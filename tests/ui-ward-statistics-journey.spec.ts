@@ -243,15 +243,14 @@ test("@mockup ward bed figures stay visible and the chart data view preserves re
   await page.goto("/mockups/ward-flow/statistics/ward/scgh-adult-open", { waitUntil: "networkidle" });
   const beds = page.getByTestId("ward-statistics-ward-beds-now");
   await expect(beds.locator("details > summary")).toHaveCount(0);
-  await expect(beds.getByRole("table").first()).toBeVisible();
+  // v6 (7 Oct 2026): bed figures are tiles in the Beds now card, and the stay chart's exact
+  // counts sit behind a Chart and Data switch.
+  await expect(beds.getByTestId("ward-stat-capacity-empty")).toBeVisible();
   const chart = page.getByTestId("statistics-ward-stays-chart");
-  await chart.getByRole("button", { name: "Current length of stay data view" }).click();
+  await chart.getByRole("radio", { name: "Data" }).click();
   await expect(chart.getByRole("table")).toBeVisible();
-  await chart.getByRole("button", { name: /^Under 2 weeks:/ }).click();
-  await expect(chart.getByRole("complementary", { name: "Under 2 weeks details" })).toBeVisible();
-  await chart.getByRole("button", { name: "Close chart details" }).click();
-  await expect(chart.getByRole("button", { name: /^Under 2 weeks:/ })).toBeFocused();
-  await chart.getByRole("button", { name: "Current length of stay data view" }).click();
+  await expect(chart.getByRole("rowheader", { name: "Under 2 weeks" })).toBeVisible();
+  await chart.getByRole("radio", { name: "Chart" }).click();
   await expect(chart.getByRole("table")).toHaveCount(0);
   await expectNoPageOverflow(page, "ward disclosure and chart data view");
 });

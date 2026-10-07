@@ -1,13 +1,26 @@
 "use client";
 
-import { StatisticsInsightChart } from "./statistics-insight-chart";
-import { StatisticsDetailPanel } from "./statistics-detail-panel";
-import family from "./statistics-family.module.css";
-
 import { useState } from "react";
 import Link from "next/link";
+import { BedDouble, CalendarClock, ChevronDown, Clock, Download, FileText, Search, Users } from "lucide-react";
 
-import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
+import {
+  BarList,
+  Button,
+  CardBody,
+  ColumnChart,
+  HeroStat,
+  Icon,
+  Menu,
+  Segmented,
+  SrOnly,
+  StackBar,
+  StatusGlyph,
+  TextInput,
+  buttonClass,
+  durMinutes,
+  tableClasses,
+} from "@/components/wf";
 import { figureText, isUnmeasured } from "@/components/ward-management/statistics/statistics-absence";
 import { dischargeDateCoverage } from "@/components/ward-management/statistics/statistics-ward-discharge-dates";
 import { readyNotYetGone, type ReadyNotYetGone } from "@/components/ward-management/statistics/statistics-ward-ready";
@@ -16,44 +29,42 @@ import {
   statisticsSectionById,
   STATISTICS_UNIT_CHOOSER_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
-
+import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
-import { MINUTES_PER_DAY, splitDuration } from "@/components/ward-management/ward-clock";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
+import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
+import { MINUTES_PER_DAY, calendarDateOf, dayOf, splitDuration } from "@/components/ward-management/ward-clock";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import { WardPanel } from "@/components/ward-management/ward-panel";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
-import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 
+import { countAxisMax } from "./statistics-axis";
+import { csvCell } from "./statistics-csv";
+import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
+import { useOptionalRouter } from "./statistics-nav";
 import { occupiedBeds } from "./statistics-occupancy";
-import styles from "./statistics-sections.module.css";
-import pageStyles from "./statistics-ward-third-edition.module.css";
+import styles from "./statistics-v6.module.css";
+import ward from "./statistics-ward.module.css";
 
 /**
- * ONE WARD IN DETAIL — the per-ward statistics page, and it is a skeleton.
+ * ONE WARD IN DETAIL — the per-ward statistics page.
  *
  * ⚠️ **AN ID THAT RESOLVES TO NOTHING GETS A PAGE THAT SAYS SO.** Not a crash, and — worse — not an
- * empty shell that looks like a ward with no data. Those two are indistinguishable to a reader:
- * "this ward has nothing to show" and "there is no such ward" would render identically, and the
- * first is a statement about a real ward the reader would then believe. This screen never falls
- * back to a different unit, and it says which id it could not resolve.
+ * empty shell that looks like a ward with no data: "this ward has nothing to show" and "there is no
+ * such ward" would render identically. This screen never falls back to a different unit, and it
+ * says which id it could not resolve.
  *
- * ⚠️ **THE SAME PAGE CARRIES THE DISCLAIMER IN BOTH STATES.** A reader who lands here from a stale
- * link sees the not-found state first, and it is still a page of this prototype — so it still says
- * the figures are invented and that nothing enforces the coordinator framing. An error state that
- * quietly drops the governance chrome is the one page most likely to be screenshotted.
+ * ⚠️ **AN UNMEASURABLE AVERAGE IS LEFT OFF THE PAGE, NEVER SHOWN AS A NOUGHT.** Counts are counts
+ * and show their noughts; an average with nothing to average is absent.
  *
- * ⚠️ **NO FIGURE, AND NO SHAPE WHERE ONE WOULD GO.** The ward's name and its hospital are identity,
- * not measurement: they cannot drift against a figure because they are not figures. Bed counts,
- * occupancy, availability and length of stay are deliberately absent — this page shows none of
- * them, rather than showing them as noughts, and it says so in a sentence.
+ * **Each figure is drawn once for the eye and said once in words.** The tiles and bar lists are
+ * hidden from assistive technology and a sentence beside them carries the same figure, so a
+ * screen reader hears "2 admissions on this ward carry a blocker" rather than a bare "2".
  *
  * **The unit comes from the provider's live `units`**, never from `unitById()`, which is what
- * `tests/ward-flow-single-source.test.ts` requires of every screen: a surface resolving a unit from
- * the frozen fixture describes the ward as it was seeded rather than as it is.
+ * `tests/ward-flow-single-source.test.ts` requires of every screen.
  */
 export function StatisticsWardScreen({
   unitId,
@@ -64,110 +75,58 @@ export function StatisticsWardScreen({
   units?: Unit[];
   admissions?: Admission[];
 }) {
-  const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds } = useWardFlow();
-  const now = useWardFlowClock();
-  usePrintableDisclosures();
+  const live = useStatisticsLive();
+  const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds } = live.state;
+  const now = live.now;
+  const { dayZero } = useWardFlow();
   const units = unitsOverride ?? liveUnits;
   const admissions = admissionsOverride ?? liveAdmissions;
   const unit = units.find((candidate) => candidate.id === unitId);
-
-  const [bedSearchQuery, setBedSearchQuery] = useState<string>("");
 
   const section = statisticsSectionById("units");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'units' section");
 
   if (!unit) {
     return (
-      <StatisticsSectionFrame
+      <StatisticsPage
         section={section}
-        title="Ward not found"
-        subtitle="The address names a ward this prototype does not have."
+        navSection="ward"
         testId="ward-statistics-ward-screen"
-        design="third-edition"
+        title="Ward not found"
+        eyebrowLabel="Ward statistics"
+        now={now}
+        paused={live.paused}
+        onTogglePause={live.togglePause}
       >
-        <div className={styles.notFoundBlock}>
-          {/* No heading here, and NOT a WardPanel: that primitive requires a title and the frame's
-              own `<h1>` already reads "Ward not found". The frame's own `<h1>` already reads "Ward not found"; a second
-              heading saying the same thing in different words was the near-duplicate fix round 1
-              picked up, and the warning paragraph below is the content. */}
-          <p className={styles.notFoundBody} data-testid="ward-statistics-ward-unresolved">
-            No ward in this prototype has the id <span className={styles.unresolvedId}>{unitId}</span>. It may have been
-            renamed or removed, or the id in the address may be wrong. This page never falls back to a different ward,
-            because a page showing the wrong ward under the right heading is worse than a page showing nothing.
-          </p>
-          <p className={styles.body}>
-            <Link href={STATISTICS_UNIT_CHOOSER_HREF} data-testid="ward-statistics-ward-chooser-link">
-              Choose a ward from the comparisons page
-            </Link>{" "}
-            to reach one that does exist.
-          </p>
-        </div>
-      </StatisticsSectionFrame>
+        <StatCard icon={BedDouble} title="No such ward">
+          <CardBody className={styles.bodyStack}>
+            <p data-testid="ward-statistics-ward-unresolved">
+              No ward in this prototype has the id <code className={ward.unresolvedId}>{unitId}</code>. It may have been
+              renamed or removed, or the id in the address may be wrong. This page never falls back to a different ward,
+              because a page showing the wrong ward under the right heading is worse than a page showing nothing.
+            </p>
+            <p>
+              <Link href={STATISTICS_UNIT_CHOOSER_HREF} data-testid="ward-statistics-ward-chooser-link">
+                Choose a ward from the comparisons page
+              </Link>{" "}
+              to reach one that does exist.
+            </p>
+          </CardBody>
+        </StatCard>
+      </StatisticsPage>
     );
   }
 
   const site = siteByCode(unit.siteCode);
   const statistics = wardStatistics(unit.id, admissions, now);
-
-  /**
-   * Ruling R-B-09: "Ready" is the one word for `min(allocatable, empty)`, computed here by
-   * `unitCapacity` — the SAME function the five-state bed grid uses — rather than re-derived. This
-   * page previously showed none of the three; see the module doc comment above `unitCapacity`
-   * (`ward-derivations.ts`) for why `available` (Ready), `empty` and `allocatable` are shown
-   * together rather than Ready alone: a reader who can see both inputs can check the arithmetic
-   * instead of taking the word for it. `capacity.potential` is deliberately never read here — its
-   * own doc comment marks it dead beyond a handful of offline test callers and warns against
-   * repurposing it as a live figure.
-   */
   const capacity = unitCapacity(unit, bedReleases);
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
-  /*
-   * 🔴 **THE NUMBER A COORDINATOR CAN ACT ON, AND IT IS NOT THE READY FIGURE.** `PULL_PATIENT`
-   * refuses outright — *"a patient cannot be pulled to a bed that is not open"* — when every free
-   * bed is being made ready. So Ready and pullable are two different numbers, and this screen said
-   * only the larger one until 2026-09-07.
-   *
-   * ⚠️ **CALLED, NOT RECOMPUTED.** The first version of this line wrote `Math.max(0, capacity.available
-   * - pendingPreparation)` inline — a second copy of a clinical calculation, which is exactly what
-   * drifts. `openBedsNow` is the one the reducer itself gates the pull on.
-   */
   const openBeds = openBedsNow(unit, bedReleases);
-
-  /*
-   * 🔴 **REFERRALS INTO THIS WARD — owner-ruled 2026-09-12, answered to me DIRECTLY: *"Yes do it"*.**
-   * The channel is stated because a relayed ruling and a first-hand one read identically once written
-   * into a file, and this lane has already shipped one commit that blurred them.
-   *
-   * ⚠️ **CALLED, NEVER RECOMPUTED — and this derivation is the reason that rule exists here.** It
-   * shipped with six passing tests and **zero production callers**: correct, covered and unreachable,
-   * which is a shape this repository has recorded under its own name. Inlining three `.filter()` calls
-   * on this page would have left it that way while looking like the feature had been built.
-   *
-   * 🔴 **`movements`, NOT `admissions`.** They are different populations and this page reads
-   * both. An admission exists once somebody is in a bed here; a referral is the asking, and most of
-   * these three never become an admission on this ward at all.
-   */
+  const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+  const wardOccupancy = occupiedBeds([unit], admissions, bedReleases, leaveBeds);
+  const occupancyPct = unit.beds > 0 ? Math.round((wardOccupancy.occupied / unit.beds) * 100) : 0;
   const referrals = wardReferralTally(movements, unit.id);
 
-  /**
-   * ⚠️ **A DELIBERATE GUARD, NOT A WORKAROUND FOR A TEST FIXTURE.** `blockedDischargesByReason`
-   * throws if any admission's `blockReason` is not a member of `BED_RELEASE_BLOCKERS` — a real
-   * seed admission can never carry an invalid value, because `Admission.blockReason` is typed
-   * `BedReleaseBlocker | null` everywhere it is authored, but this page's whole discipline is
-   * failing conservatively rather than guessing. A single malformed field should not take the
-   * entire ward page down with it — the identity panel and the flow statistics above it are still
-   * true even if this one breakdown cannot be computed — so the failure is caught and named rather
-   * than left to crash the render.
-   *
-   * 🔴 **AND THE CALL IS NOW ONE, NOT TWO — WHICH IS THE REPAIR, NOT THE HEADING ABOVE IT.**
-   *
-   * Until now the headline count came from `statistics.readyToLeaveCannot` and the table beneath it
-   * from `blockedDischargesByReason`, **two independently maintained filters over one population**:
-   * `state !== "departed"` on one side, `admissionStagePosition(...) === "ended"` on the other.
-   * Today they select the same records. Nothing makes them. `readyNotYetGone` reads the headline,
-   * the denominator and the rows off a single pass, so they cannot disagree — see that module's own
-   * header for the edit that would have broken the old arrangement with every gate green.
-   */
   let ready: ReadyNotYetGone | null = null;
   let blockedByReasonError: string | null = null;
   try {
@@ -175,688 +134,801 @@ export function StatisticsWardScreen({
   } catch (error) {
     blockedByReasonError = error instanceof Error ? error.message : String(error);
   }
-
-  /**
-   * ⚠️ **THE FALLBACK IS NOT A SECOND SOURCE, AND THE DIFFERENCE MATTERS.** `blockedDischargesByReason`
-   * throws by design on a `blockReason` outside the vocabulary, and a pre-existing ruling on this
-   * screen says one malformed field must not take the whole ward page down — the identity panel and
-   * the flow figures above are still true. **When the table cannot be computed there is no table for
-   * the headline to contradict**, so falling back to `readyToLeaveCannot` there restores nothing of
-   * the two-place problem: the moment a table exists, both numbers come from it.
-   */
   const headlineTotal = ready === null ? statistics.readyToLeaveCannot : ready.total;
 
-  /**
-   * ⚠️ **A SECOND PANEL WITH A "SHARE OF THE WARD" DENOMINATOR, AND THE TWO MUST NOT DISAGREE.**
-   * `readyNotYetGone` takes its population from `blockedDischargesByReason`'s single pass; this one
-   * filters the same way in its own module. 🔴 **Two derivations, one population, and nothing in the
-   * type system ties them** — so `tests/ward-statistics-ward-shares-agree.dom.test.tsx` reads BOTH
-   * denominators out of the rendered page and requires them to match. A screen showing "3 of 12" in
-   * one panel and "of 11" in the next is the shape this family exists to prevent.
-   */
-  // Polished: someone a bed has been pulled for is not on the ward yet, so is not one of its patients.
+  // Someone a bed has been pulled for is not on the ward yet, so is not one of its patients.
   const dischargeDates = dischargeDateCoverage(
     admissions.filter((admission) => admission.state !== "pulled"),
     unit.id,
   );
-  const wardOccupancy = occupiedBeds([unit], admissions, bedReleases, leaveBeds);
 
-  // The admission model records a ward, not a numbered bed assignment.
-  // Preserve each recorded lifecycle state rather than inferring occupancy from roster order.
-  const admissionStateLabels: Record<Admission["state"], string> = {
-    waitlisted: "Waitlisted",
-    pulled: "Pulled",
-    occupied: "Occupied",
-    departed: "Departed",
-  };
-  const bedMatrixList = admissions
-    .filter((admission) => admission.unitId === unit.id && admission.state !== "departed")
-    .map((admission) => {
-      const stayDays =
-        admission.arrivedAt === null || admission.arrivedAt > now
-          ? null
-          : Math.floor((now - admission.arrivedAt) / MINUTES_PER_DAY);
-      return {
-        id: admission.id,
-        state: admissionStateLabels[admission.state],
-        pt: `${admission.id} (${admission.sex === "Female" ? "F" : admission.sex === "Male" ? "M" : admission.sex.toLowerCase()})`,
-        admitted:
-          admission.arrivedAt === null
-            ? "Not arrived yet"
-            : stayDays === null
-              ? "Inconsistent arrival time"
-              : `${stayDays}d ago`,
-        days: stayDays,
-        target: admission.expectedDischargeAt === null ? "No discharge date set" : "Discharge date set",
-      };
-    });
+  const current = admissions.filter((admission) => admission.unitId === unit.id && admission.state !== "departed");
+  const today = dayOf(now);
+  const dueByDay = Array.from({ length: 7 }, (_, offset) => ({
+    offset,
+    count: current.filter(
+      (admission) =>
+        admission.state !== "pulled" &&
+        admission.expectedDischargeAt !== null &&
+        admission.expectedDischargeAt >= now &&
+        dayOf(admission.expectedDischargeAt) === today + offset,
+    ).length,
+  }));
+  const dueThisWeek = dueByDay.reduce((sum, day) => sum + day.count, 0);
 
-  const filteredBedMatrix = (() => {
-    if (!bedSearchQuery.trim()) return bedMatrixList;
-    const q = bedSearchQuery.toLowerCase().trim();
-    return bedMatrixList.filter(
-      (b) => b.state.toLowerCase().includes(q) || b.pt.toLowerCase().includes(q) || b.target.toLowerCase().includes(q),
-    );
-  })();
+  const oldestPulled = current
+    .filter((admission) => admission.state === "pulled" && admission.pulledAt !== null && admission.pulledAt <= now)
+    .reduce<number | null>((oldest, admission) => {
+      const waited = now - (admission.pulledAt ?? now);
+      return oldest === null || waited > oldest ? waited : oldest;
+    }, null);
+
+  const cohortLabel = unit.cohort === "Adult" ? (unit.lockedBeds > 0 ? "Adult secure" : "Adult open") : unit.cohort;
+  const averageStay = statistics.averageLengthOfStayDays;
 
   return (
-    <StatisticsSectionFrame
+    <StatisticsPage
       section={section}
+      navSection="ward"
+      slug={unit.id}
+      testId="ward-statistics-ward-screen"
       title={unit.name}
-      metadata={
+      titleAction={<ChangeWard units={units} currentId={unit.id} />}
+      eyebrowLabel="Ward statistics"
+      eyebrowDetail={
         <span data-testid="ward-statistics-ward-identity">
           <span data-testid="ward-statistics-ward-site">{site?.name ?? "Hospital not recorded"}</span>
+          {` · ${cohortLabel}`}
         </span>
       }
-      subtitle=""
-      testId="ward-statistics-ward-screen"
-      design="third-edition"
-    >
-      <dl className={pageStyles.capacityBand} aria-label="Current bed figures">
-        <div>
-          <dt>Beds on the ward</dt>
-          <dd>{unit.beds}</dd>
-        </div>
-        <div>
-          <dt>Occupied</dt>
-          <dd>{wardOccupancy.occupied}</dd>
-        </div>
-        <div>
-          <dt>Occupancy</dt>
-          <dd>{unit.beds > 0 ? Math.round((wardOccupancy.occupied / unit.beds) * 100) : 0}%</dd>
-        </div>
-        <div>
-          <dt>Pulled, not yet arrived</dt>
-          <dd>{wardOccupancy.pulled}</dd>
-        </div>
-        <div>
-          <dt>Ready</dt>
-          <dd>{capacity.available}</dd>
-        </div>
-        <div>
-          <dt>Open now</dt>
-          <dd>{openBeds}</dd>
-        </div>
-      </dl>
-      <div className={family.modules}>
-        <StatisticsInsightChart
-          title="Discharge barriers"
-          defaultGroup="recorded"
-          emptyText="No recorded blockers."
-          groups={[{ id: "recorded", label: "With blockers" }]}
-          defaultSort="value"
-          testId="statistics-ward-barriers-chart"
-          metrics={[
-            {
-              id: "count",
-              label: "Recorded blockers",
-              unit: "people",
-              tone: "warning",
-              note: `${headlineTotal} of ${ready?.population ?? admissions.filter((admission) => admission.unitId === unit.id && admission.state !== "departed").length} with a recorded blocker. Categories use the ward's current non-departed admissions.`,
-            },
-          ]}
-          rows={
-            ready
-              ? ready.tallies.map((tally) => ({
-                  id: tally.reason,
-                  group: tally.count > 0 ? "recorded" : "none",
-                  name: tally.reason.replaceAll("_", " "),
-                  values: { count: tally.count },
-                }))
-              : [
-                  {
-                    id: "unavailable",
-                    group: "recorded",
-                    name: "Breakdown unavailable",
-                    values: { count: null },
-                    unavailable: blockedByReasonError ?? "Not recorded",
-                  },
-                ]
-          }
-        />
-        <StatisticsInsightChart
-          title="Current length of stay"
-          variant="distribution"
-          testId="statistics-ward-stays-chart"
-          metrics={[
-            {
-              id: "count",
-              label: "People by stay band",
-              unit: "people",
-              note: `${admissions.filter((admission) => admission.unitId === unit.id && admission.state !== "departed" && stayBand(admission, now) === null).length} current admissions have no recorded stay. Bands are display groupings, not clinical deadlines.`,
-            },
-          ]}
-          rows={STAY_BANDS.map((band) => ({
-            id: band.id,
-            name: band.label,
-            values: {
-              count: admissions.filter(
-                (admission) =>
-                  admission.unitId === unit.id &&
-                  admission.state !== "departed" &&
-                  stayBand(admission, now)?.id === band.id,
-              ).length,
-            },
-          }))}
-        />
-      </div>
-      <div className={pageStyles.pageGrid}>
-        <WardPanel
-          title="Beds now"
-          count={`${pendingPreparation} pending preparation`}
-          testId="ward-statistics-ward-beds-now"
-          dataTabSection="occ"
-        >
-          <dl className={pageStyles.capacityBand} aria-label="Current bed figures">
-            <div>
-              <dt>Empty</dt>
-              <dd data-testid="ward-stat-capacity-empty">{unit.empty.value}</dd>
-            </div>
-            <div>
-              <dt>Allocatable</dt>
-              <dd data-testid="ward-stat-capacity-allocatable">
-                {unit.allocatable.value}
-                {unit.allocatable.value === 0 && <small>no free bed</small>}
-              </dd>
-            </div>
-            <div>
-              <dt>Ready</dt>
-              <dd data-testid="ward-stat-capacity-ready">{capacity.available}</dd>
-            </div>
-            <div>
-              <dt>Open now</dt>
-              <dd>{openBeds}</dd>
-            </div>
-            <div>
-              <dt>Pending</dt>
-              <dd data-testid="ward-stat-capacity-pending-preparation">{pendingPreparation}</dd>
-            </div>
-          </dl>
-          <div
-            className={`${styles.panelBody} ${pageStyles.bedBody}`}
-            role="group"
-            aria-label="Beds now content"
-            tabIndex={0}
-          >
-            <div className={pageStyles.tableTools}>
-              <label htmlFor="bedMatrixSearch" className={pageStyles.srOnly}>
-                Search admissions by ID or recorded state
-              </label>
-              <input
-                id="bedMatrixSearch"
-                type="search"
-                className={pageStyles.tableSearch}
-                placeholder="Search admission ID or state..."
-                value={bedSearchQuery}
-                onChange={(e) => setBedSearchQuery(e.target.value)}
-                aria-label="Filter recorded admission roster"
-              />
-              <span className={styles.note}>
-                Showing {filteredBedMatrix.length} of {bedMatrixList.length} admissions
+      now={now}
+      paused={live.paused}
+      onTogglePause={live.togglePause}
+      stats={
+        <>
+          <HeroStat value={unit.beds} label="Beds" />
+          <HeroStat value={wardOccupancy.occupied} label={`${occupancyPct}% occupied`} />
+          <HeroStat
+            value={wardOccupancy.pulled}
+            label={
+              <span className={styles.flagged}>
+                {wardOccupancy.pulled > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                Pulled, not arrived
               </span>
+            }
+          />
+          <HeroStat value={<span data-testid="ward-stat-capacity-ready">{capacity.available}</span>} label="Ready" />
+          {averageStay === null ? null : <HeroStat value={`${averageStay}d`} label="Average stay" />}
+          <HeroStat value={dueThisWeek} label="Due out, 7 days" />
+        </>
+      }
+    >
+      <div className={styles.grid3} data-testid="ward-statistics-ward-measures">
+        <StatCard
+          icon={BedDouble}
+          title="Beds now"
+          aside={`${unit.beds} beds`}
+          data-testid="ward-statistics-ward-beds-now"
+        >
+          <CardBody className={styles.bodyStack}>
+            <div>
+              <StackBar
+                label={`${unit.name} beds by state`}
+                segments={[
+                  { id: "ready", label: BED_STATE_LABELS.ready, value: states.ready, fill: "ready" },
+                  { id: "pulled", label: BED_STATE_LABELS.pulled, value: states.pulled, hatch: true },
+                  { id: "closed", label: BED_STATE_LABELS.closed, value: states.closed, fill: "closed" },
+                  { id: "occupied", label: BED_STATE_LABELS.occupied, value: states.occupied, fill: "data-1" },
+                ]}
+              />
+              <p className={ward.stateLine} aria-hidden="true">
+                <span>{states.ready} ready</span>
+                <span>{states.pulled} pulled</span>
+                <span>{states.closed} closed</span>
+                <span className={ward.stateLineEnd}>
+                  {states.occupied} occupied{states.onLeave > 0 ? `, ${states.onLeave} on leave` : ""}
+                </span>
+              </p>
             </div>
-            <div className={pageStyles.tableWrap} tabIndex={0} role="region" aria-label="Ward admission roster">
-              <table className={pageStyles.dataTable}>
-                <caption className={pageStyles.srOnly}>
-                  Recorded admission roster; numbered bed assignments are not recorded
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Admission / recorded sex</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Admitted</th>
-                    <th scope="col" className={pageStyles.n}>
-                      Length of stay
-                    </th>
-                    <th scope="col">Discharge target</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredBedMatrix.length === 0 ? (
-                    <tr>
-                      <td colSpan={5}>
-                        {bedMatrixList.length === 0
-                          ? "No current admissions recorded"
-                          : "No admissions match this search"}
-                      </td>
-                    </tr>
-                  ) : null}
-                  {filteredBedMatrix.map((b) => {
-                    let chipClass = pageStyles.chipMark;
-                    if (b.state === "Occupied") chipClass = pageStyles.chipOccupied;
-
-                    return (
-                      <tr key={b.id}>
-                        <th scope="row">
-                          <strong>{b.pt}</strong>
-                        </th>
-                        <td>
-                          <span className={`${pageStyles.chip} ${chipClass}`}>{b.state}</span>
-                        </td>
-                        <td>{b.admitted}</td>
-                        <td className={pageStyles.n}>{b.days === null ? "Not recorded" : `${b.days} d`}</td>
-                        <td>{b.target}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </WardPanel>
-
-        <div className={pageStyles.measureColumns} data-testid="ward-statistics-ward-measures">
-          <div className={pageStyles.measureColumn}>
-            {statistics.averageLengthOfStayDays !== null && (
-              <WardPanel title="Length of stay" testId="ward-statistics-ward-length-of-stay" dataTabSection="los">
-                <div className={styles.panelBody} role="group" aria-label="Length of stay content" tabIndex={0}>
-                  <h3 className={styles.subHeading}>Average length of stay</h3>
-                  <p className={styles.body} data-testid="ward-stat-length-of-stay">
-                    {statistics.averageLengthOfStayDays === null ? (
-                      <>Not recorded</>
-                    ) : (
-                      <>
-                        {statistics.averageLengthOfStayDays} {statistics.averageLengthOfStayDays === 1 ? "day" : "days"}
-                      </>
-                    )}
-                  </p>
-                </div>
-              </WardPanel>
+            <dl className={styles.tiles} aria-label="Current bed figures">
+              <div className={styles.tile}>
+                <dt className={styles.tileLabel}>Empty</dt>
+                <dd className={styles.tileValue} data-testid="ward-stat-capacity-empty">
+                  {unit.empty.value}
+                </dd>
+              </div>
+              <div className={styles.tile}>
+                <dt className={styles.tileLabel}>Allocatable</dt>
+                <dd className={styles.tileValue} data-testid="ward-stat-capacity-allocatable">
+                  {unit.allocatable.value}
+                  {unit.allocatable.value === 0 && <small>no free bed</small>}
+                </dd>
+              </div>
+              <div className={styles.tile}>
+                <dt className={styles.tileLabel}>Open now</dt>
+                <dd className={styles.tileValue}>{openBeds}</dd>
+              </div>
+              <div className={styles.tile}>
+                <dt className={styles.tileLabel}>Pending</dt>
+                <dd className={styles.tileValue} data-testid="ward-stat-capacity-pending-preparation">
+                  {pendingPreparation}
+                </dd>
+              </div>
+            </dl>
+            {oldestPulled === null ? null : (
+              <p className={ward.factLine}>
+                <span className={styles.flagged}>
+                  <StatusGlyph tone="warning" size={9} />
+                  Oldest pulled bed
+                </span>
+                <span>
+                  <b>{durMinutes(oldestPulled)}</b> not arrived
+                </span>
+              </p>
             )}
-            {(statistics.averageEmptyBedMinutes !== null || statistics.emptyBedIncoherentCount > 0) && (
-              <StatisticsDetailPanel
-                title="Admissions and discharges"
-                testId="ward-statistics-ward-admissions-discharges"
-                dataTabSection="flow"
-              >
-                <div
-                  className={styles.panelBody}
-                  role="group"
-                  aria-label="Admissions and discharges content"
-                  tabIndex={0}
+          </CardBody>
+        </StatCard>
+
+        <StatCard
+          icon={FileText}
+          title="Discharge planning"
+          aside="Not departed"
+          data-testid="ward-statistics-ward-discharge-planning"
+        >
+          <CardBody className={styles.bodyStack}>
+            <dl className={styles.figures} data-testid="ward-stat-discharge-date-coverage">
+              <div className={styles.figure}>
+                <dd className={styles.figureValue} data-testid="ward-stat-discharge-date-recorded">
+                  {dischargeDates.recorded}
+                </dd>
+                <dt className={styles.figureLabel}>With a date</dt>
+              </div>
+              <div className={styles.figure}>
+                <dd className={styles.figureValue} data-testid="ward-stat-discharge-date-not-recorded">
+                  {dischargeDates.notRecorded}
+                </dd>
+                <dt className={styles.figureLabel}>
+                  {dischargeDates.notRecorded > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                  No date
+                </dt>
+              </div>
+              <div className={styles.figure}>
+                <dd
+                  className={styles.figureValue}
+                  data-testid="ward-stat-discharge-date-share"
+                  data-unmeasured={isUnmeasured(dischargeDates.shareRecorded) ? "" : undefined}
                 >
-                  <h3 className={styles.subHeading}>Average pull to arrival</h3>
-                  {/*
-                   * ⚠️ **`splitDuration`, THE ESTATE'S FORMATTER — this page printed "300 minutes" until
-                   * 2026-09-06 while the statistics home page printed "5h 00m" for the SAME value.** One
-                   * number in two dresses, on the pair of screens a coordinator moves between. The home
-                   * page's format wins because it is the one every other duration in this feature uses.
-                   */}
-                  <p className={styles.body} data-testid="ward-stat-empty-bed-minutes">
+                  {dischargeDates.shareRecorded.kind === "measured" ? (
+                    <>
+                      {figureText(dischargeDates.shareRecorded)}%
+                      <small className={ward.figureSub}>Of {dischargeDates.population} here</small>
+                    </>
+                  ) : (
+                    <>
+                      <span aria-hidden="true">none</span>
+                      <SrOnly>{`No share can be stated, ${figureText(dischargeDates.shareRecorded)}.`}</SrOnly>
+                    </>
+                  )}
+                </dd>
+                <dt className={styles.figureLabel}>Share with a date</dt>
+              </div>
+            </dl>
+            <div data-testid="ward-stat-discharge-outcomes">
+              <SrOnly>
+                {statistics.dischargeDateOutcomes.consideredCount === 0 ? (
+                  <>No resolved discharge dates.</>
+                ) : (
+                  <>
+                    Of {statistics.dischargeDateOutcomes.consideredCount} whose date can be judged, written down and the
+                    person has since left, {statistics.dischargeDateOutcomes.met} met and{" "}
+                    {statistics.dischargeDateOutcomes.missed} missed.
+                  </>
+                )}{" "}
+                {statistics.dischargeDateOutcomes.moved === 0 ? (
+                  <>No admission on this ward has had its discharge date revised.</>
+                ) : (
+                  <>
+                    Separately, {statistics.dischargeDateOutcomes.moved}{" "}
+                    {statistics.dischargeDateOutcomes.moved === 1
+                      ? "admission on this ward has"
+                      : "admissions on this ward have"}{" "}
+                    had a discharge date revised at least once.
+                  </>
+                )}
+              </SrOnly>
+              <div className={styles.tiles} aria-hidden="true">
+                <div className={styles.tile}>
+                  <span className={styles.tileLabel}>Dates met</span>
+                  <span className={styles.tileValue}>
+                    {statistics.dischargeDateOutcomes.consideredCount === 0
+                      ? "none yet"
+                      : `${statistics.dischargeDateOutcomes.met} of ${statistics.dischargeDateOutcomes.consideredCount}`}
+                  </span>
+                </div>
+                <div className={styles.tile}>
+                  <span className={styles.tileLabel}>Revised</span>
+                  <span className={styles.tileValue}>{statistics.dischargeDateOutcomes.moved}</span>
+                </div>
+                <div className={styles.tile}>
+                  <span className={styles.tileLabel}>Ready, not gone</span>
+                  <span className={styles.tileValue}>{headlineTotal}</span>
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </StatCard>
+
+        <StatCard
+          icon={Users}
+          title="Referrals into ward"
+          aside="Ever, this ward"
+          data-testid="ward-statistics-ward-referrals-panel"
+        >
+          <CardBody className={styles.bodyStack}>
+            <section data-testid="ward-stat-referrals" aria-label="Referrals into this ward">
+              <dl className={styles.figures}>
+                <div className={styles.figure}>
+                  <dd className={styles.figureValue} data-testid="ward-stat-referrals-asked">
+                    {referrals.askedAndWaiting}
+                  </dd>
+                  <dt className={styles.figureLabel}>Asking now</dt>
+                </div>
+                <div className={styles.figure}>
+                  <dd className={styles.figureValue} data-testid="ward-stat-referrals-accepted">
+                    {referrals.everAccepted}
+                  </dd>
+                  <dt className={styles.figureLabel}>Ever accepted</dt>
+                </div>
+                <div className={styles.figure}>
+                  <dd className={styles.figureValue} data-testid="ward-stat-referrals-declined">
+                    {referrals.everDeclined}
+                  </dd>
+                  <dt className={styles.figureLabel}>
+                    <StatusGlyph tone="closed" size={9} />
+                    Ever declined
+                  </dt>
+                </div>
+              </dl>
+              <SrOnly>
+                Asking now counts referrals waiting on this ward right now. Ever accepted and ever declined count every
+                referral since records began, and one movement can appear in both, so the three do not add up.
+              </SrOnly>
+            </section>
+            {statistics.averageEmptyBedMinutes !== null || statistics.emptyBedIncoherentCount > 0 ? (
+              <div data-testid="ward-statistics-ward-admissions-discharges">
+                <h3 className={ward.subHead}>Pull to arrival</h3>
+                <div className={styles.tiles}>
+                  <div className={styles.tile} data-testid="ward-stat-empty-bed-minutes">
+                    <span className={styles.tileLabel}>Average</span>
                     {statistics.averageEmptyBedMinutes === null ? (
-                      <>
-                        No bed on this ward has a usable pair of instants — a bed given away and a person arriving, with
-                        the arrival not earlier than the pull — so there is no empty stretch to average.
-                      </>
+                      <span className={styles.tileValue}>
+                        <span aria-hidden="true">none</span>
+                        <SrOnly>
+                          No bed on this ward has a usable pair of instants, a bed given away and a person arriving,
+                          with the arrival not earlier than the pull, so there is no empty stretch to average.
+                        </SrOnly>
+                      </span>
                     ) : (
-                      <>{splitDuration(statistics.averageEmptyBedMinutes)}</>
+                      <span className={styles.tileValue}>{splitDuration(statistics.averageEmptyBedMinutes)}</span>
                     )}
-                  </p>
-
-                  {/*
-            🔴 **AN EXCLUSION NOBODY CAN SEE IS THE CLAMP THAT WAS REMOVED, WEARING A DIFFERENT
-            NAME.** Until 2026-09-07 an admission whose arrival preceded its own bed allocation was
-            dropped from this ward's average with NOTHING on screen — no figure, no sentence. Ward
-            Lead's ruling of 2026-09-01 is that a clamp "does not make a bad number safe, it makes it
-            invisible", and the statistics home page has rendered exactly this count since, in its
-            own words: the exclusion "must be VISIBLE or the exclusion is as invisible as the clamp
-            it replaces".
-
-            The hub honoured it; this page — the surface a coordinator opens about a NAMED ward — did
-            not, and looked compliant because the clamp really had been removed. Same paragraph as
-            the hub's, deliberately: one wording for one fact across the two screens a coordinator
-            moves between.
-          */}
-                  <dl className={`${styles.body} ${pageStyles.metricFacts}`} data-testid="ward-stat-empty-bed-range">
-                    <div>
-                      <dt>Shortest</dt>
-                      <dd data-testid="ward-stat-empty-bed-shortest">
-                        {statistics.emptyBedMinutesShortest === null
-                          ? "Not recorded"
-                          : splitDuration(statistics.emptyBedMinutesShortest)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Longest</dt>
-                      <dd data-testid="ward-stat-empty-bed-longest">
-                        {statistics.emptyBedMinutesLongest === null
-                          ? "Not recorded"
-                          : splitDuration(statistics.emptyBedMinutesLongest)}
-                      </dd>
-                    </div>
-                  </dl>
-                  <p className={styles.body} data-testid="ward-stat-empty-bed-incoherent">
-                    <strong>{statistics.emptyBedIncoherentCount}</strong>{" "}
-                    {statistics.emptyBedIncoherentCount === 1
-                      ? "admission on this ward records"
-                      : "admissions on this ward record"}{" "}
-                    an arrival earlier than the bed was given away.
-                    {statistics.emptyBedIncoherentCount > 0 ? (
-                      <>
-                        {" "}
-                        That cannot be true, so {statistics.emptyBedIncoherentCount === 1 ? "it is" : "they are"}{" "}
-                        excluded from the average and counted here instead.
-                      </>
-                    ) : null}
-                  </p>
+                  </div>
+                  <div className={styles.tile}>
+                    <span className={styles.tileLabel}>Shortest</span>
+                    <span className={styles.tileValue} data-testid="ward-stat-empty-bed-shortest">
+                      {statistics.emptyBedMinutesShortest === null
+                        ? "none"
+                        : splitDuration(statistics.emptyBedMinutesShortest)}
+                    </span>
+                  </div>
+                  <div className={styles.tile}>
+                    <span className={styles.tileLabel}>Longest</span>
+                    <span className={styles.tileValue} data-testid="ward-stat-empty-bed-longest">
+                      {statistics.emptyBedMinutesLongest === null
+                        ? "none"
+                        : splitDuration(statistics.emptyBedMinutesLongest)}
+                    </span>
+                  </div>
+                  <div className={styles.tile} data-testid="ward-stat-empty-bed-incoherent">
+                    <span className={styles.tileLabel}>Excluded</span>
+                    <span className={styles.tileValue}>{statistics.emptyBedIncoherentCount}</span>
+                    <SrOnly>
+                      {statistics.emptyBedIncoherentCount === 1
+                        ? "admission on this ward records"
+                        : "admissions on this ward record"}{" "}
+                      an arrival earlier than the bed was given away.
+                      {statistics.emptyBedIncoherentCount > 0
+                        ? ` That cannot be true, so ${statistics.emptyBedIncoherentCount === 1 ? "it is" : "they are"} excluded from the average and counted here instead.`
+                        : ""}
+                    </SrOnly>
+                  </div>
                 </div>
-              </StatisticsDetailPanel>
-            )}
-          </div>
-          <div className={pageStyles.measureColumn}>
-            <WardPanel
-              title="Discharge planning"
-              testId="ward-statistics-ward-discharge-planning"
-              dataTabSection="ready"
-            >
-              <div className={styles.panelBody} role="group" aria-label="Discharge planning content" tabIndex={0}>
-                {/*
-                 * 🔴 **THE DRAWING'S "DISCHARGE PLANNING" FACTS, AND THEY GO ABOVE THE OUTCOMES BECAUSE
-                 * THEY ARE THE SIMPLER QUESTION.** How many people here have a date written down at all is
-                 * what a coordinator opens this panel for; whether past dates were met is a different and
-                 * narrower question, over a different population, and the comment below says so at length.
-                 *
-                 * ⚠️ **THESE TWO ARE A PARTITION AND THE THREE BELOW ARE NOT.** `recorded + notRecorded`
-                 * equals the ward exactly; `met`/`missed`/`moved` overlap and must never be summed. **Two
-                 * neighbouring figure sets with opposite arithmetic, three lines apart** — which is why the
-                 * partition is asserted by a test rather than left for a reader to infer from the layout.
-                 *
-                 * 🔴 **THE DRAWING'S FOURTH FACT IS DELIBERATELY ABSENT.** It reads *"Where a discharge went
-                 * — not tracked here"*, and that was measured FALSE: `Admission.leavingDestination` is
-                 * declared, carries eight members and the seed populates it on every departure. **Not
-                 * reproduced, and not silently corrected either** — recorded under §7.0(2), and the panel it
-                 * would make possible is deliberately not built.
-                 *
-                 * ⚠️ **The month-scoped table the drawing puts beneath this is NOT here and is a hand-back
-                 * (D-4):** the prototype persists no history and the network holds five departed admissions.
-                 */}
-                <dl
-                  className={`${styles.body} ${pageStyles.metricFacts}`}
-                  data-testid="ward-stat-discharge-date-coverage"
-                >
-                  <div>
-                    <dt>Patients with a discharge date recorded</dt>
-                    <dd data-testid="ward-stat-discharge-date-recorded">{dischargeDates.recorded}</dd>
-                  </div>
-                  <div>
-                    <dt>Patients without one</dt>
-                    <dd data-testid="ward-stat-discharge-date-not-recorded">{dischargeDates.notRecorded}</dd>
-                  </div>
-                  <div className={pageStyles.shareFact}>
-                    <dt>Share of the ward with a date</dt>
-                    <dd
-                      data-testid="ward-stat-discharge-date-share"
-                      data-unmeasured={isUnmeasured(dischargeDates.shareRecorded) ? "" : undefined}
-                    >
-                      {dischargeDates.shareRecorded.kind === "measured" ? (
-                        <>
-                          {figureText(dischargeDates.shareRecorded)}% of the {dischargeDates.population}{" "}
-                          {dischargeDates.population === 1 ? "patient" : "patients"} on this ward who{" "}
-                          {dischargeDates.population === 1 ? "has" : "have"} not departed
-                        </>
-                      ) : (
-                        <>No share can be stated: {figureText(dischargeDates.shareRecorded)}.</>
-                      )}
-                    </dd>
-                  </div>
-                </dl>
-
-                <h3 className={styles.subHeading}>Discharge dates</h3>
-                {/*
-                 * 🔴 **TWO POPULATIONS, AND UNTIL 2026-09-06 THIS SENTENCE PRESENTED THEM AS ONE.** It read
-                 * "Of 1 with a date written down, 1 met, 0 missed and 11 moved" on a live ward page. Eleven
-                 * of one. Every number was correct — that is what made it dangerous — and the derivation
-                 * had already written the rule down, in `ward-statistics.ts`:
-                 *
-                 * > `met`/`missed`/`moved` are therefore NOT a three-way partition of the same population
-                 * > and must never be summed to `consideredCount`.
-                 *
-                 * `moved` is counted over EVERY admission on this ward. `met` and `missed` only over the
-                 * ones with a date whose person has since left. So the two cannot share a denominator, and
-                 * they now get a sentence each rather than a clause each.
-                 *
-                 * ⚠️ **THE EMPTY BRANCH WAS SAYING SOMETHING FALSE, NOT MERELY SOMETHING VAGUE.** It fires
-                 * on `consideredCount === 0` — no outcome RESOLVED — and it claimed no discharge date had
-                 * been written down. On a ward where every admission carries a planned date and nobody has
-                 * left yet, that is untrue, and it is the reading a coordinator acts on: it says the
-                 * planning has not happened.
-                 *
-                 * ⚠️ **AND IT DROPPED `moved` ENTIRELY.** A ward with no resolved outcome and eight revised
-                 * dates published neither figure. An unresolved outcome is not a reason to withhold a
-                 * measure that IS resolved, so the revision count now stands on its own in both branches.
-                 *
-                 * `tests/ward-statistics-discharge-date-populations.dom.test.tsx` holds all three as
-                 * properties rather than wordings — reword this freely, it stays green.
-                 */}
-                <p className={styles.body} data-testid="ward-stat-discharge-outcomes">
-                  {statistics.dischargeDateOutcomes.consideredCount === 0 ? (
-                    <>No resolved discharge dates.</>
-                  ) : (
-                    <>
-                      Of {statistics.dischargeDateOutcomes.consideredCount} whose date can be judged — written down, and
-                      the person has since left — {statistics.dischargeDateOutcomes.met} met and{" "}
-                      {statistics.dischargeDateOutcomes.missed} missed.
-                    </>
-                  )}{" "}
-                  {statistics.dischargeDateOutcomes.moved === 0 ? (
-                    <>No admission on this ward has had its discharge date revised.</>
-                  ) : (
-                    <>
-                      Separately, {statistics.dischargeDateOutcomes.moved}{" "}
-                      {statistics.dischargeDateOutcomes.moved === 1
-                        ? "admission on this ward has"
-                        : "admissions on this ward have"}{" "}
-                      had a discharge date revised at least once.
-                    </>
-                  )}
-                </p>
               </div>
-            </WardPanel>
-            <StatisticsDetailPanel
-              title="Clinically ready, not yet gone"
-              testId="ward-statistics-ward-ready"
-              dataTabSection="ready"
-            >
-              <div className={styles.panelBody} role="group" aria-label="Clinically ready content" tabIndex={0}>
-                {/*
-                 * 🔴 **THE DRAWING'S SECTION, AND ITS NAME IS LOAD-BEARING.** "Clinically ready, not yet
-                 * gone" says whose readiness this is: a PATIENT ready to leave, not a BED ready to fill.
-                 * The two senses of "ready" live on this very screen — the capacity panel above uses the
-                 * bed sense — and the reason list beneath settles which one this is, since every entry
-                 * describes something the discharge is waiting on.
-                 */}
-                <section data-testid="ward-stat-ready-section">
-                  <div className={pageStyles.readyKpiBand}>
-                    <p className={`${styles.body} ${pageStyles.readyHeadline}`} data-testid="ward-stat-ready-blocked">
-                      <span className={pageStyles.kpiLabel}>Clinically ready, not yet gone</span>
-                      {/*
-                       * 🔴 **NOUGHT MEANS NO BLOCKER WAS RECORDED, NOT THAT NOBODY IS BLOCKED.**
-                       * `readyToLeaveCannot` counts live admissions where `blockReason !== null`
-                       * (`ward-statistics.ts:113`), and `Admission.blockReason` is `BedReleaseBlocker | null`
-                       * (`ward-admissions.ts:485`) — **two states, not three.** So `null` cannot separate
-                       * *"nothing is holding this discharge up"* from *"nobody wrote one down"*, and the
-                       * empty state said the first.
-                       *
-                       * ⚠️ **THE RECORD ITSELF ALREADY REFUSES THIS COLLAPSE ELSEWHERE.**
-                       * `Admission.followUp` is deliberately three-state, and its own comment gives the
-                       * reason: *"a boolean here would collapse 'nobody arranged anything' into 'nobody wrote
-                       * it down'."* Same record, same trap, opposite treatment.
-                       *
-                       * ⚠️ **And the else-branch three lines down was ALREADY CORRECT** — *"each with a blocker
-                       * recorded against it"* says exactly what is known. **The asymmetry sat inside one
-                       * paragraph**, which is why nothing looked wrong: the half that is read when there IS
-                       * something to report was honest, and the half read when there is not was a claim about
-                       * the ward rather than about the record.
-                       */}
-                      {headlineTotal === 0 ? (
-                        <>
-                          <strong className={pageStyles.kpiValue}>0</strong>
-                          <span>No admission on this ward that has not departed carries a blocker.</span>
-                        </>
-                      ) : (
-                        <>
-                          <strong className={pageStyles.kpiValue}>{headlineTotal}</strong>
-                          <span>
-                            {headlineTotal === 1 ? "admission" : "admissions"} on this ward that{" "}
-                            {headlineTotal === 1 ? "has" : "have"} not departed{" "}
-                            {headlineTotal === 1 ? "carries" : "carry"} a blocker.
-                          </span>
-                        </>
-                      )}
-                    </p>
-
-                    {/*
-                     * 🔴 **THE SHARE, AND WHY IT IS A FIGURE RATHER THAN A NUMBER.** A ward with nobody on it
-                     * has no denominator — `0 of 0` is undefined — while a ward with patients and no blockers
-                     * has a share and it is a true nought. **Rendering both as "0%" would destroy exactly the
-                     * distinction this family exists to keep**, so the derivation returns a `StatisticsFigure`
-                     * and the unmeasured case says what it is instead of showing a number.
-                     */}
-                    <p
-                      className={`${styles.body} ${pageStyles.readyShare}`}
-                      data-testid="ward-stat-ready-share"
-                      data-unmeasured={ready !== null && isUnmeasured(ready.shareOfWard) ? "" : undefined}
-                    >
-                      <span className={pageStyles.kpiLabel}>Share of the ward</span>
-                      {ready === null ? (
-                        <span>Unavailable</span>
-                      ) : ready.shareOfWard.kind === "measured" ? (
-                        <>
-                          <strong className={pageStyles.kpiValue}>{figureText(ready.shareOfWard)}%</strong>
-                          <span>
-                            of the {ready.population} {ready.population === 1 ? "patient" : "patients"} on this ward who{" "}
-                            {ready.population === 1 ? "has" : "have"} not departed.
-                          </span>
-                        </>
-                      ) : (
-                        <span>No share can be stated: {figureText(ready.shareOfWard)}.</span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/*
-                   * ⚠️ **THE RECORDED REASONS, AND THEY ARE THE MODEL'S EIGHT, NOT THE DRAWING'S THREE.**
-                   * The drawing's example data names *"Funding or plan decision pending"* — a concept
-                   * `BED_RELEASE_BLOCKERS` refuses on a recorded decision ("Guardianship and financial
-                   * arrangements stay excluded ... Adding any further entry remains a recorded product
-                   * decision, never an implementer's convenience"). 🔴 **Widening that list to match a
-                   * drawing is exactly the convenience the comment forbids**, so the difference is handed
-                   * back rather than coded around.
-                   *
-                   * Rows are generated from the tally the derivation returns, never typed out here: the row
-                   * set IS the vocabulary, so a row can neither be missing nor invented.
-                   */}
-                  {ready === null ? (
-                    <p className={styles.note} data-testid="ward-stat-blocked-by-reason-error">
-                      The blocker breakdown could not be computed for this ward: {blockedByReasonError}
-                    </p>
-                  ) : (
-                    <>
-                      <p
-                        className={`${styles.body} ${pageStyles.readyPopulation}`}
-                        data-testid="ward-stat-blocked-by-reason-population"
-                      >
-                        {ready.total} {ready.total === 1 ? "blocked discharge" : "blocked discharges"} on this ward, out
-                        of {ready.population} {ready.population === 1 ? "admission" : "admissions"} on this ward that
-                        have not departed.
-                      </p>
-                      <ul
-                        className={`${styles.body} ${pageStyles.reasonTable}`}
-                        data-testid="ward-stat-blocked-by-reason-list"
-                      >
-                        {ready.tallies.map((tally) => (
-                          <li key={tally.reason} data-testid={`ward-stat-blocked-by-reason-${tally.reason}`}>
-                            {tally.reason}:{" "}
-                            <span data-testid={`ward-stat-blocked-by-reason-${tally.reason}-count`}>{tally.count}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  )}
-                </section>
-              </div>
-            </StatisticsDetailPanel>
-            <WardPanel
-              title="Referrals into this ward"
-              testId="ward-statistics-ward-referrals-panel"
-              dataTabSection="flow"
-            >
-              <div className={styles.panelBody} role="group" aria-label="Ward referrals content" tabIndex={0}>
-                {/*
-                 * 🔴 **THREE FIGURES THAT MUST NEVER BE ADDED UP, AND THE APPROVED DRAWING ADDS THEM UP.**
-                 * Its band is *Received · Accepted · Declined · Still open · Accepted share*, with **Received
-                 * defined as the other three summed**. Both halves of that are unbuildable here, for two
-                 * independent reasons, and only one of them is the no-history limit:
-                 *
-                 *     they mix tenses   `referredUnitIds` is LIVE — emptied by ACCEPT_IN_PRINCIPLE and by
-                 *                       WITHDRAW_REFERRAL. `acceptedUnitId` and `declines[]` are CUMULATIVE
-                 *                       and survive arrival, closure and discharge. One current figure and
-                 *                       two lifetime ones; summing them adds different periods together.
-                 *     they can overlap  DECLINE removes a unit from the live list and locks it out of
-                 *                       nothing, so one ward can decline a movement and later accept it.
-                 *                       The same movement then lands in two of these counts.
-                 *
-                 * ⚠️ **SO THERE IS NO TOTAL AND NO SHARE HERE, AND THAT IS THE DESIGN.** The derivation
-                 * refuses to publish either; **a screen can put the defect back by summing them in JSX**, which
-                 * is why `tests/ward-statistics-ward-referrals-section.dom.test.tsx` asserts the total's
-                 * absence against the RENDERED page rather than trusting the derivation's own test.
-                 *
-                 * 🔴 **THE OVERLAP SENTENCE IS ON THE PAGE, NOT ONLY IN A DOC COMMENT.** A reader who
-                 * adds two of these together is not being careless — nothing on screen tells them not to
-                 * unless it is written here, and the family has already shipped *"Of 1 with a date written
-                 * down, 1 met, 0 missed and 11 moved"* on a live ward page for exactly this reason.
-                 *
-                 * ⚠️ **THE MONTH-SCOPED VERSION THE DRAWING PUTS BESIDE THIS IS NOT HERE (D-4).** The
-                 * prototype persists no history, so a "this month" figure would be true by construction and
-                 * almost entirely nought — and a reader cannot tell that from a quiet ward.
-                 */}
-                {/*
-                 * The testid sits on a SECTION wrapping heading, figures AND the overlap sentence — not on
-                 * the `dl` alone. The first draft put it on the `dl`, so the test asserting the page warns
-                 * about the overlap read only the three rows and could never see the warning. A guard whose
-                 * subject excludes the thing it is guarding cannot pass however correct the page is.
-                 */}
-                <section data-testid="ward-stat-referrals">
-                  <dl className={`${styles.body} ${pageStyles.metricFacts}`}>
-                    <div>
-                      <dt>Asking this ward right now</dt>
-                      <dd data-testid="ward-stat-referrals-asked">{referrals.askedAndWaiting}</dd>
-                    </div>
-                    <div>
-                      <dt>Ever accepted by this ward</dt>
-                      <dd data-testid="ward-stat-referrals-accepted">{referrals.everAccepted}</dd>
-                    </div>
-                    <div>
-                      <dt>Ever declined by this ward</dt>
-                      <dd data-testid="ward-stat-referrals-declined">{referrals.everDeclined}</dd>
-                    </div>
-                  </dl>
-                </section>
-              </div>
-            </WardPanel>
-            <StatisticsDetailPanel
-              title="Long stays"
-              testId="ward-statistics-ward-long-stays"
-              dataTabSection="longStay"
-            >
-              <div className={styles.panelBody} role="group" aria-label="Long stays content" tabIndex={0}>
-                <h3 className={styles.subHeading}>Long stays</h3>
-                <p className={styles.body} data-testid="ward-stat-long-stays">
-                  {statistics.longStays === 0 ? (
-                    <>None. No admission on this ward has passed three months.</>
-                  ) : (
-                    <>
-                      {statistics.longStays}{" "}
-                      {statistics.longStays === 1 ? "admission on this ward has" : "admissions on this ward have"} been
-                      here longer than three months.
-                    </>
-                  )}
-                </p>
-              </div>
-            </StatisticsDetailPanel>
-          </div>
-        </div>
+            ) : null}
+          </CardBody>
+        </StatCard>
       </div>
-    </StatisticsSectionFrame>
+
+      <div className={ward.gridWide}>
+        <StayCard current={current} now={now} averageStay={averageStay} longStays={statistics.longStays} />
+        <StatCard icon={CalendarClock} title="Expected discharges" aside="Next 7 days">
+          <CardBody>
+            <ColumnChart
+              label="Expected discharges by day, next 7 days"
+              columns={dueByDay.map((day) => ({
+                id: String(day.offset),
+                label: day.offset === 0 ? "Today" : weekdayOf(now + day.offset * MINUTES_PER_DAY, dayZero),
+                value: day.count,
+              }))}
+            />
+          </CardBody>
+          <Barriers ready={ready} error={blockedByReasonError} headlineTotal={headlineTotal} />
+        </StatCard>
+      </div>
+
+      <Roster unit={unit} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />
+    </StatisticsPage>
+  );
+}
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function weekdayOf(instant: number, dayZero: Date): string {
+  return WEEKDAYS[calendarDateOf(instant, dayZero).getDay()]!;
+}
+
+/** "Thu 3 Sep", the calendar day an instant falls on. */
+function dateOf(instant: number, dayZero: Date): string {
+  const date = calendarDateOf(instant, dayZero);
+  return `${WEEKDAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]}`;
+}
+
+/** "in 2d", "today" or "3d ago": how far a day is from today. */
+function fromToday(instant: number, now: number): string {
+  const days = dayOf(instant) - dayOf(now);
+  if (days === 0) return "today";
+  return days > 0 ? `in ${days}d` : `${-days}d ago`;
+}
+
+/** Whole days since arrival, or null when the person has not arrived (or the record says later). */
+function stayDaysOf(admission: Admission, now: number): number | null {
+  if (admission.arrivedAt === null || admission.arrivedAt > now) return null;
+  return Math.floor((now - admission.arrivedAt) / MINUTES_PER_DAY);
+}
+
+function ChangeWard({ units, currentId }: { units: Unit[]; currentId: string }) {
+  const router = useOptionalRouter();
+  return (
+    <Menu
+      label="Change ward"
+      items={units.map((candidate) => ({
+        id: candidate.id,
+        label: candidate.name,
+        meta: candidate.siteCode,
+        disabled: candidate.id === currentId,
+        onSelect: () => {
+          const href = wardStatisticsHref(candidate.id);
+          if (router) router.push(href);
+          else window.location.assign(href);
+        },
+      }))}
+      trigger={(props) => (
+        <button {...props} type="button" className={buttonClass({ variant: "onHero", size: "sm" })}>
+          Change ward
+          <Icon icon={ChevronDown} size={14} />
+        </button>
+      )}
+    />
+  );
+}
+
+function StayCard({
+  current,
+  now,
+  averageStay,
+  longStays,
+}: {
+  current: Admission[];
+  now: number;
+  averageStay: number | null;
+  longStays: number;
+}) {
+  const bands = STAY_BANDS.map((band) => ({
+    band,
+    count: current.filter((admission) => stayBand(admission, now)?.id === band.id).length,
+  }));
+  const unrecorded = current.filter((admission) => stayBand(admission, now) === null).length;
+  const [view, setView] = useState<"chart" | "data">("chart");
+  return (
+    <StatCard
+      icon={Clock}
+      title="Length of stay"
+      aside={
+        averageStay === null ? null : (
+          <span className={ward.headFigure}>
+            Average{" "}
+            <b data-testid="ward-stat-length-of-stay">
+              {averageStay} {averageStay === 1 ? "day" : "days"}
+            </b>
+          </span>
+        )
+      }
+      action={
+        <Segmented
+          label="Length of stay view"
+          value={view}
+          onChange={setView}
+          items={[
+            { id: "chart", label: "Chart" },
+            { id: "data", label: "Data" },
+          ]}
+        />
+      }
+      data-testid="statistics-ward-stays-chart"
+    >
+      <CardBody className={styles.bodyStack}>
+        {view === "chart" ? (
+          <BarList
+            label="Current admissions by stay band"
+            axis
+            max={countAxisMax(bands.map((entry) => entry.count))}
+            labelWidth="9rem"
+            rows={bands.map(({ band, count }) => ({
+              id: band.id,
+              label: band.label,
+              value: count,
+              display: String(count),
+            }))}
+          />
+        ) : (
+          <div className={styles.tableWrap}>
+            <table className={`${tableClasses.table} ${styles.table}`}>
+              <caption className={styles.srOnly}>Current admissions by stay band</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Stay band</th>
+                  <th scope="col" className={styles.num}>
+                    Admissions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {bands.map(({ band, count }) => (
+                  <tr key={band.id}>
+                    <th scope="row">{band.label}</th>
+                    <td className={count === 0 ? `${styles.num} ${styles.muted}` : styles.num}>{count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className={styles.srOnly} data-testid="ward-stat-long-stays">
+          {longStays === 0 ? (
+            <>None. No admission on this ward has passed three months.</>
+          ) : (
+            <>
+              {longStays} {longStays === 1 ? "admission on this ward has" : "admissions on this ward have"} been here
+              longer than three months.
+            </>
+          )}
+        </p>
+        {unrecorded > 0 ? (
+          <p className={ward.note}>
+            {unrecorded} {unrecorded === 1 ? "admission has" : "admissions have"} no recorded stay
+          </p>
+        ) : null}
+      </CardBody>
+    </StatCard>
+  );
+}
+
+function Barriers({
+  ready,
+  error,
+  headlineTotal,
+}: {
+  ready: ReadyNotYetGone | null;
+  error: string | null;
+  headlineTotal: number;
+}) {
+  const [show, setShow] = useState<"blocked" | "all">("blocked");
+  const rows = ready === null ? [] : ready.tallies.filter((tally) => show === "all" || tally.count > 0);
+  return (
+    <section className={ward.barriers} data-testid="ward-stat-ready-section" aria-labelledby="ward-barriers-head">
+      <div className={ward.barriersHead}>
+        <h3 id="ward-barriers-head" className={ward.subHead}>
+          Discharge barriers
+        </h3>
+        {ready === null ? null : (
+          <Segmented
+            label="Discharge barriers shown"
+            value={show}
+            onChange={setShow}
+            items={[
+              { id: "blocked", label: "With blockers" },
+              { id: "all", label: `All ${ready.vocabularySize}` },
+            ]}
+          />
+        )}
+      </div>
+      <p className={styles.srOnly} data-testid="ward-stat-ready-blocked">
+        <span>Clinically ready, not yet gone</span>{" "}
+        {headlineTotal === 0 ? (
+          <>0. No admission on this ward that has not departed carries a blocker.</>
+        ) : (
+          <>
+            {headlineTotal} {headlineTotal === 1 ? "admission" : "admissions"} on this ward that{" "}
+            {headlineTotal === 1 ? "has" : "have"} not departed {headlineTotal === 1 ? "carries" : "carry"} a blocker.
+          </>
+        )}
+      </p>
+      <p
+        className={ward.readyShare}
+        data-testid="ward-stat-ready-share"
+        data-unmeasured={ready !== null && isUnmeasured(ready.shareOfWard) ? "" : undefined}
+      >
+        {ready === null ? (
+          <span>Share of the ward unavailable</span>
+        ) : ready.shareOfWard.kind === "measured" ? (
+          <>
+            <b>{headlineTotal}</b> ready, not gone, <b>{figureText(ready.shareOfWard)}%</b> of the {ready.population}{" "}
+            {ready.population === 1 ? "patient" : "patients"} here
+          </>
+        ) : (
+          <span>No share can be stated, {figureText(ready.shareOfWard)}</span>
+        )}
+      </p>
+      {ready === null ? (
+        <p className={ward.note} data-testid="ward-stat-blocked-by-reason-error">
+          The blocker breakdown could not be computed for this ward: {error}
+        </p>
+      ) : (
+        <>
+          <p className={styles.srOnly} data-testid="ward-stat-blocked-by-reason-population">
+            {ready.total} {ready.total === 1 ? "blocked discharge" : "blocked discharges"} on this ward, out of{" "}
+            {ready.population} {ready.population === 1 ? "admission" : "admissions"} on this ward that have not
+            departed.
+          </p>
+          {rows.length === 0 ? (
+            <p className={ward.note} aria-hidden="true">
+              No recorded blockers
+            </p>
+          ) : (
+            <div aria-hidden="true">
+              <BarList
+                label="Discharge barriers"
+                axis
+                max={countAxisMax(ready.tallies.map((tally) => tally.count))}
+                labelWidth="12rem"
+                rows={rows.map((tally) => ({
+                  id: tally.reason,
+                  label: tally.reason.replaceAll("_", " "),
+                  value: tally.count,
+                  display: String(tally.count),
+                }))}
+              />
+            </div>
+          )}
+          <ul className={styles.srOnly} data-testid="ward-stat-blocked-by-reason-list">
+            {ready.tallies.map((tally) => (
+              <li key={tally.reason} data-testid={`ward-stat-blocked-by-reason-${tally.reason}`}>
+                {tally.reason}:{" "}
+                <span data-testid={`ward-stat-blocked-by-reason-${tally.reason}-count`}>{tally.count}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
+
+type RosterFilter = "all" | "no-date" | "long" | "blocked" | "pulled";
+
+const ADMISSION_STATE_LABELS: Record<Admission["state"], string> = {
+  waitlisted: "Waitlisted",
+  pulled: "Pulled",
+  occupied: "In bed",
+  departed: "Departed",
+};
+
+const SEX_MARK: Record<string, string> = {
+  Female: "F",
+  Male: "M",
+  "Another term": "Another",
+  "Not recorded": "Not recorded",
+};
+
+function Roster({
+  unit,
+  current,
+  now,
+  dayZero,
+  leaveBeds,
+}: {
+  unit: Unit;
+  current: Admission[];
+  now: number;
+  dayZero: Date;
+  leaveBeds: readonly { admissionId: string }[];
+}) {
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<RosterFilter>("all");
+
+  // The admission model records a ward, not a numbered bed: each row is a recorded admission.
+  const rows = current.map((admission) => {
+    const onLeave = leaveBeds.some((bed) => bed.admissionId === admission.id);
+    const days = stayDaysOf(admission, now);
+    return {
+      admission,
+      status: onLeave ? "On leave" : ADMISSION_STATE_LABELS[admission.state],
+      sex: SEX_MARK[admission.sex] ?? admission.sex.toLowerCase(),
+      days,
+      long: stayBand(admission, now)?.id === "over-3-months",
+    };
+  });
+  const maxDays = Math.max(1, ...rows.map((row) => row.days ?? 0));
+  const counts: Record<RosterFilter, number> = {
+    all: rows.length,
+    "no-date": rows.filter((row) => row.admission.expectedDischargeAt === null).length,
+    long: rows.filter((row) => row.long).length,
+    blocked: rows.filter((row) => row.admission.blockReason !== null).length,
+    pulled: rows.filter((row) => row.admission.state === "pulled").length,
+  };
+  const needle = query.trim().toLowerCase();
+  const shown = rows.filter((row) => {
+    if (filter === "no-date" && row.admission.expectedDischargeAt !== null) return false;
+    if (filter === "long" && !row.long) return false;
+    if (filter === "blocked" && row.admission.blockReason === null) return false;
+    if (filter === "pulled" && row.admission.state !== "pulled") return false;
+    if (!needle) return true;
+    return `${row.admission.id} ${row.status} ${row.admission.blockReason ?? ""}`.toLowerCase().includes(needle);
+  });
+
+  function exportCsv() {
+    const lines = [
+      ["Synthetic admission", "Sex", "Status", "Days in bed", "Expected discharge set", "Blocker", "Date revisions"],
+      ...shown.map((row) => [
+        row.admission.id,
+        row.sex,
+        row.status,
+        row.days ?? "",
+        row.admission.expectedDischargeAt === null ? "No" : "Yes",
+        row.admission.blockReason ?? "",
+        row.admission.dischargeDateMoves,
+      ]),
+    ];
+    const url = URL.createObjectURL(
+      new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ward-flow-synthetic-${unit.id}-roster.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <StatCard
+      icon={Users}
+      title="Admission roster"
+      aside="Bed numbers not recorded"
+      data-testid="ward-statistics-ward-roster"
+    >
+      <div className={styles.toolbar}>
+        <TextInput
+          type="search"
+          icon={Search}
+          boxClassName={styles.search}
+          aria-label="Filter recorded admission roster"
+          placeholder="Search by ID or status"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <Segmented
+          label="Roster filter"
+          value={filter}
+          onChange={setFilter}
+          items={[
+            { id: "all", label: "All", count: counts.all },
+            { id: "no-date", label: "No date", count: counts["no-date"] },
+            { id: "long", label: "Over 3 months", count: counts.long },
+            { id: "blocked", label: "Blocked", count: counts.blocked },
+            { id: "pulled", label: "Pulled", count: counts.pulled },
+          ]}
+        />
+        <span className={styles.toolbarEnd}>
+          <b>{shown.length}</b> of {rows.length}
+        </span>
+        <Button size="sm" variant="ghost" icon={Download} onClick={exportCsv} disabled={shown.length === 0}>
+          CSV
+        </Button>
+      </div>
+      <div className={styles.tableWrap}>
+        <table className={`${tableClasses.table} ${styles.table}`}>
+          <caption className={styles.srOnly}>
+            Recorded admission roster; numbered bed assignments are not recorded
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Admission</th>
+              <th scope="col">Status</th>
+              <th scope="col">Admitted</th>
+              <th scope="col" className={styles.num}>
+                Length of stay
+              </th>
+              <th scope="col">Discharge target</th>
+              <th scope="col">Blocker</th>
+              <th scope="col" className={styles.num}>
+                Revised
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.length === 0 ? (
+              <tr>
+                <td colSpan={7} className={styles.muted}>
+                  {rows.length === 0 ? "No current admissions recorded" : "No admissions match this search"}
+                </td>
+              </tr>
+            ) : null}
+            {shown.map((row) => {
+              const { admission } = row;
+              return (
+                <tr key={admission.id}>
+                  <th scope="row">
+                    <span className={ward.admissionId}>{admission.id}</span>{" "}
+                    <span className={styles.code}>{row.sex}</span>
+                  </th>
+                  <td>
+                    <span className={ward.status}>
+                      {admission.state === "pulled" ? <StatusGlyph tone="warning" size={9} /> : null}
+                      {row.status === "On leave" ? <StatusGlyph tone="info" size={9} /> : null}
+                      {row.status}
+                    </span>
+                  </td>
+                  <td className={admission.arrivedAt === null ? styles.muted : undefined}>
+                    {admission.arrivedAt === null ? "Not arrived" : dateOf(admission.arrivedAt, dayZero)}
+                  </td>
+                  <td className={styles.num}>
+                    <span className={styles.occBar}>
+                      <span className={styles.occTrack} aria-hidden="true">
+                        {row.days === null ? null : (
+                          <span className={styles.occFill} style={{ width: `${(row.days / maxDays) * 100}%` }} />
+                        )}
+                      </span>
+                      <span className={row.days === null ? `${styles.occValue} ${styles.muted}` : styles.occValue}>
+                        {row.days === null ? "none" : `${row.days}d`}
+                      </span>
+                    </span>
+                  </td>
+                  <td>
+                    {admission.expectedDischargeAt === null ? (
+                      <span className={styles.flagged}>
+                        <StatusGlyph tone="warning" size={9} />
+                        <span aria-hidden="true">No date</span>
+                        <SrOnly>No discharge date set</SrOnly>
+                      </span>
+                    ) : (
+                      <>
+                        {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
+                        <span className={styles.muted}>{fromToday(admission.expectedDischargeAt, now)}</span>
+                      </>
+                    )}
+                  </td>
+                  <td className={admission.blockReason === null ? styles.muted : undefined}>
+                    {admission.blockReason ?? "none"}
+                  </td>
+                  <td className={admission.dischargeDateMoves === 0 ? `${styles.num} ${styles.muted}` : styles.num}>
+                    {admission.dischargeDateMoves}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </StatCard>
   );
 }

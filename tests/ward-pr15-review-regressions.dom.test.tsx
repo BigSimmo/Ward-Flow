@@ -160,9 +160,9 @@ describe("PR15 recorded facts and unavailable data", () => {
     const row = (id: string) => within(roster).getByText(new RegExp(id)).closest("tr")!;
     expect(within(row("AD-WAIT")).getByText("Waitlisted")).toBeTruthy();
     expect(within(row("AD-PULL")).getByText("Pulled")).toBeTruthy();
-    expect(within(row("AD-WAIT")).getByText("Not arrived yet")).toBeTruthy();
-    expect(within(row("AD-HOUR")).getByText("0 d")).toBeTruthy();
-    expect(within(row("AD-DAYS")).getByText("2 d")).toBeTruthy();
+    expect(within(row("AD-WAIT")).getByText("Not arrived")).toBeTruthy();
+    expect(within(row("AD-HOUR")).getByText("0d")).toBeTruthy();
+    expect(within(row("AD-DAYS")).getByText("2d")).toBeTruthy();
     expect(within(roster).queryByText(/AD-GONE/)).toBeNull();
     expect(roster.textContent).not.toMatch(/Bed \d+|Out of Service/);
     expect(within(roster).queryByRole("button")).toBeNull();

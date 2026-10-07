@@ -128,6 +128,7 @@ export function StatisticsPage({
   paused,
   onTogglePause,
   eyebrowLabel,
+  eyebrowDetail,
   children,
 }: {
   section: StatisticsSection;
@@ -142,6 +143,8 @@ export function StatisticsPage({
   onTogglePause: () => void;
   /** The eyebrow's lead word when the title already names the section. Defaults to the section label. */
   eyebrowLabel?: string;
+  /** What the page is about (a ward's hospital and kind), in place of the clock. */
+  eyebrowDetail?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -153,7 +156,7 @@ export function StatisticsPage({
           eyebrow={
             <>
               <span data-testid="ward-statistics-section-eyebrow">{eyebrowLabel ?? section.label}</span>
-              {` · as at ${formatInstant(now)}`}
+              {eyebrowDetail ? <> · {eyebrowDetail}</> : ` · as at ${formatInstant(now)}`}
             </>
           }
           title={title}

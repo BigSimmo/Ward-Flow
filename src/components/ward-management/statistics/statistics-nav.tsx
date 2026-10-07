@@ -48,7 +48,7 @@ function slugOf(pathname: string): string | undefined {
  * The router, or null when the nav renders outside the app router (a screen rendered on its own in
  * a test or preview). Links still work there; only the phone select falls back to a plain load.
  */
-function useOptionalRouter(): ReturnType<typeof useRouter> | null {
+export function useOptionalRouter(): ReturnType<typeof useRouter> | null {
   try {
     return useRouter();
   } catch {

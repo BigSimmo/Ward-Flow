@@ -13,3 +13,13 @@ export function axisMax(values: readonly number[], count = 4): number {
   const step = [1, 2, 2.5, 5, 10].map((m) => m * magnitude).find((s) => s >= rough) ?? rough;
   return Math.ceil(largest / step - 1e-9) * step;
 }
+
+/**
+ * `axisMax` for a count of people: never below 4, so the ticks are whole people (0, 1, 2, 3, 4)
+ * rather than quarters of one when the largest count is 1. The kit steps by 2.5 for a top above 8
+ * and up to 10, so that range is raised to 12, which the kit ticks in fives.
+ */
+export function countAxisMax(values: readonly number[]): number {
+  const top = axisMax([4, ...values]);
+  return top > 8 && top <= 10 ? 12 : top;
+}
