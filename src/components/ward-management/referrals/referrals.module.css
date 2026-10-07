@@ -6879,12 +6879,6 @@ input.historyField:focus-visible {
   min-width: 0;
 }
 
-/* Local workaround: the shared hero track's hover colour outranks its selected colour, so a hovered
- * selected item read white on white. Remove once the wf primitive's selected hover is fixed. */
-.v6Tracks [role="radio"][aria-checked="true"]:hover {
-  color: var(--wf-hero-2);
-}
-
 .v6OrderNote {
   color: var(--wf-hero-ink-2);
   font-size: var(--wf-fs-12);
@@ -7961,5 +7955,740 @@ input.historyField:focus-visible {
   .screen[data-ward-design="v6"] .modalSubmitBtn,
   .screen[data-ward-design="v6"] .modalCloseBtn {
     min-height: 3rem;
+  }
+}
+
+/* Bed placement: a unit's state badge, the glyphs that carry its colour, and the gate toggle's
+ * hint. These were inline styles; as classes they can follow the page's design. */
+.unitStateBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: var(--ward-leading-none);
+  white-space: nowrap;
+}
+
+.unitStateReady {
+  background: var(--ward-success);
+  color: var(--surface);
+}
+
+.unitStatePending {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.unitStateExcluded {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.intelGlyphExcluded {
+  color: var(--danger);
+}
+
+.triageGlyph {
+  color: currentColor;
+}
+
+.gateToggleHint {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* ═══ v6 (Referrals.png): the Bed placement tab ═══
+ * The drawing is a calm list: hairline cards and rows, neutral ink, and colour only on the glyph
+ * that names a state. Every Accept is a secondary button, because the screen never chooses a
+ * unit for the coordinator; the gate and criteria hints read as plain links. */
+
+.screen[data-ward-design="v6"][data-referral-view="register"] .matchPanel {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .unifiedTriageBanner {
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.screen[data-ward-design="v6"] .triageLargeCount {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+/* Answers the base rule's !important: a zero count is quiet ink, not a colour. */
+.screen[data-ward-design="v6"] .unifiedTriageBannerZero .triageLargeCount {
+  color: var(--wf-ink-2) !important;
+}
+
+.screen[data-ward-design="v6"] .triagePillGroup {
+  gap: var(--wf-s-2);
+}
+
+.screen[data-ward-design="v6"] .triageMiniPill {
+  gap: var(--wf-s-1);
+  height: var(--wf-h-chip);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .triageMiniPill.pillGood .triageGlyph {
+  color: var(--wf-success);
+}
+
+.screen[data-ward-design="v6"] .triageMiniPill.pillWarn .triageGlyph {
+  color: var(--wf-warning);
+}
+
+.screen[data-ward-design="v6"] .triageMiniPill.pillMuted .triageGlyph {
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .governanceDisclosure {
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .governanceNoticeText {
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  margin: 0;
+}
+
+.screen[data-ward-design="v6"] .governanceNoticeText strong {
+  color: var(--wf-ink-2);
+  font-weight: 600;
+}
+
+.screen[data-ward-design="v6"] .infoIcon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .syntheticNoticeInline {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .matchCompactNoticeWrap,
+.screen[data-ward-design="v6"] .matchGovernance,
+.screen[data-ward-design="v6"] .syntheticNotice,
+.screen[data-ward-design="v6"] .allNotRecorded {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.screen[data-ward-design="v6"] .matchGovernance,
+.screen[data-ward-design="v6"] .syntheticNotice,
+.screen[data-ward-design="v6"] .allNotRecorded {
+  border-left-color: var(--wf-line-2);
+}
+
+.screen[data-ward-design="v6"] .structuralGap,
+.screen[data-ward-design="v6"] .noBedAccepts {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .structuralGap {
+  border-left: 3px solid var(--wf-warning);
+}
+
+.screen[data-ward-design="v6"] .noBedAccepts {
+  border-left: 3px solid var(--wf-danger);
+}
+
+/* The three tiers: one hairline card, each tier a ruled section. */
+.screen[data-ward-design="v6"] .tierAccordionGroup {
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.screen[data-ward-design="v6"] .tierAccordionGroup > .tierCard {
+  border-bottom-color: var(--wf-line);
+}
+
+.screen[data-ward-design="v6"] .tierCard:hover {
+  border-color: var(--wf-line);
+}
+
+.screen[data-ward-design="v6"] .tierCardHeader {
+  min-height: var(--wf-h-lg);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  background: transparent;
+  color: var(--wf-ink-1);
+}
+
+.screen[data-ward-design="v6"] .tierCardHeader:hover {
+  background: var(--wf-hover);
+}
+
+.screen[data-ward-design="v6"] .tierCardHeader:focus-visible,
+.screen[data-ward-design="v6"] .gateToggle:focus-visible,
+.screen[data-ward-design="v6"] .acceptButton:focus-visible,
+.screen[data-ward-design="v6"] .btnGood:focus-visible,
+.screen[data-ward-design="v6"] .btnSubtle:focus-visible,
+.screen[data-ward-design="v6"] .bandSummary:focus-visible,
+.screen[data-ward-design="v6"] .criteriaSummary:focus-visible,
+.screen[data-ward-design="v6"] .localBedButton:focus-visible,
+.screen[data-ward-design="v6"] .matchOverrideButton:focus-visible,
+.screen[data-ward-design="v6"] .declineButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.screen[data-ward-design="v6"] .tierCardHeaderExpanded {
+  border-bottom-color: var(--wf-line);
+}
+
+.screen[data-ward-design="v6"] .tierChevronChip,
+.screen[data-ward-design="v6"] .tierChevronChipExpanded {
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .tierTitleText {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .tierSubtitle {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .tierCountBadge {
+  height: var(--wf-h-chip);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / calc(var(--wf-h-chip) - 2px) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.screen[data-ward-design="v6"] .tierCountBadgeActive {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.screen[data-ward-design="v6"] .tierCountBadgeZero {
+  border-color: var(--wf-line);
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .tierEmptyWell {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  background: transparent;
+}
+
+.screen[data-ward-design="v6"] .tierEmptyIconWrap {
+  border-color: var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .tierEmptyText {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* A unit is a hairline row; the badge and its glyphs carry the state, not a coloured edge. */
+.screen[data-ward-design="v6"] .tierCard .unitCard {
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  border-left: 0;
+  background: transparent;
+  opacity: 1;
+}
+
+.screen[data-ward-design="v6"] .tierCard .unitCard:last-child {
+  border-bottom: 0;
+}
+
+.screen[data-ward-design="v6"] .tierCard .unitCard:hover {
+  background: var(--wf-hover);
+}
+
+.screen[data-ward-design="v6"] .unitCardTop {
+  gap: var(--wf-s-3);
+}
+
+.screen[data-ward-design="v6"] .unitName {
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .unitSub,
+.screen[data-ward-design="v6"] .unitIntelRow {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .unitIntelRow {
+  gap: var(--wf-s-2);
+  margin-top: 0;
+}
+
+.screen[data-ward-design="v6"] .unitIntelRow strong {
+  color: var(--wf-ink-2);
+  font-weight: 600;
+}
+
+.screen[data-ward-design="v6"] .demoDot {
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .unitStateBadge {
+  height: var(--wf-h-chip);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .unitStateReady {
+  color: var(--wf-success-ink);
+}
+
+.screen[data-ward-design="v6"] .unitStatePending {
+  color: var(--wf-warning-ink);
+}
+
+.screen[data-ward-design="v6"] .unitStateExcluded {
+  color: var(--wf-ink-2);
+}
+
+.screen[data-ward-design="v6"] .intelGlyphExcluded {
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .unitActionStatusWrap {
+  gap: var(--wf-s-1);
+  align-items: flex-end;
+}
+
+.screen[data-ward-design="v6"] .unitNoticeMuted {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+}
+
+.screen[data-ward-design="v6"] .gateSummary {
+  padding-top: 0;
+  border-top: 0;
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .gateToggle,
+.screen[data-ward-design="v6"] .gateToggleWarn,
+.screen[data-ward-design="v6"] .gateToggleDanger {
+  min-height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-2);
+  margin-left: calc(-1 * var(--wf-s-2));
+  width: calc(100% + 2 * var(--wf-s-2));
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .gateToggle:hover {
+  background: var(--wf-hover);
+}
+
+.screen[data-ward-design="v6"] .gateToggleHint {
+  color: var(--wf-accent-ink);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .gateGrid {
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin-top: var(--wf-s-1);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .gatePill,
+.screen[data-ward-design="v6"] .gatePillPassed,
+.screen[data-ward-design="v6"] .gatePillPending,
+.screen[data-ward-design="v6"] .gatePillFailed {
+  color: var(--wf-ink-2);
+  font-weight: 400;
+  line-height: var(--wf-lh-12);
+}
+
+.screen[data-ward-design="v6"] .gatePillFailed {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+/* Every Accept is the same secondary button: the coordinator chooses, the screen does not. */
+.screen[data-ward-design="v6"] .btnGood,
+.screen[data-ward-design="v6"] .acceptButton,
+.screen[data-ward-design="v6"] .btnSubtle,
+.screen[data-ward-design="v6"] .localBedButton,
+.screen[data-ward-design="v6"] .matchOverrideButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wf-s-1);
+  min-height: var(--ward-tap);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .btnGood:hover,
+.screen[data-ward-design="v6"] .acceptButton:hover,
+.screen[data-ward-design="v6"] .localBedButton:hover,
+.screen[data-ward-design="v6"] .matchOverrideButton:not(:disabled, [aria-disabled="true"]):hover {
+  border-color: var(--wf-line-3);
+  background: var(--wf-hover);
+}
+
+/* An unavailable action reads as a dashed outline, never as a faded live button. */
+.screen[data-ward-design="v6"] .btnSubtle[aria-disabled="true"],
+.screen[data-ward-design="v6"] .matchOverrideButton:disabled,
+.screen[data-ward-design="v6"] .matchOverrideButton[aria-disabled="true"] {
+  border: 1px dashed var(--wf-line-3);
+  background: var(--wf-surface-2);
+  box-shadow: none;
+  color: var(--wf-ink-3);
+  cursor: not-allowed;
+}
+
+.screen[data-ward-design="v6"] .declineButton {
+  min-height: var(--ward-tap);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  box-shadow: var(--wf-e1);
+  color: var(--wf-danger-ink);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+/* Travel bands: a small section head, then hairline cards that fold. */
+.screen[data-ward-design="v6"] .geographySection {
+  margin: 0;
+  padding-top: var(--wf-s-2);
+  border-top: 0;
+}
+
+.screen[data-ward-design="v6"] .geographyHeader {
+  margin-bottom: var(--wf-s-2);
+  padding: 0;
+}
+
+.screen[data-ward-design="v6"] .geographyTitle {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .geographyBadge {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.screen[data-ward-design="v6"] .matchList {
+  gap: var(--wf-s-2);
+}
+
+.screen[data-ward-design="v6"] .bandGroup,
+.screen[data-ward-design="v6"] .bandGroupHasAvailable {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.screen[data-ward-design="v6"] .bandSummary,
+.screen[data-ward-design="v6"] .bandGroupHasAvailable > .bandSummary {
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-radius: var(--wf-r-lg);
+  background: transparent;
+}
+
+.screen[data-ward-design="v6"] .bandSummary:hover,
+.screen[data-ward-design="v6"] .bandGroupHasAvailable > .bandSummary:hover {
+  background-color: var(--wf-hover);
+}
+
+.screen[data-ward-design="v6"] .bandGroup[open] > .bandSummary {
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg) var(--wf-r-lg) 0 0;
+}
+
+.screen[data-ward-design="v6"] .bandSummary::after {
+  border-left-color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .bandLabel {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .bandAvailableBadge {
+  height: var(--wf-h-chip);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-success-ink);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .bandCounts,
+.screen[data-ward-design="v6"] .bandEmpty,
+.screen[data-ward-design="v6"] .matchBand {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .bandEmpty {
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+}
+
+.screen[data-ward-design="v6"] .bandRows {
+  gap: 0;
+  padding: 0 var(--wf-s-4);
+}
+
+/* A unit inside a band is a ruled row, not a tinted card. */
+.screen[data-ward-design="v6"] .matchRowAccepts,
+.screen[data-ward-design="v6"] .matchRowDeclines {
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) 0;
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.screen[data-ward-design="v6"] .bandRows > :last-child {
+  border-bottom: 0;
+}
+
+.screen[data-ward-design="v6"] .matchUnitName {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .acceptsLabel {
+  color: var(--wf-success-ink);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .declinedBadge,
+.screen[data-ward-design="v6"] .forensicBadge {
+  height: var(--wf-h-chip);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / calc(var(--wf-h-chip) - 2px) var(--wf-font);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .criteriaDisclosure {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.screen[data-ward-design="v6"] .criteriaSummary {
+  min-height: var(--wf-h-sm);
+  padding: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .criteriaDisclosure[open] > .criteriaSummary {
+  border-bottom: 0;
+}
+
+.screen[data-ward-design="v6"] .criteriaSummaryTitle {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .criteriaSummaryHint {
+  color: var(--wf-accent-ink);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .criteriaList {
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.screen[data-ward-design="v6"] .criteriaPass,
+.screen[data-ward-design="v6"] .criteriaFail {
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .criteriaName {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .criteriaDetail,
+.screen[data-ward-design="v6"] .criteriaFail .criteriaDetail {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .criteriaPass .criteriaGlyph {
+  color: var(--wf-success);
+}
+
+.screen[data-ward-design="v6"] .criteriaFail .criteriaGlyph {
+  color: var(--wf-danger);
+}
+
+.screen[data-ward-design="v6"] .matchAcceptRow {
+  gap: var(--wf-s-2);
+}
+
+.screen[data-ward-design="v6"] .matchDeclineSection,
+.screen[data-ward-design="v6"] .matchOverrideRow {
+  gap: var(--wf-s-2);
+}
+
+.screen[data-ward-design="v6"] .matchReasonText {
+  padding: var(--wf-s-1) var(--wf-s-2);
+  border-left: 2px solid var(--wf-warning);
+  border-radius: 0 var(--wf-r-sm) var(--wf-r-sm) 0;
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .matchOverrideRow {
+  padding-top: var(--wf-s-2);
+  border-top-color: var(--wf-line);
+}
+
+.screen[data-ward-design="v6"] .matchOverrideLabel {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .matchOverrideSelect,
+.screen[data-ward-design="v6"] .declineControls .select {
+  min-height: var(--ward-tap);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / 1 var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .localBed {
+  gap: var(--wf-s-2);
+}
+
+.screen[data-ward-design="v6"] .localBedRecord {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .declineControls {
+  gap: var(--wf-s-2);
+  padding-top: var(--wf-s-3);
+  border-top-color: var(--wf-line);
+}
+
+.screen[data-ward-design="v6"] .declineControls .fieldLegend {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* A mouse gets the drawing's compact controls; touch keeps the 48px floor. */
+@media (pointer: fine) {
+  .screen[data-ward-design="v6"] .btnGood,
+  .screen[data-ward-design="v6"] .acceptButton,
+  .screen[data-ward-design="v6"] .btnSubtle,
+  .screen[data-ward-design="v6"] .localBedButton,
+  .screen[data-ward-design="v6"] .matchOverrideButton,
+  .screen[data-ward-design="v6"] .declineButton,
+  .screen[data-ward-design="v6"] .matchOverrideSelect,
+  .screen[data-ward-design="v6"] .declineControls .select {
+    min-height: var(--wf-h-md);
+  }
+}
+
+@media (pointer: coarse) {
+  .screen[data-ward-design="v6"] .tierCardHeader,
+  .screen[data-ward-design="v6"] .gateToggle,
+  .screen[data-ward-design="v6"] .criteriaSummary {
+    min-height: var(--ward-tap);
   }
 }
