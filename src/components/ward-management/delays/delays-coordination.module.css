@@ -1814,3 +1814,30 @@
     color: CanvasText;
   }
 }
+
+/* v6 (7 Oct 2026): the Pressure summary is a hairline chip; the past-time state is carried by
+ * its dot, not by a tinted fill. */
+.attentionSummary.attentionSummary {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-sm);
+  background: none;
+  color: var(--wf-ink-2);
+}
+
+.attentionSummary.attentionSummary::before {
+  content: "";
+  flex: none;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-warning);
+}
+
+.attentionSummary.attentionSummary[data-past="true"] {
+  background: none;
+  color: var(--wf-danger-ink);
+}
+
+.attentionSummary.attentionSummary[data-past="true"]::before {
+  background: var(--wf-danger);
+}

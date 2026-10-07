@@ -50,8 +50,12 @@ import {
 import styles from "./delays.module.css";
 import { DelaysTableWorkspace } from "./delays-data-views";
 import { DelaysCoordination, delayQueueLabel, type DelayQueueScope } from "./delays-coordination";
-import { Users, Clock, TriangleAlert } from "lucide-react";
-import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import {
+  DUE_SOON_URGENT_MINUTES,
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
+  LONG_WAIT_MINUTES,
+} from "@/components/ward-management/ward-operational-defaults";
+import { Hero, HeroStat } from "@/components/wf";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 
 export type SystemicHoldCategory = "all" | "emergency" | "ward" | "transport" | "staffing";
@@ -322,6 +326,14 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     const l = legalDeadlineMinutes(m, now);
     return l !== undefined && l < 0;
   }).length;
+  // Same bands and windows the Pressure card and its distribution read.
+  const dueWithinHourCount = open.filter((m) => {
+    const l = legalDeadlineMinutes(m, now);
+    return l !== undefined && l >= 0 && l <= DUE_SOON_URGENT_MINUTES;
+  }).length;
+  const overSevereWaitCount = open.filter((m) => now - m.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length;
+  const overLongWaitCount = open.filter((m) => now - m.openedAt >= LONG_WAIT_MINUTES).length;
+  const escalatedCount = open.filter((m) => m.escalation !== undefined).length;
 
   const queueMatches = (movement: Movement, cause: DelayCause) =>
     queueScope === null ||
@@ -337,41 +349,38 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
     .filter((group) => group.movements.length > 0);
 
   return (
-    <div
-      className={styles.screen}
-      data-ward-design="third-edition"
-      data-ward-page="delays"
-      data-testid="ward-delays-page"
-    >
+    <div className={styles.screen} data-ward-design="v6" data-ward-page="delays" data-testid="ward-delays-page">
       <main id="main-content" className={styles.main}>
-        <h1 className={styles.landmarkTitle}>Delays</h1>
-        <div className={styles.countStrip} aria-label="Waiting counts">
-          <div className={styles.statPill}>
-            <Users size={14} aria-hidden="true" />
-            <span className={styles.statPillValue}>{open.length}</span>
-            <span className={styles.statPillLabel}>waiting</span>
-          </div>
-          <div className={styles.statPill} data-tone="wait">
-            <Clock size={14} aria-hidden="true" />
-            <span className={styles.statPillValue}>
-              {open.filter((movement) => now - movement.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length}
-            </span>
-            <span className={styles.statPillLabel}>over {severeWaitHours}h</span>
-          </div>
-          <div className={styles.statPill} data-tone="escalated">
-            <TriangleAlert size={14} aria-hidden="true" />
-            <span className={styles.statPillValue}>
-              {open.filter((movement) => movement.escalation !== undefined).length}
-            </span>
-            <span className={styles.statPillLabel}>escalated</span>
-          </div>
-          {breachedCount > 0 && (
-            <div className={styles.breachedSentinelPill}>
-              <span className={styles.sentinelDot} />
-              <span>{breachedCount} past recorded legal time</span>
-            </div>
-          )}
-        </div>
+        <Hero
+          level={1}
+          eyebrow="Delays"
+          title={`${open.length} ${open.length === 1 ? "person" : "people"} waiting`}
+          stats={
+            <>
+              <HeroStat
+                value={overSevereWaitCount}
+                tone={overSevereWaitCount > 0 ? "warning" : undefined}
+                label={`Over ${severeWaitHours}h`}
+              />
+              <HeroStat
+                value={overLongWaitCount}
+                tone={overLongWaitCount > 0 ? "danger" : undefined}
+                label={`Over ${LONG_WAIT_MINUTES / 60}h`}
+              />
+              <HeroStat value={escalatedCount} label="Escalated" />
+              <HeroStat
+                value={breachedCount}
+                tone={breachedCount > 0 ? "danger" : undefined}
+                label="Past recorded time"
+              />
+              <HeroStat
+                value={dueWithinHourCount}
+                tone={dueWithinHourCount > 0 ? "warning" : undefined}
+                label={`Due within ${DUE_SOON_URGENT_MINUTES}m`}
+              />
+            </>
+          }
+        />
 
         {showAliasBanner && aliasFrom ? (
           <aside

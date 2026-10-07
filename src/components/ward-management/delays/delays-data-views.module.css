@@ -1836,3 +1836,39 @@ span.workspaceMeasure,
   font-size: 12px;
   transition-property: none;
 }
+
+/* v6 (7 Oct 2026): the responsible team reads as text with its icon, and the urgency tier as a
+ * hairline box. Colour stays in a dot, never a fill. */
+.ownerBadge.ownerBadge[data-owner] {
+  padding: 0;
+  gap: var(--wf-s-1);
+  border-radius: 0;
+  background: none;
+  color: var(--wf-ink-2);
+  box-shadow: none;
+}
+
+.urgency.urgency[data-tier] {
+  gap: var(--wf-s-1);
+  height: var(--wf-h-chip);
+  min-width: 0;
+  padding: 0 var(--wf-s-1);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xs);
+  background: none;
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+}
+
+.urgency.urgency[data-tier="1"]::before,
+.urgency.urgency[data-tier="2"]::before {
+  content: "";
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-warning);
+}
+
+.urgency.urgency[data-tier="1"]::before {
+  background: var(--wf-danger);
+}
