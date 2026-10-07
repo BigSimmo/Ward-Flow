@@ -6,7 +6,7 @@ import { ArrowRight, Building2, Clock, Copy, Layers, Phone, Radio, Search, Star 
 import { NETWORK_ON_CALL_ROLES, roleRecordCounts, SERVICE_ON_CALL_ROLES } from "./on-call-roster";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
-import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
@@ -324,7 +324,7 @@ export function OnCallScreen() {
 
   const statusFor =
     coverAt === "now"
-      ? `Status shown for now, ${formatInstant(boardNow)}`
+      ? `Status shown for now, ${formatInstantWithDay(boardNow, boardNow)}`
       : `Status shown for ${hhmm(referenceMinute)} ${referenceIsTomorrow ? "tomorrow" : "today"}`;
 
   async function copyRoute(item: RosterItem) {
@@ -369,7 +369,7 @@ export function OnCallScreen() {
             barAside={
               <span className={styles.heroClock}>
                 <Icon icon={Clock} size={14} />
-                <span className={styles.heroClockTime}>{formatInstant(boardNow)}</span>
+                <span className={styles.heroClockTime}>{formatInstantWithDay(boardNow, boardNow)}</span>
                 <span className={styles.heroClockZone}>AWST</span>
               </span>
             }
@@ -541,6 +541,7 @@ export function OnCallScreen() {
               meta={
                 <span className={styles.footMeta}>
                   <span data-testid="ward-on-call-count" aria-live="polite">
+                    <span className="sr-only">Synthetic records: </span>
                     {filteredRoster.length} {filteredRoster.length === 1 ? "role" : "roles"}
                     {hasFilters ? ` of ${counts.recorded}` : " recorded"}
                   </span>
@@ -585,6 +586,7 @@ export function OnCallScreen() {
               title="ED liaison, by department"
               meta={
                 <span aria-live="polite">
+                  <span className="sr-only">Synthetic records: </span>
                   {filteredDepartments.length} {filteredDepartments.length === 1 ? "department" : "departments"}
                   {hasDirectoryFilters ? ` of ${departments.length}` : ""}
                 </span>

@@ -594,6 +594,12 @@
   .toastRow {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  /* Phone and tablet: every control keeps the 48px tap floor. */
+  .swatch,
+  .drawerButton {
+    min-height: var(--ward-tap, 3rem);
+  }
 }
 
 @media (forced-colors: active) {
