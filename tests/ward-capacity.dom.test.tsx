@@ -13,10 +13,9 @@ vi.mock("next/link", () => ({
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
-import styles from "@/components/ward-management/ward/ward.module.css";
 
-describe("ward capacity confirmation form on #tab-return", () => {
-  it("renders capacityConfirmationForm visibly right below WardDecisionsCockpit on #tab-return", () => {
+describe("ward decisions tab keeps the compact queue and not the census form", () => {
+  it("does not render the census or capacity form on #tab-return", () => {
     const { container } = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="rph-adult-secure" />
@@ -25,28 +24,13 @@ describe("ward capacity confirmation form on #tab-return", () => {
 
     const tabReturn = container.querySelector("#tab-return");
     expect(tabReturn).not.toBeNull();
-
-    const form = within(tabReturn as HTMLElement).getByTestId("ward-capacity-form");
-    expect(form).toBeInTheDocument();
-
-    // Verify it is NOT inside visuallyHidden
-    const visuallyHiddenContainer = container.querySelector(`.${styles.visuallyHidden}`);
-    if (visuallyHiddenContainer) {
-      expect(visuallyHiddenContainer.contains(form)).toBe(false);
-    }
-
-    // Verify it is inside an open details disclosure
-    const openDisclosure = form.closest("details");
-    expect(openDisclosure).not.toBeNull();
-    expect(openDisclosure?.hasAttribute("open")).toBe(true);
-
-    const input = within(tabReturn as HTMLElement).getByTestId("ward-capacity-input");
-    const submit = within(tabReturn as HTMLElement).getByTestId("ward-capacity-submit");
-    expect(input).toBeInTheDocument();
-    expect(submit).toBeInTheDocument();
+    expect(within(tabReturn as HTMLElement).queryByTestId("ward-capacity-form")).not.toBeInTheDocument();
+    expect(within(tabReturn as HTMLElement).queryByTestId("ward-daily-return")).not.toBeInTheDocument();
+    expect(within(tabReturn as HTMLElement).queryByText(/Morning Census/i)).not.toBeInTheDocument();
+    expect(within(tabReturn as HTMLElement).getByRole("button", { name: "Staffing, 07:00–09:30" })).toBeInTheDocument();
   });
 
-  it("allows entering a capacity count and updates the confirmed count", () => {
+  it("does not offer the allocatable stepper on the decisions queue", () => {
     const unit = unitById("rph-adult-secure");
     expect(unit).toBeDefined();
 
@@ -56,16 +40,12 @@ describe("ward capacity confirmation form on #tab-return", () => {
       </WardFlowProvider>,
     );
 
-    const input = screen.getByTestId("ward-capacity-input");
-    const submit = screen.getByTestId("ward-capacity-submit");
-
-    fireEvent.change(input, { target: { value: "3" } });
-    fireEvent.click(submit);
-
-    expect(screen.getByText(/Currently confirmed 3 at/)).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-capacity-input")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-capacity-submit")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirm unchanged" })).not.toBeInTheDocument();
   });
 
-  it("is operable after switching to the Decisions/return tab", () => {
+  it("shows the compact queue after switching to the Decisions tab", () => {
     const { container } = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="rph-adult-secure" />
@@ -78,13 +58,26 @@ describe("ward capacity confirmation form on #tab-return", () => {
 
     const tabReturn = container.querySelector("#tab-return");
     expect(tabReturn?.getAttribute("data-active")).toBe("true");
+    expect(within(tabReturn as HTMLElement).getByRole("button", { name: "Intake, 09:30–13:00" })).toBeInTheDocument();
+    expect(within(tabReturn as HTMLElement).queryByTestId("ward-capacity-input")).not.toBeInTheDocument();
+  });
 
-    const input = screen.getByTestId("ward-capacity-input");
-    const submit = screen.getByTestId("ward-capacity-submit");
+  it("shows the same due count on the Decisions tab as the queue", () => {
+    const { container } = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardScreen unitId="rph-adult-secure" />
+      </WardFlowProvider>,
+    );
 
-    fireEvent.change(input, { target: { value: "0" } });
-    fireEvent.click(submit);
-
-    expect(screen.getByText(/Currently confirmed 0 at/)).toBeInTheDocument();
+    const heading = screen.getByRole("heading", { name: /^Decisions/ });
+    const dueMatch = heading.textContent?.match(/(\d+) due/);
+    const badge = container.querySelector("#badgeReturn");
+    expect(badge).not.toBeNull();
+    if (dueMatch) {
+      expect(badge).toHaveTextContent(`${dueMatch[1]} Due`);
+    } else {
+      expect(heading).toHaveTextContent("Done");
+      expect(badge).toHaveTextContent("Done");
+    }
   });
 });

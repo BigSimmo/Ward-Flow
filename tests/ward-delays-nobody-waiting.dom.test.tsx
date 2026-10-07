@@ -119,17 +119,21 @@ describe("the delays screen when nobody is waiting", () => {
     const waiting = wardMovements.filter(isOpen).slice(0, 2) as Movement[];
     expect(waiting, "the seed has no open movements, so this direction cannot be tested").toHaveLength(2);
 
-    const split = waitingSplit(waiting, NOW);
+    const waited = (movement: Movement) => NOW - movement.openedAt;
+    const under8 = waiting.filter((movement) => waited(movement) < 8 * 60).length;
+    const eightTo12 = waiting.filter((movement) => waited(movement) >= 8 * 60 && waited(movement) < 12 * 60).length;
+    const twelveTo24 = waiting.filter((movement) => waited(movement) >= 12 * 60 && waited(movement) < 24 * 60).length;
+    const over24 = waiting.filter((movement) => waited(movement) >= 24 * 60).length;
     expect(
-      split.reduce((sum, segment) => sum + segment.value, 0),
+      under8 + eightTo12 + twelveTo24 + over24,
       "this fixture produces no open movements, so it cannot prove the duration facts survive a non-empty state",
-    ).toBeGreaterThan(0);
+    ).toBe(waiting.length);
 
     renderWith(waiting);
     expect(screen.queryByTestId("ward-delays-nobody-waiting")).toBeNull();
     const facts = screen.getByRole("img", { name: /Under 8h:/ });
     expect(facts).toHaveAccessibleName(
-      `Under 8h: ${split[0].value}; 8 – 24h: ${split[1].value}; Over 24h: ${split[2].value}`,
+      `Under 8h: ${under8}; 8–12h: ${eightTo12}; Over 12h: ${twelveTo24}; Over 24h: ${over24}`,
     );
   });
 });

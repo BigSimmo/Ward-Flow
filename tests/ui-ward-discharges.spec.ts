@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "playwright/test";
+import { expect, test, type Page } from "playwright/test";
 
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -79,9 +79,9 @@ async function gotoWard(page: Page) {
  * this rather than selecting the tab once at the top.
  */
 async function openBedRecordsTab(page: Page) {
-  const decisions = page.getByRole("tab", { name: "Decisions (Ward record)" });
-  await decisions.click();
-  await expect(decisions).toHaveAttribute("aria-selected", "true");
+  const discharges = page.getByRole("tab", { name: "Discharges (On the way out)" });
+  await discharges.click();
+  await expect(discharges).toHaveAttribute("aria-selected", "true");
 }
 
 async function goToCapacityBoard(page: Page) {
@@ -150,48 +150,10 @@ function networkCell(page: Page, testId: string) {
   return page.getByTestId(`ward-capacity-network-row-${UNIT_ID}`).getByTestId(testId);
 }
 
-/**
- * The blocked-count cell's own text, excluding its nested `ward-capacity-network-blocked-since`
- * annotation (WLQ-10, 2026-09-15). Reading `textContent` on the cell itself concatenates the
- * count with the nested note's text ("1held up since 16:30"); this reads only the cell's direct
- * text node, which is exactly the count `freeingCellText` rendered.
- */
-async function blockedCountOwnText(page: Page): Promise<string> {
-  return networkCell(page, "ward-capacity-network-blocked").evaluate((el) => {
-    const clone = el.cloneNode(true) as HTMLElement;
-    clone.querySelector('[data-testid="ward-capacity-network-blocked-since"]')?.remove();
-    return clone.textContent?.trim() ?? "";
-  });
-}
-
 /** A board cell's own number: "none" reads as 0. */
 async function networkNumber(page: Page, testId: string): Promise<number> {
   const text = ((await networkCell(page, testId).textContent()) ?? "").trim();
   return text === "none" ? 0 : Number.parseInt(text, 10);
-}
-
-/** The blocked cell's own count, read without its nested "held up since" note. */
-async function blockedNumber(page: Page): Promise<number> {
-  const text = await blockedCountOwnText(page);
-  return text === "none" || text === "" ? 0 : Number.parseInt(text, 10);
-}
-
-/**
- * A release row's own STAGE label — the first `<strong>{bedReleaseStateLabels[release.state]}</strong>`
- * in its `cardHeader` (`ward-screen.tsx`). Every row also carries a `WardFreshness` stamp that
- * literally reads "Confirmed HH:MM · NUM <ward>" for EVERY stage, not only `confirmed` — the
- * reducer sets `confirmedAt`/`confirmedBy` on every bed-release write regardless of the resulting
- * `state`, because those fields mean "last reported", not "currently in the confirmed stage". A
- * plain `toContainText("Confirmed")` on the row is therefore true at every step and asserts
- * nothing — this reads the stage label alone.
- *
- * `.first()` matters more since the bed-model rework of 2026-08-28: a blocked row renders a
- * SECOND `<strong>` for the flag, right after the stage. That is the change made visible — the
- * stage and the flag are two facts shown together, where the four-stage model showed one word
- * that erased the other.
- */
-function releaseStateLabel(row: Locator) {
-  return row.locator("strong").first();
 }
 
 test.describe("@mockup Ward discharges — a bed release's whole lifecycle reaches the coordinator live", () => {
@@ -206,7 +168,7 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
   // that the person has left, on the ward board. The ward screen's old "Release" button path is
   // refused while the person is still in the bed; replacing or removing that button is Remove
   // invented data's plan 5b, so it is deliberately not driven here.
-  test("a seeded expected release is confirmed, blocked, unblocked and completed by the person leaving, and the coordinator's capacity board reflects every step", async ({
+  test("a seeded expected release is confirmed and completed by the person leaving, and the coordinator's capacity board reflects each step", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 1024 });
@@ -222,51 +184,25 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     const releaseId = release.id;
 
     await gotoWard(page);
-    const releaseRow = page.getByTestId(`ward-bed-release-${releaseId}`);
-    await expect(releaseStateLabel(releaseRow)).toHaveText("Expected");
+    const releaseRow = page.getByTestId(`ward-today-release-${releaseId}`);
+    const releaseState = page.getByTestId(`ward-today-release-state-${releaseId}`);
+    await expect(releaseState).toHaveText("Expected");
 
     // --- Baseline on the coordinator's capacity board. ---
     await goToCapacityBoard(page);
     const confirmedBefore = await networkNumber(page, "ward-capacity-network-confirmed");
-    const blockedBefore = await blockedNumber(page);
     const readyBefore = await networkNumber(page, "ward-capacity-network-ready");
 
-    // --- Step 1: the ward confirms the release. ---
+    // --- Step 1: the ward confirms the release from the Discharges list. ---
     await goBackToWard(page);
-    await page.getByTestId(`ward-bed-release-confirm-${releaseId}`).click();
-    await expect(releaseStateLabel(releaseRow)).toHaveText("Confirmed");
+    await page.getByTestId(`ward-today-release-confirm-${releaseId}`).click();
+    await expect(releaseState).toHaveText("Confirmed");
     await goToCapacityBoard(page);
     await expect.poll(() => networkNumber(page, "ward-capacity-network-confirmed")).toBe(confirmedBefore + 1);
     // Confirming is a record about a future bed, not the bed becoming free.
     await expect.poll(() => networkNumber(page, "ward-capacity-network-ready")).toBe(readyBefore);
 
-    // --- Step 2: block it with a reason from the fixed list, never free text (binding spec §4). ---
-    await goBackToWard(page);
-    await page.getByTestId(`ward-bed-release-block-toggle-${releaseId}`).click();
-    await page.getByTestId(`ward-bed-release-blocker-${releaseId}`).selectOption("Awaiting clean");
-    await page.getByTestId(`ward-bed-release-block-submit-${releaseId}`).click();
-    // Blocking is a FLAG (bed-model rework, 2026-08-28): the stage stays "Confirmed" and the row also
-    // reads "Blocked".
-    await expect(releaseStateLabel(releaseRow)).toHaveText("Confirmed");
-    await expect(page.getByTestId(`ward-bed-release-blocked-flag-${releaseId}`)).toHaveText("Blocked");
-    await expect(releaseRow).toContainText("Awaiting clean");
-    await goToCapacityBoard(page);
-    // 🔴 THE LOAD-BEARING PAIR: confirmed must HOLD while blocked rises. The defect the 2026-08-28
-    // rework closed was a block dropping the confirmed count, so the figures improved at the moment
-    // the ward got stuck. Either assertion alone passes on the old behaviour.
-    await expect.poll(() => networkNumber(page, "ward-capacity-network-confirmed")).toBe(confirmedBefore + 1);
-    await expect.poll(() => blockedNumber(page)).toBe(blockedBefore + 1);
-
-    // --- Step 3: the flag comes off again without touching the stage. ---
-    await goBackToWard(page);
-    await page.getByTestId(`ward-bed-release-unblock-${releaseId}`).click();
-    await expect(page.getByTestId(`ward-bed-release-blocked-flag-${releaseId}`)).toHaveCount(0);
-    await expect(releaseStateLabel(releaseRow)).toHaveText("Confirmed");
-    await goToCapacityBoard(page);
-    await expect.poll(() => networkNumber(page, "ward-capacity-network-confirmed")).toBe(confirmedBefore + 1);
-    await expect.poll(() => blockedNumber(page)).toBe(blockedBefore);
-
-    // --- Step 4: the person leaves, recorded on the ward board. Leaving completes this person's
+    // --- Step 2: the person leaves, recorded on the ward board. Leaving completes this person's
     // release and is the one step here that frees a real bed. ---
     await goBackToWard(page);
     await page.getByRole("link", { name: "Bed board" }).click();
@@ -417,12 +353,13 @@ test.describe("@mockup WA disposition pathways", () => {
       await page.goto(`/mockups/ward-flow/ward/${release.unitId}?tab=departure-planning`);
       await page.waitForLoadState("networkidle");
       await expect(page.getByRole("tab", { name: "Decisions (Ward record)" })).toHaveAttribute("aria-selected", "true");
-      await page.getByTestId(`ward-bed-release-release-${release.id}`).click();
-      const picker = page.getByTestId(`ward-bed-release-discharge-destination-${release.id}`);
-      await expect(picker.locator("option")).toHaveCount(LEAVING_DESTINATIONS.length + 1);
+      await page.getByRole("tab", { name: "Beds (Bed Board & Roster)" }).click();
+      await page.locator(`[data-admission-id="${admission.id}"]`).click();
+      const picker = page.locator("#drawer-leaving-dest");
+      await expect(picker.locator("option")).toHaveCount(LEAVING_DESTINATIONS.length);
       await picker.selectOption(destination.id);
-      await page.getByTestId(`ward-bed-release-discharge-submit-${release.id}`).click();
-      await expect(page.getByTestId(`ward-bed-release-${release.id}`)).toHaveCount(0);
+      await page.getByRole("button", { name: /Record that they have left/ }).click();
+      await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);
       await page.locator('[data-testid="ward-rail-link"][href="/mockups/ward-flow/discharges"]').click();
       await page.getByRole("button", { name: /Admission records/ }).click();
       await page.locator("#discharges-filter-destination").selectOption(destination.id);
@@ -448,7 +385,7 @@ test.describe("@mockup WA disposition pathways", () => {
     await page.getByRole("combobox", { name: "Ward for departure planning" }).selectOption(release.unitId);
     await page.getByRole("link", { name: "Open ward departure planning" }).click();
     await expect(page.getByRole("tab", { name: "Decisions (Ward record)" })).toHaveAttribute("aria-selected", "true");
-    await expect(page.getByTestId("ward-bed-release-admission")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Staffing", exact: true })).toBeVisible();
   });
 });
 

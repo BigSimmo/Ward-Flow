@@ -178,7 +178,7 @@ describe("PR15 recorded facts and unavailable data", () => {
 
   it("retains the service history disclosure without generating demonstration trends", () => {
     renderFlow(<StatisticsServiceScreen serviceId="North Metro" />);
-    const disclosure = screen.getByText("View historical referral flow records").closest("details")!;
+    const disclosure = screen.getByRole("region", { name: "Sent and taken in, over the last 30 days" });
     expect(disclosure.textContent).toContain("Not recorded.");
     expect(disclosure.querySelector("svg, img")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-service-sent-chart")).toBeNull();
