@@ -88,6 +88,13 @@ test("Azure provisioning reuses an existing database server without creating res
   const result = await run("provision");
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.frontend, /NEXT_PUBLIC_WARD_SHARED_ENABLED=true/);
+  const host = JSON.parse(await readFile(new URL("./host.json", import.meta.url), "utf8"));
+  const prefix = host.extensions.http.routePrefix;
+  const expectedBase = `https://wardflow-dev-api-aue.azurewebsites.net${prefix ? `/${prefix}` : ""}`;
+  assert.equal(
+    result.frontend.split("\n").find((line) => line.startsWith("NEXT_PUBLIC_WARD_API_BASE_URL=")),
+    `NEXT_PUBLIC_WARD_API_BASE_URL=${expectedBase}`,
+  );
   assert.ok(result.calls.every((args) => args.includes("show") || args.includes("list")));
 });
 test("ambiguous Azure inventory requires an explicit existing server", async () => {

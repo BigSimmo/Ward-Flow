@@ -164,7 +164,7 @@ const frontendValues = {
   NEXT_PUBLIC_WARD_TENANT_ID: config.tenantId,
   NEXT_PUBLIC_WARD_CLIENT_ID: config.frontendClientId,
   NEXT_PUBLIC_WARD_API_SCOPE: `${api.identifierUris[0]}/WardFlow.Access`,
-  NEXT_PUBLIC_WARD_API_BASE_URL: `https://${app.defaultHostName}/api`,
+  NEXT_PUBLIC_WARD_API_BASE_URL: `https://${app.defaultHostName}`,
 };
 if (mode === "verify") {
   const { AzureCliCredential } = await import("@azure/identity");

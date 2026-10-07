@@ -6,7 +6,7 @@ This is a synthetic demonstration implementation. No live Azure resource was rea
 
 ## What is implemented
 
-- The existing Azure Function gains `/api/v1/workspace`, `/api/v1/workspace/commands` and `/api/v1/workspace/audit`. Existing owner-specific Blob sessions remain separate.
+- The existing Azure Function gains `/v1/workspace`, `/v1/workspace/commands` and `/v1/workspace/audit`. Its checked-in host configuration has an empty route prefix; the generated frontend base URL is the Function origin. Existing owner-specific Blob sessions remain separate.
 - PostgreSQL holds one shared, versioned JSONB workspace, idempotency receipts and append-only audit entries. Named coordinators share the same workspace ID. The server applies the existing domain engine against the latest locked state.
 - A stale command returns 409 without overwriting the winner. Successful state, audit and command receipt commit in one transaction. A retry uses the same command ID; reusing an ID for different content is refused.
 - Audit identifies the authenticated Entra object ID and effective role `coordinator`, with action, revision, outcome, server commit time and structured domain audit changes. Existing domain roles are workflow perspectives, not access grants. Workflow guards remain effective.
@@ -36,7 +36,7 @@ npm --prefix backend/ward-flow run build:engine
 npm --prefix backend/ward-flow run azure:inspect -- /absolute/path/to/azure-settings.local.json
 ```
 
-Inspection reports safe resource metadata. If a database already exists, review its hosting, private network, authentication and backup settings; inspection preserves them. Subsequent modes refuse an unsuitable existing database rather than silently replace or open it.
+Inspection needs only the actual subscription and tenant IDs; role/administrator placeholders may remain until setup. It reports safe resource metadata. If a database already exists, review its hosting, private network, authentication and backup settings; inspection preserves them. Subsequent modes refuse an unsuitable existing database rather than silently replace or open it.
 
 ```sh
 npm --prefix backend/ward-flow run azure:provision -- /absolute/path/to/azure-settings.local.json
@@ -91,6 +91,8 @@ The proof covers two-account contention for the last bed, stable idempotency, ch
 Local verification on 7 October 2026: 43 backend tests passed, eight focused frontend/CI tests passed, 52 existing provider/privacy/restore/scenario/audit tests passed, source typecheck and scoped ESLint passed, and the production Next build and offline Bicep compilation passed. System Chromium smoke checks returned HTTP 200 with no page errors; enabling shared mode without configuration hid the board and left browser session storage empty. Six offline setup tests check existing-server reuse, ambiguous inventory, identity mismatch and preserving unsuitable resources/networks. These tests use a fake Azure CLI and make no Azure requests.
 
 Migration SQL and an offline Bicep compilation are not live Azure application evidence. Azure-managed token access, actual private DNS/routing, consent, Easy Auth, deployment, restore and hosted browser journeys remain unverified until the authorised resource checks pass.
+
+The Knip dependency/export check remains red on root-repository findings also reproduced on the unchanged base checkout: `server-only`, `@typescript/typescript6`, `playwright-core`, `tsx`, `sharp`, `parse5` and seven duplicate exports. The added workspace configuration resolves the new nested-backend dependency warnings and recognises the existing root `esbuild` dependency. This is not a full PR-readiness or hosted-CI verdict.
 
 ## Before real patient use
 
