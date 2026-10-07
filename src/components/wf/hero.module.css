@@ -228,6 +228,20 @@
   }
 }
 
+/* Phone: stats wrap onto a grid so every label shows in full rather than clipping. */
+@media (max-width: 600px) {
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+    gap: var(--wf-s-2) var(--wf-s-3);
+    overflow: visible;
+  }
+  .stat {
+    border-left: 0;
+    padding: 0;
+  }
+}
+
 @media (forced-colors: active) {
   .hero {
     border: 1px solid CanvasText;
