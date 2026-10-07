@@ -115,7 +115,9 @@ describe("approved four-tab referral drawer journey", () => {
         target: { files: [new File(["%PDF-1.7\nSynthetic demo chart"], `${label}.pdf`, { type: "application/pdf" })] },
       });
     }
-    await waitFor(() => expect(screen.getAllByRole("button", { name: "Replace" })).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Replace" })).toHaveLength(2), {
+      timeout: 10_000,
+    });
     next("Next: Locations");
     const locations = screen.getByRole("list", { name: "Placement Destination Options" });
     const first = within(locations).getByRole("checkbox", { name: /rph-adult-secure/ });

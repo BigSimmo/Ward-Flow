@@ -58,6 +58,12 @@ function YesNo({ label, value, onChange }: { label: string; value: string; onCha
   );
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
 function ChartUpload({
   kind,
   label,
@@ -99,21 +105,17 @@ function ChartUpload({
     }
     setReading(true);
     try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
-        reader.onerror = () => reject(new Error("This file could not be read."));
-        reader.readAsDataURL(selected);
-      });
+      const bytes = new Uint8Array(await selected.arrayBuffer());
       if (current !== generation.current) return;
       latestOnChange.current({
         kind,
         name: selected.name,
         mimeType: selected.type as ReferralChart["mimeType"],
         sizeBytes: selected.size,
-        base64,
+        base64: bytesToBase64(bytes),
       });
     } catch {
+      if (current !== generation.current) return;
       setError("This file could not be read. Select it again.");
     } finally {
       if (current === generation.current) setReading(false);
