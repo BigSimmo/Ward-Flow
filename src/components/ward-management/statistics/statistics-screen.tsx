@@ -3,47 +3,76 @@
 import { readDeclinesByReason } from "./statistics-decline-reporting";
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  ArrowRight,
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronUp,
+  Clock,
+  Lock,
+  Search,
+  TrendingUp,
+  Truck,
+  X,
+} from "lucide-react";
 
+import {
+  Badge,
+  BarList,
+  Button,
+  CardBody,
+  CardFoot,
+  ColumnChart,
+  FilterChip,
+  HeroStat,
+  Icon,
+  StackBar,
+  StatusGlyph,
+  durMinutes,
+  TextInput,
+  buttonClass,
+  tableClasses,
+} from "@/components/wf";
 import {
   blockedDischargesByReason,
   bedsBeingPrepared,
   pullToArrival,
   refusedAndNothingPending,
 } from "@/components/ward-management/statistics/statistics-derivations";
-import {
-  STATISTICS_COMMUNITY_CHOOSER_ID,
-  STATISTICS_SECTIONS,
-  STATISTICS_SERVICE_CHOOSER_ID,
-} from "@/components/ward-management/statistics/statistics-sections";
 import { communityStatisticsHref, serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { calendarDateOf, dayOf, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
-import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
+import {
+  calendarDateOf,
+  dayOf,
+  formatInstant,
+  splitDuration,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
   HEALTH_SERVICES,
   type BedRelease,
   type Movement,
   type Referral,
 } from "@/components/ward-management/ward-model";
-import { WardPanel } from "@/components/ward-management/ward-panel";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 
-import styles from "./statistics.module.css";
-import pageStyles from "./statistics-landing-third-edition.module.css";
+import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
+import { StatCard, StatisticsHero, useStatisticsLive } from "./statistics-hero";
+import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
-import { hoursText, occupiedBeds } from "./statistics-occupancy";
+import { occupiedBeds } from "./statistics-occupancy";
 
 /**
- * THE COORDINATOR STATISTICS SCREEN — Third Edition Platinum Raised Cool Hub.
+ * THE COORDINATOR STATISTICS SCREEN — the v6 Summary page.
  *
  * ⚠️ Checked identifiers preserved in source comments for checkability and test coverage:
  * - ReferralAddressing
@@ -65,6 +94,68 @@ function formatReportDay(instant: Instant, dayZero: Date): string {
   return `${weekday} ${day} ${month}`;
 }
 
+/** "no_specialling" reads "No specialling". */
+const sentenceCase = (text: string) => {
+  const spaced = text.replace(/_/g, " ");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+};
+
+/** Minutes as a duration, or "none" when nothing is waiting. */
+const waitText = (minutes: number | null) => (minutes === null ? "none" : durMinutes(Math.round(minutes)));
+
+const median = (values: number[]): number | null => {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+};
+
+const ED_AMBER_MINUTES = 8 * 60;
+const ED_RED_MINUTES = 24 * 60;
+const PRESSURE_ROWS = 10;
+
+const ARRIVAL_BANDS: Array<{ id: string; label: string; from: number; to: number }> = [
+  { id: "lt2", label: "<2h", from: 0, to: 120 },
+  { id: "2-4", label: "2-4h", from: 120, to: 240 },
+  { id: "4-6", label: "4-6h", from: 240, to: 360 },
+  { id: "6-8", label: "6-8h", from: 360, to: 480 },
+  { id: "8-12", label: "8-12h", from: 480, to: 720 },
+  { id: "12+", label: "12h+", from: 720, to: Number.POSITIVE_INFINITY },
+];
+
+type WardSortKey = "name" | "beds" | "ready" | "occ" | "ref";
+type EdSortKey = "name" | "waiting" | "longest" | "median" | "over8" | "over24";
+
+function SortTh<K extends string>({
+  id,
+  label,
+  sort,
+  asc,
+  onSort,
+  numeric = false,
+}: {
+  id: K;
+  label: string;
+  sort: K;
+  asc: boolean;
+  onSort: (id: K) => void;
+  numeric?: boolean;
+}) {
+  const active = sort === id;
+  return (
+    <th
+      scope="col"
+      className={`${styles.sortTh} ${numeric ? styles.num : ""}`}
+      aria-sort={active ? (asc ? "ascending" : "descending") : "none"}
+    >
+      <button type="button" onClick={() => onSort(id)}>
+        {label}
+        <Icon icon={active ? (asc ? ChevronUp : ChevronDown) : ChevronsUpDown} size={14} />
+      </button>
+    </th>
+  );
+}
+
 export function StatisticsScreen({
   admissions,
   referrals,
@@ -76,6 +167,7 @@ export function StatisticsScreen({
   bedReleases?: BedRelease[];
   movements?: Movement[];
 } = {}) {
+  const live = useStatisticsLive();
   const {
     admissions: liveAdmissions,
     referrals: liveReferrals,
@@ -85,8 +177,8 @@ export function StatisticsScreen({
     units,
     dayZero,
     configuration,
-  } = useWardFlow();
-  const now = useWardFlowClock();
+  } = live.state;
+  const now = live.now;
   const service = useServiceScope();
 
   const sourceAdmissions = admissions ?? liveAdmissions;
@@ -101,14 +193,10 @@ export function StatisticsScreen({
   const blocked = blockedDischargesByReason(sourceAdmissions);
 
   const totalBeds = units.reduce((sum, u) => sum + u.beds, 0);
-  const hospitals = Array.from(new Set(units.map((u) => siteByCode(u.siteCode)?.name ?? u.siteCode)));
-  const hospitalsCount = hospitals.length;
   const occupancy = occupiedBeds(units, sourceAdmissions, sourceBedReleases, leaveBeds);
   const occupiedCount = occupancy.occupied;
   const occupiedPct = totalBeds > 0 ? Math.round((occupiedCount / totalBeds) * 100) : 0;
-  const pendingPreparation = units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, sourceBedReleases), 0);
   const availableNow = units.reduce((sum, u) => sum + unitCapacity(u, sourceBedReleases).available, 0);
-  const availablePct = totalBeds > 0 ? Math.round((availableNow / totalBeds) * 100) : 0;
   const waitingCount = refused.openMovementCount;
 
   const admissionsCount = sourceAdmissions.filter(
@@ -120,185 +208,134 @@ export function StatisticsScreen({
 
   // Emergency departments
   const emergencyDepts = useMemo(() => {
-    const allEds = allEmergencyDepartments();
-    return allEds
+    return allEmergencyDepartments()
       .map((ed) => {
         const figures = edWaitFigures(sourceMovements, ed.id, now);
-        const longestHours = figures.longestWait ? Math.round(figures.longestWait.waitMinutes / 60) : 0;
-        const waitMinutes = figures.waitingMovements.map((w) => w.waitMinutes);
-        const middle = Math.floor(waitMinutes.length / 2);
-        const medianHours =
-          waitMinutes.length === 0
-            ? 0
-            : Math.round(
-                (waitMinutes.length % 2 ? waitMinutes[middle] : (waitMinutes[middle - 1] + waitMinutes[middle]) / 2) /
-                  60,
-              );
-        const over8 = figures.waitingMovements.filter((w) => w.waitMinutes >= 8 * 60).length;
+        const waits = figures.waitingMovements.map((w) => w.waitMinutes);
         return {
           id: ed.id,
           name: ed.name.replace(/ Emergency Department$/, ""),
           site: ed.siteCode,
           waiting: figures.onTheList,
-          longest: longestHours,
-          median: medianHours,
-          over8,
+          longest: figures.longestWait ? figures.longestWait.waitMinutes : null,
+          median: median(waits),
+          over8: waits.filter((minutes) => minutes >= ED_AMBER_MINUTES).length,
           over24: figures.over24h,
+          waits,
         };
       })
-      .sort((a, b) => b.waiting - a.waiting || b.longest - a.longest);
+      .sort((a, b) => b.waiting - a.waiting || (b.longest ?? 0) - (a.longest ?? 0));
   }, [sourceMovements, now]);
 
   const totalEdWaiting = emergencyDepts.reduce((s, d) => s + d.waiting, 0);
-  const networkLongestWait = Math.max(...emergencyDepts.map((d) => d.longest), 0);
-  const networkWaits = emergencyDepts
-    .flatMap((ed) => edWaitFigures(sourceMovements, ed.id, now).waitingMovements.map((entry) => entry.waitMinutes))
-    .sort((a, b) => a - b);
-  const networkMiddle = Math.floor(networkWaits.length / 2);
-  const networkMedianWait =
-    networkWaits.length === 0
-      ? 0
-      : Math.round(
-          (networkWaits.length % 2
-            ? networkWaits[networkMiddle]
-            : (networkWaits[networkMiddle - 1] + networkWaits[networkMiddle]) / 2) / 60,
-        );
+  const longestEd = emergencyDepts.reduce<(typeof emergencyDepts)[number] | null>(
+    (best, d) => (d.longest !== null && (best === null || (best.longest ?? 0) < d.longest) ? d : best),
+    null,
+  );
+  const networkMedianWait = median(emergencyDepts.flatMap((d) => d.waits));
   const totalEdOver8 = emergencyDepts.reduce((s, d) => s + d.over8, 0);
   const totalEdOver24 = emergencyDepts.reduce((s, d) => s + d.over24, 0);
 
-  // Ward Table interactive state
+  // Table state
   const [wardSearchQuery, setWardSearchQuery] = useState("");
-  const [wardSortCol, setWardSortCol] = useState<"name" | "hosp" | "beds" | "ready" | "occ" | "ref">("ready");
-  const [wardSortAsc, setWardSortAsc] = useState(true);
-
-  // ED Table interactive state
+  const [wardOverLine, setWardOverLine] = useState(false);
+  const [wardShowAll, setWardShowAll] = useState(false);
+  const [wardSortCol, setWardSortCol] = useState<WardSortKey>("occ");
+  const [wardSortAsc, setWardSortAsc] = useState(false);
   const [edSearchQuery, setEdSearchQuery] = useState("");
-  const [edSortCol, setEdSortCol] = useState<"name" | "waiting" | "longest" | "median" | "over8" | "over24">("waiting");
+  const [edSortCol, setEdSortCol] = useState<EdSortKey>("waiting");
   const [edSortAsc, setEdSortAsc] = useState(false);
 
-  const [teamSearchQuery, setTeamSearchQuery] = useState("");
-
-  // Flow chart interactive hover state
-
-  const handleWardSort = (col: "name" | "hosp" | "beds" | "ready" | "occ" | "ref") => {
-    if (wardSortCol === col) {
-      setWardSortAsc((prev) => !prev);
-    } else {
+  const handleWardSort = (col: WardSortKey) => {
+    if (wardSortCol === col) setWardSortAsc((prev) => !prev);
+    else {
       setWardSortCol(col);
-      setWardSortAsc(col === "name" || col === "hosp");
+      setWardSortAsc(col === "name");
     }
   };
 
-  const handleEdSort = (col: "name" | "waiting" | "longest" | "median" | "over8" | "over24") => {
-    if (edSortCol === col) {
-      setEdSortAsc((prev) => !prev);
-    } else {
+  const handleEdSort = (col: EdSortKey) => {
+    if (edSortCol === col) setEdSortAsc((prev) => !prev);
+    else {
       setEdSortCol(col);
       setEdSortAsc(col === "name");
     }
   };
 
-  // Pressure Wards (all 23 wards available, ranked by ready asc, occupancy desc, name)
   const allPressureWards = useMemo(() => {
     return units.map((u) => {
       const capInfo = unitCapacity(u, sourceBedReleases);
       const occupancyRate =
         u.beds > 0 ? occupiedBeds([u], sourceAdmissions, sourceBedReleases, leaveBeds).occupied / u.beds : 0;
-      const referredCount = wardReferralTally(sourceMovements, u.id).askedAndWaiting;
       return {
         id: u.id,
         name: u.name,
+        site: u.siteCode,
         hospital: siteByCode(u.siteCode)?.name ?? u.siteCode,
         beds: u.beds,
         ready: capInfo.available,
         occupancyRate,
-        referred: referredCount,
+        referred: wardReferralTally(sourceMovements, u.id).askedAndWaiting,
       };
     });
   }, [units, sourceAdmissions, sourceBedReleases, leaveBeds, sourceMovements]);
 
+  const overLineCount = allPressureWards.filter(
+    (w) => Math.round(w.occupancyRate * 100) >= BED_ALERT_THRESHOLD_PERCENT,
+  ).length;
+
   const filteredAndSortedWards = useMemo(() => {
     let list = allPressureWards.slice();
     const q = wardSearchQuery.trim().toLowerCase();
-    if (q) {
-      list = list.filter((w) => w.name.toLowerCase().includes(q) || w.hospital.toLowerCase().includes(q));
-    }
+    if (q) list = list.filter((w) => `${w.name} ${w.hospital} ${w.site}`.toLowerCase().includes(q));
+    if (wardOverLine) list = list.filter((w) => Math.round(w.occupancyRate * 100) >= BED_ALERT_THRESHOLD_PERCENT);
+    const value = (w: (typeof list)[number]): number | string =>
+      wardSortCol === "name"
+        ? w.name
+        : wardSortCol === "beds"
+          ? w.beds
+          : wardSortCol === "ready"
+            ? w.ready
+            : wardSortCol === "ref"
+              ? w.referred
+              : w.occupancyRate;
     list.sort((a, b) => {
-      let vA: number | string;
-      let vB: number | string;
-      if (wardSortCol === "name") {
-        vA = a.name;
-        vB = b.name;
-      } else if (wardSortCol === "hosp") {
-        vA = a.hospital;
-        vB = b.hospital;
-      } else if (wardSortCol === "beds") {
-        vA = a.beds;
-        vB = b.beds;
-      } else if (wardSortCol === "ready") {
-        vA = a.ready;
-        vB = b.ready;
-      } else if (wardSortCol === "occ") {
-        vA = a.occupancyRate;
-        vB = b.occupancyRate;
-      } else if (wardSortCol === "ref") {
-        vA = a.referred;
-        vB = b.referred;
-      } else {
-        vA = a.ready;
-        vB = b.ready;
-      }
-
+      const vA = value(a);
+      const vB = value(b);
       if (vA < vB) return wardSortAsc ? -1 : 1;
       if (vA > vB) return wardSortAsc ? 1 : -1;
       return a.name.localeCompare(b.name);
     });
     return list;
-  }, [allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
+  }, [allPressureWards, wardSearchQuery, wardOverLine, wardSortCol, wardSortAsc]);
+
+  const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, PRESSURE_ROWS);
 
   const filteredAndSortedEds = useMemo(() => {
     let list = emergencyDepts.slice();
     const q = edSearchQuery.trim().toLowerCase();
-    if (q) {
-      list = list.filter((d) => d.name.toLowerCase().includes(q) || d.site.toLowerCase().includes(q));
-    }
+    if (q) list = list.filter((d) => d.name.toLowerCase().includes(q) || d.site.toLowerCase().includes(q));
+    const value = (d: (typeof list)[number]): number | string =>
+      edSortCol === "name"
+        ? d.site
+        : edSortCol === "longest"
+          ? (d.longest ?? -1)
+          : edSortCol === "median"
+            ? (d.median ?? -1)
+            : edSortCol === "over8"
+              ? d.over8
+              : edSortCol === "over24"
+                ? d.over24
+                : d.waiting;
     list.sort((a, b) => {
-      let vA: number | string;
-      let vB: number | string;
-      if (edSortCol === "name") {
-        vA = a.site;
-        vB = b.site;
-      } else if (edSortCol === "waiting") {
-        vA = a.waiting;
-        vB = b.waiting;
-      } else if (edSortCol === "longest") {
-        vA = a.longest;
-        vB = b.longest;
-      } else if (edSortCol === "median") {
-        vA = a.median;
-        vB = b.median;
-      } else if (edSortCol === "over8") {
-        vA = a.over8;
-        vB = b.over8;
-      } else if (edSortCol === "over24") {
-        vA = a.over24;
-        vB = b.over24;
-      } else {
-        vA = a.waiting;
-        vB = b.waiting;
-      }
-
+      const vA = value(a);
+      const vB = value(b);
       if (vA < vB) return edSortAsc ? -1 : 1;
       if (vA > vB) return edSortAsc ? 1 : -1;
       return a.site.localeCompare(b.site);
     });
     return list;
   }, [emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
-
-  const communityTeams = COMMUNITY_TEAM_PAGES;
-  const filteredAndSortedTeams = communityTeams.filter((team) =>
-    team.name.toLowerCase().includes(teamSearchQuery.trim().toLowerCase()),
-  );
 
   // A referral can have multiple destinations; count the referral once using its derived outcome.
   const todayBedReferrals = sourceReferrals.filter(
@@ -323,716 +360,582 @@ export function StatisticsScreen({
   ).length;
   const refRaised = todayBedReferrals.length;
 
+  // Pull to arrival, banded. The same measured gaps `pullToArrival` averages.
+  const arrivalBands = useMemo(() => {
+    const gaps = sourceAdmissions
+      .filter((a) => a.pulledAt !== null && a.arrivedAt !== null)
+      .map((a) => (a.arrivedAt as number) - (a.pulledAt as number))
+      .filter((gap) => Number.isFinite(gap) && gap >= 0);
+    return ARRIVAL_BANDS.map((band) => ({
+      id: band.id,
+      label: band.label,
+      value: gaps.filter((gap) => gap >= band.from && gap < band.to).length,
+    }));
+  }, [sourceAdmissions]);
+
+  const finderLists = useMemo(
+    () => ({
+      ward: units
+        .map((u) => ({
+          id: u.id,
+          name: u.name,
+          code: u.siteCode,
+          meta: `${unitCapacity(u, sourceBedReleases).available} ready`,
+          ready: unitCapacity(u, sourceBedReleases).available,
+        }))
+        .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name)),
+      ed: emergencyDepts.map((d) => ({ id: d.id, name: d.name, code: d.site, meta: `${d.waiting} waiting` })),
+      service: HEALTH_SERVICES.map((svc) => {
+        const count = units.filter((u) => siteByCode(u.siteCode)?.service === svc).length;
+        return { id: svc, name: svc, meta: `${count} ${count === 1 ? "ward" : "wards"}` };
+      }),
+      team: COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
+    }),
+    [units, sourceBedReleases, emergencyDepts],
+  );
+
   usePrintableDisclosures();
 
+  const blockedMean = blocked.vocabularySize > 0 ? blocked.totalCount / blocked.vocabularySize : 0;
+
   return (
-    <div
-      className={`${styles.screen} ${pageStyles.screen}`}
-      data-testid="ward-statistics-screen"
-      data-ward-design="third-edition"
-    >
-      <main id="main-content" className={`${styles.main} ${pageStyles.main}`}>
-        {/* Hidden screen reader heading */}
-        <header className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>Statistics</h1>
-        </header>
-
-        {/* ══════════ PANEL 1: ACROSS ALL SERVICES ══════════ */}
-        <WardPanel
-          title="Across all services"
-          count={`${units.length} wards · ${emergencyDepts.length} departments · ${communityTeams.length} teams`}
-          testId="ward-statistics-system"
-        >
-          {service === null ? null : (
-            <p className={styles.notice} data-testid="ward-statistics-service-scope-sentence">
-              {`Set to ${service}. This page is the whole network's own, so these figures already include ${service}.`}{" "}
-              <Link href={serviceStatisticsHref(service)} data-testid="ward-statistics-service-scope-link">
-                {`Open ${service} statistics`}
-              </Link>
-            </p>
-          )}
-
-          {/* 6-Card KPI Headline Band */}
-          <dl className={pageStyles.band} id="headline" tabIndex={-1} aria-label="Across all services headline figures">
-            <div className={pageStyles.kpi}>
-              <dt>Total beds</dt>
-              <dd>
-                {totalBeds}
-                <small>
-                  {units.length} wards across {hospitalsCount} hospitals
-                </small>
-              </dd>
-            </div>
-            <div className={pageStyles.kpi}>
-              <dt>Occupied</dt>
-              <dd>
-                {occupiedCount}
-                <small>
-                  {occupiedPct}% of all beds · {occupancy.pulled} more pulled for people not yet arrived
-                </small>
-              </dd>
-            </div>
-            <div className={pageStyles.kpi}>
-              <dt>Ready</dt>
-              <dd>
-                {availableNow}
-                <small>
-                  {availablePct}% of beds · {pendingPreparation} pending preparation
-                </small>
-              </dd>
-            </div>
-            <div className={pageStyles.kpi} data-tone={waitingCount > 0 ? "warn" : undefined}>
-              <dt>Waiting for a bed</dt>
-              <dd>
-                {waitingCount}
-                <small>open requests from emergency departments</small>
-              </dd>
-            </div>
-            <div className={pageStyles.kpi}>
-              <dt>Admissions today</dt>
-              <dd>
-                <span data-testid="ward-statistics-admissions-today-count">{admissionsCount}</span>
-                <small className={pageStyles.metricCaption} data-testid="ward-statistics-admissions-today-caption">
-                  {reportDayCaption}
-                </small>
-              </dd>
-            </div>
-            <div className={pageStyles.kpi}>
-              <dt>Discharges today</dt>
-              <dd>
-                <span data-testid="ward-statistics-discharges-today-count">{dischargesCount}</span>
-                <small className={pageStyles.metricCaption} data-testid="ward-statistics-discharges-today-caption">
-                  {reportDayCaption}
-                </small>
-              </dd>
-            </div>
-          </dl>
-
-          <nav
-            className={styles.index}
-            aria-labelledby="ward-statistics-index-heading"
-            data-testid="ward-statistics-index"
-          >
-            <h2 id="ward-statistics-index-heading" className={styles.indexHeading}>
-              Where to look
-            </h2>
-            <ul className={styles.indexList}>
-              {STATISTICS_SECTIONS.map((sec) => (
-                <li key={sec.id} className={styles.indexItem}>
-                  <Link
-                    href={sec.href}
-                    className={styles.indexLink}
-                    data-testid={`ward-statistics-index-entry-${sec.id}`}
-                  >
-                    <span className={styles.indexLabel}>{sec.label}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <div className={styles.panelBody}></div>
-        </WardPanel>
-
-        {/* ══════════ PANEL 2: FLOW OVER TIME ══════════ */}
-        <WardPanel title="Where beds are available" count="Current capacity" testId="ward-statistics-patients">
-          <StatisticsCapacityChart
-            units={units}
-            bedReleases={sourceBedReleases}
-            admissions={sourceAdmissions}
-            leaveBeds={leaveBeds}
-          />
-
-          {/* Patients audience contract and pull-to-arrival article */}
-          <div className={styles.panelBody}>
-            <article className={styles.panelBody} data-testid="ward-statistics-pull-to-arrival">
-              <dl className={pageStyles.band} aria-label="Admission timing">
-                <div className={pageStyles.kpi}>
-                  <dt>Average pull to arrival</dt>
-                  <dd>
-                    <span data-testid="ward-statistics-arrival-average">
-                      {arrivals.averageMinutes === null ? "Not recorded" : splitDuration(arrivals.averageMinutes)}
+    <div className={styles.page} data-testid="ward-statistics-screen" data-ward-design="v6">
+      <main id="main-content" className={styles.stack}>
+        <StatisticsHero
+          section="hub"
+          navTestId="ward-statistics-index"
+          eyebrow={`Statistics · as at ${formatInstant(now)}`}
+          title="Whole network"
+          paused={live.paused}
+          onTogglePause={live.togglePause}
+          stats={
+            <>
+              <HeroStat value={totalBeds} label="Beds" />
+              <HeroStat value={occupiedCount} label={`${occupiedPct}% occupied`} />
+              <HeroStat value={availableNow} label="Ready" />
+              <HeroStat value={waitingCount} label="Waiting in ED" />
+              <HeroStat
+                value={<span data-testid="ward-statistics-admissions-today-count">{admissionsCount}</span>}
+                label={
+                  <>
+                    Admitted today
+                    <span className={styles.srOnly} data-testid="ward-statistics-admissions-today-caption">
+                      {reportDayCaption}
                     </span>
-                    <small>
-                      <span data-testid="ward-statistics-arrival-measured-count">{arrivals.measuredCount}</span>{" "}
-                      measured admissions
-                    </small>
-                  </dd>
-                </div>
-                <div className={pageStyles.kpi}>
-                  <dt>Shortest</dt>
-                  <dd data-testid="ward-statistics-arrival-shortest">
-                    {arrivals.shortestMinutes === null ? "Not recorded" : splitDuration(arrivals.shortestMinutes)}
-                  </dd>
-                </div>
-                <div className={pageStyles.kpi}>
-                  <dt>Longest</dt>
-                  <dd data-testid="ward-statistics-arrival-longest">
-                    {arrivals.longestMinutes === null ? "Not recorded" : splitDuration(arrivals.longestMinutes)}
-                  </dd>
-                </div>
-                <div className={pageStyles.kpi}>
-                  <dt>Awaiting arrival</dt>
-                  <dd data-testid="ward-statistics-arrival-awaiting-count">{arrivals.awaitingArrivalCount}</dd>
-                </div>
-                <div className={pageStyles.kpi}>
-                  <dt>Ended admissions</dt>
-                  <dd data-testid="ward-statistics-arrival-ended-count">{arrivals.endedCount}</dd>
-                </div>
-                <div className={pageStyles.kpi}>
-                  <dt>Excluded records</dt>
-                  <dd data-testid="ward-statistics-arrival-incoherent">{arrivals.incoherentCount}</dd>
-                </div>
-                <div className={pageStyles.kpi}>
-                  <dt>Marked pending</dt>
-                  <dd data-testid="ward-statistics-preparing-count">{preparingCount}</dd>
-                </div>
-              </dl>
-            </article>
+                  </>
+                }
+              />
+              <HeroStat
+                value={<span data-testid="ward-statistics-discharges-today-count">{dischargesCount}</span>}
+                label={
+                  <>
+                    Discharged today
+                    <span className={styles.srOnly} data-testid="ward-statistics-discharges-today-caption">
+                      {reportDayCaption}
+                    </span>
+                  </>
+                }
+              />
+            </>
+          }
+        />
+
+        {service === null ? null : (
+          <p className={styles.notice} data-testid="ward-statistics-service-scope-sentence">
+            {`Set to ${service}. This page is the whole network's own, so these figures already include ${service}.`}{" "}
+            <Link href={serviceStatisticsHref(service)} data-testid="ward-statistics-service-scope-link">
+              {`Open ${service} statistics`}
+            </Link>
+          </p>
+        )}
+
+        <div className={styles.gridMain}>
+          <div className={styles.stack} data-testid="ward-statistics-patients">
+            <StatisticsCapacityChart
+              units={units}
+              bedReleases={sourceBedReleases}
+              admissions={sourceAdmissions}
+              leaveBeds={leaveBeds}
+            />
           </div>
-        </WardPanel>
 
-        {/* ══════════ TWO-COLUMN GRID 1: PRESSURE & ED WAITS ══════════ */}
-        <div className={pageStyles.cols2}>
-          {/* Where the pressure is */}
-          <WardPanel
-            title="Where the pressure is"
-            count={`${filteredAndSortedWards.length} of ${allPressureWards.length} wards`}
-            testId="ward-statistics-pressure"
-          >
-            <div className={pageStyles.pb}></div>
+          <div className={styles.stack}>
+            <StatisticsUnitFinder lists={finderLists} />
 
-            {/* Table Controls Bar with live search and counter */}
-            <div className={pageStyles.tableControlsBar}>
-              <div className={pageStyles.tableSearchBox}>
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <circle cx="7" cy="7" r="4.5" />
-                  <path d="M10.5 10.5L14 14" />
-                </svg>
-                <input
-                  type="search"
-                  className={pageStyles.tableSearchInput}
-                  id="wardSearchInput"
-                  placeholder="Filter wards or hospitals..."
-                  value={wardSearchQuery}
-                  onChange={(e) => setWardSearchQuery(e.target.value)}
-                  aria-label="Filter wards or hospitals"
+            <StatCard
+              icon={ArrowRight}
+              title="Referrals today"
+              data-testid="ward-statistics-referrals-for-bed"
+              action={
+                <Link href="/mockups/ward-flow/referrals" className={buttonClass({ variant: "sec", size: "sm" })}>
+                  Open referrals
+                </Link>
+              }
+            >
+              <CardBody className={styles.bodyStack}>
+                <dl className={styles.figures} id="refBand" aria-label="Referrals for a bed today">
+                  <div className={styles.figure}>
+                    <dt className={styles.figureLabel}>Raised</dt>
+                    <dd className={styles.figureValue}>{refRaised}</dd>
+                  </div>
+                  <div className={styles.figure}>
+                    <dt className={styles.figureLabel}>
+                      <StatusGlyph tone="success" size={9} />
+                      Accepted
+                    </dt>
+                    <dd className={styles.figureValue}>{refAccepted}</dd>
+                  </div>
+                  <div className={styles.figure}>
+                    <dt className={styles.figureLabel}>
+                      <StatusGlyph tone="closed" size={9} />
+                      Declined
+                    </dt>
+                    <dd className={styles.figureValue}>{refDeclined}</dd>
+                  </div>
+                  <div className={styles.figure}>
+                    <dt className={styles.figureLabel}>
+                      <StatusGlyph tone="neutral" size={9} />
+                      Still open
+                    </dt>
+                    <dd className={styles.figureValue}>{refOpen}</dd>
+                  </div>
+                </dl>
+                <StackBar
+                  label="Referrals raised today"
+                  segments={[
+                    { id: "accepted", label: "Accepted", value: refAccepted, fill: "data-1" },
+                    { id: "declined", label: "Declined", value: refDeclined, fill: "data-2" },
+                    { id: "open", label: "Still open", value: refOpen, fill: "data-3" },
+                  ]}
                 />
-              </div>
-              <span className={pageStyles.tableFilterCount} id="wardFilterCount">
-                Showing {filteredAndSortedWards.length} of {allPressureWards.length} wards
+                <div className={styles.tiles} data-testid="ward-statistics-refused-so-far">
+                  <div className={styles.tile}>
+                    <h3 className={styles.srOnly}>Referrals where every ward asked so far has refused</h3>
+                    <p className={styles.tileLabel} aria-hidden="true">
+                      Refused so far
+                    </p>
+                    <p className={styles.tileValue} data-testid="ward-statistics-refused-so-far-count">
+                      <span data-testid="ward-statistics-refused-so-far-value">{refused.count}</span>
+                      <small>
+                        of{" "}
+                        <span data-testid="ward-statistics-refused-so-far-open-count">{refused.openMovementCount}</span>
+                      </small>
+                    </p>
+                  </div>
+                  <div className={styles.tile} data-testid="ward-statistics-refused-so-far-escalated">
+                    <p className={styles.tileLabel} aria-hidden="true">
+                      Escalated
+                    </p>
+                    <p className={styles.tileValue} aria-hidden="true">
+                      {refused.escalatedCount}
+                    </p>
+                    <span className={styles.srOnly}>
+                      {` ${refused.escalatedCount} open ${refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation.`}
+                    </span>
+                  </div>
+                  <div className={styles.tile}>
+                    <p className={styles.tileLabel}>Parallel cap</p>
+                    <p className={styles.tileValue} data-testid="ward-statistics-refused-so-far-cap">
+                      {configuration.parallelReferralCap}
+                    </p>
+                  </div>
+                </div>
+              </CardBody>
+            </StatCard>
+          </div>
+        </div>
+
+        <div className={styles.grid2}>
+          <StatCard
+            icon={TrendingUp}
+            title="Where the pressure is"
+            meta="Occupancy, awaiting answer"
+            data-testid="ward-statistics-pressure"
+          >
+            <div className={styles.toolbar}>
+              <TextInput
+                type="search"
+                icon={Search}
+                boxClassName={styles.search}
+                id="wardSearchInput"
+                placeholder="Filter wards"
+                value={wardSearchQuery}
+                onChange={(e) => setWardSearchQuery(e.target.value)}
+                aria-label="Filter wards or hospitals"
+              />
+              <FilterChip pressed={wardOverLine} onPressedChange={setWardOverLine} tone="warning" count={overLineCount}>
+                {`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+              </FilterChip>
+              <span className={styles.toolbarEnd} id="wardFilterCount">
+                <b>{filteredAndSortedWards.length}</b> of {allPressureWards.length}
               </span>
             </div>
-
-            <div
-              className={pageStyles.tableWrap}
-              data-wrap
-              tabIndex={0}
-              role="group"
-              aria-label="The highest pressure wards, scrolls sideways when the panel is narrow"
-            >
-              <table className={pageStyles.dataTable} id="wardPressureTable">
-                <caption className="srOnly">Inpatient mental health ward capacity and demand</caption>
+            <div className={styles.tableWrap}>
+              <table className={`${tableClasses.table} ${styles.table}`} id="wardPressureTable">
+                <caption className={styles.srOnly}>Inpatient mental health ward capacity and demand</caption>
                 <thead>
                   <tr>
-                    <th
-                      scope="col"
-                      className={`${pageStyles.sortable} ${wardSortCol === "name" ? pageStyles.sortActive : ""}`}
-                      aria-sort={wardSortCol === "name" ? (wardSortAsc ? "ascending" : "descending") : "none"}
-                    >
-                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleWardSort("name")}>
-                        Ward{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {wardSortCol === "name" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </button>
-                    </th>
-                    <th
-                      scope="col"
-                      className={`${pageStyles.sortable} ${wardSortCol === "hosp" ? pageStyles.sortActive : ""}`}
-                      aria-sort={wardSortCol === "hosp" ? (wardSortAsc ? "ascending" : "descending") : "none"}
-                    >
-                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleWardSort("hosp")}>
-                        Hospital{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {wardSortCol === "hosp" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </button>
-                    </th>
-                    <th
-                      scope="col"
-                      className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "beds" ? pageStyles.sortActive : ""}`}
-                      aria-sort={wardSortCol === "beds" ? (wardSortAsc ? "ascending" : "descending") : "none"}
-                    >
-                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleWardSort("beds")}>
-                        Beds{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {wardSortCol === "beds" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </button>
-                    </th>
-                    <th
-                      scope="col"
-                      className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "ready" ? pageStyles.sortActive : ""}`}
-                      aria-sort={wardSortCol === "ready" ? (wardSortAsc ? "ascending" : "descending") : "none"}
-                    >
-                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleWardSort("ready")}>
-                        Ready{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {wardSortCol === "ready" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </button>
-                    </th>
-                    <th
-                      scope="col"
-                      className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "occ" ? pageStyles.sortActive : ""}`}
-                      aria-sort={wardSortCol === "occ" ? (wardSortAsc ? "ascending" : "descending") : "none"}
-                    >
-                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleWardSort("occ")}>
-                        Occupancy{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {wardSortCol === "occ" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </button>
-                    </th>
-                    <th
-                      scope="col"
-                      className={`${pageStyles.n} ${pageStyles.sortable} ${wardSortCol === "ref" ? pageStyles.sortActive : ""}`}
-                      aria-sort={wardSortCol === "ref" ? (wardSortAsc ? "ascending" : "descending") : "none"}
-                    >
-                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleWardSort("ref")}>
-                        Referred, awaiting answer{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {wardSortCol === "ref" ? (wardSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </button>
-                    </th>
+                    <SortTh id="name" label="Ward" sort={wardSortCol} asc={wardSortAsc} onSort={handleWardSort} />
+                    <SortTh
+                      id="beds"
+                      label="Beds"
+                      sort={wardSortCol}
+                      asc={wardSortAsc}
+                      onSort={handleWardSort}
+                      numeric
+                    />
+                    <SortTh
+                      id="ready"
+                      label="Ready"
+                      sort={wardSortCol}
+                      asc={wardSortAsc}
+                      onSort={handleWardSort}
+                      numeric
+                    />
+                    <SortTh
+                      id="occ"
+                      label="Occupancy"
+                      sort={wardSortCol}
+                      asc={wardSortAsc}
+                      onSort={handleWardSort}
+                      numeric
+                    />
+                    <SortTh
+                      id="ref"
+                      label="Awaiting"
+                      sort={wardSortCol}
+                      asc={wardSortAsc}
+                      onSort={handleWardSort}
+                      numeric
+                    />
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAndSortedWards.map((w) => {
-                    const full = w.ready === 0 && w.occupancyRate === 1;
+                  {visibleWards.map((w) => {
+                    const percent = Math.round(w.occupancyRate * 100);
+                    const over = percent >= BED_ALERT_THRESHOLD_PERCENT;
                     return (
                       <tr key={w.id}>
                         <th scope="row">
                           {w.name}
-                          {full ? (
-                            <span className={pageStyles.chip} style={{ marginLeft: "8px" }}>
+                          <span className={styles.code} title={w.hospital}>
+                            {w.site}
+                          </span>
+                          {w.ready === 0 && w.occupancyRate === 1 ? (
+                            <Badge variant="plain" tone="neutral" size="sm">
                               Full
-                            </span>
+                            </Badge>
                           ) : null}
                         </th>
-                        <td>{w.hospital}</td>
-                        <td className={pageStyles.n}>{w.beds}</td>
-                        <td className={pageStyles.n}>{w.ready}</td>
-                        <td className={pageStyles.n}>{Math.round(w.occupancyRate * 100)}%</td>
-                        <td className={pageStyles.n}>
-                          {w.referred === 0 ? <span className={pageStyles.zero}>none</span> : w.referred}
+                        <td className={styles.num}>{w.beds}</td>
+                        <td className={`${styles.num} ${w.ready === 0 ? styles.zero : ""}`}>{w.ready}</td>
+                        <td className={styles.num}>
+                          <span className={styles.occBar}>
+                            <span className={styles.occTrack} aria-hidden="true">
+                              <span className={styles.occFill} style={{ width: `${Math.min(100, percent)}%` }} />
+                              <span className={styles.occTick} style={{ left: `${BED_ALERT_THRESHOLD_PERCENT}%` }} />
+                            </span>
+                            <span className={styles.occValue}>
+                              {over ? <StatusGlyph tone="warning" size={9} /> : null}
+                              {percent}%
+                            </span>
+                          </span>
                         </td>
+                        <td className={`${styles.num} ${w.referred === 0 ? styles.zero : ""}`}>{w.referred}</td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
+            <CardFoot
+              meta={
+                filteredAndSortedWards.length > PRESSURE_ROWS ? (
+                  <Button size="sm" variant="ghost" onClick={() => setWardShowAll((value) => !value)}>
+                    {wardShowAll ? `Show top ${PRESSURE_ROWS}` : `Show all ${filteredAndSortedWards.length}`}
+                  </Button>
+                ) : undefined
+              }
+            >
+              <Link href="/mockups/ward-flow/statistics/compare#choose-a-unit" className={styles.footLink}>
+                Compare wards
+              </Link>
+            </CardFoot>
+          </StatCard>
 
-            <div className={styles.panelBody}>
-              <Link href="/mockups/ward-flow/statistics/compare#choose-a-unit">Compare wards and departments ↗</Link>
-            </div>
-
-            <div className={styles.panelBody}>
-              <article className={styles.figure} data-testid="ward-statistics-refused-so-far">
-                <h3 className={styles.figureHeading}>Referrals where every ward asked so far has refused</h3>
-
-                <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-count">
-                  <span className={styles.measuredValue} data-testid="ward-statistics-refused-so-far-value">
-                    {refused.count}
-                  </span>{" "}
-                  of <span data-testid="ward-statistics-refused-so-far-open-count">{refused.openMovementCount}</span>{" "}
-                  open {refused.openMovementCount === 1 ? "movement" : "movements"}, as at this render.
-                </p>
-
-                <p className={styles.measuredCount}>
-                  Parallel referral cap{" "}
-                  <span data-testid="ward-statistics-refused-so-far-cap">{configuration.parallelReferralCap}</span>
-                </p>
-
-                <p className={styles.measuredCount} data-testid="ward-statistics-refused-so-far-escalated">
-                  <span className={styles.measuredValue}>{refused.escalatedCount}</span> open{" "}
-                  {refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation instead.
-                </p>
-              </article>
-
-              <article className={styles.figure} data-testid="ward-statistics-blocked-discharges-by-reason">
-                <h3 className={styles.figureHeading}>Blocked discharges by blocker</h3>
-
-                <p
-                  className={styles.measuredCount}
-                  data-testid="ward-statistics-blocked-discharges-by-reason-population"
+          <StatCard
+            icon={Clock}
+            title="ED waits for a bed"
+            data-testid="ward-statistics-emergency-departments"
+            aside={
+              longestEd && longestEd.longest !== null ? (
+                <Badge
+                  tone={
+                    longestEd.longest >= ED_RED_MINUTES
+                      ? "danger"
+                      : longestEd.longest >= ED_AMBER_MINUTES
+                        ? "warning"
+                        : undefined
+                  }
                 >
-                  <span
-                    className={styles.measuredValue}
-                    data-testid="ward-statistics-blocked-discharges-by-reason-total"
-                  >
-                    {blocked.totalCount}
-                  </span>{" "}
-                  blocked {blocked.totalCount === 1 ? "discharge" : "discharges"}, out of{" "}
-                  <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
-                    {blocked.admissionCount}
-                  </span>{" "}
-                  {blocked.admissionCount === 1 ? "admission" : "admissions"} that have not departed.
-                </p>
-
-                <ul className={styles.tallyList} data-testid="ward-statistics-blocked-discharges-by-reason-list">
-                  {blocked.tallies.map((tally) => (
-                    <li
-                      key={tally.reason}
-                      className={styles.tallyRow}
-                      data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}
-                    >
-                      <span className={styles.tallyReason}>{tally.reason}</span>
-                      <span
-                        className={styles.tallyCount}
-                        data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}
-                      >
-                        {tally.count}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                <p className={styles.figureNote} data-testid="ward-statistics-blocked-discharges-by-reason-generated">
-                  All{" "}
-                  <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
-                    {blocked.vocabularySize}
-                  </span>{" "}
-                  blocker categories.
-                </p>
-              </article>
-            </div>
-          </WardPanel>
-
-          {/* Emergency departments */}
-          <WardPanel
-            title="Emergency departments"
-            count={`${filteredAndSortedEds.length} of ${emergencyDepts.length} departments`}
-            testId="ward-statistics-emergency-departments"
+                  {`${durMinutes(Math.round(longestEd.longest))} longest, ${longestEd.site}`}
+                </Badge>
+              ) : undefined
+            }
           >
-            <div className={pageStyles.pb}></div>
-
-            {/* Table Controls Bar with live search and counter */}
-            <div className={pageStyles.tableControlsBar}>
-              <div className={pageStyles.tableSearchBox}>
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <circle cx="7" cy="7" r="4.5" />
-                  <path d="M10.5 10.5L14 14" />
-                </svg>
-                <input
-                  type="search"
-                  className={pageStyles.tableSearchInput}
-                  id="edSearchInput"
-                  placeholder="Filter emergency departments..."
-                  value={edSearchQuery}
-                  onChange={(e) => setEdSearchQuery(e.target.value)}
-                  aria-label="Filter emergency departments"
-                />
-              </div>
-              <span className={pageStyles.tableFilterCount} id="edFilterCount">
-                Showing {filteredAndSortedEds.length} of {emergencyDepts.length} EDs
+            <div className={styles.toolbar}>
+              <TextInput
+                type="search"
+                icon={Search}
+                boxClassName={styles.search}
+                id="edSearchInput"
+                placeholder="Filter departments"
+                value={edSearchQuery}
+                onChange={(e) => setEdSearchQuery(e.target.value)}
+                aria-label="Filter emergency departments"
+              />
+              <span className={styles.toolbarEnd} id="edFilterCount">
+                Thresholds 8h and 24h, synthetic
               </span>
             </div>
-
-            <div
-              className={pageStyles.tableWrap}
-              data-wrap
-              tabIndex={0}
-              role="group"
-              aria-label="Emergency department waits, scrolls sideways when the panel is narrow"
-            >
-              <table className={pageStyles.dataTable} id="edPressureTable">
-                <caption className="srOnly">Emergency department waits for a mental health bed</caption>
+            <div className={styles.tableWrap}>
+              <table className={`${tableClasses.table} ${styles.table}`} id="edPressureTable">
+                <caption className={styles.srOnly}>Emergency department waits for a mental health bed</caption>
                 <thead>
                   <tr>
-                    <th
-                      scope="col"
-                      className={`${pageStyles.sortable} ${edSortCol === "name" ? pageStyles.sortActive : ""}`}
-                      aria-sort={edSortCol === "name" ? (edSortAsc ? "ascending" : "descending") : "none"}
-                    >
-                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleEdSort("name")}>
-                        Site{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {edSortCol === "name" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </button>
-                    </th>
-                    <th
-                      scope="col"
-                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "waiting" ? pageStyles.sortActive : ""}`}
-                      aria-sort={edSortCol === "waiting" ? (edSortAsc ? "ascending" : "descending") : "none"}
-                    >
-                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleEdSort("waiting")}>
-                        Waiting{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {edSortCol === "waiting" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </button>
-                    </th>
-                    <th
-                      scope="col"
-                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "longest" ? pageStyles.sortActive : ""}`}
-                      aria-sort={edSortCol === "longest" ? (edSortAsc ? "ascending" : "descending") : "none"}
-                    >
-                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleEdSort("longest")}>
-                        Longest wait{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {edSortCol === "longest" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </button>
-                    </th>
-                    <th
-                      scope="col"
-                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "median" ? pageStyles.sortActive : ""}`}
-                      aria-sort={edSortCol === "median" ? (edSortAsc ? "ascending" : "descending") : "none"}
-                    >
-                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleEdSort("median")}>
-                        Median wait{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {edSortCol === "median" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </button>
-                    </th>
-                    <th
-                      scope="col"
-                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "over8" ? pageStyles.sortActive : ""}`}
-                      aria-sort={edSortCol === "over8" ? (edSortAsc ? "ascending" : "descending") : "none"}
-                    >
-                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleEdSort("over8")}>
-                        Over 8 hours{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {edSortCol === "over8" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </button>
-                    </th>
-                    <th
-                      scope="col"
-                      className={`${pageStyles.n} ${pageStyles.sortable} ${edSortCol === "over24" ? pageStyles.sortActive : ""}`}
-                      aria-sort={edSortCol === "over24" ? (edSortAsc ? "ascending" : "descending") : "none"}
-                    >
-                      <button type="button" className={pageStyles.sortBtn} onClick={() => handleEdSort("over24")}>
-                        Over 24 hours{" "}
-                        <span className={pageStyles.sortIcon} aria-hidden="true">
-                          {edSortCol === "over24" ? (edSortAsc ? "↑" : "↓") : "↕"}
-                        </span>
-                      </button>
-                    </th>
+                    <SortTh id="name" label="Site" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} />
+                    <SortTh
+                      id="waiting"
+                      label="Waiting"
+                      sort={edSortCol}
+                      asc={edSortAsc}
+                      onSort={handleEdSort}
+                      numeric
+                    />
+                    <SortTh
+                      id="longest"
+                      label="Longest"
+                      sort={edSortCol}
+                      asc={edSortAsc}
+                      onSort={handleEdSort}
+                      numeric
+                    />
+                    <SortTh id="median" label="Median" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
+                    <SortTh id="over8" label="8h+" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
+                    <SortTh id="over24" label="24h+" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
                   </tr>
                 </thead>
                 <tbody>
                   {filteredAndSortedEds.map((d) => (
                     <tr key={d.id}>
                       <th scope="row">
-                        <b className={pageStyles.site}>{d.site}</b>
-                        <span className={pageStyles.deptName}>{d.name}</span>
+                        <b className={styles.codeLead}>{d.site}</b>
+                        {d.name}
                       </th>
-                      <td className={pageStyles.n}>
-                        {d.waiting === 0 ? <span className={pageStyles.zero}>none</span> : d.waiting}
+                      <td className={`${styles.num} ${d.waiting === 0 ? styles.zero : ""}`}>{d.waiting}</td>
+                      <td className={`${styles.num} ${d.longest === null ? styles.zero : ""}`}>
+                        <span className={styles.flagged}>
+                          {d.longest !== null && d.longest >= ED_RED_MINUTES ? (
+                            <StatusGlyph tone="danger" size={9} />
+                          ) : d.longest !== null && d.longest >= ED_AMBER_MINUTES ? (
+                            <StatusGlyph tone="warning" size={9} />
+                          ) : null}
+                          {waitText(d.longest)}
+                        </span>
                       </td>
-                      <td className={pageStyles.n}>{hoursText(d.longest)}</td>
-                      <td className={pageStyles.n}>{hoursText(d.median)}</td>
-                      <td className={pageStyles.n}>
-                        {d.over8 === 0 ? <span className={pageStyles.zero}>none</span> : d.over8}
-                      </td>
-                      <td className={pageStyles.n}>
-                        {d.over24 === 0 ? <span className={pageStyles.zero}>none</span> : d.over24}
-                      </td>
+                      <td className={`${styles.num} ${d.median === null ? styles.zero : ""}`}>{waitText(d.median)}</td>
+                      <td className={`${styles.num} ${d.over8 === 0 ? styles.zero : ""}`}>{d.over8}</td>
+                      <td className={`${styles.num} ${d.over24 === 0 ? styles.zero : ""}`}>{d.over24}</td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="total">
+                  <tr>
                     <th scope="row">All {emergencyDepts.length} departments</th>
-                    <td className={pageStyles.n}>{totalEdWaiting}</td>
-                    <td className={pageStyles.n}>{hoursText(networkLongestWait)}</td>
-                    <td className={pageStyles.n}>{hoursText(networkMedianWait)}</td>
-                    <td className={pageStyles.n}>{totalEdOver8}</td>
-                    <td className={pageStyles.n}>{totalEdOver24}</td>
+                    <td className={styles.num}>{totalEdWaiting}</td>
+                    <td className={styles.num}>{waitText(longestEd?.longest ?? null)}</td>
+                    <td className={styles.num}>{waitText(networkMedianWait)}</td>
+                    <td className={styles.num}>{totalEdOver8}</td>
+                    <td className={styles.num}>{totalEdOver24}</td>
                   </tr>
                 </tfoot>
               </table>
             </div>
-
-            <div className={styles.panelBody}>
-              <article className={styles.figure} data-testid="ward-statistics-declines-by-reason">
-                <h3 className={styles.figureHeading}>Declines by reason</h3>
-
-                {!declinesReadout.ok ? (
-                  <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-unavailable">
-                    {declinesReadout.statement}
-                  </p>
-                ) : (
-                  <>
-                    <small>
-                      <span data-testid="ward-statistics-declines-by-reason-vocabulary-size">
-                        {declinesReadout.value.vocabularySize}
-                      </span>{" "}
-                      reason categories
-                    </small>
-                    <p className={styles.measuredCount} data-testid="ward-statistics-declines-by-reason-population">
-                      <span className={styles.measuredValue} data-testid="ward-statistics-declines-by-reason-total">
-                        {declinesReadout.value.totalCount}
-                      </span>{" "}
-                      {declinesReadout.value.totalCount === 1 ? "decline" : "declines"} on record, from{" "}
-                      <span data-testid="ward-statistics-declines-by-reason-movements-with">
-                        {declinesReadout.value.movementsWithDeclinesCount}
-                      </span>{" "}
-                      of the{" "}
-                      <span data-testid="ward-statistics-declines-by-reason-movements">
-                        {declinesReadout.value.movementCount}
-                      </span>{" "}
-                      {declinesReadout.value.movementCount === 1 ? "movement" : "movements"} this page examined.
-                    </p>
-
-                    <ul className={styles.tallyList} data-testid="ward-statistics-declines-by-reason-list">
-                      {declinesReadout.value.tallies.map((tally) => (
-                        <li
-                          key={tally.reason}
-                          className={styles.tallyRow}
-                          data-testid={`ward-statistics-decline-${tally.reason}`}
-                        >
-                          <span className={styles.tallyReason}>{tally.reason.replace(/_/g, " ")}</span>
-                          <span
-                            className={styles.tallyCount}
-                            data-testid={`ward-statistics-decline-${tally.reason}-count`}
-                          >
-                            {tally.count}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </article>
-            </div>
-          </WardPanel>
+          </StatCard>
         </div>
 
-        {/* ══════════ TWO-COLUMN GRID 2: COMMUNITY & REFERRALS ══════════ */}
-        <div className={pageStyles.cols2}>
-          {/* Community teams */}
-          <div id={STATISTICS_COMMUNITY_CHOOSER_ID} style={{ minWidth: 0 }}>
-            <WardPanel
-              title="Community teams"
-              count={`${filteredAndSortedTeams.length} of ${communityTeams.length} teams`}
-              testId="ward-statistics-community-chooser"
-            >
-              <div className={pageStyles.tableControlsBar}>
-                <div className={pageStyles.tableSearchBox}>
-                  <input
-                    type="search"
-                    className={pageStyles.tableSearchInput}
-                    placeholder="Find a community team"
-                    aria-label="Filter community teams"
-                    value={teamSearchQuery}
-                    onChange={(event) => {
-                      setTeamSearchQuery(event.target.value);
-                    }}
+        <div className={styles.grid3}>
+          <StatCard
+            icon={Lock}
+            title="Blocked discharges"
+            data-testid="ward-statistics-blocked-discharges-by-reason"
+            aside={
+              <span className={styles.muted} data-testid="ward-statistics-blocked-discharges-by-reason-population">
+                <span data-testid="ward-statistics-blocked-discharges-by-reason-total">{blocked.totalCount}</span> of{" "}
+                <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
+                  {blocked.admissionCount}
+                </span>{" "}
+                not departed
+              </span>
+            }
+          >
+            <CardBody data-testid="ward-statistics-blocked-discharges-by-reason-list">
+              <BarList
+                label="Blocked discharges by blocker"
+                axis
+                mean={blockedMean}
+                rows={blocked.tallies.map((tally) => ({
+                  id: tally.reason,
+                  label: <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}>{tally.reason}</span>,
+                  labelText: tally.reason,
+                  value: tally.count,
+                  display: (
+                    <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}>
+                      {tally.count === 0 ? "none" : tally.count}
+                    </span>
+                  ),
+                }))}
+              />
+              <span className={styles.srOnly} data-testid="ward-statistics-blocked-discharges-by-reason-generated">
+                All{" "}
+                <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
+                  {blocked.vocabularySize}
+                </span>{" "}
+                blocker categories.
+              </span>
+            </CardBody>
+          </StatCard>
+
+          <StatCard
+            icon={X}
+            title="Declines by reason"
+            data-testid="ward-statistics-declines-by-reason"
+            aside={
+              declinesReadout.ok ? (
+                <span className={styles.muted} data-testid="ward-statistics-declines-by-reason-population">
+                  <span data-testid="ward-statistics-declines-by-reason-total">{declinesReadout.value.totalCount}</span>{" "}
+                  {declinesReadout.value.totalCount === 1 ? "decline" : "declines"},{" "}
+                  <span data-testid="ward-statistics-declines-by-reason-movements-with">
+                    {declinesReadout.value.movementsWithDeclinesCount}
+                  </span>{" "}
+                  of{" "}
+                  <span data-testid="ward-statistics-declines-by-reason-movements">
+                    {declinesReadout.value.movementCount}
+                  </span>{" "}
+                  {declinesReadout.value.movementCount === 1 ? "movement" : "movements"}
+                </span>
+              ) : undefined
+            }
+          >
+            <CardBody>
+              {!declinesReadout.ok ? (
+                <p className={styles.notice} data-testid="ward-statistics-declines-by-reason-unavailable">
+                  {declinesReadout.statement}
+                </p>
+              ) : (
+                <div data-testid="ward-statistics-declines-by-reason-list">
+                  <BarList
+                    label="Declines by reason"
+                    axis
+                    mean={
+                      declinesReadout.value.vocabularySize > 0
+                        ? declinesReadout.value.totalCount / declinesReadout.value.vocabularySize
+                        : 0
+                    }
+                    rows={declinesReadout.value.tallies.map((tally) => ({
+                      id: tally.reason,
+                      label: (
+                        <span data-testid={`ward-statistics-decline-${tally.reason}`}>
+                          {sentenceCase(tally.reason)}
+                        </span>
+                      ),
+                      labelText: sentenceCase(tally.reason),
+                      value: tally.count,
+                      display: (
+                        <span data-testid={`ward-statistics-decline-${tally.reason}-count`}>
+                          {tally.count === 0 ? "none" : tally.count}
+                        </span>
+                      ),
+                    }))}
                   />
+                  <span className={styles.srOnly}>
+                    <span data-testid="ward-statistics-declines-by-reason-vocabulary-size">
+                      {declinesReadout.value.vocabularySize}
+                    </span>{" "}
+                    reason categories
+                  </span>
                 </div>
-              </div>
-              <div className={styles.panelBody}>
-                <section className={styles.panelBody}>
-                  <h3 className={styles.figureHeading}>Choose a community team</h3>
-                  <ul className={styles.indexList} data-testid="ward-statistics-community-list">
-                    {filteredAndSortedTeams.map((team) => (
-                      <li key={team.id} className={styles.indexItem}>
-                        <Link
-                          href={communityStatisticsHref(team.id)}
-                          className={styles.indexLink}
-                          data-testid={`ward-statistics-community-link-${team.id}`}
-                        >
-                          <span className={styles.indexLabel}>{team.name}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-                {filteredAndSortedTeams.length === 0 && <p className={pageStyles.scopeNote}>No matching teams.</p>}
-              </div>
-            </WardPanel>
-          </div>
+              )}
+            </CardBody>
+          </StatCard>
 
-          {/* Right column: Referrals & Health Services */}
-          <div className={pageStyles.sideCol}>
-            {/* Referrals for a bed */}
-            <WardPanel title="Referrals for a bed" count="Today, all wards" testId="ward-statistics-referrals-for-bed">
-              <div className={pageStyles.pb}></div>
-
-              <dl className={`${pageStyles.band} ${pageStyles.referralBand}`} id="refBand">
-                <div className={pageStyles.kpi}>
-                  <dt>Raised today</dt>
-                  <dd>
-                    {refRaised}
-                    <small>asking a ward for a bed</small>
+          <StatCard
+            icon={Truck}
+            title="Pull to arrival"
+            data-testid="ward-statistics-pull-to-arrival"
+            aside={
+              <span className={styles.muted}>
+                <span data-testid="ward-statistics-arrival-measured-count">{arrivals.measuredCount}</span> admissions
+              </span>
+            }
+          >
+            <CardBody className={styles.bodyStack}>
+              <dl className={styles.figures} aria-label="Admission timing">
+                <div className={styles.figure}>
+                  <dd className={styles.figureValue} data-testid="ward-statistics-arrival-average">
+                    {arrivals.averageMinutes === null ? "Not recorded" : splitDuration(arrivals.averageMinutes)}
+                  </dd>
+                  <dt className={styles.figureLabel}>Average</dt>
+                </div>
+                <div className={styles.figure}>
+                  <dd className={styles.figureValue} data-testid="ward-statistics-arrival-shortest">
+                    {arrivals.shortestMinutes === null ? "Not recorded" : splitDuration(arrivals.shortestMinutes)}
+                  </dd>
+                  <dt className={styles.figureLabel}>Shortest</dt>
+                </div>
+                <div className={styles.figure}>
+                  <dd className={styles.figureValue} data-testid="ward-statistics-arrival-longest">
+                    {arrivals.longestMinutes === null ? "Not recorded" : splitDuration(arrivals.longestMinutes)}
+                  </dd>
+                  <dt className={styles.figureLabel}>Longest</dt>
+                </div>
+              </dl>
+              <ColumnChart label="Pull to arrival, admissions by band" height={110} columns={arrivalBands} />
+              <dl className={styles.tiles}>
+                <div className={styles.tile}>
+                  <dt className={styles.tileLabel}>Awaiting</dt>
+                  <dd className={styles.tileValue} data-testid="ward-statistics-arrival-awaiting-count">
+                    {arrivals.awaitingArrivalCount}
                   </dd>
                 </div>
-                <div className={pageStyles.kpi}>
-                  <dt>Accepted today</dt>
-                  <dd>
-                    {refAccepted}
-                    <small>accepted outcome</small>
+                <div className={styles.tile}>
+                  <dt className={styles.tileLabel}>Ended</dt>
+                  <dd className={styles.tileValue} data-testid="ward-statistics-arrival-ended-count">
+                    {arrivals.endedCount}
                   </dd>
                 </div>
-                <div className={pageStyles.kpi}>
-                  <dt>Declined today</dt>
-                  <dd>
-                    {refDeclined}
-                    <small>each with a recorded reason</small>
+                <div className={styles.tile}>
+                  <dt className={styles.tileLabel}>Excluded</dt>
+                  <dd className={styles.tileValue} data-testid="ward-statistics-arrival-incoherent">
+                    {arrivals.incoherentCount}
                   </dd>
                 </div>
-                <div className={pageStyles.kpi} data-tone="warn">
-                  <dt>Still open</dt>
-                  <dd>
-                    {refOpen}
-                    <small>ward answer pending</small>
+                <div className={styles.tile}>
+                  <dt className={styles.tileLabel}>Pending</dt>
+                  <dd className={styles.tileValue} data-testid="ward-statistics-preparing-count">
+                    {preparingCount}
                   </dd>
                 </div>
               </dl>
-
-              <p className={pageStyles.panelFoot}>
-                <Link href="/mockups/ward-flow/referrals">Open referrals ↗</Link>
-              </p>
-
-              <div className={styles.panelBody}></div>
-            </WardPanel>
-
-            {/* Choose a health service */}
-            <div id={STATISTICS_SERVICE_CHOOSER_ID}>
-              <WardPanel title="Choose a health service" testId="ward-statistics-service-chooser">
-                <div className={pageStyles.pb}></div>
-                <div className={styles.panelBody}>
-                  <ul className={pageStyles.serviceGrid} data-testid="ward-statistics-service-list">
-                    {HEALTH_SERVICES.map((svc) => (
-                      <li key={svc} className={pageStyles.serviceCardItem}>
-                        <Link
-                          href={serviceStatisticsHref(svc)}
-                          className={pageStyles.serviceCardLink}
-                          data-testid={`ward-statistics-service-link-${svc}`}
-                        >
-                          <div className={pageStyles.serviceCardContent}>
-                            <span className={pageStyles.serviceCardTitle}>{svc}</span>
-                            <span className={pageStyles.serviceCardSubtitle}>View service measures →</span>
-                          </div>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </WardPanel>
-            </div>
-          </div>
+            </CardBody>
+          </StatCard>
         </div>
 
-        <WardPrototypeFooter testId="ward-statistics-footer" note="Whole network · Synthetic data" />
+        <WardPrototypeFooter testId="ward-statistics-footer" note="Synthetic prototype. Every figure is invented." />
       </main>
     </div>
   );
 }
+
+// Kept for the community chooser deep link and the per-team statistics route.
+export { communityStatisticsHref };

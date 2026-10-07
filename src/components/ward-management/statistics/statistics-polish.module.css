@@ -1,149 +1,20 @@
-/* Shared finishing layer: preserve every screen's grid, with compact glass surfaces. */
-
+/*
+ * Shared layer under every statistics route. The v6 primitives style the pages themselves; this
+ * only keeps anchored sections clear of the header and lines figures up.
+ */
 .root {
   display: contents;
-  /* Default until StatisticsNav measures; keeps sticky section jumps off the chrome. */
-  --statistics-anchor-offset: 8rem;
+  --statistics-anchor-offset: 5rem;
 }
 
-.root :global([data-ward-primitive="panel"]) {
-  border-radius: 0.875rem;
-  border-color: color-mix(in srgb, var(--line) 80%, transparent);
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--surface) 95%, transparent),
-    0 8px 28px color-mix(in srgb, var(--ink) 5%, transparent);
-}
-.root :global([data-ward-primitive="panel-header"]) {
-  padding: 0.875rem 1rem;
-  background: color-mix(in srgb, var(--surface-2) 50%, transparent);
-}
 .root :global(section[id]),
 .root :global(div[id]),
+.root :global(span[id]),
 .root :global(dl[id]) {
-  scroll-margin-top: var(--statistics-anchor-offset, 8rem);
-}
-.root :global(dl[aria-label]) {
-  border-radius: 0.625rem;
-}
-.root :global(dl[aria-label] > div) {
-  padding: 0.875rem 1rem;
-}
-.root :global(thead th) {
-  font-weight: 600;
-  background: var(--surface-2);
-}
-.root :global(tbody td),
-.root :global(tbody th) {
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
+  scroll-margin-top: var(--statistics-anchor-offset, 5rem);
 }
 
-/* Numbers line up in every table and figure band. */
 .root :global(table),
 .root :global(dl) {
   font-variant-numeric: tabular-nums;
-}
-
-.root :global(tbody tr) {
-  transition: background-color 120ms ease;
-}
-
-.root :global(tbody tr:hover) {
-  background: var(--surface-2);
-}
-
-/* Visible keyboard focus everywhere. */
-.root :global(:focus-visible) {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* 48px tap targets without moving anything: controls grow, small links get an invisible hit area. */
-.root :global(select),
-.root :global(input[type="search"]),
-.root :global(input[type="text"]) {
-  min-height: var(--spacing-tap, 3rem);
-}
-
-.root :global(th button),
-.root :global(td a),
-.root :global(p a),
-.root :global(li a),
-.root :global(dd a) {
-  position: relative;
-}
-
-.root :global(th button)::after,
-.root :global(td a)::after,
-.root :global(p a)::after,
-.root :global(li a)::after,
-.root :global(dd a)::after {
-  position: absolute;
-  inset: -1rem -0.25rem;
-  content: "";
-}
-
-.root :global(nav a) {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--spacing-tap, 3rem);
-}
-
-/* Figure bands keep every figure on one row instead of orphaning the last one. */
-.root :global(dl[aria-label="Current bed figures"]) {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(8.5rem, 100%), 1fr));
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .root :global(tbody tr) {
-    transition: none;
-  }
-}
-
-/* Keep the identifying column and headings in view, like the capacity tables. */
-.root :global(div:has(> table)) {
-  position: relative;
-  max-height: min(32rem, 65dvh);
-  overflow: auto;
-  isolation: isolate;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
-  border-radius: 0.625rem;
-}
-.root :global(table thead th) {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  background: var(--surface-2);
-  box-shadow: 0 1px 0 var(--line);
-}
-.root :global(table tr > :first-child:not([colspan])) {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  background: var(--surface);
-  box-shadow:
-    1px 0 0 var(--line),
-    6px 0 14px color-mix(in srgb, var(--ink) 4%, transparent);
-}
-.root :global(table thead tr > th:first-child) {
-  top: 0;
-  z-index: 4;
-  background: var(--surface-2);
-}
-.root :global(table tbody tr:hover > :first-child) {
-  background: var(--surface-2);
-}
-@media print {
-  .root :global(div:has(> table)) {
-    max-height: none;
-    overflow: visible;
-  }
-  .root :global(table th),
-  .root :global(table td) {
-    position: static !important;
-    box-shadow: none !important;
-  }
 }

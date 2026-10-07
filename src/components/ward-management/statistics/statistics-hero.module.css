@@ -1,0 +1,27 @@
+/* Statistics hero and card helpers. The Hero and Card primitives do the styling; these only place. */
+.statsHero {
+  flex: 0 0 auto;
+}
+
+.titleAction {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--wf-s-3);
+}
+
+.navSlot {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.divider {
+  align-self: stretch;
+  width: 1px;
+  margin: var(--wf-s-1) var(--wf-s-1);
+  background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+}
+
+.card {
+  min-width: 0;
+}

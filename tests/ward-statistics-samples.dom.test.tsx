@@ -32,7 +32,7 @@ afterEach(() => {
 describe("optional sample statistics", () => {
   it("defaults to off, hides unavailable history, and preserves recorded figures when switched on and off", () => {
     render(<Workspace />);
-    const toggle = screen.getByRole("switch", { name: "Sample statistics" });
+    const toggle = screen.getByRole("switch", { name: "Samples" });
     expect(toggle).toHaveAttribute("aria-checked", "false");
     expect(screen.queryByTestId("statistics-sample-figures")).toBeNull();
     expect(screen.queryByTestId("ward-statistics-ward-occupancy-trajectory")).toBeNull();
@@ -60,11 +60,11 @@ describe("optional sample statistics", () => {
 
   it("persists across page mounts and switches to the appropriate metrics for the selected mode", () => {
     const view = render(<Workspace />);
-    fireEvent.click(screen.getByRole("switch", { name: "Sample statistics" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Samples" }));
     view.unmount();
     route.pathname = "/mockups/ward-flow/statistics/ed/rph-ed";
     render(<Workspace />);
-    expect(screen.getByRole("switch", { name: "Sample statistics" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: "Samples" })).toHaveAttribute("aria-checked", "true");
     const samples = screen.getByTestId("statistics-sample-figures");
     expect(within(samples).getByRole("heading", { name: /Median wait/ })).toBeTruthy();
     expect(samples).toHaveTextContent("Royal Perth");

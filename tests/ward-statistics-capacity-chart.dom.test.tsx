@@ -67,10 +67,17 @@ describe("current-capacity explorer", () => {
   it("filters both the plotted population and summary, without keeping hidden detail", () => {
     chart();
     fireEvent.click(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ }));
-    fireEvent.change(screen.getByLabelText("Health service filter"), { target: { value: "South Metro" } });
+    // v6: the service filter is a segmented control ("South" for South Metro), and the summary
+    // reads "ready of N beds" with the foot saying how many rows are shown.
+    fireEvent.click(
+      within(screen.getByRole("radiogroup", { name: "Health service filter" })).getByRole("radio", { name: "South" }),
+    );
     expect(screen.queryByRole("button", { name: /Royal Perth Hospital: 4 ready/ })).not.toBeInTheDocument();
     expect(screen.queryByTestId("capacity-details")).not.toBeInTheDocument();
-    expect(screen.getByText("5 beds · 1 hospital matched")).toBeInTheDocument();
+    expect(screen.getByText(/ready of 5 (synthetic )?beds/)).toBeInTheDocument();
+    expect(screen.getByTestId("ward-statistics-capacity-showing")).toHaveTextContent(
+      "Showing 1 of 2 hospitals matched",
+    );
     expect(
       screen.getByRole("button", { name: /Fiona Stanley Hospital: 0 ready, 0 pulled, 0 closed, 5 occupied/ }),
     ).toBeInTheDocument();
@@ -78,24 +85,28 @@ describe("current-capacity explorer", () => {
 
   it("switches to wards and searches within a hospital rather than including unmatched wards", () => {
     chart();
-    fireEvent.click(screen.getByRole("button", { name: "Wards" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Wards" }));
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Beta" } });
     expect(
       screen.getByRole("button", { name: /Beta: 1 ready, 0 pulled, 1 closed, 8 occupied of 10 beds/ }),
     ).toBeInTheDocument();
-    expect(screen.getByText("10 beds · 1 ward matched")).toBeInTheDocument();
+    expect(screen.getByText(/ready of 10 (synthetic )?beds/)).toBeInTheDocument();
+    expect(screen.getByTestId("ward-statistics-capacity-showing")).toHaveTextContent("Showing 1 of 3 wards matched");
     expect(screen.queryByRole("button", { name: /Alpha: 3 ready/ })).not.toBeInTheDocument();
   });
 
   it("normalises each bar to its own denominator in percentage mode", () => {
     chart();
+    // v6 opens on the percentage scale; switch to beds first to see the shared denominator.
+    fireEvent.click(screen.getByRole("radio", { name: "Beds" }));
     const smallBar = screen
       .getByRole("button", { name: /Fiona Stanley Hospital: 0 ready/ })
       .querySelector('[style*="width"]');
     expect(smallBar).toHaveStyle({ width: "25%" });
-    fireEvent.click(screen.getByRole("button", { name: "%" }));
+    fireEvent.click(screen.getByRole("radio", { name: "%" }));
     expect(smallBar).toHaveStyle({ width: "100%" });
-    expect(screen.getByText("100% occupied")).toBeInTheDocument();
+    // Fiona Stanley is 100% occupied, the only row over the 85% alert line.
+    expect(screen.getByTestId("ward-statistics-capacity-showing")).toHaveTextContent("1 over the alert line");
   });
 
   it("can aggregate hospitals from a service ward view and reset to that view", () => {
@@ -109,11 +120,14 @@ describe("current-capacity explorer", () => {
     );
     expect(screen.queryByRole("button", { name: "Reset view" })).toBeNull();
     expect(screen.getByRole("button", { name: /Alpha: 3 ready/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Hospitals" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Hospitals" }));
     expect(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Reset view" }));
-    expect(screen.getByRole("button", { name: "Wards" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("20 beds · 2 wards in this service")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Wards" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByText(/ready of 20 (synthetic )?beds/)).toBeInTheDocument();
+    expect(screen.getByTestId("ward-statistics-capacity-showing")).toHaveTextContent(
+      "Showing 2 of 2 wards in this service",
+    );
   });
 
   it("moves keyboard focus between capacity rows and returns it when details close", () => {
@@ -133,13 +147,14 @@ describe("current-capacity explorer", () => {
 
   it("recovers from an empty result and resets every view control", () => {
     chart();
-    fireEvent.click(screen.getByRole("button", { name: "%" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Beds" }));
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "missing hospital" } });
     expect(screen.getByText("No matching wards")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Export chart CSV/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Chart CSV/ })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(screen.getByRole("searchbox")).toHaveValue("");
-    expect(screen.getByRole("button", { name: "Beds" })).toHaveAttribute("aria-pressed", "true");
+    // v6: every view control returns to its default, which is now the percentage scale.
+    expect(screen.getByRole("radio", { name: "%" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ })).toBeInTheDocument();
   });
 });
@@ -173,8 +188,9 @@ it("derives the network ED median from individual waits, including an even popul
     cell.textContent?.trim().startsWith("Median"),
   );
   expect(medianColumn).toBeGreaterThan(-1);
-  expect(row.cells[medianColumn].textContent).toBe("6h");
-  expect(table.tFoot!.rows[0].cells[medianColumn].textContent).toBe("6h");
+  // v6 duration format (wf `dur`): hours always carry their minutes.
+  expect(row.cells[medianColumn].textContent).toBe("6h 00m");
+  expect(table.tFoot!.rows[0].cells[medianColumn].textContent).toBe("6h 00m");
 });
 
 it("counts today's bed referrals once across parallel bed criteria, with recorded outcomes", () => {
@@ -226,7 +242,7 @@ it("exports a formula-like ward name neutralised", async () => {
   try {
     const risky = { ...unit("Alpha", "RPH", 10, 4, 3), name: "=cmd|x" };
     const { container } = render(<StatisticsCapacityChart units={[risky]} bedReleases={[]} initialGroup="ward" />);
-    fireEvent.click(within(container).getByRole("button", { name: /export chart csv/i }));
+    fireEvent.click(within(container).getByRole("button", { name: /chart csv/i }));
     const csv = await new Promise<string>((resolve) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result));

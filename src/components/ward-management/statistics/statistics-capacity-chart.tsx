@@ -2,6 +2,22 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { BedDouble, Check, ChevronRight, Download, ListFilter, Minus, Plus, Search, X } from "lucide-react";
+
+import {
+  Button,
+  CardBody,
+  CardFoot,
+  Icon,
+  Legend,
+  Menu,
+  Segmented,
+  SrOnly,
+  StatusGlyph,
+  TextInput,
+  type MenuItem,
+} from "@/components/wf";
+import { BED_ALERT_THRESHOLD_PERCENT } from "../shell/ward-service-bed-alerts";
 import { unitCapacity } from "../ward-derivations";
 import { bedsPendingPreparation } from "../ward-bed-availability";
 import { BED_STATE_LABELS, bedStates } from "../ward-bed-states";
@@ -10,6 +26,7 @@ import { siteByCode } from "../ward-sites";
 import type { BedRelease, LeaveBed, Unit } from "../ward-model";
 import { statisticsChartScale } from "./statistics-chart-scale";
 import { csvCell } from "./statistics-csv";
+import { StatCard } from "./statistics-hero";
 import styles from "./statistics-capacity-chart.module.css";
 
 type CapacityRow = {
@@ -26,14 +43,24 @@ type CapacityRow = {
   units: Unit[];
 };
 
-/** The pulled bar segment reuses the occupied fill (a bed spoken for), told apart by its lighter weight. */
-const PULLED_SEGMENT_OPACITY = 0.5;
+type SortKey = "ready" | "occupancy" | "beds" | "name";
+
+const SORT_LABELS: Record<SortKey, string> = {
+  ready: "Most ready",
+  occupancy: "Highest occupancy",
+  beds: "Largest capacity",
+  name: "Name A to Z",
+};
+
+/** "North Metro" reads "North" on the filter track; the full name stays in the accessible name. */
+const shortService = (name: string) => name.replace(/ Metro$/, "");
 
 /**
  * One current-state chart; React owns filters, aggregation, selection and bar geometry. Bed figures
  * are the ruled boxes from `bedStates` — Ready · Pulled · Closed · Occupied add up to the beds.
  * Without `admissions` no pull can be told apart, so Pulled is 0 and a pulled patient stays inside
- * Occupied.
+ * Occupied. The dashed alert line marks occupancy at the bed alert threshold; a row at or over it
+ * carries an amber circle beside its ready count.
  */
 export function StatisticsCapacityChart({
   units,
@@ -42,6 +69,7 @@ export function StatisticsCapacityChart({
   leaveBeds = [],
   initialGroup = "hospital",
   scopeLabel = "across the network",
+  title = "Where beds are available",
 }: {
   units: Unit[];
   bedReleases: BedRelease[];
@@ -49,49 +77,65 @@ export function StatisticsCapacityChart({
   leaveBeds?: readonly LeaveBed[];
   initialGroup?: "hospital" | "ward";
   scopeLabel?: string;
+  title?: string;
 }) {
   const rowButtons = useRef(new Map<string, HTMLButtonElement>());
   const [groupBy, setGroupBy] = useState<"hospital" | "ward">(initialGroup);
-  const [scale, setScale] = useState<"beds" | "share">("beds");
+  const [scale, setScale] = useState<"beds" | "share">("share");
   const [service, setService] = useState("all");
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState("ready");
+  const [sort, setSort] = useState<SortKey>("ready");
+  const [alertLine, setAlertLine] = useState(BED_ALERT_THRESHOLD_PERCENT);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const services = [...new Set(units.map((unit) => siteByCode(unit.siteCode)?.service).filter(Boolean))].sort();
-  const rows = useMemo(() => {
-    const grouped = new Map<string, CapacityRow>();
-    for (const unit of units) {
+  const services = [
+    ...new Set(
+      units
+        .map((unit) => siteByCode(unit.siteCode)?.service)
+        .filter((name): name is NonNullable<typeof name> => !!name),
+    ),
+  ].sort();
+
+  const { rows, allCount } = useMemo(() => {
+    const group = (list: Unit[]) => {
+      const grouped = new Map<string, CapacityRow>();
+      for (const unit of list) {
+        const site = siteByCode(unit.siteCode);
+        const id = groupBy === "hospital" ? unit.siteCode : unit.id;
+        const row = grouped.get(id) ?? {
+          id,
+          name: groupBy === "hospital" ? (site?.name ?? unit.siteCode) : unit.name,
+          context: groupBy === "hospital" ? (site?.service ?? "Service not recorded") : (site?.name ?? unit.siteCode),
+          beds: 0,
+          occupied: 0,
+          ready: 0,
+          pulled: 0,
+          closed: 0,
+          onLeave: 0,
+          pending: 0,
+          units: [],
+        };
+        const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+        row.beds += unit.beds;
+        row.occupied += states.occupied;
+        row.ready += states.ready;
+        row.pulled += states.pulled;
+        row.closed += states.closed;
+        row.onLeave += states.onLeave;
+        row.pending += bedsPendingPreparation(unit.id, bedReleases);
+        row.units.push(unit);
+        grouped.set(id, row);
+      }
+      return [...grouped.values()];
+    };
+    const needle = query.trim().toLowerCase();
+    const matched = units.filter((unit) => {
       const site = siteByCode(unit.siteCode);
-      if (service !== "all" && site?.service !== service) continue;
+      if (service !== "all" && site?.service !== service) return false;
       const search = `${unit.name} ${site?.name ?? unit.siteCode} ${unit.siteCode}`.toLowerCase();
-      if (query.trim() && !search.includes(query.trim().toLowerCase())) continue;
-      const id = groupBy === "hospital" ? unit.siteCode : unit.id;
-      const row = grouped.get(id) ?? {
-        id,
-        name: groupBy === "hospital" ? (site?.name ?? unit.siteCode) : unit.name,
-        context: groupBy === "hospital" ? (site?.service ?? "Service not recorded") : (site?.name ?? unit.siteCode),
-        beds: 0,
-        occupied: 0,
-        ready: 0,
-        pulled: 0,
-        closed: 0,
-        onLeave: 0,
-        pending: 0,
-        units: [],
-      };
-      const states = bedStates(unit, admissions, bedReleases, leaveBeds);
-      row.beds += unit.beds;
-      row.occupied += states.occupied;
-      row.ready += states.ready;
-      row.pulled += states.pulled;
-      row.closed += states.closed;
-      row.onLeave += states.onLeave;
-      row.pending += bedsPendingPreparation(unit.id, bedReleases);
-      row.units.push(unit);
-      grouped.set(id, row);
-    }
-    return [...grouped.values()].sort((a, b) => {
+      return !needle || search.includes(needle);
+    });
+    const sorted = group(matched).sort((a, b) => {
       const difference =
         sort === "ready"
           ? b.ready - a.ready
@@ -102,6 +146,7 @@ export function StatisticsCapacityChart({
               : 0;
       return difference || a.name.localeCompare(b.name);
     });
+    return { rows: sorted, allCount: group(units).length };
   }, [units, bedReleases, admissions, leaveBeds, service, query, groupBy, sort]);
 
   // Resolve from current rows: hidden or removed selections never leave a stale inspector.
@@ -110,18 +155,19 @@ export function StatisticsCapacityChart({
     (sum, row) => ({
       beds: sum.beds + row.beds,
       ready: sum.ready + row.ready,
-      occupied: sum.occupied + row.occupied,
-      pulled: sum.pulled + row.pulled,
-      closed: sum.closed + row.closed,
       pending: sum.pending + row.pending,
     }),
-    { beds: 0, ready: 0, occupied: 0, pulled: 0, closed: 0, pending: 0 },
+    { beds: 0, ready: 0, pending: 0 },
   );
   const { maximum, ticks } =
     scale === "share"
       ? { maximum: 100, ticks: [0, 25, 50, 75, 100] }
       : statisticsChartScale(Math.max(0, ...rows.map((row) => row.beds)));
+  const occupancyOf = (row: CapacityRow) => (row.beds ? ((row.occupied + row.pulled) / row.beds) * 100 : 0);
+  const overLine = rows.filter((row) => occupancyOf(row) >= alertLine).length;
   const hasFilters = service !== "all" || query !== "";
+  const changed = hasFilters || groupBy !== initialGroup || scale !== "share" || sort !== "ready";
+  const noun = groupBy === "hospital" ? (allCount === 1 ? "hospital" : "hospitals") : allCount === 1 ? "ward" : "wards";
 
   function closeDetails() {
     if (selected) rowButtons.current.get(selected.id)?.focus();
@@ -132,7 +178,7 @@ export function StatisticsCapacityChart({
     setService("all");
     setQuery("");
     setGroupBy(initialGroup);
-    setScale("beds");
+    setScale("share");
     setSort("ready");
     setSelectedId(null);
   }
@@ -161,10 +207,16 @@ export function StatisticsCapacityChart({
     URL.revokeObjectURL(url);
   }
 
+  const sortItems: MenuItem[] = (Object.keys(SORT_LABELS) as SortKey[]).map((key) => ({
+    id: key,
+    label: SORT_LABELS[key],
+    icon: sort === key ? Check : undefined,
+    onSelect: () => setSort(key),
+  }));
+
   return (
-    <section
+    <StatCard
       className={styles.chart}
-      aria-label="Bed capacity explorer"
       data-testid="ward-statistics-capacity-chart"
       onKeyDown={(event) => {
         if (event.key === "Escape" && selected) {
@@ -172,132 +224,121 @@ export function StatisticsCapacityChart({
           closeDetails();
         }
       }}
+      icon={BedDouble}
+      title={title}
+      action={
+        <span className={styles.headControls}>
+          <Segmented
+            label="Group capacity by"
+            value={groupBy}
+            onChange={(id) => {
+              setGroupBy(id);
+              setSelectedId(null);
+            }}
+            items={[
+              { id: "hospital", label: "Hospitals" },
+              { id: "ward", label: "Wards" },
+            ]}
+          />
+          <Segmented
+            label="Chart scale"
+            value={scale}
+            onChange={setScale}
+            items={[
+              { id: "share", label: "%" },
+              { id: "beds", label: "Beds" },
+            ]}
+          />
+        </span>
+      }
     >
       <div className={styles.toolbar}>
-        <div className={styles.switch} role="group" aria-label="Group capacity by">
-          <button
-            type="button"
-            aria-pressed={groupBy === "hospital"}
-            onClick={() => {
-              setGroupBy("hospital");
+        <TextInput
+          type="search"
+          icon={Search}
+          boxClassName={styles.search}
+          aria-label="Search capacity"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Find a hospital or ward"
+        />
+        {services.length > 1 ? (
+          <Segmented
+            label="Health service filter"
+            value={service}
+            onChange={(id) => {
+              setService(id);
               setSelectedId(null);
             }}
-          >
-            Hospitals
-          </button>
-          <button
-            type="button"
-            aria-pressed={groupBy === "ward"}
-            onClick={() => {
-              setGroupBy("ward");
-              setSelectedId(null);
-            }}
-          >
-            Wards
-          </button>
-        </div>
-        <label className={styles.search}>
-          <span className={styles.srOnly}>Search capacity</span>
-          <svg
-            aria-hidden="true"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          >
-            <circle cx="7" cy="7" r="4.5" />
-            <path d="m10.5 10.5 3 3" />
-          </svg>
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Find a hospital or ward"
+            items={[{ id: "all", label: "All" }, ...services.map((name) => ({ id: name, label: shortService(name) }))]}
           />
-        </label>
-        {services.length > 1 && (
-          <label>
-            <span className={styles.srOnly}>Health service filter</span>
-            <select value={service} onChange={(event) => setService(event.target.value)}>
-              <option value="all">All health services</option>
-              {services.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <label>
-          <span className={styles.srOnly}>Sort capacity</span>
-          <select value={sort} onChange={(event) => setSort(event.target.value)}>
-            <option value="ready">Most ready beds</option>
-            <option value="occupancy">Highest occupancy</option>
-            <option value="beds">Largest capacity</option>
-            <option value="name">Name A–Z</option>
-          </select>
-        </label>
+        ) : null}
+        <span className={styles.sortSlot}>
+          <Menu
+            label="Sort capacity"
+            align="end"
+            items={sortItems}
+            trigger={(props) => (
+              <button {...props} type="button" className={styles.sortButton}>
+                <Icon icon={ListFilter} size={14} />
+                {SORT_LABELS[sort]}
+              </button>
+            )}
+          />
+        </span>
       </div>
 
       <div className={styles.summary}>
-        <div className={styles.summaryNumbers} aria-live="polite" aria-atomic="true">
-          <strong>
-            {total.ready}
-            <span>ready</span>
-          </strong>
-          <span>
-            {total.beds} beds · {rows.length}{" "}
-            {groupBy === "hospital"
-              ? rows.length === 1
-                ? "hospital"
-                : "hospitals"
-              : rows.length === 1
-                ? "ward"
-                : "wards"}
-            {hasFilters ? " matched" : ` ${scopeLabel}`}
-          </span>
+        <span className={styles.summaryNumbers} aria-live="polite" aria-atomic="true">
+          <strong>{total.ready}</strong> ready of {total.beds} <SrOnly>synthetic </SrOnly>beds
           {total.pending > 0 ? (
-            <span data-testid="ward-statistics-capacity-pending">
-              {total.pending} of the ready beds still being made ready
+            <span className={styles.beingReady} data-testid="ward-statistics-capacity-pending">
+              {total.pending} being made ready
             </span>
           ) : null}
-          <span className={styles.srOnly}>The beds are synthetic.</span>
-        </div>
-        <div className={styles.legend} aria-label="Bed status legend">
-          <span>
-            <i className={styles.ready} />
-            {BED_STATE_LABELS.ready}
+        </span>
+        <span role="group" aria-label="Bed status legend" className={styles.legendSlot}>
+          <Legend
+            items={[
+              { id: "ready", label: BED_STATE_LABELS.ready, fill: "data-1" },
+              { id: "pulled", label: BED_STATE_LABELS.pulled, hatch: true },
+              { id: "closed", label: BED_STATE_LABELS.closed, fill: "data-2" },
+              { id: "occupied", label: BED_STATE_LABELS.occupied, fill: "data-3" },
+            ]}
+          />
+        </span>
+        {scale === "share" ? (
+          <span className={styles.alertLine}>
+            <span className={styles.alertKey} aria-hidden="true" />
+            <span>Alert line</span>
+            <span className={styles.stepper} role="group" aria-label="Alert line">
+              <button
+                type="button"
+                aria-label="Lower the alert line"
+                disabled={alertLine <= 50}
+                onClick={() => setAlertLine((value) => Math.max(50, value - 5))}
+              >
+                <Icon icon={Minus} size={14} />
+              </button>
+              <output aria-live="polite">{alertLine}%</output>
+              <button
+                type="button"
+                aria-label="Raise the alert line"
+                disabled={alertLine >= 100}
+                onClick={() => setAlertLine((value) => Math.min(100, value + 5))}
+              >
+                <Icon icon={Plus} size={14} />
+              </button>
+            </span>
           </span>
-          <span>
-            <i className={styles.occupied} style={{ opacity: PULLED_SEGMENT_OPACITY }} />
-            {BED_STATE_LABELS.pulled}
-          </span>
-          <span>
-            <i className={styles.held} />
-            {BED_STATE_LABELS.closed}
-          </span>
-          <span>
-            <i className={styles.occupied} />
-            {BED_STATE_LABELS.occupied}
-          </span>
-        </div>
-        <div className={styles.switch} role="group" aria-label="Chart scale">
-          <button type="button" aria-pressed={scale === "beds"} onClick={() => setScale("beds")}>
-            Beds
-          </button>
-          <button type="button" aria-pressed={scale === "share"} onClick={() => setScale("share")}>
-            %
-          </button>
-        </div>
+        ) : null}
       </div>
 
-      <div className={styles.workspace}>
+      <CardBody flush className={styles.workspace}>
         <div className={styles.plot}>
           <div className={styles.axis} aria-hidden="true">
-            <span>{groupBy === "hospital" ? "Hospital" : "Ward"}</span>
-            <div>
+            <span />
+            <div className={styles.axisTicks}>
               {ticks.map((tick) => (
                 <span key={tick} style={{ left: `${(tick / maximum) * 100}%` }}>
                   {tick}
@@ -305,19 +346,25 @@ export function StatisticsCapacityChart({
                 </span>
               ))}
             </div>
-            <span>Ready</span>
+            <span className={styles.axisReady}>Ready</span>
+            <span />
           </div>
           {rows.length === 0 ? (
             <div className={styles.empty}>
               <strong>No matching wards</strong>
-              <button type="button" onClick={reset}>
+              <Button size="sm" variant="ghost" onClick={reset}>
                 Clear filters
-              </button>
+              </Button>
             </div>
           ) : (
             rows.map((row, index) => {
               const denominator = scale === "share" ? row.beds || 1 : maximum;
-              const percent = row.beds ? Math.round((row.occupied / row.beds) * 100) : 0;
+              const over = occupancyOf(row) >= alertLine;
+              const wards = row.units.length;
+              const sub =
+                groupBy === "hospital"
+                  ? `${row.context} · ${wards} ${wards === 1 ? "ward" : "wards"} · ${row.beds} beds`
+                  : `${row.context} · ${row.beds} beds`;
               return (
                 <button
                   key={row.id}
@@ -347,24 +394,22 @@ export function StatisticsCapacityChart({
                 >
                   <span className={styles.rowName}>
                     <strong>{row.name}</strong>
-                    <small>{row.context}</small>
+                    <small>{sub}</small>
                   </span>
                   <span className={styles.barArea} aria-hidden="true">
                     {ticks.map((tick) => (
                       <i className={styles.guide} key={tick} style={{ left: `${(tick / maximum) * 100}%` }} />
                     ))}
+                    {scale === "share" ? <i className={styles.alertMark} style={{ left: `${alertLine}%` }} /> : null}
                     <span className={styles.bar} style={{ width: `${(row.beds / denominator) * 100}%` }}>
                       {row.ready > 0 && (
                         <span className={styles.ready} style={{ width: `${(row.ready / (row.beds || 1)) * 100}%` }} />
                       )}
                       {row.pulled > 0 && (
                         <span
-                          className={styles.occupied}
+                          className={styles.pulled}
                           data-bed-state="pulled"
-                          style={{
-                            width: `${(row.pulled / (row.beds || 1)) * 100}%`,
-                            opacity: PULLED_SEGMENT_OPACITY,
-                          }}
+                          style={{ width: `${(row.pulled / (row.beds || 1)) * 100}%` }}
                         />
                       )}
                       {row.closed > 0 && (
@@ -377,12 +422,12 @@ export function StatisticsCapacityChart({
                         />
                       )}
                     </span>
-                    <small>{scale === "share" ? `${percent}% occupied` : `${row.beds} beds`}</small>
                   </span>
                   <span className={styles.readyCount} data-empty={row.ready === 0}>
+                    {over ? <StatusGlyph tone="warning" size={9} /> : null}
                     {row.ready}
-                    <span aria-hidden="true">›</span>
                   </span>
+                  <Icon icon={ChevronRight} size={14} className={styles.chevron} />
                 </button>
               );
             })
@@ -392,13 +437,17 @@ export function StatisticsCapacityChart({
         {selected && (
           <aside className={styles.inspector} aria-label="Selected capacity details" data-testid="capacity-details">
             <div className={styles.inspectorHeading}>
-              <span>{groupBy === "hospital" ? "Hospital detail" : "Ward detail"}</span>
-              <button type="button" aria-label="Close capacity details" onClick={closeDetails}>
-                ×
-              </button>
+              <h3>{selected.name}</h3>
+              <span>{selected.context}</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                iconOnly
+                icon={X}
+                aria-label="Close capacity details"
+                onClick={closeDetails}
+              />
             </div>
-            <h3>{selected.name}</h3>
-            <p>{selected.context}</p>
             <dl className={styles.detailsMetrics}>
               <div>
                 <dt>{BED_STATE_LABELS.ready}</dt>
@@ -424,36 +473,44 @@ export function StatisticsCapacityChart({
                 <dd>{selected.beds}</dd>
               </div>
             </dl>
-
             <div className={styles.wardList}>
               {selected.units.map((unit) => {
                 const capacity = unitCapacity(unit, bedReleases);
                 return (
                   <Link key={unit.id} href={`/mockups/ward-flow/statistics/ward/${encodeURIComponent(unit.id)}`}>
                     <span>{unit.name}</span>
-                    <strong>
-                      {capacity.available} ready <span aria-hidden="true">↗</span>
-                    </strong>
+                    <strong>{capacity.available} ready</strong>
+                    <Icon icon={ChevronRight} size={14} />
                   </Link>
                 );
               })}
             </div>
           </aside>
         )}
-      </div>
-      <div className={styles.footer}>
-        <span>Current snapshot · synthetic data.</span>
-        <div>
-          {(hasFilters || groupBy !== initialGroup || scale !== "beds" || sort !== "ready") && (
-            <button type="button" onClick={reset}>
-              Reset view
-            </button>
-          )}
-          <button type="button" onClick={exportCsv} disabled={!rows.length}>
-            Export chart CSV <span aria-hidden="true">↗</span>
-          </button>
-        </div>
-      </div>
-    </section>
+      </CardBody>
+      <CardFoot
+        meta={
+          <span data-testid="ward-statistics-capacity-showing">
+            Showing <b>{rows.length}</b> of {allCount} {noun}
+            {hasFilters ? " matched" : ` ${scopeLabel}`}
+            {scale === "share" ? (
+              <span className={styles.footOver}>
+                <StatusGlyph tone="warning" size={9} />
+                <b>{overLine}</b> over the alert line
+              </span>
+            ) : null}
+          </span>
+        }
+      >
+        {changed ? (
+          <Button size="sm" variant="ghost" onClick={reset}>
+            Reset view
+          </Button>
+        ) : null}
+        <Button size="sm" variant="ghost" icon={Download} onClick={exportCsv} disabled={!rows.length}>
+          Chart CSV
+        </Button>
+      </CardFoot>
+    </StatCard>
   );
 }
