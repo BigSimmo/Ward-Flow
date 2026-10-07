@@ -109,7 +109,14 @@ const SEARCH_RESULT_LIMIT = 8;
  */
 const TEAM_TABS = [
   { id: "tab-triage", buttonId: "tabBtn-triage", label: "Waiting answer", section: "ward-community-waiting" },
-  { id: "tab-inpatients", buttonId: "tabBtn-inpatients", label: "In a bed", section: "ward-community-admitted" },
+  // The list and its count hold everyone in a bed or holding one; the hero's "In a bed" counts
+  // only those in the bed, so the tab names the wider group it counts.
+  {
+    id: "tab-inpatients",
+    buttonId: "tabBtn-inpatients",
+    label: "In a bed or holding one",
+    section: "ward-community-admitted",
+  },
   { id: "tab-egress", buttonId: "tabBtn-egress", label: "Expected back", section: "ward-community-expected-back" },
   { id: "tab-caseload", buttonId: "tabBtn-caseload", label: "Caseload and CTOs", section: "section-caseload" },
 ] as const;
