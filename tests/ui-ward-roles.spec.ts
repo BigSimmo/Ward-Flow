@@ -258,8 +258,9 @@ test.describe("@mockup Transport officer screen", () => {
     const job = page.getByTestId("ward-officer-job-WF-005");
     await expect(job).toContainText(/escort/i);
 
-    // Exactly four actions, pinned and reachable without scrolling.
-    const actions = job.locator('[class*="actionButton"]');
+    // Exactly four actions, pinned and reachable without scrolling. v6 (7 Oct 2026): they sit in
+    // the selected job's panel, which leads the page at phone width.
+    const actions = page.getByTestId("ward-officer-detail").locator('[class*="actionButton"]');
     await expect(actions).toHaveCount(4);
     for (const action of await actions.all()) {
       const box = await action.boundingBox();
@@ -1134,11 +1135,14 @@ test.describe("@mockup Role switcher — the loop", () => {
     if (await selectJob.count()) {
       await selectJob.click();
     }
-    await expect(job.locator('[class*="actionButton"]')).toHaveCount(4);
+    await expect(job).toBeVisible();
+    // v6 (7 Oct 2026): the four stage actions sit in the selected job's panel.
+    const panel = page.getByTestId("ward-officer-detail");
+    await expect(panel.locator('[class*="actionButton"]')).toHaveCount(4);
     // Item 31 (owner's 17 September answers): the officer's own fourth action reads "Delivered",
     // not "Arrived" — the event dispatched is still PATIENT_ARRIVED.
     for (const label of ["Accepted", "En route", "Collected", "Delivered"]) {
-      await job.getByRole("button", { name: label }).click();
+      await panel.getByRole("button", { name: label }).click();
     }
 
     // --- Step 11: Coordinator — the patient has left the system. ---
@@ -1254,8 +1258,11 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // ambiguity: the diagram's scroll container carries a second, more specific
     // `aria-label="Statewide flow diagram"` nested inside this section since the third-edition
     // visual upgrade (883ecfdfb4).
+    // 2026-10-07 re-point (v6 Home): Home's State bedflow card is a grouped ward list with no SVG
+    // arrows, so "the diagram has rendered" now waits on its first ward node instead of the old
+    // `svg path[marker-end]`. The nodes keep the old diagram's `ward-diagram-unit-<id>` ids.
     const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    await expect(diagram.locator("svg path[marker-end]").first()).toBeAttached({ timeout: 15_000 });
+    await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]').first()).toBeAttached({ timeout: 15_000 });
 
     await page
       .getByRole("region", { name: "Priority queue" })

@@ -62,10 +62,11 @@ describe("settings screen configuration draft", () => {
     fireEvent.click(screen.getByRole("button", { name: "Select surge values" }));
     expect(screen.getByTestId("probe-ed-target").textContent).toBe(beforeTarget);
     expect(screen.getByText("Unsaved changes — Save coordination rules to apply.")).toBeVisible();
-    expect(screen.queryByText("SURGE VALUES SAVED")).not.toBeInTheDocument();
+    // v6 Settings (7 Oct 2026): the toolbar status reads in sentence case.
+    expect(screen.queryByText("Surge values saved")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Save coordination rules" }));
     expect(screen.getByTestId("probe-ed-target")).toHaveTextContent(String(ED_ACCESS_TARGET_RANGE_MINUTES.min));
-    expect(screen.getByText("SURGE VALUES SAVED")).toBeVisible();
+    expect(screen.getByText("Surge values saved")).toBeVisible();
     expect(screen.queryByText("Unsaved changes — Save coordination rules to apply.")).not.toBeInTheDocument();
   });
 
@@ -96,24 +97,24 @@ describe("settings screen configuration draft", () => {
 
   it("morning rollup deadline stepper and slider update draft and dispatch on save", () => {
     renderSettings();
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:30 AM");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:30");
     expect(rollupSlider().value).toBe("570");
 
     // Click plus button (increase by 15m to 09:45 AM / 585)
     fireEvent.click(screen.getByRole("button", { name: "Increase morning rollup deadline" }));
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:45 AM");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:45");
     expect(rollupSlider().value).toBe("585");
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("570"); // not saved yet
 
     // Click minus button twice (decrease by 30m to 09:15 AM / 555)
     fireEvent.click(screen.getByRole("button", { name: "Decrease morning rollup deadline" }));
     fireEvent.click(screen.getByRole("button", { name: "Decrease morning rollup deadline" }));
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:15 AM");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:15");
     expect(rollupSlider().value).toBe("555");
 
     // Move slider to 600 (10:00 AM)
     fireEvent.change(rollupSlider(), { target: { value: "600" } });
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("10:00 AM");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("10:00");
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("570");
 
     // Save coordination rules
@@ -149,7 +150,9 @@ describe("settings screen configuration draft", () => {
     expect(screen.getByTestId("probe-ed-target").textContent).toBe(String(defaults.edAccessTargetMinutes));
     expect(screen.getByTestId("probe-pull-hold").textContent).toBe(String(defaults.pullHoldMinutes));
     expect(screen.getByTestId("probe-parallel-cap").textContent).toBe(String(defaults.parallelReferralCap));
-    expect(screen.getByTestId("probe-morning-rollup").textContent).toBe(String(defaults.morningRollupDeadlineMinutes ?? 570));
+    expect(screen.getByTestId("probe-morning-rollup").textContent).toBe(
+      String(defaults.morningRollupDeadlineMinutes ?? 570),
+    );
     // Save (accepted) + Reset (accepted) = two recorded configuration audit events.
     expect(Number(screen.getByTestId("probe-audit-count").textContent)).toBe(beforeAuditCount + 2);
   });

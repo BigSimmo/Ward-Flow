@@ -49,8 +49,8 @@ describe("the transport officer's job cards render a leg stepper", () => {
     // readable as ordinary page text, not only inside an aria-label a sighted reader never sees.
     expect(stepper).toHaveAttribute("aria-label", "Transport stage: Accepted, next en route");
 
-    const card = stepper.closest("li");
-    expect(card, "the stepper must live inside the job's own card").not.toBeNull();
+    const card = stepper.closest('[data-testid="ward-officer-job-WF-005"]');
+    expect(card, "the stepper must live inside the job's own row").not.toBeNull();
     // The stage line is the stepper's own next sibling, not merely somewhere inside the card —
     // scoping this way (rather than `getByText`) avoids colliding with the "Accepted" action
     // button label that also renders inside the same card.

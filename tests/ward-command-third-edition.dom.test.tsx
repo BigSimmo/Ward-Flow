@@ -62,10 +62,12 @@ function renderCoordinator() {
 describe("Command third-edition restyle — panel order and heading pins", () => {
   it("renders pressure, queue and flow, then mounts the shortlist after selection", () => {
     renderCoordinator();
+    // v6 Home (7 Oct 2026): the hero band's title leads, then the three headed cards.
     expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual([
-      "Emergency department pressure",
+      "70 open movements",
+      "ED pressure",
       "Priority queue",
-      "State Bedflow",
+      "State bedflow",
     ]);
     expect(screen.queryByLabelText("Explainable shortlist")).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
@@ -76,11 +78,12 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // test is about, in DOM order — nothing here reaches into an inactive tabpanel to manufacture
     // that count.
     const headings = screen.getAllByRole("heading", { level: 2 });
-    expect(headings.length, "expected exactly the four headed top-level panels, found a different count").toBe(4);
+    expect(headings.length, "expected the hero and the four headed top-level panels, found a different count").toBe(5);
     expect(headings.map((heading) => heading.textContent)).toEqual([
-      "Emergency department pressure",
+      "70 open movements",
+      "ED pressure",
       "Priority queue",
-      "State Bedflow",
+      "State bedflow",
       "Explainable shortlist",
     ]);
   });
@@ -155,7 +158,8 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     renderCoordinator();
     // Anti-vacuity floor: a selector that matched nothing would otherwise pass the loop below
     // silently and prove nothing about the drawing's own no-bars rule.
-    const edNodes = screen.getAllByTestId(/^ward-diagram-ed-/);
+    // v6 Home draws each ED as a pressure card (`ward-ed-<id>`) rather than a diagram node.
+    const edNodes = screen.getAllByTestId(/^ward-ed-/);
     expect(
       edNodes.length,
       "expected at least one ED node in the flow diagram — selector matched nothing",
@@ -191,9 +195,10 @@ describe("Command's priority queue carries a Patients/Referrals tablist (Task C2
   it("renders a Queues tablist with two tabs, each carrying the real count of its own rows", () => {
     renderCoordinator();
 
-    const tablist = screen.getByRole("tablist", { name: "Queues" });
-    const patientsTab = within(tablist).getByRole("tab", { name: /Patients/ });
-    const referralsTab = within(tablist).getByRole("tab", { name: /Referrals/ });
+    // v6 Home (7 Oct 2026): the Queues choice is a segmented radiogroup, not a tablist.
+    const tablist = screen.getByRole("radiogroup", { name: "Queues" });
+    const patientsTab = within(tablist).getByRole("radio", { name: /Patients/ });
+    const referralsTab = within(tablist).getByRole("radio", { name: /Referrals/ });
 
     // Anti-vacuity floor — a selector matching nothing would let every assertion below pass on an
     // empty queue and prove nothing about the real tab wiring.
@@ -223,26 +228,26 @@ describe("Command's priority queue carries a Patients/Referrals tablist (Task C2
   it("moves focus and selection between the two tabs with the arrow keys, and marks the active one", () => {
     renderCoordinator();
 
-    const patientsTab = screen.getByRole("tab", { name: /Patients/ });
-    const referralsTab = screen.getByRole("tab", { name: /Referrals/ });
-    expect(patientsTab).toHaveAttribute("aria-selected", "true");
-    expect(referralsTab).toHaveAttribute("aria-selected", "false");
+    const patientsTab = screen.getByRole("radio", { name: /Patients/ });
+    const referralsTab = screen.getByRole("radio", { name: /Referrals/ });
+    expect(patientsTab).toHaveAttribute("aria-checked", "true");
+    expect(referralsTab).toHaveAttribute("aria-checked", "false");
 
     patientsTab.focus();
     fireEvent.keyDown(patientsTab, { key: "ArrowRight" });
 
-    expect(referralsTab).toHaveAttribute("aria-selected", "true");
-    expect(patientsTab).toHaveAttribute("aria-selected", "false");
+    expect(referralsTab).toHaveAttribute("aria-checked", "true");
+    expect(patientsTab).toHaveAttribute("aria-checked", "false");
     expect(referralsTab, "focus follows selection, the same convention the registers tabs use").toHaveFocus();
 
     fireEvent.keyDown(referralsTab, { key: "ArrowLeft" });
-    expect(patientsTab).toHaveAttribute("aria-selected", "true");
+    expect(patientsTab).toHaveAttribute("aria-checked", "true");
     expect(patientsTab).toHaveFocus();
   });
 
   it("keeps a selected referral's fields off the destination it never carries — no ward, no 'referred to'", () => {
     renderCoordinator();
-    fireEvent.click(screen.getByRole("tab", { name: /Referrals/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
     const referralRows = screen.getAllByTestId(/^ward-referral-row-/);
     fireEvent.click(referralRows[0]!);
 
@@ -266,7 +271,7 @@ describe("Command's priority queue carries a Patients/Referrals tablist (Task C2
 
     // Switching to the Referrals tab decides which LIST is on screen — it must not touch which
     // record the shortlist is explaining.
-    fireEvent.click(screen.getByRole("tab", { name: /Referrals/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
     shortlist = screen.getByLabelText("Explainable shortlist");
     expect(
       within(shortlist).getByTestId(`ward-shortlist-${movementId}`),
@@ -286,7 +291,7 @@ describe("Command's priority queue carries a Patients/Referrals tablist (Task C2
     // Switching back to Patients must not silently hand the shortlist back to the movement either
     // — the referral stays the subject until a movement (or another referral) is explicitly
     // selected, exactly the independence the drawing's own comment describes.
-    fireEvent.click(screen.getByRole("tab", { name: /Patients/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Patients/ }));
     shortlist = screen.getByLabelText("Referral placement");
     expect(
       within(shortlist).getByTestId(`ward-referral-placement-${referralId}`),

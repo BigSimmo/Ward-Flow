@@ -229,7 +229,10 @@ describe("Community gateway — live search narrows to exactly the matching set"
 
   it("narrows further to teams in the selected health service", () => {
     renderGateway();
-    fireEvent.change(screen.getByRole("combobox", { name: "Filter team names" }), { target: { value: "EMHS" } });
+    // v6 (7 Oct 2026): the service filter is a segmented control, one radio per service.
+    fireEvent.click(
+      within(screen.getByRole("radiogroup", { name: "Filter team names" })).getByRole("radio", { name: /^EMHS/ }),
+    );
 
     const anchors = screen.getAllByTestId("community-index-link");
     expect(anchors.length).toBe(16);
@@ -382,12 +385,25 @@ describe("Community gateway — a way in, not a caseload: no row carries anythin
       if (row === null) continue;
 
       // The marker is a real button and legitimately carries its own words ("reads like N others").
-      // Everything else on the row must be the name.
-      const markerText = Array.from(row.querySelectorAll("button"))
-        .map((button) => button.textContent ?? "")
-        .join("");
-      const rowText = (row.textContent ?? "").replace(markerText, "");
+      // v6 (7 Oct 2026): a row also carries catchment facts, each in a `data-row-detail` cell: the
+      // health service code, how many catchment suburbs name the team, and "No marker". Each is
+      // checked to be exactly that fact before it is set aside; everything else must be the name.
       const name = (link.textContent ?? "").trim();
+      const clone = row.cloneNode(true) as HTMLElement;
+      for (const button of Array.from(clone.querySelectorAll("button"))) button.remove();
+      for (const detail of Array.from(clone.querySelectorAll<HTMLElement>("[data-row-detail]"))) {
+        const kind = detail.dataset.rowDetail;
+        const text = (detail.textContent ?? "").trim();
+        if (kind === "service")
+          expect(text, `service cell on "${name}"`).toBe(mapClinicToServiceAndHospital(name).code);
+        else if (kind === "suburbs") expect(text, `suburb cell on "${name}"`).toMatch(/^\d+$/u);
+        else
+          expect(kind === "no-marker" && text === "No marker", `unexpected row detail "${kind}" on "${name}"`).toBe(
+            true,
+          );
+        detail.remove();
+      }
+      const rowText = clone.textContent ?? "";
 
       expect(
         rowText.replace(/\s+/gu, " ").trim(),
@@ -414,6 +430,9 @@ describe("Community gateway — a way in, not a caseload: no row carries anythin
       const row = link.closest("li");
       if (row === null) continue;
       for (const button of Array.from(row.querySelectorAll("button"))) button.remove();
+      // v6 (7 Oct 2026): the one other number is the catchment-suburb cell, checked above to hold
+      // only that count; it is a figure about places, not people.
+      for (const cell of Array.from(row.querySelectorAll('[data-row-detail="suburbs"]'))) cell.remove();
       expect(
         row.textContent ?? "",
         `a digit appears on the row for "${link.textContent}" outside the reads-alike marker`,
@@ -441,20 +460,21 @@ describe("Community gateway — directory header layout and service filtering", 
   it("filters by health service and updates results count", () => {
     renderGateway();
     const resultLine = screen.getByTestId("community-gateway-result-line");
-    expect(resultLine).toHaveTextContent("64 synthetic team results");
+    // v6 (7 Oct 2026): the line reads "N of M synthetic team names" and the filter is a segmented control.
+    expect(resultLine).toHaveTextContent("64 of 64 synthetic team names");
 
-    const combobox = screen.getByRole("combobox", { name: "Filter team names" });
-    fireEvent.change(combobox, { target: { value: "NMHS" } });
+    const serviceGroup = screen.getByRole("radiogroup", { name: "Filter team names" });
+    fireEvent.click(within(serviceGroup).getByRole("radio", { name: /^NMHS/ }));
 
-    expect(resultLine).toHaveTextContent("6 of 64 synthetic team results");
+    expect(resultLine).toHaveTextContent("6 of 64 synthetic team names");
     expect(screen.getAllByTestId("community-index-link")).toHaveLength(6);
 
     const resetBtn = screen.getByRole("button", { name: /reset all search and filter/i });
     expect(resetBtn).toBeInTheDocument();
 
     fireEvent.click(resetBtn);
-    expect(combobox).toHaveValue("all");
-    expect(resultLine).toHaveTextContent("64 synthetic team results");
+    expect(within(serviceGroup).getByRole("radio", { name: /^All/ })).toHaveAttribute("aria-checked", "true");
+    expect(resultLine).toHaveTextContent("64 of 64 synthetic team names");
   });
 
   it("shows the reset button when search or filter is active, and resets on click", () => {

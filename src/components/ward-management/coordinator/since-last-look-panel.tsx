@@ -1,12 +1,14 @@
 "use client";
 
+import { History } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 
 import { createBrowserStore } from "@/lib/client-store-factory";
 
+import { Badge, Button, Card, CardHead, Stat, StatGroup, StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 
-import styles from "./coordinator.module.css";
+import styles from "./home.module.css";
 import {
   changesSinceLastLook,
   hasAnyChange,
@@ -64,7 +66,40 @@ function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }
 
-export function SinceLastLookPanel({ world, now }: { world: LastLookWorld; now: Instant }) {
+/** One line of the timeline: the bar's Activity projection (`deriveCommandActivity`). */
+export type SinceActivityLine = {
+  id: string;
+  time: string;
+  text: string;
+  category?: string;
+  tone: "info" | "warning" | "danger";
+};
+
+function ActivityTimeline({ lines }: { lines: readonly SinceActivityLine[] }) {
+  if (lines.length === 0) return null;
+  return (
+    <ol className={styles.sinceTimeline} aria-label="Recent activity" data-testid="ward-since-timeline">
+      {lines.map((line) => (
+        <li key={line.id} className={styles.sinceEvent}>
+          <span className={styles.sinceTime}>{line.time}</span>
+          {/* A decline is a closed outcome: the neutral cross, never red. */}
+          <StatusGlyph tone={line.category === "decline" ? "closed" : line.tone} size={9} />
+          <span className={styles.sinceText}>{line.text}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+export function SinceLastLookPanel({
+  world,
+  now,
+  activity = [],
+}: {
+  world: LastLookWorld;
+  now: Instant;
+  activity?: readonly SinceActivityLine[];
+}) {
   const current = useMemo(() => takeLastLookSnapshot(world, now), [world, now]);
   const latest = useRef(current);
   useEffect(() => {
@@ -98,78 +133,93 @@ export function SinceLastLookPanel({ world, now }: { world: LastLookWorld; now: 
   if (!changes) return null;
 
   const since = formatInstantWithDay(changes.since, now);
+  const minutesAgo = Math.max(0, now - changes.since);
+  const ago = minutesAgo < 1 ? "Just now" : `${durMinutes(minutesAgo)} ago`;
 
   if (!hasAnyChange(changes)) {
     return (
-      <p className={styles.sinceLastLookQuiet} data-testid="ward-since-last-look">
-        Nothing new since you last looked at {since}.
-      </p>
+      <Card className={styles.sinceCard} data-testid="ward-since-last-look">
+        <CardHead icon={History} title="Since you looked" aside={<Badge variant="mono">{ago}</Badge>} />
+        <p className={styles.sinceQuiet}>
+          <StatusGlyph tone="success" size={9} />
+          Nothing new since you last looked at {since}.
+        </p>
+        <ActivityTimeline lines={activity} />
+      </Card>
     );
   }
 
   const delayCounts = new Map<string, number>();
   for (const delay of changes.newDelays) delayCounts.set(delay.title, (delayCounts.get(delay.title) ?? 0) + 1);
   const bedsTotal = changes.bedsFreed.reduce((sum, entry) => sum + entry.count, 0);
-  const chips: { key: string; label: string }[] = [];
+  const lines: { key: string; tone: WfTone; label: string }[] = [];
   if (changes.newReferralIds.length > 0) {
-    chips.push({
+    lines.push({
       key: "referrals",
+      tone: "info",
       label: plural(changes.newReferralIds.length, "new referral", "new referrals"),
     });
   }
   if (changes.newMovementIds.length > 0) {
-    chips.push({
+    lines.push({
       key: "journeys",
+      tone: "neutral",
       label: `${plural(changes.newMovementIds.length, "new person", "new people")} waiting in ED`,
     });
   }
   if (bedsTotal > 0) {
-    chips.push({
+    lines.push({
       key: "beds",
+      tone: "success",
       label: `${plural(bedsTotal, "bed", "beds")} newly ready: ${changes.bedsFreed
         .map((entry) => `${entry.unitName} +${entry.count}`)
         .join(", ")}`,
     });
   }
   if (changes.newDelays.length > 0) {
-    chips.push({
+    lines.push({
       key: "delays",
+      tone: "warning",
       label: `${plural(changes.newDelays.length, "new delay", "new delays")}: ${[...delayCounts]
         .map(([title, count]) => `${title} (${count})`)
         .join(", ")}`,
     });
   }
   if (changes.newEscalationIds.length > 0) {
-    chips.push({
+    lines.push({
       key: "escalations",
+      tone: "warning",
       label: `${plural(changes.newEscalationIds.length, "new escalation", "new escalations")}: no suitable bed`,
     });
   }
 
   return (
-    <section className={styles.sinceLastLook} aria-label="Since you last looked" data-testid="ward-since-last-look">
-      <div className={styles.sinceLastLookHeader}>
-        <div className={styles.sinceLastLookCopy}>
-          <h2>Since you last looked</h2>
-          <p className={styles.sinceLastLookWhen}>at {since}</p>
-        </div>
-        <button
-          type="button"
-          className={styles.sinceLastLookDismiss}
-          onClick={() => {
-            writeSnapshot(current);
-          }}
-        >
-          Mark as seen
-        </button>
-      </div>
-      <ul className={styles.sinceLastLookChips}>
-        {chips.map((chip) => (
-          <li key={chip.key} className={styles.sinceLastLookChip} data-change={chip.key}>
-            {chip.label}
+    <Card className={styles.sinceCard} aria-label="Since you last looked" data-testid="ward-since-last-look">
+      <CardHead
+        icon={History}
+        title="Since you looked"
+        meta={`at ${since}`}
+        aside={<Badge variant="mono">{ago}</Badge>}
+      />
+      <StatGroup className={styles.sinceStats}>
+        <Stat value={changes.newReferralIds.length} label="Referrals" tone="info" size="sm" />
+        <Stat value={bedsTotal} label="Beds freed" tone="success" size="sm" />
+        <Stat value={changes.newDelays.length} label="Delays" tone="warning" size="sm" />
+      </StatGroup>
+      <ul className={styles.sinceLines}>
+        {lines.map((line) => (
+          <li key={line.key} className={styles.sinceLine} data-change={line.key}>
+            <StatusGlyph tone={line.tone} size={9} />
+            <span>{line.label}</span>
           </li>
         ))}
       </ul>
-    </section>
+      <ActivityTimeline lines={activity} />
+      <div className={styles.cardFoot}>
+        <Button variant="sec" size="sm" onClick={() => writeSnapshot(current)}>
+          Mark as seen
+        </Button>
+      </div>
+    </Card>
   );
 }

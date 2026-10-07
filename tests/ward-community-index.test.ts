@@ -306,7 +306,13 @@ describe("Community team index — every team the prototype can name has a way i
 
     // No heading, badge or label carries a comparative or a count. The page renders one section and
     // one list; a second heading here would be the first step towards a grouping nobody decided.
-    expect((main.match(/<h2/g) ?? []).length, "the index grew a second heading — it renders one flat list").toBe(1);
+    // v6 (7 Oct 2026): the side column's cards (suburb lookup, names that read alike, teams by
+    // service) carry their own headings; the rule is about the team list, so it is counted there.
+    const sideAt = main.indexOf('data-testid="community-index-side"');
+    const directory = sideAt === -1 ? main : main.slice(0, sideAt);
+    expect((directory.match(/<h2/g) ?? []).length, "the index grew a second heading — it renders one flat list").toBe(
+      1,
+    );
 
     /*
      * 🔴 **THE SENTENCE ABOVE STATED A RULE AND THE ASSERTION BESIDE IT CHECKED A DIFFERENT ONE.**

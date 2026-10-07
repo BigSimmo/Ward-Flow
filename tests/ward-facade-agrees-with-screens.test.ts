@@ -375,13 +375,19 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
     screen: "Movements",
     component: MovementsScreen,
     read: (markup) => {
+      // v6 Movements (7 Oct 2026): The day is the hero band, whose title carries the count. Read
+      // between The day's opening tag and the next panel so a second count anywhere in it still fails.
+      // The title is also the "Open" day figure (#113 browser journey): its DOM reads label then
+      // number ("Open movements" then <strong>70</strong>) and CSS draws "70 open movements".
       const headers = [
-        ...markup.matchAll(/<section\b[^>]*\baria-label="The day"[^>]*>\s*<header\b[^>]*>([\s\S]*?)<\/header>/gu),
+        ...markup.matchAll(
+          /<section\b[^>]*\baria-label="The day"[^>]*>([\s\S]*?)<section\b[^>]*\baria-label="Today’s traffic"/gu,
+        ),
       ];
       expect(headers, "Movements must render exactly one day panel header").toHaveLength(1);
       const counts = [
         ...headers[0][1].matchAll(
-          /<span\b[^>]*\bdata-ward-panel-count(?:="")?[^>]*>\s*(\d+) open movements\s*<\/span>/gu,
+          /<span\b[^>]*\bdata-ward-panel-count(?:="")?[^>]*>\s*<span\b[^>]*>Open movements<\/span>\s*<strong\b[^>]*>(\d+)<\/strong>\s*<\/span>/gu,
         ),
       ];
       expect(counts, "The day panel header must render exactly one own open-movement count").toHaveLength(1);

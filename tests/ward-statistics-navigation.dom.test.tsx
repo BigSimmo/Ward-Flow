@@ -12,30 +12,31 @@ vi.mock("next/link", () => ({
 describe("one shared statistics navigation", () => {
   it.each([
     ["", "Summary"],
-    ["/overview", "Network overview"],
+    ["/overview", "Overview"],
     ["/compare", "Compare"],
-    ["/service/North%20Metro", "Health services"],
+    ["/service/North%20Metro", "Services"],
     ["/ward/scgh-adult-open", "Wards"],
-    ["/ed/scgh", "Emergency departments"],
-    ["/community/bentley", "Community teams"],
+    ["/ed/scgh", "EDs"],
+    ["/community/bentley", "Teams"],
   ])("keeps the same destinations and exactly one current page on %s", (suffix, label) => {
     routing.pathname = `/mockups/ward-flow/statistics${suffix}`;
     render(<StatisticsNav />);
     const nav = within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" }));
     const links = nav.getAllByRole("link");
-    expect(links.map((link) => link.textContent)).toEqual([
+    // v6 hero track (7 Oct 2026): short labels, the four unit kinds carrying their counts.
+    expect(links.map((link) => link.textContent?.replace(/\d+$/, ""))).toEqual([
       "Summary",
-      "Network overview",
+      "Overview",
       "Compare",
-      "Health services",
+      "Services",
       "Wards",
-      "Emergency departments",
-      "Community teams",
+      "EDs",
+      "Teams",
     ]);
     expect(links.filter((link) => link.getAttribute("aria-current") === "page")).toHaveLength(1);
-    expect(nav.getByRole("link", { name: label })).toHaveAttribute("aria-current", "page");
-    if (suffix.includes("/ward/"))
-      expect(nav.getByRole("link", { name: label })).toHaveAttribute("href", routing.pathname);
+    const current = nav.getByRole("link", { name: new RegExp(`^${label}(\\s*\\d+)?$`) });
+    expect(current).toHaveAttribute("aria-current", "page");
+    if (suffix.includes("/ward/")) expect(current).toHaveAttribute("href", routing.pathname);
   });
 
   it("uses the same destinations from the compact mobile selector", () => {

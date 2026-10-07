@@ -4917,3 +4917,994 @@
   color: var(--ink) !important;
   box-shadow: 0 1px 3px var(--ward-shadow-black-06);
 }
+
+/* ---------- v6 Settings (7 Oct 2026): operator hero and one toolbar row ---------- */
+
+.operatorHero {
+  min-width: 0;
+}
+
+.operatorName {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.operatorAvatar {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--wf-hero-edge);
+  border-radius: 50%;
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  font-family: var(--wf-font);
+}
+
+.toolbar .categoryRail {
+  position: static;
+  display: flex;
+  flex: 0 0 auto;
+  width: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  max-height: none;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.toolbar .categoryRail:hover {
+  box-shadow: none;
+}
+
+.toolbar .sidebarSearchWrap {
+  flex: 0 0 14rem;
+  padding: 0;
+}
+
+.toolbar .catListScroll {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: row;
+  gap: 2px;
+  min-width: 0;
+  padding: 2px;
+  overflow-x: auto;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.toolbar .catItem {
+  width: auto;
+  min-height: var(--wf-h-sm);
+  gap: var(--wf-s-1);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-sm);
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  white-space: nowrap;
+  transform: none;
+}
+
+.toolbar .catItem:hover:not([aria-current="true"]) {
+  border-color: transparent;
+  background: var(--wf-hover);
+  transform: none;
+}
+
+.toolbar .catItem[aria-current="true"] {
+  border-color: var(--wf-line-2);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  transform: none;
+}
+
+.toolbar .catTitle,
+.toolbar .catItem[aria-current="true"] .catTitle {
+  color: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+}
+
+.toolbar .catCount,
+.toolbar .catItem[aria-current="true"] .catCount {
+  padding: 0 var(--wf-s-1);
+  border: 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  box-shadow: none;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+}
+
+.toolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-left: auto;
+}
+
+.toolbarStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.settingsBody {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pageHeader:has(.toolbar) {
+  border-bottom: 0;
+}
+
+@media (max-width: 48rem) {
+  .toolbar .categoryRail {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar .sidebarSearchWrap {
+    flex-basis: auto;
+  }
+
+  .toolbar .catItem {
+    min-height: var(--spacing-tap, 3rem);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   v6 Settings section bodies (7 October 2026): cards on a two-column grid, then the
+   full-width previews, defaults, thresholds and roles. v6 tokens only.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.main {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+}
+
+.pageHeader {
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.contentPane {
+  gap: var(--wf-s-3);
+}
+
+.contentPane [id^="cat-"] {
+  scroll-margin-top: var(--wf-s-4);
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.cardColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.headMeta {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  white-space: nowrap;
+}
+
+/* Words in a row: a title that never wraps, a short line under it. */
+.ruleText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  text-align: start;
+}
+
+.ruleTitle {
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ruleSub {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* Busy-day timings: Rule | Value | Range | Effect now. */
+.ruleColumns,
+.ruleRow {
+  --rule-cols: minmax(0, 1fr) 7.5rem 6.5rem 5.5rem;
+  display: grid;
+  grid-template-columns: var(--rule-cols);
+  gap: var(--wf-s-2);
+}
+
+.ruleColumns {
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ruleColumnEnd {
+  text-align: end;
+}
+
+.ruleRow {
+  grid-template-areas: "text step range effect";
+  align-items: center;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.ruleRow + .ruleRow {
+  border-top: 1px solid var(--wf-line);
+}
+
+.ruleRow:not(.ruleRowWarning) .ruleSub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Form warning times: words over the range, the stepper beside both. */
+.ruleRowWarning {
+  --rule-cols: minmax(0, 1fr) 9rem;
+  grid-template-areas:
+    "text step"
+    "range step";
+  column-gap: var(--wf-s-4);
+  row-gap: var(--wf-s-2);
+}
+
+.ruleRowWarning .rangeCell {
+  max-width: 16rem;
+}
+
+.ruleTextCell {
+  grid-area: text;
+}
+
+.stepBox {
+  grid-area: step;
+  display: inline-flex;
+  align-items: stretch;
+  justify-self: stretch;
+  height: var(--wf-h-md);
+  overflow: hidden;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  box-sizing: border-box;
+}
+
+.stepButton {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: var(--wf-h-sm);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+
+.stepButton:hover:not([aria-disabled="true"]) {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.stepButton[aria-disabled="true"] {
+  color: var(--wf-ink-off);
+  cursor: default;
+}
+
+.stepButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.stepValue {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 var(--wf-s-1);
+  border-inline: 1px solid var(--wf-line);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / calc(var(--wf-h-md) - 2px) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.rangeCell {
+  grid-area: range;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rangeInput {
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.rangeInput::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+
+.rangeInput::-webkit-slider-thumb {
+  width: 4px;
+  height: 14px;
+  margin-top: -5px;
+  border: 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-ink-1);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.rangeInput::-moz-range-track {
+  height: 4px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+
+.rangeInput::-moz-range-thumb {
+  width: 4px;
+  height: 14px;
+  border: 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-ink-1);
+}
+
+.rangeInput:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+.rangeInput[aria-disabled="true"] {
+  cursor: default;
+}
+
+.rangeInput[aria-disabled="true"]::-webkit-slider-thumb {
+  background: var(--wf-ink-3);
+}
+
+.rangeEnds {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  white-space: nowrap;
+}
+
+.effectCell {
+  grid-area: effect;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 0;
+  text-align: end;
+}
+
+.effectLine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.savedLine {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+/* The two warnings on one window, neutral greys only. */
+.cascade {
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.cascadeTrack {
+  display: flex;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+
+.cascadeCalm {
+  background: var(--wf-track);
+}
+
+.cascadeSoon {
+  background: var(--wf-line-3);
+}
+
+.cascadeUrgent {
+  background: var(--wf-ink-3);
+}
+
+.cascadeEnds {
+  position: relative;
+  display: flex;
+  margin-top: var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  white-space: nowrap;
+}
+
+.cascadeEnds > span {
+  flex-basis: 0;
+  min-width: 0;
+  text-align: end;
+}
+
+.cascadeEnds > .cascadeStart {
+  position: absolute;
+  left: 0;
+  text-align: start;
+}
+
+/* This browser */
+.statRow {
+  display: flex;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding-inline: var(--wf-s-4);
+  border-left: 1px solid var(--wf-line);
+}
+
+.statItem:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.statValue {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.statLabel {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-height: 52px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  box-sizing: border-box;
+}
+
+.listRow:last-child {
+  border-bottom: 0;
+}
+
+.listRow > .ruleText {
+  flex: 1 1 auto;
+}
+
+.listRow > :not(.ruleText) {
+  flex: 0 0 auto;
+}
+
+.listRow .ruleSub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.readout {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+}
+
+.browserFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-top: auto;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.footEnd {
+  margin-left: auto;
+}
+
+/* Theme: one pressed choice of three, marked on the control itself. */
+.segGroup {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+}
+
+.segOption {
+  min-height: calc(var(--wf-h-sm) - 4px);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-xs);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segOption:hover {
+  color: var(--wf-ink-1);
+}
+
+.segOption[aria-pressed="true"] {
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.segOption:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Recent changes */
+.cardEmpty {
+  margin: 0;
+  padding: var(--wf-s-4);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.changeList {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  list-style: none;
+}
+
+.changeRow {
+  display: grid;
+  grid-template-columns: 7rem auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 30px;
+}
+
+.changeTime {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  text-align: end;
+  white-space: nowrap;
+}
+
+.changeText {
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.changeActor {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+/* Shortcuts and search */
+.kbdList {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  list-style: none;
+}
+
+.kbdRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-height: 28px;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+}
+
+.kbdKeys {
+  display: inline-flex;
+  gap: var(--wf-s-1);
+}
+
+.recentRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 52px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  box-sizing: border-box;
+}
+
+.recentLabel,
+.recentEmpty {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.recentChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}
+
+.recentChip {
+  height: var(--wf-h-chip);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.recentChip:hover {
+  background: var(--wf-hover);
+}
+
+.recentChip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Prototype previews: three columns, each item names itself a preview. */
+.previewGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: calc(var(--wf-s-4) * 2);
+  padding: var(--wf-s-1) var(--wf-s-4);
+}
+
+.previewItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 52px;
+  border-top: 1px solid var(--wf-line);
+}
+
+.previewItem:nth-child(-n + 3) {
+  border-top: 0;
+}
+
+.previewMark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.previewSelect {
+  width: 7.5rem;
+}
+
+.previewRange {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.previewRange .rangeInput {
+  width: 4.5rem;
+}
+
+.previewValue {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+  white-space: nowrap;
+}
+
+.previewItem .switchSlider {
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-line-ctl);
+}
+
+.previewItem .switchSlider::before {
+  bottom: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.previewItem .switchToggle input:checked + .switchSlider {
+  background: var(--wf-pri-2);
+}
+
+.previewItem .switchToggle input:checked + .switchSlider::before {
+  transform: translateX(12px);
+  background: var(--wf-surface);
+}
+
+.previewItem .switchToggle input:focus-visible + .switchSlider {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Operational defaults: name and value pairs in three columns. */
+.defaultsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: calc(var(--wf-s-4) * 2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+}
+
+.defaultsItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.defaultsItem:nth-child(-n + 3) {
+  border-top: 0;
+}
+
+.defaultsName {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.defaultsValue {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.defaultsEdit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+}
+
+.defaultsInput {
+  width: 9rem;
+  height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  box-sizing: border-box;
+}
+
+.defaultsInput:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+.customMark {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+}
+
+/* Thresholds and roles tables inside cards. */
+.cardNote {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.tableWrap:has(> .cardTable) {
+  border-block: 0;
+}
+
+.table.cardTable {
+  table-layout: fixed;
+}
+
+/* Cell padding, dividers, top alignment and the last-row rule all come from the canonical
+   `.table th`/`.table td` rule that `.table` composes (ward-table.module.css); only the card's
+   type and colours are set here. */
+.table.cardTable th {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-align: start;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.table.cardTable td {
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.table.cardTable .cellStrong {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.codeCell {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+@media (max-width: 64rem) {
+  .cardGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .previewGrid,
+  .defaultsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .previewItem:nth-child(3),
+  .defaultsItem:nth-child(3) {
+    border-top: 1px solid var(--wf-line);
+  }
+}
+
+@media (max-width: 48rem) {
+  .previewGrid,
+  .defaultsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .previewItem:nth-child(2),
+  .defaultsItem:nth-child(2) {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .ruleColumns {
+    display: none;
+  }
+
+  .ruleRow {
+    --rule-cols: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "text text"
+      "step effect"
+      "range range";
+  }
+
+  .ruleRowWarning {
+    --rule-cols: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "text text"
+      "range step";
+  }
+
+  .listRow,
+  .recentRow,
+  .statRow {
+    flex-wrap: wrap;
+  }
+}
+
+/* Phone widths: every control in the cards keeps a 48px tap target. */
+@media (max-width: 40rem) {
+  .stepBox {
+    height: var(--ward-tap, 3rem);
+  }
+
+  .stepButton {
+    width: var(--ward-tap, 3rem);
+  }
+
+  .stepValue {
+    line-height: calc(var(--ward-tap, 3rem) - 2px);
+  }
+
+  .segOption,
+  .recentChip,
+  .defaultsInput {
+    min-height: var(--ward-tap, 3rem);
+  }
+
+  .rangeInput {
+    height: var(--ward-tap, 3rem);
+  }
+}

@@ -78,7 +78,7 @@ describe("out-of-area upgrade — functional layout and clean presentation", () 
   it("displays out-of-area counts in the executive KPI strip", () => {
     renderBoard();
     const board = screen.getByTestId("ward-out-of-area-board");
-    expect(board).toHaveTextContent("Total Out-of-Area");
+    expect(board).toHaveTextContent(`${entries.length} away from home`);
     expect(board).toHaveTextContent(String(entries.length));
   });
 
@@ -155,14 +155,10 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     const first = entries[0];
     fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`));
 
-    fireEvent.click(
-      within(screen.getByTestId("ward-out-of-area-subject")).getByRole("button", { name: /Initiate repatriation/i }),
-    );
-
-    // Fill form
+    // Fill the return plan's inline form (v6: the form is a step of the plan, not a dialog)
     fireEvent.change(screen.getByTestId("ward-out-of-area-repat-home-hospital"), { target: { value: "RPH" } });
-    fireEvent.click(screen.getByLabelText(/Yes — receiving ward has agreed/i));
-    fireEvent.change(screen.getByTestId("ward-out-of-area-repat-mode"), { target: { value: "road" } });
+    fireEvent.click(within(screen.getByTestId("ward-out-of-area-repat-ward-agreed")).getByLabelText("Agreed"));
+    fireEvent.click(within(screen.getByTestId("ward-out-of-area-repat-mode")).getByLabelText("Road"));
     fireEvent.change(screen.getByTestId("ward-out-of-area-repat-provider"), { target: { value: "Ambulance service" } });
     fireEvent.change(screen.getByTestId("ward-out-of-area-repat-cad"), { target: { value: "CAD-9999" } });
     fireEvent.click(screen.getByLabelText("Voluntary"));
@@ -178,12 +174,12 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(notice.textContent).toContain("Royal Perth Hospital");
   });
 
-  it("filters placements when home catchment dropdown is selected", () => {
+  it("filters placements when a home catchment is chosen in the catchment filter", () => {
     renderBoard();
-    const select = screen.getByTestId("ward-out-of-area-catchment-filter");
-    expect(select).toBeInTheDocument();
+    const group = screen.getByRole("radiogroup", { name: "Filter by home catchment" });
+    expect(group).toBeInTheDocument();
 
-    fireEvent.change(select, { target: { value: "South West" } });
+    fireEvent.click(within(group).getByRole("radio", { name: /^South West/ }));
     const swEntries = entries.filter((e) => e.admission.homeRegion === "South West");
     expect(swEntries.length).toBeGreaterThan(0);
 
@@ -304,7 +300,8 @@ describe("out-of-area inspector — navigation and explicit patient choice", () 
     const originalIds = rows().map((row) => row.getAttribute("data-testid"));
     expect(originalIds).toEqual(entries.map((entry) => `ward-out-of-area-row-${entry.admission.id}`));
     const originalLabels = rows().map((row) => row.getAttribute("aria-label") ?? "");
-    fireEvent.change(screen.getByLabelText("Sort placements"), { target: { value: "patient" } });
+    const sort = screen.getByRole("radiogroup", { name: "Sort placements" });
+    fireEvent.click(within(sort).getByRole("radio", { name: "Name" }));
     expect(rows().map((row) => row.getAttribute("aria-label"))).toEqual(
       [...originalLabels].sort((a, b) => a.localeCompare(b, "en-AU")),
     );
@@ -312,17 +309,17 @@ describe("out-of-area inspector — navigation and explicit patient choice", () 
     fireEvent.click(sortedRows[0]);
     fireEvent.click(screen.getByRole("button", { name: "Inspect next patient" }));
     expect(sortedRows[1]).toHaveAttribute("aria-selected", "true");
-    fireEvent.change(screen.getByLabelText("Sort placements"), { target: { value: "ledger" } });
+    fireEvent.click(within(sort).getByRole("radio", { name: "Ledger" }));
     expect(rows().map((row) => row.getAttribute("data-testid"))).toEqual(originalIds);
   });
 
   it("requires patient selection before opening the arrangement form", () => {
     renderBoard();
-    const action = screen.getByRole("button", { name: /Initiate Repatriation/i });
-    // The redesign keeps the unavailable action focusable (aria-disabled, not `disabled`) so keyboard
-    // and screen-reader users can still reach its "Select a patient" explanation.
-    expect(action).toHaveAttribute("aria-disabled", "true");
-    fireEvent.click(action);
+    // v6 (7 Oct 2026): the arrangement form is a step of the selected person's return plan, so it
+    // does not exist at all until a person is chosen; no dialog opens from the empty plan either.
+    expect(screen.getByTestId("ward-out-of-area-subject-empty")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-out-of-area-repat-submit")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-out-of-area-repat-home-hospital")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
@@ -331,7 +328,11 @@ describe("out-of-area inspector — navigation and explicit patient choice", () 
     const region = entries[0].admission.homeRegion as string;
     const cohort = entries.filter((entry) => entry.admission.homeRegion === region);
     expect(cohort.length).toBeGreaterThan(1);
-    fireEvent.change(screen.getByTestId("ward-out-of-area-catchment-filter"), { target: { value: region } });
+    fireEvent.click(
+      within(screen.getByRole("radiogroup", { name: "Filter by home catchment" })).getByRole("radio", {
+        name: new RegExp(`^${region}`),
+      }),
+    );
     fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${cohort[0].admission.id}`));
     expect(screen.getByRole("button", { name: "Inspect previous patient" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Inspect next patient" }));
