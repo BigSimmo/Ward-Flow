@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { ContextualBackLink } from "@/components/contextual-back-link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -329,10 +330,10 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
           eyebrow={`Ward answer · ${site?.name ?? unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`}
           title={unit.name}
           bar={
-            <Link href={`/mockups/ward-flow/ward/${unit.id}`} className={styles.backLink}>
+            <ContextualBackLink fallbackHref={`/mockups/ward-flow/ward/${unit.id}`} className={styles.backLink}>
               <ArrowLeft size={14} aria-hidden="true" />
               <span>Back to Ward Overview</span>
-            </Link>
+            </ContextualBackLink>
           }
           aside={
             <button
