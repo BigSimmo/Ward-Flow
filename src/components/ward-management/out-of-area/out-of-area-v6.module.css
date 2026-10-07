@@ -185,6 +185,23 @@
   white-space: nowrap;
 }
 
+/*
+ * Between the phone cards and the two-column desktop the ledger runs full width at around 600px.
+ * Its five columns fit there only when names, units and headers may wrap and no column holds a
+ * fixed share, so every column stays on screen without sideways scrolling.
+ */
+@media (max-width: 62.5rem) {
+  .table th:nth-child(n) {
+    width: auto;
+  }
+
+  .tableWrap .table th,
+  .row .secondary,
+  .row .primary {
+    white-space: normal;
+  }
+}
+
 .row:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
@@ -298,7 +315,9 @@
 }
 
 @media (max-width: 40rem) {
-  .tableWrap {
+  /* The phone swap: the table's own scroll wrapper gives way to the card list. */
+  .tableWrap,
+  .tableScroll {
     display: none;
   }
 
