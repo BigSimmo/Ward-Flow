@@ -166,7 +166,14 @@ export function HubScreen() {
     // Most ready first, inside the same service groups. A stable sort keeps the service order for ties.
     return [...filtered].sort((a, b) => (b.ready ?? -1) - (a.ready ?? -1));
   }, [entries, query, kind, readyOnly, order]);
-  const counts = useMemo(() => hubCounts(entries, query), [entries, query]);
+  // Category counts follow "Ready beds only" as well as the search, so each count matches what
+  // pressing that category shows.
+  const counts = useMemo(
+    () => hubCounts(readyOnly ? entries.filter((entry) => (entry.ready ?? 0) > 0) : entries, query),
+    [entries, query, readyOnly],
+  );
+  // The list foot's "of" stays the search-matched total, so "Ready beds only" reads as a narrowing.
+  const searchMatched = useMemo(() => searchHub(entries, query, "all").length, [entries, query]);
   const readyBedsCount = useMemo(() => entries.reduce((sum, entry) => sum + (entry.ready ?? 0), 0), [entries]);
   const isFiltered = query !== "" || kind !== "all" || readyOnly;
 
@@ -521,7 +528,7 @@ export function HubScreen() {
               <BedStripLegend />
               <span className={styles.shownCount}>
                 <b>
-                  {results.length} of {counts.all}
+                  {results.length} of {searchMatched}
                 </b>{" "}
                 shown
               </span>
