@@ -237,7 +237,7 @@ test.describe("@mockup Ward Flow command view", () => {
     // behind the rail's Menu button, which opens the same "More pages" sheet. The tap-target floor
     // is what this test guards, so open whichever door this width offers, then measure.
     const opener = (await nav.isVisible())
-      ? page.getByRole("button", { name: /^All Pages/u })
+      ? page.getByRole("button", { name: /^All pages/iu })
       : page.getByTestId("ward-rail").getByRole("button", { name: "Menu", exact: true });
     if (await opener.isVisible()) {
       await opener.click();

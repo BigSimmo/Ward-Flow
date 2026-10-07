@@ -100,6 +100,33 @@ export function occupancyTone(occupancyPercent: number): {
   return { code: "green", codeLabel };
 }
 
+/**
+ * The rail's Bed alerts threshold (v6 shell boards 02 and 03b, Josh, 7 October 2026): a service at
+ * or over this occupancy shows a filled amber circle, an amber meter and counts as one alert; under
+ * it, a neutral ring. Every meter carries a tick at this value. It is a display threshold for the
+ * synthetic prototype, separate from `OCCUPANCY_ALERT_PERCENT`'s colour bands, and not a clinical
+ * standard.
+ */
+export const BED_ALERT_THRESHOLD_PERCENT = 85;
+
+/** True when an occupancy figure is at or over the rail's Bed alerts threshold. */
+export function isBedAlert(occupancyPercent: number): boolean {
+  return occupancyPercent >= BED_ALERT_THRESHOLD_PERCENT;
+}
+
+/** One decimal place, always: `84.8%`, `78.0%`. */
+export function formatOccupancyPercent(occupancyPercent: number): string {
+  return `${occupancyPercent.toFixed(1)}%`;
+}
+
+/** Site codes for a service row (`RPH · ARM · BENT`), or a count once there are too many to read. */
+export function bedAlertSiteLabel(alert: Pick<ServiceBedAlert, "hospitalCodes">): string {
+  const codes = alert.hospitalCodes ?? [];
+  if (codes.length === 0) return "";
+  if (codes.length > 4) return `${codes.length} sites`;
+  return codes.join(" · ");
+}
+
 function roundOneDecimal(value: number): number {
   return Math.round(value * 10) / 10;
 }

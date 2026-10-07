@@ -510,7 +510,7 @@ function queuedCardIds(page: Page): Promise<string[]> {
  * "More pages" button that is present but hidden no longer counts as the door.
  */
 async function openRailSheetIfNeeded(page: Page, rail: Locator): Promise<boolean> {
-  const morePages = rail.getByRole("button", { name: /^All Pages/u });
+  const morePages = rail.getByRole("button", { name: /^All pages/iu });
   const menu = rail.getByRole("button", { name: "Menu", exact: true });
   const opener = (await morePages.isVisible()) ? morePages : (await menu.isVisible()) ? menu : undefined;
   if (!opener) return false;
