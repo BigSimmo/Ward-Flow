@@ -436,77 +436,152 @@ export function StatisticsWardScreen({
             aria-label="Beds now content"
             tabIndex={0}
           >
-            <section className={styles.panelBody}>
-              <h3 className={styles.figureHeading}>Recorded admissions · {bedMatrixList.length}</h3>{" "}
-              <div className={pageStyles.tableTools}>
-                <label htmlFor="bedMatrixSearch" className={pageStyles.srOnly}>
-                  Search admissions by ID or recorded state
-                </label>
-                <input
-                  id="bedMatrixSearch"
-                  type="search"
-                  className={pageStyles.tableSearch}
-                  placeholder="Search admission ID or state..."
-                  value={bedSearchQuery}
-                  onChange={(e) => setBedSearchQuery(e.target.value)}
-                  aria-label="Filter recorded admission roster"
-                />
-                <span className={styles.note}>
-                  Showing {filteredBedMatrix.length} of {bedMatrixList.length} admissions
-                </span>
-              </div>
-              <div className={pageStyles.tableWrap}>
-                <table className={pageStyles.dataTable}>
-                  <caption className={pageStyles.srOnly}>
-                    Recorded admission roster; numbered bed assignments are not recorded
-                  </caption>
-                  <thead>
+            <p className={styles.note}>
+              This roster records admission states. Numbered bed assignments are not recorded.
+            </p>
+            <div className={pageStyles.tableTools}>
+              <label htmlFor="bedMatrixSearch" className={pageStyles.srOnly}>
+                Search admissions by ID or recorded state
+              </label>
+              <input
+                id="bedMatrixSearch"
+                type="search"
+                className={pageStyles.tableSearch}
+                placeholder="Search admission ID or state..."
+                value={bedSearchQuery}
+                onChange={(e) => setBedSearchQuery(e.target.value)}
+                aria-label="Filter recorded admission roster"
+              />
+              <span className={styles.note}>
+                Showing {filteredBedMatrix.length} of {bedMatrixList.length} admissions
+              </span>
+            </div>
+            <div className={pageStyles.tableWrap}>
+              <table className={pageStyles.dataTable}>
+                <caption className={pageStyles.srOnly}>
+                  Recorded admission roster; numbered bed assignments are not recorded
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Assigned bed</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Admission / recorded sex</th>
+                    <th scope="col">Admitted</th>
+                    <th scope="col" className={pageStyles.n}>
+                      Length of stay
+                    </th>
+                    <th scope="col">Discharge target</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredBedMatrix.length === 0 ? (
                     <tr>
-                      <th scope="col">Assigned bed</th>
-                      <th scope="col">Status</th>
-                      <th scope="col">Admission / recorded sex</th>
-                      <th scope="col">Admitted</th>
-                      <th scope="col" className={pageStyles.n}>
-                        Length of stay
-                      </th>
-                      <th scope="col">Discharge target</th>
+                      <td colSpan={6}>
+                        {bedMatrixList.length === 0
+                          ? "No current admissions recorded"
+                          : "No admissions match this search"}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredBedMatrix.length === 0 ? (
-                      <tr>
-                        <td colSpan={6}>
-                          {bedMatrixList.length === 0
-                            ? "No current admissions recorded"
-                            : "No admissions match this search"}
-                        </td>
-                      </tr>
-                    ) : null}
-                    {filteredBedMatrix.map((b) => {
-                      let chipClass = pageStyles.chipMark;
-                      if (b.state === "Occupied") chipClass = pageStyles.chipOccupied;
+                  ) : null}
+                  {filteredBedMatrix.map((b) => {
+                    let chipClass = pageStyles.chipMark;
+                    if (b.state === "Occupied") chipClass = pageStyles.chipOccupied;
 
-                      return (
-                        <tr key={b.id}>
-                          <td>
-                            <strong>{b.bed}</strong>
-                          </td>
-                          <td>
-                            <span className={`${pageStyles.chip} ${chipClass}`}>{b.state}</span>
-                          </td>
-                          <td>
-                            <strong>{b.pt}</strong>
-                          </td>
-                          <td>{b.admitted}</td>
-                          <td className={pageStyles.n}>{b.days === null ? "Not recorded" : `${b.days} d`}</td>
-                          <td>{b.target}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
+                    return (
+                      <tr key={b.id}>
+                        <td>
+                          <strong>{b.bed}</strong>
+                        </td>
+                        <td>
+                          <span className={`${pageStyles.chip} ${chipClass}`}>{b.state}</span>
+                        </td>
+                        <td>
+                          <strong>{b.pt}</strong>
+                        </td>
+                        <td>{b.admitted}</td>
+                        <td className={pageStyles.n}>{b.days === null ? "Not recorded" : `${b.days} d`}</td>
+                        <td>{b.target}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className={pageStyles.measureDetailsBody}>
+              <h3 className={styles.subHeading}>Empty</h3>
+              <p className={styles.body}>
+                {unit.empty.value} {unit.empty.value === 1 ? "bed is" : "beds are"} physically empty on this ward right
+                now, whether or not the ward has confirmed it can allocate them.
+              </p>
+
+              <h3 className={styles.subHeading}>Allocatable</h3>
+              <p className={styles.body}>
+                {unit.allocatable.value === 0 ? (
+                  <>{unit.name} has no free bed right now — none of its beds are confirmed allocatable.</>
+                ) : (
+                  <>
+                    {unit.allocatable.value} {unit.allocatable.value === 1 ? "bed" : "beds"} this ward has confirmed it
+                    can allocate to a new patient.
+                  </>
+                )}
+              </p>
+
+              {/*
+               * Ruling R-B-09: "Ready" is the one word for `min(allocatable, empty)`, computed above by
+               * `unitCapacity` — never re-derived here. Both inputs sit beside it above so a reader can
+               * check the arithmetic rather than take the word for it — never "available now", "you can
+               * fill today", or "no bed free" (retired wording; "no free bed" above is a different,
+               * correct claim about `allocatable` alone).
+               */}
+              <h3 className={styles.subHeading}>Ready</h3>
+              <p className={styles.body}>
+                {capacity.available} {capacity.available === 1 ? "bed is" : "beds are"} ready to admit a new patient
+                right now — the smaller of the {unit.empty.value}{" "}
+                {unit.empty.value === 1 ? "bed that is" : "beds that are"} physically empty and the{" "}
+                {unit.allocatable.value} the ward has confirmed allocatable.
+              </p>
+              {/*
+               * ⚠️ **THE READY FIGURE ABOVE DELIBERATELY SUBTRACTS NOTHING FOR THIS, AND MUST NOT START.**
+               * The owner ruled (2026-09-01) that a bed being made ready blocks the pull but must not drop
+               * the ward's figure, so the number does not lurch as cleaning starts and stops. What was
+               * missing was this sentence beside it, not an adjustment to it.
+               *
+               * **Population is the owner's ruling of 2026-09-07: beds the patient has already left.**
+               * `bedsPendingPreparation` filters `state === "discharged" && preparing`, so a bed still
+               * occupied and flagged is not counted here — it is not a bed anyone can plan around tonight.
+               *
+               * ⚠️ **"marked as" is load-bearing and is not a hedge to tidy away.** The reducer does not
+               * constrain which releases may carry the flag, so this is a claim about the RECORD. "N beds
+               * are being made ready" would be a claim about the world, and the model cannot support it.
+               */}
+              {/*
+            ⚠️ **THE "but" CLAUSE RENDERS ONLY WHEN THE CONSTRAINT IS ACTUALLY BITING.** With nothing
+            pending it read "0 of this ward's empty beds are marked as being made ready … but a
+            patient cannot be pulled into a bed that is still being made ready" — a warning about a
+            constraint that is not operating, on 22 of the 23 wards. Not false, which is why it
+            survived; but a caution the reader meets every time and which never applies is one they
+            learn to skip, and it is still there on the ward where it matters.
+
+            Condition compares the two figures rather than `pendingPreparation > 0`, for the reason
+            given on the service screen: `openBedsNow` floors at nought, so the counts can coincide
+            while beds are pending.
+          */}
+              <p className={styles.body}>
+                {pendingPreparation} of this ward&apos;s empty {pendingPreparation === 1 ? "bed is" : "beds are"} marked
+                as Pending — cleaning, maintenance or repair, or with no reason stated.{" "}
+                {pendingPreparation === 1 ? "It is" : "They are"} counted in the figure above rather than held back from
+                it
+                {openBeds < capacity.available ? (
+                  <strong>
+                    , but a patient cannot be pulled into a bed that is still Pending, so the number available to act on
+                    right now is {openBeds}.
+                  </strong>
+                ) : (
+                  "."
+                )}
+              </p>
+            </div>
           </div>
         </WardPanel>
 
@@ -531,6 +606,12 @@ export function StatisticsWardScreen({
                 aria-label="Occupancy over the window content"
                 tabIndex={0}
               >
+                <p className={styles.note} data-testid="ward-stat-trends-disclaimer">
+                  Neither trend below is recorded — both charts below are demonstration data, not a measurement of this
+                  ward. This prototype keeps only the ward&apos;s current state, never a day-by-day history, so neither
+                  trend was ever recorded — see each chart&apos;s own caption for what it stands in for.
+                </p>
+
                 <DemonstrationChart series={occupancySeries} testId="ward-stat-occupancy-trend" />
                 <DemonstrationChart series={readySeries} testId="ward-stat-ready-trend" />
               </div>
@@ -548,6 +629,11 @@ export function StatisticsWardScreen({
                     </>
                   )}
                 </p>
+
+                <p className={styles.note} data-testid="ward-stat-los-bands-not-shown">
+                  The distribution above uses current non-departed admissions with a recorded stay. The average uses its
+                  own recorded-stay population.
+                </p>
               </div>
             </WardPanel>
             <StatisticsDetailPanel
@@ -561,6 +647,10 @@ export function StatisticsWardScreen({
                 aria-label="Admissions and discharges content"
                 tabIndex={0}
               >
+                <p className={styles.note} data-testid="ward-stat-flow-history-not-recorded">
+                  Day-by-day admissions and discharges are not recorded in Ward Flow, so the last 7 days are not shown.
+                </p>
+
                 <h3 className={styles.subHeading}>Average time a bed stood empty</h3>
                 {/*
                  * ⚠️ **`splitDuration`, THE ESTATE'S FORMATTER — this page printed "300 minutes" until
@@ -626,6 +716,14 @@ export function StatisticsWardScreen({
                   <p className={styles.body}>
                     This measure cannot be formed. The admission record carries no instant marking when a person joined
                     the waiting list.
+                  </p>
+                  <p className={styles.body}>
+                    The instants the record does carry are not all of one kind: some are about the bed, some are about
+                    the discharge plan, and at least one is about the person rather than about the bed. They are
+                    deliberately not listed here because this page does not own that record shape. The nearest
+                    equivalent elsewhere in this prototype measures from the moment a referral was raised, which this
+                    derivation cannot see, because it is given admissions only, by design. Supporting this figure would
+                    require a new recorded instant or a different derivation input.
                   </p>
                 </div>
               </div>
@@ -868,6 +966,11 @@ export function StatisticsWardScreen({
                     </>
                   )}
                 </section>
+
+                <p className={styles.note} data-testid="ward-stat-delayed-people-not-shown">
+                  A list of the people delayed, with their barriers and review times, is not recorded in Ward Flow. The
+                  counts by reason above are what the records hold.
+                </p>
               </div>
             </StatisticsDetailPanel>
             <WardPanel
@@ -950,6 +1053,33 @@ export function StatisticsWardScreen({
             </StatisticsDetailPanel>
           </div>
         </div>
+
+        <StatisticsDetailPanel
+          title="Data provenance and limits"
+          testId="ward-statistics-ward-governance"
+          dataTabSection="common"
+        >
+          <div
+            className={styles.panelBody}
+            role="group"
+            aria-label="Ward data provenance and limits content"
+            tabIndex={0}
+          >
+            <p className={styles.body}>
+              <Link href={STATISTICS_UNIT_CHOOSER_HREF} data-testid="ward-statistics-ward-chooser-link">
+                Choose a different ward from the comparisons page
+              </Link>
+            </p>
+
+            <p className={styles.note}>
+              Every figure here is invented and computed from this prototype&apos;s own state as the page renders.
+            </p>
+            <p className={styles.note}>
+              <strong>Unsupported measures</strong>: a measure the record cannot support says so in words rather than
+              showing a nought, because a nought that was never measured reads exactly like a nought that was.
+            </p>
+          </div>
+        </StatisticsDetailPanel>
       </div>
     </StatisticsSectionFrame>
   );

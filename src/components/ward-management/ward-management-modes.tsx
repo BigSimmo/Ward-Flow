@@ -1,33 +1,18 @@
 "use client";
 
-import { ChevronDown, CircleSlash, Clock3, History, Users, UserRound } from "lucide-react";
-import Link from "next/link";
+import { ChevronDown, UserRound } from "lucide-react";
 import { useState } from "react";
 
-import {
-  changeAudit,
-  effectivenessNumbers,
-  roleLabels,
-  MINIMUM_EFFECTIVENESS_SAMPLE,
-  type ChangeAuditEntry,
-  type EffectivenessMeasure,
-  type WardRole,
-} from "@/components/ward-management/ward-derivations";
+import { roleLabels, type ChangeAuditEntry, type WardRole } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardNetworkWorkspace } from "@/components/ward-management/ward-management-network";
 import type { WardMode } from "@/components/ward-management/ward-management-navigation";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstant } from "@/components/ward-management/ward-clock";
 import { DEMONSTRATION_DAY_LABEL, JURISDICTION_LABEL } from "@/components/ward-management/ward-sites";
 import { GovernanceWorkbench } from "@/components/ward-management/governance-registers";
 
 import styles from "./ward-management-modes.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-// Second-edition classes for the three views this file still owns (QueueView, ExceptionsView,
-// GovernanceView) plus their exclusive sub-components (DecisionPanel, EffectivenessValue). See
-// that file's own header comment for why it is a separate module rather than an edit to the
-// selectors above: several of those are declared in selector lists shared with CapacityView,
-// MovementsView, TransportView, ModeHeader and RoleFocus, which this task does not own.
-import se from "./ward-modes-second-edition.module.css";
 import governance from "./governance-third-edition.module.css";
 
 const roleFocusCopy: Record<WardRole, { title: string; detail: string }> = {
@@ -78,28 +63,6 @@ export const auditKindLabels: Record<ChangeAuditEntry["kind"], string> = {
   stage_corrected: "Stage corrected",
   acceptance_withdrawn: "Acceptance withdrawn",
 };
-
-/**
- * THE PANEL'S OWN SENTENCE ABOUT WHAT IT SHOWS, DERIVED FROM THE MAP ABOVE RATHER THAN RETYPED.
- *
- * 🔴 UNTIL 2026-09-04 BOTH SENTENCES NAMED FOUR KINDS AND THE MAP HELD SIX. `stage_corrected` and
- * `acceptance_withdrawn` were added the same day; the heading three hundred lines below still said
- * "Every urgency change, legal status change, pull release and transport cancellation", and the
- * empty state still said none of those four "has been recorded yet" — **a false statement of fact
- * about a patient's record on any movement whose stage had been corrected.**
- *
- * ⚠️ AND THE REASON IT HAPPENED IS THE GENERAL ONE. `auditKindLabels` is a TOTAL `Record` over the
- * union, so the compiler forced whoever added the two kinds to add their labels. Nothing forced the
- * paragraph. **The compiler is inside the definition of "the code" and the rendered sentence is
- * not** — which is why a heavily-guarded codebase keeps producing this class: every guard is on the
- * side the compiler can see. Deriving the sentence moves it to that side.
- *
- * The labels are used verbatim, only de-capitalised, so the sentence names the kinds in the same
- * words as the rows beneath it and a reader can match one to the other.
- */
-const auditKindWords = Object.values(auditKindLabels).map((label) => label.charAt(0).toLowerCase() + label.slice(1));
-const auditKindsAnd = `${auditKindWords.slice(0, -1).join(", ")} and ${auditKindWords[auditKindWords.length - 1]}`;
-const auditKindsOr = `${auditKindWords.slice(0, -1).join(", ")} or ${auditKindWords[auditKindWords.length - 1]}`;
 
 function ModeHeader({
   mode,
@@ -194,216 +157,13 @@ export function NotAMedicalDeviceStatement() {
   );
 }
 
-/**
- * Renders a computed effectiveness number, or its explicit absence — never a substituted `0` —
- * always immediately beside the basis it was drawn from. Rule 4 (conservative failure): a measure
- * this cannot compute must read as unknown, not as a suspiciously perfect result. Fix round 1: a
- * measure computed from a thin sample must say so in the same breath as the figure, not in a
- * tooltip or a footnote — a median of one, rendered bare, is a guess wearing the clothes of a
- * measurement, and this board's rule is to say nothing rather than guess.
- *
- * ⚠️ **THE TWO `data-testid`s BELOW EXIST SO A TEST CAN ASSERT THE FIGURE RATHER THAN THE LINE, AND
- * THEY ARE DELIBERATELY NOT UNIQUE ON THE PAGE.** Both governance measures render through this one
- * component, so each testid appears once per measure. The wrapper `<div>` around each `<dt>`/`<dd>`
- * pair already carries a unique testid (`…-acceptance`, `…-units-contacted`), and that wrapper is
- * the scope a test must query inside. It matters because the basis line ("from 32 of 50 movements")
- * always contains digits: a check made against the wrapper's `textContent` is satisfied by the
- * basis alone and cannot see a `NaN` where the published figure should be — reproduced 2026-09-01,
- * and the reason these two hooks were added. Do not "fix" the duplication by making the ids unique
- * per measure; scope with `within(wrapper)` instead. A bare `getByTestId` across the whole screen
- * throws on the two matches, which fails loudly rather than silently picking one.
- */
-function EffectivenessValue({
-  measure,
-  unit,
-  basisNoun,
-}: {
-  measure: EffectivenessMeasure;
-  unit: string;
-  basisNoun: string;
-}) {
-  const basis = (
-    <span className={se.effectivenessBasis}>
-      from {measure.sampleSize} of {measure.population} {basisNoun}
-    </span>
-  );
-  /*
-   * ⚠️ THE FLOOR (owner ruling, 2026-08-30). Below `MINIMUM_EFFECTIVENESS_SAMPLE` the figure is not
-   * published at all. The board was rendering "30 min — from 1 of 27 recorded acceptances", and the
-   * argument he approved is that **the word "Median" means "a typical case" to a clinician, and no
-   * caveat printed beside it undoes that** — on the one page whose entire purpose is being trusted
-   * about its own limits.
-   *
-   * ⚠️ **THIS ADDS A FLOOR BENEATH THE DISCLOSURE RULE ABOVE, IT DOES NOT REPLACE IT**, and that
-   * distinction was nearly lost. This comment's own tail clause — "say nothing rather than guess" —
-   * was read by one session as meaning suppress, and a question framed as "your code disagrees with
-   * its own rule, shall I fix it?" would have got a yes from anybody and deleted a repair somebody
-   * deliberately made. The clause attaches to a median RENDERED BARE. So `basis` still renders
-   * beneath the suppression: the screen says "from 1 of 27" beside "Not enough data to compute",
-   * which is what makes the absence informative rather than merely blank.
-   *
-   * It is decided HERE and not in `effectivenessNumbers`, deliberately. Suppressing in the
-   * derivation gutted five unit tests that exist to prove the median arithmetic and the
-   * `acceptedAt`-over-fallback preference — they feed it two and three movements on purpose. A
-   * publishing rule enforced inside the calculation stops the calculation being testable at the
-   * sizes it is interesting at. The derivation computes; this decides what a reader is shown.
-   */
-  if (measure.value === undefined || measure.sampleSize < MINIMUM_EFFECTIVENESS_SAMPLE) {
-    return (
-      <div className={governance.effSuppressed}>
-        <span className={governance.badge} data-tone="warn">
-          Suppressed
-        </span>
-        <span data-testid="ward-governance-effectiveness-suppressed">Not enough data to compute</span>
-        <span className={governance.auditDot}>·</span>
-        {basis}
-      </div>
-    );
-  }
-  const rounded = Math.round(measure.value * 10) / 10;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      <div className={governance.effFigureRow}>
-        <span className={governance.effFigure} data-testid="ward-governance-effectiveness-figure">
-          {rounded}
-        </span>
-        <span className={governance.effUnit}>{unit}</span>
-      </div>
-      {basis}
-    </div>
-  );
-}
-
-// Exported for the enumeration guard in `tests/ward-change-audit-enumeration.dom.test.tsx`,
-// which renders this panel and checks its sentences name every kind the audit can produce.
 export function GovernanceView() {
   const flow = useWardFlow();
   const { movements, units } = flow;
   const now = useWardFlowClock();
-  const audit = changeAudit(movements);
-  const effectiveness = effectivenessNumbers(movements);
   return (
     <div className={governance.governanceRoute} data-testid="ward-governance-view">
-      <GovernanceWorkbench
-        movements={movements}
-        units={units}
-        now={now}
-        api={flow}
-        legacyChanges={
-          <section className={governance.cardPanel} data-testid="ward-governance-change-audit">
-            <header className={governance.cardHead}>
-              <div>
-                <h2>Change audit</h2>
-                <p>Every {auditKindsAnd}, newest first</p>
-              </div>
-            </header>
-            <div className={governance.cardBody} style={{ padding: 0 }}>
-              {audit.length > 0 ? (
-                <ol className={governance.auditList}>
-                  {audit.map((entry, index) => {
-                    const tone =
-                      entry.kind === "urgency"
-                        ? "warn"
-                        : entry.kind === "legal_status"
-                          ? "accent"
-                          : entry.kind === "stage_corrected"
-                            ? "good"
-                            : "warn";
-                    return (
-                      <li
-                        key={`${entry.movementId}-${entry.kind}-${entry.at}-${index}`}
-                        className={governance.auditItem}
-                      >
-                        <div className={governance.auditTop}>
-                          <span className={governance.auditTime}>
-                            {entry.kind === "pull_released" || entry.kind === "transport_cancelled" ? (
-                              <History aria-hidden="true" />
-                            ) : (
-                              <Clock3 aria-hidden="true" />
-                            )}{" "}
-                            {formatInstantWithDay(entry.at, now)}
-                          </span>
-                          <span className={governance.auditDot}>·</span>
-                          <Link href="/mockups/ward-flow/movements" className={governance.auditMovementLink}>
-                            {entry.movementId}
-                          </Link>
-                          <span className={governance.auditDot}>·</span>
-                          <span className={governance.badge} data-tone={tone}>
-                            {auditKindLabels[entry.kind]}
-                          </span>
-                        </div>
-                        <div className={governance.auditDetailRow}>
-                          <span className={governance.auditDetail}>{entry.detail}</span>
-                          <span className={governance.auditBy}>· Recorded by treating team · by {entry.by}</span>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ol>
-              ) : (
-                <p className={governance.overrideEmptyCard} data-testid="ward-governance-change-audit-empty">
-                  None — no {auditKindsOr} has been recorded yet.
-                </p>
-              )}
-            </div>
-          </section>
-        }
-        effectiveness={
-          <aside className={governance.effCard} data-testid="ward-governance-effectiveness">
-            <header className={governance.effHead}>
-              <div>
-                <h2>Effectiveness</h2>
-                <p>Network placement response and operational quality measures</p>
-              </div>
-            </header>
-            <dl className={governance.effGrid}>
-              <div className={governance.effMetric} data-testid="ward-governance-effectiveness-acceptance">
-                <dt className={governance.effLabel}>
-                  <Clock3 aria-hidden="true" /> Median time, referral to a ward accepting
-                </dt>
-                <dd style={{ margin: 0 }}>
-                  <EffectivenessValue
-                    measure={effectiveness.medianMinutesToAcceptance}
-                    unit="min"
-                    basisNoun="recorded acceptances"
-                  />
-                </dd>
-                <span className={governance.effFootnote}>
-                  Sample volume is below the required publishing floor of 5 acceptances. Figure is withheld per clinical
-                  governance standards.
-                </span>
-              </div>
-              <div className={governance.effMetric} data-testid="ward-governance-effectiveness-units-contacted">
-                <dt className={governance.effLabel}>
-                  <Users aria-hidden="true" /> Average units contacted per patient
-                </dt>
-                <dd style={{ margin: 0 }}>
-                  <EffectivenessValue
-                    measure={effectiveness.averageUnitsContacted}
-                    unit="units"
-                    basisNoun="movements that referred at least one unit"
-                  />
-                </dd>
-                <span className={governance.effFootnote}>
-                  Target range 1.0 – 2.5 units · Demonstrates targeted placement without multi-ward scatter
-                </span>
-              </div>
-            </dl>
-            <p className={governance.effNotice}>
-              Both numbers describe recorded operational placement activity; does not show real-world clinical
-              performance.
-            </p>
-            <div className={governance.effDropped} data-testid="ward-governance-dropped-measure">
-              <CircleSlash aria-hidden="true" />
-              <div>
-                <strong>Governance Note on Time Limits: </strong>A third proposed success measure — statutory time
-                limits passed while a patient waits — is not published here. Form expiries remain recorded and shown as
-                operational alerts; this screen defines no effectiveness metric for them.
-              </div>
-            </div>
-          </aside>
-        }
-      />
+      <GovernanceWorkbench movements={movements} units={units} now={now} api={flow} />
       <details className={governance.srOnly} data-testid="ward-governance-medical-device-notice">
         <summary>Synthetic prototype · not a medical device</summary>
         <NotAMedicalDeviceStatement />

@@ -88,9 +88,12 @@ const CLAIMS = [
     //
     // 2026-10-01: PR12 adds tests/ward-capacity.dom.test.tsx for the Ward capacity-confirmation
     // form. Eighteen now; preserve the original correction and check this named addition too.
+    //
+    // 2026-10-06: nineteen. The capacity review pass adds tests/ward-capacity-review.dom.test.tsx.
+    // Same rule: the count must match and the named file must be the reason.
     claim:
-      "tests/ward-capacity-* was FOURTEEN files when the plan claimed fifteen; eighteen now for unrelated " +
-      "reasons (D9 added one on 2026-09-12, the WF-27 controls test one on 2026-09-16, C1 service-scope on 2026-09-17, Ward capacity-confirmation form on 2026-10-01), which does not make the plan's figure right",
+      "tests/ward-capacity-* was FOURTEEN files when the plan claimed fifteen; nineteen now for unrelated " +
+      "reasons (D9 added one on 2026-09-12, the WF-27 controls test one on 2026-09-16, C1 service-scope on 2026-09-17, Ward capacity-confirmation form on 2026-10-01, capacity review on 2026-10-06), which does not make the plan's figure right",
     check: () => {
       const n = existsSync(p("tests"))
         ? readdirSync(p("tests")).filter((f) => f.startsWith("ward-capacity")).length
@@ -99,10 +102,11 @@ const CLAIMS = [
       const controls = existsSync(p("tests/ward-capacity-controls.dom.test.tsx"));
       const serviceScope = existsSync(p("tests/ward-capacity-service-scope.dom.test.tsx"));
       const capacityForm = existsSync(p("tests/ward-capacity.dom.test.tsx"));
+      const review = existsSync(p("tests/ward-capacity-review.dom.test.tsx"));
       // Every half, so this cannot pass by a DIFFERENT file arriving or a named one being renamed.
       return {
-        ok: n === 18 && absorbed && controls && serviceScope && capacityForm,
-        saw: `${n} files, D9 addition ${absorbed ? "present" : "ABSENT"}, WF-27 addition ${controls ? "present" : "ABSENT"}, C1 addition ${serviceScope ? "present" : "ABSENT"}, capacity-confirmation form addition ${capacityForm ? "present" : "ABSENT"}`,
+        ok: n === 19 && absorbed && controls && serviceScope && capacityForm && review,
+        saw: `${n} files, D9 addition ${absorbed ? "present" : "ABSENT"}, WF-27 addition ${controls ? "present" : "ABSENT"}, C1 addition ${serviceScope ? "present" : "ABSENT"}, capacity-confirmation form addition ${capacityForm ? "present" : "ABSENT"}, review addition ${review ? "present" : "ABSENT"}`,
       };
     },
   },

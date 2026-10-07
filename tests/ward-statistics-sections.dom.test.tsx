@@ -117,12 +117,19 @@ describe("every statistics section page carries the disclaimer", () => {
     },
   ];
 
-  it.each(pages)(
-    "uses visible operational panels instead of the retired explanation: $name says the figures are invented and that no role gate exists",
-    () => {
-      assertStatisticsPresentation("ed", "ward-statistics-section-governance");
-    },
-  );
+  it.each(pages)("$name says the figures are invented and that no role gate exists", ({ testId, node }) => {
+    renderInProvider(node);
+    const governance = screen.getByTestId("ward-statistics-section-governance");
+    expect(governance.textContent).toContain("Synthetic prototype");
+    expect(governance.textContent).toContain("not real figures");
+    expect(governance.textContent).toContain("nothing here has been measured against a real service");
+    const access = screen.getByTestId("ward-statistics-section-access");
+    expect(access.textContent).toContain("no role check on this route");
+    expect(access.textContent).toContain("not as access control");
+    expect(governance.querySelector("details")).toBeNull();
+    expect(mainOf(testId).contains(governance)).toBe(true);
+    expect(mainOf(testId).contains(access)).toBe(true);
+  });
 
   it.each(pages)("$name offers a way back to the statistics hub", ({ node }) => {
     renderInProvider(node);

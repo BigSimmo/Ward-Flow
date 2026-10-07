@@ -1,10 +1,15 @@
 import type { ComponentProps } from "react";
 import { WardPanel } from "../ward-panel";
+import styles from "./statistics-family.module.css";
 
-/** Keep every operational breakdown visible in the page's modular grid. */
+/** Figure blocks stay on the page in the modular grid. They are sections, not tabs or closed disclosures. */
 export function StatisticsDetailPanel(props: ComponentProps<typeof WardPanel>) {
   return (
-    <section data-testid={`${props.testId ?? "statistics"}-disclosure`} data-tab-section={props.dataTabSection}>
+    <section
+      className={styles.shownSection}
+      data-testid={`${props.testId ?? "statistics"}-disclosure`}
+      data-tab-section={props.dataTabSection}
+    >
       <WardPanel {...props} />
     </section>
   );

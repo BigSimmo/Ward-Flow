@@ -1,7 +1,7 @@
 // The setup file already loads these matchers; importing them here as well lets the commit-time
 // type check, which reads only the changed files, see them too.
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -61,130 +61,49 @@ describe("ward release/leave forms — Today/Tomorrow day chooser", () => {
     fireEvent.click(screen.getByTestId("test-advance-clock"));
   }
 
-  it("both forms offer exactly Today and Tomorrow, Today checked by default, never free text", () => {
+  it("does not render the flag-bed or leave day choosers", () => {
     renderOnDay1At10();
-
-    for (const [formTestId, dayFieldPrefix] of [
-      ["ward-flag-bed-release", "ward-bed-release-day"],
-      ["ward-leave-bed-form", "ward-leave-bed-day"],
-    ] as const) {
-      const form = screen.getByTestId(formTestId);
-      const today = within(form).getByTestId(`${dayFieldPrefix}-today`);
-      const tomorrow = within(form).getByTestId(`${dayFieldPrefix}-tomorrow`);
-
-      expect(today).toHaveAttribute("type", "radio");
-      expect(tomorrow).toHaveAttribute("type", "radio");
-      expect(today).toBeChecked();
-      expect(tomorrow).not.toBeChecked();
-
-      // "Day" legend, and exactly these two options — a fixed control, never free text.
-      expect(within(form).getByText("Day")).toBeInTheDocument();
-      expect(
-        within(form)
-          .getAllByRole("radio")
-          .map((radio) => radio.getAttribute("data-testid")),
-      ).toEqual([`${dayFieldPrefix}-today`, `${dayFieldPrefix}-tomorrow`]);
-    }
+    expect(screen.queryByTestId("ward-flag-bed-release")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-leave-bed-form")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-bed-release-day-today")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-leave-bed-day-today")).not.toBeInTheDocument();
   });
 
-  it("release form: choosing Today with a past time shows the exact hint; Tomorrow never does", () => {
+  it("does not show the release-form past-time hint", () => {
     renderOnDay1At10();
-
-    // now is day 1, 10:00. 09:00 today has already passed.
-    fireEvent.change(screen.getByLabelText("Expected free"), { target: { value: "09:00" } });
-    expect(screen.getByTestId("ward-bed-release-day-hint")).toHaveTextContent(
-      "That time has already passed today, so this bed will show as due now.",
-    );
-
-    // Switching to Tomorrow must clear the hint — 09:00 tomorrow has not passed, however early
-    // the clock face reads. A same-day-only comparison (the shape the old bug would take if
-    // half-fixed) would keep the hint showing here.
-    fireEvent.click(screen.getByTestId("ward-bed-release-day-tomorrow"));
-    expect(screen.queryByTestId("ward-bed-release-day-hint")).not.toBeInTheDocument();
-
-    // Back to Today: the hint returns, proving the control is read live rather than latched.
-    fireEvent.click(screen.getByTestId("ward-bed-release-day-today"));
-    expect(screen.getByTestId("ward-bed-release-day-hint")).toBeInTheDocument();
-
-    // A later-today time never shows the hint.
-    fireEvent.change(screen.getByLabelText("Expected free"), { target: { value: "14:00" } });
+    expect(screen.queryByLabelText("Expected free")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-bed-release-day-hint")).not.toBeInTheDocument();
   });
 
-  it("leave form behaves exactly the same, with its own exact hint wording", () => {
+  it("does not show the leave-form past-time hint", () => {
     renderOnDay1At10();
-
-    fireEvent.change(screen.getByLabelText("Expected return"), { target: { value: "09:00" } });
-    expect(screen.getByTestId("ward-leave-bed-day-hint")).toHaveTextContent(
-      "That time has already passed today, so this bed will show as due back now.",
-    );
-
-    fireEvent.click(screen.getByTestId("ward-leave-bed-day-tomorrow"));
-    expect(screen.queryByTestId("ward-leave-bed-day-hint")).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByTestId("ward-leave-bed-day-today"));
-    expect(screen.getByTestId("ward-leave-bed-day-hint")).toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText("Expected return"), { target: { value: "14:00" } });
+    expect(screen.queryByLabelText("Expected return")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-leave-bed-day-hint")).not.toBeInTheDocument();
   });
 
-  // 🔴 CHANGED 25 September 2026 (Josh chose "Refuse"): with no patient picker yet, a release
-  // submit is refused and records nothing. What this test still proves is that a Tomorrow time
-  // gets PAST the day-aware parse and reaches the patient check: the refusal message appears (a
-  // parse failure returns silently before it). When the picker lands, restore the success half:
-  // the form resets and the chooser returns to Today.
-  it("release form: a Tomorrow time passes the day-aware parse and reaches the patient check, which refuses with no patient chosen", () => {
+  it("does not offer a release submit that can record a bed coming free", () => {
     renderOnDay1At10();
-
-    fireEvent.change(screen.getByLabelText("Waiting on"), { target: { value: "Nothing outstanding" } });
-    fireEvent.change(screen.getByLabelText("Expected free"), { target: { value: "09:00" } });
-    fireEvent.click(screen.getByTestId("ward-bed-release-day-tomorrow"));
-    expect(screen.getByTestId("ward-bed-release-day-tomorrow")).toBeChecked();
-
-    fireEvent.click(screen.getByTestId("ward-flag-bed-release-submit"));
-
-    expect(screen.getByText("Choose the patient whose bed is coming free. Nothing was recorded.")).toBeInTheDocument();
-    // Refused, so nothing is reset: the choices stay as the ward left them.
-    expect(screen.getByLabelText("Waiting on")).toHaveValue("Nothing outstanding");
-    expect(screen.getByTestId("ward-bed-release-day-tomorrow")).toBeChecked();
+    expect(screen.queryByLabelText("Waiting on")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-flag-bed-release-submit")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Choose the patient whose bed is coming free. Nothing was recorded."),
+    ).not.toBeInTheDocument();
   });
 
-  // CHANGED 25 September 2026 (owner ruling: a leave bed names the stay it belongs to). The form has
-  // no patient picker yet, so it refuses with a plain message, as the bed-release form beside it
-  // does (case above). When the picker lands, restore the record half: the count rises by one and
-  // the chooser resets to Today.
-  it("leave form: submitting with Tomorrow chosen is refused with no patient chosen, and nothing is reset", () => {
+  it("does not offer a leave submit that can record a bed on leave", () => {
     renderOnDay1At10();
-
-    const before = screen.getByTestId("ward-leave-bed-form").textContent ?? "";
-
-    fireEvent.change(screen.getByLabelText("Expected return"), { target: { value: "09:00" } });
-    fireEvent.click(screen.getByTestId("ward-leave-bed-day-tomorrow"));
-    fireEvent.click(screen.getByTestId("ward-leave-bed-submit"));
-
-    expect(screen.getByText("Choose the patient who is on leave. Nothing was recorded.")).toBeInTheDocument();
-    const after = screen.getByTestId("ward-leave-bed-form").textContent ?? "";
-    expect(after, "a refused submit must not change this ward's on-leave count").toBe(before);
-    // Refused, so nothing is reset: the choice stays as the ward left it.
-    expect(screen.getByTestId("ward-leave-bed-day-tomorrow")).toBeChecked();
+    expect(screen.queryByTestId("ward-leave-bed-submit")).not.toBeInTheDocument();
+    expect(screen.queryByText("Choose the patient who is on leave. Nothing was recorded.")).not.toBeInTheDocument();
   });
 
-  it("on the opening day, before any midnight roll, existing same-day submits are unaffected", () => {
-    // No clock advance here — the exact scenario every pre-existing test in
-    // ward-screen.dom.test.tsx and ward-bed-release.dom.test.tsx already exercises, which must
-    // keep passing unchanged: default Today, no interaction with the new chooser at all.
+  it("on the opening day, the leave form is still absent", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId="scgh-adult-open" />
       </WardFlowProvider>,
     );
-
+    expect(screen.queryByTestId("ward-leave-bed-form")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-leave-bed-day-hint")).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Expected return"), { target: { value: "12:15" } });
-    fireEvent.click(screen.getByTestId("ward-leave-bed-submit"));
-    expect(screen.getByTestId("ward-leave-bed-form")).toHaveTextContent(
-      "1 bed currently on leave at Mental Health Unit",
-    );
+    expect(screen.getByRole("button", { name: "Leave, 14:00–18:00" })).toBeInTheDocument();
   });
 });

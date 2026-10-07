@@ -1,4 +1,3 @@
-import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -19,7 +18,7 @@ import {
   refusedAndNothingPending,
   type AdmissionStagePosition,
 } from "@/components/ward-management/statistics/statistics-derivations";
-
+import { statisticsSectionById } from "@/components/ward-management/statistics/statistics-sections";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -260,8 +259,13 @@ describe("the statistics overview now carries real figures, honestly", () => {
    * disclosure's own testid rather than the whole page, so a false positive elsewhere in the page's
    * prose cannot satisfy it.
    */
-  it("uses visible operational panels instead of the retired explanation: states who the declines-by-reason figure misses", () => {
-    assertStatisticsPresentation("overview", "ward-statistics-overview-declines-scope");
+  it("states who the declines-by-reason figure misses", () => {
+    renderOverview();
+
+    const text = value("ward-statistics-overview-declines-scope");
+    expect(text.length, "the disclosure has almost no content").toBeGreaterThan(120);
+    expect(text).toMatch(/already (waiting )?inside/i);
+    expect(text).toMatch(/before the person has (ever )?reached a department/i);
   });
 
   /** The two tables the brief requires, at minimum. */
@@ -271,13 +275,24 @@ describe("the statistics overview now carries real figures, honestly", () => {
     expect(screen.getByTestId("ward-statistics-overview-declines-table")).toBeInTheDocument();
   });
 
-  /** The three disclosures the brief requires, at minimum — native `<details>` elements, per the
-   *  fourth-edition design language's `.reveal` primitive. */
-  it("uses visible operational panels instead of the retired explanation: carries at least three disclosures", () => {
-    assertStatisticsPresentation("overview");
+  /** Limits sit on the page. They are not closed disclosures. */
+  it("shows recorded limits on the page rather than behind disclosures", () => {
+    renderOverview();
+    const main = within(screen.getByTestId("ward-statistics-overview-screen")).getByRole("main");
+    expect(main.querySelectorAll("details")).toHaveLength(0);
+    expect(screen.getByTestId("ward-statistics-overview-declines-scope")).toBeVisible();
+    expect(screen.getAllByTestId("ward-statistics-overview-capacity-disclosure").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("ward-statistics-overview-refused-so-far-disclosure")).toBeVisible();
   });
 
-  it("uses visible operational panels instead of the retired explanation: shows the shared section title and retained reporting scope and provenance", () => {
-    assertStatisticsPresentation("overview", "ward-statistics-overview-invented-figures");
+  it("shows the shared section title and retained reporting scope and provenance", () => {
+    renderOverview();
+    const section = statisticsSectionById("overview");
+    expect(section).toBeDefined();
+    expect(screen.getByRole("heading", { level: 1, name: section!.label })).toBeTruthy();
+    expect(screen.getByTestId("ward-statistics-overview-scope").textContent).toContain("Network-wide current state");
+    expect(screen.getByTestId("ward-statistics-overview-invented-figures").textContent).toContain(
+      "Every figure here is invented and describes no real person or day.",
+    );
   });
 });

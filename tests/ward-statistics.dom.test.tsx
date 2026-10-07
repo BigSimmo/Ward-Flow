@@ -1,16 +1,19 @@
-import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 // The setup file already loads these matchers; importing them here as well lets the commit-time
 // type check, which reads only the changed files, see them too.
 import "@testing-library/jest-dom/vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { expectNeverSaysAgain, expectSays } from "./helpers/ward-caption";
+import { expectCaption, expectNeverSaysAgain, expectSays } from "./helpers/ward-caption";
 
+const OF_GAP = "the constant-gap note";
+const OF_READY = "the bed-readiness timing refusal";
 const OF_ESC = "the escalated-movements disclosure";
+const OF_REASON = "the declines-by-reason note";
+const OF_CLEAN = "the nought-preparing count";
 
 // Same reason as every sibling dom suite: `ClinicalRail` renders next/link anchors, and jsdom
 // cannot provide an App Router context.
@@ -22,6 +25,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+import { STATISTICS_SECTIONS } from "@/components/ward-management/statistics/statistics-sections";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-reasons";
@@ -126,8 +130,14 @@ function renderScreen(props: {
 
 describe("the statistics screen — six drawing panels, kept apart", () => {
   // Josh, 25 Sept 2026: made-up trends show "Not recorded"; targets stay, labelled as targets.
-  it("uses visible operational panels instead of the retired explanation: offers only the current state, with concise history and synthetic-data context", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-reporting-period");
+  it("offers only the current state, without a history switch or the old reporting strip", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+    expect(screen.queryByTestId("ward-statistics-reporting-period")).toBeNull();
+    expect(screen.queryByText("history unavailable")).toBeNull();
+    expect(screen.queryByText("Current state")).toBeNull();
+    expect(screen.queryByText("Last 7 Days")).toBeNull();
+    expect(screen.queryByText("Last 30 Days")).toBeNull();
+    expect(screen.queryByRole("radio")).toBeNull();
   });
 
   it("shows a current capacity chart without inventing history or a target", () => {
@@ -143,8 +153,31 @@ describe("the statistics screen — six drawing panels, kept apart", () => {
     }
   });
 
-  it("uses visible operational panels instead of the retired explanation: renders six named drawing panels and says whose question each audience answers", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-system-audience");
+  it("renders six named drawing panels and says whose question each audience answers", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+
+    screen.getByTestId("ward-statistics-system");
+    screen.getByTestId("ward-statistics-patients");
+
+    const drawingPanels = [
+      ["ward-statistics-system", "Across all services"],
+      ["ward-statistics-patients", "Where beds are available"],
+      ["ward-statistics-pressure", "Where the pressure is"],
+      ["ward-statistics-emergency-departments", "Emergency departments"],
+      ["ward-statistics-community-chooser", "Community teams"],
+      ["ward-statistics-referrals-for-bed", "Referrals for a bed"],
+    ] as const;
+    expect(drawingPanels).toHaveLength(6);
+    for (const [testId, name] of drawingPanels) {
+      expect(within(screen.getByTestId(testId)).getByRole("heading", { name })).toBeTruthy();
+    }
+
+    expect(screen.getByTestId("ward-statistics-system-audience")).toHaveTextContent(
+      "Network and ward measures. No person-level measure is shown here.",
+    );
+    expect(screen.getByTestId("ward-statistics-patients-audience")).toHaveTextContent(
+      "Waiting-time measures from admission records; no ward score.",
+    );
   });
 
   /**
@@ -155,8 +188,44 @@ describe("the statistics screen — six drawing panels, kept apart", () => {
    * The table below is exhaustive over the four figures on the page and the loop asserts BOTH
    * directions for each — present in its own section, absent from the other.
    */
-  it("uses visible operational panels instead of the retired explanation: puts every figure in its own audience's section, and in no other", () => {
-    assertStatisticsPresentation("hub");
+  it("puts every figure in its own audience's section, and in no other", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+
+    const PLACEMENT: { figure: string; belongsIn: string; notIn: string }[] = [
+      { figure: "ward-statistics-bed-readiness", belongsIn: "system", notIn: "patients" },
+      { figure: "ward-statistics-not-offered", belongsIn: "system", notIn: "patients" },
+      { figure: "ward-statistics-refused-so-far", belongsIn: "pressure", notIn: "patients" },
+      { figure: "ward-statistics-declines", belongsIn: "emergency-departments", notIn: "system" },
+      { figure: "ward-statistics-declines-by-reason", belongsIn: "emergency-departments", notIn: "system" },
+      { figure: "ward-statistics-blocked-discharges-by-reason", belongsIn: "pressure", notIn: "system" },
+      { figure: "ward-statistics-pull-to-arrival", belongsIn: "patients", notIn: "system" },
+      { figure: "ward-statistics-referral-to-bed", belongsIn: "referrals-for-bed", notIn: "system" },
+    ];
+
+    // The vacuity guard: a table that had shrunk to nothing would make the loop assert nothing at
+    // all, which is exactly how the referral-to-bed hole came to exist in the first place.
+    expect(PLACEMENT.length).toBe(8);
+
+    /*
+     * ⚠️ **AND THE TABLE IS COMPARED AGAINST THE PAGE, NOT ONLY WALKED.** A hand-written length is
+     * a second copy of "how many figures there are", and it stops being true the moment somebody
+     * adds a figure without a placement row — the exact hole this test was written for, reopened
+     * from the other side. Every `<article className={figure}>` on the page carries a testid
+     * starting `ward-statistics-`, so the set of figures is discoverable from the DOM: a figure
+     * added and not listed above fails HERE, naming itself, rather than passing unnoticed.
+     */
+    const rendered = Array.from(document.querySelectorAll("[data-testid^='ward-statistics-']"))
+      .filter((node) => node.tagName === "ARTICLE")
+      .map((node) => node.getAttribute("data-testid"));
+    expect(rendered.length).toBeGreaterThan(0);
+    expect([...rendered].sort()).toEqual([...PLACEMENT.map((entry) => entry.figure)].sort());
+
+    for (const { figure, belongsIn, notIn } of PLACEMENT) {
+      const home = screen.getByTestId(`ward-statistics-${belongsIn}`);
+      const other = screen.getByTestId(`ward-statistics-${notIn}`);
+      expect(within(home).queryByTestId(figure)).not.toBeNull();
+      expect(within(other).queryByTestId(figure)).toBeNull();
+    }
   });
 
   /**
@@ -171,8 +240,14 @@ describe("the statistics screen — six drawing panels, kept apart", () => {
    * is pinned in `tests/ward-statistics-sections.dom.test.tsx`, so a shared edit fails on both sides
    * and a page-specific one fails on this side alone.
    */
-  it("uses visible operational panels instead of the retired explanation: says it is the coordinator's view and that nothing enforces it", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-access");
+  it("says it is the coordinator's view and that nothing enforces it", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+
+    expect(normalise(screen.getByTestId("ward-statistics-access").textContent)).toBe(
+      "This is meant to be the coordinator's view — and nothing in this prototype enforces that. There is no " +
+        "role check on this route. Anyone who can reach the Ward Flow mockups can reach this page and read " +
+        "everything on it. Treat the coordinator framing as a statement of intent, not as access control.",
+    );
   });
 
   /**
@@ -185,8 +260,15 @@ describe("the statistics screen — six drawing panels, kept apart", () => {
    * figures")` guards the alarm and leaves unguarded the half that says which things are invented —
    * exactly the clause the fold rewrote.
    */
-  it("uses visible operational panels instead of the retired explanation: says on itself that the figures are not real", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-governance");
+  it("says on itself that the figures are not real", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+
+    const banner = screen.getByTestId("ward-statistics-governance");
+    expect(banner.textContent).toContain("Synthetic prototype");
+    expect(normalise(banner.querySelector("p")?.textContent)).toBe(
+      "These are not real figures. Every patient, bed, referral and instant this prototype holds is invented, and " +
+        "nothing here has been measured against a real service.",
+    );
   });
 });
 
@@ -203,13 +285,31 @@ describe("the statistics screen — six drawing panels, kept apart", () => {
  */
 describe("the hub index, driven by the section list", () => {
   /** Every entry the index rendered, in document order. */
+  function renderedEntries(): HTMLAnchorElement[] {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+    return Array.from(screen.getByTestId("ward-statistics-index").querySelectorAll("a"));
+  }
 
-  it("uses visible operational panels instead of the retired explanation: renders exactly one entry per section, in the module's order", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-index");
+  it("renders exactly one entry per section, in the module's order", () => {
+    // The vacuity guard: an empty module would make every assertion below compare two empty arrays
+    // and pass while the index rendered nothing at all.
+    expect(STATISTICS_SECTIONS.length).toBeGreaterThan(0);
+
+    const entries = renderedEntries();
+    expect(entries.length).toBe(STATISTICS_SECTIONS.length);
+    expect(entries.map((entry) => entry.getAttribute("data-testid"))).toEqual(
+      STATISTICS_SECTIONS.map((section) => `ward-statistics-index-entry-${section.id}`),
+    );
   });
 
-  it("uses visible operational panels instead of the retired explanation: takes every compact navigation label from the module", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-index");
+  it("takes every compact navigation label from the module", () => {
+    // Each entry's own elements, compared as a pair: an entry that rendered the label twice, or
+    // dropped the description, differs here where a check on the entry's whole text might not.
+    const rendered = renderedEntries().map((entry) =>
+      Array.from(entry.querySelectorAll("span")).map((part) => normalise(part.textContent)),
+    );
+
+    expect(rendered).toEqual(STATISTICS_SECTIONS.map((section) => [section.label]));
   });
 
   /**
@@ -220,8 +320,10 @@ describe("the hub index, driven by the section list", () => {
    * comparison exists, with the list they wanted below the fold. Fix round 1 found precisely that
    * defect in four other places.
    */
-  it("uses visible operational panels instead of the retired explanation: renders each href exactly as the module gives it, fragment and all", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-index");
+  it("renders each href exactly as the module gives it, fragment and all", () => {
+    expect(renderedEntries().map((entry) => entry.getAttribute("href"))).toEqual(
+      STATISTICS_SECTIONS.map((section) => section.href),
+    );
   });
 
   /**
@@ -231,8 +333,13 @@ describe("the hub index, driven by the section list", () => {
    * page as measured. The check is over the whole index region rather than over the entries alone,
    * so a count added to the heading or the introduction fails here too.
    */
-  it("uses visible operational panels instead of the retired explanation: puts no numeral anywhere in the index", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-index");
+  it("puts no numeral anywhere in the index", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+
+    const index = screen.getByTestId("ward-statistics-index");
+    // Not vacuous: an index that rendered nothing would also contain no numeral.
+    expect(within(index).getAllByRole("link")).toHaveLength(STATISTICS_SECTIONS.length);
+    expect(index.textContent).not.toMatch(/[0-9]/);
   });
 
   /**
@@ -240,8 +347,19 @@ describe("the hub index, driven by the section list", () => {
    * figure moves off it. A figure rendered inside the index would be both a content migration and a
    * number in a place that must hold none.
    */
-  it("uses visible operational panels instead of the retired explanation: keeps every figure out of the index and on the page where it already was", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-index");
+  it("keeps every figure out of the index and on the page where it already was", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+
+    const index = screen.getByTestId("ward-statistics-index");
+    for (const figure of [
+      "ward-statistics-bed-readiness",
+      "ward-statistics-declines",
+      "ward-statistics-pull-to-arrival",
+      "ward-statistics-referral-to-bed",
+    ]) {
+      expect(within(index).queryByTestId(figure)).toBeNull();
+      expect(screen.queryByTestId(figure)).not.toBeNull();
+    }
   });
 });
 
@@ -254,14 +372,85 @@ describe("the withheld statistic says so on the page", () => {
    * current six-panel layout carries the ward-facing decline measures, and it must name both records
    * so the ruling is legible.
    */
-  it("uses visible operational panels instead of the retired explanation: renders a withheld-declines block in the emergency-departments section, naming both records", () => {
-    assertStatisticsPresentation("hub");
+  it("renders a withheld-declines block in the emergency-departments section, naming both records", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+
+    const emergencyDepartments = screen.getByTestId("ward-statistics-emergency-departments");
+    expect(within(emergencyDepartments).queryByTestId("ward-statistics-declines")).not.toBeNull();
+
+    // Concepts, not sentences: the owner is redesigning these pages, and pinning the wording made
+    // a reworded caption and a DELETED one produce the same red. The deletion is the defect.
+    expectCaption(screen.getByTestId("ward-statistics-declines"), {
+      of: "the withheld declines figure",
+      mentions: [
+        ["No ward-attributable decline measure", "no per-ward number"],
+        // Both records, because the ruling is a choice between them. Named by CONCEPT since the
+        // field names came off these pages on 2026-09-06 (the owner's ruling); the identifiers are
+        // still checkable, and the test below this one is what keeps them so.
+        //
+        // ⚠️ DEAD ALTERNATES REMOVED 2026-09-09. `ReferralAddressing` and `Movement.declines` were
+        // the first spelling in each group, and the `it.each(identifiers)` test a few lines below
+        // asserts UNCONDITIONALLY that both are nowhere on the rendered page. Neither could ever
+        // fire. Each group read as three ways to pass and had two — the same shape found at five
+        // other sites in this file, and the reason it matters is that redundancy which is not there
+        // is what stops the next reader checking the spellings that are.
+        ["referral decline", "referral names"],
+        ["movement decline", "Movement declines"],
+        // The block must identify why neither record can supply one ward-attributable measure.
+        "decline",
+        ["different populations", "different measure"],
+      ],
+    });
   });
 });
 
 describe("a count of nought is an answer, and never looks like a missing one", () => {
-  it("uses visible operational panels instead of the retired explanation: renders nought beds being prepared as a numeral, in the count element", () => {
-    assertStatisticsPresentation("hub");
+  it("renders nought beds being prepared as a numeral, in the count element", () => {
+    renderScreen({
+      admissions: [],
+      referrals: [],
+      bedReleases: [bedRelease({ id: "BR-A", preparing: false })],
+    });
+
+    const count = screen.getByTestId("ward-statistics-preparing-count");
+    expect(count.textContent).toContain("0");
+    /*
+     * ⚠️ **THIS ASSERTION PINNED "cleaned" AND FORBADE "made ready" UNTIL 2026-09-07. IT WAS
+     * DEFENDING A RULING THE OWNER HAD SINCE SUPERSEDED, AND IT WENT RED ON THE CORRECT FIX.**
+     *
+     * The 2026-09-04 ruling it enforced is real and is NOT withdrawn: "Ready" names ONE number,
+     * `min(allocatable, empty)`, and this figure counts beds nobody can be put in yet. That is why
+     * "cleaned" was chosen as the substitute for the heading and the sentence.
+     *
+     * **The owner corrected the substitute on 2026-09-07:** *"It is not just being cleaned… it can
+     * be many things and it comes under the bed state of Pending."* The model agrees —
+     * `bedsBeingPrepared()` filters on `release.preparing` ALONE, and `BED_PREPARATION_NOTES` holds
+     * "Being cleaned" AND "Awaiting maintenance or repair", with a null note documented at
+     * `ward-model.ts:1097` as legal and meaning "being made ready, reason not stated". Three states;
+     * "cleaned" named one of them.
+     *
+     * ⚠️ **The old assertion passed only by fixture accident.** The seed holds exactly one
+     * `preparing: true` record and its note happens to say "Being cleaned", so this test would have
+     * gone on passing over a screen that called a bed awaiting MAINTENANCE a bed being cleaned.
+     *
+     * "cleaned" is deliberately NOT left in the accepted list beside the new spelling. Keeping it
+     * would let the superseded wording pass too, and an assertion that accepts either of two
+     * contradictory words is not pinning a concept — it is recording that nobody decided.
+     */
+    expectSays(count.textContent ?? "", OF_CLEAN, ["pending"]);
+    /*
+     * ⚠️ AND IT MUST NOT SAY "EXPECTED". `expected` is a member of `BED_RELEASE_STATES` meaning the
+     * discharge has NOT yet happened, so "0 expected beds are being made ready" told a coordinator
+     * the bed was not yet available when it already is — preparation only ever begins after
+     * `RELEASE_BED`. The count was right and the word inverted the capacity fact, which is why this
+     * assertion is about a word rather than a number.
+     */
+    expect(count.textContent).not.toContain("expected");
+    // The distinction made in the markup rather than only in the words: the measured count is its
+    // own element and is NOT the element that says a figure cannot be measured.
+    const absence = screen.getByTestId("ward-statistics-readiness-timing-absent");
+    expect(count).not.toBe(absence);
+    expect(absence.contains(count)).toBe(false);
   });
 
   it("renders a non-nought count in the same element, so nought is not a special rendering", () => {
@@ -275,8 +464,29 @@ describe("a count of nought is an answer, and never looks like a missing one", (
     expect(screen.getByTestId("ward-statistics-preparing-count").textContent).toContain("2");
   });
 
-  it("uses visible operational panels instead of the retired explanation: never puts a numeral inside an unmeasurable-figure statement", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-readiness-timing-absent");
+  it("never puts a numeral inside an unmeasurable-figure statement", () => {
+    renderScreen({
+      admissions: [],
+      referrals: [],
+      bedReleases: [bedRelease({ id: "BR-A", preparing: false })],
+    });
+
+    // If a "cannot be measured" paragraph ever renders a figure, a reader has no way left to tell
+    // an absence from a nought. All THREE absence statements are checked — including the withheld
+    // declines block, whose whole safety is that saying it publishes no figure — and each must be
+    // non-empty so this cannot pass against a page that renders none of them.
+    const absences = [
+      "ward-statistics-readiness-timing-absent",
+      "ward-statistics-referral-join-absent",
+      "ward-statistics-declines-withheld",
+    ];
+    expect(absences.length).toBe(3);
+
+    for (const testId of absences) {
+      const text = screen.getByTestId(testId).textContent ?? "";
+      expect(text.length).toBeGreaterThan(0);
+      expect(text).not.toMatch(/[0-9]/);
+    }
   });
 });
 
@@ -309,12 +519,41 @@ describe("pull to arrival — a real figure, computed from the record", () => {
    * incoherent record would be the same failure one step along — so the page counts it, and this
    * test proves the count reaches the screen rather than only the derivation.
    */
-  it("uses visible operational panels instead of the retired explanation: excludes an impossible record from the average and shows it as excluded", () => {
-    assertStatisticsPresentation("hub");
+  it("excludes an impossible record from the average and shows it as excluded", () => {
+    renderScreen({
+      admissions: [
+        admission({ id: "AD-A", pulledAt: 0, arrivedAt: 240 }),
+        // Arrived four hours before the bed was given away. A clamp would fold this in as a zero
+        // and drag the average to 2h 00m.
+        admission({ id: "AD-B", pulledAt: 500, arrivedAt: 260 }),
+      ],
+      referrals: [],
+      bedReleases: [],
+    });
+
+    expect(screen.getByTestId("ward-statistics-arrival-average").textContent).toBe("4h 00m");
+    expect(screen.getByTestId("ward-statistics-arrival-measured-count").textContent).toBe("1");
+
+    const incoherent = screen.getByTestId("ward-statistics-arrival-incoherent").textContent ?? "";
+    expect(incoherent).toContain("1");
+    expect(incoherent).toContain("arrival before bed pull");
+    expect(incoherent).toContain("excluded, never treated as zero");
   });
 
-  it("uses visible operational panels instead of the retired explanation: says there is nothing to average rather than showing nought minutes", () => {
-    assertStatisticsPresentation("hub");
+  it("says there is nothing to average rather than showing nought minutes", () => {
+    renderScreen({
+      admissions: [admission({ id: "AD-A", state: "pulled", pulledAt: 30, arrivedAt: null })],
+      referrals: [],
+      bedReleases: [],
+    });
+
+    // An average of nothing is absent. A rendered "0m" here would claim everybody arrived the
+    // instant their bed was given away, which is the most flattering possible lie on this page.
+    expect(screen.queryByTestId("ward-statistics-arrival-average")).toBeNull();
+    const nothing = screen.getByTestId("ward-statistics-arrival-nothing-to-average").textContent ?? "";
+    expect(nothing).toContain("No usable pull-and-arrival pair is recorded");
+    expect(nothing).toContain("no average is shown");
+    expect(nothing).toContain("excluded, rather than treated as zero");
   });
 
   it("counts the people still waiting separately instead of dropping them", () => {
@@ -334,8 +573,19 @@ describe("pull to arrival — a real figure, computed from the record", () => {
     expect(screen.getByTestId("ward-statistics-arrival-awaiting-count").textContent).toBe("2");
   });
 
-  it("uses visible operational panels instead of the retired explanation: says how much of the figure is history rather than tonight", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-arrival-population");
+  it("says how much of the figure is history rather than tonight", () => {
+    renderScreen({
+      admissions: [
+        admission({ id: "AD-A", state: "departed", pulledAt: 0, arrivedAt: 120, leftAt: 9000 }),
+        admission({ id: "AD-B", state: "occupied", pulledAt: 0, arrivedAt: 120 }),
+      ],
+      referrals: [],
+      bedReleases: [],
+    });
+
+    expect(screen.getByTestId("ward-statistics-arrival-ended-count").textContent).toBe("1");
+    const population = screen.getByTestId("ward-statistics-arrival-population").textContent ?? "";
+    expect(population).toContain("measured admissions have ended and remain in this historic measure");
   });
 });
 
@@ -348,8 +598,32 @@ describe("pull to arrival — a real figure, computed from the record", () => {
  * case is the one that would go red on a hardcoded paragraph.
  */
 describe("a constant gap is identified without an inferred cause, and only while it is constant", () => {
-  it("uses visible operational panels instead of the retired explanation: reports the identical recorded gaps without claiming why they match", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-arrival-constant-gap");
+  it("reports the identical recorded gaps without claiming why they match", () => {
+    renderScreen({
+      admissions: [
+        // Two records, the same gap on both: 0 -> 120 and 500 -> 620 are both two hours. That is
+        // the shape a fixed offset between the two instants produces, and the shape this sentence
+        // exists to explain.
+        admission({ id: "AD-A", pulledAt: 0, arrivedAt: 120 }),
+        admission({ id: "AD-B", pulledAt: 500, arrivedAt: 620 }),
+      ],
+      referrals: [],
+      bedReleases: [],
+    });
+
+    // The world the sentence describes: an average with the two ends sitting on top of it.
+    expect(screen.getByTestId("ward-statistics-arrival-average").textContent).toBe("2h 00m");
+    expect(screen.getByTestId("ward-statistics-arrival-shortest").textContent).toBe("2h 00m");
+    expect(screen.getByTestId("ward-statistics-arrival-longest").textContent).toBe("2h 00m");
+
+    const text = screen.getByTestId("ward-statistics-arrival-constant-gap").textContent ?? "";
+    expectSays(text, OF_GAP, ["same length", "identical", "all the same"]);
+    expect(text).toContain("no variation");
+    expect(text).toContain("does not establish why");
+    // It must never name the seeded value or the population size: both are seed facts that move,
+    // and a sentence carrying them would age into a wrong figure on the page that is believed
+    // hardest. Any digit at all in this paragraph is that defect.
+    expect(text).not.toMatch(/[0-9]/);
   });
 
   it("says nothing of the kind once the gaps actually differ", () => {
@@ -421,6 +695,19 @@ describe("a constant gap is identified without an inferred cause, and only while
  * BedRelease.preparing", so a ban on the bare stem "recorded" would fail on true copy. These are
  * phrases, and the phrase is what carries the promise.
  */
+const DATA_ENTRY_FRAMINGS: readonly string[] = [
+  "not yet collected",
+  "not yet recorded",
+  "not yet captured",
+  "not yet gathered",
+  "not yet entered",
+  "has not been collected",
+  "have not been collected",
+  "yet to be collected",
+  "awaiting collection",
+  "once the data is collected",
+  "when the data is collected",
+];
 
 /**
  * THE FIELD NAMES CAME OFF THE SCREEN AND MUST STAY REACHABLE FROM THE SOURCE.
@@ -480,8 +767,54 @@ describe("the identifiers came off the screen and stayed in the source", () => {
 });
 
 describe("the two empty states say WHY, mechanically", () => {
-  it("uses visible operational panels instead of the retired explanation: names the recorded fields and the reason bed readiness cannot be timed", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-readiness-timing-absent");
+  it("names the recorded fields and the reason bed readiness cannot be timed", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+
+    const text = screen.getByTestId("ward-statistics-readiness-timing-absent").textContent ?? "";
+    expect(text).toContain("Bed readiness");
+    expectSays(text, OF_READY, ["yes/no", "boolean", "true or false"]);
+    expect(text).toContain("one shared timestamp");
+    expect(text).toContain("later release actions overwrite");
+    expect(text).toContain("no start-and-end pair can be measured");
+    // The DATA-ENTRY framing is the retired falsehood: no amount of data entry against today's
+    // model produces this figure, so any wording promising it later is wrong however it is spelt.
+    /*
+     * 🔴 **THE BAN BELOW READS THE PAGE, AND IT USED TO READ ONE ELEMENT. Measured 2026-09-10**,
+     * after Ward Lead pointed out that a narrowed read proves less than it appears to. I had run
+     * this ban's PREDICATE — retired phrase planted in the guarded element, RED — and recorded it
+     * as measured. **That is the predicate, not the guard**, and it is the second time on this
+     * branch I have made exactly that substitution.
+     *
+     *     "not yet collected" planted in a DIFFERENT ARTICLE   ->   SILENT while both bans sat
+     *                                                                at element scope; RED once
+     *                                                                either one reads the page
+     *
+     * 🔴 **MY FIRST PROBE OF THIS WAS INVALID, AND I FOUND OUT ONLY BECAUSE THE FIX DID NOT CHANGE
+     * ITS RESULT.** I planted *"have not yet been collected"*. The banned phrase is *"not yet
+     * collected"* — "been" sits in the middle, so the plant carried no banned phrase at all and
+     * its SILENT result was evidence of nothing. It had already been committed as a measured hole.
+     * **A near-miss paraphrase of a banned phrase is a probe that cannot fire, and it is
+     * indistinguishable from a ban that will not fire.** It agreed with the hypothesis I was
+     * holding, which is why it read as a result rather than as a null. Copy the phrase verbatim
+     * out of the list.
+     *
+     * ⚠️ **The counterfactual also needed BOTH data-entry bans reverted at once.** With either one
+     * page-scoped it caught the plant meant for the other, so a single-ban revert reports a working
+     * guard. **Two guards sharing one list cover for each other, and the cover is invisible until
+     * you try to measure one of them alone.**
+     *
+     * ⚠️ **And reading the lists first is what made the probe worth running.** None of the eleven
+     * `DATA_ENTRY_FRAMINGS` phrases appears in the page-wide ban further down this file, so these
+     * bans had no cover from it at all — unlike the already-free ban, whose three phrases the
+     * page-wide list does carry, and which caught the same plant.
+     *
+     * All four are page-scoped now rather than three, so **no ban here depends on another ban's
+     * list for its cover.** Cover borrowed from a sibling is silently withdrawn the day somebody
+     * edits that sibling, and nothing goes red when it is.
+     */
+    const page = normalise(screen.getByTestId("ward-statistics-screen").textContent);
+    expect(page.length).toBeGreaterThan(2000);
+    expectNeverSaysAgain(page, "the statistics page — the data-entry framing", DATA_ENTRY_FRAMINGS);
   });
 
   /**
@@ -491,12 +824,72 @@ describe("the two empty states say WHY, mechanically", () => {
    * time. The refusal is right and the reason was wrong, which is the combination every green test
    * in this suite missed — so the old wording is now forbidden by name rather than merely replaced.
    */
-  it("uses visible operational panels instead of the retired explanation: never says again that nothing marks the moment preparation started", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-readiness-timing-absent");
+  it("never says again that nothing marks the moment preparation started", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+
+    screen.getByTestId("ward-statistics-readiness-timing-absent");
+    // Widened past the two exact sentences: a withdrawn claim returns just as wrongly when it is
+    // paraphrased, and the original ban passes on any rewrite of it.
+    /*
+     * 🔴 **THE BAN BELOW READS THE PAGE, AND IT USED TO READ ONE ELEMENT. Measured 2026-09-10**,
+     * after Ward Lead pointed out that a narrowed read proves less than it appears to. I had run
+     * this ban's PREDICATE — retired phrase planted in the guarded element, RED — and recorded it
+     * as measured. **That is the predicate, not the guard**, and it is the second time on this
+     * branch I have made exactly that substitution.
+     *
+     *     phrase planted in a DIFFERENT ARTICLE on the same page   ->   SILENT, no ban fired
+     *
+     * ⚠️ **And reading the lists first is what made the probe worth running.** None of the eleven
+     * `DATA_ENTRY_FRAMINGS` phrases appears in the page-wide ban further down this file, so these
+     * bans had no cover from it at all — unlike the already-free ban, whose three phrases the
+     * page-wide list does carry, and which caught the same plant.
+     *
+     * All four are page-scoped now rather than three, so **no ban here depends on another ban's
+     * list for its cover.** Cover borrowed from a sibling is silently withdrawn the day somebody
+     * edits that sibling, and nothing goes red when it is.
+     */
+    const page = normalise(screen.getByTestId("ward-statistics-screen").textContent);
+    expect(page.length).toBeGreaterThan(2000);
+    expectNeverSaysAgain(page, "the statistics page — the readiness-timing claim", [
+      "nothing marks the moment preparation started",
+      "nothing records when preparation started",
+      "no instant marks the moment preparation",
+      "no timed state to measure",
+      "no timed state",
+    ]);
+    /*
+     * 🔴 **A BARE BAN ON "not a missing timestamp" STOOD HERE UNTIL 2026-09-05 AND IT WAS A
+     * FIGHTER — it went red on copy stating the very fact the paragraph exists to state.**
+     *
+     * It was never one of the five claims corrected in `ab16d11a9`; that commit lists them, and
+     * only "nothing marks the moment preparation started" came from this paragraph. The phrase was
+     * collateral in the same rewrite, and banning it froze one wording of a surviving true claim.
+     *
+     * **The live headline says the reason is "not that nobody writes a time down". "The reason is
+     * not a missing timestamp" says the same thing — the obstacle is not an unfilled field — and
+     * it is arguably the better sentence.** Measured rather than argued: substituting it into
+     * `statistics-screen.tsx` failed THIS test ALONE, by name, with the other 47 in the file green,
+     * including every assertion about `confirmedAt`, the boolean, the pair of instants and the
+     * model change. Source hash 73a0700c before and after.
+     *
+     * That is Ward Lead's own test for a fighter — restate the fact differently and the guard must
+     * SURVIVE — failed in one mutation. The retired FALSE claim is guarded above, by concept, which
+     * is where the protection belongs. Do not reinstate this line.
+     */
   });
 
-  it("uses visible operational panels instead of the retired explanation: explains the refusal by what an exact link can establish", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-referral-join-absent");
+  it("explains the refusal by what an exact link can establish", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+
+    const text = screen.getByTestId("ward-statistics-referral-join-absent").textContent ?? "";
+    expect(text).toContain("No referral-to-bed duration is published");
+    expect(text).toContain("exact referral link");
+    expect(text).toContain("does not establish");
+    expect(text).toContain("started the wait that ended with this admission");
+    expect(text).toContain("without turning them into a duration");
+    const page = normalise(screen.getByTestId("ward-statistics-screen").textContent);
+    expect(page.length).toBeGreaterThan(2000);
+    expectNeverSaysAgain(page, "the statistics page — the referral-join data-entry framing", DATA_ENTRY_FRAMINGS);
   });
 
   /**
@@ -510,8 +903,16 @@ describe("the two empty states say WHY, mechanically", () => {
    * prose carries no numeral at all — a rule a reviewer can check at a glance and a rewrite cannot
    * quietly weaken.
    */
-  it("uses visible operational panels instead of the retired explanation: states the refusal without a single numeral in it", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-referral-join-absent");
+  it("states the refusal without a single numeral in it", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+
+    const text = screen.getByTestId("ward-statistics-referral-join-absent").textContent ?? "";
+    // Not vacuous: it has to be a complete refusal, not an empty element that trivially has no digit.
+    expect(text.trim().split(/\s+/).length).toBeGreaterThan(20);
+    expect(text).not.toMatch(/[0-9]/);
+    // And the measurement is still on the page, in its own elements, so the prose gave nothing up.
+    expect(screen.getByTestId("ward-statistics-join-coherent-count").textContent).toBe("0");
+    expect(screen.getByTestId("ward-statistics-join-matched-count").textContent).toBe("0");
   });
 
   /**
@@ -582,18 +983,140 @@ describe("the two empty states say WHY, mechanically", () => {
    * `SET_BED_PREPARATION` checks the acting ward and the note and never the release's stage. The
    * page now says both halves — what should hold, and that nothing enforces it.
    */
-  it("uses visible operational panels instead of the retired explanation: says what Pending means without claiming it establishes occupancy", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-bed-readiness");
+  it("says what Pending means without claiming it establishes occupancy", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [] });
+
+    const text = screen.getByTestId("ward-statistics-bed-readiness").textContent ?? "";
+    expect(text).toContain("currently marked as Pending");
+    expect(text).toContain("cleaning, maintenance or repair, or with no reason stated");
+    expect(text).toContain("the model does not enforce that the occupant has already left");
+    // Page-scoped for INDEPENDENCE, not because a hole was found here: the plant that defeated the
+    // two bans above was caught for these three phrases by the page-wide ban further down. That is
+    // cover borrowed from another list, and it disappears silently the day that list is edited.
+    const page = normalise(screen.getByTestId("ward-statistics-screen").textContent);
+    expect(page.length).toBeGreaterThan(2000);
+    expectNeverSaysAgain(page, "the statistics page — the already-free claim", [
+      "These beds are already free",
+      "these beds are free already",
+      "the beds are already free",
+    ]);
   });
 
-  it("uses visible operational panels instead of the retired explanation: shows the measured join beside the claim, so the claim is checkable", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-join-coherent-count");
+  it("shows the measured join beside the claim, so the claim is checkable", () => {
+    renderScreen({
+      admissions: [
+        admission({ id: "AD-A", referralId: "RF-GER1-01", arrivedAt: 900 }),
+        admission({ id: "AD-B", referralId: "RF-GER1-02", arrivedAt: 900 }),
+      ],
+      // No referral carries either id, so nothing matches and nothing can be measured.
+      referrals: [],
+      bedReleases: [],
+    });
+
+    // Equality on the figure's OWN element, never `toContain` on the sentence. An adversarial
+    // check found the old containment assertion passed by luck: the substituted value was `267`,
+    // which happens to contain no "0" — `260`, `100` or `30` would all have slipped through.
+    expect(screen.getByTestId("ward-statistics-join-coherent-count").textContent).toBe("0");
+    expect(screen.getByTestId("ward-statistics-join-matched-count").textContent).toBe("0");
+    expect(screen.getByTestId("ward-statistics-join-with-id-count").textContent).toBe("2");
+    expect(screen.getByTestId("ward-statistics-join-referrals-searched").textContent).toBe("0");
+
+    // The population sentence is a separate element and was asserted by nothing; a deletion of it
+    // would have left the coherent count with no denominator on the page and no test failing.
+    const population = screen.getByTestId("ward-statistics-join-population").textContent ?? "";
+    expect(population).toContain("2");
+    expect(population).toContain("carrying a referral id");
   });
 });
 
 describe("the live world", () => {
-  it("uses visible operational panels instead of the retired explanation: renders against provider state with no overrides at all", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-arrival-constant-gap");
+  it("renders against provider state with no overrides at all", () => {
+    // The route passes nothing, so this is the only rendering a user ever sees. A screen that only
+    // worked against hand-built fixtures would pass every test above and be blank in the app.
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <StatisticsScreen />
+      </WardFlowProvider>,
+    );
+
+    expect(screen.getByTestId("ward-statistics-screen")).toBeTruthy();
+    // The seeded world has measurable arrivals, so the average branch — not the empty one — renders.
+    expect(screen.queryByTestId("ward-statistics-arrival-nothing-to-average")).toBeNull();
+    expect(screen.getByTestId("ward-statistics-arrival-average").textContent).toBe("5h 00m");
+
+    /*
+     * ⚠️ AND THE SEEDED WORLD IS THE CONSTANT-GAP WORLD, which is the whole reason the sentence
+     * had to be written. The seed derives one instant from the other by a single offset at every
+     * site that writes both, so the two ends land on the headline and the average re-reports one
+     * seeded interval. Asserted from the seed rather than a hand-built fixture: a reader of the
+     * app sees only this rendering, and a sentence that appeared for test fixtures and not for the
+     * live page would leave the real reader with the symptom and no cause, exactly as before.
+     */
+    expect(screen.getByTestId("ward-statistics-arrival-shortest").textContent).toBe("5h 00m");
+    expect(screen.getByTestId("ward-statistics-arrival-longest").textContent).toBe("5h 00m");
+    expect(screen.getByTestId("ward-statistics-arrival-constant-gap")).toBeTruthy();
+
+    /*
+     * ⚠️ THE LIVE-WORLD ENDED COUNT, pinned to a non-zero literal, and it is the guard for the
+     * in-flight `"left"` -> `"departed"` rename. Every other test of this figure uses a hand-built
+     * two-record fixture whose `state: "departed"` literal still hits a stale `case "left"`, so a
+     * half-landed rename left them all green while the page silently rendered "0 of the measured
+     * admissions have since ended" — inverting the caveat that stops a historical figure being
+     * read as tonight's ward. Only a seed-driven assertion sees that.
+     */
+    const endedCount = screen.getByTestId("ward-statistics-arrival-ended-count").textContent ?? "";
+    expect(Number(endedCount)).toBeGreaterThan(0);
+    expect(endedCount).toBe("5");
+
+    /*
+     * ⚠️ COUPLED TO TWO THINGS THAT DO NOT MENTION IT — READ BOTH BEFORE CHANGING THESE FIGURES.
+     *
+     *   1. `tests/ward-statistics-derivations.test.ts`, "finds exactly one seeded pair, and that
+     *      pair can carry a duration" — the same measurement asserted on `referralToBedJoin`
+     *      itself rather than on the rendered page. It moves whenever this does, in its own file.
+     *   2. The community hub. `admissionBelongsToTeam`
+     *      (`src/components/ward-management/community/community-derivations.ts`) runs the same
+     *      `find` over the same two arrays, so the one seeded admission that makes these counts
+     *      non-nought is also the only thing that can put anybody on one of the 65 team pages.
+     *
+     * Full account: `docs/ward-flow/fields-with-no-producer-2026-09-01.md` (final addendum).
+     *
+     * ⚠️ THE SEEDED JOIN MATCHED NINE UNTIL 2026-09-01, AND THIS COMMENT WAS WRONG ABOUT THEM TWICE
+     * OVER. It said the nine were an ACCIDENTAL COLLISION between the admissions fixture's ward
+     * tags and referrals that happened to share hospital abbreviations, and that the patients
+     * arrived WEEKS BEFORE the referral. Neither survives being checked. `52ad01dda` added those
+     * nine DELIBERATELY — in its own words, "by using the ids the admissions ALREADY hold, so not
+     * one admission changed" — to make the community team pages render; `git log -S'RF-SCGO-15'`
+     * returns it, and `fa616d1c9` is where they were removed again, for a third reason: they asked
+     * for no ward bed and sat at the top of the coordinator's bed-matching queue. And three of the
+     * nine were 1.03, 3.03 and 5.04 days, not weeks. ⚠️ The one-day case is the dangerous one,
+     * because it reads as a rounding error rather than as a category error.
+     *
+     * ⚠️ BOTH HALVES ARE TRUE AND NEITHER ALONE IS THE STORY: the nine were deliberate, and the
+     * pairs they produced were meaningless. Every one put the patient in the bed before the
+     * referral existed, so not one could carry a duration.
+     *
+     * ⚠️ THE COUNT IS ONE NOW, AND THAT IS THE FRONT DOOR STARTING TO WORK RATHER THAN THE
+     * COLLISION RETURNING. `AD-LEFT-01` names `RF-010`, the community-only referral split out of
+     * `RF-007`; the referral is raised 24 days before the anchor and the admission arrived 23 days
+     * ago, so MATCHED and COHERENT are both one. The equality is the check that matters — a matched
+     * count running ahead of the coherent one is the `52ad01dda` shape returning under a new name.
+     *
+     * ⚠️ **TEN SINCE 2026-09-05, AND THE NINE ADDED ARE DEMONSTRATION DATA — see
+     * `MIDLAND_DEMONSTRATION_ROWS` (`ward-movements.ts`).** The owner asked for one community
+     * team's page to be populated so the redesign could be judged on a screen with people on it,
+     * and nine referrals naming `"Midland"` were added using ids the admissions seed ALREADY
+     * manufactures. **Not one admission changed.**
+     *
+     * ⚠️ **THE TWO FIGURES BELOW MOVED TOGETHER, WHICH IS THE WHOLE TEST.** Every one of the nine
+     * is raised, and answered, before its admission's bed was pulled — so each match can date a
+     * bed, and MATCHED still equals COHERENT. **A ten that is not matched by a ten below is the
+     * `52ad01dda` shape returning**, and the fix is the fixture's timing, never this number.
+     */
+    expect(Number(screen.getByTestId("ward-statistics-join-with-id-count").textContent)).toBeGreaterThan(0);
+    expect(Number(screen.getByTestId("ward-statistics-join-referrals-searched").textContent)).toBeGreaterThan(0);
+    expect(screen.getByTestId("ward-statistics-join-matched-count").textContent).toBe("10");
+    expect(screen.getByTestId("ward-statistics-join-coherent-count").textContent).toBe("10");
   });
 });
 
@@ -680,17 +1203,41 @@ describe("a refusal figure publishes no quantity in its prose", () => {
   // Non-vacuous: four, and the loop below proves each one actually rendered.
   expect(refusals.length).toBe(4);
 
-  it.each(refusals)(
-    "uses visible operational panels instead of the retired explanation: %s carries its refusal with no loose figure beside it",
-    () => {
-      assertStatisticsPresentation("hub", "ward-statistics-not-offered-absent");
-    },
-  );
+  it.each(refusals)("%s carries its refusal with no loose figure beside it", (testId) => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [], movements: [] });
+
+    const paragraph = screen.getByTestId(testId);
+    const article = paragraph.closest("article");
+    expect(article, `${testId} is not inside an <article>, so this guard has nothing to read`).not.toBeNull();
+
+    // The refusal itself has to be real prose, or an emptied render passes this trivially.
+    expect(normalise(paragraph.textContent).split(/\s+/u).length).toBeGreaterThan(5);
+
+    const clone = article!.cloneNode(true) as HTMLElement;
+    for (const named of Array.from(clone.querySelectorAll("[data-testid]"))) named.remove();
+    const loose = normalise(clone.textContent);
+
+    expect(
+      loose.match(/[0-9]/g) ?? [],
+      `a figure is rendered inside the ${testId} article as loose prose rather than in an element ` +
+        "of its own. A quantity beside a refusal is read as the refusal's answer however the " +
+        `paragraph is worded. The prose left after removing every named element was: "${loose}"`,
+    ).toEqual([]);
+  });
 });
 
 describe("empty beds that were not offered — an absence, with no proxy beside it", () => {
-  it("uses visible operational panels instead of the retired explanation: renders the absence and no figure at all", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-not-offered");
+  it("renders the absence and no figure at all", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [], movements: [] });
+
+    const block = screen.getByTestId("ward-statistics-not-offered");
+    expect(within(block).getByRole("heading", { name: "Empty beds that were not offered" })).toBeTruthy();
+    expect(within(block).getByTestId("ward-statistics-not-offered-absent")).toBeTruthy();
+
+    // ⚠️ NOT A PROSE ASSERTION. A figure beside its own disclaimer is read as the figure, so what
+    // is pinned is that the block renders no digit anywhere — no derived held count, no arithmetic,
+    // no "0". A stand-in added later fails here whatever wording is put around it.
+    expect(normalise(block.textContent)).not.toMatch(/[0-9]/);
   });
 
   /**
@@ -698,8 +1245,14 @@ describe("empty beds that were not offered — an absence, with no proxy beside 
    * what the record actually holds, and says whose change would fix it — "not yet collected" would
    * invite somebody to fill the gap later with a plausible number.
    */
-  it("uses visible operational panels instead of the retired explanation: names both aggregate capacity measures and refuses an offer proxy", () => {
-    assertStatisticsPresentation("hub", "ward-statistics-not-offered-absent");
+  it("names both aggregate capacity measures and refuses an offer proxy", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [], movements: [] });
+
+    const absence = normalise(screen.getByTestId("ward-statistics-not-offered-absent").textContent);
+
+    expect(absence).toContain("aggregate empty and allocatable counts");
+    expect(absence).toContain("no bed-level or request-level offer event");
+    expect(absence).toContain("No readiness-gap proxy is shown");
   });
 });
 
@@ -1115,8 +1668,42 @@ describe("declines by reason — generated from the model's vocabulary", () => {
    * The two are easy to confuse and the confusion is the dangerous direction: a by-reason table
    * read as a per-ward one would decide, silently, the very question the owner reserved.
    */
-  it("uses visible operational panels instead of the retired explanation: names no ward, and leaves the per-ward figure withheld", () => {
-    assertStatisticsPresentation("hub");
+  it("names no ward, and leaves the per-ward figure withheld", () => {
+    renderScreen({
+      admissions: [],
+      referrals: [],
+      bedReleases: [],
+      movements: [movement({ id: "WF-J", declines: [{ unitId: "rph-adult-secure", at: 0, reason: "no_bed" }] })],
+    });
+
+    const block = normalise(screen.getByTestId("ward-statistics-declines-by-reason").textContent);
+    // The unit id is on the record the tally was built from, and must not reach the page.
+    expect(block).not.toContain("rph-adult-secure");
+    expect(block).toContain("Movement declines grouped by the ward's recorded reason");
+    // The front-door boundary, in the one durable sentence: which referral reasons a screen can
+    // even offer is a fact about the software, so no distribution over them belongs here.
+    /*
+     * 🔴 **POLARITY-BLIND. Measured 2026-09-09.** The spelling was `["front door"]`, which is the
+     * SUBJECT of an exclusion rather than the exclusion. Rendered *"it counts wards approached
+     * through the coordinator's matching, as well as referrals refused at the front door"* — the
+     * opposite of what the figure measures — and the file went **66/66 GREEN**. The reader would
+     * be told this count includes front-door refusals, which would misdescribe its denominator.
+     *
+     * ⚠️ REPLACED, not widened. Every spelling below carries the negation, so none of them can
+     * survive the reversal; the cost is the ordinary one — a paraphrase outside the list reddens
+     * honest copy, which is why the list holds several shapes of the same denial and not one idiom.
+     */
+    expectSays(block, OF_REASON, [
+      "not referrals refused at the front door",
+      "not refusals at the front door",
+      "not at the front door",
+      "excludes the front door",
+      "front door is not counted",
+      "front-door refusals are not counted",
+      "front-door referral declines are excluded",
+    ]);
+
+    expect(screen.getByTestId("ward-statistics-declines-withheld")).toBeTruthy();
   });
 });
 
@@ -1252,8 +1839,32 @@ describe("blocked discharges by reason — generated from the model's blocker vo
    * identifiers off the prototype. They are asserted in the source instead, by the identifier guard
    * above — which is why this can be re-pointed at the distinction without the claim going unchecked.
    */
-  it("uses visible operational panels instead of the retired explanation: says which record the blocker sits on and rules out the other", () => {
-    assertStatisticsPresentation("hub");
+  it("says which record the blocker sits on and rules out the other", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [], movements: [] });
+
+    const block = screen.getByTestId("ward-statistics-blocked-discharges-by-reason").textContent ?? "";
+    const OF_BLOCKED = "the blocked-discharges figure";
+    // 🔴 THE STARKEST OF THE FIVE: THREE listed spellings, ONE live. "against the ADMISSION" and
+    // "against the admission" are the SAME string once expectSays lowercases both sides, and
+    // "Admission.blockReason" is guaranteed absent by the identifier test in this file. So a
+    // three-alternate list had exactly one spelling that could ever match.
+    expectSays(block, OF_BLOCKED, [
+      "against the admission",
+      "on the admission record",
+      "recorded against the admission",
+      "their recorded discharge blocker",
+    ]);
+    // 🔴 A DEAD ALTERNATE. The identifier spelling below was listed as a fallback, and a SEPARATE
+    // test in this file — "the identifiers came off the screen and stayed in the source" — asserts
+    // that identifier is NOWHERE on the rendered page, unconditionally. So the fallback could never
+    // fire: the list looked like it had redundancy and had none. Replaced with real English
+    // alternates. Found 2026-09-09 across five sites.
+    expectSays(block, OF_BLOCKED, [
+      "against a movement",
+      "on a movement",
+      "on the movement",
+      "movement blockers are excluded",
+    ]);
   });
 
   /**

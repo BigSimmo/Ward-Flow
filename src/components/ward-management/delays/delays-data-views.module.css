@@ -92,7 +92,10 @@
   grid-template-columns: minmax(0, 1fr);
 }
 .layout[data-layout="workspace"] {
-  grid-template-columns: 200px minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+}
+.layout[data-layout="workspace"][data-dossier="open"] {
+  grid-template-columns: minmax(160px, 200px) minmax(0, 1fr) minmax(280px, 340px);
 }
 .toolbar {
   display: flex;
@@ -1063,7 +1066,10 @@
 }
 @media (max-width: 1450px) {
   .layout[data-layout="workspace"] {
-    grid-template-columns: 175px minmax(0, 1fr) 305px;
+    grid-template-columns: 175px minmax(0, 1fr);
+  }
+  .layout[data-layout="workspace"][data-dossier="open"] {
+    grid-template-columns: 160px minmax(0, 1fr) 280px;
   }
   .worklistHeader {
     flex-wrap: wrap;
@@ -1182,8 +1188,8 @@
 
 /* Final reference alignment: a single-line action toolbar and six compact rows. */
 @media (min-width: 1451px) {
-  .layout[data-layout="workspace"] {
-    grid-template-columns: 225px minmax(0, 1fr) 390px;
+  .layout[data-layout="workspace"][data-dossier="open"] {
+    grid-template-columns: 200px minmax(0, 1fr) 360px;
   }
   .layout[data-layout="workspace"] .worklistHeader {
     flex-wrap: nowrap;
@@ -1626,4 +1632,207 @@
   .compactReviewLabel {
     background: Canvas;
   }
+}
+
+.layout[data-layout="focus"] .patientButton {
+  font-size: 12.5px;
+}
+.layout[data-layout="focus"] tbody tr[data-selected="true"] {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+.selectLabel select,
+.modeSwitch,
+.rowsPerPage select {
+  border-radius: 999px;
+}
+.modeSwitch {
+  padding: 3px;
+  background: var(--surface-2);
+}
+.modeSwitch button {
+  border-radius: 999px;
+}
+.dossier {
+  border-radius: 16px;
+}
+.dossier h3 {
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+.blockerPanel {
+  margin-top: 8px;
+}
+.blockerPanel summary {
+  min-height: 44px;
+  padding: 10px 14px;
+}
+
+.workspace,
+.panel,
+.teamRail,
+.dossier,
+.timelinePanel {
+  border: 1px solid color-mix(in srgb, var(--dv-ink) 8%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
+    0 8px 22px color-mix(in srgb, var(--dv-ink) 6%, transparent);
+}
+.workspace {
+  padding: 12px 14px;
+}
+.teamRail,
+.dossier,
+.blockerPanel {
+  border-radius: 8px;
+}
+.tabs,
+.tabs button,
+.selectLabel select,
+.search {
+  border-radius: 8px;
+}
+.tabs {
+  padding: 2px;
+  background: color-mix(in srgb, var(--dv-ink) 4%, var(--surface));
+}
+.tabs button[aria-selected="true"] {
+  border-radius: 6px;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .workspace,
+  .panel,
+  .teamRail,
+  .dossier {
+    background: var(--surface);
+    backdrop-filter: none;
+  }
+}
+.tabs,
+.modeSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  width: max-content;
+  max-width: 100%;
+  padding: 2px;
+  border: 1px solid color-mix(in srgb, var(--dv-ink) 8%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--dv-ink) 5%, var(--surface));
+  box-shadow: inset 0 1px 1px color-mix(in srgb, var(--dv-ink) 5%, transparent);
+}
+.tabs button,
+.modeSwitch button {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dv-muted, var(--muted));
+  box-shadow: none;
+  min-height: 28px;
+  padding: 4px 10px;
+}
+.tabs button[aria-selected="true"],
+.modeSwitch button[aria-pressed="true"] {
+  border-radius: 6px;
+  border-color: transparent;
+  background: var(--surface);
+  color: var(--dv-ink);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
+    0 1px 2px color-mix(in srgb, var(--dv-ink) 10%, transparent);
+}
+.markBar {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  width: max-content;
+  max-width: 100%;
+  padding: 2px;
+  border: 1px solid color-mix(in srgb, var(--dv-ink) 8%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--dv-ink) 5%, var(--surface));
+  box-shadow: inset 0 1px 1px color-mix(in srgb, var(--dv-ink) 5%, transparent);
+}
+.markBar button {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dv-muted, var(--muted));
+  box-shadow: none;
+  min-height: 28px;
+  padding: 4px 10px;
+  gap: 6px;
+}
+.markBar button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--dv-ink);
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 78%, transparent),
+    0 1px 2px color-mix(in srgb, var(--dv-ink) 10%, transparent);
+}
+.markBar b {
+  border: 0;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--dv-ink) 7%, transparent);
+  color: var(--muted);
+  box-shadow: none;
+}
+.markBar button[aria-pressed="true"] b {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  color: var(--accent);
+}
+.teamRail button {
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-height: 40px;
+}
+.teamRail button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.pagination button {
+  border-radius: 8px;
+  border-color: color-mix(in srgb, var(--dv-ink) 8%, transparent);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+@media (forced-colors: active) {
+  .workspace,
+  .panel,
+  .teamRail,
+  .dossier,
+  .tabs,
+  .modeSwitch,
+  .markBar {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .tabs button[aria-selected="true"],
+  .modeSwitch button[aria-pressed="true"],
+  .markBar button[aria-pressed="true"] {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+}
+
+/*
+ * Workspace cause and update text is 12px. The older parent override loses in the
+ * production bundle, where the cell keeps the 13px table step. The class sits on
+ * the measured cell, so it does not depend on that parent selector.
+ */
+td.workspaceMeasure,
+span.workspaceMeasure,
+.layout[data-layout="workspace"] td.workspaceMeasure,
+.layout[data-layout="workspace"] span.workspaceMeasure,
+.cause.workspaceMeasure,
+.update.workspaceMeasure {
+  --t-1: 12px;
+  font-size: 12px;
+  transition-property: none;
 }

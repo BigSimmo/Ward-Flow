@@ -163,6 +163,7 @@ export function StatisticsSectionFrame({
 function ThirdEditionFrame({
   section,
   title,
+  subtitle,
   testId,
   children,
 }: {
@@ -204,6 +205,17 @@ function ThirdEditionFrame({
               </svg>
               <span>Back to statistics</span>
             </Link>
+
+            <div className={thirdEditionStyles.contextBody} data-testid="ward-statistics-section-governance">
+              <strong>Synthetic prototype</strong>
+              <p>
+                <SyntheticFiguresDisclaimer />
+              </p>
+              <p data-testid="ward-statistics-section-access">
+                <CoordinatorAccessDisclaimer />
+              </p>
+              {subtitle && <p>{subtitle}</p>}
+            </div>
           </div>
 
           <header className={thirdEditionStyles.semanticHeader}>

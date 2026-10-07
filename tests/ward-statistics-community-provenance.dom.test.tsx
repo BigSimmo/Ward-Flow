@@ -48,10 +48,14 @@ function renderCommunityScreen() {
 /** Every figure the table actually renders, read from the rendered DOM rather than from a list. */
 
 describe("the community screen's provenance section", () => {
-  it("removes the explanation panel while retaining the recorded figures", () => {
+  it("shows the invented-figures provenance beside the recorded figures", () => {
     renderCommunityScreen();
-    expect(screen.queryByTestId("ward-statistics-community-provenance")).toBeNull();
+    const provenance = screen.getByTestId("ward-statistics-community-provenance");
+    expect(provenance).toBeVisible();
+    expect(provenance.textContent).toContain("Every figure on this page is invented");
+    expect(provenance.textContent).toContain("describes no real person or day");
     expect(screen.getByTestId("ward-statistics-community-figures-table")).toBeVisible();
+    expect(provenance.querySelector("details")).toBeNull();
   });
 
   /**

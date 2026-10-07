@@ -153,7 +153,11 @@ describe("comparison across departments", () => {
     expect(note, "the reason the seven-day columns cannot be built is not stated").toContain("history");
   });
 
-  it("uses visible operational panels instead of the retired explanation: quotes the drawing's own guarantee about quiet departments", () => {
-    assertStatisticsPresentation("ed", "ward-stat-ed-comparison-scope");
+  it("says a quiet department is a measured none, not a missing figure", () => {
+    renderEd([]);
+    const note = screen.getByTestId("ward-stat-ed-comparison-scope");
+    expect(note).toBeVisible();
+    expect(note.textContent).toContain("including the ones with nobody waiting");
+    expect(note.textContent).toContain("measured answer and not a missing figure");
   });
 });

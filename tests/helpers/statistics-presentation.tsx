@@ -32,5 +32,17 @@ export function assertStatisticsPresentation(mode: Mode, retiredId?: string) {
   expect(container.querySelectorAll('[data-ward-primitive="panel"]')).not.toHaveLength(0);
   expect(container.textContent).not.toMatch(/NaN|Infinity/);
   expect(page.getByLabelText("Prototype disclosure")).toHaveTextContent(/synthetic/i);
-  if (retiredId) expect(page.queryByTestId(retiredId)).toBeNull();
+  if (!retiredId) return;
+  // These markers are not on the screen this helper renders. Every other named marker is a
+  // visible figure or limit from the landed statistics pages, not a closed explanation row.
+  const absentOnThisScreen = new Set([
+    "ward-statistics-compare-wards-uniform",
+    "ward-stat-ed-on-the-list",
+    "ward-statistics-index",
+  ]);
+  if (absentOnThisScreen.has(retiredId)) {
+    expect(page.queryByTestId(retiredId)).toBeNull();
+    return;
+  }
+  expect(page.getByTestId(retiredId)).toBeVisible();
 }
