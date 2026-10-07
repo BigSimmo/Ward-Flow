@@ -13,7 +13,7 @@ import { wardSites, siteByCode, allEmergencyDepartments } from "../ward-sites";
 import { COMMUNITY_TEAM_PAGES } from "../community/community-derivations";
 import { contactForTeam } from "../community/community-team-contact-mapping";
 import { HEALTH_SERVICES, TRANSPORT_PROVIDERS, type Unit } from "../ward-model";
-import { StatusGlyph } from "@/components/wf/status-glyph";
+import { StatusGlyph } from "@/components/wf";
 import styles from "./ward-tools-workspace.module.css";
 
 const root = "/mockups/ward-flow";

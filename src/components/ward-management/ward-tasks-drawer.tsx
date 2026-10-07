@@ -20,9 +20,8 @@ import {
 } from "lucide-react";
 import { useRef, useState, type Dispatch } from "react";
 
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { StatusGlyph, type WfTone } from "@/components/wf/status-glyph";
-import { durMinutes } from "@/components/wf/format";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
 import { edById } from "./ward-sites";
 import { stageCopy } from "./ward-derivations";
@@ -110,7 +109,7 @@ function rowTiming(
     return {
       value: durMinutes(now - movement.transport.acceptedAt),
       word: "waiting",
-      state: `Accepted ${formatInstant(movement.transport.acceptedAt)}`,
+      state: `Accepted ${formatInstantWithDay(movement.transport.acceptedAt, now)}`,
       tone: "warning",
     };
   }
@@ -119,8 +118,7 @@ function rowTiming(
       value: String(movement.declines.length),
       word: "wards",
       state: "Declined",
-      tone: "danger",
-      stateTone: "danger",
+      tone: "closed",
     };
   }
   return item.tone === "danger"
@@ -129,13 +127,18 @@ function rowTiming(
 }
 
 /** The row's one sentence, from the movement's own recorded times where it holds them. */
-function rowDetail(item: InboxItem, movement: Movement | undefined, units: readonly Unit[] | undefined): string {
+function rowDetail(
+  item: InboxItem,
+  movement: Movement | undefined,
+  units: readonly Unit[] | undefined,
+  now: Instant,
+): string {
   if (movement && /bed pull/i.test(item.title) && movement.pullExpiresAt !== undefined) {
     const unit = units?.find((candidate) => candidate.id === movement.acceptedUnitId);
-    return `${unit?.name ?? "The pulled bed"} was held until ${formatInstant(movement.pullExpiresAt)} and has lapsed`;
+    return `${unit?.name ?? "The pulled bed"} was held until ${formatInstantWithDay(movement.pullExpiresAt, now)} and has lapsed`;
   }
   if (movement && /legal/i.test(item.title) && movement.legalForm?.dueAt !== undefined) {
-    return `Form ${movement.legalForm.code} recorded due time ${formatInstant(movement.legalForm.dueAt)} has passed`;
+    return `Form ${movement.legalForm.code} recorded due time ${formatInstantWithDay(movement.legalForm.dueAt, now)} has passed`;
   }
   return item.detail.replace(`${item.movementId} · `, "");
 }
@@ -331,7 +334,7 @@ export function WardTasksDrawer({
     const latestCompletion = done && completionHistory ? completionHistory.at(-1) : undefined;
     const timing = done
       ? {
-          value: latestCompletion ? formatInstant(latestCompletion.at) : undefined,
+          value: latestCompletion ? formatInstantWithDay(latestCompletion.at, now) : undefined,
           word: undefined,
           state: "Done",
           tone: "success" as WfTone,
@@ -340,7 +343,7 @@ export function WardTasksDrawer({
       : rowTiming(item, movement, now);
     const isExpanded = expanded === item.id;
     const severity: WfTone = item.tone === "danger" ? "danger" : "warning";
-    const detail = rowDetail(item, movement, records?.units);
+    const detail = rowDetail(item, movement, records?.units, now);
 
     return (
       <li
@@ -560,7 +563,8 @@ export function WardTasksDrawer({
 
           <div className={styles.filterMeta}>
             <span role="status" className={styles.filterStatus}>
-              <strong className={styles.mono}>{filteredItems.length}</strong> of {items.length} tasks
+              <strong className={styles.mono}>{filteredItems.length}</strong> of {items.length}{" "}
+              <span className="sr-only">invented </span>tasks
             </span>
             <label className={styles.selectWrap}>
               <Filter aria-hidden="true" />

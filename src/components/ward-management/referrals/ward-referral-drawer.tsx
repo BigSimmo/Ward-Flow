@@ -75,7 +75,7 @@ import {
   type DocumentationDraft,
 } from "./referral-flow-panels";
 import { WardReferralInbox } from "./ward-referral-inbox";
-import { StatusGlyph, type WfTone } from "@/components/wf/status-glyph";
+import { StatusGlyph, type WfTone } from "@/components/wf";
 import {
   REFERRAL_RISK_FLAGS,
   referralContactError,
@@ -421,7 +421,7 @@ function Field({
   wide?: boolean;
 }) {
   return (
-    <div className={`${styles.field} ${wide ? styles.fieldWide : ""}`} data-invalid={error ? true : undefined}>
+    <div className={`${styles.formField} ${wide ? styles.fieldWide : ""}`} data-invalid={error ? true : undefined}>
       <div className={styles.fieldLabelRow}>
         <label htmlFor={htmlFor} className={required ? styles.required : undefined}>
           {label}
@@ -1076,7 +1076,7 @@ function WardReferralDrawerContent({
                     <button
                       key={id}
                       type="button"
-                      className={styles.step}
+                      className={styles.stepItem}
                       aria-pressed={activeSection === id}
                       aria-controls={`${sectionId}-${id}`}
                       aria-describedby={`${sectionId}-${id}-state`}
@@ -1702,7 +1702,7 @@ function WardReferralDrawerContent({
                   </CardHead>
                   <div className={styles.cardBody}>
                     <div className={styles.fieldGrid}>
-                      <div className={styles.field}>
+                      <div className={styles.formField}>
                         <div className={styles.fieldLabelRow}>
                           <span className={styles.required} id={`${sectionId}-source`}>
                             Source
@@ -1983,7 +1983,7 @@ function WardReferralDrawerContent({
                             </select>
                           </SelectBox>
                         </Field>
-                        <div className={styles.field}>
+                        <div className={styles.formField}>
                           <div className={styles.fieldLabelRow}>
                             <span id={`${sectionId}-acuity`}>High-acuity nursing</span>
                           </div>
@@ -2113,7 +2113,7 @@ function WardReferralDrawerContent({
                                 }}
                               />
                               <span className={styles.wardIdentity}>
-                                <span className={styles.wardName}>
+                                <span className={styles.wardTitle}>
                                   <strong>{unit.name}</strong> {unit.hospital}
                                 </span>
                                 <span className={styles.wardMeta}>
@@ -2194,7 +2194,7 @@ function WardReferralDrawerContent({
                             }}
                           />
                           <span className={styles.wardIdentity}>
-                            <span className={styles.wardName}>
+                            <span className={styles.wardTitle}>
                               <strong>{option.name}</strong>
                             </span>
                             <span className={styles.wardMeta}>

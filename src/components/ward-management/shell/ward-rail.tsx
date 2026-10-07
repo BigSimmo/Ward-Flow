@@ -20,8 +20,7 @@ import {
 
 import { Sheet } from "@/components/ui/sheet";
 import { Tooltip } from "@/components/ui/tooltip";
-import { Dot } from "@/components/wf/status-glyph";
-import { durMinutes } from "@/components/wf/format";
+import { Dot, durMinutes } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
@@ -600,7 +599,7 @@ export function WardRail() {
           title="Ward Flow Western Australia"
         >
           <span className={styles.brandEmblem} aria-hidden="true">
-            <Plus className={styles.brandEmblemIcon} strokeWidth={2} aria-hidden="true" />
+            <Plus className={styles.emblemGlyph} strokeWidth={2} aria-hidden="true" />
           </span>
           <span className={styles.brandTitle}>Ward Flow</span>
           <span className={styles.brandStateText}>WA</span>

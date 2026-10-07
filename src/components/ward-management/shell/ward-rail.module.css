@@ -129,7 +129,7 @@
   color: var(--wf-on-accent);
 }
 
-.brandEmblemIcon {
+.emblemGlyph {
   width: 1rem;
   height: 1rem;
 }
@@ -1771,12 +1771,12 @@
 }
 
 .moreSheet .railLink {
-  min-height: 2.5rem;
+  min-height: var(--spacing-tap, 3rem);
   padding: 0.25rem 0.5rem;
 }
 
 .moreSheet .railLink[data-two-line="true"] {
-  min-height: 2.75rem;
+  min-height: var(--spacing-tap, 3rem);
 }
 
 .moreSheet .railLink[data-active="true"] {
@@ -1814,7 +1814,7 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  min-height: 2.5rem;
+  min-height: var(--spacing-tap, 3rem);
   padding: 0 0.5rem;
   border-radius: var(--wf-r-md);
   color: var(--wf-ink-2);

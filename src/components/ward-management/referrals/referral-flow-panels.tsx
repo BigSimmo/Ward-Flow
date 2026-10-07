@@ -2,7 +2,7 @@
 
 import { Check, Circle, FileText, Lock, Stethoscope, Upload, User, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
-import { StatusGlyph } from "@/components/wf/status-glyph";
+import { StatusGlyph } from "@/components/wf";
 import { CHART_MAX_BYTES, CHART_MIME_TYPES, type ReferralChart, type ReferralContact } from "./referral-submission";
 import styles from "./ward-referral-drawer.module.css";
 
@@ -239,7 +239,7 @@ export function DocumentationPanel({
           {draft.medical === "no" && (
             <>
               <div className={styles.fieldGrid} data-layout="three">
-                <div className={styles.field}>
+                <div className={styles.formField}>
                   <div className={styles.fieldLabelRow}>
                     <label htmlFor={`${id}-expected`} className={styles.required}>
                       Expected clearance
@@ -253,7 +253,7 @@ export function DocumentationPanel({
                     onChange={(e) => onChange({ ...draft, expectedAt: e.target.value })}
                   />
                 </div>
-                <div className={styles.field}>
+                <div className={styles.formField}>
                   <div className={styles.fieldLabelRow}>
                     <label htmlFor={`${id}-contact`} className={styles.required}>
                       Contact name
@@ -268,7 +268,7 @@ export function DocumentationPanel({
                     onChange={(e) => onChange({ ...draft, contactName: e.target.value })}
                   />
                 </div>
-                <div className={styles.field}>
+                <div className={styles.formField}>
                   <div className={styles.fieldLabelRow}>
                     <label htmlFor={`${id}-phone`} className={styles.required}>
                       Contact phone
@@ -359,7 +359,7 @@ export function DocumentationPanel({
         <PanelHead icon={User} title="Referrer" />
         <div className={styles.cardBody}>
           <div className={styles.fieldGrid}>
-            <div className={styles.field}>
+            <div className={styles.formField}>
               <div className={styles.fieldLabelRow}>
                 <label htmlFor={`${id}-referrer`}>Referrer name</label>
               </div>
@@ -405,7 +405,7 @@ export function ContactFields({
         const error = errors[key];
         return (
           <div
-            className={`${styles.field} ${key === "location" ? styles.fieldWide : ""}`}
+            className={`${styles.formField} ${key === "location" ? styles.fieldWide : ""}`}
             key={key}
             data-invalid={error ? true : undefined}
           >

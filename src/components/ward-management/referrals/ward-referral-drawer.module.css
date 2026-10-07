@@ -252,7 +252,7 @@
   gap: var(--wf-s-2);
 }
 
-.step {
+.stepItem {
   display: flex;
   min-width: 0;
   flex: 1 1 0;
@@ -268,7 +268,7 @@
   cursor: pointer;
 }
 
-.step:not(:last-child)::after {
+.stepItem:not(:last-child)::after {
   min-width: var(--wf-s-2);
   height: 1px;
   flex: 1;
@@ -293,7 +293,7 @@
   font-weight: 600;
 }
 
-.step[data-active="true"] .stepMark {
+.stepItem[data-active="true"] .stepMark {
   border-color: var(--wf-pri-edge);
   background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
   color: var(--wf-on-accent);
@@ -990,7 +990,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.field {
+.formField {
   display: grid;
   min-width: 0;
   align-content: start;
@@ -1075,8 +1075,8 @@
   resize: vertical;
 }
 
-.field[data-invalid="true"] .fieldInput,
-.field[data-invalid="true"] .fieldSelect {
+.formField[data-invalid="true"] .fieldInput,
+.formField[data-invalid="true"] .fieldSelect {
   border-color: var(--wf-danger);
 }
 
@@ -1149,7 +1149,7 @@
   clear: both;
 }
 
-.field > .segmented {
+.formField > .segmented {
   justify-self: start;
 }
 
@@ -1550,7 +1550,7 @@
   min-width: 0;
 }
 
-.wardName {
+.wardTitle {
   overflow: hidden;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
@@ -1558,7 +1558,7 @@
   white-space: nowrap;
 }
 
-.wardName strong {
+.wardTitle strong {
   color: var(--wf-ink-1);
   font-weight: 600;
 }
@@ -1956,7 +1956,7 @@ details.refCard > summary {
 
   .stepState,
   .drawerHeadTop > .kbd,
-  .step:not(:last-child)::after {
+  .stepItem:not(:last-child)::after {
     display: none;
   }
 
@@ -2004,7 +2004,7 @@ details.refCard > summary {
   .answerGroup .answerOptions > label[data-selected="true"],
   .tierTile[data-selected="true"],
   .wardRow[data-selected="true"],
-  .step[data-active="true"] .stepMark {
+  .stepItem[data-active="true"] .stepMark {
     outline: 2px solid Highlight;
     outline-offset: -2px;
   }

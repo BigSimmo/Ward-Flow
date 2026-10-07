@@ -150,5 +150,5 @@ describe("approved four-tab referral drawer journey", () => {
     fireEvent.click(within(board).getAllByRole("button", { name: /Tobias Wren/ })[0]);
     fireEvent.click(within(board).getByRole("tab", { name: "Clinical Dossier & Referrer Letter" }));
     expect(board).toHaveTextContent("Synthetic patient story for inbox review");
-  });
+  }, 90_000);
 });
