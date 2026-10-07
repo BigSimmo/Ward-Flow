@@ -258,8 +258,9 @@ test.describe("@mockup Transport officer screen", () => {
     const job = page.getByTestId("ward-officer-job-WF-005");
     await expect(job).toContainText(/escort/i);
 
-    // Exactly four actions, pinned and reachable without scrolling.
-    const actions = job.locator('[class*="actionButton"]');
+    // Exactly four actions, pinned and reachable without scrolling. v6 (7 Oct 2026): they sit in
+    // the selected job's panel, which leads the page at phone width.
+    const actions = page.getByTestId("ward-officer-detail").locator('[class*="actionButton"]');
     await expect(actions).toHaveCount(4);
     for (const action of await actions.all()) {
       const box = await action.boundingBox();
@@ -1134,11 +1135,14 @@ test.describe("@mockup Role switcher — the loop", () => {
     if (await selectJob.count()) {
       await selectJob.click();
     }
-    await expect(job.locator('[class*="actionButton"]')).toHaveCount(4);
+    await expect(job).toBeVisible();
+    // v6 (7 Oct 2026): the four stage actions sit in the selected job's panel.
+    const panel = page.getByTestId("ward-officer-detail");
+    await expect(panel.locator('[class*="actionButton"]')).toHaveCount(4);
     // Item 31 (owner's 17 September answers): the officer's own fourth action reads "Delivered",
     // not "Arrived" — the event dispatched is still PATIENT_ARRIVED.
     for (const label of ["Accepted", "En route", "Collected", "Delivered"]) {
-      await job.getByRole("button", { name: label }).click();
+      await panel.getByRole("button", { name: label }).click();
     }
 
     // --- Step 11: Coordinator — the patient has left the system. ---
@@ -1316,7 +1320,7 @@ async function showcaseTableState(page: Page) {
   return page.getByRole("table", { name: SHOWCASE_TABLE_NAME }).evaluate((table) => {
     const rows = [...(table as HTMLTableElement).tBodies[0]!.rows];
     return {
-      firstLabel: rows[0]!.querySelector("th")?.textContent?.trim(),
+      firstLabel: rows[0]!.querySelector("th [data-example-label]")?.textContent?.trim(),
       firstPadding: getComputedStyle(rows[0]!.cells[0]!).paddingTop,
       secondPadding: getComputedStyle(rows[1]!.cells[0]!).paddingTop,
       density: getComputedStyle(table).getPropertyValue("--ward-table-cell-inset").trim(),
@@ -1336,32 +1340,32 @@ test.describe("@mockup Ward Flow design system showcase", () => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await openDesignShowcase(page);
     await expectShowcaseNoPageOverflow(page);
-    await expect(page.getByText("Synthetic examples", { exact: true })).toBeVisible();
-
-    const links = page.getByRole("navigation", { name: "Showcase sections" }).locator('a[href^="#"]');
-    await expect(links).toHaveCount(4);
-    for (let index = 0; index < 4; index++) {
-      const link = links.nth(index);
-      const href = await link.getAttribute("href");
-      expect(href).toMatch(/^#[a-z-]+$/);
-      await link.focus();
-      await page.keyboard.press("Enter");
-      const target = page.locator(href!);
-      await expect(target).toBeFocused();
-      const top = await target.evaluate((element) => element.getBoundingClientRect().top);
-      expect(top, `${href} must clear the fixed 56px WardBar`).toBeGreaterThanOrEqual(55);
-      expect(top, `${href} must land in the viewport`).toBeLessThan(1080);
+    // v6 (approved mockup, October 2026): the section control is the hero track. "All" shows every
+    // card; each other choice shows only its own card.
+    const sections = page.getByRole("radiogroup", { name: "Showcase sections" });
+    await expect(sections.getByRole("radio")).toHaveCount(5);
+    for (const [name, heading] of [
+      ["Foundations", "Foundations"],
+      ["Interaction", "Interaction example"],
+      ["Live", "Live and time"],
+      ["Drawers", "Drawer triggers"],
+    ] as const) {
+      await sections.getByRole("radio", { name }).click();
+      await expect(sections.getByRole("radio", { name })).toHaveAttribute("aria-checked", "true");
+      await expect(page.getByRole("heading", { level: 2, name: heading })).toBeVisible();
     }
+    await sections.getByRole("radio", { name: "All" }).click();
+    await expect(page.getByRole("heading", { level: 2, name: "Status language" })).toBeVisible();
 
     const input = page.getByRole("textbox", { name: "Example row label" });
-    const density = page.getByRole("combobox", { name: "Table density" });
+    const density = page.getByRole("radiogroup", { name: "Table density" });
     const before = await showcaseTableState(page);
     await input.fill("");
-    await density.selectOption("compact");
+    await density.getByRole("radio", { name: "Compact" }).click();
     await page.getByRole("button", { name: "Apply example" }).click();
     await expect(input).toHaveAttribute("aria-invalid", "true");
     await expect(input).toHaveValue("");
-    await expect(density).toHaveValue("compact");
+    await expect(density.getByRole("radio", { name: "Compact" })).toHaveAttribute("aria-checked", "true");
     await expect(page.getByText("Enter a label to apply the example.", { exact: true })).toBeVisible();
     expect(await showcaseTableState(page), "invalid input must preserve the last accepted label and density").toEqual(
       before,
@@ -1369,7 +1373,7 @@ test.describe("@mockup Ward Flow design system showcase", () => {
 
     await input.fill("QA example row");
     await page.getByRole("button", { name: "Apply example" }).click();
-    await expect(page.getByText(/Example applied locally\. The first row label and table density/)).toBeVisible();
+    await expect(page.getByText("Example applied locally", { exact: true })).toBeVisible();
     // The success message and the density custom property update in the same render, but on a slow
     // runner the cells' computed padding has been read while still at the comfortable value (CI saw
     // "12px" for both). Wait on the rendered padding itself — the property this test is about — before
@@ -1391,8 +1395,8 @@ test.describe("@mockup Ward Flow design system showcase", () => {
 
     const unavailable = page.getByRole("button", { name: "Save preset" });
     await expect(unavailable).toHaveAttribute("aria-disabled", "true");
-    await expect(unavailable).toHaveAttribute("aria-describedby", "showcase-disabled-reason");
-    await expect(page.locator("#showcase-disabled-reason")).toContainText("unavailable");
+    const reasonId = await unavailable.getAttribute("aria-describedby");
+    await expect(page.locator(`[id="${reasonId}"]`)).toContainText("No saved presets here");
     await unavailable.focus();
     await expect(unavailable).toBeFocused();
     await page.keyboard.press("Enter");
@@ -1446,28 +1450,30 @@ test.describe("@mockup Ward Flow design system showcase", () => {
     await openDesignShowcase(page);
     const lightSurface = await page
       .locator("main")
-      .evaluate((element) => getComputedStyle(element).getPropertyValue("--surface").trim());
+      .evaluate((element) => getComputedStyle(element).getPropertyValue("--wf-surface").trim());
     await page.emulateMedia({ colorScheme: "dark" });
     await openDesignShowcase(page);
     await expectShowcaseNoPageOverflow(page);
     const darkSurface = await page
       .locator("main")
-      .evaluate((element) => getComputedStyle(element).getPropertyValue("--surface").trim());
+      .evaluate((element) => getComputedStyle(element).getPropertyValue("--wf-surface").trim());
     expect(darkSurface, "dark mode must resolve a different surface token").not.toBe(lightSurface);
   });
 });
 
 test("@mockup on-call printing includes all coverage details and preserves screen expansion", async ({ page }) => {
+  // v6 (approved mockup, October 2026): on screen a role's cover shows in the role panel; the
+  // per-role cover rows are print-only and appear for every role when printed.
   await page.goto("/mockups/ward-flow/on-call");
   const rows = page.locator('tr[id^="ward-coverage-"]');
-  const toggles = page.getByRole("button", { name: /^Coverage and handover for /, includeHidden: true });
+  const toggles = page.getByRole("button", { name: /^Coverage and handover for / });
   const count = await rows.count();
   expect(count).toBeGreaterThan(1);
   for (let i = 0; i < count; i++) await expect(rows.nth(i)).toBeHidden();
 
-  await toggles.first().click();
-  await expect(rows.first()).toBeVisible();
-  await expect(rows.nth(1)).toBeHidden();
+  await toggles.nth(1).click();
+  await expect(toggles.nth(1)).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("ward-on-call-role-panel").getByText("Not verified", { exact: true })).toBeVisible();
 
   await page.emulateMedia({ media: "print" });
   for (let i = 0; i < count; i++) {
@@ -1475,11 +1481,9 @@ test("@mockup on-call printing includes all coverage details and preserves scree
     await expect(row).toBeVisible();
     await expect(row.getByText("Current cover", { exact: true })).toBeVisible();
     await expect(row.getByText("Not verified", { exact: true })).toBeVisible();
-    await expect(row.getByText("Next confirmed contact", { exact: true })).toBeVisible();
-    await expect(toggles.nth(i)).toBeHidden();
+    await expect(row.getByText("Last confirmed", { exact: true })).toBeVisible();
   }
   await page.emulateMedia({ media: "screen" });
-  await expect(rows.first()).toBeVisible();
-  for (let i = 1; i < count; i++) await expect(rows.nth(i)).toBeHidden();
-  await expect(toggles.first()).toHaveAttribute("aria-expanded", "true");
+  for (let i = 0; i < count; i++) await expect(rows.nth(i)).toBeHidden();
+  await expect(toggles.nth(1)).toHaveAttribute("aria-pressed", "true");
 });

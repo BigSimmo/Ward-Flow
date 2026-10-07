@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ChevronRight, ClipboardList, Fingerprint, History } from "lucide-react";
+import { ChevronRight, ClipboardList, Fingerprint, History, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useRef, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
@@ -23,7 +23,35 @@ import { LEAVING_DESTINATIONS } from "./ward-admissions";
 import { legalFormReceiptCorrectionReasonLabels } from "./ward-change-reasons";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { movementHref, unitHref } from "./shell/ward-facade";
-import { WardDynamicIsland } from "./shell/ward-dynamic-island";
+import {
+  Avatar,
+  Badge,
+  BarList,
+  Button,
+  Card,
+  CardBody,
+  CardFoot,
+  CardHead,
+  Count,
+  EmptyState,
+  Field,
+  Hero,
+  HeroStat,
+  HeroTrack,
+  Inset,
+  Radio,
+  Segmented,
+  Select,
+  StatusGlyph,
+  TextInput,
+  Textarea,
+  ToastView,
+  buttonClass,
+  cx,
+  tableClasses,
+  type BarListRow,
+  type WfTone,
+} from "@/components/wf";
 
 import thirdEdition from "./governance-third-edition.module.css";
 
@@ -66,8 +94,8 @@ export function GovernanceOverridesRegisterPanel({
 }) {
   const entries = allOverrides(movements);
   return (
-    <section className={thirdEdition.cardPanel} data-testid="ward-governance-overrides-register">
-      <header className={thirdEdition.cardHead}>
+    <Card data-testid="ward-governance-overrides-register">
+      <header className={thirdEdition.panelHead}>
         <div>
           <h2>Overrides register</h2>
           {/* Deliberately NOT "for review" and NOT "oldest first": neither a reviewed/unreviewed
@@ -77,10 +105,10 @@ export function GovernanceOverridesRegisterPanel({
           <p>Every override this system has recorded, across the network</p>
         </div>
       </header>
-      <div className={thirdEdition.cardBody}>
+      <CardBody>
         <OverrideRegister entries={entries} units={units} now={now} />
-      </div>
-    </section>
+      </CardBody>
+    </Card>
   );
 }
 
@@ -105,24 +133,24 @@ export function GovernanceOverridesRegisterPanel({
  */
 export function GovernanceAccessRecordPanel() {
   return (
-    <aside className={thirdEdition.cardPanel} data-testid="ward-governance-access-record">
-      <header className={thirdEdition.cardHead}>
+    <Card as="div" role="complementary" data-testid="ward-governance-access-record">
+      <header className={thirdEdition.panelHead}>
         <div>
           <h2>Access record</h2>
           <p>What this prototype actually keeps, not a network-wide log</p>
         </div>
       </header>
-      <div className={thirdEdition.cardBody}>
-        <p className={thirdEdition.effNotice} style={{ margin: 0 }}>
-          <History aria-hidden="true" /> {ACCESS_RECORD_NOTE}
+      <CardBody className={thirdEdition.noticeStack}>
+        <p className={thirdEdition.notice}>
+          <History aria-hidden="true" size={16} /> {ACCESS_RECORD_NOTE}
         </p>
-        <p className={thirdEdition.effNotice} style={{ margin: 0 }} data-testid="ward-governance-access-record-scope">
-          <Fingerprint aria-hidden="true" /> There is no network-wide version of this record here, and no row names who
-          looked: this system has no signed-in user to name, only the screen a search ran from, held in that
+        <p className={thirdEdition.notice} data-testid="ward-governance-access-record-scope">
+          <Fingerprint aria-hidden="true" size={16} /> There is no network-wide version of this record here, and no row
+          names who looked: this system has no signed-in user to name, only the screen a search ran from, held in that
           screen&apos;s own memory and nowhere else.
         </p>
-      </div>
-    </aside>
+      </CardBody>
+    </Card>
   );
 }
 
@@ -467,6 +495,8 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
   }
 }
 
+type OverrideStatus = "Pending Review" | "Upheld" | "To committee" | "Follow-up" | "Not upheld";
+
 interface GovernanceOverrideItem {
   id: string;
   movement: string;
@@ -477,7 +507,7 @@ interface GovernanceOverrideItem {
   reason: string;
   by: string;
   recordedAgoText: string;
-  status: "Pending Review" | "Upheld";
+  status: OverrideStatus;
   reviewed: boolean;
   reviewer?: string | null;
   decision?: string | null;
@@ -491,7 +521,7 @@ interface GovernanceDecisionItem {
   subject: string;
   category: string;
   verdict: string;
-  tone: "good" | "warn" | "accent";
+  tone: "good" | "warn" | "accent" | "closed";
 }
 
 interface GovernanceRestrictiveItem {
@@ -733,6 +763,85 @@ const SAMPLE_SEARCH_SEIZURE: GovernanceSearchSeizureItem[] = [
 ];
 
 /** Original required props remain compatible; only the mounted coordinator view supplies its guarded API. */
+/** The review verdicts a reviewer can record. The first three are the inline choices. */
+const VERDICTS: { id: string; label: string; status: OverrideStatus; tone: GovernanceDecisionItem["tone"] }[] = [
+  { id: "Upheld", label: "Uphold", status: "Upheld", tone: "good" },
+  { id: "Referred to committee", label: "Refer to committee", status: "To committee", tone: "accent" },
+  { id: "Follow-up required", label: "Follow-up", status: "Follow-up", tone: "warn" },
+  { id: "Not upheld", label: "Not upheld", status: "Not upheld", tone: "closed" },
+];
+const REVIEWING_ROLES = [
+  "Clinical Director",
+  "Duty Consultant Psychiatrist",
+  "Governance Lead Psychiatrist",
+  "Executive Director of Clinical Services",
+] as const;
+const DECISION_TONE: Record<GovernanceDecisionItem["tone"], WfTone> = {
+  good: "success",
+  warn: "warning",
+  accent: "info",
+  closed: "closed",
+};
+const OUTCOME_TONE: Record<keyof typeof outcomeLabels, WfTone> = {
+  accepted: "success",
+  partial: "warning",
+  denied: "closed",
+  stale: "neutral",
+};
+const TYPE_LABELS: Record<string, string> = {
+  "Acuity Ceiling Override": "Acuity ceiling",
+  "Catchment Boundary Bypass": "Catchment bypass",
+  "Legal Form Deadline Review": "Legal form deadline",
+  "Cohort & Gender Mix Exception": "Cohort and gender mix",
+};
+function overrideTypeLabel(category: string): string {
+  return TYPE_LABELS[category] ?? category;
+}
+function roleInitials(role: string): string {
+  return role
+    .split(/\s+/u)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("");
+}
+function statusTone(status: OverrideStatus): WfTone {
+  if (status === "Upheld") return "success";
+  if (status === "To committee") return "info";
+  if (status === "Not upheld") return "closed";
+  return "warning";
+}
+/** Overrides per type, with the role that said yes most often when it did so twice or more. */
+function overrideTypeRows(list: GovernanceOverrideItem[]): BarListRow[] {
+  const byType = new Map<string, Map<string, number>>();
+  for (const item of list) {
+    const roles = byType.get(item.category) ?? new Map<string, number>();
+    roles.set(item.by, (roles.get(item.by) ?? 0) + 1);
+    byType.set(item.category, roles);
+  }
+  return [...byType.entries()]
+    .map(([category, roles]) => {
+      const value = [...roles.values()].reduce((sum, n) => sum + n, 0);
+      const [topRole, topCount] = [...roles.entries()].sort((a, b) => b[1] - a[1])[0]!;
+      const repeat = topCount >= 2;
+      return {
+        id: category,
+        label: overrideTypeLabel(category),
+        value,
+        flag: repeat ? ("warning" as const) : undefined,
+        display: (
+          <span className={thirdEdition.barValue}>
+            <span>{value}</span>
+            <span className={repeat ? thirdEdition.repeat : thirdEdition.quietText}>
+              {repeat ? `Repeat, ${roleInitials(topRole)} ×${topCount}` : "No repeat"}
+            </span>
+          </span>
+        ),
+      };
+    })
+    .sort((a, b) => b.value - a.value);
+}
+
 export function GovernanceWorkbench(props: WorkbenchProps) {
   return <GovernanceSession key={props.api?.worldGeneration ?? "unavailable"} {...props} />;
 }
@@ -758,6 +867,8 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
   const [decisionList, setDecisionList] = useState<GovernanceDecisionItem[]>(hasSampleData ? SAMPLE_DECISIONS : []);
   const [selectedOverrideId, setSelectedOverrideId] = useState<string | null>(hasSampleData ? "OVR-107" : null);
 
+  const [overrideScope, setOverrideScope] = useState<"all" | "open" | "closed">("all");
+  const [inlineTried, setInlineTried] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   // The endorse form starts empty. It used to arrive pre-filled with a verdict, a reviewing role and
   // a finding of "no adverse patient safety events", so a reviewer who saved without typing recorded
@@ -849,8 +960,6 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
   const overrides = allOverrides(movements);
 
   const totalMonitored = overrideList.length;
-  const catchmentBypasses = overrideList.filter((o) => o.category === "Catchment Boundary Bypass").length;
-  const acuityCeilings = overrideList.filter((o) => o.category === "Acuity Ceiling Override").length;
   const reviewedUpheld = overrideList.filter((o) => o.status === "Upheld").length;
 
   const selectedOverride = overrideList.find((o) => o.id === selectedOverrideId) ?? overrideList[0];
@@ -878,7 +987,7 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
     { id: "decisions", label: "Outcomes", count: decisionList.length },
     {
       id: "restrictive",
-      label: "Forms 10 & 11",
+      label: "Forms 10, 11",
       count: hasSampleData ? SAMPLE_RESTRICTIVE_PRACTICES.length : 0,
     },
     {
@@ -895,15 +1004,17 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
         ? "Unreviewed"
         : reviewLabels[reviewState(selected) as AuditReview["decision"]]
     : selectedOverride
-      ? selectedOverride.status
+      ? selectedOverride.status === "Pending Review"
+        ? "Pending review"
+        : selectedOverride.status
       : "No selection";
-  const inspTone = selected
+  const inspTone: WfTone = selected
     ? reviewState(selected) === "reviewed"
-      ? "good"
-      : "warn"
-    : selectedOverride?.status === "Upheld"
-      ? "good"
-      : "warn";
+      ? "success"
+      : "warning"
+    : selectedOverride
+      ? statusTone(selectedOverride.status)
+      : "neutral";
 
   const choose = (event: AuditEvent | null) => {
     setSelection(event);
@@ -929,24 +1040,6 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
             ? "Restrictive practices register view shown."
             : "Search and seizure register view shown.",
     );
-  }
-
-  function tabKey(event: ReactKeyboardEvent<HTMLDivElement>) {
-    const activeIndex = tabs.findIndex((entry) => entry.id === tab || (tab === "captured" && entry.id === "overrides"));
-    const next =
-      event.key === "ArrowRight"
-        ? (activeIndex + 1) % tabs.length
-        : event.key === "ArrowLeft"
-          ? (activeIndex - 1 + tabs.length) % tabs.length
-          : event.key === "Home"
-            ? 0
-            : event.key === "End"
-              ? tabs.length - 1
-              : -1;
-    if (next < 0) return;
-    event.preventDefault();
-    changeTab(tabs[next].id);
-    event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
   }
 
   function rowKey(event: ReactKeyboardEvent<HTMLDivElement>) {
@@ -999,6 +1092,62 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
     });
   }
 
+  function chooseOverride(item: GovernanceOverrideItem) {
+    setSelectedOverrideId(item.id);
+    setSelection(null);
+    setPending(null);
+    setInlineTried(false);
+    setAnnouncement(`Selected override for ${item.patient}.`);
+  }
+
+  function resetDraft() {
+    setEndorseVerdict("");
+    setEndorseRole("");
+    setEndorseNotes("");
+    setInlineTried(false);
+  }
+
+  /** Records the drafted review against the selected override. False when the draft is incomplete. */
+  function recordOverrideReview(): boolean {
+    if (!selectedOverride) return false;
+    const verdict = VERDICTS.find((entry) => entry.id === endorseVerdict);
+    if (!verdict || endorseRole === "") {
+      const refusal = "Choose a verdict and a reviewing role before recording the finding.";
+      showToast(refusal);
+      setAnnouncement(refusal);
+      return false;
+    }
+    setOverrideList((prev) =>
+      prev.map((item) =>
+        item.id === selectedOverride.id
+          ? {
+              ...item,
+              status: verdict.status,
+              reviewed: true,
+              reviewer: endorseRole,
+              decision: verdict.id,
+              reviewerReason: endorseNotes,
+            }
+          : item,
+      ),
+    );
+    const newDecision: GovernanceDecisionItem = {
+      id: `DEC-${decisionList.length + 1}`,
+      auditor: endorseRole,
+      time: "Just now",
+      // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
+      subject: selectedOverride.patient,
+      category: selectedOverride.category,
+      verdict: verdict.id,
+      tone: verdict.tone,
+    };
+    setDecisionList((prev) => [newDecision, ...prev]);
+    resetDraft();
+    showToast("Review recorded.");
+    setAnnouncement(`Override for ${selectedOverride.patient} reviewed and recorded.`);
+    return true;
+  }
+
   function openEndorseModal() {
     if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
       endorseTriggerRef.current = document.activeElement;
@@ -1020,44 +1169,7 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
       return;
     }
 
-    if (selectedOverride) {
-      if (endorseVerdict === "" || endorseRole === "") {
-        const refusal = "Choose a verdict and a reviewing role before recording the finding.";
-        showToast(refusal);
-        setAnnouncement(refusal);
-        return;
-      }
-      setOverrideList((prev) =>
-        prev.map((item) =>
-          item.id === selectedOverride.id
-            ? {
-                ...item,
-                status: "Upheld" as const,
-                reviewed: true,
-                reviewer: endorseRole,
-                decision: endorseVerdict,
-                reviewerReason: endorseNotes,
-              }
-            : item,
-        ),
-      );
-
-      const newDecision: GovernanceDecisionItem = {
-        id: `DEC-${decisionList.length + 1}`,
-        auditor: endorseRole,
-        time: "Just now",
-        // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-        subject: selectedOverride.patient,
-        category: selectedOverride.category,
-        verdict: endorseVerdict.split(" · ")[0],
-        tone: "good",
-      };
-      setDecisionList((prev) => [newDecision, ...prev]);
-
-      closeEndorseModal();
-      showToast("Action executed successfully.");
-      setAnnouncement(`Override for ${selectedOverride.patient} endorsed and recorded.`);
-    }
+    if (recordOverrideReview()) closeEndorseModal();
   }
 
   const unreviewed = events.filter(
@@ -1079,301 +1191,654 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
     subject?.kind === "movement" && movements.filter((entry) => entry.id === subject.movementId).length === 1;
   const referenced = subject?.kind === "audit-event" ? events.find((entry) => entry.id === subject.eventId) : undefined;
 
+  const reviewedCount = events.filter(
+    (event) => event.category !== "review" && reviewState(event) === "reviewed",
+  ).length;
+  const pendingOverrides = overrideList.filter((o) => o.status === "Pending Review").length;
+  const toCommittee = overrideList.filter((o) => o.status === "To committee").length;
+  const openOverrides = overrideList.filter((o) => o.status === "Pending Review");
+  const closedOverrides = overrideList.filter((o) => o.status !== "Pending Review");
+  const shownOverrides =
+    overrideScope === "open" ? openOverrides : overrideScope === "closed" ? closedOverrides : overrideList;
+  const typeRows = overrideTypeRows(overrideList);
+  const typeMean = typeRows.length ? overrideList.length / typeRows.length : 0;
+  const unitName = (id: string) => units.find((unit) => unit.id === id)?.name ?? null;
+  const showEventDetail = selected !== null;
+  const tabTitle =
+    tab === "decisions"
+      ? "Outcomes"
+      : tab === "restrictive"
+        ? "Restrictive practices"
+        : tab === "search-seizure"
+          ? "Search and seizure"
+          : "Overrides and exceptions";
+  const tabCount =
+    tab === "decisions"
+      ? decisionList.length
+      : tab === "restrictive"
+        ? tabs[2].count
+        : tab === "search-seizure"
+          ? tabs[3].count
+          : overrideList.length;
+  const activeTab: GovernanceRegisterTab = tab === "captured" ? "overrides" : tab;
+  const inlineVerdictError = inlineTried && endorseVerdict === "" ? "Choose a verdict." : undefined;
+  const inlineRoleError = inlineTried && endorseRole === "" ? "Choose a reviewing role." : undefined;
+
   return (
-    <div className={thirdEdition.governanceWorkspace} data-testid="ward-governance-workbench">
-      <WardDynamicIsland
+    <div className={thirdEdition.governanceWorkspace} data-testid="ward-governance-workbench" data-ward-design="v6">
+      <Hero
+        level={2}
+        eyebrow="Governance · This session"
         title={
-          <>
-            Governance{" "}
-            <span style={{ opacity: 0.75, fontWeight: 500, fontSize: "var(--t-0, 12px)" }}>· This session</span>
-          </>
+          overrideList.length === 0
+            ? "No decisions to review"
+            : pendingOverrides === 1
+              ? "1 decision to review"
+              : `${pendingOverrides} decisions to review`
         }
-        status={totalMonitored > 0 ? "warning" : "nominal"}
-        statusText={totalMonitored > 0 ? `${totalMonitored} overrides monitored` : "No overrides recorded this session"}
-        ariaLabel="Clinical governance indicators"
-        testId="ward-governance-hud-island"
-        metrics={[
-          {
-            id: "kpi-monitored",
-            label: "Overrides",
-            value: totalMonitored,
-            tone: "warn",
-            ariaLabel: `${totalMonitored} Overrides Monitored`,
-          },
-          {
-            id: "kpi-catchment",
-            label: "Catchment",
-            value: catchmentBypasses,
-            tone: "accent",
-            ariaLabel: `${catchmentBypasses} Catchment Bypasses`,
-          },
-          {
-            id: "kpi-acuity",
-            label: "Acuity",
-            value: acuityCeilings,
-            tone: "warn",
-            ariaLabel: `${acuityCeilings} Acuity Ceilings Bypassed`,
-          },
-          {
-            id: "kpi-upheld",
-            label: "Upheld",
-            value: reviewedUpheld,
-            tone: "good",
-            ariaLabel: `${reviewedUpheld} Reviewed & Upheld`,
-          },
-        ]}
-        actions={
-          <span className={thirdEdition.sentenceSub} style={{ margin: 0, paddingLeft: 4 }}>
-            Safety incidents not recorded
+        stats={
+          overrideList.length > 0 ? (
+            <>
+              <HeroStat value={overrideList.length} label="Overrides" />
+              <HeroStat value={pendingOverrides} label="Pending" tone="warning" />
+              <HeroStat value={reviewedUpheld} label="Upheld" tone="success" />
+              <HeroStat value={toCommittee} label="To committee" />
+            </>
+          ) : (
+            <HeroStat value={allowed ? events.length : "Not shown"} label="Captured" />
+          )
+        }
+        bar={<HeroTrack label="Governance registers" items={tabs} value={activeTab} onChange={changeTab} />}
+        barAside={
+          <span className={thirdEdition.heroActions}>
+            <Badge variant="onHero" tone="neutral">
+              Safety incidents not recorded here
+            </Badge>
+            <Button variant="light" size="sm" id="btnEndorseHeader" onClick={openEndorseModal}>
+              Record review
+            </Button>
           </span>
         }
       />
 
-      <div className={thirdEdition.workspaceBar} role="region" aria-label="Governance session status and actions">
-        <div className={thirdEdition.sessionCard}>
-          <span className={thirdEdition.sessionDot} aria-hidden="true" />
-          <p className={thirdEdition.workspaceNote}>Captured this session · resets with demo</p>
-        </div>
-        <div className={thirdEdition.workspaceMeta}>
-          <div className={thirdEdition.summary}>
-            <span className={thirdEdition.summaryPill}>
-              <strong>{allowed ? events.length : "—"}</strong> captured
-            </span>
-            <span className={thirdEdition.summaryPill}>
-              <strong>{allowed ? unreviewed : "—"}</strong> unreviewed
-            </span>
-            <span className={thirdEdition.summaryPill}>
-              <strong>{allowed ? followUp : "—"}</strong> follow-up
-            </span>
-          </div>
-        </div>
-        <div className={thirdEdition.reviewEntry}>
-          <button
-            type="button"
-            className={`${thirdEdition.btn} ${thirdEdition.primary}`}
-            id="btnEndorseHeader"
-            onClick={openEndorseModal}
-            aria-label="Record review"
-          >
-            Record review
-          </button>
-        </div>
-      </div>
-
-      <div className={thirdEdition.tabbar} role="tablist" aria-label="Governance Registers" onKeyDown={tabKey}>
-        {tabs.map((entry) => {
-          const isSelected = tab === entry.id || (tab === "captured" && entry.id === "overrides");
-          return (
-            <button
-              key={entry.id}
-              type="button"
-              id={`tab-${entry.id}`}
-              data-tab={entry.id}
-              className={thirdEdition.tabBtn}
-              role="tab"
-              aria-label={entry.label}
-              aria-selected={isSelected}
-              aria-controls={`pane-${entry.id}`}
-              tabIndex={isSelected ? 0 : -1}
-              onClick={() => changeTab(entry.id)}
-            >
-              {entry.label}
-              {entry.count !== undefined && (
-                <span className={thirdEdition.tabNum} id={`tabBadge-${entry.id}`} aria-hidden="true">
-                  {entry.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {(tab === "overrides" || tab === "captured") && (
-        <div
-          id="pane-overrides"
-          role="tabpanel"
-          aria-labelledby="tab-overrides"
-          className={thirdEdition.govLayout}
-          tabIndex={0}
+      <div className={thirdEdition.govLayout}>
+        <Card
+          className={thirdEdition.registerCard}
+          aria-labelledby="governance-register-title"
+          id={`pane-${activeTab}`}
         >
-          <section className={thirdEdition.tabsPanel} aria-label="Clinical governance registers">
-            <div className={thirdEdition.ph}>
-              <h2>Overrides &amp; Exceptions</h2>
-              <span className="mono" style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-                Demo list
-              </span>
-            </div>
-            <div className={thirdEdition.tableWrap}>
-              <table className={thirdEdition.govTable} id="ovrTable" aria-label="Clinical gate exceptions register">
+          <CardHead
+            id="governance-register-title"
+            icon={ShieldCheck}
+            title={tabTitle}
+            meta={<Count n={tabCount ?? 0} />}
+            action={
+              activeTab === "overrides" && overrideList.length > 0 ? (
+                <Segmented
+                  label="Override review state"
+                  value={overrideScope}
+                  onChange={setOverrideScope}
+                  items={[
+                    { id: "all", label: "All", count: overrideList.length },
+                    { id: "open", label: "Open", count: openOverrides.length },
+                    { id: "closed", label: "Closed", count: closedOverrides.length },
+                  ]}
+                />
+              ) : undefined
+            }
+          />
+
+          {activeTab === "overrides" && (
+            <>
+              <CardBody flush className={thirdEdition.tableScroll}>
+                <table
+                  className={cx(tableClasses.table, thirdEdition.govTable)}
+                  id="ovrTable"
+                  aria-label="Clinical gate exceptions register"
+                >
+                  <thead>
+                    <tr>
+                      <th scope="col">Patient</th>
+                      <th scope="col">Override</th>
+                      <th scope="col">Who said yes</th>
+                      <th scope="col">When</th>
+                      <th scope="col">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ovrTableBody">
+                    {overrideList.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className={thirdEdition.emptyCell}>
+                          No override audit is recorded in this session.
+                        </td>
+                      </tr>
+                    ) : null}
+                    {shownOverrides.map((o) => {
+                      const isSel = selectedOverrideId === o.id && !selected;
+                      return (
+                        <tr key={o.id} className={cx(isSel && tableClasses.selected)} onClick={() => chooseOverride(o)}>
+                          {/* Owner, 26 Sept 2026: the patient's name, not a journey or audit number. */}
+                          <td>
+                            <button
+                              type="button"
+                              className={thirdEdition.rowButton}
+                              aria-pressed={isSel}
+                              aria-controls="governance-event-detail"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                chooseOverride(o);
+                              }}
+                            >
+                              {o.patient}
+                            </button>
+                          </td>
+                          <td>
+                            <span className={thirdEdition.typeCell}>
+                              <span className={thirdEdition.typeTile} aria-hidden="true">
+                                {o.category.charAt(0)}
+                              </span>
+                              <span className={thirdEdition.clip}>{overrideTypeLabel(o.category)}</span>
+                            </span>
+                          </td>
+                          <td>
+                            <span className={thirdEdition.typeCell}>
+                              <Avatar name={o.by} initials={roleInitials(o.by)} decorative />
+                              <span className={thirdEdition.clip}>{o.by}</span>
+                            </span>
+                          </td>
+                          <td className={thirdEdition.quietCell}>{o.recordedAgoText}</td>
+                          <td>
+                            <OverrideStatusLabel status={o.status} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </CardBody>
+
+              {overrides.length > 0 && (
+                <CardBody className={thirdEdition.tableScroll}>
+                  <OverrideRegister entries={overrides} units={units} now={now} />
+                </CardBody>
+              )}
+
+              {typeRows.length > 0 && (
+                <CardBody className={thirdEdition.typeBlock}>
+                  <div className={thirdEdition.typeHead}>
+                    <h3 className={thirdEdition.blockTitle}>This session by type</h3>
+                    <span className={thirdEdition.quietText}>Repeat means 2 or more from one role</span>
+                  </div>
+                  <BarList
+                    label="Overrides this session by type"
+                    rows={typeRows}
+                    mean={typeMean}
+                    meanLabel="Session mean"
+                    labelWidth="10rem"
+                  />
+                </CardBody>
+              )}
+            </>
+          )}
+
+          {activeTab === "decisions" && (
+            <CardBody flush className={thirdEdition.tableScroll}>
+              <table
+                className={cx(tableClasses.table, thirdEdition.govTable)}
+                id="decisionTable"
+                aria-label="Closed decisions audit log"
+              >
                 <thead>
                   <tr>
                     <th scope="col">Patient</th>
                     <th scope="col">Override</th>
-                    <th scope="col">Who said yes</th>
-                    <th scope="col">Status</th>
+                    <th scope="col">Reviewed by</th>
+                    <th scope="col">When</th>
+                    <th scope="col">Verdict</th>
                   </tr>
                 </thead>
-                <tbody id="ovrTableBody">
-                  {overrideList.length === 0 ? (
+                <tbody id="decisionTableBody">
+                  {decisionList.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className={thirdEdition.emptyCell}>
-                        No override audit is recorded in this session.
+                      <td colSpan={5} className={thirdEdition.emptyCell}>
+                        No review decision is recorded in this session.
                       </td>
                     </tr>
                   ) : null}
-                  {overrideList.map((o) => {
-                    const isSel = selectedOverrideId === o.id && !selected;
-                    const catTone =
-                      o.category === "Acuity Ceiling Override"
-                        ? "danger"
-                        : o.category === "Catchment Boundary Bypass"
-                          ? "warn"
-                          : o.category === "Cohort & Gender Mix Override"
-                            ? "accent"
-                            : "warn";
-                    return (
-                      <tr
-                        key={o.id}
-                        className={isSel ? thirdEdition.selected : ""}
-                        onClick={() => {
-                          setSelectedOverrideId(o.id);
-                          setSelection(null);
-                          setAnnouncement(`Selected override for ${o.patient}.`);
-                        }}
-                        tabIndex={0}
-                        role="row"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            setSelectedOverrideId(o.id);
-                            setSelection(null);
-                          }
-                        }}
-                      >
-                        {/* Owner, 26 Sept 2026: the patient's name, not a journey or audit number. */}
+                  {decisionList.map((d) => (
+                    <tr key={d.id}>
+                      <td>
+                        <strong>{d.subject}</strong>
+                      </td>
+                      <td>{overrideTypeLabel(d.category)}</td>
+                      <td>
+                        <span className={thirdEdition.typeCell}>
+                          <Avatar name={d.auditor} initials={roleInitials(d.auditor)} decorative />
+                          <span className={thirdEdition.clip}>{d.auditor}</span>
+                        </span>
+                      </td>
+                      <td className={thirdEdition.quietCell}>{d.time}</td>
+                      <td>
+                        <span className={thirdEdition.statusText}>
+                          <StatusGlyph tone={DECISION_TONE[d.tone]} size={9} />
+                          {d.verdict}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardBody>
+          )}
+
+          {activeTab === "restrictive" && (
+            <CardBody flush className={thirdEdition.tableScroll}>
+              <table
+                className={cx(tableClasses.table, thirdEdition.govTable)}
+                id="restrictiveTable"
+                aria-label="Restrictive practices register"
+              >
+                <thead>
+                  <tr>
+                    <th scope="col">Patient</th>
+                    <th scope="col">Practice</th>
+                    <th scope="col">Authorised by</th>
+                    <th scope="col">Start</th>
+                    <th scope="col">Review due</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="restrictiveTableBody">
+                  {!hasSampleData || SAMPLE_RESTRICTIVE_PRACTICES.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className={thirdEdition.emptyCell}>
+                        No Form 10 or Form 11 record in this session.
+                      </td>
+                    </tr>
+                  ) : (
+                    SAMPLE_RESTRICTIVE_PRACTICES.map((row) => (
+                      <tr key={row.id}>
                         <td>
-                          <strong>{o.patient}</strong>
-                        </td>
-                        <td>
-                          <span className={thirdEdition.badge} data-tone={catTone}>
-                            {o.category}
+                          <span className={thirdEdition.stack}>
+                            <strong>{row.patient}</strong>
+                            <span className={thirdEdition.quietText}>{row.unit}</span>
                           </span>
                         </td>
-                        <td>{o.by}</td>
+                        <td>{row.form}</td>
                         <td>
-                          <span className={thirdEdition.badge} data-tone={o.status === "Upheld" ? "good" : "warn"}>
-                            {o.status}
+                          <span className={thirdEdition.typeCell}>
+                            <Avatar name={row.authorisedBy} initials={roleInitials(row.authorisedBy)} decorative />
+                            <span className={thirdEdition.clip}>{row.authorisedBy}</span>
+                          </span>
+                        </td>
+                        <td className={thirdEdition.quietCell}>{row.startTime}</td>
+                        <td className={thirdEdition.quietCell}>{row.reviewDue}</td>
+                        <td>
+                          <span className={thirdEdition.statusText}>
+                            <StatusGlyph tone={DECISION_TONE[row.tone]} size={9} />
+                            {row.status}
                           </span>
                         </td>
                       </tr>
-                    );
-                  })}
+                    ))
+                  )}
                 </tbody>
               </table>
+            </CardBody>
+          )}
+
+          {activeTab === "search-seizure" && (
+            <CardBody flush className={thirdEdition.tableScroll}>
+              <table
+                className={cx(tableClasses.table, thirdEdition.govTable)}
+                id="searchSeizureTable"
+                aria-label="Search and seizure register"
+              >
+                <thead>
+                  <tr>
+                    <th scope="col">Patient</th>
+                    <th scope="col">Officer</th>
+                    <th scope="col">Articles</th>
+                    <th scope="col">When</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="searchSeizureTableBody">
+                  {!hasSampleData || SAMPLE_SEARCH_SEIZURE.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className={thirdEdition.emptyCell}>
+                        No Form 8 record in this session.
+                      </td>
+                    </tr>
+                  ) : (
+                    SAMPLE_SEARCH_SEIZURE.map((row) => (
+                      <tr key={row.id}>
+                        <td>
+                          <span className={thirdEdition.stack}>
+                            <strong>{row.patient}</strong>
+                            <span className={thirdEdition.quietText}>{row.unit}</span>
+                          </span>
+                        </td>
+                        <td>{row.officer}</td>
+                        <td>{row.articles}</td>
+                        <td className={thirdEdition.quietCell}>{row.time}</td>
+                        <td>
+                          <span className={thirdEdition.statusText}>
+                            <StatusGlyph tone={DECISION_TONE[row.tone]} size={9} />
+                            {row.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </CardBody>
+          )}
+        </Card>
+
+        <Card
+          id="governance-event-detail"
+          className={thirdEdition.detailCard}
+          data-testid="ward-governance-override-detail"
+          aria-label="Selected event detail"
+        >
+          <h2 className={thirdEdition.srOnly}>Event detail</h2>
+          <span className={thirdEdition.srOnly}>Select an event from the register</span>
+          <div className={thirdEdition.detailHead}>
+            <div className={thirdEdition.stack}>
+              <span className={thirdEdition.eyebrow}>
+                {showEventDetail
+                  ? categoryLabels[selected.category]
+                  : selectedOverride
+                    ? overrideTypeLabel(selectedOverride.category)
+                    : "Event detail"}
+              </span>
+              <h3 className={thirdEdition.detailTitle} id="inspectorHeading">
+                {showEventDetail
+                  ? actionLabels[selected.action]
+                  : selectedOverride
+                    ? selectedOverride.patient
+                    : "Nothing selected"}
+              </h3>
             </div>
+            {showEventDetail || selectedOverride ? <Badge tone={inspTone}>{inspStatus}</Badge> : null}
+          </div>
 
-            {overrides.length > 0 && (
-              <div className={thirdEdition.tableWrap}>
-                <OverrideRegister entries={overrides} units={units} now={now} />
-              </div>
+          <div className={thirdEdition.detailBody} role="region" aria-label="Event facts" tabIndex={0}>
+            {showEventDetail ? (
+              <>
+                <FactList
+                  facts={[
+                    ["Record", subjectLabel(selected, patientOf)],
+                    ["Recorded", when(selected.at, now)],
+                    [
+                      "Role recorded",
+                      selected.actor.role ? WARD_FLOW_ROLE_LABELS[selected.actor.role] : "Not recorded",
+                    ],
+                    ...(selected.actor.actingUnitId
+                      ? [
+                          [
+                            "Acting ward",
+                            units.find((unit) => unit.id === selected.actor.actingUnitId)?.name ?? "Unresolved ward",
+                          ] as const,
+                        ]
+                      : []),
+                    ...(selected.reasonCode !== "none"
+                      ? [["Outcome reason", reasonLabels[selected.reasonCode]] as const]
+                      : []),
+                  ]}
+                />
+                {(movementExists || (subjectExists && matchingWard.length === 1) || referenced) && (
+                  <div className={thirdEdition.entityLinks}>
+                    {movementExists && subject?.kind === "movement" && (
+                      <Link href={movementHref(subject.movementId)} className={buttonClass({ size: "sm" })}>
+                        Open movement <ChevronRight aria-hidden="true" size={14} />
+                      </Link>
+                    )}
+                    {subjectExists && matchingWard.length === 1 && (
+                      <Link href={unitHref(matchingWard[0].id)} className={buttonClass({ size: "sm" })}>
+                        Open {matchingWard[0].name} <ChevronRight aria-hidden="true" size={14} />
+                      </Link>
+                    )}
+                    {referenced && (
+                      <Button size="sm" onClick={() => choose(referenced)}>
+                        Inspect {referenced.id}
+                      </Button>
+                    )}
+                  </div>
+                )}
+                <div className={thirdEdition.operationFacts}>
+                  <h3 className={thirdEdition.subheading}>Recorded facts</h3>
+                  <EventFacts event={selected} units={units} now={now} />
+                </div>
+              </>
+            ) : selectedOverride ? (
+              <>
+                <Inset className={thirdEdition.factGrid}>
+                  <dl>
+                    <div>
+                      <dt>Who said yes</dt>
+                      <dd id="inspAuthoriser">{selectedOverride.by}</dd>
+                    </div>
+                    <div>
+                      <dt>Recorded</dt>
+                      <dd id="inspTime">{selectedOverride.recordedAgoText}</dd>
+                    </div>
+                    {unitName(selectedOverride.unit) ? (
+                      <div>
+                        <dt>Ward</dt>
+                        <dd>{unitName(selectedOverride.unit)}</dd>
+                      </div>
+                    ) : null}
+                    <div>
+                      <dt>Service</dt>
+                      <dd>{selectedOverride.service}</dd>
+                    </div>
+                  </dl>
+                </Inset>
+
+                <h4 className={thirdEdition.eyebrow}>Reason given</h4>
+                <Inset className={thirdEdition.reasonText} id="inspJustification">
+                  {selectedOverride.reason}
+                </Inset>
+
+                {selectedOverride.status === "Pending Review" ? (
+                  <form
+                    className={thirdEdition.reviewForm}
+                    aria-label="Your review"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      setInlineTried(true);
+                      recordOverrideReview();
+                    }}
+                  >
+                    <fieldset className={thirdEdition.verdictSet}>
+                      <legend className={thirdEdition.eyebrow}>Your review</legend>
+                      <div className={thirdEdition.verdictRow}>
+                        {VERDICTS.slice(0, 3).map((verdict) => (
+                          <Radio
+                            key={verdict.id}
+                            name="governanceInlineVerdict"
+                            value={verdict.id}
+                            label={verdict.label}
+                            checked={endorseVerdict === verdict.id}
+                            onChange={() => setEndorseVerdict(verdict.id)}
+                          />
+                        ))}
+                      </div>
+                      {inlineVerdictError ? (
+                        <span className={thirdEdition.inlineError}>
+                          <StatusGlyph tone="danger" size={9} />
+                          {inlineVerdictError}
+                        </span>
+                      ) : null}
+                    </fieldset>
+                    <Field label="Reviewing role" id="governance-inline-role" error={inlineRoleError}>
+                      <Select value={endorseRole} onChange={(event) => setEndorseRole(event.target.value)}>
+                        <option value="">Choose a reviewing role</option>
+                        {REVIEWING_ROLES.map((role) => (
+                          <option key={role} value={role}>
+                            {role}
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
+                    <Field label="Note for the register" id="governance-inline-note">
+                      <Textarea
+                        rows={2}
+                        maxLength={280}
+                        value={endorseNotes}
+                        placeholder="Administrative review only"
+                        onChange={(event) => setEndorseNotes(event.target.value)}
+                        spellCheck={false}
+                        autoComplete="off"
+                      />
+                    </Field>
+                    <div className={thirdEdition.formActions}>
+                      <Button type="submit" variant="pri" id="btnEndorseInsp" className={thirdEdition.grow}>
+                        Record review
+                      </Button>
+                      <Button type="button" onClick={resetDraft}>
+                        Reset
+                      </Button>
+                    </div>
+                  </form>
+                ) : null}
+
+                <h4 className={thirdEdition.eyebrow}>History</h4>
+                {selectedOverride.reviewed && selectedOverride.decision ? (
+                  <ol className={thirdEdition.timeline} id="inspFindingsGroup">
+                    <li>
+                      <StatusGlyph tone={statusTone(selectedOverride.status)} size={9} />
+                      <span id="inspReview">
+                        {selectedOverride.decision} by {selectedOverride.reviewer || "reviewer not recorded"}
+                        {selectedOverride.reviewerReason ? `. ${selectedOverride.reviewerReason}` : ""}
+                      </span>
+                    </li>
+                  </ol>
+                ) : (
+                  <p className={thirdEdition.quiet}>No review recorded for this override.</p>
+                )}
+              </>
+            ) : (
+              <EmptyState icon={ClipboardList} title="Select an event from the register" />
             )}
+          </div>
+        </Card>
+      </div>
 
-            <section className={thirdEdition.registerPanel} aria-label="Captured event register">
-              <header className={thirdEdition.panelHeader}>
-                <div>
-                  <h2>This session</h2>
+      <Card className={thirdEdition.capturedCard} aria-labelledby="governance-captured-title">
+        <CardHead
+          id="governance-captured-title"
+          icon={History}
+          title="Captured this session"
+          meta={
+            <span className={thirdEdition.metaRow}>
+              <Count n={allowed ? events.length : "–"} />
+              <span>resets with demo</span>
+            </span>
+          }
+          action={
+            <div className={thirdEdition.filterRow}>
+              <label className={thirdEdition.filterLabel} htmlFor="governance-filter-category">
+                Category
+              </label>
+              <Select
+                id="governance-filter-category"
+                name="governanceFilterCategory"
+                aria-label="Filter event category"
+                value={category}
+                onChange={(event) => {
+                  setCategory(event.target.value as typeof category);
+                  choose(null);
+                }}
+              >
+                <option value="all">All categories</option>
+                {Object.entries(categoryLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+              <label className={thirdEdition.filterLabel} htmlFor="governance-filter-outcome">
+                Outcome
+              </label>
+              <Select
+                id="governance-filter-outcome"
+                name="governanceFilterOutcome"
+                aria-label="Filter event outcome"
+                value={outcome}
+                onChange={(event) => {
+                  setOutcome(event.target.value as typeof outcome);
+                  choose(null);
+                }}
+              >
+                <option value="all">All outcomes</option>
+                {Object.entries(outcomeLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+              <label className={thirdEdition.filterLabel} htmlFor="governance-filter-review">
+                Review
+              </label>
+              <Select
+                id="governance-filter-review"
+                name="governanceFilterReview"
+                aria-label="Filter review state"
+                value={reviewFilter}
+                onChange={(event) => {
+                  setReviewFilter(event.target.value as typeof reviewFilter);
+                  choose(null);
+                }}
+              >
+                <option value="all">All review states</option>
+                <option value="unreviewed">Unreviewed</option>
+                <option value="reviewed">Reviewed</option>
+                <option value="follow-up-required">Follow-up required</option>
+              </Select>
+            </div>
+          }
+        />
+        <div className={thirdEdition.capturedGrid}>
+          <div className={thirdEdition.capturedList}>
+            <div className={thirdEdition.eventHeader} aria-hidden="true">
+              <span>Time</span>
+              <span>Action</span>
+              <span>Record</span>
+              <span>Role</span>
+              <span>Outcome</span>
+              <span>Review</span>
+            </div>
+            <div
+              className={thirdEdition.registerBody}
+              role="region"
+              aria-label="Captured events"
+              tabIndex={0}
+              onKeyDown={rowKey}
+            >
+              {!allowed ? (
+                <div className={thirdEdition.emptyBlock}>
+                  <Fingerprint aria-hidden="true" size={16} />
+                  <h3>Record access unavailable</h3>
+                  <p>These records require the coordinator role.</p>
+                </div>
+              ) : visible.length === 0 ? (
+                <div className={thirdEdition.emptyBlock}>
+                  <ClipboardList aria-hidden="true" size={16} />
+                  <h3>{events.length ? "No matching events" : "No events captured yet"}</h3>
                   <p>
-                    {allowed
-                      ? `${visible.length} of ${events.length} captured events · newest first`
-                      : "Record access unavailable"}
+                    {events.length
+                      ? "Change the filters to see other captured events."
+                      : "Recorded actions and discharge-record opens will appear here."}
                   </p>
                 </div>
-              </header>
-              <div className={thirdEdition.filters}>
-                <label htmlFor="governance-filter-category">
-                  Category
-                  <select
-                    id="governance-filter-category"
-                    name="governanceFilterCategory"
-                    aria-label="Filter event category"
-                    value={category}
-                    onChange={(event) => {
-                      setCategory(event.target.value as typeof category);
-                      choose(null);
-                    }}
-                  >
-                    <option value="all">All categories</option>
-                    {Object.entries(categoryLabels).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label htmlFor="governance-filter-outcome">
-                  Outcome
-                  <select
-                    id="governance-filter-outcome"
-                    name="governanceFilterOutcome"
-                    aria-label="Filter event outcome"
-                    value={outcome}
-                    onChange={(event) => {
-                      setOutcome(event.target.value as typeof outcome);
-                      choose(null);
-                    }}
-                  >
-                    <option value="all">All outcomes</option>
-                    {Object.entries(outcomeLabels).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label htmlFor="governance-filter-review">
-                  Review
-                  <select
-                    id="governance-filter-review"
-                    name="governanceFilterReview"
-                    aria-label="Filter review state"
-                    value={reviewFilter}
-                    onChange={(event) => {
-                      setReviewFilter(event.target.value as typeof reviewFilter);
-                      choose(null);
-                    }}
-                  >
-                    <option value="all">All review states</option>
-                    <option value="unreviewed">Unreviewed</option>
-                    <option value="reviewed">Reviewed</option>
-                    <option value="follow-up-required">Follow-up required</option>
-                  </select>
-                </label>
-              </div>
-              <div
-                className={thirdEdition.registerBody}
-                role="region"
-                aria-label="Captured events"
-                tabIndex={0}
-                onKeyDown={rowKey}
-              >
-                {!allowed ? (
-                  <div className={thirdEdition.empty}>
-                    <Fingerprint aria-hidden="true" />
-                    <h3>Record access unavailable</h3>
-                    <p>These records require the coordinator role.</p>
-                  </div>
-                ) : visible.length === 0 ? (
-                  <div className={thirdEdition.empty}>
-                    <ClipboardList aria-hidden="true" />
-                    <h3>{events.length ? "No matching events" : "No events captured yet"}</h3>
-                    <p>
-                      {events.length
-                        ? "Change the filters to see other captured events."
-                        : "Recorded actions and discharge-record opens will appear here."}
-                    </p>
-                  </div>
-                ) : (
-                  visible.map((event) => (
+              ) : (
+                visible.map((event) => {
+                  const state = event.category === "review" ? "Review attempt" : reviewState(event);
+                  return (
                     <button
                       type="button"
                       key={`${event.generation}-${event.id}`}
@@ -1383,448 +1848,117 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
                       aria-controls="governance-event-detail"
                       onClick={() => choose(event)}
                     >
-                      <span className={thirdEdition.eventMain}>
-                        <strong>{actionLabels[event.action]}</strong>
-                        <span className={thirdEdition.badge} data-tone={event.outcome}>
-                          {outcomeLabels[event.outcome]}
-                        </span>
+                      <span className={thirdEdition.eventTime}>{when(event.at, now)}</span>
+                      <strong className={thirdEdition.clip}>{actionLabels[event.action]}</strong>
+                      <span className={thirdEdition.clip}>
+                        {subjectLabel(event, patientOf)} · {categoryLabels[event.category]}
                       </span>
-                      <span className={thirdEdition.eventMeta}>
-                        <span>
-                          {subjectLabel(event, patientOf)} · {categoryLabels[event.category]}
-                        </span>
-                        <time>{when(event.at, now)}</time>
+                      <span className={thirdEdition.clip}>
+                        {event.actor.role ? WARD_FLOW_ROLE_LABELS[event.actor.role] : "Role unavailable"}
                       </span>
-                      <span className={thirdEdition.eventBottom}>
-                        <span>{event.actor.role ? WARD_FLOW_ROLE_LABELS[event.actor.role] : "Role unavailable"}</span>
-                        <span>
-                          {event.category === "review"
-                            ? "Review attempt"
-                            : reviewState(event) === "unreviewed"
-                              ? "Unreviewed"
-                              : reviewLabels[reviewState(event) as AuditReview["decision"]]}
-                        </span>
-                        <ChevronRight aria-hidden="true" />
+                      <span className={thirdEdition.statusText}>
+                        <StatusGlyph tone={OUTCOME_TONE[event.outcome]} size={9} />
+                        {outcomeLabels[event.outcome]}
+                      </span>
+                      <span className={thirdEdition.statusText}>
+                        <StatusGlyph
+                          tone={
+                            state === "reviewed" ? "success" : state === "follow-up-required" ? "warning" : "neutral"
+                          }
+                          size={9}
+                        />
+                        {state === "Review attempt"
+                          ? "Review attempt"
+                          : state === "unreviewed"
+                            ? "Unreviewed"
+                            : reviewLabels[state]}
                       </span>
                     </button>
-                  ))
-                )}
-              </div>
-            </section>
-          </section>
-
-          <div className={thirdEdition.sideColumn}>
-            <section
-              id="governance-event-detail"
-              className={thirdEdition.detailPanel}
-              data-testid="ward-governance-override-detail"
-              aria-label="Selected event detail"
-            >
-              <header className={thirdEdition.panelHeader}>
-                <div>
-                  <h2 id="inspectorHeading">
-                    {selected ? actionLabels[selected.action] : "Override Detail Inspector"}
-                  </h2>
-                  <h2 className={thirdEdition.srOnly}>Event detail</h2>
-                  <p>
-                    {selected
-                      ? categoryLabels[selected.category]
-                      : selectedOverride
-                        ? selectedOverride.category
-                        : "Select an event from the register"}
-                    <span className={thirdEdition.srOnly}>Select an event from the register</span>
-                  </p>
-                </div>
-                <span className={thirdEdition.badge} id="inspBadge" data-tone={inspTone}>
-                  {inspStatus}
-                </span>
-              </header>
-
-              <div className={thirdEdition.detailBody} role="region" aria-label="Event facts" tabIndex={0}>
-                {selected ? (
-                  <>
-                    <FactList
-                      facts={[
-                        ["Record", subjectLabel(selected, patientOf)],
-                        ["Recorded", when(selected.at, now)],
-                        [
-                          "Role recorded",
-                          selected.actor.role ? WARD_FLOW_ROLE_LABELS[selected.actor.role] : "Not recorded",
-                        ],
-                        ...(selected.actor.actingUnitId
-                          ? [
-                              [
-                                "Acting ward",
-                                units.find((unit) => unit.id === selected.actor.actingUnitId)?.name ??
-                                  "Unresolved ward",
-                              ] as const,
-                            ]
-                          : []),
-                        ...(selected.reasonCode !== "none"
-                          ? [["Outcome reason", reasonLabels[selected.reasonCode]] as const]
-                          : []),
-                      ]}
-                    />
-                    {(movementExists || (subjectExists && matchingWard.length === 1) || referenced) && (
-                      <div className={thirdEdition.entityLinks}>
-                        {movementExists && subject?.kind === "movement" && (
-                          <Link href={movementHref(subject.movementId)}>
-                            Open movement <ChevronRight aria-hidden="true" />
-                          </Link>
-                        )}
-                        {subjectExists && matchingWard.length === 1 && (
-                          <Link href={unitHref(matchingWard[0].id)}>
-                            Open {matchingWard[0].name} <ChevronRight aria-hidden="true" />
-                          </Link>
-                        )}
-                        {referenced && (
-                          <button type="button" onClick={() => choose(referenced)}>
-                            Inspect {referenced.id} <ChevronRight aria-hidden="true" />
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    <div className={thirdEdition.operationFacts}>
-                      <h3 className={thirdEdition.subheading}>Recorded facts</h3>
-                      <EventFacts event={selected} units={units} now={now} />
-                    </div>
-                  </>
-                ) : selectedOverride ? (
-                  <div className={thirdEdition.inspectorBody}>
-                    <div className={thirdEdition.inspectorCard}>
-                      <div className={thirdEdition.inspectorRow}>
-                        <span className={thirdEdition.inspectorLabel}>Patient</span>
-                        {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                        <span className={thirdEdition.inspectorVal} id="inspPatient">
-                          {selectedOverride.patient}
-                        </span>
-                      </div>
-                      <div className={thirdEdition.inspectorRow}>
-                        <span className={thirdEdition.inspectorLabel}>Override</span>
-                        <span className={thirdEdition.inspectorVal} id="inspGate">
-                          {selectedOverride.category}
-                        </span>
-                      </div>
-                      <div className={thirdEdition.inspectorRow}>
-                        <span className={thirdEdition.inspectorLabel}>Role</span>
-                        <span className={thirdEdition.inspectorVal} id="inspAuthoriser">
-                          {selectedOverride.by}
-                        </span>
-                      </div>
-                      <div className={thirdEdition.inspectorRow}>
-                        <span className={thirdEdition.inspectorLabel}>Recorded Time</span>
-                        <span className={`${thirdEdition.inspectorVal} mono`} id="inspTime">
-                          {selectedOverride.recordedAgoText}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className={thirdEdition.formGroup}>
-                      <span className={thirdEdition.formLabel}>Reason</span>
-                      <div className={thirdEdition.inspectorText} id="inspJustification">
-                        {selectedOverride.reason}
-                      </div>
-                    </div>
-
-                    {selectedOverride.reviewed && selectedOverride.decision && (
-                      <div className={thirdEdition.formGroup} id="inspFindingsGroup">
-                        <span className={thirdEdition.formLabel}>Audit Finding &amp; Rationale</span>
-                        <div className={thirdEdition.inspectorText} id="inspReview">
-                          {selectedOverride.reviewerReason ||
-                            `Endorsed by ${selectedOverride.reviewer || "reviewer not recorded"}: ${selectedOverride.decision}.`}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className={thirdEdition.inspectorActions}>
-                      <button
-                        type="button"
-                        className={`${thirdEdition.btn} ${thirdEdition.primary}`}
-                        id="btnEndorseInsp"
-                        onClick={openEndorseModal}
-                      >
-                        Record review
-                      </button>
-                      <button
-                        type="button"
-                        className={thirdEdition.btn}
-                        id="btnReferInsp"
-                        onClick={() => showToast("Not wired in this prototype.")}
-                      >
-                        Refer to Committee
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className={thirdEdition.empty}>
-                    <ClipboardList aria-hidden="true" />
-                    <p>Select an event from the register</p>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <section
-              className={thirdEdition.recordPanel}
-              data-testid="ward-governance-decision-record"
-              aria-label="Administrative review"
-            >
-              <header className={thirdEdition.panelHeader}>
-                <div>
-                  <h2>Review and history</h2>
-                  <p>
-                    {selected
-                      ? `${history.length} recorded ${history.length === 1 ? "review" : "reviews"} · role recorded`
-                      : selectedOverride?.reviewed
-                        ? `1 recorded review · role recorded`
-                        : "No event selected"}
-                  </p>
-                </div>
-              </header>
-              <div className={thirdEdition.reviewBody} role="region" aria-label="Review history" tabIndex={0}>
-                {selected && history.length ? (
-                  <ol className={thirdEdition.historyList}>
-                    {[...history].reverse().map((review) => (
-                      <li key={review.id}>
-                        <CheckCircle2 aria-hidden="true" />
-                        <div>
-                          <strong>{reviewLabels[review.decision]}</strong>
-                          <span>{when(review.at, now)} · Flow coordinator</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                ) : selectedOverride?.reviewed ? (
-                  <ol className={thirdEdition.historyList}>
-                    <li>
-                      <CheckCircle2 aria-hidden="true" />
-                      <div>
-                        <strong>{selectedOverride.decision || "Not recorded"}</strong>
-                        <span>{selectedOverride.reviewer || "Not recorded"}</span>
-                      </div>
-                    </li>
-                  </ol>
-                ) : (
-                  <p className={thirdEdition.quiet}>
-                    {selected?.category === "review"
-                      ? "Review attempts cannot be reviewed."
-                      : selected
-                        ? "No review recorded for this event."
-                        : "Choose an event to review."}
-                  </p>
-                )}
-              </div>
-              <div className={thirdEdition.reviewControls}>
-                <p>Administrative review only</p>
-                <div className={thirdEdition.reviewActions}>
-                  <button
-                    type="button"
-                    disabled={!allowed || !selected || selected.category === "review" || reviewPending}
-                    onClick={() => recordReview("reviewed")}
-                  >
-                    Mark reviewed
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!allowed || !selected || selected.category === "review" || reviewPending}
-                    onClick={() => recordReview("follow-up-required")}
-                  >
-                    Follow-up required
-                  </button>
-                </div>
-                <p className={thirdEdition.feedback} role="status" aria-live="polite">
-                  {pending
-                    ? confirmed
-                      ? `${reviewLabels[pending.decision]} recorded.`
-                      : reviewAttempt
-                        ? "Review not recorded. The record may have changed; select it again."
-                        : "Recording review…"
-                    : ""}
-                </p>
-              </div>
-            </section>
+                  );
+                })
+              )}
+            </div>
           </div>
-        </div>
-      )}
 
-      {tab === "decisions" && (
-        <div
-          id="pane-decisions"
-          role="tabpanel"
-          aria-labelledby="tab-decisions"
-          tabIndex={0}
-          className={thirdEdition.tabsPanel}
-        >
-          <div className={thirdEdition.ph}>
-            <h2>Outcomes</h2>
-            <span className="mono" style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-              Audited Exceptions
-            </span>
-          </div>
-          <div className={thirdEdition.tableWrap}>
-            <table className={thirdEdition.govTable} id="decisionTable" aria-label="Closed decisions audit log">
-              <thead>
-                <tr>
-                  <th scope="col">Decision ID</th>
-                  <th scope="col">Auditor Role</th>
-                  <th scope="col">Timestamp</th>
-                  <th scope="col">Patient</th>
-                  <th scope="col">Gate Category</th>
-                  <th scope="col">Verdict</th>
-                </tr>
-              </thead>
-              <tbody id="decisionTableBody">
-                {decisionList.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
-                      No review decision is recorded in this session.
-                    </td>
-                  </tr>
-                ) : null}
-                {decisionList.map((d) => (
-                  <tr key={d.id} role="row">
-                    <td className="mono">
-                      <strong>{d.id}</strong>
-                    </td>
-                    <td>{d.auditor}</td>
-                    <td className="mono">{d.time}</td>
-                    <td className="mono">{d.subject}</td>
-                    <td>{d.category}</td>
-                    <td>
-                      <span className={thirdEdition.badge} data-tone={d.tone}>
-                        {d.verdict}
+          <section
+            className={thirdEdition.recordPane}
+            data-testid="ward-governance-decision-record"
+            aria-label="Administrative review"
+          >
+            <div className={thirdEdition.stack}>
+              <h3 className={thirdEdition.blockTitle}>Review and history</h3>
+              <span className={thirdEdition.quietText}>
+                {selected
+                  ? `${history.length} recorded ${history.length === 1 ? "review" : "reviews"} · role recorded`
+                  : "No event selected"}
+              </span>
+            </div>
+            <div className={thirdEdition.reviewBody} role="region" aria-label="Review history" tabIndex={0}>
+              {selected && history.length ? (
+                <ol className={thirdEdition.timeline}>
+                  {[...history].reverse().map((review) => (
+                    <li key={review.id}>
+                      <StatusGlyph tone={review.decision === "reviewed" ? "success" : "warning"} size={9} />
+                      <span className={thirdEdition.stack}>
+                        <strong>{reviewLabels[review.decision]}</strong>
+                        <span className={thirdEdition.quietText}>{when(review.at, now)} · Flow coordinator</span>
                       </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className={thirdEdition.quiet}>
+                  {selected?.category === "review"
+                    ? "Review attempts cannot be reviewed."
+                    : selected
+                      ? "No review recorded for this event."
+                      : "Choose an event to review."}
+                </p>
+              )}
+            </div>
+            <div className={thirdEdition.reviewActions}>
+              <Button
+                size="sm"
+                disabled={!allowed || !selected || selected.category === "review" || reviewPending}
+                onClick={() => recordReview("reviewed")}
+              >
+                Mark reviewed
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={!allowed || !selected || selected.category === "review" || reviewPending}
+                onClick={() => recordReview("follow-up-required")}
+              >
+                Follow-up required
+              </Button>
+            </div>
+            <p className={thirdEdition.feedback} role="status" aria-live="polite">
+              {pending
+                ? confirmed
+                  ? `${reviewLabels[pending.decision]} recorded.`
+                  : reviewAttempt
+                    ? "Review not recorded. The record may have changed; select it again."
+                    : "Recording review…"
+                : ""}
+            </p>
+          </section>
         </div>
-      )}
-
-      {tab === "restrictive" && (
-        <div
-          id="pane-restrictive"
-          role="tabpanel"
-          aria-labelledby="tab-restrictive"
-          tabIndex={0}
-          className={thirdEdition.tabsPanel}
+        <CardFoot
+          meta={
+            allowed
+              ? `${reviewedCount} reviewed · ${followUp} follow-up · ${unreviewed} unreviewed`
+              : "Record access unavailable"
+          }
         >
-          <div className={thirdEdition.ph}>
-            <h2>Forms 10 &amp; 11</h2>
-            <span className="mono" style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-              WA Mental Health Act Statutory Register
-            </span>
-          </div>
-          <div className={thirdEdition.tableWrap}>
-            <table className={thirdEdition.govTable} id="restrictiveTable" aria-label="Restrictive practices register">
-              <thead>
-                <tr>
-                  <th scope="col">Practice</th>
-                  <th scope="col">Patient · UMRN</th>
-                  <th scope="col">Ward · Location</th>
-                  <th scope="col">Who said yes</th>
-                  <th scope="col">Start Time</th>
-                  <th scope="col">Review Due</th>
-                  <th scope="col">Status</th>
-                </tr>
-              </thead>
-              <tbody id="restrictiveTableBody">
-                {!hasSampleData || SAMPLE_RESTRICTIVE_PRACTICES.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
-                      Statutory register for Form 10 and Form 11 clinical records.
-                    </td>
-                  </tr>
-                ) : (
-                  SAMPLE_RESTRICTIVE_PRACTICES.map((row) => (
-                    <tr key={row.id} role="row">
-                      <td>
-                        <strong>{row.form}</strong>
-                      </td>
-                      <td>{row.patient}</td>
-                      <td>{row.unit}</td>
-                      <td>{row.authorisedBy}</td>
-                      <td className="mono">{row.startTime}</td>
-                      <td className="mono">{row.reviewDue}</td>
-                      <td>
-                        <span className={thirdEdition.badge} data-tone={row.tone}>
-                          {row.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+          System advice and bed state at decision time are not recorded
+        </CardFoot>
+      </Card>
 
-      {tab === "search-seizure" && (
-        <div
-          id="pane-search-seizure"
-          role="tabpanel"
-          aria-labelledby="tab-search-seizure"
-          tabIndex={0}
-          className={thirdEdition.tabsPanel}
-        >
-          <div className={thirdEdition.ph}>
-            <h2>Form 8</h2>
-            <span className="mono" style={{ fontSize: "var(--t-0)", color: "var(--muted)" }}>
-              WA Mental Health Act Statutory Register
-            </span>
-          </div>
-          <div className={thirdEdition.tableWrap}>
-            <table className={thirdEdition.govTable} id="searchSeizureTable" aria-label="Search and seizure register">
-              <thead>
-                <tr>
-                  <th scope="col">Record ID</th>
-                  <th scope="col">Patient · UMRN</th>
-                  <th scope="col">Ward · Location</th>
-                  <th scope="col">Authorised Officer</th>
-                  <th scope="col">Articles Seized</th>
-                  <th scope="col">Seizure Time</th>
-                  <th scope="col">Status</th>
-                </tr>
-              </thead>
-              <tbody id="searchSeizureTableBody">
-                {!hasSampleData || SAMPLE_SEARCH_SEIZURE.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
-                      Statutory register for Form 8 records.
-                    </td>
-                  </tr>
-                ) : (
-                  SAMPLE_SEARCH_SEIZURE.map((row) => (
-                    <tr key={row.id} role="row">
-                      <td className="mono">
-                        <strong>{row.id}</strong>
-                      </td>
-                      <td>{row.patient}</td>
-                      <td>{row.unit}</td>
-                      <td>{row.officer}</td>
-                      <td>{row.articles}</td>
-                      <td className="mono">{row.time}</td>
-                      <td>
-                        <span className={thirdEdition.badge} data-tone={row.tone}>
-                          {row.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Review-recording & endorsement modal */}
+      {/* Review-recording modal, opened from the hero. */}
       <div
         ref={endorseModalRef}
-        className={`${thirdEdition.modal} ${modalOpen ? thirdEdition.open : ""}`}
+        className={thirdEdition.modal}
         id="endorseModal"
         role="dialog"
         aria-modal="true"
@@ -1838,81 +1972,45 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
         <div className={thirdEdition.modalDialog}>
           <div className={thirdEdition.modalHead}>
             <h3 id="endorseModalTitle">Record a review</h3>
-            <button
-              type="button"
-              className={`${thirdEdition.btn} ${thirdEdition.sm}`}
-              onClick={closeEndorseModal}
-              aria-label="Close modal"
-            >
-              ✕
-            </button>
+            <Button iconOnly icon={X} variant="ghost" size="sm" aria-label="Close modal" onClick={closeEndorseModal} />
           </div>
           <div className={thirdEdition.modalBody}>
-            <div className={thirdEdition.formGroup}>
-              <label className={thirdEdition.formLabel} htmlFor="endorseSubj">
-                Override under review
-              </label>
-              <input
-                type="text"
-                className={`${thirdEdition.formInput} mono`}
-                id="endorseSubj"
+            <Field label="Under review" id="endorseSubj">
+              <TextInput
                 value={
                   selected
                     ? `${actionLabels[selected.action]} (${subjectLabel(selected, patientOf)})`
                     : selectedOverride
-                      ? `${selectedOverride.patient} · ${selectedOverride.category}`
+                      ? `${selectedOverride.patient} · ${overrideTypeLabel(selectedOverride.category)}`
                       : "No override selected"
                 }
                 readOnly
               />
-            </div>
-            <div className={thirdEdition.formGroup}>
-              <label className={thirdEdition.formLabel} htmlFor="endorseVerdict">
-                Governance Review Verdict
-              </label>
-              <select
-                className={thirdEdition.formSelect}
-                id="endorseVerdict"
-                value={endorseVerdict}
-                onChange={(e) => setEndorseVerdict(e.target.value)}
-              >
+            </Field>
+            <Field label="Verdict" id="endorseVerdict">
+              <Select value={endorseVerdict} onChange={(e) => setEndorseVerdict(e.target.value)}>
                 <option value="">Choose a verdict</option>
-                <option value="Upheld in Full · Justified Clinical Need & Safety">
-                  Upheld in Full · Justified Clinical Need &amp; Safety
-                </option>
-                <option value="Upheld with System Decompression Recommendation">
-                  Upheld with System Decompression Recommendation
-                </option>
-                <option value="Not Upheld · Quality Review Initiated">Not Upheld · Quality Review Initiated</option>
-                <option value="Referred to Clinical Governance Committee">
-                  Referred to Clinical Governance Committee
-                </option>
-              </select>
-            </div>
-            <div className={thirdEdition.formGroup}>
-              <label className={thirdEdition.formLabel} htmlFor="endorseRole">
-                Reviewing Authority Role
-              </label>
-              <select
-                className={thirdEdition.formSelect}
-                id="endorseRole"
-                value={endorseRole}
-                onChange={(e) => setEndorseRole(e.target.value)}
-              >
+                {VERDICTS.map((verdict) => (
+                  <option key={verdict.id} value={verdict.id}>
+                    {verdict.id}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Reviewing role" id="endorseRole">
+              <Select value={endorseRole} onChange={(e) => setEndorseRole(e.target.value)}>
                 <option value="">Choose a reviewing role</option>
-                <option value="Clinical Director">Clinical Director</option>
-                <option value="Duty Consultant Psychiatrist">Duty Consultant Psychiatrist</option>
-                <option value="Governance Lead Psychiatrist">Governance Lead Psychiatrist</option>
-                <option value="Executive Director of Clinical Services">Executive Director of Clinical Services</option>
-              </select>
-            </div>
-            <div className={thirdEdition.formGroup}>
-              <label className={thirdEdition.formLabel} htmlFor="endorseNotes">
-                Audit Findings &amp; Action Plan
-              </label>
-              <textarea
-                className={thirdEdition.formTextarea}
-                id="endorseNotes"
+                {REVIEWING_ROLES.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Note for the register" id="endorseNotes">
+              <Textarea
+                rows={3}
+                maxLength={280}
                 value={endorseNotes}
                 onChange={(e) => setEndorseNotes(e.target.value)}
                 data-gramm="false"
@@ -1920,32 +2018,32 @@ function GovernanceSession({ movements, units, now, api, sampleData }: Workbench
                 spellCheck={false}
                 autoComplete="off"
               />
-            </div>
+            </Field>
           </div>
           <div className={thirdEdition.modalFoot}>
-            <button type="button" className={thirdEdition.btn} onClick={closeEndorseModal}>
-              Cancel
-            </button>
-            <button type="button" className={`${thirdEdition.btn} ${thirdEdition.primary}`} onClick={submitEndorsement}>
-              Sign &amp; Record Finding
-            </button>
+            <Button onClick={closeEndorseModal}>Cancel</Button>
+            <Button variant="pri" onClick={submitEndorsement}>
+              Record finding
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Action Confirmation Toast */}
-      <div
-        className={`${thirdEdition.toast} ${toastMessage ? thirdEdition.show : ""}`}
-        id="actionToast"
-        role="status"
-        aria-live="polite"
-      >
-        <span>✓</span>
-        <span id="toastMsg">{toastMessage ?? "Action executed successfully."}</span>
+      <div className={thirdEdition.toastSlot} id="actionToast" role="status" aria-live="polite">
+        {toastMessage ? <ToastView tone="neutral" title={<span id="toastMsg">{toastMessage}</span>} /> : null}
       </div>
       <p className={thirdEdition.srOnly} id="screenAnnouncer" aria-live="polite" aria-atomic="true">
         {announcement}
       </p>
     </div>
+  );
+}
+
+function OverrideStatusLabel({ status }: { status: OverrideStatus }) {
+  return (
+    <span className={thirdEdition.statusText}>
+      <StatusGlyph tone={statusTone(status)} size={9} />
+      {status === "Pending Review" ? "Pending review" : status}
+    </span>
   );
 }

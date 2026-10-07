@@ -1,16 +1,22 @@
 /** @vitest-environment jsdom */
 
+import { readFileSync } from "node:fs";
 import { createRef, useState } from "react";
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MoreHorizontal } from "lucide-react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  BarList,
   Button,
+  Card,
   Checkbox,
+  Drawer,
+  Hero,
   LiveChip,
   Menu,
+  type MenuItem,
   Segmented,
   Stepper,
   Switch,
@@ -252,5 +258,212 @@ describe("Checkbox", () => {
     const box = screen.getByRole("checkbox", { name: "Select all" });
     expect(ref.current).toBe(box);
     expect((box as HTMLInputElement).indeterminate).toBe(true);
+  });
+});
+
+describe("Refs", () => {
+  it("forwards a ref to the real button and to the card element, whatever `as` is", () => {
+    const buttonRef = createRef<HTMLButtonElement>();
+    const cardRef = createRef<HTMLElement>();
+    render(
+      <Card as="article" ref={cardRef} aria-label="Bed map">
+        <Button ref={buttonRef}>Accept</Button>
+      </Card>,
+    );
+    expect(buttonRef.current).toBe(screen.getByRole("button", { name: "Accept" }));
+    expect(cardRef.current).toBe(screen.getByRole("article", { name: "Bed map" }));
+  });
+});
+
+describe("Hero", () => {
+  it("passes a test id onto the hero section itself", () => {
+    render(<Hero title="26 beds ready" testId="ward-capacity-hero" level={1} />);
+    const hero = screen.getByTestId("ward-capacity-hero");
+    expect(hero.tagName).toBe("SECTION");
+    expect(hero).toHaveAccessibleName("26 beds ready");
+  });
+});
+
+describe("Menu checkable items", () => {
+  function Harness() {
+    const [shown, setShown] = useState<string[]>(["ready"]);
+    const [sort, setSort] = useState<"waiting" | "tier">("waiting");
+    const toggle = (id: string) =>
+      setShown((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]));
+    const items: MenuItem[] = [
+      { kind: "heading", id: "h-show", label: "Show" },
+      { id: "ready", label: "Ready beds", checked: shown.includes("ready"), onSelect: () => toggle("ready") },
+      { id: "held", label: "Held beds", checked: shown.includes("held"), onSelect: () => toggle("held") },
+      { kind: "separator", id: "sep" },
+      {
+        id: "waiting",
+        label: "Sort by waiting",
+        checkable: "radio",
+        checked: sort === "waiting",
+        onSelect: () => setSort("waiting"),
+      },
+      {
+        id: "tier",
+        label: "Sort by tier",
+        checkable: "radio",
+        checked: sort === "tier",
+        onSelect: () => setSort("tier"),
+      },
+    ];
+    return (
+      <Menu
+        label="View options"
+        items={items}
+        trigger={(props) => (
+          <button {...props} type="button">
+            View
+          </button>
+        )}
+      />
+    );
+  }
+
+  it("exposes menuitemcheckbox and menuitemradio with aria-checked; checkboxes stay open, radios close", async () => {
+    render(<Harness />);
+    await userEvent.click(screen.getByRole("button", { name: "View" }));
+    const ready = screen.getByRole("menuitemcheckbox", { name: "Ready beds" });
+    const held = screen.getByRole("menuitemcheckbox", { name: "Held beds" });
+    expect(ready).toHaveAttribute("aria-checked", "true");
+    expect(held).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByRole("menuitemradio", { name: "Sort by waiting" })).toHaveAttribute("aria-checked", "true");
+
+    await userEvent.click(held);
+    expect(screen.getByRole("menu", { name: "View options" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitemcheckbox", { name: "Held beds" })).toHaveAttribute("aria-checked", "true");
+
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Sort by tier" }));
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "View" }));
+    expect(screen.getByRole("menuitemradio", { name: "Sort by tier" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("menuitemradio", { name: "Sort by waiting" })).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("keeps plain items as menuitem with no aria-checked", async () => {
+    render(
+      <Menu
+        label="Card actions"
+        items={[{ id: "open", label: "Open ward", onSelect: () => {} }]}
+        trigger={(props) => (
+          <button {...props} type="button">
+            Actions
+          </button>
+        )}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Actions" }));
+    expect(screen.getByRole("menuitem", { name: "Open ward" })).not.toHaveAttribute("aria-checked");
+  });
+});
+
+describe("Drawer", () => {
+  it("keeps Tab inside the shared sheet in both directions, and Escape closes it", async () => {
+    // jsdom has no layout; the shared trap only cycles through controls that have client rects.
+    const rects = vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({
+      length: 1,
+      item: () => null,
+      [Symbol.iterator]: function* () {
+        yield {} as DOMRect;
+      },
+    } as DOMRectList);
+    const onClose = vi.fn();
+    try {
+      render(
+        <>
+          <button type="button">Outside</button>
+          <Drawer open onClose={onClose} title="Tasks" portal>
+            <button type="button">First task</button>
+            <button type="button">Last task</button>
+          </Drawer>
+        </>,
+      );
+      const dialog = screen.getByRole("dialog", { name: "Tasks" });
+      await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+
+      const last = screen.getByRole("button", { name: "Last task" });
+      last.focus();
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+      });
+      // Tab from the last control wraps to the first one inside, never out to the page.
+      const wrapped = document.activeElement as HTMLElement;
+      expect(dialog.contains(wrapped)).toBe(true);
+      expect(wrapped).not.toBe(last);
+
+      act(() => {
+        window.dispatchEvent(
+          new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true, cancelable: true }),
+        );
+      });
+      expect(document.activeElement).toBe(last);
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      });
+      expect(onClose).toHaveBeenCalledOnce();
+    } finally {
+      rects.mockRestore();
+    }
+  });
+});
+
+describe("BarList", () => {
+  it("ends an auto-scaled axis at or past the largest value, so 7 and 6 are not drawn level", () => {
+    const { container } = render(
+      <BarList
+        label="Declines by reason"
+        axis
+        rows={[
+          { id: "a", label: "No bed", value: 7 },
+          { id: "b", label: "Acuity", value: 6 },
+          { id: "c", label: "Gender", value: 0 },
+        ]}
+      />,
+    );
+    const widths = Array.from(container.querySelectorAll<HTMLElement>("[style*='width']")).map(
+      (node) => node.style.width,
+    );
+    expect(widths).toEqual(["87.5%", "75%"]);
+    expect(screen.getByText("none")).toBeInTheDocument();
+    expect(screen.getByText("8")).toBeInTheDocument();
+  });
+
+  it("draws at most four gridlines, zero being the bars' own baseline", () => {
+    const { container } = render(<BarList label="Waiting" axis rows={[{ id: "a", label: "Ward 1", value: 8 }]} />);
+    const lefts = Array.from(container.querySelectorAll<HTMLElement>("[style*='left']")).map((node) => node.style.left);
+    // Five tick labels (0 to 8) plus four gridlines (2 to 8); only the zero label sits at 0%.
+    expect(lefts).toHaveLength(9);
+    expect(lefts.filter((left) => left === "0%")).toHaveLength(1);
+  });
+});
+
+describe("Kit CSS", () => {
+  const css = (name: string) => readFileSync(`src/components/wf/${name}`, "utf8");
+  const block = (source: string, selector: string) => {
+    const start = source.indexOf(`${selector} {`);
+    expect(start, `${selector} block`).toBeGreaterThanOrEqual(0);
+    return source.slice(start, source.indexOf("}", start));
+  };
+  const phone = (source: string) => source.slice(source.indexOf("@media (max-width: 48rem)"));
+
+  it("anchors the Timer's absolutely positioned screen-reader words on its root", () => {
+    expect(block(css("live.module.css"), ".timer")).toMatch(/position:\s*relative/);
+  });
+
+  it("lifts buttons, segmented options and hero track items to the 48px tap floor on a phone", () => {
+    const button = css("button.module.css");
+    const choice = css("choice.module.css");
+    expect(button).toContain("@media (max-width: 48rem)");
+    expect(choice).toContain("@media (max-width: 48rem)");
+    expect(block(phone(button), ".b")).toContain("min-height: var(--spacing-tap, 3rem)");
+    expect(phone(choice)).toMatch(/\.segItem,\s*\.trk \.segItem \{\s*min-height: var\(--spacing-tap, 3rem\)/);
+  });
+
+  it("gives segmented options a visible focus ring from the focus token", () => {
+    expect(block(css("choice.module.css"), ".segItem:focus-visible")).toContain("var(--wf-focus-ring)");
   });
 });

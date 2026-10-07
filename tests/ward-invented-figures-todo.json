@@ -1,11 +1,5 @@
 [
   {
-    "file": "alerts/alerts-screen.tsx",
-    "rule": "hour window",
-    "text": "4 hours (Standard shift duration)",
-    "owner": "Remove invented data"
-  },
-  {
     "file": "alerts/ward-broadcast-model.ts",
     "rule": "hour window",
     "text": "Demo alert. Not a live broadcast. Several ED waits at Fiona Stanley, Sir Charles",
@@ -26,7 +20,7 @@
   {
     "file": "handover/handover-page.tsx",
     "rule": "hour window",
-    "text": "• Form expiries passed over 24h ago: on sheet, outside filter",
+    "text": "\u2022 Form expiries passed over 24h ago: on sheet, outside filter",
     "owner": "Remove invented data"
   },
   {
@@ -62,19 +56,13 @@
   {
     "file": "patients/patient-now-screen.tsx",
     "rule": "hour window",
-    "text": "4h window passed — review the hold",
+    "text": "4h window passed \u2014 review the hold",
     "owner": "Build linked demo data"
-  },
-  {
-    "file": "statistics/statistics-ed-screen.tsx",
-    "rule": "hour window",
-    "text": "positioned by elapsed time since their movement opened. past 24 hours, past 48.",
-    "owner": "Remove invented data"
   },
   {
     "file": "ward-flow-reducer.ts",
     "rule": "hour window",
-    "text": "Leave bed has been away for more than 24 hours — consider opening it.",
+    "text": "Leave bed has been away for more than 24 hours \u2014 consider opening it.",
     "owner": "Remove invented data"
   }
 ]

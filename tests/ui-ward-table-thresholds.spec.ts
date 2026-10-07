@@ -104,11 +104,18 @@ import { expect, test } from "playwright/test";
  * imports; `statistics-sections.module.css` carries the same class names but is dead for this
  * screen, so editing it would have changed nothing rendered. See that file's own comment for the
  * full re-measurement.
+ *
+ * ⚠️ UPDATED AGAIN, 2026-10-07, for the v6 rebuild: both tables moved behind each card's Data view
+ * and onto the v6 table. Re-measured at 1440px: wards 581px and departments 511px max-content, so
+ * the pins are 592px (37rem) and 520px (32.5rem) in `statistics-compare.module.css`. The sweep opens
+ * the Data views before it measures this route. CI then measured the departments table's
+ * min-content at 528px, at or above its 520px pin, so that pin is now 560px (35rem). It then measured
+ * the wards table's min-content at 597px, above its 592px pin, so that pin is now 640px (40rem).
  */
 const OWNED = "/mockups/ward-flow/statistics/compare";
 const OWNED_TABLES: readonly { readonly testId: string; readonly columns: number; readonly minWidthPx: number }[] = [
-  { testId: "ward-statistics-compare-wards", columns: 5, minWidthPx: 760 },
-  { testId: "ward-statistics-compare-eds", columns: 4, minWidthPx: 576 },
+  { testId: "ward-statistics-compare-wards", columns: 5, minWidthPx: 640 },
+  { testId: "ward-statistics-compare-eds", columns: 4, minWidthPx: 560 },
 ];
 
 /**
@@ -195,6 +202,9 @@ test.describe("@mockup every ward table's threshold still describes the table it
       // React streams a hidden staging copy of the screen; measuring geometry against it would be
       // meaningless even where it does not double every locator.
       await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
+      if (route === OWNED) {
+        for (const radio of await page.getByRole("radio", { name: "Data" }).all()) await radio.click();
+      }
 
       const measured: Measured[] = await page.evaluate(
         (sentinel) =>

@@ -68,7 +68,8 @@ describe("ward statistics page: only what this ward's records hold", () => {
     const { container } = renderWard();
     const text = container.textContent ?? "";
 
-    expect(text).toContain("AD-REAL-01 (F)");
+    // v6 roster (7 Oct 2026): the sex code sits beside the id as its own muted mark, not in brackets.
+    expect(text).toMatch(/AD-REAL-01\s*F/u);
     expect(text).toContain("No discharge date set");
     expect(text, "an invented P-number").not.toMatch(/\bP-1[89]\d\b/u);
     for (const invented of ["Planned Date Set", "Pending Review", "MDT Review", "Cleaning / Prep", "Maintenance"]) {

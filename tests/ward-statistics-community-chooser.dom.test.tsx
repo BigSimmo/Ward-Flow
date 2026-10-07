@@ -41,6 +41,9 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const COMMUNITY_ROUTE_PREFIX = "/mockups/ward-flow/statistics/community";
 
 function renderHubMain(): HTMLElement {
+  // v6: the hub entry's fragment opens the "Open a unit" finder on this chooser's own tab, so
+  // arrive the way a person following that href does.
+  window.history.replaceState(null, "", `#${STATISTICS_COMMUNITY_CHOOSER_ID}`);
   const { container } = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <StatisticsScreen />

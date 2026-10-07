@@ -10,7 +10,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import type { LucideIcon } from "lucide-react";
+import { Check, type LucideIcon } from "lucide-react";
 import { cx } from "./cx";
 import { Icon } from "./icon";
 import { Kbd } from "./primitives";
@@ -29,6 +29,19 @@ export type MenuItem =
       tone?: "danger";
       /** Keeps the item focusable with `aria-disabled`; show why in `meta`. */
       disabled?: boolean;
+      /**
+       * Makes the item checkable: `menuitemcheckbox` (or `menuitemradio` with `checkable:
+       * "radio"`) with `aria-checked` and a tick when checked. The caller owns the state and
+       * flips it in `onSelect`.
+       */
+      checked?: boolean;
+      /** Checkable role. Defaults to `checkbox` when `checked` is set. */
+      checkable?: "checkbox" | "radio";
+      /**
+       * Close the menu after selecting. Defaults to true, except checkbox items, which stay open
+       * so several can be toggled in one visit.
+       */
+      closeOnSelect?: boolean;
       onSelect: () => void;
     }
   | { kind: "separator"; id: string }
@@ -69,7 +82,8 @@ export type MenuProps = {
 
 /**
  * Glass menu with full keyboard support: arrows, Home and End, type-ahead, Escape returns focus
- * to the trigger, Tab closes. Items are real buttons with `role="menuitem"`.
+ * to the trigger, Tab closes. Items are real buttons with `role="menuitem"`, or
+ * `menuitemcheckbox` / `menuitemradio` with `aria-checked` when they carry `checked`.
  */
 export function Menu({ label, items, trigger, align = "start", className, onOpenChange }: MenuProps) {
   const menuId = useId();
@@ -80,6 +94,11 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const actionableCount = items.filter((item) => item.kind === undefined || item.kind === "item").length;
+  /** One checkable item reserves the tick column on every item, so labels stay aligned. */
+  const hasCheckable = items.some(
+    (item) =>
+      (item.kind === undefined || item.kind === "item") && (item.checked !== undefined || item.checkable !== undefined),
+  );
 
   const setOpen = useCallback(
     (next: boolean) => {
@@ -186,6 +205,8 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
                 </div>
               );
             const position = positionOf.get(item.id) ?? 0;
+            const checkable = item.checkable ?? (item.checked !== undefined ? ("checkbox" as const) : undefined);
+            const closeOnSelect = item.closeOnSelect ?? checkable !== "checkbox";
             return (
               <button
                 key={item.id}
@@ -193,17 +214,23 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
                   itemRefs.current[position] = node;
                 }}
                 type="button"
-                role="menuitem"
+                role={checkable === "radio" ? "menuitemradio" : checkable ? "menuitemcheckbox" : "menuitem"}
+                aria-checked={checkable ? Boolean(item.checked) : undefined}
                 tabIndex={position === active ? 0 : -1}
                 aria-disabled={item.disabled || undefined}
                 className={cx(styles.item, item.tone === "danger" && styles.danger)}
                 onMouseEnter={() => setActive(position)}
                 onClick={() => {
                   if (item.disabled) return;
-                  close(true);
+                  if (closeOnSelect) close(true);
                   item.onSelect();
                 }}
               >
+                {hasCheckable ? (
+                  <span className={styles.itemCheck} aria-hidden="true">
+                    {checkable && item.checked ? <Icon icon={Check} size={14} /> : null}
+                  </span>
+                ) : null}
                 {item.icon ? <Icon icon={item.icon} size={16} className={styles.itemIcon} /> : null}
                 <span className={styles.itemLabel}>{item.label}</span>
                 {item.meta ? <span className={styles.itemMeta}>{item.meta}</span> : null}
