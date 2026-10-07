@@ -11,6 +11,29 @@
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
   padding-bottom: 3rem;
+
+  /* v6: the answer view reads the v6 tokens through the shell names its rules already use, so it
+   * follows the v6 day and night themes. Soft status tints map to plain surfaces. */
+  --ground: var(--wf-canvas);
+  --surface: var(--wf-surface);
+  --surface-2: var(--wf-surface-2);
+  --sunk: var(--wf-surface-2);
+  --ink: var(--wf-ink-1);
+  --ink-soft: var(--wf-ink-2);
+  --muted: var(--wf-ink-2);
+  --line: var(--wf-line);
+  --line-strong: var(--wf-line-2);
+  --accent: var(--wf-accent);
+  --accent-ink: var(--wf-accent-ink);
+  --accent-soft: var(--wf-accent-tint);
+  --good: var(--wf-success-ink);
+  --good-soft: var(--wf-surface-2);
+  --warn: var(--wf-warning-ink);
+  --warn-soft: var(--wf-surface-2);
+  --danger: var(--wf-danger-ink);
+  --danger-soft: var(--wf-surface-2);
+  --body: var(--wf-font);
+  --mono: var(--wf-mono);
 }
 
 /* Prototype Governance Banner (FF8) */
@@ -1151,5 +1174,34 @@
 
   .bedCell {
     min-height: var(--ward-tap, 48px);
+  }
+}
+
+/* v6 (design/pages-v6/Ward_answer.png): the ward's hero band on top, sentence-case card heads. */
+@media screen {
+  .answerTop {
+    padding: var(--wf-s-3) clamp(0.75rem, 2vw, 1.5rem) 0;
+  }
+
+  .answerTop .backLink {
+    padding: 0;
+    color: var(--wf-hero-ink-2);
+    font-size: var(--wf-fs-13);
+  }
+
+  .answerTop .backLink:hover {
+    background: transparent;
+    color: var(--wf-hero-ink);
+  }
+
+  .answerTop .backLink:focus-visible {
+    outline-color: var(--wf-hero-ink);
+  }
+
+  .panelTitle {
+    font-size: var(--wf-fs-14);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--wf-ink-1);
   }
 }

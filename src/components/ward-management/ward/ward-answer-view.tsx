@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -30,6 +31,8 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 
+import { Hero, buttonClass } from "@/components/wf";
+import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import styles from "./ward-answer-view.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
@@ -320,50 +323,35 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
   return (
     <div className={styles.answerScreen} data-testid="ward-unit-screen">
-      {/* Top Console Header */}
-      <header className={styles.answerHeader}>
-        <div className={styles.headerLeft}>
-          <Link href={`/mockups/ward-flow/ward/${unit.id}`} className={styles.backLink}>
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+      <div className={styles.answerTop}>
+        <Hero
+          level={1}
+          eyebrow={`Ward answer · ${site?.name ?? unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`}
+          title={unit.name}
+          bar={
+            <Link href={`/mockups/ward-flow/ward/${unit.id}`} className={styles.backLink}>
+              <ArrowLeft size={14} aria-hidden="true" />
+              <span>Back to Ward Overview</span>
+            </Link>
+          }
+          aside={
+            <button
+              ref={triggerRef}
+              type="button"
+              className={buttonClass({ variant: "light", size: "sm" })}
+              disabled={!activeMovement}
+              onClick={(e) => {
+                if (activeMovement) {
+                  openerRef.current = e.currentTarget;
+                  setAcceptModalOpen(true);
+                }
+              }}
             >
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
-            <span>Back to Ward Overview</span>
-          </Link>
-          <div className={styles.headerTitle}>
-            <h1>Ward Bed Intake Response Console</h1>
-            <span className={styles.chipMark}>
-              {site?.name ?? unit.siteCode} &bull; {unit.name}
-            </span>
-          </div>
-        </div>
-        <div className={styles.headerRight}>
-          <button
-            ref={triggerRef}
-            type="button"
-            className={`${styles.btn} ${styles.btnGood}`}
-            disabled={!activeMovement}
-            onClick={(e) => {
-              if (activeMovement) {
-                openerRef.current = e.currentTarget;
-                setAcceptModalOpen(true);
-              }
-            }}
-          >
-            Accept in Principle (Waitlist)
-          </button>
-        </div>
-      </header>
+              Accept in Principle (Waitlist)
+            </button>
+          }
+        />
+      </div>
 
       <main id="main-content" className={styles.workspace}>
         {/* Contextual Dynamic HUD Island */}
