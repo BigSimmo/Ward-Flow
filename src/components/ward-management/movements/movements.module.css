@@ -3046,8 +3046,77 @@
   min-width: 0;
 }
 
-.dayMetricSlot {
-  display: contents;
+/* "The day" title is also the Open figure. DOM order is label then number (so the figure is
+   found by its label); row-reverse draws "70 open movements" as the mockup does. */
+.dayOpenTitle {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 0.3em;
+  white-space: nowrap;
+}
+
+.dayOpenValue {
+  font-weight: inherit;
+}
+
+.dayOpenLabel::first-letter {
+  text-transform: lowercase;
+}
+
+/* One day figure, drawn like the hero's own stat: number over label, divider on the left. The
+   DOM keeps label first (see DayMetric), and column-reverse puts the number on top. */
+.dayStat {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 0 var(--wf-s-4);
+  border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+}
+
+.dayStatValue {
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: var(--wf-hero-ink);
+}
+
+.dayStatLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+  .dayStat:first-child {
+    border-left: 0;
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .dayStat {
+    border-left: 0;
+    padding: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .dayStat {
+    border-left-color: CanvasText;
+  }
 }
 
 .needsYou {

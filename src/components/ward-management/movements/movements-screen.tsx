@@ -53,7 +53,6 @@ import {
   ChipGroup,
   FilterChip,
   Hero,
-  HeroStat,
   Legend,
   LiveChip,
   StackBar,
@@ -703,7 +702,15 @@ export function MovementsScreen() {
           <Hero
             className={styles.dayHero}
             eyebrow="The day"
-            title={<span data-ward-panel-count>{`${openMovements.length} open movements`}</span>}
+            title={
+              // The title doubles as the "Open" day figure. Its DOM reads label first ("Open
+              // movements 70"), so the figure's own label anchors it like every stat beside it;
+              // CSS puts the number first on screen, as the mockup draws it.
+              <span className={styles.dayOpenTitle} data-ward-panel-count data-testid="movements-day-metric">
+                <span className={styles.dayOpenLabel}>Open movements</span>
+                <strong className={styles.dayOpenValue}>{openMovements.length}</strong>
+              </span>
+            }
             stats={
               <>
                 <DayMetric label="Resolved today" value={closedToday.length} />
@@ -1423,12 +1430,18 @@ export function MovementsScreen() {
 }
 
 function DayMetric({ label, value, tone }: { label: string; value: number; tone?: "warning" | "danger" }) {
+  const shownTone = value > 0 ? tone : undefined;
   return (
     // `data-testid` for D-b/D-f coverage: it isolates the hero's whole-network FIGURES from the
-    // "Needs you" list, which carries an "Outside {S}" marker when a service is chosen. The wrapper
-    // is `display: contents`, so the hero's own separators still sit between the stats.
-    <div className={styles.dayMetricSlot} data-testid="movements-day-metric">
-      <HeroStat value={<strong>{value}</strong>} label={label} tone={value > 0 ? tone : undefined} />
+    // "Needs you" list, which carries an "Outside {S}" marker when a service is chosen. The DOM
+    // reads label then value, so each figure is found by its own label and a screen reader hears
+    // "Transport legs 13"; `column-reverse` draws the number above the label, as the hero does.
+    <div className={styles.dayStat} data-tone={shownTone} data-testid="movements-day-metric">
+      <span className={styles.dayStatLabel}>
+        {shownTone ? <StatusGlyph tone={shownTone} size={9} /> : null}
+        {label}
+      </span>
+      <strong className={styles.dayStatValue}>{value}</strong>
     </div>
   );
 }
