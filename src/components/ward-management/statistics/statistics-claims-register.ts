@@ -154,7 +154,6 @@
 /** The surfaces this register claims to have swept. Repository-relative paths. */
 export const REGISTERED_SURFACES: readonly string[] = [
   "src/components/ward-management/statistics/statistics-screen.tsx",
-  "src/components/ward-management/statistics/statistics-overview-screen.tsx",
   "src/components/ward-management/statistics/statistics-compare-screen.tsx",
   "src/components/ward-management/statistics/statistics-ward-screen.tsx",
   "src/components/ward-management/statistics/statistics-ed-screen.tsx",
@@ -198,7 +197,7 @@ export type FalsifyingEdit = {
 export type ModelClaim = {
   /** Unique. Reads `<surface>/<where on it>/<what is claimed>`, so a red names a place and a fact. */
   id: string;
-  /** Repository-relative path of the file that MAKES the claim. One of `REGISTERED_SURFACES`. */
+  /** Repository-relative path of the file that MAKES the claim. One of `REGISTERED_SURFACES` for active claims; retained historically for retired prose. */
   renderedIn: string;
   /**
    * A short locator copied from `renderedIn` — a `data-testid`, or a distinctive fragment where the
@@ -256,61 +255,7 @@ const DESTINATION_OPTIONS = "src/components/ward-management/referrals/referral-d
  * blast radius, because a new unit field on this record falsifies all three of them together.
  */
 const REFERRAL_ADDRESSING_BODY =
-  "export type ReferralAddressing = { destination: ReferralDestination; state: ReferralAddressingState; " +
-  "/** When this destination answered, or when acceptance elsewhere cancelled it. */ decidedAt?: " +
-  "Instant; /** A ROLE, never a person — see `WARD_FLOW_ROLE_LABELS`. Absent on a `cancelled` " +
-  "addressing, * because nobody decided it: it is a consequence of an acceptance, not an act. */ " +
-  "decidedBy?: string; " +
-  // ⚠️ RE-READ 2026-09-17, NOT RE-POINTED: declineReason widened to a union of reason codes for
-  // community declines; it names no unit, so the claim survives. The widening's rationale moved off
-  // this field and onto `DECLINE_REFERRAL` (`ward-flow-reducer.ts`), which is what actually holds the
-  // two vocabularies apart at runtime — see that case's own comment, not this one.
-  "/** * Only on a `declined` addressing. From `REFERRAL_DECLINE_REASONS` when `destination.kind` is " +
-  "* `psychiatric_ward` or `emergency_department` (the latter further narrowed to " +
-  "* `ED_DECLINE_REASONS` by convention, never enforced by this type); from " +
-  "* `COMMUNITY_DECLINE_REASONS` when `destination.kind` is `community_team` — O-16.6, community- " +
-  "* decline engine fix, 2026-09-17. `DECLINE_REFERRAL` (`ward-flow-reducer.ts`) holds the two " +
-  "* vocabularies apart at runtime, since this field's own type cannot narrow per destination kind — " +
-  "* see that case. */ declineReason?: ReferralDeclineReason | CommunityDeclineReason; " +
-  "/** * Only on an `accepted` addressing, and only from " +
-  "`OVERRIDE_REASONS` — the SAME vocabulary the * three placement events use, deliberately not a second " +
-  "one. Set when the ward accepted a * referral that failed a judgement gate (age, legal status, sex " +
-  "designation, forensic, security, * sex mix), which is permitted with a reason recorded and refused " +
-  "without one. * * ⚠️ Its ABSENCE on an accepted addressing means the referral passed every gate — not " +
-  "that * nobody bothered to type a reason. The reducer refuses the acceptance outright in that case, " +
-  "so * an accepted-and-unreasoned addressing is only ever a clean one. */ acceptOverrideReason?: " +
-  "OverrideReason; /** The unit that accepted. Only ever set on a `psychiatric_ward` addressing — the " +
-  "other three * are answered by a person or a team, and have no unit to name. */ acceptedUnitId?: " +
-  // ⚠️ EXTENDED 2026-09-12, AND RE-READ RATHER THAN RE-POINTED. FD-5 added two fields to this type
-  // and this citation went red naming all three claims that rest on it — which is the register
-  // working. The claim itself SURVIVES: `withdrawnAt` is an Instant and `withdrawalRecordedBy` is a
-  // ROLE label, so `acceptedUnitId` is still the only field here that can name a unit. Had either
-  // named one, the three screens' sentences would have been the thing to change, not this string.
-  //
-  // 🔴 AND THE FIELD COMMENTS IN `ward-model.ts` WERE SHORTENED TO MAKE THIS HONEST RATHER THAN
-  // MERELY PASSING. They first carried the whole FD-5 rationale — thirty lines that would have had
-  // to be reproduced here verbatim, and that any later rewording would break for three claims at
-  // once. The rationale lives on the EVENT and its reducer case, where it is read by whoever
-  // dispatches it; the field carries a sentence. A citation nobody can maintain gets repointed
-  // without reading, which is the failure this register exists to prevent.
-  "string; /** FD-5 — when the referrer took this referral back. A FIELD, not a fifth state " +
-  "(O-17.11), and * set on every destination still `queued` at that moment: the referrer takes back " +
-  "the REFERRAL, * not one ward's copy of it. A destination that already answered keeps its answer. " +
-  "The reasoning, * and the three same-shaped events it must not be confused with, are on * " +
-  "`RECORD_REFERRER_WITHDRAWAL` (`ward-flow-events.ts`) and in its reducer case. */ withdrawnAt?: " +
-  "Instant; /** The ROLE that wrote it down — never the person who withdrew, who is the referrer and " +
-  "outside * this system. Deliberately not `withdrawnBy`: that name reads as the first and would hold " +
-  "the * second. Like `decidedBy`, see `WARD_FLOW_ROLE_LABELS`. */ withdrawalRecordedBy?: string; " +
-  // ⚠️ EXTENDED 2026-09-17 (round-2 fold), RE-READ RATHER THAN RE-POINTED, same discipline as the
-  // 2026-09-12 extension above. Owner ruling 11 added `withdrawalReason` to this type. The claim
-  // SURVIVES: `withdrawalReason` is a `WardRequestWithdrawalReason` — a reason code, not a unit id —
-  // so `acceptedUnitId` is still the only field here that can name a unit.
-  "/** * Owner ruling 11 (2026-09-17): only set when `RECORD_REFERRER_WITHDRAWAL` withdrew THIS one " +
-  '* destination alone (`destinationKind: "community_team"`), never on a whole-referral withdrawal — ' +
-  "* that act carries no reason at all (see that event's own doc comment, `ward-flow-events.ts`, for " +
-  '* why). Reuses `WardRequestWithdrawalReason`, the one existing fixed vocabulary for "why a person ' +
-  "* took back one destination's own live request\", rather than a second list for this narrower act. " +
-  "*/ withdrawalReason?: WardRequestWithdrawalReason; };";
+  "export type ReferralAddressing = { /** Explicitly placed on a recipient waitlist; still awaiting an answer. */ waitlistedAt?: Instant; destination: ReferralDestination; state: ReferralAddressingState; /** When this destination answered, or when acceptance elsewhere cancelled it. */ decidedAt?: Instant; /** A ROLE, never a person \u2014 see `WARD_FLOW_ROLE_LABELS`. Absent on a `cancelled` addressing, * because nobody decided it: it is a consequence of an acceptance, not an act. */ decidedBy?: string; /** * Only on a `declined` addressing. From `REFERRAL_DECLINE_REASONS` when `destination.kind` is * `psychiatric_ward` or `emergency_department` (the latter further narrowed to * `ED_DECLINE_REASONS` by convention, never enforced by this type); from * `COMMUNITY_DECLINE_REASONS` when `destination.kind` is `community_team` \u2014 O-16.6, community- * decline engine fix, 2026-09-17. `DECLINE_REFERRAL` (`ward-flow-reducer.ts`) holds the two * vocabularies apart at runtime, since this field's own type cannot narrow per destination kind \u2014 * see that case. */ declineReason?: ReferralDeclineReason | CommunityDeclineReason; /** * Only on an `accepted` addressing, and only from `OVERRIDE_REASONS` \u2014 the SAME vocabulary the * three placement events use, deliberately not a second one. Set when the ward accepted a * referral that failed a judgement gate (age, legal status, sex designation, forensic, security, * sex mix), which is permitted with a reason recorded and refused without one. * * \u26a0\ufe0f Its ABSENCE on an accepted addressing means the referral passed every gate \u2014 not that * nobody bothered to type a reason. The reducer refuses the acceptance outright in that case, so * an accepted-and-unreasoned addressing is only ever a clean one. */ acceptOverrideReason?: OverrideReason; /** The unit that accepted. Only ever set on a `psychiatric_ward` addressing \u2014 the other three * are answered by a person or a team, and have no unit to name. */ acceptedUnitId?: string; /** FD-5 \u2014 when the referrer took this referral back. A FIELD, not a fifth state (O-17.11), and * set on every destination still `queued` at that moment: the referrer takes back the REFERRAL, * not one ward's copy of it. A destination that already answered keeps its answer. The reasoning, * and the three same-shaped events it must not be confused with, are on * `RECORD_REFERRER_WITHDRAWAL` (`ward-flow-events.ts`) and in its reducer case. */ withdrawnAt?: Instant; /** The ROLE that wrote it down \u2014 never the person who withdrew, who is the referrer and outside * this system. Deliberately not `withdrawnBy`: that name reads as the first and would hold the * second. Like `decidedBy`, see `WARD_FLOW_ROLE_LABELS`. */ withdrawalRecordedBy?: string; /** * Owner ruling 11 (2026-09-17): only set when `RECORD_REFERRER_WITHDRAWAL` withdrew THIS one * destination alone (`destinationKind: \"community_team\"`), never on a whole-referral withdrawal \u2014 * that act carries no reason at all (see that event's own doc comment, `ward-flow-events.ts`, for * why). Reuses `WardRequestWithdrawalReason`, the one existing fixed vocabulary for \"why a person * took back one destination's own live request\", rather than a second list for this narrower act. */ withdrawalReason?: WardRequestWithdrawalReason; };";
 
 /**
  * The `psychiatric_ward` destination arm, cited whole — from its `kind` discriminant to the brace
@@ -327,44 +272,13 @@ const REFERRAL_ADDRESSING_BODY =
  * up, and it is the reason `falsifiedBy` exists.
  */
 const WARD_DESTINATION_ARM =
-  'kind: "psychiatric_ward"; /** * Compared to a unit\'s `sexMix` and `sexDesignation` by equality. A ' +
-  "fact about the person, * and the ONLY one that sits on an arm rather than on the referral itself — " +
-  "it is here * because it is read solely to match a bed's designation, and no other destination has " +
-  // R7, 25 September 2026: the arm's `sex` became `RecordedSex` (female, male, another term, not
-  // recorded). Re-read, not re-pointed blind: the type names no unit, so the claim is unchanged.
-  "one. */ sex: RecordedSex; " +
-  // T10, item 8, 2026-09-09/10: `gender` landed between `sex` and `secureBedNeeded`, breaking this
-  // citation's contiguous match. RE-READ, NOT RE-POINTED-BLIND: `gender` names no unit, so the claim
-  // "carries no unit id of its own" survives unchanged — the field is included below rather than the
-  // citation being narrowed around it, because narrowing it would silently stop covering an insertion
-  // between `sex` and `secureBedNeeded` in the future.
-  "/** * T10, item 8: the gender recorded at referral — see `Movement.gender`'s doc comment for * why " +
-  "this is a separate, wider fact from `sex` immediately above and from * `Patient.gender`. Absent " +
-  "means not yet recorded. */ gender?: ReferralGender; " +
-  "/** Whether THIS REQUEST needs a secure bed. Never a fact stored about the person." +
-  " */ secureBedNeeded: boolean; /** * Whether THIS REQUEST needs a bed that can hold someone " +
-  "involuntarily — never a fact stored * about the person, and never a legal determination. Same " +
-  "convention as `secureBedNeeded` and * roadmap decision 5's cohort framing: the request needs an " +
-  "adolescent bed, a secure bed, or * here, a bed that can hold someone involuntarily — the word never " +
-  "attaches to the patient. * Introduces no figure, timeframe or threshold from the Mental Health Act; " +
-  "a plain * Voluntary/Involuntary bed label was already permitted, and this is the same category. */ " +
-  "involuntaryBedNeeded: boolean; /** * Whether THIS REQUEST needs high-acuity nursing. Same convention" +
-  " as the two above: a fact * about the request, never one stored about the person, and never a score," +
-  " risk or * assessment. **The referring clinician marks it at referral** — owner ruling 2026-09-10, *" +
-  " chosen over the system working it out. Read only to ask whether a ward is staffed for a * high-" +
-  "acuity place; see the `acuity` gate in `ward-eligibility.ts` for why nothing here * may be turned " +
-  "into a remaining count. */ highAcuityNursingNeeded: boolean; }";
+  "kind: \"psychiatric_ward\"; /** Selected recipient. Absent on legacy network-wide requests. */ unitId?: string; /** * Compared to a unit's `sexMix` and `sexDesignation` by equality. A fact about the person, * and the ONLY one that sits on an arm rather than on the referral itself \u2014 it is here * because it is read solely to match a bed's designation, and no other destination has one. */ sex: RecordedSex; /** * T10, item 8: the gender recorded at referral \u2014 see `Movement.gender`'s doc comment for * why this is a separate, wider fact from `sex` immediately above and from * `Patient.gender`. Absent means not yet recorded. */ gender?: ReferralGender; /** Whether THIS REQUEST needs a secure bed. Never a fact stored about the person. */ secureBedNeeded: boolean; /** * Whether THIS REQUEST needs a bed that can hold someone involuntarily \u2014 never a fact stored * about the person, and never a legal determination. Same convention as `secureBedNeeded` and * roadmap decision 5's cohort framing: the request needs an adolescent bed, a secure bed, or * here, a bed that can hold someone involuntarily \u2014 the word never attaches to the patient. * Introduces no figure, timeframe or threshold from the Mental Health Act; a plain * Voluntary/Involuntary bed label was already permitted, and this is the same category. */ involuntaryBedNeeded: boolean; /** * Whether THIS REQUEST needs high-acuity nursing. Same convention as the two above: a fact * about the request, never one stored about the person, and never a score, risk or * assessment. **The referring clinician marks it at referral** \u2014 owner ruling 2026-09-10, * chosen over the system working it out. Read only to ask whether a ward is staffed for a * high-acuity place; see the `acuity` gate in `ward-eligibility.ts` for why nothing here * may be turned into a remaining count. */ highAcuityNursingNeeded: boolean;";
 
 /** Shared by both screens that make the ward-destination claim, so both go red together. */
 const WARD_DESTINATION_ARM_GAINS_A_UNIT_ID: FalsifyingEdit = {
-  change:
-    "The ward arm starts naming a unit — a `preferredUnitId` is added to it, so the arm no longer " +
-    "carries only the bed's criteria and the two screens' 'no unit id of its own' becomes false.",
-  // RE-ANCHORED 2026-09-10: `involuntaryBedNeeded` stopped being the arm's last field when
-  // `highAcuityNursingNeeded` landed, so the old anchor matched nothing and this edit would have
-  // passed by doing nothing. The register caught that itself, which is what `falsifiedBy` is for.
-  find: "highAcuityNursingNeeded: boolean; }",
-  replaceWith: "highAcuityNursingNeeded: boolean; preferredUnitId?: string; }",
+  change: "The selected ward recipient is no longer recorded on a named request.",
+  find: "/** Selected recipient. Absent on legacy network-wide requests. */ unitId?: string;",
+  replaceWith: "",
 };
 
 /**
@@ -655,6 +569,11 @@ const COMMUNITY_TEAM_BODY =
 export const MODEL_CLAIMS: readonly ModelClaim[] = [
   // ── statistics-screen.tsx — beds being made ready ─────────────────────────────────────────────
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-screen/bed-readiness/preparing-is-a-boolean",
     renderedIn: STATISTICS_SCREEN,
     rendered: 'data-testid="ward-statistics-readiness-timing-absent"',
@@ -664,6 +583,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: PREPARING_STOPS_BEING_A_BOOLEAN,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-screen/bed-readiness/preparation-stamps-confirmed-at",
     renderedIn: STATISTICS_SCREEN,
     rendered: "Bed readiness has a yes/no flag and one shared timestamp",
@@ -677,6 +601,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-screen/bed-readiness/confirmed-at-is-one-shared-field",
     renderedIn: STATISTICS_SCREEN,
     // Locator moved 2026-09-06 with the field-name removal. The page now says "that record's ONE
@@ -828,6 +757,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-screen/bed-readiness/reducer-writes-the-callers-preparing-value",
     renderedIn: STATISTICS_SCREEN,
     rendered: "This count reads the flag as recorded; the model does not enforce that the occupant has already left.",
@@ -848,10 +782,15 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
 
   // ── statistics-screen.tsx — declines per ward ─────────────────────────────────────────────────
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-screen/declines/addressing-has-one-unit-field",
     renderedIn: STATISTICS_SCREEN,
     rendered: 'data-testid="ward-statistics-declines-withheld"',
-    claim: "`ReferralAddressing` carries exactly one field that can name a unit: `acceptedUnitId`.",
+    claim: "The answer records acceptedUnitId; a named ward request may also record its target before acceptance.",
     sourceFile: WARD_MODEL,
     evidence: REFERRAL_ADDRESSING_BODY,
     falsifiedBy: REFERRAL_ADDRESSING_GAINS_A_SECOND_UNIT_ID,
@@ -867,21 +806,31 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     rendered: "the sex it must suit, whether it must be secure, whether it must be able",
     claim:
       "The ward destination arm records the bed's criteria — sex, secure, able to hold somebody " +
-      "involuntarily, high-acuity nursing — and carries no unit id of its own.",
+      "involuntarily, high-acuity nursing — and may identify its selected ward recipient.",
     sourceFile: WARD_MODEL,
     evidence: WARD_DESTINATION_ARM,
     falsifiedBy: WARD_DESTINATION_ARM_GAINS_A_UNIT_ID,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-screen/declines/accepted-unit-id-is-written-on-acceptance",
     renderedIn: STATISTICS_SCREEN,
-    rendered: "A referral names a ward only when that ward accepts",
+    rendered: "Named ward referrals preserve their recipient before acceptance",
     claim: "The reducer sets an addressing's `acceptedUnitId` on the acceptance path and nowhere else.",
     sourceFile: WARD_REDUCER,
     evidence: 'accepted = { ...addressing, state: "accepted", acceptedUnitId: unit.id,',
     falsifiedBy: ACCEPTANCE_STOPS_RECORDING_THE_UNIT,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-screen/declines/movement-declines-name-a-unit",
     renderedIn: STATISTICS_SCREEN,
     rendered: "declines name a ward for people already inside an emergency department.",
@@ -891,6 +840,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: DECLINE_LOSES_ITS_UNIT,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-screen/declines/movement-carries-a-decline-list",
     renderedIn: STATISTICS_SCREEN,
     rendered: "Movement declines grouped by the ward&apos;s recorded reason.",
@@ -938,6 +892,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-screen/declines/a-movement-is-inside-an-emergency-department",
     renderedIn: STATISTICS_SCREEN,
     rendered: "people already inside an emergency department.",
@@ -949,6 +908,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
 
   // ── statistics-screen.tsx — empty beds that were not offered (the figure that is not built) ───
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-screen/not-offered/a-unit-holds-two-aggregate-capacity-counts",
     renderedIn: STATISTICS_SCREEN,
     rendered: 'data-testid="ward-statistics-not-offered-absent"',
@@ -1087,6 +1051,10 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: THE_PARALLEL_REFERRAL_CAP_IS_REMOVED,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of remaining explanatory captions; the model evidence remains checked.",
+    },
     id: "statistics-screen/refused-so-far/the-shared-derivation-classifies-escalation-first",
     renderedIn: STATISTICS_SCREEN,
     rendered: "Escalations are classified first, so this is a floor.",
@@ -1109,6 +1077,10 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of remaining explanatory captions; the model evidence remains checked.",
+    },
     id: "statistics-screen/refused-so-far/an-escalation-is-recorded-unvalidated",
     renderedIn: STATISTICS_SCREEN,
     rendered: "An escalation records an opinion, not a derived",
@@ -1190,6 +1162,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-screen/declines-by-reason/the-existing-label-map-belongs-to-the-other-list",
     renderedIn: STATISTICS_SCREEN,
     rendered: "`DECLINE_REASON_LABELS` (`ward-referrals.ts`) is keyed by",
@@ -1224,6 +1201,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-screen/pull-to-arrival/the-arrival-instant",
     renderedIn: STATISTICS_SCREEN,
     rendered: "Time between the recorded bed pull and arrival instants on an admission.",
@@ -1337,6 +1319,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-screen/referral-to-bed/referrals-carry-a-raised-instant",
     renderedIn: STATISTICS_SCREEN,
     rendered: "arrived no earlier than the referral was raised.",
@@ -1365,54 +1352,44 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
   },
 
   // ── statistics-overview-screen.tsx ────────────────────────────────────────────────────────────
+
   {
-    id: "statistics-overview-screen/precedent/the-home-page-really-does-withhold-declines",
-    renderedIn: OVERVIEW_SCREEN,
-    rendered: 'data-testid="ward-statistics-overview-precedent"',
-    claim: "The statistics home page does show a withheld-declines block, as this page says it does.",
-    /** Widened 2026-09-01 from the bare `data-testid` to the enclosing figure and its heading, so
-     *  that putting the block behind a condition — the cheapest way to stop showing it — has to
-     *  insert characters INSIDE the cited run and cannot leave it intact. */
-    sourceFile: STATISTICS_SCREEN,
-    evidence:
-      '<article className={styles.figure} data-testid="ward-statistics-declines"> ' +
-      "<h3 className={styles.figureHeading}>Declines per ward</h3> " +
-      '<p className={styles.absence} data-testid="ward-statistics-declines-withheld">',
-    falsifiedBy: {
-      change:
-        "The withheld-declines block stops being rendered unconditionally and goes behind a flag, so the home page " +
-        "no longer always shows it. (A substring witnesses presence in the FILE, not that it renders; widening the " +
-        "citation to the enclosing figure is what makes a wrapping condition break it.)",
-      find:
-        "<h3 className={styles.figureHeading}>Declines per ward</h3> <p className={styles.absence} " +
-        'data-testid="ward-statistics-declines-withheld">',
-      replaceWith:
-        "<h3 className={styles.figureHeading}>Declines per ward</h3> {showWithheldDeclines && ( <p " +
-        'className={styles.absence} data-testid="ward-statistics-declines-withheld">',
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
     },
-  },
-  {
+
     id: "statistics-overview-screen/precedent/addressing-has-one-unit-field",
     renderedIn: OVERVIEW_SCREEN,
     // Locator moved 2026-09-06 with the field-name removal. The claim is unchanged and the page
     // still makes it — in words rather than identifiers. Evidence and falsifier below still name
     // `acceptedUnitId` exactly, which is what keeps this checkable.
-    rendered: "A referral names a ward only when that ward accepts",
-    claim: "`ReferralAddressing` carries exactly one field that can name a unit: `acceptedUnitId`.",
+    rendered: "Named ward referrals preserve their recipient before acceptance",
+    claim: "The answer records acceptedUnitId; a named ward request may also record its target before acceptance.",
     sourceFile: WARD_MODEL,
     evidence: REFERRAL_ADDRESSING_BODY,
     falsifiedBy: REFERRAL_ADDRESSING_GAINS_A_SECOND_UNIT_ID,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-overview-screen/precedent/movement-declines-name-a-unit",
     renderedIn: OVERVIEW_SCREEN,
-    rendered: "a movement decline names a ward for somebody already inside a department.",
+    rendered: "movement declines name a ward for somebody already inside a department.",
     claim: "A movement decline records a unit id, an instant and a reason.",
     sourceFile: WARD_MODEL,
     evidence: DECLINE_BODY,
     falsifiedBy: DECLINE_LOSES_ITS_UNIT,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-overview-screen/precedent/a-movement-is-inside-an-emergency-department",
     renderedIn: OVERVIEW_SCREEN,
     rendered: "already inside a department",
@@ -1424,6 +1401,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
 
   // ── statistics-compare-screen.tsx ─────────────────────────────────────────────────────────────
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-compare-screen/attributability/admissions-always-carry-a-unit",
     renderedIn: COMPARE_SCREEN,
     rendered: 'data-testid="ward-statistics-compare-attributability-rule"',
@@ -1439,39 +1421,59 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-compare-screen/declines/ward-destination-records-bed-criteria",
     renderedIn: COMPARE_SCREEN,
     rendered: 'data-testid="ward-statistics-compare-declines-example"',
     claim:
       "The ward destination arm records the bed's criteria — sex, secure, able to hold somebody " +
-      "involuntarily, high-acuity nursing — and carries no unit id of its own.",
+      "involuntarily, high-acuity nursing — and may identify its selected ward recipient.",
     sourceFile: WARD_MODEL,
     evidence: WARD_DESTINATION_ARM,
     falsifiedBy: WARD_DESTINATION_ARM_GAINS_A_UNIT_ID,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-compare-screen/declines/addressing-has-one-unit-field",
     renderedIn: COMPARE_SCREEN,
-    rendered: "A referral names its ward only when a ward accepts.",
-    claim: "`ReferralAddressing` carries exactly one field that can name a unit: `acceptedUnitId`.",
+    rendered: "Named ward referrals preserve their recipient before acceptance.",
+    claim: "The answer records acceptedUnitId; a named ward request may also record its target before acceptance.",
     sourceFile: WARD_MODEL,
     evidence: REFERRAL_ADDRESSING_BODY,
     falsifiedBy: REFERRAL_ADDRESSING_GAINS_A_SECOND_UNIT_ID,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-compare-screen/declines/accepted-unit-id-is-written-on-acceptance",
     renderedIn: COMPARE_SCREEN,
     // Locator moved 2026-09-06 with the field-name removal. Both this claim and the one above are
     // now carried by the SAME sentence on the page, which is why they share a locator: the reword
     // merged two clauses that had been separate. The claims stay distinct here, with distinct
     // evidence and distinct falsifiers, so they still fail independently.
-    rendered: "A referral names its ward only when a ward accepts.",
+    rendered: "Named ward referrals preserve their recipient before acceptance.",
     claim: "The reducer sets an addressing's `acceptedUnitId` on the acceptance path and nowhere else.",
     sourceFile: WARD_REDUCER,
     evidence: 'accepted = { ...addressing, state: "accepted", acceptedUnitId: unit.id,',
     falsifiedBy: ACCEPTANCE_STOPS_RECORDING_THE_UNIT,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-compare-screen/double-count/referred-unit-ids-is-a-list",
     renderedIn: COMPARE_SCREEN,
     rendered: 'data-testid="ward-statistics-compare-double-count-example"',
@@ -1575,6 +1577,10 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
    */
   // ── statistics-ward-screen.tsx ────────────────────────────────────────────────────────────────
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested hiding empty statistics panels; no waitlist average is recorded.",
+    },
     id: "statistics-ward-screen/blocked/waitlist-wait-is-always-null",
     renderedIn: WARD_STATS_SCREEN,
     // Moved 2026-09-05: the paragraph survives verbatim as the built `Average wait after being
@@ -1592,6 +1598,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-ward-screen/blocked/the-derivation-takes-admissions-only",
     renderedIn: WARD_STATS_SCREEN,
     // Locator moved 2026-09-06: the paragraph was reworded when the owner ruled the field names
@@ -1610,6 +1621,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-ward-screen/blocked/the-nearest-equivalent-measures-from-referral-raised-at",
     renderedIn: WARD_STATS_SCREEN,
     /*
@@ -1641,6 +1657,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
 
   // ── statistics-ed-screen.tsx ──────────────────────────────────────────────────────────────────
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-ed-screen/attributable/department-record-holds-three-fields",
     renderedIn: ED_SCREEN,
     rendered: 'data-testid="ward-statistics-ed-attributable"',
@@ -1662,6 +1683,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-ed-screen/attributable/origin-ed-id-is-required",
     renderedIn: ED_SCREEN,
     /*
@@ -1682,6 +1708,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: MOVEMENT_ORIGIN_ED_BECOMES_OPTIONAL,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-ed-screen/attributable/a-movement-records-when-it-opened",
     renderedIn: ED_SCREEN,
     rendered: "alongside when their movement opened",
@@ -1695,6 +1726,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-ed-screen/attributable/a-movement-records-its-stage",
     renderedIn: ED_SCREEN,
     rendered: "what stage it has reached",
@@ -1708,6 +1744,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-ed-screen/attributable/a-movement-records-every-ward-decline",
     renderedIn: ED_SCREEN,
     rendered: "every ward decline against it",
@@ -1717,6 +1758,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: MOVEMENT_STOPS_CARRYING_A_DECLINE_LIST,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-ed-screen/attributable/an-ed-destination-carries-an-ed-id",
     renderedIn: ED_SCREEN,
     rendered: "names the department on its destination",
@@ -1730,6 +1776,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-ed-screen/attributable/raised-at-is-required",
     renderedIn: ED_SCREEN,
     rendered: "the moment it was raised is always recorded",
@@ -1739,6 +1790,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     falsifiedBy: RAISED_AT_STOPS_BEING_REQUIRED,
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-ed-screen/attributable/triaged-at-is-optional",
     renderedIn: ED_SCREEN,
     rendered: "the moment it was triaged is optional",
@@ -1752,6 +1808,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     },
   },
   {
+    retiredPageProse: {
+      date: "2026-10-07",
+      reason: "Owner requested removal of explanatory statistics panels; the model evidence remains checked.",
+    },
+
     id: "statistics-ed-screen/near-miss/a-movement-can-close-as-did-not-proceed",
     renderedIn: ED_SCREEN,
     // Locator moved 2026-09-06 with the field-name removal. The page now describes the outcome

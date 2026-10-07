@@ -60,7 +60,7 @@
   gap: 0.875rem;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   padding: 0.3125rem 0.875rem;
   box-shadow: var(--lift);
 }
@@ -74,6 +74,12 @@
 }
 
 .interactiveItem {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
   cursor: pointer;
   padding: 0.1875rem 0.375rem;
   border-radius: var(--r1);
@@ -114,7 +120,7 @@
 .microMeter {
   width: 2.5rem;
   height: 0.375rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-2);
   border: 1px solid var(--line);
   overflow: hidden;
@@ -123,7 +129,7 @@
 
 .microMeterBar {
   height: 100%;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--accent);
   transition: width 0.3s ease;
 }
@@ -132,7 +138,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--good-soft);
   color: var(--good);
   border: 1px solid var(--good);
@@ -147,7 +153,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--danger-soft);
   color: var(--danger);
   border: 1px solid var(--danger);
@@ -717,7 +723,7 @@
   gap: 0.375rem;
   padding: 0.3125rem 0.75rem;
   border: 1px solid var(--line);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface);
   color: var(--ink);
   font-size: var(--t-0);
@@ -746,7 +752,7 @@
   align-items: center;
   justify-content: center;
   padding: 0.0625rem 0.4375rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-2);
   color: var(--muted);
   font-size: 0.75rem;
@@ -979,7 +985,7 @@
 }
 
 .gapTable :global([data-ward-primitive="chip"]) {
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   padding: 0.125rem 0.5rem;
   font-size: 0.75rem; /* 12px floor */
   font-weight: 700;
@@ -1059,7 +1065,7 @@
 .gapMicroGauge {
   width: 100%;
   height: 0.375rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-2);
   border: 1px solid var(--line);
   overflow: hidden;
@@ -1070,7 +1076,7 @@
 
 .gapGaugeFill {
   height: 100%;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   transition: width 0.3s ease;
 }
 
@@ -1652,7 +1658,7 @@
   align-items: center;
   flex: 0 0 auto;
   padding: 0.25rem 0.625rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--good-soft);
   color: var(--good);
   border: 1px solid var(--good);
@@ -1914,6 +1920,18 @@
   border: none;
 }
 
+.networkTableScroll[data-overflowing="true"] {
+  border-inline-end: 2px solid var(--line-strong);
+}
+
+.tableScrollNotice {
+  margin: 0;
+  padding: var(--ward-space-8) var(--ward-space-12);
+  color: var(--ink-soft);
+  font-size: var(--t-0);
+  background: var(--surface-2);
+}
+
 .networkTable {
   --ward-table-min-width: 68rem;
   --ward-table-cell-inset: 0.5rem 0.625rem;
@@ -2069,7 +2087,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.0625rem 0.4375rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface);
   border: 1px solid var(--line);
   color: var(--muted);
@@ -2092,7 +2110,7 @@
   justify-content: center;
   min-width: 1.625rem;
   padding: 0.125rem 0.4375rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--good-soft);
   color: var(--good);
   border: 1px solid var(--good);
@@ -2107,7 +2125,7 @@
   justify-content: center;
   min-width: 1.625rem;
   padding: 0.125rem 0.4375rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-2);
   color: var(--ink);
   border: 1px solid var(--line-strong);
@@ -2121,7 +2139,7 @@
   align-items: center;
   justify-content: center;
   padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--warn-soft);
   color: var(--warn);
   border: 1px solid var(--warn);
@@ -2937,7 +2955,7 @@
 
 /* Restore the shell's floating capsule, retaining readable headline figures. */
 .telemetryCapsule {
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   padding: 0.25rem 0.5rem;
   box-shadow: var(--lift);
   overflow: visible;
@@ -2948,7 +2966,7 @@
   gap: 0.25rem 0.5rem;
 }
 .telemetryItem.interactiveItem {
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 .screen h1.pageTitle {
   font-size: 1.75rem;
@@ -2972,11 +2990,11 @@
 .sidebarTabs {
   margin: 0.375rem;
   border: 1px solid var(--line);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   padding: 0.1875rem;
 }
 .sidebarTabs button {
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 .networkActions {
   background: var(--surface);
@@ -3422,12 +3440,12 @@
   gap: 1rem;
 }
 .sidebarTabs {
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-2);
   border-color: var(--line);
 }
 .sidebarTabs button {
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 .sidebarTabs button[aria-selected="true"] {
   background: var(--surface);
@@ -3537,7 +3555,7 @@
 .screen .gapTable :global([data-ward-primitive="chip"]) {
   padding: 0.125rem 0.5rem;
   border: 1px solid currentColor;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   line-height: 1.35;
   letter-spacing: 0.025em;
   font-weight: 500;
@@ -3548,7 +3566,7 @@
 .screen .freeingBadge {
   padding: 0.25rem 0.625rem;
   border: 1px solid var(--good);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--good-soft);
   color: var(--good);
   font-weight: 500;
@@ -3785,5 +3803,177 @@
 @media (forced-colors: active) {
   .screen .networkTable .confirmationCell > span {
     color: CanvasText;
+  }
+}
+
+/* Capacity polish: bounded metric groups, frosted layers and precise nested curves. */
+.screen {
+  background:
+    radial-gradient(ellipse at 0 0, color-mix(in srgb, var(--surface) 70%, transparent), transparent 65%),
+    linear-gradient(140deg, var(--surface-2), color-mix(in srgb, var(--accent-soft) 28%, var(--surface-2)));
+}
+.screen .main {
+  gap: 0.875rem;
+}
+.screen .pageHeader {
+  gap: 0.875rem;
+  padding-block: 0.25rem;
+}
+.screen .pageTitleBlock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: min(100%, 48rem);
+  gap: 0.25rem 1rem;
+  align-items: center;
+}
+.screen .pageTitleBlock :is(h1, .pageSubtitle) {
+  grid-column: 1;
+}
+.screen .pageTitleBlock > button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-height: 2.25rem;
+  padding-inline: 0.75rem;
+  font-size: 0.75rem;
+  border-radius: 0.5rem;
+  border-color: color-mix(in srgb, var(--line) 85%, transparent);
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--surface),
+    0 2px 5px color-mix(in srgb, var(--accent-ink) 5%, transparent);
+}
+.screen .telemetryCapsule {
+  width: max-content;
+  max-width: 100%;
+  min-width: 0;
+  grid-template-columns: auto repeat(4, max-content);
+  padding: 0.1875rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  backdrop-filter: blur(18px) saturate(130%);
+  box-shadow:
+    inset 0 1px 0 var(--surface),
+    0 4px 16px -8px color-mix(in srgb, var(--accent-ink) 18%, transparent);
+}
+.screen .telemetryItem {
+  min-height: 2.25rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: 0.5rem;
+  flex-wrap: nowrap;
+}
+.screen :global([data-ward-primitive="panel"]),
+.screen .secondary {
+  border-radius: 0.875rem;
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--surface),
+    0 2px 4px color-mix(in srgb, var(--accent-ink) 3%, transparent),
+    0 12px 28px -16px color-mix(in srgb, var(--accent-ink) 20%, transparent);
+}
+.screen :global([data-ward-primitive="panel-header"]) {
+  padding: 0.625rem 0.875rem;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--line) 72%, transparent);
+  box-shadow: inset 0 1px 0 var(--surface);
+}
+.screen :global([data-ward-primitive="panel-header"]) h2 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.screen .capacityGrid {
+  gap: 0.875rem;
+}
+.screen .filters {
+  background: color-mix(in srgb, var(--surface-2) 64%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--line) 72%, transparent);
+}
+.screen .filters :global([data-ward-primitive="filters"]),
+.screen .sortSelectWrap {
+  border-radius: 0.625rem;
+}
+.screen .filters :global([data-ward-primitive="filters"]) button,
+.screen .fullscreenButton,
+.screen .sortControl select {
+  min-height: 2.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.screen .filters :global([data-ward-primitive="filters"]) button[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--line) 80%, transparent);
+  background: var(--surface);
+  box-shadow:
+    inset 0 1px 0 var(--surface),
+    0 1px 4px color-mix(in srgb, var(--accent-ink) 8%, transparent);
+  font-weight: 600;
+}
+.screen .networkTable tbody td {
+  padding-block: 0.625rem;
+}
+.screen .networkHeaderRow {
+  background: linear-gradient(130deg, var(--accent), var(--accent-press));
+}
+.screen .tableScrollNotice {
+  background: color-mix(in srgb, var(--surface-2) 65%, transparent);
+}
+@media (max-width: 45rem) {
+  .screen .pageTitleBlock {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .screen .pageTitleBlock > button {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+  }
+  .screen .telemetryCapsule {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .screen .telemetryItem {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding-inline: 0.625rem;
+  }
+}
+@media (pointer: coarse) {
+  .screen .pageTitleBlock > button,
+  .screen .telemetryItem,
+  .screen .filters :global([data-ward-primitive="filters"]) button,
+  .screen .fullscreenButton,
+  .screen .sortControl select {
+    min-height: 2.75rem;
+  }
+}
+@media (forced-colors: active) {
+  .screen {
+    background: Canvas;
+  }
+  .screen :global([data-ward-primitive="panel"]),
+  .screen .secondary,
+  .screen .telemetryCapsule,
+  .screen .pageTitleBlock > button {
+    background: Canvas;
+    border-color: CanvasText;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .screen .filters :global([data-ward-primitive="filters"]) button[aria-pressed="true"] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+}
+@media print {
+  .screen,
+  .screen :global([data-ward-primitive="panel"]),
+  .screen .secondary,
+  .screen .telemetryCapsule {
+    background: var(--surface);
+    box-shadow: none;
+    backdrop-filter: none;
   }
 }

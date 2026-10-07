@@ -40,9 +40,10 @@ vi.mock("next/link", () => ({
 }));
 
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
+import { refusalFor } from "@/components/ward-management/search/search-refusals";
 import { searchMovements } from "@/components/ward-management/ward-derivations";
 import { wardMovements } from "@/components/ward-management/ward-movements";
-import { findPatients } from "@/components/ward-management/ward-patients";
+import { findPatients, patientDisplayName } from "@/components/ward-management/ward-patients";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { allUnits } from "@/components/ward-management/ward-sites";
 
@@ -61,8 +62,14 @@ if (!targetPatient) throw new Error("fixture drifted: PT-001 no longer exists in
 const targetMovement = wardMovements.find((movement) => movement.id === "WF-001");
 if (!targetMovement) throw new Error("fixture drifted: WF-001 no longer exists in wardMovements");
 
+const movementPatient = targetMovement.patientId
+  ? wardPatients.find((patient) => patient.id === targetMovement.patientId)
+  : undefined;
+if (!movementPatient) throw new Error("fixture drifted: WF-001 has no linked patient");
+
 const personQuery = targetPatient.givenName;
 const movementQuery = targetMovement.id;
+const movementNameQuery = patientDisplayName(movementPatient);
 
 describe("WardGlobalSearch — anti-vacuity floor", () => {
   it("the person query genuinely matches the target patient in the real matcher", () => {
@@ -117,7 +124,11 @@ describe("WardGlobalSearch", () => {
     const row = screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`);
     expect(row.tagName).toBe("A");
     expect(row).toHaveAttribute("href", `/mockups/ward-flow/people/${targetPatient.id}`);
+    expect(row).toHaveTextContent(patientDisplayName(targetPatient));
+    expect(row).toHaveTextContent(targetPatient.umrn);
+    expect(row).toHaveTextContent(targetPatient.dateOfBirth);
     expect(row).toHaveTextContent("Person");
+    expect(screen.getByTestId("ward-global-search-intent")).toHaveTextContent("People");
   });
 
   it("finds the movement by its own id and carries the exact movement id in the href", () => {
@@ -135,8 +146,9 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: movementQuery } });
 
     const popup = screen.getByTestId("ward-global-search-popup");
-    expect(within(popup).getByText("Movements")).toBeInTheDocument();
-    expect(within(popup).queryByText("People")).not.toBeInTheDocument();
+    expect(within(popup).getByTestId("ward-global-search-group-movements")).toBeInTheDocument();
+    expect(within(popup).queryByTestId("ward-global-search-group-people")).not.toBeInTheDocument();
+    expect(within(popup).getByTestId("ward-global-search-intent")).toHaveTextContent("Movements");
   });
 
   it("says plainly that nothing matched, and guesses at nothing", () => {
@@ -151,39 +163,85 @@ describe("WardGlobalSearch", () => {
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
-  /*
-   * Standard §8.6 (`docs/ward-flow/mockups/WARD-FLOW-DESIGN-SYSTEM.md`): "The footer of the
-   * results is always: 'Names are invented. Search never returns a risk score, an acuity score or
-   * a best match.'" This is the shell's search — the surface §8.6 governs — so it takes the fixed
-   * sentence VERBATIM, both halves (BRIEF-AV-search-marker.md). Unlike `PatientTypeahead`'s own
-   * marker (`tests/ward-patient-typeahead.dom.test.tsx`), this component's own group header never
-   * claims a person is "known to this system", but the fixed sentence is the same requirement
-   * either way: shown every time the popup is shown, matched or empty.
-   */
-  describe("the fixed §8.6 results footer", () => {
-    const FIXED_SENTENCE = "Names are invented. Search never returns a risk score, an acuity score or a best match.";
-
-    it("renders the exact sentence, both halves, once real results have actually rendered", () => {
+  describe("header palette footer", () => {
+    it("keeps keyboard hints and does not render the invented-names disclaimer", () => {
       renderSearch();
       fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: personQuery } });
 
-      // Anti-vacuity: prove the popup actually rendered a real option first, so an empty render
-      // could not pass the assertion below by rendering nothing.
       expect(screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`)).toBeInTheDocument();
 
-      expect(screen.getByTestId("ward-global-search-footer")).toHaveTextContent(FIXED_SENTENCE);
+      const footer = screen.getByTestId("ward-global-search-footer");
+      expect(footer).toHaveTextContent("Navigate");
+      expect(footer).toHaveTextContent("Select");
+      expect(footer).toHaveTextContent("Esc");
+      expect(footer).not.toHaveTextContent("Names are invented.");
+      expect(footer).not.toHaveTextContent("Search never returns a risk score");
+      expect(screen.queryByText("Names are invented.")).not.toBeInTheDocument();
     });
 
-    it("renders the same sentence in the empty state — where 'nobody matches' most needs it", () => {
+    it("omits that disclaimer in the empty state as well", () => {
       renderSearch();
       const nonsense = "zzq-no-such-record-in-this-fixture-zzq";
       fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: nonsense } });
 
-      // Anti-vacuity: prove the empty state itself actually rendered first.
       expect(screen.getByTestId("ward-global-search-empty")).toBeInTheDocument();
-
-      expect(screen.getByTestId("ward-global-search-footer")).toHaveTextContent(FIXED_SENTENCE);
+      expect(screen.getByTestId("ward-global-search-footer")).toHaveTextContent("Navigate");
+      expect(screen.queryByText("Names are invented.")).not.toBeInTheDocument();
     });
+  });
+
+  it("names the detected intent and updates it when the query changes", () => {
+    renderSearch();
+    const input = screen.getByTestId("ward-global-search-input");
+
+    fireEvent.change(input, { target: { value: personQuery } });
+    expect(screen.getByTestId("ward-global-search-intent")).toHaveTextContent("People");
+
+    fireEvent.change(input, { target: { value: "ward" } });
+    expect(screen.getByTestId("ward-global-search-intent")).toHaveTextContent("Places");
+
+    fireEvent.change(input, { target: { value: movementQuery } });
+    expect(screen.getByTestId("ward-global-search-intent")).toHaveTextContent("Movements");
+  });
+
+  it("finds the open movement from the linked patient's display name and lists People first", () => {
+    renderSearch();
+    fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: movementNameQuery } });
+
+    const row = screen.getByTestId(`ward-global-search-result-movement-${targetMovement.id}`);
+    expect(row).toHaveTextContent("Movement");
+    expect(screen.getByTestId("ward-global-search-intent")).toHaveTextContent("People");
+
+    const people = screen.getByTestId("ward-global-search-group-people");
+    const movements = screen.getByTestId("ward-global-search-group-movements");
+    expect(people.compareDocumentPosition(movements) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("shows the score refusal and no result links", () => {
+    renderSearch();
+    const query = "risk score";
+    const refusal = refusalFor(query);
+    expect(refusal?.kind).toBe("score");
+
+    fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: query } });
+
+    expect(screen.getByTestId("ward-global-search-refusal")).toHaveTextContent(refusal?.sentence ?? "");
+    expect(screen.queryByTestId("ward-global-search-intent")).not.toBeInTheDocument();
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(screen.queryByText("Names are invented.")).not.toBeInTheDocument();
+  });
+
+  it("shows the closed-movement refusal when the query asks for arrived work", () => {
+    renderSearch();
+    const query = "arrived";
+    const refusal = refusalFor(query);
+    expect(refusal?.kind).toBe("closed");
+
+    fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: query } });
+
+    expect(screen.getByTestId("ward-global-search-refusal")).toHaveTextContent(refusal?.sentence ?? "");
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
   });
 
   it("calls onNavigate with the exact patient id on a plain click, and does not let the anchor navigate itself", () => {
@@ -325,7 +383,7 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: "Fiona Stanley" } });
 
     const popup = screen.getByTestId("ward-global-search-popup");
-    expect(within(popup).getByText("Emergency Departments")).toBeInTheDocument();
+    expect(within(popup).getAllByText("ED").length).toBeGreaterThan(0);
     const edItem = screen.getByTestId("ward-global-search-result-ed-fsh-ed");
     expect(edItem).toHaveAttribute("href", "/mockups/ward-flow/ed/fsh-ed");
     expect(edItem).toHaveTextContent("ED");
@@ -336,7 +394,7 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: "Mead Centre (Armadale)" } });
 
     const popup = screen.getByTestId("ward-global-search-popup");
-    expect(within(popup).getByText("Community Teams")).toBeInTheDocument();
+    expect(within(popup).getAllByText("Community").length).toBeGreaterThan(0);
     const teamItem = screen.getByTestId("ward-global-search-result-community-mead-centre-armadale");
     expect(teamItem).toHaveAttribute("href", "/mockups/ward-flow/community/mead-centre-armadale");
     expect(teamItem).toHaveTextContent("Community");
@@ -347,7 +405,7 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: "Form 1A" } });
 
     const popup = screen.getByTestId("ward-global-search-popup");
-    expect(within(popup).getByText("Legal Forms")).toBeInTheDocument();
+    expect(within(popup).getByText("Legal")).toBeInTheDocument();
     const formItem = screen.getByTestId("ward-global-search-result-form-1a");
     expect(formItem).toHaveAttribute("href", "/mockups/ward-flow/legal-forms");
     expect(formItem).toHaveTextContent("Legal Form");
@@ -358,7 +416,7 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: "Shift Handover" } });
 
     const popup = screen.getByTestId("ward-global-search-popup");
-    expect(within(popup).getByText("Core Views")).toBeInTheDocument();
+    expect(within(popup).getByText("Screens")).toBeInTheDocument();
     const viewItem = screen.getByTestId("ward-global-search-result-view-handover");
     expect(viewItem).toHaveAttribute("href", "/mockups/ward-flow/handover");
     expect(viewItem).toHaveTextContent("View");
@@ -369,7 +427,8 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: "task" } });
 
     const popup = screen.getByTestId("ward-global-search-popup");
-    expect(within(popup).getByText("Action Tasks")).toBeInTheDocument();
+    expect(within(popup).getByTestId("ward-global-search-intent")).toHaveTextContent("Tasks");
+    expect(within(popup).getByTestId("ward-global-search-group-tasks")).toHaveTextContent("Tasks");
     const taskItems = screen.getAllByTestId(/^ward-global-search-result-task-/);
     expect(taskItems.length).toBeGreaterThan(0);
     expect(taskItems[0]).toHaveAttribute("href", expect.stringMatching(/\/mockups\/ward-flow\/movements\//));

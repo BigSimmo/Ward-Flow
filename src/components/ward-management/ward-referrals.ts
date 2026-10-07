@@ -215,6 +215,9 @@ export function referralDestinationLabels(referral: Referral): string[] {
 /** Human label for where a referral is addressed. Exhaustive by `switch` on the union, so a fifth
  *  destination cannot be added without this failing to compile. */
 export function referralDestinationLabel(destination: ReferralDestination): string {
+  if (destination.kind === "psychiatric_ward" && destination.unitId) {
+    return `Ward · ${destination.unitId}`;
+  }
   // ⚠️ AN ED DESTINATION CARRIES ITS PURPOSE INTO EVERY LABEL, ON THE OWNER'S RULING OF
   // 2026-09-03: "it is not a bed request when a patient is referred to the ED from community or
   // from another ED doctor."
@@ -618,7 +621,9 @@ export function referralCandidates(
   units: Unit[],
   now: Instant,
 ): { unit: Unit; verdict: EligibilityVerdict }[] {
-  return units.map((unit) => ({ unit, verdict: referralEligibility(referral, ward, unit, now) }));
+  return units
+    .filter((unit) => ward.unitId === undefined || ward.unitId === unit.id)
+    .map((unit) => ({ unit, verdict: referralEligibility(referral, ward, unit, now) }));
 }
 
 export type ReferralCandidate = { unit: Unit; verdict: EligibilityVerdict };
@@ -1107,6 +1112,7 @@ export function referralAddressingStateLabel(addressing: ReferralAddressing): st
   // stamps this instead, so a switch keyed on `state` alone would keep reading a withdrawn
   // addressing as "Queued." forever. See `isAwaitingAnswer` above for the one home of this check.
   if (addressing.withdrawnAt !== undefined) return "Withdrawn by the referrer.";
+  if (addressing.state === "queued" && addressing.waitlistedAt !== undefined) return "Waitlisted.";
   switch (addressing.state) {
     case "accepted":
       return "Accepted.";

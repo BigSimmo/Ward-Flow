@@ -1,3 +1,4 @@
+import { splitDuration } from "@/components/ward-management/ward-clock";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -73,7 +74,7 @@ function renderWard(admissions: Admission[]) {
 const UNIFORM_NOTE = "ward-stat-empty-bed-uniform";
 
 describe("the ward page says when its bed-empty average has no spread", () => {
-  it("states it when every measured gap is the same length", () => {
+  it("shows equal endpoints without the retired uniform-gap explanation", () => {
     const admissions = [gapOf("ADM-U1", 300), gapOf("ADM-U2", 300), gapOf("ADM-U3", 300)];
     const view = renderWard(admissions);
 
@@ -83,15 +84,13 @@ describe("the ward page says when its bed-empty average has no spread", () => {
     expect(statistics.emptyBedMinutesShortest, "the constructed uniform case no longer has a measurable gap").toBe(300);
     expect(statistics.emptyBedMinutesLongest).toBe(300);
 
-    expect(
-      screen.queryByTestId(UNIFORM_NOTE),
-      "every measured gap on this ward is identical and the page does not say so, so it publishes one " +
-        "repeated number under the word average — the defect this file exists for",
-    ).not.toBeNull();
+    expect(screen.queryByTestId(UNIFORM_NOTE)).toBeNull();
+    expect(screen.getByTestId("ward-stat-empty-bed-shortest")).toHaveTextContent(splitDuration(300));
+    expect(screen.getByTestId("ward-stat-empty-bed-longest")).toHaveTextContent(splitDuration(300));
     view.unmount();
   });
 
-  it("stays silent when the gaps genuinely differ", () => {
+  it("shows different endpoints without an explanation", () => {
     const admissions = [gapOf("ADM-V1", 120), gapOf("ADM-V2", 300), gapOf("ADM-V3", 480)];
     const view = renderWard(admissions);
 
@@ -105,6 +104,8 @@ describe("the ward page says when its bed-empty average has no spread", () => {
         "120 to 480 minutes. A note rendered unconditionally is a false statement about the data, and it " +
         "is the shape a future red gets 'fixed' into",
     ).toBeNull();
+    expect(screen.getByTestId("ward-stat-empty-bed-shortest")).toHaveTextContent(splitDuration(120));
+    expect(screen.getByTestId("ward-stat-empty-bed-longest")).toHaveTextContent(splitDuration(480));
     view.unmount();
   });
 
@@ -122,13 +123,13 @@ describe("the ward page says when its bed-empty average has no spread", () => {
           <StatisticsWardScreen unitId={unit.id} units={[unit]} admissions={seeded} />
         </WardFlowProvider>,
       );
-      const uniform = statistics.emptyBedMinutesShortest === statistics.emptyBedMinutesLongest;
-      const note = screen.queryByTestId(UNIFORM_NOTE);
-      expect(
-        note !== null,
-        `${unit.name}: the derivation says spread ${statistics.emptyBedMinutesShortest}–${statistics.emptyBedMinutesLongest} ` +
-          `and the page ${note === null ? "says nothing" : "says the average describes no variation"}`,
-      ).toBe(uniform);
+      expect(screen.queryByTestId(UNIFORM_NOTE)).toBeNull();
+      expect(screen.getByTestId("ward-stat-empty-bed-shortest")).toHaveTextContent(
+        splitDuration(statistics.emptyBedMinutesShortest),
+      );
+      expect(screen.getByTestId("ward-stat-empty-bed-longest")).toHaveTextContent(
+        splitDuration(statistics.emptyBedMinutesLongest!),
+      );
       view.unmount();
     }
 

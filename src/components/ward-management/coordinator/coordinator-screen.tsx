@@ -401,11 +401,11 @@ export function CoordinatorScreen() {
             <div className={styles.midCol}>
               <section
                 className={styles.diagramRegion}
-                aria-label="Statewide flow"
+                aria-label="State Bedflow"
                 data-fullscreen={diagramExpansion === "full-page" ? "true" : undefined}
               >
                 <header className={styles.regionHeader}>
-                  <h2>Statewide flow</h2>
+                  <h2>State Bedflow</h2>
                   {!hasPanelSubject ? <span className={styles.regionCount}>{units.length} inpatient wards</span> : null}
                   {selectedUnitId ? (
                     <button
@@ -588,7 +588,7 @@ export function CoordinatorScreen() {
           testId="ward-coordinator-governance"
           note={
             <>
-              Live coordinator view · Not a medical device
+              Demo coordinator view · Not a medical device
               <span
                 className={
                   rejections.length > 0 ? styles.exceptionsToggleRefusalCount : styles.exceptionsToggleRecordCount

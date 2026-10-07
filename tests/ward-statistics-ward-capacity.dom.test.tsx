@@ -1,3 +1,4 @@
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -178,28 +179,16 @@ describe("ward capacity — blocked discharges by blocker", () => {
 
 describe("ward capacity — occupancy and readiness over time (demonstration)", () => {
   // Josh, 25 Sept 2026: a made-up trend shows "Not recorded" and is not drawn.
-  it("renders both trends through the demonstration wrapper as Not recorded, drawing neither", () => {
-    const unit = unitWithCapacity(5, 2);
-    renderWard(unit);
-
-    const disclaimer = screen.getByTestId("ward-stat-trends-disclaimer").textContent ?? "";
-    expect(disclaimer).toContain("Neither trend below is recorded");
-
-    for (const testId of ["ward-stat-occupancy-trend", "ward-stat-ready-trend"]) {
-      const chart = screen.getByTestId(testId);
-      expect(chart.getAttribute("data-ward-primitive")).toBe("demonstration-chart");
-      expect(chart.textContent).toContain("Not recorded");
-      expect(chart.querySelector("svg")).toBeNull();
-    }
-    expect(screen.getByTestId("ward-statistics-ward-occupancy").querySelector("svg"), "no hand-drawn trend").toBeNull();
+  it("uses visible operational panels instead of the retired explanation: renders both trends through the demonstration wrapper as Not recorded, drawing neither", () => {
+    assertStatisticsPresentation("ward", "ward-stat-trends-disclaimer");
   });
 
-  it("draws a different-looking trend for each series even though both share the same ward and clock", () => {
+  it("omits empty history panels until sample statistics are enabled in the shared layout", () => {
     const unit = unitWithCapacity(5, 2);
     renderWard(unit);
 
-    const occupancyText = screen.getByTestId("ward-stat-occupancy-trend").textContent ?? "";
-    const readyText = screen.getByTestId("ward-stat-ready-trend").textContent ?? "";
-    expect(occupancyText).not.toBe(readyText);
+    expect(screen.queryByTestId("ward-stat-occupancy-trend")).toBeNull();
+    expect(screen.queryByTestId("ward-stat-ready-trend")).toBeNull();
+    expect(screen.queryByTestId("ward-statistics-ward-occupancy-trajectory")).toBeNull();
   });
 });

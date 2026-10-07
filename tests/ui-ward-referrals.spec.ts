@@ -107,8 +107,17 @@ async function answerEveryIntakeQuestion(
     highAcuityNursingNeeded: "yes" | "no";
   },
 ) {
-  await page.getByTestId("ward-referral-intake-ageBand").selectOption(answers.ageBand);
-  await page.getByTestId("ward-referral-intake-sex").selectOption(answers.sex);
+  // v6 (7 Oct 2026): Age band and Sex are segmented radio groups.
+  await page
+    .getByTestId("ward-referral-intake-ageBand")
+    .locator("label")
+    .filter({ has: page.getByRole("radio", { name: answers.ageBand, exact: true }) })
+    .click();
+  await page
+    .getByTestId("ward-referral-intake-sex")
+    .locator("label")
+    .filter({ has: page.getByRole("radio", { name: answers.sex, exact: true }) })
+    .click();
   // T11/T10 (owner answer 17 September 2026): a separate required question from Sex — the fifth
   // question this helper has been missed for (see the trail below on the ninth through twelfth).
   await page.getByTestId("ward-referral-intake-gender").selectOption(answers.gender);
@@ -510,7 +519,7 @@ function queuedCardIds(page: Page): Promise<string[]> {
  * "More pages" button that is present but hidden no longer counts as the door.
  */
 async function openRailSheetIfNeeded(page: Page, rail: Locator): Promise<boolean> {
-  const morePages = rail.getByRole("button", { name: /^More pages/u });
+  const morePages = rail.getByRole("button", { name: /^All pages/iu });
   const menu = rail.getByRole("button", { name: "Menu", exact: true });
   const opener = (await morePages.isVisible()) ? morePages : (await menu.isVisible()) ? menu : undefined;
   if (!opener) return false;
@@ -534,9 +543,9 @@ async function goToBoardViaPhoneRail(page: Page) {
   // content sits outside `rail`'s own DOM subtree once open — the target link is looked up from
   // `page`, unscoped, rather than from `rail`.
   if (await openRailSheetIfNeeded(page, rail)) {
-    await page.getByRole("link", { name: /^Referral Board\b/iu }).click();
+    await page.getByRole("link", { name: /^Referrals\b/iu }).click();
   } else {
-    await rail.getByRole("link", { name: /^Referral Board\b/iu }).click();
+    await rail.getByRole("link", { name: /^Referrals\b/iu }).click();
   }
   await expect(page.getByTestId("ward-referral-board-screen")).toBeVisible({ timeout: 15_000 });
 }
@@ -633,7 +642,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
 
     // The seed, before anything is raised. Asserted so the counts below are a real change rather
     // than a number that happened to be right.
-    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Queued (${SEEDED_QUEUED})`);
+    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Awaiting decision ${SEEDED_QUEUED}`);
     // 🔴 THE HEADING NAMES BOTH NUMBERS SINCE THE OWNER'S 2026-09-06 RULING, because it used to
     // print the display cap in the grammatical position of a total: "Recently decided (10)" while
     // eighteen had been decided. Asserted as two separate containments rather than as one pinned
@@ -678,7 +687,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await goToBoardViaPhoneRail(page);
     await expectNoReloadSince(page, "intake form -> board via the phone rail");
 
-    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Queued (${SEEDED_QUEUED + 1})`);
+    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(
+      `Awaiting decision ${SEEDED_QUEUED + 1}`,
+    );
     const queuedAfter = await queuedCardIds(page);
     expect(queuedAfter).toHaveLength(SEEDED_QUEUED + 1);
 
@@ -800,7 +811,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
 
     // --- The board reflects the decision on the very next render: out of the queue, into
     // recently decided, with the outcome named. ---
-    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Queued (${SEEDED_QUEUED})`);
+    await expect(page.getByTestId("ward-referral-board-queued")).toContainText(`Awaiting decision ${SEEDED_QUEUED}`);
     /*
      * 🔴 **THIS HAS NOW BEEN WRONG IN BOTH DIRECTIONS, AND THE HEADING CHANGE IS WHY IT IS RIGHT
      * NOW.** It first read `SEEDED_DECIDED + 1`, which was true only while the seed sat below the

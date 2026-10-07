@@ -94,7 +94,6 @@ export function StatisticsCompareScreen({
 } = {}) {
   const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases = [] } = useWardFlow();
   const now = useWardFlowClock();
-  const [compareView, setCompareView] = useState("ward");
   const admissions = admissionsOverride ?? liveAdmissions;
   const units = unitsOverride ?? liveUnits;
   const emergencyDepartments = edsOverride ?? allEmergencyDepartments();
@@ -182,99 +181,82 @@ export function StatisticsCompareScreen({
         </div>
       </div>
 
-      <p className={family.note}>
-        Ready beds and people waiting are separate counts. This page does not match which bed suits which person.
-      </p>
-      <label className={family.viewControl}>
-        Compare
-        <select
-          aria-label="Comparison type"
-          value={compareView}
-          onChange={(event) => setCompareView(event.target.value)}
-        >
-          <option value="ward">Wards</option>
-          <option value="ed">Emergency departments</option>
-        </select>
-      </label>
-      {compareView === "ward" ? (
-        <StatisticsInsightChart
-          key="wards"
-          defaultSort="value"
-          title="Ward comparison"
-          testId="statistics-compare-ward-chart"
-          metrics={[
-            {
-              id: "stay",
-              label: "Average length of stay",
-              unit: "days",
-              note: "Recorded stays for each ward. Missing averages remain unavailable; case mix differs between wards.",
-            },
-            {
-              id: "blocked",
-              label: "Discharge blockers",
-              unit: "people",
-              note: "Current admissions carrying a recorded discharge blocker.",
-            },
-            {
-              id: "long",
-              label: "Long stays",
-              unit: "people",
-              note: "Current admissions in the established over-three-month stay band.",
-            },
-          ]}
-          rows={wardStats.map(({ unit, statistics }) => ({
-            id: unit.id,
-            name: unit.name,
-            context: siteByCode(unit.siteCode)?.name ?? unit.siteCode,
+      <StatisticsInsightChart
+        key="wards"
+        defaultSort="value"
+        title="Ward comparison"
+        testId="statistics-compare-ward-chart"
+        metrics={[
+          {
+            id: "stay",
+            label: "Average length of stay",
+            unit: "days",
+            note: "Recorded stays for each ward. Missing averages remain unavailable; case mix differs between wards.",
+          },
+          {
+            id: "blocked",
+            label: "Discharge blockers",
+            unit: "people",
+            note: "Current admissions carrying a recorded discharge blocker.",
+          },
+          {
+            id: "long",
+            label: "Long stays",
+            unit: "people",
+            note: "Current admissions in the established over-three-month stay band.",
+          },
+        ]}
+        rows={wardStats.map(({ unit, statistics }) => ({
+          id: unit.id,
+          name: unit.name,
+          context: siteByCode(unit.siteCode)?.name ?? unit.siteCode,
+          values: {
+            stay: statistics.averageLengthOfStayDays,
+            blocked: statistics.readyToLeaveCannot,
+            long: statistics.longStays,
+          },
+          href: wardStatisticsHref(unit.id),
+        }))}
+      />
+      <StatisticsInsightChart
+        key="eds"
+        defaultSort="value"
+        title="ED comparison"
+        testId="statistics-compare-ed-chart"
+        metrics={[
+          {
+            id: "open",
+            label: "Open placements",
+            unit: "people",
+            note: "Open movements from each department. These are placement records, not total ED attendance.",
+          },
+          {
+            id: "urgent",
+            label: "Marked urgent",
+            unit: "people",
+            note: "Urgent open placements, a subset of each department's open movements.",
+          },
+          {
+            id: "unplaced",
+            label: "No accepting ward",
+            unit: "people",
+            note: "Open placements without a recorded ward acceptance.",
+          },
+        ]}
+        rows={emergencyDepartments.map((department) => {
+          const mine = movements.filter((movement) => movement.originEdId === department.id && isOpen(movement));
+          return {
+            id: department.id,
+            name: department.name,
             values: {
-              stay: statistics.averageLengthOfStayDays,
-              blocked: statistics.readyToLeaveCannot,
-              long: statistics.longStays,
+              open: mine.length,
+              urgent: mine.filter((movement) => movement.flaggedUrgent).length,
+              unplaced: mine.filter((movement) => movement.acceptedUnitId === undefined).length,
             },
-            href: wardStatisticsHref(unit.id),
-          }))}
-        />
-      ) : (
-        <StatisticsInsightChart
-          key="eds"
-          defaultSort="value"
-          title="ED comparison"
-          testId="statistics-compare-ed-chart"
-          metrics={[
-            {
-              id: "open",
-              label: "Open placements",
-              unit: "people",
-              note: "Open movements from each department. These are placement records, not total ED attendance.",
-            },
-            {
-              id: "urgent",
-              label: "Marked urgent",
-              unit: "people",
-              note: "Urgent open placements, a subset of each department's open movements.",
-            },
-            {
-              id: "unplaced",
-              label: "No accepting ward",
-              unit: "people",
-              note: "Open placements without a recorded ward acceptance.",
-            },
-          ]}
-          rows={emergencyDepartments.map((department) => {
-            const mine = movements.filter((movement) => movement.originEdId === department.id && isOpen(movement));
-            return {
-              id: department.id,
-              name: department.name,
-              values: {
-                open: mine.length,
-                urgent: mine.filter((movement) => movement.flaggedUrgent).length,
-                unplaced: mine.filter((movement) => movement.acceptedUnitId === undefined).length,
-              },
-              href: edStatisticsHref(department.id),
-            };
-          })}
-        />
-      )}
+            href: edStatisticsHref(department.id),
+          };
+        })}
+      />
       <nav className={styles.sovereignTabs} aria-label="Comparison sections">
         <a
           className={styles.sovereignTab}
@@ -305,114 +287,92 @@ export function StatisticsCompareScreen({
       </nav>
 
       {/* ══════════ SCOPE & ATTRIBUTION LIMITS PANEL ══════════ */}
-      <WardPanel
-        title="Scope and attribution limits"
-        count={`${units.length} wards · ${emergencyDepartments.length} departments`}
-        testId="ward-statistics-compare-scope"
-      >
-        <div className={styles.panelBody}>
-          <p className={styles.note} data-testid="ward-statistics-compare-order-note">
-            Fixed record order carries no meaning: this is not a ranking, score or result sort, and nothing is hidden.
-          </p>
-          <details className={`${styles.reveal} source-print`} data-testid="ward-statistics-compare-why-two">
-            <summary>Method and attribution limits</summary>
-            <div className={styles.revealBody}>
-              <p data-testid="ward-statistics-compare-attributability-rule">
-                <strong>
-                  A measure belongs to a named ward only when its source record carries a required unit id.
-                </strong>{" "}
-                An admission always carries its ward, with no exceptions, so admission measures attribute cleanly. An
-                optional unit id covers only the records where it happens to be present, not the whole population.
-              </p>
-              <p data-testid="ward-statistics-compare-declines-example">
-                <strong>Declines show the attribution limit.</strong> A referral names its ward only when a ward
-                accepts. An acceptance is attributable to a named ward and a decline is not.
-              </p>
-              <p data-testid="ward-statistics-compare-double-count-example">
-                <strong>Referrals received fail differently.</strong> Referred wards are stored as a LIST, not a single
-                ward, because one referral can be live at several wards. A per-ward total would therefore sum to more
-                than the number of referrals that exist.
-              </p>
-            </div>
-          </details>
-        </div>
-      </WardPanel>
 
-      <div id="compare-ward-measures" className={styles.compareRegion} tabIndex={-1}>
-        <details className={`${family.disclosure} source-print`}>
-          <summary>Ward chart and recorded table</summary>
-          <WardPanel title="Wards" count={`${units.length} wards`}>
-            <div className={styles.panelBody}>
-              <div className={styles.chartCard}>
-                <div className={styles.chartHeader}>
-                  <h3 className={styles.chartTitle}>Average length of stay by ward</h3>
-                  <span className={styles.chartCount}>{units.length} Wards</span>
-                </div>
-                {units.length === 0 ? (
-                  <p className={styles.emptyNote} data-testid="ward-statistics-compare-ward-chart-empty">
-                    No ward is recorded in this prototype, so there is nothing to chart.
-                  </p>
-                ) : (
-                  <WardAlosBarChart units={units} admissions={admissions} now={now} />
-                )}
+      <div
+        id="compare-ward-measures"
+        className={styles.compareRegion}
+        tabIndex={-1}
+        role="region"
+        aria-labelledby="compare-ward-chart-heading"
+      >
+        <h2 id="compare-ward-chart-heading" className={styles.chartTitle}>
+          Ward chart and recorded table
+        </h2>
+        <WardPanel title="Wards" count={`${units.length} wards`}>
+          <div className={styles.panelBody}>
+            <div className={styles.chartCard}>
+              <div className={styles.chartHeader}>
+                <h3 className={styles.chartTitle}>Average length of stay by ward</h3>
+                <span className={styles.chartCount}>{units.length} Wards</span>
               </div>
-              <CompareTable
-                className={styles.compareWardTable}
-                testId="ward-statistics-compare-wards"
-                rowHeader="Ward"
-                columns={WARD_COLUMNS}
-                rows={allWardStatistics(units, admissions, now).map(({ unit, statistics }) => ({
-                  id: unit.id,
-                  name: unit.name,
-                  row: statistics,
-                }))}
-              />
+              {units.length === 0 ? (
+                <p className={styles.emptyNote} data-testid="ward-statistics-compare-ward-chart-empty">
+                  No wards recorded.
+                </p>
+              ) : (
+                <WardAlosBarChart units={units} admissions={admissions} now={now} />
+              )}
             </div>
-          </WardPanel>
-        </details>
+            <CompareTable
+              className={styles.compareWardTable}
+              testId="ward-statistics-compare-wards"
+              rowHeader="Ward"
+              columns={WARD_COLUMNS}
+              rows={allWardStatistics(units, admissions, now).map(({ unit, statistics }) => ({
+                id: unit.id,
+                name: unit.name,
+                row: statistics,
+              }))}
+            />
+          </div>
+        </WardPanel>
       </div>
 
-      <div id="compare-ed-measures" className={styles.compareRegion} tabIndex={-1}>
-        <details className={`${family.disclosure} source-print`}>
-          <summary>ED chart and recorded table</summary>
-          <WardPanel title="Emergency departments" count={`${emergencyDepartments.length} departments`}>
-            <div className={styles.panelBody}>
-              <div className={styles.chartCard}>
-                <div className={styles.chartHeader}>
-                  <h3 className={styles.chartTitle}>Emergency Department Placement Requests &amp; Urgent Priority</h3>
-                  <span className={styles.chartCount}>{emergencyDepartments.length} Departments</span>
-                </div>
-                {emergencyDepartments.length === 0 ? (
-                  <p className={styles.emptyNote} data-testid="ward-statistics-compare-ed-chart-empty">
-                    No emergency department is recorded in this prototype, so there is nothing to chart.
-                  </p>
-                ) : (
-                  <EdWaitingBarChart emergencyDepartments={emergencyDepartments} movements={movements} />
-                )}
+      <div
+        id="compare-ed-measures"
+        className={styles.compareRegion}
+        tabIndex={-1}
+        role="region"
+        aria-labelledby="compare-ed-chart-heading"
+      >
+        <h2 id="compare-ed-chart-heading" className={styles.chartTitle}>
+          ED chart and recorded table
+        </h2>
+        <WardPanel title="Emergency departments" count={`${emergencyDepartments.length} departments`}>
+          <div className={styles.panelBody}>
+            <div className={styles.chartCard}>
+              <div className={styles.chartHeader}>
+                <h3 className={styles.chartTitle}>Emergency Department Placement Requests &amp; Urgent Priority</h3>
+                <span className={styles.chartCount}>{emergencyDepartments.length} Departments</span>
               </div>
-              <CompareTable
-                className={styles.compareEdTable}
-                testId="ward-statistics-compare-eds"
-                rowHeader="Department"
-                columns={ED_COLUMNS}
-                rows={emergencyDepartments.map((department) => {
-                  const mine = movements.filter(
-                    (movement) => movement.originEdId === department.id && isOpen(movement),
-                  );
-                  return {
-                    id: department.id,
-                    name: department.name,
-                    row: {
-                      onTheList: mine.length,
-                      urgent: mine.filter((movement) => movement.flaggedUrgent).length,
-                      unplaced: mine.filter((movement) => movement.acceptedUnitId === undefined).length,
-                    },
-                  };
-                })}
-              />
+              {emergencyDepartments.length === 0 ? (
+                <p className={styles.emptyNote} data-testid="ward-statistics-compare-ed-chart-empty">
+                  No emergency departments recorded.
+                </p>
+              ) : (
+                <EdWaitingBarChart emergencyDepartments={emergencyDepartments} movements={movements} />
+              )}
             </div>
-          </WardPanel>
-        </details>
+            <CompareTable
+              className={styles.compareEdTable}
+              testId="ward-statistics-compare-eds"
+              rowHeader="Department"
+              columns={ED_COLUMNS}
+              rows={emergencyDepartments.map((department) => {
+                const mine = movements.filter((movement) => movement.originEdId === department.id && isOpen(movement));
+                return {
+                  id: department.id,
+                  name: department.name,
+                  row: {
+                    onTheList: mine.length,
+                    urgent: mine.filter((movement) => movement.flaggedUrgent).length,
+                    unplaced: mine.filter((movement) => movement.acceptedUnitId === undefined).length,
+                  },
+                };
+              })}
+            />
+          </div>
+        </WardPanel>
       </div>
 
       <div id={STATISTICS_UNIT_CHOOSER_ID} className={styles.compareRegion} tabIndex={-1}>
@@ -499,38 +459,6 @@ export function StatisticsCompareScreen({
        * typed here.
        */}
       {/* ══════════ DATA PROVENANCE PANEL ══════════ */}
-      <WardPanel title="Data provenance" count="Scope" testId="ward-statistics-compare-provenance">
-        <div className={styles.panelBody}>
-          {/*
-           * ⚠️ EVERY SENTENCE HERE CARRIES ITS OWN DISCLOSURE, AND THAT IS WHY THE WORDING IS
-           * SHAPED AS IT IS — owner ruling 2026-09-09 §2, enforced by
-           * `tests/ward-provenance-sentences-carry-their-own-marker.test.ts`. The heading above
-           * does NOT do this work: a sentence gets quoted, screen-read, or read after the heading
-           * has scrolled away, and alone it must still say the figures are not real.
-           *
-           * 🔴 DO NOT "TIDY" THESE INTO SHORTER SENTENCES. Two of them were red on the first full
-           * suite run over this screen: "None of it describes a real person…" and a second
-           * paragraph that said only what IS real. Both were honest and both failed, because the
-           * disclosing words were not bound to a verb or a noun inside their own sentence.
-           *
-           * 🔴 AND NEVER SPLIT ONE OF THESE WITH A SEMICOLON. The guard treats a semicolon as a
-           * sentence boundary, so a marker before it does not vouch for the clause after it —
-           * which is the exact hole its own header records ("The ward names are invented; there
-           * were 28 referrals this period."). A comma or an "and" is safe here; a semicolon is not.
-           */}
-          <p className={styles.body}>
-            Every figure in the two tables above is invented: {joinNames(WARD_COLUMNS.map((column) => column.header))}{" "}
-            for every ward, and {joinNames(ED_COLUMNS.map((column) => column.header))} for every department. Nothing on
-            this screen is a real person, a real bed or a real referral.
-          </p>
-          <p className={styles.note}>
-            <strong>What is real</strong> is only the naming: the wards, the hospitals that hold them, and the emergency
-            departments — above and in the chooser below — are read from the network&apos;s own tables at render time
-            rather than typed here, in the fixed order the prototype records them, and every figure set beside those
-            names is invented.
-          </p>
-        </div>
-      </WardPanel>
     </StatisticsSectionFrame>
   );
 }
@@ -693,21 +621,6 @@ const ED_COLUMNS: readonly CompareColumn<EdRow>[] = [
  *
  * A single row cannot be uniform in any useful sense, so a one-row table reports nothing.
  */
-function columnsThatSeparateNothing<Row>(
-  columns: readonly CompareColumn<Row>[],
-  rows: readonly CompareRow<Row>[],
-): readonly string[] {
-  if (rows.length < 2) return [];
-  return columns
-    .filter((column) => new Set(rows.map(({ row }) => column.cell(row).text)).size === 1)
-    .map((column) => column.header);
-}
-
-/** English for a list of column names, so the note reads as a sentence rather than as output. */
-function joinNames(names: readonly string[]): string {
-  if (names.length <= 1) return names.join("");
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-}
 
 /**
  * One comparison table, plus the note about its own uniform columns.
@@ -729,8 +642,6 @@ function CompareTable<Row>({
   columns: readonly CompareColumn<Row>[];
   rows: readonly CompareRow<Row>[];
 }) {
-  const uniform = columnsThatSeparateNothing(columns, rows);
-  const unit = rowHeader.toLowerCase();
   return (
     <>
       {/*
@@ -774,17 +685,6 @@ function CompareTable<Row>({
           })}
         </tbody>
       </WardTable>
-      {uniform.length > 0 && (
-        <p className={styles.note} data-testid={`${testId}-uniform`}>
-          <strong>
-            {joinNames(uniform)} {uniform.length === 1 ? "gives" : "give"} every {unit} the same answer here, so{" "}
-            {uniform.length === 1 ? "it separates" : "they separate"} nothing.
-          </strong>{" "}
-          That is a property of this prototype&apos;s own data rather than a finding about the {unit}s. It is not
-          evidence that they are alike, and the figure is not varied to make the column look useful — an invented spread
-          on a comparison screen would be a ranking nobody measured.
-        </p>
-      )}
     </>
   );
 }
@@ -825,7 +725,6 @@ function WardAlosBarChart({ units, admissions, now }: { units: Unit[]; admission
 
   return (
     <div ref={containerRef} className={styles.barChartBox}>
-      <p className={styles.emptyNote}>Average among arrived admissions on each ward, in days. No target recorded.</p>
       <svg
         width="100%"
         height={H}

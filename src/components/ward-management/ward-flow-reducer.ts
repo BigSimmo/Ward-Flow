@@ -1,3 +1,4 @@
+import { referralIntakeError } from "./referrals/referral-submission";
 import {
   validCareChange,
   careChangeRefusal,
@@ -5860,7 +5861,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         );
       }
       const kinds = event.destinations.map((destination) => destination.kind);
-      if (new Set(kinds).size !== kinds.length) {
+      const recipientKeys = event.destinations.map((destination) =>
+        destination.kind === "psychiatric_ward" && destination.unitId
+          ? `${destination.kind}:${destination.unitId}`
+          : destination.kind,
+      );
+      const broadWard = event.destinations.some(
+        (destination) => destination.kind === "psychiatric_ward" && !destination.unitId,
+      );
+      if (
+        new Set(recipientKeys).size !== recipientKeys.length ||
+        (broadWard && kinds.filter((kind) => kind === "psychiatric_ward").length > 1)
+      ) {
         // Asking one kind twice is asking twice, not addressing two destinations. Refused rather
         // than de-duplicated: silently collapsing it would make the cap count something other than
         // what the referrer chose.
@@ -5897,19 +5909,28 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           return reject(state, event, `RECEIVE_REFERRAL purpose must be chosen from REFERRAL_PURPOSES`);
         }
       }
-      const wardDestination = event.destinations.find((destination) => destination.kind === "psychiatric_ward");
-      if (wardDestination?.kind === "psychiatric_ward" && !RECORDED_SEXES.includes(wardDestination.sex)) {
-        return reject(state, event, `RECEIVE_REFERRAL sex must be chosen from RECORDED_SEXES`);
+      for (const wardDestination of event.destinations) {
+        if (wardDestination.kind !== "psychiatric_ward") continue;
+        if (wardDestination.unitId !== undefined && !findUnit(state, wardDestination.unitId)) {
+          return reject(state, event, "RECEIVE_REFERRAL unitId must resolve to a real ward");
+        }
+        if (!RECORDED_SEXES.includes(wardDestination.sex))
+          return reject(state, event, "RECEIVE_REFERRAL sex must be chosen from RECORDED_SEXES");
+        if (wardDestination.gender !== undefined && !REFERRAL_GENDERS.includes(wardDestination.gender))
+          return reject(state, event, "RECEIVE_REFERRAL gender must be chosen from REFERRAL_GENDERS");
+        if (
+          [
+            wardDestination.secureBedNeeded,
+            wardDestination.involuntaryBedNeeded,
+            // Legacy broad referrals omitted acuity; named recipients must answer explicitly.
+            wardDestination.highAcuityNursingNeeded ?? (wardDestination.unitId === undefined ? false : undefined),
+          ].some((value) => typeof value !== "boolean")
+        )
+          return reject(state, event, "RECEIVE_REFERRAL bed criteria must be answered");
       }
-      // T10, item 8: the ward arm's own gender, checked the same way `sex` immediately above is
-      // — membership, never truthiness — and only when supplied at all, since absent means not
-      // yet recorded rather than a caller who forgot to answer.
-      if (
-        wardDestination?.kind === "psychiatric_ward" &&
-        wardDestination.gender !== undefined &&
-        !REFERRAL_GENDERS.includes(wardDestination.gender)
-      ) {
-        return reject(state, event, `RECEIVE_REFERRAL gender must be chosen from REFERRAL_GENDERS`);
+      if (event.intake !== undefined) {
+        const error = referralIntakeError(event.intake);
+        if (error) return reject(state, event, `RECEIVE_REFERRAL: ${error}`);
       }
       if (!REFERRAL_SOURCES.includes(event.source)) {
         return reject(state, event, `RECEIVE_REFERRAL source must be chosen from REFERRAL_SOURCES`);
@@ -6129,6 +6150,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const sequence = state.frontDoorReferralSequence + 1;
       const created: Referral = {
         id: nextFrontDoorReferralId(sequence),
+        ...(event.intake === undefined ? {} : { intake: event.intake }),
         // ⚠️ COPIED THROUGH, NEVER DEFAULTED. `undefined` here means the referral was raised
         // without a person on file — which is a real case, not a gap to be filled. Inventing an id
         // to avoid an empty field is how a referral comes to point at the wrong human being.
@@ -6234,9 +6256,22 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `${event.type} was raised by role ${event.role}, which may only answer ${ownKind.replace(/_/g, " ")} destinations, not ${event.destinationKind.replace(/_/g, " ")}`,
         );
       }
-      const addressing = referral.destinations.find(
+      const eligibleAddressings = referral.destinations.filter(
         (candidate) => candidate.destination.kind === event.destinationKind,
       );
+      const addressing = eligibleAddressings.find(
+        (candidate) =>
+          candidate.destination.kind !== "psychiatric_ward" ||
+          candidate.destination.unitId === undefined ||
+          candidate.destination.unitId === event.unitId,
+      );
+      if (
+        event.destinationKind === "psychiatric_ward" &&
+        eligibleAddressings.length > 1 &&
+        event.unitId === undefined
+      ) {
+        return reject(state, event, "Name the ward that is answering this referral.");
+      }
       if (!addressing) {
         return reject(
           state,
@@ -6663,9 +6698,22 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `${event.type} was raised by role ${event.role}, which may only answer ${ownKind.replace(/_/g, " ")} destinations, not ${event.destinationKind.replace(/_/g, " ")}`,
         );
       }
-      const addressing = referral.destinations.find(
+      const eligibleAddressings = referral.destinations.filter(
         (candidate) => candidate.destination.kind === event.destinationKind,
       );
+      const addressing = eligibleAddressings.find(
+        (candidate) =>
+          candidate.destination.kind !== "psychiatric_ward" ||
+          candidate.destination.unitId === undefined ||
+          candidate.destination.unitId === event.unitId,
+      );
+      if (
+        event.destinationKind === "psychiatric_ward" &&
+        eligibleAddressings.length > 1 &&
+        event.unitId === undefined
+      ) {
+        return reject(state, event, "Name the ward that is answering this referral.");
+      }
       if (!addressing) {
         return reject(
           state,
@@ -6738,6 +6786,20 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // so a `community_team` addressing's `declineReason` is a `ReferralDeclineReason` only in the
       // type system, never in fact.
       //
+      if (event.waitlist === true) {
+        if (
+          addressing.destination.kind !== "psychiatric_ward" ||
+          !addressing.destination.unitId ||
+          event.reason !== "no_suitable_bed"
+        )
+          return reject(state, event, "Only a named ward can waitlist a referral for no suitable bed.");
+        return replaceReferral(state, referral.id, {
+          ...referral,
+          destinations: referral.destinations.map((candidate) =>
+            candidate === addressing ? { ...candidate, waitlistedAt: event.now } : candidate,
+          ),
+        });
+      }
       // FD-24: this destination declines and NOTHING ELSE CHANGES. The other destinations stay
       // queued, this ward is not locked out of anything later, and the refusal stays on the record
       // with its time and its reason.

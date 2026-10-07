@@ -126,7 +126,7 @@
   color: var(--ink-soft);
   background: var(--surface);
   padding: 0.1875rem 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   border: 1px solid var(--line);
   letter-spacing: 0.01em;
 }
@@ -358,7 +358,7 @@
   background: var(--surface-2);
   border: 1px solid var(--line);
   padding: 0.0625rem 0.375rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   flex-shrink: 0;
 }
 
@@ -451,7 +451,7 @@
   display: flex;
   width: 100%;
   height: 0.3125rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   overflow: hidden;
   background: var(--surface-2);
   border: 1px solid var(--line);
@@ -1088,11 +1088,11 @@
 }
 .layoutSwitch {
   flex: none;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   padding: 0.1875rem;
 }
 .layoutSwitch button {
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 .services {
   gap: 0.625rem;
@@ -1190,7 +1190,7 @@
   min-height: var(--ward-tap);
   padding: 0.375rem 0.75rem;
   border: 1px solid transparent;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   background: transparent;
   color: var(--ink-soft);
   font: inherit;
@@ -1279,6 +1279,7 @@
 .serviceGroup[data-layout="grid"] .serviceWardTrack {
   gap: 0.5rem;
 }
+
 .map .wardBlock {
   padding: 0.75rem;
   border-radius: 0.75rem;
@@ -1362,7 +1363,7 @@
   order: 3;
   height: 4px;
   margin-top: auto;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 .map[data-bed-detail="false"] .capacityRibbon {
   margin-block: 0.25rem 0;
@@ -1496,6 +1497,14 @@
     box-shadow: none;
   }
 }
+@media print {
+  .services,
+  .map .wardBlock,
+  .map .wardBlock[data-selected="true"] {
+    background: var(--surface);
+    box-shadow: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .map .wardBlock {
     transition: none;
@@ -1510,11 +1519,11 @@
 }
 .layoutSwitch {
   background: var(--surface);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
   padding: 0;
 }
 .layoutSwitch button {
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 .layoutSwitch button[aria-pressed="true"] {
   background: var(--accent);
@@ -1588,7 +1597,7 @@
   border-bottom: 1px solid var(--line);
 }
 .capacityRibbon {
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 .wardAvailability {
   min-height: 2rem;
@@ -1629,11 +1638,13 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.25rem 0.75rem;
-  padding: 0.375rem 0.75rem;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  justify-content: flex-start;
+  gap: 0.5rem 0.625rem;
+  padding: 0.625rem 0.875rem;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  backdrop-filter: blur(18px) saturate(130%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 85%, transparent);
 }
 .mapToolbar .layoutSwitch:first-child {
   order: 1;
@@ -1645,32 +1656,97 @@
   order: 2;
   position: static;
   display: flex;
-  justify-content: center;
-  flex: 1;
-  width: auto;
+  justify-content: flex-start;
+  flex: 0 1 auto;
+  width: max-content;
+  max-width: 100%;
   gap: 0.125rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  padding: 0.1875rem;
+  border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  border-radius: 0.625rem;
+  background: color-mix(in srgb, var(--surface-2) 68%, transparent);
   overflow-x: auto;
 }
 .mapToolbar .serviceNav button {
-  padding-inline: 0.5rem;
-  min-height: var(--ward-tap);
-  font-size: var(--t-0);
-  border-color: transparent;
-  border-radius: 0.5rem;
+  flex: 0 0 auto;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5625rem;
+  min-height: 1.875rem;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  border: 1px solid transparent;
+  border-radius: 0.4375rem;
+  color: var(--ink-soft);
   background: transparent;
   box-shadow: none;
 }
 .mapToolbar .serviceNav button[aria-current="location"] {
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--line) 75%, transparent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 var(--surface),
+    0 1px 3px color-mix(in srgb, var(--accent-ink) 9%, transparent);
+}
+.mapToolbar .layoutSwitch {
+  display: inline-flex;
+  width: max-content;
+  padding: 0.1875rem;
+  gap: 0.125rem;
+  border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  border-radius: 0.625rem;
+  background: color-mix(in srgb, var(--surface-2) 68%, transparent);
+  flex-shrink: 0;
+}
+.mapToolbar .layoutSwitch button {
+  min-height: 1.875rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid transparent;
+  border-radius: 0.4375rem;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--ink-soft);
+  background: transparent;
+}
+.mapToolbar .layoutSwitch button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--accent-ink);
+  font-weight: 600;
+  border-color: color-mix(in srgb, var(--line) 75%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--surface),
+    0 1px 3px color-mix(in srgb, var(--accent-ink) 9%, transparent);
+}
+.mapToolbar :is(.layoutSwitch, .serviceNav) button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.mapToolbar :is(.layoutSwitch, .serviceNav) button:hover {
+  color: var(--accent-ink);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+}
+.mapToolbar .serviceNav button span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding-inline: 0.1875rem;
+  border-radius: 0.3125rem;
+  background: color-mix(in srgb, var(--accent-ink) 6%, transparent);
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.mapToolbar .serviceNav button[aria-current="location"] span {
   background: var(--accent-soft);
   color: var(--accent-ink);
-}
-.layoutSwitch {
-  background: var(--surface-2);
-  border-color: var(--line);
-  flex-shrink: 0;
 }
 .serviceHeaderBar {
   padding-block: 0.375rem;
@@ -1714,9 +1790,13 @@
   flex-shrink: 0;
 }
 @container capacityMap (max-width: 64rem) {
+  .mapToolbar .layoutSwitch:nth-child(2) {
+    order: 2;
+  }
   .mapToolbar .serviceNav {
-    order: 4;
-    flex-basis: 100%;
+    order: 3;
+    flex-basis: auto;
+    margin-inline-end: auto;
     justify-content: start;
   }
 }
@@ -1732,5 +1812,97 @@
   .mapToolbar,
   .mapToolbar .serviceNav {
     display: none;
+  }
+}
+
+/* Refined nested surfaces: compact controls above calm, light-catching ward cards. */
+.services {
+  gap: 0.625rem;
+  padding: 0.625rem 0.875rem 0.875rem;
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--surface-2) 78%, transparent),
+    color-mix(in srgb, var(--surface) 60%, transparent)
+  );
+}
+.serviceHeaderBar {
+  padding: 0.25rem 0.125rem;
+}
+.serviceHeading {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.serviceCount {
+  margin-inline-start: 0.25rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+.map .wardBlock {
+  border-radius: 0.6875rem;
+  border-color: color-mix(in srgb, var(--line) 70%, transparent);
+  background: linear-gradient(145deg, var(--surface), color-mix(in srgb, var(--surface) 87%, transparent));
+  box-shadow:
+    inset 0 1px 0 var(--surface),
+    0 2px 4px color-mix(in srgb, var(--accent-ink) 3%, transparent),
+    0 8px 20px -12px color-mix(in srgb, var(--accent-ink) 14%, transparent);
+}
+.map[data-bed-detail="false"] .wardBlock {
+  padding: 0.625rem;
+}
+.map[data-bed-detail="false"] .wardTitleRow {
+  min-height: 2rem;
+}
+.map .wardBlock[data-interactive="true"]:hover {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
+  box-shadow:
+    inset 0 1px 0 var(--surface),
+    0 4px 14px -5px color-mix(in srgb, var(--accent-ink) 17%, transparent);
+}
+.map .wardBlock[data-selected="true"] {
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 0 0 1px var(--accent),
+    0 4px 14px -5px color-mix(in srgb, var(--accent-ink) 17%, transparent);
+}
+.map .bedTotalBadge {
+  padding: 0.125rem 0.3125rem;
+  border-radius: 0.3125rem;
+  background: color-mix(in srgb, var(--surface-2) 75%, transparent);
+  font-weight: 500;
+}
+@media (pointer: coarse) {
+  .mapToolbar :is(.layoutSwitch, .serviceNav) button {
+    min-height: 2.75rem;
+  }
+  .map[data-bed-detail="false"] .wardTitleRow {
+    min-height: 2.75rem;
+  }
+}
+@media (forced-colors: active) {
+  .mapToolbar,
+  .mapToolbar .layoutSwitch,
+  .mapToolbar .serviceNav,
+  .map .wardBlock {
+    background: Canvas;
+    border-color: CanvasText;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .mapToolbar .layoutSwitch button[aria-pressed="true"],
+  .mapToolbar .serviceNav button[aria-current="location"] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+  .mapToolbar .serviceNav button span,
+  .mapToolbar .serviceNav button[aria-current="location"] span {
+    background: Canvas;
+    color: CanvasText;
+  }
+  .map .wardBlock[data-selected="true"] {
+    border: 2px solid Highlight;
+    box-shadow: none;
   }
 }

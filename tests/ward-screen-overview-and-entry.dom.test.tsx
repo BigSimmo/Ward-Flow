@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -47,7 +47,8 @@ describe("the ward screen — the bed-list control is never gated by the confirm
     // ⚠️ "since this page opened", NOT "today" — `confirmedToday` is `useState`, so it counts
     // taps in THIS session and resets on reload. The label was corrected 2026-09-07; these two
     // assertions pinned the false word and would have reddened on the truthfulness fix.
-    expect(screen.getByText("0 of 3 confirmed since this page opened")).toBeInTheDocument();
+    expect(screen.queryByText(/\bof 3 confirmed\b/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-daily-return")).not.toBeInTheDocument();
 
     const cta = screen.getByTestId("ward-hero-open-bed-list");
     // ⚠️ ASSERTION 1 of 2 — THE ATTRIBUTE CHECK.
@@ -67,13 +68,8 @@ describe("the ward screen — the bed-list control is never gated by the confirm
       </WardFlowProvider>,
     );
 
-    fireEvent.click(screen.getByTestId("ward-confirm-all"));
-    // Owner Answer 18 (second round, 2026-09-17) replaced the free-text
-    // `ward-confirm-constraints-input` with a fixed-list checkbox group; the save button is now
-    // the stable handle onto the same form, submittable with nothing ticked (a valid answer).
-    fireEvent.submit(screen.getByTestId("ward-confirm-constraints-save").closest("form")!);
-
-    expect(screen.getByText("3 of 3 confirmed since this page opened")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Decisions (Ward record)" }));
+    expect(screen.queryByTestId("ward-confirm-all")).not.toBeInTheDocument();
 
     const cta = screen.getByTestId("ward-hero-open-bed-list");
     expect(cta).not.toHaveAttribute("disabled");
@@ -203,7 +199,8 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     );
 
     // Top Action Bar & Live Capacity Glance Strip
-    expect(screen.getByRole("button", { name: /Enter Ward \/ Open Bed Board/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Enter Ward \/ Open Bed Board/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Bed board" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Live Capacity Telemetry" })).toBeInTheDocument();
 
     // Operational Tabs exist
@@ -211,9 +208,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(bedBoardTab).toBeInTheDocument();
     expect(bedBoardTab).toHaveAttribute("aria-selected", "false");
 
-    // Click "Enter Ward / Open Bed Board" button
-    const enterWardBtn = screen.getByRole("button", { name: /Enter Ward \/ Open Bed Board/i });
-    fireEvent.click(enterWardBtn);
+    fireEvent.click(bedBoardTab);
 
     // Bed Board tab is now active
     expect(bedBoardTab).toHaveAttribute("aria-selected", "true");
@@ -245,7 +240,10 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     const drawer = screen.getByTestId("bed-telemetry-drawer");
     expect(drawer).toBeInTheDocument();
     expect(drawer).toHaveTextContent(/Bed 01/i);
-    expect(drawer).toHaveTextContent(/Patient Dossier/i);
+    expect(drawer).not.toHaveTextContent(/Patient Dossier/i);
+    const drawerTitle = within(drawer).getByRole("heading", { level: 2 });
+    expect(drawerTitle.textContent?.trim().length).toBeGreaterThan(0);
+    expect(drawerTitle).not.toHaveTextContent(/Bed 01/i);
     // Ward Flow holds no observations. The drawer used to type in the same SpO2, heart rate, blood
     // pressure, pacing mode and transmitter readings for every bed (25 September 2026 audit, A3);
     // it now says vital signs are not recorded, and no reading appears anywhere in it.
@@ -256,5 +254,19 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     const closeBtn = screen.getByRole("button", { name: /Close bed drawer/i });
     fireEvent.click(closeBtn);
     expect(screen.queryByTestId("bed-telemetry-drawer")).not.toBeInTheDocument();
+  });
+
+  it("switches the full-height column from the shift log to awaiting answers", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardScreen unitId={RPH_ADULT_SECURE} />
+      </WardFlowProvider>,
+    );
+
+    const awaiting = screen.getByRole("region", { name: "Awaiting your answer", hidden: true });
+    expect(awaiting).toHaveAttribute("data-active", "false");
+    fireEvent.click(screen.getByRole("tab", { name: /Awaiting your answer/i }));
+    expect(awaiting).toHaveAttribute("data-active", "true");
+    expect(screen.getByRole("tab", { name: "Shift log" })).toHaveAttribute("aria-selected", "false");
   });
 });

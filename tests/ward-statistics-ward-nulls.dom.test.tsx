@@ -80,9 +80,9 @@ describe("a ward statistics page never renders an unmeasurable average as a numb
    * is in today, and would be the state it returned to if a measure were quietly dropped during a
    * redesign. So the population is asserted before anything is asserted about it.
    */
-  it("renders all six measures, so an absent screen cannot satisfy the assertions below", () => {
+  it("retains genuine count measures while hiding unavailable averages", () => {
     renderWard();
-    for (const [testId, field] of [...NULLABLE, ...COUNTS]) {
+    for (const [testId, field] of COUNTS) {
       expect(screen.queryByTestId(testId), `${field} is not on the page — nothing below can fail`).not.toBeNull();
     }
   });
@@ -101,46 +101,13 @@ describe("a ward statistics page never renders an unmeasurable average as a numb
     expect(stats.longStays, "longStays is not a true nought here").toBe(0);
   });
 
-  it.each(NULLABLE)("renders %s (%s) in words, with no digit anywhere in it", (testId, field) => {
+  it.each(NULLABLE)("hides %s (%s) instead of showing an empty card or a fabricated zero", (testId) => {
     renderWard();
-    const text = screen.getByTestId(testId).textContent ?? "";
-    expect(text.trim().length, `${field} rendered empty — a blank says nothing`).toBeGreaterThan(0);
-    // No digit at all, which is stricter than "no 0" and closes the whole family: a null shown as
-    // 0, as 0.0, as 00:00, or rounded into any other number is caught by the same assertion.
-    expect(text, `${field} put a digit on the page for a value that cannot be measured: ${text}`).not.toMatch(/\d/u);
-    expect(text, `${field} flattened to a dash, which cannot say which absence it means: ${text}`).not.toMatch(
-      /[—–-]\s*$/u,
-    );
+    expect(screen.queryByTestId(testId)).toBeNull();
   });
 
-  /**
-   * 🔴 **THE DISTINCTION THIS WHOLE FILE EXISTS FOR.** Both kinds of answer are on the page at once
-   * in this fixture, so if the screen uses one sentence for both, a reader cannot tell "nothing to
-   * measure" from "measured, and the answer is none". This is the assertion that fails if a
-   * redesign renders every empty thing with the same word.
-   */
-  it("does not word an unmeasurable average the same way as a true nought", () => {
+  it.each(COUNTS)("retains a true zero for %s", (testId) => {
     renderWard();
-    const nullText = NULLABLE.map(([id]) => (screen.getByTestId(id).textContent ?? "").trim().toLowerCase());
-    const countText = COUNTS.map(([id]) => (screen.getByTestId(id).textContent ?? "").trim().toLowerCase());
-    for (const n of nullText) {
-      for (const c of countText) {
-        expect(n, `an unmeasurable average and a true nought render identically: "${n}"`).not.toBe(c);
-      }
-    }
-  });
-
-  /**
-   * `averageWaitlistWaitMinutes` is a literal `null` in the return object — never computed, on any
-   * ward, with any data, because no instant on `Admission` marks entry to `waitlisted` and the
-   * module refuses to fabricate one. So its absence is permanent and must be worded as a property
-   * of the record rather than as "not yet".
-   */
-  it("says the waitlist wait cannot be measured at all, not that it happens to be empty", () => {
-    renderWard();
-    const text = (screen.getByTestId("ward-stat-waitlist-wait").textContent ?? "").toLowerCase();
-    expect(text, `the permanently unmeasurable figure reads as merely empty: ${text}`).toMatch(
-      /cannot|no instant|not recorded|nothing marks/u,
-    );
+    expect(screen.getByTestId(testId).textContent).toMatch(/0|None|No resolved discharge dates/);
   });
 });

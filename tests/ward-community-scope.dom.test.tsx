@@ -63,7 +63,7 @@ function renderHome() {
 describe.skip("CommunityHome — the coordinator's scope switch", () => {
   it("defaults to the all-teams scope, with the All teams button pressed", () => {
     renderHome();
-    expect(screen.getByRole("heading", { level: 1, name: "All community teams" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Community teams" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "All teams" })).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -88,7 +88,7 @@ describe.skip("CommunityHome — the coordinator's scope switch", () => {
     renderHome();
     fireEvent.change(screen.getByLabelText("or open a team"), { target: { value: COMMUNITY_TEAM_PAGES[2].id } });
     fireEvent.click(screen.getByRole("button", { name: "All teams" }));
-    expect(screen.getByRole("heading", { level: 1, name: "All community teams" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Community teams" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "All teams" })).toHaveAttribute("aria-pressed", "true");
   });
 

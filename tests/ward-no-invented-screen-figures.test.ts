@@ -33,7 +33,7 @@ import todo from "./ward-invented-figures-todo.json";
 const WARD_DIR = resolve(process.cwd(), "src/components/ward-management");
 
 /** The list can never grow past this. Lower it when entries go; never raise it. */
-const MAX_TODO = 17;
+const MAX_TODO = 13;
 
 /** Files Josh ruled on (rule 4 only), relative to WARD_DIR, and the ruling. */
 const RULED_ON: ReadonlyArray<{ file: string; name: RegExp; ruling: string }> = [
@@ -103,7 +103,7 @@ const EXCLUSIONS: readonly Exclusion[] = [
     id: "reporting-window",
     why: "The period a count or chart covers, and the code filters on that period.",
     whole:
-      /^(?:(?:Discharged|Departures finalized) · 24h|24-hour arrivals vs dispositions curve|48-Hour (?:Bed )?Movement (?:Horizon )?Timeline|48-Hour Bed Movement Horizon · Click any event bar to select in worklist)$/,
+      /^(?:(?:Discharged|Departures finalized) · 24h|24-hour arrivals vs dispositions curve|48-Hour (?:Bed )?Movement (?:Horizon )?Timeline|48-Hour Bed Movement Horizon · Click any event bar to select in worklist|Expiring next 8h|Nothing expires in the next 8h)$/,
     strip: /\blast 24 hours\b/g,
   },
   { id: "gauge-end", why: "The two ends of a 0 to 100% scale.", whole: /^(?:0|100)%$/ },

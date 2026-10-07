@@ -51,7 +51,7 @@ describe("Handover screen — perfected tab order (R2-12)", () => {
     expect(source).toContain('aria-label="Handover Scope and Filters"');
     expect(source).toContain("Reset to Statewide");
     expect(source).toContain("Caseload in Scope");
-    expect(source).toContain("Allocatable Vacancies");
+    expect(source).toContain("Unoccupied Beds");
     expect(source).toContain("1:1 Specialling Roster");
   });
 });

@@ -128,15 +128,20 @@ describe("GovernanceAccessRecordPanel", () => {
   });
 });
 
-describe("the Session Access Record tab", () => {
-  it("says in plain view that it is this session only and not saved, and lists no invented access", () => {
+describe("removed session, legacy, and effectiveness tabs", () => {
+  it("is not offered, and the override table does not show an audit id or a route", () => {
     const seed = seedWardFlowState();
     render(<GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />);
-    fireEvent.click(screen.getByRole("tab", { name: "Session Access Record" }));
-    expect(screen.getByTestId("ward-governance-access-session-only").textContent).toBe("This session only, not saved");
-    const table = screen.getByRole("table", { name: /kept for this session only/ });
-    expect(within(table).getAllByRole("row")).toHaveLength(2);
-    expect(table.textContent).not.toMatch(/WF-\d+/);
+    expect(screen.queryByRole("tab", { name: "Session activity" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Session Access Record" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Older notes" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Legacy facts" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Effectiveness" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-governance-access-session-only")).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Audit ID" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Location · Route" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Transfer Route")).not.toBeInTheDocument();
+    expect(screen.queryByText("Override Audit ID")).not.toBeInTheDocument();
   });
 });
 
@@ -156,7 +161,7 @@ describe("the override and decision registers hold only what this session record
   it("opens the endorse form empty, so nobody records a review they did not write", () => {
     const seed = seedWardFlowState();
     render(<GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />);
-    fireEvent.click(screen.getByRole("button", { name: "Endorse current audit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record review" }));
     expect((document.getElementById("endorseVerdict") as HTMLSelectElement).value).toBe("");
     expect((document.getElementById("endorseRole") as HTMLSelectElement).value).toBe("");
     expect((document.getElementById("endorseNotes") as HTMLTextAreaElement).value).toBe("");

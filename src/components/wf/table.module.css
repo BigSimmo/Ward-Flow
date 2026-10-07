@@ -1,0 +1,191 @@
+/* v6 rows and tables: 52px rows, hairlines, the selected row's 3px slate edge is the only stripe. */
+
+.row {
+  display: grid;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: var(--wf-row);
+  padding: 0 var(--wf-s-4);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--wf-line);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+  min-width: 0;
+}
+
+.compact {
+  min-height: var(--wf-row-compact);
+}
+
+.interactive:hover {
+  background: var(--wf-hover);
+}
+
+.selected {
+  background: var(--wf-selected);
+  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+}
+
+.head {
+  min-height: 36px;
+  background: var(--wf-surface-2);
+}
+
+.cell {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.end {
+  text-align: right;
+  justify-self: end;
+}
+
+/* Header cell (`.th`). */
+.th {
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  text-align: left;
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sortButton:hover,
+.sorted .sortButton {
+  color: var(--wf-ink-1);
+}
+
+.sortButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Tier digit tile (`.sq`). Tier 1 has danger ink and a stronger edge, never a fill. */
+.sq {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-xs);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-2);
+}
+
+.t1 {
+  color: var(--wf-danger-ink);
+  border-color: var(--wf-line-3);
+}
+
+/* Bulk bar under a table. */
+.bulk {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: var(--wf-row-compact);
+  padding: 0 var(--wf-s-3) 0 var(--wf-s-4);
+  box-sizing: border-box;
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.bulkActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-left: auto;
+}
+
+/* Native table styling, for pages that use <table>. */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.table th {
+  height: 36px;
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table td {
+  height: var(--wf-row);
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 0;
+}
+
+.table th:first-child,
+.table td:first-child {
+  padding-left: var(--wf-s-4);
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: var(--wf-s-4);
+}
+
+.table tr.selected > td {
+  background: var(--wf-selected);
+}
+
+.table tr.selected > td:first-child {
+  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+}
+
+.num {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  text-align: right;
+}
+
+@media (forced-colors: active) {
+  .selected,
+  .table tr.selected > td:first-child {
+    box-shadow: none;
+    border-left: 3px solid Highlight;
+  }
+  .sq {
+    border-color: CanvasText;
+  }
+}

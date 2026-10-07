@@ -13,23 +13,26 @@
  * - Action Inbox Tasks (`buildActionInbox(movements.filter(isOpen), now ?? NOW_ANCHOR, units)`) - task summary, title, keyword "task"
  *
  * STANDARD §8.6 ENFORCEMENT:
- * - Unranked candidate discipline: results are presented in deterministic structural order,
- *   never ordered by an opaque "relevance score", "risk score" or "acuity score".
+ * - Unranked candidate discipline: within a group, a prefix or word-start match is listed before a
+ *   match buried mid-word. There is no numeric score, and nothing is labelled a best match.
  * - Truthfulness: only genuine matches are returned; empty state makes no claims about reality.
  * - Zero LLM or external provider calls: purely local, deterministic TypeScript matching.
  */
 
 import {
   buildActionInbox,
+  destinationUnit,
   isOpen,
   searchMovements,
+  stageCopy,
   type InboxItem,
   type MovementSearchQuery,
 } from "@/components/ward-management/ward-derivations";
 import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { EmergencyDepartment, LegalForm, Movement, Unit } from "@/components/ward-management/ward-model";
-import { findPatients, type Patient } from "@/components/ward-management/ward-patients";
-import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
+import { findPatients, patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
+import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES, type CommunityTeam } from "@/components/ward-management/community/community-derivations";
 import { teamHref, unitHref } from "../shell/ward-facade";
 
@@ -44,87 +47,87 @@ export type CoreSearchView = {
 export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
   {
     key: "handover",
-    title: "Shift Handover",
+    title: "Handover",
     href: "/mockups/ward-flow/handover",
-    keywords: ["handover", "shift", "nursing", "notes"],
-    description: "Shift Handover notes and summary",
+    keywords: ["handover", "shift", "shift handover", "nursing", "notes"],
+    description: "Handover notes",
   },
   {
     key: "capacity",
-    title: "Capacity Bed Map",
+    title: "Capacity",
     href: "/mockups/ward-flow/capacity",
-    keywords: ["capacity", "bed map", "beds", "occupancy"],
-    description: "Hospital network capacity and bed map",
+    keywords: ["capacity", "bed map", "beds", "occupancy", "capacity bed map"],
+    description: "Beds and occupancy",
   },
   {
     key: "delays",
-    title: "Transfer Delays",
+    title: "Delays",
     href: "/mockups/ward-flow/delays",
     keywords: ["delays", "transfer delays", "past due", "wait"],
-    description: "Transfer delay register and escalations",
+    description: "Transfer delays",
   },
   {
     key: "movements",
-    title: "Movement Horizon",
+    title: "Movements",
     href: "/mockups/ward-flow/movements",
     keywords: ["movements", "horizon", "intake", "transfers"],
-    description: "Active movements and admissions horizon",
+    description: "Open movements",
   },
   {
     key: "escalation",
-    title: "Escalation Desk",
+    title: "Delays",
     href: "/mockups/ward-flow/escalation",
-    keywords: ["escalation", "desk", "priority", "alerts"],
-    description: "Escalation desk and system pressure",
+    keywords: ["escalation", "desk", "escalation desk", "priority", "alerts"],
+    description: "Same as Delays",
   },
   {
     key: "statistics",
-    title: "System Statistics",
+    title: "Statistics",
     href: "/mockups/ward-flow/statistics",
-    keywords: ["statistics", "stats", "reports", "metrics"],
-    description: "System statistics and network analytics",
+    keywords: ["statistics", "stats", "reports", "metrics", "system statistics"],
+    description: "Figures for this demo",
   },
   {
     key: "on-call",
-    title: "On-Call Specialist Roster",
+    title: "On-call",
     href: "/mockups/ward-flow/on-call",
     keywords: ["on-call", "roster", "specialist", "doctors"],
-    description: "On-call specialist and consultant roster",
+    description: "Contacts — no roster in this prototype",
   },
   {
     key: "hub",
-    title: "Facilities Hub",
+    title: "Places",
     href: "/mockups/ward-flow/hub",
-    keywords: ["hub", "facilities", "site overview"],
-    description: "Facilities hub and regional overview",
+    keywords: ["hub", "facilities", "facilities hub", "site overview"],
+    description: "Wards, ED and teams",
   },
   {
     key: "settings",
-    title: "System Settings",
+    title: "Settings",
     href: "/mockups/ward-flow/settings",
-    keywords: ["settings", "configuration", "preferences"],
-    description: "System configuration and preferences",
+    keywords: ["settings", "configuration", "preferences", "system settings"],
+    description: "This browser",
   },
   {
     key: "legal-forms",
-    title: "Mental Health Act Forms",
+    title: "Legal forms",
     href: "/mockups/ward-flow/legal-forms",
-    keywords: ["legal-forms", "legal forms", "forms", "mha", "mental health act"],
-    description: "Mental Health Act forms register",
+    keywords: ["legal-forms", "legal forms", "forms", "mha", "mental health act", "mental health act forms"],
+    description: "Recorded forms (demo)",
   },
   {
     key: "referrals",
-    title: "Referral Intake & Board",
+    title: "Referrals",
     href: "/mockups/ward-flow/referrals",
     keywords: ["referrals", "intake", "board", "queue"],
-    description: "Referral intake board and queue",
+    description: "Waiting for a bed",
   },
   {
     key: "community",
-    title: "Community Teams Directory",
+    title: "Community",
     href: "/mockups/ward-flow/community",
     keywords: ["community", "teams", "directory", "clinics"],
-    description: "Community mental health teams directory",
+    description: "Community teams",
   },
 ];
 
@@ -353,6 +356,158 @@ export function searchTasks(query: string, tasks: InboxItem[]): TaskSearchResult
     }));
 }
 
+/**
+ * What the typed query is asking for. A label for the dropdown, not a rank and not a score.
+ *
+ * Checked in this order: PT-/WF- identifier, form word or form code, mostly-digits identifier,
+ * place word or site token, view word, task word, a name (letters, spaces, apostrophe, hyphen),
+ * then general. A query that hits more than one keyword keeps the earlier category.
+ */
+export type SearchIntent = "person" | "identifier" | "place" | "form" | "view" | "task" | "general";
+
+export type SearchIntentLabel = "People" | "Movements" | "Places" | "Forms" | "Views" | "Tasks" | "All";
+
+export const SEARCH_GROUP_ORDER = ["people", "movements", "wards", "eds", "teams", "forms", "views", "tasks"] as const;
+
+export type SearchGroupKey = (typeof SEARCH_GROUP_ORDER)[number];
+
+const SITE_NAME_NOISE = new Set([
+  "hospital",
+  "health",
+  "service",
+  "campus",
+  "public",
+  "general",
+  "emergency",
+  "department",
+  "memorial",
+  "royal",
+  "children",
+  "childrens",
+  "john",
+  "king",
+  "edward",
+  "saint",
+]);
+
+function mentionsKnownSite(query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  const tokens = needle.split(/[^a-z0-9]+/).filter((token) => token.length >= 3);
+  return wardSites.some((site) => {
+    const code = site.code.toLowerCase();
+    const name = site.name.toLowerCase();
+    if (needle.length >= 3 && (code === needle || name.includes(needle))) return true;
+    if (tokens.includes(code)) return true;
+    const distinctive = name.split(/[^a-z0-9]+/).filter((word) => word.length >= 4 && !SITE_NAME_NOISE.has(word));
+    return tokens.some((token) => distinctive.includes(token));
+  });
+}
+
+function hasPlaceSignal(query: string): boolean {
+  return /\b(?:wards?|ed|emergency|community|teams?)\b/i.test(query) || mentionsKnownSite(query);
+}
+
+export function detectSearchIntent(query: string): SearchIntent {
+  const trimmed = query.trim();
+  if (trimmed.length === 0) return "general";
+  if (/^(?:pt|wf)-/i.test(trimmed)) return "identifier";
+  if (/\b(?:forms?|legal)\b/i.test(trimmed) || /^\d{1,2}[a-z]?$/i.test(trimmed)) return "form";
+  const alnum = trimmed.replace(/[^0-9a-z]/gi, "");
+  const digits = alnum.replace(/\D/g, "").length;
+  const letters = alnum.replace(/[^a-z]/gi, "").length;
+  if (digits >= 3 && digits > letters) return "identifier";
+  if (hasPlaceSignal(trimmed)) return "place";
+  if (/\b(?:delays?|movements?|capacity|command|network|transport|horizon|governance)\b/i.test(trimmed)) {
+    return "view";
+  }
+  if (/\btasks?\b/i.test(trimmed)) return "task";
+  if (/^[\p{L}][\p{L}\s'’-]*$/u.test(trimmed)) return "person";
+  return "general";
+}
+
+/** Dropdown label for a detected intent. Identifier follows the id: WF- is Movements, otherwise People. */
+export function searchIntentLabel(intent: SearchIntent, query = ""): SearchIntentLabel {
+  switch (intent) {
+    case "person":
+      return "People";
+    case "identifier":
+      return /^\s*wf-/i.test(query) ? "Movements" : "People";
+    case "place":
+      return "Places";
+    case "form":
+      return "Forms";
+    case "view":
+      return "Views";
+    case "task":
+      return "Tasks";
+    default:
+      return "All";
+  }
+}
+
+/** Header palette group order. The matching intent's groups lead; everything else keeps the fixed order. */
+export function searchGroupOrder(intent: SearchIntent, query: string): readonly SearchGroupKey[] {
+  const front = leadingGroups(intent, query);
+  return [...front, ...SEARCH_GROUP_ORDER.filter((key) => !front.includes(key))];
+}
+
+function leadingGroups(intent: SearchIntent, query: string): readonly SearchGroupKey[] {
+  switch (intent) {
+    case "person":
+      return ["people"];
+    case "identifier":
+      return /^\s*wf-/i.test(query) ? ["movements", "people"] : ["people", "movements"];
+    case "place":
+      return ["wards", "eds", "teams"];
+    case "form":
+      return ["forms"];
+    case "view":
+      return ["views"];
+    case "task":
+      return ["tasks"];
+    default:
+      return [];
+  }
+}
+
+function movementDisplayNames(movements: readonly Movement[], patients: readonly Patient[]): Record<string, string> {
+  const resolve = createPatientResolver({ patients, movements });
+  const names: Record<string, string> = {};
+  for (const movement of movements) {
+    const resolved = resolve(movement);
+    if (!resolved.patient) continue;
+    names[movement.id] = resolved.displayName;
+  }
+  return names;
+}
+
+/** 0 = prefix or word-start, 1 = buried in a word, 2 = no text hit (kept in the original order). */
+function matchTier(fields: readonly (string | undefined)[], needle: string): number {
+  const q = needle.trim().toLowerCase();
+  if (q.length === 0) return 0;
+  let tier = 2;
+  for (const field of fields) {
+    if (!field) continue;
+    const hay = field.toLowerCase();
+    if (hay.startsWith(q) || hay.split(/[^a-z0-9]+/).some((word) => word.startsWith(q))) return 0;
+    if (tier > 1 && hay.includes(q)) tier = 1;
+  }
+  return tier;
+}
+
+function rankAndLimit<T>(
+  items: readonly T[],
+  needle: string,
+  fieldsOf: (item: T) => readonly (string | undefined)[],
+  limit: number,
+): T[] {
+  return items
+    .map((item, index) => ({ item, index, tier: matchTier(fieldsOf(item), needle) }))
+    .sort((left, right) => left.tier - right.tier || left.index - right.index)
+    .slice(0, limit)
+    .map((entry) => entry.item);
+}
+
 export type SmartSearchInput = {
   query: string;
   patients: readonly Patient[];
@@ -373,14 +528,16 @@ export type SmartSearchResults = {
   tasks: TaskSearchResult[];
   hasAny: boolean;
   totalCount: number;
+  intent: SearchIntent;
 };
 
 /**
  * Unified multi-entity search runner.
- * Enforces unranked candidate discipline and zero provider calls.
+ * Prefix and word-start matches lead each group. No score, no provider calls.
  */
 export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
   const trimmed = input.query.trim();
+  const intent = detectSearchIntent(trimmed);
   if (trimmed.length === 0) {
     return {
       people: [],
@@ -393,24 +550,77 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
       tasks: [],
       hasAny: false,
       totalCount: 0,
+      intent,
     };
   }
 
   const limit = input.limitPerGroup ?? 6;
+  const names = movementDisplayNames(input.movements, input.patients);
 
-  const people = findPatients(input.patients, trimmed).slice(0, limit);
+  const people = rankAndLimit(
+    findPatients(input.patients, trimmed),
+    trimmed,
+    (patient) => [patientDisplayName(patient), patient.givenName, patient.familyName, patient.umrn, patient.id],
+    limit,
+  );
 
-  const movementQuery: MovementSearchQuery = { text: trimmed };
-  const movements = searchMovements(input.movements, input.units, movementQuery).slice(0, limit);
+  const movementQuery: MovementSearchQuery = { text: trimmed, patientDisplayNames: names };
+  const movements = rankAndLimit(
+    searchMovements(input.movements, input.units, movementQuery),
+    trimmed,
+    (movement) => {
+      const destination = destinationUnit(movement, input.units);
+      return [
+        names[movement.id],
+        movement.id,
+        movement.originEdId,
+        destination?.id,
+        destination?.name,
+        stageCopy[movement.stage].label,
+        movement.owner,
+      ];
+    },
+    limit,
+  );
 
-  const wards = searchWards(trimmed, input.units).slice(0, limit);
-  const emergencyDepartments = searchEmergencyDepartments(trimmed).slice(0, limit);
-  const communityTeams = searchCommunityTeams(trimmed).slice(0, limit);
-  const legalForms = searchLegalForms(trimmed).slice(0, limit);
-  const views = searchCoreViews(trimmed).slice(0, limit);
+  const wards = rankAndLimit(
+    searchWards(trimmed, input.units),
+    trimmed,
+    (ward) => [ward.unit.name, ward.unit.siteCode, ward.unit.id, ward.siteName],
+    limit,
+  );
+  const emergencyDepartments = rankAndLimit(
+    searchEmergencyDepartments(trimmed),
+    trimmed,
+    (department) => [department.ed.name, department.ed.siteCode, department.ed.id],
+    limit,
+  );
+  const communityTeams = rankAndLimit(
+    searchCommunityTeams(trimmed),
+    trimmed,
+    (team) => [team.team.name, team.team.id],
+    limit,
+  );
+  const legalForms = rankAndLimit(
+    searchLegalForms(trimmed),
+    trimmed,
+    (form) => [form.form.code, form.title, `Form ${form.form.code}`],
+    limit,
+  );
+  const views = rankAndLimit(
+    searchCoreViews(trimmed),
+    trimmed,
+    (view) => [view.view.title, view.view.key, view.view.description, ...(view.view.keywords ?? [])],
+    limit,
+  );
 
   const tasksInbox = buildActionInbox(input.movements.filter(isOpen), input.now ?? 0, input.units);
-  const tasks = searchTasks(trimmed, tasksInbox).slice(0, limit);
+  const tasks = rankAndLimit(
+    searchTasks(trimmed, tasksInbox),
+    trimmed,
+    (task) => [task.task.title, task.task.detail, task.task.movementId, task.task.owner],
+    limit,
+  );
 
   const totalCount =
     people.length +
@@ -433,5 +643,6 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     tasks,
     hasAny: totalCount > 0,
     totalCount,
+    intent,
   };
 }

@@ -110,9 +110,9 @@ describe("WardBar primary action — the five kinds, D-16", () => {
   });
 
   it.each([
-    ["community", "Community Referral", "community"],
-    ["ed_medical", "ED Referral", "ed"],
-    ["inter_hospital", "Ward Referral", "ward"],
+    ["community", "From community", "community"],
+    ["ed_medical", "From ED", "ed"],
+    ["inter_hospital", "From a ward", "ward"],
   ] as const)(
     'opens the referral drawer with "%s" auto-selected when clicking "%s"',
     async (source, label, expectedDestType) => {
@@ -134,9 +134,13 @@ describe("WardBar primary action — the five kinds, D-16", () => {
       const badge = screen.getByTestId("ward-referral-drawer-category-badge");
       expect(badge).toHaveTextContent(label);
 
-      // Placement Destination Tier select has the corresponding value auto-selected
-      const destSelect = screen.getByLabelText(/Placement Destination Tier/i) as HTMLSelectElement;
-      expect(destSelect.value).toBe(expectedDestType);
+      // The "Refer to" choice has the corresponding destination auto-selected. v6
+      // (ReferralDrawer--referral.webp) shows it as a radio group, which replaced the
+      // "Placement Destination Tier" select.
+      const destLabel = { ward: "Ward bed", community: "Community team", ed: "ED psychiatry" }[expectedDestType];
+      const destRadio = screen.getByLabelText(destLabel) as HTMLInputElement;
+      expect(destRadio).toBeChecked();
+      expect(destRadio.value).toBe(expectedDestType);
     },
   );
 

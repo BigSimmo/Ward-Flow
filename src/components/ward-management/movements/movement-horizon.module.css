@@ -68,7 +68,7 @@
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--surface-2);
   border: 1px solid var(--line);
   color: var(--muted);
@@ -233,7 +233,7 @@
   appearance: none;
   flex: 1;
   height: 5px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   background: var(--sunk);
   border: 1px solid var(--line);
   outline: none;
@@ -364,7 +364,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
   align-items: stretch;
   position: relative;
-  height: clamp(18rem, 42dvh, 30rem);
+  height: clamp(24.5rem, 57dvh, 41rem);
 }
 
 .diagSplit.enlarged {
@@ -941,7 +941,7 @@
 @media (max-width: 760px) {
   .diagSplit {
     grid-template-columns: minmax(0, 1fr);
-    height: 26rem;
+    height: 35rem;
     grid-template-rows: minmax(0, 1fr) 9rem;
   }
 

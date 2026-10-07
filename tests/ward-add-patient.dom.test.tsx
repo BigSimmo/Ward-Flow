@@ -611,13 +611,15 @@ describe("AddPatientForm — Q004 registration workspace", () => {
   });
 });
 
+// v6 (AddPatient.png): Gender, triage category and legal status are segmented controls (radios),
+// and the Indigenous status, health service and presenting complaint fields carry the mockup labels.
 describe("AddPatientForm — third-edition upgrade, the Gender control", () => {
   it("defaults to 'Not yet recorded' and omits the gender key entirely on submit", async () => {
     renderForm();
     // The literal sentinel `add-patient.tsx`'s own `GENDER_NOT_RECORDED` uses — not exported, so
     // named here rather than imported, matching this file's existing style of pinning values
     // rather than reaching into the component's private constants.
-    expect(screen.getByLabelText("Gender")).toHaveValue("not-recorded");
+    expect(screen.getByRole("radio", { name: "Not recorded" })).toHaveAttribute("aria-checked", "true");
 
     fillDraft();
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
@@ -630,7 +632,7 @@ describe("AddPatientForm — third-edition upgrade, the Gender control", () => {
   it("dispatches 'Female' when chosen", async () => {
     renderForm();
     fillDraft();
-    fireEvent.change(screen.getByLabelText("Gender"), { target: { value: "Female" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Female" }));
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
 
     await waitFor(() => {
@@ -641,7 +643,7 @@ describe("AddPatientForm — third-edition upgrade, the Gender control", () => {
   it("dispatches 'Male' when chosen", async () => {
     renderForm();
     fillDraft();
-    fireEvent.change(screen.getByLabelText("Gender"), { target: { value: "Male" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Male" }));
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
 
     await waitFor(() => {
@@ -667,7 +669,7 @@ describe("AddPatientForm — ADD_PATIENT never creates a referral", () => {
     const referralsBefore = Number(screen.getByTestId("referral-count").textContent);
 
     fillDraft();
-    fireEvent.change(screen.getByLabelText("Gender"), { target: { value: "Female" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Female" }));
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
 
     await waitFor(() => {
@@ -723,15 +725,17 @@ describe("AddPatientForm safety regressions", () => {
   it("clears every intake field and notice after confirming reset", () => {
     renderForm();
     fillDraft();
-    fireEvent.change(screen.getByLabelText("Gender"), { target: { value: "Female" } });
-    fireEvent.change(screen.getByLabelText("Indigenous status"), { target: { value: "aboriginal" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Female" }));
+    fireEvent.change(screen.getByLabelText("Aboriginal or Torres Strait Islander"), {
+      target: { value: "aboriginal" },
+    });
     fireEvent.change(screen.getByLabelText(/^Address/), { target: { value: "1 Invented Street" } });
     fireEvent.change(screen.getByTestId("ward-add-patient-suburb"), { target: { value: "Armadale" } });
-    fireEvent.change(screen.getByLabelText("Health service catchment"), { target: { value: "East Metro" } });
+    fireEvent.change(screen.getByLabelText("Health service"), { target: { value: "East Metro" } });
     fireEvent.change(screen.getByLabelText("Presenting facility"), { target: { value: "rph-ed" } });
-    fireEvent.click(screen.getByRole("button", { name: /^ATS 1/ }));
-    fireEvent.click(screen.getByRole("button", { name: /^Form 1A/ }));
-    fireEvent.change(screen.getByLabelText("Presenting complaint / reason for admission"), {
+    fireEvent.click(screen.getByRole("radio", { name: /^ATS 1/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /^Form 1A/ }));
+    fireEvent.change(screen.getByLabelText("Presenting complaint"), {
       target: { value: "other" },
     });
     fireEvent.change(screen.getByLabelText("Clinical intake notes"), { target: { value: "Invented intake note" } });
@@ -750,16 +754,16 @@ describe("AddPatientForm safety regressions", () => {
     ]) {
       expect(screen.getByLabelText(label)).toHaveValue("");
     }
-    expect(screen.getByLabelText("Gender")).toHaveValue("not-recorded");
-    expect(screen.getByLabelText("Indigenous status")).toHaveValue("not-stated");
+    expect(screen.getByRole("radio", { name: "Not recorded" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByLabelText("Aboriginal or Torres Strait Islander")).toHaveValue("not-stated");
     expect(screen.getByTestId("ward-add-patient-suburb")).toHaveValue("");
-    expect(screen.getByLabelText("Health service catchment")).toHaveValue("");
+    expect(screen.getByLabelText("Health service")).toHaveValue("");
     expect(screen.getByLabelText("Presenting facility")).toHaveValue("");
-    expect(screen.getByRole("button", { name: /^ATS 4/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("radio", { name: /^ATS 4/ })).toHaveAttribute("aria-checked", "true");
     expect(
-      within(screen.getByRole("group", { name: "Legal status" })).getByRole("button", { name: /^Voluntary/ }),
-    ).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByLabelText("Presenting complaint / reason for admission")).toHaveValue("assessment");
+      within(screen.getByRole("radiogroup", { name: "Legal status" })).getByRole("radio", { name: /^Voluntary/ }),
+    ).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByLabelText("Presenting complaint")).toHaveValue("assessment");
     expect(screen.queryByTestId("ward-add-patient-d4-notice")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -768,12 +772,15 @@ describe("AddPatientForm safety regressions", () => {
     "asks before discarding a change only to %s",
     (field) => {
       renderForm();
+      // v6 (AddPatient.png): the field is labelled "Aboriginal or Torres Strait Islander".
       if (field === "Indigenous status")
-        fireEvent.change(screen.getByLabelText(field), { target: { value: "aboriginal" } });
-      if (field === "Triage urgency") fireEvent.click(screen.getByRole("button", { name: /^ATS 1/ }));
-      if (field === "Legal status") fireEvent.click(screen.getByRole("button", { name: /^Form 1A/ }));
+        fireEvent.change(screen.getByLabelText("Aboriginal or Torres Strait Islander"), {
+          target: { value: "aboriginal" },
+        });
+      if (field === "Triage urgency") fireEvent.click(screen.getByRole("radio", { name: /^ATS 1/ }));
+      if (field === "Legal status") fireEvent.click(screen.getByRole("radio", { name: /^Form 1A/ }));
       if (field === "Presenting complaint")
-        fireEvent.change(screen.getByLabelText("Presenting complaint / reason for admission"), {
+        fireEvent.change(screen.getByLabelText("Presenting complaint"), {
           target: { value: "other" },
         });
       fireEvent.click(screen.getByTestId("ward-add-patient-reset"));

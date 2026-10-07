@@ -1126,8 +1126,23 @@
   min-height: 100%;
   padding-top: 0;
   color: var(--ink);
-  background: var(--ground);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 46%, var(--ground)), var(--ground) 22rem);
+  --glass-fill: color-mix(in srgb, var(--surface) 86%, transparent);
+  --glass-band: color-mix(in srgb, var(--surface-2) 92%, transparent);
   font-family: var(--body);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .screen {
+    --glass-fill: var(--surface);
+    --glass-band: var(--surface-2);
+    background: var(--ground);
+  }
+
+  .screen,
+  .screen * {
+    backdrop-filter: none;
+  }
 }
 
 .main {
@@ -1155,12 +1170,15 @@
 .unitCard,
 .bedSection,
 .listSection {
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
   border-bottom-color: var(--line-strong);
-  border-radius: var(--r1);
+  border-radius: 0.875rem;
   color: var(--ink);
-  background: var(--surface);
-  box-shadow: var(--lift);
+  background: var(--glass-fill, var(--surface));
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
+  backdrop-filter: blur(18px) saturate(1.2);
 }
 
 .unitCard {
@@ -1200,11 +1218,14 @@
 
 .entryHero {
   order: 2;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
   border-bottom-color: var(--line-strong);
-  border-radius: var(--r1);
-  background: var(--surface);
-  box-shadow: var(--lift);
+  border-radius: 0.875rem;
+  background: var(--glass-fill, var(--surface));
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
+  backdrop-filter: blur(18px) saturate(1.2);
 }
 
 .bedSection {
@@ -1234,7 +1255,8 @@
   padding: 0.7rem 1rem;
   border-bottom: 1px solid var(--line);
   color: var(--accent-ink);
-  background: var(--surface-2);
+  background: var(--glass-band, var(--surface-2));
+  box-shadow: inset 0 1px 0 var(--hl);
   font-family: var(--display);
   font-size: var(--t-3);
   font-weight: 600;
@@ -1945,7 +1967,7 @@
   display: flex;
   height: 0.65rem;
   margin-top: 0.65rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 9999px);
   overflow: hidden;
   background: var(--line);
 }
@@ -2366,15 +2388,167 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 .topActionBarWrap {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  padding: 14px 20px 0;
+  position: sticky;
+  top: var(--ward-sticky-top, 4.5rem);
+  z-index: var(--ward-z-sticky, 3);
+  background: color-mix(in oklab, var(--surface) 64%, transparent);
+  border: 1px solid color-mix(in oklab, var(--line) 22%, transparent);
+  padding: 12px;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  border-radius: 0.75rem;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 92%, transparent),
+    inset 0 0 0 0.5px color-mix(in oklab, var(--ink) 5%, transparent),
+    0 1px 1px color-mix(in srgb, var(--ink) 4%, transparent),
+    0 22px 48px -30px color-mix(in srgb, var(--ink) 42%, transparent);
+  backdrop-filter: blur(22px) saturate(1.35);
+  -webkit-backdrop-filter: blur(22px) saturate(1.35);
+}
+
+@media (max-width: 40rem) {
+  .topActionBarWrap {
+    position: static;
+  }
+}
+
+.commandIdentity {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 20px;
+  flex-wrap: wrap;
+}
+
+.commandIdentityCopy {
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.commandKicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.commandName {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.commandMeta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.commandActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.actionCluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: 100%;
+  padding: 4px 5px 4px 10px;
+  border-radius: 0.55rem;
+  background: color-mix(in oklab, var(--sunk, var(--surface-2)) 62%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--line) 36%, transparent);
+}
+
+.actionClusterLabel {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 2px;
+}
+
+.noticeRow {
+  display: flex;
+  align-items: center;
   gap: 12px;
-  border-radius: var(--r1, 10px);
-  box-shadow: var(--lift);
-  overflow: hidden;
+  margin: 0;
+  padding: 8px 12px;
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  border: 1px solid color-mix(in oklab, var(--line) 24%, transparent);
+  border-radius: 0.75rem;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
+    inset 3px 0 0 var(--warn),
+    0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+}
+
+.noticeRow[data-tone="warning"] {
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
+    inset 3px 0 0 var(--warn),
+    0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
+}
+
+.noticeRow[data-tone="good"] {
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
+    inset 3px 0 0 var(--good),
+    0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
+}
+
+.noticeRow[data-tone="critical"] {
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 88%, transparent),
+    inset 3px 0 0 var(--danger),
+    0 14px 32px -24px color-mix(in srgb, var(--ink) 36%, transparent);
+}
+
+.noticeClock {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.noticeCopy {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+
+.noticeCopy strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+@media (max-width: 40rem) {
+  .noticeRow {
+    flex-wrap: wrap;
+  }
 }
 
 .topIdentityBanner {
@@ -2396,16 +2570,29 @@
 }
 
 .topIdentityBanner .sectionHeading {
-  font-size: var(--t-1, 13px);
-  font-weight: 700;
+  font-size: var(--t-0);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--accent);
-  background: var(--surface-2);
-  padding: 3px 8px;
-  border-radius: var(--r2, 4px);
-  border: 1px solid var(--line);
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+  border: 0;
   margin: 0;
+}
+
+.topIdentityBanner .unitName {
+  margin: 0;
+  font-size: var(--t-4);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.topIdentityBanner .unitMeta {
+  font-size: var(--t-1);
 }
 
 .actionBar {
@@ -2427,9 +2614,11 @@
   display: inline-flex;
   gap: 2px;
   padding: 2px;
-  background: var(--sunk);
+  background: color-mix(in srgb, var(--sunk) 78%, transparent);
   border-radius: var(--r2);
-  box-shadow: inset 0 0 0 1px var(--line);
+  box-shadow:
+    inset 0 1px 0 var(--hl),
+    inset 0 0 0 1px var(--line);
   align-items: center;
 }
 
@@ -2466,12 +2655,12 @@
 }
 
 .wardScreenNav span[aria-current="page"] {
-  background: var(--surface);
+  background: var(--glass-fill, var(--surface));
   color: var(--ink);
-  font-weight: 700;
+  font-weight: 650;
   box-shadow:
-    inset 0 0 0 1.5px var(--accent),
-    var(--lift);
+    inset 0 1px 0 var(--hl),
+    inset 0 0 0 1px var(--accent);
   cursor: default;
 }
 
@@ -2519,10 +2708,10 @@
   background: var(--accent);
   color: var(--on-accent);
   min-height: 2.125rem;
-  padding: 5px 12px;
+  padding: 5px 14px;
   font-weight: 600;
   font-size: var(--t-1, 13px);
-  border-radius: var(--r2, 6px);
+  border-radius: 0.5rem;
   box-shadow: var(--lift);
   display: inline-flex;
   align-items: center;
@@ -2547,29 +2736,34 @@
 
 .btnActionSec {
   min-height: 2.125rem;
-  padding: 5px 10px;
-  border-radius: var(--r2, 6px);
-  background: var(--surface);
-  border: 1px solid var(--line);
+  padding: 5px 12px;
+  border-radius: 0.4rem;
+  background: color-mix(in oklab, var(--surface) 86%, transparent);
+  border: 1px solid color-mix(in oklab, var(--line) 32%, transparent);
   font-size: var(--t-1, 13px);
   font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--ink);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   text-decoration: none;
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 90%, transparent);
   transition:
-    background 0.12s,
-    border-color 0.12s,
-    transform 0.1s;
+    background 0.14s cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 0.14s cubic-bezier(0.23, 1, 0.32, 1);
   white-space: nowrap;
 }
 
 .btnActionSec:hover {
-  background: var(--surface-2);
-  border-color: var(--accent);
-  transform: translateY(-1px);
+  background: color-mix(in oklab, var(--surface) 96%, transparent);
+  border-color: color-mix(in oklab, var(--line) 70%, transparent);
+}
+
+.btnActionSec:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .wardSelectContainer {
@@ -2754,17 +2948,22 @@
 }
 
 .tabBarWrap {
-  background: var(--surface-2);
-  border-top: 1px solid var(--line);
-  margin: 6px -20px 0;
-  padding: 6px 14px;
-  border-radius: 0 0 var(--r1, 10px) var(--r1, 10px);
+  align-self: flex-start;
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 3px;
+  background: color-mix(in oklab, var(--sunk, var(--surface-2)) 58%, transparent);
+  border-radius: 0.65rem;
+  box-shadow:
+    inset 0 1px 1px color-mix(in oklab, var(--ink) 7%, transparent),
+    inset 0 0 0 1px color-mix(in oklab, var(--line) 28%, transparent);
 }
 
 .tabList {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   overflow-x: auto;
   scrollbar-width: none;
   margin: 0;
@@ -2780,31 +2979,43 @@
   background: transparent;
   border: 1px solid transparent;
   min-height: 2.25rem;
-  padding: 6px 14px;
+  padding: 6px 12px;
   font-size: var(--t-1, 13px);
   font-weight: 500;
+  letter-spacing: -0.01em;
   color: var(--ink-soft);
-  border-radius: var(--r2, 6px);
+  border-radius: 0.45rem;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   position: relative;
   white-space: nowrap;
-  transition: all 0.12s ease;
+  transition:
+    background 0.14s cubic-bezier(0.23, 1, 0.32, 1),
+    color 0.14s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.14s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .tabBtn:hover {
   color: var(--ink);
-  background: var(--surface-2);
+  background: color-mix(in oklab, var(--surface) 48%, transparent);
+}
+
+.tabBtn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
 }
 
 .tabBtn[aria-selected="true"] {
   color: var(--ink);
   font-weight: 600;
-  background: var(--surface);
-  border-color: var(--line-strong);
-  box-shadow: var(--lift-sm);
+  background: color-mix(in oklab, var(--surface) 94%, transparent);
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 95%, transparent),
+    0 1px 1px color-mix(in srgb, var(--ink) 6%, transparent),
+    0 8px 16px -12px color-mix(in srgb, var(--ink) 45%, transparent);
 }
 
 .tabBadge {
@@ -2828,7 +3039,7 @@
 .tabPanel {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 }
 
 .tabPanel > * {
@@ -2847,10 +3058,13 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  padding: 10px 14px;
+  background: var(--glass-fill, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
+  border-radius: 0.75rem;
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
+  padding: 8px 12px;
 }
 
 .podFilters {
@@ -3270,11 +3484,14 @@
 
 /* ─── Perfected Third Edition Console Layout ─────────────────── */
 .cardPanel {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
+  background: var(--glass-fill, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--line) 72%, var(--hl));
+  border-radius: 0.875rem;
   overflow: hidden;
-  box-shadow: var(--lift);
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl);
+  backdrop-filter: blur(18px) saturate(1.2);
   display: flex;
   flex-direction: column;
 }
@@ -4390,22 +4607,26 @@
   min-height: 34px;
   padding: 0 14px;
   font-weight: 600;
-  font-size: 12.5px;
-  border-radius: var(--r2, 6px);
+  font-size: 12px;
+  border-radius: 0.4rem;
   border: 1px solid var(--warn-border);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: 0 1px 2px rgb(var(--ward-shadow-rgb) / 0.15);
-  transition: all 0.12s ease;
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 35%, transparent);
+  transition: filter 0.14s cubic-bezier(0.23, 1, 0.32, 1);
   white-space: nowrap;
 }
 
 .btnConfirmMorningRollup:hover {
-  filter: brightness(0.92);
-  transform: translateY(-1px);
+  filter: brightness(0.94);
+}
+
+.btnConfirmMorningRollup:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .morningRollupConfirmedBanner {
@@ -4507,20 +4728,23 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 .censusCommandCard {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r1, 10px);
-  box-shadow: var(--lift);
+  background: color-mix(in oklab, var(--surface) 72%, transparent);
+  border: 1px solid color-mix(in oklab, var(--line) 22%, transparent);
+  border-radius: 0.75rem;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--surface) 90%, transparent),
+    0 16px 36px -26px color-mix(in srgb, var(--ink) 40%, transparent);
+  backdrop-filter: blur(18px) saturate(1.2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin-bottom: var(--ward-space-16, 1rem);
+  margin-bottom: 10px;
 }
 
 .commandHeader {
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
-  padding: 14px 18px;
+  background: color-mix(in oklab, var(--surface) 28%, transparent);
+  border-bottom: 1px solid color-mix(in oklab, var(--line) 22%, transparent);
+  padding: 10px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -4773,6 +4997,13 @@
   gap: 8px;
 }
 
+.capacityTrackMeta {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--t-0);
+  font-variant-numeric: tabular-nums;
+}
+
 .capacityTrackLabel {
   font-size: var(--t-1, 13px);
   font-weight: 700;
@@ -4823,9 +5054,10 @@
 }
 
 .statBox {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
+  background: var(--glass-fill, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--line) 75%, var(--hl));
   border-radius: var(--r2, 6px);
+  box-shadow: inset 0 1px 0 var(--hl);
   padding: 8px 10px;
   display: flex;
   flex-direction: column;
@@ -4839,6 +5071,9 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .statBoxVal {
@@ -4949,7 +5184,7 @@
 }
 
 .constraintChip[data-active="true"] {
-  background: var(--warn-soft);
+  background: transparent;
   border-color: var(--warn);
   color: var(--ink);
   font-weight: 600;
@@ -5326,11 +5561,10 @@
   text-align: center;
   font-size: var(--t-0, 0.75rem);
   color: var(--muted);
-  padding: 14px 18px;
-  border-top: 1px solid var(--line);
-  margin-top: 10px;
-  background: var(--surface);
-  border-radius: var(--r2, 6px);
+  padding: 2px 0 0;
+  border: 0;
+  margin: 0;
+  background: transparent;
 }
 
 @media (max-width: 1080px) {
@@ -5373,28 +5607,39 @@
    ───────────────────────────────────────────────────────────── */
 .btnDailySheet {
   min-height: 2.125rem;
-  padding: 5px 12px;
-  border-radius: var(--r2, 6px);
+  padding: 5px 14px;
+  border-radius: 0.4rem;
   background: var(--ink);
   color: var(--text-inverse);
   border: 1px solid var(--ink);
   font-size: var(--t-1, 13px);
   font-weight: 600;
+  letter-spacing: -0.01em;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 0 1px 3px rgb(var(--ward-shadow-rgb) / 0.25);
+  transition:
+    opacity 0.14s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.14s cubic-bezier(0.23, 1, 0.32, 1),
+    transform 0.14s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--surface) 28%, transparent);
   white-space: nowrap;
 }
 
 .btnDailySheet:hover {
   background: var(--ink);
-  opacity: 0.92;
+  opacity: 0.9;
   color: var(--text-inverse);
   transform: translateY(-1px);
-  box-shadow: 0 3px 6px rgb(var(--ward-shadow-rgb) / 0.3);
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--hl-on-accent);
+}
+
+.btnDailySheet:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 :global([data-theme="dark"]) .btnDailySheet {

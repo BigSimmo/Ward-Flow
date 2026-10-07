@@ -17,28 +17,39 @@ import styles from "./ward-panel.module.css";
  */
 export function WardPanel({
   title,
+  accessibleName,
   count,
   blurb,
   blurbInHeader = false,
   headingLevel = 2,
   testId,
   dataTabSection,
+  headerAction,
   children,
 }: {
   title: string;
+  /** Region name when the visible heading is shorter than the name tests and screen readers use. */
+  accessibleName?: string;
   count?: string;
   blurb?: string;
   blurbInHeader?: boolean;
   headingLevel?: 2 | 3;
   testId?: string;
   dataTabSection?: string;
+  /** Optional control rendered in the header corner, after the count. */
+  headerAction?: ReactNode;
   children: ReactNode;
 }) {
   const Heading = headingLevel === 3 ? "h3" : "h2";
+  const countNode = count ? (
+    <span className={styles.panelCount} data-ward-panel-count>
+      {count}
+    </span>
+  ) : null;
   return (
     <section
       className={styles.panel}
-      aria-label={title}
+      aria-label={accessibleName ?? title}
       data-testid={testId}
       data-ward-primitive="panel"
       data-tab-section={dataTabSection}
@@ -49,11 +60,14 @@ export function WardPanel({
       >
         <Heading className={styles.panelTitle}>{title}</Heading>
         {blurb && blurbInHeader ? <p className={styles.headerBlurb}>{blurb}</p> : null}
-        {count ? (
-          <span className={styles.panelCount} data-ward-panel-count>
-            {count}
-          </span>
-        ) : null}
+        {headerAction ? (
+          <div className={styles.panelHeaderEnd}>
+            {countNode}
+            {headerAction}
+          </div>
+        ) : (
+          countNode
+        )}
       </header>
       {blurb && !blurbInHeader ? <p className={styles.panelBlurb}>{blurb}</p> : null}
       {children}

@@ -722,7 +722,7 @@
 .listBody::-webkit-scrollbar-thumb,
 .detailBody::-webkit-scrollbar-thumb {
   background: var(--line-strong);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 9999px);
 }
 .listBody::-webkit-scrollbar-thumb:hover,
 .detailBody::-webkit-scrollbar-thumb:hover {

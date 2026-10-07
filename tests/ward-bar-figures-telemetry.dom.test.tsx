@@ -38,7 +38,7 @@ function renderBarWithAdvance(minutes = 0) {
   const result = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardLiveRegion />
-      <AdvanceClock minutes={minutes} />
+      <AdvanceClock minutes={minutes || 60} />
       <WardBar />
     </WardFlowProvider>,
   );
@@ -66,52 +66,51 @@ describe("Figures in the Tools workspace", () => {
     expect(within(tools).getByTestId("ward-bar-figures-trigger")).toHaveTextContent("Nothing flagged");
   });
 
-  it("keeps deadline status reactive when the demonstration clock advances", () => {
+  it("keeps deadline status reactive when the shared clock advances", () => {
     const tools = openTools();
-    fireEvent.click(within(tools).getByRole("button", { name: "Demo" }));
-    fireEvent.click(within(tools).getByTestId("ward-demo-controls-trigger"));
-    fireEvent.click(within(tools).getByTestId("ward-demo-advance-60"));
-    fireEvent.click(within(tools).getByRole("button", { name: "Overview" }));
+    fireEvent.click(screen.getByTestId("test-advance-clock"));
     expect(within(tools).getByTestId("ward-bar-figures-trigger").textContent).toMatch(/deadline passed|due within/i);
   });
 
-  it("shows deadline flags and all figure clusters within the same Tools dialog", () => {
+  it("shows deadline flags and all figure clusters within the same Tools dialog", async () => {
     const tools = openTools(70);
     const launch = within(tools).getByTestId("ward-bar-figures-trigger");
     expect(launch.textContent).toMatch(/deadline passed|due within/i);
     fireEvent.click(launch);
     expect(within(tools).getByRole("button", { name: "Figures" })).toHaveAttribute("aria-pressed", "true");
-    expect(within(tools).getByTestId("ward-stats-drawer-content")).toBeVisible();
-    for (const heading of ["Risk & Statutory Clocks", "Supply & Capacity", "Demand & Flow"]) {
-      expect(within(tools).getByText(heading)).toBeVisible();
+    expect(await within(tools).findByRole("heading", { name: "Beds and capacity" })).toBeVisible();
+    for (const heading of ["Waits and recorded limits", "Beds and capacity", "Flow and discharges"]) {
+      expect(within(tools).getByRole("heading", { name: heading })).toBeVisible();
     }
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
     expect(within(tools).getByRole("button", { name: "Figures" })).toHaveFocus();
   });
 
-  it("keeps utilities and demo controls accessible through their sections", () => {
+  it("keeps compact utilities and scenario controls in the shift desk", async () => {
     const tools = openTools();
     fireEvent.click(within(tools).getByRole("button", { name: "Utilities" }));
     expect(within(tools).getByText("Catchment resolver")).toBeVisible();
     expect(within(tools).getByText("Form date review")).toBeVisible();
-    fireEvent.click(within(tools).getByRole("button", { name: "Demo" }));
-    expect(within(tools).getByRole("button", { name: /change view/i })).toBeVisible();
+    fireEvent.click(within(tools).getByRole("button", { name: "Shift desk" }));
+    expect(await within(tools).findByRole("link", { name: /Shift handover/ })).toBeVisible();
+    expect(within(tools).queryByRole("button", { name: "Demo" })).toBeNull();
+    expect(within(tools).getByTestId("ward-demo-controls-trigger")).toBeVisible();
   });
 
-  it("filters the directory without losing its navigation links", () => {
+  it("filters the directory without losing its navigation links", async () => {
     const tools = openTools();
     fireEvent.click(within(tools).getByRole("button", { name: "Directory" }));
-    const wardList = within(tools).getByRole("list", { name: "Ward contacts" });
+    const search = await within(tools).findByRole("searchbox", { name: "Search contact directory" });
+    fireEvent.click(within(tools).getByRole("button", { name: "Wards" }));
+    const wardList = within(tools).getByRole("list", { name: "Contact directory" });
     const firstLink = within(wardList).getAllByRole("link")[0];
-    const name = firstLink.querySelector("span")!.textContent!;
+    const name = firstLink.querySelector("strong")!.textContent!;
     const href = firstLink.getAttribute("href");
-    fireEvent.change(within(tools).getByRole("textbox", { name: "Search ward contacts" }), { target: { value: name } });
+    fireEvent.change(search, { target: { value: name } });
     expect(within(wardList).getByRole("link", { name: new RegExp(name) })).toHaveAttribute("href", href);
-    fireEvent.change(within(tools).getByRole("textbox", { name: "Search ward contacts" }), {
-      target: { value: "no-such-unit" },
-    });
+    fireEvent.change(search, { target: { value: "no-such-unit" } });
     expect(within(wardList).queryAllByRole("link")).toHaveLength(0);
-    expect(within(tools).getByText(/No matching locations/)).toBeVisible();
+    expect(within(tools).getByText("No matching contacts")).toBeVisible();
   });
 
   it("closes Tools from Figures without leaving a second drawer open", () => {

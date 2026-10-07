@@ -475,32 +475,9 @@ export function WardDailySheet({
       style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
     >
       <h2 id="ward-daily-sheet-heading" className={styles.sheetHeading}>
-        The ward&apos;s daily sheet
+        Shift brief
       </h2>
-      {/* DB-11: there is no frozen view anywhere — on screen or on paper. The stamp in the heading
-        above is what makes that safe (DB-10), so the sheet says out loud which picture it is. */}
-      <p className={styles.sheetIntro}>
-        Live at the moment stamped above — on screen and on paper, nothing here is held from an earlier hour.
-      </p>
-
-      {/* Executive 24h KPI Delta Ribbon */}
-      <div className={styles.sheetKpiRibbon}>
-        <div className={styles.sheetKpiCard}>
-          <span className={styles.sheetKpiValue}>{resolvedMovement.discharged}</span>
-          <span className={styles.sheetKpiLabel}>Discharged · 24h</span>
-          <span className={styles.sheetKpiSub}>Left this ward</span>
-        </div>
-        <div className={styles.sheetKpiCard}>
-          <span className={styles.sheetKpiValue}>{resolvedMovement.pulled}</span>
-          <span className={styles.sheetKpiLabel}>Beds Pulled</span>
-          <span className={styles.sheetKpiSub}>Allocated for transfer</span>
-        </div>
-        <div className={styles.sheetKpiCard}>
-          <span className={styles.sheetKpiValue}>{resolvedMovement.datesMoved}</span>
-          <span className={styles.sheetKpiLabel}>Dates Moved</span>
-          <span className={styles.sheetKpiSub}>Expected dates adjusted</span>
-        </div>
-      </div>
+      <p className={styles.sheetIntro}>Live at the moment stamped above. Nothing here is held from an earlier hour.</p>
 
       {resolvedTimestamp ? (
         <p
@@ -520,21 +497,16 @@ export function WardDailySheet({
         data-testid="ward-daily-sheet-since"
         style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
       >
-        Since yesterday:{" "}
-        <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
-          {resolvedMovement.discharged}
-        </span>{" "}
-        left this ward,{" "}
-        <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
-          {resolvedMovement.pulled}
-        </span>{" "}
-        bed
-        {resolvedMovement.pulled === 1 ? "" : "s"} given away,{" "}
-        <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
-          {resolvedMovement.datesMoved}
-        </span>{" "}
-        expected date
-        {resolvedMovement.datesMoved === 1 ? "" : "s"} moved.
+        <span>
+          <strong>{resolvedMovement.discharged}</strong> left this ward
+        </span>
+        <span>
+          <strong>{resolvedMovement.pulled}</strong> bed{resolvedMovement.pulled === 1 ? "" : "s"} given away
+        </span>
+        <span>
+          <strong>{resolvedMovement.datesMoved}</strong> expected date{resolvedMovement.datesMoved === 1 ? "" : "s"}{" "}
+          moved
+        </span>
       </p>
 
       <div className={styles.sheetGroups}>

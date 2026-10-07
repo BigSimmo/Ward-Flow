@@ -97,13 +97,13 @@ describe("the patient-now screen", () => {
     expect(summary.getByRole("region", { name: /Next steps/ })).toHaveTextContent(
       "Review next cohort-matching bed releases across network.",
     );
-    expect(summary.getByRole("button", { name: "Coordinate placement" })).toBeInTheDocument();
+    expect(summary.getByRole("button", { name: "Place them" })).toBeInTheDocument();
     unmount();
 
     renderScreen({ movementId: "WF-004" });
     summary = within(screen.getByRole("region", { name: "Patient summary" }));
     expect(summary.getByRole("region", { name: /Next steps/ })).toHaveTextContent("Bed Pull Confirmation");
-    expect(summary.getByRole("button", { name: "Coordinate placement" })).toBeInTheDocument();
+    expect(summary.getByRole("button", { name: "Place them" })).toBeInTheDocument();
   });
 
   // Owner ruling & user request: remove obsolete movement record / perspective switchers and purge WF ids
@@ -146,7 +146,7 @@ describe("the patient-now screen", () => {
     renderScreen();
     const root = screen.getByTestId("ward-person-screen");
     expect(root).toBeInTheDocument();
-    expect(root).toHaveAttribute("data-ward-design", "third-edition");
+    expect(root).toHaveAttribute("data-ward-design", "v6");
     // Scoped to the identity block — the "Details" tab pane also states the name, present in the
     // DOM but visually hidden, so an unscoped query throws on multiple matches.
     expect(

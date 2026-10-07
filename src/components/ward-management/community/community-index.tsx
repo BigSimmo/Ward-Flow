@@ -350,7 +350,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       <main id="main-content" className={styles.main}>
         <div className={styles.topActionBar}>
           <div className={styles.topActionContext}>
-            <h1 className={styles.pageTitle}>All community teams</h1>
+            <h1 className={styles.pageTitle}>Community teams</h1>
           </div>
           <div className={styles.topActionButtons}>
             <Link
@@ -367,7 +367,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               data-testid="community-action-referral-board"
             >
               <ArrowUpRight aria-hidden="true" className={styles.btnIcon} />
-              <span>Referral Board</span>
+              <span>Referrals</span>
             </Link>
             <button
               ref={drawerTriggerRef}
@@ -458,13 +458,13 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
 
             <section
               className={`${panelStyles.panel} ${styles.directoryPanel}`}
-              aria-label="A–Z directory"
+              aria-label="A–Z"
               data-testid="community-index-teams"
               data-ward-primitive="panel"
             >
               <header className={styles.directoryHeader} data-ward-primitive="panel-header">
                 <div className={styles.headerControlsLeft}>
-                  <h2 className={styles.directoryTitle}>A–Z directory</h2>
+                  <h2 className={styles.directoryTitle}>A–Z</h2>
                   <span className={styles.headerDivider} aria-hidden="true" />
                   <div className={styles.searchRow}>
                     <div className={styles.searchBox}>
@@ -711,7 +711,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               </div>
               <div className={styles.drawerBody}>
                 <section className={styles.drawerSection}>
-                  <h3 className={styles.drawerSectionTitle}>Directory source</h3>
+                  <h3 className={styles.drawerSectionTitle}>Where this list comes from</h3>
                   <p className={styles.drawerText}>
                     Every team listed in this directory is derived directly from the referral intake vocabulary
                     extracted from Western Australian Mental Health Service catchment documentation.
@@ -727,7 +727,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 </section>
 
                 <section className={styles.drawerSection}>
-                  <h3 className={styles.drawerSectionTitle}>Quick Actions</h3>
+                  <h3 className={styles.drawerSectionTitle}>Actions</h3>
                   <div className={styles.drawerActions}>
                     <Link href="/mockups/ward-flow/referrals/new" className={styles.drawerBtnPrimary}>
                       <FileText aria-hidden="true" className={styles.btnIcon} />

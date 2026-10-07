@@ -1,0 +1,489 @@
+/*
+ * Tools drawer content: figures, shortcuts and the contact directory (v6, 7 Oct 2026).
+ * Cards are surfaces with a fine edge; counts sit in small pills; colour is a glyph only.
+ * Tokens only (`--wf-*`), no literal colour, size or radius.
+ */
+.workspace {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.surface,
+.action {
+  min-width: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.surface {
+  overflow: hidden;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  min-height: var(--wf-h-lg);
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.heading small {
+  margin-left: auto;
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--wf-s-1);
+  border-radius: var(--wf-r-xs);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+}
+
+.workspace svg,
+.action svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--wf-ink-2);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.meta > span:last-child {
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wf-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-success) 16%, transparent);
+}
+
+/* Category filters: one segmented track, counts in pills. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1);
+  padding: 3px;
+  border-radius: var(--wf-r-md);
+  background: var(--wf-track);
+  border: 1px solid var(--wf-line);
+}
+
+.filters button {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-sm);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.filters button:hover {
+  color: var(--wf-ink-1);
+}
+
+.filters button[aria-pressed="true"] {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  background: var(--wf-surface);
+  border-color: var(--wf-line-2);
+  box-shadow: var(--wf-e1);
+}
+
+.filters button .count {
+  min-width: 18px;
+  height: 18px;
+  border-color: transparent;
+  background: var(--wf-line);
+}
+
+/* Figures: a two-column grid of cells, label left, value right. */
+.figures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.figures > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--wf-s-2);
+  min-width: 0;
+  min-height: var(--wf-h-lg);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.figures > div:nth-child(-n + 2) {
+  border-top: 0;
+}
+
+.figures > div:nth-child(odd) {
+  border-right: 1px solid var(--wf-line);
+}
+
+.figures dt {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.figures dd {
+  display: contents;
+}
+
+.value {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+}
+
+.value > svg {
+  width: 8px;
+  height: 8px;
+}
+
+.figures small {
+  grid-column: 1;
+  grid-row: 2;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.moreLink {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  gap: 6px;
+  min-height: var(--wf-h-sm);
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.moreLink svg {
+  width: 14px;
+  height: 14px;
+  color: inherit;
+}
+
+/* Directory search: one field, pill shaped like the header search. */
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-h-md);
+  padding: 0 var(--wf-s-3);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
+}
+
+.search:focus-within {
+  border-color: var(--wf-focus-ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-focus-ring) 18%, transparent);
+}
+
+.search svg {
+  color: var(--wf-ink-3);
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--wf-h-md);
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+}
+
+.search input::placeholder {
+  color: var(--wf-ink-3);
+}
+
+.search button {
+  min-height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-2);
+  background: transparent;
+  border: 0;
+  color: var(--wf-accent-ink);
+  font: inherit;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Contacts: rows inside one card. */
+.contacts {
+  list-style: none;
+  display: grid;
+  margin: 0;
+  padding: 0;
+}
+
+.contacts li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.contacts li:first-child {
+  border-top: 0;
+}
+
+.contactTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-h-sm);
+  color: var(--wf-ink-1);
+  text-decoration: none;
+  border-radius: var(--wf-r-sm);
+}
+
+.contactTitle span,
+.action span {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.contactTitle strong,
+.action strong {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contactTitle small,
+.action small {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contactTitle > svg {
+  width: 14px;
+  height: 14px;
+  color: var(--wf-ink-3);
+}
+
+.contactMethods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--wf-s-3);
+}
+
+.contactMethods > * {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.contactMethods svg {
+  width: 14px;
+  height: 14px;
+  color: var(--wf-ink-3);
+}
+
+.contactMethods a {
+  color: var(--wf-accent-ink);
+  text-decoration: none;
+}
+
+.methodValue {
+  min-width: 0;
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.contactDate {
+  display: block;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.mockBadge {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: var(--wf-fs-11);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+}
+
+.empty svg {
+  width: 20px;
+  height: 20px;
+  color: var(--wf-ink-3);
+}
+
+.empty button {
+  min-height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  box-shadow: var(--wf-e1);
+  cursor: pointer;
+}
+
+/* Shortcuts: a two-column grid divided by hairlines, inside its parent card. */
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: var(--wf-h-lg);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-decoration: none;
+  color: var(--wf-ink-1);
+}
+
+.action:nth-child(-n + 2) {
+  border-top: 0;
+}
+
+.action:nth-child(odd) {
+  border-right: 1px solid var(--wf-line);
+}
+
+.action > svg:last-child {
+  width: 14px;
+  height: 14px;
+  margin-left: auto;
+  color: var(--wf-ink-3);
+}
+
+.action:hover,
+.contactTitle:hover {
+  background: var(--wf-hover);
+}
+
+.workspace :focus-visible,
+.action:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+@media (max-width: 540px) {
+  .actionGrid,
+  .figures {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .action:nth-child(odd),
+  .figures > div:nth-child(odd) {
+    border-right: 0;
+  }
+
+  .action:nth-child(2),
+  .figures > div:nth-child(2) {
+    border-top: 1px solid var(--wf-line);
+  }
+}

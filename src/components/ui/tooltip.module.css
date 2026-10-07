@@ -1,0 +1,28 @@
+/* v6 tooltip (`.tip`): small ink bubble. Dark on day, raised slate on night. Tokens only. */
+.tip {
+  pointer-events: none;
+  width: max-content;
+  max-width: 220px;
+  box-sizing: border-box;
+  padding: 6px 9px;
+  border-radius: var(--wf-r-sm);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-surface);
+  background: color-mix(in srgb, var(--wf-ink-1) 92%, transparent);
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--wf-ink-1) 45%, transparent);
+}
+
+:global(html.dark) .tip,
+:global(.night) .tip {
+  color: var(--wf-ink-1);
+  background: color-mix(in srgb, var(--wf-track) 97%, transparent);
+  box-shadow:
+    0 0 0 1px var(--wf-line-2),
+    0 8px 20px -6px color-mix(in srgb, var(--wf-canvas) 60%, transparent);
+}
+
+@media (forced-colors: active) {
+  .tip {
+    border: 1px solid CanvasText;
+  }
+}

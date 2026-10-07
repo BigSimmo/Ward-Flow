@@ -151,8 +151,8 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
           >
             <CheckCircle2 aria-hidden="true" size={18} style={{ color: "#16a34a", marginTop: "2px", flexShrink: 0 }} />
             <span>
-              Only the selected file name, size and document type are recorded for the{" "}
-              <strong>Transport Officer Console</strong>. File contents are not stored or sent.
+              Only the selected file name, size and document type are recorded for the <strong>Transport</strong>{" "}
+              screen. File contents are not stored or sent.
             </span>
           </div>
 

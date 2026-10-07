@@ -199,12 +199,16 @@ describe("the Legal forms screen", () => {
 });
 
 describe("LegalFormsScreen expiry reminder (item 13 synthetic demo)", () => {
+  // v6 (LegalForms.png): the reminder sentence became the Warning windows card ("Your defaults,
+  // not legal limits") plus a "Within Nh" state beside each typed expiry; the selected form's
+  // Act-period note carries the "not legally checked" label.
   it("shows the reminder banner for seeded typed expiries inside the warning windows, labelled as a synthetic, not legally checked demo", () => {
     renderScreen();
     const banner = screen.getByTestId("ward-legal-expiry-reminder");
-    expect(banner).toHaveTextContent(/^Synthetic demo reminder:/);
-    expect(banner).toHaveTextContent("not legally checked");
-    expect(screen.getAllByText(/^Expires within \dh$/).length).toBeGreaterThan(0);
+    expect(banner).toHaveTextContent("Warning windows");
+    expect(banner).toHaveTextContent("not legal limits");
+    expect(screen.getAllByText(/^Within \dh$/).length).toBeGreaterThan(0);
+    expect(screen.getByTestId("ward-legal-selected")).toHaveTextContent("not legally checked");
   });
 });
 

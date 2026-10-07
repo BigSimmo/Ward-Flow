@@ -207,8 +207,8 @@ describe("the aside's Freeing/Attention sub-panels are labelled whole-network wh
     renderScreen();
     fireEvent.click(screen.getByRole("tab", { name: "Attention" }));
 
-    expect(screen.getByRole("heading", { name: /^Worth your attention/u })).toHaveTextContent(
-      "Worth your attention across the whole network",
+    expect(screen.getByRole("heading", { name: /^Needs you/u })).toHaveTextContent(
+      "Needs you across the whole network",
     );
     expect(screen.getByRole("button", { name: /wards need confirming/iu })).toHaveTextContent(
       "wards need confirming across the whole network · Highlight wards",
@@ -219,9 +219,7 @@ describe("the aside's Freeing/Attention sub-panels are labelled whole-network wh
     renderScreen();
     fireEvent.click(screen.getByRole("tab", { name: "Attention" }));
 
-    expect(screen.getByRole("heading", { name: /^Worth your attention/u })).not.toHaveTextContent(
-      "across the whole network",
-    );
+    expect(screen.getByRole("heading", { name: /^Needs you/u })).not.toHaveTextContent("across the whole network");
     expect(screen.getByRole("button", { name: /wards need confirming/iu })).not.toHaveTextContent(
       "across the whole network",
     );

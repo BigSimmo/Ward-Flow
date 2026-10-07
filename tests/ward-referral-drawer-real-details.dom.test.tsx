@@ -57,7 +57,7 @@ describe("the referral drawer shows only what the record holds", () => {
   it("lists only wards that exist in the network, under their own names", () => {
     const { container } = renderDrawer();
     const rows = [...container.querySelectorAll('[role="listitem"]')].filter((row) =>
-      row.textContent?.includes("Select"),
+      row.querySelector('input[type="checkbox"]'),
     );
     expect(rows.length).toBeGreaterThan(0);
     const units = new Map(allUnits().map((unit) => [unit.id, unit.name]));
@@ -81,8 +81,9 @@ describe("the referral drawer shows only what the record holds", () => {
 
     // The identity banner carries the recorded name.
     expect(screen.getByText(new RegExp(`^${recorded.displayName} \\(`))).toBeInTheDocument();
-    expect(document.body.textContent).toContain(`UMRN: ${recorded.umrn}`);
-    expect(document.body.textContent).toContain("Medicare: Not recorded");
+    // v6 (ReferralDrawer.webp): "UMRN UM100052 · DOB … · Medicare Not recorded", no colons.
+    expect(document.body.textContent).toContain(`UMRN ${recorded.umrn}`);
+    expect(document.body.textContent).toContain("Medicare Not recorded");
     expect(document.body.textContent).not.toMatch(/Dr\. L\. Patel|persecutory delusions|2940 19283 1/);
   });
 
@@ -90,42 +91,49 @@ describe("the referral drawer shows only what the record holds", () => {
     renderDrawer();
     expect(screen.getByRole("searchbox", { name: "Search sample patients" })).toBeInTheDocument();
     expect(screen.queryByText("Live Database Search")).not.toBeInTheDocument();
-    expect(document.body.textContent).toMatch(/Diag:\s*Not recorded/);
+    // v6: the clinical acuity cell reads "Diagnosis not recorded".
+    expect(document.body.textContent).toMatch(/Diagnosis not recorded/);
     expect(screen.queryByText("Code Black")).not.toBeInTheDocument();
   });
 
   it("retains the clinical draft and placement choice when switching sections", () => {
     renderDrawer();
     const sections = within(screen.getByRole("group", { name: "Referral sections" }));
-    fireEvent.click(sections.getByRole("button", { name: "Clinical" }));
-    const clinician = screen.getByLabelText(/Referring Clinician & Origin Unit/);
-    fireEvent.change(clinician, { target: { value: "Synthetic clinician draft" } });
     fireEvent.click(sections.getByRole("button", { name: "Referral" }));
-    fireEvent.change(screen.getByLabelText(/Placement Destination Tier/), { target: { value: "community" } });
-    fireEvent.click(sections.getByRole("button", { name: "Clinical" }));
-    expect(clinician).toHaveValue("Synthetic clinician draft");
+    const clinician = screen.getByLabelText(/Reason for referral/);
+    fireEvent.change(clinician, { target: { value: "Synthetic reason for referral" } });
     fireEvent.click(sections.getByRole("button", { name: "Referral" }));
-    expect(screen.getByLabelText(/Placement Destination Tier/)).toHaveValue("community");
+    // v6 (ReferralDrawer--referral.webp): the placement choice is the "Refer to" radio group.
+    fireEvent.click(within(screen.getByRole("group", { name: "Refer to" })).getByLabelText("Community team"));
+    fireEvent.click(sections.getByRole("button", { name: "Documents" }));
+    fireEvent.click(sections.getByRole("button", { name: "Referral" }));
+    expect(clinician).toHaveValue("Synthetic reason for referral");
+    fireEvent.click(sections.getByRole("button", { name: "Referral" }));
+    expect(within(screen.getByRole("group", { name: "Refer to" })).getByLabelText("Community team")).toBeChecked();
   });
 
   it("shows no diagnosis selected when the sample record has none", () => {
     renderDrawer();
     fireEvent.click(
       within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", {
-        name: "Clinical",
+        name: "Referral",
       }),
     );
-    expect(screen.getByLabelText(/Provisional Psychiatric Diagnosis/)).toHaveValue("");
+    expect(screen.getByLabelText(/Provisional diagnosis/)).toHaveValue("");
   });
 
   // 26 Sept 2026: the urgency picker offered typed hour windows ("< 2 hours · Active Breach", and a
   // fourth tier the model does not have). It now shows only the recorded tiers and no deadline.
   it("offers only the recorded urgency tiers, with no invented hour window or breach", () => {
     renderDrawer();
-    const picker = document.getElementById("refUrgencySelect") as HTMLSelectElement;
-    const tiers = [...picker.options]
-      .map((option) => option.textContent ?? "")
-      .filter((text) => text !== "Not recorded");
+    // v6 (ReferralDrawer--referral.webp): the urgency picker is three radio tiles, one per tier,
+    // on the Referral section.
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name: "Referral" }),
+    );
+    const tiers = within(screen.getByRole("group", { name: "Urgency" }))
+      .getAllByRole("radio")
+      .map((radio) => radio.getAttribute("aria-label"));
     expect(tiers).toEqual(["Tier 1 · most urgent", "Tier 2 · urgent", "Tier 3 · least urgent"]);
     expect(document.body.textContent).not.toMatch(/Active Breach|< ?2 hours|Operational Acuity Target|Target Window/i);
   });
@@ -134,13 +142,12 @@ describe("the referral drawer shows only what the record holds", () => {
   // first time. Choosing each tier must show that tier's label and no hour window.
   it("shows the chosen tier in the summary, never a typed hour window", () => {
     renderDrawer();
-    const picker = document.getElementById("refUrgencySelect") as HTMLSelectElement;
-    for (const [value, label] of [
-      ["1", "Tier 1 · most urgent"],
-      ["2", "Tier 2 · urgent"],
-      ["3", "Tier 3 · least urgent"],
-    ] as const) {
-      fireEvent.change(picker, { target: { value } });
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name: "Referral" }),
+    );
+    const picker = within(screen.getByRole("group", { name: "Urgency" }));
+    for (const label of ["Tier 1 · most urgent", "Tier 2 · urgent", "Tier 3 · least urgent"] as const) {
+      fireEvent.click(picker.getByRole("radio", { name: label }));
       expect(document.body.textContent).toContain(label);
       expect(document.body.textContent).not.toMatch(/< ?\d+h \(/);
     }

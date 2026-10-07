@@ -221,7 +221,7 @@ describe("officer screen's refusals region has its own accessible name", () => {
     );
   }
 
-  it("stops the refusals list re-using the jobs panel's 'Transport jobs' name", () => {
+  it("stops the refusals list re-using the jobs panel's 'Jobs' name", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <Harness />
@@ -233,10 +233,11 @@ describe("officer screen's refusals region has its own accessible name", () => {
     const refusals = screen.getByTestId("ward-officer-refusals");
     expect(within(refusals).getByText(/was refused/)).toBeInTheDocument();
 
-    // Before this fix, both the jobs panel (`aria-labelledby` → "Transport jobs") and the
-    // refusals list's own inner region (`aria-label="Transport jobs"`) shared one accessible
-    // name — a screen reader could not tell them apart. Exactly one region may now carry it.
-    expect(screen.getAllByRole("region", { name: "Transport jobs" })).toHaveLength(1);
+    // Before this fix, both the jobs panel and the refusals list shared one accessible
+    // name — a screen reader could not tell them apart. The jobs panel is "Jobs"; the
+    // refusals list is "Refused list".
+    expect(screen.getAllByRole("region", { name: /^Jobs$/ })).toHaveLength(1);
+    expect(within(refusals).getByRole("region", { name: "Refused list" })).toBeInTheDocument();
   });
 });
 

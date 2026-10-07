@@ -50,7 +50,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--ground);
-  scroll-padding-top: 3.5rem;
+  scroll-padding-top: 3.75rem;
 }
 
 /*
@@ -78,20 +78,10 @@
     height: auto;
     overflow-y: visible;
   }
-}
-
-/* Reuse the live shell controls for the selected horizontal action-workspace mockup. */
-@media (min-width: 1001px) {
-  .shellRow:has([data-delay-layout="workspace"]) {
-    flex-direction: column;
-  }
-  .shellRow:has([data-delay-layout="workspace"]) .shellContent {
-    display: contents;
-  }
-  .shellRow:has([data-delay-layout="workspace"]) :global([data-ward-ground]) {
-    order: 2;
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: auto;
+  /* A visible/hidden overflow pair creates a scroll container even when only the document
+     scrolls. Use clip on statistics so the navigation can anchor to the document on mobile. */
+  .shellContent:has([data-testid="ward-statistics-nav"]) {
+    overflow-x: clip;
+    overflow-y: visible;
   }
 }

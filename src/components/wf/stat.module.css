@@ -1,0 +1,227 @@
+/* v6 stats, meters, stacked bars and legends. Mono values, hairline separators. */
+
+.group {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.group > .stat + .stat {
+  border-left: 1px solid var(--wf-line);
+  padding-left: var(--wf-s-3);
+  margin-left: var(--wf-s-3);
+}
+
+.value {
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: var(--wf-ink-1);
+}
+
+.sm .value {
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+}
+
+.lg .value {
+  font-size: var(--wf-fs-28);
+  line-height: var(--wf-lh-28);
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Meter: 6px track, tone fill, optional threshold tick, text value beside it. */
+.meterWrap {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.meter {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 24px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+
+.fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-data-1);
+}
+
+.tick {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 12px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--wf-ink-1);
+  box-shadow: 0 0 0 2px var(--wf-surface);
+}
+
+.meterValue {
+  flex: 0 0 auto;
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+}
+
+.meterLabel {
+  flex: 0 0 auto;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+/* Fill colours: data roles and status tones. */
+.c-data-1 {
+  background: var(--wf-data-1);
+}
+.c-data-2 {
+  background: var(--wf-data-2);
+}
+.c-data-3 {
+  background: var(--wf-data-3);
+}
+.c-ready {
+  background: var(--wf-data-ready);
+}
+.c-closed {
+  background: var(--wf-data-closed);
+}
+.c-danger {
+  background: var(--wf-danger);
+}
+.c-warning {
+  background: var(--wf-warning);
+}
+.c-success {
+  background: var(--wf-success);
+}
+.c-info {
+  background: var(--wf-info);
+}
+.c-neutral {
+  background: var(--wf-neutral);
+}
+.c-track {
+  background: var(--wf-track);
+}
+
+/* Hatch: pulled, crossing, estimated. */
+.hatch {
+  background: repeating-linear-gradient(135deg, var(--wf-data-2) 0 2px, var(--wf-track) 2px 4px);
+}
+
+/* Stacked bar: 2px gaps, rounded outer ends. */
+.stack {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  min-width: 0;
+}
+
+.stack > span {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+}
+
+.stack > span:first-child {
+  border-radius: var(--wf-r-pill) 0 0 var(--wf-r-pill);
+}
+
+.stack > span:last-child {
+  border-radius: 0 var(--wf-r-pill) var(--wf-r-pill) 0;
+}
+
+.stack > span:only-child {
+  border-radius: var(--wf-r-pill);
+}
+
+.thin {
+  height: 6px;
+}
+
+/* Legend: short rounded swatches, never squares. */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  flex: 0 0 12px;
+}
+
+.legendValue {
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  color: var(--wf-ink-1);
+}
+
+@media (forced-colors: active) {
+  .meter,
+  .stack {
+    border: 1px solid CanvasText;
+    forced-color-adjust: none;
+  }
+  .tick {
+    background: CanvasText;
+  }
+  .group > .stat + .stat {
+    border-left-color: CanvasText;
+  }
+}

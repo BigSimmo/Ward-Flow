@@ -223,6 +223,9 @@ describe("the breakpoint scale", () => {
     "src/components/ward-management/discharges/discharges-third-edition.module.css: 62.5625",
     "src/components/ward-management/ed/ed.module.css: 62.5625",
     "src/components/ward-management/governance-third-edition.module.css: 62.5625",
+    // Desktop governance polish starts one pixel above the stylesheet's existing
+    // max-width: 64rem stack, so the two ranges do not both match. 64.0625rem is 1025px.
+    "src/components/ward-management/governance-third-edition.module.css: 64.0625",
     "src/components/ward-management/handover/handover-third-edition.module.css: 62.5625",
     "src/components/ward-management/hub/hub.module.css: 62.5625",
     "src/components/ward-management/legal-forms/legal-forms.module.css: 62.5625",

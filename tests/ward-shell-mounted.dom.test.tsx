@@ -152,7 +152,8 @@ describe("Task 6 — the shell is actually reached on a real route, not merely i
     renderWardRoute();
     expect(screen.getAllByTestId("ward-bar-place")).toHaveLength(1);
     expect(screen.getByTestId("ward-bar-place")).toHaveTextContent("Dabakarn");
-    expect(screen.getByTestId("ward-bar-subtitle")).toHaveTextContent("Inpatient Unit");
+    // v6 header (7 Oct 2026, boards 02 and 03): the title stands alone; the old subtitle line is gone.
+    expect(screen.queryByTestId("ward-bar-subtitle")).toBeNull();
     expect(
       screen.queryByTestId("ward-shell-place"),
       "`WardShellHeader` is retired; a second place label on the same route is the defect this " +
@@ -166,8 +167,8 @@ describe("Task 6 — the shell is actually reached on a real route, not merely i
     // element is absent, not that the string never occurs anywhere on the page.
     renderCoordinatorRoute();
     expect(screen.queryByTestId("ward-bar-place")).toBeNull();
-    expect(screen.getByTestId("ward-bar-route-title")).toHaveTextContent("Command");
-    expect(screen.getByTestId("ward-bar-subtitle")).toHaveTextContent("Statewide Bed Coordination");
+    expect(screen.getByTestId("ward-bar-route-title")).toHaveTextContent("Home");
+    expect(screen.queryByTestId("ward-bar-subtitle")).toBeNull();
     expect(screen.queryByTestId("ward-shell-header")).toBeNull();
     expect(screen.queryByTestId("ward-shell-place")).toBeNull();
   });
@@ -184,7 +185,7 @@ describe("Task 6 — the shell is actually reached on a real route, not merely i
     const user = userEvent.setup();
     renderWardRoute();
     await user.click(screen.getByTestId("ward-bar-tools-trigger"));
-    await user.click(screen.getByRole("button", { name: "Demo" }));
+    await user.click(screen.getByRole("button", { name: "Shift desk" }));
     expect(screen.getAllByRole("button", { name: /change view/i })).toHaveLength(1);
   });
 });

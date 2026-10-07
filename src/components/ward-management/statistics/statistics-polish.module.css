@@ -1,11 +1,42 @@
-/*
- * Statistics polish (5 October 2026). A finishing layer over the statistics screens:
- * same sections, panels, tabs and order. It only refines spacing, numbers, focus and tap targets.
- * Tokens only, no hex.
- */
+/* Shared finishing layer: preserve every screen's grid, with compact glass surfaces. */
 
 .root {
   display: contents;
+  /* Default until StatisticsNav measures; keeps sticky section jumps off the chrome. */
+  --statistics-anchor-offset: 8rem;
+}
+
+.root :global([data-ward-primitive="panel"]) {
+  border-radius: 0.875rem;
+  border-color: color-mix(in srgb, var(--line) 80%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 95%, transparent),
+    0 8px 28px color-mix(in srgb, var(--ink) 5%, transparent);
+}
+.root :global([data-ward-primitive="panel-header"]) {
+  padding: 0.875rem 1rem;
+  background: color-mix(in srgb, var(--surface-2) 50%, transparent);
+}
+.root :global(section[id]),
+.root :global(div[id]),
+.root :global(dl[id]) {
+  scroll-margin-top: var(--statistics-anchor-offset, 8rem);
+}
+.root :global(dl[aria-label]) {
+  border-radius: 0.625rem;
+}
+.root :global(dl[aria-label] > div) {
+  padding: 0.875rem 1rem;
+}
+.root :global(thead th) {
+  font-weight: 600;
+  background: var(--surface-2);
+}
+.root :global(tbody td),
+.root :global(tbody th) {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
 }
 
 /* Numbers line up in every table and figure band. */
@@ -68,5 +99,51 @@
 @media (prefers-reduced-motion: reduce) {
   .root :global(tbody tr) {
     transition: none;
+  }
+}
+
+/* Keep the identifying column and headings in view, like the capacity tables. */
+.root :global(div:has(> table)) {
+  position: relative;
+  max-height: min(32rem, 65dvh);
+  overflow: auto;
+  isolation: isolate;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+  border-radius: 0.625rem;
+}
+.root :global(table thead th) {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface-2);
+  box-shadow: 0 1px 0 var(--line);
+}
+.root :global(table tr > :first-child:not([colspan])) {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+  box-shadow:
+    1px 0 0 var(--line),
+    6px 0 14px color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.root :global(table thead tr > th:first-child) {
+  top: 0;
+  z-index: 4;
+  background: var(--surface-2);
+}
+.root :global(table tbody tr:hover > :first-child) {
+  background: var(--surface-2);
+}
+@media print {
+  .root :global(div:has(> table)) {
+    max-height: none;
+    overflow: visible;
+  }
+  .root :global(table th),
+  .root :global(table td) {
+    position: static !important;
+    box-shadow: none !important;
   }
 }

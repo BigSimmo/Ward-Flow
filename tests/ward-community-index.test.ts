@@ -422,9 +422,7 @@ describe("Community team index — an empty list explains itself instead of look
     // above are that evidence; this line adds that nothing was linked behind them.
     expect(linkedTeamIdsIn(markup)).toEqual([]);
     expect(linkCountIn(markup)).toBe(0);
-    expect(main, "the empty page rendered no section at all — it did not render an empty state").toContain(
-      "A–Z directory",
-    );
+    expect(main, "the empty page rendered no section at all — it did not render an empty state").toContain("A–Z");
   });
 });
 

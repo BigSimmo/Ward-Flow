@@ -93,6 +93,8 @@ export function CapacityScreen() {
   const [wardSort, setWardSort] = useState("name");
   const [tableFullscreen, setTableFullscreen] = useState(false);
   const [showAllColumns, setShowAllColumns] = useState(false);
+  const [networkOverflow, setNetworkOverflow] = useState(false);
+  const networkBody = useRef<HTMLDivElement>(null);
   const tableDialog = useRef<HTMLDivElement>(null);
   useWardModalFocus(tableFullscreen, tableDialog, () => setTableFullscreen(false));
   const selectionOrigin = useRef<HTMLElement | null>(null);
@@ -141,6 +143,23 @@ export function CapacityScreen() {
     target?.focus();
   }, [selectedUnitId]);
   const [networkFilterId, setNetworkFilterId] = useState("all");
+  function highlightWards(filterId: string) {
+    setNetworkFilterId(filterId);
+    const table = document.getElementById("capacity-wards");
+    table?.scrollIntoView({ block: "start" });
+    table?.focus({ preventScroll: true });
+  }
+  useEffect(() => {
+    const scroller = networkBody.current?.querySelector<HTMLElement>('[data-ward-primitive="table"]');
+    if (!scroller) return;
+    const measure = () => setNetworkOverflow(scroller.scrollWidth > scroller.clientWidth + 1);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(scroller);
+    if (scroller.firstElementChild) observer.observe(scroller.firstElementChild);
+    return () => observer.disconnect();
+  }, [showAllColumns, tableFullscreen, service]);
 
   const gapRows = bedKindGaps(movements, units, now);
   const gapTotals = bedKindTotals(gapRows);
@@ -229,7 +248,7 @@ export function CapacityScreen() {
   const visibleNetworkRows = networkRows;
   // How many of `visibleNetworkRows` the active chip matches — a count for the panel header below,
   // never a filter. Nothing reads this to decide what the table renders.
-  const matchingNetworkRows = networkRows.filter(activeNetworkFilter.predicate);
+  const matchingNetworkRows = scopedNetworkRows.filter(activeNetworkFilter.predicate);
 
   /**
    * Task 2, Part Two — the network table folded by health service.
@@ -287,7 +306,7 @@ export function CapacityScreen() {
         <header className={styles.pageHeader}>
           <div className={styles.pageTitleBlock}>
             <h1 className={styles.pageTitle}>Capacity</h1>
-            <span className={styles.pageSubtitle}>Statewide inpatient directory · synthetic current state</span>
+            <span className={styles.pageSubtitle}>Every ward · synthetic current state</span>
             {/* The one-page morning bed-meeting sheet: today's capacity, expected discharges, people
              *  waiting in ED and the top delays, scoped to the service chosen here. */}
             <BedMeetingSheetLauncher
@@ -316,31 +335,30 @@ export function CapacityScreen() {
             >
               <span className={styles.liveDot} data-live="true" aria-hidden="true" />
             </span>
-            <div
+            <button
+              type="button"
               className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-              onClick={() => setNetworkFilterId("all")}
-              role="button"
-              tabIndex={0}
-              title="Click to view all operational wards"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") setNetworkFilterId("all");
-              }}
+              onClick={() => highlightWards("all")}
+              aria-pressed={networkFilterId === "all"}
+              title="Show the ward table and clear highlights"
             >
               <span className={styles.telemetryLabel}>Wards</span>
               <span className={styles.telemetryVal}>{networkRows.length}</span>
-              <span className={styles.telemetrySub}>{networkServiceGroups.length} clusters</span>
-            </div>
+              <span className={styles.telemetrySub}>
+                {networkServiceGroups.filter((group) => group.wards.length > 0).length} services
+              </span>
+            </button>
 
             <div
               className={styles.telemetryItem}
-              title={`${netTotals.beds} total staffed beds, ${totalOccupied} occupied (${((totalOccupied / netTotals.beds) * 100).toFixed(1)}% occupancy)`}
+              title={`${netTotals.beds} total staffed beds, ${totalOccupied} occupied (${netTotals.beds > 0 ? ((totalOccupied / netTotals.beds) * 100).toFixed(1) : 0}% occupancy)`}
             >
               <span className={styles.telemetryLabel}>Beds</span>
               <span className={styles.telemetryVal}>{netTotals.beds}</span>
               <div
                 className={styles.microMeter}
                 aria-hidden="true"
-                title={`${((totalOccupied / netTotals.beds) * 100).toFixed(1)}% Occupancy`}
+                title={`${netTotals.beds > 0 ? ((totalOccupied / netTotals.beds) * 100).toFixed(1) : 0}% Occupancy`}
               >
                 <div
                   className={styles.microMeterBar}
@@ -354,34 +372,27 @@ export function CapacityScreen() {
               </span>
             </div>
 
-            <div
+            <button
+              type="button"
               className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-              onClick={() => setNetworkFilterId("ready")}
-              role="button"
-              tabIndex={0}
-              title="Click to filter wards with available beds"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") setNetworkFilterId("ready");
-              }}
+              onClick={() => highlightWards("ready")}
+              aria-pressed={networkFilterId === "ready"}
+              title="Highlight wards with beds ready in the ward table"
             >
               <span className={styles.telemetryLabel}>Available</span>
               <span className={styles.telemetryPillGood}>{netTotals.ready} Ready</span>
-            </div>
+            </button>
 
-            <div
+            <button
+              type="button"
               className={`${styles.telemetryItem} ${styles.interactiveItem}`}
-              onClick={() => setNetworkFilterId("locked-ready")}
-              role="button"
-              tabIndex={0}
-              title="Click to filter locked / HDU units"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") setNetworkFilterId("locked-ready");
-              }}
+              onClick={() => highlightWards("locked-ready")}
+              aria-pressed={networkFilterId === "locked-ready"}
+              title="Highlight wards with locked beds ready in the ward table"
             >
-              <span className={styles.telemetryLabel}>Locked/HDU</span>
+              <span className={styles.telemetryLabel}>Locked ready</span>
               <span className={styles.telemetryPillDanger}>{totalLockedReady}</span>
-              <span className={styles.telemetrySub}>0 1:1</span>
-            </div>
+            </button>
           </div>
         </header>
 
@@ -637,7 +648,7 @@ export function CapacityScreen() {
                             unscoped ("Across the whole network, not only {S}.") — labelled here too
                             while a service is chosen. */}
                         <h3 className={styles.sidebarSectionTitle}>
-                          Worth your attention{service !== null ? " across the whole network" : ""}{" "}
+                          Needs you{service !== null ? " across the whole network" : ""}{" "}
                           <span>
                             {shortfalls.length} of {gapRows.length}
                           </span>
@@ -668,16 +679,13 @@ export function CapacityScreen() {
                       </>
                     )}
                   </div>
-                  <div className={styles.networkActions} aria-label="Network shortcuts">
+                  <div className={styles.networkActions} aria-label="Ward table shortcuts">
                     {networkFilters.slice(1).map((filter) => (
                       <button
                         type="button"
                         key={filter.id}
                         aria-pressed={networkFilterId === filter.id}
-                        onClick={() => {
-                          setNetworkFilterId(filter.id);
-                          document.getElementById("capacity-wards")?.scrollIntoView({ block: "start" });
-                        }}
+                        onClick={() => highlightWards(filter.id)}
                       >
                         <span>
                           {filter.id === "ready"
@@ -686,7 +694,7 @@ export function CapacityScreen() {
                               ? "Locked beds ready"
                               : "Check confirmations"}
                         </span>
-                        <strong>{networkRows.filter(filter.predicate).length}</strong>
+                        <strong>{scopedNetworkRows.filter(filter.predicate).length}</strong>
                       </button>
                     ))}
                     <Link href="/mockups/ward-flow/discharges">
@@ -709,7 +717,7 @@ export function CapacityScreen() {
           >
             <WardPanel
               title="Wards"
-              count={`${networkRows.length} ${networkRows.length === 1 ? "ward" : "wards"} in the network, ${matchingNetworkRows.length} matching`}
+              count={`${scopedNetworkRows.length} ${scopedNetworkRows.length === 1 ? "ward" : "wards"} ${service === null ? "in the network" : `in ${service}`}, ${matchingNetworkRows.length} matching`}
             >
               <div className={styles.filters}>
                 <div className={styles.tableToolbar}>
@@ -737,7 +745,7 @@ export function CapacityScreen() {
                   options={networkFilters.map((option) => ({
                     id: option.id,
                     label: option.label,
-                    count: networkRows.filter(option.predicate).length,
+                    count: scopedNetworkRows.filter(option.predicate).length,
                   }))}
                 />
                 <label className={styles.sortControl}>
@@ -760,12 +768,26 @@ export function CapacityScreen() {
                   </div>
                 </label>
               </div>
-              <div className={styles.networkBody} role="region" aria-label="Ward capacity table" tabIndex={0}>
+              <div
+                ref={networkBody}
+                className={styles.networkBody}
+                role="region"
+                aria-label="Ward capacity table"
+                aria-describedby={networkOverflow && !showAllColumns ? "capacity-table-scroll-notice" : undefined}
+                tabIndex={0}
+              >
+                {networkOverflow && !showAllColumns ? (
+                  <p id="capacity-table-scroll-notice" className={styles.tableScrollNotice}>
+                    Scroll sideways to see more ward details.
+                  </p>
+                ) : null}
                 <WardTable
                   className={`${styles.networkTable} ${showAllColumns ? styles.detailTable : styles.compactTable}`}
                   wrapperClassName={styles.networkTableScroll}
                   testId="ward-capacity-network-table"
                   hasScrollThreshold={showAllColumns}
+                  overflowing={networkOverflow}
+                  ariaLabel="Scrollable ward capacity table"
                 >
                   <thead>
                     <tr className={styles.stickyHeaderRow}>
@@ -1850,7 +1872,7 @@ function CapacityWardSidebar({ row, onBack }: { row: NetworkWardRow; onBack: () 
               <p className={styles.sidebarWarning}>Bed records are mid-update. Sex mix may not be settled.</p>
             ) : null}
             <section className={styles.confirmationSection}>
-              <h3>Confirmation</h3>
+              <h3>Confirmed beds</h3>
               <WardFreshness
                 confirmedAt={row.confirmedAt}
                 confirmedByRole={row.unit.allocatable.source === "ward" ? `NUM ${row.unit.name}` : undefined}
@@ -1929,7 +1951,7 @@ function CapacityWardSidebar({ row, onBack }: { row: NetworkWardRow; onBack: () 
                     ))}
                   </ul>
                 )}
-                <h3 className={styles.sidebarSectionTitle}>Anonymous bed releases</h3>
+                <h3 className={styles.sidebarSectionTitle}>Bed frees (no name)</h3>
                 {anonymousReleases.length === 0 ? (
                   <p className={styles.absent}>No anonymous bed releases recorded.</p>
                 ) : (

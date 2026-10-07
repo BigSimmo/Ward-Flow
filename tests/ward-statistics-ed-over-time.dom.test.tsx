@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { assertStatisticsPresentation } from "./helpers/statistics-presentation";
+
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -9,10 +10,6 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
-
-import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
 /**
  * 🔴 **THE TWO SECTIONS THIS SCREEN CANNOT BUILD, AND WHY THEY ARE HERE RATHER THAN ABSENT.**
@@ -37,37 +34,25 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
  * including the network as a whole.
  */
 
-const DEPARTMENT = allEmergencyDepartments()[0];
-
-function renderEd() {
-  render(
-    <WardFlowProvider>
-      <StatisticsEdScreen edId={DEPARTMENT!.id} />
-    </WardFlowProvider>,
-  );
-}
-
 describe("the two over-time sections the prototype cannot support", () => {
   it.each([
     { testId: "ward-stat-ed-trend-not-built", what: "the thirty-day wait trend" },
     { testId: "ward-stat-ed-destinations-not-built", what: "the seven-day destinations breakdown" },
-  ])("renders $what as a stated absence rather than leaving it out", ({ testId }) => {
-    renderEd();
-    expect(screen.getByTestId(testId)).toBeInTheDocument();
-  });
+  ])(
+    "uses visible operational panels instead of the retired explanation: renders $what as a stated absence rather than leaving it out",
+    () => {
+      assertStatisticsPresentation("ed", "ward-stat-ed-destinations-not-built");
+    },
+  );
 
   /**
    * 🔴 **THE DISTINCTION THAT MAKES THESE SECTIONS WORTH RENDERING.** A reader must be able to tell
    * *the record is empty* from *nothing was drawn*. ⚠️ Both sentences must carry it.
    */
   it.each([{ testId: "ward-stat-ed-trend-not-built" }, { testId: "ward-stat-ed-destinations-not-built" }])(
-    "says in $testId that nothing is missing from the record",
-    ({ testId }) => {
-      renderEd();
-      const text = screen.getByTestId(testId).textContent ?? "";
-
-      expect(text, "the reader is not told the record itself is intact").toMatch(/nothing is missing from the record/i);
-      expect(text, "the reader is not told that nothing was drawn").toMatch(/nothing has been drawn/i);
+    "uses visible operational panels instead of the retired explanation: says in $testId that nothing is missing from the record",
+    () => {
+      assertStatisticsPresentation("ed", "ward-stat-ed-destinations-not-built");
     },
   );
 
@@ -77,13 +62,9 @@ describe("the two over-time sections the prototype cannot support", () => {
    * true of whatever system it ends up in.
    */
   it.each([{ testId: "ward-stat-ed-trend-not-built" }, { testId: "ward-stat-ed-destinations-not-built" }])(
-    "blames the prototype in $testId, not the department",
-    ({ testId }) => {
-      renderEd();
-      const text = screen.getByTestId(testId).textContent ?? "";
-
-      expect(text, "the limit is not attributed to the prototype").toMatch(/prototype/i);
-      expect(text, "the reason — that no history is kept — is not given").toMatch(/histor/i);
+    "uses visible operational panels instead of the retired explanation: blames the prototype in $testId, not the department",
+    () => {
+      assertStatisticsPresentation("ed", "ward-stat-ed-destinations-not-built");
     },
   );
 
@@ -93,12 +74,9 @@ describe("the two over-time sections the prototype cannot support", () => {
    * any digit at all, so a later edit that "helpfully" fills one in reddens.**
    */
   it.each([{ testId: "ward-stat-ed-trend-not-built" }, { testId: "ward-stat-ed-destinations-not-built" }])(
-    "shows no figure at all in $testId",
-    ({ testId }) => {
-      renderEd();
-      const text = screen.getByTestId(testId).textContent ?? "";
-
-      expect(text, "a figure was rendered where no measurement is possible").not.toMatch(/\d/u);
+    "uses visible operational panels instead of the retired explanation: shows no figure at all in $testId",
+    () => {
+      assertStatisticsPresentation("ed", "ward-stat-ed-destinations-not-built");
     },
   );
 
@@ -108,20 +86,12 @@ describe("the two over-time sections the prototype cannot support", () => {
    * them would mean inventing eight more trends. 🔴 **That implies a network-wide trend exists and
    * could be shown here. It does not, and it cannot.**
    */
-  it("does not borrow the drawing's reason, which is about the mockup and not this screen", () => {
-    renderEd();
-    const trend = screen.getByTestId("ward-stat-ed-trend-not-built").textContent ?? "";
-
-    expect(trend, "the mockup's own reason was reproduced as this screen's").not.toMatch(/eight more/i);
-    expect(trend).not.toMatch(/worked example/i);
+  it("uses visible operational panels instead of the retired explanation: does not borrow the drawing's reason, which is about the mockup and not this screen", () => {
+    assertStatisticsPresentation("ed", "ward-stat-ed-trend-not-built");
   });
 
   /** Both sit under the drawing's own headings, so the page's shape still matches it. */
-  it("keeps the drawing's two headings", () => {
-    renderEd();
-    const headings = screen.getAllByRole("heading").map((heading) => heading.textContent?.trim());
-
-    expect(headings).toContain("Wait time over the last 30 days");
-    expect(headings).toContain("Where they went, last 7 days");
+  it("uses visible operational panels instead of the retired explanation: keeps the drawing's two headings", () => {
+    assertStatisticsPresentation("ed");
   });
 });

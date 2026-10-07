@@ -334,7 +334,7 @@ describe("the Capacity screen", () => {
     expect(within(table).queryByText(/No site matches/u)).toBeNull();
   });
 
-  it("shows 'Worth your attention' with exactly the bed kinds that are short, and states the absence in words when none are", () => {
+  it("shows 'Needs you' with exactly the bed kinds that are short, and states the absence in words when none are", () => {
     const shortfalls = gapRows.filter((row) => row.gap < 0);
     renderScreen();
     fireEvent.click(screen.getByRole("tab", { name: "Attention" }));
