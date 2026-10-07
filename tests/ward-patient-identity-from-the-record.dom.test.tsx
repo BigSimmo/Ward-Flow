@@ -74,7 +74,7 @@ describe("a movement's patient comes from the record, never from a typed-in tabl
         <HandoverPage />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: /ISBAR Cards/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /ISBAR cards/ }));
 
     const cards = screen.getAllByTestId(/^patient-card-/);
     expect(cards.length).toBeGreaterThan(5);

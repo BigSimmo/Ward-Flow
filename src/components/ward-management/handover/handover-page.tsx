@@ -29,6 +29,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import {
   DAY_SHIFT_END_MINUTE,
+  dayShiftEndInstant,
   openWorkBeforeShiftEnd,
   openWorkBeforeShiftEndLabel,
 } from "@/components/ward-management/ward-board-time-features";
@@ -71,6 +72,30 @@ import {
 import styles from "./handover.module.css";
 import pageStyles from "./handover-third-edition.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { Check, ClipboardList, Clock, Copy, Maximize2, Minimize2, Printer, RotateCcw } from "lucide-react";
+import {
+  Button,
+  Card,
+  Hero,
+  HeroStat,
+  HeroTrack,
+  Icon,
+  IconTile,
+  Segmented,
+  Select,
+  SrOnly,
+  StatusGlyph,
+  Timer,
+} from "@/components/wf";
+
+const MINUTE_MS = 60_000;
+
+/** The three handover shifts and the board-time clock each one starts at. */
+const SHIFTS = [
+  { id: "morning", label: "Morning", start: "07:00" },
+  { id: "afternoon", label: "Afternoon", start: "15:00" },
+  { id: "night", label: "Night", start: "23:00" },
+] as const;
 
 /**
  * THE FILTER — owner ruling 2026-09-09 (`docs/ward-flow/owner-decisions-2026-09-09.md` §1).
@@ -899,6 +924,11 @@ export function HandoverPage() {
     [patients, referrals, units, now],
   );
 
+  const currentShift = SHIFTS.find((shift) => shift.id === selectedShift) ?? SHIFTS[1];
+  const previousShift = SHIFTS[(SHIFTS.indexOf(currentShift) + SHIFTS.length - 1) % SHIFTS.length];
+  // Same 15:00 board-time boundary the sidebar handover countdown reads.
+  const minutesToHandover = dayShiftEndInstant(now) - now;
+
   const shiftLabelText =
     selectedShift === "morning"
       ? "Morning Shift (07:00–15:30)"
@@ -907,87 +937,115 @@ export function HandoverPage() {
         : "Night Shift (23:00–07:30)";
 
   return (
-    <div
-      className={`${styles.screen} ${pageStyles.screen}`}
-      data-testid="ward-handover-page"
-      data-ward-design="third-edition"
-    >
+    <div className={`${styles.screen} ${pageStyles.screen}`} data-testid="ward-handover-page" data-ward-design="v6">
       <main id="main-content" className={`${styles.main} ${pageStyles.main}`}>
-        {/* ── UNIFIED COMMAND HORIZON: 3-TIER HANDOVER FLIGHT DECK ── */}
-        <div className={pageStyles.commandHorizonCard}>
-          {/* TIER 1: DARK HERO HEADER */}
-          <header className={pageStyles.heroHeader}>
-            <div className={pageStyles.shiftInfo}>
-              <div className={pageStyles.govTag}>
-                <span className={pageStyles.badgeDot} />
-                WA HEALTH MENTAL HEALTH OPERATIONS · LIVE SYNC
-              </div>
-              <div className={pageStyles.shiftTitleRow}>
-                <h1 className={pageStyles.shiftTitle}>
-                  {selectedShift === "morning"
-                    ? "Morning handover"
-                    : selectedShift === "afternoon"
-                      ? "Afternoon handover"
-                      : "Night handover"}
-                </h1>
-                <span className={pageStyles.shiftTime}>
-                  {selectedShift === "morning"
-                    ? "07:00 – 15:30 AWST"
-                    : selectedShift === "afternoon"
-                      ? "15:00 – 23:30 AWST"
-                      : "23:00 – 07:30 AWST"}
-                </span>
-              </div>
-              <div className={pageStyles.handoffTeams}>
-                Outgoing:{" "}
-                <strong>
-                  {selectedShift === "morning"
-                    ? "Night Shift"
-                    : selectedShift === "afternoon"
-                      ? "Morning Shift"
-                      : "Afternoon Shift"}
-                </strong>{" "}
-                → Incoming:{" "}
-                <strong>
-                  {selectedShift === "morning"
-                    ? "Morning Shift"
-                    : selectedShift === "afternoon"
-                      ? "Afternoon Shift"
-                      : "Night Shift"}
-                </strong>
-                <span className={pageStyles.takenAtMeta} data-testid="ward-handover-taken-at">
-                  {" · "}Updated {formatSheetMoment(now, dayZero)}
-                </span>
-              </div>
+        {/* v6 hero: shift, the five handover counts, the shift track and the print action. */}
+        <Hero
+          level={1}
+          className={pageStyles.handoverHero}
+          eyebrow={`Handover · ${currentShift.start} start`}
+          title={`${currentShift.label} handover`}
+          stats={
+            <div
+              className={pageStyles.heroStats}
+              data-testid="ward-handover-kpi-strip"
+              aria-label="Handover summary indicators"
+              data-print-hide
+            >
+              <SrOnly>Handover HUD</SrOnly>
+              <HeroStat
+                value={
+                  includedOpenCount === totalOpenCount ? (
+                    includedOpenCount
+                  ) : (
+                    <>
+                      {includedOpenCount}
+                      <span className={pageStyles.statOf}> of {totalOpenCount}</span>
+                    </>
+                  )
+                }
+                label={
+                  <>
+                    <span aria-hidden="true">Caseload</span>
+                    <SrOnly>Caseload in Scope</SrOnly>
+                  </>
+                }
+              />
+              <HeroStat value={currentReferralsCount} label="Referrals" />
+              <HeroStat
+                value={allocatableVacancies}
+                tone={allocatableVacancies > 0 ? "success" : undefined}
+                label={
+                  <>
+                    <span aria-hidden="true">Allocatable beds</span>
+                    <SrOnly>Unoccupied Beds</SrOnly>
+                  </>
+                }
+              />
+              <HeroStat
+                value={breachedOnSheetCount + urgentOutsideFilter.length}
+                tone={breachedOnSheetCount + urgentOutsideFilter.length > 0 ? "danger" : undefined}
+                label={
+                  <>
+                    <span aria-hidden="true">Form expiries</span>
+                    <SrOnly>Form expiries passed</SrOnly>
+                  </>
+                }
+              />
+              <HeroStat
+                value={speciallingInScopeCount}
+                label={
+                  <>
+                    <span aria-hidden="true">1:1 specialling</span>
+                    <SrOnly>1:1 Specialling Roster</SrOnly>
+                  </>
+                }
+              />
             </div>
-
-            <div className={pageStyles.actions}>
-              <button
-                type="button"
-                className={pageStyles.btnAction}
+          }
+          bar={
+            <>
+              <HeroTrack
+                label="Shift"
+                value={selectedShift}
+                onChange={setSelectedShift}
+                items={SHIFTS.map((shift) => ({
+                  id: shift.id,
+                  label: (
+                    <>
+                      {shift.label}
+                      <span className={pageStyles.trackClock}>{shift.start}</span>
+                    </>
+                  ),
+                }))}
+              />
+              <span className={pageStyles.handoffTeams}>
+                Outgoing <strong>{previousShift.label}</strong> · incoming <strong>{currentShift.label}</strong>
+              </span>
+            </>
+          }
+          barAside={
+            <>
+              {minutesToHandover > 0 ? (
+                <span className={pageStyles.heroTimer}>
+                  <Icon icon={Clock} size={14} />
+                  <span>Handover</span>
+                  <Timer at={(now + minutesToHandover) * MINUTE_MS} now={now * MINUTE_MS} direction="in" />
+                </span>
+              ) : null}
+              <Button
+                variant="onHero"
+                size="sm"
+                icon={copied ? Check : Copy}
                 onClick={handleCopySummary}
                 title="Copy formatted text handover snapshot"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="13"
-                  height="13"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                </svg>
-                <span>{copied ? "✓ Copied!" : "Copy Summary"}</span>
-              </button>
-
-              <button
-                type="button"
-                className={pageStyles.btnAction}
+                {copied ? "Copied" : "Copy summary"}
+              </Button>
+              <Button
+                variant="light"
+                size="sm"
+                icon={Printer}
                 aria-label="Print"
                 onClick={() => {
                   setActiveTab("snapshot");
@@ -997,100 +1055,20 @@ export function HandoverPage() {
                 data-testid="print-button"
                 title="Print A4 rapid handover sheet"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="13"
-                  height="13"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <polyline points="6 9 6 2 18 2 18 9" />
-                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                  <rect x="6" y="14" width="12" height="8" />
-                </svg>
-                <span>Print A4 Sheet</span>
-              </button>
-            </div>
-          </header>
+                Print A4 sheet
+              </Button>
+            </>
+          }
+        />
 
-          {/* TIER 2: DARK TELEMETRY DECK */}
-          <div
-            className={pageStyles.telemetryDeck}
-            data-testid="ward-handover-kpi-strip"
-            aria-label="Handover summary indicators"
-            data-print-hide
-          >
-            <span className={pageStyles.srOnly}>Handover HUD</span>
-            <div className={pageStyles.telemetryPlain}>
-              <div className={pageStyles.metricItem}>
-                <span className={pageStyles.metricLabel}>
-                  Caseload:
-                  <span className={pageStyles.srOnly}>Caseload in Scope</span>
-                </span>
-                <span className={pageStyles.metricVal}>
-                  {includedOpenCount} / {totalOpenCount}
-                </span>
-              </div>
-              <span className={pageStyles.metricSep}>|</span>
-              <div className={pageStyles.metricItem}>
-                <span className={pageStyles.metricLabel}>Referrals:</span>
-                <span className={pageStyles.metricVal}>{currentReferralsCount}</span>
-              </div>
-              <span className={pageStyles.metricSep}>|</span>
-              <div className={pageStyles.metricItem}>
-                <span className={pageStyles.metricLabel}>
-                  Allocatable Beds:
-                  <span className={pageStyles.srOnly}>Unoccupied Beds</span>
-                </span>
-                <span className={`${pageStyles.metricVal} ${allocatableVacancies > 0 ? pageStyles.goodVal : ""}`}>
-                  {allocatableVacancies}
-                </span>
-              </div>
-              <span className={pageStyles.metricSep}>|</span>
-              <div className={pageStyles.metricItem}>
-                <span className={pageStyles.metricLabel}>
-                  Form Expiries:
-                  <span className={pageStyles.srOnly}>Form expiries passed</span>
-                </span>
-                <span
-                  className={`${pageStyles.metricVal} ${breachedOnSheetCount + urgentOutsideFilter.length > 0 ? pageStyles.dangerVal : ""}`}
-                >
-                  {breachedOnSheetCount + urgentOutsideFilter.length}
-                </span>
-                <LegalLimitsNotChecked variant="tag" />
-              </div>
-              <span className={pageStyles.metricSep}>|</span>
-              <div className={pageStyles.metricItem}>
-                <span className={pageStyles.metricLabel}>
-                  1:1 Specialling:
-                  <span className={pageStyles.srOnly}>1:1 Specialling Roster</span>
-                </span>
-                <span className={`${pageStyles.metricVal} ${speciallingInScopeCount > 0 ? pageStyles.warnVal : ""}`}>
-                  {speciallingInScopeCount}
-                </span>
-              </div>
-            </div>
-
-            <div className={pageStyles.liveSyncRoster}>
-              <span className={pageStyles.rosterDot} /> Whole Network Live Roster Sync
-            </div>
-          </div>
-
-          {/* TIER 3: WHITE CONTROL DECK */}
-          <section className={pageStyles.controlToolbarDeck} aria-label="Handover Scope and Filters" data-print-hide>
-            {/* Far Left: Three Dropdowns + Reset */}
-            <div className={pageStyles.ctrlGroupLeft}>
-              {/* Dropdown 1: Network / Master Scope Control */}
+        {/* Scope and layout toolbar */}
+        <Card as="section" className={pageStyles.toolbarCard} aria-label="Handover Scope and Filters" data-print-hide>
+          <div className={pageStyles.toolbarRow}>
+            <div className={pageStyles.toolbarGroup}>
               <HandoverScopeControl value={scopeValue} onChange={setScopeValue} units={units} />
-
-              {/* Dropdown 2: Wards Quick Selection */}
-              <select
+              <Select
                 aria-label="Wards Selection"
-                className={`${pageStyles.selectThin} ${pageStyles.selectWards}`}
+                boxClassName={pageStyles.toolbarSelect}
                 value={scope.kind === "ward" ? scope.id : ""}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -1101,18 +1079,16 @@ export function HandoverPage() {
                   }
                 }}
               >
-                <option value="">All Wards</option>
+                <option value="">All wards</option>
                 {sortedUnits.map((unit) => (
                   <option key={unit.id} value={unit.id}>
                     {unit.name}
                   </option>
                 ))}
-              </select>
-
-              {/* Dropdown 3: Filters (Movement Focus) */}
-              <select
+              </Select>
+              <Select
                 aria-label="Movement Filters"
-                className={`${pageStyles.selectThin} ${pageStyles.selectFilters}`}
+                boxClassName={pageStyles.toolbarSelect}
                 value={activeTableSection === "all" && focusFilter !== "all" ? focusFilter : activeTableSection}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -1129,106 +1105,77 @@ export function HandoverPage() {
                   }
                 }}
               >
-                <option value="longest">Longest Waits ({snapshot.longestWaits.length})</option>
-                <option value="pulled">Beds Pulled ({snapshot.pulledBeds.length})</option>
-                <option value="open">Still Open ({openBeforeShiftEnd.length})</option>
-                <option value="transit">In Transit ({snapshot.inTransit.length})</option>
+                <option value="longest">Longest waits ({snapshot.longestWaits.length})</option>
+                <option value="pulled">Beds pulled ({snapshot.pulledBeds.length})</option>
+                <option value="open">Still open ({openBeforeShiftEnd.length})</option>
+                <option value="transit">In transit ({snapshot.inTransit.length})</option>
                 <option value="placement">Placement ({snapshot.placementGoneWrong.length})</option>
-                <option value="all">All Movements ({scopeIncludedCount})</option>
-              </select>
-
-              {/* Reset Button */}
-              <button
-                type="button"
-                className={pageStyles.btnResetIntuitive}
+                <option value="all">All movements ({scopeIncludedCount})</option>
+              </Select>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={RotateCcw}
+                aria-label="Reset to Statewide"
+                title="Reset to Statewide"
                 onClick={() => {
                   setScopeValue(NETWORK_SCOPE_VALUE);
                   setFocusFilter("all");
                   setActiveTableSection("longest");
                   setSearchQuery("");
                 }}
-                title="Reset to Statewide"
               >
-                <span style={{ fontSize: "13px" }}>↺</span> Reset
-                <span className={pageStyles.srOnly}>Reset to Statewide</span>
-              </button>
+                Reset
+              </Button>
             </div>
-
-            {/* Far Right: Shift Switcher with Exact Shift Times + Count Chip */}
-            <div className={pageStyles.ctrlGroupRight}>
-              <div className={pageStyles.shiftPillLight}>
-                <button
-                  type="button"
-                  className={`${pageStyles.shiftBtnLight} ${selectedShift === "morning" ? pageStyles.active : ""}`}
-                  onClick={() => setSelectedShift("morning")}
-                  title="Switch to Morning Shift"
-                >
-                  {selectedShift === "morning" && <span className={pageStyles.deckShiftDot} />}
-                  <span>Morning</span>
-                  <span className={pageStyles.shiftSubtime}>07:00</span>
-                </button>
-                <button
-                  type="button"
-                  className={`${pageStyles.shiftBtnLight} ${selectedShift === "afternoon" ? pageStyles.active : ""}`}
-                  onClick={() => setSelectedShift("afternoon")}
-                  title="Switch to Afternoon Shift"
-                >
-                  {selectedShift === "afternoon" && <span className={pageStyles.deckShiftDot} />}
-                  <span>Afternoon</span>
-                  <span className={pageStyles.shiftSubtime}>15:00</span>
-                </button>
-                <button
-                  type="button"
-                  className={`${pageStyles.shiftBtnLight} ${selectedShift === "night" ? pageStyles.active : ""}`}
-                  onClick={() => setSelectedShift("night")}
-                  title="Switch to Night Shift"
-                >
-                  {selectedShift === "night" && <span className={pageStyles.deckShiftDot} />}
-                  <span>Night</span>
-                  <span className={pageStyles.shiftSubtime}>23:00</span>
-                </button>
-              </div>
-
-              <span className={pageStyles.countChip}>
-                <span className={pageStyles.countDot} />
-                {totalOpenCount} open
-              </span>
+            <div className={pageStyles.toolbarGroup}>
+              <Segmented
+                label="Sheet Layout"
+                value={sheetViewMode}
+                onChange={setSheetViewMode}
+                items={[
+                  { id: "table", label: "Table" },
+                  { id: "cards", label: "ISBAR cards" },
+                ]}
+              />
+              {sheetViewMode === "table" ? (
+                <Button
+                  variant="sec"
+                  size="sm"
+                  iconOnly
+                  icon={isTableEnlarged ? Minimize2 : Maximize2}
+                  aria-label={isTableEnlarged ? "Compress view" : "Enlarge table"}
+                  aria-expanded={isTableEnlarged}
+                  title={
+                    isTableEnlarged ? "Compress table to normal bounded view" : "Enlarge table to view all records"
+                  }
+                  onClick={() => setIsTableEnlarged(!isTableEnlarged)}
+                />
+              ) : null}
+              <Button variant="sec" size="sm" icon={Copy} onClick={handleCopySummary}>
+                Copy text
+              </Button>
             </div>
-          </section>
-
-          {/* Scope transparency banner */}
-          <div className={pageStyles.filterBanner} id="filterBanner" data-print-hide>
-            <div className={pageStyles.filterBannerText}>
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <circle cx="8" cy="8" r="7" />
-                <path d="M8 5v3l2 2" />
-              </svg>
-              <span>
-                Displaying records for{" "}
-                <b data-testid="ward-handover-scope-summary">
-                  {scopeLabel} · {scopeIncludedCount} of {totalOpenCount} open movements
-                </b>
-                {" · "}
-                <span data-testid="ward-handover-scope-excluded">
-                  {scopeExcludedCount} open movement{scopeExcludedCount === 1 ? "" : "s"}{" "}
-                  {scopeExcludedCount === 1 ? "is" : "are"} outside this filter.
-                </span>
-              </span>
-            </div>
-            <button
-              type="button"
-              className={pageStyles.filterResetBtn}
-              onClick={() => {
-                setScopeValue(NETWORK_SCOPE_VALUE);
-                setFocusFilter("all");
-                setActiveTableSection("longest");
-                setSearchQuery("");
-              }}
-            >
-              Reset to Statewide
-            </button>
           </div>
-        </div>
+          {/* Scope transparency line: the named scope and the excluded count stay side by side. */}
+          <p className={pageStyles.scopeLine} id="filterBanner">
+            <StatusGlyph tone="info" size={9} />
+            <span>
+              Showing{" "}
+              <b data-testid="ward-handover-scope-summary">
+                {scopeLabel} · {scopeIncludedCount} of {totalOpenCount} open movements
+              </b>
+              {" · "}
+              <span data-testid="ward-handover-scope-excluded">
+                {scopeExcludedCount} open movement{scopeExcludedCount === 1 ? "" : "s"}{" "}
+                {scopeExcludedCount === 1 ? "is" : "are"} outside this filter.
+              </span>
+            </span>
+            <span className={pageStyles.scopeLineAside}>
+              Form expiries <LegalLimitsNotChecked variant="tag" />
+            </span>
+          </p>
+        </Card>
 
         {/* Hidden / accessible Tab Nav for R2-12 test compatibility */}
         <nav className={pageStyles.tabNavHidden} role="tablist" aria-label="Handover Detail Sections" data-print-hide>
@@ -1315,131 +1262,19 @@ export function HandoverPage() {
           <article className={pageStyles.snapshotCard} id="printableSnapshotCard" data-testid="ward-handover-sheet">
             <div className={pageStyles.snapshotHead}>
               <div className={pageStyles.snapshotTitleGroup}>
+                <IconTile icon={ClipboardList} />
                 <h2>Handover sheet</h2>
-                <span className={pageStyles.snapshotBadge}>Snapshot at {formatInstant(now)} AWST</span>
+                <span className={pageStyles.snapshotMeta}>
+                  {scopeLabel} · {currentShift.label.toLowerCase()} shift
+                </span>
               </div>
-
-              <div className={pageStyles.snapshotControls}>
-                <div className={pageStyles.viewModeToggle} role="radiogroup" aria-label="Sheet Layout" data-print-hide>
-                  <button
-                    type="button"
-                    className={`${pageStyles.viewModeBtn} ${sheetViewMode === "table" ? pageStyles.active : ""}`}
-                    onClick={() => setSheetViewMode("table")}
-                    role="radio"
-                    aria-checked={sheetViewMode === "table"}
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="13"
-                      height="13"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden="true"
-                    >
-                      <line x1="2" y1="4" x2="14" y2="4" />
-                      <line x1="2" y1="8" x2="14" y2="8" />
-                      <line x1="2" y1="12" x2="14" y2="12" />
-                    </svg>
-                    <span>Table View</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${pageStyles.viewModeBtn} ${sheetViewMode === "cards" ? pageStyles.active : ""}`}
-                    onClick={() => setSheetViewMode("cards")}
-                    role="radio"
-                    aria-checked={sheetViewMode === "cards"}
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="13"
-                      height="13"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden="true"
-                    >
-                      <rect x="2" y="2" width="5" height="5" rx="1" />
-                      <rect x="9" y="2" width="5" height="5" rx="1" />
-                      <rect x="2" y="9" width="5" height="5" rx="1" />
-                      <rect x="9" y="9" width="5" height="5" rx="1" />
-                    </svg>
-                    <span>ISBAR Cards</span>
-                  </button>
-                </div>
-                {sheetViewMode === "table" && (
-                  <button
-                    type="button"
-                    className={pageStyles.btnActionSec}
-                    onClick={() => setIsTableEnlarged(!isTableEnlarged)}
-                    aria-expanded={isTableEnlarged}
-                    title={
-                      isTableEnlarged ? "Compress table to normal bounded view" : "Enlarge table to view all records"
-                    }
-                    data-print-hide
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="13"
-                      height="13"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      {isTableEnlarged ? (
-                        <>
-                          <polyline points="4 14 7 14 7 11" />
-                          <polyline points="12 2 9 2 9 5" />
-                          <polyline points="14 7 14 4 11 4" />
-                          <polyline points="2 9 2 12 5 12" />
-                        </>
-                      ) : (
-                        <>
-                          <polyline points="1.5 6 1.5 1.5 6 1.5" />
-                          <polyline points="14.5 6 14.5 1.5 10 1.5" />
-                          <polyline points="1.5 10 1.5 14.5 6 14.5" />
-                          <polyline points="14.5 10 14.5 14.5 10 14.5" />
-                        </>
-                      )}
-                    </svg>
-                    <span>{isTableEnlarged ? "Compress View" : "Enlarge Table"}</span>
-                  </button>
-                )}
-                <button type="button" className={pageStyles.btnActionSec} onClick={handleCopySummary}>
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="13"
-                    height="13"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                  <span>Copy Text</span>
-                </button>
-                <button type="button" className={pageStyles.btnPrintPrimary} onClick={() => window.print()}>
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="13"
-                    height="13"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    aria-hidden="true"
-                  >
-                    <polyline points="6 9 6 2 18 2 18 9" />
-                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                    <rect x="6" y="14" width="12" height="8" />
-                  </svg>
-                  <span>Print Sheet (A4)</span>
-                </button>
-              </div>
+              <span className={pageStyles.snapshotBadge}>
+                <Icon icon={Clock} size={14} />
+                Snapshot{" "}
+                <span className={pageStyles.snapshotClock} data-testid="ward-handover-taken-at">
+                  at {formatInstant(now)}
+                </span>
+              </span>
             </div>
 
             <div className={pageStyles.snapshotBody}>
@@ -1475,15 +1310,6 @@ export function HandoverPage() {
                     </div>
                   ) : (
                     priorityGroups.map((group) => {
-                      const tierClass =
-                        group.tier === "critical"
-                          ? pageStyles.priorityCritical
-                          : group.tier === "inbound"
-                            ? pageStyles.priorityInbound
-                            : group.tier === "referral"
-                              ? pageStyles.priorityReferral
-                              : pageStyles.priorityDischarge;
-
                       return (
                         <section key={group.tier} className={pageStyles.prioritySection}>
                           <div className={pageStyles.priorityHead}>
@@ -1521,7 +1347,7 @@ export function HandoverPage() {
                                 return (
                                   <article
                                     key={movement.id}
-                                    className={`${pageStyles.patientCard} ${tierClass}`}
+                                    className={pageStyles.patientCard}
                                     data-testid={`patient-card-${movement.id}`}
                                   >
                                     <div className={pageStyles.patientCardHead}>
@@ -1783,7 +1609,6 @@ export function HandoverPage() {
                                       }}
                                       aria-label={`View clinical handover details for ${patientInfo.name}`}
                                     >
-                                      <span className={pageStyles.patientAvatarPill}>{patientInfo.name.charAt(0)}</span>
                                       <b>{patientInfo.name}</b>
                                     </button>
                                     <div className={pageStyles.patientMetaRow}>
@@ -3432,74 +3257,44 @@ export function HandoverScopeControl({
   return (
     <label htmlFor="ward-handover-scope" className={pageStyles.scopeSelectForm} data-print-hide>
       <span className={pageStyles.srOnly}>Filter the sheet</span>
-      <div className={pageStyles.scopeSelectWrap}>
-        <svg
-          viewBox="0 0 16 16"
-          width="13"
-          height="13"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={pageStyles.scopeSelectIcon}
-          aria-hidden="true"
-        >
-          <path d="M2 14h12M4 14V3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v11M7 5h2M7 8h2M7 11h2" />
-        </svg>
-        <select
-          id="ward-handover-scope"
-          aria-label="Filter the sheet"
-          data-testid="ward-handover-scope-select"
-          className={pageStyles.wardSelect}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        >
-          <option value={NETWORK_SCOPE_VALUE}>Whole network</option>
-          <optgroup label="Service">
-            {HEALTH_SERVICES.map((service) => (
-              <option key={service} value={handoverScopeValue({ kind: "service", id: service })}>
-                {service}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Ward">
-            {sortedUnits.map((unit) => (
-              <option key={unit.id} value={handoverScopeValue({ kind: "ward", id: unit.id })}>
-                {unit.name}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Emergency department">
-            {sortedEds.map((ed) => (
-              <option key={ed.id} value={handoverScopeValue({ kind: "ed", id: ed.id })}>
-                {ed.name}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Community team">
-            {sortedTeams.map((team) => (
-              <option key={team.id} value={handoverScopeValue({ kind: "team", id: team.id })}>
-                {team.name}
-              </option>
-            ))}
-          </optgroup>
-        </select>
-        <svg
-          viewBox="0 0 12 12"
-          width="10"
-          height="10"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={pageStyles.scopeChevronIcon}
-          aria-hidden="true"
-        >
-          <path d="M3 4.5l3 3 3-3" />
-        </svg>
-      </div>
+      <Select
+        id="ward-handover-scope"
+        aria-label="Filter the sheet"
+        data-testid="ward-handover-scope-select"
+        boxClassName={pageStyles.scopeSelect}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        <option value={NETWORK_SCOPE_VALUE}>Whole network</option>
+        <optgroup label="Service">
+          {HEALTH_SERVICES.map((service) => (
+            <option key={service} value={handoverScopeValue({ kind: "service", id: service })}>
+              {service}
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label="Ward">
+          {sortedUnits.map((unit) => (
+            <option key={unit.id} value={handoverScopeValue({ kind: "ward", id: unit.id })}>
+              {unit.name}
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label="Emergency department">
+          {sortedEds.map((ed) => (
+            <option key={ed.id} value={handoverScopeValue({ kind: "ed", id: ed.id })}>
+              {ed.name}
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label="Community team">
+          {sortedTeams.map((team) => (
+            <option key={team.id} value={handoverScopeValue({ kind: "team", id: team.id })}>
+              {team.name}
+            </option>
+          ))}
+        </optgroup>
+      </Select>
     </label>
   );
 }
