@@ -104,6 +104,9 @@
   --ward-feature-end: var(--surface-feature-end);
   --ward-feature-ink: var(--surface-feature-ink);
   --ward-shadow-rgb: 0 0 0;
+  /* Raised-popover shadow. Nine ward stylesheets read it with no fallback; its only declaration
+     used to sit on the Community index page and went with that page's v6 rebuild. */
+  --float: 0 8px 24px -4px rgb(var(--ward-shadow-rgb) / 0.12);
   /* White text on a filled status chip. Seven chips on the delays and statistics screens read
      this with no fallback after their literal #ffffff was tokenised on 25 September, and nothing
      declared it, so they lost their white text. `--danger-solid-contrast` is #ffffff in light and

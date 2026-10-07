@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -66,6 +66,16 @@ function renderOverview() {
 }
 
 /** The page's own body text, tags stripped, so a CSS Module class hash cannot pass as a figure. */
+/** v6: the admission stages card opens on its chart; its Data view is the exact table. */
+function showStageData() {
+  fireEvent.click(screen.getByRole("radio", { name: "Data" }));
+}
+
+/** A v6 bar list writes a nought as "none"; read it back as the number it stands for. */
+function countText(count: number): string {
+  return count === 0 ? "none" : String(count);
+}
+
 function bodyText(): string {
   return (document.body.textContent ?? "").replace(/\s+/gu, " ").trim();
 }
@@ -130,6 +140,7 @@ describe("the statistics overview now carries real figures, honestly", () => {
     }
 
     renderOverview();
+    showStageData();
 
     for (const position of ADMISSION_STAGE_POSITIONS) {
       expect(value(`ward-statistics-overview-stage-${position}`), `stage "${position}"`).toBe(
@@ -151,7 +162,7 @@ describe("the statistics overview now carries real figures, honestly", () => {
 
     for (const tally of expected.tallies) {
       expect(value(`ward-statistics-overview-decline-${tally.reason}`), `reason "${tally.reason}"`).toBe(
-        String(tally.count),
+        countText(tally.count),
       );
     }
   });
@@ -204,6 +215,7 @@ describe("the statistics overview now carries real figures, honestly", () => {
    */
   it("every figure leaf is pure digits — no dash and no blank standing in for a number", () => {
     renderOverview();
+    showStageData();
 
     const leafTestIds = [
       "ward-statistics-overview-capacity-ready",
@@ -228,7 +240,8 @@ describe("the statistics overview now carries real figures, honestly", () => {
     for (const reason of declinesByReason(seedWardFlowStateAt(0).movements).tallies.map((tally) => tally.reason)) {
       const testId = `ward-statistics-overview-decline-${reason}`;
       const text = value(testId);
-      expect(text, `"${testId}" is not pure digits: "${text}"`).toMatch(/^\d+$/u);
+      // v6 bar lists write a nought as the word "none" (components.md BarList), never a dash or blank.
+      expect(text, `"${testId}" is not pure digits or "none": "${text}"`).toMatch(/^(\d+|none)$/u);
     }
   });
 
@@ -263,6 +276,7 @@ describe("the statistics overview now carries real figures, honestly", () => {
   /** The two tables the brief requires, at minimum. */
   it("carries at least two real data tables", () => {
     renderOverview();
+    showStageData();
     expect(screen.getByTestId("ward-statistics-overview-stage-table")).toBeInTheDocument();
     expect(screen.getByTestId("ward-statistics-overview-declines-table")).toBeInTheDocument();
   });
@@ -281,7 +295,9 @@ describe("the statistics overview now carries real figures, honestly", () => {
     renderOverview();
     const section = statisticsSectionById("overview");
     expect(section).toBeDefined();
-    expect(screen.getByRole("heading", { level: 1, name: section!.label })).toBeTruthy();
+    // v6: the hero names the network's beds in use; the section name leads the eyebrow.
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/beds in use$/);
+    expect(screen.getByTestId("ward-statistics-section-eyebrow")).toHaveTextContent(section!.label);
     expect(screen.queryByTestId("ward-statistics-overview-scope")).toBeNull();
     expect(screen.getByTestId("ward-statistics-overview-capacity")).toBeVisible();
     expect(screen.queryByTestId("ward-statistics-overview-invented-figures")).toBeNull();

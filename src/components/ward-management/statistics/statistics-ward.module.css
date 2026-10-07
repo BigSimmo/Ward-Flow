@@ -1,0 +1,119 @@
+/*
+ * One ward in detail (v6). Layout and small text roles only; the cards, charts and tables come
+ * from the wf primitives and statistics-v6.module.css. Tokens only.
+ */
+.gridWide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .gridWide {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.unresolvedId {
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+}
+
+.stateLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: var(--wf-s-2) 0 0;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.stateLineEnd {
+  margin-left: auto;
+}
+
+.factLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line-2);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.factLine b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+}
+
+.figureSub {
+  display: block;
+  margin-top: 2px;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+}
+
+.subHead {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.headFigure {
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.headFigure b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.barriers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line-2);
+}
+
+.barriersHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.readyShare {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.readyShare b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+}
+
+.admissionId {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}

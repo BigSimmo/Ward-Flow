@@ -60,7 +60,7 @@ describe("the out-of-area board layout ordering", () => {
 
   it("renders the board grid following the page header", () => {
     renderBoard();
-    const header = screen.getByText("Out-of-Area Repatriation Ledger");
+    const header = screen.getByRole("heading", { level: 1, name: /away from home/ });
     const entries = screen.getByTestId("ward-out-of-area-entries");
     expect(header).toBeInTheDocument();
     expect(entries).toBeInTheDocument();

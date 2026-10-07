@@ -104,14 +104,15 @@ describe("PR15 recorded facts and unavailable data", () => {
     ];
     render(<HospitalCapacityMatrix units={units} bedReleases={[]} />);
     const held = screen.getByText(units[0].name).closest("tr")!;
-    expect(within(held).getByText("No ready beds")).toBeTruthy();
+    // v6 "Beds by ward" status wording: None ready, Near limit, Has ready.
+    expect(within(held).getByText("None ready")).toBeTruthy();
     expect(
       within(held)
         .getAllByRole("cell")
         .map((cell) => cell.textContent),
     ).toContain("3");
-    expect(within(screen.getByText("Zero-bed ward").closest("tr")!).getByText("No ready beds")).toBeTruthy();
-    expect(within(screen.getByText("Available ward").closest("tr")!).getByText("Ready beds recorded")).toBeTruthy();
+    expect(within(screen.getByText("Zero-bed ward").closest("tr")!).getByText("None ready")).toBeTruthy();
+    expect(within(screen.getByText("Available ward").closest("tr")!).getByText("Has ready")).toBeTruthy();
     expect(screen.queryByText("Open Intake")).toBeNull();
   });
 
@@ -159,9 +160,9 @@ describe("PR15 recorded facts and unavailable data", () => {
     const row = (id: string) => within(roster).getByText(new RegExp(id)).closest("tr")!;
     expect(within(row("AD-WAIT")).getByText("Waitlisted")).toBeTruthy();
     expect(within(row("AD-PULL")).getByText("Pulled")).toBeTruthy();
-    expect(within(row("AD-WAIT")).getByText("Not arrived yet")).toBeTruthy();
-    expect(within(row("AD-HOUR")).getByText("0 d")).toBeTruthy();
-    expect(within(row("AD-DAYS")).getByText("2 d")).toBeTruthy();
+    expect(within(row("AD-WAIT")).getByText("Not arrived")).toBeTruthy();
+    expect(within(row("AD-HOUR")).getByText("0d")).toBeTruthy();
+    expect(within(row("AD-DAYS")).getByText("2d")).toBeTruthy();
     expect(within(roster).queryByText(/AD-GONE/)).toBeNull();
     expect(roster.textContent).not.toMatch(/Bed \d+|Out of Service/);
     expect(within(roster).queryByRole("button")).toBeNull();
@@ -191,7 +192,9 @@ describe("PR15 recorded facts and unavailable data", () => {
   it("changes community team using the internal router", () => {
     renderFlow(<StatisticsCommunityScreen teamId={COMMUNITY_TEAM_PAGES[0].id} />);
     const next = COMMUNITY_TEAM_PAGES[1].id;
-    fireEvent.change(screen.getByLabelText("Community Team:"), { target: { value: next } });
+    // v6 (7 Oct 2026): the team is changed from the hero's Change team menu.
+    fireEvent.click(screen.getByRole("button", { name: /Change team/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: COMMUNITY_TEAM_PAGES[1].name }));
     expect(push).toHaveBeenCalledExactlyOnceWith(communityStatisticsHref(next));
   });
 

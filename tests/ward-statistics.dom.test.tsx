@@ -122,6 +122,9 @@ function renderScreen(props: {
   );
 }
 
+/** A v6 bar list writes a nought as "none"; read it back as the number it stands for. */
+const renderedCount = (text: string | null) => (text === "none" ? 0 : Number(text));
+
 describe("the statistics screen — six drawing panels, kept apart", () => {
   // Josh, 25 Sept 2026: made-up trends show "Not recorded"; targets stay, labelled as targets.
   it("uses visible operational panels instead of the retired explanation: offers only the current state, with concise history and synthetic-data context", () => {
@@ -133,7 +136,8 @@ describe("the statistics screen — six drawing panels, kept apart", () => {
     const capacity = screen.getByTestId("ward-statistics-capacity-chart");
     expect(capacity).toBeVisible();
     expect(capacity.closest("details")).toBeNull();
-    expect(capacity.textContent).toContain("Current snapshot");
+    // v6 (7 Oct 2026): the approved card states the current ready-of-beds figure rather than a "Current snapshot" caption.
+    expect(capacity.textContent).toContain("ready of");
     expect(screen.queryByTestId("ward-statistics-flow-history")).toBeNull();
     expect(container.textContent).not.toContain("on yesterday");
     for (const invented of ["Surge Pressure", "Nominal Target", ">95% Surge", "reconciled live", "85% target"]) {
@@ -835,7 +839,12 @@ describe("declines by reason — generated from the model's vocabulary", () => {
 
     renderScreen({ admissions: [], referrals: [], bedReleases: [], movements: [] });
 
-    const rows = within(screen.getByTestId("ward-statistics-declines-by-reason-list")).getAllByRole("listitem");
+    // v6 bar list: each row's label carries the row testid; the count sits beside it in the same row.
+    const rows = Array.from(
+      screen
+        .getByTestId("ward-statistics-declines-by-reason-list")
+        .querySelectorAll('[data-testid^="ward-statistics-decline-"]:not([data-testid$="-count"])'),
+    );
     expect(rows.length).toBe(DECLINE_REASONS.length);
     // Order as well as membership: the vocabulary's own order is not a ranking, and a component
     // that started sorting by count would still pass a membership-only check.
@@ -865,7 +874,8 @@ describe("declines by reason — generated from the model's vocabulary", () => {
     });
 
     expect(screen.getByTestId(`ward-statistics-decline-${used}-count`).textContent).toBe("1");
-    expect(screen.getByTestId(`ward-statistics-decline-${unused}-count`).textContent).toBe("0");
+    // v6 bar lists write a nought as "none" (components.md BarList), and the row stays.
+    expect(screen.getByTestId(`ward-statistics-decline-${unused}-count`).textContent).toBe("none");
   });
 
   it("counts declines across movements and states the population they came from", () => {
@@ -920,7 +930,7 @@ describe("declines by reason — generated from the model's vocabulary", () => {
     });
 
     const rendered = DECLINE_REASONS.map((reason) =>
-      Number(screen.getByTestId(`ward-statistics-decline-${reason}-count`).textContent),
+      renderedCount(screen.getByTestId(`ward-statistics-decline-${reason}-count`).textContent),
     );
     expect(rendered.reduce((sum, value) => sum + value, 0)).toBe(3);
     expect(screen.getByTestId("ward-statistics-declines-by-reason-total").textContent).toBe("3");
@@ -951,8 +961,11 @@ describe("blocked discharges by reason — generated from the model's blocker vo
 
     // getByTestId throws (rather than returning null) when the list is absent, so a regression that
     // removes the figure fails here loudly instead of producing a silent empty-array comparison.
-    const rows = within(screen.getByTestId("ward-statistics-blocked-discharges-by-reason-list")).getAllByRole(
-      "listitem",
+    // v6 bar list: each row's label carries the row testid; the count sits beside it in the same row.
+    const rows = Array.from(
+      screen
+        .getByTestId("ward-statistics-blocked-discharges-by-reason-list")
+        .querySelectorAll('[data-testid^="ward-statistics-blocked-discharge-"]:not([data-testid$="-count"])'),
     );
     expect(rows.length).toBe(BED_RELEASE_BLOCKERS.length);
     // Order as well as membership: the vocabulary's own order is not a ranking.
@@ -981,7 +994,8 @@ describe("blocked discharges by reason — generated from the model's blocker vo
     });
 
     expect(screen.getByTestId(`ward-statistics-blocked-discharge-${used}-count`).textContent).toBe("1");
-    expect(screen.getByTestId(`ward-statistics-blocked-discharge-${unused}-count`).textContent).toBe("0");
+    // v6 bar lists write a nought as "none" (components.md BarList), and the row stays.
+    expect(screen.getByTestId(`ward-statistics-blocked-discharge-${unused}-count`).textContent).toBe("none");
   });
 
   it("counts blocked admissions across the ward and states the population they came from", () => {
@@ -1052,7 +1066,7 @@ describe("blocked discharges by reason — generated from the model's blocker vo
     });
 
     const rendered = BED_RELEASE_BLOCKERS.map((reason) =>
-      Number(screen.getByTestId(`ward-statistics-blocked-discharge-${reason}-count`).textContent),
+      renderedCount(screen.getByTestId(`ward-statistics-blocked-discharge-${reason}-count`).textContent),
     );
     expect(rendered.reduce((sum, value) => sum + value, 0)).toBe(3);
     expect(screen.getByTestId("ward-statistics-blocked-discharges-by-reason-total").textContent).toBe("3");
@@ -1092,7 +1106,7 @@ describe("blocked discharges by reason — generated from the model's blocker vo
     // `expect.soft()` so every row is checked and reported even if one fails — a plain `expect` here
     // would abort the loop at the first red row and hide every row after it.
     for (const reason of BED_RELEASE_BLOCKERS) {
-      expect.soft(screen.getByTestId(`ward-statistics-blocked-discharge-${reason}-count`).textContent).toBe("0");
+      expect.soft(screen.getByTestId(`ward-statistics-blocked-discharge-${reason}-count`).textContent).toBe("none");
     }
   });
 });

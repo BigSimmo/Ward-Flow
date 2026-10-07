@@ -1,117 +1,78 @@
 "use client";
 
-import { StatisticsInsightChart } from "./statistics-insight-chart";
-import { StatisticsDetailPanel } from "./statistics-detail-panel";
-import family from "./statistics-family.module.css";
-import { StatisticsCapacityChart } from "./statistics-capacity-chart";
-
+import { useState } from "react";
 import Link from "next/link";
+import { BedDouble, ChevronDown, MapPin, Network, Plane } from "lucide-react";
 
-import { StatisticsSectionFrame } from "@/components/ward-management/statistics/statistics-section-frame";
+import {
+  BarList,
+  CardBody,
+  CardFoot,
+  HeroStat,
+  Icon,
+  Menu,
+  Segmented,
+  SrOnly,
+  StatusGlyph,
+  buttonClass,
+  durMinutes,
+  tableClasses,
+} from "@/components/wf";
 import {
   statisticsSectionById,
   STATISTICS_SERVICE_CHOOSER_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
+import { serviceStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { HEALTH_SERVICES, type HealthService, type Referral } from "@/components/ward-management/ward-model";
-import { WardPanel } from "@/components/ward-management/ward-panel";
 import { outOfAreaLedger } from "@/components/ward-management/ward-referrals";
 import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
-import { WardTable } from "@/components/ward-management/ward-table/ward-table";
-import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 
+import { countAxisMax } from "./statistics-axis";
+import { StatisticsCapacityChart } from "./statistics-capacity-chart";
+import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
+import { useOptionalRouter } from "./statistics-nav";
 import { occupiedBeds } from "./statistics-occupancy";
-import styles from "./statistics-sections.module.css";
-import serviceStyles from "./statistics-service-screen.module.css";
-import pageStyles from "./statistics-service-third-edition.module.css";
+import styles from "./statistics-v6.module.css";
+import detail from "./statistics-detail.module.css";
 
-/**
- * ONE HEALTH SERVICE IN DETAIL — the only genuinely new screen in this plan.
- *
- * The audience is not a coordinator or a clinician, the two this feature has served until now — it
- * is a health-service manager asking one question: *is my service carrying its own referral demand,
- * or exporting it, and what does that cost.* Nothing else in Ward Flow groups by health service and
- * shows one of them its own figures; the network map and the ward index group by service too, but
- * every reader sees the whole network at once.
- *
- * ⚠️ **THE SERVICES ARE NORTH METRO, SOUTH METRO, EAST METRO, WACHS AND PRIVATE — `HEALTH_SERVICES`
- * (`ward-model.ts`).** The approved design mockup names them EMHS/SMHS/NMHS; this app has never had
- * those names, the acronyms appear nowhere in `src` as a service, and East Metropolitan Health
- * Service (EMHS) is East Metro under a second name. Using the app's own names rather than inventing
- * a mapping is not a stylistic choice — a second name for one fact is exactly the drift this
- * feature's own governance rules elsewhere.
- *
- * ⚠️ **AN ID THAT RESOLVES TO NOTHING GETS A PAGE THAT SAYS SO**, for the same reason the ward and
- * department screens beside this one do: an empty shell and "there is no such service" would render
- * identically, and a reader who takes the first for the second believes something false about a real
- * service. This screen never falls back to a different service.
- *
- * ⚠️ **EVERY UNIT READ HERE COMES FROM THE PROVIDER'S LIVE `units`, NEVER FROM `allUnits()` OR
- * `unitById()`.** `tests/ward-flow-single-source.test.ts` restricts both to three files that are not
- * this one; a screen resolving a ward from the frozen fixture would describe it as seeded rather
- * than as it is, which is the exact defect whole-branch review Critical 1 found. Which SITE a health
- * service owns, and which SITE an emergency department sits at, is identity rather than capacity —
- * neither changes while the prototype runs — so `wardSites`, `siteByCode` and
- * `allEmergencyDepartments()` are read directly, matching `statistics-ed-screen.tsx`'s own reasoning
- * for why an emergency department needs no live state at all.
- *
- * ⚠️ **DECLINES ATTRIBUTED TO A NAMED WARD ARE A WITHHELD PRODUCT DECISION, NOT BUILT HERE.**
- * `statistics-screen.tsx` explains at length why a per-ward decline figure would quietly decide what
- * "declines per ward" means, and that decision is the owner's rather than an implementer's. This
- * screen never attributes a decline to a ward. Attributing one to a SERVICE would be a different,
- * smaller claim — but this screen does not build that either, because the destinations a referral
- * declines from carry a bed's criteria rather than a service, and inventing a service attribution
- * for a figure the owner has not asked for would be the same withheld decision in a different unit.
- *
- * ⚠️ **THE 30-DAY IMPORT/EXPORT TREND IS DEMONSTRATION DATA, LABELLED AS SUCH ON EVERY RENDER.**
- * `WardFlowState` keeps only the current picture — nothing here remembers yesterday's placements —
- * so there is no real trend to compute. `generateDemonstrationSeries` and `DemonstrationChart`
- * (Task 1) are the one place a number may be invented in this feature, and the only component that
- * may render one; see their own file headers for the compiler brand that keeps a plain object from
- * reaching a real chart by accident.
- */
+const OUT_OF_AREA_HREF = "/mockups/ward-flow/out-of-area";
 
-function DistanceBandsBar({
-  total,
-  bandCounts,
-}: {
-  total: number;
-  bandCounts: Map<(typeof OUT_OF_AREA_BANDS)[number], number>;
-}) {
-  return (
-    <StatisticsInsightChart
-      title="Travel bands"
-      testId="statistics-service-travel-chart"
-      metrics={[
-        {
-          id: "people",
-          label: "Recorded patients",
-          unit: "people",
-          note: "Recorded travel bands use synthetic travel times and prototype thresholds.",
-        },
-      ]}
-      rows={OUT_OF_AREA_BANDS.map((band) => {
-        const count = bandCounts.get(band) ?? 0;
-        return {
-          id: band,
-          name: TRAVEL_BAND_LABELS[band],
-          values: { people: count },
-          detail:
-            total > 0
-              ? `${count} of ${total} recorded patients (${((count / total) * 100).toFixed(1)}%). Travel bands are synthetic, not a live travel estimate.`
-              : "No patients currently recorded out of area. Travel bands are synthetic, not a live travel estimate.",
-        };
-      })}
-    />
-  );
+/** "Sir Charles Gairdner Hospital" to "Sir Charles Gairdner", for the hero's one-line list. */
+function shortSiteName(name: string): string {
+  return name.replace(/\s+(Hospital|Health Campus)$/u, "");
 }
 
+/**
+ * ONE HEALTH SERVICE IN DETAIL.
+ *
+ * The audience is a health-service manager asking one question: *is my service carrying its own
+ * referral demand, or exporting it.* Nothing else in Ward Flow groups by health service and shows
+ * one of them its own figures.
+ *
+ * ⚠️ **THE SERVICES ARE NORTH METRO, SOUTH METRO, EAST METRO, WACHS AND PRIVATE — `HEALTH_SERVICES`
+ * (`ward-model.ts`).** The approved drawing names them EMHS/SMHS/NMHS; this app has never had those
+ * names, and a second name for one fact is exactly the drift this feature's governance rules out.
+ *
+ * ⚠️ **AN ID THAT RESOLVES TO NOTHING GETS A PAGE THAT SAYS SO**, for the same reason the ward and
+ * department screens beside this one do. This screen never falls back to a different service.
+ *
+ * ⚠️ **EVERY UNIT READ HERE COMES FROM THE PROVIDER'S LIVE `units`, NEVER FROM `allUnits()` OR
+ * `unitById()`.** Which SITE a health service owns, and which SITE an emergency department sits at,
+ * is identity rather than capacity, so `wardSites`, `siteByCode` and `allEmergencyDepartments()` are
+ * read directly.
+ *
+ * ⚠️ **DECLINES ATTRIBUTED TO A WARD OR A SERVICE ARE A WITHHELD PRODUCT DECISION, NOT BUILT HERE.**
+ *
+ * ⚠️ **NO TREND.** The drawing's seven-day occupancy line needs a history the record does not keep
+ * (owner, 25 Sept 2026: a made-up trend is not drawn), so it is left out rather than invented.
+ */
 export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
-  const { units: liveUnits, admissions, referrals, bedReleases, leaveBeds } = useWardFlow();
-  const now = useWardFlowClock();
+  const live = useStatisticsLive();
+  const { units: liveUnits, admissions, referrals, bedReleases, leaveBeds } = live.state;
+  const now = live.now;
 
   const section = statisticsSectionById("service");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'service' section");
@@ -120,81 +81,65 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
 
   if (!service) {
     return (
-      <StatisticsSectionFrame
+      <StatisticsPage
         section={section}
-        title="Health service not found"
-        subtitle="The address names a health service this prototype does not have."
+        navSection="service"
         testId="ward-statistics-service-screen"
-        design="third-edition"
+        title="Health service not found"
+        eyebrowLabel="Health service"
+        now={now}
+        paused={live.paused}
+        onTogglePause={live.togglePause}
       >
-        <div className={styles.notFoundBlock}>
-          <p className={styles.notFoundBody} data-testid="ward-statistics-service-unresolved">
-            No health service in this prototype has the name <span className={styles.unresolvedId}>{serviceId}</span>.
-            This prototype has exactly five: {wardServiceOrder.join(", ")}. It may have been renamed, or the name in the
-            address may be wrong. This page never falls back to a different service, because a page showing the wrong
-            service under the right heading is worse than a page showing nothing.
-          </p>
-          <p className={styles.body}>
-            <Link href={STATISTICS_SERVICE_CHOOSER_HREF} data-testid="ward-statistics-service-chooser-link">
-              Choose a health service from the statistics hub
-            </Link>{" "}
-            to reach one that does exist.
-          </p>
-        </div>
-      </StatisticsSectionFrame>
+        <StatCard icon={Network} title="No such health service">
+          <CardBody className={styles.bodyStack}>
+            <p data-testid="ward-statistics-service-unresolved">
+              No health service in this prototype has the name <code className={detail.code}>{serviceId}</code>. This
+              prototype has exactly five: {wardServiceOrder.join(", ")}. It may have been renamed, or the name in the
+              address may be wrong. This page never falls back to a different service, because a page showing the wrong
+              service under the right heading is worse than a page showing nothing.
+            </p>
+            <p>
+              <Link href={STATISTICS_SERVICE_CHOOSER_HREF} data-testid="ward-statistics-service-chooser-link">
+                Choose a health service from the statistics hub
+              </Link>{" "}
+              to reach one that does exist.
+            </p>
+          </CardBody>
+        </StatCard>
+      </StatisticsPage>
     );
   }
 
-  // Identity: which real hospitals, wards and emergency departments this service owns. Static
-  // membership rather than capacity, so the frozen site table is the right source — see the file
-  // header on why that is not the same rule as the one restricting `allUnits`/`unitById`.
   const serviceSites = wardSites.filter((site) => site.service === service);
   const serviceSiteCodes = new Set(serviceSites.map((site) => site.code));
   const serviceUnits = liveUnits.filter((unit) => serviceSiteCodes.has(unit.siteCode));
   const serviceEds = allEmergencyDepartments().filter((department) => serviceSiteCodes.has(department.siteCode));
 
-  // Ready beds — `unitCapacity`'s `available`, `min(allocatable, empty)` per the owner's ruling that
-  // "Ready" names exactly that one number — by ward and the cohort each ward serves.
+  // Ready is `unitCapacity`'s `available`, `min(allocatable, empty)`, per the owner's ruling.
   const readyRows = serviceUnits.map((unit) => ({ unit, capacity: unitCapacity(unit, bedReleases) }));
   const totalReady = readyRows.reduce((sum, row) => sum + row.capacity.available, 0);
   const totalBedBase = serviceUnits.reduce((sum, unit) => sum + unit.beds, 0);
   const totalOccupied = occupiedBeds(serviceUnits, admissions, bedReleases, leaveBeds).occupied;
-  const networkOccupancyPct = totalBedBase > 0 ? Math.round((totalOccupied / totalBedBase) * 100) : 0;
+  const occupancyPct = totalBedBase > 0 ? Math.round((totalOccupied / totalBedBase) * 100) : 0;
   const zeroReadyWards = readyRows.filter((row) => row.capacity.available === 0).length;
-  /*
-   * ⚠️ **THE OWNER'S RULING OF 2026-09-07: beds the patient has already left.**
-   * `bedsPendingPreparation` filters `state === "discharged" && preparing`, so a bed still occupied
-   * and flagged is not counted — it is not a bed this service can plan around tonight. Summed over
-   * this service's own wards only, the same population `readyRows` walks, so the two figures below
-   * can never describe different sets of wards.
-   */
+  // Owner's ruling of 2026-09-07: only beds the patient has already left count as being made ready.
   const pendingPreparation = serviceUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0);
-  /*
-   * 🔴 **PULLABLE IS A DIFFERENT, SMALLER NUMBER THAN READY, AND THE REDUCER ENFORCES IT.**
-   * `PULL_PATIENT` refuses with *"a patient cannot be pulled to a bed that is not open"* when every
-   * free bed at a ward is being made ready. Summed per ward through `openBedsNow`, never subtracted
-   * from the service total, because the clamp is PER WARD: a ward with more pending beds than free
-   * ones must not borrow headroom from another.
-   */
+  // Pullable is smaller than Ready and clamped per ward, never subtracted from the service total.
   const totalOpenNow = serviceUnits.reduce((sum, unit) => sum + openBedsNow(unit, bedReleases), 0);
 
-  // Where this service's OWN referral demand ended up. `originSiteCode` is a real site code on every
-  // referral (never an address), so `siteByCode(...)?.service` names the ORIGIN service exactly the
-  // way `movementHealthService` (`ward-derivations.ts`) does it for a movement's originating ED.
+  // Where this service's OWN referral demand ended up, by the referral's origin site.
   function referralOriginService(referral: Referral): HealthService | undefined {
     return siteByCode(referral.originSiteCode)?.service;
   }
-
   const ownReferrals = referrals.filter((referral) => referralOriginService(referral) === service);
-
   let placedWithinService = 0;
   let placedElsewhereCount = 0;
   let notYetAcceptedAtWard = 0;
+  let placedAtUnresolvedWard = 0;
   const placedElsewhereByService = new Map<HealthService, number>(
     wardServiceOrder.filter((candidate) => candidate !== service).map((candidate) => [candidate, 0]),
   );
-  let placedAtUnresolvedWard = 0;
-
   for (const referral of ownReferrals) {
     const wardAcceptance = referral.destinations.find(
       (addressing) => addressing.destination.kind === "psychiatric_ward" && addressing.acceptedUnitId !== undefined,
@@ -205,354 +150,464 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
     }
     const acceptedUnit = liveUnits.find((unit) => unit.id === wardAcceptance.acceptedUnitId);
     const acceptedService = acceptedUnit ? siteByCode(acceptedUnit.siteCode)?.service : undefined;
-    if (acceptedService === service) {
-      placedWithinService += 1;
-    } else if (acceptedService !== undefined) {
+    if (acceptedService === service) placedWithinService += 1;
+    else if (acceptedService !== undefined) {
       placedElsewhereCount += 1;
       placedElsewhereByService.set(acceptedService, (placedElsewhereByService.get(acceptedService) ?? 0) + 1);
-    } else {
-      placedAtUnresolvedWard += 1;
-    }
+    } else placedAtUnresolvedWard += 1;
   }
 
-  // Out of area, scoped to this service's own beds. Passing `serviceUnits` rather than every unit
-  // means an admission on another service's ward resolves to no unit at all and is skipped — never
-  // counted here and never counted as unbanded either, exactly as `outOfAreaLedger`'s own doc
-  // comment says an unresolved `unitId` is skipped rather than guessed against.
+  // Out of area, scoped to this service's own beds.
   const { entries: outOfAreaEntries, notBanded: outOfAreaNotBanded } = outOfAreaLedger(admissions, serviceUnits, now);
   const bandCounts = new Map<(typeof OUT_OF_AREA_BANDS)[number], number>(OUT_OF_AREA_BANDS.map((band) => [band, 0]));
-  for (const entry of outOfAreaEntries) {
-    bandCounts.set(entry.band, (bandCounts.get(entry.band) ?? 0) + 1);
-  }
+  for (const entry of outOfAreaEntries) bandCounts.set(entry.band, (bandCounts.get(entry.band) ?? 0) + 1);
 
   return (
-    <StatisticsSectionFrame
+    <StatisticsPage
       section={section}
-      title={service}
-      subtitle=""
+      navSection="service"
+      slug={service}
       testId="ward-statistics-service-screen"
-      design="third-edition"
+      title={service}
+      titleAction={<ChangeService current={service} />}
+      eyebrowLabel="Health service"
+      eyebrowDetail={
+        <span data-testid="ward-statistics-service-identity">
+          <span className={detail.eyebrowSites} aria-hidden="true">
+            {serviceSites.map((site) => shortSiteName(site.name)).join(", ") || "No hospital recorded"}
+          </span>
+          <SrOnly>
+            <span>{serviceSites.map((site) => site.name).join(", ") || "No hospital recorded"}</span>
+            {", "}
+            <span>Hospitals</span>
+            <span>{serviceSites.length}</span>
+            {", "}
+            <span>Wards</span>
+            <span>{serviceUnits.length}</span>
+            {", "}
+            <span>{serviceEds.length} emergency departments</span>
+          </SrOnly>
+        </span>
+      }
+      now={now}
+      paused={live.paused}
+      onTogglePause={live.togglePause}
+      stats={
+        <>
+          <HeroStat
+            value={<span data-testid="ward-statistics-service-exec-total-beds">{totalBedBase}</span>}
+            label="Beds"
+          />
+          <HeroStat
+            value={<span data-testid="ward-statistics-service-exec-occupancy">{occupancyPct}%</span>}
+            label="Occupied"
+          />
+          <HeroStat
+            value={<span data-testid="ward-statistics-service-exec-ready-beds">{totalReady}</span>}
+            label={pendingPreparation > 0 ? `Ready, ${pendingPreparation} being made ready` : "Ready"}
+          />
+          <HeroStat value={serviceUnits.length} label="Wards" />
+          <HeroStat value={serviceEds.length} label="EDs" />
+          <HeroStat
+            value={<span data-testid="ward-statistics-service-exec-ooa">{outOfAreaEntries.length}</span>}
+            label={
+              <span className={styles.flagged}>
+                {outOfAreaEntries.length > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                Out of area
+              </span>
+            }
+          />
+        </>
+      }
     >
-      <div className={family.modules}>
-        <div className={family.full}>
-          <WardPanel
+      <div className={styles.gridMain}>
+        <div className={styles.stack}>
+          <StatisticsCapacityChart
+            units={serviceUnits}
+            bedReleases={bedReleases}
+            admissions={admissions}
+            leaveBeds={leaveBeds}
+            initialGroup="ward"
+            scopeLabel={`in ${service}`}
             title="Ward capacity"
-            count={`${totalReady} ready · ${totalOpenNow} open · ${pendingPreparation} pending`}
-          >
-            <StatisticsCapacityChart
-              units={serviceUnits}
-              bedReleases={bedReleases}
-              admissions={admissions}
-              leaveBeds={leaveBeds}
-              initialGroup="ward"
-              scopeLabel={`in ${service}`}
-            />
-          </WardPanel>
-        </div>
-        <div className={family.full}>
-          <StatisticsInsightChart
-            title="Referral placement destinations"
-            variant="distribution"
-            testId="statistics-service-placement-chart"
-            metrics={[
-              {
-                id: "count",
-                label: "Referrals",
-                unit: "referrals",
-                note: "Referrals originating in this service. Recorded ward acceptance does not mean the person has arrived.",
-              },
-            ]}
-            rows={[
-              { id: "within", name: "Within service", values: { count: placedWithinService } },
-              {
-                id: "elsewhere",
-                name: "Other services",
-                values: { count: placedElsewhereCount },
-                detail: [...placedElsewhereByService].map(([name, count]) => `${name}: ${count}`).join(" · "),
-              },
-              { id: "waiting", name: "No ward acceptance", values: { count: notYetAcceptedAtWard } },
-              {
-                id: "unresolved",
-                name: "Ward unresolved",
-                values: { count: placedAtUnresolvedWard },
-                detail: "A ward acceptance is recorded, but its health service cannot be resolved.",
-              },
-            ]}
+          />
+          <ReadyBeds
+            service={service}
+            readyRows={readyRows}
+            totalReady={totalReady}
+            zeroReadyWards={zeroReadyWards}
+            pendingPreparation={pendingPreparation}
+            openNow={totalOpenNow}
           />
         </div>
-      </div>
-      <div className={pageStyles.pageGrid}>
-        <div className={pageStyles.leftColumn}>
-          <StatisticsDetailPanel
-            title={service}
-            count={`${serviceSites.length} ${serviceSites.length === 1 ? "hospital" : "hospitals"}`}
-            testId="ward-statistics-service-identity"
+        <div className={styles.stack}>
+          <Placement
+            service={service}
+            raised={ownReferrals.length}
+            within={placedWithinService}
+            elsewhere={placedElsewhereCount}
+            notYet={notYetAcceptedAtWard}
+            unresolved={placedAtUnresolvedWard}
+            byService={placedElsewhereByService}
+          />
+          <StatCard
+            icon={MapPin}
+            title="Far from home"
+            aside="Synthetic travel bands"
+            data-testid="ward-statistics-service-out-of-area"
           >
-            <div className={styles.panelBody} role="group" aria-label="Service identity content" tabIndex={0}>
-              <dl className={pageStyles.identityFacts}>
-                <div>
-                  <dt>Hospitals</dt>
-                  <dd>
-                    {serviceSites.length}: {serviceSites.map((site) => site.name).join(", ") || "none recorded"}
+            <CardBody className={styles.bodyStack}>
+              <dl className={styles.figures}>
+                <div className={styles.figure}>
+                  <dd className={styles.figureValue} data-testid="ward-statistics-service-out-of-area-value">
+                    {outOfAreaEntries.length}
                   </dd>
+                  <dt className={styles.figureLabel}>Far from home</dt>
                 </div>
-                <div>
-                  <dt>Wards</dt>
-                  <dd>{serviceUnits.length}</dd>
-                </div>
-                <div>
-                  <dt>Departments</dt>
-                  <dd>{serviceEds.length} emergency departments</dd>
-                </div>
-              </dl>
-
-              <dl
-                className={`${pageStyles.kpiBand} ${pageStyles.placementBand}`}
-                data-testid="ward-statistics-service-exec-band"
-              >
-                <div>
-                  <dt>Beds</dt>
-                  <dd data-testid="ward-statistics-service-exec-total-beds">{totalBedBase}</dd>
-                  <dd className={pageStyles.kpiCaption}>Recorded acute mental health capacity.</dd>
-                </div>
-                <div>
-                  <dt>Service occupancy</dt>
-                  <dd data-testid="ward-statistics-service-exec-occupancy">{networkOccupancyPct}%</dd>
-                  <dd className={pageStyles.kpiCaption}>
-                    {totalOccupied} of {totalBedBase} beds occupied.
+                <div className={styles.figure}>
+                  <dd className={styles.figureValue} data-testid="ward-statistics-service-out-of-area-not-banded-value">
+                    {outOfAreaNotBanded}
                   </dd>
-                </div>
-                <div>
-                  <dt>Ready beds</dt>
-                  <dd data-testid="ward-statistics-service-exec-ready-beds">{totalReady}</dd>
-                  <dd className={pageStyles.kpiCaption}>Empty and clinically allocatable immediately.</dd>
-                </div>
-                <div>
-                  <dt>Out of Area Placements</dt>
-                  <dd data-testid="ward-statistics-service-exec-ooa">{outOfAreaEntries.length}</dd>
-                  <dd className={pageStyles.kpiCaption}>Patients from outside home catchment.</dd>
+                  <dt className={styles.figureLabel}>Not banded</dt>
                 </div>
               </dl>
-            </div>
-          </StatisticsDetailPanel>
-
-          <StatisticsDetailPanel title="Ready beds, by ward and cohort" testId="ward-statistics-service-ready-beds">
-            <div className={styles.panelBody} role="group" aria-label="Ready beds content" tabIndex={0}>
-              {serviceUnits.length > 0 ? (
-                <dl className={pageStyles.kpiBand}>
-                  <div>
-                    <dt>Ready beds</dt>
-                    <dd>{totalReady}</dd>
-                    <dd className={pageStyles.kpiCaption}>Across {serviceUnits.length} wards</dd>
-                  </div>
-                  <div>
-                    <dt>Wards with none ready</dt>
-                    <dd>{zeroReadyWards}</dd>
-                    <dd className={pageStyles.kpiCaption}>Of {serviceUnits.length} wards</dd>
-                  </div>
-                </dl>
-              ) : null}
-              {/*
-               * ⚠️ **"marked as" is load-bearing and must survive any rewording.** The reducer does not
-               * constrain which releases may carry the preparation flag, so this is a claim about the
-               * RECORD, not about the beds. "N beds are being made ready" would be a claim about the
-               * world that the model cannot support.
-               *
-               * The Ready figures below subtract nothing for this, by the owner's 2026-09-01 ruling that
-               * a ward's number must not lurch as cleaning starts and stops. This sentence is what was
-               * missing beside them, not an adjustment to them.
-               */}
-              {/*
-            ⚠️ **THE CONTRAST CLAUSE RENDERS ONLY WHEN THE TWO FIGURES ACTUALLY DIFFER.** It used to
-            render always, so on any service with nothing pending it read "the number this service
-            can act on right now is 12, not 12" — reachable on FOUR OF THE FIVE services today,
-            because the seed holds exactly one `preparing: true` release (`WR-008`, on
-            `arm-adult-open`), and every service that does not own that ward renders the
-            contradiction.
-
-            ⚠️ **THE CONDITION IS THE TWO FIGURES, NOT `pendingPreparation > 0`.** `openBedsNow` is
-            `max(0, min(allocatable, empty) - pending)`, so a service whose Ready figure is already
-            nought has `openNow === ready` even with beds pending — the proxy would still print
-            "0, not 0". Compare the numbers the sentence is about.
-          */}
-              {serviceUnits.length > 0 ? (
-                <div className={pageStyles.measureDetailsBody}>
-                  <p className={styles.body} data-testid="ward-statistics-service-pending-preparation">
-                    <strong>{pendingPreparation}</strong> pending · <strong>{totalOpenNow}</strong> open now
-                  </p>
-                  <p className={serviceStyles.measuredCount} data-testid="ward-statistics-service-zero-ready-wards">
-                    <span data-testid="ward-statistics-service-zero-ready-wards-value">{zeroReadyWards}</span> of{" "}
-                    {serviceUnits.length} wards without ready beds
-                  </p>
-                </div>
-              ) : null}
-              {serviceUnits.length === 0 ? (
-                <p className={styles.notFoundBody} data-testid="ward-statistics-service-no-wards">
-                  No ward in this prototype is recorded at a {service} hospital.
-                </p>
-              ) : (
-                <WardTable testId="ward-statistics-service-ready-beds-table" className={serviceStyles.readyBedsTable}>
-                  <thead>
-                    <tr>
-                      <th scope="col">Ward</th>
-                      <th scope="col">Cohort</th>
-                      <th scope="col">Ready beds</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {readyRows.map(({ unit, capacity }) => (
-                      <tr key={unit.id} data-testid={`ward-statistics-service-ready-row-${unit.id}`}>
-                        <th scope="row">
-                          <Link href={wardStatisticsHref(unit.id)} className={serviceStyles.wardLink}>
-                            {unit.name}
-                          </Link>
-                        </th>
-                        <td>{unit.cohort}</td>
-                        <td data-testid={`ward-statistics-service-ready-value-${unit.id}`}>{capacity.available}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <th scope="row">All {serviceUnits.length} wards</th>
-                      <td />
-                      <td data-testid="ward-statistics-service-ready-total">{totalReady}</td>
-                    </tr>
-                  </tfoot>
-                </WardTable>
-              )}
-            </div>
-          </StatisticsDetailPanel>
-
-          <StatisticsDetailPanel
-            title="Where this service's own referrals were accepted"
-            testId="ward-statistics-service-placement"
-          >
-            <div className={styles.panelBody} role="group" aria-label="Referral placement content" tabIndex={0}>
-              <dl className={`${pageStyles.kpiBand} ${pageStyles.placementBand}`}>
-                <div>
-                  <dt>Raised</dt>
-                  <dd data-testid="ward-statistics-service-placement-raised">{ownReferrals.length}</dd>
-                  <dd className={pageStyles.kpiCaption}>by this service</dd>
-                </div>
-                <div>
-                  <dt>Accepted within</dt>
-                  <dd data-testid="ward-statistics-service-placement-within">{placedWithinService}</dd>
-                  <dd className={pageStyles.kpiCaption}>at its own wards</dd>
-                </div>
-                <div>
-                  <dt>Accepted elsewhere</dt>
-                  <dd data-testid="ward-statistics-service-placement-elsewhere">{placedElsewhereCount}</dd>
-                  <dd className={pageStyles.kpiCaption}>at another service</dd>
-                </div>
-                <div>
-                  <dt>Not yet</dt>
-                  <dd data-testid="ward-statistics-service-placement-not-yet">{notYetAcceptedAtWard}</dd>
-                  <dd className={pageStyles.kpiCaption}>accepted at a ward</dd>
-                </div>
-              </dl>
-
-              <div className={pageStyles.measureDetailsBody}></div>
-
-              <h3 className={pageStyles.sectionHeading}>Accepted at a ward in another service</h3>
-              <ul
-                className={`${serviceStyles.tallyList} ${pageStyles.bandList}`}
-                data-testid="ward-statistics-service-placement-elsewhere-list"
-              >
-                {[...placedElsewhereByService.entries()].map(([destination, count]) => (
-                  <li
-                    key={destination}
-                    className={serviceStyles.tallyRow}
-                    data-testid={`ward-statistics-service-placement-to-${destination}`}
-                  >
-                    <span className={serviceStyles.tallyReason}>{destination}</span>
-                    <span className={pageStyles.bandTrack} aria-hidden="true">
-                      <span
-                        style={{
-                          width: `${placedElsewhereCount === 0 ? 0 : (count / placedElsewhereCount) * 100}%`,
-                        }}
-                      />
-                    </span>
-                    <span
-                      className={serviceStyles.tallyCount}
-                      data-testid={`ward-statistics-service-placement-to-${destination}-count`}
-                    >
-                      {count}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              {placedAtUnresolvedWard > 0 ? (
-                <p className={serviceStyles.absence} data-testid="ward-statistics-service-placement-unresolved">
-                  <span data-testid="ward-statistics-service-placement-unresolved-count">{placedAtUnresolvedWard}</span>{" "}
-                  {placedAtUnresolvedWard === 1 ? "referral names" : "referrals name"} an accepting ward this prototype
-                  cannot place at any hospital, so it cannot be counted as within {service} or as exported.
-                </p>
-              ) : null}
-            </div>
-          </StatisticsDetailPanel>
-        </div>
-
-        <div className={pageStyles.rightColumn}>
-          <WardPanel title="Patients far from home" testId="ward-statistics-service-out-of-area">
-            <div className={styles.panelBody} role="group" aria-label="Out of area content" tabIndex={0}>
-              <dl className={pageStyles.kpiBand}>
-                <div>
-                  <dt>People far from home</dt>
-                  <dd data-testid="ward-statistics-service-out-of-area-value">{outOfAreaEntries.length}</dd>
-                  <dd className={pageStyles.kpiCaption}>currently in this service&apos;s beds</dd>
-                </div>
-                <div>
-                  <dt>Not banded at all</dt>
-                  <dd data-testid="ward-statistics-service-out-of-area-not-banded-value">{outOfAreaNotBanded}</dd>
-                  <dd className={pageStyles.kpiCaption}>No shared denominator</dd>
-                </div>
-              </dl>
-
-              <DistanceBandsBar total={outOfAreaEntries.length} bandCounts={bandCounts} />
-
-              <ul
-                className={`${serviceStyles.tallyList} ${pageStyles.bandList}`}
-                data-testid="ward-statistics-service-out-of-area-bands"
-              >
+              <BarList
+                label="Patients far from home by travel band"
+                axis
+                max={countAxisMax(OUT_OF_AREA_BANDS.map((band) => bandCounts.get(band) ?? 0))}
+                labelWidth="13rem"
+                rows={OUT_OF_AREA_BANDS.map((band) => ({
+                  id: band,
+                  label: TRAVEL_BAND_LABELS[band],
+                  value: bandCounts.get(band) ?? 0,
+                  display: String(bandCounts.get(band) ?? 0),
+                }))}
+              />
+              <ul className={styles.srOnly} data-testid="ward-statistics-service-out-of-area-bands">
                 {OUT_OF_AREA_BANDS.map((band) => (
-                  <li
-                    key={band}
-                    className={serviceStyles.tallyRow}
-                    data-testid={`ward-statistics-service-out-of-area-band-${band}`}
-                  >
-                    <span className={serviceStyles.tallyReason}>{TRAVEL_BAND_LABELS[band]}</span>
-                    <span className={pageStyles.bandTrack} aria-hidden="true">
-                      <span
-                        style={{
-                          width: `${outOfAreaEntries.length === 0 ? 0 : ((bandCounts.get(band) ?? 0) / outOfAreaEntries.length) * 100}%`,
-                        }}
-                      />
-                    </span>
-                    <span
-                      className={serviceStyles.tallyCount}
-                      data-testid={`ward-statistics-service-out-of-area-band-${band}-count`}
-                    >
+                  <li key={band} data-testid={`ward-statistics-service-out-of-area-band-${band}`}>
+                    {TRAVEL_BAND_LABELS[band]},{" "}
+                    <span data-testid={`ward-statistics-service-out-of-area-band-${band}-count`}>
                       {bandCounts.get(band) ?? 0}
                     </span>
                   </li>
                 ))}
               </ul>
-
-              <div className={pageStyles.measureDetailsBody}></div>
-            </div>
-          </WardPanel>
-        </div>
-
-        <div className={pageStyles.pageFoot}>
-          <p className={styles.body}>
-            <Link href={STATISTICS_SERVICE_CHOOSER_HREF} data-testid="ward-statistics-service-chooser-link">
-              Choose a different health service
-            </Link>
-          </p>
+            </CardBody>
+          </StatCard>
         </div>
       </div>
-    </StatisticsSectionFrame>
+
+      <StatCard
+        icon={Plane}
+        title="Out of area"
+        aside="In this service's beds"
+        data-testid="ward-statistics-service-repatriation"
+      >
+        <div className={styles.tableWrap}>
+          <table className={`${tableClasses.table} ${styles.table}`}>
+            <caption className={styles.srOnly}>Admissions in this service far from home</caption>
+            <thead>
+              <tr>
+                <th scope="col">Admission</th>
+                <th scope="col">Home</th>
+                <th scope="col">Travel</th>
+                <th scope="col" className={styles.num}>
+                  Since arrival
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {outOfAreaEntries.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className={styles.muted}>
+                    Nobody in this service&apos;s beds is far from home
+                  </td>
+                </tr>
+              ) : null}
+              {outOfAreaEntries.map((entry) => (
+                <tr key={entry.admission.id}>
+                  <th scope="row">
+                    <span className={detail.primary}>{entry.admission.id}</span>
+                    <Link className={detail.secondary} href={wardStatisticsHref(entry.unit.id)}>
+                      {entry.unit.name}
+                    </Link>
+                  </th>
+                  <td className={entry.admission.homeRegion === null ? styles.muted : undefined}>
+                    {entry.admission.homeRegion ?? "Not recorded"}
+                  </td>
+                  <td>{TRAVEL_BAND_LABELS[entry.band]}</td>
+                  <td className={styles.num}>{durMinutes(Math.max(0, entry.sinceArrival))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <CardFoot meta="Repatriation is arranged on the out-of-area board">
+          <Link href={OUT_OF_AREA_HREF} className={styles.footLink}>
+            Open out of area
+          </Link>
+        </CardFoot>
+      </StatCard>
+
+      <p className={detail.pageFoot}>
+        <Link href={STATISTICS_SERVICE_CHOOSER_HREF} data-testid="ward-statistics-service-chooser-link">
+          Choose a different health service
+        </Link>
+      </p>
+    </StatisticsPage>
+  );
+}
+
+function ChangeService({ current }: { current: HealthService }) {
+  const router = useOptionalRouter();
+  return (
+    <Menu
+      label="Change service"
+      items={wardServiceOrder.map((candidate) => ({
+        id: candidate,
+        label: candidate,
+        disabled: candidate === current,
+        onSelect: () => {
+          const href = serviceStatisticsHref(candidate);
+          if (router) router.push(href);
+          else window.location.assign(href);
+        },
+      }))}
+      trigger={(props) => (
+        <button {...props} type="button" className={buttonClass({ variant: "onHero", size: "sm" })}>
+          Change service
+          <Icon icon={ChevronDown} size={14} />
+        </button>
+      )}
+    />
+  );
+}
+
+function ReadyBeds({
+  service,
+  readyRows,
+  totalReady,
+  zeroReadyWards,
+  pendingPreparation,
+  openNow,
+}: {
+  service: HealthService;
+  readyRows: { unit: { id: string; name: string; cohort: string }; capacity: { available: number } }[];
+  totalReady: number;
+  zeroReadyWards: number;
+  pendingPreparation: number;
+  openNow: number;
+}) {
+  return (
+    <StatCard
+      icon={BedDouble}
+      title="Ready beds by ward"
+      aside={`${readyRows.length} ${readyRows.length === 1 ? "ward" : "wards"}`}
+      data-testid="ward-statistics-service-ready-beds"
+    >
+      {readyRows.length === 0 ? (
+        <CardBody>
+          <p className={styles.muted} data-testid="ward-statistics-service-no-wards">
+            No ward in this prototype is recorded at a {service} hospital.
+          </p>
+        </CardBody>
+      ) : (
+        <>
+          <CardBody className={styles.bodyStack}>
+            <dl className={styles.figures}>
+              <div className={styles.figure}>
+                <dd className={styles.figureValue}>{totalReady}</dd>
+                <dt className={styles.figureLabel}>Ready</dt>
+              </div>
+              <div className={styles.figure}>
+                <dd className={styles.figureValue}>{openNow}</dd>
+                <dt className={styles.figureLabel}>Open now</dt>
+              </div>
+              <div className={styles.figure}>
+                <dd className={styles.figureValue}>{pendingPreparation}</dd>
+                <dt className={styles.figureLabel}>Pending</dt>
+              </div>
+              <div className={styles.figure}>
+                <dd className={styles.figureValue}>{zeroReadyWards}</dd>
+                <dt className={styles.figureLabel}>
+                  {zeroReadyWards > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                  None ready
+                </dt>
+              </div>
+            </dl>
+            <SrOnly>
+              <p data-testid="ward-statistics-service-pending-preparation">
+                {pendingPreparation} pending, {openNow} open now
+              </p>
+              <p data-testid="ward-statistics-service-zero-ready-wards">
+                <span data-testid="ward-statistics-service-zero-ready-wards-value">{zeroReadyWards}</span> of{" "}
+                {readyRows.length} wards without ready beds
+              </p>
+            </SrOnly>
+          </CardBody>
+          <div className={styles.tableWrap} data-testid="ward-statistics-service-ready-beds-table">
+            <table className={`${tableClasses.table} ${styles.table}`}>
+              <caption className={styles.srOnly}>Ready beds by ward and cohort</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Ward</th>
+                  <th scope="col">Cohort</th>
+                  <th scope="col" className={styles.num}>
+                    Ready
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {readyRows.map(({ unit, capacity }) => (
+                  <tr key={unit.id} data-testid={`ward-statistics-service-ready-row-${unit.id}`}>
+                    <th scope="row">
+                      <Link href={wardStatisticsHref(unit.id)} className={styles.rowLink}>
+                        {unit.name}
+                      </Link>
+                    </th>
+                    <td>{unit.cohort}</td>
+                    <td
+                      className={capacity.available === 0 ? `${styles.num} ${styles.muted}` : styles.num}
+                      data-testid={`ward-statistics-service-ready-value-${unit.id}`}
+                    >
+                      {capacity.available}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row">All {readyRows.length} wards</th>
+                  <td />
+                  <td className={styles.num} data-testid="ward-statistics-service-ready-total">
+                    {totalReady}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </>
+      )}
+    </StatCard>
+  );
+}
+
+function Placement({
+  service,
+  raised,
+  within,
+  elsewhere,
+  notYet,
+  unresolved,
+  byService,
+}: {
+  service: HealthService;
+  raised: number;
+  within: number;
+  elsewhere: number;
+  notYet: number;
+  unresolved: number;
+  byService: Map<HealthService, number>;
+}) {
+  const [view, setView] = useState<"chart" | "data">("chart");
+  const rows = [
+    { id: "own", label: service, value: within },
+    ...[...byService].map(([name, count]) => ({ id: name, label: name, value: count })),
+    { id: "not-yet", label: "Not yet", value: notYet },
+  ];
+  return (
+    <StatCard
+      icon={Network}
+      title="Where referrals landed"
+      action={
+        <Segmented
+          label="Where referrals landed view"
+          value={view}
+          onChange={setView}
+          items={[
+            { id: "chart", label: "Chart" },
+            { id: "data", label: "Data" },
+          ]}
+        />
+      }
+      data-testid="ward-statistics-service-placement"
+    >
+      <CardBody className={styles.bodyStack}>
+        <dl className={styles.figures}>
+          <div className={styles.figure}>
+            <dd className={styles.figureValue} data-testid="ward-statistics-service-placement-raised">
+              {raised}
+            </dd>
+            <dt className={styles.figureLabel}>Raised</dt>
+          </div>
+          <div className={styles.figure}>
+            <dd className={styles.figureValue} data-testid="ward-statistics-service-placement-within">
+              {within}
+            </dd>
+            <dt className={styles.figureLabel}>Within</dt>
+          </div>
+          <div className={styles.figure}>
+            <dd className={styles.figureValue} data-testid="ward-statistics-service-placement-elsewhere">
+              {elsewhere}
+            </dd>
+            <dt className={styles.figureLabel}>Elsewhere</dt>
+          </div>
+          <div className={styles.figure}>
+            <dd className={styles.figureValue} data-testid="ward-statistics-service-placement-not-yet">
+              {notYet}
+            </dd>
+            <dt className={styles.figureLabel}>Not yet</dt>
+          </div>
+        </dl>
+        {view === "chart" ? (
+          <BarList
+            label="Referrals raised here, by the service whose ward accepted"
+            axis
+            max={countAxisMax(rows.map((row) => row.value))}
+            labelWidth="8rem"
+            rows={rows.map((row) => ({ ...row, display: String(row.value) }))}
+          />
+        ) : (
+          <div className={styles.tableWrap}>
+            <table className={`${tableClasses.table} ${styles.table}`}>
+              <caption className={styles.srOnly}>Referrals raised here, by the service whose ward accepted</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Accepted at</th>
+                  <th scope="col" className={styles.num}>
+                    Referrals
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id}>
+                    <th scope="row">{row.label}</th>
+                    <td className={row.value === 0 ? `${styles.num} ${styles.muted}` : styles.num}>{row.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <ul className={styles.srOnly} data-testid="ward-statistics-service-placement-elsewhere-list">
+          {[...byService].map(([destination, count]) => (
+            <li key={destination} data-testid={`ward-statistics-service-placement-to-${destination}`}>
+              Accepted at a {destination} ward,{" "}
+              <span data-testid={`ward-statistics-service-placement-to-${destination}-count`}>{count}</span>
+            </li>
+          ))}
+        </ul>
+        {unresolved > 0 ? (
+          <p className={detail.note} data-testid="ward-statistics-service-placement-unresolved">
+            <span data-testid="ward-statistics-service-placement-unresolved-count">{unresolved}</span>{" "}
+            {unresolved === 1 ? "referral names" : "referrals name"} an accepting ward this prototype cannot place at
+            any hospital, so it is counted neither within {service} nor elsewhere.
+          </p>
+        ) : null}
+      </CardBody>
+      <CardFoot meta="An acceptance is not an arrival" />
+    </StatCard>
   );
 }
