@@ -6246,3 +6246,471 @@ tr.qRow:focus-visible {
     font-size: var(--wf-fs-11);
   }
 }
+
+/* v6 board rows (second pass, 7 October 2026): the mockup's compact rows. Tier first, then
+ * patient with UMRN and presentation underneath, time, bay, form, clearance, review, destination
+ * and one next step. The row opens in place to show where the person is up to. */
+@media screen {
+  .boardTable {
+    min-width: 1040px;
+  }
+
+  .boardTable :is(th, td):first-child {
+    position: static;
+    box-shadow: none;
+  }
+
+  .boardTable thead th:first-child,
+  .boardTable .tierCell {
+    text-align: center;
+  }
+
+  .boardTable .expandedRow > td {
+    text-align: left;
+  }
+
+  .boardTable .qRow > td {
+    overflow: hidden;
+  }
+
+  .boardTable tr:nth-child(even) > td,
+  .boardTable td {
+    background: var(--wf-surface);
+  }
+
+  .boardTable tr.qRow:hover > td {
+    background: var(--wf-hover);
+  }
+
+  .boardTable .qRow > td {
+    vertical-align: middle;
+  }
+
+  .tierCell .identityUrgency {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-r-xs);
+    background: transparent;
+    font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+    color: var(--wf-ink-1);
+  }
+
+  .tierCell .identityUrgency[data-urgency="1"] {
+    border-color: var(--wf-danger);
+    color: var(--wf-danger-ink);
+  }
+
+  .patientIdentity .patientName {
+    font: 600 var(--wf-fs-13) / 1.35 var(--wf-font);
+    color: var(--wf-ink-1);
+  }
+
+  .patientIdentity .sub {
+    margin: 2px 0 0;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+  }
+
+  .boardTable .patientIdentity .umrnInline {
+    display: inline;
+    font: 500 var(--wf-fs-12) var(--wf-mono);
+    color: var(--wf-ink-2);
+  }
+
+  .patientIdentity [data-testid^="ward-ed-outstanding-"] {
+    overflow: hidden;
+    margin-top: 1px;
+    font-family: var(--wf-font);
+    font-size: var(--wf-fs-12);
+    line-height: 1.4;
+    color: var(--wf-ink-2);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .boardTable .compactTime > b {
+    font: 600 var(--wf-fs-13) var(--wf-mono);
+    color: var(--wf-ink-1);
+  }
+
+  .boardTable .accessWarning {
+    margin-top: 1px;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-danger-ink);
+  }
+
+  .boardTable .bayNumber {
+    height: auto;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: 600 var(--wf-fs-13) var(--wf-mono);
+    color: var(--wf-ink-1);
+  }
+
+  .boardTable .thinSelect,
+  .boardTable .thinSelect[data-cleared] {
+    height: var(--wf-h-sm);
+    border-color: transparent;
+    background-color: transparent;
+    font-family: var(--wf-font);
+    font-size: var(--wf-fs-13);
+    font-weight: 500;
+    color: var(--wf-ink-1);
+  }
+
+  .boardTable .thinSelect:hover,
+  .boardTable .thinSelect:focus-visible {
+    border-color: var(--wf-line-ctl);
+  }
+
+  .boardTable .compactForm .thinSelect {
+    color: var(--wf-ink-1);
+    font-family: var(--wf-font);
+  }
+
+  .boardTable .thinSelect[data-cleared="yes"] {
+    color: var(--wf-success-ink);
+  }
+
+  .boardTable .thinSelect[data-cleared="no"] {
+    color: var(--wf-danger-ink);
+  }
+
+  .boardTable .compactExpiry {
+    padding-top: 0;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+  }
+
+  .presentationCell .reviewPill,
+  .presentationCell .reviewPill[data-tone] {
+    overflow: hidden;
+    justify-content: flex-start;
+    gap: 4px;
+    text-align: left;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-height: var(--wf-h-sm);
+    border-color: transparent;
+    background: transparent;
+    padding: 0 var(--wf-s-1);
+    font-family: var(--wf-font);
+    font-size: var(--wf-fs-13);
+    color: var(--wf-ink-1);
+  }
+
+  .presentationCell .reviewPill:hover {
+    border-color: var(--wf-line-ctl);
+  }
+
+  .presentationCell .reviewPill[data-tone="good"] {
+    color: var(--wf-success-ink);
+  }
+
+  .presentationCell .reviewDropdownWrap {
+    margin: 0;
+  }
+
+  .boardTable .dest {
+    display: block;
+    font-size: var(--wf-fs-13);
+    color: var(--wf-ink-1);
+  }
+
+  .boardTable .acceptedLabel {
+    margin-top: 1px;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+  }
+
+  .boardTable .acceptedLabel::before {
+    content: "\2713\00a0";
+    color: var(--wf-success);
+  }
+
+  .nextCell .nextGroup {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--wf-s-1);
+  }
+
+  .nextCell .nextGroup [data-testid^="ward-ed-unfold-"] {
+    width: auto;
+    border-color: transparent;
+    background: transparent;
+    color: var(--wf-ink-2);
+  }
+
+  .nextCell .nextGroup > button[data-testid^="ward-ed-next-"] {
+    white-space: nowrap;
+  }
+
+  .rowExpand {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--wf-h-sm);
+    height: var(--wf-h-sm);
+    border: 1px solid transparent;
+    border-radius: var(--wf-r-xs);
+    background: transparent;
+    color: var(--wf-ink-2);
+    cursor: pointer;
+  }
+
+  .rowExpand:hover {
+    border-color: var(--wf-line-ctl);
+    color: var(--wf-ink-1);
+  }
+
+  .rowExpand svg {
+    width: 14px;
+    height: 14px;
+    transition: transform var(--wf-m-fast) var(--wf-ease);
+  }
+
+  .rowExpand[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+  }
+
+  .boardTable .expandedRow > td {
+    padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-3);
+    background: var(--wf-surface-2);
+    box-shadow: inset 3px 0 0 var(--wf-ink-1);
+  }
+
+  .expandedGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.15fr) minmax(12rem, 0.7fr);
+    gap: var(--wf-s-3);
+    align-items: start;
+  }
+
+  .expandedCard {
+    padding: var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .expandedHeading {
+    margin: 0 0 var(--wf-s-2);
+    font: 600 var(--wf-fs-11) / 1.3 var(--wf-font);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--wf-ink-3);
+  }
+
+  .upTo {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .upToRow {
+    display: grid;
+    grid-template-columns: max-content 14px minmax(0, 1fr);
+    gap: var(--wf-s-2);
+    align-items: baseline;
+    font-size: var(--wf-fs-13);
+    color: var(--wf-ink-1);
+  }
+
+  .upToAt {
+    font: 500 var(--wf-fs-12) var(--wf-mono);
+    color: var(--wf-ink-2);
+    white-space: nowrap;
+  }
+
+  .upToWhat {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .upToMark {
+    font-size: var(--wf-fs-11);
+    text-align: center;
+    color: var(--wf-ink-2);
+  }
+
+  .upToMark[data-tone="danger"] {
+    color: var(--wf-danger);
+  }
+
+  .upToMark[data-tone="good"] {
+    color: var(--wf-success);
+  }
+
+  .factList {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+  }
+
+  .factList > div {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: var(--wf-s-2);
+    align-items: baseline;
+  }
+
+  .factList dt {
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+    white-space: nowrap;
+  }
+
+  .factList dd {
+    margin: 0;
+    font-size: var(--wf-fs-13);
+    color: var(--wf-ink-1);
+  }
+
+  .expandedActions {
+    display: grid;
+    gap: var(--wf-s-2);
+  }
+
+  .expandedActions > button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .expandedNote {
+    margin: 0;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+    text-align: center;
+  }
+
+  .lowerPair {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--wf-s-3);
+    align-items: start;
+    min-width: 0;
+  }
+
+  .lowerPair > .panel {
+    grid-column: auto;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .lowerPair .seenStreamWrap {
+    max-height: 34rem;
+    overflow-y: auto;
+    padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-3);
+  }
+
+  .lowerPair .capacityTableWrap {
+    max-height: 34rem;
+    overflow-y: auto;
+  }
+
+  .lowerPair .capacityTable {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+  }
+
+  .lowerPair .capacityTable :is(th, td) {
+    padding: var(--wf-s-2) var(--wf-s-2);
+    vertical-align: middle;
+  }
+
+  .lowerPair .capacityTable :is(th, td):first-child {
+    width: 46%;
+    padding-left: var(--wf-s-3);
+  }
+
+  .lowerPair .capacityTable :is(th, td):nth-child(2),
+  .lowerPair .capacityTable :is(th, td):nth-child(3) {
+    width: 18%;
+  }
+
+  .lowerPair .capacityTable :is(th, td):nth-child(4),
+  .lowerPair .capacityTable :is(th, td):nth-child(5) {
+    width: 9%;
+  }
+
+  .lowerPair .capacityTable :is(th, td):last-child {
+    padding-right: var(--wf-s-3);
+  }
+
+  .lowerPair .unitNameCol {
+    display: grid;
+    gap: 1px;
+  }
+
+  .lowerPair .unitNameText {
+    font-family: var(--wf-font);
+    font-size: var(--wf-fs-13);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--wf-ink-1);
+  }
+
+  .lowerPair .serviceTag,
+  .lowerPair .cohortTag,
+  .lowerPair .securityTag {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-family: var(--wf-font);
+    font-size: var(--wf-fs-12);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--wf-ink-2);
+  }
+
+  .lowerPair .capacityMeter {
+    display: none;
+  }
+
+  .lowerPair :is(.readyPill, .zeroPill) {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: 600 var(--wf-fs-13) var(--wf-mono);
+    color: var(--wf-ink-1);
+  }
+
+  .lowerPair .zeroPill {
+    color: var(--wf-ink-3);
+  }
+
+  .lowerPair .bedTotalNum {
+    font: 500 var(--wf-fs-13) var(--wf-mono);
+    color: var(--wf-ink-2);
+  }
+
+  .lowerPair .capacityFilterBar {
+    gap: var(--wf-s-1);
+  }
+}
+
+@media screen and (min-width: 1200px) {
+  .lowerPair {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .expandedGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
