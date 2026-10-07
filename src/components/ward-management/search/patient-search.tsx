@@ -236,7 +236,7 @@ export interface UnifiedCaseloadPatient {
   presenceDetail: string;
   clinicalNote: string;
   /** The person's record id when the subject resolves to one, for "Open patient". */
-  patientId: string | null;
+  personRecordId: string | null;
   /** When the movement opened or the referral was raised, in ward minutes. */
   openedAtInstant: number;
   /** The recorded legal due time, in ward minutes, for the "Form ending" sort. */
@@ -467,7 +467,7 @@ export function PatientSearchPage() {
           presenceLabel: "Live in Hospital",
           presenceDetail: `Present in ${originText} · ${isTransit ? "In-Transit" : m.acceptedUnitId ? "Bed hold active" : "Awaiting transfer"}`,
           clinicalNote: NO_CLINICAL_NOTE,
-          patientId: info.patient?.id ?? null,
+          personRecordId: info.patient?.id ?? null,
           openedAtInstant: m.openedAt,
           legalDueAt: m.legalForm?.dueAt ?? null,
           originalSubject: { kind: "movement", movement: m },
@@ -528,7 +528,7 @@ export function PatientSearchPage() {
             ? `Active Community Referral · ${ref.originSiteCode}`
             : `Queued Referral · ${ref.originSiteCode} ED`,
           clinicalNote: NO_CLINICAL_NOTE,
-          patientId: info.patient?.id ?? null,
+          personRecordId: info.patient?.id ?? null,
           openedAtInstant: ref.raisedAt,
           legalDueAt: null,
           originalSubject: { kind: "referral", referral: ref },
@@ -1280,10 +1280,10 @@ Clinical Note: ${p.clinicalNote}`;
                       New referral
                     </Link>
                   )}
-                  {selectedPatient.patientId ? (
+                  {selectedPatient.personRecordId ? (
                     <Link
                       className={buttonClass({ variant: "pri", size: "sm" })}
-                      href={`/mockups/ward-flow/people/${selectedPatient.patientId}`}
+                      href={`/mockups/ward-flow/people/${selectedPatient.personRecordId}`}
                     >
                       Open patient
                     </Link>
