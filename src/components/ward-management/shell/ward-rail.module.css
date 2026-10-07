@@ -29,7 +29,9 @@
   align-self: flex-start;
   height: 100dvh;
   background: var(--surface);
+  border-top: 0;
   border-right: 0.0625rem solid var(--line);
+  box-shadow: none;
   font-family: var(--body);
   color: var(--ink);
   /* O-7: the one GENUINE token substitution the stylesheet enumeration found — 0.18s and
@@ -343,8 +345,9 @@
 
 .railGlyph {
   flex-shrink: 0;
-  width: 1rem;
-  height: 1rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke-width: 1.75;
 }
 
 .railText {
@@ -354,8 +357,11 @@
   align-items: center;
   column-gap: 0.5rem;
   row-gap: 0.0625rem;
-  font-size: var(--t-3);
-  line-height: 1.4;
+  font-family: var(--body);
+  font-size: var(--t-2);
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  line-height: 1.25;
   min-width: 0;
 }
 
@@ -481,9 +487,10 @@
 .roleCard > svg,
 .utilityLink > svg,
 .appearanceReveal > svg {
-  width: 1rem;
-  height: 1rem;
+  width: 1.25rem;
+  height: 1.25rem;
   flex: none;
+  stroke-width: 1.75;
 }
 
 .roleCopy {
@@ -687,13 +694,13 @@
   }
 
   .rail[data-rail="closed"] .brand {
-    position: relative;
-    padding: 0.5rem 0;
-    display: grid;
-    gap: 0.125rem;
+    position: static;
+    padding: 0.625rem 0 0.375rem;
+    display: flex;
     justify-content: center;
     align-items: center;
     min-height: 3.375rem;
+    border-bottom: 0;
   }
 
   .rail[data-rail="closed"] .brandLink {
@@ -705,13 +712,17 @@
   }
 
   .rail[data-rail="closed"] .railToggle {
-    position: static;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 3.125rem;
+    margin-inline: auto;
     transform: none;
-    width: var(--ward-tap);
-    height: var(--ward-tap);
-    min-width: var(--ward-tap);
-    min-height: var(--ward-tap);
-    border: 1px solid transparent;
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    border: 0.0625rem solid transparent;
     border-radius: var(--r2);
     background: transparent;
     color: var(--muted);
@@ -719,6 +730,7 @@
     pointer-events: auto;
     padding: 0;
     box-sizing: border-box;
+    z-index: 4;
     transition:
       background-color 0.15s ease,
       color 0.15s ease,
@@ -738,9 +750,9 @@
   }
 
   .rail[data-rail="closed"] .toggleIcon {
-    width: 1rem;
-    height: 1rem;
-    stroke-width: 2.25;
+    width: 1.25rem;
+    height: 1.25rem;
+    stroke-width: 1.75;
   }
 
   .rail[data-rail="closed"] .shiftCockpit {
@@ -794,7 +806,7 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    margin-top: 0.25rem;
+    margin-top: 2.75rem;
     padding-top: 0.25rem;
     border-top: 0;
   }
@@ -954,7 +966,7 @@
   .rail[data-rail="closed"] .utilityLink > svg {
     width: 1.25rem;
     height: 1.25rem;
-    stroke-width: 1.9;
+    stroke-width: 1.75;
   }
 
   .rail[data-rail="closed"] .railScroll {
@@ -970,7 +982,7 @@
   }
 
   .rail[data-rail="closed"] .railList {
-    padding-inline: 0.25rem;
+    padding-inline: 0.375rem;
     width: 100%;
     box-sizing: border-box;
   }
@@ -981,23 +993,26 @@
     justify-content: center;
     align-items: center;
     gap: 0.25rem;
-    padding: 0.4375rem 0.1875rem 0.375rem;
+    padding: 0.4375rem 0.25rem 0.375rem;
     min-height: 3.25rem;
     border-radius: var(--r2);
     width: 100%;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .rail[data-rail="closed"] .railText {
     display: flex;
     flex: none;
     flex-direction: column;
+    align-items: center;
     gap: 0.125rem;
+    font-family: var(--body);
     font-size: var(--t-0);
+    font-weight: 500;
     line-height: 1.15;
     text-align: center;
-    letter-spacing: -0.01em;
+    letter-spacing: 0.01em;
     max-width: 100%;
     width: 100%;
     box-sizing: border-box;
@@ -1024,7 +1039,7 @@
     width: 1.25rem;
     height: 1.25rem;
     flex-basis: 1.25rem;
-    stroke-width: 1.9;
+    stroke-width: 1.75;
     flex-shrink: 0;
     transition:
       transform 0.15s ease,
@@ -2052,9 +2067,10 @@
 }
 
 .utilityLink svg {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 1.25rem;
+  height: 1.25rem;
   flex-shrink: 0;
+  stroke-width: 1.75;
   color: var(--muted);
 }
 
