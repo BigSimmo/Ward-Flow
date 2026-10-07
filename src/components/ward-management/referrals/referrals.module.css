@@ -7445,3 +7445,171 @@ input.historyField:focus-visible {
     display: none;
   }
 }
+
+/* ═══ v6 (NewReferral.png): the person bar on the intake form ═══
+ * One compact card: the linked or unlinked switch, the search, then the person in one row. */
+
+.screen[data-referral-view="intake"][data-ward-design="v6"] .main {
+  padding: var(--wf-s-4);
+  gap: var(--wf-s-3);
+  background: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font: inherit;
+}
+
+.screen[data-ward-design="v6"] .personPanel {
+  margin-bottom: 0;
+}
+
+.screen[data-ward-design="v6"] .personHeaderStrip {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.screen[data-ward-design="v6"] .personTitle {
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  line-height: var(--wf-lh-14);
+  color: var(--wf-ink-1);
+}
+
+.screen[data-ward-design="v6"] .personSubtitle {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .personModeSwitch {
+  padding: 2px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.screen[data-ward-design="v6"] .modeBtn {
+  min-height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .modeBtn[data-active="true"] {
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow: var(--wf-e1);
+}
+
+.screen[data-ward-design="v6"] .addPatientHeaderBtn {
+  min-height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .addPatientHeaderBtn:hover {
+  background: var(--wf-hover);
+}
+
+.screen[data-ward-design="v6"] .personSearchBox {
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: transparent;
+}
+
+.screen[data-ward-design="v6"] .rapidSearchInput {
+  min-height: var(--wf-h-md);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+
+.screen[data-ward-design="v6"] .rapidSearchInput:focus {
+  border-color: var(--wf-focus-ring);
+  box-shadow: none;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+.screen[data-ward-design="v6"] .personCardBody {
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.screen[data-ward-design="v6"] .personAvatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: var(--wf-hero-2);
+  color: var(--wf-hero-ink);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.screen[data-ward-design="v6"] .personAvatar[data-mode="unlinked"] {
+  border: 1px dashed var(--wf-line-ctl);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+}
+
+.screen[data-ward-design="v6"] .personName {
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.screen[data-ward-design="v6"] .personIdPill,
+.screen[data-ward-design="v6"] .personStatusPill {
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+}
+
+.screen[data-ward-design="v6"] .personDetailSentence {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.screen[data-ward-design="v6"] .actionBtn {
+  min-height: var(--wf-h-sm);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.screen[data-ward-design="v6"] .alreadyOpen {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+
+@media (max-width: 48rem) {
+  .screen[data-ward-design="v6"] .modeBtn,
+  .screen[data-ward-design="v6"] .addPatientHeaderBtn,
+  .screen[data-ward-design="v6"] .actionBtn,
+  .screen[data-ward-design="v6"] .rapidSearchInput {
+    min-height: 3rem;
+  }
+}

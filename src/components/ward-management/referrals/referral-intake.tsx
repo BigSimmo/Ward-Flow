@@ -2174,14 +2174,13 @@ export function ReferralIntakeForm() {
       className={`${styles.screen} ${pageStyles.screen}`}
       data-testid="ward-referral-intake-screen"
       data-referral-view="intake"
-      data-ward-design="third-edition"
+      data-ward-design="v6"
       data-ward-rebuilt-screen="raise-referral"
     >
-      <header className={`${styles.pageHeader} ${pageStyles.hdr1}`}>
-        <div className={pageStyles.hdrTitle}>
-          <h1 className={`${styles.pageTitle} ${pageStyles.hdrTitleText}`}>New referral</h1>
-          <span className={pageStyles.chipMark}>Intake front door</span>
-        </div>
+      {/* v6 (NewReferral.png): the shell header names the page, so the page's own h1 is for
+          screen readers only. */}
+      <header className="sr-only">
+        <h1>New referral</h1>
       </header>
 
       <main id="main-content" className={`${styles.main} ${pageStyles.workspace}`}>

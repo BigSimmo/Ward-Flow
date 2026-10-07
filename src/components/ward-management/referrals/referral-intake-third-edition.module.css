@@ -3822,3 +3822,408 @@
   display: inline-block !important;
   flex-shrink: 0 !important;
 }
+
+/* ═══ v6 (NewReferral.png) ═══
+ * The same questions, controls and rail, drawn in v6: hairline cards with a small numbered head,
+ * compact labels over 36px controls, segmented yes or no answers, hairline urgency cards and the
+ * summary rail as one card. v6 tokens only. `!important` here only answers the `!important`
+ * declarations above it; scoped to the v6 screen. */
+
+.screen[data-ward-design="v6"] {
+  background: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.screen[data-ward-design="v6"] .workspace {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+}
+
+.screen[data-ward-design="v6"] .workGrid {
+  grid-template-columns: minmax(0, 1fr) 21rem;
+  gap: var(--wf-s-3);
+}
+
+.screen[data-ward-design="v6"] .stepsColumn {
+  gap: var(--wf-s-3) !important;
+}
+
+.screen[data-ward-design="v6"] .panel {
+  margin-bottom: 0 !important;
+  border: 1px solid var(--wf-line) !important;
+  border-radius: var(--wf-r-lg) !important;
+  background: var(--wf-surface) !important;
+  box-shadow: var(--wf-e1) !important;
+}
+
+.screen[data-ward-design="v6"] .panelHeader,
+.screen[data-ward-design="v6"] .ph {
+  /* A step head is the fieldset's legend; floating it makes it ordinary content inside the card's
+     edge instead of a notch in the top border. */
+  float: left;
+  padding: var(--wf-s-3) var(--wf-s-4) !important;
+  border-bottom: 1px solid var(--wf-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.screen[data-ward-design="v6"] .stepBadge,
+.screen[data-ward-design="v6"] .stepNo {
+  padding: 0 var(--wf-s-2) !important;
+  border: 1px solid var(--wf-line-ctl) !important;
+  border-radius: var(--wf-r-sm) !important;
+  background: var(--wf-surface) !important;
+  color: var(--wf-ink-2) !important;
+  font-family: var(--wf-mono) !important;
+  font-size: var(--wf-fs-11) !important;
+  letter-spacing: 0 !important;
+  line-height: var(--wf-lh-16) !important;
+  text-transform: none !important;
+  white-space: nowrap !important;
+}
+
+.screen[data-ward-design="v6"] .panelHeaderTitle {
+  color: var(--wf-ink-1) !important;
+  font-family: var(--wf-font) !important;
+  font-size: var(--wf-fs-14) !important;
+  font-weight: 600 !important;
+  line-height: var(--wf-lh-14) !important;
+  white-space: nowrap !important;
+}
+
+.screen[data-ward-design="v6"] .stepStatusPill,
+.screen[data-ward-design="v6"] .stepStatusPill[data-status="complete"],
+.screen[data-ward-design="v6"] .stepStatusPill[data-status="incomplete"] {
+  padding: 0 var(--wf-s-2) !important;
+  border: 1px solid var(--wf-line-ctl) !important;
+  border-radius: var(--wf-r-sm) !important;
+  background: var(--wf-surface) !important;
+  color: var(--wf-ink-2) !important;
+  font-family: var(--wf-font) !important;
+  font-size: var(--wf-fs-11) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  white-space: nowrap !important;
+}
+
+.screen[data-ward-design="v6"] .stepStatusPill[data-status="complete"] {
+  color: var(--wf-success-ink) !important;
+}
+
+.screen[data-ward-design="v6"] .chip,
+.screen[data-ward-design="v6"] .chip[data-state="answered"],
+.screen[data-ward-design="v6"] .chip[data-state="not-answered"] {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--wf-ink-3) !important;
+  font-size: var(--wf-fs-11) !important;
+  font-weight: 500 !important;
+}
+
+.screen[data-ward-design="v6"] .chip[data-state="answered"] {
+  color: var(--wf-success-ink) !important;
+}
+
+.screen[data-ward-design="v6"] .panelBody {
+  gap: var(--wf-s-3) !important;
+  margin: 0 !important;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4) !important;
+  background: transparent !important;
+}
+
+.screen[data-ward-design="v6"] .fieldRow2,
+.screen[data-ward-design="v6"] .grid2 {
+  gap: var(--wf-s-3) var(--wf-s-4) !important;
+}
+
+.screen[data-ward-design="v6"] .fieldCard,
+.screen[data-ward-design="v6"] .questionGroup {
+  gap: var(--wf-s-1) !important;
+}
+
+.screen[data-ward-design="v6"] .questionHead,
+.screen[data-ward-design="v6"] .questionLabelRow {
+  align-items: baseline !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+}
+
+.screen[data-ward-design="v6"] .fieldLegend,
+.screen[data-ward-design="v6"] .questionLabel {
+  color: var(--wf-ink-1) !important;
+  font-family: var(--wf-font) !important;
+  font-size: var(--wf-fs-12) !important;
+  font-weight: 600 !important;
+  line-height: var(--wf-lh-12) !important;
+}
+
+.screen[data-ward-design="v6"] .select,
+.screen[data-ward-design="v6"] .formInput,
+.screen[data-ward-design="v6"] .suburbFilterInput {
+  height: var(--wf-h-md) !important;
+  min-height: var(--wf-h-md) !important;
+  padding: 0 var(--wf-s-3) !important;
+  border: 1px solid var(--wf-line-ctl) !important;
+  border-radius: var(--wf-r-md) !important;
+  background: var(--wf-surface) !important;
+  color: var(--wf-ink-1) !important;
+  font-family: var(--wf-font) !important;
+  font-size: var(--wf-fs-13) !important;
+}
+
+.screen[data-ward-design="v6"] .select:focus-visible,
+.screen[data-ward-design="v6"] .formInput:focus-visible,
+.screen[data-ward-design="v6"] .suburbFilterInput:focus-visible {
+  border-color: var(--wf-focus-ring) !important;
+  box-shadow: none !important;
+  outline: 2px solid var(--wf-focus-ring) !important;
+  outline-offset: 1px !important;
+}
+
+.screen[data-ward-design="v6"] .note,
+.screen[data-ward-design="v6"] .questionHelp {
+  color: var(--wf-ink-3) !important;
+  font-size: var(--wf-fs-12) !important;
+}
+
+.screen[data-ward-design="v6"] .optionalPill {
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  text-transform: none;
+}
+
+/* Urgency: three hairline cards; the chosen one carries the selected tint and a 3:1 edge. */
+.screen[data-ward-design="v6"] .urgencyCard {
+  border: 1px solid var(--wf-line-ctl) !important;
+  border-radius: var(--wf-r-md) !important;
+  background: var(--wf-surface) !important;
+  box-shadow: none !important;
+}
+
+.screen[data-ward-design="v6"] .urgencyCard:hover {
+  background: var(--wf-hover) !important;
+}
+
+.screen[data-ward-design="v6"] .urgencyCard[data-selected="true"] {
+  border-color: var(--wf-accent) !important;
+  background: var(--wf-selected) !important;
+}
+
+.screen[data-ward-design="v6"] .urgencyName {
+  color: var(--wf-ink-1) !important;
+  font-size: var(--wf-fs-13) !important;
+  font-weight: 600 !important;
+}
+
+.screen[data-ward-design="v6"] .urgencyWindow {
+  color: var(--wf-ink-3) !important;
+  font-size: var(--wf-fs-12) !important;
+}
+
+/* Yes or no questions: unboxed rows with a segmented answer, as the drawing has them. */
+.screen[data-ward-design="v6"] .switchGrid2x2 {
+  gap: 0 var(--wf-s-4) !important;
+}
+
+.screen[data-ward-design="v6"] .clinicalSwitchCard {
+  padding: var(--wf-s-2) 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--wf-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.screen[data-ward-design="v6"] .switchTitle {
+  color: var(--wf-ink-1) !important;
+  font-family: var(--wf-font) !important;
+  font-size: var(--wf-fs-13) !important;
+  font-weight: 600 !important;
+}
+
+.screen[data-ward-design="v6"] .switchSubtitle {
+  color: var(--wf-ink-3) !important;
+  font-size: var(--wf-fs-12) !important;
+}
+
+.screen[data-ward-design="v6"] .yesNoToggleGroup,
+.screen[data-ward-design="v6"] .choiceRow {
+  padding: 2px !important;
+  border: 1px solid var(--wf-line) !important;
+  border-radius: var(--wf-r-md) !important;
+  background: var(--wf-surface-2) !important;
+}
+
+.screen[data-ward-design="v6"] .toggleOption,
+.screen[data-ward-design="v6"] .choiceOption {
+  min-height: var(--wf-h-sm) !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--wf-r-sm) !important;
+  background: transparent !important;
+  color: var(--wf-ink-2) !important;
+  font-size: var(--wf-fs-13) !important;
+  font-weight: 500 !important;
+}
+
+.screen[data-ward-design="v6"] .toggleOption.optSelectedYes,
+.screen[data-ward-design="v6"] .toggleOption.optSelectedNo,
+.screen[data-ward-design="v6"] .toggleOption[data-selected="yes"],
+.screen[data-ward-design="v6"] .toggleOption[data-selected="no"] {
+  border-color: var(--wf-line-ctl) !important;
+  background: var(--wf-surface) !important;
+  color: var(--wf-ink-1) !important;
+  font-weight: 600 !important;
+  box-shadow: var(--wf-e1) !important;
+}
+
+/* History. */
+.screen[data-ward-design="v6"] .promptChip {
+  min-height: var(--wf-h-sm) !important;
+  border: 1px solid var(--wf-line-ctl) !important;
+  border-radius: var(--wf-r-md) !important;
+  background: var(--wf-surface) !important;
+  color: var(--wf-ink-1) !important;
+  font-size: var(--wf-fs-13) !important;
+  font-weight: 600 !important;
+}
+
+.screen[data-ward-design="v6"] .textArea,
+.screen[data-ward-design="v6"] .historyTextarea {
+  border: 1px solid var(--wf-line-ctl) !important;
+  border-radius: var(--wf-r-md) !important;
+  background: var(--wf-surface) !important;
+  color: var(--wf-ink-1) !important;
+  font-family: var(--wf-font) !important;
+  font-size: var(--wf-fs-13) !important;
+}
+
+/* Destinations. */
+.screen[data-ward-design="v6"] .destCard,
+.screen[data-ward-design="v6"] .destinationOption {
+  margin-bottom: 0 !important;
+  padding: var(--wf-s-3) !important;
+  border: 1px solid var(--wf-line) !important;
+  border-radius: var(--wf-r-md) !important;
+  background: var(--wf-surface) !important;
+  box-shadow: none !important;
+}
+
+.screen[data-ward-design="v6"] .destCard[data-active="true"] {
+  border: 1px solid var(--wf-accent) !important;
+  background: var(--wf-selected) !important;
+}
+
+/* The rail: catchment, summary and send, each a v6 card. */
+.screen[data-ward-design="v6"] .sideRailScroll {
+  gap: var(--wf-s-3) !important;
+}
+
+.screen[data-ward-design="v6"] .radarCard,
+.screen[data-ward-design="v6"] .summaryCard,
+.screen[data-ward-design="v6"] .dispatchCard {
+  padding: var(--wf-s-3) var(--wf-s-4) !important;
+  border: 1px solid var(--wf-line) !important;
+  border-radius: var(--wf-r-lg) !important;
+  background: var(--wf-surface) !important;
+  box-shadow: var(--wf-e1) !important;
+}
+
+.screen[data-ward-design="v6"] .gateTitle {
+  color: var(--wf-ink-1) !important;
+  font-size: var(--wf-fs-14) !important;
+  font-weight: 600 !important;
+}
+
+.screen[data-ward-design="v6"] .summaryCardHead {
+  border-bottom: 1px solid var(--wf-line) !important;
+}
+
+.screen[data-ward-design="v6"] .summaryCountBadge {
+  border: 1px solid var(--wf-line-ctl) !important;
+  border-radius: var(--wf-r-sm) !important;
+  background: var(--wf-surface) !important;
+  color: var(--wf-ink-2) !important;
+  font-family: var(--wf-mono) !important;
+  font-size: var(--wf-fs-11) !important;
+}
+
+.screen[data-ward-design="v6"] .summaryList {
+  gap: 0 !important;
+}
+
+.screen[data-ward-design="v6"] .summaryRow {
+  min-height: 1.875rem;
+  padding: 0 !important;
+  border-bottom: 1px solid var(--wf-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.screen[data-ward-design="v6"] .summaryRow:hover {
+  background: transparent !important;
+}
+
+.screen[data-ward-design="v6"] .summaryKey {
+  color: var(--wf-ink-2) !important;
+  font-family: var(--wf-font) !important;
+  font-size: var(--wf-fs-12) !important;
+}
+
+.screen[data-ward-design="v6"] .summaryVal {
+  color: var(--wf-ink-1) !important;
+  font-family: var(--wf-font) !important;
+  font-size: var(--wf-fs-12) !important;
+}
+
+.screen[data-ward-design="v6"] .summaryValMissing {
+  color: var(--wf-ink-3) !important;
+  opacity: 1 !important;
+}
+
+.screen[data-ward-design="v6"] .sendButton {
+  min-height: var(--wf-h-lg);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-pri-1);
+  color: var(--wf-on-accent);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  box-shadow: var(--wf-e1);
+}
+
+.screen[data-ward-design="v6"] .sendButton:hover:not([aria-disabled="true"]):not([disabled]) {
+  background: var(--wf-pri-2);
+  box-shadow: var(--wf-e2);
+}
+
+.screen[data-ward-design="v6"] .sendButton[aria-disabled="true"],
+.screen[data-ward-design="v6"] .sendButton[disabled] {
+  border: 1px dashed var(--wf-line-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-3);
+  box-shadow: none;
+}
+
+.screen[data-ward-design="v6"] .sendReason {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+@media (max-width: 820px) {
+  .screen[data-ward-design="v6"] .workGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen[data-ward-design="v6"] .select,
+  .screen[data-ward-design="v6"] .formInput,
+  .screen[data-ward-design="v6"] .suburbFilterInput,
+  .screen[data-ward-design="v6"] .toggleOption,
+  .screen[data-ward-design="v6"] .promptChip {
+    min-height: 3rem !important;
+  }
+}
