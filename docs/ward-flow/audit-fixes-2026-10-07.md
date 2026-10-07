@@ -27,3 +27,11 @@ Locked dependencies were installed independently in the patch worktree after det
 The duplicate-stay guard recognises recorded psychiatric-ward referrals as transfers, preserving the sending stay through reservation and departing it on receiving arrival. Older saves with a completed incoming care transfer can start a new transfer. Defensive release is tested against the legacy occupied-source alias, independently of the corrected producer. Broadcast validation preserves producer-valid fractional durations and rejects stale ID counters.
 
 Focused state and compatibility regressions passed; the broad run is underway. No runtime logging or diagnostic instrumentation was added.
+
+## Discharge editor and truthful Settings
+
+Expected departure editing starts with a clock-only `HH:mm` value; saving still preserves its recorded date. Operational defaults are read-only runtime values, with no browser display-string override or false save action. Board refresh stays visible and keyboard-reachable with the exact “Not wired in this prototype.” disclosure; activation gives that explanation rather than pretending to save a cadence.
+
+Reduced motion and high contrast use shared browser preferences, restored by a component above every Ward route. Scoped Ward CSS consumes those attributes: manual reduction suppresses animation, transitions and smooth scrolling; contrast uses the current Ward ink colour for muted text and borders, preserving light/dark palette selection.
+
+Browser proof: system Chromium at desktop 1440×1000 and phone 390×844; animation computed from `audit` to `none`, muted ink from `#5f6873` to `#161a20`; preferences survived a reload on Home; phone Settings disclosure passed; zero page errors. Evidence lives in `/workspace/ward-flow-audit/patch-browser-exact.log` and the adjacent screenshots. The browser probe waits for hydration before activation.

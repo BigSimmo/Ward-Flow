@@ -25,6 +25,8 @@ import {
   X,
 } from "lucide-react";
 
+import type { WallboardRefreshInterval } from "@/components/ward-management/shell/ward-wallboard-store";
+import { useWardAccessibilityPreference } from "@/components/ward-management/shell/ward-accessibility";
 import { applyAppearance, useAppearanceStore } from "@/components/ward-management/shell/ward-bar";
 import { setRailOpenPreference, useRailOpenStore } from "@/components/ward-management/shell/ward-rail";
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
@@ -59,9 +61,6 @@ import {
   DUE_SOON_URGENT_MINUTES,
   DUE_SOON_URGENT_RANGE_MINUTES,
   OPERATIONAL_DEFAULTS,
-  loadCustomOperationalDefaults,
-  saveCustomOperationalDefaults,
-  clearCustomOperationalDefaults,
 } from "@/components/ward-management/ward-operational-defaults";
 
 import { publishedThresholds, type ThresholdState } from "./settings-thresholds";
@@ -73,11 +72,7 @@ import {
   PULL_HOLD_RANGE_MINUTES,
 } from "@/components/ward-management/ward-model";
 import { useAudioBuzzPreference, setAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
-import {
-  useWallboardRefreshPreference,
-  setWallboardRefreshPreference,
-  type WallboardRefreshInterval,
-} from "@/components/ward-management/shell/ward-wallboard-store";
+
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
 import { SETTINGS_SEARCH_ENTRIES } from "./settings-search-index";
@@ -455,83 +450,19 @@ export function SettingsScreen() {
   const [genderMixProtection, setGenderMixProtection] = useState(false);
   const [audioBreachChimes, setAudioBreachChimes] = useState(false);
 
-  // Real functional Accessibility & Ergonomic preferences (lazy init from localStorage;
-  // DOM attributes synced below without setState-in-effect).
-  const [reducedMotion, setReducedMotion] = useState<boolean>(
-    () => typeof window !== "undefined" && window.localStorage.getItem("ward-flow-reduced-motion") === "true",
-  );
-  const [highContrast, setHighContrast] = useState<boolean>(
-    () => typeof window !== "undefined" && window.localStorage.getItem("ward-flow-high-contrast") === "true",
-  );
-
-  useEffect(() => {
-    if (reducedMotion) document.documentElement.setAttribute("data-reduced-motion", "true");
-    else document.documentElement.removeAttribute("data-reduced-motion");
-    if (highContrast) document.documentElement.setAttribute("data-high-contrast", "true");
-    else document.documentElement.removeAttribute("data-high-contrast");
-  }, [reducedMotion, highContrast]);
-
+  const [reducedMotion, setReducedMotion] = useWardAccessibilityPreference("reduced-motion");
+  const [highContrast, setHighContrast] = useWardAccessibilityPreference("high-contrast");
   const handleToggleReducedMotion = (enabled: boolean) => {
     setReducedMotion(enabled);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("ward-flow-reduced-motion", enabled ? "true" : "false");
-      if (enabled) {
-        document.documentElement.setAttribute("data-reduced-motion", "true");
-      } else {
-        document.documentElement.removeAttribute("data-reduced-motion");
-      }
-    }
     showToast(`Reduced motion ${enabled ? "enabled" : "disabled"}.`);
   };
-
   const handleToggleHighContrast = (enabled: boolean) => {
     setHighContrast(enabled);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("ward-flow-high-contrast", enabled ? "true" : "false");
-      if (enabled) {
-        document.documentElement.setAttribute("data-high-contrast", "true");
-      } else {
-        document.documentElement.removeAttribute("data-high-contrast");
-      }
-    }
     showToast(`High contrast mode ${enabled ? "enabled" : "disabled"}.`);
-  };
-
-  // Operational Defaults Editability state (Image 4)
-  const [isEditingDefaults, setIsEditingDefaults] = useState(false);
-  const [customDefaults, setCustomDefaults] = useState<Record<string, string>>(() => loadCustomOperationalDefaults());
-
-  const handleDefaultChange = (name: string, value: string) => {
-    setCustomDefaults((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSaveCustomDefaults = () => {
-    saveCustomOperationalDefaults(customDefaults);
-    setIsEditingDefaults(false);
-    showToast("Operational defaults saved for this browser.");
-  };
-
-  const handleResetSingleDefault = (name: string) => {
-    setCustomDefaults((prev) => {
-      const copy = { ...prev };
-      delete copy[name];
-      saveCustomOperationalDefaults(copy);
-      return copy;
-    });
-    showToast(`Restored default for "${name}".`);
-  };
-
-  const handleResetAllDefaults = () => {
-    clearCustomOperationalDefaults();
-    setCustomDefaults({});
-    setIsEditingDefaults(false);
-    showToast("All operational defaults restored to standard baseline.");
   };
 
   // Audio & Visual Urgent Buzz Alerts state (browser-store backed, SSR-safe)
   const [audioBuzzAlerts, setAudioBuzzAlerts] = useAudioBuzzPreference();
-  // Wallboard Auto-Refresh Timer state (browser-store backed, SSR-safe)
-  const [wallboardRefresh, setWallboardRefresh] = useWallboardRefreshPreference();
   // Operator Switcher Modal state
   const [isOperatorModalOpen, setIsOperatorModalOpen] = useState(false);
 
@@ -906,8 +837,6 @@ export function SettingsScreen() {
     setDraft({ ...defaults, morningRollupDeadlineMinutes: 570 });
     setAudioBuzzAlerts(true);
     setAudioBuzzPreference(true);
-    setWallboardRefresh("off");
-    setWallboardRefreshPreference("off");
     setStatutoryWarningHours(4);
     setAutoEscalationAlerts(false);
     setAutoCapacityRefresh(false);
@@ -2017,30 +1946,22 @@ export function SettingsScreen() {
                                   <span className={styles.ruleText}>
                                     <span className={styles.ruleTitle}>Board refresh</span>
                                     <span className={styles.ruleSub} data-testid="setting-wallboard-refresh-desc">
-                                      Unattended displays
+                                      {NOT_WIRED}
                                     </span>
                                   </span>
-                                  <Segmented
-                                    label="Board refresh"
-                                    items={BOARD_REFRESH_CHOICES.map((choice) => ({
-                                      id: String(choice.value),
-                                      label: choice.label,
-                                    }))}
-                                    value={String(wallboardRefresh)}
-                                    onChange={(id) => {
-                                      const choice = BOARD_REFRESH_CHOICES.find(
-                                        (option) => String(option.value) === id,
-                                      );
-                                      if (!choice) return;
-                                      setWallboardRefresh(choice.value);
-                                      setWallboardRefreshPreference(choice.value);
-                                      showToast(
-                                        choice.value === "off"
-                                          ? "Board refresh off."
-                                          : `Board refresh set to every ${choice.label}.`,
-                                      );
-                                    }}
-                                  />
+                                  <div role="group" aria-label="Board refresh">
+                                    {BOARD_REFRESH_CHOICES.map((choice) => (
+                                      <button
+                                        key={String(choice.value)}
+                                        type="button"
+                                        aria-disabled="true"
+                                        onClick={() => showToast(NOT_WIRED)}
+                                        className={buttonClass({ variant: "ghost", size: "sm" })}
+                                      >
+                                        {choice.label}
+                                      </button>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -2192,101 +2113,18 @@ export function SettingsScreen() {
                         icon={SlidersHorizontal}
                         title="Operational defaults"
                         meta={`${OPERATIONAL_DEFAULTS.length} fixed in code`}
-                        action={
-                          isEditingDefaults ? (
-                            <>
-                              <button
-                                type="button"
-                                className={buttonClass({ variant: "ghost", size: "sm" })}
-                                onClick={handleResetAllDefaults}
-                                title="Restore the standard defaults"
-                              >
-                                Restore baseline
-                              </button>
-                              <button
-                                type="button"
-                                className={buttonClass({ variant: "sec", size: "sm" })}
-                                onClick={() => {
-                                  setCustomDefaults(loadCustomOperationalDefaults());
-                                  setIsEditingDefaults(false);
-                                }}
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                className={buttonClass({ variant: "pri", size: "sm" })}
-                                onClick={handleSaveCustomDefaults}
-                              >
-                                Save defaults
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              {Object.keys(customDefaults).length > 0 && (
-                                <button
-                                  type="button"
-                                  className={buttonClass({ variant: "ghost", size: "sm" })}
-                                  onClick={handleResetAllDefaults}
-                                  title="Restore every operational default to standard"
-                                >
-                                  Reset to baseline
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                className={buttonClass({ variant: "ghost", size: "sm" })}
-                                onClick={() => setIsEditingDefaults(true)}
-                              >
-                                Edit defaults
-                              </button>
-                            </>
-                          )
-                        }
                       />
                       <dl className={styles.defaultsGrid} aria-label="Operational defaults table">
-                        {OPERATIONAL_DEFAULTS.map((item) => {
-                          const customValue = customDefaults[item.name];
-                          const isModified = Boolean(customValue && customValue !== item.display);
-                          return (
-                            <div
-                              key={item.name}
-                              className={styles.defaultsItem}
-                              data-testid={`ward-settings-operational-default-${item.name}`}
-                            >
-                              <dt className={styles.defaultsName}>
-                                {item.name}
-                                {isModified && <span className={styles.customMark}>Customised</span>}
-                              </dt>
-                              <dd className={styles.defaultsValue}>
-                                {isEditingDefaults ? (
-                                  <span className={styles.defaultsEdit}>
-                                    <input
-                                      type="text"
-                                      className={styles.defaultsInput}
-                                      value={customValue ?? item.display}
-                                      onChange={(e) => handleDefaultChange(item.name, e.target.value)}
-                                      aria-label={`Edit ${item.name}`}
-                                    />
-                                    {isModified && (
-                                      <button
-                                        type="button"
-                                        className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true })}
-                                        aria-label={`Reset "${item.name}" to its standard default`}
-                                        title={`Reset "${item.name}" to its standard default`}
-                                        onClick={() => handleResetSingleDefault(item.name)}
-                                      >
-                                        <RotateCcw size={14} aria-hidden="true" />
-                                      </button>
-                                    )}
-                                  </span>
-                                ) : (
-                                  (customValue ?? item.display)
-                                )}
-                              </dd>
-                            </div>
-                          );
-                        })}
+                        {OPERATIONAL_DEFAULTS.map((item) => (
+                          <div
+                            key={item.name}
+                            className={styles.defaultsItem}
+                            data-testid={`ward-settings-operational-default-${item.name}`}
+                          >
+                            <dt className={styles.defaultsName}>{item.name}</dt>
+                            <dd className={styles.defaultsValue}>{item.display}</dd>
+                          </div>
+                        ))}
                       </dl>
                     </Card>
                   )}
