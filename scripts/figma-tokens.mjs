@@ -3,7 +3,7 @@
  * Two-way token sync between src/app/ward-flow-v6-tokens.css (the source of truth) and the Figma
  * file "Ward Flow v6 live". Figma Professional has no Variables REST API, so Claude reads and
  * writes the Figma side through the Figma MCP on Josh's device. This script only handles the code side.
- * Procedure: .claude/skills/figma-sync/SKILL.md. Map: design/figma/figma-sync.json.
+ * Procedure: docs/agents/figma-sync.md. Map: design/figma/figma-sync.json.
  *
  *   node scripts/figma-tokens.mjs --export          write design/figma/tokens.json from the CSS
  *   node scripts/figma-tokens.mjs --diff <file>     print tokens in <file> that differ from the CSS

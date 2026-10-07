@@ -1,9 +1,8 @@
----
-name: figma-sync
-description: Sync the Ward Flow design between code and the Figma file "Ward Flow v6 live", in either direction. Use when asked to push code changes to Figma or pull Figma edits back into code.
----
-
 # Figma sync
+
+Push code changes to the Figma file "Ward Flow v6 live", or pull Figma edits back into code. The
+repository ships no `.claude` or `.agents` folder, so this procedure lives here; a personal Claude
+skill named `figma-sync` can point at it.
 
 Code is the source of truth. Figma Professional has no Code Connect or Variables REST API, so
 Claude runs the sync on request through the Figma MCP (`use_figma`, `get_variable_defs`,

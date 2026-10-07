@@ -1,5 +1,5 @@
 {
-  "$comment": "Map between the Figma file and the code. Code is the source of truth. Claude runs the sync through the Figma MCP on Josh's device (Figma Professional has no Code Connect or Variables REST API). Procedure: .claude/skills/figma-sync/SKILL.md. Tokens: scripts/figma-tokens.mjs.",
+  "$comment": "Map between the Figma file and the code. Code is the source of truth. Claude runs the sync through the Figma MCP on Josh's device (Figma Professional has no Code Connect or Variables REST API). Procedure: docs/agents/figma-sync.md. Tokens: scripts/figma-tokens.mjs.",
   "file": {
     "key": "UfpjjBWlvb3NMp3Nuvktzu",
     "name": "Ward Flow v6 live",
