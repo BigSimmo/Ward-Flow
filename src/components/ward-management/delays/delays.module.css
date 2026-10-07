@@ -7380,3 +7380,13 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* Touch-accessible close button (44x44px minimum touch target) */
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+}

@@ -1362,7 +1362,6 @@ export function ReferralMatchView({
                   const hospitalName = siteByCode(c.unit.siteCode)?.name ?? c.unit.siteCode;
                   const occPct =
                     c.unit.beds > 0 ? Math.round(((c.unit.beds - c.unit.empty.value) / c.unit.beds) * 100) : 0;
-                  const shortName = c.unit.name.replace(/^(Hospital|Ward|Centre)\s+/i, "").split(" ")[0];
 
                   return (
                     <div key={c.unit.id} className={`${styles.unitCard} ${styles.unitCardReady}`}>
@@ -1372,7 +1371,7 @@ export function ReferralMatchView({
                             <span>{c.unit.name}</span>
                             <span
                               className={styles.bandAvailableBadge}
-                              style={{ fontSize: "11px", padding: "1px 6px" }}
+                              style={{ fontSize: "var(--text-xs)", padding: "1px 6px" }}
                             >
                               {bedLabel}
                             </span>
@@ -1382,7 +1381,7 @@ export function ReferralMatchView({
                           </div>
                         </div>
                         <button type="button" className={styles.btnGood} onClick={() => handleAccept(c.unit.id)}>
-                          ✓ Accept Bed at {shortName}
+                          ✓ Accept Bed at {c.unit.name}
                         </button>
                       </div>
 
@@ -1414,7 +1413,7 @@ export function ReferralMatchView({
                           <span>
                             ✓ {passedGates.length}/{totalGates} Statutory & Clinical Criteria Met
                           </span>
-                          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: "var(--text-xs)" }}>
                             {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
                           </span>
                         </button>
@@ -1490,7 +1489,7 @@ export function ReferralMatchView({
                             <span>{c.unit.name}</span>
                             <span
                               style={{
-                                fontSize: "11px",
+                                fontSize: "var(--text-xs)",
                                 padding: "1px 6px",
                                 borderRadius: "10px",
                                 background: "var(--warn-soft)",
@@ -1543,7 +1542,7 @@ export function ReferralMatchView({
                           aria-controls={`gate-grid-${gateKey}`}
                         >
                           <span>Capacity checks outstanding · other recorded gates passed</span>
-                          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: "var(--text-xs)" }}>
                             {isGatesExpanded ? "▲ Hide Verification Gates" : "▼ Show Verification Gates"}
                           </span>
                         </button>
@@ -1628,7 +1627,7 @@ export function ReferralMatchView({
                             <span>{c.unit.name}</span>
                             <span
                               style={{
-                                fontSize: "11px",
+                                fontSize: "var(--text-xs)",
                                 padding: "1px 6px",
                                 borderRadius: "10px",
                                 background: "var(--danger-soft)",
@@ -1681,7 +1680,7 @@ export function ReferralMatchView({
                             ✕ {failedGates.length} of {c.verdict.gates.length} Criteria Failed · Statutory Exclusion
                             Breakdown
                           </span>
-                          <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: "var(--text-xs)" }}>
                             {isGatesExpanded ? "▲ Hide Failed Gate Breakdown" : "▼ Show Failed Gate Breakdown"}
                           </span>
                         </button>

@@ -364,7 +364,8 @@
 
 /* Dropdown Styles */
 .selectThin {
-  height: 34px;
+  height: 44px;
+  min-height: 44px;
   border-radius: 6px;
   border: 1px solid var(--line-strong);
   background: var(--surface);
@@ -426,7 +427,8 @@
 
 /* Intuitive Reset Button */
 .btnResetIntuitive {
-  height: 34px;
+  height: 44px;
+  min-height: 44px;
   padding: 0 11px;
   border-radius: 6px;
   border: 1px solid var(--line);
@@ -463,7 +465,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  min-height: 44px;
+  padding: 8px 12px;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
@@ -498,7 +501,7 @@
 }
 
 .shiftSubtime {
-  font-size: 10px;
+  font-size: 12px;
   font-family: var(--mono, monospace);
   color: var(--muted);
 }

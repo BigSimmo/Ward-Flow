@@ -485,8 +485,8 @@
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  height: 31px;
-  width: 31px;
+  min-height: 44px;
+  min-width: 44px;
   border: 1px solid var(--dc-line);
   border-radius: 4px;
   background: var(--surface);
