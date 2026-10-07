@@ -3,11 +3,19 @@
   composes: wardTokens from "./ward-tokens.module.css";
   composes: wardShellTokens from "../../app/ward-flow-shell-tokens.module.css";
   composes: descendantKillWithScroll from "./ward-reduced-motion.module.css";
+  --task-edge-light: color-mix(in srgb, var(--surface) 88%, white);
+  --task-shadow-near: color-mix(in srgb, black 4%, transparent);
+  --task-shadow-ambient: color-mix(in srgb, black 6%, transparent);
   display: flex;
   min-height: 0;
   height: 100%;
   flex-direction: column;
-  background: linear-gradient(155deg, var(--ground-hi), var(--ground));
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--ground-hi) 96%, transparent),
+    color-mix(in srgb, var(--ground) 98%, transparent)
+  );
+  backdrop-filter: blur(18px);
   color: var(--ink);
   font-family: var(--body);
   font-variant-numeric: tabular-nums;
@@ -24,9 +32,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.625rem 1rem;
+  padding: 0.625rem 0.875rem;
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(125deg, var(--surface), var(--surface-2));
+  background: linear-gradient(
+    125deg,
+    color-mix(in srgb, var(--surface) 92%, transparent),
+    color-mix(in srgb, var(--surface-2) 94%, transparent)
+  );
+  box-shadow: inset 0 1px 0 var(--task-edge-light);
 }
 .eyebrow {
   display: flex;
@@ -62,7 +75,7 @@
   align-items: center;
   justify-content: center;
   padding: 0 0.375rem;
-  border-radius: 999px;
+  border-radius: 0.375rem;
   background: var(--accent-soft);
   color: var(--accent-ink);
   font-size: var(--t-0);
@@ -78,14 +91,17 @@
 .closeButton {
   display: inline-flex;
   flex: none;
-  min-height: 3rem;
-  min-width: 3rem;
+  min-height: 2rem;
+  min-width: 2rem;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--line);
-  border-radius: 50%;
+  border-radius: 0.625rem;
   background: var(--surface);
   color: var(--ink-soft);
+  box-shadow:
+    inset 0 1px 0 var(--task-edge-light),
+    0 2px 6px var(--task-shadow-near);
   cursor: pointer;
 }
 .closeButton > span {
@@ -102,7 +118,8 @@
   flex: none;
   padding: 0.625rem 0.875rem 0.5rem;
   border-bottom: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  box-shadow: inset 0 1px 0 var(--task-edge-light);
 }
 .summary {
   display: grid;
@@ -116,8 +133,11 @@
   gap: 0.5rem;
   padding: 0.375rem 0.625rem;
   border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: var(--surface);
+  border-radius: 0.625rem;
+  background: linear-gradient(160deg, var(--task-edge-light), color-mix(in srgb, var(--surface) 94%, transparent));
+  box-shadow:
+    inset 0 1px 0 var(--task-edge-light),
+    0 2px 8px var(--task-shadow-near);
 }
 .summary strong {
   font-size: var(--t-3);
@@ -136,44 +156,15 @@
   color: var(--muted);
   line-height: 1.25;
 }
-.search {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 3rem;
-  padding: 0 0.875rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  color: var(--muted);
-  box-shadow: 0 2px 3px color-mix(in srgb, var(--ink) 3%, transparent);
-}
-.search svg {
-  width: 1rem;
-  height: 1rem;
-  flex: none;
-}
-.search input {
-  width: 100%;
-  min-width: 0;
-  background: transparent;
-  border: 0;
-  outline: none;
-  font-family: var(--body);
-  font-size: var(--t-1);
-  color: var(--ink);
-}
-.search input::placeholder {
-  color: var(--muted);
-}
 .taskFilterTrack {
   display: flex;
   gap: 0.25rem;
   margin: 0.5rem 0;
   padding: 0.25rem;
   border: 1px solid var(--line);
-  border-radius: 1.25rem;
-  background: var(--surface);
+  border-radius: 0.875rem;
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  box-shadow: inset 0 1px 0 var(--task-edge-light);
 }
 .taskFilterTab {
   display: inline-flex;
@@ -181,11 +172,11 @@
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  min-height: 3rem;
+  min-height: 2rem;
   min-width: 0;
   padding: 0.375rem 0.625rem;
   border: 1px solid transparent;
-  border-radius: 1rem;
+  border-radius: 0.625rem;
   background: transparent;
   color: var(--ink-soft);
   font-family: inherit;
@@ -200,12 +191,15 @@
 .taskFilterTabActive:hover {
   background: var(--accent);
   color: var(--on-accent);
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 20%, transparent);
+  border-color: color-mix(in srgb, var(--on-accent) 12%, var(--accent));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--on-accent) 12%, transparent),
+    0 2px 6px var(--task-shadow-near);
 }
 .taskFilterTab span {
   min-width: 1.25rem;
   padding: 0.125rem 0.25rem;
-  border-radius: 999px;
+  border-radius: 0.375rem;
   font-size: var(--t-0);
   background: var(--sunk);
   color: var(--ink-soft);
@@ -224,14 +218,20 @@
 }
 .filterMeta select {
   min-width: 0;
-  max-width: 72%;
-  min-height: 3rem;
-  padding: 0.5rem 0.625rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  max-width: 100%;
+  min-height: 2.125rem;
+  padding: 0.375rem 2.125rem 0.375rem 0.625rem;
+  appearance: none;
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5rem;
   background: var(--surface);
   color: var(--ink-soft);
+  font-family: inherit;
   font-size: var(--t-0);
+  box-shadow:
+    inset 0 1px 0 var(--task-edge-light),
+    0 2px 5px var(--task-shadow-near);
 }
 .drawerBody {
   display: flex;
@@ -281,16 +281,29 @@
   gap: 0.375rem;
   padding: 0.625rem;
   border: 1px solid var(--line);
-  border-radius: 1.25rem;
-  background: var(--surface);
-  box-shadow: 0 3px 8px color-mix(in srgb, var(--ink) 4%, transparent);
-  transition: border-color 150ms ease;
+  border-radius: 0.75rem;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--surface) 96%, white),
+    color-mix(in srgb, var(--surface) 94%, transparent)
+  );
+  box-shadow:
+    inset 0 1px 0 var(--task-edge-light),
+    0 2px 5px var(--task-shadow-near),
+    0 8px 22px var(--task-shadow-ambient);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 .taskStrip[data-tone="danger"] {
   background: linear-gradient(120deg, color-mix(in srgb, var(--danger-soft) 28%, var(--surface)), var(--surface) 70%);
 }
 .taskStrip:hover {
   border-color: var(--line-strong);
+  box-shadow:
+    inset 0 1px 0 var(--task-edge-light),
+    0 3px 7px var(--task-shadow-near),
+    0 10px 26px var(--task-shadow-ambient);
 }
 .taskStripMain {
   display: flex;
@@ -301,11 +314,12 @@
   display: grid;
   place-items: center;
   flex: none;
-  width: 2.375rem;
-  height: 2.375rem;
-  margin-top: 0.3125rem;
+  width: 2rem;
+  height: 2rem;
+  margin-top: 0;
   border: 1px solid color-mix(in srgb, var(--danger) 12%, var(--line));
-  border-radius: 0.875rem;
+  border-radius: 0.5rem;
+  box-shadow: inset 0 1px 0 var(--task-edge-light);
   background: var(--danger-soft);
   color: var(--danger);
 }
@@ -333,14 +347,15 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0 0.5rem;
+  gap: 0.25rem 0.5rem;
+  justify-content: space-between;
   min-width: 0;
 }
 .rowSelect {
   display: inline-flex;
   align-items: center;
-  min-width: 3rem;
-  min-height: 3rem;
+  min-width: 2rem;
+  min-height: 1.5rem;
   border: 0;
   background: transparent;
   padding: 0;
@@ -350,14 +365,18 @@
 }
 .taskStripPatient {
   overflow-wrap: anywhere;
-  font-size: var(--t-2);
+  font-size: var(--t-1);
   font-weight: 650;
   letter-spacing: -0.015em;
   color: var(--ink);
 }
 .taskStripBadge {
-  padding: 0.1875rem 0.5rem;
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--line);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.375rem;
   background: var(--sunk);
   color: var(--ink-soft);
   font-size: var(--t-0);
@@ -365,10 +384,12 @@
   line-height: 1.4;
 }
 .taskStripBadgeUrgent {
+  border-color: color-mix(in srgb, var(--danger) 22%, transparent);
   background: var(--danger-soft);
   color: var(--danger);
 }
 .taskStripBadgeWarn {
+  border-color: color-mix(in srgb, var(--warn) 22%, transparent);
   background: var(--warn-soft);
   color: var(--warn);
 }
@@ -387,7 +408,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.375rem;
-  padding-left: 3rem;
+  padding-left: 0;
 }
 .btnAckFact,
 .btnMovement,
@@ -397,16 +418,22 @@
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  min-height: 3rem;
-  min-width: 3rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid transparent;
-  border-radius: 999px;
+  min-height: 2rem;
+  min-width: 2rem;
+  padding: 0.3125rem 0.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5rem;
   font-family: inherit;
   font-size: var(--t-0);
   font-weight: 550;
   cursor: pointer;
-  transition: background 150ms ease;
+  box-shadow:
+    inset 0 1px 0 var(--task-edge-light),
+    0 1px 3px var(--task-shadow-near);
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 .btnAckFact {
   background: var(--accent-soft);
@@ -420,10 +447,11 @@
   color: var(--good-ink, var(--good));
 }
 .btnMovement {
-  background: transparent;
+  background: var(--surface);
   color: var(--ink-soft);
 }
 .btnMovement:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line-strong));
   background: var(--sunk);
 }
 .ackStatus,
@@ -444,7 +472,10 @@
   gap: 0.5rem;
   padding: 0.625rem 0.875rem;
   border-top: 1px solid var(--line);
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--task-edge-light),
+    0 -4px 16px var(--task-shadow-near);
 }
 .drawerFoot > span {
   color: var(--muted);
@@ -454,7 +485,9 @@
 .btnAckAll {
   background: var(--accent);
   color: var(--on-accent);
-  box-shadow: 0 3px 8px color-mix(in srgb, var(--accent) 18%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--on-accent) 14%, transparent),
+    0 3px 9px var(--task-shadow-near);
 }
 .btnAckAll:hover {
   background: var(--accent-press);
@@ -464,7 +497,7 @@
   padding: 1.5rem 1rem;
   text-align: center;
   border: 1px dashed var(--line-strong);
-  border-radius: 1.25rem;
+  border-radius: 0.875rem;
   color: var(--muted);
 }
 .empty > svg {
@@ -481,7 +514,6 @@
   font-size: var(--t-1);
   margin-bottom: 0.5rem;
 }
-.search:focus-within,
 .taskFilterTab:focus-visible,
 .closeButton:focus-visible,
 .filterMeta select:focus-visible,
@@ -522,7 +554,6 @@
   .summary,
   .headerNote {
     display: none;
-    display: none;
   }
   .controls {
     padding-block: 0.5rem;
@@ -536,5 +567,113 @@
   .btnAckAll {
     background: Highlight;
     color: HighlightText;
+  }
+}
+
+.selectWrap {
+  position: relative;
+  width: 12rem;
+  max-width: 68%;
+}
+.selectWrap > svg {
+  position: absolute;
+  right: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.875rem;
+  height: 0.875rem;
+  pointer-events: none;
+}
+.patientMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0.125rem 0 0;
+  color: var(--muted);
+  font-size: var(--t-0);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.taskTitle {
+  margin: 0.375rem 0 0.125rem;
+  color: var(--ink-soft);
+  font-size: var(--t-1);
+  line-height: 1.35;
+  font-weight: 600;
+}
+.taskStripActions svg,
+.taskStripBadge svg,
+.patientMeta svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex: none;
+}
+.escalationForm {
+  flex-basis: 100%;
+  margin-top: 0.25rem;
+  padding: 0.625rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.5rem;
+  background: var(--surface-2);
+  font-size: var(--t-0);
+}
+.escalationForm label {
+  display: grid;
+  gap: 0.375rem;
+  color: var(--ink);
+  font-weight: 550;
+}
+.escalationForm input {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.25rem;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.375rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+.escalationForm p {
+  margin: 0.5rem 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.escalationForm button + button {
+  margin-left: 0.375rem;
+}
+.escalationForm input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.btnAckFact:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+@media (pointer: coarse) {
+  .closeButton,
+  .taskFilterTab,
+  .filterMeta select,
+  .rowSelect,
+  .btnAckFact,
+  .btnMovement,
+  .btnCompleteTask,
+  .btnAckAll {
+    min-height: 3rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .taskStrip,
+  .summary > div,
+  .closeButton,
+  .filterMeta select,
+  .btnAckFact,
+  .btnMovement,
+  .btnCompleteTask,
+  .btnAckAll {
+    border-color: ButtonBorder;
+    box-shadow: none;
   }
 }
