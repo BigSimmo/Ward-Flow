@@ -468,11 +468,13 @@ To satisfy the stringent standards of the WA Health Clinical Governance Director
 
 **Presenter Response:**
 
-> "Ward Flow is engineered around a **Local-First, High-Resilience Architecture**.
+> "Ward Flow is a **synthetic demonstration prototype**, not a production patient record system.
 >
-> Every user action dispatched within the application is validated through a centralized state reducer and mirrored immediately to encrypted local browser session storage. If a workstation loses network connection or the browser tab is accidentally terminated, the application state rehydrates instantly upon reboot.
+> Actions are handled by a central state reducer. When browser storage is available and the demo's privacy lock permits saving, the demo state is saved as plain JSON in this tab's session storage; it is not encrypted by the application. A valid saved state may be restored on a same-day reload while that browser session remains available. Restoration after a tab closes, a browser crash or a workstation reboot is not guaranteed.
 >
-> Furthermore, our `useDirtyStateGuard` actively intercepts page unload events if a clinician has half-completed a clinical note or referral, preventing accidental loss of complex clinical summaries. Nothing is lost, even in volatile ward environments."
+> Once an event that can carry typed text is dispatched, whether accepted or refused, the demo clears its saved state and stops saving until a genuine demo reset or scenario reseed. If storage is unavailable, changes remain in memory and may be lost when the page closes.
+>
+> Where a form marks unsaved changes, `useDirtyStateGuard` can request a browser warning before leaving the page. That warning does not guarantee recovery or prevent loss after a crash. Use synthetic data only."
 
 ---
 
