@@ -1,0 +1,126 @@
+/* v6 card: radius 14, e1, hairline. Head, body, foot. Never a coloured stripe. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 56px;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.titleWrap {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.title {
+  margin: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.eyebrowTitle {
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.meta {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.aside {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  flex: 0 0 auto;
+}
+
+.body {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  min-width: 0;
+}
+
+.flush {
+  padding: 0;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 52px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  box-sizing: border-box;
+  border-top: 1px solid var(--wf-line);
+  margin-top: auto;
+}
+
+.footMeta {
+  min-width: 0;
+  flex: 1 1 auto;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+/* Compact, in a list: one row with tile, title and meta, values, one action. */
+.compact .head {
+  min-height: 0;
+  padding: var(--wf-s-3);
+  border-bottom: 0;
+}
+
+.compact .titleWrap {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.compact .meta {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+@media (forced-colors: active) {
+  .card {
+    border-color: CanvasText;
+  }
+}

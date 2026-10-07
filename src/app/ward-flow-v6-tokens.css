@@ -185,6 +185,18 @@ html.dark .day {
   --wf-lh-28: 32px;
 }
 
+/*
+ * The hero band is deep slate in both themes, so status dots and focus inside it use the night
+ * values (spec section 3). Components switch to these inside `.hero` through src/components/wf.
+ */
+:root {
+  --wf-hero-danger: #e27a68;
+  --wf-hero-warning: #d9a441;
+  --wf-hero-success: #4cb383;
+  --wf-hero-info: #7fa3c8;
+  --wf-hero-neutral: #8fa0b1;
+}
+
 /* Touch: 44px targets on tablets. */
 @media (pointer: coarse) {
   :root,

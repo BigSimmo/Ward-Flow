@@ -1,0 +1,196 @@
+/* v6 glass overlays: menus, popovers and toasts use regular glass (88%, blur 28px). */
+
+.anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.glass {
+  background-color: var(--wf-glass);
+  background-image: var(--wf-sheen);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  backdrop-filter: blur(28px) saturate(1.8);
+  border: 1px solid var(--wf-line-2);
+  box-shadow: var(--wf-e2);
+  color: var(--wf-ink-1);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background-color: var(--wf-surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background-color: var(--wf-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  z-index: var(--z-popover, 95);
+  min-width: 220px;
+  max-width: min(360px, calc(100vw - 16px));
+  box-sizing: border-box;
+  border-radius: var(--wf-r-lg);
+  padding: var(--wf-s-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.start {
+  left: 0;
+}
+
+.end {
+  right: 0;
+}
+
+.popover {
+  padding: var(--wf-s-3);
+}
+
+.popover:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: var(--wf-h-md);
+  padding: 0 var(--wf-s-2);
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.item:hover,
+.item:focus-visible {
+  background: var(--wf-hover);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.item[aria-disabled="true"] {
+  color: var(--wf-ink-off);
+  cursor: not-allowed;
+}
+
+.itemIcon {
+  color: var(--wf-ink-2);
+}
+
+.itemLabel {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemMeta {
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.danger {
+  color: var(--wf-danger-ink);
+}
+
+.separator {
+  height: 1px;
+  margin: var(--wf-s-1) 0;
+  background: var(--wf-line);
+}
+
+.heading {
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-1);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+/* Toast: glass, one line, glyph first, actions stay until dismissed. */
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-h-lg);
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 0 var(--wf-s-1) 0 var(--wf-s-3);
+  box-sizing: border-box;
+  border-radius: var(--wf-r-md);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  pointer-events: auto;
+}
+
+.toastText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: var(--wf-s-2) 0;
+}
+
+.toastTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wf-ink-1);
+}
+
+.toastBody {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.toastMeta {
+  flex: 0 0 auto;
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.toastAction {
+  flex: 0 0 auto;
+}
+
+.toastClose {
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+}
+
+@media (forced-colors: active) {
+  .glass {
+    border: 1px solid CanvasText;
+  }
+  .item:focus-visible,
+  .popover:focus-visible {
+    outline: 2px solid CanvasText;
+  }
+}

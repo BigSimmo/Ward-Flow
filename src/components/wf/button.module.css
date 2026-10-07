@@ -1,0 +1,307 @@
+/* v6 buttons (`.b`). Tokens only. One primary per area. */
+
+.b {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--wf-h-md);
+  min-width: 0;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-md);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition:
+    transform var(--wf-m-fast) var(--wf-ease),
+    box-shadow var(--wf-m-base) var(--wf-ease),
+    background var(--wf-m-base) var(--wf-ease),
+    filter var(--wf-m-base);
+}
+
+.b:active {
+  transform: scale(0.98);
+}
+
+.b:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Labels never wrap: shrink, then truncate. */
+.label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sm {
+  height: var(--wf-h-sm);
+  padding: 0 10px;
+  border-radius: var(--wf-r-sm);
+  font-size: var(--wf-fs-12);
+}
+
+.lg {
+  height: var(--wf-h-lg);
+  padding: 0 16px;
+  font-size: var(--wf-fs-14);
+}
+
+.iconOnly {
+  width: var(--wf-h-md);
+  padding: 0;
+}
+
+.sm.iconOnly {
+  width: var(--wf-h-sm);
+}
+
+.lg.iconOnly {
+  width: var(--wf-h-lg);
+}
+
+/* Primary: deep slate. One per area. */
+.pri {
+  color: var(--wf-on-accent);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  border-color: var(--wf-pri-edge);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent),
+    0 1px 2px color-mix(in srgb, var(--wf-hero-2) 22%, transparent),
+    0 4px 10px -6px color-mix(in srgb, var(--wf-hero-2) 45%, transparent);
+}
+
+.pri:hover {
+  filter: brightness(1.08);
+}
+
+.pri:active {
+  filter: brightness(0.9);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-hero-edge) 60%, transparent);
+}
+
+.sec {
+  color: var(--wf-ink-1);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  border-color: var(--wf-line-2);
+  box-shadow:
+    inset 0 1px 0 var(--wf-hl),
+    0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
+}
+
+.sec:hover {
+  border-color: var(--wf-line-3);
+}
+
+.sec:active,
+.danger:active {
+  background: var(--wf-track);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
+}
+
+.tint {
+  color: var(--wf-accent-ink);
+  background: var(--wf-accent-tint);
+  border-color: color-mix(in srgb, var(--wf-accent) 22%, transparent);
+}
+
+.tint:hover {
+  background: color-mix(in srgb, var(--wf-accent-tint), var(--wf-accent) 8%);
+}
+
+.ghost {
+  color: var(--wf-accent-ink);
+  background: transparent;
+}
+
+.ghost:hover {
+  background: var(--wf-hover);
+}
+
+.ghost:active,
+.tint:active {
+  background: var(--wf-track);
+}
+
+/* Danger is a neutral button with danger ink. Red means act now only. */
+.danger {
+  color: var(--wf-danger-ink);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  border-color: var(--wf-line-2);
+  box-shadow: inset 0 1px 0 var(--wf-hl);
+}
+
+.danger:hover {
+  border-color: var(--wf-line-3);
+  background: var(--wf-hover);
+}
+
+.onHero {
+  color: var(--wf-hero-ink);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  border-color: color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+}
+
+.onHero:hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+}
+
+/* Light: the hero band's one primary. */
+.light {
+  color: var(--wf-hero-2);
+  background: linear-gradient(
+    180deg,
+    var(--wf-hero-ink),
+    color-mix(in srgb, var(--wf-hero-ink) 93%, var(--wf-hero-ink-3))
+  );
+  border-color: color-mix(in srgb, var(--wf-hero-ink) 60%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--wf-hero-ink),
+    0 2px 6px -2px color-mix(in srgb, var(--wf-hero-edge) 70%, transparent);
+}
+
+.light:hover {
+  filter: brightness(0.97);
+}
+
+/* Disabled: dashed edge, muted ink, and a visible reason beside it. */
+.b:disabled,
+.b[aria-disabled="true"] {
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+  color: var(--wf-ink-off);
+  background: var(--wf-surface-2);
+  border: 1px dashed var(--wf-line-3);
+  box-shadow: none;
+}
+
+.onHero:disabled,
+.onHero[aria-disabled="true"],
+.light:disabled,
+.light[aria-disabled="true"] {
+  color: var(--wf-hero-ink-3);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--wf-hero-ink) 28%, transparent);
+}
+
+.b[aria-busy="true"] {
+  cursor: progress;
+}
+
+.b .kbd {
+  margin-left: 2px;
+}
+
+.pri .kbd {
+  background: color-mix(in srgb, var(--wf-on-accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--wf-on-accent) 24%, transparent);
+  color: var(--wf-on-accent);
+}
+
+.pri .count {
+  background: color-mix(in srgb, var(--wf-on-accent) 16%, transparent);
+  color: var(--wf-on-accent);
+}
+
+.onHero .count {
+  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+  color: var(--wf-hero-ink);
+}
+
+.endIcon {
+  color: var(--wf-ink-3);
+}
+
+.pri .endIcon,
+.onHero .endIcon,
+.light .endIcon {
+  color: inherit;
+  opacity: 0.8;
+}
+
+/* Disabled with a visible reason. */
+.withReason {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.reason {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Split button: primary action plus a caret that opens a menu. */
+.split {
+  display: inline-flex;
+  align-items: stretch;
+  position: relative;
+}
+
+.splitMain {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  padding-right: 12px;
+}
+
+.splitCaret {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left-width: 0;
+  width: 32px;
+  padding: 0;
+}
+
+.splitCaret::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: color-mix(in srgb, currentColor 24%, transparent);
+}
+
+.sm.splitCaret {
+  width: 28px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .b {
+    transition: none;
+  }
+  .b:active {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .b {
+    border: 1px solid ButtonText;
+    forced-color-adjust: auto;
+  }
+  .b:focus-visible {
+    outline: 2px solid CanvasText;
+  }
+  .b:disabled,
+  .b[aria-disabled="true"] {
+    border: 1px dashed GrayText;
+    color: GrayText;
+  }
+}

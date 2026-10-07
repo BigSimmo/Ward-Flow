@@ -13,7 +13,8 @@ import {
 } from "react";
 import { X } from "lucide-react";
 import { OverlayPortal } from "@/components/ui/overlay-root";
-import { cn, toolbarButton } from "@/components/ui-primitives";
+import { cn } from "@/components/ui-primitives";
+import styles from "./sheet.module.css";
 import {
   canRestoreFocusTo,
   isTopmostSheet,
@@ -101,6 +102,7 @@ export type SheetProps = SheetBaseProps & SheetAccessibleName;
 /**
  * Responsive overlay: a bottom sheet on mobile (rises from the bottom, safe-area
  * aware, drag-grip) and a centred dialog from `sm:` up. CSS-only animation.
+ * v6 material: thick glass over a scrim (`sheet.module.css`), hairline edges, e3 depth.
  * Portals into `OverlayRoot` (`layer="modal"`) by default so stacking and
  * inerting stay consistent across product overlays; pass `portal={false}` to
  * keep the sheet in-tree when an ancestor-scoped style must still apply.
@@ -396,7 +398,8 @@ export function Sheet({
       className={cn(
         // The modal rung is kept on the backdrop itself so the non-portal
         // branch still stacks above sibling chrome.
-        "pointer-events-auto fixed inset-0 z-[var(--z-modal)] flex bg-[color:var(--overlay-backdrop)] backdrop-blur-[2px] motion-reduce:animate-none motion-reduce:transition-none",
+        "pointer-events-auto fixed inset-0 z-[var(--z-modal)] flex motion-reduce:animate-none motion-reduce:transition-none",
+        styles.backdrop,
         desktopBackdropClassName,
         !sideSheet && !responsiveSideSheet && "motion-safe:animate-overlay-in",
         placement === "left"
@@ -439,7 +442,8 @@ export function Sheet({
         }}
         style={contentStyle}
         className={cn(
-          "flex min-w-0 w-full flex-col overflow-hidden border border-[color:var(--border-lux)] bg-[color:var(--surface-raised)] text-[color:var(--text)] shadow-[var(--shadow-elevated)] pb-safe",
+          "flex min-w-0 w-full flex-col overflow-hidden border pb-safe",
+          styles.panel,
           "transition duration-[var(--duration-moderate)] motion-reduce:transition-none sm:duration-[var(--duration-quick)]",
           placement === "left"
             ? "h-full max-h-full max-w-[min(22rem,calc(100vw-1rem))] rounded-r-2xl border-y-0 border-l-0 pt-safe sm:max-h-dvh sm:max-w-[22rem] sm:rounded-l-none sm:rounded-r-2xl sm:pb-0"
@@ -452,7 +456,7 @@ export function Sheet({
                       ? // Fullscreen panels size from the inset-0 backdrop (h-full), not
                         // 100dvh: iOS Safari resolves dvh stale across toolbar
                         // collapse, which strands a dead band under the sheet.
-                        "h-full max-h-full rounded-none border-0 motion-safe:animate-pop-in sm:max-w-none sm:rounded-none lg:h-auto lg:max-h-[calc(100dvh-3rem)] lg:rounded-2xl lg:border lg:border-[color:var(--border-lux)] lg:pb-0 lg:motion-safe:animate-dialog-rise"
+                        "h-full max-h-full rounded-none border-0 motion-safe:animate-pop-in sm:max-w-none sm:rounded-none lg:h-auto lg:max-h-[calc(100dvh-3rem)] lg:rounded-2xl lg:border lg:pb-0 lg:motion-safe:animate-dialog-rise"
                       : cn(
                           "sm:max-w-lg sm:rounded-2xl sm:pb-0 sm:motion-safe:animate-dialog-rise",
                           defaultSheetIsTopAligned
@@ -488,7 +492,7 @@ export function Sheet({
           onPointerUp={handleGripPointerUp}
           onPointerCancel={handleGripPointerUp}
         >
-          <span className="h-1 w-9 rounded-full bg-[color:var(--border-strong)]" />
+          <span className={cn("h-1 w-9 rounded-full", styles.grip)} />
         </div>
         {title ? (
           <div
@@ -497,7 +501,8 @@ export function Sheet({
             aria-hidden={headerHidden}
             inert={headerHidden || undefined}
             className={cn(
-              "flex items-center justify-between gap-x-3 border-b border-[color:var(--border)] p-4 sm:p-5",
+              "flex items-center justify-between gap-x-3 border-b p-4 sm:p-5",
+              styles.header,
               Boolean(headerBottom) && "flex-wrap",
               headerClassName,
               !headerHidden &&
@@ -512,10 +517,7 @@ export function Sheet({
               {headerLeading ? <div className="shrink-0">{headerLeading}</div> : null}
               <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-2">
-                  <h2
-                    id={titleId}
-                    className={cn("break-words text-lg font-semibold text-[color:var(--text-heading)]", titleClassName)}
-                  >
+                  <h2 id={titleId} className={cn("break-words", styles.title, titleClassName)}>
                     {title}
                   </h2>
                   {titleAccessory}
@@ -525,7 +527,7 @@ export function Sheet({
                     {descriptionContent}
                   </div>
                 ) : description ? (
-                  <p id={descId} className="mt-1 text-sm leading-6 text-[color:var(--text-muted)]">
+                  <p id={descId} className={cn("mt-1", styles.description)}>
                     {description}
                   </p>
                 ) : null}
@@ -538,7 +540,7 @@ export function Sheet({
                 type="button"
                 onClick={onClose}
                 aria-label={closeLabel}
-                className={closeButtonClassName ?? toolbarButton}
+                className={closeButtonClassName ?? styles.close}
               >
                 <X aria-hidden="true" className="h-4 w-4" />
               </button>
@@ -567,7 +569,7 @@ export function Sheet({
         {footer ? (
           <div
             data-footer-variant={footerVariant}
-            className={cn("shrink-0 border-t border-[color:var(--border)] p-3 sm:p-4", footerClassName)}
+            className={cn("shrink-0 border-t p-3 sm:p-4", styles.footer, footerClassName)}
           >
             {footer}
           </div>

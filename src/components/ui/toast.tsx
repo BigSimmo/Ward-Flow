@@ -1,9 +1,8 @@
 "use client";
 
-import { CheckCircle2, Info, OctagonAlert, TriangleAlert, X } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { OverlayPortal } from "@/components/ui/overlay-root";
-import { cn } from "@/components/ui-primitives";
+import { ToastView } from "@/components/wf/toast";
 
 export type ToastTone = "success" | "info" | "warning" | "danger";
 
@@ -12,8 +11,15 @@ export type Toast = {
   tone: ToastTone;
   title: string;
   body?: string;
-  /** ms before auto-dismiss. Pass 0 to require an explicit dismiss. */
+  /**
+   * ms before auto-dismiss. Pass 0 to require an explicit dismiss. A toast with an `action`
+   * defaults to 0: v6 keeps actions on screen until dismissed.
+   */
   duration?: number;
+  /** One action, such as Undo. */
+  action?: { label: string; onAction: () => void };
+  /** Mono meta on the right, such as "1s ago". */
+  meta?: string;
   /**
    * Bumped when an identical outcome is pushed again while still visible so the
    * polite region re-announces and the dismiss timer restarts.
@@ -35,27 +41,6 @@ type ToastContextValue = {
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
-
-const TONE_ICON = {
-  success: CheckCircle2,
-  info: Info,
-  warning: TriangleAlert,
-  danger: OctagonAlert,
-} as const;
-
-const TONE_ACCENT: Record<ToastTone, string> = {
-  success: "var(--success)",
-  info: "var(--info)",
-  warning: "var(--warning)",
-  danger: "var(--danger)",
-};
-
-const TONE_TEXT: Record<ToastTone, string> = {
-  success: "text-[color:var(--success)]",
-  info: "text-[color:var(--info)]",
-  warning: "text-[color:var(--warning)]",
-  danger: "text-[color:var(--danger)]",
-};
 
 const DEFAULT_DURATION = 6000;
 const MAX_VISIBLE_TOASTS = 5;
@@ -118,7 +103,7 @@ export function useToast(): ToastApi {
 }
 
 function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string) => void }) {
-  const duration = toast.duration ?? DEFAULT_DURATION;
+  const duration = toast.duration ?? (toast.action ? 0 : DEFAULT_DURATION);
 
   useEffect(() => {
     if (duration <= 0) return;
@@ -126,45 +111,33 @@ function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
     return () => clearTimeout(timer);
   }, [duration, onDismiss, toast.id, toast.announceKey]);
 
-  const Icon = TONE_ICON[toast.tone];
-
   return (
-    <div
+    <ToastView
       data-testid="toast"
       data-tone={toast.tone}
       data-announce-key={toast.announceKey ?? 0}
+      // The region is pointer-events: none so it never blocks the page; each card opts back in.
       style={{ pointerEvents: "auto" }}
-      // Borderless floating surface: a hairline ring is its edge and the shadow is
-      // its lift — never a border AND a shadow on one element (register #39/#40).
-      className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg bg-[color:var(--surface-raised)] p-3 shadow-[var(--shadow-elevated)] ring-1 ring-[color:var(--border-lux)]"
-    >
-      <span
-        aria-hidden
-        className="mt-0.5 block h-[1.125rem] w-[3px] shrink-0 rounded-full"
-        style={{ background: TONE_ACCENT[toast.tone] }}
-      />
-      <Icon aria-hidden="true" className={cn("mt-0.5 size-icon-md shrink-0", TONE_TEXT[toast.tone])} />
-      <div className="min-w-0 flex-1">
-        {/* Remount on announceKey so a repeated identical outcome re-enters the
-            polite live region instead of staying silent while still visible. */}
-        <p key={toast.announceKey ?? 0} className="text-sm font-semibold text-[color:var(--text-heading)]">
-          {toast.title}
-        </p>
-        {toast.body ? (
-          <p key={`body-${toast.announceKey ?? 0}`} className="mt-0.5 text-xs text-[color:var(--text-muted)]">
-            {toast.body}
-          </p>
-        ) : null}
-      </div>
-      <button
-        type="button"
-        onClick={() => onDismiss(toast.id)}
-        aria-label={`Dismiss: ${toast.title}`}
-        className="grid size-tap shrink-0 place-items-center rounded-lg text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-subtle)] hover:text-[color:var(--text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--focus)]"
-      >
-        <X aria-hidden="true" className="size-icon-md" />
-      </button>
-    </div>
+      tone={toast.tone}
+      // Remount on announceKey so a repeated identical outcome re-enters the polite live region
+      // instead of staying silent while still visible.
+      title={<span key={toast.announceKey ?? 0}>{toast.title}</span>}
+      body={toast.body ? <span key={`body-${toast.announceKey ?? 0}`}>{toast.body}</span> : undefined}
+      meta={toast.meta}
+      action={
+        toast.action
+          ? {
+              label: toast.action.label,
+              onAction: () => {
+                toast.action?.onAction();
+                onDismiss(toast.id);
+              },
+            }
+          : undefined
+      }
+      onClose={() => onDismiss(toast.id)}
+      closeLabel={`Dismiss: ${toast.title}`}
+    />
   );
 }
 

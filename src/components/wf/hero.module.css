@@ -1,0 +1,239 @@
+/*
+ * v6 hero band: one per page, deep slate, holds the title and counts. Inside it the status tokens
+ * switch to their night values and the focus ring turns white, so dots and focus stay >= 3:1.
+ */
+
+.hero {
+  --wf-danger: var(--wf-hero-danger);
+  --wf-warning: var(--wf-hero-warning);
+  --wf-success: var(--wf-hero-success);
+  --wf-info: var(--wf-hero-info);
+  --wf-neutral: var(--wf-hero-neutral);
+  --wf-focus-ring: var(--wf-hero-ink);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  box-sizing: border-box;
+  background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  border: 1px solid var(--wf-hero-edge);
+  border-radius: var(--wf-r-xl);
+  color: var(--wf-hero-ink);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 10%, transparent),
+    0 18px 36px -26px color-mix(in srgb, var(--wf-hero-edge) 90%, transparent);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-4);
+  min-width: 0;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 0 1 auto;
+  padding: var(--wf-s-1) var(--wf-s-1) var(--wf-s-1) 0;
+}
+
+.eyebrow {
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--wf-hero-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titleLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+  letter-spacing: -0.015em;
+  color: var(--wf-hero-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.titleMeta {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+}
+
+.stats {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.statsEnd {
+  justify-content: flex-end;
+}
+
+.aside {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  flex: 1 1 auto;
+  color: var(--wf-hero-ink-2);
+}
+
+/* Hero stat: mono value over a label, hairline separators between. */
+.stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 0 var(--wf-s-4);
+  border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+}
+
+.valueLine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.value {
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: var(--wf-hero-ink);
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trend {
+  color: var(--wf-hero-ink-2);
+}
+
+/* Journey track: done shows a tick, the current step is solid white, future steps are numbered. */
+.steps {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 2px;
+  margin: 0;
+  padding: var(--wf-s-1);
+  list-style: none;
+  border-radius: var(--wf-r-md);
+  background: color-mix(in srgb, var(--wf-hero-edge) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  height: 26px;
+  padding: 0 var(--wf-s-2);
+  border-radius: var(--wf-r-xs);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+}
+
+.stepLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stepMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
+  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+}
+
+.done .stepMark {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  color: var(--wf-hero-success);
+}
+
+.current {
+  background: var(--wf-hero-ink);
+  color: var(--wf-hero-2);
+  font-weight: 600;
+}
+
+.current .stepMark {
+  border-color: var(--wf-hero-2);
+  background: var(--wf-hero-2);
+  color: var(--wf-hero-ink);
+}
+
+@media (max-width: 900px) {
+  .row {
+    flex-wrap: wrap;
+  }
+  .stats {
+    flex-basis: 100%;
+    order: 3;
+  }
+  .stat:first-child {
+    border-left: 0;
+    padding-left: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .hero {
+    border: 1px solid CanvasText;
+  }
+  .stat {
+    border-left-color: CanvasText;
+  }
+  .current {
+    outline: 2px solid CanvasText;
+  }
+}

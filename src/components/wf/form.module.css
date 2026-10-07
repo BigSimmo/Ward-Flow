@@ -1,0 +1,457 @@
+/* v6 inputs: label above, help below, control edges at 3:1 (`--wf-line-ctl`). */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.label {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hint {
+  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.help {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.error {
+  color: var(--wf-danger-ink);
+}
+
+/* Control box (`.in`). */
+.in {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  height: var(--wf-h-md);
+  min-width: 0;
+  padding: 0 var(--wf-s-3);
+  box-sizing: border-box;
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-ctl);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
+  color: var(--wf-ink-1);
+  transition:
+    box-shadow var(--wf-m-base),
+    border-color var(--wf-m-base);
+}
+
+.in:focus-within {
+  border-color: var(--wf-accent);
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.invalid {
+  border-color: var(--wf-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-danger) 12%, transparent);
+}
+
+.locked {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  border-style: dashed;
+}
+
+.control {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  outline: none;
+  box-shadow: none;
+}
+
+.control::placeholder {
+  color: var(--wf-ink-3);
+  opacity: 1;
+}
+
+.control:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.adorn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-right: -6px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--wf-r-xs);
+  background: transparent;
+  color: var(--wf-ink-3);
+  cursor: pointer;
+}
+
+.clear:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.clear:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 0;
+}
+
+/* Textarea. */
+.area {
+  height: auto;
+  min-height: 64px;
+  align-items: stretch;
+  flex-direction: column;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.areaControl {
+  resize: vertical;
+  min-height: 44px;
+  line-height: var(--wf-lh-13);
+}
+
+.counter {
+  align-self: flex-end;
+  font: 500 var(--wf-fs-11) / 1 var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  color: var(--wf-ink-3);
+}
+
+/* Select. */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  padding-right: 24px;
+}
+
+.selectCaret {
+  position: absolute;
+  right: var(--wf-s-3);
+  pointer-events: none;
+  color: var(--wf-ink-3);
+}
+
+/* Checkbox and radio: real inputs, the whole row is the target. */
+.choice {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 28px;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.choiceDisabled {
+  color: var(--wf-ink-off);
+  cursor: not-allowed;
+}
+
+.native {
+  position: absolute;
+  opacity: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: inherit;
+}
+
+.box,
+.dot {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--wf-line-ctl);
+  background: var(--wf-surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wf-on-accent);
+}
+
+.box {
+  border-radius: var(--wf-r-xs);
+}
+
+.dot {
+  border-radius: 50%;
+}
+
+.native:checked + .box,
+.native:indeterminate + .box {
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  border-color: var(--wf-pri-edge);
+}
+
+.native:checked + .dot {
+  border: 5px solid var(--wf-accent-strong);
+}
+
+.native:disabled + .box,
+.native:disabled + .dot {
+  border-style: dashed;
+  background: var(--wf-surface-2);
+}
+
+.native:focus-visible + .box,
+.native:focus-visible + .dot {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.mark {
+  display: none;
+}
+
+.native:checked + .box .tick,
+.native:indeterminate + .box .dash {
+  display: block;
+}
+
+.native:indeterminate + .box .tick {
+  display: none;
+}
+
+/* Switch: off grey, on slate, visible On or Off text. */
+.switchRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+  text-align: left;
+  cursor: pointer;
+}
+
+.inline {
+  width: auto;
+}
+
+.switchLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.switchState {
+  flex: 0 0 auto;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.track {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  flex: 0 0 32px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-line-ctl);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 12%, transparent);
+  transition: background var(--wf-m-base) var(--wf-ease);
+}
+
+.track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--wf-on-accent);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--wf-ink-1) 30%, transparent),
+    0 0 0 0.5px color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
+  transition: left var(--wf-m-base) var(--wf-ease);
+}
+
+.switchRow[aria-checked="true"] .track {
+  background: var(--wf-pri-2);
+  box-shadow: inset 0 0 0 1px var(--wf-pri-edge);
+}
+
+.switchRow[aria-checked="true"] .track::after {
+  left: 14px;
+}
+
+.switchRow:focus-visible {
+  outline: none;
+}
+
+.switchRow:focus-visible .track {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.switchRow:disabled {
+  cursor: not-allowed;
+  color: var(--wf-ink-off);
+}
+
+.onHero {
+  color: var(--wf-hero-ink-2);
+}
+
+.onHero .switchState {
+  color: var(--wf-hero-ink);
+  font-weight: 600;
+}
+
+/* Stepper (`.stp`). */
+.stepperRow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+}
+
+.stp {
+  display: inline-flex;
+  align-items: stretch;
+  height: var(--wf-h-md);
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
+}
+
+.stpButton {
+  width: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+  transition: background var(--wf-m-fast) var(--wf-ease);
+}
+
+.stpButton:hover {
+  background: var(--wf-hover);
+}
+
+.stpButton:focus-visible,
+.stpValue:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--wf-focus-ring);
+}
+
+.stpButton[aria-disabled="true"] {
+  color: var(--wf-ink-off);
+  cursor: not-allowed;
+}
+
+.stpValue {
+  min-width: 34px;
+  padding: 0 var(--wf-s-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 500 var(--wf-fs-13) / 1 var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  border-left: 1px solid var(--wf-line);
+  border-right: 1px solid var(--wf-line);
+}
+
+.stepperNote {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+@media (pointer: coarse) {
+  .stpButton {
+    width: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .in,
+  .track,
+  .track::after,
+  .stpButton {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .in,
+  .box,
+  .dot,
+  .stp,
+  .track {
+    border: 1px solid CanvasText;
+  }
+  .in:focus-within,
+  .native:focus-visible + .box,
+  .native:focus-visible + .dot,
+  .switchRow:focus-visible .track {
+    outline: 2px solid CanvasText;
+  }
+  .switchRow[aria-checked="true"] .track {
+    background: Highlight;
+  }
+}

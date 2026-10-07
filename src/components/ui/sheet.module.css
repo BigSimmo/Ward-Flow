@@ -1,0 +1,90 @@
+/*
+ * v6 sheet material: thick glass (92%, blur 36px) over a scrim, e3 depth, hairline edges.
+ * Layout, placement and motion stay in sheet.tsx. Tokens only. Falls back to a solid surface when
+ * blur or transparency is unavailable. Rules sit in :where() so a caller's own class always wins.
+ */
+:where(.backdrop) {
+  background: var(--wf-scrim);
+}
+
+:where(.panel) {
+  color: var(--wf-ink-1);
+  background-color: var(--wf-glass-thick);
+  background-image: var(--wf-sheen);
+  -webkit-backdrop-filter: blur(36px) saturate(1.5);
+  backdrop-filter: blur(36px) saturate(1.5);
+  border-color: var(--wf-line-2);
+  box-shadow: var(--wf-e3);
+  font-family: var(--wf-font);
+}
+
+:where(.header) {
+  border-color: var(--wf-line);
+}
+
+:where(.title) {
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--wf-ink-1);
+}
+
+:where(.description) {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-3);
+}
+
+:where(.close) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--wf-h-md);
+  height: var(--wf-h-md);
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+
+:where(.close):hover {
+  background: var(--wf-hover);
+}
+
+:where(.close):focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+:where(.grip) {
+  background: var(--wf-line-3);
+}
+
+:where(.footer) {
+  border-color: var(--wf-line);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :where(.panel) {
+    background-color: var(--wf-surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :where(.panel) {
+    background-color: var(--wf-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(.panel) {
+    border-color: CanvasText;
+  }
+  :where(.close):focus-visible {
+    outline-color: CanvasText;
+  }
+}
