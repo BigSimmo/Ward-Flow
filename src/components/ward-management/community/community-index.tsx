@@ -2,8 +2,28 @@
 
 import Link from "next/link";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowUpRight, BookOpen, ChevronDown, ChevronRight, FileText, Search, X } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronRight, Download, History, Info, MapPin, Plus, Search, X } from "lucide-react";
 
+import {
+  BarList,
+  Button,
+  Card,
+  CardBody,
+  CardHead,
+  Drawer,
+  FilterChip,
+  Hero,
+  HeroStat,
+  Icon,
+  Kbd,
+  Segmented,
+  Select,
+  SrOnly,
+  StatusGlyph,
+  TextInput,
+  buttonClass,
+  type BarListRow,
+} from "@/components/wf";
 import {
   COMMUNITY_TEAM_PAGES,
   communityTeamSlug,
@@ -15,12 +35,16 @@ import {
   communityNamesInCollisions,
   type CommunityNameCollision,
 } from "@/components/ward-management/community/community-vocabulary";
-import panelStyles from "@/components/ward-management/ward-panel.module.css";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-resolver";
-import { S2015_CATCHMENT_ROWS, parseFollowUpClinicSet } from "@/components/ward-management/ward-catchment";
+import {
+  S2015_CATCHMENT_ROWS,
+  lookupCatchment,
+  parseFollowUpClinicSet,
+} from "@/components/ward-management/ward-catchment";
+import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
 
 import styles from "./community-index.module.css";
 
@@ -99,51 +123,25 @@ import styles from "./community-index.module.css";
  */
 
 /**
- * THE GATEWAY REDESIGN, 2026-09-05 — approved prototype at
- * `docs/ward-flow/design/prototypes/mockup-community-gateway-v1.html`. This file reproduces that
- * mockup's structure and behaviour in React, over the app's own token layer; it does not change
- * what the mockup decided.
+ * THE V6 REBUILD, 7 October 2026 — `design/pages-v6/Community.png` and its state shots. The page
+ * keeps the gateway's rules and changes its frame: one hero band names the page and counts what the
+ * record holds; the A to Z card lists every team with its health service and how many catchment
+ * suburbs name it; the side column looks a suburb up, sets names that read alike side by side and
+ * counts teams by service.
  *
- * ⚠️ **THE ONE RULE THIS FILE MUST NEVER BREAK: THIS PAGE COMPUTES NO "READS ALIKE" GROUPING OF ITS
- * OWN.** The mockup's own vanilla-JS prototype derives near-duplicate names inline, and its own
- * comments record two live bugs that derivation produced — a missing service-word ("clinic",
- * "centre") and a length-gated distance band that silently dropped the very misspelling it existed
- * to catch. Both were found only because a SECOND implementation existed to disagree with. This
- * page is that second implementation's replacement: it reads `communityNameCollisions()`,
- * `communityNamesInCollisions()` and `namesAreNearDuplicates()`-derived groupings from
- * `community-vocabulary.ts` and nothing else. If that shared function ever disagrees with what the
- * mockup shows, the shared function wins — that is the whole point of having one derivation feed
- * every surface, and it is an owner ruling, not a style preference.
+ * ⚠️ **THIS PAGE STILL COMPUTES NO "READS ALIKE" GROUPING OF ITS OWN.** Every marker, family and
+ * count reads `communityNameCollisions()` and `communityNamesInCollisions()` from
+ * `community-vocabulary.ts`. The suburb lookup reads `lookupCatchment()` and states its own note
+ * when a suburb is contested, unreviewed or unknown; it never picks a team for a reader.
  *
- * **What is new here, matched to the mockup:** a live search box with a rendered match count and a
- * "/" shortcut; an A–Z jump rail whose disabled letters say why in words; letter-headed sections of
- * rows in place of the old flat `<ul>` of boxes; a "reads like N others" marker — never "did you
- * mean" — on every row whose name collides, opening a collapsible panel that lists each family side
- * by side; and a "recently opened" strip backed by `localStorage`, wrapped in `try`/`catch` on every
- * read and write because it throws in a private or storage-restricted context.
+ * **A row carries catchment facts and nothing about people.** The service code comes from the
+ * catchment resolver's mapping and the suburb figure from the catchment rows. Neither is a count
+ * of people, a discharge or a follow-up, so the page is still a way in, not a caseload.
  *
- * **The marker never implies sameness, and an absent one is stated as not proving uniqueness.**
- * Both are TRUTH rules from the owner, not wording preferences: this page marks a name that reads
- * like another, it never merges, corrects or de-duplicates one, and it says so in words in the
- * provenance copy below.
- *
- * ⚠️ **THE PROVENANCE COPY NAMED `ICC` AS ITS EXAMPLE UNTIL 2026-09-05, AND THE EXAMPLE HAD TO GO
- * BEFORE IT BECAME A LIE.** It read that `ICC` carries no marker because no rule flags an
- * initialism — true of the string rules, and about to be false of the page. The owner confirmed
- * that day that `ICC`, `Inner City`, `Inner City Clinic` and `Inner City (central)` are ONE
- * service across 21 suburbs, so an owner-confirmed alias list will record them as the same. **A
- * screen teaching a reader that `ICC` is unmatched, while it is matched, is worse than the gap it
- * was describing.** The copy now states the MECHANISM — the check compares spellings, so an
- * abbreviation or a renaming is invisible to it — which stays true either side of that landing,
- * and points at the human decision rather than at one name whose status can change underneath it.
- * `tests/ward-community-collision-coverage.test.ts` pins `ICC` as unmatched BY THE RULES, and is
- * meant to go red when the alias list lands: it is the thing that makes whoever lands it come and
- * read this paragraph. Fix the copy, never the pin.
- *
- * **Two counts are rendered here that are not typed anywhere as prose**: the search result line and
- * the two chip counts. Every one of them reads off `allTeams`/`filteredTeams`/the collision map at
- * render time, the same discipline the surrounding doc comment already holds this file to for the
- * team count itself.
+ * **Left out, because the record cannot support it:** a nearest emergency department per team (the
+ * catchment table's hospital column is stale by the owner's ruling and is not carried), times on the
+ * recently opened strip (the strip stores names only), and a selected-team bar with a "Refer to this
+ * team" action (the referral form takes no team from its address).
  */
 export const COMMUNITY_SERVICE_OPTIONS = [
   { value: "all", label: "All" },
@@ -153,21 +151,35 @@ export const COMMUNITY_SERVICE_OPTIONS = [
   { value: "WACHS", label: "Country Health (WACHS)" },
 ] as const;
 
+type ServiceFilter = (typeof COMMUNITY_SERVICE_OPTIONS)[number]["value"];
+
+/** The bar label for each service on "Teams by service", read from the options above. */
+const SERVICE_BAR_LABEL: Record<Exclude<ServiceFilter, "all">, string> = {
+  NMHS: "North Metro, NMHS",
+  SMHS: "South Metro, SMHS",
+  EMHS: "East Metro, EMHS",
+  WACHS: "Country, WACHS",
+};
+
+/** The same key `communityTeamOptions()` folds spellings with: case, whitespace and punctuation. */
+function clinicKey(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, " ")
+    .trim();
+}
+
+type TeamFacts = { service: string; suburbs: number };
+
 export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: readonly CommunityTeam[] }) {
-  // Sorted here rather than trusted from upstream. `communityTeamOptions()` happens to return its
-  // names sorted today, but this page is the surface making the alphabetical CLAIM — in its own
-  // copy, on screen — and a claim held somewhere else is a claim that can be withdrawn without
-  // anybody editing the page that makes it. The id tie-break keeps the order total: `localeCompare`
-  // can rank two distinct names equal, and an unstable order on an index is a team that appears to
-  // move between renders.
+  // Sorted here rather than trusted from upstream: this page makes the alphabetical claim in its own
+  // copy, so it holds the sort itself. The id tie-break keeps the order total.
   const allTeams = useMemo(
     () => [...teams].sort((left, right) => left.name.localeCompare(right.name) || left.id.localeCompare(right.id)),
     [teams],
   );
 
-  // One call to the shared derivation, indexed by name for O(1) lookup per row. `communityNameCollisions()`
-  // re-derives from the catchment rows on every call (its own doc comment says so), so it is called
-  // once here and once below for the family panel's own totals — never re-implemented.
+  // One call to the shared derivation, indexed by name for each row's marker.
   const collisionByName = useMemo(() => {
     const map = new Map<string, CommunityNameCollision>();
     for (const collision of communityNameCollisions()) {
@@ -176,36 +188,46 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     return map;
   }, []);
 
-  // Pre-map every community team name to its health service code ("NMHS" | "SMHS" | "EMHS" | "WACHS")
-  const teamServiceMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const team of allTeams) {
-      map.set(team.name, mapClinicToServiceAndHospital(team.name).code);
-    }
-    return map;
-  }, [allTeams]);
+  // The family card is deliberately NOT scoped to the `teams` prop: it is the same derivation
+  // whichever subset a caller renders, so an override to `[]` still gets the real families.
+  const familyGroups = useMemo(() => communityNameCollisions(), []);
 
-  // Suburb aliases + service labels so typeahead matches the PR's promised fields, not only names.
-  const teamSearchHaystack = useMemo(() => {
-    const suburbByClinicKey = new Map<string, Set<string>>();
-    const clinicKey = (name: string) =>
-      name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/gu, " ")
-        .trim();
+  // Suburbs per clinic key, from the catchment rows. Feeds search, the row figure, the lookup and
+  // the side-by-side families, so all four read one map.
+  const suburbsByClinicKey = useMemo(() => {
+    const map = new Map<string, Set<string>>();
     for (const row of S2015_CATCHMENT_ROWS) {
       for (const clinic of parseFollowUpClinicSet(row.followUpClinicVerbatim)) {
         const key = clinicKey(clinic);
         if (!key) continue;
-        const set = suburbByClinicKey.get(key) ?? new Set<string>();
+        const set = map.get(key) ?? new Set<string>();
         set.add(row.suburb);
-        suburbByClinicKey.set(key, set);
+        map.set(key, set);
       }
     }
+    return map;
+  }, []);
+
+  const factsFor = useCallback(
+    (name: string): TeamFacts => ({
+      service: mapClinicToServiceAndHospital(name).code,
+      suburbs: suburbsByClinicKey.get(clinicKey(name))?.size ?? 0,
+    }),
+    [suburbsByClinicKey],
+  );
+
+  const teamFacts = useMemo(() => {
+    const map = new Map<string, TeamFacts>();
+    for (const team of allTeams) map.set(team.name, factsFor(team.name));
+    return map;
+  }, [allTeams, factsFor]);
+
+  // Suburb names and service labels, so search matches the fields the page promises, not only names.
+  const teamSearchHaystack = useMemo(() => {
     const map = new Map<string, string>();
     for (const team of allTeams) {
       const mapping = mapClinicToServiceAndHospital(team.name);
-      const suburbs = suburbByClinicKey.get(clinicKey(team.name));
+      const suburbs = suburbsByClinicKey.get(clinicKey(team.name));
       map.set(
         team.name,
         [team.name, mapping.code, mapping.name, mapping.displayName, ...(suburbs ? [...suburbs] : [])]
@@ -214,60 +236,33 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       );
     }
     return map;
+  }, [allTeams, suburbsByClinicKey]);
+
+  const teamByKey = useMemo(() => {
+    const map = new Map<string, CommunityTeam>();
+    for (const team of allTeams) map.set(clinicKey(team.name), team);
+    return map;
   }, [allTeams]);
 
-  // The family panel is deliberately NOT scoped to the `teams` prop: it is the same derivation
-  // regardless of which subset of pages a caller happens to be rendering (a test overriding `teams`
-  // to `[]` still gets an honest, real family panel rather than an empty one that looks like a
-  // measurement of the override).
-  const familyGroups = useMemo(() => communityNameCollisions(), []);
-
   const [query, setQuery] = useState("");
-  const [serviceFilter, setServiceFilter] = useState("all");
+  const [serviceFilter, setServiceFilter] = useState<ServiceFilter>("all");
+  const [alikeOnly, setAlikeOnly] = useState(false);
+  const [familyIndex, setFamilyIndex] = useState(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // `useSyncExternalStore` (via `createBrowserStore`, module scope below), not a `useState` fed
-  // from an effect: an effect that calls `setState` in its own body — which is exactly what a
-  // "load once after mount" effect does — trips `react-hooks/set-state-in-effect`, and rightly so,
-  // since it is really a subscription to state that lives outside React. This also renders under
-  // `renderToStaticMarkup` in several test files, which never runs effects OR subscribes, so the
-  // server snapshot (an empty list) is what those tests see — exactly the honest "nothing opened
-  // yet" state a server-rendered first paint should have anyway.
+  // `useSyncExternalStore` through `createBrowserStore`: the recent list lives in localStorage, and
+  // a server render (and `renderToStaticMarkup` in tests) sees the empty server snapshot.
   const storedRecentNames = useRecentTeamNames();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const familyPanelRef = useRef<HTMLDetailsElement>(null);
   const drawerTriggerRef = useRef<HTMLButtonElement>(null);
-
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  useEffect(() => {
-    if (!drawerOpen) return;
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setDrawerOpen(false);
-        drawerTriggerRef.current?.focus();
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [drawerOpen]);
 
   useEffect(() => {
     /*
-     * ⚠️ **`stopPropagation()` IS LOAD-BEARING, NOT DEFENSIVE.** `WardGlobalSearch`
-     * (`ward-global-search.tsx`) binds the same "/" shortcut on `window`, and a keydown dispatched
-     * inside this document bubbles from `document` to `window` afterwards — so without this call,
-     * the header's handler ran a moment after this one on every "/" press, read the ORIGINAL event
-     * target (still whatever had focus before either handler ran, never this field, since the
-     * target does not change when focus moves mid-event), and refocused its own input, undoing the
-     * line above. Measured on `/community`: `document.activeElement` ended up as the header's
-     * input, not this one, even though this handler ran first and the page renders a `[/]` hint
-     * beside its own field. This page's own field owning "/" on this page is the intended reading
-     * of that hint — `WardGlobalSearch`'s handler already declines to act when the keydown's target
-     * is itself a form field (see its own "does not hijack another field" guard), so a page owning
-     * the key on its own route is a shape the header already anticipates, not one that fights it.
-     * Stopping propagation here is what actually delivers that: it keeps the keystroke from ever
-     * reaching the header's `window` listener at all, rather than racing it.
+     * ⚠️ **`stopPropagation()` IS LOAD-BEARING, NOT DEFENSIVE.** `WardGlobalSearch` binds the same
+     * "/" shortcut on `window`, and a keydown bubbles from `document` to `window` afterwards, so
+     * without this call the header's handler refocused its own input a moment later. This page's
+     * own field owns "/" on this page, which is what its "/" hint promises.
      */
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "/" && document.activeElement !== searchInputRef.current) {
@@ -280,30 +275,29 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Imperative rather than a controlled `open` state: this only ever needs to force the panel OPEN
-  // from a row's marker, never to close it, and a controlled boolean would have to track the
-  // reader's own toggle clicks too just to stay in sync with the native element.
-  const openFamilyPanel = useCallback(() => {
-    const panel = familyPanelRef.current;
-    if (!panel) return;
-    panel.open = true;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    panel.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
-  }, []);
+  // A row's marker selects that row's family on the side-by-side card and brings the card into view.
+  const openFamily = useCallback(
+    (collision: CommunityNameCollision) => {
+      const index = familyGroups.findIndex((family) => family.names[0]?.name === collision.names[0]?.name);
+      if (index >= 0) setFamilyIndex(index);
+      const card = document.getElementById(FAMILY_CARD_ID);
+      if (!card) return;
+      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+      card.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    },
+    [familyGroups],
+  );
 
-  // `document.getElementById` rather than a ref map: the set of letters is not fixed (it depends on
-  // what the current search leaves visible), so a ref map would have to be rebuilt on every filter
-  // change for no benefit over an id lookup that already has to happen at click time regardless.
+  // `document.getElementById` rather than a ref map: which letters exist depends on the filters.
   const jumpToLetter = useCallback((letter: string) => {
     const heading = document.getElementById(letterHeadingId(letter));
     if (!heading) return;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    heading.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    heading.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
     heading.focus();
   }, []);
 
-  // One source-validated recent list feeds the strip, the filter and its count, so a stored name that
-  // was renamed or removed can never show a chip the filter then reports as empty.
+  // One source-validated recent list feeds the strip, so a renamed or removed name never shows.
   const recentNames = useMemo(() => {
     const known = new Set(allTeams.map((team) => team.name));
     return storedRecentNames.filter((name) => known.has(name));
@@ -314,14 +308,15 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   const filteredTeams = useMemo(
     () =>
       allTeams.filter((team) => {
-        if (serviceFilter !== "all" && teamServiceMap.get(team.name) !== serviceFilter) return false;
+        if (serviceFilter !== "all" && teamFacts.get(team.name)?.service !== serviceFilter) return false;
+        if (alikeOnly && !collisionByName.has(team.name)) return false;
         if (normalizedQuery) {
           const haystack = teamSearchHaystack.get(team.name) ?? team.name.toLowerCase();
           if (!haystack.includes(normalizedQuery)) return false;
         }
         return true;
       }),
-    [allTeams, serviceFilter, teamServiceMap, teamSearchHaystack, normalizedQuery],
+    [allTeams, serviceFilter, alikeOnly, teamFacts, collisionByName, teamSearchHaystack, normalizedQuery],
   );
 
   const grouped = useMemo(() => {
@@ -335,223 +330,247 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     return map;
   }, [filteredTeams]);
 
+  const serviceCounts = useMemo(() => {
+    const counts = new Map<string, { teams: number; alike: number }>();
+    for (const team of allTeams) {
+      const service = teamFacts.get(team.name)?.service ?? "";
+      const entry = counts.get(service) ?? { teams: 0, alike: 0 };
+      entry.teams += 1;
+      if (collisionByName.has(team.name)) entry.alike += 1;
+      counts.set(service, entry);
+    }
+    return counts;
+  }, [allTeams, teamFacts, collisionByName]);
+
+  const alikeTeamCount = useMemo(
+    () => allTeams.filter((team) => collisionByName.has(team.name)).length,
+    [allTeams, collisionByName],
+  );
+
+  // Distinct suburbs whose catchment row names at least one team on this page.
+  const suburbsMapped = useMemo(() => {
+    const suburbs = new Set<string>();
+    for (const row of S2015_CATCHMENT_ROWS) {
+      if (parseFollowUpClinicSet(row.followUpClinicVerbatim).some((clinic) => teamByKey.has(clinicKey(clinic)))) {
+        suburbs.add(row.suburb.toLowerCase());
+      }
+    }
+    return suburbs.size;
+  }, [teamByKey]);
+
+  const filtersActive = query.trim() !== "" || serviceFilter !== "all" || alikeOnly;
+
+  function resetFilters() {
+    setQuery("");
+    setServiceFilter("all");
+    setAlikeOnly(false);
+  }
+
+  // "Show in list" clears the filters first; the focus waits a tick so the row has rendered.
+  function showInList(team: CommunityTeam) {
+    resetFilters();
+    window.setTimeout(() => {
+      const link = document.getElementById(teamRowId(team.id))?.querySelector("a");
+      if (!(link instanceof HTMLElement)) return;
+      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+      link.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+      link.focus();
+    }, 0);
+  }
+
+  function exportTeamList() {
+    const lines: (string | number)[][] = [["Team", "Health service", "Catchment suburbs", "Reads like another name"]];
+    for (const team of allTeams) {
+      const facts = teamFacts.get(team.name);
+      lines.push([team.name, facts?.service ?? "", facts?.suburbs ?? 0, collisionByName.has(team.name) ? "Yes" : "No"]);
+    }
+    const url = URL.createObjectURL(
+      new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "ward-flow-synthetic-community-team-list.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const serviceItems = COMMUNITY_SERVICE_OPTIONS.map((option) => ({
+    id: option.value,
+    label: option.value === "all" ? "All" : option.value,
+    count: option.value === "all" ? allTeams.length : (serviceCounts.get(option.value)?.teams ?? 0),
+  }));
+
   return (
     <div className={styles.screen} data-testid="community-index">
       <main id="main-content" className={styles.main}>
-        <div className={styles.topActionBar}>
-          <div className={styles.topActionContext}>
-            <h1 className={styles.pageTitle}>Community teams</h1>
-          </div>
-          <div className={styles.topActionButtons}>
-            <Link
-              href="/mockups/ward-flow/referrals/new"
-              className={styles.btnActionPrimary}
-              data-testid="community-action-raise-referral"
-            >
-              <FileText aria-hidden="true" className={styles.btnIcon} />
-              <span>+ Raise Referral</span>
-            </Link>
-            <Link
-              href="/mockups/ward-flow/referrals"
-              className={styles.btnActionSecondary}
-              data-testid="community-action-referral-board"
-            >
-              <ArrowUpRight aria-hidden="true" className={styles.btnIcon} />
-              <span>Referrals</span>
-            </Link>
-            <button
-              ref={drawerTriggerRef}
-              type="button"
-              className={styles.btnActionSecondary}
-              onClick={() => setDrawerOpen(true)}
-              data-testid="community-action-catchment-guide"
-              aria-haspopup="dialog"
-              aria-expanded={drawerOpen}
-            >
-              <BookOpen aria-hidden="true" className={styles.btnIcon} />
-              <span>Catchment Guide</span>
-            </button>
-          </div>
-        </div>
-
-        <p className="sr-only">
-          These are recorded <strong>names</strong>, not verified services; possible aliases remain separate.
-        </p>
-
-        <div className={styles.body}>
-          <nav className={styles.azRail} aria-label="Jump to letter">
-            {/*
-             * ⚠️ `aria-disabled`, NOT native `disabled` — an empty letter is unavailable for a
-             * STATED reason (no team currently starts with it), and the reason can change on the
-             * next render as the search or the collision filter changes what `grouped` holds. A
-             * native `disabled` button drops out of the Tab order entirely, so a keyboard or
-             * screen-reader user moving by Tab would never land on the letter to learn why it is
-             * empty, and the rail's own count of live letters would silently shrink under them.
-             * `ignoreUnavailableActivation` absorbs the click the same way the rest of this repo's
-             * `aria-disabled` controls do; see `primitive-recipes/recipes.ts`.
-             */}
-            {ALPHABET.map((letter) => {
-              const present = grouped.has(letter);
-              const blockedReason = present ? undefined : `No teams under this letter`;
-              const blockedId = present ? undefined : azRailBlockedId(letter);
-              return (
-                // F14 (Opus adversarial review, 2026-09-17): the reason span used to sit INSIDE
-                // this button. `aria-describedby` already pointed at it for the DESCRIPTION, but a
-                // descendant text node is also folded into the accessible NAME computation, so the
-                // reason was announced twice — once as "A No teams under this letter" (the name)
-                // and again as its own description. Moving it to a sibling, still inside the rail
-                // and still referenced by `aria-describedby`, keeps the description and drops the
-                // button's name back to just the letter.
-                <Fragment key={letter}>
-                  <button
-                    type="button"
-                    className={styles.azRailButton}
-                    aria-disabled={present ? undefined : "true"}
-                    aria-describedby={blockedId}
-                    title={blockedReason}
-                    onClick={present ? () => jumpToLetter(letter) : ignoreUnavailableActivation}
-                  >
-                    {letter}
-                  </button>
-                  {blockedId ? (
-                    <span id={blockedId} className="sr-only">
-                      {blockedReason}
-                    </span>
-                  ) : null}
-                </Fragment>
-              );
-            })}
-          </nav>
-
-          <div className={styles.content}>
-            {recentNames.length > 0 ? (
+        <Hero
+          level={1}
+          eyebrow="Community"
+          title="Community teams"
+          stats={
+            <>
+              <HeroStat value={allTeams.length} label="Team names" />
+              <HeroStat value={alikeTeamCount} label="Read alike" tone={alikeTeamCount > 0 ? "warning" : undefined} />
+              <HeroStat value={serviceCounts.size} label="Health services" />
+              <HeroStat value={suburbsMapped} label="Suburbs mapped" />
+            </>
+          }
+          aside={
+            <div className={styles.heroActions}>
+              <Button
+                ref={drawerTriggerRef}
+                variant="onHero"
+                icon={BookOpen}
+                onClick={() => setDrawerOpen(true)}
+                data-testid="community-action-catchment-guide"
+                aria-haspopup="dialog"
+                aria-expanded={drawerOpen}
+              >
+                Catchment guide
+              </Button>
+              <Link
+                href="/mockups/ward-flow/referrals"
+                className={buttonClass({ variant: "onHero" })}
+                data-testid="community-action-referral-board"
+              >
+                <Icon icon={ArrowRight} size={16} />
+                Referrals
+              </Link>
+              <Link
+                href="/mockups/ward-flow/referrals/new"
+                className={buttonClass({ variant: "light" })}
+                data-testid="community-action-raise-referral"
+              >
+                <Icon icon={Plus} size={16} />
+                Raise referral
+              </Link>
+            </div>
+          }
+          bar={
+            recentNames.length > 0 ? (
               <section className={styles.recentStrip} aria-label="Recently opened">
-                <p className={styles.stripLabel}>Recently opened</p>
-                <div className={styles.recentRow}>
-                  {recentNames.map((name) => {
-                    const team = teamRef(name);
-                    return (
-                      <Link
-                        key={team.id}
-                        className={styles.recentLink}
-                        href={communityTeamHref(team)}
-                        data-testid="community-gateway-recent-link"
-                        onClick={() => recordVisit(name)}
-                      >
-                        {name}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </section>
-            ) : null}
-
-            <section
-              className={`${panelStyles.panel} ${styles.directoryPanel}`}
-              aria-label="A–Z"
-              data-testid="community-index-teams"
-              data-ward-primitive="panel"
-            >
-              <header className={styles.directoryHeader} data-ward-primitive="panel-header">
-                <div className={styles.headerControlsLeft}>
-                  <h2 className={styles.directoryTitle}>A–Z</h2>
-                  <span className={styles.headerDivider} aria-hidden="true" />
-                  <div className={styles.searchRow}>
-                    <div className={styles.searchBox}>
-                      <label className={styles.searchField}>
-                        <Search aria-hidden="true" className={styles.searchIcon} />
-                        <input
-                          ref={searchInputRef}
-                          type="search"
-                          className={styles.searchInput}
-                          placeholder="Search team names"
-                          autoComplete="off"
-                          aria-label="Search team names"
-                          value={query}
-                          onChange={(event) => setQuery(event.target.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Escape" && query) {
-                              event.stopPropagation();
-                              setQuery("");
-                            }
-                          }}
-                        />
-                      </label>
-                      {query ? (
-                        <button
-                          type="button"
-                          className={styles.clearButton}
-                          aria-label="Clear search"
-                          onClick={() => {
-                            setQuery("");
-                            searchInputRef.current?.focus();
-                          }}
-                        >
-                          Clear
-                        </button>
-                      ) : null}
-                      <kbd className={styles.kbdHint} aria-hidden="true">
-                        /
-                      </kbd>
-                    </div>
-
-                    <div className={styles.nameFilter}>
-                      <select
-                        className={styles.filterSelect}
-                        aria-label="Filter team names"
-                        value={serviceFilter}
-                        onChange={(event) => setServiceFilter(event.target.value)}
-                      >
-                        {COMMUNITY_SERVICE_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown aria-hidden="true" className={styles.filterChevron} />
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.headerStatusRight}>
-                  <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
-                    {filteredTeams.length === allTeams.length ? (
-                      <>
-                        <strong>{filteredTeams.length}</strong> synthetic team results
-                      </>
-                    ) : (
-                      <>
-                        <strong>{filteredTeams.length}</strong> of {allTeams.length} synthetic team results
-                      </>
-                    )}
-                  </p>
-
-                  {(query.trim() !== "" || serviceFilter !== "all") && (
-                    <button
-                      type="button"
-                      className={styles.resetButton}
-                      onClick={() => {
-                        setQuery("");
-                        setServiceFilter("all");
-                        searchInputRef.current?.focus();
-                      }}
-                      aria-label="Reset all search and filter parameters"
-                      title="Clear active search and filter"
+                <span className={styles.recentLabel}>
+                  <Icon icon={History} size={14} />
+                  Recently opened
+                </span>
+                {recentNames.map((name) => {
+                  const team = teamRef(name);
+                  return (
+                    <Link
+                      key={team.id}
+                      className={buttonClass({ variant: "onHero", size: "sm" })}
+                      href={communityTeamHref(team)}
+                      data-testid="community-gateway-recent-link"
+                      onClick={() => recordVisit(name)}
                     >
-                      Reset
-                    </button>
-                  )}
-                </div>
-              </header>
+                      {name}
+                    </Link>
+                  );
+                })}
+              </section>
+            ) : undefined
+          }
+          barAside={<span className={styles.heroNote}>Recorded names, not verified services</span>}
+        />
+
+        <div className={styles.layout}>
+          <Card
+            className={styles.directoryCard}
+            aria-label="A–Z"
+            data-testid="community-index-teams"
+            data-ward-primitive="panel"
+          >
+            <div data-ward-primitive="panel-header">
+              <CardHead
+                title="A–Z"
+                eyebrow
+                aside={
+                  <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
+                    <strong>{filteredTeams.length}</strong> of {allTeams.length} synthetic team names
+                  </p>
+                }
+              />
+            </div>
+            <div className={styles.toolbar}>
+              <TextInput
+                ref={searchInputRef}
+                type="search"
+                icon={Search}
+                boxClassName={styles.searchBox}
+                placeholder="Search"
+                autoComplete="off"
+                aria-label="Search team names"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape" && query) {
+                    event.stopPropagation();
+                    setQuery("");
+                  }
+                }}
+                trailing={<Kbd>/</Kbd>}
+              />
+              <Segmented
+                label="Filter team names"
+                items={serviceItems}
+                value={serviceFilter}
+                onChange={setServiceFilter}
+              />
+              <FilterChip pressed={alikeOnly} onPressedChange={setAlikeOnly} tone="warning">
+                Reads alike
+              </FilterChip>
+              {filtersActive ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    resetFilters();
+                    searchInputRef.current?.focus();
+                  }}
+                  aria-label="Reset all search and filter parameters"
+                >
+                  Reset
+                </Button>
+              ) : null}
+            </div>
+            <div className={styles.directoryBody}>
+              <nav className={styles.azRail} aria-label="Jump to letter">
+                {/*
+                 * ⚠️ `aria-disabled`, NOT native `disabled`: an empty letter is unavailable for a
+                 * stated reason that changes with the filters, and a natively disabled button drops
+                 * out of the Tab order, so a keyboard user would never reach it to learn why. The
+                 * reason is a sibling span, not a child, so the button's name stays the letter.
+                 */}
+                {ALPHABET.map((letter) => {
+                  const present = grouped.has(letter);
+                  const blockedReason = present ? undefined : "No teams under this letter";
+                  const blockedId = present ? undefined : azRailBlockedId(letter);
+                  return (
+                    <Fragment key={letter}>
+                      <button
+                        type="button"
+                        className={styles.azRailButton}
+                        aria-disabled={present ? undefined : "true"}
+                        aria-describedby={blockedId}
+                        title={blockedReason}
+                        onClick={present ? () => jumpToLetter(letter) : ignoreUnavailableActivation}
+                      >
+                        {letter}
+                      </button>
+                      {blockedId ? (
+                        <span id={blockedId} className="sr-only">
+                          {blockedReason}
+                        </span>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
+              </nav>
               {allTeams.length === 0 ? (
                 /*
-                 * An empty SOURCE is rendered as a stated absence, never as an empty list. A blank
-                 * list looks exactly like a loaded page for a service with no teams, and nobody
-                 * re-checks a blank — so the page has to say which of the two it is. It says only
-                 * what is observable: the derivation returned nothing. It does NOT name a cause,
-                 * because nothing here can see one. This is deliberately checked BEFORE the search
-                 * filter below: a truly empty source and a search that matched nothing are two
-                 * different facts and must not share one sentence.
+                 * An empty SOURCE is a stated absence, never an empty list: a blank list looks like
+                 * a loaded page for a service with no teams. Checked before the filters, because an
+                 * empty source and a search that matched nothing are different facts.
                  */
                 <div className={styles.emptyNotice} data-testid="community-index-empty">
                   <p>
@@ -564,9 +583,17 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   </p>
                 </div>
               ) : filteredTeams.length === 0 ? (
-                <SearchEmptyNotice query={query.trim()} />
+                <SearchEmptyNotice query={query.trim()} alikeOnly={alikeOnly} />
               ) : (
-                <div className={styles.letterGroups} role="region" aria-label="Community team directory" tabIndex={0}>
+                <div className={styles.listWrap} role="region" aria-label="Community team directory" tabIndex={0}>
+                  <div className={styles.columnHead} aria-hidden="true">
+                    <span />
+                    <span>Team</span>
+                    <span>Service</span>
+                    <span className={styles.numHead}>Suburbs</span>
+                    <span>Name check</span>
+                    <span />
+                  </div>
                   {[...grouped.keys()].sort().map((letter) => (
                     <section key={letter} className={styles.letterSection} aria-labelledby={letterHeadingId(letter)}>
                       <h3 id={letterHeadingId(letter)} tabIndex={-1} className={styles.letterHeading}>
@@ -577,10 +604,10 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                           <TeamRow
                             key={team.id}
                             team={team}
+                            facts={teamFacts.get(team.name)}
                             query={normalizedQuery}
                             collision={collisionByName.get(team.name)}
-                            onVisit={recordVisit}
-                            onOpenFamilyPanel={openFamilyPanel}
+                            onOpenFamily={openFamily}
                           />
                         ))}
                       </ul>
@@ -588,40 +615,79 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   ))}
                 </div>
               )}
-            </section>
+            </div>
+          </Card>
 
-            <details className={styles.familyPanel} ref={familyPanelRef} data-testid="community-gateway-family-panel">
-              <summary className={styles.familySummary}>
-                <ChevronRight aria-hidden="true" className={styles.familyCaret} />
-                <span>
-                  Names that read alike — <strong>{communityNamesInCollisions()}</strong> names in{" "}
-                  <strong>{familyGroups.length}</strong> groups
-                </span>
-                <span className={styles.familyWhy}>View details</span>
-              </summary>
-              <div className={styles.familyBody}>
-                <p>
-                  These entries reduce to the same or nearly the same name once brackets, punctuation and suffixes such
-                  as &ldquo;HS&rdquo; are set aside. <strong>They have not been merged.</strong> Each is still its own
-                  entry with its own page, exactly as the source document records it — this grouping is only a prompt to
-                  check you are opening the one you mean.
-                </p>
+          <div className={styles.side} data-testid="community-index-side">
+            <SuburbLookup teamByKey={teamByKey} factsFor={factsFor} onShowInList={showInList} />
+
+            <Card
+              id={FAMILY_CARD_ID}
+              className={styles.sideCard}
+              aria-labelledby="community-gateway-family-title"
+              data-testid="community-gateway-family-panel"
+            >
+              <CardHead
+                id="community-gateway-family-title"
+                title="Names that read alike"
+                eyebrow
+                aside={
+                  <span className={styles.headNote}>
+                    {communityNamesInCollisions()} names in {familyGroups.length} groups
+                  </span>
+                }
+              />
+              <CardBody className={styles.familyBody}>
                 {familyGroups.length === 0 ? (
-                  <p className={styles.familyEmpty} data-testid="community-gateway-family-empty">
+                  <p className={styles.muted} data-testid="community-gateway-family-empty">
                     No name in this list currently reads like another. That would itself be a change worth noticing,
                     since the source document is known to hold near-duplicate spellings.
                   </p>
                 ) : (
-                  <div className={styles.familyGrid}>
-                    {familyGroups.map((family) => (
-                      <FamilyCard key={family.names[0]?.name ?? ""} family={family} onVisit={recordVisit} />
+                  <>
+                    <Select
+                      aria-label="Names to set side by side"
+                      value={String(familyIndex)}
+                      onChange={(event) => setFamilyIndex(Number(event.target.value))}
+                    >
+                      {familyGroups.map((family, index) => (
+                        <option key={family.names[0]?.name ?? index} value={index}>
+                          {family.names[0]?.name} · {family.names.length} spellings
+                        </option>
+                      ))}
+                    </Select>
+                    {familyGroups.map((family, index) => (
+                      <FamilySideBySide
+                        key={family.names[0]?.name ?? index}
+                        family={family}
+                        hidden={index !== familyIndex}
+                        factsFor={factsFor}
+                        suburbsByClinicKey={suburbsByClinicKey}
+                      />
                     ))}
-                  </div>
+                  </>
                 )}
-              </div>
-            </details>
+                <p className={styles.note}>
+                  <Icon icon={Info} size={14} />
+                  <span>Not merged. Spellings are compared, so an abbreviation or a renaming carries no marker.</span>
+                </p>
+              </CardBody>
+            </Card>
+
+            <Card className={styles.sideCard} aria-labelledby="community-gateway-service-title">
+              <CardHead
+                id="community-gateway-service-title"
+                title="Teams by service"
+                eyebrow
+                aside={<span className={styles.headNote}>Line is the mean</span>}
+              />
+              <CardBody>
+                <ServiceBars serviceCounts={serviceCounts} />
+              </CardBody>
+            </Card>
           </div>
         </div>
+
         <div className="sr-only">
           <p data-testid="community-index-about">Every community team a referral can name in this prototype</p>
           <p data-testid="community-index-provenance">
@@ -631,9 +697,9 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
             than one a team&apos;s own record supports.
           </p>
           <p data-testid="community-index-restraint">
-            This is a way in, not a caseload. It shows each team&apos;s name and links to it — no counts of people, no
-            discharges and nothing about who a team is following up. A team&apos;s own page answers those questions for
-            that team.
+            This is a way in, not a caseload. Each row shows a team&apos;s name, its health service and how many
+            catchment suburbs name it, and links to the team — no counts of people, no discharges and nothing about who
+            a team is following up. A team&apos;s own page answers those questions for that team.
           </p>
           <p data-testid="community-index-marker-explanation">
             Some names below carry a marker reading <strong>reads like others</strong>, because the source document
@@ -651,7 +717,10 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           testId="community-index-governance"
           note={
             <>
-              <span>Unverified directory · Not a medical device</span>
+              <span>
+                Synthetic prototype. Listed A to Z because the record holds a name only. Names come from referral
+                vocabulary, not a roster of WA services.
+              </span>
               <span className="sr-only">
                 Every team listed here comes from one extracted source document; no team has agreed to be represented,
                 and nothing here has been checked against a real service.
@@ -660,75 +729,83 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           }
         />
 
-        {drawerOpen ? (
-          <div
-            className={styles.drawerScrim}
-            onClick={() => {
-              setDrawerOpen(false);
-              drawerTriggerRef.current?.focus();
-            }}
-          >
-            <div
-              className={styles.drawerPanel}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="community-catchment-guide-title"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className={styles.drawerHead}>
-                <div className={styles.drawerHeadTitleWrap}>
-                  <BookOpen aria-hidden="true" className={styles.drawerHeadIcon} />
-                  <div
-                    id="community-catchment-guide-title"
-                    role="heading"
-                    aria-level={2}
-                    className={styles.drawerTitle}
-                  >
-                    Catchment Directory Guide
-                  </div>
+        <Drawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          title="Catchment guide"
+          returnFocusRef={drawerTriggerRef}
+          testId="community-catchment-guide"
+        >
+          <div className={styles.guide}>
+            <section className={styles.guideSection} aria-labelledby="community-guide-source">
+              <h3 id="community-guide-source" className={styles.guideHead}>
+                Source
+              </h3>
+              <dl className={styles.guideList}>
+                <div>
+                  <dt>Table</dt>
+                  <dd>S2015 catchment rows</dd>
                 </div>
-                <button
-                  type="button"
-                  className={styles.drawerClose}
-                  aria-label="Close guide"
-                  onClick={() => {
-                    setDrawerOpen(false);
-                    drawerTriggerRef.current?.focus();
-                  }}
-                >
-                  <X aria-hidden="true" className={styles.drawerCloseIcon} />
-                </button>
+                <div>
+                  <dt>Team names</dt>
+                  <dd>{allTeams.length}</dd>
+                </div>
+                <div>
+                  <dt>Suburbs mapped</dt>
+                  <dd>{suburbsMapped}</dd>
+                </div>
+                <div>
+                  <dt>Roster and hours</dt>
+                  <dd>Not held</dd>
+                </div>
+              </dl>
+              <p className={styles.muted}>
+                Every team listed here is derived from the referral vocabulary extracted from Western Australian mental
+                health catchment documents. This directory has not been verified with the services.
+              </p>
+            </section>
+            <section className={styles.guideSection} aria-labelledby="community-guide-similar">
+              <h3 id="community-guide-similar" className={styles.guideHead}>
+                Similar names
+              </h3>
+              <ul className={styles.guideLegend}>
+                <li>
+                  <StatusGlyph tone="warning" size={9} />
+                  <strong>Reads like N</strong>
+                  <span>spelling close to another name</span>
+                </li>
+                <li>
+                  <StatusGlyph tone="neutral" size={9} />
+                  <strong>No marker</strong>
+                  <span>does not prove a name is unique</span>
+                </li>
+                <li>
+                  <Icon icon={X} size={14} />
+                  <strong>Never merged</strong>
+                  <span>each name keeps its own page</span>
+                </li>
+              </ul>
+            </section>
+            <section className={styles.guideSection} aria-labelledby="community-guide-actions">
+              <h3 id="community-guide-actions" className={styles.guideHead}>
+                Actions
+              </h3>
+              <div className={styles.guideActions}>
+                <Link href="/mockups/ward-flow/referrals/new" className={buttonClass({ variant: "sec" })}>
+                  <Icon icon={Plus} size={16} />
+                  Raise referral
+                </Link>
+                <Link href="/mockups/ward-flow/referrals" className={buttonClass({ variant: "sec" })}>
+                  <Icon icon={ArrowRight} size={16} />
+                  Open referrals
+                </Link>
+                <Button variant="sec" icon={Download} onClick={exportTeamList}>
+                  Export team list
+                </Button>
               </div>
-              <div className={styles.drawerBody}>
-                <section className={styles.drawerSection}>
-                  <h3 className={styles.drawerSectionTitle}>Where this list comes from</h3>
-                  <p className={styles.drawerText}>
-                    Every team listed in this directory is derived directly from the referral intake vocabulary
-                    extracted from Western Australian Mental Health Service catchment documentation.
-                  </p>
-                </section>
-
-                <section className={styles.drawerSection}>
-                  <h3 className={styles.drawerSectionTitle}>Similar names</h3>
-                  <p className={styles.drawerText}>
-                    Some recorded names read alike. Each remains a separate entry; check that you are opening the team
-                    you mean. This directory has not been verified with the services.
-                  </p>
-                </section>
-
-                <section className={styles.drawerSection}>
-                  <h3 className={styles.drawerSectionTitle}>Actions</h3>
-                  <div className={styles.drawerActions}>
-                    <Link href="/mockups/ward-flow/referrals/new" className={styles.drawerBtnPrimary}>
-                      <FileText aria-hidden="true" className={styles.btnIcon} />
-                      <span>Raise referral</span>
-                    </Link>
-                  </div>
-                </section>
-              </div>
-            </div>
+            </section>
           </div>
-        ) : null}
+        </Drawer>
       </main>
     </div>
   );
@@ -737,47 +814,38 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
 /** How many recently-opened teams the strip remembers. */
 const RECENT_LIMIT = 5;
 
-/** The `localStorage` key the "recently opened" strip reads and writes. Namespaced to this
- *  prototype's gateway rather than reusing another Ward Flow key, so the two cannot collide. */
+/** The `localStorage` key the "recently opened" strip reads and writes. */
 const RECENT_STORAGE_KEY = "ward-community-gateway-recent";
 
-/** Fired after a same-tab write, since the `storage` event browsers dispatch natively only reaches
- *  OTHER tabs, never the tab that made the write — and this strip has to update in the same tab a
- *  reader just clicked a team in. */
+/** Fired after a same-tab write; the native `storage` event only reaches other tabs. */
 const RECENT_CHANGE_EVENT = "ward-community-gateway-recent-change";
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
-/** The id a letter's heading renders under, and the id the jump rail looks up. One function, so
- *  the two never drift apart. */
+/** The id a letter's heading renders under, and the id the jump rail looks up. */
 function letterHeadingId(letter: string): string {
   return `community-gateway-letter-${letter}`;
 }
 
-/** The id an empty A–Z rail letter's `aria-describedby` points at, and the id its own `sr-only`
- *  reason span renders under. Namespaced separately from `letterHeadingId` — the two ids name
- *  different things (a heading that exists only when the letter is present; a reason that exists
- *  only when it is not) and must never collide even though they share a source letter. */
+/** The id an empty rail letter's `aria-describedby` points at. */
 function azRailBlockedId(letter: string): string {
   return `community-gateway-az-blocked-${letter}`;
 }
 
-/**
- * A `CommunityTeam` built straight from a name, for the two surfaces (the recent strip, the family
- * panel) that carry only a name and need a link. `id` is recomputed from the name via
- * `communityTeamSlug` — the same function `COMMUNITY_TEAM_PAGES` itself uses — rather than looked
- * up in `allTeams`, which may be a caller-supplied subset that does not contain this name at all.
- */
+/** The id of the side-by-side card, so a row's marker can bring it into view. */
+const FAMILY_CARD_ID = "community-gateway-family";
+
+/** The id of a team's row, so "Show in list" can focus its link. */
+function teamRowId(teamId: string): string {
+  return `community-gateway-row-${teamId}`;
+}
+
+/** A `CommunityTeam` built from a name, for surfaces that carry only a name and need a link. */
 function teamRef(name: string): CommunityTeam {
   return { id: communityTeamSlug(name), name };
 }
 
-/**
- * Every name the "recently opened" strip has stored, oldest read failure absorbed rather than
- * thrown. Wrapped in `try`/`catch`: `localStorage` throws in a private-browsing context in some
- * browsers, and a page that crashed on that would be a strictly worse outcome than a strip that
- * simply remembers nothing this session.
- */
+/** Every stored recent name; a read failure (private browsing) is absorbed, never thrown. */
 function readRecentTeamNames(): string[] {
   try {
     const raw = window.localStorage.getItem(RECENT_STORAGE_KEY);
@@ -790,27 +858,21 @@ function readRecentTeamNames(): string[] {
   }
 }
 
-/** The write half of the pair above — same reason, same shape: a failed write must not crash the
- *  page that just successfully navigated somewhere. */
+/** The write half: a failed write must not crash the page that just navigated somewhere. */
 function writeRecentTeamNames(names: readonly string[]): void {
   try {
     window.localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(names));
   } catch {
-    // Private browsing or quota exhaustion: the strip will not remember this visit, and nothing
-    // else on the page depends on the write having succeeded.
+    // Private browsing or quota exhaustion: the strip will not remember this visit.
   }
   try {
     window.dispatchEvent(new Event(RECENT_CHANGE_EVENT));
   } catch {
-    // No `window` (should not happen — this only ever runs from a click handler) — nothing else
-    // depends on the notification having gone out.
+    // Nothing else depends on the notification having gone out.
   }
 }
 
-/** Reads the strip, prepends `teamName`, drops any earlier occurrence of it, and caps the length —
- *  then writes the result straight back. A plain module-level function rather than a hook: nothing
- *  it does depends on this component's own state, so every caller (a team row, a family-panel
- *  link, the recent strip's own links) can reference it directly with a stable identity. */
+/** Prepends `teamName`, drops any earlier occurrence, caps the length, and writes it back. */
 function recordVisit(teamName: string): void {
   const current = readRecentTeamNames();
   const next = [teamName, ...current.filter((name) => name !== teamName)].slice(0, RECENT_LIMIT);
@@ -818,18 +880,8 @@ function recordVisit(teamName: string): void {
 }
 
 /*
- * The `useSyncExternalStore` plumbing behind `recentNames` in `CommunityIndex` — the same
- * `createBrowserStore` pattern `use-ward-sidebar-collapsed.ts` already uses, and for the same
- * reason: it lets a write to `localStorage` trigger a re-render through a SUBSCRIPTION rather than
- * through `setState` called inside an effect body, which is the pattern
- * `react-hooks/set-state-in-effect` exists to flag — correctly, since state that lives in
- * `localStorage` is exactly the "external system" `useSyncExternalStore` is for.
- *
- * ⚠️ THE SNAPSHOT IS CACHED AGAINST THE RAW STRING, NOT RECOMPUTED ON EVERY CALL. `getSnapshot`
- * must return a referentially STABLE value when nothing has changed, or `useSyncExternalStore`
- * treats every render as a change and loops. Parsing a fresh array from `JSON.parse` on every call
- * would do exactly that, so the last raw string and its parsed array are cached at module scope and
- * only a raw string that has actually changed produces a new array reference.
+ * The `useSyncExternalStore` plumbing behind the recent strip. The snapshot is cached against the
+ * raw string, because `getSnapshot` must return a stable value when nothing changed or React loops.
  */
 let cachedRecentRaw: string | null = null;
 let cachedRecentNames: readonly string[] = [];
@@ -849,8 +901,6 @@ function getRecentNamesSnapshot(): readonly string[] {
 }
 
 function subscribeToRecentNames(onChange: () => void): () => void {
-  // `storage` covers a write from another tab; the custom event covers a write from THIS one,
-  // which the native `storage` event deliberately never fires for.
   window.addEventListener("storage", onChange);
   window.addEventListener(RECENT_CHANGE_EVENT, onChange);
   return () => {
@@ -861,135 +911,365 @@ function subscribeToRecentNames(onChange: () => void): () => void {
 
 const useRecentTeamNames = createBrowserStore(subscribeToRecentNames, getRecentNamesSnapshot, NO_RECENT_NAMES);
 
-/**
- * Highlights every case-insensitive occurrence of `query` inside `name` with a real `<mark>`,
- * exactly like the approved mockup. Returns `name` untouched when there is no query, so a row never
- * pays for a scan it does not need.
- */
-function highlightMatches(name: string, query: string): ReactNode {
-  if (!query) return name;
+/** Highlights every case-insensitive occurrence of `query` inside `name` with a real `<mark>`. */
+function HighlightedName({ name, query }: { name: string; query: string }) {
+  if (!query) return <>{name}</>;
   const lower = name.toLowerCase();
-  const needle = query.toLowerCase();
   const parts: ReactNode[] = [];
   let from = 0;
-  let at = lower.indexOf(needle, from);
+  let at = lower.indexOf(query, from);
   let key = 0;
   while (at !== -1) {
     if (at > from) parts.push(name.slice(from, at));
     parts.push(
       <mark key={`match-${key}`} className={styles.match}>
-        {name.slice(at, at + needle.length)}
+        {name.slice(at, at + query.length)}
       </mark>,
     );
     key += 1;
-    from = at + needle.length;
-    at = lower.indexOf(needle, from);
+    from = at + query.length;
+    at = lower.indexOf(query, from);
   }
   if (from < name.length) parts.push(name.slice(from));
-  return parts;
+  return <>{parts}</>;
 }
 
 /**
- * One row: the team's own link, an optional reads-alike marker, and a "go" chevron.
+ * One row: the team's own link, its service and catchment suburbs, the name check and a chevron.
  *
- * ⚠️ **THE MARKER IS A SIBLING OF THE LINK, NEVER A DESCENDANT OF IT.** A `<button>` nested inside
- * an `<a>` is invalid HTML and, worse, fires the anchor's own navigation on top of the button's
- * click — a reader trying to open the comparison panel would be sent straight to the team page
- * instead. `.teamRowLink`'s CSS stretches an `::after` pseudo-element over the whole row so the row
- * keeps its whole-area click behaviour without the marker ever being inside the anchor's own DOM
- * subtree — the same technique the approved mockup documents in its own CSS comments.
+ * ⚠️ **THE MARKER IS A SIBLING OF THE LINK, NEVER A DESCENDANT OF IT.** A button inside an anchor is
+ * invalid HTML and fires the navigation on top of the button. The link's `::after` stretches over
+ * the row instead, and the marker sits above it.
+ *
+ * Every cell other than the name and the marker carries `data-row-detail`, so the gateway test can
+ * check that what sits beside the name is a catchment fact and never a figure about people.
  */
 function TeamRow({
   team,
+  facts,
   query,
   collision,
-  onVisit,
-  onOpenFamilyPanel,
+  onOpenFamily,
 }: {
   team: CommunityTeam;
+  facts: TeamFacts | undefined;
   query: string;
   collision: CommunityNameCollision | undefined;
-  onVisit: (name: string) => void;
-  onOpenFamilyPanel: () => void;
+  onOpenFamily: (collision: CommunityNameCollision) => void;
 }) {
   return (
-    <li className={styles.teamRow}>
+    <li className={styles.teamRow} id={teamRowId(team.id)}>
       <Link
         className={styles.teamRowLink}
         href={communityTeamHref(team)}
         data-testid="community-index-link"
-        onClick={() => onVisit(team.name)}
+        onClick={() => recordVisit(team.name)}
       >
-        <span className={styles.teamRowName}>{highlightMatches(team.name, query)}</span>
+        <HighlightedName name={team.name} query={query} />
       </Link>
-      {collision ? <ReadsAlikeMarker collision={collision} onOpen={onOpenFamilyPanel} /> : null}
-      <ChevronRight aria-hidden="true" className={styles.teamRowGo} />
+      <span className={styles.service} data-row-detail="service">
+        {facts?.service}
+      </span>
+      <span className={styles.suburbs} data-row-detail="suburbs">
+        {facts?.suburbs ?? 0}
+      </span>
+      <span className={styles.check}>
+        {collision ? (
+          <ReadsAlikeMarker collision={collision} onOpen={() => onOpenFamily(collision)} />
+        ) : (
+          <span className={styles.noMarker} data-row-detail="no-marker">
+            No marker
+          </span>
+        )}
+      </span>
+      <Icon icon={ChevronRight} size={14} className={styles.teamRowGo} />
     </li>
   );
 }
 
 /**
- * The reads-alike marker itself. A real `<button type="button">`, never a `<span role="button">` —
- * a fake button is invisible to keyboard Tab order and to the accessibility tree's list of
- * activatable controls, which is exactly the gap this whole task exists to close on the rest of the
- * page.
+ * The reads-alike marker. A real `<button type="button">`.
  *
- * ⚠️ **WORDING IS A CLINICAL-SAFETY RULE HERE, NOT A STYLE CHOICE.** "Reads like N others — check
- * you have the right one" states a spelling property and asks for a check. "Did you mean" — or any
- * wording implying sameness — is forbidden: this project has already shipped the harm a merge would
- * cause (see `community-vocabulary.ts`'s own doc comment), and the owner ruled the fix is a visible
- * split a reader is warned about, never an invisible merge nobody is.
+ * ⚠️ **WORDING IS A CLINICAL-SAFETY RULE HERE, NOT A STYLE CHOICE.** It states a spelling property
+ * and asks for a check. "Did you mean", or any wording implying sameness, is forbidden.
  */
 function ReadsAlikeMarker({ collision, onOpen }: { collision: CommunityNameCollision; onOpen: () => void }) {
   const others = collision.names.length - 1;
   return (
     <button type="button" className={styles.readsAlike} data-testid="community-gateway-reads-alike" onClick={onOpen}>
-      <span className={styles.readsAlikeDot} aria-hidden="true" />
-      Reads like {others} {others === 1 ? "other" : "others"} — check you have the right one
+      <StatusGlyph tone="warning" size={9} />
+      Reads like {others} {others === 1 ? "other" : "others"}
+      <SrOnly> — check you have the right one</SrOnly>
     </button>
   );
 }
 
-/** One family in the collapsible panel: the lead spelling, a rendered count of the group, and every
- *  member linked to its own page. `teamRef` builds each link independently of `allTeams` — see its
- *  own comment — so this panel is honest even when a caller renders the index over a subset. */
-function FamilyCard({ family, onVisit }: { family: CommunityNameCollision; onVisit: (name: string) => void }) {
+/**
+ * One family set side by side: each spelling's own link, its service and its catchment suburbs, and
+ * the suburbs more than one spelling names. Hidden families stay in the document, so every
+ * colliding name keeps a link on the page whichever family is showing.
+ */
+function FamilySideBySide({
+  family,
+  hidden,
+  factsFor,
+  suburbsByClinicKey,
+}: {
+  family: CommunityNameCollision;
+  hidden: boolean;
+  factsFor: (name: string) => TeamFacts;
+  suburbsByClinicKey: ReadonlyMap<string, ReadonlySet<string>>;
+}) {
   const lead = family.names[0]?.name ?? "";
   const total = family.names.length;
+  const shared = useMemo(() => {
+    const seen = new Map<string, number>();
+    for (const entry of family.names) {
+      for (const suburb of suburbsByClinicKey.get(clinicKey(entry.name)) ?? []) {
+        seen.set(suburb, (seen.get(suburb) ?? 0) + 1);
+      }
+    }
+    return [...seen.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([suburb]) => suburb)
+      .sort((left, right) => left.localeCompare(right));
+  }, [family, suburbsByClinicKey]);
+
   return (
-    <div className={styles.familyCard} data-testid="community-gateway-family-card">
-      <p className={styles.familyCardLabel}>
-        {lead} — {total} {total === 1 ? "entry" : "entries"} read alike
-      </p>
-      <ul className={styles.familyCardList}>
-        {family.names.map((entry) => {
-          const team = teamRef(entry.name);
-          return (
-            <li key={team.id}>
-              <Link
-                className={styles.familyCardLink}
-                href={communityTeamHref(team)}
-                data-testid="community-gateway-family-link"
-                onClick={() => onVisit(entry.name)}
-              >
-                {entry.name}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+    <div className={styles.family} hidden={hidden} data-testid="community-gateway-family-card">
+      <div className={styles.sideTableWrap}>
+        <table className={styles.sideTable}>
+          <caption className="sr-only">
+            {lead}, {total} entries read alike
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Written as</th>
+              {family.names.map((entry) => {
+                const team = teamRef(entry.name);
+                return (
+                  <th key={team.id} scope="col">
+                    <Link
+                      className={styles.familyLink}
+                      href={communityTeamHref(team)}
+                      data-testid="community-gateway-family-link"
+                      onClick={() => recordVisit(entry.name)}
+                    >
+                      {entry.name}
+                    </Link>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Service</th>
+              {family.names.map((entry) => (
+                <td key={entry.name} className={styles.mono}>
+                  {factsFor(entry.name).service}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <th scope="row">Suburbs</th>
+              {family.names.map((entry) => (
+                <td key={entry.name} className={styles.mono}>
+                  {factsFor(entry.name).suburbs}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {shared.length > 0 ? (
+        <div className={styles.shared}>
+          <h3 className={styles.subHead}>Suburbs more than one names</h3>
+          <ul className={styles.tagList}>
+            {shared.map((suburb) => (
+              <li key={suburb} className={styles.tag}>
+                {suburb}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }
 
+/** Teams per health service, with the mean as a tick and how many of each read alike. */
+function ServiceBars({ serviceCounts }: { serviceCounts: ReadonlyMap<string, { teams: number; alike: number }> }) {
+  const codes = COMMUNITY_SERVICE_OPTIONS.map((option) => option.value).filter(
+    (value): value is Exclude<ServiceFilter, "all"> => value !== "all",
+  );
+  const present = codes.filter((code) => (serviceCounts.get(code)?.teams ?? 0) > 0);
+  if (present.length === 0) return <p className={styles.muted}>No team on this page maps to a health service.</p>;
+  const total = present.reduce((sum, code) => sum + (serviceCounts.get(code)?.teams ?? 0), 0);
+  const rows: BarListRow[] = present.map((code) => {
+    const entry = serviceCounts.get(code) ?? { teams: 0, alike: 0 };
+    return {
+      id: code,
+      label: SERVICE_BAR_LABEL[code],
+      value: entry.teams,
+      display: (
+        <span className={styles.serviceFigure}>
+          {entry.teams}
+          <span className={styles.alikeFigure}>
+            <StatusGlyph tone={entry.alike > 0 ? "warning" : "neutral"} size={9} />
+            {entry.alike}
+          </span>
+        </span>
+      ),
+    };
+  });
+  return (
+    <>
+      <BarList
+        rows={rows}
+        mean={total / present.length}
+        meanLabel="Mean"
+        label="Community teams by health service"
+        labelWidth="9.5rem"
+      />
+      <SrOnly>
+        <ul>
+          {present.map((code) => (
+            <li key={code}>
+              {SERVICE_BAR_LABEL[code]}, names that read alike: {serviceCounts.get(code)?.alike ?? 0}
+            </li>
+          ))}
+        </ul>
+      </SrOnly>
+    </>
+  );
+}
+
 /**
- * The empty state when a search or the "reads alike" filter leaves nothing — distinct from the
- * "the whole derivation is empty" state above, which is a fact about the SOURCE rather than about
- * anything a reader typed. Three variants, matched to the approved mockup: alike-only with a query,
- * alike-only alone, and a plain query. Every variant states the absence in words and offers the
- * next step, never a bare blank.
+ * The suburb lookup: which team or teams the catchment table names for a suburb. It reads
+ * `lookupCatchment()` and states its note when the answer is contested, unreviewed or unknown; it
+ * never picks one team for a reader. The quick picks are the suburbs whose own row names more than
+ * one team, read off the rows.
  */
-function SearchEmptyNotice({ query }: { query: string }) {
+function SuburbLookup({
+  teamByKey,
+  factsFor,
+  onShowInList,
+}: {
+  teamByKey: ReadonlyMap<string, CommunityTeam>;
+  factsFor: (name: string) => TeamFacts;
+  onShowInList: (team: CommunityTeam) => void;
+}) {
+  const picks = useMemo(() => {
+    const names = new Set<string>();
+    for (const row of S2015_CATCHMENT_ROWS) {
+      if (parseFollowUpClinicSet(row.followUpClinicVerbatim).length > 1) names.add(row.suburb);
+    }
+    return [...names].sort((left, right) => left.localeCompare(right));
+  }, []);
+  const [suburb, setSuburb] = useState(() => picks[0] ?? "");
+  const trimmed = suburb.trim();
+  const lookup = useMemo(() => (trimmed ? lookupCatchment(trimmed) : null), [trimmed]);
+
+  const answers = lookup && lookup.state !== "unknown" ? lookup.answers : [];
+  const clinics = [...new Set(answers.flatMap((answer) => answer.clinics))];
+  const postcodes = [...new Set(answers.flatMap((answer) => answer.postcodes))];
+  const named = lookup?.suburb ?? trimmed;
+
+  return (
+    <Card className={styles.sideCard} aria-labelledby="community-suburb-lookup-title">
+      <CardHead
+        id="community-suburb-lookup-title"
+        title="Suburb lookup"
+        eyebrow
+        aside={<span className={styles.headNote}>Which team covers it</span>}
+      />
+      <CardBody className={styles.lookupBody}>
+        <TextInput
+          icon={MapPin}
+          aria-label="Suburb"
+          placeholder="Suburb"
+          autoComplete="off"
+          value={suburb}
+          onChange={(event) => setSuburb(event.target.value)}
+          onClear={() => setSuburb("")}
+          trailing={postcodes.length > 0 ? <span className={styles.mono}>{postcodes.join(", ")} WA</span> : undefined}
+        />
+        {picks.length > 0 ? (
+          <div className={styles.picks} role="group" aria-label="Suburbs whose row names more than one team">
+            {picks.map((pick) => (
+              <button
+                key={pick}
+                type="button"
+                className={buttonClass({ variant: "sec", size: "sm" })}
+                aria-pressed={pick === trimmed}
+                onClick={() => setSuburb(pick)}
+              >
+                {pick}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {lookup === null ? null : (
+          <div className={styles.lookupResult}>
+            {clinics.length > 0 ? (
+              <ul className={styles.lookupList}>
+                {clinics.map((clinic) => {
+                  const team = teamByKey.get(clinicKey(clinic));
+                  const facts = factsFor(clinic);
+                  return (
+                    <li key={clinic} className={styles.lookupRow}>
+                      <span className={styles.lookupName}>
+                        {team ? (
+                          <Link href={communityTeamHref(team)} onClick={() => recordVisit(team.name)}>
+                            {clinic}
+                          </Link>
+                        ) : (
+                          clinic
+                        )}
+                        <span className={styles.lookupMeta}>
+                          {facts.service} · {facts.suburbs} suburbs
+                        </span>
+                      </span>
+                      <span className={styles.lookupAside}>
+                        {clinics.length > 1 ? (
+                          <span className={styles.oneOf}>
+                            <StatusGlyph tone="warning" size={9} />
+                            One of {clinics.length}
+                          </span>
+                        ) : null}
+                        {team ? (
+                          <Button variant="ghost" size="sm" onClick={() => onShowInList(team)}>
+                            Show in list
+                          </Button>
+                        ) : null}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+            {lookup.state === "reviewed" ? (
+              clinics.length > 1 ? (
+                <p className={styles.lookupNote}>
+                  {clinics.length} teams name {named}. Check the right one.
+                </p>
+              ) : null
+            ) : (
+              <p className={styles.lookupNote}>{lookup.note}</p>
+            )}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
+
+/**
+ * The empty state when the filters leave nothing — distinct from the empty SOURCE above. Each
+ * variant states the absence in words and offers the next step.
+ */
+function SearchEmptyNotice({ query, alikeOnly }: { query: string; alikeOnly: boolean }) {
   if (query) {
     return (
       <div className={styles.emptyNotice} data-testid="community-gateway-search-empty">
@@ -1006,9 +1286,11 @@ function SearchEmptyNotice({ query }: { query: string }) {
   return (
     <div className={styles.emptyNotice} data-testid="community-gateway-search-empty">
       <p>
-        <strong>No teams found matching active filters.</strong>
+        <strong>
+          {alikeOnly ? "No team in this service reads like another." : "No teams found matching active filters."}
+        </strong>
       </p>
-      <p>Try resetting the filter to view all teams.</p>
+      <p>Reset the filters to view all teams.</p>
     </div>
   );
 }
