@@ -33,6 +33,10 @@ it("checks each mandatory generator and its shared input helper", () => {
     "scripts/ward-flow/screen-verification.mjs",
   );
 });
+it("selects maintained architecture checks for the checker and tracked design roots", () => {
+  for (const file of ["scripts/check-codebase-index-coverage.mjs", ".design/brief.md", "design/figma/tokens.json"])
+    expect(selectedDocChecks([file])).toContain("scripts/check-codebase-index-coverage.mjs");
+});
 it("checks staged generation inputs and leaves dirty output untouched", () => {
   const root = fixture();
   writeFileSync(path.join(root, "scripts/update-docs-inventory.mjs"), "process.exit(9);");

@@ -4,22 +4,24 @@
  * NOT mentioned in docs/codebase-index.md.
  *
  * codebase-index.md is the orientation map agents read first; docs:check-links
- * already verifies the paths it names EXIST, but nothing catches the reverse — a
+ * verifies explicit linked targets, but does not catch the reverse — a
  * new src/lib module or app route that never gets added to the map, silently
  * staling it. This checks that each top-level directory the index organizes around
- * is referenced somewhere in it.
+ * is referenced in its maintained section.
  *
  * Granularity is deliberately top-level directories (route groups + src/lib module
  * dirs), not every file — the index maps modules by theme, so per-file coverage
  * would be pure noise.
  *
  * Run: `npm run docs:check-index`. Blocking — runs in `verify:cheap:internal` and in
- * CI (`.github/workflows/ci.yml`, the "Codebase index coverage" step). Exit 1 on gaps.
+ * CI (`.github/workflows/ward-flow.yml`). Only maintained Ward sections establish
+ * coverage; historical path mentions never satisfy the current map. Exit 1 on gaps.
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { stripHistoricalSections } from "./check-docs-script-refs.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const INDEX_PATH = "docs/codebase-index.md";
@@ -57,10 +59,10 @@ export function coverageCandidates(kind, name) {
 }
 
 const SECTION_BOUNDS = {
-  root: ["## Top-level layout", "## Application architecture"],
-  route: ["### Product pages (`src/app/`)", "### API routes (`src/app/api/`)"],
-  api: ["### API routes (`src/app/api/`)", "## `src/lib/` module map"],
-  lib: ["## `src/lib/` module map", "## Supabase"],
+  root: ["## Ward repository layout", "## Ward route groups"],
+  route: ["## Ward route groups", "## Ward API routes"],
+  api: ["## Ward API routes", "## Ward library modules"],
+  lib: ["## Ward library modules", "## Historical provenance"],
   schema: ["### Schema tables", "### Migration themes"],
 };
 
@@ -75,6 +77,9 @@ function sectionText(indexText, kind) {
   const start = headingOffset(startMarker);
   if (start < 0) return "";
   const end = headingOffset(endMarker, start + startMarker.length);
+  // Maintained sections need both ordered boundaries; never borrow later sections
+  // when a heading is removed or reordered. The legacy schema helper permits EOF.
+  if (end < 0 && kind !== "schema") return "";
   return indexText.slice(start, end < 0 ? indexText.length : end);
 }
 
@@ -90,8 +95,9 @@ function candidateMatches(span, candidate) {
 
 /** Pure: given the index text and the discovered groups, return the uncovered entries. */
 export function coverageGaps(indexText, groups, allowlist = ALLOWLIST) {
+  const maintained = stripHistoricalSections(indexText);
   const spansByKind = new Map(
-    ["root", "lib", "route", "api"].map((kind) => [kind, codeSpans(sectionText(indexText, kind))]),
+    ["root", "lib", "route", "api"].map((kind) => [kind, codeSpans(sectionText(maintained, kind))]),
   );
   const gaps = [];
   for (const { kind, dir, name } of groups) {
@@ -156,6 +162,10 @@ function discoverGroups() {
 
 function main() {
   const indexText = readFileSync(path.join(repoRoot, INDEX_PATH), "utf8");
+  const maintained = stripHistoricalSections(indexText);
+  for (const kind of ["root", "route", "api", "lib"]) {
+    if (!sectionText(maintained, kind)) throw new Error(`${INDEX_PATH} is missing its maintained ${kind} section.`);
+  }
   const groups = discoverGroups();
   const gaps = coverageGaps(indexText, groups);
 

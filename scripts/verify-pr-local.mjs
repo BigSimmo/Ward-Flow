@@ -13,6 +13,9 @@ const common = [
   "check:diff-integrity",
   "docs:check-scripts",
   "check:ward-doc-links",
+  "docs:check-links",
+  "docs:check-index",
+  "docs:check-inventory",
 ];
 
 // `--extended` is still accepted (callers pass it), but the extended and default plans are now the

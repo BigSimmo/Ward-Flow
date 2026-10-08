@@ -35,3 +35,8 @@ See [repository boundaries](AGENTS.md), [hosting records](docs/hosting.md) and
 is not evidence that hosted checks or deployment ran. As reviewed on 2 October
 2026, no Ward Gitleaks/Semgrep workflow establishes the inherited scanning claims;
 current hosted security controls and deployment state remain unverified.
+
+Source update, 8 October 2026: `ward-flow.yml` now defines a full-history Gitleaks job using
+a pinned, checksum-verified release. This establishes configured source coverage, not a
+successful hosted scan. No Semgrep job is declared in this workflow. Hosted results still
+require separate exact-revision evidence.
