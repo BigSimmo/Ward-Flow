@@ -193,6 +193,10 @@ const DURATION_TOKENS = new Set([
  * — the clinician or the product owner — and a date.
  */
 const MODEL_CONSTANT_PROVENANCE: Record<string, string> = {
+  ATS_CATEGORIES:
+    "Owner decision D-32, Josh, 6 October 2026, docs/ward-flow/decisions.md: display recorded " +
+    "ATS Triage Categories 1–5. These are referring-clinician supplied labels, never statutory " +
+    "time limits, automatically assigned acuity or a conversion of the separate three-tier urgency.",
   SENDING_TEAM_NAME_LIMIT:
     "Not a Mental Health Act figure. A length cap on the sending team's NAME, chosen by this " +
     "prototype for a text field and carrying no statutory meaning whatever — no timeframe, no " +

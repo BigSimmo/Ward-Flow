@@ -43,25 +43,75 @@ describe("patient-linked discharge transition", () => {
     if (reason === "invalid-payload") expect(refused.auditEvents.at(-1)?.at).toBeNull();
   });
   it("arrival increments the actual selected DTO revision before the linked departure can run", () => {
-    const { state, admission, event } = fixture();
-    admission.state = "pulled";
-    const moving = state.movements.find((row) => row.stage === "moving" && row.transport?.collectedAt);
-    if (!moving) throw new Error("Moving fixture required");
-    moving.acceptedUnitId = admission.unitId;
-    moving.admissionId = admission.id;
-    state.units.find((unit) => unit.id === admission.unitId)!.empty.value = 1;
-    const selected = selectDischargeRecord(state, { role: "ward", actingUnitId: admission.unitId }, admission.id);
+    // The previous fixture transplanted WF-006 onto an unrelated occupied stay, changed the
+    // stay to pulled, and left its patient/backpointer mismatched. Produce the actual held stay
+    // instead so this tests revision invalidation without bypassing arrival identity checks.
+    let state = seedWardFlowState();
+    const send = (event: WardFlowEvent) => {
+      state = wardFlowReducer(state, event);
+    };
+    send({
+      type: "ADD_PATIENT",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      umrn: "SYN-DISCHARGE-REVISION",
+      givenName: "Synthetic",
+      familyName: "Revision",
+      dateOfBirth: "1980-01-01",
+    });
+    const patientId = state.patients.at(-1)!.id;
+    send({
+      type: "RAISE_REFERRAL",
+      role: "ed",
+      now: NOW_ANCHOR,
+      edId: "jhc-ed",
+      patientId,
+      draft: {
+        cohort: "Adult",
+        security: "Open",
+        sex: "Female",
+        gender: "Female",
+        specialling: false,
+        highAcuity: false,
+        legalStatus: "Voluntary",
+        urgency: 2,
+        legalFormCode: null,
+      },
+    });
+    const movementId = state.movements.at(-1)!.id;
+    const unitId = "scgh-adult-open";
+    send({ type: "REFER_TO_UNITS", role: "coordinator", now: NOW_ANCHOR, movementId, unitIds: [unitId] });
+    send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", now: NOW_ANCHOR, movementId, unitId });
+    send({ type: "PULL_PATIENT", role: "ward", now: NOW_ANCHOR, movementId, unitId });
+    send({ type: "RECORD_TRANSPORT_NEED", role: "ward", now: NOW_ANCHOR, movementId, needed: false });
+    expect(state.rejections).toEqual([]);
+    const admissionId = state.movements.at(-1)!.admissionId!;
+    expect(admissionId).toBeTruthy();
+    const held = state.admissions.find((row) => row.id === admissionId)!;
+    expect(held).toMatchObject({ state: "pulled", unitId, patientId, movementId });
+    const selected = selectDischargeRecord(state, { role: "ward", actingUnitId: unitId }, admissionId);
     if (selected.status !== "allowed") throw new Error("Selected DTO required");
     const arrived = wardFlowReducer(state, {
       type: "PATIENT_ARRIVED",
-      role: "officer",
+      role: "ward",
       now: NOW_ANCHOR,
-      movementId: moving.id,
+      movementId,
+      actingUnitId: unitId,
     });
     expect(arrived.rejections).toEqual([]);
-    expect(arrived.admissions.find((row) => row.id === admission.id)?.state).toBe("occupied");
-    expect(arrived.dischargeRevisions[admission.id]).toBe(selected.value.revision + 1);
-    const stale = wardFlowReducer(arrived, { ...event, expectedRevision: selected.value.revision });
+    expect(arrived.admissions.find((row) => row.id === admissionId)?.state).toBe("occupied");
+    expect(arrived.dischargeRevisions[admissionId]).toBe(selected.value.revision + 1);
+    const stale = wardFlowReducer(arrived, {
+      type: "RECORD_PATIENT_DISCHARGE",
+      role: "ward",
+      now: NOW_ANCHOR,
+      actingUnitId: unitId,
+      admissionId,
+      patientId,
+      expectedGeneration: selected.value.generation,
+      expectedRevision: selected.value.revision,
+      leavingDestination: "discharged-to-the-community",
+    });
     expect(stale.units).toBe(arrived.units);
     expect(stale.auditEvents.at(-1)).toMatchObject({ outcome: "stale", reasonCode: "revision" });
   });
