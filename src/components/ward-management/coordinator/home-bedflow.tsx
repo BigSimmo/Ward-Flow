@@ -25,7 +25,6 @@ import {
   INFORMATIONAL_GATES,
   candidateReason,
   eligibleCandidatesAmong,
-  needsNoRecordedReason,
   restrictionNotice,
   shortlistCandidates,
   wardServiceOrder,
@@ -76,7 +75,9 @@ type Candidate = ReturnType<typeof eligibleCandidatesAmong>[number];
 type FitKind = "bed" | "no-bed";
 
 function fitKind(candidate: ShortlistCandidate): FitKind | undefined {
-  if (needsNoRecordedReason(candidate.availability)) return "bed";
+  // Only a ward the eligibility rules pass counts as a fit, so the count, the chips and the status
+  // line below agree. A ward that declined this patient before fails `prior_decline` and stays out.
+  if (candidate.availability === "eligible") return "bed";
   if (candidate.availability !== "unavailable") return undefined;
   const failing = candidate.verdict.gates.filter((gate) => !gate.pass && !INFORMATIONAL_GATES.includes(gate.gate));
   return failing.length > 0 && failing.every((gate) => gate.gate === "allocatable_bed") ? "no-bed" : undefined;

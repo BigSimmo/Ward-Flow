@@ -3,12 +3,7 @@ import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
-import {
-  INFORMATIONAL_GATES,
-  isOpen,
-  needsNoRecordedReason,
-  shortlistCandidates,
-} from "@/components/ward-management/ward-derivations";
+import { INFORMATIONAL_GATES, isOpen, shortlistCandidates } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
@@ -27,7 +22,7 @@ function expectedFits(movementId: string) {
   const bed = new Set<string>();
   const noBed = new Set<string>();
   for (const candidate of shortlistCandidates(movement, state.units, NOW)) {
-    if (needsNoRecordedReason(candidate.availability)) {
+    if (candidate.availability === "eligible") {
       bed.add(candidate.unit.id);
       continue;
     }
