@@ -24,7 +24,18 @@ treatment order, temporary leave and episode closure are not interchangeable phy
 Clinical/support services can work in parallel. Hospital in the Home is distinct from ordinary
 community care and from a Step Up/Step Down residence.
 
-The revised controls provide four clear views:
+The revised controls retain the original diagram style alongside the detailed WA views:
+
+- **Overall journey:** the original symbol-based central sequence, with stalls/endings on the
+  left, diversions/parallel records on the right and the person/bed exit tracks shown separately.
+  Every main step opens its original box in the master map.
+- **Master map:** all 111 original boxes and 161 original connections, with their original
+  positions, lane colours and SVG symbols. Fit-width, whole-map, readable-size and zoom controls
+  are explicit. Search highlights without removing branches; selecting a box shows its source
+  wording and neighbours. This is the preserved prototype source snapshot, not a fresh audit
+  of current engine behaviour or a clinical bed-release rule.
+
+The detailed WA views remain available:
 
 1. **Care map:** search for a place/team/outcome, select it, and see all explicit incoming
    and outgoing links. A small connected example introduces the overview without implying

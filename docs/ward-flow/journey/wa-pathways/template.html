@@ -908,6 +908,192 @@
           margin: 12px 0;
         }
       }
+      .workspace.wide {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .workspace.wide > #inspector {
+        display: none;
+      }
+      .symbol {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 18px;
+        vertical-align: middle;
+      }
+      .symbol-row {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .symbol-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 22px;
+        margin: 18px 0;
+        font-size: 13px;
+      }
+      .symbol-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .overall-lanes {
+        display: grid;
+        grid-template-columns: minmax(160px, 1fr) minmax(260px, 1.7fr) minmax(160px, 1fr);
+        gap: 24px;
+        align-items: start;
+      }
+      .overall-side {
+        display: grid;
+        gap: 18px;
+      }
+      .overall-side .branch-note {
+        border-left: 3px solid var(--lane);
+        border-radius: 10px;
+        padding: 18px;
+        background: #f7f9f8;
+      }
+      .overall-side .branch-note h3 {
+        margin: 0 0 8px;
+      }
+      .overall-step {
+        display: block;
+        width: 100%;
+        text-align: left;
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--lane);
+        border-radius: 10px;
+        padding: 15px 18px;
+        background: white;
+        color: var(--ink);
+      }
+      .overall-step b {
+        display: block;
+        font-size: 16px;
+      }
+      .overall-step small {
+        display: block;
+        color: var(--muted);
+        margin-top: 5px;
+      }
+      .overall-arrow {
+        text-align: center;
+        font-size: 24px;
+        color: var(--teal);
+        line-height: 1.25;
+        padding: 4px;
+      }
+      .overall-split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .master-viewport {
+        overflow: auto;
+        height: 620px;
+        max-height: 75vh;
+        border: 1px solid var(--line);
+        background: #f6f6f4;
+        border-radius: 12px;
+        padding: 12px;
+        overscroll-behavior: contain;
+      }
+      .master-stage {
+        position: relative;
+      }
+      .master-canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+        transform-origin: top left;
+        background: #f6f6f4;
+      }
+      .master-node {
+        position: absolute;
+        display: block;
+        text-align: left;
+        padding: 10px 14px 9px 32px;
+        border: 1px solid #b7bdb9;
+        border-left: 4px solid var(--lane);
+        border-radius: 5px;
+        background: #fff;
+        color: #1b1b19;
+        font:
+          14px/1.25 system-ui,
+          sans-serif;
+      }
+      .master-node .symbol {
+        position: absolute;
+        left: 9px;
+        top: 12px;
+        width: 14px;
+        height: 14px;
+      }
+      .master-node b {
+        display: block;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .master-node small {
+        display: block;
+        font-size: 11px;
+        margin-top: 5px;
+      }
+      .master-node[data-lane="heading"] {
+        border: 0;
+        background: transparent;
+        padding: 8px;
+      }
+      .master-node[data-lane="heading"] b {
+        font-size: 20px;
+      }
+      .master-node.match {
+        outline: 4px solid #b58722;
+        outline-offset: 3px;
+      }
+      .master-node[aria-current="true"] {
+        outline: 5px solid #17635e;
+        outline-offset: 3px;
+        background: #e8f2ed;
+      }
+      .master-detail {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 16px;
+        background: #f7f9f8;
+        margin: 16px 0;
+      }
+      .master-detail h3 {
+        margin: 0 0 8px;
+      }
+      .master-detail p {
+        margin: 8px 0;
+      }
+      .master-zoom-label {
+        min-width: 48px;
+        font-variant-numeric: tabular-nums;
+      }
+      @media (max-width: 850px) {
+        .overall-lanes {
+          grid-template-columns: 1fr;
+        }
+        .overall-spine {
+          grid-row: 1;
+        }
+        .master-viewport {
+          height: 520px;
+        }
+      }
+      @media print {
+        .master-viewport {
+          height: auto;
+          max-height: none;
+          overflow: visible;
+        }
+        .overall-step {
+          break-inside: avoid;
+        }
+      }
     </style>
   </head>
   <body>
@@ -940,7 +1126,9 @@
           >
         </div>
         <nav class="nav" aria-label="Wireframe views">
-          <button type="button" data-view="map" aria-current="page">Care map</button
+          <button type="button" data-view="overall" aria-current="page">Overall journey</button
+          ><button type="button" data-view="master">Master map</button
+          ><button type="button" data-view="map">Care map</button
           ><button type="button" data-view="journey">Trace a journey</button
           ><button type="button" data-view="connections">All connections</button
           ><button type="button" data-view="review">Review & sources</button>
@@ -948,7 +1136,68 @@
       </header>
       <div class="workspace" id="workspace">
         <main id="content" tabindex="-1">
-          <section id="view-map" class="panel" aria-labelledby="map-title">
+          <section id="view-overall" class="panel" aria-labelledby="overall-title">
+            <div class="row between">
+              <div>
+                <h2 id="overall-title" tabindex="-1">The whole journey, with its branches</h2>
+                <p class="small muted">
+                  The original Ward Flow sequence and symbols. Read down the centre; open any step in the complete
+                  master map.
+                </p>
+              </div>
+              <button class="btn primary" type="button" data-view="master">Open the master map</button>
+            </div>
+            <div class="symbol-legend" id="overall-legend"></div>
+            <div id="overall-body"></div>
+            <p class="small muted">
+              This is the original prototype workflow, not a compulsory clinical route. The Care map retains the broader
+              WA pathways, including community alternatives and shared care.
+            </p>
+          </section>
+          <section id="view-master" class="panel" hidden aria-labelledby="master-title">
+            <h2 id="master-title" tabindex="-1">The original master map</h2>
+            <p class="small muted" id="master-description"></p>
+            <div class="toolbar">
+              <div class="field grow">
+                <label for="master-search">Find a box in the master map</label
+                ><input id="master-search" type="search" placeholder="Try transport, leave, referral or discharge…" />
+              </div>
+              <button class="btn" type="button" id="master-find">Go to match</button
+              ><span class="small muted" id="master-matches" role="status"></span>
+            </div>
+            <div class="row">
+              <button class="btn" type="button" data-master-zoom="width">Fit width</button
+              ><button class="btn" type="button" data-master-zoom="whole">Whole map</button
+              ><button class="btn" type="button" data-master-zoom="readable">Readable size</button
+              ><button class="btn" type="button" data-master-zoom="out" aria-label="Zoom out of master map">−</button
+              ><span id="master-zoom-label" class="master-zoom-label small" aria-live="polite"></span
+              ><button class="btn" type="button" data-master-zoom="in" aria-label="Zoom into master map">+</button>
+            </div>
+            <details style="margin-top: 16px">
+              <summary>Symbols and connecting lines</summary>
+              <div class="symbol-legend" id="master-legend"></div>
+              <p class="small">
+                Solid arrows continue the route; dotted lines are automatic consequences in this source snapshot; dashed
+                lines mark the original special links. Double arrows return. A bar marks an ending. These historical
+                prototype findings have not been re-audited against today's app.
+              </p>
+            </details>
+            <div class="master-detail" id="master-detail" aria-live="polite"></div>
+            <p class="tiny muted">
+              Scroll inside the map to move around. “Readable size” makes box labels larger; “Whole map” shows the
+              complete shape. Search highlights boxes without removing any branches.
+            </p>
+            <div
+              class="master-viewport"
+              id="master-viewport"
+              tabindex="0"
+              role="region"
+              aria-label="Scrollable original master map"
+            >
+              <div id="master-stage" class="master-stage"><div id="master-canvas" class="master-canvas"></div></div>
+            </div>
+          </section>
+          <section id="view-map" class="panel" hidden aria-labelledby="map-title">
             <div class="toolbar">
               <div class="field grow">
                 <label for="place-search">Find a place, team or outcome</label
@@ -1061,7 +1310,7 @@
       const sourceById = new Map(DATA.sources.map((source) => [source.id, source]));
       const interactionById = new Map(DATA.interactions.map((interaction) => [interaction.id, interaction]));
       const state = {
-        view: "map",
+        view: "overall",
         node: null,
         edge: null,
         query: "",
@@ -1070,6 +1319,10 @@
         limit: 40,
         journey: ["home"],
         journeyEdges: [],
+        masterNode: null,
+        masterQuery: "",
+        masterMatch: null,
+        masterZoom: "width",
       };
       const escape = (value) =>
         String(value).replace(
@@ -1104,15 +1357,23 @@
         const params = new URLSearchParams({ view: state.view });
         if (state.node) params.set("place", state.node);
         if (state.edge) params.set("link", state.edge);
+        if (state.masterNode && state.view === "master") params.set("box", state.masterNode);
         history.replaceState(null, "", `#${params}`);
       }
       function view(next, focus = true) {
         if ($("#mobile-details").open) $("#mobile-details").close();
         state.view = next;
+        $("#workspace").classList.toggle("wide", ["overall", "master"].includes(next));
         document
           .querySelectorAll("[data-view]")
           .forEach((button) => button.setAttribute("aria-current", button.dataset.view === next ? "page" : "false"));
-        ["map", "journey", "connections", "review"].forEach((id) => ($("#view-" + id).hidden = id !== next));
+        ["overall", "master", "map", "journey", "connections", "review"].forEach(
+          (id) => ($("#view-" + id).hidden = id !== next),
+        );
+        if (next === "master") {
+          renderMaster();
+          requestAnimationFrame(scaleMaster);
+        }
         if (next === "map") renderMap();
         if (next === "journey") {
           state.edge = state.journeyEdges.at(-1) || null;
@@ -1121,10 +1382,7 @@
         if (next === "connections") renderConnections();
         renderDetails();
         updateHash();
-        if (focus)
-          $(
-            "#" + { map: "map", journey: "journey", connections: "connections", review: "review" }[next] + "-title",
-          ).focus({ preventScroll: true });
+        if (focus) $("#" + next + "-title").focus({ preventScroll: true });
       }
       function showNode(id, focus = false) {
         if (!nodeById.has(id)) return;
@@ -1153,6 +1411,205 @@
           } else $("#detail-heading").focus({ preventScroll: true });
         }
       }
+      const masterLanes = {
+        expected: ["#1b1b19", "The expected route", "M 3 2 L 11 7 L 3 12 Z", true],
+        seam: ["#2f6f4e", "A second record starts", "M 7 1.5 L 12.5 7 L 7 12.5 L 1.5 7 Z", true],
+        diversion: ["#9a6a12", "Diversions", "M 2 11 L 2 6 Q 2 3 6 3 L 11 3 M 8.5 0.5 L 11.5 3 L 8.5 5.5"],
+        forced: [
+          "#8a4b86",
+          "Forced past a refusal",
+          "M 9.5 2 A 2.6 2.6 0 1 1 6.6 5.6 L 2 10.2 L 2 12.5 L 4.3 12.5 L 4.3 10.8 L 6 10.8 L 6 9.1",
+        ],
+        stall: ["#6d6d66", "Stalls and undos", "M 4 2.5 L 4 11.5 M 10 2.5 L 10 11.5"],
+        end: ["#1e5f5c", "Endings", "M 1.5 7 L 9 7 M 11.5 2 L 11.5 12"],
+        breach: ["#a33a2e", "Nothing stops it", "M 7 1.5 L 13 12 L 1 12 Z M 7 5.5 L 7 8.5 M 7 10.2 L 7 10.7"],
+        absent: ["#6a4f7a", "No record exists", "M 7 1.8 A 5.2 5.2 0 1 1 6.99 1.8", false, "2.4 2.2"],
+        record: [
+          "#2f4d6b",
+          "Recorded alongside",
+          "M 2 12 L 3.2 9.2 L 9.8 2.6 L 12 4.8 L 5.4 11.4 Z M 9.8 2.6 L 12 4.8",
+        ],
+        note: ["#6d6257", "Notes", "M 7 2 L 7 12 M 2.7 4.5 L 11.3 9.5 M 11.3 4.5 L 2.7 9.5"],
+      };
+      const masterById = new Map(DATA.prototype.stages.nodes.map((n) => [n.id, n]));
+      const masterColour = (lane) => (masterLanes[lane] || masterLanes.expected)[0];
+      function symbol(lane) {
+        const spec = masterLanes[lane];
+        if (!spec) return "";
+        return `<svg class="symbol" viewBox="0 0 14 14" aria-hidden="true"><path d="${spec[2]}" fill="${spec[3] ? spec[0] : "none"}" stroke="${spec[0]}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" ${spec[4] ? `stroke-dasharray="${spec[4]}"` : ""}/></svg>`;
+      }
+      function masterButton(id, label, note, lane = "expected") {
+        const node = masterById.get(id);
+        return `<button type="button" class="overall-step" style="--lane:${masterColour(lane)}" data-master-node="${id}" aria-label="Open in master map: ${escape(node.label)}"><span class="symbol-row">${symbol(lane)}<b>${escape(label || node.label)}</b></span>${note ? `<small>${escape(note)}</small>` : ""}</button>`;
+      }
+      function renderOverall() {
+        $("#overall-legend").innerHTML = ["expected", "seam", "diversion", "stall", "end", "record"]
+          .map((lane) => `<span>${symbol(lane)}${masterLanes[lane][1]}</span>`)
+          .join("");
+        const steps = [
+          [
+            "raised",
+            "1 · Entry and referral",
+            "Community, crisis, police, ambulance, another hospital, ED or GP can raise a referral.",
+          ],
+          [
+            "addressed",
+            "2 · Assessment and a response",
+            "Community team, psychiatric ward or emergency department; the branches are shown in the master map.",
+          ],
+          [
+            "placement",
+            "3 · Inpatient placement requested",
+            "Where inpatient placement is needed, a separate movement record starts.",
+            "seam",
+          ],
+          [
+            "inPrinciple",
+            "4 · A ward responds; a bed is held",
+            "Acceptance, allocation and a held bed are separate steps.",
+          ],
+          [
+            "booked",
+            "5 · Transport and handover",
+            "Booking, handover readiness, crew departure and patient pickup remain distinct.",
+          ],
+          [
+            "occupied",
+            "6 · Arrival and ward care",
+            "Arrival and occupation, with leave, absence, transfer and return branches.",
+          ],
+          [
+            "ready",
+            "7 · Planning to leave",
+            "Clinical readiness, actual departure and bed release are distinct facts.",
+          ],
+        ];
+        const side = (lane, title, text) =>
+          `<div class="branch-note" style="--lane:${masterColour(lane)}"><h3 class="symbol-row">${symbol(lane)}${title}</h3><p class="small">${text}</p></div>`;
+        $("#overall-body").innerHTML =
+          `<div class="overall-lanes"><div class="overall-side">${side("stall", "Stalls and returns", "Waiting, refusals, cancellations and reversals branch away from the main line. Many return to an earlier step.")}${side("end", "A pathway can end early", "Withdrawal, declined care and other endings do not require reaching a ward. Each ending stays visible on the master map.")}<button type="button" class="btn" data-view="master">See every branch</button></div><div class="overall-spine">${steps.map((row) => masterButton(...row)).join('<div class="overall-arrow" aria-hidden="true">↓</div>')}<div class="overall-arrow" aria-hidden="true">↙ &nbsp;&nbsp;&nbsp; ↘</div><div class="overall-split">${masterButton("personLeaves", "8a · The person leaves", "Departure, destination and continuity of care.")}${masterButton("bedReleased", "8b · The bed is released", "A separate named record in the prototype.")}</div><p class="tiny muted">The two final tracks are shown separately; neither is a clinical rule for automatic bed release.</p></div><div class="overall-side">${side("diversion", "Other destinations", "Transfers, repatriation, emergency reassessment and other diversions continue somewhere else.")}${side("record", "Alongside the journey", "Clinical, legal, transport and support records may coexist with the person's actual location.")}${side("absent", "Historic gaps stay visible", "The original open circles and warning symbols are retained as source findings, not freshly verified defects.")}<button type="button" class="btn" data-view="map">Explore the wider WA care map</button></div></div>`;
+      }
+      function scaleMaster() {
+        if (state.view !== "master") return;
+        const stages = DATA.prototype.stages;
+        const viewport = $("#master-viewport");
+        let zoom = state.masterZoom;
+        if (zoom === "width") zoom = (viewport.clientWidth - 26) / stages.width;
+        if (zoom === "whole")
+          zoom = Math.min((viewport.clientWidth - 26) / stages.width, (viewport.clientHeight - 26) / stages.height);
+        zoom = Math.max(0.06, Math.min(2, Number(zoom)));
+        $("#master-canvas").style.transform = `scale(${zoom})`;
+        $("#master-stage").style.width = `${stages.width * zoom}px`;
+        $("#master-stage").style.height = `${stages.height * zoom}px`;
+        $("#master-zoom-label").textContent = `${Math.round(zoom * 100)}%`;
+        return zoom;
+      }
+      function renderMasterDetail() {
+        const selected = masterById.get(state.masterNode);
+        if (!selected) {
+          $("#master-detail").innerHTML =
+            '<b>Choose any box to read it.</b><p class="small muted">All original branches, symbols and connecting lines remain on the map. This is a retained source snapshot; current app behaviour and historical findings are not revalidated here.</p>';
+          return;
+        }
+        const neighbours = (incoming) =>
+          DATA.prototype.stages.edges
+            .filter((e) => (incoming ? e.to : e.from) === selected.id)
+            .map((e) => masterById.get(incoming ? e.from : e.to))
+            .filter(Boolean);
+        const list = (nodes) =>
+          [...new Map(nodes.map((n) => [n.id, n])).values()]
+            .map(
+              (n) => `<button class="btn small" type="button" data-master-node="${n.id}">${escape(n.label)}</button>`,
+            )
+            .join(" ") || '<span class="small muted">None in this snapshot.</span>';
+        const actions = DATA.prototype.actionRecords.filter((a) => a.nodes?.includes(selected.id));
+        $("#master-detail").innerHTML =
+          `<h3 class="symbol-row">${symbol(selected.lane)}${escape(selected.label)}</h3>${selected.sub ? `<p class="small">${escape(selected.sub)}</p>` : ""}<p class="tiny muted">Original source wording. ${escape(masterLanes[selected.lane]?.[1] || "Map heading")} · ${escape(selected.id)}</p>${selected.patient ? `<p class="small"><b>Person:</b> ${escape(selected.patient)}</p>` : ""}${selected.bed ? `<p class="small"><b>Bed:</b> ${escape(selected.bed)}</p>` : ""}<details><summary>Connected boxes and source actions · ${actions.length} action records</summary><p class="small"><b>Incoming:</b></p><div class="row">${list(neighbours(true))}</div><p class="small"><b>Onward:</b></p><div class="row">${list(neighbours(false))}</div><p class="small muted">See the WA connection views for the separately researched conditions and handovers. These original links are prototype references.</p></details>`;
+      }
+      function renderMaster() {
+        const { nodes, edges, width, height } = DATA.prototype.stages;
+        $("#master-description").textContent =
+          `All ${nodes.length} original boxes and ${edges.length} original connections, in their original positions. The symbols and lane colours are retained alongside the broader WA care model.`;
+        $("#master-legend").innerHTML = Object.entries(masterLanes)
+          .map(([lane, spec]) => `<span>${symbol(lane)}${spec[1]}</span>`)
+          .join("");
+        const onward = new Set(edges.filter((e) => e.from !== e.to).map((e) => e.from));
+        for (const edge of edges) if (edge.both) onward.add(edge.to);
+        const ends = new Set(
+          nodes
+            .filter(
+              (n) =>
+                ["expected", "seam", "stall", "diversion", "forced", "end", "breach", "absent"].includes(n.lane) &&
+                !onward.has(n.id),
+            )
+            .map((n) => n.id),
+        );
+        const defs = Object.entries(masterLanes)
+          .map(
+            ([lane, spec]) =>
+              `<marker id="master-arrow-${lane}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="${spec[0]}"/></marker><marker id="master-bar-${lane}" viewBox="0 0 10 10" refX="2" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M 2 0 L 2 10" stroke="${spec[0]}" stroke-width="2.5"/></marker>`,
+          )
+          .join("");
+        const masks = edges
+          .map((e) => `<path d="${escape(e.d)}" fill="none" stroke="#f6f6f4" stroke-width="6"/>`)
+          .join("");
+        const lines = edges
+          .map((e) => {
+            const lane = masterLanes[e.lane] ? e.lane : "expected";
+            return `<path class="master-edge" d="${escape(e.d)}" fill="none" stroke="${masterColour(lane)}" stroke-width="${["expected", "seam"].includes(lane) ? 2.6 : lane === "record" ? 1.3 : 1.7}" stroke-linecap="round" ${e.dashed ? 'stroke-dasharray="7 5"' : e.auto ? 'stroke-dasharray="1.5 4"' : ""} ${e.terminal || ends.has(e.to) ? `marker-end="url(#master-bar-${lane})"` : e.arrow !== false ? `marker-end="url(#master-arrow-${lane})"` : ""} ${e.both ? `marker-start="url(#master-arrow-${lane})"` : ""}>${e.note ? `<title>${escape(e.note)}</title>` : ""}</path>`;
+          })
+          .join("");
+        const canvas = $("#master-canvas");
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        canvas.innerHTML = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-hidden="true" style="position:absolute;left:0;top:0"><defs>${defs}</defs>${masks}${lines}</svg>${nodes.map((n) => `<${n.lane === "heading" ? "div" : "button"} ${n.lane === "heading" ? "" : `type="button" data-master-node="${n.id}" aria-label="Read original box: ${escape(n.label)}"`} class="master-node" data-lane="${n.lane}" data-original-id="${n.id}" aria-current="${n.id === state.masterNode}" style="--lane:${masterColour(n.lane)};left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px">${symbol(n.lane)}<b>${escape(n.label)}</b>${n.sub ? `<small>${escape(n.sub)}</small>` : ""}</${n.lane === "heading" ? "div" : "button"}>`).join("")}`;
+        updateMasterMatches();
+        renderMasterDetail();
+      }
+      function updateMasterMatches() {
+        const query = state.masterQuery.trim().toLowerCase();
+        let matches = 0;
+        for (const node of DATA.prototype.stages.nodes) {
+          const match = !!query && `${node.label} ${node.sub || ""} ${node.id}`.toLowerCase().includes(query);
+          $(`[data-original-id="${node.id}"]`)?.classList.toggle("match", match);
+          if (match) matches++;
+        }
+        $("#master-matches").textContent = query ? `${matches} matching boxes` : "All original boxes shown";
+      }
+      function selectMaster(id) {
+        if (!masterById.has(id)) return;
+        state.masterNode = id;
+        state.masterZoom = 1;
+        view("master", false);
+        scaleMaster();
+        const box = $(`[data-original-id="${id}"]`);
+        box.scrollIntoView({ block: "center", inline: "center" });
+        box.focus({ preventScroll: true });
+        announce(`Original master map: ${masterById.get(id).label}`);
+      }
+      $("#master-search").addEventListener("input", (event) => {
+        state.masterQuery = event.target.value;
+        state.masterMatch = null;
+        updateMasterMatches();
+      });
+      const findMaster = () => {
+        const query = state.masterQuery.trim().toLowerCase();
+        const matches = [...document.querySelectorAll(".master-node.match")].sort(
+          (a, b) =>
+            Number(masterById.get(b.dataset.originalId).label.toLowerCase().includes(query)) -
+            Number(masterById.get(a.dataset.originalId).label.toLowerCase().includes(query)),
+        );
+        const index = matches.findIndex((box) => box.dataset.originalId === state.masterMatch);
+        const match = matches[(index + 1) % matches.length];
+        if (match) {
+          state.masterMatch = match.dataset.originalId;
+          selectMaster(match.dataset.originalId);
+        } else announce("No matching master-map box.");
+      };
+      $("#master-find").addEventListener("click", findMaster);
+      $("#master-search").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") findMaster();
+      });
       function card(node) {
         return `<button type="button" class="place" data-node="${node.id}"><b>${escape(node.label)}</b><small>${kindName(node)}</small></button>`;
       }
@@ -1283,6 +1740,25 @@
       document.addEventListener("click", (event) => {
         const button = event.target.closest("button");
         if (!button) return;
+        if (button.dataset.masterNode) {
+          selectMaster(button.dataset.masterNode);
+          return;
+        }
+        if (button.dataset.masterZoom) {
+          const mode = button.dataset.masterZoom;
+          state.masterZoom =
+            mode === "readable"
+              ? 1
+              : mode === "in" || mode === "out"
+                ? Math.max(0.06, Math.min(2, scaleMaster() + (mode === "in" ? 0.15 : -0.15)))
+                : mode;
+          scaleMaster();
+          if (["whole", "width"].includes(mode)) {
+            $("#master-viewport").scrollTop = 0;
+            $("#master-viewport").scrollLeft = 0;
+          }
+          return;
+        }
         if (button.dataset.view) {
           view(button.dataset.view);
           return;
@@ -1462,6 +1938,7 @@
       window.addEventListener("resize", () => {
         cancelAnimationFrame(resizeFrame);
         resizeFrame = requestAnimationFrame(drawConnections);
+        if (["width", "whole"].includes(state.masterZoom)) requestAnimationFrame(scaleMaster);
       });
       $("#stats").innerHTML =
         `<div class="stat"><strong>${DATA.nodes.length}</strong><span>care categories</span></div><div class="stat"><strong>${DATA.edges.length}</strong><span>conditional links</span></div><div class="stat"><strong>${DATA.sources.length}</strong><span>WA references</span></div>`;
@@ -1481,10 +1958,14 @@
         const hash = new URLSearchParams(location.hash.slice(1));
         state.node = nodeById.has(hash.get("place")) ? hash.get("place") : null;
         state.edge = edgeById.has(hash.get("link")) ? hash.get("link") : null;
-        const tab = ["map", "journey", "connections", "review"].includes(hash.get("view")) ? hash.get("view") : "map";
+        state.masterNode = DATA.prototype.stages.nodes.some((n) => n.id === hash.get("box")) ? hash.get("box") : null;
+        const tab = ["overall", "master", "map", "journey", "connections", "review"].includes(hash.get("view"))
+          ? hash.get("view")
+          : "overall";
         view(tab, false);
         renderDetails();
       }
+      renderOverall();
       renderReview();
       restoreHash();
       window.addEventListener("hashchange", restoreHash);

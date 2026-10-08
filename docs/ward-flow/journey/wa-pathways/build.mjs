@@ -24,6 +24,8 @@ const artifactData = {
     sourceKind: "Curated WA review model; not executable app workflow",
   },
   prototype: {
+    stages: original,
+    actionRecords: actions,
     nodes: original.nodes.length,
     actions: actions.length,
     machines: machines.machines.length,
