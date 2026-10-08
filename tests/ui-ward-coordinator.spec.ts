@@ -395,10 +395,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // The worst department leads, and says why it is worst.
     const worst = cards.first();
     await expect(worst).toContainText("waiting");
-    // 2026-10-07 (v6 Home): Home's ED pressure card paints "{duration} longest" (the v6 Home
-    // mockup's wording, `home-ed-pressure.tsx`), so the visible label is lower case now. This
-    // still checks the rendered text, so it matches the visible label's casing.
-    await expect(worst).toContainText("longest");
+    // 8 Oct 2026 (owner): the visible "longest" word was cut off on the tile, so it was dropped.
+    // The tile's accessible name still says which figure is the longest wait.
+    await expect(worst).toHaveAccessibleName(/longest/);
 
     // The rendered sequence itself is non-increasing on the two keys `edPressure` ranks by.
     // Asserting only that card 1 "contains some text" (above) stays true even if the rows were
