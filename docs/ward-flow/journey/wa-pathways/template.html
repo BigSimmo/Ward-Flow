@@ -1,0 +1,1488 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>WA mental health pathways · Ward Flow</title>
+    <style>
+      :root {
+        --ink: #20313a;
+        --muted: #52636c;
+        --line: #dce4e6;
+        --bg: #f4f6f5;
+        --teal: #17635e;
+        --blue: #225a9e;
+        --purple: #70508d;
+        --green: #3e6543;
+        --amber: #825819;
+        --red: #974640;
+        --panel: #fff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          15px/1.55 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      a {
+        color: var(--blue);
+        text-underline-offset: 3px;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      a:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid #2865ab;
+        outline-offset: 3px;
+      }
+      button:disabled {
+        cursor: default;
+        opacity: 0.5;
+      }
+      .skip {
+        position: fixed;
+        top: -80px;
+        left: 12px;
+        z-index: 10;
+        padding: 12px;
+        background: white;
+      }
+      .skip:focus {
+        top: 12px;
+      }
+      .shell {
+        max-width: 1840px;
+        margin: 0 auto;
+        padding: 0 32px 32px;
+      }
+      header {
+        padding: 24px 0 0;
+      }
+      .mast {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        font-weight: 650;
+      }
+      .logo {
+        display: grid;
+        place-items: center;
+        width: 37px;
+        height: 37px;
+        border-radius: 11px;
+        background: var(--teal);
+        color: #fff;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      .eyebrow {
+        text-transform: uppercase;
+        font-size: 11px;
+        font-weight: 750;
+        letter-spacing: 1.4px;
+        color: var(--teal);
+      }
+      .date {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 24px;
+        padding: 25px 0 23px;
+      }
+      h1 {
+        font-size: clamp(26px, 2.4vw, 38px);
+        line-height: 1.15;
+        letter-spacing: -1.2px;
+        margin: 0 0 10px;
+        font-weight: 680;
+      }
+      h2 {
+        font-size: 22px;
+        line-height: 1.3;
+        margin: 0 0 8px;
+        letter-spacing: -0.4px;
+      }
+      h3 {
+        font-size: 16px;
+        line-height: 1.35;
+        margin: 0 0 8px;
+      }
+      h4 {
+        margin: 18px 0 6px;
+        font-size: 14px;
+      }
+      p {
+        margin: 0 0 12px;
+      }
+      .subtitle {
+        color: var(--muted);
+        max-width: 780px;
+        margin: 0;
+      }
+      .stats {
+        display: flex;
+        gap: 24px;
+        flex-shrink: 0;
+      }
+      .stat strong {
+        display: block;
+        font-size: 24px;
+        font-weight: 650;
+        line-height: 1.2;
+      }
+      .stat span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .notice {
+        display: flex;
+        align-items: start;
+        gap: 10px;
+        background: #eaf0ee;
+        border: 1px solid #d4e1dc;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 13px;
+        margin-bottom: 20px;
+      }
+      .notice b {
+        white-space: nowrap;
+      }
+      .nav {
+        display: flex;
+        gap: 4px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      .nav button {
+        border: 0;
+        background: none;
+        min-height: 48px;
+        padding: 11px 17px;
+        color: var(--muted);
+        font-weight: 620;
+        border-bottom: 3px solid transparent;
+      }
+      .nav button[aria-current="page"] {
+        color: var(--teal);
+        border-bottom-color: var(--teal);
+      }
+      .nav button:hover {
+        background: #e7ecea;
+      }
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 20px;
+        align-items: start;
+      }
+      main {
+        min-width: 0;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 22px;
+      }
+      .panel + .panel {
+        margin-top: 16px;
+      }
+      .toolbar {
+        display: flex;
+        align-items: end;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+      .field {
+        display: grid;
+        gap: 5px;
+        min-width: 180px;
+      }
+      .field.grow {
+        flex: 1;
+      }
+      label,
+      .field-label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 650;
+      }
+      input,
+      select {
+        width: 100%;
+        min-height: 44px;
+        padding: 9px 12px;
+        border: 1px solid #becbce;
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        min-width: 0;
+      }
+      .btn {
+        min-height: 44px;
+        padding: 9px 14px;
+        border: 1px solid #cbd7d7;
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .btn:hover {
+        border-color: var(--teal);
+        background: #eef5f2;
+      }
+      .btn.primary {
+        background: var(--teal);
+        color: #fff;
+        border-color: var(--teal);
+      }
+      .btn.primary:hover {
+        background: #114d49;
+      }
+      .btn.small {
+        padding: 7px 11px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .between {
+        justify-content: space-between;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .small {
+        font-size: 13px;
+      }
+      .tiny {
+        font-size: 12px;
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 5px;
+        padding: 3px 7px;
+        font-size: 11px;
+        line-height: 1.4;
+        font-weight: 650;
+        background: #eaf0ee;
+        color: var(--teal);
+      }
+      .tag.design {
+        background: #eef1f8;
+        color: #354c7d;
+      }
+      .tag.legal {
+        background: #fff3dc;
+        color: var(--amber);
+      }
+      .tag.state {
+        background: #f7ece9;
+        color: var(--red);
+      }
+      .overview {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+        align-items: start;
+        margin-top: 20px;
+      }
+      .lane {
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: #f9fbfa;
+        min-width: 0;
+        overflow: hidden;
+      }
+      .lane-head {
+        padding: 14px 11px;
+        border-top: 4px solid var(--lane);
+        border-bottom: 1px solid var(--line);
+      }
+      .lane-head h3 {
+        font-size: 14px;
+        margin: 0 0 5px;
+      }
+      .lane-head p {
+        font-size: 11px;
+        color: var(--muted);
+        margin: 0;
+      }
+      .teal {
+        --lane: var(--teal);
+      }
+      .blue {
+        --lane: var(--blue);
+      }
+      .purple {
+        --lane: var(--purple);
+      }
+      .green {
+        --lane: var(--green);
+      }
+      .amber {
+        --lane: var(--amber);
+      }
+      .place {
+        width: calc(100% - 14px);
+        margin: 7px;
+        padding: 12px 10px;
+        min-height: 57px;
+        border: 1px solid #d7e0df;
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        text-align: left;
+        font-size: 12px;
+        line-height: 1.4;
+        display: block;
+      }
+      .place:hover {
+        border-color: var(--teal);
+        background: #ecf4f1;
+      }
+      .place b {
+        font-weight: 620;
+        display: block;
+      }
+      .place small {
+        display: block;
+        color: var(--muted);
+        margin-top: 4px;
+        font-size: 10px;
+      }
+      .place.selected {
+        border-color: var(--teal);
+        border-width: 2px;
+        background: #eef6f2;
+      }
+      .guidance {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .guidance strong {
+        display: block;
+        color: var(--ink);
+        margin-bottom: 3px;
+      }
+      .example-path {
+        margin-top: 18px;
+        background: #f3f7f5;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 13px;
+      }
+      .example-path .row {
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 6px;
+      }
+      .example-place {
+        flex: 1;
+        min-width: 0;
+        text-align: left;
+        min-height: 52px;
+        padding: 9px;
+        background: white;
+        border: 1px solid #ccdcd3;
+        border-radius: 7px;
+        color: var(--ink);
+        font-size: 11px;
+        line-height: 1.4;
+      }
+      .example-place:hover {
+        border-color: var(--teal);
+      }
+      .example-path .trace-arrow {
+        flex: 0 0 auto;
+        font-size: 17px;
+      }
+      .mobile-dialog {
+        max-width: min(560px, 100%);
+        width: 100%;
+        max-height: 90dvh;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 20px;
+        color: var(--ink);
+        background: white;
+      }
+      .mobile-dialog::backdrop {
+        background: rgb(20 40 36 / 0.45);
+      }
+      .mobile-dialog .dialog-actions {
+        position: sticky;
+        top: -20px;
+        background: white;
+        padding: 8px 0 14px;
+        margin-top: -8px;
+        z-index: 2;
+      }
+      .detail {
+        position: sticky;
+        top: 20px;
+        min-width: 0;
+        max-height: calc(100vh - 40px);
+        overflow: auto;
+        overscroll-behavior: contain;
+      }
+      .detail h2 {
+        font-size: 20px;
+      }
+      .detail ol,
+      .detail ul {
+        margin: 9px 0 17px;
+        padding-left: 20px;
+        font-size: 13px;
+      }
+      .detail li {
+        margin-bottom: 8px;
+      }
+      .detail .section {
+        border-top: 1px solid var(--line);
+        margin-top: 18px;
+        padding-top: 16px;
+      }
+      .source-link {
+        display: block;
+        margin: 7px 0;
+        font-size: 12px;
+        overflow-wrap: anywhere;
+      }
+      .source-warning {
+        font-size: 12px;
+        color: var(--muted);
+        border-left: 2px solid #d5deda;
+        padding-left: 9px;
+      }
+      .links {
+        display: grid;
+        gap: 8px;
+      }
+      .connection {
+        display: block;
+        width: 100%;
+        text-align: left;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        padding: 12px;
+        min-height: 44px;
+      }
+      .connection:hover,
+      .connection.active {
+        background: #f0f6f3;
+        border-color: var(--teal);
+      }
+      .connection strong {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .connection .route {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        margin: 5px 0;
+      }
+      .focus-map {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(180px, 0.8fr) minmax(0, 1fr);
+        gap: 36px;
+        align-items: start;
+        margin-top: 20px;
+        position: relative;
+      }
+      .focus-map .map-col {
+        position: relative;
+        z-index: 1;
+      }
+      .focus-map svg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+      }
+      .focus-map h3 {
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.5px;
+        margin-bottom: 13px;
+        text-transform: uppercase;
+      }
+      .focus-card {
+        background: #edf5f1;
+        border: 2px solid #7da99b;
+        border-radius: 12px;
+        padding: 20px 16px;
+        margin-top: 32px;
+      }
+      .focus-card h3 {
+        color: var(--ink);
+        text-transform: none;
+        letter-spacing: 0;
+        font-size: 19px;
+      }
+      .focus-card p {
+        font-size: 13px;
+      }
+      .focus-card .summary-count {
+        margin-top: 16px;
+        border-top: 1px solid #c4d7ce;
+        padding-top: 13px;
+        font-size: 12px;
+      }
+      .scroll-table {
+        overflow: auto;
+        margin-top: 14px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 12px;
+        text-align: left;
+      }
+      th {
+        color: var(--muted);
+        font-weight: 650;
+        background: #f3f6f4;
+      }
+      th,
+      td {
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      td .btn {
+        min-height: 44px;
+      }
+      .trace {
+        display: flex;
+        align-items: stretch;
+        gap: 8px;
+        overflow: auto;
+        padding: 12px 3px 18px;
+      }
+      .trace-step {
+        flex: 0 0 160px;
+        border: 1px solid #bbd0c6;
+        background: #f0f6f2;
+        border-radius: 9px;
+        padding: 13px;
+        font-size: 12px;
+      }
+      .trace-step b {
+        display: block;
+        margin-top: 5px;
+      }
+      .trace-arrow {
+        align-self: center;
+        color: var(--teal);
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .review-card {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 16px;
+        background: #fbfcfb;
+      }
+      .review-card p {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 0;
+      }
+      details {
+        border-top: 1px solid var(--line);
+        padding: 15px 0;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 620;
+        min-height: 44px;
+        display: list-item;
+        padding-top: 10px;
+      }
+      details[open] summary {
+        margin-bottom: 14px;
+      }
+      .source-card {
+        border-bottom: 1px solid var(--line);
+        padding: 14px 0;
+      }
+      .source-card h3 {
+        font-size: 14px;
+        margin: 0 0 5px;
+      }
+      .source-card p {
+        font-size: 13px;
+        margin: 6px 0;
+      }
+      .gap {
+        background: #fff8ea;
+        border: 1px solid #e7dbc1;
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-size: 13px;
+        margin-bottom: 10px;
+      }
+      .empty {
+        padding: 30px 16px;
+        text-align: center;
+        color: var(--muted);
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      footer {
+        color: var(--muted);
+        font-size: 11px;
+        margin-top: 22px;
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      #workspace:fullscreen {
+        padding: 24px;
+        background: var(--bg);
+        overflow: auto;
+      }
+      @media (max-width: 1250px) {
+        .shell {
+          padding: 0 20px 24px;
+        }
+        .workspace {
+          grid-template-columns: minmax(0, 1fr) 300px;
+          gap: 14px;
+        }
+        .panel {
+          padding: 17px;
+        }
+        .overview {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .hero {
+          align-items: start;
+        }
+        .stats {
+          gap: 16px;
+        }
+        .focus-map {
+          gap: 24px;
+        }
+      }
+      @media (max-width: 850px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+        .detail {
+          position: static;
+          max-height: none;
+        }
+        .hero {
+          display: block;
+        }
+        .stats {
+          margin-top: 18px;
+        }
+        .overview {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .detail {
+          order: 1;
+        }
+      }
+      @media (max-width: 580px) {
+        .shell {
+          padding: 0 12px 20px;
+        }
+        header {
+          padding-top: 16px;
+        }
+        .mast {
+          align-items: start;
+        }
+        .date {
+          max-width: 105px;
+          text-align: right;
+        }
+        h1 {
+          letter-spacing: -0.8px;
+        }
+        .hero {
+          padding-top: 20px;
+        }
+        .notice {
+          display: block;
+        }
+        .notice b {
+          display: block;
+          margin-bottom: 4px;
+        }
+        .nav {
+          gap: 0;
+        }
+        .nav button {
+          padding: 10px 11px;
+          font-size: 13px;
+        }
+        .overview {
+          grid-template-columns: 1fr;
+        }
+        .lane {
+          display: block;
+        }
+        .place {
+          min-height: 49px;
+          font-size: 14px;
+        }
+        .lane-head h3 {
+          font-size: 16px;
+        }
+        .lane-head p,
+        .place small {
+          font-size: 12px;
+        }
+        .guidance,
+        .grid2 {
+          grid-template-columns: 1fr;
+        }
+        .toolbar {
+          gap: 9px;
+        }
+        .field {
+          min-width: 0;
+          width: 100%;
+        }
+        .field.grow {
+          flex-basis: 100%;
+        }
+        .focus-map {
+          grid-template-columns: 1fr;
+          gap: 18px;
+        }
+        .focus-map svg {
+          display: none;
+        }
+        .focus-card {
+          margin-top: 0;
+        }
+        .map-centre {
+          order: -1;
+        }
+        .focus-map .connection strong {
+          font-size: 14px;
+        }
+        .panel {
+          padding: 16px;
+        }
+        .trace-step {
+          flex-basis: 150px;
+        }
+        .example-path .row {
+          flex-direction: column;
+        }
+        .example-place {
+          font-size: 13px;
+        }
+        .example-path .trace-arrow {
+          text-align: center;
+          transform: rotate(90deg);
+          margin: 0 auto;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          scroll-behavior: auto !important;
+        }
+      }
+      @media (forced-colors: active) {
+        .lane-head,
+        .focus-card,
+        .tag,
+        .notice {
+          border: 1px solid CanvasText;
+        }
+        .nav button[aria-current="page"] {
+          border-bottom: 3px solid Highlight;
+        }
+        .focus-map svg path {
+          stroke: CanvasText;
+        }
+      }
+      @media print {
+        .shell {
+          max-width: none;
+          padding: 0;
+        }
+        .workspace {
+          display: block;
+        }
+        .nav,
+        .toolbar,
+        .skip,
+        #inspector {
+          display: none;
+        }
+        header {
+          padding: 0;
+        }
+        .panel {
+          border: 0;
+          padding: 0;
+        }
+        .overview {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .lane {
+          break-inside: avoid;
+          margin-bottom: 10px;
+        }
+        .place {
+          border: 0;
+          margin: 4px;
+          padding: 6px;
+          min-height: 0;
+        }
+        .notice {
+          margin: 12px 0;
+        }
+        details {
+          break-inside: avoid;
+        }
+        footer {
+          margin: 12px 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip" href="#content">Skip to the diagram</a>
+    <div class="shell">
+      <header>
+        <div class="mast">
+          <div class="brand">
+            <span class="logo" aria-hidden="true">WF</span
+            ><span>Ward Flow <span class="muted small">/ Journey design</span></span>
+          </div>
+          <div class="date">Reviewed 8 October 2026<br />Local design proposal</div>
+        </div>
+        <div class="hero">
+          <div>
+            <div class="eyebrow">Western Australia · mental health</div>
+            <h1>One person. Many possible pathways.</h1>
+            <p class="subtitle">
+              A connected map of entry, care, transfer and exit. Explore the places, then open a connection to see what
+              needs to be agreed.
+            </p>
+          </div>
+          <div class="stats" id="stats"></div>
+        </div>
+        <div class="notice">
+          <b>For review</b
+          ><span
+            >Every route has conditions. A drawn link does not guarantee eligibility, a bed, a legal power or an
+            implemented app feature. Services can share care without moving the person.</span
+          >
+        </div>
+        <nav class="nav" aria-label="Wireframe views">
+          <button type="button" data-view="map" aria-current="page">Care map</button
+          ><button type="button" data-view="journey">Trace a journey</button
+          ><button type="button" data-view="connections">All connections</button
+          ><button type="button" data-view="review">Review & sources</button>
+        </nav>
+      </header>
+      <div class="workspace" id="workspace">
+        <main id="content" tabindex="-1">
+          <section id="view-map" class="panel" aria-labelledby="map-title">
+            <div class="toolbar">
+              <div class="field grow">
+                <label for="place-search">Find a place, team or outcome</label
+                ><input
+                  type="search"
+                  id="place-search"
+                  placeholder="Try emergency, home, leave or forensic…"
+                  autocomplete="off"
+                />
+              </div>
+              <button class="btn" id="overview-button" type="button">Show all places</button
+              ><button class="btn" id="large-button" type="button">View larger</button>
+            </div>
+            <div class="row between">
+              <div>
+                <h2 id="map-title" tabindex="-1">The whole system, at a glance</h2>
+                <p class="muted small" id="map-description">
+                  Choose a box to reveal every mapped incoming and outgoing connection.
+                </p>
+              </div>
+              <button class="btn small" id="print-button" type="button">Print / save PDF</button>
+            </div>
+            <div id="map-body"></div>
+            <div class="guidance">
+              <div><strong>1. Pick a place</strong>Every box opens a connected view. Search narrows the overview.</div>
+              <div>
+                <strong>2. Open a connection</strong>Read its conditions, people, handover and potential failures.
+              </div>
+              <div>
+                <strong>3. Build a journey</strong>Choose each next step. Return and reassessment loops are allowed.
+              </div>
+            </div>
+          </section>
+          <section id="view-journey" class="panel" hidden aria-labelledby="journey-title">
+            <h2 id="journey-title" tabindex="-1">Trace a possible journey</h2>
+            <p class="muted small">
+              An exploration tool, not a recommended care plan. Each step needs its own assessment and agreement.
+            </p>
+            <div class="toolbar">
+              <div class="field grow">
+                <label for="journey-start">Start at</label
+                ><select id="journey-start"></select>
+              </div>
+              <div class="field grow">
+                <label for="journey-example">Or open an example</label
+                ><select id="journey-example">
+                  <option value="">Choose an example…</option>
+                </select>
+              </div>
+              <button class="btn" id="journey-undo" type="button">Undo last step</button
+              ><button class="btn" id="journey-reset" type="button">Start again</button>
+            </div>
+            <div id="journey-body"></div>
+          </section>
+          <section id="view-connections" class="panel" hidden aria-labelledby="connections-title">
+            <h2 id="connections-title" tabindex="-1">Every mapped one-step connection</h2>
+            <p class="muted small">
+              Physical moves, referrals, shared care, leave and reviewed outcomes are listed separately. An unlisted
+              direct connection is an unmodelled option, not a proven impossibility.
+            </p>
+            <div class="toolbar">
+              <div class="field grow">
+                <label for="connection-search">Find a connection</label
+                ><input type="search" id="connection-search" placeholder="Search either end, route or condition…" />
+              </div>
+              <div class="field">
+                <label for="connection-type">Kind of interaction</label
+                ><select id="connection-type">
+                  <option value="all">All interactions</option>
+                </select>
+              </div>
+              <button class="btn" id="download-links" type="button">Download routes CSV</button
+              ><button class="btn" id="download-pairs" type="button">Download all pairs CSV</button>
+            </div>
+            <div id="connection-body"></div>
+          </section>
+          <section id="view-review" class="panel" hidden aria-labelledby="review-title">
+            <h2 id="review-title" tabindex="-1">What the review covers</h2>
+            <p class="muted small">
+              WA service descriptions and public policies, plus explicitly labelled design connections. This is a
+              service-category map; local admission and operational rules still need confirmation.
+            </p>
+            <div id="review-body"></div>
+          </section>
+        </main>
+        <aside class="panel detail" id="inspector" aria-label="Selected place or connection">
+          <div id="detail-body"></div>
+        </aside>
+      </div>
+      <footer>
+        <span>Local synthetic-data design · no patient records · no admissions or transport are booked</span
+        ><span id="provenance"></span>
+      </footer>
+      <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+      <dialog id="mobile-details" class="mobile-dialog" aria-label="Connection details">
+        <div class="dialog-actions">
+          <button type="button" class="btn" id="close-mobile-details">Back to the wireframe</button>
+        </div>
+        <div id="mobile-detail-body" class="detail"></div>
+      </dialog>
+    </div>
+    <script>
+      "use strict";
+      // Generated model is kept on one line; readable curated inputs live in data.mjs.
+      // prettier-ignore
+      const DATA = {}; // __MODEL_DATA__
+      const $ = (selector) => document.querySelector(selector);
+      const nodeById = new Map(DATA.nodes.map((node) => [node.id, node]));
+      const edgeById = new Map(DATA.edges.map((edge) => [edge.id, edge]));
+      const sourceById = new Map(DATA.sources.map((source) => [source.id, source]));
+      const interactionById = new Map(DATA.interactions.map((interaction) => [interaction.id, interaction]));
+      const state = {
+        view: "map",
+        node: null,
+        edge: null,
+        query: "",
+        connectionQuery: "",
+        type: "all",
+        limit: 40,
+        journey: ["home"],
+        journeyEdges: [],
+      };
+      const escape = (value) =>
+        String(value).replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        );
+      const nodeName = (id) => nodeById.get(id).label;
+      const basis = (edge) => (edge.basis === "documented" ? "WA pathway family" : "Design connection");
+      const kindName = (node) =>
+        ({
+          location: "Physical setting",
+          service: "Service / provider",
+          team: "Care team",
+          contact: "Contact / assessment",
+          setting: "Admitted treatment setting",
+          state: "Episode circumstance",
+          boundary: "External system interface",
+          endpoint: "Episode outcome",
+        })[node.kind];
+      const tags = (edge) => `<span class="tag ${edge.basis === "design" ? "design" : ""}">${basis(edge)}</span>`;
+      const announce = (message) => {
+        $("#announcement").textContent = message;
+      };
+      const sourceLinks = (ids) =>
+        [...new Set(ids)]
+          .map((id) => {
+            const source = sourceById.get(id);
+            return `<a class="source-link" href="${escape(source.url)}" target="_blank" rel="noopener noreferrer">${escape(source.title)} ↗</a><p class="source-warning">${escape(source.limitation)}</p>`;
+          })
+          .join("");
+      function updateHash() {
+        const params = new URLSearchParams({ view: state.view });
+        if (state.node) params.set("place", state.node);
+        if (state.edge) params.set("link", state.edge);
+        history.replaceState(null, "", `#${params}`);
+      }
+      function view(next, focus = true) {
+        if ($("#mobile-details").open) $("#mobile-details").close();
+        state.view = next;
+        document
+          .querySelectorAll("[data-view]")
+          .forEach((button) => button.setAttribute("aria-current", button.dataset.view === next ? "page" : "false"));
+        ["map", "journey", "connections", "review"].forEach((id) => ($("#view-" + id).hidden = id !== next));
+        if (next === "map") renderMap();
+        if (next === "journey") {
+          state.edge = state.journeyEdges.at(-1) || null;
+          renderJourney();
+        }
+        if (next === "connections") renderConnections();
+        renderDetails();
+        updateHash();
+        if (focus)
+          $(
+            "#" + { map: "map", journey: "journey", connections: "connections", review: "review" }[next] + "-title",
+          ).focus({ preventScroll: true });
+      }
+      function showNode(id, focus = false) {
+        if (!nodeById.has(id)) return;
+        state.node = id;
+        state.edge = null;
+        state.query = "";
+        $("#place-search").value = "";
+        view("map", focus);
+        renderDetails();
+        updateHash();
+        announce(`${nodeName(id)} selected. Incoming and outgoing connections shown.`);
+      }
+      function showEdge(id, focus = false) {
+        if (!edgeById.has(id)) return;
+        state.edge = id;
+        renderDetails();
+        updateHash();
+        announce(`Connection details: ${edgeById.get(id).label}.`);
+        if (focus) {
+          if (innerWidth < 850) {
+            $("#mobile-detail-body").innerHTML = $("#detail-body").innerHTML.replace(
+              'id="detail-heading"',
+              'id="mobile-detail-heading"',
+            );
+            if (!$("#mobile-details").open) $("#mobile-details").showModal();
+          } else $("#detail-heading").focus({ preventScroll: true });
+        }
+      }
+      function card(node) {
+        return `<button type="button" class="place" data-node="${node.id}"><b>${escape(node.label)}</b><small>${kindName(node)}</small></button>`;
+      }
+      function edgeCard(edge, incoming = false, journey = false) {
+        const other = incoming ? edge.from : edge.to;
+        return `<button type="button" class="connection ${state.edge === edge.id ? "active" : ""}" data-${journey ? "step" : "edge"}="${edge.id}" aria-label="${escape((journey ? "Add step: " : "Open connection: ") + edge.label + " — " + nodeName(edge.from) + " to " + nodeName(edge.to))}"><strong>${escape(nodeName(other))}</strong><span class="route">${escape(edge.label)}</span>${tags(edge)} <span class="tiny muted">${escape(edge.type === "shared" ? "Shared care · no assumed move" : interactionById.get(edge.type).title)}</span></button>`;
+      }
+      function renderMap() {
+        const target = $("#map-body");
+        if (!state.node) {
+          $("#map-title").textContent = "The whole system, at a glance";
+          $("#map-description").textContent =
+            "These columns organise the map; they are not a compulsory sequence. Choose a box to see its exact connections.";
+          const q = state.query.trim().toLowerCase();
+          const visible = DATA.nodes.filter(
+            (n) => !q || `${n.id} ${n.label} ${n.description} ${kindName(n)}`.toLowerCase().includes(q),
+          );
+          if (!visible.length)
+            target.innerHTML =
+              '<div class="empty">No matching place. Try another word or choose “Show all places”.</div>';
+          else
+            target.innerHTML = `${q ? "" : `<div class="example-path"><p class="tiny muted"><b>One conditional example:</b> emergency assessment to ongoing care. Other routes appear below.</p><div class="row">${["home", "ed", "acute", "followup", "cmh"].map((id, index) => `${index ? '<span class="trace-arrow" aria-hidden="true">→</span>' : ""}<button type="button" class="example-place" data-node="${id}" aria-label="Explore example place: ${escape(nodeName(id))}">${escape(nodeName(id))}</button>`).join("")}</div></div>`}<div class="overview">${DATA.groups
+              .map((g) => {
+                const list = visible.filter((n) => n.group === g.id);
+                if (!list.length) return "";
+                return `<section class="lane ${g.colour}" aria-label="${escape(g.title)}"><div class="lane-head"><h3>${escape(g.title)}</h3><p>${escape(g.caption)}</p></div>${list.map(card).join("")}</section>`;
+              })
+              .join(
+                "",
+              )}</div><p class="small muted" style="margin-top:14px">${visible.length} of ${DATA.nodes.length} places, teams, contacts and outcomes. Exact connections appear when a box is selected.</p>`;
+        } else {
+          const node = nodeById.get(state.node);
+          const incoming = DATA.edges.filter((e) => e.to === node.id);
+          const outgoing = DATA.edges.filter((e) => e.from === node.id);
+          $("#map-title").textContent = node.label;
+          $("#map-description").textContent =
+            "Every mapped one-step connection for this selection. Open a route for its conditions and handover.";
+          target.innerHTML = `<div class="focus-map" id="focus-map"><svg aria-hidden="true"></svg><section class="map-col" id="map-in"><h3>Into this selection · ${incoming.length}</h3><div class="links">${incoming.map((e) => edgeCard(e, true)).join("") || '<p class="small muted">No incoming connection modelled.</p>'}</div></section><section class="map-col map-centre"><div class="focus-card" id="focus-card"><span class="tag ${["state", "endpoint"].includes(node.kind) ? "state" : ""}">${kindName(node)}</span><h3 style="margin-top:12px">${escape(node.label)}</h3><p>${escape(node.description)}</p><button class="btn primary" type="button" data-start="${node.id}">Start a journey here</button><div class="summary-count">${incoming.length} incoming · ${outgoing.length} outgoing<br />Every connection remains conditional.</div></div></section><section class="map-col" id="map-out"><h3>From this selection · ${outgoing.length}</h3><div class="links">${outgoing.map((e) => edgeCard(e)).join("") || '<p class="small muted">Terminal outcome. No onward patient-flow route is modelled.</p>'}</div></section></div>`;
+          requestAnimationFrame(drawConnections);
+        }
+      }
+      function drawConnections() {
+        const map = $("#focus-map"),
+          centre = $("#focus-card");
+        if (!map || !centre || innerWidth <= 580 || $("#view-map").hidden) return;
+        const rect = map.getBoundingClientRect(),
+          c = centre.getBoundingClientRect(),
+          svg = map.querySelector("svg");
+        svg.setAttribute("width", rect.width);
+        svg.setAttribute("height", rect.height);
+        svg.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+        let lines =
+          '<defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 8 4 L 0 8 z" fill="#7d9b91" /></marker></defs>';
+        for (const side of ["in", "out"]) {
+          for (const item of map.querySelectorAll(`#map-${side} .connection`)) {
+            const r = item.getBoundingClientRect();
+            const ax = side === "in" ? r.right - rect.left : c.right - rect.left;
+            const ay = side === "in" ? r.top + r.height / 2 - rect.top : c.top + c.height / 2 - rect.top;
+            const bx = side === "in" ? c.left - rect.left : r.left - rect.left;
+            const by = side === "in" ? c.top + c.height / 2 - rect.top : r.top + r.height / 2 - rect.top;
+            const mid = (ax + bx) / 2;
+            lines += `<path d="M${ax},${ay} C${mid},${ay} ${mid},${by} ${bx},${by}" stroke="#b0c6bb" fill="none" stroke-width="1.4" marker-end="url(#arrow)" />`;
+          }
+        }
+        svg.innerHTML = lines;
+      }
+      function renderDetails() {
+        const target = $("#detail-body");
+        if (state.edge) {
+          const edge = edgeById.get(state.edge),
+            interaction = interactionById.get(edge.type);
+          target.innerHTML = `<div class="eyebrow">Connection details</div><h2 id="detail-heading" tabindex="-1" style="margin-top:8px">${escape(edge.label)}</h2><p class="small">${escape(nodeName(edge.from))}<br /><span class="muted">↓</span><br />${escape(nodeName(edge.to))}</p><div class="row">${tags(edge)}<span class="tag">${escape(interaction.title)}</span></div><p class="small" style="margin-top:14px">${escape(edge.note)}</p><div class="row"><button class="btn" type="button" data-node="${edge.from}">Explore origin</button><button class="btn" type="button" data-node="${edge.to}">Explore destination</button></div><div class="section"><h3>Before this can happen</h3><ul>${edge.guards.map((g) => `<li>${escape(g)}</li>`).join("")}</ul></div><div class="section"><h3>Who interacts, and how</h3><ol>${interaction.steps.map((s) => `<li>${escape(s)}</li>`).join("")}</ol><h4>If the plan changes</h4><ul>${interaction.failures.map((f) => `<li>${escape(f)}</li>`).join("")}</ul></div><div class="section"><h3>Evidence and limits</h3><p class="small muted">${edge.basis === "documented" ? "WA sources explicitly describe this pathway family. They do not establish access for every site or person." : "A proposed connection based on the service categories and coordination logic. Its local feasibility needs confirmation."}</p>${edge.sourceIds.length ? sourceLinks(edge.sourceIds) : '<p class="source-warning">Design proposal; no direct WA source was found for this exact connection.</p>'}</div><p class="tiny muted">Route ID: ${escape(edge.id)}</p>`;
+        } else if (state.node || state.view === "journey") {
+          const node = nodeById.get(state.view === "journey" ? state.journey.at(-1) : state.node);
+          target.innerHTML = `<div class="eyebrow">Selected place / state</div><h2 id="detail-heading" tabindex="-1" style="margin-top:8px">${escape(node.label)}</h2><span class="tag">${kindName(node)}</span><p class="small" style="margin-top:14px">${escape(node.description)}</p><div class="section"><h3>Keep three facts separate</h3><p class="small"><b>Location:</b> where the person is.<br /><b>Care:</b> who is responsible.<br /><b>Legal status:</b> the current, verified authority.</p><p class="small muted">A team/contact/status box does not necessarily mean the person moves.</p></div><div class="section"><h3>Open a connection</h3><p class="small muted">Choose an incoming or outgoing route to see the acceptance conditions and interaction checklist.</p></div><div class="section"><h3>Source context</h3>${node.sourceIds.length ? sourceLinks(node.sourceIds) : '<p class="source-warning">Proposed boundary/interface in this design. Its local service rules need confirmation.</p>'}</div>`;
+        } else {
+          target.innerHTML = `<div class="eyebrow">A clearer way to explore</div><h2 style="margin-top:8px">Start with a place.</h2><p class="small muted">Select a box to see all its mapped connections. Select a connection to see what must be agreed.</p><div class="section"><h3>Read the map honestly</h3><p class="small"><span class="tag">WA pathway family</span></p><p class="small muted">A pathway type explicitly described in a WA source; local access still needs checking.</p><p class="small"><span class="tag design">Design connection</span></p><p class="small muted">A proposed or inferred link requiring local confirmation.</p></div><div class="section"><h3>More than movement</h3><p class="small muted">Referrals, shared care, physical transfers, leave and episode closure each have their own interaction checklist.</p></div><div class="section"><h3>Review boundary</h3><p class="small muted">${DATA.nodes.length} categories and ${DATA.edges.length} explicit one-step links. Facility-level rules and some statutory/operational details remain unverified.</p><button class="btn" type="button" data-view="review">Read the review & gaps</button></div>`;
+        }
+      }
+      function renderJourney() {
+        const current = state.journey.at(-1),
+          node = nodeById.get(current),
+          outgoing = DATA.edges.filter((e) => e.from === current);
+        $("#journey-start").value = state.journey[0];
+        $("#journey-undo").disabled = state.journey.length <= 1;
+        $("#journey-body").innerHTML =
+          `<div class="trace" aria-label="Selected journey">${state.journey.map((id, index) => `${index ? '<span class="trace-arrow" aria-hidden="true">→</span>' : ""}<div class="trace-step"><span class="tiny muted">Step ${index + 1} · ${kindName(nodeById.get(id))}</span><b>${escape(nodeName(id))}</b>${index ? `<button type="button" class="btn small" data-edge="${state.journeyEdges[index - 1]}" style="margin-top:10px">Read this link</button>` : ""}</div>`).join("")}</div><h3>Now at: ${escape(node.label)}</h3><p class="small muted">${escape(node.description)}</p>${node.kind === "endpoint" ? '<div class="notice"><span>This is a terminal outcome in the design. Notifications, ongoing support or other services may still have work to complete.</span></div>' : `<h3 style="margin-top:22px">Choose a possible next step · ${outgoing.length} options</h3><p class="small muted">Adding a step displays its conditions. Example journeys and your choices do not verify eligibility or legal authority.</p><div class="grid2">${outgoing.map((e) => edgeCard(e, false, true)).join("")}</div>`}`;
+      }
+      function renderConnections() {
+        const q = state.connectionQuery.trim().toLowerCase();
+        const rows = DATA.edges.filter(
+          (e) =>
+            (state.type === "all" || e.type === state.type) &&
+            (!q || `${nodeName(e.from)} ${nodeName(e.to)} ${e.label} ${e.note} ${e.id}`.toLowerCase().includes(q)),
+        );
+        const visible = rows.slice(0, state.limit);
+        $("#connection-body").innerHTML =
+          `<div class="row between"><span class="small muted">Showing ${visible.length} of ${rows.length} matching connections · ${DATA.edges.length} total</span><span class="tiny muted">No direct link ≠ proven impossibility</span></div>${rows.length ? `<div class="scroll-table"><table><thead><tr><th scope="col">From</th><th scope="col">To</th><th scope="col">Interaction / route</th><th scope="col">Basis</th><th scope="col">Details</th></tr></thead><tbody>${visible.map((e) => `<tr><td>${escape(nodeName(e.from))}</td><td>${escape(nodeName(e.to))}</td><td>${escape(e.label)}<br /><span class="tiny muted">${escape(interactionById.get(e.type).title)}</span></td><td>${tags(e)}</td><td><button type="button" class="btn small" data-edge="${e.id}" aria-label="${escape("Read " + e.label + " from " + nodeName(e.from) + " to " + nodeName(e.to))}">Read</button></td></tr>`).join("")}</tbody></table></div>` : '<div class="empty">No matching connections. Change or clear the search and interaction filter.</div>'}${visible.length < rows.length ? '<button type="button" class="btn" id="more-connections" style="margin-top:18px">Show 40 more</button>' : ""}`;
+      }
+      function renderReview() {
+        const cards = DATA.overlays
+          .map(
+            ([label, description]) =>
+              `<div class="review-card"><h3>${escape(label)}</h3><p>${escape(description)}</p></div>`,
+          )
+          .join("");
+        $("#review-body").innerHTML =
+          `<div class="grid2">${cards}</div><details open><summary>Review findings and remaining gaps</summary><p class="small">The older diagram focuses on prototype referrals, bed search, transport and admission actions. This model adds the wider care settings, re-entry loops, non-hospital alternatives and explicit boundaries. It separates physical movement from shared care and administrative outcomes.</p>${DATA.gaps.map((gap) => `<div class="gap">${escape(gap)}</div>`).join("")}</details><details><summary>Every mapped way into care · ${DATA.entryRoutes.length} entry families</summary><div class="scroll-table"><table><thead><tr><th>Entry</th><th>People involved</th><th>Assessment / route</th></tr></thead><tbody>${DATA.entryRoutes.map((entry) => `<tr><td>${escape(entry.label)}</td><td>${escape(entry.actors)}</td><td>${escape(entry.route)}<br />${entry.sourceIds.map((id) => `<a href="${escape(sourceById.get(id).url)}" target="_blank" rel="noopener noreferrer">${escape(sourceById.get(id).title)}</a>`).join(" · ")}</td></tr>`).join("")}</tbody></table></div></details><details><summary>Legal status and care decisions · ${DATA.legalTransitions.length} decision families</summary><p class="small muted">A design checklist of decisions to verify. Full current statutory text and local legal procedures were not audited; this is not a legal algorithm.</p>${DATA.legalTransitions.map((row) => `<div class="source-card"><h3>${escape(row.trigger)}</h3><p>${escape(row.options)}</p><p class="muted">${escape(row.condition)}</p></div>`).join("")}</details><details><summary>When the planned pathway changes · ${DATA.exceptions.length} exception families</summary>${DATA.exceptions.map((row) => `<div class="source-card"><h3>${escape(row.label)}</h3><p>${escape(row.response)}</p></div>`).join("")}</details><details><summary>Interaction checklists · ${DATA.interactions.length} kinds</summary>${DATA.interactions.map((i) => `<div class="source-card"><h3>${escape(i.title)}</h3><ol class="small">${i.steps.map((s) => `<li>${escape(s)}</li>`).join("")}</ol><p class="tiny muted">Possible failures: ${escape(i.failures.join(" · "))}</p></div>`).join("")}</details><details><summary>WA source register · ${DATA.sources.length} references</summary><p class="small muted">Source access dates refer to this review. Public pages, historic publications and search excerpts have different evidence limits, recorded below.</p>${DATA.sources.map((s) => `<article class="source-card"><h3><a href="${escape(s.url)}" target="_blank" rel="noopener noreferrer">${escape(s.title)} ↗</a></h3><p>${escape(s.finding)}</p><p class="source-warning">${escape(s.limitation)}</p><span class="tiny muted">${escape(s.id)} · checked ${escape(s.checked)}</span></article>`).join("")}</details><details><summary>Prototype reference and reproducibility</summary><p class="small">Existing source snapshot: ${DATA.prototype.nodes} map boxes, ${DATA.prototype.actions} listed actions and ${DATA.prototype.machines} state-machine diagrams. Counts describe those source files, not all current executable engine events.</p><p class="small muted">${escape(DATA.prototype.status)}. The original explorer is preserved. This broader WA map is not installed into the Ward Flow app.</p><p class="tiny muted">Base ${escape(DATA.provenance.base)}<br />Branch ${escape(DATA.provenance.branch)}<br />Inputs SHA-256 ${escape(DATA.provenance.inputHash)}</p></details>`;
+      }
+      function csv(rows) {
+        return (
+          rows
+            .map((row) => row.map((cell) => '"' + String(cell ?? "").replace(/"/g, '""') + '"').join(","))
+            .join("\n") + "\n"
+        );
+      }
+      function download(filename, rows) {
+        const url = URL.createObjectURL(new Blob([csv(rows)], { type: "text/csv;charset=utf-8" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        announce(`${filename} prepared for download.`);
+      }
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("button");
+        if (!button) return;
+        if (button.dataset.view) {
+          view(button.dataset.view);
+          return;
+        }
+        if (button.dataset.node) {
+          showNode(button.dataset.node, true);
+          return;
+        }
+        if (button.dataset.edge) {
+          showEdge(button.dataset.edge, true);
+          return;
+        }
+        if (button.dataset.start) {
+          state.journey = [button.dataset.start];
+          state.journeyEdges = [];
+          $("#journey-example").value = "";
+          view("journey");
+          return;
+        }
+        if (button.dataset.step) {
+          const edge = edgeById.get(button.dataset.step);
+          if (edge.from !== state.journey.at(-1)) return;
+          state.journey.push(edge.to);
+          state.journeyEdges.push(edge.id);
+          $("#journey-example").value = "";
+          renderJourney();
+          showEdge(edge.id, true);
+          return;
+        }
+        if (button.id === "more-connections") {
+          state.limit += 40;
+          renderConnections();
+          announce(`Now showing up to ${state.limit} matching connections.`);
+          ($("#more-connections") || $("#connections-title")).focus({ preventScroll: true });
+        }
+      });
+      $("#place-search").addEventListener("input", (event) => {
+        state.query = event.target.value;
+        state.node = null;
+        state.edge = null;
+        renderMap();
+        renderDetails();
+        updateHash();
+      });
+      $("#overview-button").addEventListener("click", () => {
+        state.node = null;
+        state.edge = null;
+        state.query = "";
+        $("#place-search").value = "";
+        renderMap();
+        renderDetails();
+        updateHash();
+        announce("All places shown.");
+      });
+      $("#connection-search").addEventListener("input", (event) => {
+        state.connectionQuery = event.target.value;
+        state.limit = 40;
+        renderConnections();
+      });
+      $("#connection-type").addEventListener("change", (event) => {
+        state.type = event.target.value;
+        state.limit = 40;
+        renderConnections();
+      });
+      $("#journey-start").addEventListener("change", (event) => {
+        state.journey = [event.target.value];
+        state.journeyEdges = [];
+        state.edge = null;
+        $("#journey-example").value = "";
+        renderJourney();
+        renderDetails();
+        updateHash();
+      });
+      $("#journey-example").addEventListener("change", (event) => {
+        const scenario = DATA.scenarios.find((s) => s.id === event.target.value);
+        if (!scenario) return;
+        state.journey = [...scenario.steps];
+        state.journeyEdges = scenario.steps
+          .slice(1)
+          .map((to, i) => DATA.edges.find((e) => e.from === scenario.steps[i] && e.to === to).id);
+        state.edge = state.journeyEdges.at(-1) || null;
+        renderJourney();
+        renderDetails();
+        updateHash();
+        announce("Example loaded. All steps remain conditional.");
+      });
+      $("#journey-undo").addEventListener("click", () => {
+        if (state.journey.length > 1) {
+          state.journey.pop();
+          state.journeyEdges.pop();
+          state.edge = state.journeyEdges.at(-1) || null;
+          $("#journey-example").value = "";
+          renderJourney();
+          renderDetails();
+          updateHash();
+          announce("Last journey step removed.");
+        }
+      });
+      $("#journey-reset").addEventListener("click", () => {
+        state.journey = [state.journey[0]];
+        state.journeyEdges = [];
+        state.edge = null;
+        $("#journey-example").value = "";
+        renderJourney();
+        renderDetails();
+        updateHash();
+        announce("Journey reset to its starting point.");
+      });
+      $("#large-button").addEventListener("click", async () => {
+        try {
+          if (document.fullscreenElement) await document.exitFullscreen();
+          else await $("#workspace").requestFullscreen();
+        } catch {
+          announce("Larger view is unavailable here. Use your browser's zoom or full-screen control.");
+        }
+      });
+      document.addEventListener("fullscreenchange", () => {
+        $("#large-button").textContent = document.fullscreenElement ? "Exit larger view" : "View larger";
+        requestAnimationFrame(drawConnections);
+      });
+      $("#print-button").addEventListener("click", () => window.print());
+      $("#close-mobile-details").addEventListener("click", () => $("#mobile-details").close());
+      $("#download-links").addEventListener("click", () =>
+        download("wa-mental-health-pathways.csv", [
+          ["id", "from", "to", "interaction", "route", "evidence_basis", "conditions", "source_ids"],
+          ...DATA.edges.map((e) => [
+            e.id,
+            nodeName(e.from),
+            nodeName(e.to),
+            e.type,
+            e.label,
+            e.basis,
+            [...e.guards, e.note].join(" | "),
+            e.sourceIds.join(" | "),
+          ]),
+        ]),
+      );
+      $("#download-pairs").addEventListener("click", () =>
+        download("wa-mental-health-connection-pairs.csv", [
+          ["from", "to", "status", "direct_route_ids"],
+          ...DATA.nodes.flatMap((from) =>
+            DATA.nodes.map((to) => {
+              const direct = DATA.edges.filter((e) => e.from === from.id && e.to === to.id);
+              return [
+                from.label,
+                to.label,
+                direct.length
+                  ? "Explicit conditional link(s)"
+                  : from.id === to.id
+                    ? "No same-category link modelled"
+                    : "No direct link modelled; not evidence of impossibility",
+                direct.map((e) => e.id).join(" | "),
+              ];
+            }),
+          ),
+        ]),
+      );
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && state.view === "map" && !document.fullscreenElement) {
+          state.node = null;
+          state.edge = null;
+          state.query = "";
+          $("#place-search").value = "";
+          renderMap();
+          renderDetails();
+          updateHash();
+          $("#place-search").focus();
+          announce("Returned to all places.");
+        }
+      });
+      let resizeFrame;
+      window.addEventListener("resize", () => {
+        cancelAnimationFrame(resizeFrame);
+        resizeFrame = requestAnimationFrame(drawConnections);
+      });
+      $("#stats").innerHTML =
+        `<div class="stat"><strong>${DATA.nodes.length}</strong><span>care categories</span></div><div class="stat"><strong>${DATA.edges.length}</strong><span>conditional links</span></div><div class="stat"><strong>${DATA.sources.length}</strong><span>WA references</span></div>`;
+      $("#provenance").textContent = `Review model · inputs ${DATA.provenance.inputHash.slice(0, 10)}`;
+      const options = DATA.nodes.map((n) => `<option value="${n.id}">${escape(n.label)}</option>`).join("");
+      $("#journey-start").innerHTML = options;
+      $("#journey-example").insertAdjacentHTML(
+        "beforeend",
+        DATA.scenarios.map((s) => `<option value="${s.id}">${escape(s.label)}</option>`).join(""),
+      );
+      $("#connection-type").insertAdjacentHTML(
+        "beforeend",
+        DATA.interactions.map((i) => `<option value="${i.id}">${escape(i.title)}</option>`).join(""),
+      );
+      function restoreHash() {
+        if (location.hash === "#content") return;
+        const hash = new URLSearchParams(location.hash.slice(1));
+        state.node = nodeById.has(hash.get("place")) ? hash.get("place") : null;
+        state.edge = edgeById.has(hash.get("link")) ? hash.get("link") : null;
+        const tab = ["map", "journey", "connections", "review"].includes(hash.get("view")) ? hash.get("view") : "map";
+        view(tab, false);
+        renderDetails();
+      }
+      renderReview();
+      restoreHash();
+      window.addEventListener("hashchange", restoreHash);
+    </script>
+  </body>
+</html>
