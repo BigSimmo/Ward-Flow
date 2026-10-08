@@ -1321,7 +1321,7 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
 
         <aside
           className={styles.shortlistPanel}
-          aria-label={selectedReferral ? "Referral placement" : "Explainable shortlist"}
+          aria-label={selectedReferral ? "Referral placement" : "Placement"}
           aria-live="polite"
           tabIndex={0}
         >
@@ -1331,7 +1331,7 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
             <>
               <header className={styles.panelHeader}>
                 <h2>
-                  <ListChecks aria-hidden="true" /> Explainable shortlist · {patient.id}
+                  <ListChecks aria-hidden="true" /> Placement · {patient.id}
                 </h2>
               </header>
               {/* `data-label` is read by nothing on screen — same job as the bed chips' own

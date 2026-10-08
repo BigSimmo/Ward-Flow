@@ -62,6 +62,7 @@ export function LiveChip({ state, age, asAt, onHero = false, onTogglePause, clas
           icon={paused ? Play : Pause}
           aria-label={paused ? "Resume live updates" : "Pause live updates"}
           aria-pressed={paused}
+          className={styles.pause}
           onClick={onTogglePause}
         />
       ) : null}

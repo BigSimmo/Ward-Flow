@@ -270,7 +270,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expectNoReloadSince(page, "ED -> coordinator");
 
     await page.locator(`[data-testid="ward-queue-row-${movementId}"]`).click();
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await openShortlistSections(shortlist);
     await expect(shortlist).toHaveAttribute("data-subject-movement", movementId);
 

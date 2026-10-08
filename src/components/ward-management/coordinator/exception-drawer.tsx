@@ -14,7 +14,7 @@ import type { Rejection, Unit } from "@/components/ward-management/ward-model";
 
 import styles from "./home.module.css";
 
-type RegisterTabId = "declines" | "overrides" | "exceptions" | "refused";
+export type RegisterTabId = "declines" | "overrides" | "exceptions" | "refused";
 
 /** Order fixed here: arrow-key order and DOM order both read off this one list. v6 Home mockup
  *  (7 Oct 2026) puts Exceptions first, then the two records, then Refused. */
@@ -46,6 +46,9 @@ type ExceptionDrawerProps = {
   onSelectMovement: (movementId: string) => void;
   /** `band`: the desktop strip under the Home hero. `column`: the phone card under the queue. */
   placement?: "band" | "column";
+  /** Optional controlled tab, so the hero's Exceptions and Declines counts open their own tab. */
+  tab?: RegisterTabId;
+  onTabChange?: (tab: RegisterTabId) => void;
 };
 
 /**
@@ -81,8 +84,12 @@ export function ExceptionDrawer({
   onToggle,
   onSelectMovement,
   placement = "column",
+  tab,
+  onTabChange,
 }: ExceptionDrawerProps) {
-  const [activeTab, setActiveTab] = useState<RegisterTabId>("exceptions");
+  const [ownTab, setOwnTab] = useState<RegisterTabId>("exceptions");
+  const activeTab = tab ?? ownTab;
+  const setActiveTab = onTabChange ?? setOwnTab;
   // Owner, 26 Sept 2026: resolves a silence reminder's bare movement id to the patient's name.
   const resolvePatientIdentity = usePatientOf();
 

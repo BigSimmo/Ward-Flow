@@ -27,12 +27,12 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 
 import styles from "./home.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
-import { ExceptionDrawer } from "./exception-drawer";
+import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
 import { HomeBedflow } from "./home-bedflow";
 import { HomeEdPressure, dueWindowLabel } from "./home-ed-pressure";
 import { PriorityQueue } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel";
-import { SinceLastLookPanel } from "./since-last-look-panel";
+import { SinceLastLookPanel, sinceLastLookCount, useSinceLastLook } from "./since-last-look-panel";
 
 const HANDOVER_HREF = "/mockups/ward-flow/handover";
 /** Activity lines shown under "Since you looked". */
@@ -100,8 +100,19 @@ export function CoordinatorScreen() {
   const [selectedReferralId, setSelectedReferralId] = useState<string | undefined>(undefined);
   const queueFocusRef = useRef<HTMLDivElement>(null);
   const [exceptionsOpen, setExceptionsOpen] = useState(false);
-  // Desktop: the registers strip opens from the hero's Exceptions count and starts closed.
-  const [registersOpen, setRegistersOpen] = useState(false);
+  // Desktop: one strip under the hero, opened from its Exceptions, Declines or New events count.
+  // It starts closed. Exceptions and Declines open the registers on their own tab.
+  const [heroPanel, setHeroPanel] = useState<"registers" | "since" | undefined>(undefined);
+  const [registerTab, setRegisterTab] = useState<RegisterTabId>("exceptions");
+  function toggleRegisters(tab: RegisterTabId) {
+    const showing = heroPanel === "registers" && (tab === "declines") === (registerTab === "declines");
+    if (showing) {
+      setHeroPanel(undefined);
+      return;
+    }
+    setRegisterTab(tab);
+    setHeroPanel("registers");
+  }
   // Phone keeps the registers in the page flow under the queue, behind "Today's answers".
   const [isPhone, setIsPhone] = useState(false);
   useEffect(() => {
@@ -215,6 +226,8 @@ export function CoordinatorScreen() {
     () => ({ scenario, referrals, movements, units, bedReleases }),
     [scenario, referrals, movements, units, bedReleases],
   );
+  const lastLook = useSinceLastLook(lastLookWorld, now);
+  const newEvents = sinceLastLookCount(lastLook.changes);
 
   // The same timestamped projection the bar's Activity drawer reads; Home shows its newest lines.
   const recentActivity = useMemo(() => {
@@ -263,6 +276,8 @@ export function CoordinatorScreen() {
         now={now}
         open={exceptionsOpen}
         placement={placement}
+        tab={placement === "band" ? registerTab : undefined}
+        onTabChange={placement === "band" ? setRegisterTab : undefined}
         onToggle={() => setExceptionsOpen((open) => !open)}
         // On a phone the open registers stand between a coordinator and Confirm, so choosing a
         // row closes them in the same tap.
@@ -289,19 +304,44 @@ export function CoordinatorScreen() {
                 <HeroStat value={bedsReady} label="Beds ready" />
                 <HeroStat value={waitingInEd} label="Waiting in ED" />
                 <HeroStat
-                  value={actionInbox.length}
-                  label="Exceptions"
-                  tone={actionInbox.length > 0 ? "warning" : undefined}
-                  expanded={isPhone ? undefined : registersOpen}
-                  controls={isPhone ? undefined : "ward-home-registers"}
-                  onToggle={isPhone ? undefined : () => setRegistersOpen((open) => !open)}
-                />
-                <HeroStat
                   value={breachWithinHour}
                   label={`Due within ${dueWindowLabel(configuration.dueSoonUrgentMinutes)}`}
                   tone={breachWithinHour > 0 ? "warning" : undefined}
                 />
               </>
+            }
+            bar={
+              isPhone ? undefined : (
+                <div className={styles.heroToggles}>
+                  <HeroStat
+                    inline
+                    value={actionInbox.length}
+                    label="Exceptions"
+                    tone={actionInbox.length > 0 ? "warning" : undefined}
+                    expanded={heroPanel === "registers" && registerTab !== "declines"}
+                    controls="ward-home-hero-panel"
+                    onToggle={() => toggleRegisters("exceptions")}
+                  />
+                  <HeroStat
+                    inline
+                    value={declineRegister.length}
+                    label="Declines"
+                    tone={declineRegister.length > 0 ? "closed" : undefined}
+                    expanded={heroPanel === "registers" && registerTab === "declines"}
+                    controls="ward-home-hero-panel"
+                    onToggle={() => toggleRegisters("declines")}
+                  />
+                  <HeroStat
+                    inline
+                    value={newEvents}
+                    label="New events"
+                    tone={newEvents > 0 ? "info" : undefined}
+                    expanded={heroPanel === "since"}
+                    controls="ward-home-hero-panel"
+                    onToggle={() => setHeroPanel((open) => (open === "since" ? undefined : "since"))}
+                  />
+                </div>
+              )
             }
             aside={
               <>
@@ -313,9 +353,19 @@ export function CoordinatorScreen() {
             }
           />
 
-          {registersOpen && !isPhone ? (
-            <div id="ward-home-registers" className={styles.registersBand}>
-              {renderRegisters("band")}
+          {heroPanel && !isPhone ? (
+            <div id="ward-home-hero-panel" className={styles.registersBand}>
+              {heroPanel === "registers" ? (
+                renderRegisters("band")
+              ) : (
+                <SinceLastLookPanel
+                  changes={lastLook.changes}
+                  now={now}
+                  activity={recentActivity}
+                  onMarkSeen={lastLook.markSeen}
+                  placement="band"
+                />
+              )}
             </div>
           ) : null}
 
@@ -350,7 +400,14 @@ export function CoordinatorScreen() {
                 delaysHref={DELAYS_HREF}
               />
               {isPhone ? renderRegisters("column") : null}
-              <SinceLastLookPanel world={lastLookWorld} now={now} activity={recentActivity} />
+              {isPhone ? (
+                <SinceLastLookPanel
+                  changes={lastLook.changes}
+                  now={now}
+                  activity={recentActivity}
+                  onMarkSeen={lastLook.markSeen}
+                />
+              ) : null}
             </div>
 
             <div className={hasPanelSubject ? styles.flowCol : styles.flowWide}>
@@ -382,13 +439,13 @@ export function CoordinatorScreen() {
                 <div className={`${styles.shortlistColumn} ${shortlistStyles.shortlistColumn ?? ""}`}>
                   <aside
                     className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
-                    aria-label={selectedReferral ? "Referral placement" : "Explainable shortlist"}
+                    aria-label={selectedReferral ? "Referral placement" : "Placement"}
                     // Journeys prove which movement the panel is for by this attribute.
                     data-subject-movement={selectedReferral ? undefined : selectedMovement?.id}
                   >
                     <div className={`${styles.sheetHandle} ${shortlistStyles.sheetHandle ?? ""}`} aria-hidden="true" />
                     <header className={styles.shortlistHeader}>
-                      <h2>{selectedReferral ? "Referral placement" : "Explainable shortlist"}</h2>
+                      <h2>{selectedReferral ? "Referral placement" : "Placement"}</h2>
                       <button
                         type="button"
                         className={buttonClass({ variant: "ghost", size: "sm" })}
