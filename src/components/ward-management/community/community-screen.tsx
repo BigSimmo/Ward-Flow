@@ -4,7 +4,7 @@ import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
 
-import { useCallback, useEffect, useMemo, useState, type Dispatch, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode } from "react";
 
 import Link from "next/link";
 import { ChevronDown, FileText, Phone, Plus, Search, Users } from "lucide-react";
@@ -474,6 +474,15 @@ export function CommunityScreen({
   referrals?: Referral[];
 }) {
   usePrintableDisclosures();
+  // Phone only (8 Oct 2026): the provenance and coverage disclosure starts closed under 48rem so
+  // the team's lists are not followed by a long block of explanatory text. It still opens with a
+  // tap, and above 48rem it renders open exactly as before.
+  const limitsDisclosureRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    const disclosure = limitsDisclosureRef.current;
+    if (!disclosure || typeof window.matchMedia !== "function") return;
+    if (window.matchMedia("(max-width: 48rem)").matches) disclosure.open = false;
+  }, []);
   const {
     admissions: liveAdmissions,
     referrals: liveReferrals,
@@ -3336,7 +3345,12 @@ export function CommunityScreen({
 
           {/* ── Governance Accordion: Limits, Facts, Links & Provenance ── */}
           <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
-            <details className={styles.governanceSection} data-testid="ward-community-limits" open>
+            <details
+              ref={limitsDisclosureRef}
+              className={styles.governanceSection}
+              data-testid="ward-community-limits"
+              open
+            >
               <summary className={styles.governanceSummary}>Data provenance, coverage limits and team facts</summary>
               <div className={styles.governanceBody}>
                 {/* Coverage limits */}

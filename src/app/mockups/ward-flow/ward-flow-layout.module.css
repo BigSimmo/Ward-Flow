@@ -86,6 +86,15 @@
   }
 }
 
+/* Phone only (8 Oct 2026): clip rather than hide, so the column is not a scroll container and the
+   header bar stays pinned to the top while the document scrolls. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .shellContent {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+}
+
 /* Manual Ward preferences apply to route content without changing the host app or defaults. */
 :global(html[data-reduced-motion]) .shellRow,
 :global(html[data-reduced-motion]) .shellRow *,

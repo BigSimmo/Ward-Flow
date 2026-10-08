@@ -6038,3 +6038,92 @@
     content: "Handover";
   }
 }
+
+/* Phone polish (8 Oct 2026): 12px gutters, and the toolbar's actions take two rows rather than
+ * four. Restore all defaults stays in the This browser card, which opens the same dialog. Above
+ * 48rem nothing changes. */
+@media (max-width: 48rem) {
+  .main {
+    padding: var(--wf-s-3);
+  }
+
+  .toolbar .toolbarActions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--wf-s-2);
+  }
+
+  .toolbarActions > .toolbarStatus {
+    min-width: 0;
+  }
+
+  .toolbarActions > button[title="Restore all defaults"] {
+    display: none;
+  }
+
+  .toolbarActions > button[title="Save coordination rules"] {
+    flex: 1 1 100%;
+    justify-content: center;
+    min-height: var(--spacing-tap, 3rem);
+  }
+}
+
+@media (max-width: 48rem) {
+  /* Hero: the two operator actions split the row evenly. */
+  .operatorHero .userProfileWrap,
+  .userProfileWrap + button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .userProfileWrap > button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 48rem) {
+  /* Timings: the stepper is the control on phone, so the duplicate range row is left to the larger
+   * screen; the effect column has a fixed width so the steppers line up. */
+  .ruleRow:not(.ruleRowWarning) {
+    --rule-cols: minmax(0, 1fr) 4.5rem;
+    grid-template-areas:
+      "text text"
+      "step effect";
+  }
+
+  .ruleRow:not(.ruleRowWarning) .rangeCell {
+    display: none;
+  }
+
+  /* This browser: three figures in one row, labels on one line. */
+  .statRow {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    padding: var(--wf-s-3);
+  }
+
+  .statItem {
+    padding-inline: var(--wf-s-3) 0;
+  }
+
+  .statLabel {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Four actions as an even two-by-two grid. */
+  .browserFoot {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: var(--wf-s-3);
+  }
+
+  .browserFoot > * {
+    justify-content: center;
+    min-height: var(--spacing-tap, 3rem);
+    margin: 0;
+  }
+}

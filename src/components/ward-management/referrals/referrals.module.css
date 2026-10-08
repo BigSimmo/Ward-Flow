@@ -8796,4 +8796,284 @@ input.historyField:focus-visible {
   .screen[data-ward-design="v6"] .v6RowOutcome > span {
     display: inline;
   }
+
+  /* Phone pass 2 (8 Oct 2026). The hero drops the "Longest wait first" note (the queue head says
+     the order) and each track fades at its right edge to show it scrolls. The control card is two
+     rows: search beside New referral, then the cohort chips; the Dense switch stays on desktop.
+     Decisions by hour is a desktop chart. */
+  .screen[data-ward-design="v6"] .v6HeroWrap > section > div:last-child > div:last-child:not(:first-child) {
+    display: none;
+  }
+
+  .screen[data-ward-design="v6"] .v6Tracks > * {
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, var(--wf-ink-1) calc(100% - var(--wf-s-4) * 2), transparent 100%);
+    mask-image: linear-gradient(90deg, var(--wf-ink-1) calc(100% - var(--wf-s-4) * 2), transparent 100%);
+  }
+
+  .screen[data-ward-design="v6"] .v6Search {
+    flex: 1 1 0;
+  }
+
+  .screen[data-ward-design="v6"] .v6FilterActions {
+    flex: none;
+    order: 1;
+  }
+
+  .screen[data-ward-design="v6"] .v6FilterActions:has(> :nth-child(3)) {
+    flex: 1 1 100%;
+  }
+
+  .screen[data-ward-design="v6"] .v6FilterActions > [data-testid="ward-referral-dense-toggle"] {
+    display: none;
+  }
+
+  .screen[data-ward-design="v6"] .v6Cohorts {
+    order: 2;
+  }
+
+  .screen[data-ward-design="v6"] .v6Chart {
+    display: none;
+  }
+
+  /* The rows sit straight in the queue card: no second bordered box inside it, and no doubled
+     hairline under each section head. */
+  .screen[data-referral-view="register"][data-ward-design="v6"] .v6List {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .screen[data-referral-view="register"][data-ward-design="v6"] .v6List > .v6Item:first-child {
+    border-top: 0;
+  }
+
+  /* A direct-presentation referral's Bed placement tab: the notice and the action card take the
+     same 16px inset as the history cards below, with a plain hairline edge (no accent stripe);
+     the badge stays on one line; Accept keeps the 48px tap floor like Decline beside it. */
+  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationNoticeCard,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationActionCard {
+    margin: 0;
+    padding: var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    box-shadow: none;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationNoticeHeader {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: var(--wf-s-1) var(--wf-s-2);
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationBadge,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationMeta {
+    font-size: var(--wf-fs-12);
+    white-space: nowrap;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .acceptPresentationBtn {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  /* Selected referral head: name and close on the first line, tier and wait on the second; the
+     decorative avatar stays on desktop. */
+  .screen[data-ward-design="v6"] .v6DetailHead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .screen[data-ward-design="v6"] .v6DetailHead > :first-child {
+    display: none;
+  }
+
+  .screen[data-ward-design="v6"] .v6DetailWho {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .screen[data-ward-design="v6"] .v6DetailHead > button:last-child {
+    grid-column: 2;
+    grid-row: 1;
+    margin-right: calc(-1 * var(--wf-s-3));
+  }
+
+  .screen[data-ward-design="v6"] .v6DetailTier {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .screen[data-ward-design="v6"] .v6DetailWait {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: end;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .screen[data-ward-design="v6"] .v6DetailHead > a {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-self: start;
+  }
+
+  .screen[data-ward-design="v6"] .v6Facts dt {
+    font-size: var(--wf-fs-12);
+  }
+
+  .screen[data-ward-design="v6"] .tierTitleGroup {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 2px;
+  }
+
+  .screen[data-ward-design="v6"] .tierSubtitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Each unit reads top to bottom: name and bed state, hospital, recorded facts, then the
+     Accept button at its natural width, then the criteria line. The unit name keeps one line. */
+  .screen[data-ward-design="v6"] .unitCardTop {
+    display: contents;
+  }
+
+  .screen[data-ward-design="v6"] .unitCardTop > div:first-child {
+    min-width: 0;
+  }
+
+  .screen[data-ward-design="v6"] .unitName {
+    min-width: 0;
+  }
+
+  .screen[data-ward-design="v6"] .unitName > span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .screen[data-ward-design="v6"] .unitName > span:last-child {
+    flex: none;
+  }
+
+  .screen[data-ward-design="v6"] .unitIntelRow {
+    order: 1;
+  }
+
+  .screen[data-ward-design="v6"] .unitCardTop > :not(:first-child) {
+    order: 2;
+    align-self: flex-start;
+    align-items: flex-start;
+    max-width: 100%;
+  }
+
+  .screen[data-ward-design="v6"] .unitCardTop > button {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: calc(var(--ward-tap) - 2px);
+  }
+
+  .screen[data-ward-design="v6"] .unitCard > .gateSummary {
+    order: 3;
+  }
+
+  .screen[data-ward-design="v6"] .unitActionStatusWrap {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .screen[data-ward-design="v6"] .unitNoticeMuted {
+    font-size: var(--wf-fs-12);
+  }
+
+  /* Travel bands: an opened band stays inside the sheet. Its grid tracks may shrink below their
+     content, and a criterion's detail wraps beside its name. */
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchList,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .bandRows,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchRowAccepts,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchRowDeclines {
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchDeclineSection,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchOverrideRow {
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchOverrideControls .matchOverrideSelect {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .bandGroup {
+    min-width: 0;
+  }
+
+  /* Legal forms: each check's state reads under its name rather than squeezing it. */
+  .screen[data-ward-design="v6"] .v6Checks > li {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    row-gap: 2px;
+  }
+
+  .screen[data-ward-design="v6"] .v6Checks > li > svg {
+    margin-top: var(--wf-s-1);
+  }
+
+  .screen[data-ward-design="v6"] .v6CheckState {
+    grid-column: 2;
+  }
+
+  /* New referral, the person bar: the link switch spans the bar in two equal halves, and the
+     decorative avatar stays on desktop. */
+  .screen[data-referral-view="intake"][data-ward-design="v6"] .personModeSwitch {
+    display: grid;
+    flex: 1 1 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .screen[data-referral-view="intake"][data-ward-design="v6"] .personModeSwitch > .modeBtn {
+    justify-content: center;
+  }
+
+  .screen[data-referral-view="intake"][data-ward-design="v6"] .personAvatar {
+    display: none;
+  }
+
+  .screen[data-referral-view="intake"][data-ward-design="v6"] .personActions .actionBtn,
+  .screen[data-referral-view="intake"][data-ward-design="v6"] .rapidSearchInput,
+  .screen[data-referral-view="intake"][data-ward-design="v6"] .suburbQuickBtn {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  /* Decline sits at its natural width, like Withdraw below it. */
+  .screen[data-ward-design="v6"][data-referral-view="register"] .declineControls > .declineButton {
+    justify-self: start;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .criteriaDetail {
+    min-width: 0;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchReasonText {
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-sm);
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .localBedButton,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchOverrideControls .matchOverrideButton {
+    justify-content: flex-start;
+    max-width: 100%;
+    padding-block: var(--wf-s-2);
+    text-align: left;
+    white-space: normal;
+  }
 }

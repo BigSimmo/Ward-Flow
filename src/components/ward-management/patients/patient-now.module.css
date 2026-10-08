@@ -4922,3 +4922,92 @@
     margin-left: calc(30px + var(--wf-s-3));
   }
 }
+
+/* Phone polish (8 Oct 2026, second pass): a tighter hero, the four movement facts as a two by two
+ * grid, and the Now view switch as one full width control. Everything here sits under 48rem, so
+ * desktop and tablet are unchanged. */
+@media (max-width: 48rem) {
+  .v6HeroWrap .v6Hero {
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3);
+  }
+
+  .v6HeroActions > :first-child {
+    right: var(--wf-s-3);
+  }
+
+  .v6IdLine {
+    row-gap: 2px;
+    line-height: var(--wf-lh-12);
+  }
+
+  .v6HeroFacts {
+    row-gap: 2px;
+    line-height: var(--wf-lh-13);
+  }
+
+  .v6HeroWait {
+    line-height: var(--wf-lh-13);
+  }
+
+  .v6Steps {
+    padding: 2px;
+  }
+
+  .v6Tabs {
+    padding: 2px;
+  }
+
+  /* Facts: two columns of short lines. The icons stay on the larger screen. */
+  .v6Facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .v6Fact {
+    padding: var(--wf-s-3);
+  }
+
+  .v6Fact + .v6Fact {
+    border-top: 0;
+    border-left: 0;
+  }
+
+  .v6Fact:nth-child(even) {
+    border-left: 1px solid var(--wf-line);
+  }
+
+  .v6Fact:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .v6FactIcon {
+    display: none;
+  }
+
+  .v6Fact > div {
+    width: 100%;
+  }
+
+  .v6Fact small,
+  .v6Fact .v6Eyebrow {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The Now view switch spans the page in two equal halves. */
+  .screen[data-ward-design="v6"] .nowViewSwitch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .screen[data-ward-design="v6"] .nowViewSwitch button {
+    justify-content: center;
+    min-width: 0;
+    min-height: var(--spacing-tap, 3rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

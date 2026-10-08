@@ -792,3 +792,11 @@
     height: 100%;
   }
 }
+
+/* Phone polish (8 Oct 2026): the length-of-stay chart is a desk read; on phone the page ends with
+ * today's decisions. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .areaStay {
+    display: none;
+  }
+}

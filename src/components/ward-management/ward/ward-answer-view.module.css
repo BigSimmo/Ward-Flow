@@ -1869,3 +1869,63 @@
     flex: 0 0 auto;
   }
 }
+
+/* Phone polish (8 Oct 2026): the answer band is title, then one row with the back arrow on the
+ * left and Accept in principle on the right. The back link keeps its words as its accessible name
+ * and a full 48px target. The page foot keeps the 12px gutter. Desktop is unchanged. */
+@media screen and (max-width: 48rem) {
+  .answerTop > section {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--wf-s-3);
+    padding-bottom: var(--wf-s-3);
+  }
+
+  .answerTop > section > div {
+    display: contents;
+  }
+
+  .answerTop > section > div:first-child > :first-child {
+    order: 1;
+    flex: 1 1 100%;
+  }
+
+  .answerTop > section > div:last-child > :first-child {
+    order: 2;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .answerTop > section > div:first-child > :last-child:not(:first-child) {
+    order: 3;
+    flex: 0 1 auto;
+    min-width: 0;
+    margin-left: auto;
+  }
+
+  .answerTop .backLink {
+    min-width: var(--spacing-tap, 3rem);
+    min-height: var(--spacing-tap, 3rem);
+    justify-content: center;
+    box-sizing: border-box;
+    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
+    border-radius: var(--wf-r-md);
+    color: var(--wf-hero-ink);
+  }
+
+  .answerTop .backLink > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .answerScreen > footer {
+    width: auto;
+    align-self: stretch;
+    margin-inline: var(--wf-s-3);
+  }
+}

@@ -2765,6 +2765,29 @@
   .main:has(.shortlistActionRow) {
     padding-bottom: 0;
   }
+
+  /* Phone pass 2: the sheet's buttons and disclosures keep the 48px tap floor. The patient's
+     name link gains an invisible 16px above and below, so its tap area clears 48px without
+     moving the header. */
+  .shortlistConfirmButton,
+  .shortlistOverrideButton,
+  .shortlistScoreSummary {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .shortlistMovementId {
+    min-width: 0;
+  }
+
+  .shortlistMovementId > a {
+    display: inline-block;
+    max-width: 100%;
+    margin-block: calc(-1 * var(--wf-s-4));
+    padding-block: var(--wf-s-4);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
 }
 
 @media (forced-colors: active) {
@@ -3975,11 +3998,13 @@
     flex-shrink: 0;
   }
 
+  /* No bottom padding: the Refer bar is sticky to the bottom of this scroller, and padding here
+     would hold it above the sheet's edge with rows showing through underneath. */
   .shortlistBody {
     overflow-y: auto !important;
     overscroll-behavior: contain;
     max-height: calc(85dvh - 3.5rem);
-    padding-bottom: 2rem;
+    padding-bottom: 0;
   }
 }
 

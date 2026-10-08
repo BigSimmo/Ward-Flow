@@ -450,6 +450,7 @@ export function LegalFormsScreen() {
 
         <div data-testid="ward-legal-hud-island">
           <Hero
+            className={styles.phoneHero}
             eyebrow="Statutory forms"
             title={`${rows.length} forms on open moves`}
             stats={

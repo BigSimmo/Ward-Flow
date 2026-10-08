@@ -917,7 +917,14 @@ button.registerRow:hover {
   }
 
   .body {
-    padding: var(--wf-s-2);
+    padding: var(--wf-s-3);
+  }
+
+  /* "Open in Delays" gains an invisible 16px above and below: a 48px tap area, same layout. */
+  .footLink {
+    display: inline-block;
+    margin-block: calc(-1 * var(--wf-s-4));
+    padding-block: var(--wf-s-4);
   }
 
   .registersToggle {
