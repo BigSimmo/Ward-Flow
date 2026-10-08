@@ -254,6 +254,13 @@ add a new entry that says which one it replaces, and mark the old one "Replaced 
 - **Why:** Josh's answers to the live walkthrough and the coordinator's cards; recorded here so no
   session asks again.
 
+**8 October implementation scope note:** The owner subsequently requested and approved
+implementation of the audit remediation backlog, including CAP-001's expected-discharge
+editor. Local implementation now uses the existing guarded date event. This records the
+new task scope without changing the historical ruling or treating the earlier deliberate
+omission as a confirmed accidental defect. No wider intervention or forecasting policy
+is inferred.
+
 ## D-20. One high-contrast colour check retired (26 September)
 
 - **Decision:** Josh chose "Retire" (decision card, 25 Sept 16:39 UTC): the search page's check

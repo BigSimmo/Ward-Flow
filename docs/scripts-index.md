@@ -5,7 +5,7 @@
 
 # Ward Flow scripts inventory
 
-Curated map of `scripts/` (161 files) and the `package.json` script surface (118 entries),
+Curated map of `scripts/` (162 files) and the `package.json` script surface (118 entries),
 with a maintained generated count header and a historical catalogue below. The current
 command surface is `package.json`. `npm run docs:check-inventory` checks the declared counts
 with the existing tolerance; `npm run docs:check-scripts` checks maintained command references,

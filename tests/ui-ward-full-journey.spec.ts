@@ -3,9 +3,9 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 import { wardSites } from "@/components/ward-management/ward-sites";
 
 /**
- * PR 46 ("Coordinator Shortlist Panel & Action Compaction") defaults the shortlist's Candidates
- * section and its Eligibility checks disclosure to closed. Open both before reading or clicking
- * inside them; idempotent, so it is safe after every queue selection.
+ * PR 130's Placement panel starts Candidates open; earlier versions started it closed.
+ * Ensure Candidates and any Eligibility checks disclosure are open before reading or clicking
+ * inside them. The helper remains idempotent after every queue selection.
  */
 async function openShortlistSections(shortlist: Locator) {
   const toggle = shortlist.getByTestId("ward-shortlist-candidates-toggle");

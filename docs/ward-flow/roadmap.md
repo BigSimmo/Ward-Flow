@@ -2,7 +2,12 @@
 
 ## Current programme — 8 October 2026
 
-The current source baseline is dedicated Ward main `e7b7f325346ea7abb5004bd2e60e63f64f5c9f95`.
+The original audit baseline is dedicated Ward main `e7b7f325346ea7abb5004bd2e60e63f64f5c9f95`.
+During remediation, canonical main advanced through PR #131 to
+`0bbcd341d08ad1b2e0c67a77a9cab84367e03769` (PR #130); those changes are preserved
+in the isolated local candidate. Local integrity fixes and verification are complete
+for the scopes in the dated remediation receipt. The next milestone is the approved,
+authenticated shared synthetic backend, rather than a clinical deployment.
 The 25 September plan below is historical: its former shared repository, red test
 baseline and drawing-based restyling instructions do not describe the current app.
 Preserve the latest accepted appearance and current AGENTS.md repository boundary.

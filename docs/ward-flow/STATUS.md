@@ -8,6 +8,23 @@ publication and deployment each require separate evidence.
 Synthetic data only. Do not enter real patient information. Ward Flow is not
 approved for clinical deployment.
 
+**Remediation integration update:** canonical main was freshly fetched and verified at
+`0bbcd341d08ad1b2e0c67a77a9cab84367e03769` (including PRs #131 and #130). Its intervening eight PRs
+are preserved in local branch `codex/audit-remediation-20261008`. Five original
+phone-layout findings were already fixed by that newer main. Local domain,
+workflow, snapshot and documentation corrections are recorded in the dated
+[remediation receipt](reports/remediation-2026-10-08.md). Main and local verification
+have separate evidence; the earlier CI result below does not verify the later tree.
+
+**Completed local verification:** the remediation source at `3d01bf9` passed
+936 files / 10,881 tests (9 files / 146 tests skipped), whole-source lint and type
+checking. After preserving the newer main, candidate `8682118` passed all 325
+tests in 29 affected/regression files, whole-source lint, an all-route production
+build with its normal full type check, and 12 selected Chromium browser checks,
+including the complete referral-to-discharge journey. Ten additional bounded
+Settings checks passed. These are local synthetic results; no full-suite rerun,
+hosted CI, shared-user operation or clinical approval is claimed for `8682118`.
+
 ## Current state
 
 The Next.js application is an interactive browser prototype with a shared in-tab
