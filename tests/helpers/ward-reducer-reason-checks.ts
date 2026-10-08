@@ -17,6 +17,7 @@ function runtimeReducerImport(declaration: ts.ImportDeclaration): string | undef
 
 function hasRuntimeBinding(clause: ts.ImportClause): boolean {
   if (clause.isTypeOnly) return false;
+  if (clause.name) return true;
   if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
     return clause.namedBindings.elements.some((element) => !element.isTypeOnly);
   }

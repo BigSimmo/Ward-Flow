@@ -212,6 +212,23 @@ describe("reason membership checks", () => {
     expect(scanned.checks).toEqual([]);
   });
 
+  it("follows a runtime default binding alongside type-only named bindings", () => {
+    const root = path.normalize("src/main-reducer.ts");
+    const child = path.normalize("src/flags-reducer.ts");
+    const sources: Record<string, string> = {
+      [root]: 'import flag, { type State } from "./flags-reducer"; export function reduce() { return flag(); }',
+      [child]:
+        'export default function flag(event: Extract<Event, { type: "FLAG_MOVEMENT_URGENT" }>) { if (!URGENT_MARK_REASONS.includes(event.reason)) return false; }',
+    };
+    const scanned = scanReducerReasonChecks(root, (file) => {
+      const source = sources[file];
+      if (source === undefined) throw new Error(`Missing fixture ${file}`);
+      return source;
+    });
+    expect(scanned.sources).toEqual([root, child]);
+    expect(scanned.checks).toEqual([{ event: "FLAG_MOVEMENT_URGENT", list: "URGENT_MARK_REASONS" }]);
+  });
+
   it("fails when an imported reducer cannot be inspected", () => {
     expect(() =>
       scanReducerReasonChecks("src/main-reducer.ts", (file) => {
