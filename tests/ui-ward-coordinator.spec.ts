@@ -1301,9 +1301,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // from an empty-state placeholder.
     //
     // Task 5: refusals moved out of the Exceptions panel into their own "Refused actions" tab —
-    // see `exception-drawer.tsx`'s own file comment on why the two were split. Task A: the panel
-    // is unconditionally visible at this width now (no toggle to click at 1600px — see
-    // `.exceptionsToggle`'s own comment), so this test scrolls to it directly instead.
+    // see `exception-drawer.tsx`'s own file comment on why the two were split. On desktop the
+    // registers open from the hero's Exceptions count (owner, 8 Oct 2026), so open them first.
+    await page.getByRole("button", { name: /Exceptions/, expanded: false }).click();
     const refusedTab = page.getByRole("tab", { name: /Refused/ });
     await refusedTab.scrollIntoViewIfNeeded();
     await refusedTab.click();
