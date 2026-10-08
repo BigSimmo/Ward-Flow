@@ -449,10 +449,22 @@ add a new entry that says which one it replaces, and mark the old one "Replaced 
 
 ## D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026)
 
+> **Implementation clarification — 8 October 2026 (evidence, not a new owner ruling):**
+> D-37 records intended standards and internal adoption. It does not constitute
+> institutional, legal or TGA approval. Local roles are simulated, not authenticated
+> staff accounts; the private Azure snapshot service is not shared service persistence;
+> runtime logs are mutable and do not provide authenticated tamper-evident PIR exports.
+> D-18 stops browser persistence after typed-text events. The current legal forms
+> mapping identifies Form 5A as a community treatment order and Forms 6A/6B as
+> inpatient treatment orders; the earlier 5A inpatient wording below is corrected.
+> TGA exclusion/exemption applicability requires a function-scoped intended-purpose
+> assessment; an excluded function and an exempt medical device have different duties.
+> See [production-readiness evidence](governance/PRODUCTION-READINESS.md).
+
 - **Date:** 6 October 2026. **Decided by:** Josh (product owner & psychiatrist).
 - **Decision:** Following full review of the 10 parked external governance gates (Item 63 and Decision D-36), formal operational postures, clinical standards, and resolution pathways are ratified across all 9 domains:
   1. **WF-29 (External Privacy & Service-Scoped Authority):** Ratified 4-tier Role-Based Access Control (RBAC) specification: (1) Statewide Bed Coordinator, (2) Inpatient Nurse Unit Manager / Bed Manager, (3) ED Psychiatric Liaison Clinician, (4) Executive / Operations Viewer. Local demonstrations continue using mock role simulation; Entra ID SSO will map directly to these 4 roles during live hospital hosting commissioning.
-  2. **WF-31 & WF-56 (WA Crown Law Legal Advice on Forms & Statutory Limits):** Ratified the "Advisory Notice Only" doctrine. Software displays advisory timers and countdown alerts based strictly on clinician-recorded timestamps; software never computes binding legal expiry or automatically alters/detains/discharges a patient under the WA _Mental Health Act 2014_. Physical signed statutory forms remain authoritative. Involuntary placements (`Form 5A`) remain strictly locked to gazetted authorised hospital beds. Pre-drafted compliance pack (`docs/ward-flow/governance/WA-MENTAL-HEALTH-ACT-COMPLIANCE.md`) approved for State Solicitor's Office / Office of the Chief Psychiatrist submission.
+  2. **WF-31 & WF-56 (WA Crown Law Legal Advice on Forms & Statutory Limits):** Ratified the "Advisory Notice Only" doctrine. Software displays advisory timers and countdown alerts based strictly on clinician-recorded timestamps; software never computes binding legal expiry or automatically alters/detains/discharges a patient under the WA _Mental Health Act 2014_. Physical signed statutory forms remain authoritative. Involuntary inpatient placements (`Forms 6A/6B`; Form 5A is a community treatment order) remain strictly locked to gazetted authorised hospital beds. Pre-drafted compliance pack (`docs/ward-flow/governance/WA-MENTAL-HEALTH-ACT-COMPLIANCE.md`) approved for State Solicitor's Office / Office of the Chief Psychiatrist submission.
   3. **WF-33 (Authoritative Multi-Tenant Persistence & Live Cloud Recovery):** Ratified cloud database deferral standard (affirming D-18). Backend Azure code and optimistic concurrency control (`expectedRevision`) are complete and verified; live cloud database connection remains parked until Health Service Provider pilot funding and dedicated GovNext network commissioning. Local JSON scenario persistence remains active for demonstrations.
   4. **WF-44 (WA Health Verified Service Directory):** Ratified "Advisory Directory with Coordinator Override" standard. The transcribed 2026 WA Health catchment schedule (~537 suburbs and catchments) is adopted as the demonstration baseline; live clinic-by-clinic phone audit is parked until site onboarding. Bed coordinators may manually assign out-of-catchment clinics by recording an auditable reason flag.
   5. **WF-46 (Clinical Safety Officer & Live Hazard Log):** Ratified Clinical Safety Case (`docs/ward-flow/governance/CLINICAL-SAFETY-CASE.md`) as the formal baseline. Josh acts as Clinical Sponsor / Lead Psychiatrist; Hazards HAZ-01 through HAZ-05 are actively mitigated in code; formal appointment of an external certified Australian CSO (or Health Service Clinical Governance Unit) is scheduled as an entry gate prior to real-patient clinical pilot.

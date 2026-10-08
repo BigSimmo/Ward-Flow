@@ -76,11 +76,10 @@ export function buildContentSecurityPolicy({
     // calls are server-side only, so the browser gets no provider origin.
     "img-src 'self' data: blob:; " +
     "media-src 'self'; " +
-    // No Sentry ingest origin: error tracking is server/edge only
-    // (src/sentry.{server,edge}.config.ts) and docs/error-tracking.md forbids a
-    // browser SDK, so the three wildcard `*.ingest*.sentry.io` origins allowed an
-    // egress channel from the clinical origin that nothing used (2026-09-02 audit,
-    // L34). Re-add them only together with a browser SDK and its privacy review.
+    // No external error-ingest origin: Ward Flow has no registered browser
+    // monitoring SDK. logger.ts provides an optional server forwarding seam,
+    // not a configured Sentry integration. Add an external origin only with
+    // an explicitly configured integration and its privacy review.
     "connect-src 'self'; " +
     "worker-src 'self'; " +
     "manifest-src 'self'; " +
@@ -100,9 +99,8 @@ export function buildSecurityHeaders(flags: SecurityHeaderFlags): SecurityHeader
     { key: "Cross-Origin-Resource-Policy", value: "same-site" },
     { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
     // No Cross-Origin-Embedder-Policy — see module header note.
-    // Microphone stays denied while Clinical Ask dictation has no user entry point
-    // (PR #2360 removed the composer controls; CLINICAL_ASK_ENABLED defaults to
-    // false). Re-grant `(self)` only together with a governed dictation surface.
+    // Ward Flow has no camera, microphone, geolocation or payment workflow.
+    // Re-grant a capability only with its deliberately implemented entry point.
     { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
     { key: "Origin-Agent-Cluster", value: "?1" },
     { key: "X-Permitted-Cross-Domain-Policies", value: "none" },

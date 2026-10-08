@@ -1,54 +1,59 @@
-# Ward Flow: Western Australian Mental Health Act 2014 Compliance Dossier
+# Ward Flow: WA Mental Health Act forms review pack
 
-**Document Version:** 1.0.0  
-**Statutory Basis:** *Mental Health Act 2014* (WA) [MHA 2014] & Chief Psychiatrist’s Statutory Guidelines  
-**Status:** DRAFT / PROTOTYPE COMPLIANCE MAPPING  
-**Clinical Scope:** Statutory mental health form tracking and involuntary admission gates in bed coordination
+**Version:** 1.1, corrected 8 October 2026. **Status:** draft for qualified review;
+not legal approval or a compliance certificate. **Scope:** synthetic form-recording
+and bed-flow demonstration. Signed statutory forms remain authoritative.
 
----
+## Source and terminology
 
-## 1. Statutory Context & Principles
+The [WA Chief Psychiatrist official forms register](https://www.chiefpsychiatrist.wa.gov.au/laws-and-rights/legislation/mental-health-act-2014-forms)
+is the source for form names. The [WA legislation register](https://www.legislation.wa.gov.au/legislation/statutes.nsf/main_mrtitle_13534_homepage.html)
+identified Act version **02-b0-02, 25 September 2025** as current during the
+8 October audit. Recheck the current Act, regulations, forms and guidance
+before any clinical review; a dated source check is not legal advice.
 
-The Western Australian *Mental Health Act 2014* provides the legal framework for the assessment, treatment, and care of persons with mental illness. Under Part 3 (Principles), services must promote voluntary treatment wherever possible and ensure involuntary powers are exercised as a last resort, for the minimum duration necessary, and in strict compliance with human rights and statutory timeframes.
+| Form         | Source-backed purpose                             | Prototype boundary                                                                    |
+| ------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 1A           | Referral for examination by a psychiatrist        | Record what the signed form states.                                                   |
+| 3A / 3B / 3C | Official further-examination/detention form group | Use each official form's complete name and conditions; do not infer equivalence.      |
+| 4A           | Transport order                                   | Record supplied form and transport facts; software does not authorise transport.      |
+| 5A           | Community treatment order                         | **Not an involuntary inpatient treatment order.**                                     |
+| 5B           | Continuation of community treatment order         | Do not represent it as an inpatient order.                                            |
+| 6A / 6B      | Involuntary inpatient treatment order forms       | Inpatient placement and authorised-hospital requirements need qualified legal review. |
 
-Bed coordination software directly impacts the administration of the Act during the critical transition points between emergency triage, inter-hospital transport, and inpatient admission.
+The earlier draft incorrectly named Form 5A as an inpatient order and attributed
+an extension to Form 3D. The official register reviewed did not establish a Form
+3D. Historical synthetic records may retain that code; it has **no verified period
+or legal meaning here** and must not be represented as an approved statutory form.
+This correction does not silently convert existing records to another form.
 
----
+## Time and placement controls
 
-## 2. Statutory Forms & Timeframe Mappings
+- Typed expiry from the signed form remains the record. Software never creates a
+  binding expiry or automatically detains, treats, discharges or changes legal status.
+- D-29 permits sourced advisory periods only in
+  `src/components/ward-management/legal-forms/act-periods-demo.ts`, labelled
+  **Synthetic demo, not legally checked**. This pack does not introduce another
+  period table or repeat unverified section numbers/durations.
+- Existing destination eligibility checks are engineering controls over synthetic
+  unit/legal-status data. They are not evidence of gazettal, legal interpretation,
+  current hospital authority or real-world compliance.
+- Ward Flow does not authorise seclusion or restraint. Expanding its intended
+  purpose would require a separate clinical, legal and regulatory assessment.
 
-Ward Flow models the following statutory forms as explicit clinical records, maintaining strict adherence to legal nomenclature:
+## Required acceptance before real use
 
-| Form | Statutory Provision | Purpose in Patient Flow | Legal Timeframe / Constraints in Ward Flow |
-|---|---|---|---|
-| **Form 1A** | MHA 2014 s. 26 | Referral for examination by a psychiatrist | Valid for 72 hours from execution. Model does not infer deadlines; displays entered practitioner time. |
-| **Form 3A** | MHA 2014 s. 58 | Order authorising detention in an authorised hospital for further examination | Authorises detention for up to 24 hours to conduct an examination. Countdown clock alerts coordinators as deadline approaches. |
-| **Form 3D** | MHA 2014 s. 62 | Order extending detention period for further examination | Allows an extension of up to 72 hours. Prototype displays time typed by clinician (`R2-3`); no computed durations. |
-| **Form 4A** | MHA 2014 s. 86 | Transport order | Authorises transport officers or police to convey person to an authorised hospital. CAD transport number logging required. |
-| **Form 5A** | MHA 2014 s. 89 | Involuntary inpatient treatment order | Confirms involuntary status. **Absolute constraint:** Can ONLY be admitted to a Gazetted Authorised Hospital. |
+1. Obtain the health service's legal/clinical owner and documented review of
+   every implemented form name, source, timer, correction and placement rule.
+2. Verify authorised-hospital/unit reference data and ownership of updates. Test
+   changes in status, correction, revocation and destination eligibility together.
+3. Review patient rights, notification, advocacy and form-record evidence with
+   appropriate WA bodies. Do not assume an electronic record replaces a signed
+   statutory document or satisfies evidentiary requirements.
+4. Reconcile unsupported historical form codes explicitly; retain provenance and
+   require an authorised correction rather than silently relabelling records.
+5. Record reviewer, date, source versions, scope, conditions and unresolved matters
+   in the [production-readiness register](PRODUCTION-READINESS.md).
 
----
-
-## 3. Strict Statutory Safety Guardrails
-
-### A. Authorised Hospital Restriction (Gazetted Beds Only)
-Under MHA 2014 s. 89 and s. 542, an involuntary inpatient can only be received and treated in an authorised hospital (or authorised unit) gazetted by the Governor.
-- **Enforcement:** `destinationNoLongerLawful()` in `ward-derivations.ts` automatically rejects involuntary placement on non-authorised units and creates a P0 Critical Breach alert in the coordination console if a patient's legal status changes to involuntary while allocated to an open/unauthorised ward.
-
-### B. Prohibition on Inferred Statutory Status
-- In accordance with clinical governance rulings, Ward Flow **never infers or computes legal expirations automatically**. A form is legally valid or revoked only when an Authorised Medical Practitioner (AMP) records a signed examination outcome.
-- Automated tests verify that no timer auto-discharges or auto-converts a patient's legal status without human clinical entry.
-
-### C. Seclusion and Bodily Restraint Exclusion
-- Under Part 14 of the MHA 2014, seclusion and mechanical/physical restraint are heavily regulated clinical interventions requiring specialized Chief Psychiatrist registers.
-- **Architecture Principle:** Ward Flow is strictly a bed-flow and capacity coordination tool. It **must never** incorporate modules for authorizing, timing, or logging seclusion or restraint events.
-
----
-
-## 4. Legal Sign-off Requirements Prior to Clinical Deployment
-
-Before live operational implementation, the following legal verifications are required:
-
-1. **State Solicitor’s Office (SSO) or Health Service Legal Counsel Review:** Confirmation that electronic form representations meet evidentiary standards under the *Electronic Transactions Act 2011* (WA).
-2. **Office of the Chief Psychiatrist (OCP) Consultation:** Audit of terminology, form registers, and reporting triggers against OCP clinical monitoring standards.
-3. **Mental Health Tribunal & Mental Health Advocacy Service Liaison:** Confirmation that patient notification tracking respects statutory advocacy rights.
+Local prototype builds and synthetic tests do not require these external approvals.
+Clinical use does. Internal approval to prepare this pack is not external sign-off.
