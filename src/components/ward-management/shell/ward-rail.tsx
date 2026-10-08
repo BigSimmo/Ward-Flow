@@ -566,7 +566,7 @@ export function WardRail() {
     );
   }
 
-  function renderBedAlertRows(variant: "card" | "sheet") {
+  function renderBedAlertRows() {
     return (
       <>
         <span className={styles.alertRow}>
@@ -577,9 +577,7 @@ export function WardRail() {
             <BedAlertMeter percent={metroPercent} />
           )}
           <span className={styles.alertRowPercent}>
-            {variant === "sheet" && metroPercent !== null ? (
-              <Dot tone={isBedAlert(metroPercent) ? "warning" : "neutral"} />
-            ) : null}
+            {metroPercent !== null ? <Dot tone={isBedAlert(metroPercent) ? "warning" : "neutral"} /> : null}
             {metroPercent === null ? "—" : formatOccupancyPercent(metroPercent)}
           </span>
         </span>
@@ -588,7 +586,7 @@ export function WardRail() {
             <span className={styles.alertRowName}>{hottest.shortName}</span>{" "}
             <BedAlertMeter percent={hottest.occupancyPercent} />
             <span className={styles.alertRowPercent}>
-              {variant === "sheet" ? <Dot tone={isBedAlert(hottest.occupancyPercent) ? "warning" : "neutral"} /> : null}
+              <Dot tone={isBedAlert(hottest.occupancyPercent) ? "warning" : "neutral"} />
               {formatOccupancyPercent(hottest.occupancyPercent)}
             </span>
           </span>
@@ -746,27 +744,35 @@ export function WardRail() {
             </span>
           </button>
 
+          {/* One line (Josh, 8 October 2026): the Metro figure and the fullest service by its short
+              name ("East"), with the dot only when a service is at or over the threshold. The full
+              names are in the label and the list that opens below. */}
           <button
             type="button"
             className={styles.capacityPulseStrip}
             data-open={alertsOpen ? "true" : undefined}
+            data-alert={alertCount > 0 ? "true" : undefined}
             data-testid="ward-rail-capacity-alerts-trigger"
-            title={`Bed alerts. Metro and ${hottest.shortName} occupancy against ${BED_ALERT_THRESHOLD_PERCENT}%.`}
+            aria-label={`Bed alerts: ${alertCountLabel}. ${metroLabel}. ${hottestLabel}.`}
+            title={`Bed alerts: ${alertCountLabel}. Occupancy against ${BED_ALERT_THRESHOLD_PERCENT}%.`}
             aria-expanded={alertsOpen}
             aria-haspopup="dialog"
             onClick={() => setAlertsOpen((prev) => !prev)}
           >
-            <span className={styles.alertsHead}>
-              <span className={styles.alertsEyebrow}>Bed alerts</span>{" "}
-              <span className={styles.alertsChip} data-alert={alertCount > 0 ? "true" : undefined}>
-                {alertCount > 0 ? <Dot tone="warning" /> : null}
-                {alertCountLabel}
-              </span>{" "}
-              <span className={styles.capacityChevron} data-open={alertsOpen ? "true" : undefined}>
-                <ChevronDown aria-hidden="true" strokeWidth={1.75} />
+            {alertCount > 0 ? <Dot tone="warning" className={styles.alertLineDot} /> : null}
+            <span className={styles.alertFigure}>
+              <span className={styles.alertFigureName}>Metro</span>{" "}
+              <span className={styles.alertFigureValue}>
+                {metroPercent === null ? "—" : formatOccupancyPercent(metroPercent)}
               </span>
             </span>
-            {renderBedAlertRows("card")}
+            <span className={styles.alertFigure} data-flex="true">
+              <span className={styles.alertFigureName}>{SERVICE_SHORT_LABEL[hottest.shortName]}</span>{" "}
+              <span className={styles.alertFigureValue}>{formatOccupancyPercent(hottest.occupancyPercent)}</span>
+            </span>
+            <span className={styles.capacityChevron} data-open={alertsOpen ? "true" : undefined}>
+              <ChevronDown aria-hidden="true" strokeWidth={1.75} />
+            </span>
           </button>
 
           {alertsOpen ? (
@@ -1085,7 +1091,7 @@ export function WardRail() {
                 {alertCountLabel}
               </span>
             </span>
-            {renderBedAlertRows("sheet")}
+            {renderBedAlertRows()}
           </Link>
         ) : null}
         {groups.map((group) => {
