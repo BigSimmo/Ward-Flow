@@ -131,12 +131,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // incidental step.
     await page.locator('[data-testid^="ward-queue-row-"]').first().click();
     await expect(page.getByRole("complementary", { name: "Explainable shortlist" })).toBeVisible();
-    // Task A (structured-wobbling-globe): the four registers moved out of the bottom bar and into
-    // a panel under the Statewide flow diagram, matching the Command mockup — no collapsed toggle
-    // at this width any more (`.exceptionsToggle` is `display: none` from 48rem up), so the panel
-    // itself, not a button that opens it, is what proves this region is present. Scrolled into
-    // view first: unlike the old bar (pinned outside `.body`'s own scroll) this panel is ordinary
-    // page content now, and Playwright's `toBeVisible()` requires it actually be in the viewport.
+    // Owner, 8 Oct 2026: the four registers start closed and open as a strip under the hero from
+    // its Exceptions count, so the toggle is clicked first. Scrolled into view before the
+    // visibility check, as Playwright's `toBeVisible()` needs it in the viewport.
+    await page.getByRole("button", { name: /Exceptions/, expanded: false }).click();
     const registers = page.getByRole("region", { name: "Declines, overrides and exceptions" });
     await registers.scrollIntoViewIfNeeded();
     await expect(registers).toBeVisible();
@@ -209,8 +207,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
-    // Opens on the Exceptions tab by default — the same tab this panel always opened on before
-    // Task 5 added the other three beside it — and, at this width, needs no click to be visible.
+    // Opens on the Exceptions tab by default. At this width the registers start closed and open
+    // from the hero's Exceptions count (owner, 8 Oct 2026).
+    await page.getByRole("button", { name: /Exceptions/, expanded: false }).click();
     const drawer = page.getByRole("tabpanel", { name: "Exceptions" });
     await drawer.scrollIntoViewIfNeeded();
     await expect(drawer).toBeVisible();

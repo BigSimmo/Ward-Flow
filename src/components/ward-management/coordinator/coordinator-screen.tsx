@@ -46,11 +46,13 @@ const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-c
  * Home: the coordinator's first screen (v6 Home mockup, 7 Oct 2026).
  *
  * One hero band (open movements and the day's counts, Live with pause, Start handover), the ED
- * pressure card, then three columns: the priority queue, State bedflow, and the registers with
- * "Since you looked". Selecting a patient or referral opens the explainable shortlist in the right
- * column under the registers (a bottom sheet on a phone); State bedflow names the patient, how
- * many wards fit and the best fit, and Offer picks that ward in the shortlist. Nothing on this screen changes state except through the
- * shortlist's own reducer actions.
+ * pressure card, then the columns. At rest: the priority queue (with "Since you looked" under it)
+ * and State bedflow across the two right columns. Selecting a patient or referral reads left to
+ * right: queue, State bedflow (narrowed, fitting wards tinted), then the explainable shortlist on
+ * the far right (a bottom sheet on a phone). The Exceptions count on the hero opens the four
+ * registers as a strip under it (owner, 8 Oct 2026); on a phone they stay under the queue behind
+ * "Today's answers". Nothing on this screen changes state except through the shortlist's own
+ * reducer actions.
  *
  * Kept from the third edition: the selection survives a role switch while the movement is open
  * (`focusMovementId`, Task 12), a closed movement stops being explained and hands focus back to
@@ -98,6 +100,18 @@ export function CoordinatorScreen() {
   const [selectedReferralId, setSelectedReferralId] = useState<string | undefined>(undefined);
   const queueFocusRef = useRef<HTMLDivElement>(null);
   const [exceptionsOpen, setExceptionsOpen] = useState(false);
+  // Desktop: the registers strip opens from the hero's Exceptions count and starts closed.
+  const [registersOpen, setRegistersOpen] = useState(false);
+  // Phone keeps the registers in the page flow under the queue, behind "Today's answers".
+  const [isPhone, setIsPhone] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(max-width: 48rem)");
+    const update = () => setIsPhone(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
 
   // A ward choice belongs to the movement it was made for, so changing movement clears it.
   function selectMovement(movementId: string | undefined) {
@@ -235,6 +249,31 @@ export function CoordinatorScreen() {
   ).length;
   const bedsReady = counts.capacity?.value ?? 0;
 
+  // The four registers: a strip under the hero on desktop (opened from its Exceptions count), and
+  // the collapsible "Today's answers" card under the queue on a phone. Only one is ever mounted.
+  function renderRegisters(placement: "band" | "column") {
+    return (
+      <ExceptionDrawer
+        items={actionInbox}
+        silenceReminders={silenceReminders}
+        rejections={rejections}
+        overrides={overrideRegister}
+        declines={declineRegister}
+        units={units}
+        now={now}
+        open={exceptionsOpen}
+        placement={placement}
+        onToggle={() => setExceptionsOpen((open) => !open)}
+        // On a phone the open registers stand between a coordinator and Confirm, so choosing a
+        // row closes them in the same tap.
+        onSelectMovement={(movementId) => {
+          selectMovement(movementId);
+          setExceptionsOpen(false);
+        }}
+      />
+    );
+  }
+
   return (
     <div className={styles.screen} data-testid="ward-coordinator" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
@@ -253,6 +292,9 @@ export function CoordinatorScreen() {
                   value={actionInbox.length}
                   label="Exceptions"
                   tone={actionInbox.length > 0 ? "warning" : undefined}
+                  expanded={isPhone ? undefined : registersOpen}
+                  controls={isPhone ? undefined : "ward-home-registers"}
+                  onToggle={isPhone ? undefined : () => setRegistersOpen((open) => !open)}
                 />
                 <HeroStat
                   value={breachWithinHour}
@@ -271,6 +313,12 @@ export function CoordinatorScreen() {
             }
           />
 
+          {registersOpen && !isPhone ? (
+            <div id="ward-home-registers" className={styles.registersBand}>
+              {renderRegisters("band")}
+            </div>
+          ) : null}
+
           <HomeEdPressure
             now={now}
             movements={movements}
@@ -285,121 +333,98 @@ export function CoordinatorScreen() {
             data-shortlist-open={hasPanelSubject}
             ref={queueFocusRef}
           >
-            <PriorityQueue
-              movements={queue}
-              referralQueue={referralQueue}
-              now={now}
-              selectedId={selectedMovementId}
-              onSelect={selectMovement}
-              selectedReferralId={selectedReferralId}
-              onSelectReferral={selectReferral}
-              filterEdId={activeEdId}
-              onClearFilter={() => setSelectedEdId(undefined)}
-              totalMovements={openMovements.length}
-              serviceScope={queueServiceScope}
-              pullHoldMinutes={configuration.pullHoldMinutes}
-              delaysHref={DELAYS_HREF}
-            />
-
-            <HomeBedflow
-              movement={selectedMovement}
-              units={units}
-              movements={movements}
-              bedReleases={bedReleases}
-              leaveBeds={leaveBeds}
-              admissions={admissions}
-              now={now}
-              selectedUnitId={selectedUnitId}
-              onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
-              onOffer={(unitId) => setSelectedUnitId(unitId)}
-              parallelReferralCap={configuration.parallelReferralCap}
-              dischargesHeldUp={counts.discharges?.value ?? 0}
-              service={service}
-            />
-
             <div className={styles.side}>
-              <ExceptionDrawer
-                items={actionInbox}
-                silenceReminders={silenceReminders}
-                rejections={rejections}
-                overrides={overrideRegister}
-                declines={declineRegister}
-                units={units}
+              <PriorityQueue
+                movements={queue}
+                referralQueue={referralQueue}
                 now={now}
-                open={exceptionsOpen}
-                onToggle={() => setExceptionsOpen((open) => !open)}
-                // On a phone the open registers stand between a coordinator and Confirm, so
-                // choosing a row closes them in the same tap.
-                onSelectMovement={(movementId) => {
-                  selectMovement(movementId);
-                  setExceptionsOpen(false);
-                }}
+                selectedId={selectedMovementId}
+                onSelect={selectMovement}
+                selectedReferralId={selectedReferralId}
+                onSelectReferral={selectReferral}
+                filterEdId={activeEdId}
+                onClearFilter={() => setSelectedEdId(undefined)}
+                totalMovements={openMovements.length}
+                serviceScope={queueServiceScope}
+                pullHoldMinutes={configuration.pullHoldMinutes}
+                delaysHref={DELAYS_HREF}
               />
-
-              {/* The shortlist opens in this column's own flow, after the registers (the drawing's
-                  order), so it never covers a register tab: Refused stays reachable while a patient
-                  is open. */}
-              {hasPanelSubject ? (
-                <>
-                  <div
-                    className={`${styles.shortlistBackdrop} ${shortlistStyles.shortlistBackdrop ?? ""}`}
-                    onClick={closeShortlist}
-                    aria-hidden="true"
-                    data-testid="ward-coordinator-shortlist-backdrop"
-                  />
-                  <div className={`${styles.shortlistColumn} ${shortlistStyles.shortlistColumn ?? ""}`}>
-                    <aside
-                      className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
-                      aria-label={selectedReferral ? "Referral placement" : "Explainable shortlist"}
-                      // Journeys prove which movement the panel is for by this attribute.
-                      data-subject-movement={selectedReferral ? undefined : selectedMovement?.id}
-                    >
-                      <div
-                        className={`${styles.sheetHandle} ${shortlistStyles.sheetHandle ?? ""}`}
-                        aria-hidden="true"
-                      />
-                      <header className={styles.shortlistHeader}>
-                        <h2>{selectedReferral ? "Referral placement" : "Explainable shortlist"}</h2>
-                        <button
-                          type="button"
-                          className={buttonClass({ variant: "ghost", size: "sm" })}
-                          onClick={closeShortlist}
-                          aria-label="Close shortlist and clear selection"
-                        >
-                          Close
-                        </button>
-                      </header>
-                      {/* Beds are never narrowed by the chosen service. */}
-                      {service ? (
-                        <p className={styles.cardNote} data-testid="ward-shortlist-not-scoped">
-                          Beds are never narrowed by service. Every ward in the network is considered.
-                        </p>
-                      ) : null}
-                      {selectedReferral ? (
-                        <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
-                      ) : (
-                        <ShortlistPanel
-                          movement={selectedMovement}
-                          now={liveNow}
-                          units={units}
-                          bedReleases={bedReleases}
-                          leaveBeds={leaveBeds}
-                          admissions={admissions}
-                          referrals={referrals}
-                          selectedUnitId={selectedUnitId}
-                          onSelectUnit={setSelectedUnitId}
-                          dispatch={dispatch}
-                          parallelReferralCap={configuration.parallelReferralCap}
-                          pullHoldMinutes={configuration.pullHoldMinutes}
-                        />
-                      )}
-                    </aside>
-                  </div>
-                </>
-              ) : null}
-
+              {isPhone ? renderRegisters("column") : null}
               <SinceLastLookPanel world={lastLookWorld} now={now} activity={recentActivity} />
             </div>
+
+            <div className={hasPanelSubject ? styles.flowCol : styles.flowWide}>
+              <HomeBedflow
+                movement={selectedMovement}
+                units={units}
+                movements={movements}
+                bedReleases={bedReleases}
+                leaveBeds={leaveBeds}
+                admissions={admissions}
+                now={now}
+                selectedUnitId={selectedUnitId}
+                onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
+                onOffer={(unitId) => setSelectedUnitId(unitId)}
+                parallelReferralCap={configuration.parallelReferralCap}
+                dischargesHeldUp={counts.discharges?.value ?? 0}
+                service={service}
+              />
+            </div>
+
+            {hasPanelSubject ? (
+              <div className={styles.side}>
+                <div
+                  className={`${styles.shortlistBackdrop} ${shortlistStyles.shortlistBackdrop ?? ""}`}
+                  onClick={closeShortlist}
+                  aria-hidden="true"
+                  data-testid="ward-coordinator-shortlist-backdrop"
+                />
+                <div className={`${styles.shortlistColumn} ${shortlistStyles.shortlistColumn ?? ""}`}>
+                  <aside
+                    className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
+                    aria-label={selectedReferral ? "Referral placement" : "Explainable shortlist"}
+                    // Journeys prove which movement the panel is for by this attribute.
+                    data-subject-movement={selectedReferral ? undefined : selectedMovement?.id}
+                  >
+                    <div className={`${styles.sheetHandle} ${shortlistStyles.sheetHandle ?? ""}`} aria-hidden="true" />
+                    <header className={styles.shortlistHeader}>
+                      <h2>{selectedReferral ? "Referral placement" : "Explainable shortlist"}</h2>
+                      <button
+                        type="button"
+                        className={buttonClass({ variant: "ghost", size: "sm" })}
+                        onClick={closeShortlist}
+                        aria-label="Close shortlist and clear selection"
+                      >
+                        Close
+                      </button>
+                    </header>
+                    {service ? (
+                      <p className={styles.cardNote} data-testid="ward-shortlist-not-scoped">
+                        Beds are never narrowed by service. Every ward in the network is considered.
+                      </p>
+                    ) : null}
+                    {selectedReferral ? (
+                      <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
+                    ) : (
+                      <ShortlistPanel
+                        movement={selectedMovement}
+                        now={liveNow}
+                        units={units}
+                        bedReleases={bedReleases}
+                        leaveBeds={leaveBeds}
+                        admissions={admissions}
+                        referrals={referrals}
+                        selectedUnitId={selectedUnitId}
+                        onSelectUnit={setSelectedUnitId}
+                        dispatch={dispatch}
+                        parallelReferralCap={configuration.parallelReferralCap}
+                        pullHoldMinutes={configuration.pullHoldMinutes}
+                      />
+                    )}
+                  </aside>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
         <WardPrototypeFooter
