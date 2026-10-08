@@ -128,6 +128,21 @@
   }
 }
 
+/* Phone: the strip scrolls on its own. `position: relative` keeps the absolutely positioned
+ * screen-reader text inside the scroller, so it no longer widens the page. */
+@media (max-width: 48rem) {
+  .strip,
+  .list {
+    position: relative;
+  }
+
+  .list {
+    grid-auto-columns: minmax(6.5rem, 1fr);
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+}
+
 @media (forced-colors: active) {
   .current {
     outline: 2px solid Highlight;

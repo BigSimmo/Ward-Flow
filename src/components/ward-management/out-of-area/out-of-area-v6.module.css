@@ -596,3 +596,79 @@
     min-height: var(--spacing-tap, 3rem);
   }
 }
+
+/* Phone (8 Oct 2026): a read-only list first. The sort switch, the home-region filter strip, the
+   export button and the home catchments chart are left to the larger screen; search stays, full
+   width and at tap height. Above 48rem nothing changes. */
+@media (max-width: 48rem) {
+  .ledgerHead {
+    padding-right: 0;
+  }
+
+  .headControls {
+    flex: 1 1 100%;
+    padding: 0 var(--wf-s-4) var(--wf-s-3);
+  }
+
+  .headControls > :not(.searchBox),
+  .segScroll,
+  .sideCard {
+    display: none;
+  }
+
+  .searchBox {
+    flex: 1 1 100%;
+    height: var(--spacing-tap, 3rem);
+  }
+
+  .toolbar {
+    padding-top: 0;
+  }
+
+  .card {
+    padding: var(--wf-s-3);
+  }
+
+  /* The UMRN link keeps a 44px hit area without growing the card. */
+  .card .umrnLink {
+    display: inline-block;
+    padding: 14px 0;
+    margin: -14px 0;
+  }
+
+  .ledgerCard span:has(> .footNote) {
+    white-space: normal;
+  }
+
+  .ledgerCard span:has(> .footNote) + div {
+    display: none;
+  }
+
+  .ledgerHead > :first-child {
+    flex: 1 1 100%;
+    border-bottom: 0;
+  }
+
+  /* "150 days" needs a step down to fit a third of the hero at 360px. */
+  .heroLongest > :first-child > :first-child {
+    font-size: var(--wf-fs-16);
+  }
+
+  .planFigures {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--wf-s-3);
+  }
+
+  .planFigures > div {
+    padding-right: var(--wf-s-3);
+  }
+
+  .planFigures dd {
+    font-size: var(--wf-fs-16);
+    white-space: normal;
+  }
+
+  .formRow select {
+    text-overflow: ellipsis;
+  }
+}

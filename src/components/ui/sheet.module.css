@@ -72,6 +72,14 @@
   }
 }
 
+/* Phone (8 Oct 2026): no hardware keyboard, so the Esc hint leaves the header and the title gets
+ * the room. Above 48rem the header is unchanged. */
+@media (max-width: 48rem) {
+  .header kbd {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-transparency: reduce) {
   :where(.panel) {
     background-color: var(--wf-surface);

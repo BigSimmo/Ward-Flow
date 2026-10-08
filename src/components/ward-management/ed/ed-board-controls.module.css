@@ -381,3 +381,10 @@
     transition: none !important;
   }
 }
+
+/* Phone (≤48rem): the row's Actions menu keeps a 44px target. */
+@media (max-width: 48rem) {
+  .actionsTrigger {
+    min-height: 2.75rem;
+  }
+}

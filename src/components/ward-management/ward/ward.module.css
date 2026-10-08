@@ -6189,3 +6189,41 @@
     color: var(--wf-ink-3);
   }
 }
+
+/* Phone: the five ward tabs scroll sideways on one line with a soft edge, and the tab tools
+ * (answer requests, tasks, shift brief, print, raise referral) sit on one scrolling line under
+ * them instead of wrapping into a tall block. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .tabBarWrap {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0;
+    padding: 0 var(--wf-s-2);
+  }
+
+  .tabList {
+    width: 100%;
+    padding-inline-end: var(--wf-s-4);
+    mask-image: linear-gradient(to right, black calc(100% - var(--wf-s-4)), transparent);
+  }
+
+  .tabTools {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+    overflow-x: auto;
+    padding-inline-end: var(--wf-s-4);
+    scrollbar-width: none;
+    border-top: 1px solid var(--wf-line);
+    mask-image: linear-gradient(to right, black calc(100% - var(--wf-s-4)), transparent);
+  }
+
+  .tabTools::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabTools > * {
+    flex: 0 0 auto;
+  }
+}

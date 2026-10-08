@@ -3,6 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
+  Activity as ActivityIcon,
   BarChart3,
   BookOpen,
   CalendarClock,
@@ -14,6 +15,7 @@ import {
   Hospital,
   ListChecks,
   MapIcon,
+  Menu as MenuIcon,
   Plus,
   RotateCcwClock,
   Settings,
@@ -24,7 +26,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
@@ -38,7 +40,10 @@ import { WardGlobalSearch } from "@/components/ward-management/ward-global-searc
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
   WARD_ADD_PERSON_HREF,
+  WARD_HOME_HREF,
   WARD_NAV,
+  WARD_NEW_REFERRAL_MENU,
+  WARD_REFERRAL_INTAKE_HREF,
   WARD_VIEWS,
   resolveWardPrimaryAction,
   resolveWardScreenTitle,
@@ -75,7 +80,7 @@ const WardMhaCalculator = dynamic(
 );
 
 import { announceToWardShell } from "./ward-live-region";
-import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
+import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { digestHref, edHref, handoverHref, movementHref, officerHref, onCallHref, settingsHref } from "./ward-facade";
 import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
@@ -351,9 +356,107 @@ export function isPendingNavigation(href: string, current: string): boolean {
   return target.origin === here.origin && target.pathname !== here.pathname;
 }
 
-export function WardBar({ activity, primaryAction, onServiceChange }: WardBarProps) {
+/**
+ * Phone bar smart auto-hide (option A, 8 Oct 2026). The bar slides away after a deliberate scroll
+ * down and returns on any scroll up, at the top of the page, while a panel is open, when focus
+ * enters it or when the task count rises. Short pages never hide it. Desktop never hides it.
+ */
+const REVEAL_BAR_EVENT = "ward-flow-reveal-bar";
+const HIDE_AFTER_PX = 48;
+const SHOW_AFTER_PX = 8;
+const TOP_ZONE_PX = 120;
+
+function useAutoHideBar(enabled: boolean, taskCount: number): boolean {
+  const [hidden, setHidden] = useState(false);
+  const [seen, setSeen] = useState({ enabled, taskCount });
+  if (seen.enabled !== enabled || seen.taskCount !== taskCount) {
+    // Leaving phone mode, opening a panel or a new task always brings the bar back.
+    if (!enabled || taskCount > seen.taskCount) setHidden(false);
+    setSeen({ enabled, taskCount });
+  }
+
+  useEffect(() => {
+    if (!enabled) return;
+    let lastY = window.scrollY;
+    let travel = 0;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const y = window.scrollY;
+      const delta = y - lastY;
+      lastY = y;
+      const shortPage = document.documentElement.scrollHeight < window.innerHeight * 1.5;
+      if (shortPage || y <= TOP_ZONE_PX) {
+        travel = 0;
+        setHidden(false);
+        return;
+      }
+      travel = Math.sign(delta) === Math.sign(travel) ? travel + delta : delta;
+      if (travel >= HIDE_AFTER_PX) setHidden(true);
+      else if (travel <= -SHOW_AFTER_PX) setHidden(false);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    const reveal = () => {
+      travel = 0;
+      setHidden(false);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener(REVEAL_BAR_EVENT, reveal);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener(REVEAL_BAR_EVENT, reveal);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [enabled]);
+
+  return enabled && hidden;
+}
+
+/** The phone layout's one breakpoint (8 Oct 2026). Everything phone-only in the bar keys off it. */
+const PHONE_QUERY = "(max-width: 48rem)";
+
+function subscribePhone(onChange: () => void) {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
+  const query = window.matchMedia(PHONE_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+function usePhoneViewport(): boolean {
+  return useSyncExternalStore(
+    subscribePhone,
+    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
+    () => false,
+  );
+}
+
+/**
+ * Phone bar, option A (Josh, 8 Oct 2026): the same bar on every page, so every page except the referral
+ * form itself offers New referral on the phone. Desktop keeps each page's own action.
+ */
+const PHONE_NEW_REFERRAL: WardPrimaryAction = {
+  kind: "new-referral",
+  label: "New referral",
+  menu: WARD_NEW_REFERRAL_MENU,
+};
+
+export function phoneBarAction(
+  action: WardPrimaryAction | undefined,
+  phone: boolean,
+  pathname: string,
+): WardPrimaryAction | undefined {
+  if (!phone || action?.kind === "new-referral") return action;
+  if (pathname.startsWith(WARD_REFERRAL_INTAKE_HREF)) return action;
+  return PHONE_NEW_REFERRAL;
+}
+
+export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
+  const isPhone = usePhoneViewport();
+  const primaryAction = phoneBarAction(pagePrimaryAction, isPhone, pathname);
   const {
     movements,
     patients,
@@ -397,6 +500,8 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   const activityTriggerRef = useRef<HTMLButtonElement>(null);
   const tasksTriggerRef = useRef<HTMLButtonElement>(null);
   const toolsTriggerRef = useRef<HTMLButtonElement>(null);
+  // Phone: Activity and Tools open from the Menu sheet, so focus returns to the Menu button.
+  const phoneMenuRef = useRef<HTMLButtonElement>(null);
   const referralReturnFocusRef = useRef<HTMLElement>(null);
   const figuresTabRef = useRef<HTMLButtonElement>(null);
   const servicePanelRef = useRef<HTMLDivElement>(null);
@@ -806,13 +911,21 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   const activeServiceBadgeLabel = activeService ?? "Statewide";
   const activityHasUnread = unreadNoticeCount > 0;
 
+  const barHidden = useAutoHideBar(isPhone && openPanel === null, tasksItems.length);
+  const revealBar = useCallback(() => window.dispatchEvent(new Event(REVEAL_BAR_EVENT)), []);
+
   return (
     <header
       className={styles.bar}
       aria-label="Header"
       data-testid="ward-bar"
       data-long-title={routeTitle.length > 17 || undefined}
+      data-hidden={barHidden || undefined}
+      onFocusCapture={revealBar}
     >
+      <Link href={WARD_HOME_HREF} className={`${styles.phoneOnly} ${styles.phoneBrand}`} aria-label="Ward Flow home">
+        <ActivityIcon aria-hidden="true" strokeWidth={2} />
+      </Link>
       <div className={styles.title}>
         <div className={styles.titleGroup}>
           <span
@@ -1092,6 +1205,19 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         </div>
       ) : null}
 
+      <button
+        type="button"
+        ref={phoneMenuRef}
+        className={styles.phoneOnly}
+        aria-label="Menu"
+        aria-haspopup="dialog"
+        aria-controls="ward-rail-more-pages"
+        data-testid="ward-bar-phone-menu"
+        onClick={(event) => openWardMenu(event.currentTarget)}
+      >
+        <MenuIcon aria-hidden="true" strokeWidth={1.75} />
+      </button>
+
       <Sheet
         id="ward-bar-activity-drawer"
         open={openPanel === "activity"}
@@ -1109,7 +1235,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         }
         placement="right"
         testId="ward-bar-activity-sheet"
-        returnFocusRef={activityTriggerRef}
+        returnFocusRef={isPhone ? phoneMenuRef : activityTriggerRef}
         descriptionContent={
           <p className={styles.activityFreshness} data-tone={activityTone}>
             <span>
@@ -1471,7 +1597,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         descriptionContent={<p className={styles.activityFreshness}>Whole network</p>}
         placement="right"
         testId="ward-bar-tools-sheet"
-        returnFocusRef={toolsTriggerRef}
+        returnFocusRef={isPhone ? phoneMenuRef : toolsTriggerRef}
         desktopBackdropClassName={styles.drawerBackdrop}
         contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide}`}
         headerClassName={styles.drawerHeader}
@@ -1594,7 +1720,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
               className={styles.toolItem}
               onClick={() => {
                 setReferralCategory("ward");
-                referralReturnFocusRef.current = toolsTriggerRef.current;
+                referralReturnFocusRef.current = isPhone ? phoneMenuRef.current : toolsTriggerRef.current;
                 openPopover("referral");
               }}
             >

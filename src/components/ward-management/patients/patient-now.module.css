@@ -4777,3 +4777,148 @@
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
+
+/* Phone (8 Oct 2026, approved phone board 02): one compact hero band. Name and identity, the
+ * Live chip in the top corner, the tier, specialling and wait facts that wrap, a two step journey
+ * (the step before and the current one), the two page actions as equal buttons, then the back
+ * button beside the record tabs, which scroll sideways. Desktop and tablet are unchanged:
+ * everything here sits under 48rem. */
+@media (max-width: 48rem) {
+  .v6Page {
+    padding: var(--wf-s-3);
+  }
+
+  .v6Hero {
+    position: relative;
+  }
+
+  /* Room for the Live chip at the end of the name line. */
+  .v6Hero :has(> h1) {
+    padding-right: 4.5rem;
+  }
+
+  /* A long place name ends in an ellipsis rather than being cut mid word. */
+  .v6IdLine > * {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .v6HeroFacts {
+    flex-wrap: wrap;
+    gap: var(--wf-s-1) var(--wf-s-3);
+    white-space: normal;
+  }
+
+  .v6HeroFact {
+    white-space: nowrap;
+  }
+
+  .v6HeroWait {
+    font-size: var(--wf-fs-14);
+    line-height: var(--wf-lh-14);
+  }
+
+  .v6LiveState {
+    align-items: flex-start;
+  }
+
+  /* The stage list scrolls inside itself; its screen reader text must not widen the page. */
+  .v6Steps {
+    position: relative;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+
+  .v6Step:not([data-s="now"]):not(:has(+ .v6Step[data-s="now"])) {
+    display: none;
+  }
+
+  .v6Step {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .v6Step[data-s="now"] {
+    flex: 0 1 auto;
+  }
+
+  .v6StepLabel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .v6HeroTabsRow {
+    flex-wrap: wrap;
+  }
+
+  .v6HeroActions {
+    order: -1;
+    flex: 1 1 100%;
+    gap: var(--wf-s-2);
+    margin-left: 0;
+  }
+
+  .v6HeroActions > :first-child {
+    position: absolute;
+    top: var(--wf-s-3);
+    right: var(--wf-s-4);
+  }
+
+  /* The two page actions share the row; a long label takes its own row rather than being cut. */
+  .screen .v6HeroActions {
+    flex-wrap: wrap;
+  }
+
+  .screen .v6HeroActions > :not(:first-child) {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 44px;
+    padding-inline: var(--wf-s-3);
+  }
+
+  .screen .v6HeroTabsRow > a {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+  }
+
+  .screen .v6Tab {
+    min-height: 40px;
+  }
+
+  .v6Tabs {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .v6Tab {
+    flex: 0 0 auto;
+  }
+
+  /* Readiness: the title wraps beside its icon and the badge sits under it, never cutting it short. */
+  .v6Gates > :first-child {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-1);
+  }
+
+  .v6Gates > :first-child > :nth-child(2) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .v6Gates > :first-child h2,
+  .v6GateTitle {
+    white-space: normal;
+  }
+
+  .v6Gates > :first-child > :nth-child(3) {
+    flex: 1 1 100%;
+    margin-left: calc(30px + var(--wf-s-3));
+  }
+}
