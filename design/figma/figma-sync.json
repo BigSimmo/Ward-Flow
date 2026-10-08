@@ -66,9 +66,9 @@
     },
     "Wards and capacity": {
       "Wards": "/mockups/ward-flow/wards",
-      "Ward": "/mockups/ward-flow/ward/ahs-moodjar",
-      "Ward answer": "/mockups/ward-flow/ward/ahs-moodjar/answer",
-      "Ward board": "/mockups/ward-flow/board/ahs-moodjar",
+      "Ward": "/mockups/ward-flow/ward/arm-adult-open",
+      "Ward answer": "/mockups/ward-flow/ward/arm-adult-open/answer",
+      "Ward board": "/mockups/ward-flow/board/arm-adult-open",
       "Capacity": "/mockups/ward-flow/capacity",
       "Places": "/mockups/ward-flow/hub",
       "Network": "/mockups/ward-flow/network",
@@ -95,7 +95,7 @@
       "Statistics": "/mockups/ward-flow/statistics",
       "Statistics overview": "/mockups/ward-flow/statistics/overview",
       "Statistics service": "/mockups/ward-flow/statistics/service/East",
-      "Statistics ward": "/mockups/ward-flow/statistics/ward/ahs-moodjar",
+      "Statistics ward": "/mockups/ward-flow/statistics/ward/arm-adult-open",
       "Statistics compare": "/mockups/ward-flow/statistics/compare"
     }
   },
