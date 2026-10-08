@@ -2680,3 +2680,157 @@ table.snapSheet {
     grid-column: 1 / -1;
   }
 }
+
+/* Phone polish (8 Oct 2026): 12px gutters, a compact hero with the countdown on the eyebrow line,
+ * and denser ISBAR cards. Everything here sits under 48rem, so desktop is unchanged. */
+@media (max-width: 48rem) {
+  .screen[data-ward-design="v6"] .main {
+    padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .handoverHero {
+    position: relative;
+  }
+
+  .handoverHero > div:last-child {
+    row-gap: 0;
+  }
+
+  .handoverHero .heroTimer {
+    position: absolute;
+    top: var(--wf-s-2);
+    right: var(--wf-s-3);
+    min-height: 0;
+    padding: 2px var(--wf-s-2);
+    font-size: var(--wf-fs-12);
+  }
+
+  /* The eyebrow already says Handover; the word stays for screen readers. */
+  .heroTimer > span:not(:last-child) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Sheet: the scope is already on the toolbar, so the head is the title and the snapshot time. */
+  .snapshotHead {
+    flex-wrap: nowrap;
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .snapshotTitleGroup {
+    min-width: 0;
+  }
+
+  .snapshotMeta {
+    display: none;
+  }
+
+  .snapshotBody {
+    padding: var(--wf-s-2);
+  }
+
+  .prioritySection {
+    margin-bottom: var(--wf-s-3);
+  }
+
+  .priorityHead {
+    flex-wrap: nowrap;
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .priorityTitleGroup > div:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .prioritySub {
+    display: none;
+  }
+
+  .priorityHead > .statusPill {
+    flex: none;
+  }
+
+  .patientCardHead {
+    align-items: center;
+  }
+
+  .patientIdGroup {
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  /* The name keeps priority; the UMRN gives way first. */
+  .btnPatientName {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .patientFullName,
+  .patientSubtitle {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .patientUmrn {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .patientSubtitle {
+    display: block;
+  }
+
+  .patientCardBadges {
+    flex-wrap: nowrap;
+  }
+
+  .patientCardBadges > .statusPill {
+    white-space: nowrap;
+  }
+
+  .isbarGrid {
+    gap: var(--wf-s-1);
+    padding-top: var(--wf-s-2);
+  }
+
+  .isbarRow {
+    grid-template-columns: 2rem minmax(0, 1fr);
+    align-items: start;
+  }
+
+  /* Origin and destination each keep one line. */
+  .isbarRoutePath {
+    flex-wrap: wrap;
+    row-gap: 0;
+    font-size: var(--t-0);
+  }
+
+  .isbarOrigin {
+    flex: 1 1 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .isbarDest {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

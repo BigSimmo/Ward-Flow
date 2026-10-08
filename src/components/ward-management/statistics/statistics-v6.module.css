@@ -581,3 +581,162 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Phone polish (8 Oct 2026): 12px gutters, toolbars on one row, the four referral figures in one
+ * row, and the two pressure tables cut to the columns that carry the pressure (the rest stay on
+ * the larger screen). Under 48rem only. */
+@media (max-width: 48rem) {
+  .page {
+    padding: var(--wf-s-3);
+  }
+
+  .toolbar {
+    flex-wrap: nowrap;
+    padding: var(--wf-s-3);
+  }
+
+  .search {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .toolbar > *,
+  .toolbarEnd {
+    flex: none;
+  }
+
+  .toolbar > .search {
+    flex: 1 1 0;
+  }
+
+  /* The unit finder: the kind switch takes the full row, the search sits under it. */
+  .toolbar:has(> [role="radiogroup"]) {
+    flex-wrap: wrap;
+  }
+
+  .toolbar > [role="radiogroup"] {
+    flex: 1 1 100%;
+  }
+
+  .toolbar > [role="radiogroup"] > button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* A second switch (sort) shares its row with the count. */
+  .toolbar > [role="radiogroup"]:not(:first-child) {
+    order: 2;
+    flex: 1 1 auto;
+  }
+
+  .toolbar:has(> [role="radiogroup"]) > .toolbarEnd {
+    order: 3;
+    margin-left: auto;
+  }
+
+  .finderList {
+    max-height: calc(5 * var(--spacing-tap, 3rem));
+  }
+
+  .finderLink {
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0 var(--wf-s-3);
+  }
+
+  .toolbarEnd[id="edFilterCount"] {
+    display: none;
+  }
+
+  .figures {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .figure {
+    padding: 0 0 0 var(--wf-s-2);
+  }
+
+  .figure:first-child {
+    padding-left: 0;
+  }
+
+  .figureLabel {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .figureLabel > * {
+    display: inline-flex;
+    vertical-align: middle;
+    margin-right: 5px;
+  }
+
+  /* Screen-reader text inside a scrolling table stays inside the scroller, so it cannot widen
+   * the page. */
+  .tableWrap {
+    position: relative;
+  }
+
+  /* Pressure tables fit the card: fixed columns, the name truncates. */
+  .tableWrap > table[id="wardPressureTable"],
+  .tableWrap > table[id="edPressureTable"] {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .tableWrap > table[id="wardPressureTable"] thead th:nth-child(4) {
+    width: 6.5rem;
+  }
+
+  .tableWrap > table[id="wardPressureTable"] thead th:nth-child(5) {
+    width: 5rem;
+  }
+
+  .tableWrap > table[id="edPressureTable"] thead th:nth-child(2) {
+    width: 5.5rem;
+  }
+
+  .tableWrap > table[id="edPressureTable"] thead th:nth-child(3) {
+    width: 6rem;
+  }
+
+  .tableWrap > table tbody th,
+  .tableWrap > table tfoot th {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .siteCell {
+    max-width: none;
+  }
+
+  .siteName {
+    max-width: calc(100% - 52px);
+  }
+
+  .occTrack {
+    flex-basis: 36px;
+    width: 36px;
+  }
+
+  .tile {
+    padding-inline: var(--wf-s-2);
+  }
+
+  .tileLabel {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tableWrap > table[id="wardPressureTable"] tr > :nth-child(2),
+  .tableWrap > table[id="wardPressureTable"] tr > :nth-child(3),
+  .tableWrap > table[id="edPressureTable"] tr > :nth-child(n + 4) {
+    display: none;
+  }
+}

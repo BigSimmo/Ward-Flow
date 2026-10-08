@@ -609,6 +609,7 @@ function DischargeWorkspace() {
           {" · "}As of {formatSheetMoment(now, dayZero)}
         </p>
         <Hero
+          className={pageStyles.phoneHero}
           eyebrow={population === "releases" ? "Bed release" : "Admission records"}
           title={`${openCount} ${openCount === 1 ? "discharge" : "discharges"} open`}
           stats={
