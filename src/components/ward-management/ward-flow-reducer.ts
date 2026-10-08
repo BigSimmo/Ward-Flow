@@ -1181,6 +1181,17 @@ function replaceUnit(state: WardFlowState, unitId: string, next: Unit): WardFlow
   return { ...state, units: state.units.map((candidate) => (candidate.id === unitId ? next : candidate)) };
 }
 
+/** A recorded sending ward is the only exception to the one-current-stay placement rule. */
+function movementSourceAdmission(state: WardFlowState, movement: Movement): Admission | undefined {
+  if (movement.sourceAdmissionId) return findAdmission(state, movement.sourceAdmissionId);
+  const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+  if (referral?.source !== "psychiatric_ward" || !referral.originUnitId) return undefined;
+  const patientId = movement.patientId ?? referral.patientId;
+  return state.admissions.find(
+    (a) => a.patientId === patientId && a.unitId === referral.originUnitId && a.state === "occupied",
+  );
+}
+
 /**
  * REFUNDS A HELD BED AND DELETES THE `Admission` `PULL_PATIENT` CREATED FOR IT (if one exists) — the
  * exact inverse of `PULL_PATIENT`'s own writes (ruling P4-1), extracted so `RELEASE_PULL` and, since
@@ -1267,6 +1278,14 @@ function releasePulledBedAndAdmission(state: WardFlowState, movement: Movement, 
     movement.admissionId === undefined
       ? undefined
       : state.admissions.find((candidate) => candidate.id === movement.admissionId);
+  if (
+    movement.admissionId !== undefined &&
+    (!heldAdmission ||
+      heldAdmission.state !== "pulled" ||
+      heldAdmission.unitId !== unit.id ||
+      (heldAdmission.movementId !== null && heldAdmission.movementId !== movement.id))
+  )
+    return state;
   const releasedUnit: Unit = {
     ...unit,
     allocatable: { ...unit.allocatable, value: unit.allocatable.value + 1, confirmedAt: now },
@@ -1775,7 +1794,7 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
             dischargeDateMoves: 0,
             blockReason: null,
             awayAtEmergencyDepartmentSince: null,
-            careJourney: { ...emptyCareJourney(), followUp: careJourney.followUp, transfer: careJourney.transfer },
+            careJourney: { ...emptyCareJourney(), followUp: careJourney.followUp },
           },
         ],
         movements: [
@@ -2822,7 +2841,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         gender: event.gender,
         genderChanges: [...(movement.genderChanges ?? []), changeEntry],
       };
-      const next = replaceMovement(state, movement.id, updated);
+      let next = replaceMovement(state, movement.id, updated);
+      const held = movement.admissionId ? findAdmission(state, movement.admissionId) : undefined;
+      if (held?.state === "pulled" && held.movementId === movement.id) {
+        next = replaceAdmission(next, held.id, { ...held, gender: event.gender });
+      }
       /*
        * P1-3 (Ward Lead ruling, 17 September 2026): a correction landing while an acceptance or a
        * bed is already held (`accepted_awaiting_bed` through `moving`) means a unit was chosen
@@ -3874,6 +3897,27 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
        * held admission is itself one of the places those checks count, so re-asking them would refuse
        * a patient for occupying their own bed.
        */
+      const patientId =
+        movement.patientId ?? state.referrals.find((r) => r.id === movement.referralId)?.patientId ?? event.patientId;
+      const source = movementSourceAdmission(state, movement);
+      if (
+        (movement.sourceAdmissionId && !source) ||
+        (source && (source.state !== "occupied" || source.patientId !== patientId || source.unitId === event.unitId))
+      ) {
+        return reject(state, event, "Repatriation needs the patient's occupied source stay at a different ward.");
+      }
+      if (
+        patientId &&
+        state.admissions.some(
+          (a) =>
+            a.patientId === patientId &&
+            (a.state === "pulled" || a.state === "occupied") &&
+            a.id !== movement.admissionId &&
+            a.id !== source?.id,
+        )
+      ) {
+        return reject(state, event, "This patient already holds a bed or occupies a ward; use a recorded transfer.");
+      }
       if (movement.admissionId !== undefined) {
         const held = state.admissions.find((admission) => admission.id === movement.admissionId);
         if (!held || held.unitId !== event.unitId) {
@@ -4759,6 +4803,33 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const unit = findUnit(state, movement.acceptedUnitId);
       if (!unit) return reject(state, event, `no unit found for id ${movement.acceptedUnitId}`);
 
+      const patientId =
+        movement.patientId ??
+        state.referrals.find((r) => r.id === movement.referralId)?.patientId ??
+        (movement.admissionId ? findAdmission(state, movement.admissionId)?.patientId : undefined);
+      const source = movementSourceAdmission(state, movement);
+      if (
+        (movement.sourceAdmissionId && !source) ||
+        (source && (source.state !== "occupied" || source.patientId !== patientId || source.unitId === unit.id))
+      ) {
+        return reject(
+          state,
+          event,
+          "Repatriation arrival needs the patient's occupied source stay at a different ward.",
+        );
+      }
+      if (
+        patientId &&
+        state.admissions.some(
+          (a) =>
+            a.patientId === patientId &&
+            (a.state === "pulled" || a.state === "occupied") &&
+            a.id !== movement.admissionId &&
+            a.id !== source?.id,
+        )
+      ) {
+        return reject(state, event, "This patient already holds another bed or occupies another ward.");
+      }
       const isBedTurnaround = unit.empty.value <= 0;
 
       // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).
@@ -4841,6 +4912,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         withPerson = replaceAdmission(withUnit, pulledAdmission.id, {
           ...pulledAdmission,
           state: "occupied",
+          gender: movement.gender,
           arrivedAt: event.now,
           ...(isBedTurnaround ? { blockReason: "Awaiting clean" } : {}),
         });
@@ -4848,21 +4920,27 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         withPerson = withUnit;
       }
       /*
-       * A repatriation return carries the sending stay as `sourceAdmissionId`. Arrival at the
-       * receiving ward ends that stay as a transfer, so one person never holds a bed at both
-       * hospitals. A stay that has already left (or has gone) is left alone.
+       * A repatriation or recorded ward transfer carries the sending stay (via
+       * `sourceAdmissionId` or a psychiatric-ward referral). Arrival at the receiving ward ends
+       * that stay as a transfer, so one person never holds a bed at both hospitals. A stay that
+       * has already left (or has gone) is left alone.
        */
-      const sendingAdmission =
-        movement.sourceAdmissionId === undefined ? undefined : findAdmission(withPerson, movement.sourceAdmissionId);
-      const sendingUnit = sendingAdmission ? findUnit(withPerson, sendingAdmission.unitId) : undefined;
-      if (sendingAdmission && sendingUnit && sendingAdmission.state === "occupied") {
+      const sendingUnit = source ? findUnit(withPerson, source.unitId) : undefined;
+      if (source && sendingUnit && source.state === "occupied") {
         withPerson = departAdmission(
           withPerson,
-          sendingAdmission,
+          source,
           sendingUnit,
           event.now,
           "transferred-to-another-psychiatric-ward",
         );
+        withPerson = {
+          ...withPerson,
+          dischargeRevisions: {
+            ...withPerson.dischargeRevisions,
+            [source.id]: (withPerson.dischargeRevisions[source.id] ?? 0) + 1,
+          },
+        };
       }
       return replaceMovement(withPerson, movement.id, updatedMovement);
     }

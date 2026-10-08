@@ -85,3 +85,21 @@
     overflow-y: visible;
   }
 }
+
+/* Manual Ward preferences apply to route content without changing the host app or defaults. */
+:global(html[data-reduced-motion]) .shellRow,
+:global(html[data-reduced-motion]) .shellRow *,
+:global(html[data-reduced-motion]) .shellRow *::before,
+:global(html[data-reduced-motion]) .shellRow *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+:global(html[data-high-contrast]) .shellRow,
+:global(html[data-high-contrast]) .shellRow * {
+  --ink-soft: var(--ink) !important;
+  --muted: var(--ink) !important;
+  --line: var(--ink) !important;
+  --line-strong: var(--ink) !important;
+}

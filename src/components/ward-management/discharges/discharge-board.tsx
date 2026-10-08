@@ -6,7 +6,12 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronRight, ClipboardList, Plus, Truck, X } from "lucide-react";
 import { MissingValue } from "@/components/ui/missing-value";
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
-import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { parseReleaseDayInstant } from "@/components/ward-management/ward/release-day";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
@@ -1342,7 +1347,7 @@ function DischargeWorkspace() {
                                   setShowUpdateDate(true);
                                   setNewTimeDraft(
                                     activeRecord.expectedDischargeAt !== null
-                                      ? formatInstantWithDay(activeRecord.expectedDischargeAt, now)
+                                      ? formatInstant(activeRecord.expectedDischargeAt)
                                       : "14:00",
                                   );
                                 }}

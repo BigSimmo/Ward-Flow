@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { WardAccessibility } from "@/components/ward-management/shell/ward-accessibility";
 import { WardBarMount } from "@/components/ward-management/shell/ward-bar";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
@@ -100,6 +101,7 @@ import styles from "./ward-flow-layout.module.css";
 export default function WardFlowMockupLayout({ children }: { children: ReactNode }) {
   return (
     <WardFlowProvider>
+      <WardAccessibility />
       <WardLiveRegion />
       <div className={styles.shellRow}>
         <WardRail />
