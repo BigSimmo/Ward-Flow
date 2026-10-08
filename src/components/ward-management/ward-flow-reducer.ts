@@ -1,3 +1,4 @@
+import { reduceExpectFlagsEvent } from "./ward-flow-expect-flags-reducer";
 import { reduceArrivalDetailsEvent } from "./ward-flow-arrival-details-reducer";
 import { reduceLegalPaperEvent } from "./ward-flow-legal-paper-reducer";
 import { reduceLegalFormRecordsEvent } from "./ward-flow-legal-form-records-reducer";
@@ -6994,38 +6995,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ),
       ]);
     }
+    case "CLEAR_EXPECT_FLAG":
+      return reduceExpectFlagsEvent(state, event, { reject, findMovement, replaceMovement });
 
-    case "CLEAR_EXPECT_FLAG": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) return reject(state, event, "This movement is closed.");
-      if (!movement.expectFlag || movement.expectFlag.clearedAt !== undefined) {
-        return reject(state, event, `movement ${movement.id} has no open expect flag to clear`);
-      }
-      const updated: Movement = {
-        ...movement,
-        expectFlag: { ...movement.expectFlag, clearedAt: event.now, clearedBy: event.role },
-      };
-      return replaceMovement(state, movement.id, updated);
-    }
-
-    case "RAISE_EXPECT_FLAG": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) return reject(state, event, "This movement is closed.");
-      if (movement.expectFlag && movement.expectFlag.clearedAt === undefined) {
-        return reject(state, event, `movement ${movement.id} already has an open expect flag`);
-      }
-      // A type-only union passes `vitest run` with no tsc, so membership is enforced at runtime too.
-      if (event.kind !== "voluntary_48h" && event.kind !== "involuntary_7d") {
-        return reject(state, event, `RAISE_EXPECT_FLAG kind must be "voluntary_48h" or "involuntary_7d"`);
-      }
-      const updated: Movement = {
-        ...movement,
-        expectFlag: { raisedAt: event.now, kind: event.kind },
-      };
-      return replaceMovement(state, movement.id, updated);
-    }
+    case "RAISE_EXPECT_FLAG":
+      return reduceExpectFlagsEvent(state, event, { reject, findMovement, replaceMovement });
 
     case "FLAG_LEGAL_MISMATCH": {
       const movement = findMovement(state, event.movementId);

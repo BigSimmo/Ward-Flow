@@ -49,6 +49,9 @@ guards, and appends the audit result after command handling. Internal event fami
 - `ward-flow-arrival-details-reducer.ts`: recorded arrival details and one-shot lateness notices.
   Both commands share notice construction with separate referrer/ward identities. Recording
   details still clears the pull expiry; lateness evaluation retains its closed/no-op checks.
+- `ward-flow-expect-flags-reducer.ts`: raise and clear the existing fixed expect flags.
+  Closed/missing records, open-versus-cleared flags, retry refusals and zero timestamps retain
+  their original behaviour. These records do not calculate legal or clinical deadlines.
 
 `ward-flow-storage-validation.ts` separately validates nested containers, header/counters,
 record shapes, identifiers, cross-record links, capacity bounds, audit data and persistence privacy.
