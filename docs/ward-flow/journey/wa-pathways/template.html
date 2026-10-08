@@ -1441,7 +1441,12 @@
         ]),
       );
       document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && state.view === "map" && !document.fullscreenElement) {
+        if (
+          event.key === "Escape" &&
+          state.view === "map" &&
+          !$("#mobile-details").open &&
+          !document.fullscreenElement
+        ) {
           state.node = null;
           state.edge = null;
           state.query = "";
