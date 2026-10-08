@@ -66,6 +66,10 @@ helpers separate today's freeing releases, recorded discharge dates, tracked rel
 surge and staffable specialling. Missing releases/admissions remain `undefined`, distinct from zero;
 the calculations do not add a patient shortlist or change placement rules.
 
+The coordinator's remembered snapshot separately checks its existing header, ID lists and ready-bed
+counts. Comparison separates newly freed beds and one delay row per movement. The stored schema
+and its exclusion of names, notes and typed text remain unchanged.
+
 Final boundary repairs: protected departures use the approved scoped projection; transfer movements record their own arrival history/closure rather than copying earlier stages. The stage guard uses syntax-tree ancestry and drives the protected transfer. Care clock fields are covered by the re-anchor contract; coding supports a not-applicable receiver and rejects incompatible leave endings. Final offline evidence is in the dated WA audit report.
 
 ## WA remediation update — 3 October 2026
