@@ -455,11 +455,16 @@ test.describe("@mockup Ward Flow command view", () => {
       "the closed rail must hide its brand title so the header brand below is the only thing naming the application",
     ).toBeHidden();
     // b93b3b07e3 (21 Sept) retired the workspace header ("eliminate duplicate headers"), and the
-    // 25 Sept ruling keeps that design. With the rail closed, its emblem link is what names the app.
+    // 25 Sept ruling keeps that design. With the rail closed, its emblem is what names the app.
+    // Since 8 October 2026 (Josh) the closed emblem opens the full rail rather than going Home.
+    const brandOpen = rail.getByRole("button", { name: "Ward Flow, open the menu" });
     await expect(
-      rail.getByRole("link", { name: "Ward Flow home" }),
+      brandOpen,
       "with the rail closed and the workspace header retired, nothing on screen names the application",
     ).toBeVisible();
+    await brandOpen.click();
+    await expect(rail, "the closed emblem must open the full rail").toHaveAttribute("data-rail", "open");
+    await expect(rail.getByRole("link", { name: "Ward Flow home" })).toBeVisible();
   });
 
   // MERGE 01 (2026-09-05): /queue now redirects to /delays. The fixed-bar link this checks lived in
