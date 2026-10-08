@@ -1,0 +1,109 @@
+{
+  "$comment": "Map between the Figma file and the code. Code is the source of truth. Claude runs the sync through the Figma MCP on Josh's device (Figma Professional has no Code Connect or Variables REST API). Procedure: docs/agents/figma-sync.md. Tokens: scripts/figma-tokens.mjs.",
+  "file": {
+    "name": "Ward Flow v6 live",
+    "url": "https://www.figma.com/design/UfpjjBWlvb3NMp3Nuvktzu"
+  },
+  "tokens": {
+    "css": "src/app/ward-flow-v6-tokens.css",
+    "export": "design/figma/tokens.json",
+    "collections": {
+      "Colour": { "modes": ["Day", "Night"] },
+      "Size": { "modes": ["Value"] }
+    },
+    "naming": {
+      "rule": "Figma variable group/name maps to CSS --wf-group-name (each slash becomes a hyphen), for example ink/1 is --wf-ink-1.",
+      "codeSyntax": "Every Figma variable sets WEB code syntax to var(--wf-name). Read the CSS name from it rather than rebuilding it from the Figma name.",
+      "codeOnly": "Gradients, shadows (--wf-e1 to --wf-e3), backdrop, glass rim, sheen, motion and fonts stay in code. Figma cannot bind them to variables."
+    },
+    "figmaOnly": {
+      "patterns": ["alpha/*", "status/*-tint", "status/*-edge"],
+      "note": "Figma helpers. Code derives these with color-mix, so a pull ignores them."
+    }
+  },
+  "components": {
+    "Button": { "file": "src/components/wf/button.tsx", "export": "Button" },
+    "Badge": { "file": "src/components/wf/badge.tsx", "export": "Badge" },
+    "Status glyph": { "file": "src/components/wf/status-glyph.tsx", "export": "StatusGlyph" },
+    "Icon button": { "file": "src/components/wf/button.tsx", "export": "Button", "props": "iconOnly" },
+    "Stat": { "file": "src/components/wf/stat.tsx", "export": "Stat" },
+    "Hero band": { "file": "src/components/wf/hero.tsx", "export": "Hero" },
+    "Card": { "file": "src/components/wf/card.tsx", "export": "Card" },
+    "Input": { "file": "src/components/wf/form.tsx", "export": "TextInput" },
+    "Field": { "file": "src/components/wf/form.tsx", "export": "Field" },
+    "Choice": { "file": "src/components/wf/choice.tsx", "export": "FilterChip" },
+    "Segmented": { "file": "src/components/wf/choice.tsx", "export": "Segmented" },
+    "Tabs": { "file": "src/components/wf/choice.tsx", "export": "Tabs" },
+    "Menu": { "file": "src/components/wf/menu.tsx", "export": "Menu" },
+    "Toast": { "file": "src/components/wf/toast.tsx", "export": "ToastView" },
+    "Live chip": { "file": "src/components/wf/live.tsx", "export": "LiveChip" },
+    "Timer": { "file": "src/components/wf/live.tsx", "export": "Timer" },
+    "Tier tile": { "file": "src/components/wf/table.tsx", "export": "TierTile" },
+    "Table cell": { "file": "src/components/wf/table.tsx", "export": "Cell" },
+    "Drawer": { "file": "src/components/wf/sheet.tsx", "export": "Drawer" },
+    "Shell/Sidebar": { "file": "src/components/ward-management/shell/ward-rail.tsx", "export": "WardRail" },
+    "Shell/Header": { "file": "src/components/ward-management/shell/ward-bar.tsx", "export": "WardBar" },
+    "Shell/Phone header": {
+      "file": "src/components/ward-management/shell/ward-bar.tsx",
+      "export": "WardBar",
+      "note": "Same component; the phone layout is the 40rem breakpoint in ward-bar.module.css."
+    }
+  },
+  "screens": {
+    "Core": {
+      "Home": "/mockups/ward-flow",
+      "Sign in": "/mockups/ward-flow-sign-in",
+      "Settings": "/mockups/ward-flow/settings",
+      "Work mode": "/mockups/work-mode"
+    },
+    "Patients": {
+      "Patients": "/mockups/ward-flow/search",
+      "Patient": "/mockups/ward-flow/people/WF-009",
+      "Add patient": "/mockups/ward-flow/people/new",
+      "New referral": "/mockups/ward-flow/referrals/new",
+      "Referrals": "/mockups/ward-flow/referrals",
+      "Legal forms": "/mockups/ward-flow/legal-forms"
+    },
+    "Wards and capacity": {
+      "Wards": "/mockups/ward-flow/wards",
+      "Ward": "/mockups/ward-flow/ward/ahs-moodjar",
+      "Ward answer": "/mockups/ward-flow/ward/ahs-moodjar/answer",
+      "Ward board": "/mockups/ward-flow/board/ahs-moodjar",
+      "Capacity": "/mockups/ward-flow/capacity",
+      "Places": "/mockups/ward-flow/hub",
+      "Network": "/mockups/ward-flow/network",
+      "Emergency": "/mockups/ward-flow/ed",
+      "Emergency department": "/mockups/ward-flow/ed/peel-ed"
+    },
+    "Oversight": {
+      "Alerts": "/mockups/ward-flow/alerts",
+      "Delays": "/mockups/ward-flow/delays",
+      "Discharges": "/mockups/ward-flow/discharges",
+      "Governance": "/mockups/ward-flow/governance",
+      "Handover": "/mockups/ward-flow/handover",
+      "On call": "/mockups/ward-flow/on-call",
+      "Movements": "/mockups/ward-flow/movements",
+      "Movement": "/mockups/ward-flow/movements/WF-001",
+      "Showcase": "/mockups/ward-flow/sovereign"
+    },
+    "Community, transport and stats": {
+      "Community": "/mockups/ward-flow/community",
+      "Community team": "/mockups/ward-flow/community/bentley",
+      "Out of area": "/mockups/ward-flow/out-of-area",
+      "Transport": "/mockups/ward-flow/transport",
+      "Transport officer": "/mockups/ward-flow/transport/officer",
+      "Statistics": "/mockups/ward-flow/statistics",
+      "Statistics overview": "/mockups/ward-flow/statistics/overview",
+      "Statistics service": "/mockups/ward-flow/statistics/service/East",
+      "Statistics ward": "/mockups/ward-flow/statistics/ward/ahs-moodjar",
+      "Statistics compare": "/mockups/ward-flow/statistics/compare"
+    }
+  },
+  "aliases": {
+    "/mockups/ward-flow/queue": "Delays",
+    "/mockups/ward-flow/command": "Home",
+    "/mockups/ward-flow/constellation": "Network",
+    "/mockups/ward-flow/exceptions": "Delays",
+    "/mockups/ward-flow/escalation": "Delays"
+  }
+}
