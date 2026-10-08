@@ -1,3 +1,4 @@
+import { reduceArrivalDetailsEvent } from "./ward-flow-arrival-details-reducer";
 import { reduceLegalPaperEvent } from "./ward-flow-legal-paper-reducer";
 import { reduceLegalFormRecordsEvent } from "./ward-flow-legal-form-records-reducer";
 import { reduceMovementClassificationEvent } from "./ward-flow-movement-classification-reducer";
@@ -81,10 +82,8 @@ import {
 } from "@/components/ward-management/ward-flow-events";
 import { SELECTABLE_LEGAL_FORMS, countryExtensionEligible } from "@/components/ward-management/ward-legal-forms";
 import {
-  ARRIVAL_LATE_AFTER_MINUTES,
   WAITLIST_INSTEAD_OF_DECLINE_REASONS,
   GENDER_MISMATCH_DECLINE_REASON,
-  isArrivalLate,
   leaveBedNeedsOpenWarning,
 } from "@/components/ward-management/ward-legal-clock";
 import { isTentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
@@ -6752,66 +6751,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (next) return next;
       return state;
     }
-
-    case "SET_ARRIVAL_DETAILS": {
-      const movement = state.movements.find((m) => m.id === event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-
-      const arrivalDetails = {
-        mode: event.arrivalMode,
-        trackingNumber: event.trackingNumber?.trim() || undefined,
-        estimatedArrivalAt: event.estimatedArrivalAt,
-        recordedAt: event.now,
-        recordedBy: event.role,
-      };
-
-      let updatedMovement: Movement = {
-        ...movement,
-        arrivalDetails,
-        pullExpiresAt: undefined, // Default 4h countdown timer is removed as arrival is sorted
-      };
-
-      let next = {
-        ...state,
-        movements: state.movements.map((m) => (m.id === movement.id ? updatedMovement : m)),
-      };
-
-      if (
-        isArrivalLate(event.estimatedArrivalAt, updatedMovement.stage, event.now) &&
-        updatedMovement.arrivalLateNotifiedAt === undefined
-      ) {
-        updatedMovement = { ...updatedMovement, arrivalLateNotifiedAt: event.now };
-        next = {
-          ...next,
-          movements: next.movements.map((m) => (m.id === movement.id ? updatedMovement : m)),
-        };
-        const notices = [
-          makeNotice(
-            event.now,
-            next.notices.length,
-            "arrival_late_referrer",
-            { role: "ed", placeId: movement.originEdId },
-            { movementId: movement.id },
-            `Arrival for ${movement.id} is more than ${ARRIVAL_LATE_AFTER_MINUTES} minutes past the planned time and they have not arrived.`,
-          ),
-        ];
-        if (movement.acceptedUnitId) {
-          notices.push(
-            makeNotice(
-              event.now,
-              next.notices.length + 1,
-              "arrival_late_ward",
-              { role: "ward", placeId: movement.acceptedUnitId },
-              { movementId: movement.id, unitId: movement.acceptedUnitId },
-              `Arrival for ${movement.id} is more than ${ARRIVAL_LATE_AFTER_MINUTES} minutes past the planned time and they have not arrived.`,
-            ),
-          );
-        }
-        return appendNotices(next, notices);
-      }
-
-      return next;
-    }
+    case "SET_ARRIVAL_DETAILS":
+      return reduceArrivalDetailsEvent(state, event, {
+        reject,
+        findMovement,
+        replaceMovement,
+        makeNotice,
+        appendNotices,
+      });
 
     case "SET_STEP_DOWN_CANDIDATE": {
       const admission = state.admissions.find((a) => a.id === event.admissionId);
@@ -6978,41 +6925,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
     case "RECORD_LEGAL_FORM_CONTINUATION":
       return reduceLegalPaperEvent(state, event, decision, { reject, findMovement, replaceMovement });
-
-    case "EVALUATE_ARRIVAL_LATENESS": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) return reject(state, event, "This movement is closed.");
-      if (movement.arrivalLateNotifiedAt !== undefined) return state;
-      if (!isArrivalLate(movement.arrivalDetails?.estimatedArrivalAt, movement.stage, event.now)) {
-        return state;
-      }
-      const updated: Movement = { ...movement, arrivalLateNotifiedAt: event.now };
-      const next = replaceMovement(state, movement.id, updated);
-      const notices = [
-        makeNotice(
-          event.now,
-          next.notices.length,
-          "arrival_late_referrer",
-          { role: "ed", placeId: movement.originEdId },
-          { movementId: movement.id },
-          `Arrival for ${movement.id} is more than ${ARRIVAL_LATE_AFTER_MINUTES} minutes past the planned time and they have not arrived.`,
-        ),
-      ];
-      if (movement.acceptedUnitId) {
-        notices.push(
-          makeNotice(
-            event.now,
-            next.notices.length + 1,
-            "arrival_late_ward",
-            { role: "ward", placeId: movement.acceptedUnitId },
-            { movementId: movement.id, unitId: movement.acceptedUnitId },
-            `Arrival for ${movement.id} is more than ${ARRIVAL_LATE_AFTER_MINUTES} minutes past the planned time and they have not arrived.`,
-          ),
-        );
-      }
-      return appendNotices(next, notices);
-    }
+    case "EVALUATE_ARRIVAL_LATENESS":
+      return reduceArrivalDetailsEvent(state, event, {
+        reject,
+        findMovement,
+        replaceMovement,
+        makeNotice,
+        appendNotices,
+      });
 
     case "RELEASE_AND_REOPEN_SEARCH": {
       const movement = findMovement(state, event.movementId);

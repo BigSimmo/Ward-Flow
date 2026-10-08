@@ -46,6 +46,9 @@ guards, and appends the audit result after command handling. Internal event fami
 - `ward-flow-legal-paper-reducer.ts`: written-form and continuation facts chosen by the clinician.
   Ordered region/time/code checks, same-form paper facts, the 3C-after-3D refusal and the
   recorded 5A/5B continuation stay intact. Country expiry still delegates through the facade.
+- `ward-flow-arrival-details-reducer.ts`: recorded arrival details and one-shot lateness notices.
+  Both commands share notice construction with separate referrer/ward identities. Recording
+  details still clears the pull expiry; lateness evaluation retains its closed/no-op checks.
 
 `ward-flow-storage-validation.ts` separately validates nested containers, header/counters,
 record shapes, identifiers, cross-record links, capacity bounds, audit data and persistence privacy.
