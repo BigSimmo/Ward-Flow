@@ -8,6 +8,7 @@
 }
 
 .main {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
@@ -90,6 +91,7 @@
 }
 
 .tableScroll {
+  position: relative;
   flex: 1 1 auto;
   min-width: 0;
   overflow-x: auto;
@@ -674,6 +676,19 @@
 }
 
 @media (max-width: 62.5625rem) {
+  /* Keep the existing card anatomy; let this directory's long action slots use a second row. */
+  .main :has(> :has(> .headActions)),
+  .main :has(> :has(> .coverAt)) {
+    flex-wrap: wrap;
+  }
+
+  .main :has(> .headActions),
+  .main :has(> .coverAt) {
+    min-width: 0;
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+
   .topGrid,
   .lowerGrid {
     grid-template-columns: minmax(0, 1fr);
@@ -681,6 +696,7 @@
 
   .headActions {
     flex-wrap: wrap;
+    width: 100%;
   }
 
   .search {
@@ -693,6 +709,13 @@
 
   .gapsLabel {
     width: auto;
+  }
+
+  .coverAt,
+  .legend,
+  .footMeta {
+    flex-wrap: wrap;
+    white-space: normal;
   }
 
   /* Phone and tablet: every control keeps the 48px tap floor. */

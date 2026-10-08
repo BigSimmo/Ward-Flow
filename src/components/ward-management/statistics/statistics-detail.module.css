@@ -63,8 +63,9 @@ a.secondary:hover {
 
 /* The hero eyebrow's site list: one line, cut with an ellipsis before it can squeeze the figures. */
 .eyebrowSites {
+  position: relative;
   display: inline-block;
-  max-width: 30rem;
+  max-width: min(30rem, 100%);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
