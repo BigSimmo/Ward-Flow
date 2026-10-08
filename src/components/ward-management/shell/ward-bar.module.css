@@ -894,6 +894,136 @@
   }
 }
 
+/* ── phone bar, option A (Josh, 8 Oct 2026) ─────────────────────────────────────────────────
+ * One 52px bar on every page: brand, title with scope under it, Search, Tasks, New referral and
+ * Menu. Activity and Tools move into the Menu sheet. Everything here is phone only; the brand and
+ * Menu buttons are hidden above 48rem so the desktop bar is untouched. */
+.phoneOnly {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .bar {
+    gap: 0;
+    height: 3.25rem;
+    min-height: 3.25rem;
+    padding: 0 2px;
+    transition: transform var(--wf-m-base, 200ms) var(--wf-ease);
+  }
+
+  .bar[data-hidden="true"] {
+    transform: translateY(-100%);
+  }
+
+  .phoneOnly {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+    border: 0;
+    border-radius: var(--wf-r-pill);
+    background: transparent;
+    color: var(--wf-ink-1);
+    cursor: pointer;
+  }
+
+  .phoneOnly svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .phoneBrand {
+    color: var(--wf-info);
+  }
+
+  .phoneOnly:hover {
+    background: var(--wf-hover);
+  }
+
+  .phoneOnly:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: -2px;
+  }
+
+  .title {
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .titleGroup {
+    max-width: 100%;
+  }
+
+  .place {
+    font-size: var(--t-2);
+    line-height: 18px;
+    max-width: 100%;
+  }
+
+  .scopeBadgeContainer {
+    max-width: 100%;
+  }
+
+  .scopeBadgeBtn {
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 1.25rem;
+    padding: 0;
+    justify-content: flex-start;
+    gap: 5px;
+    font-size: var(--t-0);
+    font-weight: 500;
+    color: var(--wf-ink-2);
+  }
+
+  /* The visible line is small; the hit area still reaches 48px tall. */
+  .scopeBadgeBtn::before {
+    inset: -14px -8px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .scopeBadgeBtn[aria-expanded="true"]::before {
+    box-shadow: none;
+  }
+
+  .scopeBadgeLabel {
+    display: inline;
+  }
+
+  .scopeDot {
+    width: 6px;
+    height: 6px;
+    box-shadow: none;
+  }
+
+  .scopeCaret {
+    width: 12px;
+    height: 12px;
+  }
+
+  .drawerTrigger[data-bar-mode="activity"],
+  .drawerTrigger[data-bar-mode="tools"],
+  .vsep {
+    display: none;
+  }
+}
+
+@media (max-width: 48rem) and (prefers-reduced-motion: reduce) {
+  .bar {
+    transition: none;
+  }
+}
+
 @media (forced-colors: active) {
   .bar {
     border-bottom: 1px solid CanvasText;

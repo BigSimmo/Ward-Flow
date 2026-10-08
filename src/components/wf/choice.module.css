@@ -247,6 +247,26 @@
   .trk .segItem {
     min-height: var(--spacing-tap, 3rem);
   }
+
+  /* Phone (8 Oct 2026): options keep their full label and count and the row scrolls sideways,
+   * so nothing shrinks into its neighbour. */
+  .seg,
+  .trk {
+    position: relative;
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .seg::-webkit-scrollbar,
+  .trk::-webkit-scrollbar,
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .segItem {
+    flex: 0 0 auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

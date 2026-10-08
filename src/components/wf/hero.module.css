@@ -242,6 +242,55 @@
   }
 }
 
+/* Phone layout (8 Oct 2026): title first, then three figures in one row, then the aside
+ * (LiveChip, pause, one light button) as a left-aligned row. Figures past the third are left to
+ * the larger screen. Desktop and tablet are unchanged: everything here sits under 48rem. */
+@media (max-width: 48rem) {
+  .hero {
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  }
+  .row {
+    flex-wrap: wrap;
+    gap: var(--wf-s-3);
+  }
+  .titleBlock {
+    flex: 1 1 100%;
+    padding: 0;
+  }
+  .stats,
+  .statsEnd {
+    order: 2;
+    flex: 1 1 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    justify-content: stretch;
+    overflow: hidden;
+  }
+  .stat {
+    padding: 0 0 0 var(--wf-s-3);
+    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  }
+  .stat:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .stat:nth-child(n + 4) {
+    display: none;
+  }
+  .aside {
+    order: 3;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+  .bar {
+    flex: 1 1 100%;
+  }
+}
+
 @media (forced-colors: active) {
   .hero {
     border: 1px solid CanvasText;
