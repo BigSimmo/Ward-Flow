@@ -246,6 +246,26 @@ Scope: storage validation, persistence classification, scenario file, `shell/war
 - **A2-14. Unused `WardFlowClockProvider` computes a different time** (`ward-flow-provider.tsx:1013`). Dead code with a latent clock bug.
 - **A2-15. Reload after midnight discards the day with a "damaged" message** (`:404`). Dropping the day is deliberate; the wording misleads.
 
+## Area 3 findings: what the screens show
+
+Scope: `ward-derivations.ts`, `ward-referrals.ts`, `ward-referral-visibility.ts`, `capacity/capacity-derivations.ts`, `movements/movements-derivations.ts`, `delays/delays-derivations.ts`, with the reducer read where needed. One reviewer, one pass, by reading; none replayed.
+
+- **A3-1. Bed-kind gap double-counts pulled patients** (`capacity/capacity-derivations.ts:112`). Movements already holding a bed count as waiting while their bed is already gone from supply, overstating shortfalls.
+- **A3-2. Handover lists in-transit patients as expired pulled beds** (`ward-derivations.ts:1439`). `pullExpiresAt` stays set through handover and transport, so a patient in the vehicle shows "Expired · 1h overdue".
+- **A3-3. "Nowhere eligible" lists patients who already have a bed** (`ward-derivations.ts:1545`). Their own pull makes their ward fail the bed gate.
+- **A3-4. Delays files referable patients under "No suitable bed"** (`delays/delays-derivations.ts:254`). Ignores previously-declined wards that may be referred again, and runs before the live-referral check.
+- **A3-5. Patients with an accepted referral vanish from patient search** (`ward-derivations.ts:1697`). Search assumes an accepted referral has a movement; `ACCEPT_REFERRAL` creates none.
+- **A3-6. Waitlist answers counted as declines** (`ward-derivations.ts:1253`; `movements/movements-derivations.ts:387`). Counts decline entries, not distinct wards, so "no bed" waitlists show as "3 destinations have declined".
+- **A3-7. "Ward silent" measured from the first referral** (`delays/delays-derivations.ts:619`). A ward asked 10 minutes ago reads as silent for hours; waitlisting wards keep being nagged.
+- **A3-8. Fully withdrawn referrals disappear from the referral board** (`ward-referrals.ts:665`). Neither in the queue nor in recently decided.
+- **A3-9. Handover says "declined by all" when a ward never declined** (`ward-derivations.ts:1461`). Coordinator withdrawals and released pulls produce the same shape.
+- **A3-10. Beds held after a stopped transport drop off the handover** (`ward-derivations.ts:1432`). The closed movement still holds a pulled bed; the incoming coordinator sees nothing to release. Related to S2-1.
+- **A3-11. "Nothing recorded for N" ignores most recorded events** (`delays/delays-derivations.ts:358`). Accept, pull, handover and step-back are not counted, so a just-pulled patient reads as idle for 26 hours.
+- **A3-12. Revoked-exam hold routed to Transport** (`delays/delays-derivations.ts:268`). Transport cannot act until the coordinator releases the bed.
+- **A3-13. "Figures may not have settled" stuck on for non-binary records** (`capacity/capacity-derivations.ts:384`). `sexMix` never counts them, so the warning lasts the whole stay.
+- **A3-14. Capacity boxes can sum to more than the ward's beds** (`capacity/capacity-derivations.ts:346`). Ready uses raw allocatable while the others use `min(allocatable, empty)`.
+- **A3-15. "Freeing" uses a different day rule from the rest of the row** (`capacity/capacity-derivations.ts:338`). Overdue and tomorrow releases are counted in Confirmed/Expected but not Freeing.
+
 ## Next steps
 
 1. Reproduce the two stranded-in-transit findings (slice-1 finding 1 and S2-6) and the unreleasable seeded bed (S2-1) with failing reducer tests, then fix them.
