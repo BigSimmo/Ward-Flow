@@ -7,13 +7,14 @@ objective; it is not a new task/status ledger.
 - Repository: `BigSimmo/Ward-Flow`.
 - Base: `e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` (`origin/main` inspected locally).
 - Branch: `codex/documentation-repair-20261008`, isolated from the original checkout.
-- Stage: local implementation and verification; publication and deployment are separate.
-- Status: In progress. No ownership conflict; exact owned files are signed out in the
-  execution workspace's local log through `WARD_SIGNOUT_FILE`.
+- Stage: documentation implementation delivered; local verification executed.
+- Status: Blocked for broad readiness by 34 existing Ward-screen lint warnings. All nine
+  documentation findings are implemented. No ownership conflict; exact file claims are
+  recorded in the execution workspace's local log through `WARD_SIGNOUT_FILE`.
 - Scope: nine documentation findings, maintained Context7 guidance, navigation and
   targeted maintenance improvements. Preserve historical records and approved product rules.
-- Next action: preserve the implementation in a clean local commit, then execute the full
-  unit and browser gates. Investigate existing application failures separately from doc repairs.
+- Next action: review the local documentation repair. Resolve the existing application lint
+  warnings before claiming broad readiness; publication and deployment remain separate stages.
 
 ## Evidence contract
 
@@ -27,6 +28,8 @@ The existing organisation `canonicalSources` remains the reviewed reference regi
 unsupported schema fields or competing manifest were added. Always-loaded incident narrative
 was extracted to `docs/agents/recovery-history.md`, retaining core operational rules and headings.
 The client must reload instructions to observe these file changes; no live client-load claim is made.
+The general wiring catalogue now links directly to the maintained Ward guide and preserves its
+original body behind paired historical markers, keeping foreign paths out of current instructions.
 
 The 204 code-span path candidates occur in 35 documents. They are not 204 broken links.
 The structural gate checks links, not arbitrary code spans or incident quotations. No missing
@@ -69,7 +72,7 @@ older wiring catalogue are background. Dated code maps and completed registers r
 | `docs/ward-flow/triage/reexport-blindness-sweep.md`                                  | 19          | Dated report, source snapshot or retirement record; preserve the original path evidence.           |
 | `docs/ward-flow/triage/wf-build2-006-batch-b.md`                                     | 1           | Dated report, source snapshot or retirement record; preserve the original path evidence.           |
 | `docs/ward-flow/triage/wf-build2-006-batch-c.md`                                     | 1           | Dated report, source snapshot or retirement record; preserve the original path evidence.           |
-| `docs/wiring-conventions.md`                                                         | 13          | Mixed legacy examples; use the maintained Ward wiring guide, not foreign catalogue paths.          |
+| `docs/wiring-conventions.md`                                                         | 13          | Ward guide linked directly; original mixed catalogue preserved behind paired historical markers.   |
 | `mockups/README.md`                                                                  | 4           | Retirement/index examples; missing retired assets do not commission restoration.                   |
 
 ## Implementation checkpoint
@@ -85,10 +88,34 @@ and 30 advisory references outside supported validation. The historical Ward pat
 Selected acceptance against the actual base completed runtime, formatting, diff integrity,
 all documentation gates, installed-lock parity, CI scope and 24 backend tests. It stopped at
 lint: 34 unused-code warnings in `src/components/ward-management/ward/ward-screen.tsx`,
-which has no changes from the task base. Typecheck is running separately. The FULL unit gate
-requires a clean committed candidate and will follow the implementation commit.
+which has no changes from the task base. The remaining selected gates were executed separately.
 
 The pinned Chromium download returned HTTP 403 (`Domain forbidden`). The repository-supported
-executable override can use installed Chromium 151.0.7922.173 for local journey evidence;
+executable override used installed Chromium 151.0.7922.173 for local journey evidence;
 that evidence does not establish the pinned browser revision or hosted CI. No hosted actions,
 publication, merge, deployment or visual-verification refresh have been performed.
+
+## Final execution evidence — 8 October 2026
+
+The implementation was preserved as `92d198fc4cf21189a7153c6d09564e11b85f9aa3` before the
+clean-tree FULL gate. Its evidence is local and scoped to that commit:
+
+| Check                              | Result                                                                                            |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Root typecheck                     | Passed                                                                                            |
+| FULL unit gate                     | 926 files; 10,697 executed tests passed; 146 collected tests skipped; zero failures               |
+| Production browser build/typecheck | Passed; 50 static pages generated                                                                 |
+| Ward browser journeys              | 120 passed, one existing skipped probe, zero failures; 7.5 minutes                                |
+| Browser skip                       | `ui-ward-forced-colors.spec.ts:306`, the existing unresolved custom-property probe                |
+| Commit hooks                       | Staged scan, nine tooling lint files, four scoped typecheck files and generated-doc checks passed |
+| Broad lint                         | Blocked: 34 warnings in unchanged `src/components/ward-management/ward/ward-screen.tsx`           |
+
+The final follow-up changes only this checkpoint and `docs/wiring-conventions.md`; documentation
+gates and owned formatting cover that follow-up. The source, tooling and tests remain identical
+to the unit/browser-verified implementation commit. The browser runner and the temporary
+identity-verified development server were stopped; the original checkout remains untouched.
+
+Execution logs and the immutable FULL receipt are retained in the execution workspace at
+`/workspace/review-artifacts/`, including `docs-repair-full-unit-receipt.json`,
+`docs-repair-browser.log` and `docs-repair-acceptance.log`. The initial acceptance log stopped
+at lint; the separate logs above supply the later typecheck, FULL and browser evidence.
