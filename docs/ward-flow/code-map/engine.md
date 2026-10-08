@@ -32,6 +32,9 @@ guards, and appends the audit result after command handling. Internal event fami
   and identity, ED/ward recipients, structured intake, sender, catchment, origin, timing/patient
   links, history shape/length, team name and diagnosis retain their original order. The facade
   still constructs the successful referral and copies its history byte for byte.
+- `ward-flow-transport-progress-reducer.ts`: handover readiness, transport acceptance, en route
+  and collection. Booked-job checks, recorded zero timestamps, revoked examinations and held-bed
+  gender rechecks remain. Arrival and its atomic occupancy update remain in the facade.
 
 `ward-flow-storage-validation.ts` separately validates nested containers, header/counters,
 record shapes, identifiers, cross-record links, capacity bounds, audit data and persistence privacy.
