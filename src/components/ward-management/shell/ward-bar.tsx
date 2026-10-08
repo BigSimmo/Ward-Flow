@@ -357,61 +357,34 @@ export function isPendingNavigation(href: string, current: string): boolean {
 }
 
 /**
- * Phone bar smart auto-hide (option A, 8 Oct 2026). The bar slides away after a deliberate scroll
- * down and returns on any scroll up, at the top of the page, while a panel is open, when focus
- * enters it or when the task count rises. Short pages never hide it. Desktop never hides it.
+ * Phone bar (Josh, 8 Oct 2026, board 00b): bar A with C's behaviour. It never hides. At the top of
+ * the page it sits on the page with no fill; once the page scrolls it condenses and turns solid.
+ * Phone only: `enabled` is false above 48rem, so the desktop bar never gets `data-scrolled`.
  */
-const REVEAL_BAR_EVENT = "ward-flow-reveal-bar";
-const HIDE_AFTER_PX = 48;
-const SHOW_AFTER_PX = 8;
-const TOP_ZONE_PX = 120;
+const SCROLLED_AFTER_PX = 8;
 
-function useAutoHideBar(enabled: boolean, taskCount: number): boolean {
-  const [hidden, setHidden] = useState(false);
-  const [seen, setSeen] = useState({ enabled, taskCount });
-  if (seen.enabled !== enabled || seen.taskCount !== taskCount) {
-    // Leaving phone mode, opening a panel or a new task always brings the bar back.
-    if (!enabled || taskCount > seen.taskCount) setHidden(false);
-    setSeen({ enabled, taskCount });
-  }
+function useBarScrolled(enabled: boolean): boolean {
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     if (!enabled) return;
-    let lastY = window.scrollY;
-    let travel = 0;
     let frame = 0;
     const update = () => {
       frame = 0;
-      const y = window.scrollY;
-      const delta = y - lastY;
-      lastY = y;
-      const shortPage = document.documentElement.scrollHeight < window.innerHeight * 1.5;
-      if (shortPage || y <= TOP_ZONE_PX) {
-        travel = 0;
-        setHidden(false);
-        return;
-      }
-      travel = Math.sign(delta) === Math.sign(travel) ? travel + delta : delta;
-      if (travel >= HIDE_AFTER_PX) setHidden(true);
-      else if (travel <= -SHOW_AFTER_PX) setHidden(false);
+      setScrolled(window.scrollY > SCROLLED_AFTER_PX);
     };
     const onScroll = () => {
       if (!frame) frame = window.requestAnimationFrame(update);
     };
-    const reveal = () => {
-      travel = 0;
-      setHidden(false);
-    };
+    frame = window.requestAnimationFrame(update);
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener(REVEAL_BAR_EVENT, reveal);
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener(REVEAL_BAR_EVENT, reveal);
       if (frame) window.cancelAnimationFrame(frame);
     };
   }, [enabled]);
 
-  return enabled && hidden;
+  return enabled && scrolled;
 }
 
 /** The phone layout's one breakpoint (8 Oct 2026). Everything phone-only in the bar keys off it. */
@@ -911,8 +884,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const activeServiceBadgeLabel = activeService ?? "Statewide";
   const activityHasUnread = unreadNoticeCount > 0;
 
-  const barHidden = useAutoHideBar(isPhone && openPanel === null, tasksItems.length);
-  const revealBar = useCallback(() => window.dispatchEvent(new Event(REVEAL_BAR_EVENT)), []);
+  const barScrolled = useBarScrolled(isPhone);
+  // Phone only: the condensed bar's live line, the open movements in the current scope.
+  const scopeOpenCount = activeService
+    ? (serviceOptionOpenCounts.get(activeService as HealthService) ?? 0)
+    : movements.filter(isOpen).length;
 
   return (
     <header
@@ -920,8 +896,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       aria-label="Header"
       data-testid="ward-bar"
       data-long-title={routeTitle.length > 17 || undefined}
-      data-hidden={barHidden || undefined}
-      onFocusCapture={revealBar}
+      data-scrolled={barScrolled || undefined}
     >
       <Link href={WARD_HOME_HREF} className={`${styles.phoneOnly} ${styles.phoneBrand}`} aria-label="Ward Flow home">
         <ActivityIcon aria-hidden="true" strokeWidth={2} />
@@ -970,6 +945,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             )}
             <span className="sr-only">{activeService ?? "All services"}</span>
           </button>
+          {isPhone ? (
+            <span className={styles.scopeLive} aria-hidden="true">
+              {scopeOpenCount} open · {activeServiceBadgeLabel}
+            </span>
+          ) : null}
 
           {!isFixedJurisdiction && openPanel === "service" ? (
             <div
