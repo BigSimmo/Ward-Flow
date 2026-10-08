@@ -33,9 +33,11 @@ Migration 2 must run before deploying the updated client. An older backend witho
 
 Implementation verified on 8 October 2026: 47 backend tests passed with real disposable PostgreSQL; 15 focused frontend/provider/colour tests, source typecheck and scoped ESLint passed. Desktop/mobile Chromium verified the mode controls without page errors or toolbar overflow, and the production Next build passed. The deployment package was regenerated. Live Azure rollout remains blocked by identity/network access from the execution workspace.
 
+For the two current private-network/reader blockers, use [SETUP-MCP-READONLY.md](SETUP-MCP-READONLY.md). It includes the fixed read-only connection/metadata check and keeps migration/deployment separate.
+
 ## One settings file
 
-Copy `infra/azure-settings.example.json` to ignored `infra/azure-settings.local.json`. Keep `dataMode` set to `prototype`, and fill the actual Ward Flow subscription, tenant, coordinator account object IDs and migration administrator identity. The migration administrator is an Entra database administrator name, not a password. Leave `serverName` empty to discover and reuse a single existing server in `rg-wardflow-dev-aue`; if more than one exists, set the verified name explicitly. Keep the generated workspace UUID stable across restarts and deployments.
+Copy `infra/azure-settings.example.json` to ignored `infra/azure-settings.local.json`, or reuse the existing private settings file on the owner's PC. Keep `dataMode` set to `prototype`, and fill the actual Ward Flow subscription, tenant, coordinator account object IDs and migration administrator identity only after verification. The migration administrator is an Entra database administrator name, not a password. The example pins `serverName: wardflow-dev-aue`, `databaseName: wardflow_dev` and `requireExistingDatabase: true` to reuse the verified development target. Keep the generated workspace UUID stable across restarts and deployments.
 
 The resource group, existing Function and API audience are fixed to Ward Flow. The setup verifies the selected subscription/tenant, the Function's Australian location and managed identity, then inspects PostgreSQL. It does not use PsychSift resources.
 
@@ -45,7 +47,7 @@ No secret or access token belongs in the settings file, frontend variables, repo
 
 ## Apply in order
 
-Run from the repository root with Node 24, this repository's locked dependencies, Azure CLI and access to the selected Ward Flow subscription. Build the shared engine before packaging. `zip` is needed for packaging.
+The rollout commands below require separate approval before any provider mutation, migration or deployment. Run from the repository root with Node 24, this repository's locked dependencies, Azure CLI and access to the selected Ward Flow subscription. Build the shared engine before packaging. Packaging uses Python on Windows and `zip` on other systems.
 
 ```sh
 npm ci
@@ -60,7 +62,7 @@ Inspection needs only the actual subscription and tenant IDs; role/administrator
 npm --prefix backend/ward-flow run azure:provision -- /absolute/path/to/azure-settings.local.json
 ```
 
-Provision reuses the discovered server. Only when no matching server exists does it apply `infra/database.bicep`: PostgreSQL 16, Australia East by default (matching the Function's Australian region), 32 GB storage, burstable B1ms development compute, 35-day backups, public access disabled, Entra-only authentication, private DNS and a private VNet. It creates database `wardflow`. Existing Ward Flow networks or Function network integration cause a review stop before creating a new topology. The default address space is `10.74.0.0/16`; verify its suitability before applying the new-network template.
+Provision reuses the verified existing server and database. With the default `requireExistingDatabase: true`, missing inventory fails before creation. Only a separately approved new-resource plan may explicitly set that flag to false and use `infra/database.bicep`: PostgreSQL 16, Australian region, 32 GB storage, burstable B1ms development compute, 35-day backups, public access disabled, Entra-only authentication, private DNS and a private VNet. Those template values describe historical preparation, not the actual PostgreSQL 18 development server's settings. Existing networks or Function network integration cause a review stop before creating another topology.
 
 Provision writes non-secret `dist/setup/backend.env` and `dist/setup/frontend.env`. These are ignored generated outputs. Existing private networks need a verified `functionSubnetId` in the same VNet as the database; an existing network attachment is never silently switched. The new subnet delegation targets the documented Flex Consumption Function. Another hosting plan needs its appropriate reviewed delegation.
 
@@ -83,7 +85,7 @@ The configuration command must run on a host that can reach the private database
 npm --prefix backend/ward-flow run azure:configure -- /absolute/path/to/azure-settings.local.json
 ```
 
-Configure verifies the existing enforced Function Entra authentication and safe identity/storage app settings. It creates the `wardflow` database only if missing on the reused server, preserves an existing database, and applies versioned migrations under the nominated administrator, verifies/creates the Function's Entra database principal and grants least privilege. Migration and grants are repeatable; a grant failure remains a failure even if the schema was already applied. It then attaches the reviewed private network, appends the SPA redirect URI without replacing existing redirects, adds the exact frontend CORS origin, expands any existing host identity allowlist to include the named coordinators, and applies shared backend settings. Consent for a separate frontend client remains an explicit directory configuration step.
+Configure is an administrative mutation, not an inspection or read-only MCP check. It verifies existing Function Entra authentication and identity/storage settings, then applies versioned migrations to the configured database under the nominated administrator and verifies/creates the Function's database principal and grants. The default existing-resource guard forbids creating a missing database. The verified target is `wardflow_dev`. Migration and grant failures remain failures. Configure also attaches the reviewed private network, appends the SPA redirect URI, adds the frontend CORS origin, expands any existing host identity allowlist to include named coordinators, and applies shared settings. Review and approve those exact changes before running it; consent for a separate frontend client is an additional directory step.
 
 Apply the generated `frontend.env` values to the verified frontend service and rebuild it. Next.js public variables are embedded at build time; changing runtime variables alone does not update an already-built client. The Microsoft SPA redirect is exactly `<frontendOrigin>/mockups/ward-flow`.
 
