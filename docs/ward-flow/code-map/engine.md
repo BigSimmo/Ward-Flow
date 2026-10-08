@@ -35,6 +35,10 @@ guards, and appends the audit result after command handling. Internal event fami
 - `ward-flow-transport-progress-reducer.ts`: handover readiness, transport acceptance, en route
   and collection. Booked-job checks, recorded zero timestamps, revoked examinations and held-bed
   gender rechecks remain. Arrival and its atomic occupancy update remain in the facade.
+- `ward-flow-movement-classification-reducer.ts`: escalation, urgency and legal-status records.
+  Reason membership, histories and the legal audit outcome are retained. These commands do not
+  allocate/release beds or change movement stage. The reason-list contract test follows runtime
+  reducer imports and attributes checks to each case or type-narrowed event handler.
 
 `ward-flow-storage-validation.ts` separately validates nested containers, header/counters,
 record shapes, identifiers, cross-record links, capacity bounds, audit data and persistence privacy.
