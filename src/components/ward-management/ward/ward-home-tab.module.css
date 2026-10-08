@@ -759,3 +759,44 @@
     grid-row: 2;
   }
 }
+
+/* Phone: who is coming in and going out sits straight under the hero's bed numbers, then every
+ * bed. The bed card's filter row takes its own line under the title so the title is never
+ * squeezed to nothing. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .areaComing {
+    order: -3;
+  }
+
+  .areaOut {
+    order: -2;
+  }
+
+  .areaBeds {
+    order: -1;
+  }
+
+  .areaBeds > div:first-child {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+  }
+
+  .areaBeds > div:first-child > div:last-child {
+    flex: 1 1 100%;
+    min-width: 0;
+    margin-left: 0;
+  }
+
+  /* Tiles in a row share one height, so a tile with a note does not leave its neighbour short. */
+  .bedTile {
+    height: 100%;
+  }
+}
+
+/* Phone polish (8 Oct 2026): the length-of-stay chart is a desk read; on phone the page ends with
+ * today's decisions. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .areaStay {
+    display: none;
+  }
+}

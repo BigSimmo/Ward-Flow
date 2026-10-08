@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type Dispatch,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
@@ -132,6 +133,19 @@ const NETWORK_SCOPE_VALUE = "network";
 
 function isHealthService(value: string): value is HealthService {
   return (HEALTH_SERVICES as readonly string[]).includes(value);
+}
+
+const PHONE_WIDTH_QUERY = "(max-width: 48rem)";
+
+function subscribePhoneWidth(onChange: () => void) {
+  if (typeof window.matchMedia !== "function") return () => {};
+  const query = window.matchMedia(PHONE_WIDTH_QUERY);
+  query.addEventListener?.("change", onChange);
+  return () => query.removeEventListener?.("change", onChange);
+}
+
+function readPhoneWidth() {
+  return typeof window.matchMedia === "function" && window.matchMedia(PHONE_WIDTH_QUERY).matches;
 }
 
 /** The `<select>`'s own value for a scope — round-tripped by `parseHandoverScope` below. */
@@ -412,7 +426,12 @@ export function HandoverPage() {
   const [copiedPatientId, setCopiedPatientId] = useState<string | null>(null);
   const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
-  const [sheetViewMode, setSheetViewMode] = useState<"cards" | "table">("table");
+  // Phone (8 Oct 2026): until someone picks a layout, the sheet reads as ISBAR cards on a phone,
+  // because the table needs a wider screen (the layout toggle is hidden there). Desktop and tablet
+  // keep the table default; the server render always starts from the table.
+  const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
+  const [sheetViewChoice, setSheetViewMode] = useState<"cards" | "table" | null>(null);
+  const sheetViewMode = sheetViewChoice ?? (isPhoneWidth ? "cards" : "table");
   const [isTableEnlarged, setIsTableEnlarged] = useState<boolean>(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   useWardModalFocus(isTableEnlarged, tableContainerRef, () => setIsTableEnlarged(false));

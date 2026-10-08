@@ -86,16 +86,16 @@ describe("Q004 refinement interaction regressions", () => {
     const row = within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!;
     const before = screen.getByTestId("ward-refinement-domain-state").textContent;
 
-    expect(screen.queryByLabelText("Explainable shortlist")).toBeNull();
+    expect(screen.queryByLabelText("Placement")).toBeNull();
     expect(screen.queryByLabelText("Referral placement")).toBeNull();
     expect(row).toHaveAttribute("aria-pressed", "false");
 
     fireEvent.click(row);
     expect(row).toHaveAttribute("aria-pressed", "true");
-    const shortlist = screen.getByLabelText("Explainable shortlist");
+    const shortlist = screen.getByLabelText("Placement");
     fireEvent.click(within(shortlist).getByRole("button", { name: "Close shortlist and clear selection" }));
 
-    expect(screen.queryByLabelText("Explainable shortlist")).toBeNull();
+    expect(screen.queryByLabelText("Placement")).toBeNull();
     expect(row).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
   });

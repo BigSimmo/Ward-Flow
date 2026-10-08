@@ -4676,3 +4676,141 @@
     height: 3rem;
   }
 }
+
+/* Phone (8 Oct 2026): New referral fits 390px in one column. `!important` only answers the
+   earlier `!important` rules for the same parts. Desktop and tablet are untouched. On a phone the
+   example catchment radar and the summary recap are left to the larger screen; Send referral and
+   its "Not answered" reason stay. */
+@media (max-width: 48rem) {
+  .screen[data-ward-design="v6"] .radarCard,
+  .screen[data-ward-design="v6"] .summaryCard {
+    display: none !important;
+  }
+
+  .screen[data-ward-design="v6"] .panelHeader,
+  .screen[data-ward-design="v6"] .ph {
+    padding: var(--wf-s-2) var(--wf-s-3) !important;
+  }
+
+  .screen[data-ward-design="v6"] .panelHeaderTitle {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: normal !important;
+  }
+
+  .screen[data-ward-design="v6"] .stepStatusPill {
+    flex: none;
+  }
+
+  .screen[data-ward-design="v6"] .panelBody {
+    padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-3) !important;
+  }
+
+  .screen[data-ward-design="v6"] .optionalPill {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /* Age band and sex: equal options across the full width; four options make a 2 x 2 grid. */
+  .screen[data-ward-design="v6"] .segmentGroup {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    width: auto;
+  }
+
+  .screen[data-ward-design="v6"] .segmentGroup:has(> :nth-child(4)) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+  }
+
+  .screen[data-ward-design="v6"] .segmentOption {
+    justify-content: center;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  /* Urgency: one card per row, the tier over its window. */
+  .screen[data-ward-design="v6"] .urgencyGrid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: var(--wf-s-2) !important;
+  }
+
+  .screen[data-ward-design="v6"] .urgencyCard {
+    min-height: var(--ward-tap) !important;
+    padding: var(--wf-s-2) var(--wf-s-3) !important;
+  }
+
+  .screen[data-ward-design="v6"] .urgencyName,
+  .screen[data-ward-design="v6"] .urgencyWindow {
+    white-space: nowrap;
+  }
+
+  /* Yes or no questions: one per row, question left, answer right. */
+  .screen[data-ward-design="v6"] .switchGrid2x2 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .screen[data-ward-design="v6"] .clinicalSwitchCard {
+    min-height: 0 !important;
+  }
+
+  .screen[data-ward-design="v6"] .switchTitle {
+    white-space: normal;
+  }
+
+  /* Where to refer: the catchment strip stacks its title over its region badge. */
+  .screen[data-ward-design="v6"] .locationsCorridorCard {
+    padding: var(--wf-s-2) var(--wf-s-3) !important;
+  }
+
+  .screen[data-ward-design="v6"] .locationsCorridorHeader {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: var(--wf-s-2) !important;
+  }
+
+  .screen[data-ward-design="v6"] .locationsCorridorTitleGroup {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Phone pass 2 (8 Oct 2026). 12px gutters. The catchment card under "Where to refer" repeats
+     the team, unit and department each option below already names, so it stays on desktop. An
+     option with no badge loses the empty row its badge strip left; a badge is chip height. The
+     history step takes the same 12px inset as the other steps, its label sitting over the
+     heading buttons. */
+  .screen[data-ward-design="v6"] .workspace {
+    padding: var(--wf-s-3);
+  }
+
+  .screen[data-ward-design="v6"] .locationsCorridorCard {
+    display: none !important;
+  }
+
+  .screen[data-ward-design="v6"] .destinationBadges:empty {
+    display: none !important;
+  }
+
+  .screen[data-ward-design="v6"] .badgePill {
+    padding: 2px var(--wf-s-2) !important;
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font) !important;
+  }
+
+  .screen[data-ward-design="v6"] .panelBody.historyBoxWrap {
+    padding: var(--wf-s-3) !important;
+  }
+
+  .screen[data-ward-design="v6"] .promptChipsRow {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--wf-s-2) !important;
+  }
+
+  .screen[data-ward-design="v6"] .historyBoxWrap > legend {
+    float: none;
+    min-height: 0 !important;
+    margin: 0 0 var(--wf-s-2) !important;
+    line-height: var(--wf-lh-12) !important;
+  }
+}

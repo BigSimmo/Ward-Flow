@@ -332,6 +332,13 @@ export function LegalFormsScreen() {
   const handleSelect = (movement: Movement) => {
     if (movement.id !== selectedMovement?.id) setWrittenDraft(BLANK_TYPED_WRITTEN_DRAFT);
     setSelectedMovementId(movement.id);
+    // Phone (8 Oct 2026): the selected form card sits below the list in one column, so bring it
+    // into view; wider screens show it beside the list and do not scroll.
+    if (typeof window.matchMedia === "function" && window.matchMedia("(max-width: 48rem)").matches) {
+      window.requestAnimationFrame(() =>
+        document.querySelector('[data-testid="ward-legal-selected"]')?.scrollIntoView?.({ block: "start" }),
+      );
+    }
   };
 
   const handleOpenInspector = (movement: Movement) => {
@@ -443,6 +450,7 @@ export function LegalFormsScreen() {
 
         <div data-testid="ward-legal-hud-island">
           <Hero
+            className={styles.phoneHero}
             eyebrow="Statutory forms"
             title={`${rows.length} forms on open moves`}
             stats={

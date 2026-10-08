@@ -68,6 +68,17 @@
   }
 }
 
+/* Desktop only (8 Oct 2026): screen-reader-only text is absolutely positioned. With no positioned
+   ancestor it escaped the inner scroller and stretched the document, so scrolling past the end of
+   a page showed blank space below it. Making the row and the scroller containing blocks keeps that
+   text inside the scroller. Phone is unchanged. */
+@media (min-width: 1001px) {
+  .shellRow,
+  .shellContent {
+    position: relative;
+  }
+}
+
 @media (max-width: 1000px) {
   .shellRow {
     height: auto;
@@ -81,6 +92,15 @@
   /* A visible/hidden overflow pair creates a scroll container even when only the document
      scrolls. Use clip on statistics so the navigation can anchor to the document on mobile. */
   .shellContent:has([data-testid="ward-statistics-nav"]) {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+}
+
+/* Phone only (8 Oct 2026): clip rather than hide, so the column is not a scroll container and the
+   header bar stays pinned to the top while the document scrolls. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .shellContent {
     overflow-x: clip;
     overflow-y: visible;
   }

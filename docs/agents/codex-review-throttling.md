@@ -6,7 +6,7 @@
 
 Do not review branches opportunistically. Review the current changed diff, PR, or branch only when the user explicitly asks for review/audit/hunter/cleanup/upload work, when CI/check failures are the task, or when the current change touches high-risk areas that require a targeted review before handoff.
 
-Use [current Ward Flow review handling](codex-github-review.md#current-contract-2-october-2026) and the repository boundary for repo-local reviews, audits, bug hunts, readiness checks and PR/CI reviews. The [inherited protocol](../codex-review-protocol.md) is historical background, not an active workflow.
+Use [current Ward Flow review handling](codex-github-review.md#current-review-contract) and the repository boundary for repo-local reviews, audits, bug hunts, readiness checks and PR/CI reviews. The [inherited protocol](../codex-review-protocol.md) is historical background, not an active workflow.
 
 Report concrete findings by severity with file/line evidence and the affected behaviour. Separate reproduced defects from unverified concerns, design preferences and historical findings. Keep clinical/privacy consequences explicit and select proportionate checks. State the exact reviewed scope/revision and unrun evidence; a review or local pass does not establish hosted readiness.
 

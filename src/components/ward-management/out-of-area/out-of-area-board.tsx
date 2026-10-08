@@ -470,7 +470,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             <>
               <HeroStat value={airCount} label="Air only" />
               <HeroStat value={roadCount} label="Road" />
-              <HeroStat value={maxDaysEntry ? sinceArrivalLabel(maxDaysEntry, now) : "None"} label="Longest away" />
+              <HeroStat
+                className={styles.heroLongest}
+                value={maxDaysEntry ? sinceArrivalLabel(maxDaysEntry, now) : "None"}
+                label="Longest away"
+              />
             </>
           }
           aside={

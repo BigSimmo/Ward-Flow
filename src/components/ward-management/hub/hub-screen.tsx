@@ -275,7 +275,16 @@ export function HubScreen() {
           type="button"
           className={styles.resultMain}
           aria-current={active ? "true" : undefined}
-          onClick={() => select(entry.id)}
+          onClick={() => {
+            // Phone: the preview pane is not shown, so a tap opens the place itself, exactly as the
+            // preview's own Open link does. Every wider screen keeps select-to-preview.
+            if (typeof window.matchMedia === "function" && window.matchMedia("(max-width: 48rem)").matches) {
+              recordHubVisit(entry.id);
+              router.push(entry.href);
+              return;
+            }
+            select(entry.id);
+          }}
         >
           <span className={styles.resultText}>
             <span className={styles.resultName}>{entry.name}</span>

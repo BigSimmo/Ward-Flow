@@ -35,7 +35,10 @@ export function selectedDocChecks(files, wardIndexes = false) {
           /^(?:src\/app\/|mockups\/|scripts\/generate-site-map\.ts$|docs\/site-map\.md$)/u,
         ],
         ["scripts/update-docs-inventory.mjs", /^(?:scripts\/|package\.json$|docs\/scripts-index\.md$)/u],
-        ["scripts/check-codebase-index-coverage.mjs", /^(?:src\/app\/|src\/lib\/|docs\/codebase-index\.md$)/u],
+        [
+          "scripts/check-codebase-index-coverage.mjs",
+          /^(?:src\/app\/|src\/lib\/|\.design\/|design\/|docs\/codebase-index\.md$|scripts\/check-codebase-index-coverage\.mjs$)/u,
+        ],
       ];
   return specs.filter(([, pattern]) => files.some((file) => pattern.test(file))).map(([script]) => script);
 }

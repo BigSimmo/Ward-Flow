@@ -36,3 +36,20 @@ export function subscribeWardDrawerClose(onClose: () => void) {
   window.addEventListener(WARD_DRAWER_CLOSE_EVENT, handler);
   return () => window.removeEventListener(WARD_DRAWER_CLOSE_EVENT, handler);
 }
+
+const WARD_MENU_EVENT = "ward-flow-open-menu";
+
+/** Phone bar Menu button: opens the rail's navigation sheet, returning focus to `trigger`. */
+export function openWardMenu(trigger: HTMLButtonElement | null) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(WARD_MENU_EVENT, { detail: { trigger } }));
+}
+
+export function subscribeWardMenu(onOpen: (trigger: HTMLButtonElement | null) => void) {
+  if (typeof window === "undefined") return () => {};
+  function handler(event: Event) {
+    onOpen((event as CustomEvent<{ trigger: HTMLButtonElement | null }>).detail?.trigger ?? null);
+  }
+  window.addEventListener(WARD_MENU_EVENT, handler);
+  return () => window.removeEventListener(WARD_MENU_EVENT, handler);
+}

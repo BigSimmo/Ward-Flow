@@ -1007,3 +1007,87 @@
     display: none;
   }
 }
+
+/* Phone (simplified): one tidy list of places. Kind chips, search and "Ready beds only" stay; the
+ * order switch and the preview pane (glance, region chart, needs a check, recent places) stay on
+ * the larger screen, and a tap on a row opens the place (hub-screen.tsx). Each ward row is two
+ * lines: name and site with the ready figure, then the bed bar and counts with the age of the
+ * figure. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .hubRight {
+    display: none;
+  }
+
+  .controlsRow + .controlsRow > :first-child,
+  .controlsRow + .controlsRow > :nth-child(2) {
+    display: none;
+  }
+
+  .controlsEnd {
+    margin-left: 0;
+  }
+
+  .resultMain {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--wf-s-3);
+    row-gap: var(--wf-s-1);
+    padding-block: var(--wf-s-2);
+  }
+
+  .resultText {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .resultBeds {
+    grid-column: 1;
+    grid-row: 2;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--wf-s-2);
+  }
+
+  .resultBeds > :first-child {
+    flex: 1 1 4rem;
+    min-width: 0;
+  }
+
+  .resultPrep {
+    flex: 1 1 100%;
+  }
+
+  .resultReady {
+    grid-column: 2;
+    grid-row: 1;
+    flex-direction: row;
+    align-items: baseline;
+    align-self: start;
+    justify-self: end;
+    gap: var(--wf-s-1);
+  }
+
+  .resultConfirmed {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+  }
+
+  .pinButton {
+    align-self: center;
+  }
+}
+
+/* Phone polish (8 Oct 2026): a one-line result (a community team) centres in its 48px row, so the
+ * name sits level with its pin. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .resultMain {
+    align-content: center;
+  }
+
+  .resultBeds:empty,
+  .resultConfirmed:empty,
+  .resultReady:empty {
+    display: none;
+  }
+}

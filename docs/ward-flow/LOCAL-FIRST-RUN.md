@@ -24,7 +24,7 @@ npm run ensure
 ### Port rules
 
 - **Never hardcode a port** in docs, scripts, or chat.
-- This worktree's path-stable port is often **3605** (`stableProjectPort`). If busy, `ensure` / `dev` advances — folklore **3606** usually means 3605 was taken.
+- The launcher chooses a path-stable port for this worktree and advances if that port is busy.
 - Trust only the URL `npm run ensure` prints.
 
 ## Env for UI-only mockups

@@ -2,6 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import { selectedScripts, validateSelectedScripts } from "../scripts/verify-pr-local.mjs";
 import { arbitrate, deriveCiCoverage } from "../scripts/gate-arbiter.mjs";
 describe("actual Ward local verification plan", () => {
+  it("checks maintained links, current architecture and inventory for every acceptance scope", () => {
+    for (const file of ["README.md", "AGENTS.md", "src/app/page.tsx", "backend/ward-flow/backend.test.mjs"])
+      expect(selectedScripts({ entries: [{ file, status: "M" }] })).toEqual(
+        expect.arrayContaining(["docs:check-links", "docs:check-index", "docs:check-inventory"]),
+      );
+  });
   it("keeps Ward prose static, maintained policy exact, and source or unknown conservative", () => {
     const select = (file: string, status = "M") => selectedScripts({ entries: [{ file, status }] });
     expect(select("README.md")).not.toContain("check:ward-expected-reds");

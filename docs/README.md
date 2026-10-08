@@ -16,6 +16,12 @@ Explicit selection excludes paired historical sections. Web URLs, reference-styl
 renderer extensions are not validated. `npm run docs:check-scripts` checks maintained npm
 references; generated inventory/index checks do not prove architectural truth or prose freshness.
 
+`npm run docs:check-links` checks inline local paths and supported heading anchors in maintained
+sections of **every Git-tracked Markdown file**, including root and nested agent instructions.
+Paired historical markers exclude preserved source sections; a banner alone does not exclude text.
+Stage new owned documents before this check. Untracked scratch is not part of its acceptance scope.
+Local PR verification and Ward CI also run the maintained architecture and script-inventory checks.
+
 ## Start here
 
 | Doc                                                                                                       | What it is                                                                                           |
@@ -27,6 +33,10 @@ references; generated inventory/index checks do not prove architectural truth or
 | [ward-flow/README.md](ward-flow/README.md) · [ward-flow/LOCAL-FIRST-RUN.md](ward-flow/LOCAL-FIRST-RUN.md) | **Ward Flow** local bed-flow prototype — product entry + UI boot on this machine                     |
 | [DOCS-SYSTEM.md](DOCS-SYSTEM.md)                                                                          | **Documentation system** - pipeline, registry, Ward Flow tip lock, recheck triggers                  |
 | [scripts-index.md](scripts-index.md)                                                                      | Curated map of `scripts/` and the `package.json` command surface by purpose                          |
+| [Context7](agents/context7.md)                                                                            | Maintained connector use, source identity and version verification                                   |
+| [Backend](../backend/ward-flow/README.md)                                                                 | Separate synthetic Azure package and local API checks                                                |
+| [Public CI](ward-flow/PUBLIC-CI.md)                                                                       | Ward workflow scope and acceptance evidence                                                          |
+| [Railway operations](ward-flow/RAILWAY-OPERATIONS.md)                                                     | Diagnosis of separately authorised Ward hosting tasks                                                |
 
 ## Historical discovery catalogue
 

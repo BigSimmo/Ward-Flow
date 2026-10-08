@@ -58,7 +58,8 @@ function RefusalHarness({ children }: { children: React.ReactNode }) {
 /** Opens the registers panel and switches to Refused actions — same helper shape as
  *  `ward-override-register-render.dom.test.tsx`'s own `openOverridesTab`. */
 function openRefusedTab() {
-  fireEvent.click(screen.getByRole("button", { name: /Today’s answers/ }));
+  // Desktop: the registers open from the hero's Exceptions count (owner, 8 Oct 2026).
+  fireEvent.click(screen.getByRole("button", { name: /Exceptions/, expanded: false }));
   fireEvent.click(screen.getByRole("tab", { name: /Refused/ }));
 }
 
@@ -91,7 +92,8 @@ describe("the persistent refusal marker", () => {
       "the refusal marker is inside the scrollable body — it can be scrolled out of view",
     ).toBe(false);
     // And the registers panel really is inside `.body`, or the assertion above proves nothing —
-    // a non-vacuity check on the population itself, not just the marker.
+    // a non-vacuity check on the population itself, not just the marker. It opens from the hero.
+    fireEvent.click(screen.getByRole("button", { name: /Exceptions/, expanded: false }));
     const registers = screen.getByTestId("ward-coordinator-registers");
     expect(
       body.contains(registers),

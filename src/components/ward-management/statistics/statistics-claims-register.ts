@@ -226,7 +226,6 @@ const WARD_REDUCER = "src/components/ward-management/ward-flow-reducer.ts";
 const WARD_STATISTICS = "src/components/ward-management/ward-statistics.ts";
 const WARD_DERIVATIONS = "src/components/ward-management/ward-derivations.ts";
 const WARD_REFERRALS = "src/components/ward-management/ward-referrals.ts";
-const WARD_SCREEN = "src/components/ward-management/ward/ward-screen.tsx";
 const WARD_SITES = "src/components/ward-management/ward-sites.ts";
 const WARD_TEAMS = "src/components/ward-management/ward-teams.ts";
 const STATISTICS_SCREEN = "src/components/ward-management/statistics/statistics-screen.tsx";
@@ -732,30 +731,10 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
       replaceWith: "see that case. preparing: true,",
     },
   },
-  {
-    id: "statistics-screen/bed-readiness/only-discharged-releases-offer-the-flag",
-    retiredPageProse: {
-      date: "2026-09-13",
-      reason:
-        "Q004 owner-requested removal of implementation commentary. The page no longer describes which ward-screen records expose the preparation control.",
-    },
-    renderedIn: STATISTICS_SCREEN,
-    rendered: "the only screen that can raise the flag offers it on released beds alone",
-    claim: "The ward screen's preparation control is offered only on releases whose state is `discharged`.",
-    sourceFile: WARD_SCREEN,
-    evidence:
-      "const dischargedBedReleases = bedReleases.filter( " +
-      '(release) => release.unitId === unit.id && release.state === "discharged",',
-    falsifiedBy: {
-      change:
-        "The ward screen stops narrowing to released beds, so the preparation control is offered on every release " +
-        "rather than on discharged ones alone.",
-      find:
-        "const dischargedBedReleases = bedReleases.filter( (release) => release.unitId === unit.id && release.state " +
-        '=== "discharged",',
-      replaceWith: "const dischargedBedReleases = bedReleases.filter( (release) => release.unitId === unit.id,",
-    },
-  },
+  // Retired 8 October 2026: only-discharged-releases-offer-the-flag. Its page prose was removed
+  // under Q004 on 13 September, and its remaining citation pointed to an unused Ward-screen
+  // filter removed by the lint repair. It never proved that a rendered preparation control
+  // existed; retain the retirement reason rather than redirecting the claim to unrelated code.
   {
     retiredPageProse: {
       date: "2026-10-07",

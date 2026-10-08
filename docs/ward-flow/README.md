@@ -70,9 +70,15 @@ catchment data). They are listed in [`STATUS.md`](STATUS.md).
 ```bash
 npm run ward:dev                                 # organisation checkpoint, then ensure prints the URL
 node scripts/ward-flow/serve-mockups.mjs         # serve the drawings to look at them side by side
-node scripts/run-vitest.mjs <affected-files>     # focused vitest: changed files + up to 3 direct importers
+node scripts/run-vitest.mjs run <test-file>      # explicit test-file filters, one completed run
+npm run test:related -- --base <actual-task-base> --dry-run  # preview changed-source selection
+npm run test:related -- --base <actual-task-base>            # execute the related selection
 node scripts/ward-flow/gate-tsc.mjs               # when changed source or types require it
 ```
+
+Vitest positional arguments filter test filenames; they do not select importers of source files.
+`test:related` follows imports from changed sources and reports its fan-out cap and fallback scope.
+A related-test pass is focused evidence, not a substitute for the selected readiness gate.
 
 **Fold checks (selected for the changed files, by the steward):**
 
