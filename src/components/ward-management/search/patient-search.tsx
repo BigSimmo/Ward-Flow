@@ -76,6 +76,7 @@ import { PatientTypeahead } from "./patient-typeahead";
 import { handOffTypedPatientQuery, isNewTabClick } from "./patient-query-handoff";
 import { RecordPreview, buildMovementSummary, buildReferralSummary, type PreviewSelection } from "./record-preview";
 import { refusalFor } from "./search-refusals";
+import { movementOriginService, movementSearchState, referralOriginService } from "./search-operational-state";
 import {
   LEGAL_FILTER_OPTIONS,
   QUICK_CHIPS,
@@ -245,7 +246,7 @@ export interface UnifiedCaseloadPatient {
 }
 
 export function PatientSearchPage() {
-  const { movements, referrals, units, patients, dayZero } = useWardFlow();
+  const { movements, referrals, units, patients, admissions, dayZero } = useWardFlow();
   const now = useWardFlowClock();
   const [text, setText] = useState("");
   const [stage, setStage] = useState<MovementStage | "">("");
@@ -306,7 +307,7 @@ export function PatientSearchPage() {
     (skip.facet || matchesKpiFacet(result, activeKpiFacet, now)) &&
     (skip.presence || presenceFilter === "all" || matchesPresence(result, presenceFilter)) &&
     (serviceFilter === "all" || matchesService(result, serviceFilter)) &&
-    (settingFilter === "all" || matchesSetting(result, settingFilter)) &&
+    (settingFilter === "all" || matchesSetting(result, settingFilter, admissions)) &&
     (legalFilter === "all" || matchesLegal(result, legalFilter)) &&
     (waitFilter === "all" || matchesWait(result, waitFilter, now));
 
@@ -355,7 +356,7 @@ export function PatientSearchPage() {
 
       if (presenceFilter !== "all" && !matchesPresence(result, presenceFilter)) return false;
       if (serviceFilter !== "all" && !matchesService(result, serviceFilter)) return false;
-      if (settingFilter !== "all" && !matchesSetting(result, settingFilter)) return false;
+      if (settingFilter !== "all" && !matchesSetting(result, settingFilter, admissions)) return false;
       if (legalFilter !== "all" && !matchesLegal(result, legalFilter)) return false;
       if (waitFilter !== "all" && !matchesWait(result, waitFilter, now)) return false;
       return true;
@@ -371,6 +372,7 @@ export function PatientSearchPage() {
     legalFilter,
     waitFilter,
     now,
+    admissions,
   ]);
 
   const refusal = useMemo(() => refusalFor(text), [text]);
@@ -408,19 +410,10 @@ export function PatientSearchPage() {
         const info = resolveSubjectPatient(m, { patients, referrals, movements });
         const waitH = waitedHours(m, now);
         const originText = originDepartmentText(m);
-        const isTransit = m.stage === "moving" || m.transport !== undefined;
-        const isEd = !isTransit && originText.includes("ED");
-        const isPulled = m.stage === "pulled" || m.stage === "accepted_awaiting_bed";
+        const operational = movementSearchState(m, admissions);
         const destUnit = m.acceptedUnitId ? units.find((u) => u.id === m.acceptedUnitId) : null;
         const destName = destUnit ? destUnit.name : "No ward yet";
-        const svc =
-          originText.includes("Royal Perth") || originText.includes("Midland")
-            ? "East Metro"
-            : originText.includes("Sir Charles") || originText.includes("Graylands")
-              ? "North Metro"
-              : originText.includes("Fiona") || originText.includes("Peel") || originText.includes("Armadale")
-                ? "South Metro"
-                : "WACHS";
+        const svc = movementOriginService(m);
 
         // The movement's own legal record and urgency. A table keyed by movement id and a default
         // of "Voluntary" used to stand in here, and an age of 38 and a sex of "Male" filled any gap
@@ -449,7 +442,7 @@ export function PatientSearchPage() {
           indigenous: Boolean(info.patient?.aboriginalOrTorresStraitIslanderStatus),
           confidential: Boolean((info.patient as { confidential?: boolean } | undefined)?.confidential),
           origin: originText,
-          setting: isTransit ? "transit" : isPulled ? "inpatient" : isEd ? "ed" : "inpatient",
+          setting: operational.setting,
           service: svc,
           legalStatus: legal,
           legalExpires,
@@ -458,14 +451,14 @@ export function PatientSearchPage() {
           openedAt: formatInstantWithDay(m.openedAt, now),
           destination: m.acceptedUnitId ?? null,
           destinationName: destName,
-          holdStatus: isTransit ? "In-Transit" : m.acceptedUnitId ? "Bed hold active" : "Unplaced",
+          holdStatus: operational.holdStatus,
           stage: stageCopy[m.stage].label,
           transportNeeded: Boolean(m.transport),
-          transportStatus: m.transport ? "Vehicle dispatched" : isTransit ? "In-Transit" : "Pending allocation",
+          transportStatus: operational.transportStatus,
           nurseEscort: Boolean(m.transport?.escortRequired),
           presence: "live",
           presenceLabel: "Live in Hospital",
-          presenceDetail: `Present in ${originText} · ${isTransit ? "In-Transit" : m.acceptedUnitId ? "Bed hold active" : "Awaiting transfer"}`,
+          presenceDetail: `${operational.setting === "transit" ? "Collected from" : "Origin"} ${originText} · ${operational.holdStatus}`,
           clinicalNote: NO_CLINICAL_NOTE,
           personRecordId: info.patient?.id ?? null,
           openedAtInstant: m.openedAt,
@@ -482,14 +475,7 @@ export function PatientSearchPage() {
         const acceptedDest = ref.destinations.find((d) => d.acceptedUnitId);
         const destUnit = acceptedDest ? units.find((u) => u.id === acceptedDest.acceptedUnitId) : null;
         const waitH = Math.max(0, (now - ref.raisedAt) / 60);
-        const svc =
-          ref.originSiteCode.includes("RPH") || ref.originSiteCode.includes("BTY")
-            ? "East Metro"
-            : ref.originSiteCode.includes("SCGH")
-              ? "North Metro"
-              : ref.originSiteCode.includes("FSH") || ref.originSiteCode.includes("ARM")
-                ? "South Metro"
-                : "East Metro";
+        const svc = referralOriginService(ref.originSiteCode);
 
         const patientAge = recordedAge(info.patient, calendarDateOf(now, dayZero));
 
@@ -555,7 +541,7 @@ export function PatientSearchPage() {
       if (sortBy === "opened-desc") return b.id.localeCompare(a.id);
       return 0;
     });
-  }, [results, patients, referrals, movements, units, now, dayZero, sortBy]);
+  }, [results, patients, referrals, movements, units, admissions, now, dayZero, sortBy]);
 
   // KPI Metrics Calculation
   const yieldMetrics = useMemo(() => {
