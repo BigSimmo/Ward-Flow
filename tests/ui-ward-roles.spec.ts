@@ -1031,7 +1031,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await page.waitForLoadState("networkidle");
 
     const queue = page.getByRole("region", { name: "Priority queue" });
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await queue.getByTestId("ward-queue-row-WF-315").click();
     await openShortlistSections(shortlist);
     await shortlist.getByTestId("ward-shortlist-candidate-rph-adult-secure").click();
@@ -1080,7 +1080,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await switchTo("Coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("complementary", { name: "Explainable shortlist" })).toContainText(
+    await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toContainText(
       "Accepted destination: Dabakarn",
     );
 
@@ -1282,7 +1282,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // zero. It must now read the opposite: Not met, 0 allocatable. `ward-eligibility.ts` is a
     // protected surface — this is not a change to what the gate judges, only to which unit's
     // live data it is judging. ---
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await expect(shortlist).toContainText("Dabakarn");
     const allocatableGate = shortlist.getByTestId("ward-gate-allocatable_bed");
     await expect(allocatableGate).toHaveAttribute("data-pass", "false");

@@ -24,6 +24,22 @@
   border: 1px solid var(--wf-line);
 }
 
+/* The pause control matches the chip's height, so the pair reads as one control. */
+.group > button.pause {
+  width: var(--wf-h-chip);
+  height: var(--wf-h-chip);
+  border-radius: var(--wf-r-xs);
+}
+
+.group:has(> button.pause) > .lv {
+  height: var(--wf-h-chip);
+}
+
+.group > button.pause svg {
+  width: 12px;
+  height: 12px;
+}
+
 .u {
   font: 500 var(--wf-fs-11) / 1 var(--wf-font);
   color: var(--wf-ink-3);

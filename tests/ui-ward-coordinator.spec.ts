@@ -124,13 +124,13 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // duplicate to collapse away.
     await expect(page.getByRole("region", { name: "State Bedflow", exact: true })).toBeVisible();
     // ⚠️ **THE SHORTLIST NO LONGER MOUNTS UNCONDITIONALLY.** `coordinator-screen.tsx` now wraps
-    // the whole `<aside aria-label="Explainable shortlist">` in `{hasPanelSubject ? ... : null}` —
+    // the whole `<aside aria-label="Placement">` in `{hasPanelSubject ? ... : null}` —
     // with nothing selected, "Statewide flow"'s own header shows "Select a patient or referral to
     // open shortlist" instead, and the shortlist landmark simply is not in the document yet. A
     // click is therefore a real precondition for this region existing at all now, not an
     // incidental step.
     await page.locator('[data-testid^="ward-queue-row-"]').first().click();
-    await expect(page.getByRole("complementary", { name: "Explainable shortlist" })).toBeVisible();
+    await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toBeVisible();
     // Owner, 8 Oct 2026: the four registers start closed and open as a strip under the hero from
     // its Exceptions count, so the toggle is clicked first. Scrolled into view before the
     // visibility check, as Playwright's `toBeVisible()` needs it in the viewport.
@@ -158,7 +158,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await gotoCoordinator(page);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     // Before selection, the diagram header reports the fixture's ward count and
     // the shortlist is absent. Selecting a row mounts the matching shortlist.
     // 2026-10-07 (v6 Home): the State bedflow card head reads "22 wards", as the v6 Home mockup
@@ -248,7 +248,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const wf005Item = drawer.locator('[data-testid*="-WF-005"]').first();
     await expect(wf005Item).toBeVisible();
     await wf005Item.click();
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await expect(shortlist).toBeVisible();
     await expect(shortlist).toContainText("WF-005");
     await expect(page.getByTestId("ward-queue-row-WF-005")).toHaveAttribute("aria-pressed", "true");
@@ -262,7 +262,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // clears the selection, so the last step below — selecting WF-005 again from the phone drawer
     // — now proves the drawer itself selects, rather than leaning on the leftover selection.
     await page.getByRole("button", { name: "Close shortlist and clear selection" }).click();
-    await expect(page.getByRole("complementary", { name: "Explainable shortlist" })).toHaveCount(0);
+    await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Priority queue" })).toBeVisible();
     // Task A: the toggle only exists below 48rem now — restored exactly at the width the diagram
     // disappears (`@media (max-width: 48rem)`, the same query in both places).
@@ -379,7 +379,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // Selecting a movement drives the rest of the screen.
     await firstRow.click();
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     const selectedId = await queue.locator('[aria-pressed="true"]').getAttribute("data-testid");
     await expect(shortlist).toContainText(String(selectedId).replace("ward-queue-row-", ""));
   });
@@ -395,10 +395,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // The worst department leads, and says why it is worst.
     const worst = cards.first();
     await expect(worst).toContainText("waiting");
-    // 2026-10-07 (v6 Home): Home's ED pressure card paints "{duration} longest" (the v6 Home
-    // mockup's wording, `home-ed-pressure.tsx`), so the visible label is lower case now. This
-    // still checks the rendered text, so it matches the visible label's casing.
-    await expect(worst).toContainText("longest");
+    // 8 Oct 2026 (owner): the visible "longest" word was cut off on the tile, so it was dropped.
+    // The tile's accessible name still says which figure is the longest wait.
+    await expect(worst).toHaveAccessibleName(/longest/);
 
     // The rendered sequence itself is non-increasing on the two keys `edPressure` ranks by.
     // Asserting only that card 1 "contains some text" (above) stays true even if the rows were
@@ -690,7 +689,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await gotoCoordinator(page);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
     // 2026-10-07 (v6 Home): State bedflow is a grouped ward list with no SVG arrows; this guard
     // waits on its first ward node instead. Every assertion below reads the same node ids.
@@ -774,7 +773,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await gotoCoordinator(page);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
     // 2026-10-07 (v6 Home): State bedflow is a grouped ward list with no SVG arrows; this guard
     // waits on its first ward node instead. Every assertion below reads the same node ids.
@@ -839,7 +838,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await gotoCoordinator(page);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     // WF-017: selected explicitly by id, not by row position — it no longer ranks first in the
     // queue now that Task 6A deleted the fabricated deadline that used to inflate its score (see
@@ -932,7 +931,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await gotoCoordinator(page);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     const referButton = shortlist.getByTestId("ward-shortlist-refer");
     const overrideToggle = shortlist.getByTestId("ward-shortlist-override-toggle");
 
@@ -1031,7 +1030,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await gotoCoordinator(page);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     // WF-009's default candidate (Dabakarn) fails exactly one of the eleven gates
     // (prior_decline) — enough to prove ordering without depending on how many gates fail.
@@ -1063,7 +1062,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await gotoCoordinator(page);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     const movement = requireMovement("WF-009");
     expect(movement.declines.length, "fixture assumption: WF-009 carries five declines").toBe(5);
@@ -1084,7 +1083,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await gotoCoordinator(page);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     // WF-009: every one of its three candidates is ineligible, so there is no unit this
     // panel may honestly suggest.
@@ -1119,7 +1118,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await gotoCoordinator(page);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     // WF-009: every candidate is ineligible, so override is the only human path that can
     // place a patient here — exactly the scenario the control exists for.
@@ -1182,7 +1181,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // test in this file already does.
     await queue.locator('[data-testid="ward-queue-row-WF-002"]').click();
 
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await openShortlistSections(shortlist);
 
     // Nothing is referable until a human picks a ward.
@@ -1220,7 +1219,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     ).toBeTruthy();
 
     const queue = page.getByRole("region", { name: "Priority queue" });
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     await queue.locator('[data-testid="ward-queue-row-WF-004"]').click();
     await openShortlistSections(shortlist);
@@ -1254,7 +1253,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     expect(wf004Default, "fixture assumption: WF-004 has a candidate to override into").toBeTruthy();
 
     const queue = page.getByRole("region", { name: "Priority queue" });
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
 
     // ⚠️ PRE-EXISTING, found running this deliberate spec for Task A (structured-wobbling-globe)
     // rather than caused by it: owner ruling 2026-09-07 (commit 952ef55cb1, landed on this branch
@@ -1409,7 +1408,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     expect(wf009.declines.length, "fixture assumption: WF-009 carries five declines").toBe(5);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await queue.locator('[data-testid="ward-queue-row-WF-009"]').click();
 
     // The pre-authored fixture record renders correctly before anything is dispatched.
