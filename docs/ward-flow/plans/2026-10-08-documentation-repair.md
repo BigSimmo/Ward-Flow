@@ -7,15 +7,16 @@ objective; it is not a new task/status ledger.
 - Repository: `BigSimmo/Ward-Flow`.
 - Base: `e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` (`origin/main` inspected locally).
 - Branch: `codex/documentation-repair-20261008`, isolated from the original checkout.
-- Stage: documentation implementation delivered; continuing local readiness repair.
-- Status: In progress. The owner requested continuation after the lint blocker was reported.
-  All nine documentation findings are implemented. No ownership conflict; exact file claims are
-  recorded in the execution workspace's local log through `WARD_SIGNOUT_FILE`.
+- Stage: local engineering completed.
+- Status: Completed. All nine documentation findings and the reported lint blocker are repaired;
+  the corrected candidate passed every selected local gate. The two existing UI wiring gaps
+  exposed by the cleanup are explicitly recorded below. Exact file claims are recorded through
+  `WARD_SIGNOUT_FILE` and released at handoff.
 - Scope: nine documentation findings, maintained Context7 guidance, navigation and
   targeted maintenance improvements; the requested continuation clears the reported lint blocker.
   Preserve historical records and approved product rules.
-- Next action: verify the corrected claim/reachability contracts and complete selected local gates.
-  Publication and deployment remain separate stages.
+- Next action: none for this local implementation stage. Publication, hosted CI observation and
+  deployment remain separate stages.
 
 ## Evidence contract
 
@@ -76,7 +77,7 @@ older wiring catalogue are background. Dated code maps and completed registers r
 | `docs/wiring-conventions.md`                                                         | 13          | Ward guide linked directly; original mixed catalogue preserved behind paired historical markers.   |
 | `mockups/README.md`                                                                  | 4           | Retirement/index examples; missing retired assets do not commission restoration.                   |
 
-## Implementation checkpoint
+## Documentation-stage implementation checkpoint
 
 Current guidance, source/version documentation, architecture sections and local/CI gate wiring
 are implemented. The exact locked installation passed parity (Next 16.3.8, Vitest 4.1.11).
@@ -96,7 +97,7 @@ executable override used installed Chromium 151.0.7922.173 for local journey evi
 that evidence does not establish the pinned browser revision or hosted CI. No hosted actions,
 publication, merge, deployment or visual-verification refresh have been performed.
 
-## Final execution evidence — 8 October 2026
+## Documentation-stage execution evidence — 8 October 2026
 
 The implementation was preserved as `92d198fc4cf21189a7153c6d09564e11b85f9aa3` before the
 clean-tree FULL gate. Its evidence is local and scoped to that commit:
@@ -155,7 +156,44 @@ The exact model/retired counts move from 80/54 to 79/53; all 26 active page clai
 checks remain. Corrected Ward comments that still described the removed forms. No reducer,
 permission, expected-red manifest or rendered interaction changed in this follow-up.
 
-Next: commit the coherent correction and rerun selected acceptance against `origin/main`.
-The source-register change requires fresh FULL evidence rather than the test-only bounded recheck.
+The coherent correction was committed before fresh selected acceptance against `origin/main`.
+The source-register change required fresh FULL evidence rather than the test-only bounded recheck.
 New evidence is stored under `/workspace/review-artifacts/docs-repair-lint-*`, including
 `docs-repair-lint-structure.json` and `docs-repair-lint-focused-tests.log`.
+
+## Completed continuation — local acceptance evidence
+
+The corrected candidate is `b8cc97793d2036b9da2a5425a24ecc0c622ffec6`. The selected local gate
+against `origin/main` passed all 15 selected commands with no failures or unreached commands:
+
+| Check                                                              | Result                                                               |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| Runtime, formatting and diff integrity                             | Passed                                                               |
+| Documentation links, script references, architecture and inventory | Passed; zero broken maintained links                                 |
+| Installed-lock parity and CI scope                                 | Passed                                                               |
+| Backend checks                                                     | 24 passed                                                            |
+| Repository-wide lint                                               | Passed with zero warnings; the earlier 34-warning blocker is cleared |
+| Root typecheck                                                     | Passed                                                               |
+| Fresh FULL unit gate                                               | 926 files; 10,697 passed; 146 collected tests skipped; zero failures |
+| Production browser build/typecheck                                 | Passed; 50 static pages generated                                    |
+| Ward browser journeys                                              | 120 passed; one existing skipped probe; zero failures; 7.5 minutes   |
+
+The two corrected contract files also passed their focused run (22 tests). The fresh FULL
+run includes those corrections and all earlier passing files; no failing test was placed in the
+expected-red manifest. The known-gap register records the missing leave-recording and
+intake-constraint controls as open gaps, not implemented features.
+
+Local browser evidence used installed Chromium 151.0.7922.173 through the supported executable
+override after the pinned revision download was blocked with HTTP 403. The unchanged skipped
+probe is `tests/ui-ward-forced-colors.spec.ts:306`. This is selected local Ward journey evidence;
+it does not establish the pinned browser revision, hosted CI or a new visual-verification verdict.
+
+The immutable passing receipt is
+`/workspace/review-artifacts/docs-repair-lint-final-full-unit-receipt.json`; the complete selected
+run is `/workspace/review-artifacts/docs-repair-lint-final-acceptance.log`. The earlier failed
+receipt/log are retained as failure evidence. The browser runner and identity-verified local
+servers have stopped. The original checkout remains clean and untouched.
+
+The completion follow-up changes only this checkpoint. Source, tooling and tests remain identical
+to the verified candidate above; final documentation checks and formatting cover the record update.
+No publication, merge, deployment or provider mutation was performed.
