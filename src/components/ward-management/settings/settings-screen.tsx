@@ -70,7 +70,7 @@ import {
 
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
-import { AlertsPane, DataPane, DisplayPane, ProfilePane } from "./settings-panes";
+import { AlertsPane, DataPane, DisplayPane, ProfilePane, type ReferenceTab } from "./settings-panes";
 import { NOT_WIRED, PreviewTag, RuleRow, ScopeLine, SettingRow } from "./settings-rows";
 import { SETTINGS_TABS, findSettings, type SettingsSearchEntry, type SettingsTab } from "./settings-search-index";
 import { publishedThresholds } from "./settings-thresholds";
@@ -399,6 +399,7 @@ export function SettingsScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [findOpen, setFindOpen] = useState(false);
   const [highlight, setHighlight] = useState<string | null>(null);
+  const [reference, setReference] = useState<ReferenceTab>("thresholds");
   const findRef = useRef<HTMLInputElement>(null);
   const results = useMemo(() => findSettings(query), [query]);
 
@@ -437,6 +438,8 @@ export function SettingsScreen() {
 
   const jumpTo = (entry: SettingsSearchEntry) => {
     chooseTab(entry.tab);
+    // Fixed defaults sits behind the reference card's second tab; show it before highlighting.
+    if (entry.id === "fixed-defaults") setReference("defaults");
     setHighlight(entry.id);
     setQuery("");
     setFindOpen(false);
@@ -992,6 +995,8 @@ export function SettingsScreen() {
 
         <div className={styles.pane} hidden={tab !== "data"} data-pane="data">
           <DataPane
+            reference={reference}
+            onReferenceChange={setReference}
             movementCount={movements.length}
             eventCount={eventLog.length}
             thresholds={thresholds}

@@ -140,6 +140,17 @@ describe("the settings screen", () => {
     expect(screen.getByTestId("ward-settings-rail")).toBeInTheDocument();
   });
 
+  it("finding Fixed defaults opens the Data tab with that reference panel showing", () => {
+    renderSettings();
+    fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), {
+      target: { value: "fixed defaults" },
+    });
+    fireEvent.click(screen.getByRole("option", { name: /Fixed defaults/ }));
+
+    const target = document.querySelector<HTMLElement>('[data-setting="fixed-defaults"]')!;
+    expect(target.closest("[hidden]"), "Find landed on a hidden panel").toBeNull();
+  });
+
   /**
    * ⚠️ **The anti-vacuity case for every "no control" assertion above.** All of them would pass on a
    * screen that rendered nothing at all.

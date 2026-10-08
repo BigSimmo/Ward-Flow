@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
 import {
   BellOff,
   BellRing,
@@ -557,7 +557,11 @@ const THRESHOLD_STATE_WORDS: Record<ThresholdState, string> = {
   "nothing-reaches-it": "Nothing reaches it today",
 };
 
+export type ReferenceTab = "thresholds" | "defaults";
+
 export function DataPane({
+  reference,
+  onReferenceChange,
   movementCount,
   eventCount,
   thresholds,
@@ -566,6 +570,9 @@ export function DataPane({
   onClearSession,
   onRestore,
 }: {
+  /** Held by the screen so Find a setting can open Fixed defaults. */
+  reference: ReferenceTab;
+  onReferenceChange: (next: ReferenceTab) => void;
   movementCount: number;
   eventCount: number;
   thresholds: readonly PublishedThreshold[];
@@ -574,7 +581,6 @@ export function DataPane({
   onClearSession: () => void;
   onRestore: () => void;
 }) {
-  const [reference, setReference] = useState<"thresholds" | "defaults">("thresholds");
   return (
     <>
       <div className={styles.columns}>
@@ -691,7 +697,7 @@ export function DataPane({
               label="Reference"
               idPrefix="settings-reference"
               value={reference}
-              onChange={setReference}
+              onChange={onReferenceChange}
               items={[
                 { id: "thresholds", label: "Thresholds" },
                 { id: "defaults", label: "Fixed defaults", count: OPERATIONAL_DEFAULTS.length },
