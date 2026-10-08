@@ -31,6 +31,7 @@ function connection(): WardSharedConnection {
     error: null,
     receivedAt: Date.now(),
     snapshot: {
+      dataMode: "prototype",
       revision: 1,
       now: 642,
       payload: { version: 1, state, dayZero: "2026-10-07T00:00:00Z", startedAt: "2026-10-07T10:00:00Z" },
@@ -51,6 +52,23 @@ afterEach(() => {
 });
 
 describe("shared provider boundary", () => {
+  it("explains live data without switching databases or losing a prototype draft", () => {
+    render(
+      <WardFlowProvider>
+        <Probe />
+      </WardFlowProvider>,
+    );
+    const draft = screen.getByRole("textbox");
+    fireEvent.change(draft, { target: { value: "keep prototype draft" } });
+    expect(screen.getByText("Data mode: Prototype")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Live data (unavailable)" }));
+    expect(screen.getByRole("heading", { name: "Live data is not connected" })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(fake.connection!.dispatch).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Return to prototype" }));
+    expect(screen.getByRole("textbox")).toBe(draft);
+    expect(draft).toHaveValue("keep prototype draft");
+  });
   it("adopts server state without reading or writing browser demo storage", () => {
     const read = vi.spyOn(Storage.prototype, "getItem");
     const write = vi.spyOn(Storage.prototype, "setItem");

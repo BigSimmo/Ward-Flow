@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { PublicClientApplication, type AccountInfo } from "@azure/msal-browser";
 import { SharedWorkspaceClient, type SharedView } from "./ward-shared-client";
 import type { WardFlowEvent } from "./ward-flow-events";
+import styles from "./ward-shared-access.module.css";
 
 export type WardSharedConnection = SharedView & {
   enabled: boolean;
@@ -123,6 +124,61 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
 }
 
 export function WardSharedAccess({ connection, children }: { connection: WardSharedConnection; children: ReactNode }) {
+  const [showLiveInfo, setShowLiveInfo] = useState(false);
+  const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
+  return (
+    <>
+      <section className={styles.toolbar} aria-label="Ward Flow data mode" data-data-mode="prototype">
+        <div>
+          <strong>Data mode: Prototype</strong>
+          <span className={styles.detail}>
+            Invented records ·{" "}
+            {connection.enabled
+              ? connected
+                ? "Shared database connected"
+                : "Shared database not connected"
+              : "Local demonstration"}
+          </span>
+        </div>
+        <div className={styles.controls} role="group" aria-label="Data mode controls">
+          <button type="button" aria-pressed={!showLiveInfo} onClick={() => setShowLiveInfo(false)}>
+            Prototype
+          </button>
+          <button type="button" aria-expanded={showLiveInfo} onClick={() => setShowLiveInfo(true)}>
+            Live data (unavailable)
+          </button>
+        </div>
+      </section>
+      {showLiveInfo && (
+        <section className={styles.notice} aria-label="Live data unavailable">
+          <h1>Live data is not connected</h1>
+          <p>
+            Live mode uses real hospital records in a separately approved workspace. Prototype mode uses invented
+            records, including when it connects to Azure.
+          </p>
+          <p>
+            Hospital approval, a separate live database and the clinical data connection must be configured before live
+            mode can open. Selecting this option does not connect or relabel any data.
+          </p>
+          <button type="button" onClick={() => setShowLiveInfo(false)}>
+            Return to prototype
+          </button>
+        </section>
+      )}
+      <div hidden={showLiveInfo} inert={showLiveInfo}>
+        <WardSharedWorkspaceContent connection={connection}>{children}</WardSharedWorkspaceContent>
+      </div>
+    </>
+  );
+}
+
+function WardSharedWorkspaceContent({
+  connection,
+  children,
+}: {
+  connection: WardSharedConnection;
+  children: ReactNode;
+}) {
   if (!connection.enabled) return children;
   if (!connection.signedIn || !connection.snapshot)
     return (

@@ -9,6 +9,7 @@ const subscriptionId = "11111111-1111-4111-8111-111111111111";
 const tenantId = "22222222-2222-4222-8222-222222222222";
 const objectId = "33333333-3333-4333-8333-333333333333";
 const settings = {
+  dataMode: "prototype",
   subscriptionId,
   tenantId,
   coordinatorObjectIds: [objectId],
@@ -65,7 +66,11 @@ async function run(mode, { config = {}, servers = [server], account = {}, app = 
       encoding: "utf8",
       env: { ...process.env, PATH: `${folder}:${process.env.PATH}` },
     });
-    const calls = (await readFile(join(folder, "calls.jsonl"), "utf8")).trim().split("\n").map(JSON.parse);
+    const log = await readFile(join(folder, "calls.jsonl"), "utf8").catch((error) => {
+      if (error.code === "ENOENT") return "";
+      throw error;
+    });
+    const calls = log.trim() ? log.trim().split("\n").map(JSON.parse) : [];
     let frontend = "";
     try {
       frontend = await readFile(join(folder, "dist/setup/frontend.env"), "utf8");
@@ -83,6 +88,12 @@ test("Azure inspection accepts unset role placeholders and makes only inventory 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /already-existing-ward-db/);
   assert.equal(result.calls.length, 5);
+});
+test("setup refuses live mode before contacting Azure", async () => {
+  const result = await run("provision", { config: { dataMode: "live" } });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Live data mode is not commissioned/);
+  assert.equal(result.calls.length, 0);
 });
 test("Azure provisioning reuses an existing database server without creating resources", async () => {
   const result = await run("provision");

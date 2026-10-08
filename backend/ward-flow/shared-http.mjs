@@ -36,13 +36,19 @@ export function createSharedHandler({ config, store, authenticate, readBody, ver
     if (!config.coordinatorIds.includes(actorId))
       return reply(403, { error: "Coordinator access is not assigned to this account" });
     try {
-      if (path === "/v1/workspace" && request.method === "GET")
+      if (config.dataMode && config.dataMode !== "prototype")
+        return reply(503, { error: "Live data mode is not commissioned" });
+      if (path === "/v1/workspace" && request.method === "GET") {
+        const snapshot = await store.read(actorId);
+        if (snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
         return reply(200, {
           role: "coordinator",
           actorId,
           workspaceId: config.workspaceId,
-          snapshot: await store.read(actorId),
+          data: { mode: snapshot.dataMode, source: "synthetic", liveAvailable: false },
+          snapshot,
         });
+      }
       if (path === "/v1/workspace/audit" && request.method === "GET")
         return reply(200, { events: await store.audit() });
       if (path !== "/v1/workspace/commands" || request.method !== "POST")
@@ -59,6 +65,7 @@ export function createSharedHandler({ config, store, authenticate, readBody, ver
         !body ||
         typeof body !== "object" ||
         body.classification !== "synthetic" ||
+        (body.dataMode !== undefined && body.dataMode !== "prototype") ||
         !UUID.test(body.commandId ?? "") ||
         !Number.isSafeInteger(body.expectedRevision) ||
         body.expectedRevision < 1 ||

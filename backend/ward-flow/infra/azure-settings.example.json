@@ -1,4 +1,5 @@
 {
+  "dataMode": "prototype",
   "subscriptionId": "REPLACE_WITH_WARD_FLOW_SUBSCRIPTION_ID",
   "tenantId": "REPLACE_WITH_WARD_FLOW_TENANT_ID",
   "coordinatorObjectIds": ["REPLACE_WITH_YOUR_ENTRA_USER_OBJECT_ID"],

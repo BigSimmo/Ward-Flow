@@ -3,6 +3,7 @@ import type { WardFlowState } from "./ward-flow-reducer";
 import { isValidSharedWardFlowState } from "./ward-shared-state-validation";
 
 export type SharedSnapshot = {
+  dataMode: "prototype";
   revision: number;
   now: number;
   payload: { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
@@ -15,6 +16,7 @@ export type SharedView = {
   error: string | null;
 };
 type PendingCommand = {
+  dataMode: "prototype";
   classification: "synthetic";
   commandId: string;
   expectedRevision: number;
@@ -47,6 +49,7 @@ export class SharedWorkspaceClient {
   private adopt(snapshot: SharedSnapshot) {
     if (
       !snapshot ||
+      snapshot.dataMode !== "prototype" ||
       !Number.isSafeInteger(snapshot.revision) ||
       snapshot.revision < 1 ||
       !Number.isFinite(snapshot.now) ||
@@ -119,6 +122,7 @@ export class SharedWorkspaceClient {
         if (!this.pending)
           this.pending = {
             classification: "synthetic",
+            dataMode: "prototype",
             commandId: (this.options.commandId ?? (() => crypto.randomUUID()))(),
             expectedRevision: this.view.snapshot!.revision,
             event: this.queue.shift()!,

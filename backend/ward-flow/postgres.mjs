@@ -38,6 +38,7 @@ function canonical(value) {
 
 export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => new Date() }) {
   const snapshot = (row, at) => ({
+    dataMode: row.data_mode,
     revision: Number(row.revision),
     payload: row.payload,
     now: engine.worldNow(row.payload, at),
@@ -66,15 +67,17 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
         "INSERT INTO ward_flow.audit(workspace_id, actor_id, action, outcome, prior_revision, revision, changes) VALUES ($1, $2, 'INITIALISE_WORKSPACE', 'accepted', 0, 1, '{}')",
         [workspaceId, actorId],
       );
-    const { rows } = await client.query("SELECT revision, payload FROM ward_flow.workspaces WHERE id=$1 FOR UPDATE", [
-      workspaceId,
-    ]);
+    const { rows } = await client.query(
+      "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR UPDATE",
+      [workspaceId],
+    );
+    if (rows[0]?.data_mode !== "prototype") throw new Error("Workspace data mode mismatch");
     if (!engine.validWorld(rows[0]?.payload)) throw new Error("Stored workspace is incompatible");
     return rows[0];
   }
   return {
     async ready() {
-      const { rows } = await pool.query("SELECT version FROM ward_flow.migrations WHERE version=1");
+      const { rows } = await pool.query("SELECT version FROM ward_flow.migrations WHERE version=2");
       if (!rows.length) throw new Error("Shared schema unavailable");
     },
     async read(actorId) {
@@ -82,7 +85,7 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
     },
     async audit() {
       const { rows } = await pool.query(
-        "SELECT sequence, actor_id, actor_role, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 ORDER BY sequence DESC LIMIT 200",
+        "SELECT sequence, actor_id, actor_role, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype' ORDER BY sequence DESC LIMIT 200",
         [workspaceId],
       );
       return rows;

@@ -9,6 +9,7 @@ import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow
 
 const state = JSON.parse(JSON.stringify(seedWardFlowStateAt(0))) as SharedSnapshot["payload"]["state"];
 const snapshot = (revision: number): SharedSnapshot => ({
+  dataMode: "prototype",
   revision,
   now: 642,
   payload: { version: 1, state, dayZero: "2026-10-07T00:00:00Z", startedAt: "2026-10-07T10:00:00Z" },
@@ -19,6 +20,23 @@ const settle = async () => {
 };
 
 describe("shared workspace connection", () => {
+  it("rejects missing or live provenance before showing a shared snapshot", async () => {
+    for (const dataMode of [undefined, "live"]) {
+      let view: SharedView | undefined;
+      const client = new SharedWorkspaceClient({
+        baseUrl: "https://example.test",
+        token: async () => "test",
+        changed: (next) => {
+          view = next;
+        },
+        fetch: async () => Response.json({ snapshot: { ...snapshot(1), dataMode } }),
+      });
+      await client.refresh();
+      expect(view?.snapshot).toBeNull();
+      expect(view?.status).toBe("unavailable");
+      client.dispose();
+    }
+  });
   it("retries an uncertain save with the exact command ID and expected revision", async () => {
     const requests: string[] = [];
     let view: SharedView | undefined;

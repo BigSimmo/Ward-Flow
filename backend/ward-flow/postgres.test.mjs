@@ -23,6 +23,8 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
     await storeA.ready();
     const seed = await storeA.read(actorA);
     assert.equal(seed.revision, 1);
+    assert.equal(seed.dataMode, "prototype");
+    assert.equal((await pool.query("SELECT max(version) AS version FROM ward_flow.migrations")).rows[0].version, 2);
     assert.ok(engine.validWorld(seed.payload));
     // Prepare two independent, valid movements targeting one allocatable secure bed.
     const world = structuredClone(seed.payload);
@@ -117,6 +119,40 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
         pool.query("DELETE FROM ward_flow.audit WHERE workspace_id=$1", [workspaceId]),
         /append-only/,
       );
+    });
+    await t.test("workspace mode cannot be relabelled and receipts retain prototype provenance", async () => {
+      await assert.rejects(
+        pool.query("UPDATE ward_flow.workspaces SET data_mode='live' WHERE id=$1", [workspaceId]),
+        /data mode cannot be changed/,
+      );
+      assert.ok((await storeA.audit()).every((row) => row.data_mode === "prototype"));
+      const receipts = await pool.query("SELECT data_mode FROM ward_flow.commands WHERE workspace_id=$1", [
+        workspaceId,
+      ]);
+      assert.ok(receipts.rows.length && receipts.rows.every((row) => row.data_mode === "prototype"));
+      await assert.rejects(
+        pool.query(
+          "INSERT INTO ward_flow.commands(workspace_id, actor_id, command_id, fingerprint, status, result, data_mode) VALUES($1,$2,$3,'test',200,'{}','live')",
+          [workspaceId, actorA, randomUUID()],
+        ),
+        /command_workspace_mode/,
+      );
+    });
+    await t.test("a prototype connection never reads or changes a live-tagged workspace", async () => {
+      const liveId = randomUUID();
+      // Invented fixture tagged live to prove separation, never real patient data.
+      await pool.query("INSERT INTO ward_flow.workspaces(id,revision,payload,data_mode) VALUES($1,1,$2,'live')", [
+        liveId,
+        seed.payload,
+      ]);
+      const wrongStore = createWorkspaceStore(pool, { workspaceId: liveId, engine, clock: () => at });
+      await assert.rejects(wrongStore.read(actorA), /data mode mismatch/);
+      await assert.rejects(wrongStore.command(actorA, randomUUID(), 1, pull(winner.movement)), /data mode mismatch/);
+      assert.equal(
+        (await pool.query("SELECT revision FROM ward_flow.workspaces WHERE id=$1", [liveId])).rows[0].revision,
+        "1",
+      );
+      assert.equal((await wrongStore.audit()).length, 0);
     });
     await t.test("audit failure rolls back the workflow state and receipt", async () => {
       const failingId = randomUUID();

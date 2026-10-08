@@ -9,6 +9,8 @@ if (!["inspect", "provision", "configure", "verify"].includes(mode) || !settings
     "Usage: node azure-setup.mjs inspect|provision|configure|verify /absolute/path/to/azure-settings.local.json",
   );
 const config = JSON.parse(await readFile(settingsPath, "utf8"));
+if (config.dataMode && config.dataMode !== "prototype")
+  throw new Error("Live data mode is not commissioned in this release");
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 if (config.resourceGroup !== "rg-wardflow-dev-aue" || config.functionName !== "wardflow-dev-api-aue")
   throw new Error("Wrong Ward Flow Azure target");
@@ -180,7 +182,12 @@ if (mode === "verify") {
     });
     if (!response.ok) throw new Error(`Authenticated Azure verification failed at ${path}: HTTP ${response.status}`);
     const value = await response.json();
-    if (path === "/v1/workspace" && (value.role !== "coordinator" || value.workspaceId !== config.workspaceId))
+    if (
+      path === "/v1/workspace" &&
+      (value.role !== "coordinator" ||
+        value.workspaceId !== config.workspaceId ||
+        value.snapshot?.dataMode !== "prototype")
+    )
       throw new Error("Shared workspace or role mismatch");
     console.log(`${path}: HTTP 200${value.snapshot ? `, shared revision ${value.snapshot.revision}` : ""}`);
   }
@@ -193,6 +200,7 @@ await writeFile(
     .join("\n") + "\n",
 );
 const settings = {
+  WARD_DATA_MODE: "prototype",
   WARD_SHARED_ENABLED: "true",
   WARD_COORDINATOR_OBJECT_IDS: config.coordinatorObjectIds.join(","),
   WARD_WORKSPACE_ID: config.workspaceId,

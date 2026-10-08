@@ -15,9 +15,23 @@ This is a synthetic demonstration implementation. No live Azure resource was rea
 - Schema version 1 contains an explicit shared repatriation validator. This does not loosen the browser's prohibition on persisting those records. All entered content must remain invented.
 - Database connections use verified TLS and short-lived Entra tokens. The app identity can update workspace state and append/read receipts/audit, but cannot migrate the schema or change/delete audit entries.
 
+## Prototype versus live data
+
+Database connectivity and data mode are separate. Prototype mode uses invented records and can run either locally or in the shared Azure database. Saving prototype data on a real hosted database does not make the records live.
+
+The persistent workspace, command receipts and audit entries carry a `prototype` classification. Migration 2 labels existing synthetic workspaces and prevents changing a workspace's classification. A prototype API filters by that mode before fetching the payload; it refuses to expose a different mode. The client rejects missing or mismatched snapshot provenance. Server configuration and setup accept `WARD_DATA_MODE=prototype` only in this release.
+
+Every Ward Flow screen shows **Data mode: Prototype**, plus whether it is a local demonstration or connected to the shared database. **Live data (unavailable)** opens an explanation without contacting another database, changing classification or discarding local drafts. Returning to prototype resumes the same workspace. The control does not grant permission or create a database connection.
+
+Live mode is reserved for real hospital records in a separately commissioned deployment/database and workspace. It requires the health-service approvals, operational clock/source implementation and access/recovery checks described below. Prototype patients must never be copied into a live workspace. The SQL classification reserves the `live` value for a future commissioned adapter; this release never opens it. The mode describes the configured data source, not an automatic detector that can tell whether someone typed a real person's details. Do not enter real patient information into prototype mode.
+
+Migration 2 must run before deploying the updated client. An older backend without snapshot provenance is rejected, rather than silently treated as prototype or live. The first migration remains unchanged; rerunning the runner upgrades schema 1 to 2 and does not erase stored synthetic state or audit history.
+
+Implementation verified on 8 October 2026: 47 backend tests passed with real disposable PostgreSQL; 15 focused frontend/provider/colour tests, source typecheck and scoped ESLint passed. Desktop/mobile Chromium verified the mode controls without page errors or toolbar overflow, and the production Next build passed. The deployment package was regenerated. Live Azure rollout remains blocked by identity/network access from the execution workspace.
+
 ## One settings file
 
-Copy `infra/azure-settings.example.json` to ignored `infra/azure-settings.local.json`. Fill the actual Ward Flow subscription, tenant, coordinator account object IDs and migration administrator identity. The migration administrator is an Entra database administrator name, not a password. Leave `serverName` empty to discover and reuse a single existing server in `rg-wardflow-dev-aue`; if more than one exists, set the verified name explicitly. Keep the generated workspace UUID stable across restarts and deployments.
+Copy `infra/azure-settings.example.json` to ignored `infra/azure-settings.local.json`. Keep `dataMode` set to `prototype`, and fill the actual Ward Flow subscription, tenant, coordinator account object IDs and migration administrator identity. The migration administrator is an Entra database administrator name, not a password. Leave `serverName` empty to discover and reuse a single existing server in `rg-wardflow-dev-aue`; if more than one exists, set the verified name explicitly. Keep the generated workspace UUID stable across restarts and deployments.
 
 The resource group, existing Function and API audience are fixed to Ward Flow. The setup verifies the selected subscription/tenant, the Function's Australian location and managed identity, then inspects PostgreSQL. It does not use PsychSift resources.
 

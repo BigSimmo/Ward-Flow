@@ -12,12 +12,12 @@ const body = {
   expectedRevision: 1,
   event: { type: "PULL_PATIENT", role: "coordinator" },
 };
-function setup(actor = coordinator) {
+function setup(actor = coordinator, dataMode = "prototype") {
   const calls = [];
   const sharedStore = {
     read: async (...args) => {
       calls.push(args);
-      return { revision: 1 };
+      return { revision: 1, dataMode };
     },
     command: async (...args) => {
       calls.push(args);
@@ -47,13 +47,21 @@ test("a named coordinator can read the entire shared workspace", async () => {
   const { calls, handler } = setup();
   const response = await handler(request());
   assert.equal(response.status, 200);
-  assert.equal((await response.json()).role, "coordinator");
+  const value = await response.json();
+  assert.equal(value.role, "coordinator");
+  assert.deepEqual(value.data, { mode: "prototype", source: "synthetic", liveAvailable: false });
   assert.deepEqual(calls, [[coordinator]]);
 });
 test("another tenant account cannot self-assign coordinator in a command", async () => {
   const { calls, handler } = setup(other);
   assert.equal((await handler(request("/commands", body))).status, 403);
   assert.equal(calls.length, 0);
+});
+test("the API does not expose a snapshot with mismatched database provenance", async () => {
+  const { handler } = setup(coordinator, "live");
+  const response = await handler(request());
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).snapshot, undefined);
 });
 test("missing authentication and cross-origin calls never reach the database", async () => {
   const { calls, handler } = setup();
@@ -74,6 +82,7 @@ test("clinical labels and invalid command envelopes are rejected", async () => {
   const { calls, handler } = setup();
   for (const invalid of [
     { ...body, classification: "clinical" },
+    { ...body, dataMode: "live" },
     { ...body, expectedRevision: 0 },
     { ...body, commandId: "bad" },
     { ...body, event: [] },
@@ -95,5 +104,8 @@ test("shared configuration refuses a host that differs from its Ward Flow resour
     WARD_PG_USER: "wardflow_backend",
   };
   assert.ok(readConfig(env).shared);
+  assert.equal(readConfig(env).dataMode, "prototype");
+  assert.throws(() => readConfig({ ...env, WARD_DATA_MODE: "live" }), /not commissioned/);
+  assert.throws(() => readConfig({ ...env, WARD_DATA_MODE: "invalid" }), /not commissioned/);
   assert.throws(() => readConfig({ ...env, WARD_PG_HOST: "different.postgres.database.azure.com" }), /Unapproved/);
 });

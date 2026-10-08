@@ -46,6 +46,8 @@ export function readConfig(env = process.env) {
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid port configuration");
   const allowTenantUsers = env.WARD_ALLOW_TENANT_USERS === "true";
   const shared = env.WARD_SHARED_ENABLED === "true";
+  const dataMode = env.WARD_DATA_MODE || "prototype";
+  if (dataMode !== "prototype") throw new Error("Live data mode is not commissioned in this release");
   const coordinatorIds = (env.WARD_COORDINATOR_OBJECT_IDS || allowedObjectId)
     .split(",")
     .map((id) => id.trim().toLowerCase());
@@ -76,6 +78,7 @@ export function readConfig(env = process.env) {
     allowedObjectId,
     allowTenantUsers,
     shared,
+    dataMode,
     coordinatorIds,
     workspaceId: env.WARD_WORKSPACE_ID?.toLowerCase(),
     postgres,

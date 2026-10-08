@@ -798,3 +798,5 @@ admissions on arrival, mismatched secure-bed rules between referral and movement
 `ward-movements.ts` (seed fixtures), `ward-derivations.ts` (the 53 pure selectors), and the
 smaller domain-rule files (`ward-eligibility.ts`, `ward-referrals.ts`, `ward-legal-clock.ts`, etc.)
 are out of scope for this document and are covered elsewhere in the code map.
+
+Shared data-mode update, 8 October 2026: the PostgreSQL migration runner now applies version 2, recording immutable workspace provenance and matching command/audit modes. `ward-shared-client.ts` rejects snapshots without prototype provenance; `ward-shared-access.tsx` and its CSS module show the persistent mode and an unavailable-live explanation without changing the connection or discarding drafts. A separately commissioned live adapter remains required; the current server and setup reject live configuration.
