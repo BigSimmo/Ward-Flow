@@ -71,7 +71,7 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 git show "$MAIN:$REDUCER" > "$TMP/reducer"
 TOTAL=$(wc -l < "$TMP/reducer" | tr -d ' ')
-SPLIT=$(grep -nF "$SPLIT_MARKER" "$TMP/reducer" | head -n 1 | cut -d: -f1)
+SPLIT=$(grep -nF "$SPLIT_MARKER" "$TMP/reducer" | head -n 1 | cut -d: -f1 || true)
 [ -n "$SPLIT" ] || die "split marker '$SPLIT_MARKER' not found in the reducer"
 MODE=$(git ls-tree "$MAIN" -- "$REDUCER" | cut -d' ' -f1)
 
