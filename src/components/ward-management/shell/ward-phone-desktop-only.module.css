@@ -53,7 +53,7 @@
   }
 
   /* The page under the card stays mounted but out of sight until Show anyway. */
-  :global(body:has([data-phone-desktop-only]) [data-ward-ground]) {
+  .ground ~ :global([data-ward-ground]) {
     display: none;
   }
 }
