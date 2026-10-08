@@ -501,13 +501,7 @@ export function SettingsScreen() {
   const [activeDomain, setActiveDomain] = useState<string>("all");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-  const [searchHistory, setSearchHistory] = useState<string[]>([
-    "ED threshold",
-    "Form catalogue",
-    "Form 4A",
-    "Hold buffer",
-  ]);
-
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -862,9 +856,15 @@ export function SettingsScreen() {
     showToast("Configuration restored to baseline.");
   };
 
+  // Ephemeral submitted filter queries only; never browser storage or an access-audit claim.
+  const recordSearch = () => {
+    const query = searchQuery.trim();
+    if (query) setSearchHistory((current) => [query, ...current.filter((previous) => previous !== query)].slice(0, 4));
+  };
+
   const handleClearLedger = () => {
     setSearchHistory([]);
-    showToast("Search access history cleared.");
+    showToast("Search history cleared on this screen.");
   };
 
   // Helper to check if a specific row should be rendered
@@ -1163,6 +1163,10 @@ export function SettingsScreen() {
                     placeholder="Filter settings"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onBlur={recordSearch}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") recordSearch();
+                    }}
                     autoComplete="off"
                     spellCheck="false"
                     aria-label="Filter settings by keyword"

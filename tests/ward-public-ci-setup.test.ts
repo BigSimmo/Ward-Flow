@@ -177,7 +177,7 @@ describe("bounded synthetic-source CI failure conditions", () => {
       writeFileSync(footer, "<footer>Application</footer>");
       expect(runGovernanceAudit(root)).toMatchObject({ ok: false, disclaimers: { ok: false } });
     } finally {
-      rmSync(root, { recursive: true, force: true });
+      rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 });

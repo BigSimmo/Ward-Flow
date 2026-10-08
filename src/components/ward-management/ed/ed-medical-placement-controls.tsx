@@ -32,25 +32,46 @@ export function EdMedicalPlacementControls({
     movement.transport?.collectedAt === undefined;
   const canCancel = available && !paused && movement.acceptedUnitId !== undefined;
 
-  const rejection = attempt ? rejections.slice(attempt.rejectedBefore).find(record => record.movementId === movementId) : undefined;
-  const recorded = attempt && movement && (attempt.kind === "deterioration"
-    ? movement.medicalDeterioration?.at === attempt.at && movement.medicalDeterioration.resumedAt === undefined
-    : movement.medicalClearance?.at === attempt.at && movement.medicalClearance.cleared === (attempt.kind === "cleared"));
-  const feedback = rejection?.reason ?? (recorded && attempt ? attempt.kind === "deterioration"
-    ? "Allocation cancelled; referral paused until fresh medical re-clearance."
-    : attempt.kind === "cleared"
-      ? paused || movement?.medicalDeterioration?.resumedAt !== undefined
-        ? "Recorded medically cleared. A cancelled allocation is not restored; coordinator placement is required."
-        : "Recorded medically cleared."
-      : "Recorded not medically cleared. Onward transfer is blocked; this does not cancel a reservation."
-    : undefined);
-  const pending = attempt !== null && feedback === undefined;
-  function beginConfirmation(kind: Confirmation) { setAttempt(null); setConfirmation(kind); }
+  const rejection = attempt
+    ? rejections
+        .slice(attempt.rejectedBefore)
+        .find(
+          (record) =>
+            record.movementId === movementId &&
+            record.at === attempt.at &&
+            record.attempted ===
+              (attempt.kind === "deterioration"
+                ? "RECORD_ED_MEDICAL_DETERIORATION"
+                : "RECORD_MOVEMENT_MEDICAL_CLEARANCE"),
+        )
+    : undefined;
+  const recorded =
+    attempt &&
+    movement &&
+    (attempt.kind === "deterioration"
+      ? movement.medicalDeterioration?.at === attempt.at && movement.medicalDeterioration.resumedAt === undefined
+      : movement.medicalClearance?.at === attempt.at &&
+        movement.medicalClearance.cleared === (attempt.kind === "cleared"));
+  const feedback =
+    rejection?.reason ??
+    (recorded && attempt
+      ? attempt.kind === "deterioration"
+        ? "Allocation cancelled; referral paused until fresh medical re-clearance."
+        : attempt.kind === "cleared"
+          ? paused || movement?.medicalDeterioration?.resumedAt !== undefined
+            ? "Recorded medically cleared. A cancelled allocation is not restored; coordinator placement is required."
+            : "Recorded medically cleared."
+          : "Recorded not medically cleared. Onward transfer is blocked; this does not cancel a reservation."
+      : undefined);
+  function beginConfirmation(kind: Confirmation) {
+    setAttempt(null);
+    setConfirmation(kind);
+  }
 
   if (!movement || movement.originEdId !== actingPlaceId || movement.sourceAdmissionId !== undefined) return null;
 
   function confirm() {
-    if (!confirmation || !available || pending) return;
+    if (!confirmation || !available) return;
     const kind = confirmation;
     setAttempt({ kind, at: now, rejectedBefore: rejections.length });
     setConfirmation(null);
@@ -85,29 +106,14 @@ export function EdMedicalPlacementControls({
       {available && (
         <>
           <div className={styles.inboxActionRow}>
-            <button
-              type="button"
-              className={styles.inboxBtn}
-              disabled={pending}
-              onClick={() => beginConfirmation("cleared")}
-            >
+            <button type="button" className={styles.inboxBtn} onClick={() => beginConfirmation("cleared")}>
               Record medically cleared
             </button>
-            <button
-              type="button"
-              className={styles.inboxBtn}
-              disabled={pending}
-              onClick={() => beginConfirmation("not_cleared")}
-            >
+            <button type="button" className={styles.inboxBtn} onClick={() => beginConfirmation("not_cleared")}>
               Record not medically cleared
             </button>
             {canCancel && (
-              <button
-                type="button"
-                className={styles.inboxBtn}
-                disabled={pending}
-                onClick={() => beginConfirmation("deterioration")}
-              >
+              <button type="button" className={styles.inboxBtn} onClick={() => beginConfirmation("deterioration")}>
                 Record medical deterioration
               </button>
             )}

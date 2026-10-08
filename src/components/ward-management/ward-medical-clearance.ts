@@ -1,4 +1,5 @@
 import type { Movement, Referral } from "./ward-model";
+import { movementPatientIdentityMatchesRecord } from "./ward-patient-resolver";
 
 /** Read a recorded fact, never a screen-only clearance draft or an inferred status. */
 export function recordedMovementMedicalClearance(movement: Movement, referrals: readonly Referral[]) {
@@ -6,9 +7,7 @@ export function recordedMovementMedicalClearance(movement: Movement, referrals: 
     movement.referralId === undefined
       ? undefined
       : referrals.find(
-          (referral) =>
-            referral.id === movement.referralId &&
-            (movement.patientId === undefined || movement.patientId === referral.patientId),
+          (referral) => referral.id === movement.referralId && movementPatientIdentityMatchesRecord(movement, referral),
         )?.medicalClearance;
   const own = movement.medicalClearance;
   if (own === undefined) return linked;

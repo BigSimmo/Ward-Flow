@@ -1,5 +1,6 @@
 import type { Admission } from "./ward-admissions";
 import type { Movement } from "./ward-model";
+import { movementPatientIdentityMatchesRecord } from "./ward-patient-resolver";
 
 /** The same bounded join accepted by arrival and restore: authored seed admissions may lack
  * a movement backpointer; runtime AD-ARR records may not. Acceptance alone is never a hold. */
@@ -11,7 +12,7 @@ export function movementHasBedHold(movement: Movement, admissions: readonly Admi
         admission.id === movement.admissionId &&
         admission.state === "pulled" &&
         admission.unitId === movement.acceptedUnitId &&
-        (movement.patientId === undefined || admission.patientId === movement.patientId) &&
+        movementPatientIdentityMatchesRecord(movement, admission) &&
         (admission.movementId === movement.id ||
           (admission.movementId === null && !admission.id.startsWith("AD-ARR-"))),
     );

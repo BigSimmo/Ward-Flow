@@ -28,6 +28,14 @@ function Probe() {
       <button onClick={() => dispatch({ type: "ADVANCE_CLOCK", role: "demo", now, minutes: 1 })}>
         Advance one synthetic minute
       </button>
+      <button
+        type="button"
+        onClick={() =>
+          dispatch({ type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE", role: "ed", now, movementId: held.id, cleared: false })
+        }
+      >
+        Record later negative clearance from another control
+      </button>
     </>
   );
 }
@@ -82,5 +90,21 @@ describe("ED medical placement controls through the real provider", () => {
     expect(state().movement.acceptedUnitId).toBeUndefined();
     expect(within(controls).getByRole("status")).toHaveTextContent("Recorded medically cleared");
     expect(screen.getByTestId(`ward-ed-medical-clearance-${held.id}`)).toHaveTextContent("Medical clearance: Yes");
+  });
+  it("remains usable after a completed clearance is changed by another real producer", () => {
+    const controls = openControls();
+    fireEvent.click(within(controls).getByRole("button", { name: "Record medically cleared" }));
+    fireEvent.click(within(controls).getByRole("button", { name: "Confirm medically cleared" }));
+    expect(within(controls).getByRole("status")).toHaveTextContent("Recorded medically cleared");
+    fireEvent.click(screen.getByRole("button", { name: "Advance one synthetic minute" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record later negative clearance from another control" }));
+    expect(state().movement.medicalClearance.cleared).toBe(false);
+    expect(within(controls).getByRole("button", { name: "Record medical deterioration" })).toBeEnabled();
+    const offered = state().unit.allocatable.value;
+    fireEvent.click(within(controls).getByRole("button", { name: "Record medical deterioration" }));
+    fireEvent.click(within(controls).getByRole("button", { name: "Confirm deterioration and release reservation" }));
+    expect(state().movement.admissionId).toBeUndefined();
+    expect(state().unit.allocatable.value).toBe(offered + 1);
+    expect(within(controls).queryByRole("button", { name: "Record medical deterioration" })).not.toBeInTheDocument();
   });
 });

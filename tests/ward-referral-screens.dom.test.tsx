@@ -773,6 +773,7 @@ describe("ReferralIntakeForm", () => {
       ["Home region", "ward-referral-intake-homeRegion"],
       ["Referral source", "ward-referral-intake-source"],
       ["Urgency", "ward-referral-intake-urgency"],
+      ["ATS category (optional)", "ward-referral-intake-atsCategory"],
       ["Origin site", "ward-referral-intake-originSiteCode"],
       // The suburb picker, added 2026-08-30 so each destination can say whether it is in
       // catchment. Its answer is deliberately NOT recorded on the referral — see the form's own
