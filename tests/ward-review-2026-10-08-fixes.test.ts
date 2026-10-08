@@ -10,6 +10,8 @@ import { DIVERSION_REASONS, TRANSPORT_WHEREABOUTS } from "@/components/ward-mana
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { DISCHARGE_BARRIERS } from "@/components/ward-management/ward-admissions";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
+import { buildScenarioFile } from "@/components/ward-management/ward-flow-scenario-file";
+import type { ReferralIntakeDetails } from "@/components/ward-management/referrals/referral-submission";
 
 const now = 642;
 type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
@@ -303,5 +305,87 @@ describe("S2-12 / A2-2: a discharge barrier is a list value, never typed text", 
       admissions: seeded.admissions.map((a) => (a.id === LONG_STAY ? { ...a, dischargeBarrier: "typed note" } : a)),
     };
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(tampered)))).toBe(false);
+  });
+});
+
+describe("A2-1: a scenario holding a drawer referral can be saved and loaded", () => {
+  const intake: ReferralIntakeDetails = {
+    catchment: { teamName: "Inner City Clinic", service: "East Metro", confirmed: true },
+    reasonForReferral: "Synthetic referral for assessment",
+    legalStatus: "Voluntary",
+    riskFlags: ["absconding"],
+    medicalClearance: {
+      cleared: false,
+      expectedAt: "2026-10-07T18:00+08:00",
+      contactName: "Demo Doctor",
+      contactPhone: "0400000000",
+    },
+    triageAndRampCompleted: false,
+    additionalDocuments: false,
+    charts: (["medication", "observation"] as const).map((kind) => ({
+      kind,
+      name: `${kind}.pdf`,
+      mimeType: "application/pdf",
+      sizeBytes: 4,
+      base64: "JVBERg==",
+    })),
+    referrer: {
+      name: "Demo Sender",
+      phone: "0400000000",
+      email: "demo@example.com",
+      role: "Nurse",
+      location: "SCGH ED",
+    },
+  };
+
+  function withDrawerReferral() {
+    const h = harness();
+    h.ok({
+      type: "RECEIVE_REFERRAL",
+      role: "community",
+      ageBand: "Adult",
+      homeRegion: "Perth Metropolitan",
+      suburb: { kind: "named", name: "Perth" },
+      source: "community",
+      urgency: 2,
+      originSiteCode: "SCGH",
+      transportNeeded: false,
+      history: "Synthetic patient story",
+      intake,
+      destinations: [
+        {
+          kind: "psychiatric_ward",
+          unitId: "scgh-adult-open",
+          sex: "Female",
+          gender: "Female",
+          secureBedNeeded: false,
+          involuntaryBedNeeded: false,
+          highAcuityNursingNeeded: false,
+        },
+      ],
+    });
+    expect(h.state.referrals.at(-1)?.intake).toBeDefined();
+    return h;
+  }
+
+  it("builds a scenario file", () => {
+    const h = withDrawerReferral();
+    const built = buildScenarioFile(h.state, now, 1, new Date(Date.UTC(2026, 9, 8)));
+    expect(built.ok, built.ok ? "" : built.reason).toBe(true);
+  });
+
+  it("still refuses a stored world with a malformed intake", () => {
+    const h = withDrawerReferral();
+    const stored = JSON.parse(JSON.stringify({ ...h.state, rejections: [] })) as WardFlowState;
+    expect(isValidStoredWardFlowState(stored)).toBe(true);
+    const broken = {
+      ...stored,
+      referrals: stored.referrals.map((r, i, all) =>
+        i === all.length - 1
+          ? { ...r, intake: { ...r.intake!, referrer: { ...r.intake!.referrer, email: "bad" } } }
+          : r,
+      ),
+    };
+    expect(isValidStoredWardFlowState(broken)).toBe(false);
   });
 });

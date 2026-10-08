@@ -1,6 +1,7 @@
 import { validCareJourney, validCareChange } from "./ward-care-journey";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { isDischargeBarrier, isLeavingDestination } from "./ward-admissions";
+import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import {
   MOVEMENT_STAGES,
   COHORTS,
@@ -76,6 +77,13 @@ function nested(value: unknown, depth = 0): boolean {
   ];
   for (const [key, item] of Object.entries(value)) {
     if (["__proto__", "constructor", "prototype"].includes(key)) return false;
+    // A drawer referral's intake has its own shape (string times, a clearance with no `at`) and its
+    // own validator, the one RECEIVE_REFERRAL applies. The generic walk below misread it and
+    // refused every world holding one, so no such scenario could be saved (review finding A2-1).
+    if (key === "intake") {
+      if (!object(item) || referralIntakeError(item as unknown as ReferralIntakeDetails) !== null) return false;
+      continue;
+    }
     if (arrayKeys.includes(key) && !records(item)) return false;
     if (objectKeys.includes(key) && !object(item)) return false;
     if (
