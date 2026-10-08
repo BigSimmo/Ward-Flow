@@ -1,3 +1,4 @@
+import { reduceAdmissionAbsenceEvent } from "./ward-flow-admission-absence-reducer";
 import { reduceMovementFlagsEvent } from "./ward-flow-movement-flags-reducer";
 import { reduceLeaveBedEvent } from "./ward-flow-leave-bed-reducer";
 import { reduceBedReleaseEvent } from "./ward-flow-bed-release-reducer";
@@ -5018,78 +5019,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
 
     case "CLEAR_MOVEMENT_BLOCKER":
       return reduceMovementFlagsEvent(state, event, { reject, findMovement, replaceMovement });
+    case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT":
+      return reduceAdmissionAbsenceEvent(state, event, { reject, findAdmission, replaceAdmission });
 
-    /**
-     * AWAY AT AN EMERGENCY DEPARTMENT, AND BACK AGAIN — the two halves of one fact, written
-     * together because half of it is the defect.
-     *
-     * `Admission.awayAtEmergencyDepartmentSince` shipped on 2026-08-30 with a renderer, a seed and
-     * NO EVENT AT EITHER END. Nothing could set it and nothing could clear it, so the seeded rows
-     * counted upward for as long as the demonstration ran and every occupant without the badge read
-     * as physically in their bed.
-     *
-     * ⚠️ **NEITHER CASE TOUCHES A UNIT.** No `replaceUnit`, no `empty`, no `allocatable`, no
-     * `sexMix` — deliberately, and it is the single most important property of both. The ward is
-     * holding this bed because the person is coming back; `bedIsOccupied` counts them throughout
-     * and no availability figure moves in either direction. A coordinator must never be offered
-     * this bed. Pinned in `tests/ward-away-at-emergency-department.test.ts`.
-     */
-    case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT": {
-      const admission = findAdmission(state, event.admissionId);
-      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
-      if (event.actingUnitId !== admission.unitId) {
-        return reject(
-          state,
-          event,
-          `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
-        );
-      }
-      // Only somebody actually IN a bed can leave the ward and still have it kept for them. A
-      // `waitlisted` or `pulled` admission has never reached the ward — they are usually sitting in
-      // an emergency department already, which is the mirror image of what this field means and
-      // exactly the confusion `Admission.awayAtEmergencyDepartmentSince`'s own doc comment warns
-      // about. A `departed` admission has no bed to hold at all.
-      if (admission.state !== "occupied") {
-        return reject(
-          state,
-          event,
-          `admission ${admission.id} is ${admission.state}, and only somebody occupying a bed can be away from it`,
-        );
-      }
-      // Refused rather than treated as a no-op, the same reasoning `RECORD_LEAVING` uses for a
-      // second discharge: overwriting the instant with a later one would silently SHORTEN the
-      // recorded trip of somebody who has been in an emergency department for six hours, and the
-      // board renders that number in words.
-      if (admission.awayAtEmergencyDepartmentSince !== null) {
-        return reject(state, event, `admission ${admission.id} is already recorded as away at an emergency department`);
-      }
-      return replaceAdmission(state, admission.id, { ...admission, awayAtEmergencyDepartmentSince: event.now });
-    }
+    case "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT":
+      return reduceAdmissionAbsenceEvent(state, event, { reject, findAdmission, replaceAdmission });
 
-    case "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT": {
-      const admission = findAdmission(state, event.admissionId);
-      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
-      if (event.actingUnitId !== admission.unitId) {
-        return reject(
-          state,
-          event,
-          `RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
-        );
-      }
-      // Refused rather than silently written as `null`. `null` already means "on the ward", so a
-      // return recorded for somebody who was never away would be indistinguishable from a no-op —
-      // and a control that reports success for an act that did not happen is the one untruth this
-      // prototype's own history names as mattering most.
-      if (admission.awayAtEmergencyDepartmentSince === null) {
-        return reject(state, event, `admission ${admission.id} is not recorded as away at an emergency department`);
-      }
-      // `state` is deliberately NOT checked here, unlike the event above. Somebody may only GO
-      // while occupying a bed, but the guard directly above already proves this admission is away,
-      // and refusing their return on a state check would strand the badge permanently if any future
-      // path ever moved an away admission's state. A flag nobody can clear is the defect being
-      // repaired, so the clearing half is guarded on the flag itself and nothing else.
-      return replaceAdmission(state, admission.id, { ...admission, awayAtEmergencyDepartmentSince: null });
-    }
     case "CONFIRM_CAPACITY":
       return reduceCapacityEvent(state, event, { reject, findUnit, replaceUnit });
 

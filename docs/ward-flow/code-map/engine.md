@@ -21,6 +21,9 @@ guards, and appends the audit result after command handling. Internal event fami
 - `ward-flow-movement-flags-reducer.ts`: raise and clear movement urgency and blockers.
   Urgency provenance and history are retained. Clearing urgency remains possible on a closed
   movement; blocker clearing retains its explicit closed-vocabulary value and refusal rules.
+- `ward-flow-admission-absence-reducer.ts`: record a trip to an emergency department and return.
+  The named admission and caller ward checks remain. Going requires an occupied bed; returning
+  checks the recorded absence. Both keep ward occupancy and capacity unchanged.
 
 `ward-flow-storage-validation.ts` separately validates nested containers, header/counters,
 record shapes, identifiers, cross-record links, capacity bounds, audit data and persistence privacy.
