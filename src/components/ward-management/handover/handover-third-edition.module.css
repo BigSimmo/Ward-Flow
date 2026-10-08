@@ -2547,3 +2547,136 @@ table.snapSheet {
   display: block;
   min-width: 0;
 }
+
+/* Phone (8 Oct 2026): the sheet reads as ISBAR cards for the shift (the page switches to cards on
+   a phone-width load). The table layout toggle, enlarge, copy and print controls, the duplicate
+   ISBAR panel and the allocatable-beds and specialling figures are left to the larger screen, so
+   the hero shows caseload, referrals and form expiries. The shift track drops its clock times so
+   the three shifts fit without clipping. Above 48rem nothing changes. */
+@media (max-width: 48rem) {
+  .handoverHero .heroStats > :nth-child(2) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .handoverHero .heroStats > :nth-child(4),
+  .handoverHero .heroStats > :nth-child(6) {
+    display: none;
+  }
+
+  .handoverHero .heroStats > :nth-child(5) {
+    display: flex;
+  }
+
+  .trackClock,
+  .handoffTeams,
+  .handoverHero [data-testid="print-button"],
+  .handoverHero button[title="Copy formatted text handover snapshot"] {
+    display: none;
+  }
+
+  .handoverHero [role="radiogroup"] {
+    flex: 1 1 auto;
+  }
+
+  .main > .toolbarCard {
+    padding: var(--wf-s-3);
+  }
+
+  .toolbarRow {
+    display: block;
+  }
+
+  .toolbarGroup {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Reset only returns to the whole network, which the scope select already offers. */
+  .toolbarGroup > button,
+  .toolbarGroup + .toolbarGroup {
+    display: none;
+  }
+
+  .main .scopeSelectForm {
+    display: block;
+    min-width: 0;
+  }
+
+  .main .toolbarGroup .toolbarSelect,
+  .main .toolbarGroup .scopeSelect {
+    width: 100%;
+    min-width: 0;
+    height: var(--spacing-tap, 3rem);
+  }
+
+  .isbarPanel {
+    display: none;
+  }
+
+  /* Compact ISBAR cards: one column, the origin shown once (in S), and the name is the way in to
+     the movement details, so the per-card copy and details buttons are left to the larger screen.
+     The name keeps a 48px hit area without growing the card. */
+  .patientCardGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--wf-s-2);
+  }
+
+  .patientCard {
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3);
+  }
+
+  .patientOrigin,
+  .patientCardFoot {
+    display: none;
+  }
+
+  .btnPatientName {
+    min-height: var(--spacing-tap, 3rem);
+    margin: calc((var(--spacing-tap, 3rem) - 1.25em) / -2) 0;
+  }
+
+  .isbarGrid {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .scopeLine {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+  }
+
+  .scopeLine > svg {
+    flex: none;
+    margin-top: 4px;
+  }
+
+  /* Movement details opens as a bottom sheet; its three footer actions keep their full labels. */
+  .drawerOverlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .scoreDrawer {
+    width: 100%;
+    max-height: 85dvh;
+    border-bottom: 0;
+    border-radius: var(--wf-r-lg) var(--wf-r-lg) 0 0;
+  }
+
+  .drawerFooter {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .drawerFooter > * {
+    justify-content: center;
+    min-height: var(--spacing-tap, 3rem);
+    margin: 0;
+  }
+
+  .drawerFooter > :last-child:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+}

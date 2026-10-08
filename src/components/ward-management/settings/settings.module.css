@@ -5916,3 +5916,125 @@
     height: var(--ward-tap, 3rem);
   }
 }
+
+/* Phone (8 Oct 2026): switch operator stays in the hero, and the Display and alerts card (theme,
+   motion, contrast) leads the cards. The toolbar fits the screen with its category chips scrolling
+   sideways. The threshold and role tables become stacked rows; the thresholds' code location and
+   provenance columns and the keyboard shortcuts card are left to the larger screen. Above 48rem
+   nothing changes. */
+@media (max-width: 48rem) {
+  .pageHeader {
+    align-items: stretch;
+  }
+
+  .toolbar .categoryRail {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .toolbar .sidebarSearchWrap,
+  .toolbar .catListScroll {
+    flex: none;
+    max-width: 100%;
+  }
+
+  .toolbar .searchInputWrap {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .toolbarActions {
+    margin-left: 0;
+  }
+
+  .cardGrid {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cardColumn:last-child {
+    order: -1;
+  }
+
+  .listRow > button {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .previewItem .previewSelect {
+    height: var(--spacing-tap, 3rem);
+  }
+
+  .cardColumn [aria-labelledby="shortcuts-title"] {
+    display: none;
+  }
+
+  .tableWrap:has(> .cardTable) {
+    overflow-x: visible;
+  }
+
+  .table.cardTable,
+  .table.cardTable tbody,
+  .table.cardTable tr,
+  .table.cardTable td {
+    display: block;
+    width: auto;
+    min-width: 0;
+  }
+
+  .table.cardTable thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .table.cardTable tr {
+    padding: var(--wf-s-2) var(--wf-s-4);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .table.cardTable tr:last-child {
+    border-bottom: 0;
+  }
+
+  .table.cardTable td {
+    padding: 0;
+    border: 0;
+  }
+
+  .table.cardTable td + td {
+    margin-top: var(--wf-s-1);
+  }
+
+  .tableWrap[aria-label="Published thresholds"] .cardTable td:nth-child(n + 4) {
+    display: none;
+  }
+
+  .tableWrap[aria-label="Role permissions matrix"] .cardTable td:nth-child(n + 2) {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: var(--wf-s-2);
+  }
+
+  .tableWrap[aria-label="Role permissions matrix"] .cardTable td:nth-child(n + 2)::before {
+    color: var(--wf-ink-3);
+    font-size: var(--wf-fs-12);
+  }
+
+  .tableWrap[aria-label="Role permissions matrix"] .cardTable td:nth-child(2)::before {
+    content: "Works in";
+  }
+
+  .tableWrap[aria-label="Role permissions matrix"] .cardTable td:nth-child(3)::before {
+    content: "Legal forms";
+  }
+
+  .tableWrap[aria-label="Role permissions matrix"] .cardTable td:nth-child(4)::before {
+    content: "Can override";
+  }
+
+  .tableWrap[aria-label="Role permissions matrix"] .cardTable td:nth-child(5)::before {
+    content: "Handover";
+  }
+}
