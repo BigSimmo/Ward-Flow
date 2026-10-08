@@ -14,8 +14,8 @@ objective; it is not a new task/status ledger.
 - Scope: nine documentation findings, maintained Context7 guidance, navigation and
   targeted maintenance improvements; the requested continuation clears the reported lint blocker.
   Preserve historical records and approved product rules.
-- Next action: remove unreachable local Ward-screen scaffolding, verify active interactions and
-  complete selected local gates. Publication and deployment remain separate stages.
+- Next action: verify the corrected claim/reachability contracts and complete selected local gates.
+  Publication and deployment remain separate stages.
 
 ## Evidence contract
 
@@ -136,6 +136,26 @@ The focused screen lint passed with zero warnings. Eight existing test files pas
 64 tests across the Ward screen, morning rollup, refusal, bed release, daily-return rows, leave
 records and day-aware release parsing. No tests were deleted or lint rules weakened.
 
-Next: preserve the clean candidate, then execute the selected gate against `origin/main`.
+The first continuation candidate, `d819367011e4518c2c8db146f193c97666fe43cc`, passed all selected
+static/documentation/backend gates, including broad lint and root typecheck. Its complete FULL
+run covered 926 files and 10,697 executed assertions, but failed in two contract files (three
+assertions). Browser journeys were not reached. The immutable failed receipt is
+`/workspace/review-artifacts/docs-repair-lint-full-unit-receipt.json`.
+
+The contracts exposed stale evidence in the unused scaffolding. `RECORD_LEAVE_BED` and
+`RECORD_WARD_INTAKE_CONSTRAINTS` had no rendered callers before this cleanup; their private
+handlers had falsely satisfied the source-name scan. They are now recorded in the existing
+known-gap register with reasons and explicit closure conditions. These two existing UI gaps
+remain open; this repair does not claim to implement their missing controls.
+
+The preparation-control statistics claim's page prose was retired under Q004 on 13 September.
+Its remaining citation pointed to the unused `dischargedBedReleases` filter. Removed that
+obsolete claim rather than redirecting it to unrelated code, retaining the retirement reason.
+The exact model/retired counts move from 80/54 to 79/53; all 26 active page claims and their
+checks remain. Corrected Ward comments that still described the removed forms. No reducer,
+permission, expected-red manifest or rendered interaction changed in this follow-up.
+
+Next: commit the coherent correction and rerun selected acceptance against `origin/main`.
+The source-register change requires fresh FULL evidence rather than the test-only bounded recheck.
 New evidence is stored under `/workspace/review-artifacts/docs-repair-lint-*`, including
 `docs-repair-lint-structure.json` and `docs-repair-lint-focused-tests.log`.

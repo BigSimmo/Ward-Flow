@@ -485,9 +485,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     (release) => release.unitId === unit.id && release.state !== "discharged",
   );
 
-  // Task 5: this unit's own beds currently occupied by someone on approved leave — read here only
-  // to report the count on the leave-bed form below; never merged into any availability figure
-  // (spec D4), and `RECORD_LEAVE_BED` (submitted by that form) is the only writer this screen has.
+  // Task 5: this unit's beds held for people on approved leave, read from provider state.
+  // Leave holds never count as available beds (spec D4). This screen can end a hold but has no
+  // rendered recording control; that existing gap is tracked by the event-reachability test.
   const unitLeaveBeds = leaveBeds.filter((bed) => bed.unitId === unit.id);
 
   /**
@@ -1171,8 +1171,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   };
 
   // Task 5 (spec D10): the ward moving its OWN bed release through its own lifecycle —
-  // `actingUnitId` is this screen's own route parameter, exactly like `submitCapacity` and
-  // `submitBedRelease` above. `expected -> confirmed` is the only transition
+  // `actingUnitId` is this screen's own route parameter, exactly like `submitCapacity` above.
+  // `expected -> confirmed` is the only transition
   // CONFIRM_BED_RELEASE accepts; this is only ever rendered on a expected row (see the
   // legal-transition gating in the render below), so the reducer is never asked for a transition
   // the row does not itself offer.
