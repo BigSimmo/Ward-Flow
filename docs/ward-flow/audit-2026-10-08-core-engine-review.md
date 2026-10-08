@@ -206,6 +206,26 @@ Each finding was replayed against the real reducer from the standard seed, using
 
 Findings 9–13, S2-8 and S2-12 need a dispatch with a value the TypeScript types do not allow. They matter only if a screen, imported scenario or stored state can produce such a value; today they are defensive gaps rather than reachable bugs.
 
+## Area 1 findings: who may do what
+
+Scope: `ward-flow-events.ts` (role table), `ward-audit.ts`, `ward-flow-roles.ts`, with the reducer read where needed. One reviewer, one pass; "reproduced" means the reviewer replayed it from the seed. Paths under `src/components/ward-management/`.
+
+- **A1-1. Any ward can accept and pull a bed for another ward** (`ward-flow-events.ts:2112`; reducer 3529, 3858). `ACCEPT_IN_PRINCIPLE` and `PULL_PATIENT` carry no `actingUnitId`. Reproduced: a ward accepts WF-002 for fsh-older-adult and pulls its bed; the audit shows no acting ward.
+- **A1-2. Any ward or community caller can withdraw an ED's referral** (`:2328`). `WITHDRAW_REFERRAL` never checks the caller is the referrer, yet records "The referrer withdrew the referral". Reproduced on WF-002.
+- **A1-3. Any ward can decline or waitlist for another ward** (`:2117`; reducer 4369). Reproduced: the ED is told a ward declined that never answered.
+- **A1-4. Continuation form code lost from the audit** (`ward-audit.ts:486`). The audit checks against `SELECTABLE_LEGAL_FORMS`, which lacks 5B, 3C, 6B, 6C. Reproduced: a 5B continuation is audited with `formCode: null`.
+- **A1-5. Legal form expiry can be shortened by ward or community, unaudited** (`:2480`). `RECORD_LEGAL_FORM_WRITTEN` writes `legalForm.dueAt` without the ordering rule, role limit or audit of `RECORD_LEGAL_FORM_EXPIRY`. Reproduced: expiry 1645 shortened to 651 by a ward.
+- **A1-6. Audit rows for walk-in journeys lose the patient** (`ward-audit.ts:289`, 377). Takes the patient only from the linked referral, ignoring `Movement.patientId`. Reproduced on WF-001.
+- **A1-7. A ward's own referral is recorded as from a community team** (`:2342`; `ward-screen.tsx:347`). `RECEIVE_REFERRAL` excludes `ward`, so the sending ward cannot withdraw or correct its referral and any community caller can.
+- **A1-8. Any of four roles can set arrival details and cancel a bed hold** (`:2475`; reducer 8378). No scope check; `pullExpiresAt` is cleared, so the hold never expires.
+- **A1-9. Non-ED roles can mark the medical workup done** (`:2478`). `RECORD_MOVEMENT_MEDICAL_CLEARANCE` (coordinator, ward, community) copies onto the referral, whose own event is ED-only. Reproduced with a community caller.
+- **A1-10. Any ward can record "no transport needed"** (`:2082`; reducer 2464). The receiving ward can then confirm arrival without transport, contrary to TR-D6/WLQ-11.
+- **A1-11. Legal expiry audit mislabels first entries as extensions** (`ward-audit.ts:509`, 482). Disagrees with the reducer's `written_on_form` basis.
+- **A1-12. Cross-ward refusals audited as "transition", not "scope"** (reducer 4984, 5437, 5550, 5599, 5631, 5677, 5711, 5747). Scope violations cannot be found reliably in the audit register.
+- **A1-13. Any role can acknowledge an alert as any ward or the coordinator desk** (`:2499`; `alerts/ward-broadcast-reducer.ts`). The acknowledgement list misstates who acknowledged.
+- **A1-14. Either side can add corrections to the other side's referral** (`:2430`; reducer 7173). No `referralSenderRole` check, unlike `RECORD_REFERRER_WITHDRAWAL`.
+- **A1-15. Coordinator cockpit records its decisions as "Ward manager"** (`patients/patient-transit-operations.tsx:169`, 302, 589). Hard-coded role `ward`, so override acceptances are attributed to a ward.
+
 ## Next steps
 
 1. Reproduce the two stranded-in-transit findings (slice-1 finding 1 and S2-6) and the unreleasable seeded bed (S2-1) with failing reducer tests, then fix them.
