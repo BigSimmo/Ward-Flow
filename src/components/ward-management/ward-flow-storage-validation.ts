@@ -274,6 +274,33 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     // CONFIRM_CAPACITY records an aggregate ward observation, which may disagree with the
     // older feed empty count and does not rewrite the separately recorded locked count.
     // Each count is bounded above; recovery must not invent a relationship the producer rejects.
+    // Release conflicts are bounded historical observations, not evidence of an arrival or a
+    // reason to relax any count invariant. A movement can later be re-pulled (including reusing
+    // its admission id), so current placement/admission presence cannot invalidate that history.
+    const releaseConflicts = unit.reservationReleaseCapacityConflicts;
+    if (releaseConflicts !== undefined && !Array.isArray(releaseConflicts)) return false;
+    const releasedMovementIds = new Set<string>();
+    for (const conflict of releaseConflicts ?? []) {
+      if (
+        !object(conflict) ||
+        !text(conflict.movementId) ||
+        !state.movements.some((movement) => movement.id === conflict.movementId) ||
+        releasedMovementIds.has(conflict.movementId) ||
+        !finite(conflict.at) ||
+        !optional(conflict, "admissionId", (id) => text(id) && id.length > 0) ||
+        !counter(conflict.allocatableBefore) ||
+        conflict.allocatableBefore > unit.beds ||
+        !counter(conflict.allocatableLockedBefore) ||
+        conflict.allocatableLockedBefore > unit.lockedBeds ||
+        !bool(conflict.lockedBedReleased) ||
+        !(
+          conflict.allocatableBefore === unit.beds ||
+          (conflict.lockedBedReleased && conflict.allocatableLockedBefore === unit.lockedBeds)
+        )
+      )
+        return false;
+      releasedMovementIds.add(conflict.movementId);
+    }
     const conflicts = unit.arrivalCapacityConflicts;
     if (conflicts !== undefined && !Array.isArray(conflicts)) return false;
     const seen = new Set<string>();

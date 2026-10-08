@@ -374,6 +374,12 @@ function WardBlock({
             count. No additional ready bed is implied.
           </p>
         ) : null}
+        {(ward.unit.reservationReleaseCapacityConflicts?.length ?? 0) > 0 ? (
+          <p data-testid={`ward-bed-map-reservation-release-conflict-${ward.unit.id}`}>
+            {ward.unit.reservationReleaseCapacityConflicts?.length} reservation release(s) need capacity re-confirmation
+            — an offered count already reported its ceiling. No extra physical vacancy is implied.
+          </p>
+        ) : null}
         {(ward.unit.arrivalCapacityConflicts?.length ?? 0) > 0 ? (
           <p data-testid={`ward-bed-map-arrival-conflict-${ward.unit.id}`}>
             {ward.unit.arrivalCapacityConflicts?.length} arrival(s) awaiting capacity reconciliation.

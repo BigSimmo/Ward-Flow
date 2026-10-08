@@ -1287,10 +1287,35 @@ function releasePulledBedAndAdmission(state: WardFlowState, movement: Movement, 
       (heldAdmission.movementId !== null && heldAdmission.movementId !== movement.id))
   )
     return state;
+  const lockedBedReleased = heldAdmission?.bedKind === "locked";
+  // A newer ward observation may already report the building/designation ceiling while this
+  // reservation still exists. Release the actual hold, but do not manufacture a bed above that
+  // ceiling or rewrite physical empty. Record the disagreement for explicit re-confirmation.
+  const releaseCountDisagrees =
+    unit.allocatable.value === unit.beds || (lockedBedReleased && unit.allocatableLocked === unit.lockedBeds);
   const releasedUnit: Unit = {
     ...unit,
-    allocatable: { ...unit.allocatable, value: unit.allocatable.value + 1, confirmedAt: now },
-    allocatableLocked: heldAdmission?.bedKind === "locked" ? unit.allocatableLocked + 1 : unit.allocatableLocked,
+    allocatable: {
+      ...unit.allocatable,
+      value: Math.min(unit.beds, unit.allocatable.value + 1),
+      confirmedAt: now,
+    },
+    allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + (lockedBedReleased ? 1 : 0)),
+    ...(releaseCountDisagrees
+      ? {
+          reservationReleaseCapacityConflicts: [
+            ...(unit.reservationReleaseCapacityConflicts ?? []).filter((entry) => entry.movementId !== movement.id),
+            {
+              movementId: movement.id,
+              ...(movement.admissionId === undefined ? {} : { admissionId: movement.admissionId }),
+              at: now,
+              allocatableBefore: unit.allocatable.value,
+              allocatableLockedBefore: unit.allocatableLocked,
+              lockedBedReleased,
+            },
+          ],
+        }
+      : {}),
   };
   const withUnit = replaceUnit(state, unit.id, releasedUnit);
   if (movement.admissionId === undefined) return withUnit;
@@ -5517,6 +5542,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       const updatedUnit: Unit = {
         ...unit,
+        ...(unit.reservationReleaseCapacityConflicts === undefined
+          ? {}
+          : {
+              reservationReleaseCapacityConflicts: unit.reservationReleaseCapacityConflicts.filter(
+                (entry) => entry.at > event.now,
+              ),
+            }),
         allocatable: {
           ...unit.allocatable,
           value: event.value,

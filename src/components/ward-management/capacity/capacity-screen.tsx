@@ -1334,6 +1334,12 @@ function NetworkRow({
           so this is silent on a settled board — an always-visible caution would be ignored within a
           day and would make every figure look doubtful.
         */}
+        {(row.reservationReleaseCapacityConflicts ?? 0) > 0 ? (
+          <small className={styles.midUpdate} data-testid={`ward-capacity-reservation-release-conflict-${row.unit.id}`}>
+            {row.reservationReleaseCapacityConflicts} reservation release(s) need capacity re-confirmation — an offered
+            count already reported its ceiling. No extra physical vacancy is implied.
+          </small>
+        ) : null}
         {(row.arrivalCapacityConflicts ?? 0) > 0 ? (
           <small className={styles.midUpdate} data-testid={`ward-capacity-arrival-conflict-${row.unit.id}`}>
             {row.arrivalCapacityConflicts} {row.arrivalCapacityConflicts === 1 ? "arrival awaits" : "arrivals await"}{" "}
@@ -1763,6 +1769,12 @@ function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack
             </dl>
             {(row.pendingPreparation ?? 0) > 0 ? (
               <p className={styles.sidebarWarning}>{row.pendingPreparation} discharged beds still being made ready.</p>
+            ) : null}
+            {(row.reservationReleaseCapacityConflicts ?? 0) > 0 ? (
+              <p className={styles.sidebarWarning}>
+                {row.reservationReleaseCapacityConflicts} reservation release(s) need capacity re-confirmation — an
+                offered count already reported its ceiling. No extra physical vacancy is implied.
+              </p>
             ) : null}
             {(row.arrivalCapacityConflicts ?? 0) > 0 ? (
               <p className={styles.sidebarWarning}>

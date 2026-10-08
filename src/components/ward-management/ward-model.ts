@@ -677,6 +677,18 @@ export type Unit = {
    * These are unresolved observation conflicts, not a derived physical overflow census.
    * Retained until the corresponding stay leaves; never add them to the bed partition. */
   arrivalCapacityConflicts?: { movementId: string; admissionId?: string; at: Instant }[];
+  /** A held reservation was actually released after a newer offered observation already
+   * reported its physical/designated ceiling. The observation remains bounded; this records
+   * the disagreement instead of inventing capacity or refusing cancellation. Cleared only by
+   * a subsequent ward capacity confirmation. Never changes the physical-empty bed partition. */
+  reservationReleaseCapacityConflicts?: {
+    movementId: string;
+    admissionId?: string;
+    at: Instant;
+    allocatableBefore: number;
+    allocatableLockedBefore: number;
+    lockedBedReleased: boolean;
+  }[];
   /** Who this bed may hold, as a CONSTRAINT — see `SexDesignation`'s own doc comment. Never
    *  compared to a referral's `sex` by equality; `"Undesignated"` accepts either sex. */
   sexDesignation: SexDesignation;
