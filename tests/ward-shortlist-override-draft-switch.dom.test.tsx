@@ -8,12 +8,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 
-/**
- * Shortlist override drafts are kept per movement. Switching the selected movement from A to B used
- * to run a render-time `clearOverrideDraft()` that, because the draft guard had already been keyed
- * to B, deleted B's saved draft and left A's. The persisted draft of the movement being arrived at
- * must survive a selection change, and the one being left must be kept for when the user returns.
- */
+/** D18: typed override drafts stay in memory; legacy browser caches are purged, never restored. */
 const KEY = (id: string) => `wf-draft:shortlist-override-${id}`;
 const open = seedWardFlowState().movements.filter((movement) => isOpen(movement));
 const [FIRST, SECOND] = open;
@@ -43,14 +38,14 @@ beforeEach(() => {
   sessionStorage.clear();
 });
 
-describe("shortlist override draft survives a movement switch", () => {
+describe("shortlist override drafts respect browser privacy", () => {
   it("has two distinct open movements, or every assertion below is vacuous", () => {
     expect(FIRST).toBeDefined();
     expect(SECOND).toBeDefined();
     expect(FIRST.id).not.toBe(SECOND.id);
   });
 
-  it("keeps the arrived-at movement's draft and the departed movement's draft", () => {
+  it("purges legacy drafts while switching movements", () => {
     sessionStorage.setItem(KEY(FIRST.id), "Draft for first movement");
     sessionStorage.setItem(KEY(SECOND.id), "Draft for second movement");
     const tree = (selectedId: string) => (
@@ -60,14 +55,14 @@ describe("shortlist override draft survives a movement switch", () => {
     );
     const { rerender } = render(tree(FIRST.id));
     expect(screen.queryByText(/Select a movement from the priority queue/)).toBeNull();
-    expect(sessionStorage.getItem(KEY(FIRST.id))).toBe("Draft for first movement");
+    expect(sessionStorage.getItem(KEY(FIRST.id))).toBeNull();
 
     rerender(tree(SECOND.id));
-    expect(sessionStorage.getItem(KEY(SECOND.id))).toBe("Draft for second movement");
-    expect(sessionStorage.getItem(KEY(FIRST.id))).toBe("Draft for first movement");
+    expect(sessionStorage.getItem(KEY(SECOND.id))).toBeNull();
+    expect(sessionStorage.getItem(KEY(FIRST.id))).toBeNull();
 
     rerender(tree(FIRST.id));
-    expect(sessionStorage.getItem(KEY(FIRST.id))).toBe("Draft for first movement");
-    expect(sessionStorage.getItem(KEY(SECOND.id))).toBe("Draft for second movement");
+    expect(sessionStorage.getItem(KEY(FIRST.id))).toBeNull();
+    expect(sessionStorage.getItem(KEY(SECOND.id))).toBeNull();
   });
 });

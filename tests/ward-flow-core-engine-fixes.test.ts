@@ -98,6 +98,9 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
   describe("Task 1.2: PULL_PATIENT patientId resolution fallback chain", () => {
     it("resolves patientId from referral, movement, or event fallback chain", () => {
       let state = seedWardFlowState("standard");
+      const patientId = state.patients.find(
+        (p) => !state.admissions.some((a) => a.patientId === p.id && (a.state === "occupied" || a.state === "pulled")),
+      )!.id;
 
       // Setup a movement with patientId but no referral
       state = wardFlowReducer(state, {
@@ -105,7 +108,7 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
         role: "ed",
         now: NOW,
         edId: "jhc-ed",
-        patientId: "PT-003",
+        patientId,
         draft: {
           cohort: "Adult",
           security: "Open",
@@ -149,7 +152,8 @@ describe("Ward Flow Core Engine & Reducer Fixes", () => {
 
       const pulledAdmission = state.admissions.find((a) => a.movementId === movement.id);
       expect(pulledAdmission).toBeDefined();
-      expect(pulledAdmission!.patientId).toBe("PT-003");
+      expect(pulledAdmission!.patientId).toBe(patientId);
+      expect(state.rejections).toEqual([]);
     });
   });
 

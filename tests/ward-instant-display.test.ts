@@ -25,6 +25,10 @@ const WARD_DIR = "src/components/ward-management";
  * somebody decides which it is.
  */
 const MAY_ASSERT_TODAY = new Map([
+  [
+    "activeRecord.expectedDischargeAt",
+    "Clock-only value for an HTML time input; its separately recorded date is preserved on save, and the visible departure display still names the day.",
+  ],
   ["now", "the current instant - today by definition"],
   ["liveNow", "the morning page's live view; the current instant under another name"],
   ["MORNING_HANDOVER_MINUTES", "08:00 of the day being shown, a constant time of day rather than a point in history"],

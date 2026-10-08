@@ -98,13 +98,6 @@ function nested(value: unknown, depth = 0): boolean {
     !["metro", "country"].includes(String(value.legalForm.region))
   )
     return false;
-  if (
-    "transport" in value &&
-    (!object(value.transport) ||
-      !fields(value.transport, ["id", "provider"], text) ||
-      !bool(value.transport.escortRequired))
-  )
-    return false;
   const historyRequirements: Record<string, string[]> = {
     statusChanges: ["from", "to", "by", "reason"],
     urgencyChanges: ["by", "reason"],
@@ -165,6 +158,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     "repatriations",
     "handoverSignOffs",
     "clinicalContacts",
+    "broadcastAlerts",
   ];
   if (!fields(value, arrays, records)) return false;
   const counts = [
@@ -176,6 +170,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     "frontDoorReferralSequence",
     "patientSequence",
     "admissionSequence",
+    "broadcastSequence",
   ];
   if (!fields(value, counts, counter) || !finite(value.auditCaptureStartedAt) || !finite(value.clockOffsetMinutes))
     return false;
@@ -211,6 +206,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     ["movements", /^WF-9(\d+)$/, state.referralSequence],
     ["referrals", /^RF-9(\d+)$/, state.frontDoorReferralSequence],
     ["leaveBeds", /^WL-9(\d+)$/, state.leaveBedSequence],
+    ["broadcastAlerts", /^BCAST-(\d+)$/, state.broadcastSequence],
   ] as const;
   for (const [collection, pattern, sequence] of runtimeSequences) {
     for (const row of value[collection] as RecordValue[]) {
@@ -310,11 +306,19 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       !strings(movement.referredUnitIds)
     )
       return false;
+    if (
+      movement.transport !== undefined &&
+      (!object(movement.transport) ||
+        !fields(movement.transport, ["id", "provider"], text) ||
+        !bool(movement.transport.escortRequired))
+    )
+      return false;
     if (!allEmergencyDepartments().some((ed) => ed.id === movement.originEdId)) return false;
     if (
       !reference(movement, "patientId", patientIds) ||
       !reference(movement, "referralId", referralIds) ||
       !reference(movement, "admissionId", admissionIds) ||
+      !reference(movement, "sourceAdmissionId", admissionIds) ||
       !reference(movement, "acceptedUnitId", unitIds)
     )
       return false;
@@ -520,6 +524,31 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       !object(row.details) ||
       !text(row.action) ||
       !text(row.category)
+    )
+      return false;
+  }
+  if (!uniqueIds(value.broadcastAlerts as RecordValue[])) return false;
+  for (const row of value.broadcastAlerts as RecordValue[]) {
+    if (
+      !fields(row, ["id", "title", "message", "targetScopeLabel", "dispatchedByRole", "dispatchedByName"], text) ||
+      !["critical", "warning", "advisory"].includes(row.severity as string) ||
+      ![
+        "capacity_gridlock",
+        "ed_surge",
+        "unit_closure",
+        "transport_delay",
+        "clinical_stream",
+        "statutory_advisory",
+      ].includes(row.category as string) ||
+      !["all", "metro_adult", "ed_liaison", "forensic", "adolescent", "older_adult", "regional_wachs"].includes(
+        row.targetScope as string,
+      ) ||
+      !["active", "stood_down", "expired"].includes(row.status as string) ||
+      !finite(row.dispatchedAt) ||
+      !finite(row.expiresAt) ||
+      !finite(row.durationMinutes) ||
+      row.durationMinutes <= 0 ||
+      !strings(row.acknowledgedUnits)
     )
       return false;
   }

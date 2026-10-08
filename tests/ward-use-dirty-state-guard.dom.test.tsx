@@ -39,7 +39,7 @@ describe("useDirtyStateGuard", () => {
     expect(removeEventListenerSpy).toHaveBeenCalledWith("beforeunload", expect.any(Function));
   });
 
-  it("caches draft in sessionStorage and restores it on mount", () => {
+  it("removes a legacy stored draft without restoring typed text", () => {
     const onRestore = vi.fn();
     window.sessionStorage.setItem("wf-draft:test-form", "Draft note content");
 
@@ -51,12 +51,11 @@ describe("useDirtyStateGuard", () => {
       }),
     );
 
-    expect(onRestore).toHaveBeenCalledWith("Draft note content");
-    // Ensure the restored draft is not immediately erased from sessionStorage by the mount commit
-    expect(window.sessionStorage.getItem("wf-draft:test-form")).toBe("Draft note content");
+    expect(onRestore).not.toHaveBeenCalled();
+    expect(window.sessionStorage.getItem("wf-draft:test-form")).toBeNull();
   });
 
-  it("updates and clears draft in sessionStorage when dirtiness changes", () => {
+  it("never caches typed text and keeps the clearDraft API safe", () => {
     const { rerender, result } = renderHook(
       ({ isDirty, value }: { isDirty: boolean; value: string }) =>
         useDirtyStateGuard({
@@ -67,7 +66,7 @@ describe("useDirtyStateGuard", () => {
       { initialProps: { isDirty: true, value: "Clinical override justification" } },
     );
 
-    expect(window.sessionStorage.getItem("wf-draft:test-override")).toBe("Clinical override justification");
+    expect(window.sessionStorage.getItem("wf-draft:test-override")).toBeNull();
 
     // Clear via clearDraft
     act(() => {
@@ -91,7 +90,7 @@ describe("useDirtyStateGuard", () => {
       { initialProps: { isDirty: true, value: "Preliminary clinical note" } },
     );
 
-    expect(window.sessionStorage.getItem("wf-draft:test-erase")).toBe("Preliminary clinical note");
+    expect(window.sessionStorage.getItem("wf-draft:test-erase")).toBeNull();
 
     // User deletes all content from the input
     rerender({ isDirty: true, value: "" });
@@ -133,10 +132,10 @@ describe("useDirtyStateGuard", () => {
       { initialProps: { renderIndex: 1 } },
     );
 
-    expect(callCount).toBe(1);
+    expect(callCount).toBe(0);
 
     // Rerender with new inline function reference
     rerender({ renderIndex: 2 });
-    expect(callCount).toBe(1);
+    expect(callCount).toBe(0);
   });
 });

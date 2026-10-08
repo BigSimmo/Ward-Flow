@@ -332,7 +332,11 @@ export function careChangeRefusal(admission: Admission, change: CareChange, now:
   if (change.kind === "transfer") {
     if (change.receivingUnitId === admission.unitId) return "Choose a different receiving ward.";
     const previous = care.transfer;
-    if (change.step === "accepted") return previous ? "A transfer acceptance is already recorded." : null;
+    if (change.step === "accepted") {
+      // Older saves copied the completed incoming transfer onto the receiving stay.
+      const incomingCompleted = previous?.step === "arrived" && previous.receivingUnitId === admission.unitId;
+      return previous && !incomingCompleted ? "A transfer acceptance is already recorded." : null;
+    }
     if (
       !previous ||
       previous.receivingUnitId !== change.receivingUnitId ||
