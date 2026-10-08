@@ -201,3 +201,27 @@ describe("referral evidence is visible and honestly qualified", () => {
     expect(document.body).not.toHaveTextContent("blocked, no bed");
   });
 });
+
+describe("draft handover cannot invent missing triage answers", () => {
+  it("shows unanswered urgency and referral source in its letterhead and clipboard", async () => {
+    window.history.replaceState({}, "", "/mockups/ward-flow/referrals/new");
+    const previous = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    try {
+      wrap(<ReferralIntakeForm />);
+      fireEvent.click(screen.getByRole("button", { name: "Copy Handover" }));
+      expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Urgency: Not answered"));
+      fireEvent.click(screen.getByRole("button", { name: /Preview Referral/ }));
+      const dialog = screen.getByRole("dialog", { name: "Referral Letterhead Preview" });
+      expect(dialog).toHaveTextContent("Urgency: Not answered");
+      expect(dialog).toHaveTextContent("Referral Source: Not answered");
+      expect(dialog).not.toHaveTextContent("Tier 2 (Urgent)");
+      expect(dialog).not.toHaveTextContent("Community CMHT");
+      await waitFor(() => expect(screen.getByText("Clinical handover text copied to clipboard.")).toBeInTheDocument());
+    } finally {
+      if (previous) Object.defineProperty(navigator, "clipboard", previous);
+      else Reflect.deleteProperty(navigator, "clipboard");
+    }
+  });
+});

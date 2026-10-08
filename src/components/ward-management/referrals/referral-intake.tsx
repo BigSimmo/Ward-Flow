@@ -1671,7 +1671,7 @@ export function ReferralIntakeForm() {
         : draft.involuntaryBedNeeded
           ? "Involuntary bed requested"
           : "Involuntary bed not requested";
-    const urg = draft.urgency !== UNANSWERED_VALUE ? urgencyTierLabel(draft.urgency) : "Standard (Tier 3)";
+    const urg = draft.urgency !== UNANSWERED_VALUE ? urgencyTierLabel(draft.urgency) : "Not answered";
     const dests =
       draft.destinationKinds.length > 0
         ? draft.destinationKinds.map(referralDestinationKindLabel).join(", ")
@@ -4639,7 +4639,7 @@ export function ReferralIntakeForm() {
                       <div>
                         <b>Urgency:</b>{" "}
                         <span>
-                          {draft.urgency !== UNANSWERED_VALUE ? urgencyTierLabel(draft.urgency) : "Tier 2 (Urgent)"}
+                          {draft.urgency !== UNANSWERED_VALUE ? urgencyTierLabel(draft.urgency) : "Not answered"}
                         </span>
                       </div>
                       <div>
@@ -4647,7 +4647,7 @@ export function ReferralIntakeForm() {
                         <span>
                           {draft.source !== UNANSWERED_VALUE
                             ? SOURCE_LABELS[draft.source as ReferralSource]
-                            : "Community CMHT"}
+                            : "Not answered"}
                         </span>
                       </div>
                       <div>
