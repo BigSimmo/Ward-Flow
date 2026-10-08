@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
+import path from "node:path";
+import { scanReducerReasonChecks } from "./helpers/ward-reducer-reason-checks";
 
 /**
  * ═══ EVERY REASON CHECK VALIDATES AGAINST ITS OWN EVENT'S LIST ═══
@@ -60,27 +62,12 @@ function stripComments(source: string): string {
 
 /** Every `case "X":` in the reducer, with the line it starts on. */
 function reducerCases(): Array<{ name: string; line: number }> {
-  const lines = stripComments(readFileSync(REDUCER, "utf8")).split("\n");
-  const found: Array<{ name: string; line: number }> = [];
-  lines.forEach((text, index) => {
-    const match = /case "([A-Z][A-Z0-9_]*)":/u.exec(text);
-    if (match) found.push({ name: match[1], line: index });
-  });
-  return found;
+  return scanReducerReasonChecks(REDUCER).cases;
 }
 
 /** Every membership check on an event reason, attributed to the case it sits inside. */
 function reasonChecks(): Array<{ event: string; list: string }> {
-  const lines = stripComments(readFileSync(REDUCER, "utf8")).split("\n");
-  const cases = reducerCases();
-  const checks: Array<{ event: string; list: string }> = [];
-  lines.forEach((text, index) => {
-    const match = /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.exec(text);
-    if (!match) return;
-    const owning = [...cases].reverse().find((entry) => entry.line < index);
-    checks.push({ event: owning?.name ?? "(no enclosing case)", list: match[1] });
-  });
-  return checks;
+  return scanReducerReasonChecks(REDUCER).checks;
 }
 
 /** The reason TYPE each event declares, read from the event union itself. */
@@ -191,10 +178,46 @@ describe("reason membership checks", () => {
     );
     // And a comment naming a constant must not be counted as a check.
     expect(reasonChecks().length).toBe(
-      readFileSync(REDUCER, "utf8")
+      scanReducerReasonChecks(REDUCER)
+        .sources.map((file) => readFileSync(file, "utf8"))
+        .join("\n")
         .split("\n")
         .filter((line) => !line.trim().startsWith("*") && /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.test(line))
         .length,
     );
+  });
+
+  it("follows imported typed handlers and attributes even a wrong list to its actual event", () => {
+    const sources: Record<string, string> = {
+      [path.normalize("src/main-reducer.ts")]:
+        'import { flag } from "./flags-reducer"; export function reduce() { return flag(); }',
+      [path.normalize("src/flags-reducer.ts")]:
+        'export function flag(event: Extract<Event, { type: "FLAG_MOVEMENT_URGENT" }>) { if (!WRONG_REASONS.includes(event.reason)) return false; }',
+    };
+    const scanned = scanReducerReasonChecks("src/main-reducer.ts", (file) => {
+      const source = sources[file];
+      if (source === undefined) throw new Error(`Missing fixture ${file}`);
+      return source;
+    });
+    expect(scanned.checks).toEqual([{ event: "FLAG_MOVEMENT_URGENT", list: "WRONG_REASONS" }]);
+  });
+
+  it("ignores comments and type-only reducer imports instead of accepting fabricated checks", () => {
+    const scanned = scanReducerReasonChecks(
+      "src/main-reducer.ts",
+      () =>
+        'import type { State } from "./unused-reducer"; // !FAKE_REASONS.includes(event.reason)\nexport function reduce() {}',
+    );
+    expect(scanned.sources).toEqual([path.normalize("src/main-reducer.ts")]);
+    expect(scanned.checks).toEqual([]);
+  });
+
+  it("fails when an imported reducer cannot be inspected", () => {
+    expect(() =>
+      scanReducerReasonChecks("src/main-reducer.ts", (file) => {
+        if (file === path.normalize("src/main-reducer.ts")) return 'import { flag } from "./missing-reducer";';
+        throw new Error("Missing reducer source");
+      }),
+    ).toThrow("Missing reducer source");
   });
 });
