@@ -16,3 +16,9 @@ projects collect only this bounded prototype proof, keeping inherited production
 Implementation checkpoint: browser execution and visual evidence are pending integration into the
 root's verified local server. This document does not claim deployed behaviour or complete
 application accessibility. The root maintains the shared screen verification registry.
+
+Browser setup limitation: the isolated Firefox/WebKit install stopped at Firefox v1538 because
+all automatic Playwright CDN/Microsoft mirror requests returned HTTP 403 `Domain forbidden`.
+WebKit download was not reached. Cross-browser application behaviour remains unverified; those
+projects can run where the supported browser downloads are available. Chromium local verification
+will use the existing container executable rather than claim an unexecuted browser pass.

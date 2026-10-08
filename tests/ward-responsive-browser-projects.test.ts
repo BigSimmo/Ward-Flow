@@ -17,4 +17,13 @@ describe("Ward responsive browser coverage", () => {
       );
     }
   });
+
+  it("enables prototype routes for explicit Ward responsive browser runs", () => {
+    const runner = readFileSync(resolve(process.cwd(), "scripts/run-playwright.mjs"), "utf8");
+    const projectSelection = runner.split("const mockupProjectRequested =")[1]?.split("// Fail loud")[0];
+    expect(projectSelection).toBeDefined();
+    for (const browser of ["firefox", "webkit"]) {
+      expect(projectSelection).toContain(`argument === "--project=${browser}-ward-responsive"`);
+    }
+  });
 });
