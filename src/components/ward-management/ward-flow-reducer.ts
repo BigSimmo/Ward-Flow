@@ -1,3 +1,4 @@
+import { reduceSettingsEvent } from "./ward-flow-settings-reducer";
 import { referralIntakeError } from "./referrals/referral-submission";
 import {
   validCareChange,
@@ -134,12 +135,7 @@ import type {
   TransportProvider,
   Unit,
 } from "@/components/ward-management/ward-model";
-import {
-  defaultWardConfiguration,
-  describeInvalidConfiguration,
-  validateConfiguration,
-  type WardConfiguration,
-} from "@/components/ward-management/ward-configuration";
+import { defaultWardConfiguration, type WardConfiguration } from "@/components/ward-management/ward-configuration";
 import {
   bedReleases,
   generatedMovementPatients,
@@ -150,12 +146,7 @@ import {
 import { applyRulingsDemoOverlay } from "@/components/ward-management/ward-rulings-demo";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
-import {
-  WARD_SCENARIOS,
-  scenarioNetwork,
-  scenarioUnits,
-  type WardScenario,
-} from "@/components/ward-management/ward-scenarios";
+import { scenarioNetwork, scenarioUnits, type WardScenario } from "@/components/ward-management/ward-scenarios";
 import { shiftInstants } from "@/components/ward-management/ward-reanchor";
 import {
   remainingHighAcuityCapacity,
@@ -2066,52 +2057,17 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       return { ...state, patients: [...state.patients, patient], patientSequence: state.patientSequence + 1 };
     }
-
     case "RESET_SCENARIO":
-      return seedWardFlowStateAt(event.now - state.clockOffsetMinutes - NOW_ANCHOR);
+      return reduceSettingsEvent(state, event, decision, { reject, seed: seedWardFlowStateAt });
 
-    case "SET_SCENARIO": {
-      // Y4 privacy fix round 2, P3 finding 6: `event.scenario` used to be passed straight through
-      // with no runtime check at all — trusted on `WardScenario`'s type alone, the same
-      // "union-typed (compile-time only)" gap this codebase already names for `legalStatus` /
-      // `waitingOn` / `to` elsewhere (see `ward-flow-persistence-classification.ts`'s own comment).
-      // A caller off the type system (an untyped script, a malformed dispatch) could store any
-      // string as `state.scenario`, and `isValidStoredWardFlowState` (`ward-flow-provider.tsx`) used
-      // to restore it unchecked too. Membership-checked here against the same `WARD_SCENARIOS` list
-      // the restore-side check now reads, so the two can never silently disagree about what counts
-      // as a real scenario.
-      if (!WARD_SCENARIOS.includes(event.scenario)) {
-        decision.reasonCode = "invalid-payload";
-        return reject(state, event, `SET_SCENARIO scenario must be chosen from WARD_SCENARIOS`);
-      }
-      return seedWardFlowStateAt(event.now - state.clockOffsetMinutes - NOW_ANCHOR, event.scenario);
-    }
+    case "SET_SCENARIO":
+      return reduceSettingsEvent(state, event, decision, { reject, seed: seedWardFlowStateAt });
 
-    case "ADVANCE_CLOCK": {
-      // Audit follow-up 2026-09-25: `event.minutes` used to be added to the offset unchecked,
-      // so a non-finite (NaN/Infinity) or negative amount would corrupt every downstream
-      // deadline read off the clock. `finiteInstant` already does the finiteness check this
-      // reducer uses everywhere else; reused here rather than duplicating it.
-      if (finiteInstant(event.minutes) === null || event.minutes < 0) {
-        return reject(state, event, "ADVANCE_CLOCK minutes must be a finite, non-negative number");
-      }
-      return { ...state, clockOffsetMinutes: state.clockOffsetMinutes + event.minutes };
-    }
+    case "ADVANCE_CLOCK":
+      return reduceSettingsEvent(state, event, decision, { reject, seed: seedWardFlowStateAt });
 
-    // Task 3 of the audit-wiring plan, 2026-09-16: the settings screen's "Save Configuration"
-    // dispatches this once, with the whole edited draft. `validateConfiguration` is the only
-    // door — an invalid payload is refused with a reason naming the field, never partially
-    // applied field by field.
-    case "SET_CONFIGURATION": {
-      const requested = validateConfiguration(event.payload);
-      if (!requested) {
-        decision.reasonCode = "invalid-payload";
-        return reject(state, event, describeInvalidConfiguration(event.payload));
-      }
-      decision.outcome = "accepted";
-      decision.reasonCode = "none";
-      return { ...state, configuration: requested };
-    }
+    case "SET_CONFIGURATION":
+      return reduceSettingsEvent(state, event, decision, { reject, seed: seedWardFlowStateAt });
 
     case "RAISE_REFERRAL": {
       const department = allEmergencyDepartments().find((ed) => ed.id === event.edId);
