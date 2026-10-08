@@ -7,7 +7,7 @@ import { ArrowRight, Check, X } from "lucide-react";
 import { edHref, teamHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useWardModalFocus } from "../ward-modal-focus";
 
-import styles from "./settings.module.css";
+import styles from "./settings-modals.module.css";
 
 export interface OperatorStation {
   readonly group: string;
@@ -154,11 +154,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onNavigate }: OperatorS
         <header className={styles.modalHeader}>
           <div className={styles.operatorHeaderMeta}>
             <h3 id="operator-switcher-title" className={styles.modalTitle}>
-              Switch Clinical Role &amp; Operator Station
+              Switch workstation
             </h3>
-            <p className={styles.operatorHeaderSub}>
-              Select a clinical workstation to simulate immediate role and perspective handoff.
-            </p>
+            <p className={styles.operatorHeaderSub}>Open another desk&rsquo;s view of the same synthetic data.</p>
           </div>
           <button type="button" className={styles.btnSecondary} onClick={onClose} aria-label="Close operator switcher">
             <X size={16} aria-hidden="true" />

@@ -46,7 +46,7 @@ it.each(["raw", "backup"])("loads a valid %s configuration into draft and applie
   importPayload(kind === "backup" ? { configuration, exportedAt: "synthetic backup" } : configuration, container);
   expect((document.getElementById("setting-ed-threshold") as HTMLInputElement).value).toBe("720");
   expect(screen.getByTestId("import-saved-configuration").textContent).toBe(before);
-  fireEvent.click(screen.getByRole("button", { name: "Save coordination rules" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
   expect(JSON.parse(screen.getByTestId("import-saved-configuration").textContent!)).toEqual(configuration);
 });
 

@@ -23,7 +23,13 @@ import {
   validRecordActor,
   type WardRecordActor,
 } from "./ward-discharge-records";
-import { isLeavingDestination, isFollowUpState, daysInBed, type LeavingDestination } from "./ward-admissions";
+import {
+  isDischargeBarrier,
+  isLeavingDestination,
+  isFollowUpState,
+  daysInBed,
+  type LeavingDestination,
+} from "./ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
@@ -1236,6 +1242,20 @@ function movementSourceAdmission(state: WardFlowState, movement: Movement): Admi
  * split `RELEASE_PULL`'s own case already kept between its unit/admission writes and its movement
  * write.
  */
+/**
+ * Whether a movement holds a reserved bed, by the same rule `releasePulledBedAndAdmission` uses.
+ * A seeded journey hand-authored as far as `pulled` or later carries no `admissionId` (fabricating
+ * one would invent an occupant), so `admissionId` alone cannot answer this (review finding S2-1).
+ */
+function movementHoldsBedByStage(movement: Movement): boolean {
+  return (
+    movement.stage === "pulled" ||
+    movement.stage === "handover_ready" ||
+    movement.stage === "moving" ||
+    movement.admissionId !== undefined
+  );
+}
+
 function releasePulledBedAndAdmission(state: WardFlowState, movement: Movement, now: Instant): WardFlowState {
   if (!movement.acceptedUnitId) return state;
   // Fix round (2026-09-16 audit): this used to decide a bed was held from `movement.stage` alone.
@@ -1568,6 +1588,34 @@ function dischargeMovement(state: WardFlowState, admission: Admission): Movement
   );
 }
 
+/** A collected journey whose vehicle has not yet arrived or been stood down. */
+function movementInTransit(movement: Movement): boolean {
+  return (
+    movement.stage === "moving" ||
+    (movement.transport?.collectedAt !== undefined &&
+      movement.transport.arrivedAt === undefined &&
+      movement.transport.cancelledAt === undefined)
+  );
+}
+
+/**
+ * The journey that makes a discharge unsafe: the stay's own inbound movement, or an open journey
+ * LEAVING this stay (ward-to-ward or repatriation) that is on the road. `dischargeMovement` alone
+ * finds only the inbound one, so a patient collected for a transfer could be discharged from the
+ * sending ward, after which the receiving ward's arrival is refused for want of an occupied source
+ * stay and the journey can never close (review finding S1-1, 8 October 2026).
+ */
+function dischargeBlockingTransit(state: WardFlowState, admission: Admission): Movement | undefined {
+  const linked = dischargeMovement(state, admission);
+  if (linked && movementInTransit(linked)) return linked;
+  return state.movements.find(
+    (movement) =>
+      movement.closure === undefined &&
+      movementInTransit(movement) &&
+      movementSourceAdmission(state, movement)?.id === admission.id,
+  );
+}
+
 function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): WardFlowState {
   const deny = (
     reasonCode: AuditDecision["reasonCode"],
@@ -1875,14 +1923,8 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
     }
   }
 
-  // Discharge blocked while in transit
-  if (
-    linkedMovement &&
-    (linkedMovement.stage === "moving" ||
-      (linkedMovement.transport?.collectedAt !== undefined &&
-        linkedMovement.transport.arrivedAt === undefined &&
-        linkedMovement.transport.cancelledAt === undefined))
-  ) {
+  // Discharge blocked while in transit, inbound or outbound
+  if (dischargeBlockingTransit(state, admission)) {
     return deny("transition", "denied", "Patient is currently in transit to another facility.");
   }
   return appendAudit(state, departAdmission(state, admission, unit, event.now, event.leavingDestination), event, {
@@ -2312,6 +2354,20 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       if (event.draft.tentativeDiagnosis !== undefined && !isTentativeDiagnosisBlock(event.draft.tentativeDiagnosis)) {
         return reject(state, event, `RAISE_REFERRAL tentativeDiagnosis must be chosen from TENTATIVE_DIAGNOSIS_BLOCKS`);
+      }
+      // A journey raised from a referral is for that referral's patient. Naming someone else let
+      // PULL_PATIENT check one person for an existing bed and then admit the other, who could end
+      // up holding two beds (review finding S1-2, 8 October 2026).
+      if (
+        event.patientId !== undefined &&
+        raisedFrom?.patientId !== undefined &&
+        event.patientId !== raisedFrom.patientId
+      ) {
+        return reject(
+          state,
+          event,
+          `RAISE_REFERRAL names patient ${event.patientId}, but referral ${raisedFrom.id} is for patient ${raisedFrom.patientId}`,
+        );
       }
       const created: Movement = {
         id: nextReferralId(sequence),
@@ -5011,17 +5067,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // Discharge blocked while in transit: a patient cannot be discharged while their transfer
       // ambulance is actively on the road.
       const linkedMovement = dischargeMovement(state, admission);
-      if (
-        linkedMovement &&
-        (linkedMovement.stage === "moving" ||
-          (linkedMovement.transport?.collectedAt !== undefined &&
-            linkedMovement.transport.arrivedAt === undefined &&
-            linkedMovement.transport.cancelledAt === undefined))
-      ) {
+      const transit = dischargeBlockingTransit(state, admission);
+      if (transit) {
         return reject(
           state,
           event,
-          `cannot record leaving for admission ${admission.id}: patient is actively in transit (movement ${linkedMovement.id})`,
+          `cannot record leaving for admission ${admission.id}: patient is actively in transit (movement ${transit.id})`,
         );
       }
 
@@ -8003,7 +8054,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `movement ${movement.id} was not stopped by STOP_TRANSPORT, so there is no held bed to release this way`,
         );
       }
-      if (movement.admissionId === undefined) {
+      // A stopped journey is closed, so its blocker can no longer change: while it still reads
+      // "awaiting release" the bed has not been released, with or without an `admissionId`.
+      const heldBedOutstanding =
+        movement.admissionId !== undefined ||
+        (movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease &&
+          movementHoldsBedByStage(movement));
+      if (!heldBedOutstanding) {
         return reject(state, event, `movement ${movement.id} holds no bed — it may already have been released`);
       }
       // Same claim-not-proof discipline as RELEASE_PULL and CANCEL_TRANSPORT: this compares what
@@ -8117,7 +8174,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `movement ${movement.id} was not diverted, so there is no diverted bed to release this way`,
         );
       }
-      if (movement.admissionId === undefined) {
+      // A diverted journey stays open until this release closes it, so the closure is the
+      // released marker; a seeded journey with no `admissionId` still holds its bed by stage.
+      if (movement.closure !== undefined || !movementHoldsBedByStage(movement)) {
         return reject(state, event, `movement ${movement.id} holds no bed — it may already have been released`);
       }
       if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId) {
@@ -8467,6 +8526,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           event,
           `SET_DISCHARGE_BARRIER was raised acting as unit ${event.actingUnitId} but admission ${admission.id} is at ${admission.unitId}`,
         );
+      }
+
+      // Chosen from DISCHARGE_BARRIERS, never typed: this event is on the persistence safe list, so
+      // anything off the list would reach browser storage as free text (review findings S2-12/A2-2).
+      if (event.barrier !== null && event.barrier !== "None" && !isDischargeBarrier(event.barrier)) {
+        return reject(state, event, "SET_DISCHARGE_BARRIER barrier must be chosen from DISCHARGE_BARRIERS");
       }
 
       const stay = daysInBed(admission, event.now) ?? 0;

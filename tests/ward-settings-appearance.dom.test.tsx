@@ -40,6 +40,7 @@ function renderSettings() {
       <SettingsScreen />
     </WardFlowProvider>,
   );
+  fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
 }
 
 function themeAttribute(): string | null {
@@ -59,7 +60,7 @@ describe("the settings screen's appearance control", () => {
     const panel = screen.getByTestId("ward-settings-appearance");
 
     for (const name of ["Light", "Dark", "Auto"]) {
-      expect(within(panel).getByRole("button", { name }), `no ${name} control`).toBeInTheDocument();
+      expect(within(panel).getByRole("radio", { name }), `no ${name} control`).toBeInTheDocument();
     }
   });
 
@@ -71,7 +72,7 @@ describe("the settings screen's appearance control", () => {
     renderSettings();
     const panel = screen.getByTestId("ward-settings-appearance");
 
-    fireEvent.click(within(panel).getByRole("button", { name: "Dark" }));
+    fireEvent.click(within(panel).getByRole("radio", { name: "Dark" }));
 
     expect(window.localStorage.getItem("ward-flow-appearance"), "the real key was not written").toBe("dark");
     expect(window.localStorage.getItem("ward-flow-settings-appearance"), "a second key was written").toBeNull();
@@ -89,10 +90,10 @@ describe("the settings screen's appearance control", () => {
     renderSettings();
     const panel = screen.getByTestId("ward-settings-appearance");
 
-    fireEvent.click(within(panel).getByRole("button", { name: "Light" }));
+    fireEvent.click(within(panel).getByRole("radio", { name: "Light" }));
     expect(window.localStorage.getItem("ward-flow-appearance")).toBe("light");
 
-    fireEvent.click(within(panel).getByRole("button", { name: "Auto" }));
+    fireEvent.click(within(panel).getByRole("radio", { name: "Auto" }));
     expect(window.localStorage.getItem("ward-flow-appearance"), "auto was stored as a value").toBeNull();
     expect(themeAttribute(), "data-theme survived a return to auto").toBeNull();
   });
@@ -106,14 +107,17 @@ describe("the settings screen's appearance control", () => {
   it("shows the current choice, and follows a change made from anywhere else", () => {
     renderSettings();
     const panel = screen.getByTestId("ward-settings-appearance");
-    expect(panel.textContent).toMatch(/auto/i);
+    expect(within(panel).getByRole("radio", { name: "Auto" }).getAttribute("aria-checked")).toBe("true");
 
     // `act` for the same reason as the rail suite: the write originates outside React.
     act(() => applyAppearance("dark"));
 
-    expect(screen.getByTestId("ward-settings-appearance").textContent, "the readout did not follow the store").toMatch(
-      /dark/i,
-    );
+    expect(
+      within(screen.getByTestId("ward-settings-appearance"))
+        .getByRole("radio", { name: "Dark" })
+        .getAttribute("aria-checked"),
+      "the readout did not follow the store",
+    ).toBe("true");
   });
 
   /**
@@ -121,14 +125,14 @@ describe("the settings screen's appearance control", () => {
    * that says "Dark" beside three buttons none of which look chosen is a state a reader has to hold
    * in their head.
    */
-  it("marks the chosen button as pressed", () => {
+  it("marks the chosen option as checked", () => {
     renderSettings();
     const panel = screen.getByTestId("ward-settings-appearance");
 
-    fireEvent.click(within(panel).getByRole("button", { name: "Dark" }));
+    fireEvent.click(within(panel).getByRole("radio", { name: "Dark" }));
 
-    expect(within(panel).getByRole("button", { name: "Dark" }).getAttribute("aria-pressed")).toBe("true");
-    expect(within(panel).getByRole("button", { name: "Light" }).getAttribute("aria-pressed")).toBe("false");
+    expect(within(panel).getByRole("radio", { name: "Dark" }).getAttribute("aria-checked")).toBe("true");
+    expect(within(panel).getByRole("radio", { name: "Light" }).getAttribute("aria-checked")).toBe("false");
   });
 
   /**

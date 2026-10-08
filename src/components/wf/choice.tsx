@@ -122,6 +122,9 @@ export type SegmentedProps<T extends string> = {
   /** `hero` is the dark track on the hero band (`.trk`). */
   variant?: "default" | "hero";
   size?: "sm" | "md";
+  /** Shown for review but not connected: each option is `aria-disabled`, still focusable, and
+   *  presses still call `onChange` so the screen can say why. */
+  unavailable?: boolean;
   className?: string;
 };
 
@@ -136,10 +139,16 @@ export function Segmented<T extends string>({
   label,
   variant = "default",
   size = "sm",
+  unavailable = false,
   className,
 }: SegmentedProps<T>) {
   const { refs, onKeyDown } = useRoving(items, value, (id) => onChange?.(id));
-  const groupClass = cx(variant === "hero" ? styles.trk : styles.seg, size === "md" && styles.md, className);
+  const groupClass = cx(
+    variant === "hero" ? styles.trk : styles.seg,
+    size === "md" && styles.md,
+    unavailable && styles.unavailable,
+    className,
+  );
   const content = (item: ChoiceItem<T>) => (
     <>
       {item.tone ? <StatusGlyph tone={item.tone} size={9} /> : null}
@@ -182,6 +191,7 @@ export function Segmented<T extends string>({
             type="button"
             role="radio"
             aria-checked={checked}
+            aria-disabled={unavailable || undefined}
             tabIndex={checked ? 0 : -1}
             className={cx(styles.segItem, checked && styles.segOn)}
             onClick={() => onChange?.(item.id)}
@@ -205,16 +215,28 @@ export type FilterChipProps = {
   children: ReactNode;
   count?: number | string;
   tone?: WfTone;
+  /** Shown for review but not connected: `aria-disabled`, still focusable, presses still call
+   *  `onPressedChange` so the screen can say why. */
+  unavailable?: boolean;
   className?: string;
 };
 
 /** Toggle chip for quick filters (`aria-pressed`). Pressed gets a 3:1 edge, never a colour fill. */
-export function FilterChip({ pressed, onPressedChange, children, count, tone, className }: FilterChipProps) {
+export function FilterChip({
+  pressed,
+  onPressedChange,
+  children,
+  count,
+  tone,
+  unavailable = false,
+  className,
+}: FilterChipProps) {
   return (
     <button
       type="button"
       aria-pressed={pressed}
-      className={cx(styles.chip, className)}
+      aria-disabled={unavailable || undefined}
+      className={cx(styles.chip, unavailable && styles.unavailableChip, className)}
       onClick={() => onPressedChange(!pressed)}
     >
       {tone ? <StatusGlyph tone={tone} size={9} /> : null}

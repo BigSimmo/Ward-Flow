@@ -346,6 +346,16 @@
   color: var(--wf-ink-off);
 }
 
+/* Shown for review, not connected: dimmed track, still focusable. */
+.switchRow.unavailable {
+  cursor: default;
+}
+
+.switchRow.unavailable .track,
+.switchRow.unavailable .switchState {
+  opacity: 0.55;
+}
+
 .onHero {
   color: var(--wf-hero-ink-2);
 }
@@ -414,6 +424,14 @@
     "tnum" 1;
   border-left: 1px solid var(--wf-line);
   border-right: 1px solid var(--wf-line);
+}
+
+.unavailable .stp {
+  opacity: 0.6;
+}
+
+.unavailable .stpButton {
+  cursor: default;
 }
 
 .stepperNote {
