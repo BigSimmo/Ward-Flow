@@ -18,6 +18,9 @@ guards, and appends the audit result after command handling. Internal event fami
 - `ward-flow-leave-bed-reducer.ts`: record and end leave. Creation keeps the named occupied
   stay, caller ward and one-leave-per-stay checks, and uses the main reducer's sequence-based
   identifier operation. Ending leave removes only the matching leave record.
+- `ward-flow-movement-flags-reducer.ts`: raise and clear movement urgency and blockers.
+  Urgency provenance and history are retained. Clearing urgency remains possible on a closed
+  movement; blocker clearing retains its explicit closed-vocabulary value and refusal rules.
 
 `ward-flow-storage-validation.ts` separately validates nested containers, header/counters,
 record shapes, identifiers, cross-record links, capacity bounds, audit data and persistence privacy.
