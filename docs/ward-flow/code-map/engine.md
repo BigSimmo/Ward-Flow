@@ -28,6 +28,10 @@ guards, and appends the audit result after command handling. Internal event fami
   search. Clearance updates only the linked patient's movements. Arrival keeps its first instant;
   local search remains optional and can be recorded once while the referral is undecided.
   Correction notes remain in the facade under the existing static history-authoring guard.
+- `ward-flow-referral-intake-reducer.ts`: ordered intake refusal checks. Age, destination count
+  and identity, ED/ward recipients, structured intake, sender, catchment, origin, timing/patient
+  links, history shape/length, team name and diagnosis retain their original order. The facade
+  still constructs the successful referral and copies its history byte for byte.
 
 `ward-flow-storage-validation.ts` separately validates nested containers, header/counters,
 record shapes, identifiers, cross-record links, capacity bounds, audit data and persistence privacy.
