@@ -347,9 +347,22 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expectNoReloadSince(page, "ward -> ED for transport booking");
 
     const edScreen = page.getByTestId("ward-ed-screen");
+    // The board's compact clearance picker is an unsaved layout draft. Record the
+    // clinician's synthetic clearance through the originating ED's real controls.
+    const expandEd = edScreen.getByTestId(`ward-ed-expand-${movementId}`);
+    if ((await expandEd.getAttribute("aria-expanded")) !== "true") await expandEd.click();
+    const medicalPlacement = edScreen.getByTestId(`ward-ed-medical-placement-${movementId}`);
+    await expect(medicalPlacement).toBeVisible();
+    await medicalPlacement.getByRole("button", { name: "Record medically cleared", exact: true }).click();
+    await medicalPlacement.getByRole("button", { name: "Confirm medically cleared", exact: true }).click();
+    await expect(medicalPlacement.getByRole("status")).toContainText("Recorded medically cleared.");
+    await expectNoReloadSince(page, "recording clinician clearance before transport");
     const unfoldEd = edScreen.getByTestId(`ward-ed-unfold-${movementId}`);
     if (await unfoldEd.isVisible()) await unfoldEd.click();
-    await edScreen.getByTestId(`ward-ed-book-transport-toggle-${movementId}`).click();
+    const bookTransport = edScreen.getByTestId(`ward-ed-book-transport-toggle-${movementId}`);
+    await expect(bookTransport).not.toHaveAttribute("aria-disabled", "true");
+    await bookTransport.click();
+    await expect(page.getByTestId(`ward-ed-book-transport-${movementId}`)).toBeVisible();
     await page.getByTestId(`ward-ed-transport-provider-${movementId}`).selectOption("Patient transport service");
     await page.getByTestId(`ward-ed-transport-escort-no-${movementId}`).click();
     // Owner's third ruling, 2026-09-17: the three facts logged from the phone call, required and

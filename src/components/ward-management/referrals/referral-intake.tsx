@@ -34,6 +34,8 @@ import {
 } from "@/components/ward-management/ward-patients";
 import { WARD_NAV } from "@/components/ward-management/ward-nav";
 import {
+  ATS_CATEGORIES,
+  type AtsCategory,
   COHORTS,
   HOME_REGIONS,
   REFERRAL_GENDERS,
@@ -497,6 +499,8 @@ type ReferralDraft = {
   highAcuityNursingNeeded: boolean | typeof UNANSWERED_VALUE;
   source: ReferralSource | typeof UNANSWERED_VALUE;
   urgency: UrgencyLevel | typeof UNANSWERED_VALUE;
+  /** Clinician-recorded ATS category, independent of Ward Flow urgency. Omitted when unrecorded. */
+  atsCategory?: AtsCategory;
   /** Already a `string`, so the sentinel needs no widening here — but see `UNANSWERED_VALUE`'s
    *  own comment for why that sentinel must not be `""`. */
   originSiteCode: string;
@@ -1678,7 +1682,7 @@ export function ReferralIntakeForm() {
         : "Pending";
     const sub = draft.suburb !== UNANSWERED_VALUE ? draft.suburb : "Not recorded";
     const reg = draft.homeRegion !== UNANSWERED_VALUE ? draft.homeRegion : "Not recorded";
-    const textToCopy = `WARD FLOW CLINICAL HANDOVER\nPatient: ${name} (${umrn})\nLegal Status: ${legal}\nCatchment: ${sub} (${reg})\nUrgency: ${urg}\nDestinations: ${dests}\n\nCLINICAL NARRATIVE:\n${draft.history || "(None)"}`;
+    const textToCopy = `WARD FLOW CLINICAL HANDOVER\nPatient: ${name} (${umrn})\nLegal Status: ${legal}\nCatchment: ${sub} (${reg})\nUrgency: ${urg}\nATS: ${draft.atsCategory ?? "Not recorded"}\nDestinations: ${dests}\n\nCLINICAL NARRATIVE:\n${draft.history || "(None)"}`;
 
     if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard
@@ -2151,6 +2155,7 @@ export function ReferralIntakeForm() {
       // clinical record. Trimming a label is not.
       sendingTeamName: draft.sendingTeamName.trim() === "" ? undefined : draft.sendingTeamName.trim(),
       urgency: answered.urgency,
+      ...(draft.atsCategory === undefined ? {} : { atsCategory: draft.atsCategory }),
       originSiteCode: answered.originSiteCode,
       originUnitId: answered.originUnitId,
       transportNeeded: answered.transportNeeded,
@@ -3277,6 +3282,37 @@ export function ReferralIntakeForm() {
                           </select>
                         </div>
                       ) : null}
+                    </div>
+
+                    <div className={`${styles.fieldCard} ${pageStyles.fieldCard} ${pageStyles.questionGroup}`}>
+                      <label
+                        className={`${styles.fieldLegend} ${pageStyles.questionLabel}`}
+                        htmlFor="ward-referral-intake-atsCategory"
+                      >
+                        ATS category (optional)
+                      </label>
+                      <select
+                        id="ward-referral-intake-atsCategory"
+                        data-testid="ward-referral-intake-atsCategory"
+                        className={`${styles.select} ${pageStyles.select}`}
+                        value={draft.atsCategory ?? ""}
+                        onChange={(event) =>
+                          setDraft((current) => ({
+                            ...current,
+                            atsCategory: ATS_CATEGORIES.find((category) => String(category) === event.target.value),
+                          }))
+                        }
+                      >
+                        <option value="">ATS not recorded</option>
+                        {ATS_CATEGORIES.map((category) => (
+                          <option key={category} value={category}>
+                            ATS {category}
+                          </option>
+                        ))}
+                      </select>
+                      <p className={`${styles.historyHint} ${pageStyles.note}`}>
+                        Record the clinician&apos;s ATS category separately. This does not change Ward Flow urgency.
+                      </p>
                     </div>
 
                     {/* Row 3: Urgency */}
@@ -4495,6 +4531,14 @@ export function ReferralIntakeForm() {
                     </span>
                   </div>
                   <div className={pageStyles.receiptRow}>
+                    <span className={pageStyles.receiptKey}>ATS category</span>
+                    <span className={pageStyles.receiptVal}>
+                      {receipt.referral.atsCategory === undefined
+                        ? "ATS not recorded"
+                        : `ATS ${receipt.referral.atsCategory}`}
+                    </span>
+                  </div>
+                  <div className={pageStyles.receiptRow}>
                     <span className={pageStyles.receiptKey}>Catchment Area</span>
                     <span className={pageStyles.receiptVal} id="receiptCatchment">
                       {receipt.catchment}
@@ -4641,6 +4685,10 @@ export function ReferralIntakeForm() {
                         <span>
                           {draft.urgency !== UNANSWERED_VALUE ? urgencyTierLabel(draft.urgency) : "Not answered"}
                         </span>
+                      </div>
+                      <div>
+                        <b>ATS category:</b>{" "}
+                        <span>{draft.atsCategory === undefined ? "ATS not recorded" : `ATS ${draft.atsCategory}`}</span>
                       </div>
                       <div>
                         <b>Referral Source:</b>{" "}

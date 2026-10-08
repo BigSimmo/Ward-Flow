@@ -225,3 +225,71 @@ describe("draft handover cannot invent missing triage answers", () => {
     }
   });
 });
+
+function AtsReferralProbe() {
+  const { referrals, rejections } = useWardFlow();
+  const newest = referrals.at(-1);
+  return (
+    <output
+      data-testid="ats-referral-probe"
+      data-count={referrals.length}
+      data-ats={newest?.atsCategory ?? "absent"}
+      data-urgency={newest?.urgency}
+      data-rejections={rejections.length}
+    />
+  );
+}
+function answerAtsIntake() {
+  const answers: Record<string, string> = {
+    ageBand: "Adult",
+    sex: "Female",
+    gender: "Female",
+    homeRegion: "Perth Metropolitan",
+    suburb: "Armadale",
+    source: "community",
+    urgency: "2",
+    originSiteCode: "RPH",
+  };
+  for (const [field, value] of Object.entries(answers)) {
+    const control = screen.getByTestId(`ward-referral-intake-${field}`);
+    if (control instanceof HTMLSelectElement) fireEvent.change(control, { target: { value } });
+    else
+      fireEvent.click(
+        within(control)
+          .getAllByRole("radio")
+          .find((input) => (input as HTMLInputElement).value === value)!,
+      );
+  }
+  for (const field of ["secureBedNeeded", "involuntaryBedNeeded", "highAcuityNursingNeeded", "transportNeeded"])
+    fireEvent.click(screen.getByTestId(`ward-referral-intake-${field}-no`));
+  fireEvent.click(screen.getByTestId("ward-referral-intake-destination-psychiatric_ward"));
+}
+
+describe("optional clinician-recorded ATS remains distinct from Ward Flow urgency", () => {
+  it.each([undefined, 5])("persists only explicitly selected ATS (%s), without changing urgency", (ats) => {
+    window.history.replaceState({}, "", "/mockups/ward-flow/referrals/new");
+    wrap(
+      <>
+        <ReferralIntakeForm />
+        <AtsReferralProbe />
+      </>,
+    );
+    const chooser = screen.getByRole("combobox", { name: "ATS category (optional)" });
+    expect(chooser).toHaveValue("");
+    expect(
+      within(chooser)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["ATS not recorded", "ATS 1", "ATS 2", "ATS 3", "ATS 4", "ATS 5"]);
+    const probe = screen.getByTestId("ats-referral-probe");
+    const before = Number(probe.getAttribute("data-count"));
+    answerAtsIntake();
+    if (ats !== undefined) fireEvent.change(chooser, { target: { value: String(ats) } });
+    expect(screen.getByTestId("ward-referral-intake-urgency")).toHaveValue("2");
+    fireEvent.click(screen.getByTestId("ward-referral-intake-submit"));
+    expect(probe).toHaveAttribute("data-count", String(before + 1));
+    expect(probe).toHaveAttribute("data-ats", ats === undefined ? "absent" : String(ats));
+    expect(probe).toHaveAttribute("data-urgency", "2");
+    expect(probe).toHaveAttribute("data-rejections", "0");
+  });
+});

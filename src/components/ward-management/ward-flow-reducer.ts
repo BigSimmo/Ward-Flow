@@ -1,4 +1,5 @@
 import { referralIntakeError } from "./referrals/referral-submission";
+import { recordedMovementMedicalClearance } from "./ward-medical-clearance";
 import {
   validCareChange,
   careChangeRefusal,
@@ -2022,7 +2023,19 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
   if (
     "movementId" in event &&
     medicalTransferEvents.includes(event.type) &&
-    findMovement(state, event.movementId)?.medicalClearance?.cleared === false
+    (() => {
+      const movement = findMovement(state, event.movementId);
+      if (!movement) return false;
+      // Arrival records physical presence. A later negative clearance cannot erase an
+      // already collected person's arrival; it still blocks departure before collection.
+      if (
+        event.type === "PATIENT_ARRIVED" &&
+        movement.stage === "moving" &&
+        movement.transport?.collectedAt !== undefined
+      )
+        return false;
+      return recordedMovementMedicalClearance(movement, state.referrals)?.cleared === false;
+    })()
   ) {
     return reject(
       state,
@@ -2401,6 +2414,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // patient already in the queue, not a property of arriving.
         flaggedUrgent: false,
         urgency: event.draft.urgency,
+        ...(raisedFrom?.medicalClearance === undefined ? {} : { medicalClearance: { ...raisedFrom.medicalClearance } }),
         ...(event.draft.atsCategory === undefined && raisedFrom?.atsCategory === undefined
           ? {}
           : { atsCategory: event.draft.atsCategory ?? raisedFrom?.atsCategory }),
