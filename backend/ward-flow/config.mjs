@@ -61,10 +61,11 @@ export function readConfig(env = process.env) {
       /^\/subscriptions\/[0-9a-f-]{36}\/resourceGroups\/rg-wardflow-dev-aue\/providers\/Microsoft.DBforPostgreSQL\/flexibleServers\/([a-z0-9-]+)$/i.exec(
         env.WARD_PG_RESOURCE_ID ?? "",
       );
+    const expectedDatabase = resource?.[1].toLowerCase() === "wardflow-dev-aue" ? "wardflow_dev" : "wardflow";
     if (
       !resource ||
       env.WARD_PG_HOST !== `${resource[1].toLowerCase()}.postgres.database.azure.com` ||
-      env.WARD_PG_DATABASE !== "wardflow" ||
+      env.WARD_PG_DATABASE !== expectedDatabase ||
       env.WARD_PG_USER !== "wardflow_backend"
     )
       throw new Error("Unapproved shared database target");

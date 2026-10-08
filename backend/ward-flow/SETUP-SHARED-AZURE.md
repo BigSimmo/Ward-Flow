@@ -6,6 +6,10 @@ This is a synthetic demonstration implementation. No live Azure resource was rea
 
 ## What is implemented
 
+Local recovery update, 9 October 2026: the verified existing server is `wardflow-dev-aue`, with database `wardflow_dev`. The example settings now pin that target, and the runtime refuses `wardflow` on this server. Setup requires an existing server and database by default; missing inventory stops before resource creation. `requireExistingDatabase: false` is reserved for a separately authorised new-resource plan, not this recovery. The new-resource template below remains historical preparation. Windows build paths are supported; packaging requires Python on Windows or `zip` elsewhere.
+
+The original three implementation commits were recovered without publication or deployment. Azure schema, private SQL reachability and a dedicated reader remain unverified. Do not run configure, migrate, provision with resource creation enabled, or deployment commands under the current read-only setup authority. Follow the private recovery checkpoint before any future rollout. The original historical test results below are separate from fresh recovery checks.
+
 - The existing Azure Function gains `/v1/workspace`, `/v1/workspace/commands` and `/v1/workspace/audit`. Its checked-in host configuration has an empty route prefix; the generated frontend base URL is the Function origin. Existing owner-specific Blob sessions remain separate.
 - PostgreSQL holds one shared, versioned JSONB workspace, idempotency receipts and append-only audit entries. Named coordinators share the same workspace ID. The server applies the existing domain engine against the latest locked state.
 - A stale command returns 409 without overwriting the winner. Successful state, audit and command receipt commit in one transaction. A retry uses the same command ID; reusing an ID for different content is refused.

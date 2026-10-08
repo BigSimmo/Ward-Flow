@@ -73,6 +73,16 @@ if (!config.serverName && candidates.length > 1)
   throw new Error(
     "Several PostgreSQL servers exist. Set serverName to the verified Ward Flow server; no resources were changed",
   );
+const requireExistingDatabase = config.requireExistingDatabase !== false;
+const databaseName = config.databaseName || (server?.name === "wardflow-dev-aue" ? "wardflow_dev" : "wardflow");
+if (
+  !["wardflow", "wardflow_dev"].includes(databaseName) ||
+  (databaseName === "wardflow_dev" && server?.name !== "wardflow-dev-aue") ||
+  (server?.name === "wardflow-dev-aue" && databaseName !== "wardflow_dev")
+)
+  throw new Error("Unapproved Ward Flow database target; the verified existing server uses wardflow_dev");
+if (mode !== "inspect" && requireExistingDatabase && !server)
+  throw new Error("Existing database server required; no replacement resources were created");
 
 if (mode === "provision" && !server) {
   if (app.virtualNetworkSubnetId)
@@ -147,6 +157,21 @@ console.log(
 );
 if (mode === "inspect") process.exit(0);
 if (!server) throw new Error("Provision a verified database first");
+let databaseInventory;
+if (requireExistingDatabase) {
+  databaseInventory = az([
+    "postgres",
+    "flexible-server",
+    "db",
+    "list",
+    "--resource-group",
+    config.resourceGroup,
+    "--server-name",
+    server.name,
+  ]);
+  if (!databaseInventory.some((row) => row.name === databaseName))
+    throw new Error("Existing database required; no replacement database or resources were created");
+}
 if (mode === "verify" && !UUID.test(config.workspaceId ?? ""))
   throw new Error("Verify requires the configured stable workspace ID");
 if (!config.workspaceId || !UUID.test(config.workspaceId)) config.workspaceId = randomUUID();
@@ -206,7 +231,7 @@ const settings = {
   WARD_WORKSPACE_ID: config.workspaceId,
   WARD_PG_RESOURCE_ID: server.id,
   WARD_PG_HOST: server.fullyQualifiedDomainName,
-  WARD_PG_DATABASE: "wardflow",
+  WARD_PG_DATABASE: databaseName,
   WARD_PG_USER: "wardflow_backend",
   WARD_ALLOWED_ORIGIN: config.frontendOrigin,
 };
@@ -270,17 +295,19 @@ if (app.virtualNetworkSubnetId && app.virtualNetworkSubnetId.toLowerCase() !== t
   throw new Error(
     "Existing Function network integration was preserved; a network change needs a separate reviewed plan",
   );
-const databases = az([
-  "postgres",
-  "flexible-server",
-  "db",
-  "list",
-  "--resource-group",
-  config.resourceGroup,
-  "--server-name",
-  server.name,
-]);
-const wardflowDatabase = databases.find((row) => row.name === "wardflow");
+const databases =
+  databaseInventory ??
+  az([
+    "postgres",
+    "flexible-server",
+    "db",
+    "list",
+    "--resource-group",
+    config.resourceGroup,
+    "--server-name",
+    server.name,
+  ]);
+const wardflowDatabase = databases.find((row) => row.name === databaseName);
 if (!wardflowDatabase)
   az(
     [
@@ -293,7 +320,7 @@ if (!wardflowDatabase)
       "--server-name",
       server.name,
       "--database-name",
-      "wardflow",
+      databaseName,
       "--charset",
       "UTF8",
       "--collation",
@@ -307,7 +334,7 @@ const pg = await import("./postgres.mjs");
 const { migrate, grantBackend } = await import("./migrate.mjs");
 const pool = pg.createPostgresPool({
   host: server.fullyQualifiedDomainName,
-  database: "wardflow",
+  database: databaseName,
   user: config.administratorName,
 });
 try {

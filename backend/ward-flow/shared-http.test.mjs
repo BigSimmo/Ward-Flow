@@ -108,4 +108,13 @@ test("shared configuration refuses a host that differs from its Ward Flow resour
   assert.throws(() => readConfig({ ...env, WARD_DATA_MODE: "live" }), /not commissioned/);
   assert.throws(() => readConfig({ ...env, WARD_DATA_MODE: "invalid" }), /not commissioned/);
   assert.throws(() => readConfig({ ...env, WARD_PG_HOST: "different.postgres.database.azure.com" }), /Unapproved/);
+  const existing = {
+    ...env,
+    WARD_PG_RESOURCE_ID: env.WARD_PG_RESOURCE_ID.replace("wardflow-test", "wardflow-dev-aue"),
+    WARD_PG_HOST: "wardflow-dev-aue.postgres.database.azure.com",
+    WARD_PG_DATABASE: "wardflow_dev",
+  };
+  assert.equal(readConfig(existing).postgres.database, "wardflow_dev");
+  assert.throws(() => readConfig({ ...existing, WARD_PG_DATABASE: "wardflow" }), /Unapproved/);
+  assert.throws(() => readConfig({ ...env, WARD_PG_DATABASE: "wardflow_dev" }), /Unapproved/);
 });

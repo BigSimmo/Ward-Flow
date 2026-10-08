@@ -30,7 +30,10 @@ const server = {
   authConfig: { activeDirectoryAuth: "Enabled", passwordAuth: "Disabled" },
 };
 
-async function run(mode, { config = {}, servers = [server], account = {}, app = {} } = {}) {
+async function run(
+  mode,
+  { config = {}, servers = [server], databases = [{ name: "wardflow" }], account = {}, app = {} } = {},
+) {
   const folder = await mkdtemp(join(tmpdir(), "ward-flow-azure-setup-test-"));
   try {
     await writeFile(join(folder, "azure-setup.mjs"), await readFile(new URL("./azure-setup.mjs", import.meta.url)));
@@ -46,6 +49,7 @@ async function run(mode, { config = {}, servers = [server], account = {}, app = 
         ...app,
       },
       "postgres flexible-server list": servers,
+      "postgres flexible-server db list": databases,
       "network vnet list": [],
       "ad app show": {
         api: {
@@ -72,10 +76,12 @@ async function run(mode, { config = {}, servers = [server], account = {}, app = 
     });
     const calls = log.trim() ? log.trim().split("\n").map(JSON.parse) : [];
     let frontend = "";
+    let backend = "";
     try {
       frontend = await readFile(join(folder, "dist/setup/frontend.env"), "utf8");
+      backend = await readFile(join(folder, "dist/setup/backend.env"), "utf8");
     } catch {}
-    return { ...result, calls, frontend };
+    return { ...result, calls, frontend, backend };
   } finally {
     await rm(folder, { recursive: true, force: true });
   }
@@ -128,10 +134,45 @@ test("Azure subscription mismatch fails before reading project resources", async
 });
 test("an existing Function network is preserved before new provisioning", async () => {
   const result = await run("provision", {
+    config: { requireExistingDatabase: false },
     servers: [],
     app: { virtualNetworkSubnetId: "/existing/network/subnets/functions" },
   });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /existing Function has network integration/);
   assert.equal(result.calls.length, 5);
+});
+
+test("setup targets the existing wardflow_dev database without creating a duplicate", async () => {
+  const existing = {
+    ...server,
+    name: "wardflow-dev-aue",
+    fullyQualifiedDomainName: "wardflow-dev-aue.postgres.database.azure.com",
+    id: server.id.replace("already-existing-ward-db", "wardflow-dev-aue"),
+  };
+  const result = await run("provision", {
+    config: { serverName: existing.name, databaseName: "wardflow_dev" },
+    servers: [existing],
+    databases: [{ name: "wardflow_dev" }],
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.backend, /WARD_PG_DATABASE=wardflow_dev\n/);
+  assert.ok(result.calls.every((args) => args.includes("show") || args.includes("list")));
+  const wrong = await run("provision", {
+    config: { serverName: existing.name, databaseName: "wardflow" },
+    servers: [existing],
+  });
+  assert.notEqual(wrong.status, 0);
+  assert.match(wrong.stderr, /Unapproved Ward Flow database target/);
+  assert.ok(wrong.calls.every((args) => args.includes("show") || args.includes("list")));
+});
+
+test("missing server or database stops setup instead of creating resources", async () => {
+  for (const inventory of [{ servers: [] }, { databases: [] }]) {
+    const result = await run("provision", inventory);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Existing database/);
+    assert.equal(result.backend, "");
+    assert.ok(result.calls.every((args) => args.includes("show") || args.includes("list")));
+  }
 });
