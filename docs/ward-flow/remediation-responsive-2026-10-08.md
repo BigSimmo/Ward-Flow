@@ -18,9 +18,21 @@ scrolling.
 Chromium collects it through the existing Ward mockup project. Dedicated Firefox and WebKit
 projects collect only this bounded prototype proof, keeping inherited production checks separate.
 
-Implementation checkpoint: browser execution and visual evidence are pending integration into the
-root's verified local server. This document does not claim deployed behaviour or complete
-application accessibility. The root maintains the shared screen verification registry.
+Local verification: seven Chromium browser tests passed against integration commit
+`d5bdf2362a6e1ede267a73b378349610dea6b92f`. Every affected route had document widths exactly
+320, 390 and 768 pixels at those viewports. Keyboard scrolling passed for the named statistics
+tables. Service identity remained complete in accessible text; its scoped dark appearance also
+passed. The browser was system Chromium `151.0.7922.173`.
+
+The separate visual capture retained 21 light screenshots (seven routes at each width) and one
+390px dark service screenshot, with hashes and unchanged start/end source revision. Only the
+root's instrumentation documentation/test work was dirty during capture. Evidence is preserved in
+the local remediation output as `responsive-final-results.json`,
+`responsive-final-provenance.json` and `responsive-screenshot-provenance.json`.
+
+UI-001 through UI-005 are reconciled to the newer main's existing phone repairs; UI-006 is
+corrected locally. This does not claim deployed behaviour, complete application accessibility or
+full resolution of QA-002. The root maintains the shared screen verification registry.
 
 Browser setup limitation: the isolated Firefox/WebKit install stopped at Firefox v1538 because
 all automatic Playwright CDN/Microsoft mirror requests returned HTTP 403 `Domain forbidden`.
