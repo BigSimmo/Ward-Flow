@@ -266,6 +266,26 @@ Scope: `ward-derivations.ts`, `ward-referrals.ts`, `ward-referral-visibility.ts`
 - **A3-14. Capacity boxes can sum to more than the ward's beds** (`capacity/capacity-derivations.ts:346`). Ready uses raw allocatable while the others use `min(allocatable, empty)`.
 - **A3-15. "Freeing" uses a different day rule from the rest of the row** (`capacity/capacity-derivations.ts:338`). Overdue and tomorrow releases are counted in Confirmed/Expected but not Freeing.
 
+## Area 4 findings: security plumbing
+
+Scope: `src/proxy.ts`, `src/lib/` (CSRF, security headers, synthetic-data guard, privacy, local-project guard, logger, crawler policy), the API and digest routes, `backend/ward-flow` (auth, server, function, config) and `next.config.ts`. One reviewer, one pass; items marked "probed" were checked by running the code's own patterns.
+
+- **A4-1. Synthetic-data guard misses common real Australian identifier formats** (`src/lib/synthetic-data-guard.ts:14`). Probed: 11-digit Medicare, dotted or non-breaking-space Medicare, IHI, `UMRN-1234567`, `UR No. 1234567`, several mobile and landline formats all pass as safe.
+- **A4-2. Guard skips identifiers stored as numbers** (`:71`). Only strings are scanned.
+- **A4-3. Backend trusts the client's "synthetic" label** (`backend/ward-flow/server.mjs:141`). No server-side identifier scan; any token holder can store real identifiers.
+- **A4-4. The guard protects nothing at runtime** (`src/lib/synthetic-data-guard.ts:56`). Its only caller is the unwired cloud vault; loads are never scanned.
+- **A4-5. Mockup routes are public in production** (`src/proxy.ts:137`). The exemption relies on a `DeveloperAreaGate` removed on 28 September 2026; comments still claim admin gating.
+- **A4-6. Proxy matcher skips page routes ending in an image extension** (`src/proxy.ts:152`). Such routes get no CSP and accept spoofed trust headers (`x-developer-area`, `x-nonce`).
+- **A4-7. Root-level `public/*.html` mockups are served and indexable in production** (`src/proxy.ts:126`; `next.config.ts:92`). They load an unpinned third-party script (blocked by CSP today).
+- **A4-8. Tenant-wide mode accepts guest accounts and any client app** (`backend/ward-flow/auth.mjs:41`). No `azp`/`appid` check when `WARD_ALLOW_TENANT_USERS=true`.
+- **A4-9. Logger redaction misses Ward Flow identifiers** (`src/lib/logger.ts:19`). Probed: UMRN, Medicare and notes emitted verbatim; patterns are UK NHS-format. Latent: nothing imports the logger.
+- **A4-10. "Copy diagnostics" can copy patient names and UMRNs** (`src/lib/privacy.ts:6`). Strips URLs and emails only.
+- **A4-11. Log context can overwrite level and message** (`src/lib/logger.ts:84`).
+- **A4-12. CSRF guard allows header-less mutations; `/api` itself unguarded** (`src/lib/api-csrf.ts:111`). Low impact today: no mutation routes exist.
+- **A4-13. Dev server exposed on the LAN; local check trusts the Host header** (`src/lib/local-project-guard.ts:114`; `scripts/dev-free-port.mjs:179`). `/api/local-project-id` also answers in production.
+- **A4-14. Digest route has no production check of its own** (`src/app/mockups/ward-flow-digest/route.ts:14`). Only the proxy hides it.
+- **A4-15. Stale PsychSift security plumbing** (`src/lib/privacy.ts:1` and others). Dead helpers, comments describing controls that do not exist, and a `/api/webhooks/**` CSRF exemption that would fail open for future routes.
+
 ## Next steps
 
 1. Reproduce the two stranded-in-transit findings (slice-1 finding 1 and S2-6) and the unreleasable seeded bed (S2-1) with failing reducer tests, then fix them.
