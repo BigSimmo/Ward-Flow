@@ -1077,3 +1077,17 @@
     align-self: center;
   }
 }
+
+/* Phone polish (8 Oct 2026): a one-line result (a community team) centres in its 48px row, so the
+ * name sits level with its pin. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .resultMain {
+    align-content: center;
+  }
+
+  .resultBeds:empty,
+  .resultConfirmed:empty,
+  .resultReady:empty {
+    display: none;
+  }
+}

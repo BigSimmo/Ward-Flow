@@ -140,3 +140,43 @@
     position: relative;
   }
 }
+
+/* Phone polish (8 Oct 2026): the two views share the row equally, the counts stay in the tabs'
+ * accessible names only, and "Find a bed" (which only opens the Placement tab) stays on the larger
+ * screen so the live chip and the longest wait sit on one row. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .networkRoute {
+    gap: var(--wf-s-3);
+  }
+
+  .viewTabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .viewTab {
+    justify-content: center;
+    min-width: 0;
+    height: var(--spacing-tap, 3rem);
+    padding: 0 var(--wf-s-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .viewTab > span {
+    display: none;
+  }
+
+  .findBed {
+    display: none;
+  }
+
+  .longestChip {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

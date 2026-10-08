@@ -5997,3 +5997,212 @@
     display: none;
   }
 }
+
+/* Phone polish (8 Oct 2026). The band reads as one compact block: eyebrow, the ward's name on one
+ * line, beds and the "as at" stamp on one row, then the three figures. The Ward home / Bed board
+ * switch and Change ward share one row. The ten day figures sit as value-and-label lines in two
+ * columns, the Going out toggle is a two-button row, and the destinations list loses its nested
+ * boxes. The synthetic day note stays on the larger screen (the page foot carries the synthetic
+ * notice). Desktop is unchanged. */
+@media screen and (max-width: 48rem) {
+  .screen .main {
+    padding: var(--wf-s-3);
+  }
+
+  .screen .header {
+    row-gap: 2px;
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-2);
+  }
+
+  .screen .header > .siteName {
+    grid-row: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .screen .header > .unitName {
+    grid-row: 2;
+    min-width: 0;
+    overflow: hidden;
+    font-size: var(--wf-fs-20);
+    line-height: var(--wf-lh-20);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .screen .header > .designation {
+    grid-column: 1 / 3;
+    grid-row: 3;
+    min-width: 0;
+    overflow: hidden;
+    font-size: var(--wf-fs-12);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .screen .header > .asAt {
+    grid-column: 3;
+    grid-row: 3;
+    justify-self: end;
+    align-self: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .screen .header > .asAt .asAtValue {
+    color: var(--wf-hero-ink-2);
+    font-size: var(--wf-fs-12);
+    white-space: nowrap;
+  }
+
+  .screen .header > .asAt .asAtNote {
+    display: none;
+  }
+
+  .screen .header > .headline,
+  .screen .header > .bandStats {
+    grid-row: 4;
+  }
+
+  .screen .header > .beingMadeReady,
+  .screen .header > .constraint {
+    grid-column: 1 / -1;
+    margin-top: var(--wf-s-1);
+  }
+
+  .screen .wardTools {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-3);
+  }
+
+  .screen .wardToolsLeft {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .screen .wardToolsRight {
+    flex: 0 0 auto;
+  }
+
+  .screen .wardScreenNav {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .screen .wardScreenNav a,
+  .screen .wardScreenNav span {
+    min-width: 0;
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0 var(--wf-s-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .screen .wardSwitch > summary {
+    width: auto;
+    min-height: var(--spacing-tap, 3rem);
+    white-space: nowrap;
+  }
+
+  .screen .wardSwitch > summary span {
+    display: none;
+  }
+
+  .screen .triageFigures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .screen .triageFigures > .triageFigure {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--wf-s-2);
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border-left: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .screen .triageFigures > .triageFigure:nth-child(even) {
+    border-left: 1px solid var(--wf-line);
+  }
+
+  .screen .triageFigures > .triageFigure:nth-child(-n + 2) {
+    border-top: 0;
+  }
+
+  .screen .triageFigures > .triageFigure > .triageValue {
+    min-width: 1.5ch;
+    font-size: var(--wf-fs-16);
+    line-height: var(--wf-lh-16);
+  }
+
+  .screen .triageFigures > .triageFigure > .triageLabel {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .screen .triageFigures > .triageFigure > .triageLedNote {
+    flex: 1 1 100%;
+  }
+
+  .screen .flowToggle {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--wf-s-2);
+  }
+
+  .screen .flowToggleLabel {
+    display: none;
+  }
+
+  .screen .flowToggleButton {
+    min-width: 0;
+    min-height: var(--spacing-tap, 3rem);
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .screen .destinations {
+    padding: var(--wf-s-3) 0 0;
+    border: 0;
+    border-top: 1px solid var(--wf-line);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .screen .destinationList {
+    gap: 0;
+  }
+
+  .screen .triage {
+    margin-bottom: 0;
+  }
+
+  .screen .zones,
+  .screen .sheetFold,
+  .screen .footnote {
+    margin-top: var(--wf-s-3);
+  }
+
+  .screen .destination {
+    margin: 0;
+    padding: var(--wf-s-2) 0;
+    border: 0;
+    border-top: 1px solid var(--wf-line);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}

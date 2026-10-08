@@ -1227,3 +1227,20 @@
     cursor: default;
   }
 }
+
+/* Phone polish (8 Oct 2026): each mismatch tile drops the table's cell rules and padding, so the
+ * need, the gap, its bar and the waiting and fit counts line up on one left edge inside the tile.
+ * Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .screen .gapTable th,
+  .screen .gapTable td {
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .screen .gapTable tr {
+    gap: var(--wf-s-1) var(--wf-s-1);
+    padding-inline: var(--wf-s-4);
+  }
+}
