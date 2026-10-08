@@ -127,7 +127,7 @@ describe("Figma import validation", () => {
       expect(result.stderr).toMatch(/invalid token/i);
       expect(readFileSync(cssFile, "utf8")).toBe(css);
     } finally {
-      rmSync(root, { recursive: true, force: true });
+      rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 });
