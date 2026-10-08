@@ -1,6 +1,6 @@
 # Ward Flow issue list — 8 October 2026
 
-Every bug and issue found in the core-engine review and the four follow-up area reviews, ranked. Synthetic data only; nothing here has been fixed. Details, scenarios and evidence for each ID are in [`audit-2026-10-08-core-engine-review.md`](audit-2026-10-08-core-engine-review.md).
+Every bug and issue found in the core-engine review and the four follow-up area reviews, ranked. Synthetic data only. Five P1 items are fixed, each with a regression test in `tests/ward-review-2026-10-08-fixes.test.ts`; S2-12 is fixed with A2-2. Details, scenarios and evidence for each ID are in [`audit-2026-10-08-core-engine-review.md`](audit-2026-10-08-core-engine-review.md).
 
 **88 issues:** P1 13, P2 28, P3 31, P4 16. S2-12 is merged into A2-2.
 
@@ -10,21 +10,21 @@ Every bug and issue found in the core-engine review and the four follow-up area 
 
 ## P1 — fix first: breaks patient flow, safety-relevant state, or lets one ward act for another
 
-| ID    | Issue                                                                                      | Evidence         | Where                                          |
-| ----- | ------------------------------------------------------------------------------------------ | ---------------- | ---------------------------------------------- |
-| S1-1  | Discharge recorded mid-transfer strands the patient; arrival at the new ward is refused    | Reproduced       | `ward-flow-reducer.ts:1878`                    |
-| S2-1  | Stopped or diverted seeded journeys can never release their bed                            | Reproduced       | `ward-flow-reducer.ts:8120, 8006`              |
-| S2-2  | Clearing the blocker text lifts the revoked-examination hold; the patient can be collected | Reproduced       | `ward-flow-reducer.ts:4675`                    |
-| S1-2  | Bed pull checks one patient for an existing bed but admits another (double bed)            | Code-confirmed   | `ward-flow-reducer.ts:2320, 4304`              |
-| A1-1  | Any ward can accept and pull a bed on another ward's behalf                                | Reproduced       | `ward-flow-events.ts:2112; reducer 3529, 3858` |
-| A1-3  | Any ward can decline or waitlist on another ward's behalf                                  | Reproduced       | `ward-flow-events.ts:2117; reducer 4369`       |
-| S2-11 | Ward callers can accept or decline referrals for any ward                                  | Code-confirmed   | `ward-flow-reducer.ts:6354`                    |
-| A1-2  | Any ward or community caller can withdraw an ED's referral, recorded as the referrer       | Reproduced       | `ward-flow-events.ts:2328`                     |
-| A1-5  | Ward or community can shorten a legal form expiry, with no audit                           | Reproduced       | `ward-flow-events.ts:2480`                     |
-| A2-1  | Saving a scenario always fails after any referral sent through the drawer                  | Script-confirmed | `ward-flow-storage-validation.ts:89`           |
-| A2-2  | Free text can reach browser storage as a discharge barrier and reloads (also S2-12)        | Script-confirmed | `ward-flow-reducer.ts:8483`                    |
-| A4-3  | Backend stores any payload labelled synthetic; no server-side identifier check             | Unverified       | `backend/ward-flow/server.mjs:141`             |
-| A4-5  | Mockup routes are public in production; their admin gate was removed                       | Unverified       | `src/proxy.ts:137`                             |
+| ID    | Issue                                                                                                           | Evidence         | Where                                          |
+| ----- | --------------------------------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------- |
+| S1-1  | **Fixed in `8327fb5`.** Discharge recorded mid-transfer strands the patient; arrival at the new ward is refused | Reproduced       | `ward-flow-reducer.ts:1878`                    |
+| S2-1  | **Fixed in `cc091f7`.** Stopped or diverted seeded journeys can never release their bed                         | Reproduced       | `ward-flow-reducer.ts:8120, 8006`              |
+| S2-2  | Clearing the blocker text lifts the revoked-examination hold; the patient can be collected                      | Reproduced       | `ward-flow-reducer.ts:4675`                    |
+| S1-2  | **Fixed in `c8e936f`.** Bed pull checks one patient for an existing bed but admits another (double bed)         | Code-confirmed   | `ward-flow-reducer.ts:2320, 4304`              |
+| A1-1  | Any ward can accept and pull a bed on another ward's behalf                                                     | Reproduced       | `ward-flow-events.ts:2112; reducer 3529, 3858` |
+| A1-3  | Any ward can decline or waitlist on another ward's behalf                                                       | Reproduced       | `ward-flow-events.ts:2117; reducer 4369`       |
+| S2-11 | Ward callers can accept or decline referrals for any ward                                                       | Code-confirmed   | `ward-flow-reducer.ts:6354`                    |
+| A1-2  | Any ward or community caller can withdraw an ED's referral, recorded as the referrer                            | Reproduced       | `ward-flow-events.ts:2328`                     |
+| A1-5  | Ward or community can shorten a legal form expiry, with no audit                                                | Reproduced       | `ward-flow-events.ts:2480`                     |
+| A2-1  | **Fixed in `25df856`.** Saving a scenario always fails after any referral sent through the drawer               | Script-confirmed | `ward-flow-storage-validation.ts:89`           |
+| A2-2  | **Fixed in `3be4b9a`.** Free text can reach browser storage as a discharge barrier and reloads (also S2-12)     | Script-confirmed | `ward-flow-reducer.ts:8483`                    |
+| A4-3  | Backend stores any payload labelled synthetic; no server-side identifier check                                  | Unverified       | `backend/ward-flow/server.mjs:141`             |
+| A4-5  | Mockup routes are public in production; their admin gate was removed                                            | Unverified       | `src/proxy.ts:137`                             |
 
 ## P2 — wrong records, missed notices, misleading screens
 
@@ -115,6 +115,15 @@ Every bug and issue found in the core-engine review and the four follow-up area 
 | A2-13 | Validator re-types lists that exist as constants; will drift          | Unverified       | `ward-flow-storage-validation.ts:535`          |
 | A2-14 | Unused WardFlowClockProvider computes a different time                | Unverified       | `ward-flow-provider.tsx:1013`                  |
 | A4-15 | Stale PsychSift security plumbing and fail-open webhook exemption     | Unverified       | `src/lib/privacy.ts:1`                         |
+
+## P1 items waiting on an owner decision
+
+- **S2-2 (revoked-exam hold).** Two pinned tests conflict with a fix: one treats the blocker as freely editable prose, one treats a cleared `admissionId` alone as a released bed. Options: (a) make the hold also count bed-holding stages (seeded journeys) and update the splice test; (b) refuse edits to an "awaiting release" blocker and update the prose-overwrite test.
+- **A1-1, A1-3, S2-11 (acting for another ward).** Options: (a) strict: ward callers must state an `actingUnitId` matching the target ward on accept, pull, decline and referral decisions; touches about 20 screen call sites and about 120 test files, and the coordinator cockpit must dispatch as coordinator (A1-15); (b) soft: refuse only when a stated `actingUnitId` mismatches, and make every screen state it.
+- **A1-2 (withdrawing an ED's referral).** The role list deliberately mirrors `RAISE_REFERRAL` (ed, community, ward); a fix needs a rule for who counts as the referrer.
+- **A1-5 (legal form expiry).** Only the coordinator screen sends `RECORD_LEGAL_FORM_WRITTEN`. Narrowing it to ed and coordinator is safe for the screens; adding the expiry ordering rule and an audit entry is a legal-workflow decision.
+- **A4-3 (backend trusts "synthetic").** Add a server-side identifier scan before the backend is used, or keep it unexposed until then.
+- **A4-5 (mockups public in production).** Confirm whether removing the admin gate on 28 September was meant to make `/mockups/ward-flow` public. If not, restore a gate; if so, correct the comments.
 
 ## Patterns
 
