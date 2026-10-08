@@ -60,7 +60,6 @@ for (const file of files) {
           file,
           line: index + 1,
           rule: pattern.name,
-          preview: line.trim().slice(0, 80),
         });
       }
     }
@@ -75,7 +74,7 @@ if (violations.length === 0) {
 } else {
   console.error(`[check-client-bundle-secrets] FAILED: ${violations.length} secret exposures found:`);
   for (const v of violations) {
-    console.error(`  - ${v.file}:${v.line} [${v.rule}]: ${v.preview}`);
+    console.error(`  - ${v.file}:${v.line} [${v.rule}] (value redacted)`);
   }
   process.exit(strict ? 1 : 0);
 }

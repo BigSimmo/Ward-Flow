@@ -1,8 +1,12 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, cpSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { unitById } from "../src/components/ward-management/ward-sites";
+import { HEALTH_SERVICES } from "../src/components/ward-management/ward-model";
 import { CSS_PATH, applyTokens, diffTokens, exportTokens } from "../scripts/figma-tokens.mjs";
 
 type Values = Record<string, unknown>;
@@ -82,5 +86,70 @@ describe("figma sync map", () => {
     }
     const routes = Object.values(map.screens).flatMap((group) => Object.values(group as Record<string, string>));
     for (const route of [...routes, ...Object.keys(map.aliases)]) expect(routeExists(route), route).toBe(true);
+  });
+});
+
+describe("Figma import validation", () => {
+  it.each([
+    { Size: { "--wf-r-xs": null } },
+    { Size: { "--wf-r-xs": Infinity } },
+    { Size: { "--wf-r-xs": "..px" } },
+    { Colour: { Day: { "--wf-accent": { r: 2, g: -1, b: 0, a: 1 } } } },
+    { Colour: { Day: { "--wf-accent": { r: 0.2, g: 0.3 } } } },
+    { Colour: { Day: { "--wf-accent": { r: 0.2, g: 0.3, b: 0.4, a: null } } } },
+    { Colour: { Day: { "--wf-accent": "invalid" } } },
+    { Colour: { Day: { "--wf-accent": "rgba(0, 0, 0, 2)" } } },
+    { Colour: { Day: { "--wf-accent": "rgb(256, 0, 0)" } } },
+    { Colour: { Day: [] } },
+    { Size: null },
+    { Colour: { Twilight: {} } },
+    null,
+  ])("rejects malformed imports before producing CSS: %j", (incoming) => {
+    expect(() => applyTokens(css, incoming)).toThrow(/invalid token/i);
+    expect(() => diffTokens(css, incoming)).toThrow(/invalid token/i);
+  });
+
+  it("a CLI import with one valid change and one invalid value leaves CSS byte-identical", () => {
+    const root = mkdtempSync(join(tmpdir(), "ward-figma-validation-"));
+    try {
+      mkdirSync(join(root, "scripts"));
+      mkdirSync(join(root, "src/app"), { recursive: true });
+      cpSync("scripts/figma-tokens.mjs", join(root, "scripts/figma-tokens.mjs"));
+      const cssFile = join(root, "src/app/ward-flow-v6-tokens.css");
+      writeFileSync(cssFile, css);
+      const incoming = join(root, "incoming.json");
+      writeFileSync(incoming, JSON.stringify({ Size: { "--wf-r-md": 15, "--wf-r-xs": null } }));
+      const result = spawnSync(process.execPath, [join(root, "scripts/figma-tokens.mjs"), "--apply", incoming], {
+        encoding: "utf8",
+        timeout: 10_000,
+      });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toMatch(/invalid token/i);
+      expect(readFileSync(cssFile, "utf8")).toBe(css);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+function fixtureExists(route: string): boolean {
+  const segments = route.split("/").filter(Boolean).map(decodeURIComponent);
+  if (segments[2] === "ward" || segments[2] === "board") return Boolean(unitById(segments[3]));
+  if (segments[2] === "statistics" && segments[3] === "ward") return Boolean(unitById(segments[4]));
+  if (segments[2] === "statistics" && segments[3] === "service")
+    return (HEALTH_SERVICES as readonly string[]).includes(segments[4]);
+  return true;
+}
+
+describe("Figma mapped fixture identity", () => {
+  it("resolves every mapped concrete ward and service rather than only dynamic directories", () => {
+    const routes = Object.values(map.screens).flatMap((group) => Object.values(group as Record<string, string>));
+    for (const route of routes) expect(fixtureExists(route), route).toBe(true);
+  });
+  it("rejects existing dynamic pages with missing records", () => {
+    expect(fixtureExists("/mockups/ward-flow/ward/ahs-moodjar")).toBe(false);
+    expect(fixtureExists("/mockups/ward-flow/statistics/service/East")).toBe(false);
+    expect(fixtureExists("/mockups/ward-flow/ward/rph-adult-secure")).toBe(true);
+    expect(fixtureExists("/mockups/ward-flow/statistics/service/East%20Metro")).toBe(true);
   });
 });

@@ -13,7 +13,7 @@
  *   { "Colour": { "Day": { "--wf-canvas": "#e8ecf0" }, "Night": { ... } }, "Size": { "--wf-r-xs": 6 } }
  * Colours may be hex, rgba() or Figma { r, g, b, a } floats. Sizes are px numbers.
  */
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, renameSync, unlinkSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -81,9 +81,10 @@ export function parseCss(css) {
 
 /** Colour to [r, g, b, a] with a rounded to 2 places, or null if it is not a plain colour. */
 export function toRgba(value) {
-  if (value && typeof value === "object" && "r" in value) {
-    const c = (v) => Math.round(v * 255);
-    return [c(value.r), c(value.g), c(value.b), Math.round((value.a ?? 1) * 100) / 100];
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const channels = [value.r, value.g, value.b, "a" in value ? value.a : 1];
+    if (!channels.every((v) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 1)) return null;
+    return channels.map((v, index) => (index === 3 ? Math.round(v * 100) / 100 : Math.round(v * 255)));
   }
   if (typeof value !== "string") return null;
   const v = value.trim().toLowerCase();
@@ -96,7 +97,12 @@ export function toRgba(value) {
     return [n(0), n(2), n(4), h.length === 8 ? Math.round((n(6) / 255) * 100) / 100 : 1];
   }
   m = v.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/);
-  if (m) return [+m[1], +m[2], +m[3], m[4] === undefined ? 1 : Math.round(+m[4] * 100) / 100];
+  if (m) {
+    if (v.startsWith("rgba(") !== (m[4] !== undefined)) return null;
+    const channels = [+m[1], +m[2], +m[3], m[4] === undefined ? 1 : +m[4]];
+    if (!channels.every((n, index) => Number.isFinite(n) && n >= 0 && n <= (index === 3 ? 1 : 255))) return null;
+    return channels.map((n, index) => (index === 3 ? Math.round(n * 100) / 100 : Math.round(n)));
+  }
   return null;
 }
 
@@ -106,10 +112,55 @@ export function formatColour([r, g, b, a]) {
 }
 
 const toPx = (value) => {
-  if (typeof value === "number") return value;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
   const m = typeof value === "string" && value.trim().match(/^(-?[\d.]+)px$/);
-  return m ? +m[1] : null;
+  return m && Number.isFinite(+m[1]) ? +m[1] : null;
 };
+
+const record = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+
+/** Validate the complete import before computing edits or writing any CSS. Partial pulls are allowed. */
+export function validateTokens(incoming) {
+  const invalid = (location) => {
+    throw new Error(`Invalid token import at ${location}`);
+  };
+  if (!record(incoming)) invalid("collections");
+  if (Object.keys(incoming).some((key) => !["Colour", "Size"].includes(key))) invalid("collections");
+  for (const group of ["Colour", "Size"]) {
+    if (group in incoming && !record(incoming[group])) invalid(group);
+  }
+  if (incoming.Colour && Object.keys(incoming.Colour).some((key) => !["Day", "Night"].includes(key)))
+    invalid("Colour modes");
+  const check = (values, location, valid) => {
+    if (values === undefined) return;
+    if (!record(values)) invalid(location);
+    for (const [name, value] of Object.entries(values)) {
+      if (!/^--wf-[\w-]+$/u.test(name)) invalid(`${location} name`);
+      if (FIGMA_ONLY.some((re) => re.test(name))) continue;
+      if (!valid(value)) invalid(`${location}/${name}`);
+    }
+  };
+  for (const mode of ["Day", "Night"]) check(incoming.Colour?.[mode], `Colour/${mode}`, (v) => toRgba(v) !== null);
+  check(incoming.Size, "Size", (v) => toPx(v) !== null);
+}
+
+function writeAtomically(file, content) {
+  const temporary = `${file}.${process.pid}.tmp`;
+  try {
+    writeFileSync(temporary, content, { flag: "wx" });
+    renameSync(temporary, file);
+  } catch (error) {
+    // Remove only the temporary file this invocation successfully created.
+    if (error.code !== "EEXIST") {
+      try {
+        unlinkSync(temporary);
+      } catch {
+        /* Already renamed or not created. */
+      }
+    }
+    throw error;
+  }
+}
 
 /** The CSS as Figma collections: Colour (Day, Night) and Size. Gradients, shadows and refs stay code-only. */
 export function exportTokens(css) {
@@ -139,6 +190,7 @@ function sameColour(a, b) {
 
 /** Tokens in `incoming` whose value differs from the CSS, plus names the CSS does not have. */
 export function diffTokens(css, incoming) {
+  validateTokens(incoming);
   const current = exportTokens(css);
   const changes = [];
   const unknown = [];
@@ -192,32 +244,39 @@ export function applyTokens(css, incoming) {
 const show = (v) => (typeof v === "object" ? JSON.stringify(v) : String(v));
 
 export function main(argv = process.argv.slice(2), { stdout = console.log, stderr = console.error } = {}) {
-  const [flag, file] = argv;
-  const css = readFileSync(CSS_PATH, "utf8");
-  if (flag === "--export") {
-    mkdirSync(dirname(TOKENS_PATH), { recursive: true });
-    writeFileSync(TOKENS_PATH, JSON.stringify(exportTokens(css), null, 2) + "\n");
-    stdout(`[figma-tokens] wrote ${TOKENS_PATH.slice(ROOT.length + 1)}`);
-    return 0;
-  }
-  if ((flag === "--diff" || flag === "--apply") && file) {
-    const incoming = JSON.parse(readFileSync(resolve(file), "utf8"));
-    const { changes, unknown } = diffTokens(css, incoming);
-    for (const c of changes) {
-      stdout(`${c.group}${c.mode ? `/${c.mode}` : ""} ${c.name}: ${show(c.from)} to ${show(c.to)}`);
+  try {
+    const [flag, file] = argv;
+    const css = readFileSync(CSS_PATH, "utf8");
+    if (flag === "--export") {
+      mkdirSync(dirname(TOKENS_PATH), { recursive: true });
+      writeAtomically(TOKENS_PATH, JSON.stringify(exportTokens(css), null, 2) + "\n");
+      stdout(`[figma-tokens] wrote ${TOKENS_PATH.slice(ROOT.length + 1)}`);
+      return 0;
     }
-    for (const u of unknown) stdout(`not in code, ignored: ${u}`);
-    if (!changes.length) stdout("[figma-tokens] no token changes");
-    if (flag === "--apply" && changes.length) {
-      const result = applyTokens(css, incoming);
-      writeFileSync(CSS_PATH, result.css);
-      for (const s of result.skipped) stderr(`[figma-tokens] skipped ${s}`);
-      stdout(`[figma-tokens] applied ${result.applied} change(s) to src/app/ward-flow-v6-tokens.css`);
+    if ((flag === "--diff" || flag === "--apply") && file) {
+      const incoming = JSON.parse(readFileSync(resolve(file), "utf8"));
+      const { changes, unknown } = diffTokens(css, incoming);
+      for (const c of changes) {
+        stdout(`${c.group}${c.mode ? `/${c.mode}` : ""} ${c.name}: ${show(c.from)} to ${show(c.to)}`);
+      }
+      for (const u of unknown) stdout(`not in code, ignored: ${u}`);
+      if (!changes.length) stdout("[figma-tokens] no token changes");
+      if (flag === "--apply" && changes.length) {
+        const result = applyTokens(css, incoming);
+        writeAtomically(CSS_PATH, result.css);
+        for (const s of result.skipped) stderr(`[figma-tokens] skipped ${s}`);
+        stdout(`[figma-tokens] applied ${result.applied} change(s) to src/app/ward-flow-v6-tokens.css`);
+      }
+      return 0;
     }
-    return 0;
+    stderr("usage: node scripts/figma-tokens.mjs --export | --diff <file> | --apply <file>");
+    return 2;
+  } catch (error) {
+    stderr(
+      `[figma-tokens] ${error.message.startsWith("Invalid token import") ? error.message : "Import or file operation failed"}`,
+    );
+    return 1;
   }
-  stderr("usage: node scripts/figma-tokens.mjs --export | --diff <file> | --apply <file>");
-  return 2;
 }
 
 const invokedAsScript = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
