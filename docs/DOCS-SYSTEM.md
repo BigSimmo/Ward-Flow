@@ -2,7 +2,7 @@
 
 How Documentation keeps Ward Flow docs accurate on this tip. **Process doc - no product DDL.**
 
-_Updated 2026-09-28 - dedicated Ward Flow repository boundary; Documentation owns._
+_Updated 2026-10-08 - maintained-section link and architecture gates; Documentation owns._
 
 ## Principles
 
@@ -32,7 +32,17 @@ Stage **docs paths only** - never mix unrelated product WIP. A push or pull requ
 | [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md)         | Builder workflow                    |
 | [`ward-flow-task-ledger.md`](ward-flow-task-ledger.md)         | Task ledger                         |
 
-**Doc check:** `npm run ward:check-docs` (= `check:ward-doc-links`).
+**Doc checks:** `npm run docs:check-links` validates inline local paths and supported heading
+anchors in every tracked Markdown file's maintained sections. Stage new owned documents first.
+`npm run ward:check-docs` (= `check:ward-doc-links`) retains the Ward tree's separate historical
+path check. Paired markers exclude history only in explicit/maintained selection; banners alone
+do not. Neither check validates web availability, reference-style links or semantic freshness.
+Local acceptance and Ward CI also run `docs:check-scripts`, `docs:check-index` and
+`docs:check-inventory`; check failures are not fresh evidence.
+
+Use the existing [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json)
+`canonicalSources` for reviewed canonical references and this index for navigation. Add metadata
+only through a reviewed, tested schema change; do not create another manifest or task ledger.
 
 **Boot:** `npm run ensure` - trust the printed URL; never hardcode ports.
 

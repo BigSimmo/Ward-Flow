@@ -3,6 +3,8 @@
 Follow [AGENTS](../AGENTS.md), [Ward README](ward-flow/README.md),
 [builder workflow](ward-flow/HOW-WE-WORK.md) and the task's scoped source/checkpoint.
 Native client adapters and loading limits are described in [task receipts](task-receipts.md).
+Use the maintained [Context7 guide](agents/context7.md) for the installed connector's source,
+version and confidentiality checks; the preserved Cursor setup below is historical.
 File changes, loaded instructions and actual execution are separate evidence.
 Ward Flow uses synthetic data; foreign Supabase/RAG/MCP/workflow instructions below are
 history. Local connector configuration is not authority to contact any provider. Use only

@@ -1,3 +1,15 @@
+# Ward Flow wiring conventions
+
+For current routes, navigation, unavailable controls and browser evidence, follow the
+[maintained Ward wiring guide](agents/wiring-and-bundle-budget.md) and [AGENTS.md](../AGENTS.md).
+Current source and the accepted Ward app govern behaviour and appearance.
+
+**Historical catalogue — preserved on 8 October 2026.** The source below mixes earlier
+Ward incidents with former PsychSift examples. Its foreign paths, route exemptions and
+dated audit conclusions are background, not current Ward instructions. Original wording is retained.
+
+<!-- docs-script-refs:historical-start -->
+
 > ⚠️ **Committed in `b21a24f12` alongside unrelated ED-screen work**, because two writers shared
 > one git index. A wholesale `git revert b21a24f12` therefore deletes this file as a side effect.
 > **Revert paths, not that commit.**
@@ -288,3 +300,5 @@ is resolved: `/tools` is the canonical entry (PT-11); `/?mode=tools` remains a d
   No fake-interactive controls found; leave unwired until the underlying features land. Reference
   markup remains `favourites-hub.tsx` — which now carries `aria-disabled` + an inert handler rather
   than the native attribute, per the section above.
+
+<!-- docs-script-refs:historical-end -->
