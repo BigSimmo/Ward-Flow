@@ -1,3 +1,4 @@
+import { reduceLegalPaperEvent } from "./ward-flow-legal-paper-reducer";
 import { reduceLegalFormRecordsEvent } from "./ward-flow-legal-form-records-reducer";
 import { reduceMovementClassificationEvent } from "./ward-flow-movement-classification-reducer";
 import { reduceTransportProgressEvent } from "./ward-flow-transport-progress-reducer";
@@ -80,8 +81,6 @@ import {
 } from "@/components/ward-management/ward-flow-events";
 import { SELECTABLE_LEGAL_FORMS, countryExtensionEligible } from "@/components/ward-management/ward-legal-forms";
 import {
-  form3CRefusedAfter3D,
-  isLegalClockFormCode,
   ARRIVAL_LATE_AFTER_MINUTES,
   WAITLIST_INSTEAD_OF_DECLINE_REASONS,
   GENDER_MISMATCH_DECLINE_REASON,
@@ -6942,65 +6941,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         movements: state.movements.map((m) => (m.id === movement.id ? updatedMovement : m)),
       };
     }
-
-    case "RECORD_LEGAL_FORM_WRITTEN": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) {
-        return reject(state, event, `cannot record a written form for a closed movement (${movement.closure.reason})`);
-      }
-      if (
-        (event.region !== undefined && !["metro", "country"].includes(event.region)) ||
-        !Number.isFinite(event.writtenAt) ||
-        (event.paperExpiresAt !== undefined && !Number.isFinite(event.paperExpiresAt))
-      ) {
-        return reject(state, event, "Enter the time and expiry written on the form.");
-      }
-      if (!isLegalClockFormCode(event.formCode)) {
-        return reject(state, event, `Form ${event.formCode} is not a recognised legal form in this prototype`);
-      }
-      if (event.formCode === "3C" && form3CRefusedAfter3D(movement.legalForm?.code ?? movement.legalClock?.code)) {
-        return reject(state, event, `Form 3C is refused when the person arrived on a Form 3D`);
-      }
-      const kind =
-        event.formCode === "1A"
-          ? ("examination" as const)
-          : event.formCode === "3A" || event.formCode === "3C" || event.formCode === "3D"
-            ? ("detention" as const)
-            : undefined;
-      // Editing the current form's written time preserves its recorded paper facts. A different
-      // form starts new facts; a legacy calculated expiry is never promoted to paper authority.
-      const sameFormTimeEdit = movement.legalForm?.code === event.formCode && event.paperExpiresAt === undefined;
-      const currentPaperExpiry =
-        movement.legalClock !== undefined && movement.legalForm?.dueAt === movement.legalClock.expiresAt
-          ? undefined
-          : movement.legalForm?.dueAt;
-      const dueAt = event.paperExpiresAt ?? (sameFormTimeEdit ? currentPaperExpiry : undefined);
-      const updated: Movement = {
-        ...movement,
-        formedAt: event.writtenAt,
-        legalForm: {
-          code: event.formCode,
-          kind,
-          ...(event.region
-            ? { region: event.region }
-            : sameFormTimeEdit && movement.legalForm?.region
-              ? { region: movement.legalForm.region }
-              : {}),
-          ...(dueAt === undefined ? {} : { dueAt }),
-        },
-        legalClock: undefined,
-        legalFormReceivedAt: sameFormTimeEdit ? movement.legalFormReceivedAt : undefined,
-        legalFormExpiryHistory:
-          event.paperExpiresAt === undefined
-            ? movement.legalFormExpiryHistory
-            : [
-                ...(movement.legalFormExpiryHistory ?? []),
-                { at: event.now, by: event.role, dueAt: event.paperExpiresAt, basis: "written_on_form" },
-              ],
-      };
-      return replaceMovement(state, movement.id, updated);
-    }
+    case "RECORD_LEGAL_FORM_WRITTEN":
+      return reduceLegalPaperEvent(state, event, decision, { reject, findMovement, replaceMovement });
 
     case "RECORD_COUNTRY_EXTENSION": {
       const movement = findMovement(state, event.movementId);
@@ -7034,73 +6976,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       return next;
     }
-
-    case "RECORD_LEGAL_FORM_CONTINUATION": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) return reject(state, event, "This record is closed, so no continuation can be added.");
-      if (
-        (event.region !== undefined && !["metro", "country"].includes(event.region)) ||
-        !Number.isFinite(event.startedAt) ||
-        (event.paperExpiresAt !== undefined && !Number.isFinite(event.paperExpiresAt))
-      ) {
-        return reject(state, event, "Enter the time and expiry written on the form.");
-      }
-      if (!isLegalClockFormCode(event.formCode)) {
-        return reject(state, event, `Form ${event.formCode} is not a recognised legal form in this prototype`);
-      }
-      const expiryHistory =
-        event.paperExpiresAt === undefined
-          ? movement.legalFormExpiryHistory
-          : [
-              ...(movement.legalFormExpiryHistory ?? []),
-              { at: event.now, by: event.role, dueAt: event.paperExpiresAt, basis: "written_on_form" as const },
-            ];
-      // Owner ruling 2026-09-25: a Form 5B CONTINUES a current Form 5A (one community treatment
-      // order) rather than replacing it. The 5A record, its start (`formedAt`) and its receipt stay;
-      // the 5B is recorded as `continuedBy`, and the current end is the 5B's typed end (unknown if
-      // none was typed). The 5A's own typed end is kept on `continuedBy`. Nothing is computed.
-      if (event.formCode === "5B" && movement.legalForm?.code === "5A") {
-        // A second 5B updates the continuation; the 5A's own typed end is kept from the first.
-        const { dueAt: currentDueAt, continuedBy: earlier, ...fiveA } = movement.legalForm;
-        const continuedFormDueAt = earlier === undefined ? currentDueAt : earlier.continuedFormDueAt;
-        const continued: Movement = {
-          ...movement,
-          legalForm: {
-            ...fiveA,
-            ...(event.paperExpiresAt === undefined ? {} : { dueAt: event.paperExpiresAt }),
-            continuedBy: {
-              code: event.formCode,
-              startedAt: event.startedAt,
-              recordedAt: event.now,
-              by: event.role,
-              ...(continuedFormDueAt === undefined ? {} : { continuedFormDueAt }),
-            },
-          },
-          legalClock: undefined,
-          legalFormExpiryHistory: expiryHistory,
-        };
-        decision.outcome = "accepted";
-        decision.reasonCode = "none";
-        return replaceMovement(state, movement.id, continued);
-      }
-      // Any other continuation replaces current paper facts while retaining the earlier expiry history.
-      const updated: Movement = {
-        ...movement,
-        formedAt: event.startedAt,
-        legalForm: {
-          code: event.formCode,
-          ...(event.region ? { region: event.region } : {}),
-          ...(event.paperExpiresAt === undefined ? {} : { dueAt: event.paperExpiresAt }),
-        },
-        legalClock: undefined,
-        legalFormReceivedAt: undefined,
-        legalFormExpiryHistory: expiryHistory,
-      };
-      decision.outcome = "accepted";
-      decision.reasonCode = "none";
-      return replaceMovement(state, movement.id, updated);
-    }
+    case "RECORD_LEGAL_FORM_CONTINUATION":
+      return reduceLegalPaperEvent(state, event, decision, { reject, findMovement, replaceMovement });
 
     case "EVALUATE_ARRIVAL_LATENESS": {
       const movement = findMovement(state, event.movementId);

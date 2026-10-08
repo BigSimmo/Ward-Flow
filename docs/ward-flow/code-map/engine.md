@@ -43,6 +43,9 @@ guards, and appends the audit result after command handling. Internal event fami
   Supported-form checks, zero-valued receipts, correction history, later-only extensions and
   legacy-clock handling are retained. No deadline is calculated. The legal-authorship companion
   test follows the same runtime reducer imports and rejects invented literal form codes.
+- `ward-flow-legal-paper-reducer.ts`: written-form and continuation facts chosen by the clinician.
+  Ordered region/time/code checks, same-form paper facts, the 3C-after-3D refusal and the
+  recorded 5A/5B continuation stay intact. Country expiry still delegates through the facade.
 
 `ward-flow-storage-validation.ts` separately validates nested containers, header/counters,
 record shapes, identifiers, cross-record links, capacity bounds, audit data and persistence privacy.
