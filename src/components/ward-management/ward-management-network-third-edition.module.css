@@ -133,3 +133,10 @@
     display: grid;
   }
 }
+
+/* Phone: the view tabs scroll, so they hold their own screen-reader counts instead of widening the page. */
+@media (max-width: 48rem) {
+  .viewTabs {
+    position: relative;
+  }
+}
