@@ -838,25 +838,10 @@
   outline-offset: -2px;
 }
 
+/* Cells come from the one canonical ward table rule set. */
 .table {
-  width: 100%;
+  composes: table from "../ward-table/ward-table.module.css";
   min-width: 54rem;
-  border-collapse: collapse;
-}
-
-.table th {
-  padding: 8px var(--wf-s-4);
-  text-align: left;
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--wf-ink-3);
-}
-
-.table td {
-  padding: 10px var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-  vertical-align: top;
 }
 
 .cellStrong {
