@@ -1,3 +1,12 @@
+# Ward Flow — historical safety checklist
+
+> **Historical post-mortem archive — retired by the owner-approved Prototype Operating Mode on
+> 3 October 2026.** This is not a mandatory per-task checklist. Follow [AGENTS.md](../AGENTS.md)
+> and [HOW-WE-WORK.md](ward-flow/HOW-WE-WORK.md) for current work. Original incident wording below
+> is preserved as evidence.
+
+<!-- docs-script-refs:historical-start -->
+
 # Ward Flow — the safety checklist
 
 **Run this before calling ANY item done. Every line is a failure that happened here, not a
@@ -2105,3 +2114,5 @@ dissolved on looking at what actually matched, and none of them was detectable f
 **Related to section U** (a check counting a term inside its own retraction) — **that was the same
 mechanism seen once; this is it seen three times, from three sessions, which is what makes it a
 class rather than an incident.**
+
+<!-- docs-script-refs:historical-end -->
