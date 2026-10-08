@@ -7048,4 +7048,184 @@ tr.qRow:focus-visible {
     content: "\00a0 beds";
     font-family: var(--wf-font);
   }
+
+  /* ─── Phone polish (8 Oct 2026, second pass) ───
+   * 12px gutters. Every board control reaches the 48px tap height. Needs you reads as one calm
+   * list inside its panel rather than a stack of tinted cards, with the person and their details
+   * on one line and the wait as plain mono text. Lists rows keep their facts on one line. The
+   * 24-hour audit stream and the read-only statewide capacity table (each a nested scroller here)
+   * are left to the larger screen; Capacity has its own page. */
+  .main {
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .boardChips > .boardChip {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .boardTools .patientSearch {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .boardTools .patientSearch input {
+    align-self: stretch;
+    height: auto;
+  }
+
+  .boardTools .patientSort select {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .boardWrap .boardTable .nextCell .nextGroup {
+    flex-wrap: nowrap;
+  }
+
+  /* The editable presentation line gets the same grown hit area as the name above it. */
+  .boardWrap .boardTable tr.qRow .patientIdentity > button:not(.patientName) {
+    padding-block: 7px;
+    margin-block: -7px;
+  }
+
+  .boardWrap .boardTable .nextCell .rowExpand {
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+    margin-left: auto;
+  }
+
+  .attentionList {
+    gap: 0;
+  }
+
+  .attentionList .attentionRow,
+  .attentionList .attentionRow[data-tone] {
+    gap: var(--wf-s-1);
+    padding: var(--wf-s-3) var(--wf-s-3) 0;
+    border: 0;
+    border-bottom: 1px solid var(--wf-line);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .attentionList .attentionRow:last-child {
+    border-bottom: 0;
+  }
+
+  .attentionList .attentionRow:not(:has(.attentionFooter > *)) {
+    padding-bottom: var(--wf-s-3);
+  }
+
+  /* The person and their details share one line. */
+  .attentionList .attentionMeta {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .attentionList .attentionMeta > .attentionDemographics::before {
+    content: "·\00a0";
+  }
+
+  .attentionList .attentionMeta > * {
+    flex: none;
+  }
+
+  .attentionList .attentionMeta > :last-child:not(:first-child) {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* The wait sits on the title line only, so the person's line can use the full width. */
+  .attentionList .attentionHeader > .attentionMeta {
+    grid-column: 2 / -1;
+  }
+
+  .attentionList .attentionHeader > .attentionStamp {
+    grid-row: 1;
+  }
+
+  .attentionList .attentionStamp,
+  .attentionList .attentionStamp[data-tone] {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .attentionList .attentionFooter :is(.attentionNext, .attentionRecord) {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .departmentListTabs .tabBtn {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  /* The time sits beside the name, so the facts under the name get the full row width. */
+  .lstWrap .lstRow {
+    grid-template-columns: 0.875rem minmax(0, 1fr) auto;
+  }
+
+  .lstWrap .lstRow > .tick {
+    grid-row: 1;
+    grid-column: 1;
+    margin-top: 0.375rem;
+  }
+
+  .lstWrap .lstRow > .lstMain {
+    grid-row: 1;
+    grid-column: 2 / -1;
+  }
+
+  .lstWrap .lstRow > .lstEnd {
+    grid-row: 1;
+    grid-column: 3;
+    align-self: start;
+    padding-top: 2px;
+  }
+
+  .lstWrap .lstRow .lstTitle {
+    padding-right: 6.5rem;
+  }
+
+  /* The name keeps its 44px hit area without pushing the facts down. */
+  .lstWrap .lstRow .nameBtn {
+    margin-block: -12px;
+  }
+
+  .lstWrap .lstRow .meta {
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .lstWrap .lstRow .meta > * {
+    flex: none;
+  }
+
+  .lstWrap .lstRow .meta > :last-child:not(:first-child) {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lstWrap .lstRow .lstWhy {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .lowerPair > .seenSection,
+  .lowerPair > .capacitySection {
+    display: none;
+  }
 }

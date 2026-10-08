@@ -775,6 +775,7 @@
     flex: 1 1 100%;
     width: 100%;
     min-width: 0;
+    height: var(--spacing-tap, 3rem);
   }
 
   .favouritesChip,
@@ -930,5 +931,12 @@
 
   .disclosure {
     white-space: normal;
+  }
+
+  /* Phone polish (8 Oct 2026, second pass): the hero clock took a row of its own; each role row
+     already says when its shift changes and the roster foot names the time shown, so the band
+     ends at the service filter. */
+  .main div:has(> .heroClock) {
+    display: none;
   }
 }

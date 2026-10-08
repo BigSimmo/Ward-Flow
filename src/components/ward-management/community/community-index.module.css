@@ -684,4 +684,82 @@
   .heroActions {
     justify-content: flex-start;
   }
+
+  /* Phone polish (8 Oct 2026, second pass). 12px gutters; the hero keeps the catchment guide and
+     raise referral on one row (the referrals board stays in the menu); search shares a row with the
+     reads-alike chip; the
+     A–Z rows give the team name more room and keep the reads-alike marker close under the name;
+     the service bar chart is left to the larger screen. */
+  .main {
+    padding: var(--wf-s-3);
+  }
+
+  .heroActions {
+    flex-wrap: nowrap;
+  }
+
+  .heroActions > [data-testid="community-action-referral-board"] {
+    display: none;
+  }
+
+  .toolbar {
+    padding: 0 var(--wf-s-3) var(--wf-s-3);
+  }
+
+  /* Search and the reads-alike chip share a row; the service filter takes the row under them. */
+  .toolbar > .searchBox {
+    flex: 1 1 0;
+    order: -2;
+    min-width: 0;
+    height: var(--spacing-tap, 3rem);
+  }
+
+  .toolbar > :nth-child(n + 3) {
+    order: -1;
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .toolbar > :nth-child(2) {
+    order: 0;
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .listWrap {
+    --cti-row-cols: minmax(0, 1fr) 3.5rem 3.75rem;
+  }
+
+  /* The list does not scroll on its own on phone, so its column head need not stick. */
+  .columnHead {
+    position: static;
+    grid-template-columns: 1.75rem var(--cti-row-cols);
+    gap: var(--wf-s-2);
+    padding-right: var(--wf-s-3);
+  }
+
+  .letterSection {
+    grid-template-columns: 1.75rem minmax(0, 1fr);
+  }
+
+  .letterHeading {
+    padding: var(--wf-s-4) 0 0 var(--wf-s-2);
+  }
+
+  .teamRow {
+    column-gap: var(--wf-s-2);
+    row-gap: 0;
+    padding-right: var(--wf-s-3);
+  }
+
+  .teamRow:has(.readsAlike) {
+    padding-top: var(--wf-s-2);
+  }
+
+  .check {
+    padding-bottom: 0;
+  }
+
+  .side > [aria-labelledby="community-gateway-service-title"] {
+    display: none;
+  }
 }

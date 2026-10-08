@@ -671,4 +671,37 @@
   .formRow select {
     text-overflow: ellipsis;
   }
+
+  /* Phone polish (8 Oct 2026, second pass): 12px gutters, and each card line stays on one line
+     with an ellipsis instead of wrapping a long unit and hospital name. */
+  .main {
+    padding: var(--wf-s-3);
+  }
+
+  .card {
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .card > .secondary,
+  .card > .travel {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .card > .travel svg {
+    display: inline-block;
+    margin: 0 var(--wf-s-1) 0 0;
+    vertical-align: -2px;
+  }
+
+  .cardTop > .primary {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
