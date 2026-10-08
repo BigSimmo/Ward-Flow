@@ -279,6 +279,19 @@
   .stat:nth-child(n + 4) {
     display: none;
   }
+
+  /* A flex label cannot show an ellipsis, so on phone the label is a block line and the glyph
+   * sits inline before the text. */
+  .label {
+    display: block;
+    max-width: 100%;
+  }
+
+  .label > * {
+    display: inline-flex;
+    vertical-align: middle;
+    margin-right: 5px;
+  }
   .aside {
     order: 3;
     flex: 1 1 100%;

@@ -8,7 +8,7 @@
   .ground {
     display: block;
     flex: 1 0 auto;
-    min-height: calc(100dvh - 3.25rem);
+    min-height: 100dvh;
     padding: var(--wf-s-4);
     background: var(--ground);
   }
