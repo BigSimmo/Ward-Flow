@@ -48,7 +48,7 @@
 
 /*
  * The glass sits on a layer behind the content rather than on `.rail` itself: a backdrop filter on
- * the rail would make it the containing block for its fixed children (the capacity toast).
+ * the rail would make it the containing block for its fixed children (the closed Bed alerts list).
  */
 .rail::before {
   content: "";
@@ -2082,40 +2082,35 @@
     width: 0;
   }
 
-  /* Closed tabs with a count stack it under the icon (8 October 2026), so counts never overlap
-   * the icon or the tab above. */
+  /* Closed counts (Josh, 8 October 2026): just the number in a small edged circle on the icon's
+   * top right, ringed in the rail colour so it never blurs into the icon. Urgent counts carry an
+   * amber edge in place of the dot. */
   .rail[data-rail="closed"] .railLink[data-two-line="true"] {
-    flex-direction: column;
-    gap: 0.1875rem;
-    min-height: 2.75rem;
-    padding: 0.25rem 0;
-  }
-
-  .rail[data-rail="closed"] .railLink[data-two-line="true"] .railText {
-    flex: 0 0 auto;
-    width: auto;
+    min-height: 2.5rem;
   }
 
   .rail[data-rail="closed"] .tag {
-    gap: 0.1875rem;
-    min-width: 0;
-    height: 1rem;
+    position: absolute;
+    top: 0;
+    left: calc(50% + 0.125rem);
+    min-width: 1.125rem;
+    height: 1.125rem;
     margin: 0;
-    padding: 0 0.3125rem;
+    padding: 0 0.25rem;
     border: 1px solid var(--wf-line-2);
     background: var(--wf-surface);
+    box-shadow: 0 0 0 2px var(--wf-surface-2);
     color: var(--wf-ink-2);
   }
 
   .rail[data-rail="closed"] .tag[data-tone="warning"] {
-    border-color: var(--rail-warn-edge);
+    border-color: var(--wf-warning);
     background: var(--wf-surface);
     color: var(--wf-ink-1);
   }
 
   .rail[data-rail="closed"] .tagDot {
-    width: 0.3125rem;
-    height: 0.3125rem;
+    display: none;
   }
 
   .rail[data-rail="closed"] .railGlyph {
