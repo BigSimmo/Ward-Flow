@@ -1066,7 +1066,18 @@ function stageFields(
       // pull cannot be recorded without a time for it to expire at.
       // admissionId points at an in-unit pulled Admission (stayDays null) — never an extra row.
       return {
-        acceptedUnitId: fallbackUnitId(cohort, security, index, legalStatus, sex),
+        // These generated holds name existing authored admissions. Their ward is fixed,
+        // unlike fallback picks which shift when the network roster changes (WF-318).
+        acceptedUnitId:
+          index === 304
+            ? "bty-older-adult"
+            : index === 311
+              ? "sjgm-adult-open"
+              : index === 318
+                ? "ger-adult-open"
+                : index === 325
+                  ? "alb-adult-open"
+                  : fallbackUnitId(cohort, security, index, legalStatus, sex),
         pullExpiresAt: NOW_ANCHOR - 20 + (index % 66),
         admissionId:
           index === 304

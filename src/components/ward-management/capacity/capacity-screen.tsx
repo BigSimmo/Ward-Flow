@@ -1334,6 +1334,12 @@ function NetworkRow({
           so this is silent on a settled board — an always-visible caution would be ignored within a
           day and would make every figure look doubtful.
         */}
+        {(row.arrivalCapacityConflicts ?? 0) > 0 ? (
+          <small className={styles.midUpdate} data-testid={`ward-capacity-arrival-conflict-${row.unit.id}`}>
+            {row.arrivalCapacityConflicts} {row.arrivalCapacityConflicts === 1 ? "arrival awaits" : "arrivals await"}{" "}
+            capacity reconciliation — recorded arrival conflicts with the empty-bed observation.
+          </small>
+        ) : null}
         {row.bedRecordsMidUpdate ? (
           <small className={styles.midUpdate} data-testid={`ward-capacity-mid-update-${row.unit.id}`}>
             This ward&rsquo;s bed records are mid-update — this figure may not be settled.
@@ -1756,7 +1762,12 @@ function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack
               </div>
             </dl>
             {(row.pendingPreparation ?? 0) > 0 ? (
-              <p className={styles.sidebarWarning}>{row.pendingPreparation} ready beds still being made ready.</p>
+              <p className={styles.sidebarWarning}>{row.pendingPreparation} discharged beds still being made ready.</p>
+            ) : null}
+            {(row.arrivalCapacityConflicts ?? 0) > 0 ? (
+              <p className={styles.sidebarWarning}>
+                {row.arrivalCapacityConflicts} arrival(s) awaiting capacity reconciliation.
+              </p>
             ) : null}
             {row.bedRecordsMidUpdate ? (
               <p className={styles.sidebarWarning}>Bed records are mid-update. Sex mix may not be settled.</p>

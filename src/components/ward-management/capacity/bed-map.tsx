@@ -25,7 +25,7 @@
 // ward has beds, or fewer, the moment a future feed lets `allocatable` exceed `empty`.
 import { StatusGlyph } from "@/components/wf";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -53,12 +53,13 @@ export type BedMapWard = {
   /** Inside `occupied`: beds held for a patient on leave. A marker beside the squares, never one. */
   onLeave: number;
   /**
-   * Of `ready`, how many are still being made ready — `bedsPendingPreparation`, the same function
+   * How many discharged beds are still being made ready — `bedsPendingPreparation`, the same function
    * whose result gates `PULL_PATIENT` in the reducer. **Never subtracted from `ready`**: owner
    * ruling 2026-09-05 (see `capacity-derivations.ts`'s `NetworkWardRow.pendingPreparation`), because
    * a bed being cleaned does not change what the ward can staff. This map draws it as a hatch OVER
    * a ready square rather than as a different-coloured square, for exactly that reason — it is
-   * still one of the ready beds, unmistakably not usable this minute.
+   * not usable this minute. If a later capacity observation no longer offers it as Ready, the
+   * preparation record remains visible in words without implying another available bed.
    */
   pendingPreparation: number;
 };
@@ -75,13 +76,10 @@ export type BedMapServiceGroup = {
  * computes a bed count of its own. Without `admissions` no pull can be told apart, so Pulled is 0
  * and a seeded pulled patient stays inside Occupied (the same fallback as `networkWardRows`).
  *
- * 🔴 **THROWS IF A WARD'S PENDING-PREPARATION COUNT EXCEEDS ITS READY COUNT.** A bed cannot be
- * "still being made ready" and also not counted among the ready beds — `bedsPendingPreparation`
- * counts discharged-and-preparing releases, each of which is a specific bed already inside
- * `unitCapacity`'s `available`. If a future release fixture ever produces more preparing beds than
- * ready ones for the same unit, that is a real data contradiction on a clinical screen, and this
- * throws rather than silently drawing more hatched squares than green ones — the same "contract on
- * the call site" discipline `WardBar` and `WardGroupHeading` already hold elsewhere in this app.
+ * Preparation is an actual discharged-stay record, not a promise that the ward offers that
+ * bed now. A later staffable-capacity observation may be zero while preparation remains true.
+ * Hatch only the subset representable inside Ready; retain the full record count and explain
+ * the remainder in words rather than throwing or changing either observation.
  */
 export function bedMapWards(
   units: Unit[],
@@ -90,15 +88,8 @@ export function bedMapWards(
   leaveBeds: readonly LeaveBed[] = [],
 ): BedMapWard[] {
   return units.map((unit) => {
-    const capacity = unitCapacity(unit, bedReleases);
     const states = bedStates(unit, admissions, bedReleases, leaveBeds);
     const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
-    if (pendingPreparation > capacity.available) {
-      throw new Error(
-        `Bed map: "${unit.name}" reports ${pendingPreparation} bed(s) still being made ready but only ` +
-          `${capacity.available} ready — a bed cannot be pending preparation without being one of the ready beds.`,
-      );
-    }
     return {
       unit,
       ready: states.ready,
@@ -300,8 +291,8 @@ function WardBlock({
   } | null>(null);
 
   const total = ward.unit.beds;
-  const pureReady = Math.max(0, ward.ready - ward.pendingPreparation);
-  const turnover = ward.pendingPreparation;
+  const pureReady = Math.max(0, ward.ready - Math.min(ward.ready, ward.pendingPreparation));
+  const turnover = Math.min(ward.ready, ward.pendingPreparation);
   const pulled = ward.pulled;
   const closed = ward.closed;
   const occupied = ward.occupied;
@@ -377,6 +368,17 @@ function WardBlock({
           )}
           <span className={styles.chipOccupied}>{countCellText(ward.occupied)} occupied</span>
         </div>
+        {ward.pendingPreparation > ward.ready ? (
+          <p data-testid={`ward-bed-map-preparation-unoffered-${ward.unit.id}`}>
+            {ward.pendingPreparation - ward.ready} discharged bed(s) still being made ready outside the offered Ready
+            count. No additional ready bed is implied.
+          </p>
+        ) : null}
+        {(ward.unit.arrivalCapacityConflicts?.length ?? 0) > 0 ? (
+          <p data-testid={`ward-bed-map-arrival-conflict-${ward.unit.id}`}>
+            {ward.unit.arrivalCapacityConflicts?.length} arrival(s) awaiting capacity reconciliation.
+          </p>
+        ) : null}
         <div className={styles.statusChipsRow}>
           {ward.pendingPreparation > 0 ? (
             <span className={styles.chipTurnover} title={`${ward.pendingPreparation} still being made ready`}>

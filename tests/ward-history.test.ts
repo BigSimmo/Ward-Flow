@@ -15,10 +15,11 @@ const NOW = 700;
 
 describe("Ward Flow Read-Only Plain History", () => {
   describe("EVENT_HISTORY_TABLE completeness and classification", () => {
-    it("classifies all 98 event types into bed, patient, both or neither with plain wording", () => {
+    it("classifies all 99 event types into bed, patient, both or neither with plain wording", () => {
       const allEventTypes = Object.keys(EVENT_ROLE) as Array<WardFlowEvent["type"]>;
       // 97 -> 96 on 2026-09-25: OVERRIDE_LEGAL_MISMATCH removed (owner ruling).
-      expect(allEventTypes.length).toBe(98);
+      // D-34 adds the explicit ED medical deterioration transition.
+      expect(allEventTypes.length).toBe(99);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];
@@ -28,6 +29,20 @@ describe("Ward Flow Read-Only Plain History", () => {
         expect(config.plainWording.length).toBeGreaterThan(0);
       }
     });
+  });
+
+  it("retains the fixed D-34 audit tag and joins the deterioration to its movement", () => {
+    const event: WardFlowEvent = {
+      type: "RECORD_ED_MEDICAL_DETERIORATION",
+      role: "ed",
+      now: NOW,
+      movementId: "SYN-D34-MOVEMENT",
+      actingPlaceId: "jhc-ed",
+    };
+    const entry = buildHistoryEntry(event, NOW);
+    expect(entry.reason).toBe("Medical Deterioration - ED Resuscitation Required");
+    expect(entry.relatedLinks.movementId).toBe(event.movementId);
+    expect(EVENT_HISTORY_TABLE[event.type].category).toBe("both");
   });
 
   describe("selectPatientHistory", () => {

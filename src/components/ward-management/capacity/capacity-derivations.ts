@@ -267,6 +267,8 @@ export type NetworkWardRow = {
    * subtraction written here, so this predicate cannot drift from the figure it qualifies.
    */
   bedRecordsMidUpdate: boolean;
+  /** Actual recorded arrivals awaiting reconciliation with the empty-bed observation. */
+  arrivalCapacityConflicts?: number;
   /**
    * How many one-to-one specialling slots this ward could still staff, and how many it is authored
    * to staff at all. **Owner ruling 2026-09-06: specialling headroom goes on the network view**,
@@ -381,6 +383,7 @@ export function networkWardRows(
       // `releases ?? []` only because `unitCapacity` takes them for its `potential` field, which this
       // never reads; `occupied` is derived from `beds`, `empty` and `blocked` alone, so the answer is
       // the same whether or not a caller supplied releases.
+      arrivalCapacityConflicts: unit.arrivalCapacityConflicts?.length ?? 0,
       bedRecordsMidUpdate:
         Object.values(unit.sexMix).reduce((sum, count) => sum + count, 0) !==
         unitCapacity(unit, [...(releases ?? [])]).occupied,

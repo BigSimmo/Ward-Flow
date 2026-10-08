@@ -585,9 +585,8 @@ export function unitCapacity(unit: Unit, bedReleases: BedRelease[]) {
   // arithmetic and bar layout stay as they were.
   const blocked = 0;
   const occupied = Math.max(notEmpty - blocked, 0);
-  // `occupied` is drawn from inside `unit.beds`, so this is 0 by construction; kept because
-  // `capacity-derivations.ts` reads it. Never feed it from `sexMix`: RELEASE_BED deliberately leaves
-  // the sex register ahead of occupancy, and that gap is the mid-update signal.
+  // Physical overflow beds are not recorded. A gender-count disagreement cannot prove surge.
+  // Actual arrivals with a conflicting empty observation are separately disclosed below.
   const surge = Math.max(0, occupied - unit.beds);
 
   return {

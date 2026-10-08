@@ -613,6 +613,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     SET_ARRIVAL_DETAILS: false,
     SET_STEP_DOWN_CANDIDATE: false,
     SET_DISCHARGE_BARRIER: false,
+    // D-34 cancels an accepted psychiatric allocation; it does not decline admission to ED.
+    RECORD_ED_MEDICAL_DETERIORATION: false,
     RECORD_MOVEMENT_MEDICAL_CLEARANCE: false,
     UPLOAD_PATIENT_FORM: false,
     RECORD_LEGAL_FORM_WRITTEN: false,
@@ -960,6 +962,8 @@ describe("Referral privacy — structural", () => {
     // three things this allowlist exists to keep off a referral.
     "medicalClearance",
     "urgency",
+    // D-32: clinician-recorded ATS, independent of operational urgency; never inferred.
+    "atsCategory",
     "originSiteCode",
     "transportNeeded",
     // `state`, `acceptedUnitId`, `declineReason`, `decidedAt` and `decidedBy` left this list on
@@ -1305,6 +1309,7 @@ describe("Referral privacy — structural", () => {
       sendingTeamName: "Armadale Community Mental Health Service",
       raisedAt: NOW_ANCHOR,
       urgency: 2,
+      atsCategory: 3,
       originSiteCode: "RPH",
       transportNeeded: false,
       ...FIXTURE_HISTORY,
