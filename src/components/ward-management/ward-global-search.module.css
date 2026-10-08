@@ -221,482 +221,441 @@
  * The popup. A floating surface over page content, so — as in `patient-typeahead.module.css` —
  * this is one of the few places in the layer that takes both an edge and a lift.
  */
+/*
+ * ── THE PALETTE (Josh, 8 Oct 2026, option B) ─────────────────────────────────────────────────
+ * Portalled to the body, so none of `.root`'s composed `--ward-*` tokens reach it: everything
+ * below reads the global v6 `--wf-*` tokens only. Thick glass over a scrim is the v6 rule for a
+ * command palette; the rows themselves sit on that glass as plain text with glyphs, no tiles.
+ */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--wf-scrim);
+  animation: wgsFade var(--wf-m-base) var(--wf-ease);
+}
+
+.popup {
+  position: fixed;
+  z-index: 41;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(48.75rem, calc(100vw - 2rem));
+  max-height: min(36rem, calc(100dvh - 6.5rem));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xl);
+  background: var(--wf-glass-thick);
+  -webkit-backdrop-filter: blur(36px) saturate(1.5);
+  backdrop-filter: blur(36px) saturate(1.5);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  animation: wgsRise var(--wf-m-base) var(--wf-ease);
+}
+
+@keyframes wgsFade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes wgsRise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -4px);
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .popup {
+    background: var(--wf-surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .popup {
+    background: var(--wf-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrim,
+  .popup {
+    animation: none;
+  }
+}
+
+.kinds {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--wf-line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.kind {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--wf-m-fast) var(--wf-ease),
+    border-color var(--wf-m-fast) var(--wf-ease);
+}
+
+.kind:hover:not(:disabled) {
+  border-color: var(--wf-line-3);
+}
+
+.kind[aria-pressed="true"] {
+  background: var(--wf-ink-1);
+  border-color: var(--wf-ink-1);
+  color: var(--wf-surface);
+  font-weight: 600;
+}
+
+.kind:disabled {
+  border-style: dashed;
+  color: var(--wf-ink-off);
+  cursor: default;
+}
+
+.kind:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.kindCount {
+  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+  opacity: 0.75;
+}
+
+.split {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.split[data-has-preview] {
+  grid-template-columns: minmax(0, 1fr) 19.5rem;
+}
+
+.listPane {
+  position: relative;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--wf-line-2) transparent;
+}
+
+.previewPane {
+  min-height: 0;
+  overflow-y: auto;
+  border-left: 1px solid var(--wf-line);
+  background: color-mix(in srgb, var(--wf-surface) 55%, transparent);
+}
+
+/* The kind chips already show the reading, so the intent line is for screen readers only. */
 .intent {
-  margin: 0;
-  padding: 0 var(--ward-space-12) var(--ward-space-6);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ward-muted);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .refusal {
   margin: 0;
-  padding: var(--ward-space-4) var(--ward-space-12) var(--ward-space-12);
-  font-size: var(--text-sm);
-  line-height: var(--ward-leading-prose);
-  color: var(--ward-text);
-}
-
-.popup {
-  position: absolute;
-  z-index: var(--ward-z-phone-bar, 30);
-  top: calc(100% + var(--ward-space-4, 0.25rem));
-  left: 0;
-  min-width: 26rem;
-  width: max(100%, 28rem);
-  max-width: min(94vw, 36rem);
-  max-height: 28rem;
-  overflow-y: auto;
-  border: 1px solid var(--ward-border);
-  border-radius: 0.625rem;
-  background: var(--surface);
-  box-shadow: 0 16px 36px -4px var(--scrim, var(--lift));
-  scrollbar-width: thin;
-  scrollbar-color: var(--ward-border) transparent;
-  padding: var(--ward-space-6) 0 0;
-}
-
-.popup::-webkit-scrollbar {
-  width: 6px;
-}
-
-.popup::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.popup::-webkit-scrollbar-thumb {
-  background: var(--ward-border);
-  border-radius: var(--radius-pill, 9999px);
-}
-
-.popup::-webkit-scrollbar-thumb:hover {
-  background: var(--ward-border-strong);
-}
-
-.list {
-  list-style: none;
-  margin: 0;
-  padding: 0 0 var(--ward-space-6);
-}
-
-.groupItem {
-  margin-bottom: var(--ward-space-4);
-}
-
-.groupItem:not(:first-child) {
-  border-top: 1px solid var(--ward-border);
-  padding-top: var(--ward-space-6);
-}
-
-.group {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--ward-space-2) var(--ward-space-12) var(--ward-space-4);
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ward-muted);
-}
-
-.groupCount {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.125rem;
-  height: 1.125rem;
-  padding: 0 0.3125rem;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--surface-subtle);
-  border: 1px solid transparent;
-  color: var(--ward-muted);
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.optionItem {
-  margin: 0 var(--ward-space-6) var(--ward-space-2);
-}
-
-/*
- * ⚠️ A REAL `<a>`, NEVER A `<div>` WITH AN ONCLICK — the brief for this control is explicit about
- * it, so the option itself carries `text-decoration` and `color` resets rather than the anchor
- * being wrapped in something else that carries them instead.
- */
-.option {
-  display: flex;
-  align-items: center;
-  gap: var(--ward-space-10);
-  padding: var(--ward-space-6) var(--ward-space-10);
-  min-height: var(--ward-tap);
-  border-radius: 0.5rem;
-  border: 1px solid transparent;
-  color: inherit;
-  text-decoration: none;
-  cursor: pointer;
-  background: transparent;
-  transition:
-    background 0.12s ease,
-    border-color 0.12s ease;
-}
-
-.option:hover {
-  background: var(--surface-subtle);
-  border-color: var(--ward-border);
-}
-
-/*
- * ⚠️ HOVER AND KEYBOARD-ACTIVE ARE DELIBERATELY DIFFERENT TREATMENTS — same reasoning
- * `patient-typeahead.module.css` records for its own `.option`/`.optionActive` pair: a pointer
- * resting on one row while an arrow key has moved a different row to active is the ORDINARY case,
- * not an edge case, because nothing here keeps mouse hover and keyboard focus in sync. Enter only
- * ever selects `activeIndex`, so the two states must read as visibly different things.
- */
-.option.optionActive {
-  background: var(--clinical-accent-soft);
-  border-color: var(--clinical-accent);
-  box-shadow: inset 0 0 0 1px var(--clinical-accent-border);
-}
-
-/*
- * ⚠️ FORCED-COLORS: THE ACTIVE ROW IS OTHERWISE CARRIED BY HUE ALONE — same fix
- * `patient-typeahead.module.css` already carries for the identical shape of problem.
- * `--clinical-accent-soft` and this popup's own `--surface` collapse to the same system colour
- * under forced colours, so the active row needs a channel that is not colour: an explicit system
- * colour AND a border WIDTH change, not only a hue swap.
- */
-@media (forced-colors: active) {
-  .option.optionActive {
-    border: 0.125rem solid Highlight;
-  }
-}
-
-.itemIconBox {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 0.5rem;
-  flex-shrink: 0;
-  background: var(--surface-subtle);
-  color: var(--ward-muted);
-  border: 1px solid var(--ward-border);
-  transition: border-color 0.12s ease;
-}
-
-.option:hover .itemIconBox,
-.option.optionActive .itemIconBox {
-  border-color: var(--ward-border-strong);
-}
-
-.itemIconBox[data-kind="person"] {
-  background: var(--clinical-accent-soft);
-  color: var(--clinical-accent);
-  border-color: var(--clinical-accent-border);
-}
-
-.itemIconBox[data-kind="ward"] {
-  background: var(--ward-domain-ward-soft);
-  color: var(--ward-domain-ward);
-  border-color: var(--ward-border);
-}
-
-.itemIconBox[data-kind="movement"] {
-  background: var(--ward-domain-transport-soft);
-  color: var(--ward-domain-transport);
-  border-color: var(--ward-border);
-}
-
-.itemIconBox[data-kind="ed"] {
-  background: var(--ward-domain-ed-soft);
-  color: var(--ward-domain-ed);
-  border-color: var(--ward-border);
-}
-
-.itemIconBox[data-kind="community"] {
-  background: var(--surface-subtle);
-  color: var(--clinical-accent);
-  border-color: var(--ward-border);
-}
-
-.itemIconBox[data-kind="form"] {
-  background: var(--surface-subtle);
-  color: var(--ward-heading);
-  border-color: var(--ward-border);
-}
-
-.itemIconBox[data-kind="task"] {
-  background: var(--ward-warning-soft);
-  color: var(--ward-warning);
-  border-color: var(--ward-border);
-}
-
-.itemIconBox[data-kind="view"] {
-  background: var(--surface-subtle);
-  color: var(--ward-heading);
-  border-color: var(--ward-border);
-}
-
-.itemIcon {
-  width: 1.125rem;
-  height: 1.125rem;
-  stroke-width: 1.85;
-}
-
-.resultContent {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
-  gap: var(--ward-space-2);
-}
-
-.resultHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ward-space-6);
-  min-width: 0;
-}
-
-.resultTitle {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  color: var(--ward-heading);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-}
-
-.resultMeta {
-  font-size: var(--text-xs);
-  color: var(--ward-muted);
-  font-variant-numeric: tabular-nums;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: var(--ward-space-4);
-}
-
-.umrnPill {
-  display: inline-block;
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  color: var(--ward-muted);
-  background: var(--surface-subtle);
-  padding: 0 var(--ward-space-4);
-  border-radius: var(--ward-radius-pixel, 0.25rem);
-  border: 1px solid var(--ward-border);
-}
-
-.readyBedsPill {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ward-space-2);
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  padding: 0 var(--ward-space-4);
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--surface-subtle);
-  border: 1px solid var(--ward-border);
-  color: var(--ward-muted);
-}
-
-.readyBedsPill[data-available="true"] {
-  background: var(--success-bg);
-  color: var(--success-text);
-  border-color: var(--ward-border);
-}
-
-.resultEnd {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--ward-space-6);
-  flex: none;
-  margin-left: auto;
-}
-
-.resultKind {
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 8rem;
-  height: 1.375rem;
-  flex: none;
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  text-align: center;
-  color: var(--ward-muted);
-  background: var(--surface-subtle);
-  padding: 0 var(--ward-space-4);
-  border-radius: var(--radius-pill, 9999px);
-  border: 1px solid var(--ward-border);
-  white-space: nowrap;
-  line-height: 1;
-  transition:
-    border-color 0.12s ease,
-    color 0.12s ease,
-    background 0.12s ease;
-}
-
-.option:hover .resultKind,
-.option.optionActive .resultKind {
-  background: var(--surface);
-  color: var(--ward-heading);
-  border-color: var(--ward-border-strong);
-}
-
-.resultKind[data-kind="person"] {
-  color: var(--clinical-accent);
-}
-
-.resultKind[data-kind="ward"] {
-  color: var(--ward-domain-ward);
-}
-
-.resultKind[data-kind="movement"] {
-  color: var(--ward-domain-transport);
-}
-
-.resultKind[data-kind="ed"] {
-  color: var(--ward-domain-ed);
-}
-
-.resultKind[data-kind="form"] {
-  color: var(--ward-heading);
-}
-
-.resultKind[data-kind="view"] {
-  color: var(--ward-muted);
-}
-
-.actionHint {
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.375rem;
-  flex: none;
-  padding: 0;
-  border-radius: 0.25rem;
-  border: 1px solid var(--ward-border);
-  background: var(--surface);
-  color: var(--ward-muted);
-  opacity: 0;
-  transform: translateX(-2px);
-  transition:
-    opacity 0.12s ease,
-    transform 0.12s ease,
-    border-color 0.12s ease,
-    color 0.12s ease;
-}
-
-.actionHintIcon {
-  width: 0.6875rem;
-  height: 0.6875rem;
-  stroke-width: 2.2;
-}
-
-.option:hover .actionHint,
-.option.optionActive .actionHint {
-  opacity: 1;
-  transform: translateX(0);
-  color: var(--clinical-accent);
-  border-color: var(--clinical-accent-border);
+  padding: 8px 10px 12px;
+  color: var(--wf-ink-1);
 }
 
 .empty {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  padding: 24px 16px;
   text-align: center;
-  padding: var(--ward-space-20) var(--ward-space-12);
-  color: var(--ward-muted);
 }
 
 .emptyIcon {
-  width: 2rem;
-  height: 2rem;
-  margin-bottom: var(--ward-space-6);
-  color: var(--ward-muted);
-  opacity: 0.6;
+  width: 20px;
+  height: 20px;
+  color: var(--wf-ink-3);
 }
 
 .emptyTitle {
-  font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--ward-heading);
-  margin-bottom: var(--ward-space-2);
+  color: var(--wf-ink-1);
 }
 
 .emptyDescription {
-  font-size: var(--text-xs);
-  line-height: var(--ward-leading-prose);
-  color: var(--ward-muted);
-  max-width: 24rem;
   margin: 0;
+  max-width: 34rem;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
 }
 
-/* Keyboard hints only. The invented-names sentence stays on the full search page and the typeahead. */
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.groupItem:not(:first-child) {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--wf-line);
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.groupCount {
+  font-family: var(--wf-mono);
+  letter-spacing: 0;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 4px 10px;
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-2);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.option[data-previewed] {
+  background: var(--wf-hover);
+}
+
+.option[data-active] {
+  background: var(--wf-selected);
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
+}
+
+@media (pointer: coarse) {
+  .option {
+    min-height: var(--wf-h-lg);
+  }
+}
+
+@media (forced-colors: active) {
+  .option[data-active] {
+    outline: 2px solid Highlight;
+  }
+}
+
+.itemIconBox {
+  flex: 0 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wf-ink-3);
+}
+
+.itemIcon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.75;
+}
+
+.resultContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.resultTitle {
+  flex: none;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.resultMeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.resultMeta > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.umrn {
+  flex: none;
+  font-family: var(--wf-mono);
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+}
+
+.resultKind {
+  flex: none;
+  font-size: var(--wf-fs-11);
+  color: var(--wf-ink-3);
+}
+
+.actionHint {
+  flex: none;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 18px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+}
+
+.option[data-active] .actionHint {
+  display: inline-flex;
+}
+
+.actionHintIcon {
+  width: 11px;
+  height: 11px;
+}
+
 .resultsFooter {
   display: flex;
   align-items: center;
-  padding: var(--ward-space-8) var(--ward-space-12);
-  border-top: 1px solid var(--ward-border);
-  background: var(--surface-subtle);
-  font-size: var(--text-xs);
-  line-height: var(--ward-leading-prose);
-  color: var(--ward-muted);
+  gap: 12px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-top: 1px solid var(--wf-line);
 }
 
 .footerHints {
   display: flex;
   align-items: center;
-  gap: var(--ward-space-8);
-  font-size: var(--text-xs);
-  color: var(--ward-muted);
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .hintItem {
   display: inline-flex;
   align-items: center;
-  gap: var(--ward-space-2);
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .hintKbd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.125rem;
-  height: 1.125rem;
-  padding: 0 0.25rem;
-  font-size: var(--t-0, 0.75rem);
-  font-weight: 700;
-  border: 1px solid var(--ward-border);
-  border-radius: 0.25rem;
-  background: var(--surface);
-  color: var(--ward-text);
-  line-height: 1;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
 }
 
 .hintLabel {
-  font-size: var(--t-0, 0.75rem);
-  color: var(--ward-muted);
+  font-size: var(--wf-fs-11);
+  color: var(--wf-ink-3);
+}
+
+.fullSearch {
+  margin-left: auto;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  color: var(--wf-accent-ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.fullSearch:hover {
+  text-decoration: underline;
+}
+
+.fullSearch:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.fullSearchIcon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Phone and narrow tablets: one column, no preview, the palette spans the screen under the bar. */
+@media (max-width: 48rem) {
+  .popup {
+    width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 5rem);
+    border-radius: var(--wf-r-lg);
+  }
+
+  .split[data-has-preview] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .previewPane,
+  .resultKind,
+  .footerHints {
+    display: none;
+  }
 }
 
 /* At compact/tablet widths the header gives search a dedicated row, so the field remains useful
@@ -728,7 +687,9 @@
  * leaving its fate to whichever ancestor element happens to be printing it.
  */
 @media print {
-  .root {
+  .root,
+  .scrim,
+  .popup {
     display: none;
   }
 }
