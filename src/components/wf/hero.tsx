@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { useId, type ElementType, type ReactNode } from "react";
 import { cx } from "./cx";
 import { SrOnly } from "./primitives";
@@ -79,13 +80,17 @@ export type HeroStatProps = {
   tone?: WfTone;
   /** A small trend beside the value, such as a `Sparkline`. */
   trend?: ReactNode;
+  /** Makes the stat a toggle that shows or hides the panel named by `controls`. */
+  onToggle?: () => void;
+  expanded?: boolean;
+  controls?: string;
   className?: string;
 };
 
 /** A count on the hero band: mono value over a label, hairline separators between items. */
-export function HeroStat({ value, label, tone, trend, className }: HeroStatProps) {
-  return (
-    <div className={cx(styles.stat, className)}>
+export function HeroStat({ value, label, tone, trend, onToggle, expanded, controls, className }: HeroStatProps) {
+  const body = (
+    <>
       <span className={styles.valueLine}>
         <span className={styles.value}>{value}</span>
         {trend ? <span className={styles.trend}>{trend}</span> : null}
@@ -93,7 +98,22 @@ export function HeroStat({ value, label, tone, trend, className }: HeroStatProps
       <span className={styles.label}>
         {tone ? <StatusGlyph tone={tone} size={9} /> : null}
         {label}
+        {onToggle ? <ChevronDown className={styles.statChevron} size={14} aria-hidden="true" /> : null}
       </span>
+    </>
+  );
+  if (!onToggle) return <div className={cx(styles.stat, className)}>{body}</div>;
+  return (
+    <div className={cx(styles.stat, className)}>
+      <button
+        type="button"
+        className={styles.statToggle}
+        aria-expanded={expanded}
+        aria-controls={controls}
+        onClick={onToggle}
+      >
+        {body}
+      </button>
     </div>
   );
 }
