@@ -992,8 +992,15 @@
     box-shadow: none;
   }
 
+  .scopeBadgeBtn:hover::before,
   .scopeBadgeBtn[aria-expanded="true"]::before {
+    border-color: transparent;
+    background: transparent;
     box-shadow: none;
+  }
+
+  .scopeBadgeBtn[aria-expanded="true"] .scopeCaret {
+    transform: rotate(180deg);
   }
 
   .scopeBadgeLabel {
