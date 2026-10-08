@@ -1,3 +1,4 @@
+import { reduceCapacityEvent } from "./ward-flow-capacity-reducer";
 import { reduceSettingsEvent } from "./ward-flow-settings-reducer";
 import { referralIntakeError } from "./referrals/referral-submission";
 import {
@@ -49,7 +50,6 @@ import {
   OVERRIDE_REASONS,
   WARD_REQUEST_WITHDRAWAL_REASONS,
   wardRequestWithdrawalReasonLabels,
-  WARD_INTAKE_CONSTRAINTS,
 } from "@/components/ward-management/ward-change-reasons";
 import {
   candidateReason,
@@ -69,7 +69,6 @@ import {
 } from "@/components/ward-management/ward-referrals";
 import {
   EVENT_ROLE,
-  WARD_BUZZ_MESSAGES,
   REPATRIATION_MODES,
   WARD_FLOW_ROLE_LABELS,
   type RepatriationMode,
@@ -5283,106 +5282,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // repaired, so the clearing half is guarded on the flag itself and nothing else.
       return replaceAdmission(state, admission.id, { ...admission, awayAtEmergencyDepartmentSince: null });
     }
+    case "CONFIRM_CAPACITY":
+      return reduceCapacityEvent(state, event, { reject, findUnit, replaceUnit });
 
-    case "CONFIRM_CAPACITY": {
-      // The role check above only proves *a* ward raised this. It does not say *which* ward, so
-      // before this a ward user on unit A could restate unit B's allocatable count.
-      //
-      // What this check does: it compares the unit the caller said it was acting as against the
-      // unit being written to, and refuses the event when they differ. What it does not do: prove
-      // the claim. `actingUnitId` is whatever the call site put on the event — the ward screen
-      // reads it from its own `/mockups/ward-flow/ward/[unitId]` route, but nothing here verifies
-      // that, and this prototype carries no authenticated actor identity to verify it against.
-      // This is a recorded assertion by the caller, not an authorisation decision, and must not
-      // be described or extended as one.
-      if (event.actingUnitId !== event.unitId) {
-        return reject(
-          state,
-          event,
-          `CONFIRM_CAPACITY was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}`,
-        );
-      }
-      const unit = findUnit(state, event.unitId);
-      if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
-      // The ward screen already bounds its own input (`min={0} max={unit.beds}`), but a screen
-      // check is bypassed by every other call site and by every hand-built event, and this reducer
-      // is the trust boundary. Without this a ward could restate more allocatable beds than the
-      // building has, and the figure would render as that ward's own confirmed claim.
-      //
-      // ⚠️ THE BOUND IS `unit.beds`, NEVER `empty.value`. A ward restating what it can allocate is
-      // ALLOWED to disagree with a stale feed figure — that is what a ward confirmation is for, and
-      // `tests/ward-flow-reducer.test.ts`'s "arrival capacity floor" depends on it, restating 5
-      // against a seeded empty of 2 to prove `PATIENT_ARRIVED` still refuses once physically empty
-      // beds run out. Beds are a fact about the building; empty is a claim about right now.
-      //
-      // ⚠️ AND IT REFUSES RATHER THAN CLAMPING. Clamping 30 to 20 would record a number the ward
-      // never said and read back to them as agreement. A refusal names both figures and leaves the
-      // previous confirmation untouched, stamp included.
-      if (!Number.isInteger(event.value) || event.value < 0) {
-        return reject(
-          state,
-          event,
-          `CONFIRM_CAPACITY on unit ${unit.id} was given ${event.value}, which is not a whole number of beds`,
-        );
-      }
-      if (event.value > unit.beds) {
-        return reject(
-          state,
-          event,
-          `CONFIRM_CAPACITY says unit ${unit.id} can allocate ${event.value} beds, which is more than the ${unit.beds} beds it has`,
-        );
-      }
-      // WF-08 optimistic-concurrency: a caller that read revision N and now writes must be told
-      // when any resource change has since landed, rather than silently overwriting it.
-      if (
-        !Number.isSafeInteger(event.expectedRevision) ||
-        (unit.allocatable.revision ?? 0) !== event.expectedRevision
-      ) {
-        return reject(
-          state,
-          event,
-          `CONFIRM_CAPACITY on unit ${unit.id} is stale: expected revision ${event.expectedRevision}, current ${unit.allocatable.revision ?? 0}`,
-        );
-      }
-      const updatedUnit: Unit = {
-        ...unit,
-        allocatable: {
-          ...unit.allocatable,
-          value: event.value,
-          source: "ward",
-          confirmedAt: event.now,
-          revision: (unit.allocatable.revision ?? 0) + 1,
-        },
-      };
-      return replaceUnit(state, unit.id, updatedUnit);
-    }
-
-    case "RECORD_WARD_INTAKE_CONSTRAINTS": {
-      // Same claim-not-proof discipline as CONFIRM_CAPACITY immediately above (see that case's own
-      // comment in full).
-      if (event.actingUnitId !== event.unitId) {
-        return reject(
-          state,
-          event,
-          `RECORD_WARD_INTAKE_CONSTRAINTS was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}`,
-        );
-      }
-      const constrainedUnit = findUnit(state, event.unitId);
-      if (!constrainedUnit) return reject(state, event, `no unit found for id ${event.unitId}`);
-      // Chosen, never typed: a typed caller cannot construct this event with a code outside
-      // `WARD_INTAKE_CONSTRAINTS` (a required union-member array, not a plain `string[]`), and this
-      // check is the runtime half of that discipline for an untyped caller, the same pattern
-      // `FLAG_BED_RELEASE`'s `blocker` membership check uses below.
-      if (event.codes.some((code) => !WARD_INTAKE_CONSTRAINTS.includes(code))) {
-        return reject(
-          state,
-          event,
-          "RECORD_WARD_INTAKE_CONSTRAINTS codes must all be chosen from WARD_INTAKE_CONSTRAINTS",
-        );
-      }
-      const updatedConstrainedUnit: Unit = { ...constrainedUnit, intakeConstraints: event.codes };
-      return replaceUnit(state, constrainedUnit.id, updatedConstrainedUnit);
-    }
+    case "RECORD_WARD_INTAKE_CONSTRAINTS":
+      return reduceCapacityEvent(state, event, { reject, findUnit, replaceUnit });
 
     case "FLAG_BED_RELEASE": {
       // Same claim-not-proof discipline as CONFIRM_CAPACITY (see that case's own comment in
@@ -5862,19 +5766,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       return { ...state, leaveBeds: state.leaveBeds.filter((candidate) => candidate.id !== leaveBed.id) };
     }
-
-    case "REQUEST_CAPACITY_REFRESH": {
-      // Spec D12: the one thing a coordinator may do to a ward's bed data. This changes no
-      // number at all — no field on any unit, release or leave bed is read or written below — it
-      // only records that somebody asked, with the time and the requesting role. Nothing leaves
-      // the sandbox and no message is sent.
-      const unit = findUnit(state, event.unitId);
-      if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
-      return {
-        ...state,
-        refreshRequests: [...state.refreshRequests, { unitId: unit.id, at: event.now, byRole: event.role }],
-      };
-    }
+    case "REQUEST_CAPACITY_REFRESH":
+      return reduceCapacityEvent(state, event, { reject, findUnit, replaceUnit });
 
     case "RECEIVE_REFERRAL": {
       // Fix round B (review finding I2): the role check above used to be the ONLY guard, and
@@ -8853,60 +8746,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const next = { ...state, leaveBeds };
       return notices.length === 0 ? next : appendNotices(next, notices);
     }
+    case "CONFIRM_MORNING_ROLLUP":
+      return reduceCapacityEvent(state, event, { reject, findUnit, replaceUnit });
 
-    case "CONFIRM_MORNING_ROLLUP": {
-      const unit = findUnit(state, event.unitId);
-      if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
-      // Same claim-not-proof discipline as CONFIRM_CAPACITY: a caller stating a different unit than
-      // the one being written to is refused, so one ward cannot confirm another ward's morning count.
-      if (
-        (event.role === "ward" && event.actingUnitId === undefined) ||
-        (event.actingUnitId !== undefined && event.actingUnitId !== event.unitId)
-      ) {
-        return reject(
-          state,
-          event,
-          `CONFIRM_MORNING_ROLLUP was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}`,
-        );
-      }
-      if (!Number.isSafeInteger(event.expectedDischarges) || event.expectedDischarges < 0) {
-        return reject(state, event, "expectedDischarges must be a finite, non-negative whole number");
-      }
-      return {
-        ...state,
-        morningRollupConfirmations: {
-          ...state.morningRollupConfirmations,
-          [event.unitId]: {
-            confirmedAt: event.now,
-            confirmedByRole: event.role,
-            expectedDischarges: event.expectedDischarges,
-          },
-        },
-      };
-    }
-
-    case "SEND_WARD_BUZZ": {
-      if (
-        !WARD_BUZZ_MESSAGES.includes(event.message) ||
-        (event.urgent !== undefined && typeof event.urgent !== "boolean")
-      )
-        return reject(state, event, "Choose a valid ward refresh message.");
-      const unit = findUnit(state, event.unitId);
-      if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
-      return {
-        ...state,
-        refreshRequests: [
-          ...state.refreshRequests,
-          {
-            unitId: unit.id,
-            at: event.now,
-            byRole: event.role,
-            message: event.message,
-            urgent: event.urgent,
-          },
-        ],
-      };
-    }
+    case "SEND_WARD_BUZZ":
+      return reduceCapacityEvent(state, event, { reject, findUnit, replaceUnit });
 
     case "RECORD_HANDOVER_SIGN_OFF": {
       // Role and time only. Never a note, a name, or a claim that anyone was notified.
