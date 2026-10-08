@@ -11,6 +11,8 @@
  */
 .drawerWide {
   composes: descendantKillWithScroll from "../ward-reduced-motion.module.css";
+  position: relative;
+  container: referral-sheet / inline-size;
   display: flex;
   width: 100%;
   min-height: 0;
@@ -109,11 +111,19 @@
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-hero-2) 6%, transparent);
 }
 
+/* Option groups are equal columns that never wrap: a long label shortens, it never breaks the row. */
 .categoryTrack,
+.segmented,
 .segmentedFull {
   display: grid;
   grid-auto-columns: minmax(0, 1fr);
   grid-auto-flow: column;
+}
+
+.segmented > button,
+.segmented > label {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .headTabs > button,
@@ -2007,5 +2017,356 @@ details.refCard > summary {
   .stepItem[data-active="true"] .stepMark {
     outline: 2px solid Highlight;
     outline-offset: -2px;
+  }
+}
+
+/* Option B (Josh, 8 Oct 2026): Refer to first, the form beside a Ready to send rail. */
+.destRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--wf-s-3);
+}
+
+.destLabel {
+  flex: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.destRow .categoryTrack {
+  min-width: 0;
+  flex: 0 1 22rem;
+}
+
+.categoryTrack > button svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  stroke-width: 1.75;
+}
+
+.categoryTrack > button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.fromText {
+  overflow: hidden;
+  min-width: 0;
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fromText strong {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.sheetMain {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.sheetMain > .drawerBody {
+  min-height: 0;
+}
+
+.rail {
+  display: none;
+  min-height: 0;
+  align-content: start;
+  gap: var(--wf-s-3);
+  overflow-y: auto;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4) 0;
+  scrollbar-width: thin;
+}
+
+.railCard {
+  display: grid;
+  min-width: 0;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.railCard > p,
+.railCard .eyebrow {
+  margin: 0;
+}
+
+.railCard[data-layout="pair"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.railCard[data-layout="pair"] > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.railCard[data-layout="pair"] > div + div {
+  padding-left: var(--wf-s-3);
+  border-left: 1px solid var(--wf-line);
+}
+
+.railCard[data-layout="pair"] strong {
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.railCard[data-layout="pair"] small {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.railHead {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.railCount {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.railCount strong {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-16);
+}
+
+.railProgress {
+  display: block;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+
+.railProgress > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--wf-pri-1);
+}
+
+.railRows {
+  display: grid;
+  margin: 0;
+  gap: 2px;
+}
+
+.railRows > div {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 24px;
+}
+
+.railRows dt {
+  display: inline-flex;
+  overflow: hidden;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.railRows dd {
+  overflow: hidden;
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.railRows > div[data-state="needed"] dd {
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+
+.summaryToggle {
+  display: inline-flex;
+}
+
+/* Wide sheet: the rail sits beside the form and the Summary toggle is not needed. */
+@container referral-sheet (min-width: 52rem) {
+  .sheetMain {
+    grid-template-columns: minmax(0, 1fr) 18.75rem;
+  }
+
+  .rail {
+    display: grid;
+  }
+
+  .summaryToggle {
+    display: none;
+  }
+}
+
+/* Narrow sheet: Summary opens the rail as a panel over the form. */
+@container referral-sheet (max-width: 51.99rem) {
+  .rail[data-open="true"] {
+    position: absolute;
+    z-index: 3;
+    right: var(--wf-s-3);
+    bottom: calc(var(--wf-h-md) + var(--wf-s-3) * 3);
+    left: var(--wf-s-3);
+    display: grid;
+    max-height: 70%;
+    padding: var(--wf-s-3);
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-xl);
+    background: var(--wf-glass-thick);
+    box-shadow: var(--wf-e2);
+    backdrop-filter: blur(16px);
+  }
+}
+
+.fit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.newPatient {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.letterText {
+  overflow-x: auto;
+  margin: 0;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  white-space: pre-wrap;
+}
+
+.copyNotice {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: var(--wf-s-1) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.btnDanger {
+  color: var(--wf-danger-ink);
+}
+
+.guard {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--wf-s-4);
+  background: var(--wf-scrim);
+}
+
+.guardBox {
+  display: grid;
+  width: min(100%, 26rem);
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xl);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e2);
+}
+
+.guardBox p {
+  margin: 0;
+}
+
+.guardActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+}
+
+@media (max-width: 40rem) {
+  .destLabel,
+  .fromText {
+    display: none;
+  }
+
+  /* Steps fold to their numbers; the current step keeps its name. */
+  .stepItem:not([data-active="true"]) .stepText {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .stepItem:not([data-active="true"]) {
+    flex: none;
+  }
+
+  .destRow .categoryTrack {
+    flex: 1 1 auto;
+  }
+
+  /* The status keeps its own line above the buttons, so an error is never cut short. */
+  .sendReferralFoot {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+  }
+
+  .sendTargetSummary {
+    flex-basis: 100%;
+  }
+
+  .sendActionCluster {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .guardActions {
+    flex-wrap: wrap;
   }
 }

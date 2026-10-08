@@ -5,17 +5,22 @@ import {
   BedDouble,
   CheckCircle2,
   ChevronDown,
+  Copy,
+  Eye,
   FileText,
+  Hospital,
   Inbox,
   Info,
+  ListChecks,
   MapPin,
   Phone,
-  Plus,
   Search,
   Send,
   Shield,
+  Siren,
   Truck,
   User,
+  UserPlus,
   Users,
   X,
 } from "lucide-react";
@@ -36,14 +41,21 @@ import {
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
-import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  calendarDateOf,
+  formatInstant,
+  formatInstantWithDay,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
+  COHORTS,
   URGENCY_LEVELS,
   HEALTH_SERVICES,
   HOME_REGIONS,
   RECORDED_SEXES,
   REFERRAL_GENDERS,
+  suburbUnknownLabels,
   type HomeRegion,
   type RecordedSex,
   type ReferralGender,
@@ -57,9 +69,11 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
+  OVERDUE_AFTER_MINUTES_BY_TIER,
 } from "@/components/ward-management/ward-operational-defaults";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
+import { GENDERS, patientAgeYears, type Gender, type Patient } from "@/components/ward-management/ward-patients";
+
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { allEmergencyDepartments, wardSites, edById, siteByCode } from "@/components/ward-management/ward-sites";
 import styles from "./ward-referral-drawer.module.css";
@@ -75,6 +89,9 @@ import {
   type DocumentationDraft,
 } from "./referral-flow-panels";
 import { WardReferralInbox } from "./ward-referral-inbox";
+import { duplicateSentence } from "./referral-duplicate";
+import { discardReferralDraft, keepReferralDraft, readKeptReferralDraft } from "./referral-draft-store";
+import { referralIsbarText, referralLetterText, type ReferralTextInput } from "./referral-letter";
 import { StatusGlyph, type WfTone } from "@/components/wf";
 import {
   REFERRAL_RISK_FLAGS,
@@ -117,8 +134,6 @@ function transportLabel(code: string): string {
   switch (code) {
     case "mht":
       return "Mental Health Transport (Contracted MHT)";
-    case "police":
-      return "Police Escort (WAPOL Transit)";
     case "rfds":
       return "RFDS Aeromedical Flight Escort";
     case "stjohn":
@@ -134,7 +149,19 @@ type WardReferralDrawerProps = {
   onClose: () => void;
   onSelectPatient?: (patientId: string) => void;
   withBackdrop?: boolean;
+  /** Where the referral comes from. Sets the sample patient and the referring source. */
   initialCategory?: "community" | "ed" | "ward";
+  /** Where the referral goes: the slide-out's first choice, Refer to. */
+  initialDestination?: "ward" | "community" | "ed";
+  /** A `Patient.id` from a Refer link. Used only when the record holds that person. */
+  initialPatientId?: string;
+  /** A `wardSites` code from a Refer link, for the referring site. */
+  initialOriginSiteCode?: string;
+  /**
+   * Filled with the slide-out's own close, which asks before discarding a draft. The sheet around
+   * it calls this for Escape and its backdrop so those ask too.
+   */
+  closeRequestRef?: React.MutableRefObject<(() => void) | null>;
 };
 
 type MockPatientProfile = {
@@ -190,8 +217,11 @@ const SAMPLE_PATIENTS: Record<string, { destType: string; transportVal: string }
   "WF-004": { destType: "ward", transportVal: "mht" },
   "WF-002": { destType: "community", transportVal: "carer" },
   "WF-006": { destType: "ward", transportVal: "stjohn" },
-  custom: { destType: "ward", transportVal: "police" },
+  custom: { destType: "ward", transportVal: "mht" },
 };
+
+/** A registered person with no open movement is picked by this key, `patient:<id>`. */
+const PATIENT_KEY_PREFIX = "patient:";
 
 const NO_RISK_FLAGS: MockPatientProfile["riskFlags"] = {
   aggression: false,
@@ -208,6 +238,9 @@ function sampleProfile(
 ): MockPatientProfile {
   const sample = SAMPLE_PATIENTS[key] ?? SAMPLE_PATIENTS.custom!;
   const movement = record.movements.find((candidate) => candidate.id === key);
+  const registered = key.startsWith(PATIENT_KEY_PREFIX)
+    ? record.patients.find((candidate) => candidate.id === key.slice(PATIENT_KEY_PREFIX.length))
+    : undefined;
   const blank = {
     id: key,
     medicare: NOT_RECORDED,
@@ -219,10 +252,31 @@ function sampleProfile(
     transitNote: "",
     riskFlags: NO_RISK_FLAGS,
   };
+  if (!movement && registered) {
+    const years = patientAgeYears(registered, calendarDateOf(now, record.dayZero));
+    return {
+      ...blank,
+      name: `${registered.familyName}, ${registered.givenName}`,
+      age: Number.isFinite(years) && years >= 0 ? String(years) : "",
+      gender: registered.sex ? registered.sex.charAt(0).toUpperCase() : "",
+      umrn: registered.umrn || NOT_RECORDED,
+      dob: registered.dateOfBirth || NOT_RECORDED,
+      origin: NOT_RECORDED,
+      legalStatus: "Voluntary",
+      recordedExpiry: "not recorded",
+      security: "Open",
+      initials: `${registered.givenName.charAt(0)}${registered.familyName.charAt(0)}`.toUpperCase(),
+      cohort: NOT_RECORDED,
+      suburb: registered.suburb ?? "",
+      catchment: registered.catchmentCommunityTeam ?? "",
+      urgency: "",
+    };
+  }
   if (!movement) {
     return {
       ...blank,
       name: "Unregistered Walk-In",
+
       age: "",
       gender: "",
       umrn: NOT_RECORDED,
@@ -330,18 +384,39 @@ type DrawerCategory = "community" | "ed" | "ward";
 type DrawerView = "new" | "inbox";
 type DrawerSection = "patient" | "referral" | "documentation" | "placement";
 
-const CATEGORY_LABELS: Record<DrawerCategory, string> = {
-  ed: "From ED",
-  community: "From community",
-  ward: "From a ward",
+/**
+ * Refer to, the slide-out's first choice (Josh, 8 Oct 2026, option B). Where the referral goes
+ * names the last two steps and the list of places to choose from.
+ */
+const DESTINATIONS: Record<
+  DrawerCategory,
+  { label: string; icon: typeof User; check: string; place: string; places: string; phrase: string }
+> = {
+  ward: { label: "Ward", icon: Hospital, check: "Clearance", place: "ward", places: "Wards", phrase: "a ward" },
+  community: {
+    label: "Community",
+    icon: Users,
+    check: "Documents",
+    place: "team",
+    places: "Teams",
+    phrase: "a community team",
+  },
+  ed: { label: "ED", icon: Siren, check: "Documents", place: "ED", places: "EDs", phrase: "an emergency department" },
 };
 
-const SECTIONS: readonly (readonly [DrawerSection, string])[] = [
-  ["patient", "Patient"],
-  ["referral", "Referral"],
-  ["documentation", "Documents"],
-  ["placement", "Locations"],
-];
+const SECTION_IDS: readonly DrawerSection[] = ["patient", "referral", "documentation", "placement"];
+
+function sectionLabel(id: DrawerSection, destination: DrawerCategory): string {
+  if (id === "patient") return "Patient";
+  if (id === "referral") return "Referral";
+  return id === "documentation" ? DESTINATIONS[destination].check : DESTINATIONS[destination].places;
+}
+
+/** "1 ward" or "2 wards". */
+function countOf(count: number, destination: DrawerCategory): string {
+  const { place, places } = DESTINATIONS[destination];
+  return `${count} ${count === 1 ? place : places.toLowerCase() === "eds" ? "EDs" : places.toLowerCase()}`;
+}
 
 const RISK_FLAG_LABELS: Record<keyof MockPatientProfile["riskFlags"], string> = {
   aggression: "Aggression",
@@ -473,24 +548,70 @@ function CardHead({
 }
 
 export function WardReferralDrawer(props: WardReferralDrawerProps) {
-  const [category, setCategory] = useState<DrawerCategory>(props.initialCategory ?? "ward");
-  const [openedWith, setOpenedWith] = useState(props.initialCategory);
   const [view, setView] = useState<DrawerView>("new");
-  // A new choice from the New referral menu restarts the draft in that category, as before.
-  if (props.initialCategory !== openedWith) {
-    setOpenedWith(props.initialCategory);
-    setCategory(props.initialCategory ?? "ward");
-  }
+  const [round, setRound] = useState(0);
+  // A new request (another Refer link, or New referral after sending) restarts the draft.
+  const requestKey = [
+    props.initialCategory,
+    props.initialDestination,
+    props.initialPatientId,
+    props.initialOriginSiteCode,
+    round,
+  ].join("|");
   return (
     <WardReferralDrawerContent
-      key={category}
+      key={requestKey}
       {...props}
-      initialCategory={category}
       view={view}
       onViewChange={setView}
-      onCategoryChange={setCategory}
+      onRestart={() => setRound((current) => current + 1)}
     />
   );
+}
+
+/** Everything a kept draft carries, so "Keep draft" can reopen exactly where the referrer stopped. */
+type KeptDraft = {
+  activePatientKey: string;
+  destType: DrawerCategory;
+  activeSection: DrawerSection;
+  ageBand: Cohort | "";
+  selectedUnitIds: string[];
+  selectedRecipient: string;
+  documentation: DocumentationDraft;
+  contact: ReferralContact;
+  catchmentSuburb: string;
+  catchmentTeam: string;
+  catchmentService: HealthService | "";
+  catchmentConfirmed: boolean;
+  homeRegion: HomeRegion | "";
+  sourceKind: "community" | "ed";
+  originSiteCode: string;
+  sendingTeam: string;
+  referralSex: RecordedSex;
+  referralGender: ReferralGender | "";
+  highAcuity: boolean;
+  arrivalEta: string;
+  legalStatus: string;
+  urgency: string;
+  security: string;
+  provisionalDiag: string;
+  doctorNote: string;
+  clinicalSummary: string;
+  transport: string;
+  transitNote: string;
+  riskFlags: Record<string, boolean>;
+};
+
+/** The pick key for a person: their open movement when they have one, else the record itself. */
+function patientKeyFor(
+  patientId: string,
+  record: { movements: Movement[]; patients: Patient[]; referrals: Referral[] },
+): string | null {
+  if (!record.patients.some((patient) => patient.id === patientId)) return null;
+  const open = record.movements.find(
+    (movement) => !movement.closure && resolveSubjectPatient(movement, record).patient?.id === patientId,
+  );
+  return open ? open.id : `${PATIENT_KEY_PREFIX}${patientId}`;
 }
 
 function WardReferralDrawerContent({
@@ -498,13 +619,17 @@ function WardReferralDrawerContent({
   onSelectPatient,
   withBackdrop = false,
   initialCategory = "ward",
+  initialDestination,
+  initialPatientId,
+  initialOriginSiteCode,
+  closeRequestRef,
   view,
   onViewChange,
-  onCategoryChange,
+  onRestart,
 }: WardReferralDrawerProps & {
   view: DrawerView;
   onViewChange: (view: DrawerView) => void;
-  onCategoryChange: (category: DrawerCategory) => void;
+  onRestart: () => void;
 }) {
   const searchId = useId();
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -512,16 +637,48 @@ function WardReferralDrawerContent({
 
   const capacityRecords = useWardCapacity();
 
-  const initialPatientKey = initialCategory === "community" ? "WF-002" : initialCategory === "ed" ? "WF-004" : "WF-009";
+  const { movements, patients, referrals, rejections, configuration, dayZero, dispatch, wardReferralInbox } =
+    useWardFlow();
+  const now = useWardFlowClock();
+
+  // A Refer link names its person, so it never reopens someone else's kept draft.
+  const [kept] = useState(() => (initialPatientId ? null : readKeptReferralDraft<KeptDraft>()));
+  const [prefillKey] = useState(() =>
+    initialPatientId ? patientKeyFor(initialPatientId, { movements, patients, referrals }) : null,
+  );
+  const initialPatientKey =
+    kept?.activePatientKey ??
+    prefillKey ??
+    (initialCategory === "community" ? "WF-002" : initialCategory === "ed" ? "WF-004" : "WF-009");
 
   const [activePatientKey, setActivePatientKey] = useState<string>(initialPatientKey);
+  const [extraPatientKeys, setExtraPatientKeys] = useState<string[]>(
+    initialPatientKey in SAMPLE_PATIENTS ? [] : [initialPatientKey],
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<DrawerSection>("patient");
+  const [activeSection, setActiveSection] = useState<DrawerSection>(kept?.activeSection ?? "patient");
   const bodyRef = useRef<HTMLDivElement>(null);
   const sectionId = useId();
-  const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
-  const [selectedRecipient, setSelectedRecipient] = useState("");
+  const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>(kept?.selectedUnitIds ?? []);
+  const [selectedRecipient, setSelectedRecipient] = useState(kept?.selectedRecipient ?? "");
+  const [ageBand, setAgeBand] = useState<Cohort | "">(kept?.ageBand ?? "");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [guardOpen, setGuardOpen] = useState(false);
+  const [copyNotice, setCopyNotice] = useState<string | null>(null);
+  const [newPatientOpen, setNewPatientOpen] = useState(false);
+  const [newPatient, setNewPatient] = useState({
+    familyName: "",
+    givenName: "",
+    dateOfBirth: "",
+    umrn: "",
+    gender: "" as Gender | "",
+    suburb: "",
+  });
+  const [newPatientError, setNewPatientError] = useState<string | null>(null);
+  const pendingNewPatient = useRef<number | null>(null);
+  const guardKeepRef = useRef<HTMLButtonElement>(null);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [sendPending, setSendPending] = useState(false);
   const [sentReferralId, setSentReferralId] = useState<string | null>(null);
@@ -532,65 +689,110 @@ function WardReferralDrawerContent({
   const confirmationHeadingRef = useRef<HTMLHeadingElement>(null);
   const [inboxUnitId, setInboxUnitId] = useState<string | null>(null);
 
-  const { movements, patients, referrals, rejections, configuration, dayZero, dispatch, wardReferralInbox } =
-    useWardFlow();
-  const now = useWardFlowClock();
   const sampleProfiles = useMemo(
     () =>
       Object.fromEntries(
-        Object.keys(SAMPLE_PATIENTS).map((key) => [
+        [...Object.keys(SAMPLE_PATIENTS), ...extraPatientKeys].map((key) => [
           key,
           sampleProfile(key, { movements, patients, referrals, dayZero }, now),
         ]),
       ) as Record<string, MockPatientProfile>,
-    [movements, patients, referrals, dayZero, now],
+    [movements, patients, referrals, dayZero, now, extraPatientKeys],
   );
   const defaultPatient = sampleProfiles[initialPatientKey]!;
   const [arrivalPlanOpen, setArrivalPlanOpen] = useState(false);
   const liveMovement = movements.find((m) => m.id === activePatientKey);
   const patientRecord = liveMovement
     ? resolveSubjectPatient(liveMovement, { patients, referrals, movements }).patient
-    : undefined;
+    : activePatientKey.startsWith(PATIENT_KEY_PREFIX)
+      ? patients.find((patient) => patient.id === activePatientKey.slice(PATIENT_KEY_PREFIX.length))
+      : undefined;
+  const movementCohort = liveMovement?.cohort;
+  const effectiveCohort: Cohort | "" = movementCohort ?? ageBand;
   const arrivalRole = initialCategory === "community" ? "community" : initialCategory === "ed" ? "ed" : "ward";
-  const [documentation, setDocumentation] = useState<DocumentationDraft>(EMPTY_DOCUMENTATION);
+  const [documentation, setDocumentation] = useState<DocumentationDraft>(kept?.documentation ?? EMPTY_DOCUMENTATION);
   const isMedicalCleared = documentation.medical === "yes";
-  const [contact, setContact] = useState<ReferralContact>({ name: "", email: "", phone: "", role: "", location: "" });
+  const [contact, setContact] = useState<ReferralContact>(
+    kept?.contact ?? { name: "", email: "", phone: "", role: "", location: "" },
+  );
   const initialLookup = lookupCatchment(defaultPatient.suburb);
   const initialTeams = catchmentRoutingDestinations(initialLookup);
-  const [catchmentSuburb, setCatchmentSuburb] = useState(defaultPatient.suburb);
+  const [catchmentSuburb, setCatchmentSuburb] = useState(kept?.catchmentSuburb ?? defaultPatient.suburb);
   const [catchmentTeam, setCatchmentTeam] = useState(
-    initialTeams?.length === 1 ? initialTeams[0] : defaultPatient.catchment,
+    kept?.catchmentTeam ?? (initialTeams?.length === 1 ? initialTeams[0] : defaultPatient.catchment),
   );
-  const [catchmentService, setCatchmentService] = useState<HealthService | "">("");
-  const [catchmentConfirmed, setCatchmentConfirmed] = useState(false);
+  const [catchmentService, setCatchmentService] = useState<HealthService | "">(kept?.catchmentService ?? "");
+  const [catchmentConfirmed, setCatchmentConfirmed] = useState(kept?.catchmentConfirmed ?? false);
   const [catchmentEditing, setCatchmentEditing] = useState(false);
-  const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(liveMovement?.homeRegion ?? "");
-  const [sourceKind, setSourceKind] = useState<"community" | "ed">(initialCategory === "ed" ? "ed" : "community");
-  const [originSiteCode, setOriginSiteCode] = useState("");
-  const [sendingTeam, setSendingTeam] = useState("");
-  const [referralSex, setReferralSex] = useState<RecordedSex>(
-    RECORDED_SEXES.find((sex) => sex === patientRecord?.sex) ?? "Not recorded",
+  const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(kept?.homeRegion ?? liveMovement?.homeRegion ?? "");
+  const [sourceKind, setSourceKind] = useState<"community" | "ed">(
+    kept?.sourceKind ?? (initialCategory === "ed" ? "ed" : "community"),
   );
-  const [referralGender, setReferralGender] = useState<ReferralGender | "">(patientRecord?.gender ?? "");
-  const [highAcuity, setHighAcuity] = useState(false);
-  const [arrivalEta, setArrivalEta] = useState("");
+  const [originSiteCode, setOriginSiteCode] = useState(kept?.originSiteCode ?? initialOriginSiteCode ?? "");
+  const [sendingTeam, setSendingTeam] = useState(kept?.sendingTeam ?? "");
+  const [referralSex, setReferralSex] = useState<RecordedSex>(
+    kept?.referralSex ?? RECORDED_SEXES.find((sex) => sex === patientRecord?.sex) ?? "Not recorded",
+  );
+  const [referralGender, setReferralGender] = useState<ReferralGender | "">(
+    kept?.referralGender ?? patientRecord?.gender ?? "",
+  );
+  const [highAcuity, setHighAcuity] = useState(kept?.highAcuity ?? false);
+  const [arrivalEta, setArrivalEta] = useState(kept?.arrivalEta ?? "");
+  const [destType, setDestType] = useState<DrawerCategory>(kept?.destType ?? initialDestination ?? "ward");
   // Form field state - fully synced and editable
   const [legalStatus, setLegalStatus] = useState(
-    defaultPatient.legalStatus.startsWith("Form")
-      ? defaultPatient.legalStatus.split(" ").slice(0, 2).join(" ")
-      : defaultPatient.legalStatus,
+    kept?.legalStatus ??
+      (defaultPatient.legalStatus.startsWith("Form")
+        ? defaultPatient.legalStatus.split(" ").slice(0, 2).join(" ")
+        : destType === "community" && defaultPatient.legalStatus === NOT_RECORDED
+          ? "Voluntary"
+          : defaultPatient.legalStatus),
   );
-  const [urgency, setUrgency] = useState(defaultPatient.urgency);
-  const [destType, setDestType] = useState<string>(initialCategory);
+  const [urgency, setUrgency] = useState(kept?.urgency ?? defaultPatient.urgency);
   const [security, setSecurity] = useState(
-    defaultPatient.security.toLowerCase().includes("secure") ? "Secure" : "Open",
+    kept?.security ?? (defaultPatient.security.toLowerCase().includes("secure") ? "Secure" : "Open"),
   );
-  const [provisionalDiag, setProvisionalDiag] = useState(defaultPatient.provisionalDiag);
-  const [doctorNote, setDoctorNote] = useState(defaultPatient.doctorNote);
-  const [clinicalSummary, setClinicalSummary] = useState(defaultPatient.clinicalSummary);
-  const [transport, setTransport] = useState(defaultPatient.transportVal);
-  const [transitNote, setTransitNote] = useState(defaultPatient.transitNote);
-  const [riskFlags, setRiskFlags] = useState<Record<string, boolean>>(defaultPatient.riskFlags);
+  const [provisionalDiag, setProvisionalDiag] = useState(kept?.provisionalDiag ?? defaultPatient.provisionalDiag);
+  const [doctorNote, setDoctorNote] = useState(kept?.doctorNote ?? defaultPatient.doctorNote);
+  const [clinicalSummary, setClinicalSummary] = useState(kept?.clinicalSummary ?? defaultPatient.clinicalSummary);
+  const [transport, setTransport] = useState(kept?.transport ?? defaultPatient.transportVal);
+  const [transitNote, setTransitNote] = useState(kept?.transitNote ?? defaultPatient.transitNote);
+  const [riskFlags, setRiskFlags] = useState<Record<string, boolean>>(kept?.riskFlags ?? defaultPatient.riskFlags);
+
+  const draftNow: KeptDraft = {
+    activePatientKey,
+    destType,
+    activeSection,
+    ageBand,
+    selectedUnitIds,
+    selectedRecipient,
+    documentation,
+    contact,
+    catchmentSuburb,
+    catchmentTeam,
+    catchmentService,
+    catchmentConfirmed,
+    homeRegion,
+    sourceKind,
+    originSiteCode,
+    sendingTeam,
+    referralSex,
+    referralGender,
+    highAcuity,
+    arrivalEta,
+    legalStatus,
+    urgency,
+    security,
+    provisionalDiag,
+    doctorNote,
+    clinicalSummary,
+    transport,
+    transitNote,
+    riskFlags,
+  };
+  // What the draft looked like on opening. A restored draft is never clean, so closing it asks again.
+  const [openingDraft] = useState(() => (kept ? "" : JSON.stringify(draftNow)));
+  const draftJson = JSON.stringify(draftNow);
 
   // Body scroll locking on mobile/desktop while drawer is open
   useEffect(() => {
@@ -610,20 +812,49 @@ function WardReferralDrawerContent({
     const deltaY = e.changedTouches[0].clientY - touchStartY.current;
     touchStartY.current = null;
     if (deltaY > 60 && typeof window !== "undefined" && window.innerWidth <= 640) {
-      onClose();
+      requestClose();
     }
   };
 
   const drawerRef = useRef<HTMLDivElement>(null);
+
+  // Asks before an unsent draft is lost: Keep editing, Keep draft or Discard.
+  const dirty = !sentReferralId && draftJson !== openingDraft;
+  const requestClose = useCallback(() => {
+    if (guardOpen) setGuardOpen(false);
+    else if (dirty) setGuardOpen(true);
+    else onClose();
+  }, [guardOpen, dirty, onClose]);
+  useEffect(() => {
+    if (!closeRequestRef) return;
+    closeRequestRef.current = requestClose;
+    return () => {
+      closeRequestRef.current = null;
+    };
+  }, [closeRequestRef, requestClose]);
+  useEffect(() => {
+    if (guardOpen) guardKeepRef.current?.focus();
+  }, [guardOpen]);
+  function discardAndClose() {
+    discardReferralDraft();
+    setGuardOpen(false);
+    onClose();
+  }
+  function keepAndClose() {
+    keepReferralDraft(draftNow);
+    setGuardOpen(false);
+    onClose();
+    announceToWardShell("Referral draft kept until this tab reloads.");
+  }
 
   const handleDrawerClose = useCallback(() => {
     if (isSearchOpen) {
       setIsSearchOpen(false);
       setSearchQuery("");
     } else {
-      onClose();
+      requestClose();
     }
-  }, [isSearchOpen, onClose]);
+  }, [isSearchOpen, requestClose]);
 
   // The enclosing Sheet owns focus when embedded. Register another modal only
   // when this drawer supplies its own backdrop.
@@ -652,9 +883,11 @@ function WardReferralDrawerContent({
   const currentPatient = sampleProfiles[activePatientKey] ?? sampleProfiles["WF-009"]!;
 
   function handleSelectPatient(key: string) {
-    const p = sampleProfiles[key];
-    if (!p) return;
+    const p = sampleProfiles[key] ?? sampleProfile(key, { movements, patients, referrals, dayZero }, now);
+    if (!sampleProfiles[key]) setExtraPatientKeys((keys) => [...keys, key]);
     setActivePatientKey(key);
+    setAgeBand("");
+    setNewPatientOpen(false);
     setSearchQuery("");
     setIsSearchOpen(false);
     setSelectedUnitIds([]);
@@ -683,9 +916,8 @@ function WardReferralDrawerContent({
 
     // Synchronize all form fields with selected patient profile
     const baseLegal = p.legalStatus.startsWith("Form") ? p.legalStatus.split(" ").slice(0, 2).join(" ") : p.legalStatus;
-    setLegalStatus(baseLegal);
+    setLegalStatus(destType === "community" && baseLegal === NOT_RECORDED ? "Voluntary" : baseLegal);
     setUrgency(p.urgency);
-    setDestType(p.destType);
     setSecurity(p.security.toLowerCase().includes("secure") ? "Secure" : "Open");
     setProvisionalDiag(p.provisionalDiag);
     setDoctorNote(p.doctorNote);
@@ -704,12 +936,12 @@ function WardReferralDrawerContent({
     setRiskFlags((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  // Searches the sample patients above, and nothing else.
+  // The sample patients first, then any other registered person whose name or UMRN matches.
   const filteredPatients = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     const profiles = Object.values(sampleProfiles);
     if (!q) return profiles;
-    return profiles.filter((p) => {
+    const matches = profiles.filter((p) => {
       return (
         p.name.toLowerCase().includes(q) ||
         p.umrn.toLowerCase().includes(q) ||
@@ -717,11 +949,57 @@ function WardReferralDrawerContent({
         p.origin.toLowerCase().includes(q)
       );
     });
-  }, [searchQuery, sampleProfiles]);
+    const shown = new Set(profiles.map((p) => p.umrn));
+    const record = { movements, patients, referrals, dayZero };
+    const more = patients
+      .filter(
+        (patient) =>
+          !shown.has(patient.umrn) &&
+          (`${patient.givenName} ${patient.familyName}`.toLowerCase().includes(q) ||
+            `${patient.familyName}, ${patient.givenName}`.toLowerCase().includes(q) ||
+            patient.umrn.toLowerCase().includes(q)),
+      )
+      .slice(0, 8)
+      .map((patient) => sampleProfile(patientKeyFor(patient.id, record) ?? "custom", record, now));
+    return [...matches, ...more];
+  }, [searchQuery, sampleProfiles, movements, patients, referrals, dayZero, now]);
+
+  // A new person is linked as soon as the record accepts them.
+  useEffect(() => {
+    if (pendingNewPatient.current === null || patients.length <= pendingNewPatient.current) return;
+    pendingNewPatient.current = null;
+    const added = patients[patients.length - 1];
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Link only the record the provider accepted.
+    if (added) handleSelectPatient(`${PATIENT_KEY_PREFIX}${added.id}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Runs when the record grows, nothing else.
+  }, [patients]);
+  function addNewPatient(event: React.FormEvent) {
+    event.preventDefault();
+    const familyName = newPatient.familyName.trim();
+    const givenName = newPatient.givenName.trim();
+    const umrn = newPatient.umrn.trim();
+    if (!familyName || !givenName) return setNewPatientError("Enter the family and given names.");
+    if (!newPatient.dateOfBirth) return setNewPatientError("Enter the date of birth.");
+    if (!umrn) return setNewPatientError("Enter the UMRN.");
+    setNewPatientError(null);
+    pendingNewPatient.current = patients.length;
+    dispatch({
+      type: "ADD_PATIENT",
+      role: sourceKind === "ed" ? "ed" : "community",
+      now,
+      givenName,
+      familyName,
+      umrn,
+      dateOfBirth: newPatient.dateOfBirth,
+      ...(newPatient.gender ? { gender: newPatient.gender } : {}),
+      ...(newPatient.suburb.trim() ? { suburb: newPatient.suburb.trim() } : {}),
+    });
+  }
 
   // Live capacity for the patient's cohort and the chosen bed security.
-  const realTimeMatch = useMemo(() => {
-    const patientCohort = currentPatient.cohort;
+  // Cheap enough to work out on each render, and the cohort can come from the record or the age band.
+  const realTimeMatch = (() => {
+    const patientCohort = movementCohort ?? ageBand;
     const matchingRecords = capacityRecords.filter((r) => r.cohort === patientCohort && r.security === security);
     const readyBedsCount = matchingRecords.reduce((sum, r) => sum + r.readyBeds, 0);
     const pulledBedsCount = matchingRecords.reduce((sum, r) => sum + r.pulledBeds, 0);
@@ -737,7 +1015,7 @@ function WardReferralDrawerContent({
       return b.readyBeds - a.readyBeds;
     });
     return { readyBedsCount, pulledBedsCount, closedBedsCount, pendingPreparationCount, sortedUnits };
-  }, [security, currentPatient, capacityRecords, catchmentService, catchmentConfirmed]);
+  })();
 
   const selectedDestinations: ReferralDestination[] =
     destType === "ward"
@@ -772,7 +1050,8 @@ function WardReferralDrawerContent({
         : [];
 
   function patientError() {
-    if (!patientRecord) return "Select a registered patient. Use Full intake to register a new patient.";
+    if (!patientRecord) return "Find a registered patient, or add a new patient.";
+    if (!effectiveCohort) return "Choose the age band.";
     if (!catchmentConfirmed || !catchmentTeam.trim()) return "Confirm the patient's catchment before continuing.";
     if (!homeRegion) return "Choose the patient's home region.";
     return null;
@@ -791,7 +1070,9 @@ function WardReferralDrawerContent({
     !!originSiteCode &&
     wardSites.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment));
   const needed: Record<DrawerSection, number> = {
-    patient: [!patientRecord, !catchmentConfirmed || !catchmentTeam.trim(), !homeRegion].filter(Boolean).length,
+    patient: [!patientRecord, !effectiveCohort, !catchmentConfirmed || !catchmentTeam.trim(), !homeRegion].filter(
+      Boolean,
+    ).length,
     referral: [
       !originValid,
       sourceKind === "community" && !sendingTeam.trim(),
@@ -885,7 +1166,7 @@ function WardReferralDrawerContent({
       setFlowError(intakeError);
       return;
     }
-    const cohort = liveMovement?.cohort;
+    const cohort = effectiveCohort || undefined;
     const tier = URGENCY_LEVELS.find((level) => String(level) === urgency);
     if (!cohort || !tier || !homeRegion || !selectedDestinations.length) {
       setFlowError("Check the patient, urgency and selected recipients.");
@@ -901,10 +1182,7 @@ function WardReferralDrawerContent({
       patientId: patientRecord?.id,
       ageBand: cohort,
       homeRegion,
-      suburb:
-        catchmentSuburb && suburbOptions().some((suburb) => suburb.toLowerCase() === catchmentSuburb.toLowerCase())
-          ? { kind: "named", name: catchmentSuburb }
-          : { kind: "unknown", reason: "not_known" },
+      suburb: suburbKnown ? { kind: "named", name: catchmentSuburb } : { kind: "unknown", reason: "not_known" },
       destinations: selectedDestinations,
       source: sourceKind === "ed" ? "ed_medical" : "community",
       originSiteCode,
@@ -921,9 +1199,11 @@ function WardReferralDrawerContent({
     if (!sendPending || !submitted) return;
     const created = referrals.find((referral) => referral.intake === submitted.intake);
     if (created) {
+      discardReferralDraft();
       setSentReferralId(created.id);
       setSentAt(now);
       setSendPending(false);
+
       announceToWardShell(`Referral ${created.id} sent to the selected locations.`);
     } else if (rejections.length > submitted.rejectionCount) {
       setFlowError(rejections[rejections.length - 1]?.reason ?? "Referral could not be sent.");
@@ -959,9 +1239,101 @@ function WardReferralDrawerContent({
   // The sender's own submission, read back from the created referral.
   const sentDetails = sentReferralId ? referrals.find((referral) => referral.id === sentReferralId)?.intake : undefined;
 
+  const destination = DESTINATIONS[destType];
+  // A blank or unlisted suburb is sent as "Suburb not known", so a person of no fixed address can
+  // still be referred. The catchment card says which will be sent.
+  const suburbKnown =
+    !!catchmentSuburb &&
+    suburbOptions().some((suburb) => suburb.toLowerCase() === catchmentSuburb.trim().toLowerCase());
+  const originLabel = originValid
+    ? sourceKind === "ed"
+      ? (wardSites.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name ?? originSiteCode)
+      : (siteByCode(originSiteCode)?.name ?? originSiteCode)
+    : "";
+  /** The board calls a referral overdue after this tier window, a service default (`OPERATIONAL_DEFAULT_LABEL`). */
+  function decisionDueAt(from: Instant): string | undefined {
+    return tier === undefined ? undefined : formatInstantWithDay(from + OVERDUE_AFTER_MINUTES_BY_TIER[tier], now);
+  }
+  // D-19: one place-free, count-free sentence about the person already named on this form.
+  const alreadyOpen = patientRecord ? duplicateSentence({ patientId: patientRecord.id, referrals }) : undefined;
+  const placeRow =
+    selectedDestinations.length === 0
+      ? "Choose"
+      : recipientLabels.length === 1
+        ? recipientLabels[0]!.split(" · ").at(-1)!
+        : `${recipientLabels.length} chosen`;
+  const readyRows: { label: string; value: string; state: "done" | "follow" | "needed" }[] = [
+    { label: "Refer to", value: destination.label, state: "done" },
+    {
+      label: "Patient",
+      value: patientRecord ? currentPatient.name : "Needed",
+      state: patientRecord ? "done" : "needed",
+    },
+    {
+      label: "Catchment",
+      value: catchmentConfirmed ? catchmentTeam : "To confirm",
+      state: catchmentConfirmed ? "done" : "needed",
+    },
+    { label: "From", value: originLabel || "Needed", state: originValid ? "done" : "needed" },
+    { label: "Legal status", value: legalStatus, state: legalStatus === NOT_RECORDED ? "needed" : "done" },
+    {
+      label: "Urgency",
+      value: tier === undefined ? "Needed" : `Tier ${tier}`,
+      state: tier === undefined ? "needed" : "done",
+    },
+    {
+      label: destination.check,
+      value: needed.documentation
+        ? `${needed.documentation} to answer`
+        : documentation.medical === "no"
+          ? "Clearance to follow"
+          : "Answered",
+      state: needed.documentation ? "needed" : documentation.medical === "no" ? "follow" : "done",
+    },
+    { label: "Your contact", value: contactNeeded ? "Needed" : contact.name, state: contactNeeded ? "needed" : "done" },
+    { label: destination.places, value: placeRow, state: selectedDestinations.length ? "done" : "needed" },
+  ];
+  const readyDone = readyRows.filter((row) => row.state !== "needed").length;
+  const letterInput: ReferralTextInput = {
+    destinationPhrase: destination.phrase,
+    patientName: patientRecord ? currentPatient.name : "",
+    umrn: patientRecord ? currentPatient.umrn : "",
+    ageSex: patientRecord ? ageSexLabel(currentPatient) : "",
+    suburb: catchmentSuburb,
+    from: originLabel,
+    recipients: recipientLabels,
+    urgency: tier === undefined ? "" : tierLabel,
+    legalStatus,
+    reason: doctorNote,
+    history: clinicalSummary,
+    risks: recordedFlags.map((key) => RISK_FLAG_LABELS[key]),
+    clearance: clearance.label,
+    referrer: { name: contact.name, role: contact.role, phone: contact.phone },
+  };
+  async function copyText(text: string, done: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyNotice(done);
+    } catch {
+      setCopyNotice("Copy unavailable in this browser");
+    }
+  }
+  function chooseDestination(kind: DrawerCategory) {
+    if (kind === destType || sendPending || sentReferralId) return;
+    setDestType(kind);
+    setSelectedUnitIds([]);
+    setSelectedRecipient("");
+    setConfirmationOpen(false);
+    setFlowError(null);
+    if (kind === "community" && legalStatus === NOT_RECORDED) setLegalStatus("Voluntary");
+    announceToWardShell(`Referring to ${DESTINATIONS[kind].phrase}.`);
+  }
+
   function selectSection(id: DrawerSection) {
     if (sendPending || sentReferralId) return;
+    setPreviewOpen(false);
     setConfirmationOpen(false);
+
     setFlowError(null);
     setActiveSection(id);
     setIsSearchOpen(false);
@@ -1004,7 +1376,7 @@ function WardReferralDrawerContent({
 
   return (
     <>
-      {withBackdrop ? <div className={styles.drawerBackdrop} onClick={onClose} aria-hidden="true" /> : null}
+      {withBackdrop ? <div className={styles.drawerBackdrop} onClick={requestClose} aria-hidden="true" /> : null}
       <div
         ref={drawerRef}
         className={styles.drawerWide}
@@ -1043,7 +1415,7 @@ function WardReferralDrawerContent({
             <button
               type="button"
               className={styles.drawerCloseBtn}
-              onClick={onClose}
+              onClick={requestClose}
               aria-label="Close referral side drawer"
             >
               <X aria-hidden="true" />
@@ -1052,25 +1424,42 @@ function WardReferralDrawerContent({
 
           {view === "new" ? (
             <>
-              <div className={styles.categoryTrack} role="group" aria-label="Referral type">
-                {(["ed", "community", "ward"] as const).map((category) => (
-                  <button
-                    key={category}
-                    type="button"
-                    aria-pressed={initialCategory === category}
-                    data-testid={initialCategory === category ? "ward-referral-drawer-category-badge" : undefined}
-                    onClick={() => {
-                      if (category !== initialCategory) onCategoryChange(category);
-                    }}
-                  >
-                    {CATEGORY_LABELS[category]}
-                  </button>
-                ))}
-              </div>
+              {sentReferralId ? null : (
+                <div className={styles.destRow}>
+                  <span className={styles.destLabel} id={`${sectionId}-refer-to`}>
+                    Refer to
+                  </span>
+                  <div className={styles.categoryTrack} role="group" aria-labelledby={`${sectionId}-refer-to`}>
+                    {(["ward", "community", "ed"] as const).map((kind) => {
+                      const KindIcon = DESTINATIONS[kind].icon;
+                      return (
+                        <button
+                          key={kind}
+                          type="button"
+                          aria-pressed={destType === kind}
+                          data-testid={`ward-referral-refer-to-${kind}`}
+                          disabled={sendPending}
+                          onClick={() => chooseDestination(kind)}
+                        >
+                          <KindIcon aria-hidden="true" />
+                          {DESTINATIONS[kind].label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {originLabel ? (
+                    <span className={styles.fromText} data-testid="ward-referral-from">
+                      From <strong>{originLabel}</strong>
+                    </span>
+                  ) : null}
+                </div>
+              )}
               <div className={styles.stepper} role="group" aria-label="Referral sections">
-                {SECTIONS.map(([id, label], index) => {
+                {SECTION_IDS.map((id, index) => {
+                  const label = sectionLabel(id, destType);
                   const done = needed[id] === 0 || (id !== "placement" && !!sentReferralId);
-                  const active = activeSection === id && !confirmationOpen && !sentReferralId;
+                  const active = activeSection === id && !confirmationOpen && !previewOpen && !sentReferralId;
+
                   const erred = !!attempted[id] && needed[id] > 0;
                   return (
                     <button
@@ -1123,1176 +1512,993 @@ function WardReferralDrawerContent({
           )}
         </div>
 
-        <div ref={bodyRef} className={styles.drawerBody}>
-          {view === "inbox" ? (
-            inboxWard ? (
-              <div className={styles.inboxPane}>
-                <WardReferralInbox key={inboxWard.unit.unitId} unitId={inboxWard.unit.unitId} />
-              </div>
+        <div className={styles.sheetMain}>
+          <div ref={bodyRef} className={styles.drawerBody}>
+            {view === "inbox" ? (
+              inboxWard ? (
+                <div className={styles.inboxPane}>
+                  <WardReferralInbox key={inboxWard.unit.unitId} unitId={inboxWard.unit.unitId} />
+                </div>
+              ) : (
+                <div className={styles.emptyCard}>
+                  <span className={styles.cardIcon} aria-hidden="true">
+                    <Inbox aria-hidden="true" />
+                  </span>
+                  <h3>No referrals waiting</h3>
+                  <p>Sent referrals arrive in each ward&apos;s inbox</p>
+                </div>
+              )
             ) : (
-              <div className={styles.emptyCard}>
-                <span className={styles.cardIcon} aria-hidden="true">
-                  <Inbox aria-hidden="true" />
-                </span>
-                <h3>No referrals waiting</h3>
-                <p>Sent referrals arrive in each ward&apos;s inbox</p>
-              </div>
-            )
-          ) : (
-            <>
-              {confirmationOpen && (
-                <form
-                  id="referralConfirmForm"
-                  onSubmit={confirmAndSend}
-                  className={styles.confirmationPanel}
-                  // The drawer's own check (`referralContactError`) gates the send and names each
-                  // missing field under it, so the browser's one-at-a-time bubble is not used.
-                  noValidate
-                >
-                  {sentReferralId ? (
-                    <>
-                      <section className={styles.refCard}>
-                        <CardHead icon={Send} title="Delivery" />
-                        <div className={styles.cardBody}>
-                          <div className={styles.sentHead}>
-                            <span className={styles.sentIcon} aria-hidden="true">
-                              <CheckCircle2 aria-hidden="true" />
-                            </span>
-                            <div>
-                              <h3 ref={confirmationHeadingRef} tabIndex={-1} className={styles.sentTitle}>
-                                Referral sent
-                              </h3>
-                              <p className={styles.sentMeta}>
-                                <span className={styles.mono}>{sentReferralId}</span>
-                                {sentAt !== null ? ` · sent ${formatInstantWithDay(sentAt, now)}` : ""}
-                              </p>
+              <>
+                {previewOpen ? (
+                  <section className={styles.refCard} data-testid="ward-referral-letter-preview">
+                    <CardHead icon={Eye} title="Letter preview">
+                      <button
+                        type="button"
+                        className={styles.btn}
+                        data-testid="ward-referral-copy-letter"
+                        onClick={() => copyText(referralLetterText(letterInput, formatInstant(now)), "Letter copied")}
+                      >
+                        <Copy aria-hidden="true" />
+                        Copy as text
+                      </button>
+                    </CardHead>
+                    <div className={styles.cardBody}>
+                      {totalNeeded ? (
+                        <p className={styles.bodyMeta}>
+                          <StatusGlyph tone="warning" size={9} />
+                          {totalNeeded} {totalNeeded === 1 ? "answer" : "answers"} still needed. Sent as written.
+                        </p>
+                      ) : null}
+                      <pre className={styles.letterText}>{referralLetterText(letterInput, formatInstant(now))}</pre>
+                    </div>
+                  </section>
+                ) : null}
+                {confirmationOpen && !previewOpen && (
+                  <form
+                    id="referralConfirmForm"
+                    onSubmit={confirmAndSend}
+                    className={styles.confirmationPanel}
+                    // The drawer's own check (`referralContactError`) gates the send and names each
+                    // missing field under it, so the browser's one-at-a-time bubble is not used.
+                    noValidate
+                  >
+                    {sentReferralId ? (
+                      <>
+                        <section className={styles.refCard}>
+                          <CardHead icon={Send} title="Delivery" />
+                          <div className={styles.cardBody}>
+                            <div className={styles.sentHead}>
+                              <span className={styles.sentIcon} aria-hidden="true">
+                                <CheckCircle2 aria-hidden="true" />
+                              </span>
+                              <div>
+                                <h3 ref={confirmationHeadingRef} tabIndex={-1} className={styles.sentTitle}>
+                                  Referral sent
+                                </h3>
+                                <p className={styles.sentMeta}>
+                                  <span className={styles.mono}>{sentReferralId}</span>
+                                  {sentAt !== null ? ` · sent ${formatInstantWithDay(sentAt, now)}` : ""}
+                                </p>
+                              </div>
+                            </div>
+                            <p className={styles.eyebrow}>Sent to {countOf(recipientLabels.length, destType)}</p>
+                            <ul className={styles.recipientList}>
+                              {recipientLabels.map((label) => (
+                                <li key={label}>
+                                  <StatusGlyph tone="neutral" size={10} />
+                                  <strong>{label}</strong>
+                                  <span title={OPERATIONAL_DEFAULT_LABEL}>
+                                    {sentAt !== null && decisionDueAt(sentAt)
+                                      ? `Awaiting review · due ${decisionDueAt(sentAt)}`
+                                      : "Awaiting review"}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                            <div className={styles.cardActions}>
+                              <Link className={styles.btn} href="/mockups/ward-flow/referrals">
+                                <Users aria-hidden="true" />
+                                View referrals board
+                              </Link>
                             </div>
                           </div>
-                          <p className={styles.eyebrow}>Recipients {recipientLabels.length}</p>
-                          <ul className={styles.recipientList}>
-                            {recipientLabels.map((label) => (
-                              <li key={label}>
-                                <StatusGlyph tone="neutral" size={10} />
-                                <strong>{label}</strong>
-                                <span>Awaiting review</span>
-                              </li>
-                            ))}
-                          </ul>
-                          <div className={styles.cardActions}>
-                            <Link className={styles.btn} href="/mockups/ward-flow/referrals">
-                              <Users aria-hidden="true" />
-                              View referrals board
-                            </Link>
-                          </div>
-                        </div>
-                      </section>
-                      {sentDetails ? (
-                        <section className={styles.refCard}>
-                          <CardHead icon={FileText} title="Submitted details">
-                            <span className={styles.asideText}>Read-only</span>
+                        </section>
+                        <section className={styles.refCard} data-testid="ward-referral-isbar">
+                          <CardHead icon={ListChecks} title="Copy to notes">
+                            <span className={styles.asideText}>ISBAR</span>
                           </CardHead>
                           <div className={styles.cardBody}>
-                            <dl className={styles.factGrid} data-columns="2">
+                            <pre className={styles.letterText}>
+                              {referralIsbarText(letterInput, {
+                                referralId: sentReferralId,
+                                sentAt: sentAt === null ? "" : formatInstantWithDay(sentAt, now),
+                                decisionDue: sentAt === null ? undefined : decisionDueAt(sentAt),
+                              })}
+                            </pre>
+                            <div className={styles.cardActions}>
+                              <button
+                                type="button"
+                                className={styles.btn}
+                                data-testid="ward-referral-copy-notes"
+                                onClick={() =>
+                                  copyText(
+                                    referralIsbarText(letterInput, {
+                                      referralId: sentReferralId,
+                                      sentAt: sentAt === null ? "" : formatInstantWithDay(sentAt, now),
+                                      decisionDue: sentAt === null ? undefined : decisionDueAt(sentAt),
+                                    }),
+                                    "Copied for the notes",
+                                  )
+                                }
+                              >
+                                <Copy aria-hidden="true" />
+                                Copy to notes
+                              </button>
+                            </div>
+                          </div>
+                        </section>
+                        {sentDetails ? (
+                          <section className={styles.refCard}>
+                            <CardHead icon={FileText} title="Submitted details">
+                              <span className={styles.asideText}>Read-only</span>
+                            </CardHead>
+                            <div className={styles.cardBody}>
+                              <dl className={styles.factGrid} data-columns="2">
+                                <div>
+                                  <dt>Catchment</dt>
+                                  <dd>{sentDetails.catchment.teamName} · confirmed</dd>
+                                </div>
+                                <div>
+                                  <dt>Medical clearance</dt>
+                                  <dd>{sentDetails.medicalClearance.cleared ? "Cleared" : "Pending"}</dd>
+                                </div>
+                                <div>
+                                  <dt>Triage and RAMP</dt>
+                                  <dd>{sentDetails.triageAndRampCompleted ? "Completed" : "Not completed"}</dd>
+                                </div>
+                                <div>
+                                  <dt>Referrer</dt>
+                                  <dd>
+                                    {sentDetails.referrer.name} · {sentDetails.referrer.role}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt>Contact</dt>
+                                  <dd>
+                                    {sentDetails.referrer.phone} · {sentDetails.referrer.email}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt>Location or service</dt>
+                                  <dd>{sentDetails.referrer.location}</dd>
+                                </div>
+                                <div>
+                                  <dt>Reason for referral</dt>
+                                  <dd>{sentDetails.reasonForReferral || "Not recorded"}</dd>
+                                </div>
+                                <div>
+                                  <dt>Legal status</dt>
+                                  <dd>{sentDetails.legalStatus}</dd>
+                                </div>
+                                <div>
+                                  <dt>Risk flags</dt>
+                                  <dd>{sentDetails.riskFlags.join(", ") || "None selected"}</dd>
+                                </div>
+                                {sentDetails.arrival ? (
+                                  <div>
+                                    <dt>Proposed arrival</dt>
+                                    <dd>
+                                      {transportLabel(sentDetails.arrival.transport)} ·{" "}
+                                      {sentDetails.arrival.estimatedAt?.replace("T", " ").replace("+08:00", "") ||
+                                        "time not recorded"}
+                                    </dd>
+                                  </div>
+                                ) : null}
+                              </dl>
+                              {sentDetails.charts.length ? (
+                                <div className={styles.documentsBlock}>
+                                  <p className={styles.eyebrow}>Documents</p>
+                                  <ReferralDocumentLinks charts={sentDetails.charts} />
+                                </div>
+                              ) : null}
+                            </div>
+                          </section>
+                        ) : null}
+                      </>
+                    ) : (
+                      <>
+                        <section className={styles.refCard}>
+                          <div className={styles.cardHead}>
+                            <span className={styles.cardIcon} aria-hidden="true">
+                              <Send aria-hidden="true" />
+                            </span>
+                            <h3 ref={confirmationHeadingRef} tabIndex={-1} className={styles.cardTitle}>
+                              Confirm and send
+                            </h3>
+                          </div>
+                          <div className={styles.cardBody}>
+                            <dl className={styles.factGrid}>
+                              <div>
+                                <dt>Patient</dt>
+                                <dd>{currentPatient.name}</dd>
+                              </div>
                               <div>
                                 <dt>Catchment</dt>
-                                <dd>{sentDetails.catchment.teamName} · confirmed</dd>
+                                <dd>{catchmentTeam}</dd>
                               </div>
                               <div>
-                                <dt>Medical clearance</dt>
-                                <dd>{sentDetails.medicalClearance.cleared ? "Cleared" : "Pending"}</dd>
+                                <dt>Clearance</dt>
+                                <dd>{isMedicalCleared ? "Cleared" : "Pending"}</dd>
                               </div>
                               <div>
-                                <dt>Triage and RAMP</dt>
-                                <dd>{sentDetails.triageAndRampCompleted ? "Completed" : "Not completed"}</dd>
+                                <dt>Charts</dt>
+                                <dd>{documentation.charts.length} attached</dd>
                               </div>
                               <div>
-                                <dt>Referrer</dt>
-                                <dd>
-                                  {sentDetails.referrer.name} · {sentDetails.referrer.role}
-                                </dd>
-                              </div>
-                              <div>
-                                <dt>Contact</dt>
-                                <dd>
-                                  {sentDetails.referrer.phone} · {sentDetails.referrer.email}
-                                </dd>
-                              </div>
-                              <div>
-                                <dt>Location or service</dt>
-                                <dd>{sentDetails.referrer.location}</dd>
-                              </div>
-                              <div>
-                                <dt>Reason for referral</dt>
-                                <dd>{sentDetails.reasonForReferral || "Not recorded"}</dd>
+                                <dt>Urgency</dt>
+                                <dd>{tier === undefined ? "Not recorded" : `Tier ${tier}`}</dd>
                               </div>
                               <div>
                                 <dt>Legal status</dt>
-                                <dd>{sentDetails.legalStatus}</dd>
+                                <dd>{legalStatus}</dd>
                               </div>
                               <div>
-                                <dt>Risk flags</dt>
-                                <dd>{sentDetails.riskFlags.join(", ") || "None selected"}</dd>
+                                <dt>Source</dt>
+                                <dd>{sourceKind === "ed" ? "Emergency" : "Community"}</dd>
                               </div>
-                              {sentDetails.arrival ? (
-                                <div>
-                                  <dt>Proposed arrival</dt>
-                                  <dd>
-                                    {transportLabel(sentDetails.arrival.transport)} ·{" "}
-                                    {sentDetails.arrival.estimatedAt?.replace("T", " ").replace("+08:00", "") ||
-                                      "time not recorded"}
-                                  </dd>
-                                </div>
-                              ) : null}
+                              <div>
+                                <dt>Refer to</dt>
+                                <dd>{DESTINATION_LABELS[destType]}</dd>
+                              </div>
                             </dl>
-                            {sentDetails.charts.length ? (
-                              <div className={styles.documentsBlock}>
-                                <p className={styles.eyebrow}>Documents</p>
-                                <ReferralDocumentLinks charts={sentDetails.charts} />
-                              </div>
-                            ) : null}
+                            <p className={styles.eyebrow}>Recipients {recipientLabels.length}</p>
+                          </div>
+                          <ul className={styles.recipientList}>
+                            {recipientLabels.map((label) => (
+                              <li key={label}>
+                                <StatusGlyph tone="success" size={10} />
+                                <strong>{label}</strong>
+                                <span>Will receive</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </section>
+                        <section className={styles.refCard}>
+                          <CardHead icon={Phone} title="Your contact details" />
+                          <div className={styles.cardBody}>
+                            <ContactFields contact={contact} onChange={setContact} errors={contactErrors} />
                           </div>
                         </section>
-                      ) : null}
-                    </>
-                  ) : (
-                    <>
-                      <section className={styles.refCard}>
-                        <div className={styles.cardHead}>
-                          <span className={styles.cardIcon} aria-hidden="true">
-                            <Send aria-hidden="true" />
-                          </span>
-                          <h3 ref={confirmationHeadingRef} tabIndex={-1} className={styles.cardTitle}>
-                            Confirm and send
-                          </h3>
-                        </div>
-                        <div className={styles.cardBody}>
-                          <dl className={styles.factGrid}>
-                            <div>
-                              <dt>Patient</dt>
-                              <dd>{currentPatient.name}</dd>
-                            </div>
-                            <div>
-                              <dt>Catchment</dt>
-                              <dd>{catchmentTeam}</dd>
-                            </div>
-                            <div>
-                              <dt>Clearance</dt>
-                              <dd>{isMedicalCleared ? "Cleared" : "Pending"}</dd>
-                            </div>
-                            <div>
-                              <dt>Charts</dt>
-                              <dd>{documentation.charts.length} attached</dd>
-                            </div>
-                            <div>
-                              <dt>Urgency</dt>
-                              <dd>{tier === undefined ? "Not recorded" : `Tier ${tier}`}</dd>
-                            </div>
-                            <div>
-                              <dt>Legal status</dt>
-                              <dd>{legalStatus}</dd>
-                            </div>
-                            <div>
-                              <dt>Source</dt>
-                              <dd>{sourceKind === "ed" ? "Emergency" : "Community"}</dd>
-                            </div>
-                            <div>
-                              <dt>Refer to</dt>
-                              <dd>{DESTINATION_LABELS[destType as DrawerCategory] ?? destType}</dd>
-                            </div>
-                          </dl>
-                          <p className={styles.eyebrow}>Recipients {recipientLabels.length}</p>
-                        </div>
-                        <ul className={styles.recipientList}>
-                          {recipientLabels.map((label) => (
-                            <li key={label}>
-                              <StatusGlyph tone="success" size={10} />
-                              <strong>{label}</strong>
-                              <span>Will receive</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </section>
-                      <section className={styles.refCard}>
-                        <CardHead icon={Phone} title="Your contact details" />
-                        <div className={styles.cardBody}>
-                          <ContactFields contact={contact} onChange={setContact} errors={contactErrors} />
-                        </div>
-                      </section>
-                      <p className={styles.deliveryNote}>
-                        <Info aria-hidden="true" />
-                        Each location gets it in its inbox. Sending reserves no bed.
-                      </p>
-                    </>
-                  )}
-                </form>
-              )}
+                        <p className={styles.deliveryNote}>
+                          <Info aria-hidden="true" />
+                          Each location gets it in its inbox. Sending reserves no bed.
+                        </p>
+                      </>
+                    )}
+                  </form>
+                )}
 
-              <div
-                id={`${sectionId}-patient`}
-                className={styles.sectionPanel}
-                hidden={confirmationOpen || activeSection !== "patient"}
-              >
-                <section className={styles.refCard}>
-                  <CardHead icon={User} title="Patient">
-                    <Link
-                      href="/mockups/ward-flow/referrals/new"
-                      className={`${styles.btn} ${styles.btnGhost}`}
-                      onClick={onClose}
-                      title="Open full page referral intake"
-                    >
-                      <Plus aria-hidden="true" />
-                      Full intake
-                    </Link>
-                  </CardHead>
-                  <div className={styles.cardBody}>
-                    <div className={styles.patientSearchWrap}>
-                      <Search className={styles.patientSearchIcon} aria-hidden="true" />
-                      <input
-                        ref={searchInputRef}
-                        type="search"
-                        id={searchId}
-                        className={styles.patientSearchInput}
-                        aria-label="Search sample patients"
-                        placeholder="Search sample patients by name or UMRN"
-                        value={searchQuery}
-                        onChange={(e) => {
-                          setSearchQuery(e.target.value);
-                          setIsSearchOpen(true);
+                <div
+                  id={`${sectionId}-patient`}
+                  className={styles.sectionPanel}
+                  hidden={previewOpen || confirmationOpen || activeSection !== "patient"}
+                >
+                  <section className={styles.refCard}>
+                    <CardHead icon={User} title="Patient">
+                      <button
+                        type="button"
+                        className={`${styles.btn} ${styles.btnGhost}`}
+                        aria-expanded={newPatientOpen}
+                        aria-controls={`${sectionId}-new-patient`}
+                        data-testid="ward-referral-new-patient-toggle"
+                        onClick={() => {
+                          setNewPatientOpen((open) => !open);
+                          setNewPatientError(null);
                         }}
-                        onFocus={() => {
-                          if (searchQuery.trim().length > 0) setIsSearchOpen(true);
-                        }}
-                        autoComplete="off"
-                        spellCheck="false"
-                        data-gramm="false"
-                        data-enable-grammarly="false"
-                      />
-                      {searchQuery ? (
-                        <button
-                          type="button"
-                          className={styles.patientSearchClear}
-                          onClick={() => {
-                            setSearchQuery("");
-                            setIsSearchOpen(false);
-                          }}
-                          aria-label="Clear search input"
+                      >
+                        <UserPlus aria-hidden="true" />
+                        New patient
+                      </button>
+                    </CardHead>
+                    <div className={styles.cardBody}>
+                      {newPatientOpen ? (
+                        <form
+                          id={`${sectionId}-new-patient`}
+                          className={styles.newPatient}
+                          onSubmit={addNewPatient}
+                          noValidate
+                          data-testid="ward-referral-new-patient"
                         >
-                          <X aria-hidden="true" />
-                        </button>
-                      ) : null}
-                      <kbd className={styles.kbd}>/</kbd>
-
-                      {isSearchOpen && filteredPatients.length > 0 ? (
-                        <div
-                          className={styles.patientSearchResults}
-                          role="listbox"
-                          aria-label="Matching sample patients"
-                        >
-                          {filteredPatients.map((p) => (
-                            <button
-                              key={p.id}
-                              type="button"
-                              role="option"
-                              aria-selected={activePatientKey === p.id}
-                              className={styles.patientSearchResultItem}
-                              data-active={activePatientKey === p.id}
-                              onClick={() => handleSelectPatient(p.id)}
-                            >
-                              <span className={styles.resultAvatar} aria-hidden="true">
-                                {p.initials}
-                              </span>
-                              <span className={styles.resultText}>
-                                <span className={styles.searchResultName}>
-                                  {p.name} ({ageSexLabel(p)})
-                                </span>
-                                <span className={styles.searchResultMeta}>
-                                  <span className={styles.mono}>{p.umrn}</span> · {p.origin.split("·")[0].trim()}
-                                </span>
-                              </span>
-                              <span className={styles.searchResultBadge}>{p.legalStatus.split("·")[0].trim()}</span>
-                              {activePatientKey === p.id ? <StatusGlyph tone="success" size={10} /> : null}
+                          <div className={styles.fieldGrid} data-layout="three">
+                            <Field label="Family name" htmlFor={`${sectionId}-np-family`} required>
+                              <input
+                                id={`${sectionId}-np-family`}
+                                className={styles.fieldInput}
+                                value={newPatient.familyName}
+                                maxLength={100}
+                                autoComplete="off"
+                                onChange={(e) => setNewPatient((p) => ({ ...p, familyName: e.target.value }))}
+                              />
+                            </Field>
+                            <Field label="Given name" htmlFor={`${sectionId}-np-given`} required>
+                              <input
+                                id={`${sectionId}-np-given`}
+                                className={styles.fieldInput}
+                                value={newPatient.givenName}
+                                maxLength={100}
+                                autoComplete="off"
+                                onChange={(e) => setNewPatient((p) => ({ ...p, givenName: e.target.value }))}
+                              />
+                            </Field>
+                            <Field label="Date of birth" htmlFor={`${sectionId}-np-dob`} required>
+                              <input
+                                id={`${sectionId}-np-dob`}
+                                type="date"
+                                className={styles.fieldInput}
+                                value={newPatient.dateOfBirth}
+                                onChange={(e) => setNewPatient((p) => ({ ...p, dateOfBirth: e.target.value }))}
+                              />
+                            </Field>
+                            <Field label="UMRN" htmlFor={`${sectionId}-np-umrn`} required>
+                              <input
+                                id={`${sectionId}-np-umrn`}
+                                className={styles.fieldInput}
+                                value={newPatient.umrn}
+                                maxLength={20}
+                                autoComplete="off"
+                                onChange={(e) => setNewPatient((p) => ({ ...p, umrn: e.target.value }))}
+                              />
+                            </Field>
+                            <Field label="Gender" htmlFor={`${sectionId}-np-gender`} hint="optional">
+                              <SelectBox>
+                                <select
+                                  id={`${sectionId}-np-gender`}
+                                  className={styles.fieldSelect}
+                                  value={newPatient.gender}
+                                  onChange={(e) =>
+                                    setNewPatient((p) => ({ ...p, gender: e.target.value as Gender | "" }))
+                                  }
+                                >
+                                  <option value="">Not recorded</option>
+                                  {GENDERS.map((gender) => (
+                                    <option key={gender}>{gender}</option>
+                                  ))}
+                                </select>
+                              </SelectBox>
+                            </Field>
+                            <Field label="Suburb" htmlFor={`${sectionId}-np-suburb`} hint="optional">
+                              <input
+                                id={`${sectionId}-np-suburb`}
+                                className={styles.fieldInput}
+                                list={`${sectionId}-suburbs`}
+                                value={newPatient.suburb}
+                                maxLength={100}
+                                autoComplete="off"
+                                onChange={(e) => setNewPatient((p) => ({ ...p, suburb: e.target.value }))}
+                              />
+                            </Field>
+                          </div>
+                          {newPatientError ? (
+                            <p className={styles.fieldError} role="alert">
+                              <StatusGlyph tone="danger" size={9} />
+                              {newPatientError}
+                            </p>
+                          ) : null}
+                          <div className={styles.confirmRow}>
+                            <button type="submit" className={`${styles.btn} ${styles.btnTint}`}>
+                              <UserPlus aria-hidden="true" />
+                              Add patient
                             </button>
-                          ))}
-                        </div>
+                            <button type="button" className={styles.btn} onClick={() => setNewPatientOpen(false)}>
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
                       ) : null}
-                    </div>
-
-                    <div className={styles.patientIdentity}>
-                      <span className={styles.patientAvatar} aria-hidden="true">
-                        {currentPatient.initials}
-                      </span>
-                      <div className={styles.patientIdentityText}>
-                        <p className={styles.patientName}>
-                          {currentPatient.name} ({ageSexLabel(currentPatient)})
-                        </p>
-                        <p className={styles.patientSub}>
-                          UMRN <span className={styles.mono}>{currentPatient.umrn}</span> · DOB{" "}
-                          {formatDob(currentPatient.dob)} · Medicare {currentPatient.medicare}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className={styles.btn}
-                        onClick={() => {
-                          setSearchQuery("");
-                          setIsSearchOpen(true);
-                          searchInputRef.current?.focus();
-                        }}
-                      >
-                        Switch
-                      </button>
-                    </div>
-
-                    <div className={styles.priorityGrid} role="region" aria-label="Clinical Priority Grid">
-                      <div className={styles.priorityCell}>
-                        <p className={styles.eyebrow}>Legal order</p>
-                        <p className={styles.priorityValue}>{currentPatient.legalStatus}</p>
-                        <p className={styles.priorityMeta}>Expiry {currentPatient.recordedExpiry}</p>
-                        <p className={styles.priorityMeta}>
-                          <StatusGlyph tone="neutral" size={9} />
-                          <LegalLimitsNotChecked variant="tag" />
-                        </p>
-                      </div>
-                      <div className={styles.priorityCell}>
-                        <p className={styles.eyebrow}>Clinical acuity</p>
-                        <p className={styles.priorityValue}>{tierLabel}</p>
-                        <p className={styles.priorityMeta}>
-                          {provisionalDiag ? `Diagnosis ${provisionalDiag}` : "Diagnosis not recorded"}
-                        </p>
-                        <p className={styles.priorityMeta}>
-                          {recordedFlags.length
-                            ? recordedFlags
-                                .map((key, index) =>
-                                  index === 0 ? RISK_FLAG_LABELS[key] : RISK_FLAG_LABELS[key].toLowerCase(),
-                                )
-                                .join(", ")
-                            : "No risk flags selected"}
-                        </p>
-                      </div>
-                      <div className={styles.priorityCell}>
-                        <p className={styles.eyebrow}>Bed fit</p>
-                        <p className={styles.priorityValue}>
-                          {currentPatient.cohort} · {security.toLowerCase()}
-                        </p>
-                        <p className={styles.priorityMeta}>Origin {currentPatient.origin.split("·")[0].trim()}</p>
-                        <p className={styles.priorityMeta}>
-                          {destType === "ward" ? (
-                            <>
-                              <StatusGlyph tone={realTimeMatch.readyBedsCount > 0 ? "success" : "danger"} size={9} />
-                              {realTimeMatch.readyBedsCount} ready · {realTimeMatch.pulledBedsCount} pulled ·{" "}
-                              {realTimeMatch.closedBedsCount} closed
-                            </>
-                          ) : destType === "community" ? (
-                            <>
-                              <StatusGlyph tone="success" size={9} />
-                              Community team, no bed requested
-                            </>
-                          ) : (
-                            <>
-                              <StatusGlyph tone="neutral" size={9} />
-                              Observation beds not recorded
-                            </>
-                          )}
-                        </p>
-                      </div>
-                      <div className={styles.priorityCell} data-testid="ward-referral-medical-clearance-card">
-                        <p className={styles.eyebrow}>Medical clearance</p>
-                        <p className={styles.priorityValue} data-testid="ward-referral-clearance-status">
-                          <StatusGlyph tone={clearance.tone} size={9} />
-                          {clearance.label}
-                        </p>
-                        <p className={styles.priorityMeta}>
-                          {isMedicalCleared ? "Fit for admission & travel" : "Pre-admission exam needed"}
-                        </p>
-                        <button
-                          type="button"
-                          className={styles.textLink}
-                          data-cleared={isMedicalCleared}
-                          data-testid="ward-referral-medical-clearance-toggle"
-                          onClick={() => setActiveSection("documentation")}
-                        >
-                          Review clearance
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section className={styles.refCard}>
-                  <CardHead icon={MapPin} title="Catchment">
-                    <span className={styles.asideText}>
-                      {catchmentConfirmed ? (
-                        <>
-                          <StatusGlyph tone="success" size={9} /> Confirmed
-                        </>
-                      ) : (
-                        "Needs confirming"
-                      )}
-                    </span>
-                  </CardHead>
-                  <div className={styles.cardBody}>
-                    <p className={styles.bodyMeta}>
-                      {patientRecord?.address
-                        ? `Recorded address ${patientRecord.address}`
-                        : "Address not recorded, search the suburb"}
-                    </p>
-                    <div className={styles.suggestion}>
-                      <StatusGlyph tone={catchmentConfirmed ? "success" : "warning"} size={9} />
-                      <span className={styles.suggestionText}>
-                        <strong>{catchmentTeam || "Catchment needs confirmation"}</strong>
-                        <small>
-                          {catchmentConfirmed
-                            ? "Catchment confirmed"
-                            : catchmentSuburb
-                              ? `Suggested from suburb ${catchmentSuburb}, confirm before continuing`
-                              : "Confirm before continuing"}
-                        </small>
-                      </span>
-                      <button
-                        type="button"
-                        className={styles.btn}
-                        onClick={() => {
-                          setCatchmentEditing(true);
-                          setCatchmentConfirmed(false);
-                        }}
-                      >
-                        Change
-                      </button>
-                    </div>
-                    {(!catchmentTeam || catchmentEditing) && (
-                      <div className={styles.fieldGrid}>
-                        <Field label="Patient suburb" htmlFor={`${sectionId}-suburb`}>
-                          <input
-                            id={`${sectionId}-suburb`}
-                            className={styles.fieldInput}
-                            list={`${sectionId}-suburbs`}
-                            value={catchmentSuburb}
-                            onChange={(e) => {
-                              setCatchmentSuburb(e.target.value);
-                              setCatchmentConfirmed(false);
-                              const teams = catchmentRoutingDestinations(lookupCatchment(e.target.value));
-                              setCatchmentTeam(teams?.length === 1 ? teams[0] : "");
-                            }}
-                          />
-                        </Field>
-                        <Field label="Search catchment" htmlFor={`${sectionId}-team`}>
-                          <input
-                            id={`${sectionId}-team`}
-                            className={styles.fieldInput}
-                            list={`${sectionId}-teams`}
-                            value={catchmentTeam}
-                            maxLength={200}
-                            onChange={(e) => {
-                              setCatchmentTeam(e.target.value);
-                              setCatchmentConfirmed(false);
-                            }}
-                          />
-                        </Field>
-                      </div>
-                    )}
-                    <datalist id={`${sectionId}-suburbs`}>
-                      {suburbOptions().map((suburb) => (
-                        <option key={suburb} value={suburb} />
-                      ))}
-                    </datalist>
-                    <datalist id={`${sectionId}-teams`}>
-                      {communityTeamOptions().map((team) => (
-                        <option key={team} value={team} />
-                      ))}
-                    </datalist>
-                    {lookupCatchment(catchmentSuburb).state === "contested" && (
-                      <p className={styles.fieldError}>
-                        <StatusGlyph tone="warning" size={9} />
-                        Catchment sources disagree for this suburb. Select and confirm the catchment manually.
-                      </p>
-                    )}
-                    <div className={styles.fieldGrid}>
-                      <Field
-                        label="Home region"
-                        htmlFor={`${sectionId}-region`}
-                        required
-                        error={patientShowErrors && !homeRegion ? "Choose the home region" : null}
-                      >
-                        <SelectBox>
-                          <select
-                            id={`${sectionId}-region`}
-                            className={styles.fieldSelect}
-                            value={homeRegion}
-                            aria-invalid={patientShowErrors && !homeRegion ? true : undefined}
-                            onChange={(e) => {
-                              setHomeRegion(e.target.value as HomeRegion);
-                              setCatchmentConfirmed(false);
-                            }}
-                          >
-                            <option value="">Choose region</option>
-                            {HOME_REGIONS.map((region) => (
-                              <option key={region}>{region}</option>
-                            ))}
-                          </select>
-                        </SelectBox>
-                      </Field>
-                      <Field label="Service area" htmlFor={`${sectionId}-service`} hint="optional">
-                        <SelectBox>
-                          <select
-                            id={`${sectionId}-service`}
-                            className={styles.fieldSelect}
-                            value={catchmentService}
-                            onChange={(e) => {
-                              setCatchmentService(e.target.value as HealthService | "");
-                              setCatchmentConfirmed(false);
-                            }}
-                          >
-                            <option value="">Not known, confirm later</option>
-                            {HEALTH_SERVICES.map((service) => (
-                              <option key={service}>{service}</option>
-                            ))}
-                          </select>
-                        </SelectBox>
-                      </Field>
-                    </div>
-                    <div className={styles.confirmRow}>
-                      {catchmentConfirmed ? (
-                        <span className={styles.confirmedNote}>
-                          <StatusGlyph tone="success" size={10} />
-                          Catchment confirmed
-                        </span>
-                      ) : (
-                        <>
+                      <div className={styles.patientSearchWrap}>
+                        <Search className={styles.patientSearchIcon} aria-hidden="true" />
+                        <input
+                          ref={searchInputRef}
+                          type="search"
+                          id={searchId}
+                          className={styles.patientSearchInput}
+                          aria-label="Find a patient"
+                          placeholder="Find a patient by name or UMRN"
+                          value={searchQuery}
+                          onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setIsSearchOpen(true);
+                          }}
+                          onFocus={() => {
+                            if (searchQuery.trim().length > 0) setIsSearchOpen(true);
+                          }}
+                          autoComplete="off"
+                          spellCheck="false"
+                          data-gramm="false"
+                          data-enable-grammarly="false"
+                        />
+                        {searchQuery ? (
                           <button
                             type="button"
-                            className={`${styles.btn} ${styles.btnTint}`}
-                            disabled={!catchmentTeam.trim() || !homeRegion}
+                            className={styles.patientSearchClear}
                             onClick={() => {
-                              setCatchmentConfirmed(true);
-                              setCatchmentEditing(false);
-                              setFlowError(null);
+                              setSearchQuery("");
+                              setIsSearchOpen(false);
                             }}
+                            aria-label="Clear search input"
                           >
-                            <CheckCircle2 aria-hidden="true" />
-                            Confirm catchment
+                            <X aria-hidden="true" />
                           </button>
-                          {!catchmentTeam.trim() || !homeRegion ? (
-                            <span className={styles.bodyMeta}>
-                              {!catchmentTeam.trim() ? "Choose the catchment first" : "Choose the home region first"}
-                            </span>
-                          ) : null}
-                        </>
-                      )}
-                    </div>
-                    {patientShowErrors && !catchmentConfirmed ? (
-                      <p className={styles.fieldError}>
-                        <StatusGlyph tone="danger" size={9} />
-                        Confirm the catchment before continuing
-                      </p>
-                    ) : null}
-                  </div>
-                </section>
-              </div>
+                        ) : null}
+                        <kbd className={styles.kbd}>/</kbd>
 
-              <div
-                id={`${sectionId}-referral`}
-                className={styles.sectionPanel}
-                hidden={confirmationOpen || activeSection !== "referral"}
-              >
-                <section className={styles.refCard}>
-                  <CardHead icon={MapPin} title="Referral from">
-                    <span className={styles.asideText}>
-                      {sourceKind === "ed" ? "Emergency referral" : "Community referral"}
-                    </span>
-                  </CardHead>
-                  <div className={styles.cardBody}>
-                    <div className={styles.fieldGrid}>
-                      <div className={styles.formField}>
-                        <div className={styles.fieldLabelRow}>
-                          <span className={styles.required} id={`${sectionId}-source`}>
-                            Source
-                          </span>
+                        {isSearchOpen && filteredPatients.length > 0 ? (
+                          <div className={styles.patientSearchResults} role="listbox" aria-label="Matching patients">
+                            {filteredPatients.map((p) => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                role="option"
+                                aria-selected={activePatientKey === p.id}
+                                className={styles.patientSearchResultItem}
+                                data-active={activePatientKey === p.id}
+                                onClick={() => handleSelectPatient(p.id)}
+                              >
+                                <span className={styles.resultAvatar} aria-hidden="true">
+                                  {p.initials}
+                                </span>
+                                <span className={styles.resultText}>
+                                  <span className={styles.searchResultName}>
+                                    {p.name} ({ageSexLabel(p)})
+                                  </span>
+                                  <span className={styles.searchResultMeta}>
+                                    <span className={styles.mono}>{p.umrn}</span> · {p.origin.split("·")[0].trim()}
+                                  </span>
+                                </span>
+                                <span className={styles.searchResultBadge}>{p.legalStatus.split("·")[0].trim()}</span>
+                                {activePatientKey === p.id ? <StatusGlyph tone="success" size={10} /> : null}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className={styles.patientIdentity}>
+                        <span className={styles.patientAvatar} aria-hidden="true">
+                          {currentPatient.initials}
+                        </span>
+                        <div className={styles.patientIdentityText}>
+                          <p className={styles.patientName}>
+                            {currentPatient.name} ({ageSexLabel(currentPatient)})
+                          </p>
+                          <p className={styles.patientSub}>
+                            UMRN <span className={styles.mono}>{currentPatient.umrn}</span> · DOB{" "}
+                            {formatDob(currentPatient.dob)} · Medicare {currentPatient.medicare}
+                          </p>
                         </div>
-                        <div className={styles.segmented} role="group" aria-labelledby={`${sectionId}-source`}>
-                          {(["ed", "community"] as const).map((kind) => (
-                            <button
-                              key={kind}
-                              type="button"
-                              aria-pressed={sourceKind === kind}
-                              onClick={() => {
-                                setSourceKind(kind);
-                                setOriginSiteCode("");
-                              }}
-                            >
-                              {kind === "community" ? "Community" : "Emergency"}
-                            </button>
-                          ))}
+                        <button
+                          type="button"
+                          className={styles.btn}
+                          onClick={() => {
+                            setSearchQuery("");
+                            setIsSearchOpen(true);
+                            searchInputRef.current?.focus();
+                          }}
+                        >
+                          Switch
+                        </button>
+                      </div>
+
+                      {alreadyOpen ? (
+                        <div className={styles.suggestion} data-testid="ward-referral-already-open">
+                          <StatusGlyph tone="warning" size={9} />
+                          <span className={styles.suggestionText}>
+                            <strong>{alreadyOpen}</strong>
+                            <small>Check the Referrals board before sending another</small>
+                          </span>
+                          <Link className={styles.btn} href="/mockups/ward-flow/referrals" onClick={onClose}>
+                            Open board
+                          </Link>
+                        </div>
+                      ) : null}
+                      {!liveMovement && patientRecord ? (
+                        <div className={styles.fieldGrid}>
+                          <Field
+                            label="Age band"
+                            htmlFor={`${sectionId}-age-band`}
+                            required
+                            error={patientShowErrors && !ageBand ? "Choose the age band" : null}
+                          >
+                            <SelectBox>
+                              <select
+                                id={`${sectionId}-age-band`}
+                                className={styles.fieldSelect}
+                                value={ageBand}
+                                onChange={(e) => setAgeBand(e.target.value as Cohort | "")}
+                              >
+                                <option value="">Choose age band</option>
+                                {COHORTS.map((cohort) => (
+                                  <option key={cohort}>{cohort}</option>
+                                ))}
+                              </select>
+                            </SelectBox>
+                          </Field>
+                        </div>
+                      ) : null}
+
+                      <div className={styles.priorityGrid} role="region" aria-label="Clinical Priority Grid">
+                        <div className={styles.priorityCell}>
+                          <p className={styles.eyebrow}>Legal order</p>
+                          <p className={styles.priorityValue}>{currentPatient.legalStatus}</p>
+                          <p className={styles.priorityMeta}>Expiry {currentPatient.recordedExpiry}</p>
+                          <p className={styles.priorityMeta}>
+                            <StatusGlyph tone="neutral" size={9} />
+                            <LegalLimitsNotChecked variant="tag" />
+                          </p>
+                        </div>
+                        <div className={styles.priorityCell}>
+                          <p className={styles.eyebrow}>Clinical acuity</p>
+                          <p className={styles.priorityValue}>{tierLabel}</p>
+                          <p className={styles.priorityMeta}>
+                            {provisionalDiag ? `Diagnosis ${provisionalDiag}` : "Diagnosis not recorded"}
+                          </p>
+                          <p className={styles.priorityMeta}>
+                            {recordedFlags.length
+                              ? recordedFlags
+                                  .map((key, index) =>
+                                    index === 0 ? RISK_FLAG_LABELS[key] : RISK_FLAG_LABELS[key].toLowerCase(),
+                                  )
+                                  .join(", ")
+                              : "No risk flags selected"}
+                          </p>
+                        </div>
+                        <div className={styles.priorityCell}>
+                          <p className={styles.eyebrow}>Bed fit</p>
+                          <p className={styles.priorityValue}>
+                            {effectiveCohort || "Age band not chosen"} · {security.toLowerCase()}
+                          </p>
+
+                          <p className={styles.priorityMeta}>Origin {currentPatient.origin.split("·")[0].trim()}</p>
+                          <p className={styles.priorityMeta}>
+                            {destType === "ward" ? (
+                              <>
+                                <StatusGlyph tone={realTimeMatch.readyBedsCount > 0 ? "success" : "danger"} size={9} />
+                                {realTimeMatch.readyBedsCount} ready · {realTimeMatch.pulledBedsCount} pulled ·{" "}
+                                {realTimeMatch.closedBedsCount} closed
+                              </>
+                            ) : destType === "community" ? (
+                              <>
+                                <StatusGlyph tone="success" size={9} />
+                                Community team, no bed requested
+                              </>
+                            ) : (
+                              <>
+                                <StatusGlyph tone="neutral" size={9} />
+                                Observation beds not recorded
+                              </>
+                            )}
+                          </p>
+                        </div>
+                        <div className={styles.priorityCell} data-testid="ward-referral-medical-clearance-card">
+                          <p className={styles.eyebrow}>Medical clearance</p>
+                          <p className={styles.priorityValue} data-testid="ward-referral-clearance-status">
+                            <StatusGlyph tone={clearance.tone} size={9} />
+                            {clearance.label}
+                          </p>
+                          <p className={styles.priorityMeta}>
+                            {isMedicalCleared ? "Fit for admission & travel" : "Pre-admission exam needed"}
+                          </p>
+                          <button
+                            type="button"
+                            className={styles.textLink}
+                            data-cleared={isMedicalCleared}
+                            data-testid="ward-referral-medical-clearance-toggle"
+                            onClick={() => setActiveSection("documentation")}
+                          >
+                            Review clearance
+                          </button>
                         </div>
                       </div>
-                      <Field
-                        label={sourceKind === "ed" ? "Referring emergency department" : "Referring service location"}
-                        htmlFor={`${sectionId}-origin`}
-                        required
-                        error={attempted.referral && !originValid ? "Choose the location of referral" : null}
-                      >
-                        <SelectBox>
-                          <select
-                            id={`${sectionId}-origin`}
-                            className={styles.fieldSelect}
-                            value={originSiteCode}
-                            onChange={(e) => setOriginSiteCode(e.target.value)}
+                    </div>
+                  </section>
+
+                  <section className={styles.refCard}>
+                    <CardHead icon={MapPin} title="Catchment">
+                      <span className={styles.asideText}>
+                        {catchmentConfirmed ? (
+                          <>
+                            <StatusGlyph tone="success" size={9} /> Confirmed
+                          </>
+                        ) : (
+                          "Needs confirming"
+                        )}
+                      </span>
+                    </CardHead>
+                    <div className={styles.cardBody}>
+                      <p className={styles.bodyMeta}>
+                        {patientRecord?.address
+                          ? `Recorded address ${patientRecord.address}`
+                          : "Address not recorded, search the suburb"}
+                      </p>
+                      <div className={styles.suggestion}>
+                        <StatusGlyph tone={catchmentConfirmed ? "success" : "warning"} size={9} />
+                        <span className={styles.suggestionText}>
+                          <strong>{catchmentTeam || "Catchment needs confirmation"}</strong>
+                          <small>
+                            {catchmentConfirmed
+                              ? "Catchment confirmed"
+                              : catchmentSuburb
+                                ? `Suggested from suburb ${catchmentSuburb}, confirm before continuing`
+                                : "Confirm before continuing"}
+                          </small>
+                        </span>
+                        <button
+                          type="button"
+                          className={styles.btn}
+                          onClick={() => {
+                            setCatchmentEditing(true);
+                            setCatchmentConfirmed(false);
+                          }}
+                        >
+                          Change
+                        </button>
+                      </div>
+                      <p className={styles.bodyMeta} data-testid="ward-referral-suburb-note">
+                        Suburb on the referral:{" "}
+                        <strong>{suburbKnown ? catchmentSuburb : suburbUnknownLabels.not_known}</strong>
+                      </p>
+                      {(!catchmentTeam || catchmentEditing) && (
+                        <div className={styles.fieldGrid}>
+                          <Field label="Patient suburb" htmlFor={`${sectionId}-suburb`}>
+                            <input
+                              id={`${sectionId}-suburb`}
+                              className={styles.fieldInput}
+                              list={`${sectionId}-suburbs`}
+                              value={catchmentSuburb}
+                              onChange={(e) => {
+                                setCatchmentSuburb(e.target.value);
+                                setCatchmentConfirmed(false);
+                                const teams = catchmentRoutingDestinations(lookupCatchment(e.target.value));
+                                setCatchmentTeam(teams?.length === 1 ? teams[0] : "");
+                              }}
+                            />
+                          </Field>
+                          <Field label="Search catchment" htmlFor={`${sectionId}-team`}>
+                            <input
+                              id={`${sectionId}-team`}
+                              className={styles.fieldInput}
+                              list={`${sectionId}-teams`}
+                              value={catchmentTeam}
+                              maxLength={200}
+                              onChange={(e) => {
+                                setCatchmentTeam(e.target.value);
+                                setCatchmentConfirmed(false);
+                              }}
+                            />
+                          </Field>
+                        </div>
+                      )}
+                      <datalist id={`${sectionId}-suburbs`}>
+                        {suburbOptions().map((suburb) => (
+                          <option key={suburb} value={suburb} />
+                        ))}
+                      </datalist>
+                      <datalist id={`${sectionId}-teams`}>
+                        {communityTeamOptions().map((team) => (
+                          <option key={team} value={team} />
+                        ))}
+                      </datalist>
+                      {lookupCatchment(catchmentSuburb).state === "contested" && (
+                        <p className={styles.fieldError}>
+                          <StatusGlyph tone="warning" size={9} />
+                          Catchment sources disagree for this suburb. Select and confirm the catchment manually.
+                        </p>
+                      )}
+                      <div className={styles.fieldGrid}>
+                        <Field
+                          label="Home region"
+                          htmlFor={`${sectionId}-region`}
+                          required
+                          error={patientShowErrors && !homeRegion ? "Choose the home region" : null}
+                        >
+                          <SelectBox>
+                            <select
+                              id={`${sectionId}-region`}
+                              className={styles.fieldSelect}
+                              value={homeRegion}
+                              aria-invalid={patientShowErrors && !homeRegion ? true : undefined}
+                              onChange={(e) => {
+                                setHomeRegion(e.target.value as HomeRegion);
+                                setCatchmentConfirmed(false);
+                              }}
+                            >
+                              <option value="">Choose region</option>
+                              {HOME_REGIONS.map((region) => (
+                                <option key={region}>{region}</option>
+                              ))}
+                            </select>
+                          </SelectBox>
+                        </Field>
+                        <Field label="Service area" htmlFor={`${sectionId}-service`} hint="optional">
+                          <SelectBox>
+                            <select
+                              id={`${sectionId}-service`}
+                              className={styles.fieldSelect}
+                              value={catchmentService}
+                              onChange={(e) => {
+                                setCatchmentService(e.target.value as HealthService | "");
+                                setCatchmentConfirmed(false);
+                              }}
+                            >
+                              <option value="">Not known, confirm later</option>
+                              {HEALTH_SERVICES.map((service) => (
+                                <option key={service}>{service}</option>
+                              ))}
+                            </select>
+                          </SelectBox>
+                        </Field>
+                      </div>
+                      <div className={styles.confirmRow}>
+                        {catchmentConfirmed ? (
+                          <span className={styles.confirmedNote}>
+                            <StatusGlyph tone="success" size={10} />
+                            Catchment confirmed
+                          </span>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className={`${styles.btn} ${styles.btnTint}`}
+                              disabled={!catchmentTeam.trim() || !homeRegion}
+                              onClick={() => {
+                                setCatchmentConfirmed(true);
+                                setCatchmentEditing(false);
+                                setFlowError(null);
+                              }}
+                            >
+                              <CheckCircle2 aria-hidden="true" />
+                              Confirm catchment
+                            </button>
+                            {!catchmentTeam.trim() || !homeRegion ? (
+                              <span className={styles.bodyMeta}>
+                                {!catchmentTeam.trim() ? "Choose the catchment first" : "Choose the home region first"}
+                              </span>
+                            ) : null}
+                          </>
+                        )}
+                      </div>
+                      {patientShowErrors && !catchmentConfirmed ? (
+                        <p className={styles.fieldError}>
+                          <StatusGlyph tone="danger" size={9} />
+                          Confirm the catchment before continuing
+                        </p>
+                      ) : null}
+                    </div>
+                  </section>
+                </div>
+
+                <div
+                  id={`${sectionId}-referral`}
+                  className={styles.sectionPanel}
+                  hidden={previewOpen || confirmationOpen || activeSection !== "referral"}
+                >
+                  <section className={styles.refCard}>
+                    <CardHead icon={MapPin} title="From">
+                      <span className={styles.asideText}>
+                        {sourceKind === "ed" ? "Emergency referral" : "Community referral"}
+                      </span>
+                    </CardHead>
+                    <div className={styles.cardBody}>
+                      <div className={styles.fieldGrid}>
+                        <div className={styles.formField}>
+                          <div className={styles.fieldLabelRow}>
+                            <span className={styles.required} id={`${sectionId}-source`}>
+                              Source
+                            </span>
+                          </div>
+                          <div className={styles.segmented} role="group" aria-labelledby={`${sectionId}-source`}>
+                            {(["ed", "community"] as const).map((kind) => (
+                              <button
+                                key={kind}
+                                type="button"
+                                aria-pressed={sourceKind === kind}
+                                onClick={() => {
+                                  setSourceKind(kind);
+                                  setOriginSiteCode("");
+                                }}
+                              >
+                                {kind === "community" ? "Community" : "Emergency"}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <Field
+                          label={sourceKind === "ed" ? "Referring emergency department" : "Referring service location"}
+                          htmlFor={`${sectionId}-origin`}
+                          required
+                          error={attempted.referral && !originValid ? "Choose the location of referral" : null}
+                        >
+                          <SelectBox>
+                            <select
+                              id={`${sectionId}-origin`}
+                              className={styles.fieldSelect}
+                              value={originSiteCode}
+                              onChange={(e) => setOriginSiteCode(e.target.value)}
+                            >
+                              <option value="">Choose location</option>
+                              {wardSites
+                                .filter((site) => sourceKind !== "ed" || site.emergencyDepartment)
+                                .map((site) => (
+                                  <option key={site.code} value={site.code}>
+                                    {sourceKind === "ed" ? site.emergencyDepartment?.name : site.name}
+                                  </option>
+                                ))}
+                            </select>
+                          </SelectBox>
+                        </Field>
+                        {sourceKind === "community" && (
+                          <Field
+                            label="Referring community service"
+                            htmlFor={`${sectionId}-sending`}
+                            required
+                            wide
+                            error={
+                              attempted.referral && !sendingTeam.trim()
+                                ? "Record the referring community service"
+                                : null
+                            }
                           >
-                            <option value="">Choose location</option>
-                            {wardSites
-                              .filter((site) => sourceKind !== "ed" || site.emergencyDepartment)
-                              .map((site) => (
-                                <option key={site.code} value={site.code}>
-                                  {sourceKind === "ed" ? site.emergencyDepartment?.name : site.name}
+                            <input
+                              id={`${sectionId}-sending`}
+                              className={styles.fieldInput}
+                              list={`${sectionId}-teams`}
+                              value={sendingTeam}
+                              maxLength={200}
+                              onChange={(e) => setSendingTeam(e.target.value)}
+                            />
+                          </Field>
+                        )}
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className={styles.refCard}>
+                    <CardHead icon={Shield} title="Legal status and urgency">
+                      <span className={styles.asideText}>
+                        <StatusGlyph tone="neutral" size={9} />
+                        <LegalLimitsNotChecked variant="tag" />
+                      </span>
+                    </CardHead>
+                    <div className={styles.cardBody}>
+                      <div className={styles.fieldGrid} data-layout="wide-narrow">
+                        <Field label="Legal status" htmlFor="refLegalSelect" required>
+                          <SelectBox>
+                            <select
+                              className={styles.fieldSelect}
+                              id="refLegalSelect"
+                              value={legalStatus}
+                              onChange={(e) => setLegalStatus(e.target.value)}
+                            >
+                              {/* The record's own status stays selectable even when it is not one of the usual
+                              choices, so the select never shows a different status from the one recorded. */}
+                              {legalStatus !== "Voluntary" &&
+                              !LEGAL_STATUS_FORM_CODES.some((code) => legalStatus === `Form ${code}`) ? (
+                                <option value={legalStatus}>
+                                  {legalStatus.startsWith("Form ")
+                                    ? legalStatusOptionLabel(legalStatus.slice(5))
+                                    : legalStatus}
+                                </option>
+                              ) : null}
+                              {LEGAL_STATUS_FORM_CODES.map((code) => (
+                                <option key={code} value={`Form ${code}`}>
+                                  {legalStatusOptionLabel(code)}
                                 </option>
                               ))}
-                          </select>
-                        </SelectBox>
-                      </Field>
-                      {sourceKind === "community" && (
-                        <Field
-                          label="Referring community service"
-                          htmlFor={`${sectionId}-sending`}
-                          required
-                          wide
-                          error={
-                            attempted.referral && !sendingTeam.trim() ? "Record the referring community service" : null
-                          }
-                        >
-                          <input
-                            id={`${sectionId}-sending`}
-                            className={styles.fieldInput}
-                            list={`${sectionId}-teams`}
-                            value={sendingTeam}
-                            maxLength={200}
-                            onChange={(e) => setSendingTeam(e.target.value)}
-                          />
+                              <option value="Voluntary">Voluntary</option>
+                            </select>
+                          </SelectBox>
                         </Field>
-                      )}
-                    </div>
-                  </div>
-                </section>
-
-                <section className={styles.refCard}>
-                  <CardHead icon={Shield} title="Legal status and urgency">
-                    <span className={styles.asideText}>
-                      <StatusGlyph tone="neutral" size={9} />
-                      <LegalLimitsNotChecked variant="tag" />
-                    </span>
-                  </CardHead>
-                  <div className={styles.cardBody}>
-                    <div className={styles.fieldGrid} data-layout="wide-narrow">
-                      <Field label="Legal status" htmlFor="refLegalSelect" required>
-                        <SelectBox>
-                          <select
-                            className={styles.fieldSelect}
-                            id="refLegalSelect"
-                            value={legalStatus}
-                            onChange={(e) => setLegalStatus(e.target.value)}
-                          >
-                            {/* The record's own status stays selectable even when it is not one of the usual
-                              choices, so the select never shows a different status from the one recorded. */}
-                            {legalStatus !== "Voluntary" &&
-                            !LEGAL_STATUS_FORM_CODES.some((code) => legalStatus === `Form ${code}`) ? (
-                              <option value={legalStatus}>
-                                {legalStatus.startsWith("Form ")
-                                  ? legalStatusOptionLabel(legalStatus.slice(5))
-                                  : legalStatus}
-                              </option>
-                            ) : null}
-                            {LEGAL_STATUS_FORM_CODES.map((code) => (
-                              <option key={code} value={`Form ${code}`}>
-                                {legalStatusOptionLabel(code)}
-                              </option>
+                        <fieldset className={styles.radioField}>
+                          <legend className={styles.required}>Bed security</legend>
+                          <div className={styles.segmented}>
+                            {(["Secure", "Open"] as const).map((level) => (
+                              <label key={level} data-selected={security === level}>
+                                <input
+                                  type="radio"
+                                  name={`${sectionId}-security`}
+                                  value={level}
+                                  checked={security === level}
+                                  onChange={() => {
+                                    setSecurity(level);
+                                    setSelectedUnitIds([]);
+                                  }}
+                                />
+                                {level}
+                              </label>
                             ))}
-                            <option value="Voluntary">Voluntary</option>
-                          </select>
-                        </SelectBox>
-                      </Field>
+                          </div>
+                        </fieldset>
+                      </div>
                       <fieldset className={styles.radioField}>
-                        <legend className={styles.required}>Bed security</legend>
-                        <div className={styles.segmented}>
-                          {(["Secure", "Open"] as const).map((level) => (
-                            <label key={level} data-selected={security === level}>
-                              <input
-                                type="radio"
-                                name={`${sectionId}-security`}
-                                value={level}
-                                checked={security === level}
-                                onChange={() => {
-                                  setSecurity(level);
-                                  setSelectedUnitIds([]);
-                                }}
-                              />
-                              {level}
-                            </label>
-                          ))}
+                        <legend className={styles.required}>Urgency</legend>
+                        <div className={styles.tierGrid}>
+                          {URGENCY_LEVELS.map((level) => {
+                            const words = urgencyTierLabel(level).split(" · ")[1] ?? "";
+                            return (
+                              <label key={level} className={styles.tierTile} data-selected={urgency === String(level)}>
+                                <input
+                                  type="radio"
+                                  name={`${sectionId}-urgency`}
+                                  value={String(level)}
+                                  aria-label={urgencyTierLabel(level)}
+                                  checked={urgency === String(level)}
+                                  onChange={() => setUrgency(String(level))}
+                                />
+                                <span className={styles.tierDigit} data-tier={level} aria-hidden="true">
+                                  {level}
+                                </span>
+                                <span className={styles.tierWords}>
+                                  {words.charAt(0).toUpperCase() + words.slice(1)}
+                                </span>
+                              </label>
+                            );
+                          })}
                         </div>
                       </fieldset>
                     </div>
-                    <fieldset className={styles.radioField}>
-                      <legend className={styles.required}>Refer to</legend>
-                      <div className={`${styles.segmented} ${styles.segmentedFull}`}>
-                        {(["ward", "community", "ed"] as const).map((kind) => (
-                          <label key={kind} data-selected={destType === kind}>
-                            <input
-                              type="radio"
-                              name={`${sectionId}-dest`}
-                              value={kind}
-                              checked={destType === kind}
-                              onChange={() => {
-                                setDestType(kind);
-                                setSelectedUnitIds([]);
-                                setSelectedRecipient("");
-                              }}
-                            />
-                            {DESTINATION_LABELS[kind]}
-                          </label>
-                        ))}
-                      </div>
-                    </fieldset>
-                    <fieldset className={styles.radioField}>
-                      <legend className={styles.required}>Urgency</legend>
-                      <div className={styles.tierGrid}>
-                        {URGENCY_LEVELS.map((level) => {
-                          const words = urgencyTierLabel(level).split(" · ")[1] ?? "";
-                          return (
-                            <label key={level} className={styles.tierTile} data-selected={urgency === String(level)}>
-                              <input
-                                type="radio"
-                                name={`${sectionId}-urgency`}
-                                value={String(level)}
-                                aria-label={urgencyTierLabel(level)}
-                                checked={urgency === String(level)}
-                                onChange={() => setUrgency(String(level))}
-                              />
-                              <span className={styles.tierDigit} data-tier={level} aria-hidden="true">
-                                {level}
-                              </span>
-                              <span className={styles.tierWords}>{words.charAt(0).toUpperCase() + words.slice(1)}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </fieldset>
-                  </div>
-                </section>
+                  </section>
 
-                <section className={styles.refCard}>
-                  <CardHead icon={Activity} title="Clinical presentation" />
-                  <div className={styles.cardBody}>
-                    <div className={styles.fieldGrid}>
-                      <Field label="Provisional diagnosis" htmlFor="refDiagSelect" hint="optional">
-                        <SelectBox>
-                          <select
-                            className={styles.fieldSelect}
-                            id="refDiagSelect"
-                            value={provisionalDiag}
-                            onChange={(e) => setProvisionalDiag(e.target.value)}
-                          >
-                            <option value="">Not recorded</option>
-                            {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
-                              <option key={block.code} value={block.code}>
-                                {block.label}
-                              </option>
-                            ))}
-                          </select>
-                        </SelectBox>
-                      </Field>
-                      <Field label="Reason for referral" htmlFor="refDocInput" hint="optional">
-                        <input
-                          type="text"
-                          className={styles.fieldInput}
-                          id="refDocInput"
-                          maxLength={1000}
-                          placeholder="Why this service is needed"
-                          value={doctorNote}
-                          onChange={(e) => setDoctorNote(e.target.value)}
-                          data-gramm="false"
-                          data-enable-grammarly="false"
-                          spellCheck={false}
-                          autoComplete="off"
-                        />
-                      </Field>
-                      <Field
-                        label="Patient story"
-                        htmlFor="refSummaryText"
-                        hint={`${clinicalSummary.length}/10000`}
-                        wide
-                      >
-                        <textarea
-                          className={styles.clinicalTextarea}
-                          id="refSummaryText"
-                          maxLength={10000}
-                          rows={2}
-                          placeholder="What changed today, history, current treatment"
-                          value={clinicalSummary}
-                          onChange={(e) => setClinicalSummary(e.target.value)}
-                          data-gramm="false"
-                          data-enable-grammarly="false"
-                          spellCheck={false}
-                          autoComplete="off"
-                        />
-                      </Field>
-                    </div>
-                    <fieldset className={styles.radioField}>
-                      <legend>
-                        Risk flags <span className={styles.fieldHint}>select all active</span>
-                      </legend>
-                      <div className={styles.checkGrid}>
-                        {(Object.keys(RISK_FLAG_LABELS) as (keyof typeof RISK_FLAG_LABELS)[]).map((key) => (
-                          <label key={key} className={styles.checkChip} data-checked={!!riskFlags[key]}>
-                            <input type="checkbox" checked={!!riskFlags[key]} onChange={() => toggleRisk(key)} />
-                            {RISK_FLAG_LABELS[key]}
-                          </label>
-                        ))}
-                      </div>
-                    </fieldset>
-                  </div>
-                </section>
-                {destType === "ward" && (
                   <section className={styles.refCard}>
-                    <CardHead icon={BedDouble} title="Bed requirements" />
+                    <CardHead icon={Activity} title="Clinical presentation" />
                     <div className={styles.cardBody}>
-                      <div className={styles.fieldGrid} data-layout="three">
-                        <Field label="Recorded sex" htmlFor={`${sectionId}-sex`}>
+                      <div className={styles.fieldGrid}>
+                        <Field label="Provisional diagnosis" htmlFor="refDiagSelect" hint="optional">
                           <SelectBox>
                             <select
-                              id={`${sectionId}-sex`}
                               className={styles.fieldSelect}
-                              value={referralSex}
-                              onChange={(e) => setReferralSex(e.target.value as RecordedSex)}
-                            >
-                              {RECORDED_SEXES.map((sex) => (
-                                <option key={sex}>{sex}</option>
-                              ))}
-                            </select>
-                          </SelectBox>
-                        </Field>
-                        <Field label="Gender identity" htmlFor={`${sectionId}-gender`}>
-                          <SelectBox>
-                            <select
-                              id={`${sectionId}-gender`}
-                              className={styles.fieldSelect}
-                              value={referralGender}
-                              onChange={(e) => setReferralGender(e.target.value as ReferralGender | "")}
+                              id="refDiagSelect"
+                              value={provisionalDiag}
+                              onChange={(e) => setProvisionalDiag(e.target.value)}
                             >
                               <option value="">Not recorded</option>
-                              {REFERRAL_GENDERS.map((gender) => (
-                                <option key={gender}>{gender}</option>
+                              {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
+                                <option key={block.code} value={block.code}>
+                                  {block.label}
+                                </option>
                               ))}
                             </select>
                           </SelectBox>
                         </Field>
-                        <div className={styles.formField}>
-                          <div className={styles.fieldLabelRow}>
-                            <span id={`${sectionId}-acuity`}>High-acuity nursing</span>
-                          </div>
-                          <span className={styles.switchRow}>
-                            <button
-                              type="button"
-                              role="switch"
-                              aria-checked={highAcuity}
-                              aria-labelledby={`${sectionId}-acuity`}
-                              className={styles.switch}
-                              onClick={() => setHighAcuity((on) => !on)}
-                            />
-                            <span aria-hidden="true">{highAcuity ? "On" : "Off"}</span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-                )}
-              </div>
-
-              <div
-                id={`${sectionId}-documentation`}
-                className={styles.sectionPanel}
-                hidden={confirmationOpen || activeSection !== "documentation"}
-              >
-                <DocumentationPanel
-                  key={activePatientKey}
-                  draft={documentation}
-                  onChange={setDocumentation}
-                  referrerName={contact.name}
-                  onReferrerNameChange={(name) => setContact((current) => ({ ...current, name }))}
-                />
-              </div>
-
-              <div
-                id={`${sectionId}-placement`}
-                className={styles.sectionPanel}
-                hidden={confirmationOpen || activeSection !== "placement"}
-              >
-                {destType === "ward" ? (
-                  <section className={styles.refCard}>
-                    <CardHead icon={Users} title="Wards to refer">
-                      <span className={styles.asideText}>Up to {configuration.parallelReferralCap}</span>
-                      <span className={styles.chip}>
-                        <span className={styles.mono}>{selectedUnitIds.length}</span> selected
-                      </span>
-                    </CardHead>
-                    <div className={styles.cardBody} data-tight="true">
-                      <div className={styles.legendRow}>
-                        <span>
-                          <StatusGlyph tone="success" size={9} />
-                          <strong className={styles.mono}>{realTimeMatch.readyBedsCount}</strong> ready
-                        </span>
-                        <span>
-                          <StatusGlyph tone="info" size={9} />
-                          <strong className={styles.mono}>{realTimeMatch.pulledBedsCount}</strong> pulled
-                        </span>
-                        <span>
-                          <StatusGlyph tone="closed" size={9} />
-                          <strong className={styles.mono}>{realTimeMatch.closedBedsCount}</strong> closed
-                        </span>
-                        <span className={styles.legendAside}>
-                          {currentPatient.cohort} · {security.toLowerCase()} · {realTimeMatch.sortedUnits.length}{" "}
-                          {realTimeMatch.sortedUnits.length === 1 ? "ward" : "wards"}
-                        </span>
-                      </div>
-                      {/*
-                        Its OWN line, never appended to the figures above: "Ready 2" immediately followed by
-                        "1 still being made ready" reads as 21. Renders only when there is one.
-                      */}
-                      {realTimeMatch.pendingPreparationCount > 0 ? (
-                        <p className={styles.beingMadeReady} data-testid="referral-drawer-pending-preparation">
-                          <StatusGlyph tone="neutral" size={9} />
-                          <strong className={styles.mono}>{realTimeMatch.pendingPreparationCount}</strong> of them still
-                          being made ready, offered and counted
-                        </p>
-                      ) : null}
-                    </div>
-                    <div className={styles.wardTable}>
-                      <div className={styles.wardTableHead} aria-hidden="true">
-                        <span>Ward</span>
-                        <span>Ready</span>
-                        <span>Waitlist</span>
-                      </div>
-                      <div role="list" aria-label="Placement Destination Options">
-                        {realTimeMatch.sortedUnits.map((unit) => {
-                          const selected = selectedUnitIds.includes(unit.unitId);
-                          const inCatchment =
-                            catchmentConfirmed && catchmentService ? unit.healthService === catchmentService : null;
-                          const waiting =
-                            referrals.filter((referral) =>
-                              referral.destinations.some(
-                                (arm) =>
-                                  arm.destination.kind === "psychiatric_ward" &&
-                                  arm.destination.unitId === unit.unitId &&
-                                  arm.state === "queued" &&
-                                  arm.waitlistedAt !== undefined &&
-                                  arm.withdrawnAt === undefined,
-                              ),
-                            ).length +
-                            movements.filter(
-                              (movement) => movement.waitlistedUnitIds?.includes(unit.unitId) && !movement.closure,
-                            ).length;
-                          return (
-                            <label
-                              key={unit.unitId}
-                              role="listitem"
-                              className={styles.wardRow}
-                              data-catchment={inCatchment === null ? "unknown" : inCatchment ? "in" : "out"}
-                              data-selected={selected}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selected}
-                                onChange={() => {
-                                  if (!selected && selectedUnitIds.length >= configuration.parallelReferralCap) {
-                                    setFlowError(
-                                      `Choose up to ${configuration.parallelReferralCap} referral locations.`,
-                                    );
-                                    return;
-                                  }
-                                  setSelectedUnitIds((ids) =>
-                                    selected ? ids.filter((id) => id !== unit.unitId) : [...ids, unit.unitId],
-                                  );
-                                  setFlowError(null);
-                                }}
-                              />
-                              <span className={styles.wardIdentity}>
-                                <span className={styles.wardTitle}>
-                                  <strong>{unit.name}</strong> {unit.hospital}
-                                </span>
-                                <span className={styles.wardMeta}>
-                                  {inCatchment ? <StatusGlyph tone="success" size={9} /> : null}
-                                  {inCatchment === null
-                                    ? "Catchment not confirmed"
-                                    : inCatchment
-                                      ? "In catchment"
-                                      : "Outside catchment"}
-                                  {unit.healthService ? ` · ${unit.healthService}` : ""} ·{" "}
-                                  <span className={styles.mono}>{unit.unitId}</span>
-                                </span>
-                              </span>
-                              <span className={styles.wardFigure}>
-                                <strong className={styles.mono}>{unit.readyBeds}</strong>
-                                {(unit.pendingPreparation ?? 0) > 0 ? (
-                                  <small>{unit.pendingPreparation} prep</small>
-                                ) : unit.pulledBeds > 0 ? (
-                                  <small>{unit.pulledBeds} pulled</small>
-                                ) : null}
-                              </span>
-                              <span className={styles.wardFigure}>
-                                <strong className={styles.mono}>{waiting}</strong>
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                      {!realTimeMatch.sortedUnits.length && (
-                        <p className={styles.bodyMeta}>No wards match this cohort and bed security.</p>
-                      )}
-                    </div>
-                  </section>
-                ) : (
-                  <section className={styles.refCard}>
-                    <CardHead icon={Users} title={destType === "community" ? "Community team" : "Emergency department"}>
-                      <span className={styles.asideText}>Choose one</span>
-                      <span className={styles.chip}>
-                        <span className={styles.mono}>{selectedRecipient ? 1 : 0}</span> selected
-                      </span>
-                    </CardHead>
-                    <div className={styles.cardBody} data-tight="true">
-                      <p className={styles.bodyMeta}>
-                        <StatusGlyph tone="info" size={8} />
-                        {destType === "community"
-                          ? "Community referrals request no bed"
-                          : "Goes to psychiatry, observation beds not recorded"}
-                      </p>
-                    </div>
-                    <div
-                      role="radiogroup"
-                      aria-label={
-                        destType === "community" ? "Community team to refer to" : "Emergency department to refer to"
-                      }
-                    >
-                      {(destType === "community"
-                        ? Array.from(new Set([catchmentTeam, ...communityTeamOptions()].filter(Boolean)))
-                            .sort(
-                              (a, b) => Number(b === catchmentTeam) - Number(a === catchmentTeam) || a.localeCompare(b),
-                            )
-                            .map((team) => ({ value: team, name: team, inCatchment: team === catchmentTeam }))
-                        : allEmergencyDepartments().map((ed) => ({ value: ed.id, name: ed.name, inCatchment: null }))
-                      ).map((option) => (
-                        <label
-                          key={option.value}
-                          className={styles.wardRow}
-                          data-variant="radio"
-                          data-selected={selectedRecipient === option.value}
-                        >
-                          <input
-                            type="radio"
-                            name={`${sectionId}-recipient`}
-                            value={option.value}
-                            checked={selectedRecipient === option.value}
-                            onChange={() => {
-                              setSelectedRecipient(option.value);
-                              setFlowError(null);
-                            }}
-                          />
-                          <span className={styles.wardIdentity}>
-                            <span className={styles.wardTitle}>
-                              <strong>{option.name}</strong>
-                            </span>
-                            <span className={styles.wardMeta}>
-                              {destType === "community"
-                                ? "Community team · no bed requested"
-                                : "Emergency department · psychiatry"}
-                            </span>
-                          </span>
-                          {option.inCatchment === null ? null : (
-                            <span className={styles.rowAside}>
-                              {option.inCatchment ? (
-                                <>
-                                  <StatusGlyph tone="success" size={9} /> In catchment
-                                </>
-                              ) : (
-                                "Outside catchment"
-                              )}
-                            </span>
-                          )}
-                        </label>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                <section className={styles.refCard}>
-                  <CardHead icon={FileText} title="Referral summary" />
-                  <div className={styles.cardBody}>
-                    <dl className={styles.factGrid}>
-                      <div>
-                        <dt>Patient</dt>
-                        <dd>{currentPatient.name}</dd>
-                      </div>
-                      <div>
-                        <dt>Catchment</dt>
-                        <dd>{catchmentConfirmed ? catchmentTeam : "Needs confirming"}</dd>
-                      </div>
-                      <div>
-                        <dt>Documents</dt>
-                        <dd>{documentation.charts.length} attached</dd>
-                      </div>
-                      <div>
-                        <dt>Clearance</dt>
-                        <dd>{clearance.label}</dd>
-                      </div>
-                    </dl>
-                    {recipientLabels.length ? (
-                      <ul className={styles.tickList}>
-                        {recipientLabels.map((label) => (
-                          <li key={label}>
-                            <StatusGlyph tone="success" size={10} />
-                            {label}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                </section>
-                {destType === "ward" && selectedDestinations.length > 0 && (
-                  <section className={styles.refCard}>
-                    <CardHead icon={Truck} title="Arrival plan">
-                      <span className={styles.chip}>Proposed</span>
-                    </CardHead>
-                    <div className={styles.cardBody}>
-                      <div className={styles.fieldGrid} data-layout="three">
-                        <Field label="Transport" htmlFor="refTransportSelect">
-                          <SelectBox>
-                            <select
-                              className={styles.fieldSelect}
-                              id="refTransportSelect"
-                              value={transport}
-                              onChange={(e) => setTransport(e.target.value)}
-                            >
-                              <option value="mht">Mental Health Transport</option>
-                              <option value="police">Police escort</option>
-                              <option value="rfds">RFDS aeromedical escort</option>
-                              <option value="stjohn">St John Ambulance escort</option>
-                              <option value="carer">Patient or carer accompanied</option>
-                            </select>
-                          </SelectBox>
-                        </Field>
-                        <Field label="Arrival, AWST" htmlFor={`${sectionId}-eta`}>
-                          <input
-                            id={`${sectionId}-eta`}
-                            type="datetime-local"
-                            className={styles.fieldInput}
-                            value={arrivalEta}
-                            onChange={(e) => setArrivalEta(e.target.value)}
-                          />
-                        </Field>
-                        <Field label="Dispatch ref" htmlFor="refTransitInput">
+                        <Field label="Reason for referral" htmlFor="refDocInput" hint="optional">
                           <input
                             type="text"
                             className={styles.fieldInput}
-                            id="refTransitInput"
-                            placeholder="Dispatch or staging bay"
-                            value={transitNote}
-                            onChange={(e) => setTransitNote(e.target.value)}
+                            id="refDocInput"
+                            maxLength={1000}
+                            placeholder="Why this service is needed"
+                            value={doctorNote}
+                            onChange={(e) => setDoctorNote(e.target.value)}
+                            data-gramm="false"
+                            data-enable-grammarly="false"
+                            spellCheck={false}
+                            autoComplete="off"
+                          />
+                        </Field>
+                        <Field
+                          label="Patient story"
+                          htmlFor="refSummaryText"
+                          hint={`${clinicalSummary.length}/10000`}
+                          wide
+                        >
+                          <textarea
+                            className={styles.clinicalTextarea}
+                            id="refSummaryText"
+                            maxLength={10000}
+                            rows={2}
+                            placeholder="What changed today, history, current treatment"
+                            value={clinicalSummary}
+                            onChange={(e) => setClinicalSummary(e.target.value)}
                             data-gramm="false"
                             data-enable-grammarly="false"
                             spellCheck={false}
@@ -2300,58 +2506,536 @@ function WardReferralDrawerContent({
                           />
                         </Field>
                       </div>
-                      {liveMovement && canSetArrivalPlan(liveMovement) ? (
-                        <div className={styles.suggestion} data-testid="ward-referral-arrival-plan-card">
-                          <StatusGlyph tone="info" size={9} />
-                          <span className={styles.suggestionText}>
-                            {liveMovement.arrivalDetails ? (
-                              <>
-                                <strong>
-                                  Current journey, ETA{" "}
-                                  {arrivalEtaLabel(liveMovement.arrivalDetails.estimatedArrivalAt, now)}
-                                </strong>
-                                <small>
-                                  {arrivalModeLabel(liveMovement.arrivalDetails.mode)}
-                                  {liveMovement.arrivalDetails.trackingNumber
-                                    ? ` · ${liveMovement.arrivalDetails.trackingNumber}`
-                                    : ""}
-                                </small>
-                              </>
-                            ) : (
-                              <>
-                                <strong>No arrival plan recorded</strong>
-                                <small>Setting one records the mode and ward time, and clears the pull clock</small>
-                              </>
-                            )}
-                            {isArrivalLate(liveMovement, now) ? (
-                              <small
-                                className={styles.lateNote}
-                                role="status"
-                                data-testid="ward-referral-arrival-late"
-                                title={OPERATIONAL_DEFAULT_LABEL}
-                              >
-                                <StatusGlyph tone="warning" size={9} />
-                                Late, more than {LATE_ARRIVAL_GRACE_MINUTES}m past the ward time. Not marked arrived.
-                              </small>
-                            ) : null}
-                          </span>
-                          <button
-                            type="button"
-                            className={styles.btn}
-                            data-testid="ward-referral-arrival-plan-toggle"
-                            onClick={() => setArrivalPlanOpen(true)}
-                          >
-                            {liveMovement.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
-                          </button>
+                      <fieldset className={styles.radioField}>
+                        <legend>
+                          Risk flags <span className={styles.fieldHint}>select all active</span>
+                        </legend>
+                        <div className={styles.checkGrid}>
+                          {(Object.keys(RISK_FLAG_LABELS) as (keyof typeof RISK_FLAG_LABELS)[]).map((key) => (
+                            <label key={key} className={styles.checkChip} data-checked={!!riskFlags[key]}>
+                              <input type="checkbox" checked={!!riskFlags[key]} onChange={() => toggleRisk(key)} />
+                              {RISK_FLAG_LABELS[key]}
+                            </label>
+                          ))}
                         </div>
+                      </fieldset>
+                    </div>
+                  </section>
+                  {destType === "ward" && (
+                    <section className={styles.refCard}>
+                      <CardHead icon={BedDouble} title="Bed requirements" />
+                      <div className={styles.cardBody}>
+                        <div className={styles.fieldGrid} data-layout="three">
+                          <Field label="Recorded sex" htmlFor={`${sectionId}-sex`}>
+                            <SelectBox>
+                              <select
+                                id={`${sectionId}-sex`}
+                                className={styles.fieldSelect}
+                                value={referralSex}
+                                onChange={(e) => setReferralSex(e.target.value as RecordedSex)}
+                              >
+                                {RECORDED_SEXES.map((sex) => (
+                                  <option key={sex}>{sex}</option>
+                                ))}
+                              </select>
+                            </SelectBox>
+                          </Field>
+                          <Field label="Gender identity" htmlFor={`${sectionId}-gender`}>
+                            <SelectBox>
+                              <select
+                                id={`${sectionId}-gender`}
+                                className={styles.fieldSelect}
+                                value={referralGender}
+                                onChange={(e) => setReferralGender(e.target.value as ReferralGender | "")}
+                              >
+                                <option value="">Not recorded</option>
+                                {REFERRAL_GENDERS.map((gender) => (
+                                  <option key={gender}>{gender}</option>
+                                ))}
+                              </select>
+                            </SelectBox>
+                          </Field>
+                          <div className={styles.formField}>
+                            <div className={styles.fieldLabelRow}>
+                              <span id={`${sectionId}-acuity`}>High-acuity nursing</span>
+                            </div>
+                            <span className={styles.switchRow}>
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={highAcuity}
+                                aria-labelledby={`${sectionId}-acuity`}
+                                className={styles.switch}
+                                onClick={() => setHighAcuity((on) => !on)}
+                              />
+                              <span aria-hidden="true">{highAcuity ? "On" : "Off"}</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  )}
+                </div>
+
+                <div
+                  id={`${sectionId}-documentation`}
+                  className={styles.sectionPanel}
+                  hidden={previewOpen || confirmationOpen || activeSection !== "documentation"}
+                >
+                  <DocumentationPanel
+                    key={activePatientKey}
+                    draft={documentation}
+                    onChange={setDocumentation}
+                    referrerName={contact.name}
+                    onReferrerNameChange={(name) => setContact((current) => ({ ...current, name }))}
+                  />
+                </div>
+
+                <div
+                  id={`${sectionId}-placement`}
+                  className={styles.sectionPanel}
+                  hidden={previewOpen || confirmationOpen || activeSection !== "placement"}
+                >
+                  {destType === "ward" ? (
+                    <section className={styles.refCard}>
+                      <CardHead icon={Users} title="Wards to refer">
+                        <span className={styles.asideText}>Up to {configuration.parallelReferralCap}</span>
+                        <span className={styles.chip}>
+                          <span className={styles.mono}>{selectedUnitIds.length}</span> selected
+                        </span>
+                      </CardHead>
+                      <div className={styles.cardBody} data-tight="true">
+                        <div className={styles.legendRow}>
+                          <span>
+                            <StatusGlyph tone="success" size={9} />
+                            <strong className={styles.mono}>{realTimeMatch.readyBedsCount}</strong> ready
+                          </span>
+                          <span>
+                            <StatusGlyph tone="info" size={9} />
+                            <strong className={styles.mono}>{realTimeMatch.pulledBedsCount}</strong> pulled
+                          </span>
+                          <span>
+                            <StatusGlyph tone="closed" size={9} />
+                            <strong className={styles.mono}>{realTimeMatch.closedBedsCount}</strong> closed
+                          </span>
+                          <span className={styles.legendAside}>
+                            {currentPatient.cohort} · {security.toLowerCase()} · {realTimeMatch.sortedUnits.length}{" "}
+                            {realTimeMatch.sortedUnits.length === 1 ? "ward" : "wards"}
+                          </span>
+                        </div>
+                        {/*
+                        Its OWN line, never appended to the figures above: "Ready 2" immediately followed by
+                        "1 still being made ready" reads as 21. Renders only when there is one.
+                      */}
+                        {realTimeMatch.pendingPreparationCount > 0 ? (
+                          <p className={styles.beingMadeReady} data-testid="referral-drawer-pending-preparation">
+                            <StatusGlyph tone="neutral" size={9} />
+                            <strong className={styles.mono}>{realTimeMatch.pendingPreparationCount}</strong> of them
+                            still being made ready, offered and counted
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className={styles.wardTable}>
+                        <div className={styles.wardTableHead} aria-hidden="true">
+                          <span>Ward</span>
+                          <span>Ready</span>
+                          <span>Waitlist</span>
+                        </div>
+                        <div role="list" aria-label="Placement Destination Options">
+                          {realTimeMatch.sortedUnits.map((unit) => {
+                            const selected = selectedUnitIds.includes(unit.unitId);
+                            const inCatchment =
+                              catchmentConfirmed && catchmentService ? unit.healthService === catchmentService : null;
+                            const waiting =
+                              referrals.filter((referral) =>
+                                referral.destinations.some(
+                                  (arm) =>
+                                    arm.destination.kind === "psychiatric_ward" &&
+                                    arm.destination.unitId === unit.unitId &&
+                                    arm.state === "queued" &&
+                                    arm.waitlistedAt !== undefined &&
+                                    arm.withdrawnAt === undefined,
+                                ),
+                              ).length +
+                              movements.filter(
+                                (movement) => movement.waitlistedUnitIds?.includes(unit.unitId) && !movement.closure,
+                              ).length;
+                            return (
+                              <label
+                                key={unit.unitId}
+                                role="listitem"
+                                className={styles.wardRow}
+                                data-catchment={inCatchment === null ? "unknown" : inCatchment ? "in" : "out"}
+                                data-selected={selected}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selected}
+                                  onChange={() => {
+                                    if (!selected && selectedUnitIds.length >= configuration.parallelReferralCap) {
+                                      setFlowError(
+                                        `Choose up to ${configuration.parallelReferralCap} referral locations.`,
+                                      );
+                                      return;
+                                    }
+                                    setSelectedUnitIds((ids) =>
+                                      selected ? ids.filter((id) => id !== unit.unitId) : [...ids, unit.unitId],
+                                    );
+                                    setFlowError(null);
+                                  }}
+                                />
+                                <span className={styles.wardIdentity}>
+                                  <span className={styles.wardTitle}>
+                                    <strong>{unit.name}</strong> {unit.hospital}
+                                  </span>
+                                  <span className={styles.wardMeta}>
+                                    <span className={styles.fit} data-fit={unit.readyBeds > 0 ? "bed" : "none"}>
+                                      <StatusGlyph tone={unit.readyBeds > 0 ? "success" : "warning"} size={9} />
+                                      {unit.readyBeds > 0 ? "Bed ready" : "No bed now"}
+                                    </span>{" "}
+                                    ·{" "}
+                                    {inCatchment === null
+                                      ? "Catchment not confirmed"
+                                      : inCatchment
+                                        ? "In catchment"
+                                        : "Outside catchment"}
+                                    {unit.healthService ? ` · ${unit.healthService}` : ""} ·{" "}
+                                    <span className={styles.mono}>{unit.unitId}</span>
+                                  </span>
+                                </span>
+                                <span className={styles.wardFigure}>
+                                  <strong className={styles.mono}>{unit.readyBeds}</strong>
+                                  {(unit.pendingPreparation ?? 0) > 0 ? (
+                                    <small>{unit.pendingPreparation} prep</small>
+                                  ) : unit.pulledBeds > 0 ? (
+                                    <small>{unit.pulledBeds} pulled</small>
+                                  ) : null}
+                                </span>
+                                <span className={styles.wardFigure}>
+                                  <strong className={styles.mono}>{waiting}</strong>
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        {!realTimeMatch.sortedUnits.length && (
+                          <p className={styles.bodyMeta}>No wards match this cohort and bed security.</p>
+                        )}
+                      </div>
+                    </section>
+                  ) : (
+                    <section className={styles.refCard}>
+                      <CardHead
+                        icon={Users}
+                        title={destType === "community" ? "Community team" : "Emergency department"}
+                      >
+                        <span className={styles.asideText}>Choose one</span>
+                        <span className={styles.chip}>
+                          <span className={styles.mono}>{selectedRecipient ? 1 : 0}</span> selected
+                        </span>
+                      </CardHead>
+                      <div className={styles.cardBody} data-tight="true">
+                        <p className={styles.bodyMeta}>
+                          <StatusGlyph tone="info" size={8} />
+                          {destType === "community"
+                            ? "Community referrals request no bed"
+                            : "Goes to psychiatry, observation beds not recorded"}
+                        </p>
+                      </div>
+                      <div
+                        role="radiogroup"
+                        aria-label={
+                          destType === "community" ? "Community team to refer to" : "Emergency department to refer to"
+                        }
+                      >
+                        {(destType === "community"
+                          ? Array.from(new Set([catchmentTeam, ...communityTeamOptions()].filter(Boolean)))
+                              .sort(
+                                (a, b) =>
+                                  Number(b === catchmentTeam) - Number(a === catchmentTeam) || a.localeCompare(b),
+                              )
+                              .map((team) => ({ value: team, name: team, inCatchment: team === catchmentTeam }))
+                          : allEmergencyDepartments().map((ed) => ({
+                              value: ed.id,
+                              name: ed.name,
+                              inCatchment: null,
+                              inEd: movements.filter(
+                                (movement) =>
+                                  movement.originEdId === ed.id && !movement.closure && movement.stage !== "arrived",
+                              ).length,
+                            }))
+                        ).map((option) => (
+                          <label
+                            key={option.value}
+                            className={styles.wardRow}
+                            data-variant="radio"
+                            data-selected={selectedRecipient === option.value}
+                          >
+                            <input
+                              type="radio"
+                              name={`${sectionId}-recipient`}
+                              value={option.value}
+                              checked={selectedRecipient === option.value}
+                              onChange={() => {
+                                setSelectedRecipient(option.value);
+                                setFlowError(null);
+                              }}
+                            />
+                            <span className={styles.wardIdentity}>
+                              <span className={styles.wardTitle}>
+                                <strong>{option.name}</strong>
+                              </span>
+                              <span className={styles.wardMeta}>
+                                {destType === "community"
+                                  ? "Community team · no bed requested"
+                                  : "Emergency department · psychiatry"}
+                              </span>
+                            </span>
+                            {"inEd" in option ? (
+                              <span className={styles.rowAside}>
+                                <strong className={styles.mono}>{option.inEd}</strong> in ED
+                              </span>
+                            ) : null}
+                            {option.inCatchment === null ? null : (
+                              <span className={styles.rowAside}>
+                                {option.inCatchment ? (
+                                  <>
+                                    <StatusGlyph tone="success" size={9} /> In catchment
+                                  </>
+                                ) : (
+                                  "Outside catchment"
+                                )}
+                              </span>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  <section className={styles.refCard}>
+                    <CardHead icon={FileText} title="Referral summary" />
+                    <div className={styles.cardBody}>
+                      <dl className={styles.factGrid}>
+                        <div>
+                          <dt>Patient</dt>
+                          <dd>{currentPatient.name}</dd>
+                        </div>
+                        <div>
+                          <dt>Catchment</dt>
+                          <dd>{catchmentConfirmed ? catchmentTeam : "Needs confirming"}</dd>
+                        </div>
+                        <div>
+                          <dt>Documents</dt>
+                          <dd>{documentation.charts.length} attached</dd>
+                        </div>
+                        <div>
+                          <dt>Clearance</dt>
+                          <dd>{clearance.label}</dd>
+                        </div>
+                      </dl>
+                      {recipientLabels.length ? (
+                        <ul className={styles.tickList}>
+                          {recipientLabels.map((label) => (
+                            <li key={label}>
+                              <StatusGlyph tone="success" size={10} />
+                              {label}
+                            </li>
+                          ))}
+                        </ul>
                       ) : null}
                     </div>
                   </section>
-                )}
-              </div>
-            </>
-          )}
+                  {destType === "ward" && selectedDestinations.length > 0 && (
+                    <section className={styles.refCard}>
+                      <CardHead icon={Truck} title="Arrival plan">
+                        <span className={styles.chip}>Proposed</span>
+                      </CardHead>
+                      <div className={styles.cardBody}>
+                        <div className={styles.fieldGrid} data-layout="three">
+                          <Field label="Transport" htmlFor="refTransportSelect">
+                            <SelectBox>
+                              <select
+                                className={styles.fieldSelect}
+                                id="refTransportSelect"
+                                value={transport}
+                                onChange={(e) => setTransport(e.target.value)}
+                              >
+                                <option value="mht">Mental Health Transport</option>
+                                <option value="rfds">RFDS aeromedical escort</option>
+                                <option value="stjohn">St John Ambulance escort</option>
+                                <option value="carer">Patient or carer accompanied</option>
+                              </select>
+                            </SelectBox>
+                          </Field>
+                          <Field label="Arrival, AWST" htmlFor={`${sectionId}-eta`}>
+                            <input
+                              id={`${sectionId}-eta`}
+                              type="datetime-local"
+                              className={styles.fieldInput}
+                              value={arrivalEta}
+                              onChange={(e) => setArrivalEta(e.target.value)}
+                            />
+                          </Field>
+                          <Field label="Dispatch ref" htmlFor="refTransitInput">
+                            <input
+                              type="text"
+                              className={styles.fieldInput}
+                              id="refTransitInput"
+                              placeholder="Dispatch or staging bay"
+                              value={transitNote}
+                              onChange={(e) => setTransitNote(e.target.value)}
+                              data-gramm="false"
+                              data-enable-grammarly="false"
+                              spellCheck={false}
+                              autoComplete="off"
+                            />
+                          </Field>
+                        </div>
+                        {liveMovement && canSetArrivalPlan(liveMovement) ? (
+                          <div className={styles.suggestion} data-testid="ward-referral-arrival-plan-card">
+                            <StatusGlyph tone="info" size={9} />
+                            <span className={styles.suggestionText}>
+                              {liveMovement.arrivalDetails ? (
+                                <>
+                                  <strong>
+                                    Current journey, ETA{" "}
+                                    {arrivalEtaLabel(liveMovement.arrivalDetails.estimatedArrivalAt, now)}
+                                  </strong>
+                                  <small>
+                                    {arrivalModeLabel(liveMovement.arrivalDetails.mode)}
+                                    {liveMovement.arrivalDetails.trackingNumber
+                                      ? ` · ${liveMovement.arrivalDetails.trackingNumber}`
+                                      : ""}
+                                  </small>
+                                </>
+                              ) : (
+                                <>
+                                  <strong>No arrival plan recorded</strong>
+                                  <small>Setting one records the mode and ward time, and clears the pull clock</small>
+                                </>
+                              )}
+                              {isArrivalLate(liveMovement, now) ? (
+                                <small
+                                  className={styles.lateNote}
+                                  role="status"
+                                  data-testid="ward-referral-arrival-late"
+                                  title={OPERATIONAL_DEFAULT_LABEL}
+                                >
+                                  <StatusGlyph tone="warning" size={9} />
+                                  Late, more than {LATE_ARRIVAL_GRACE_MINUTES}m past the ward time. Not marked arrived.
+                                </small>
+                              ) : null}
+                            </span>
+                            <button
+                              type="button"
+                              className={styles.btn}
+                              data-testid="ward-referral-arrival-plan-toggle"
+                              onClick={() => setArrivalPlanOpen(true)}
+                            >
+                              {liveMovement.arrivalDetails ? "Edit arrival plan" : "Set arrival plan"}
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </section>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          {view === "new" ? (
+            <aside
+              className={styles.rail}
+              id={`${sectionId}-summary`}
+              aria-label="Referral summary"
+              data-open={summaryOpen}
+              data-testid="ward-referral-summary-rail"
+            >
+              {sentReferralId ? (
+                <section className={styles.railCard}>
+                  <p className={styles.eyebrow}>Next</p>
+                  <p className={styles.bodyMeta}>Follow {sentReferralId} on the Referrals board.</p>
+                  <Link className={styles.btn} href="/mockups/ward-flow/referrals" onClick={onClose}>
+                    Open Referrals board
+                  </Link>
+                </section>
+              ) : (
+                <>
+                  <section className={styles.railCard}>
+                    <div className={styles.railHead}>
+                      <h3 className={styles.cardTitle}>Ready to send</h3>
+                      {kept ? (
+                        <button
+                          type="button"
+                          className={`${styles.btn} ${styles.btnGhost}`}
+                          onClick={() => {
+                            discardReferralDraft();
+                            onRestart();
+                          }}
+                        >
+                          Discard draft
+                        </button>
+                      ) : null}
+                    </div>
+                    <p className={styles.railCount}>
+                      <strong className={styles.mono}>{readyDone}</strong> of {readyRows.length} ready
+                    </p>
+                    <span className={styles.railProgress} aria-hidden="true">
+                      <i style={{ width: `${Math.round((readyDone / readyRows.length) * 100)}%` }} />
+                    </span>
+                    <dl className={styles.railRows}>
+                      {readyRows.map((row) => (
+                        <div key={row.label} data-state={row.state}>
+                          <dt>
+                            <StatusGlyph
+                              tone={row.state === "done" ? "success" : row.state === "follow" ? "warning" : "neutral"}
+                              size={9}
+                            />
+                            {row.label}
+                          </dt>
+                          <dd>{row.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                  <section className={styles.railCard} data-layout="pair">
+                    <div title={OPERATIONAL_DEFAULT_LABEL}>
+                      <p className={styles.eyebrow}>Decision due</p>
+                      <strong className={styles.mono}>{decisionDueAt(now) ?? "Choose urgency"}</strong>
+                      <small>{tier === undefined ? "No tier yet" : `Tier ${tier} default`}</small>
+                    </div>
+                    <div>
+                      <p className={styles.eyebrow}>Already open</p>
+                      <strong>{alreadyOpen ? "Yes" : "None"}</strong>
+                      <small>{alreadyOpen ? "Check before sending" : "No open referral"}</small>
+                    </div>
+                  </section>
+                  <button
+                    type="button"
+                    className={styles.btn}
+                    data-testid="ward-referral-preview-letter"
+                    aria-pressed={previewOpen}
+                    onClick={() => {
+                      setPreviewOpen((open) => !open);
+                      setSummaryOpen(false);
+                      if (bodyRef.current) bodyRef.current.scrollTop = 0;
+                    }}
+                  >
+                    <Eye aria-hidden="true" />
+                    {previewOpen ? "Back to edit" : "Preview letter"}
+                  </button>
+                </>
+              )}
+            </aside>
+          ) : null}
         </div>
+        {copyNotice ? (
+          <p className={styles.copyNotice} role="status">
+            <StatusGlyph tone={copyNotice.startsWith("Copy unavailable") ? "warning" : "success"} size={9} />
+            {copyNotice}
+          </p>
+        ) : null}
 
         <div className={styles.sendReferralFoot}>
           <div className={styles.sendTargetSummary} role={footStatus.alert ? "alert" : undefined}>
@@ -2367,11 +3051,29 @@ function WardReferralDrawerContent({
                 Open referrals board
               </Link>
             ) : sentReferralId ? (
-              <button type="button" className={styles.btnSendReferral} onClick={onClose}>
-                Done
+              <>
+                <button type="button" className={styles.btnCancelReferral} onClick={onRestart}>
+                  New referral
+                </button>
+                <button type="button" className={styles.btnSendReferral} onClick={onClose}>
+                  Done
+                </button>
+              </>
+            ) : previewOpen ? (
+              <button type="button" className={styles.btnSendReferral} onClick={() => setPreviewOpen(false)}>
+                Back to edit
               </button>
             ) : (
               <>
+                <button
+                  type="button"
+                  className={`${styles.btnCancelReferral} ${styles.summaryToggle}`}
+                  aria-pressed={summaryOpen}
+                  aria-controls={`${sectionId}-summary`}
+                  onClick={() => setSummaryOpen((open) => !open)}
+                >
+                  Summary
+                </button>
                 <button
                   type="button"
                   className={styles.btnCancelReferral}
@@ -2383,7 +3085,7 @@ function WardReferralDrawerContent({
                           setFlowError(null);
                         }
                       : activeSection === "patient"
-                        ? onClose
+                        ? requestClose
                         : goBack
                   }
                 >
@@ -2408,17 +3110,52 @@ function WardReferralDrawerContent({
                       ? "Confirm and send"
                       : activeSection === "placement"
                         ? "Send referral"
-                        : activeSection === "patient"
-                          ? "Next: Referral"
-                          : activeSection === "referral"
-                            ? "Next: Documents"
-                            : "Next: Locations"}
+                        : `Next: ${sectionLabel(SECTION_IDS[SECTION_IDS.indexOf(activeSection) + 1]!, destType)}`}
                 </button>
               </>
             )}
           </div>
         </div>
+        {guardOpen ? (
+          <div className={styles.guard}>
+            <div
+              className={styles.guardBox}
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby={`${sectionId}-guard-title`}
+              aria-describedby={`${sectionId}-guard-text`}
+              data-testid="ward-referral-close-guard"
+            >
+              <h3 className={styles.cardTitle} id={`${sectionId}-guard-title`}>
+                Close without sending?
+              </h3>
+              <p className={styles.bodyMeta} id={`${sectionId}-guard-text`}>
+                {patientRecord
+                  ? `The referral for ${currentPatient.name} is not sent. `
+                  : "This referral is not sent. "}
+                A kept draft stays until this tab reloads.
+              </p>
+              <div className={styles.guardActions}>
+                <button type="button" className={`${styles.btn} ${styles.btnDanger}`} onClick={discardAndClose}>
+                  Discard
+                </button>
+                <button type="button" className={styles.btn} onClick={keepAndClose}>
+                  Keep draft
+                </button>
+                <button
+                  type="button"
+                  ref={guardKeepRef}
+                  className={styles.btnSendReferral}
+                  onClick={() => setGuardOpen(false)}
+                >
+                  Keep editing
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
+
       {liveMovement ? (
         <ArrivalTimeModal
           isOpen={arrivalPlanOpen}

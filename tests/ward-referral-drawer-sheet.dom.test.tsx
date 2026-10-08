@@ -1,0 +1,243 @@
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
+import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
+import { referralIsbarText, referralLetterText } from "@/components/ward-management/referrals/referral-letter";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+/*
+ * Option B of the referral slide-out (Josh, 8 Oct 2026): Refer to first, steps named by the
+ * destination, a Ready to send rail, a close guard with a kept draft, a letter preview, Refer
+ * links that arrive prefilled, and new patients registered inside the sheet. The full-page form
+ * these replace was retired in the same change.
+ */
+
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+afterEach(() => discardReferralDraft());
+
+function renderDrawer(props: Partial<Parameters<typeof WardReferralDrawer>[0]> = {}) {
+  const onClose = vi.fn();
+  const view = render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <WardReferralDrawer onClose={onClose} {...props} />
+    </WardFlowProvider>,
+  );
+  return { onClose, ...view };
+}
+
+const referTo = () => within(screen.getByRole("group", { name: "Refer to" }));
+const steps = () => within(screen.getByRole("group", { name: "Referral sections" }));
+
+describe("referral slide-out, option B", () => {
+  it("asks where the referral goes first and names the steps from it", () => {
+    renderDrawer();
+    expect(referTo().getByRole("button", { name: "Ward" })).toHaveAttribute("aria-pressed", "true");
+    expect(steps().getByRole("button", { name: "Clearance" })).toBeInTheDocument();
+    expect(steps().getByRole("button", { name: "Wards" })).toBeInTheDocument();
+
+    fireEvent.click(referTo().getByRole("button", { name: "Community" }));
+    expect(steps().getByRole("button", { name: "Documents" })).toBeInTheDocument();
+    expect(steps().getByRole("button", { name: "Teams" })).toBeInTheDocument();
+
+    fireEvent.click(referTo().getByRole("button", { name: "ED" }));
+    expect(steps().getByRole("button", { name: "EDs" })).toBeInTheDocument();
+    expect(referTo().queryByRole("button", { name: /police/i })).not.toBeInTheDocument();
+  });
+
+  it("opens on the destination a link asks for", () => {
+    renderDrawer({ initialDestination: "community" });
+    expect(referTo().getByRole("button", { name: "Community" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("offers no police escort as transport", () => {
+    renderDrawer();
+    fireEvent.click(steps().getByRole("button", { name: "Wards" }));
+    fireEvent.click(screen.getAllByRole("checkbox")[0]!);
+    const transport = screen.getByLabelText("Transport");
+    expect(within(transport).queryByRole("option", { name: /police/i })).not.toBeInTheDocument();
+  });
+
+  it("shows a Ready to send summary beside the form", () => {
+    renderDrawer();
+    const rail = screen.getByTestId("ward-referral-summary-rail");
+    expect(within(rail).getByRole("heading", { name: "Ready to send" })).toBeInTheDocument();
+    expect(within(rail).getByText("Refer to")).toBeInTheDocument();
+    expect(within(rail).getByText(/of 9 ready/)).toBeInTheDocument();
+  });
+
+  it("closes straight away when nothing was entered", () => {
+    const { onClose } = renderDrawer();
+    fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId("ward-referral-close-guard")).not.toBeInTheDocument();
+  });
+
+  it("asks before closing a draft, and Keep editing stays open", () => {
+    const { onClose } = renderDrawer();
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Synthetic reason" } });
+    fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
+    const guard = screen.getByRole("alertdialog", { name: "Close without sending?" });
+    fireEvent.click(within(guard).getByRole("button", { name: "Keep editing" }));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Synthetic reason");
+  });
+
+  it("keeps a draft in memory only and reopens it", () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    const first = renderDrawer();
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Kept synthetic reason" } });
+    fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep draft" }));
+    expect(first.onClose).toHaveBeenCalledTimes(1);
+    expect(setItem).not.toHaveBeenCalled();
+    first.unmount();
+
+    renderDrawer();
+    expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Kept synthetic reason");
+    expect(screen.getByRole("button", { name: "Discard draft" })).toBeInTheDocument();
+    setItem.mockRestore();
+  });
+
+  it("Discard drops the draft", () => {
+    const first = renderDrawer();
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Dropped reason" } });
+    fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+    expect(first.onClose).toHaveBeenCalledTimes(1);
+    first.unmount();
+    renderDrawer();
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("");
+  });
+
+  it("previews the letter and copies it as text", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    renderDrawer();
+    fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
+    const preview = screen.getByTestId("ward-referral-letter-preview");
+    expect(preview).toHaveTextContent("Mental health referral to a ward");
+    fireEvent.click(within(preview).getByRole("button", { name: "Copy as text" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    expect(writeText.mock.calls[0]![0]).toContain("Mental health referral to a ward");
+    expect(await screen.findByRole("status")).toHaveTextContent("Letter copied");
+  });
+
+  it("arrives with the person a Refer link names, even without an open movement", () => {
+    renderDrawer({ initialPatientId: "PT-002" });
+    expect(document.body.textContent).toMatch(/Hallowin/);
+    // No movement holds this person's age band, so the sheet asks for it.
+    expect(screen.getByLabelText("Age band")).toBeInTheDocument();
+  });
+
+  it("ignores a Refer link naming nobody in the record", () => {
+    renderDrawer({ initialPatientId: "PT-999", initialCategory: "ed" });
+    expect(screen.queryByLabelText("Age band")).not.toBeInTheDocument();
+  });
+
+  it("prefills the referring site from the link", () => {
+    renderDrawer({ initialCategory: "ed", initialOriginSiteCode: "RPH" });
+    expect(screen.getByTestId("ward-referral-from")).toHaveTextContent("From");
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    expect(screen.getByLabelText("Referring emergency department")).toHaveValue("RPH");
+  });
+
+  it("registers a new patient inside the sheet and selects them", async () => {
+    renderDrawer();
+    fireEvent.click(screen.getByRole("button", { name: "New patient" }));
+    const form = screen.getByTestId("ward-referral-new-patient");
+    fireEvent.click(within(form).getByRole("button", { name: "Add patient" }));
+    expect(within(form).getByRole("alert")).toHaveTextContent("Enter the family and given names.");
+    fireEvent.change(within(form).getByLabelText("Family name"), { target: { value: "Synthetica" } });
+    fireEvent.change(within(form).getByLabelText("Given name"), { target: { value: "Demo" } });
+    fireEvent.change(within(form).getByLabelText("Date of birth"), { target: { value: "1990-01-02" } });
+    fireEvent.change(within(form).getByLabelText("UMRN"), { target: { value: "UM999901" } });
+    await act(async () => {
+      fireEvent.click(within(form).getByRole("button", { name: "Add patient" }));
+    });
+    await waitFor(() => expect(document.body.textContent).toMatch(/Synthetica, Demo/));
+    expect(screen.getByLabelText("Age band")).toBeInTheDocument();
+  });
+});
+
+describe("owner pins carried over from the retired full-page form", () => {
+  it("names Send referral in words", () => {
+    renderDrawer();
+    fireEvent.click(steps().getByRole("button", { name: "Wards" }));
+    expect(screen.getByRole("button", { name: "Send referral" })).toBeInTheDocument();
+  });
+
+  it("says a blank suburb goes as Suburb not known, so no fixed address can still be referred", () => {
+    renderDrawer({ initialPatientId: "PT-002" });
+    fireEvent.click(screen.getByRole("button", { name: "Change" }));
+    fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "" } });
+    expect(screen.getByTestId("ward-referral-suburb-note")).toHaveTextContent("Suburb not known");
+    fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "Perth" } });
+    expect(screen.getByTestId("ward-referral-suburb-note")).toHaveTextContent("Perth");
+  });
+
+  it("never writes typed history to browser storage", () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    renderDrawer();
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic typed history" } });
+    expect(setItem).not.toHaveBeenCalled();
+    setItem.mockRestore();
+  });
+
+  it("caps the wards chosen and says choose up to the cap", () => {
+    renderDrawer();
+    fireEvent.click(steps().getByRole("button", { name: "Wards" }));
+    const list = screen.getByRole("list", { name: "Placement Destination Options" });
+    const boxes = within(list).getAllByRole("checkbox");
+    const cap = Number(/\d+/.exec(screen.getByText(/^Up to \d+$/).textContent ?? "")![0]);
+    boxes.slice(0, cap + 1).forEach((box) => fireEvent.click(box));
+    expect(screen.getByRole("alert")).toHaveTextContent(`Choose up to ${cap} referral locations.`);
+    expect(boxes.filter((box) => (box as HTMLInputElement).checked)).toHaveLength(cap);
+  });
+});
+
+describe("referral letter text", () => {
+  const input = {
+    destinationPhrase: "a ward",
+    patientName: "Synthetic, Person",
+    umrn: "UM000001",
+    ageSex: "41F",
+    suburb: "Armadale",
+    from: "Royal Perth Hospital ED",
+    recipients: ["Royal Perth Hospital · Ward 1"],
+    urgency: "Tier 2 · urgent",
+    legalStatus: "Voluntary",
+    reason: "",
+    history: "",
+    risks: [],
+    clearance: "Pending",
+    referrer: { name: "", role: "", phone: "" },
+  };
+
+  it("says Not recorded for anything left blank rather than inventing it", () => {
+    const text = referralLetterText(input, "10:46");
+    expect(text).toContain("Reason: Not recorded");
+    expect(text).toContain("Referrer: Not recorded");
+    expect(text).toContain("Risks: None selected");
+  });
+
+  it("builds an ISBAR note with the referral number and due time", () => {
+    const text = referralIsbarText(input, { referralId: "RF-024", sentAt: "10:47", decisionDue: "14:47" });
+    expect(text.split("\n").map((line) => line.slice(0, 2))).toEqual(["I:", "S:", "B:", "A:", "R:"]);
+    expect(text).toContain("RF-024 sent 10:47");
+    expect(text).toContain("Decision due 14:47.");
+  });
+});

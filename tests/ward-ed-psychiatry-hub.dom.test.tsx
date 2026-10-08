@@ -6,8 +6,7 @@ import { expectSays } from "./helpers/ward-caption";
 
 // Same reason as the sibling dom suites (ward-ed-screen.dom.test.tsx, ward-screen.dom.test.tsx):
 // `ClinicalRail` renders next/link anchors and this suite never checks routing, so a plain <a>
-// avoids an App Router context jsdom cannot provide. `ReferralIntakeForm` also reads the URL
-// through `next/navigation`'s `useSearchParams`, which jsdom has no App Router context for either.
+// avoids an App Router context jsdom cannot provide.
 vi.mock("next/navigation", () => ({
   // The Ward Flow sidebar derives its role from the route (ward-nav-role-order.ts), so every
   // suite that renders a rail needs a pathname. A whole-module mock without one makes
@@ -26,20 +25,9 @@ vi.mock("next/link", () => ({
 
 import { EdScreen, edReferralClockLines } from "@/components/ward-management/ed/ed-screen";
 import { referralEligibility } from "@/components/ward-management/ward-eligibility";
-import { ReferralIntakeForm } from "@/components/ward-management/referrals/referral-intake";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import {
-  COHORTS,
-  HOME_REGIONS,
-  REFERRAL_GENDERS,
-  REFERRAL_PURPOSES,
-  REFERRAL_SOURCES,
-  SEXES,
-  URGENCY_LEVELS,
-  type Referral,
-  type ReferralPurpose,
-} from "@/components/ward-management/ward-model";
+import { REFERRAL_PURPOSES, type Referral, type ReferralPurpose } from "@/components/ward-management/ward-model";
 import { referrals as seededReferrals } from "@/components/ward-management/ward-movements";
 import {
   DECLINE_REASON_LABELS,
@@ -47,7 +35,7 @@ import {
   edReferralsFor,
   referralClocks,
 } from "@/components/ward-management/ward-referrals";
-import { allEmergencyDepartments, NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 /**
@@ -78,7 +66,7 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
  * something this suite papers over: `RECEIVE_REFERRAL` is the one event that creates a `Referral`
  * and its `EVENT_ROLE` entry is `["community"]`, so neither ED psychiatry nor a ward can raise one.
  * The selector tests below therefore drive the reducer directly — which is still the application's
- * own write path, with real ids and real addressing states — and the DOM tests drive the form.
+ * own write path, with real ids and real addressing states — and the DOM tests drive the hub.
  */
 
 /** Reads the live referral list back out of the provider, so a DOM test can assert what actually
@@ -122,15 +110,45 @@ const HUB_WITH_A_SEEDED_INBOX = "rph-ed";
 const REFERRAL_ON_THE_HUB = "RF-009";
 
 /**
- * The intake form and one department's hub inside ONE provider, so a referral raised on the form is
- * the very referral the hub is then asked about. Two providers would be two reducers, and the hub
- * would be reading a state the form never wrote to — a test that passes by never connecting.
+ * Raises a BED request to this department through the provider's own `dispatch` (the real reducer),
+ * standing in for the full-page intake form retired on 8 Oct 2026. Purpose `bed`, because the
+ * community front door cannot honestly mean anything else.
  */
-function renderIntakeAndHub(edId: string) {
+function RaiseBedRequest({ edId }: { edId: string }) {
+  const { dispatch, now } = useWardFlow();
+  return (
+    <button
+      type="button"
+      data-testid="harness-raise-bed"
+      onClick={() =>
+        dispatch({
+          type: "RECEIVE_REFERRAL",
+          role: "community",
+          now,
+          ageBand: "Adult",
+          destinations: [{ kind: "emergency_department", edId, purpose: "bed" }],
+          homeRegion: "Perth Metropolitan",
+          suburb: { kind: "named", name: "Armadale" },
+          source: "community",
+          urgency: 2,
+          originSiteCode: "RPH",
+          transportNeeded: false,
+          triagedAt: NOW_ANCHOR - 30,
+          ...FIXTURE_HISTORY,
+        })
+      }
+    >
+      raise bed
+    </button>
+  );
+}
+
+/** One provider, so the referral raised is the very referral the hub is then asked about. */
+function renderHubWithBedRequest(edId: string) {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <ReferralIntakeForm />
       <EdScreen edId={edId} />
+      <RaiseBedRequest edId={edId} />
       <ReferralProbe />
     </WardFlowProvider>,
   );
@@ -432,57 +450,6 @@ function renderHubWithWardAcceptanceHarness(edId: string) {
   );
 }
 
-// v6 (7 Oct 2026): Age band and Sex are segmented radio groups; the rest are still selects.
-function selectAnswer(field: string, value: string) {
-  const control = screen.getByTestId(`ward-referral-intake-${field}`);
-  if (control instanceof HTMLSelectElement) {
-    fireEvent.change(control, { target: { value } });
-    return;
-  }
-  const radio = control.querySelector<HTMLInputElement>(`input[type="radio"][value="${value}"]`);
-  expect(radio, `${field} offers no "${value}" answer`).not.toBeNull();
-  fireEvent.click(radio!);
-}
-
-function chooseNeed(field: string, answer: "yes" | "no") {
-  fireEvent.click(screen.getByTestId(`ward-referral-intake-${field}-${answer}`));
-}
-
-/** Answers every always-applicable question, addressing the referral to an emergency department
- *  and to nothing else. Deliberately does NOT answer which department.
- *
- *  ⚠️ The count used to be written here as "the ten". It was accurate when written and wrong the
- *  moment an eleventh landed (high-acuity nursing, 2026-09-10) — with nothing to fail, because a
- *  number in a sentence is not compared to anything. */
-function answerEverythingButTheDepartment() {
-  selectAnswer("ageBand", COHORTS[0]);
-  selectAnswer("sex", SEXES[0]);
-  // T11 (item 8, after T10, owner answer 17 September 2026): a required question this file's own
-  // helper must also answer, or Send never becomes available and every test using it proves
-  // nothing about the ED destination.
-  selectAnswer("gender", REFERRAL_GENDERS[0]);
-  selectAnswer("homeRegion", HOME_REGIONS[0]);
-  // 2026-08-30: the suburb became a required answer when `Referral` gained a place to put it.
-  // A real name from the catchment table, because the reducer resolves it rather than
-  // measuring its length.
-  selectAnswer("suburb", "Armadale");
-  selectAnswer("source", REFERRAL_SOURCES[0]);
-  selectAnswer("urgency", String(URGENCY_LEVELS[0]));
-  selectAnswer("originSiteCode", wardSites[0].code);
-  chooseNeed("secureBedNeeded", "no");
-  chooseNeed("involuntaryBedNeeded", "no");
-  chooseNeed("highAcuityNursingNeeded", "no");
-  chooseNeed("transportNeeded", "no");
-  // 2026-09-05: the written history's required half. Without it Send stays unavailable and every
-  // test below fails on the department question for a reason that has nothing to do with it.
-  fireEvent.change(screen.getByTestId("ward-referral-intake-history"), {
-    target: { value: "Brought in by ambulance and needs a psychiatric opinion in the department." },
-  });
-  fireEvent.click(screen.getByTestId("ward-referral-intake-destination-emergency_department"));
-}
-
-const submitButton = () => screen.getByTestId("ward-referral-intake-submit");
-
 /**
  * Raises one referral through the reducer's own `RECEIVE_REFERRAL` path, addressed to ONE emergency
  * department for ONE purpose, and hands back the referral the reducer created.
@@ -669,96 +636,13 @@ describe("the ED psychiatry inbox selector", () => {
   });
 });
 
-describe("the intake form's emergency-department destination", () => {
-  const departments = allEmergencyDepartments();
-
-  it("asks WHICH department only once one is chosen", () => {
-    renderIntakeAndHub(departments[0].id);
-
-    expect(
-      screen.queryByTestId("ward-referral-intake-edId"),
-      "the department picker was on a form with no emergency-department destination chosen",
-    ).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByTestId("ward-referral-intake-destination-emergency_department"));
-
-    expect(screen.getByTestId("ward-referral-intake-edId")).toBeInTheDocument();
-  });
-
-  it("pre-chooses no department, and offers every one in the network", () => {
-    renderIntakeAndHub(departments[0].id);
-    fireEvent.click(screen.getByTestId("ward-referral-intake-destination-emergency_department"));
-
-    const picker = screen.getByTestId("ward-referral-intake-edId") as HTMLSelectElement;
-    // A first-department default is the single most dangerous default on this form: the reducer
-    // membership-checks five fields on RECEIVE_REFERRAL and `edId` is not one of them, so a
-    // department nobody chose would queue at a real hospital rather than bounce.
-    expect(picker.value, "a department was pre-chosen for the clinician").not.toBe(departments[0].id);
-    const offered = Array.from(picker.options)
-      .map((option) => option.value)
-      .filter((value) => departments.some((department) => department.id === value));
-    expect(offered, "the picker is hand-listed rather than derived from the network").toEqual(
-      departments.map((department) => department.id),
-    );
-  });
-
-  it("⚠️ will not send while the department is unanswered, and names it in the note", () => {
-    renderIntakeAndHub(departments[0].id);
-    const before = probeParts().count;
-    answerEverythingButTheDepartment();
-
-    expect(
-      submitButton(),
-      "Send became available with an emergency department chosen and no department named",
-    ).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByTestId("ward-referral-intake-unavailable").textContent).toContain("Emergency department");
-
-    fireEvent.click(submitButton());
-    expect(probeParts().count, "a referral was queued with no department named").toBe(before);
-  });
-
-  it("⚠️ sends a REAL department and the purpose its flow implies — not a stub", () => {
-    renderIntakeAndHub(departments[0].id);
-    const before = probeParts().count;
-    answerEverythingButTheDepartment();
-
-    const chosen = departments[1];
-    selectAnswer("edId", chosen.id);
-    expect(submitButton()).not.toHaveAttribute("aria-disabled");
-    fireEvent.click(submitButton());
-
-    const probe = probeParts();
-    expect(probe.count, "the form sent nothing").toBe(before + 1);
-    // The assertions the whole file is for: what reached the reducer is a department that resolves
-    // against the real network, and a purpose, and neither is a placeholder.
-    expect(probe.edId, "the referral carries no edId at all").not.toBe("no-edId");
-    expect(probe.edId, "the referral carries an empty-string edId — a stub that compiles and sends").not.toBe("");
-    expect(probe.edId).toBe(chosen.id);
-    expect(departments.map((department) => department.id)).toContain(probe.edId);
-    // `bed`, because this form is the community front door and cannot honestly mean anything else.
-    // A picker offering the purpose is a clinician able to choose `psychiatric_review` and post
-    // themselves into another team's worklist.
-    expect(probe.purpose).toBe("bed");
-  });
-
-  it("forgets which department when the destination is un-ticked", () => {
-    renderIntakeAndHub(departments[0].id);
-    answerEverythingButTheDepartment();
-    selectAnswer("edId", departments[1].id);
-    expect(submitButton()).not.toHaveAttribute("aria-disabled");
-
-    // Un-tick and re-tick: an answer about a destination the clinician removed must not survive to
-    // be sent by a later tick they never connected it to.
-    fireEvent.click(screen.getByTestId("ward-referral-intake-destination-emergency_department"));
-    fireEvent.click(screen.getByTestId("ward-referral-intake-destination-emergency_department"));
-
-    expect(
-      (screen.getByTestId("ward-referral-intake-edId") as HTMLSelectElement).value,
-      "the previous department survived an un-tick and was ready to send again",
-    ).not.toBe(departments[1].id);
-    expect(submitButton()).toHaveAttribute("aria-disabled", "true");
-  });
-});
+/*
+ * "The intake form's emergency-department destination" (asks which department only once chosen,
+ * pre-chooses none, will not send while unanswered, sends a real department with purpose `bed`,
+ * forgets the department when un-ticked) rendered the full-page intake form, retired on 8 Oct 2026.
+ * The referral slide-out is now the one place a referral is written; those properties belong to its
+ * own suite.
+ */
 
 describe("the hub's two lists", () => {
   const departments = allEmergencyDepartments();
@@ -776,17 +660,15 @@ describe("the hub's two lists", () => {
 
   it("keeps a bed request to this department OUT of its psychiatry inbox — end to end", () => {
     const department = departments[0];
-    renderIntakeAndHub(department.id);
+    renderHubWithBedRequest(department.id);
     const before = probeParts().count;
 
-    // Raised through the real form, addressed to this very department.
-    answerEverythingButTheDepartment();
-    selectAnswer("edId", department.id);
-    fireEvent.click(submitButton());
+    // Raised through the real reducer, addressed to this very department.
+    fireEvent.click(screen.getByTestId("harness-raise-bed"));
 
     // Non-vacuity: the referral really was created, and really does name this department.
     const probe = probeParts();
-    expect(probe.count, "the form sent nothing, so the exclusion below proves nothing").toBe(before + 1);
+    expect(probe.count, "nothing was raised, so the exclusion below proves nothing").toBe(before + 1);
     expect(probe.edId).toBe(department.id);
     expect(probe.purpose).toBe("bed");
 

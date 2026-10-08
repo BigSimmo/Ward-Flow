@@ -24,7 +24,7 @@ import { stripSourceComments } from "./helpers/strip-source-comments";
  * mocks below are the same ones that file needs for the same reasons: `ClinicalRail` renders
  * `next/link` anchors, and `ContextualBackLink` (mounted by `WardPatientWorkspace`) calls
  * `next/navigation`'s `useRouter` synchronously during render — and, since this file also renders
- * `AddPatientForm` and `ReferralIntakeForm`, `useSearchParams` for the same reason. This is the
+ * `AddPatientForm`, `useSearchParams` for the same reason. This is the
  * `node` project with no `window` at all, so the mock returns an always-empty `URLSearchParams`
  * rather than reading a real querystring nothing here has.
  */
@@ -62,7 +62,6 @@ import { OfficerScreen } from "@/components/ward-management/officer/officer-scre
 import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-area-board";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
-import { ReferralIntakeForm } from "@/components/ward-management/referrals/referral-intake";
 import { WardBoard } from "@/components/ward-management/board/ward-board";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { WardPatientWorkspace } from "@/components/ward-management/ward-management-console";
@@ -95,7 +94,6 @@ import {
 } from "../src/components/ward-management/ward-nav";
 import { WARD_NAV_ICONS } from "../src/components/ward-management/ward-nav-icons";
 import { raiseReferralHref } from "../src/components/ward-management/shell/ward-facade";
-import { REFERRAL_SOURCES } from "../src/components/ward-management/ward-model";
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const WARD_FLOW_ROOT = path.join(REPO_ROOT, "src", "app", "mockups", "ward-flow");
@@ -1081,34 +1079,17 @@ describe("Ward Flow navigation — single source (ward-nav.ts)", () => {
    * an absence.
    */
   /**
-   * ⚠️ **WRITTEN BECAUSE ANOTHER FILE CITED A GUARD THAT DID NOT EXIST — AND THEN BECAUSE THE FIRST
-   * VERSION OF THIS TEST COULD NOT FIRE.**
-   *
-   * `referral-intake.tsx` reads `PATIENT_SEARCH_HREF` off `WARD_NAV` (id `"search"`) and offers it
-   * as the ONLY way out of the screen a clinician sees when a `?patientId=` link names nobody on
-   * file. Its comment claimed this file would fail if that entry were removed. **It would not
-   * have: this file referenced `"search"` nowhere.**
-   *
-   * ⚠️ **AND THE FIRST FIX WAS ALSO WRONG, WHICH IS THE MORE USEFUL HALF.** While the component
-   * still did `find(…)!.href`, deleting the entry threw `TypeError: Cannot read properties of
-   * undefined (reading 'href')` at MODULE LOAD — and because this file imports
-   * `ReferralIntakeForm`, the whole file reported `Tests no tests`. **It never collected, so the
-   * test written to catch the removal could not run.** A guard that dies with the thing it guards
-   * is not a guard, and `Tests no tests` reads as a red like any other on a summary line.
-   *
-   * The component now uses `?.href` and renders the link only when it resolves, so the refusal
-   * still explains itself with or without a way out — and this test can actually fire.
-   *
-   * Do not delete it to make a `WARD_NAV` edit pass: a clinician reaching that screen has already
-   * hit one broken link, and the recovery route is the whole point of it.
+   * The full-page intake form (retired 8 Oct 2026) offered `PATIENT_SEARCH_HREF`, read off
+   * `WARD_NAV` id `"search"`, as the only way out of its unknown-patient refusal. The patient search
+   * stays a rail destination in its own right, and the referral slide-out's own refusal may offer
+   * the same way out, so the pin stays.
    */
-  it("keeps the patient search in WARD_NAV, because the referral intake offers it as the only way out of a refusal", () => {
+  it("keeps the patient search in WARD_NAV, the way back from a referral link that names nobody", () => {
     const search = WARD_NAV.find((item) => item.id === "search");
     expect(
       search,
-      'WARD_NAV no longer holds id "search" — referral-intake.tsx offers that href as the only ' +
-        "recovery route from its unknown-patient refusal, so removing it leaves a clinician who " +
-        "followed a broken link with a dead end and no way back to the person search.",
+      'WARD_NAV no longer holds id "search" — a clinician who followed a referral link naming ' +
+        "nobody needs the person search as the way back.",
     ).toBeDefined();
     expect(search?.href, "the patient search href must resolve to a real route").toBe("/mockups/ward-flow/search");
   });
@@ -1329,7 +1310,8 @@ const RENDERABLE_ROUTES: RouteRender[] = [
     route: `${ROUTE_PREFIX}/people/[patientId]`,
     render: () => createElement(PersonScreen, { patientId: wardPatients[0].id }),
   },
-  { route: `${ROUTE_PREFIX}/referrals/new`, render: () => createElement(ReferralIntakeForm) },
+  // Since 8 Oct 2026 this route is the Referrals board with the referral slide-out opened over it.
+  { route: `${ROUTE_PREFIX}/referrals/new`, render: () => createElement(ReferralBoard) },
   { route: `${ROUTE_PREFIX}/people/new`, render: () => createElement(AddPatientForm) },
   { route: `${ROUTE_PREFIX}/referrals`, render: () => createElement(ReferralBoard) },
   { route: `${ROUTE_PREFIX}/out-of-area`, render: () => createElement(OutOfAreaBoard) },
@@ -1879,31 +1861,28 @@ describe("WARD_PRIMARY_ACTIONS — Task 7's one-action-per-route contract", () =
   // check just as easily).
   it("builds every New referral menu href through raiseReferralHref, proven by recomputing it", () => {
     /*
-     * 🔴 THIS EXPECTATION WAS 3 AND ["community","ed","gp"] AND THE CHANGE IS A RULING, not a
-     * renumber. The owner, 2026-09-11: **"NO. They come through ED or community."** There is no GP
-     * referral source, so the third entry is gone — and `ed` became `ed_medical` because this menu
-     * used to carry a SECOND vocabulary beside `REFERRAL_SOURCES`, which is how `gp` survived here.
+     * 8 Oct 2026 (Josh): the menu names where the referral GOES — the slide-out's first choice,
+     * "Refer to" Ward / Community / ED — in that order. It used to name where it came from; the
+     * owner's 2026-09-11 ruling that there is no GP source still holds for `source`, which this
+     * menu no longer sends at all.
      *
      * ⚠️ The count is asserted as well as the members on purpose: a members check alone stays green
-     * if a fourth entry is added that happens to sort after the two below.
+     * if a fourth entry is added.
      */
     expect(WARD_NEW_REFERRAL_MENU.length).toBe(3);
-    const sources = WARD_NEW_REFERRAL_MENU.map((entry) => entry.source).sort();
-    expect(sources).toEqual(["community", "ed_medical", "inter_hospital"]);
-    // Every source this menu offers must be one the MODEL can store — the property that failed
-    // while `gp` was here, and the one worth pinning rather than the two names themselves.
-    for (const entry of WARD_NEW_REFERRAL_MENU) {
-      expect(REFERRAL_SOURCES, `${entry.source} is not a ReferralSource the model can hold`).toContain(entry.source);
-    }
+    expect(WARD_NEW_REFERRAL_MENU.map((entry) => entry.destination)).toEqual(["ward", "community", "ed"]);
+    expect(WARD_NEW_REFERRAL_MENU.map((entry) => entry.label)).toEqual(["To a ward", "To community", "To an ED"]);
 
     for (const entry of WARD_NEW_REFERRAL_MENU) {
-      expect(entry.href, `${entry.source}'s href does not match raiseReferralHref's own output`).toBe(
-        raiseReferralHref({ source: entry.source }),
+      expect(entry.href, `${entry.destination}'s href does not match raiseReferralHref's own output`).toBe(
+        raiseReferralHref({ refer: entry.destination }),
       );
-      // The shape, independently of the recompute above: every href names its own source as a
-      // query parameter — this is what a lane actually reads back off the link.
+      // The shape, independently of the recompute above: every href names its own destination as a
+      // query parameter, and no source — this is what the slide-out reads back off the link.
       const query = new URLSearchParams(entry.href.split("?")[1] ?? "");
-      expect(query.get("source"), `${entry.href} does not carry source=${entry.source}`).toBe(entry.source);
+      expect(query.get("refer"), `${entry.href} does not carry refer=${entry.destination}`).toBe(entry.destination);
+      expect(query.has("source"), `${entry.href} names a source the menu does not know`).toBe(false);
+      expect(entry.href.split("?")[0]).toBe(WARD_REFERRAL_INTAKE_HREF);
     }
 
     // One shared menu object, not independent copies that could drift apart — every

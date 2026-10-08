@@ -361,9 +361,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-referral-history-honesty.test.ts`** (123 lines) — K2 — referral history honesty (2026-09-17 pin)
 - **`tests/ward-referral-history-immutable.test.ts`** (196 lines) — ADD_REFERRAL_CORRECTION — RB7, build plan item 27 (2026-09-17)
 - **`tests/ward-referral-history-is-one-optional-field.test.ts`** (106 lines) — the referral's history — one field, optional, last
-- **`tests/ward-referral-intake-sections.dom.test.tsx`** (278 lines) — raise a referral — grouping, state and the rulings the drawing lost
-- **`tests/ward-referral-intake-sending-team.dom.test.tsx`** (129 lines) — the sending-team question exists and is optional
-- **`tests/ward-referral-intake-third-edition.dom.test.tsx`** (219 lines) — ReferralIntakeForm — Third Edition Sovereign Person & Rapid Search
 - **`tests/ward-referral-kind-pair-gap.test.ts`** (116 lines) — RECEIVE_REFERRAL — GAP: the reducer does not reject {psychiatric_ward, community_team}
 - **`tests/ward-referral-match-hooks-order.dom.test.tsx`** (138 lines) — ReferralMatchView — every hook is called above the not-a-bed-question early return
 - **`tests/ward-referral-match-non-ward-decline.dom.test.tsx`** (283 lines) — the emergency-department decline control on the 'no bed shortlist' panel
@@ -372,19 +369,17 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-referral-model.test.ts`** (1849 lines) — bed category — SexDesignation
 - **`tests/ward-referral-no-bed-breakdown.test.ts`** (157 lines) — why nobody can take this patient
 - **`tests/ward-referral-producers.test.ts`** (212 lines) — every Referral field has something that can write it
-- **`tests/ward-referral-query-prefill.dom.test.tsx`** (277 lines) — the intake form reads the query contract
-- **`tests/ward-referral-receipt-integrity.dom.test.tsx`** (71 lines) — accepted referral receipt
+- **`tests/ward-referral-query-prefill.dom.test.tsx`** (139 lines) — the referral slide-out reads the query contract (`referral-sheet-link.ts`)
 - **`tests/ward-referral-reducer.test.ts`** (1751 lines) — RECEIVE_REFERRAL
 - **`tests/ward-referral-referrer.test.ts`** (105 lines) — referralReferrerName (D-12 — the referrer is the recorded source, never a source type)
 - **`tests/ward-referral-screen-boundary.test.ts`** (886 lines) — FD-23 at the screen boundary
-- **`tests/ward-referral-screens.dom.test.tsx`** (3665 lines) — the largest test file in the suite: `ReferralIntakeForm` and `ReferralBoard` DOM behaviour end to end, including the recently-decided cap, refusal-then-acceptance ordering, and cancelled-destination wording (first `describe` is a helper, `clickExpectingNoError`)
+- **`tests/ward-referral-screens.dom.test.tsx`** (2611 lines) — `ReferralBoard` DOM behaviour end to end (the `ReferralIntakeForm` suite left with the form on 8 Oct 2026), including the recently-decided cap, refusal-then-acceptance ordering, and cancelled-destination wording (first `describe` is a helper, `clickExpectingNoError`)
 - **`tests/ward-referral-sending-team-display.test.ts`** (122 lines) — the sending team as a display fragment
 - **`tests/ward-referral-sending-team.test.ts`** (167 lines) — a referral records the team or service that sent it
 - **`tests/ward-referral-sex-absence-split.test.ts`** (71 lines) — the absent sex is stated on the board and left inferable for an ED
 - **`tests/ward-referral-sex-cell.test.ts`** (90 lines) — the referral board's Sex column
 - **`tests/ward-referral-suburb-pin.test.ts`** (261 lines) — the suburb note, and the model fact that is the only reason it is true
 - **`tests/ward-referral-suburb.test.ts`** (183 lines) — a referral records its suburb
-- **`tests/ward-referral-unsaved-history-warning.dom.test.tsx`** (173 lines) — the referral history's unsaved-departure warning (D-11)
 - **`tests/ward-referral-visibility.test.ts`** (3021 lines) — FD-23 — a ward cannot see where else a patient has been referred
 - **`tests/ward-referral-wait-line.test.ts`** (111 lines) — the wait figure the referral board and match view print
 - **`tests/ward-referral-withdrawn-counts.test.ts`** (89 lines) — WF-13 T11 — the nav count drops when a referral is withdrawn
@@ -827,6 +822,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-alerts-css-tap-and-edge-bars.test.ts`** (63 lines) — alerts.module.css — no coloured edge bars (F3.3)
 - **`tests/ward-back-sync-and-focus-trap.dom.test.tsx`** (268 lines) — Issue 3: Movement Drawer Browser Back Sync
 - **`tests/ward-bar-fill-only-edges.test.ts`** (243 lines) — WardBar draws the split it can no longer fill
+- **`tests/ward-bar-referral-link.dom.test.tsx`** (95 lines) — links to `/referrals/new` open the referral slide-out in place; arriving there opens it over the board
 - **`tests/ward-bar-tasks-role-message.dom.test.tsx`** (99 lines) — F8 — the Tasks drawer's empty state names why the list is empty
 - **`tests/ward-bar.dom.test.tsx`** (127 lines) — WardBar
 - **`tests/ward-board-people-panel.dom.test.tsx`** (548 lines) — ward board people panel — the figure has to be possible, not merely computed
