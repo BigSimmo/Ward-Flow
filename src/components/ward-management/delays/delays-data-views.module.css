@@ -2099,4 +2099,75 @@ span.workspaceMeasure,
   .waitingTable tbody tr.detailRow > td {
     display: block;
   }
+
+  /* Phone pass 2 (8 Oct 2026). The layout switch and the marks span the panel in equal parts;
+     the urgency mark is chip height, so a row is no taller than its text; the pager keeps the
+     48px tap floor. */
+  .layoutHeader > .tabs {
+    display: grid;
+    flex: none;
+    align-self: stretch;
+    width: auto;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+  }
+
+  .workspace .layoutHeader > .tabs button {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  /* The name and the cause buttons reach the 48px tap floor through an invisible margin, so
+     the rows keep their height. */
+  .waitingTable .patientButton {
+    min-height: var(--spacing-tap, 3rem);
+    margin-block: calc(-1 * var(--wf-s-1));
+  }
+
+  .blockerPanel .causeButton {
+    min-height: var(--spacing-tap, 3rem);
+    margin-block: calc(-1 * var(--wf-s-2));
+  }
+
+  /* An opened row reads as one band, not a box per cell. */
+  .waitingTable tbody tr:not(.detailRow) > :is(th, td) {
+    background: transparent;
+  }
+
+  .waitingTable tbody tr[data-selected="true"]:not(.detailRow) {
+    background: var(--dv-selected);
+  }
+
+  .waitingPanel .markBar {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+  }
+
+  .waitingPanel .markBar button {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding-inline: var(--wf-s-2);
+    white-space: nowrap;
+  }
+
+  .waitingTable tbody tr .urgency.urgency[data-tier] {
+    height: auto;
+    padding-block: 2px;
+    line-height: var(--wf-lh-12);
+  }
+
+  /* The pager spans the panel: previous at the left edge, the page in the middle, next at the
+     right. Rows per page stays on desktop. */
+  .waitingPanel .rowsPerPage {
+    display: none;
+  }
+
+  .waitingPanel .pagination {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+
+  .waitingPanel .pagination button {
+    min-width: var(--spacing-tap, 3rem);
+    min-height: var(--spacing-tap, 3rem);
+  }
 }

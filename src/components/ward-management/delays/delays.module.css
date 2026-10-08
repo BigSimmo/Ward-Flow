@@ -2034,3 +2034,36 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Phone pass 2 (8 Oct 2026). Phone only; nothing here applies above 48rem. 12px gutters; a
+   panel's title sits centred in its header; the register tabs share the panel width instead of
+   clipping the last one. */
+@media (max-width: 48rem) {
+  .screen[data-ward-design="v6"] .main {
+    padding: var(--wf-s-3);
+  }
+
+  .screen[data-ward-page="delays"] [data-ward-primitive="panel-header"] {
+    align-items: center;
+  }
+
+  .screen[data-ward-page="delays"] .tabbar {
+    width: auto;
+    max-width: none;
+  }
+
+  .screen[data-ward-page="delays"] .tabBtn {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding-inline: 0;
+    white-space: nowrap;
+  }
+
+  .screen[data-ward-page="delays"] .tabBtn.tabBtn {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .screen[data-ward-page="delays"] .tabNum {
+    padding-inline: var(--wf-s-1);
+  }
+}
