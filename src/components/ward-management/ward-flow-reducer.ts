@@ -2349,6 +2349,20 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (event.draft.tentativeDiagnosis !== undefined && !isTentativeDiagnosisBlock(event.draft.tentativeDiagnosis)) {
         return reject(state, event, `RAISE_REFERRAL tentativeDiagnosis must be chosen from TENTATIVE_DIAGNOSIS_BLOCKS`);
       }
+      // A journey raised from a referral is for that referral's patient. Naming someone else let
+      // PULL_PATIENT check one person for an existing bed and then admit the other, who could end
+      // up holding two beds (review finding S1-2, 8 October 2026).
+      if (
+        event.patientId !== undefined &&
+        raisedFrom?.patientId !== undefined &&
+        event.patientId !== raisedFrom.patientId
+      ) {
+        return reject(
+          state,
+          event,
+          `RAISE_REFERRAL names patient ${event.patientId}, but referral ${raisedFrom.id} is for patient ${raisedFrom.patientId}`,
+        );
+      }
       const created: Movement = {
         id: nextReferralId(sequence),
         originEdId: event.edId,

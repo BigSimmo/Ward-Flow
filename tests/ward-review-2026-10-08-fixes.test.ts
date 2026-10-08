@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { DIVERSION_REASONS, TRANSPORT_WHEREABOUTS } from "@/components/ward-management/ward-change-reasons";
+import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 
 const now = 642;
 type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
@@ -194,5 +195,78 @@ describe("S2-1: a seeded journey with no admission record can still release its 
     expect(h.state.units.find((u) => u.id === unitId)!.allocatable.value).toBe(before + 1);
     expect(h.send({ type: "RELEASE_HELD_BED", role: "coordinator", movementId: SEEDED })).toMatch(/holds no bed/);
     expect(h.state.units.find((u) => u.id === unitId)!.allocatable.value).toBe(before + 1);
+  });
+});
+
+describe("S1-2: a journey raised from a referral must be for that referral's patient", () => {
+  function referralFor(h: Harness, umrn: string) {
+    h.ok({
+      type: "ADD_PATIENT",
+      role: "coordinator",
+      umrn,
+      givenName: "Demo",
+      familyName: "Referred",
+      dateOfBirth: "1981-01-01",
+    });
+    const patient = h.state.patients.at(-1)!;
+    h.ok({
+      type: "RECEIVE_REFERRAL",
+      role: "community",
+      patientId: patient.id,
+      ageBand: "Adult",
+      destinations: [{ kind: "emergency_department", edId: "jhc-ed", purpose: "psychiatric_review" }],
+      homeRegion: "Perth Metropolitan",
+      suburb: { kind: "named", name: "Armadale" },
+      source: "community",
+      urgency: 2,
+      originSiteCode: "SCGH",
+      transportNeeded: false,
+      ...FIXTURE_HISTORY,
+    });
+    return { patient, referral: h.state.referrals.at(-1)! };
+  }
+
+  it("refuses a different patient", () => {
+    const h = harness();
+    const { referral } = referralFor(h, "SYN-FIX-010");
+    h.ok({
+      type: "ADD_PATIENT",
+      role: "coordinator",
+      umrn: "SYN-FIX-011",
+      givenName: "Demo",
+      familyName: "Other",
+      dateOfBirth: "1982-01-01",
+    });
+    const other = h.state.patients.at(-1)!;
+    const before = h.state.movements.length;
+    const refusal = h.send({
+      type: "RAISE_REFERRAL",
+      role: "ed",
+      edId: "jhc-ed",
+      referralId: referral.id,
+      patientId: other.id,
+      draft,
+    });
+    expect(refusal).toMatch(/is for patient/);
+    expect(h.state.movements).toHaveLength(before);
+  });
+
+  it("accepts the referral's own patient, named or not", () => {
+    const named = harness();
+    const a = referralFor(named, "SYN-FIX-012");
+    named.ok({
+      type: "RAISE_REFERRAL",
+      role: "ed",
+      edId: "jhc-ed",
+      referralId: a.referral.id,
+      patientId: a.patient.id,
+      draft,
+    });
+    expect(named.state.movements.at(-1)?.patientId).toBe(a.patient.id);
+
+    const unnamed = harness();
+    const b = referralFor(unnamed, "SYN-FIX-013");
+    unnamed.ok({ type: "RAISE_REFERRAL", role: "ed", edId: "jhc-ed", referralId: b.referral.id, draft });
+    expect(unnamed.state.movements.at(-1)?.patientId).toBe(b.patient.id);
   });
 });
