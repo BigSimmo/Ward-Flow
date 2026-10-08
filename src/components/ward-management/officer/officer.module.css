@@ -1039,3 +1039,28 @@
     min-height: 2.75rem;
   }
 }
+
+/* Phone polish (8 Oct 2026, second pass): 12px side gutters and a compact hero. Transport handover
+ * moves to the hero's top corner, and the provider filter (a secondary way to narrow the jobs)
+ * stays on the larger screen, so the band holds the title, three figures and the stage tabs.
+ * Desktop is unchanged: everything here sits under 48rem. */
+@media (max-width: 48rem) {
+  .main {
+    padding-inline: var(--wf-s-3);
+  }
+
+  .main > section:first-child {
+    position: relative;
+  }
+
+  .main > section:first-child > :first-child > :last-child:has(> button) {
+    position: absolute;
+    top: var(--wf-s-3);
+    right: var(--wf-s-3);
+    width: auto;
+  }
+
+  .main > section:first-child > :last-child:has(> * > .fleetPanel) > :last-child {
+    display: none;
+  }
+}

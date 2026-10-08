@@ -3617,3 +3617,87 @@
     white-space: nowrap;
   }
 }
+
+/* Phone polish (8 Oct 2026, second pass): 12px side gutters, the Live chip in the hero's top
+ * corner, round tier markers, the Arrange options as one segmented row, and worklist rows trimmed
+ * to the person, the place, the barrier and the transport line. A row's stage and owner tags stay
+ * on the larger screen and in the record. Desktop is unchanged: everything here sits under 48rem. */
+@media (max-width: 48rem) {
+  .main {
+    padding-inline: var(--wf-s-3);
+  }
+
+  .dayHero {
+    position: relative;
+  }
+
+  .dayHero > :first-child > :last-child:not(:first-child) {
+    position: absolute;
+    top: var(--wf-s-3);
+    right: var(--wf-s-3);
+    width: auto;
+  }
+
+  .needsYouItem {
+    padding: var(--wf-s-2) var(--wf-s-3);
+    font-size: var(--wf-fs-13);
+    line-height: var(--wf-lh-13);
+  }
+
+  .needsYouItem > :first-child,
+  .wlLine > :first-child > * {
+    border-radius: var(--wf-r-pill);
+  }
+
+  .orderBar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2px;
+    padding: var(--wf-s-1);
+    border: 1px solid var(--wf-line);
+    background: var(--wf-track);
+    overflow: visible;
+  }
+
+  .orderLegend {
+    display: none;
+  }
+
+  .orderBtn {
+    justify-content: center;
+    min-width: 0;
+    padding: 0 var(--wf-s-2);
+    overflow: hidden;
+  }
+
+  .orderBtn > span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .wlSearch {
+    flex: 1 1 100%;
+  }
+
+  .wlRow {
+    gap: var(--wf-s-1);
+  }
+
+  .wlTags {
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .wlTag {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .wlTagText {
+    display: none;
+  }
+
+  .wlMeta {
+    gap: var(--wf-s-1);
+  }
+}
