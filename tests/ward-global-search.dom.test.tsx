@@ -39,7 +39,8 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
+import { WardGlobalSearch, clearGlobalSearchRecents } from "@/components/ward-management/ward-global-search";
+import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { refusalFor } from "@/components/ward-management/search/search-refusals";
 import { searchMovements } from "@/components/ward-management/ward-derivations";
 import { wardMovements } from "@/components/ward-management/ward-movements";
@@ -111,10 +112,25 @@ describe("WardGlobalSearch", () => {
     expect(screen.getByTestId("ward-global-search-scope")).toHaveTextContent("ED mental health");
   });
 
-  it("shows nothing for an empty query — absence, not a full catalogue", () => {
+  it("opens the start screen on focus: common screens and actions, never a catalogue of records", () => {
+    clearGlobalSearchRecents();
     renderSearch();
     fireEvent.focus(screen.getByTestId("ward-global-search-input"));
-    expect(screen.queryByTestId("ward-global-search-popup")).not.toBeInTheDocument();
+
+    const popup = screen.getByTestId("ward-global-search-popup");
+    expect(within(popup).getByTestId("ward-global-search-group-goto")).toHaveTextContent("Go to");
+    expect(within(popup).getByTestId("ward-global-search-result-view-capacity")).toHaveAttribute(
+      "href",
+      "/mockups/ward-flow/capacity",
+    );
+    expect(within(popup).getByTestId("ward-global-search-result-action-new-referral")).toHaveAttribute(
+      "href",
+      "/mockups/ward-flow/referrals/new",
+    );
+    // No caller tasks, no recents: no person or movement rows before anything is typed.
+    expect(within(popup).queryByTestId("ward-global-search-group-needs")).not.toBeInTheDocument();
+    expect(within(popup).queryAllByTestId(/^ward-global-search-result-(person|movement)-/)).toHaveLength(0);
+    expect(within(popup).queryByTestId("ward-global-search-intent")).not.toBeInTheDocument();
   });
 
   it("finds the person by the fixture's own given name and carries the exact patient id in the href", () => {
@@ -432,5 +448,100 @@ describe("WardGlobalSearch", () => {
     const taskItems = screen.getAllByTestId(/^ward-global-search-result-task-/);
     expect(taskItems.length).toBeGreaterThan(0);
     expect(taskItems[0]).toHaveAttribute("href", expect.stringMatching(/\/mockups\/ward-flow\/movements\//));
+  });
+});
+
+describe("WardGlobalSearch palette (option B)", () => {
+  const inbox = buildActionInbox(wardMovements.filter(isOpen), 0, units);
+
+  function renderPalette(onNavigate = vi.fn(), tasks = inbox) {
+    render(
+      <WardGlobalSearch
+        movements={wardMovements}
+        patients={wardPatients}
+        units={units}
+        tasks={tasks}
+        now={0}
+        onNavigate={onNavigate}
+      />,
+    );
+    return { onNavigate, input: screen.getByTestId("ward-global-search-input") };
+  }
+
+  it("leads the start screen with the caller's own tasks, at most three, each linked to its movement", () => {
+    if (inbox.length === 0) throw new Error("fixture drifted: the seeded inbox is empty, so this would pass vacuously");
+    clearGlobalSearchRecents();
+    const { input } = renderPalette();
+    fireEvent.focus(input);
+
+    const group = screen.getByTestId("ward-global-search-group-needs");
+    expect(group).toHaveTextContent("Needs you now");
+    const rows = screen.getAllByTestId(/^ward-global-search-result-task-/);
+    expect(rows.length).toBe(Math.min(3, inbox.length));
+    expect(rows[0]).toHaveAttribute("href", `/mockups/ward-flow/movements/${inbox[0].movementId}`);
+  });
+
+  it("previews the highlighted person with their UMRN and an Open patient action", () => {
+    const { input } = renderPalette();
+    fireEvent.change(input, { target: { value: personQuery } });
+
+    const preview = screen.getByTestId("ward-global-search-preview");
+    expect(preview).toHaveTextContent(patientDisplayName(targetPatient));
+    expect(preview).toHaveTextContent(targetPatient.umrn);
+    expect(within(preview).getByTestId("ward-global-search-preview-open")).toHaveAttribute(
+      "href",
+      `/mockups/ward-flow/people/${targetPatient.id}`,
+    );
+  });
+
+  it("moves the preview with the keyboard to the active movement", () => {
+    const { input } = renderPalette();
+    fireEvent.change(input, { target: { value: movementQuery } });
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+
+    const preview = screen.getByTestId("ward-global-search-preview");
+    expect(preview).toHaveTextContent(targetMovement.id);
+    expect(within(preview).getByTestId("ward-global-search-preview-open")).toHaveAttribute(
+      "href",
+      `/mockups/ward-flow/movements/${targetMovement.id}`,
+    );
+  });
+
+  it("narrows to one kind with a chip and counts every kind inside its chip", () => {
+    const { input } = renderPalette();
+    fireEvent.change(input, { target: { value: "ward" } });
+
+    const places = screen.getByTestId("ward-global-search-kind-places");
+    const placeCount = Number(places.textContent?.replace(/\D/g, ""));
+    expect(placeCount).toBeGreaterThan(6);
+    fireEvent.click(places);
+
+    expect(places).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByTestId("ward-global-search-group-people")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId(/^ward-global-search-result-(ward|ed|community)-/)).toHaveLength(placeCount);
+  });
+
+  it("remembers an opened record for the session and offers it under Recent before typing", () => {
+    clearGlobalSearchRecents();
+    const { input, onNavigate } = renderPalette();
+    fireEvent.change(input, { target: { value: personQuery } });
+    fireEvent.click(screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`), { button: 0 });
+    expect(onNavigate).toHaveBeenCalledWith(`/mockups/ward-flow/people/${targetPatient.id}`);
+
+    fireEvent.change(input, { target: { value: "" } });
+    expect(screen.getByTestId("ward-global-search-group-recent")).toHaveTextContent("Recent");
+    expect(
+      within(screen.getByTestId("ward-global-search-popup")).getByTestId(
+        `ward-global-search-result-person-${targetPatient.id}`,
+      ),
+    ).toBeInTheDocument();
+    clearGlobalSearchRecents();
+  });
+
+  it("closes when the scrim is pressed", () => {
+    const { input } = renderPalette();
+    fireEvent.focus(input);
+    fireEvent.mouseDown(screen.getByTestId("ward-global-search-scrim"));
+    expect(screen.queryByTestId("ward-global-search-popup")).not.toBeInTheDocument();
   });
 });
