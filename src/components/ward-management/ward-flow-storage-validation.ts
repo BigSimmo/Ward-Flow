@@ -1,6 +1,6 @@
 import { validCareJourney, validCareChange } from "./ward-care-journey";
 import type { WardFlowState } from "./ward-flow-reducer";
-import { isLeavingDestination } from "./ward-admissions";
+import { isDischargeBarrier, isLeavingDestination } from "./ward-admissions";
 import {
   MOVEMENT_STAGES,
   COHORTS,
@@ -326,6 +326,14 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   }
   for (const admission of value.admissions as RecordValue[]) {
     if (admission.leavingDestination !== null && !isLeavingDestination(admission.leavingDestination)) return false;
+    // A stored barrier is a list value or absent; free text here would be typed text restored from
+    // storage (review finding A2-2).
+    if (
+      admission.dischargeBarrier !== undefined &&
+      admission.dischargeBarrier !== null &&
+      !isDischargeBarrier(admission.dischargeBarrier)
+    )
+      return false;
     if (
       !unitIds.has(admission.unitId) ||
       !["waitlisted", "pulled", "occupied", "departed"].includes(admission.state as string)

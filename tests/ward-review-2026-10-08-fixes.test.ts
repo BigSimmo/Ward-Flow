@@ -8,6 +8,8 @@ import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/compon
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { DIVERSION_REASONS, TRANSPORT_WHEREABOUTS } from "@/components/ward-management/ward-change-reasons";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { DISCHARGE_BARRIERS } from "@/components/ward-management/ward-admissions";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 
 const now = 642;
 type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
@@ -268,5 +270,38 @@ describe("S1-2: a journey raised from a referral must be for that referral's pat
     const b = referralFor(unnamed, "SYN-FIX-013");
     unnamed.ok({ type: "RAISE_REFERRAL", role: "ed", edId: "jhc-ed", referralId: b.referral.id, draft });
     expect(unnamed.state.movements.at(-1)?.patientId).toBe(b.patient.id);
+  });
+});
+
+describe("S2-12 / A2-2: a discharge barrier is a list value, never typed text", () => {
+  const LONG_STAY = "AD-RPHS-01"; // seeded occupied stay of more than 7 days
+
+  it("refuses free text and keeps the list values working", () => {
+    const h = harness();
+    const refusal = h.send({
+      type: "SET_DISCHARGE_BARRIER",
+      role: "coordinator",
+      admissionId: LONG_STAY,
+      barrier: "housing - lives with mum at 12 X St",
+    });
+    expect(refusal).toMatch(/DISCHARGE_BARRIERS/);
+    expect(h.state.admissions.find((a) => a.id === LONG_STAY)?.dischargeBarrier ?? null).toBeNull();
+    h.ok({
+      type: "SET_DISCHARGE_BARRIER",
+      role: "coordinator",
+      admissionId: LONG_STAY,
+      barrier: DISCHARGE_BARRIERS[0],
+    });
+    expect(h.state.admissions.find((a) => a.id === LONG_STAY)?.dischargeBarrier).toBe(DISCHARGE_BARRIERS[0]);
+  });
+
+  it("refuses to restore stored state carrying a free-text barrier", () => {
+    const seeded = JSON.parse(JSON.stringify(seedWardFlowState())) as WardFlowState;
+    expect(isValidStoredWardFlowState(seeded)).toBe(true);
+    const tampered = {
+      ...seeded,
+      admissions: seeded.admissions.map((a) => (a.id === LONG_STAY ? { ...a, dischargeBarrier: "typed note" } : a)),
+    };
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(tampered)))).toBe(false);
   });
 });

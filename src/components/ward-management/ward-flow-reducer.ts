@@ -23,7 +23,13 @@ import {
   validRecordActor,
   type WardRecordActor,
 } from "./ward-discharge-records";
-import { isLeavingDestination, isFollowUpState, daysInBed, type LeavingDestination } from "./ward-admissions";
+import {
+  isDischargeBarrier,
+  isLeavingDestination,
+  isFollowUpState,
+  daysInBed,
+  type LeavingDestination,
+} from "./ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
@@ -8520,6 +8526,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           event,
           `SET_DISCHARGE_BARRIER was raised acting as unit ${event.actingUnitId} but admission ${admission.id} is at ${admission.unitId}`,
         );
+      }
+
+      // Chosen from DISCHARGE_BARRIERS, never typed: this event is on the persistence safe list, so
+      // anything off the list would reach browser storage as free text (review findings S2-12/A2-2).
+      if (event.barrier !== null && event.barrier !== "None" && !isDischargeBarrier(event.barrier)) {
+        return reject(state, event, "SET_DISCHARGE_BARRIER barrier must be chosen from DISCHARGE_BARRIERS");
       }
 
       const stay = daysInBed(admission, event.now) ?? 0;
