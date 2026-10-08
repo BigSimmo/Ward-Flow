@@ -1,0 +1,7869 @@
+# Ward Flow — remaining remediation tasks
+
+Publication snapshot of the completed local audit/remediation register, 8 October 2026. This PR corrects 49 tasks locally and preserves five original findings already resolved by newer main. The following **39 items remain**: 16 partial, 14 requiring an owner decision, eight requiring external verification and one deferred optional improvement.
+
+This list records remaining scope rather than re-reporting corrected baseline defects. IDs, original ownership/approvals and acceptance criteria are retained. Earlier source-only tests do not verify configured providers, shared staff access, recovery or clinical approval. Publication adds this task document; it performs no deployment or new clinical approval.
+
+## Verification already observed
+
+- Full local suite at `3d01bf9`: 10,881 passed, 146 skipped across 936 passing and nine skipped files; lint/typecheck passed.
+- After integrating canonical main `0bbcd34`, candidate `8682118`: 325 tests in 29 relevant files, whole-source lint, all-route production build with normal complete TypeScript check and 12 selected Chromium browser checks passed. Ten bounded Settings checks also passed.
+- Documentation candidate `b31c78b`: six files / 77 documentation contracts and staged commit checks passed. The application render fingerprint remained `659b58adf6d90659ab9306947265d23c068146c7ed5b1b973ecbbd9cb9f7f13b`.
+- No additional local tests, builds, browser checks or hosted CI observation were requested for this publication. No repeat full-suite result on the merged candidate is claimed.
+
+## Next milestones and critical path
+
+1. Establish Ward-only identity/resource ownership and approve staff/service membership and synthetic retention.
+2. Implement trusted shared sign-in, server authorisation, authoritative shared commands/persistence, durable idempotency/history and revision-aware synchronisation. Retain the assessed Azure Functions/Entra/Blob architecture unless measured requirements justify a change.
+3. Verify two-user synthetic conflicts, duplicate/retried requests, reconnect, revoked membership and cross-service access; verify monitoring, backups, recovery and rollback against the actual Ward resources.
+4. Finish remaining scoped product, browser/accessibility and historical verification work.
+5. Obtain qualified clinical/privacy/legal/cultural and intended-purpose regulatory assessments plus institutional pilot authority before real-patient use.
+
+## Prioritised task index
+
+| ID | Priority | Current disposition | Component |
+| --- | --- | --- | --- |
+| BE-001 | P1 | Requires owner decision | Frontend identity and session integration |
+| BE-002 | P1 | Requires owner decision | Authoritative shared persistence |
+| BE-003 | P1 | Requires owner decision | Service membership and server-side roles |
+| BE-004 | P1 | Requires owner decision | Cross-user update delivery |
+| BE-005 | P1 | Requires owner decision | Shared domain commands and allocation invariants |
+| BE-010 | P1 | Requires owner decision | Immutable shared action history |
+| BE-011 | P1 | Unverified external | Live Azure backend/resource evidence |
+| GOV-001 | P1 | Requires owner decision | TGA intended-purpose determination |
+| GOV-002 | P1 | Requires owner decision | WA Health privacy and data governance |
+| GOV-003 | P1 | Requires owner decision | Safety case / accountable clinical governance |
+| OPS-001 | P1 | Unverified external | Staging and environment isolation |
+| OPS-003 | P1 | Unverified external | Backups and recovery |
+| QA-001 | P1 | Partial | Shared-user acceptance scenarios |
+| SPEC-001 | P1 | Partial | Medical deterioration / held-bed lifecycle |
+| ARC-001 | P2 | Partial | Domain policy / transition maintainability |
+| BE-006 | P2 | Partial | Write outcome and safe retries |
+| BE-008 | P2 | Partial | Stored session deletion and retention |
+| BE-009 | P2 | Partial | Backend request failure diagnostics |
+| CAP-002 | P2 | Requires owner decision | Alert intervention recording |
+| CAP-004 | P2 | Requires owner decision | Operational Settings preview controls |
+| CAP-005 | P2 | Unverified external | WA Health pathways / directories / PAS / HMDC |
+| CAP-006 | P2 | Requires owner decision | Unwired global export / notification / admin surfaces |
+| DEV-002 | P2 | Requires owner decision | Canonical blocked Notion work / owner recovery |
+| DEV-003 | P2 | Unverified external | Native coding agents / remote device readiness |
+| DEV-004 | P2 | Partial | Historical registers and exhaustive semantic verification |
+| DOC-003 | P2 | Partial | Screen verification provenance |
+| NEW-OBSERVABILITY-001 | P2 | Partial | Next request error instrumentation |
+| OPS-002 | P2 | Partial | End-to-end error monitoring |
+| OPS-004 | P2 | Unverified external | Release rollback / incident response |
+| OPS-005 | P2 | Unverified external | Capacity limits and edge abuse controls |
+| QA-002 | P2 | Partial | Ward browser compatibility and accessibility acceptance |
+| QA-003 | P2 | Partial | Representative performance and large-state limits |
+| QA-004 | P2 | Unverified external | Host JWT / security contract verification |
+| RT-008 | P2 | Partial | Discharge status accessibility |
+| SEC-003 | P2 | Partial | ESLint glob / braces dependency chain |
+| SPEC-005 | P2 | Requires owner decision | Queue ordering policy reconciliation |
+| SPEC-007 | P2 | Partial | Community clinician allocation |
+| SPEC-012 | P2 | Partial | Community review/assignment capabilities |
+| OPT-001 | P3 | Deferred optional | Review approvals for higher-risk releases |
+
+## P1 — remaining tasks
+
+### BE-001 — Frontend identity and session integration
+
+**Disposition:** Requires owner decision. **Area:** Authentication. **Effort:** L.
+
+**Remaining action:** Choose current Ward-only shared backend contract, verified tenant/app/resource identities, service membership/provisioning/revocation and migration/retention policy; implement and verify dependencies from original acceptance criteria. Do not use PsychSift resources or silently choose a new database vendor.
+
+**Current local correction/evidence boundary:** Existing owner-private Azure snapshot API retained and hardened. Shared staff identity/service authority/command database/synchronisation/authenticated durable audit remain absent.
+
+**Dependencies:** BE-011
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- T
+- w
+- o
+-  
+- s
+- y
+- n
+- t
+- h
+- e
+- t
+- i
+- c
+-  
+- s
+- t
+- a
+- f
+- f
+-  
+- u
+- s
+- e
+- r
+- s
+-  
+- s
+- i
+- g
+- n
+-  
+- i
+- n
+- ;
+-  
+- e
+- x
+- p
+- i
+- r
+- e
+- d
+-  
+- t
+- o
+- k
+- e
+- n
+- s
+-  
+- c
+- a
+- n
+- n
+- o
+- t
+-  
+- s
+- a
+- v
+- e
+- ;
+-  
+- s
+- i
+- g
+- n
+- -
+- o
+- u
+- t
+-  
+- c
+- l
+- e
+- a
+- r
+- s
+-  
+- s
+- e
+- n
+- s
+- i
+- t
+- i
+- v
+- e
+-  
+- s
+- e
+- s
+- s
+- i
+- o
+- n
+-  
+- m
+- e
+- m
+- o
+- r
+- y
+- .
+
+**Verification required:**
+
+- B
+- r
+- o
+- w
+- s
+- e
+- r
+-  
+- a
+- u
+- t
+- h
+-  
+- i
+- n
+- t
+- e
+- g
+- r
+- a
+- t
+- i
+- o
+- n
+-  
+- a
+- g
+- a
+- i
+- n
+- s
+- t
+-  
+- W
+- a
+- r
+- d
+- -
+- o
+- n
+- l
+- y
+-  
+- s
+- t
+- a
+- g
+- i
+- n
+- g
+- ;
+-  
+- l
+- o
+- c
+- a
+- l
+-  
+- t
+- o
+- k
+- e
+- n
+-  
+- e
+- x
+- p
+- i
+- r
+- y
+-  
+- t
+- e
+- s
+- t
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### BE-002 — Authoritative shared persistence
+
+**Disposition:** Requires owner decision. **Area:** Backend. **Effort:** XL.
+
+**Remaining action:** Choose current Ward-only shared backend contract, verified tenant/app/resource identities, service membership/provisioning/revocation and migration/retention policy; implement and verify dependencies from original acceptance criteria. Do not use PsychSift resources or silently choose a new database vendor.
+
+**Current local correction/evidence boundary:** Existing owner-private Azure snapshot API retained and hardened. Shared staff identity/service authority/command database/synchronisation/authenticated durable audit remain absent.
+
+**Dependencies:** BE-001, BE-003
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- T
+- w
+- o
+-  
+- u
+- s
+- e
+- r
+- s
+-  
+- o
+- f
+-  
+- o
+- n
+- e
+-  
+- a
+- p
+- p
+- r
+- o
+- v
+- e
+- d
+-  
+- s
+- y
+- n
+- t
+- h
+- e
+- t
+- i
+- c
+-  
+- s
+- e
+- r
+- v
+- i
+- c
+- e
+-  
+- r
+- e
+- l
+- o
+- a
+- d
+-  
+- t
+- h
+- e
+-  
+- s
+- a
+- m
+- e
+-  
+- c
+- o
+- m
+- m
+- i
+- t
+- t
+- e
+- d
+-  
+- s
+- t
+- a
+- t
+- e
+- ;
+-  
+- i
+- s
+- o
+- l
+- a
+- t
+- i
+- o
+- n
+-  
+- p
+- r
+- e
+- v
+- e
+- n
+- t
+- s
+-  
+- a
+- n
+- o
+- t
+- h
+- e
+- r
+-  
+- s
+- e
+- r
+- v
+- i
+- c
+- e
+-  
+- r
+- e
+- a
+- d
+- i
+- n
+- g
+-  
+- i
+- t
+- .
+
+**Verification required:**
+
+- E
+- n
+- d
+- -
+- t
+- o
+- -
+- e
+- n
+- d
+-  
+- s
+- a
+- v
+- e
+- /
+- r
+- e
+- l
+- o
+- a
+- d
+-  
+- a
+- c
+- r
+- o
+- s
+- s
+-  
+- i
+- n
+- d
+- e
+- p
+- e
+- n
+- d
+- e
+- n
+- t
+-  
+- u
+- s
+- e
+- r
+- s
+-  
+- a
+- n
+- d
+-  
+- b
+- r
+- o
+- w
+- s
+- e
+- r
+- s
+- ;
+-  
+- c
+- r
+- o
+- s
+- s
+- -
+- s
+- e
+- r
+- v
+- i
+- c
+- e
+-  
+- n
+- e
+- g
+- a
+- t
+- i
+- v
+- e
+-  
+- t
+- e
+- s
+- t
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### BE-003 — Service membership and server-side roles
+
+**Disposition:** Requires owner decision. **Area:** Authorisation. **Effort:** L.
+
+**Remaining action:** Choose current Ward-only shared backend contract, verified tenant/app/resource identities, service membership/provisioning/revocation and migration/retention policy; implement and verify dependencies from original acceptance criteria. Do not use PsychSift resources or silently choose a new database vendor.
+
+**Current local correction/evidence boundary:** Existing owner-private Azure snapshot API retained and hardened. Shared staff identity/service authority/command database/synchronisation/authenticated durable audit remain absent.
+
+**Dependencies:** BE-001
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- V
+- i
+- e
+- w
+- e
+- r
+-  
+- w
+- r
+- i
+- t
+- e
+-  
+- r
+- e
+- f
+- u
+- s
+- e
+- d
+- ;
+-  
+- f
+- o
+- r
+- e
+- i
+- g
+- n
+-  
+- s
+- e
+- r
+- v
+- i
+- c
+- e
+-  
+- r
+- e
+- a
+- d
+- /
+- w
+- r
+- i
+- t
+- e
+-  
+- r
+- e
+- f
+- u
+- s
+- e
+- d
+- ;
+-  
+- r
+- e
+- v
+- o
+- k
+- e
+- d
+-  
+- u
+- s
+- e
+- r
+-  
+- r
+- e
+- j
+- e
+- c
+- t
+- e
+- d
+-  
+- w
+- i
+- t
+- h
+- i
+- n
+-  
+- a
+- g
+- r
+- e
+- e
+- d
+-  
+- r
+- e
+- v
+- o
+- c
+- a
+- t
+- i
+- o
+- n
+-  
+- i
+- n
+- t
+- e
+- r
+- v
+- a
+- l
+- .
+
+**Verification required:**
+
+- A
+- P
+- I
+-  
+- n
+- e
+- g
+- a
+- t
+- i
+- v
+- e
+-  
+- m
+- a
+- t
+- r
+- i
+- x
+- ,
+-  
+- r
+- e
+- a
+- l
+-  
+- s
+- i
+- g
+- n
+- e
+- d
+-  
+- l
+- o
+- c
+- a
+- l
+-  
+- J
+- W
+- T
+-  
+- f
+- i
+- x
+- t
+- u
+- r
+- e
+- s
+- ,
+-  
+- s
+- t
+- a
+- g
+- i
+- n
+- g
+-  
+- a
+- c
+- c
+- o
+- u
+- n
+- t
+-  
+- r
+- e
+- v
+- o
+- c
+- a
+- t
+- i
+- o
+- n
+-  
+- r
+- e
+- h
+- e
+- a
+- r
+- s
+- a
+- l
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### BE-004 — Cross-user update delivery
+
+**Disposition:** Requires owner decision. **Area:** Synchronisation. **Effort:** L.
+
+**Remaining action:** Choose current Ward-only shared backend contract, verified tenant/app/resource identities, service membership/provisioning/revocation and migration/retention policy; implement and verify dependencies from original acceptance criteria. Do not use PsychSift resources or silently choose a new database vendor.
+
+**Current local correction/evidence boundary:** Existing owner-private Azure snapshot API retained and hardened. Shared staff identity/service authority/command database/synchronisation/authenticated durable audit remain absent.
+
+**Dependencies:** BE-002
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- P
+- e
+- e
+- r
+-  
+- c
+- h
+- a
+- n
+- g
+- e
+-  
+- b
+- e
+- c
+- o
+- m
+- e
+- s
+-  
+- v
+- i
+- s
+- i
+- b
+- l
+- e
+- ;
+-  
+- r
+- e
+- c
+- o
+- n
+- n
+- e
+- c
+- t
+-  
+- r
+- e
+- f
+- e
+- t
+- c
+- h
+- e
+- s
+-  
+- c
+- u
+- r
+- r
+- e
+- n
+- t
+-  
+- r
+- e
+- v
+- i
+- s
+- i
+- o
+- n
+- ;
+-  
+- s
+- t
+- a
+- l
+- e
+-  
+- r
+- e
+- s
+- p
+- o
+- n
+- s
+- e
+- s
+-  
+- d
+- o
+-  
+- n
+- o
+- t
+-  
+- r
+- e
+- g
+- r
+- e
+- s
+- s
+-  
+- s
+- t
+- a
+- t
+- e
+- .
+
+**Verification required:**
+
+- T
+- w
+- o
+- -
+- b
+- r
+- o
+- w
+- s
+- e
+- r
+-  
+- n
+- e
+- t
+- w
+- o
+- r
+- k
+-  
+- d
+- e
+- l
+- a
+- y
+- /
+- d
+- i
+- s
+- c
+- o
+- n
+- n
+- e
+- c
+- t
+- /
+- r
+- e
+- c
+- o
+- n
+- n
+- e
+- c
+- t
+-  
+- t
+- e
+- s
+- t
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### BE-005 — Shared domain commands and allocation invariants
+
+**Disposition:** Requires owner decision. **Area:** Data integrity. **Effort:** XL.
+
+**Remaining action:** Choose current Ward-only shared backend contract, verified tenant/app/resource identities, service membership/provisioning/revocation and migration/retention policy; implement and verify dependencies from original acceptance criteria. Do not use PsychSift resources or silently choose a new database vendor.
+
+**Current local correction/evidence boundary:** Existing owner-private Azure snapshot API retained and hardened. Shared staff identity/service authority/command database/synchronisation/authenticated durable audit remain absent.
+
+**Dependencies:** BE-002, BE-003
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- C
+- o
+- m
+- p
+- e
+- t
+- i
+- n
+- g
+-  
+- r
+- e
+- s
+- e
+- r
+- v
+- a
+- t
+- i
+- o
+- n
+-  
+- c
+- o
+- m
+- m
+- a
+- n
+- d
+- s
+-  
+- y
+- i
+- e
+- l
+- d
+-  
+- o
+- n
+- e
+-  
+- s
+- u
+- c
+- c
+- e
+- s
+- s
+- f
+- u
+- l
+-  
+- a
+- l
+- l
+- o
+- c
+- a
+- t
+- i
+- o
+- n
+- ;
+-  
+- t
+- r
+- a
+- n
+- s
+- f
+- e
+- r
+-  
+- f
+- a
+- i
+- l
+- u
+- r
+- e
+-  
+- c
+- a
+- n
+- n
+- o
+- t
+-  
+- l
+- e
+- a
+- v
+- e
+-  
+- p
+- a
+- r
+- t
+- i
+- a
+- l
+-  
+- s
+- o
+- u
+- r
+- c
+- e
+- /
+- d
+- e
+- s
+- t
+- i
+- n
+- a
+- t
+- i
+- o
+- n
+-  
+- u
+- p
+- d
+- a
+- t
+- e
+- s
+- .
+
+**Verification required:**
+
+- C
+- o
+- n
+- c
+- u
+- r
+- r
+- e
+- n
+- t
+-  
+- c
+- o
+- m
+- m
+- a
+- n
+- d
+-  
+- r
+- a
+- c
+- e
+-  
+- t
+- e
+- s
+- t
+- s
+- ,
+-  
+- r
+- o
+- l
+- l
+- b
+- a
+- c
+- k
+- /
+- f
+- a
+- i
+- l
+- u
+- r
+- e
+-  
+- i
+- n
+- j
+- e
+- c
+- t
+- i
+- o
+- n
+-  
+- a
+- n
+- d
+-  
+- i
+- n
+- v
+- a
+- r
+- i
+- a
+- n
+- t
+-  
+- c
+- h
+- e
+- c
+- k
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### BE-010 — Immutable shared action history
+
+**Disposition:** Requires owner decision. **Area:** Auditability. **Effort:** L.
+
+**Remaining action:** Choose current Ward-only shared backend contract, verified tenant/app/resource identities, service membership/provisioning/revocation and migration/retention policy; implement and verify dependencies from original acceptance criteria. Do not use PsychSift resources or silently choose a new database vendor.
+
+**Current local correction/evidence boundary:** Existing owner-private Azure snapshot API retained and hardened. Shared staff identity/service authority/command database/synchronisation/authenticated durable audit remain absent.
+
+**Dependencies:** BE-001, BE-005
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- E
+- a
+- c
+- h
+-  
+- s
+- u
+- c
+- c
+- e
+- s
+- s
+- f
+- u
+- l
+- /
+- d
+- e
+- n
+- i
+- e
+- d
+-  
+- c
+- o
+- m
+- m
+- a
+- n
+- d
+-  
+- h
+- a
+- s
+-  
+- c
+- o
+- r
+- r
+- e
+- c
+- t
+-  
+- a
+- c
+- t
+- o
+- r
+- /
+- s
+- e
+- r
+- v
+- i
+- c
+- e
+- /
+- c
+- o
+- r
+- r
+- e
+- l
+- a
+- t
+- i
+- o
+- n
+- ;
+-  
+- o
+- r
+- d
+- i
+- n
+- a
+- r
+- y
+-  
+- u
+- s
+- e
+- r
+-  
+- c
+- a
+- n
+- n
+- o
+- t
+-  
+- c
+- h
+- a
+- n
+- g
+- e
+-  
+- h
+- i
+- s
+- t
+- o
+- r
+- y
+- ;
+-  
+- e
+- x
+- p
+- o
+- r
+- t
+-  
+- i
+- n
+- t
+- e
+- g
+- r
+- i
+- t
+- y
+-  
+- c
+- a
+- n
+-  
+- b
+- e
+-  
+- c
+- h
+- e
+- c
+- k
+- e
+- d
+- .
+
+**Verification required:**
+
+- A
+- t
+- t
+- e
+- m
+- p
+- t
+- e
+- d
+-  
+- a
+- u
+- d
+- i
+- t
+-  
+- m
+- u
+- t
+- a
+- t
+- i
+- o
+- n
+- ,
+-  
+- c
+- l
+- o
+- c
+- k
+-  
+- d
+- i
+- s
+- t
+- i
+- n
+- c
+- t
+- i
+- o
+- n
+-  
+- a
+- n
+- d
+-  
+- e
+- x
+- p
+- o
+- r
+- t
+-  
+- v
+- e
+- r
+- i
+- f
+- i
+- c
+- a
+- t
+- i
+- o
+- n
+-  
+- t
+- e
+- s
+- t
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### BE-011 — Live Azure backend/resource evidence
+
+**Disposition:** Unverified external. **Area:** Verification. **Effort:** M.
+
+**Remaining action:** Perform exact Ward-only provider checks and configuration/restore/rollback/security drills in original criteria after access/authority; do not classify inaccessible services as absent or healthy hosting as end-to-end proof.
+
+**Current local correction/evidence boundary:** Original audit identifies existing provider evidence and explicitly inaccessible configuration; no provider mutation performed.
+
+**Dependencies:** No additional prerequisite recorded; retain the named scope/authority conditions.
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- E
+- v
+- i
+- d
+- e
+- n
+- c
+- e
+-  
+- p
+- i
+- n
+- s
+-  
+- h
+- o
+- s
+- t
+- /
+- a
+- c
+- c
+- o
+- u
+- n
+- t
+- /
+- t
+- e
+- n
+- a
+- n
+- t
+- /
+- a
+- p
+- p
+- l
+- i
+- c
+- a
+- t
+- i
+- o
+- n
+-  
+- i
+- d
+- e
+- n
+- t
+- i
+- t
+- i
+- e
+- s
+-  
+- a
+- n
+- d
+-  
+- d
+- e
+- p
+- l
+- o
+- y
+- e
+- d
+-  
+- S
+- H
+- A
+- ;
+-  
+- s
+- a
+- v
+- e
+- /
+- r
+- e
+- l
+- o
+- a
+- d
+- /
+- c
+- o
+- n
+- f
+- l
+- i
+- c
+- t
+-  
+- a
+- n
+- d
+-  
+- d
+- e
+- n
+- i
+- a
+- l
+-  
+- w
+- o
+- r
+- k
+-  
+- o
+- n
+-  
+- d
+- e
+- p
+- l
+- o
+- y
+- e
+- d
+-  
+- s
+- e
+- r
+- v
+- i
+- c
+- e
+- .
+
+**Verification required:**
+
+- R
+- e
+- a
+- d
+- -
+- o
+- n
+- l
+- y
+-  
+- c
+- o
+- n
+- f
+- i
+- g
+-  
+- e
+- v
+- i
+- d
+- e
+- n
+- c
+- e
+-  
+- a
+- n
+- d
+-  
+- c
+- o
+- n
+- t
+- r
+- o
+- l
+- l
+- e
+- d
+-  
+- d
+- e
+- p
+- l
+- o
+- y
+- e
+- d
+-  
+- s
+- m
+- o
+- k
+- e
+- ;
+-  
+- b
+- a
+- c
+- k
+- u
+- p
+- /
+- r
+- e
+- s
+- t
+- o
+- r
+- e
+-  
+- t
+- e
+- s
+- t
+-  
+- p
+- l
+- a
+- n
+- n
+- e
+- d
+-  
+- s
+- e
+- p
+- a
+- r
+- a
+- t
+- e
+- l
+- y
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### GOV-001 — TGA intended-purpose determination
+
+**Disposition:** Requires owner decision. **Area:** Clinical / regulatory. **Effort:** L.
+
+**Remaining action:** Owner commissions qualified function-scoped TGA assessment, named clinical safety/cultural/legal review and custodian-led PRIS/WAHealth PIA; record scoped institutional acceptance before real patient use.
+
+**Current local correction/evidence boundary:** Draft claims bounded and production-readiness register separates TGA exclusion/exemption, privacy, clinical and institutional approvals. No approvals obtained.
+
+**Dependencies:** No additional prerequisite recorded; retain the named scope/authority conditions.
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- A
+- p
+- p
+- r
+- o
+- v
+- e
+- d
+-  
+- d
+- a
+- t
+- e
+- d
+-  
+- a
+- s
+- s
+- e
+- s
+- s
+- m
+- e
+- n
+- t
+-  
+- c
+- o
+- v
+- e
+- r
+- s
+-  
+- e
+- v
+- e
+- r
+- y
+-  
+- r
+- e
+- l
+- e
+- a
+- s
+- e
+- d
+-  
+- f
+- u
+- n
+- c
+- t
+- i
+- o
+- n
+-  
+- a
+- n
+- d
+-  
+- c
+- l
+- a
+- i
+- m
+- s
+- ;
+-  
+- a
+- n
+- y
+-  
+- d
+- e
+- v
+- i
+- c
+- e
+-  
+- o
+- b
+- l
+- i
+- g
+- a
+- t
+- i
+- o
+- n
+- s
+-  
+- a
+- s
+- s
+- i
+- g
+- n
+- e
+- d
+-  
+- a
+- n
+- d
+-  
+- e
+- v
+- i
+- d
+- e
+- n
+- c
+- e
+- d
+- .
+
+**Verification required:**
+
+- Q
+- u
+- a
+- l
+- i
+- f
+- i
+- e
+- d
+-  
+- r
+- e
+- g
+- u
+- l
+- a
+- t
+- o
+- r
+- y
+-  
+- r
+- e
+- v
+- i
+- e
+- w
+-  
+- w
+- i
+- t
+- h
+-  
+- c
+- u
+- r
+- r
+- e
+- n
+- t
+-  
+- p
+- r
+- i
+- m
+- a
+- r
+- y
+-  
+- l
+- e
+- g
+- i
+- s
+- l
+- a
+- t
+- i
+- o
+- n
+- /
+- g
+- u
+- i
+- d
+- a
+- n
+- c
+- e
+-  
+- a
+- n
+- d
+-  
+- c
+- h
+- a
+- n
+- g
+- e
+- -
+- c
+- o
+- n
+- t
+- r
+- o
+- l
+-  
+- t
+- r
+- i
+- g
+- g
+- e
+- r
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### GOV-002 — WA Health privacy and data governance
+
+**Disposition:** Requires owner decision. **Area:** Privacy. **Effort:** XL.
+
+**Remaining action:** Owner commissions qualified function-scoped TGA assessment, named clinical safety/cultural/legal review and custodian-led PRIS/WAHealth PIA; record scoped institutional acceptance before real patient use.
+
+**Current local correction/evidence boundary:** Draft claims bounded and production-readiness register separates TGA exclusion/exemption, privacy, clinical and institutional approvals. No approvals obtained.
+
+**Dependencies:** BE-001, BE-003, BE-008, BE-010
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- N
+- a
+- m
+- e
+- d
+-  
+- c
+- u
+- s
+- t
+- o
+- d
+- i
+- a
+- n
+-  
+- a
+- p
+- p
+- r
+- o
+- v
+- e
+- s
+-  
+- d
+- a
+- t
+- a
+-  
+- f
+- l
+- o
+- w
+- s
+- ,
+-  
+- o
+- v
+- e
+- r
+- s
+- e
+- a
+- s
+-  
+- p
+- r
+- o
+- c
+- e
+- s
+- s
+- i
+- n
+- g
+- ,
+-  
+- r
+- e
+- t
+- e
+- n
+- t
+- i
+- o
+- n
+- /
+- d
+- e
+- l
+- e
+- t
+- i
+- o
+- n
+- ,
+-  
+- c
+- o
+- n
+- t
+- r
+- a
+- c
+- t
+- s
+- ,
+-  
+- a
+- c
+- c
+- e
+- s
+- s
+- /
+- c
+- o
+- r
+- r
+- e
+- c
+- t
+- i
+- o
+- n
+-  
+- a
+- n
+- d
+-  
+- i
+- n
+- c
+- i
+- d
+- e
+- n
+- t
+-  
+- p
+- r
+- o
+- c
+- e
+- s
+- s
+- ;
+-  
+- n
+- o
+-  
+- r
+- e
+- a
+- l
+-  
+- d
+- a
+- t
+- a
+-  
+- b
+- e
+- f
+- o
+- r
+- e
+-  
+- a
+- p
+- p
+- r
+- o
+- v
+- a
+- l
+- .
+
+**Verification required:**
+
+- H
+- e
+- a
+- l
+- t
+- h
+- -
+- s
+- e
+- r
+- v
+- i
+- c
+- e
+-  
+- p
+- r
+- i
+- v
+- a
+- c
+- y
+- /
+- s
+- e
+- c
+- u
+- r
+- i
+- t
+- y
+-  
+- r
+- e
+- v
+- i
+- e
+- w
+- ,
+-  
+- p
+- r
+- o
+- c
+- e
+- s
+- s
+- o
+- r
+-  
+- c
+- o
+- n
+- t
+- r
+- a
+- c
+- t
+-  
+- a
+- n
+- d
+-  
+- l
+- o
+- g
+- /
+- b
+- r
+- o
+- w
+- s
+- e
+- r
+- /
+- b
+- a
+- c
+- k
+- u
+- p
+- s
+-  
+- d
+- a
+- t
+- a
+- -
+- f
+- l
+- o
+- w
+-  
+- t
+- e
+- s
+- t
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### GOV-003 — Safety case / accountable clinical governance
+
+**Disposition:** Requires owner decision. **Area:** Clinical safety. **Effort:** XL.
+
+**Remaining action:** Owner commissions qualified function-scoped TGA assessment, named clinical safety/cultural/legal review and custodian-led PRIS/WAHealth PIA; record scoped institutional acceptance before real patient use.
+
+**Current local correction/evidence boundary:** Draft claims bounded and production-readiness register separates TGA exclusion/exemption, privacy, clinical and institutional approvals. No approvals obtained.
+
+**Dependencies:** SPEC-001, SPEC-006, SPEC-013, DOC-001
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- C
+- l
+- i
+- n
+- i
+- c
+- a
+- l
+-  
+- s
+- a
+- f
+- e
+- t
+- y
+-  
+- c
+- a
+- s
+- e
+-  
+- a
+- n
+- d
+-  
+- a
+- l
+- l
+-  
+- c
+- r
+- i
+- t
+- i
+- c
+- a
+- l
+-  
+- c
+- o
+- n
+- t
+- r
+- o
+- l
+- s
+-  
+- s
+- i
+- g
+- n
+- e
+- d
+-  
+- b
+- y
+-  
+- a
+- u
+- t
+- h
+- o
+- r
+- i
+- s
+- e
+- d
+-  
+- a
+- c
+- c
+- o
+- u
+- n
+- t
+- a
+- b
+- l
+- e
+-  
+- p
+- e
+- o
+- p
+- l
+- e
+-  
+- f
+- o
+- r
+-  
+- p
+- i
+- n
+- n
+- e
+- d
+-  
+- r
+- e
+- l
+- e
+- a
+- s
+- e
+- ;
+-  
+- r
+- e
+- h
+- e
+- a
+- r
+- s
+- a
+- l
+-  
+- p
+- r
+- o
+- v
+- e
+- s
+-  
+- c
+- o
+- n
+- t
+- r
+- o
+- l
+- s
+- .
+
+**Verification required:**
+
+- C
+- l
+- i
+- n
+- i
+- c
+- a
+- l
+-  
+- t
+- a
+- b
+- l
+- e
+- t
+- o
+- p
+- ,
+-  
+- s
+- y
+- n
+- t
+- h
+- e
+- t
+- i
+- c
+-  
+- a
+- d
+- v
+- e
+- r
+- s
+- e
+-  
+- s
+- c
+- e
+- n
+- a
+- r
+- i
+- o
+- s
+- ,
+-  
+- a
+- u
+- t
+- h
+- o
+- r
+- i
+- s
+- e
+- d
+-  
+- p
+- a
+- t
+- h
+- w
+- a
+- y
+- /
+- A
+- c
+- t
+-  
+- r
+- e
+- v
+- i
+- e
+- w
+-  
+- a
+- n
+- d
+-  
+- i
+- n
+- d
+- e
+- p
+- e
+- n
+- d
+- e
+- n
+- t
+-  
+- a
+- c
+- c
+- e
+- p
+- t
+- a
+- n
+- c
+- e
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### OPS-001 — Staging and environment isolation
+
+**Disposition:** Unverified external. **Area:** Infrastructure. **Effort:** M.
+
+**Remaining action:** Perform exact Ward-only provider checks and configuration/restore/rollback/security drills in original criteria after access/authority; do not classify inaccessible services as absent or healthy hosting as end-to-end proof.
+
+**Current local correction/evidence boundary:** Original audit identifies existing provider evidence and explicitly inaccessible configuration; no provider mutation performed.
+
+**Dependencies:** BE-011
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- S
+- t
+- a
+- g
+- i
+- n
+- g
+-  
+- i
+- d
+- e
+- n
+- t
+- i
+- t
+- y
+- /
+- c
+- o
+- n
+- f
+- i
+- g
+- /
+- d
+- a
+- t
+- a
+-  
+- s
+- e
+- p
+- a
+- r
+- a
+- t
+- e
+-  
+- f
+- r
+- o
+- m
+-  
+- d
+- e
+- m
+- o
+-  
+- a
+- n
+- d
+-  
+- f
+- u
+- t
+- u
+- r
+- e
+-  
+- c
+- l
+- i
+- n
+- i
+- c
+- a
+- l
+-  
+- e
+- n
+- v
+- i
+- r
+- o
+- n
+- m
+- e
+- n
+- t
+- ;
+-  
+- w
+- r
+- o
+- n
+- g
+- -
+- o
+- r
+- i
+- g
+- i
+- n
+- /
+- p
+- r
+- o
+- j
+- e
+- c
+- t
+-  
+- g
+- u
+- a
+- r
+- d
+-  
+- f
+- a
+- i
+- l
+- s
+-  
+- c
+- l
+- o
+- s
+- e
+- d
+- .
+
+**Verification required:**
+
+- P
+- r
+- o
+- v
+- i
+- d
+- e
+- r
+-  
+- c
+- o
+- n
+- f
+- i
+- g
+-  
+- i
+- n
+- v
+- e
+- n
+- t
+- o
+- r
+- y
+-  
+- a
+- n
+- d
+-  
+- s
+- y
+- n
+- t
+- h
+- e
+- t
+- i
+- c
+-  
+- i
+- s
+- o
+- l
+- a
+- t
+- i
+- o
+- n
+-  
+- t
+- e
+- s
+- t
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### OPS-003 — Backups and recovery
+
+**Disposition:** Unverified external. **Area:** Infrastructure. **Effort:** M.
+
+**Remaining action:** Perform exact Ward-only provider checks and configuration/restore/rollback/security drills in original criteria after access/authority; do not classify inaccessible services as absent or healthy hosting as end-to-end proof.
+
+**Current local correction/evidence boundary:** Original audit identifies existing provider evidence and explicitly inaccessible configuration; no provider mutation performed.
+
+**Dependencies:** BE-002, BE-011
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- R
+- e
+- s
+- t
+- o
+- r
+- e
+-  
+- r
+- e
+- s
+- t
+- o
+- r
+- e
+- s
+-  
+- c
+- o
+- n
+- s
+- i
+- s
+- t
+- e
+- n
+- t
+-  
+- d
+- o
+- m
+- a
+- i
+- n
+- /
+- a
+- u
+- d
+- i
+- t
+-  
+- r
+- e
+- c
+- o
+- r
+- d
+- s
+-  
+- w
+- i
+- t
+- h
+- i
+- n
+-  
+- s
+- t
+- a
+- t
+- e
+- d
+-  
+- t
+- a
+- r
+- g
+- e
+- t
+- s
+-  
+- a
+- n
+- d
+-  
+- d
+- o
+- e
+- s
+-  
+- n
+- o
+- t
+-  
+- a
+- c
+- c
+- e
+- s
+- s
+-  
+- f
+- o
+- r
+- e
+- i
+- g
+- n
+-  
+- r
+- e
+- s
+- o
+- u
+- r
+- c
+- e
+- s
+- .
+
+**Verification required:**
+
+- D
+- o
+- c
+- u
+- m
+- e
+- n
+- t
+- e
+- d
+-  
+- t
+- i
+- m
+- e
+- d
+-  
+- r
+- e
+- s
+- t
+- o
+- r
+- e
+-  
+- d
+- r
+- i
+- l
+- l
+-  
+- a
+- n
+- d
+-  
+- c
+- r
+- o
+- s
+- s
+- -
+- r
+- e
+- c
+- o
+- r
+- d
+-  
+- v
+- a
+- l
+- i
+- d
+- a
+- t
+- i
+- o
+- n
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### QA-001 — Shared-user acceptance scenarios
+
+**Disposition:** Partial. **Area:** QA / backend. **Effort:** L.
+
+**Remaining action:** Implement actual approved shared backend first; execute all ten authenticated conflict/retry/revoke/reconnect scenarios and synthetic representative load/capacity limits on target environment.
+
+**Current local correction/evidence boundary:** New domain/HTTP/client/browser regressions improve local correctness. They do not establish shared-user concurrency or representative operating load.
+
+**Dependencies:** BE-001, BE-002, BE-003, BE-004, BE-005, BE-006
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- A
+- l
+- l
+-  
+- t
+- e
+- n
+-  
+- e
+- s
+- s
+- e
+- n
+- t
+- i
+- a
+- l
+-  
+- m
+- u
+- l
+- t
+- i
+- -
+- u
+- s
+- e
+- r
+-  
+- s
+- c
+- e
+- n
+- a
+- r
+- i
+- o
+- s
+-  
+- h
+- a
+- v
+- e
+-  
+- e
+- x
+- p
+- e
+- c
+- t
+- e
+- d
+-  
+- f
+- i
+- n
+- a
+- l
+-  
+- d
+- o
+- m
+- a
+- i
+- n
+- /
+- a
+- u
+- d
+- i
+- t
+-  
+- s
+- t
+- a
+- t
+- e
+-  
+- a
+- n
+- d
+-  
+- p
+- e
+- r
+- m
+- i
+- s
+- s
+- i
+- o
+- n
+-  
+- o
+- u
+- t
+- c
+- o
+- m
+- e
+- s
+- ;
+-  
+- n
+- o
+-  
+- d
+- o
+- u
+- b
+- l
+- e
+-  
+- r
+- e
+- s
+- e
+- r
+- v
+- a
+- t
+- i
+- o
+- n
+- /
+- l
+- o
+- s
+- t
+-  
+- u
+- p
+- d
+- a
+- t
+- e
+- .
+
+**Verification required:**
+
+- T
+- w
+- o
+-  
+- i
+- d
+- e
+- n
+- t
+- i
+- t
+- i
+- e
+- s
+- /
+- b
+- r
+- o
+- w
+- s
+- e
+- r
+-  
+- c
+- o
+- n
+- t
+- e
+- x
+- t
+- s
+- ,
+-  
+- r
+- e
+- a
+- l
+-  
+- d
+- i
+- s
+- p
+- o
+- s
+- a
+- b
+- l
+- e
+-  
+- a
+- u
+- t
+- h
+- o
+- r
+- i
+- s
+- e
+- d
+-  
+- p
+- e
+- r
+- s
+- i
+- s
+- t
+- e
+- n
+- c
+- e
+-  
+- a
+- n
+- d
+-  
+- f
+- a
+- u
+- l
+- t
+-  
+- p
+- r
+- o
+- x
+- y
+- ;
+-  
+- e
+- x
+- p
+- l
+- i
+- c
+- i
+- t
+-  
+- r
+- a
+- c
+- e
+-  
+- b
+- a
+- r
+- r
+- i
+- e
+- r
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### SPEC-001 — Medical deterioration / held-bed lifecycle
+
+**Disposition:** Partial. **Area:** Frontend/clinical workflow. **Effort:** L.
+
+**Remaining action:** Obtain an explicit qualified clinical decision and implement/test the approved emergency diversion pathway for an already-collected patient before clinical use. Local pre-collection cancel/release/pause/re-clearance and onward-arrival protections are verified; safe collected cancellation refusal is not an implemented diversion service.
+
+**Current local correction/evidence boundary:** Explicit D34 command and guarded ED controls implemented. Bound physical refundfea85da, linked-clearance/physical-arrival protections3c30811, usable stale-completion controls8377a8c and resumed clock4247723 integrated. Scoped actual-producer/domain/DOM checks and final local gates pass; earlier0ffd Chromium D34 cancel/confirm proof retained with exact source qualification. Collected emergency diversion remains a separate approved clinical contract.
+
+**Existing task/decision:** WF-43 / D-34; partially specified, not completed
+
+**Dependencies:** NEW-CAPACITY-001
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- Before transport, deterioration releases exactly one reservation and cancels any uncollected job in one state update.
+- D-34 audit reason is recorded; referral visibly paused and cannot be booked/collected/arrived before re-clearance.
+- Collected patients follow an explicitly approved emergency diversion pathway instead of refunding an occupied destination.
+
+**Verification required:**
+
+- Reducer scenario from pull → deterioration → denied arrival → fresh clearance → re-placement.
+- Repeat event idempotency, no-transport, booked transport, cancellation, source-transfer and capacity conservation tests.
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+
+## P2 — remaining tasks
+
+### ARC-001 — Domain policy / transition maintainability
+
+**Disposition:** Partial. **Area:** Architecture. **Effort:** L.
+
+**Remaining action:** After functional stabilisation extract small tested domain seams where consequence justifies migration; complete broad invariant/reader contract probes. No whole-reducer rewrite or lower file count target is commissioned.
+
+**Current local correction/evidence boundary:** Affected policy seams now use current shared status/care workflows and tested producer/reader invariants; duplicated fake screen state removed.
+
+**Dependencies:** SPEC-001, SPEC-013
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- A
+- l
+- l
+-  
+- a
+- f
+- f
+- e
+- c
+- t
+- e
+- d
+-  
+- p
+- r
+- o
+- d
+- u
+- c
+- e
+- r
+- /
+- r
+- e
+- a
+- d
+- e
+- r
+-  
+- p
+- a
+- t
+- h
+- s
+-  
+- a
+- g
+- r
+- e
+- e
+-  
+- o
+- n
+-  
+- s
+- t
+- a
+- t
+- e
+-  
+- i
+- n
+- v
+- a
+- r
+- i
+- a
+- n
+- t
+- s
+- ;
+-  
+- c
+- o
+- n
+- t
+- r
+- a
+- c
+- t
+- s
+- /
+- m
+- u
+- t
+- a
+- t
+- i
+- o
+- n
+-  
+- p
+- r
+- o
+- b
+- e
+- s
+-  
+- d
+- e
+- t
+- e
+- c
+- t
+-  
+- o
+- m
+- i
+- t
+- t
+- e
+- d
+-  
+- g
+- u
+- a
+- r
+- d
+-  
+- a
+- n
+- d
+-  
+- w
+- r
+- o
+- n
+- g
+-  
+- p
+- r
+- o
+- f
+- i
+- l
+- e
+-  
+- s
+- t
+- a
+- t
+- u
+- s
+- .
+
+**Verification required:**
+
+- E
+- x
+- i
+- s
+- t
+- i
+- n
+- g
+-  
+- r
+- e
+- d
+- u
+- c
+- e
+- r
+-  
+- s
+- u
+- i
+- t
+- e
+-  
+- p
+- l
+- u
+- s
+-  
+- n
+- a
+- m
+- e
+- d
+-  
+- w
+- o
+- r
+- k
+- f
+- l
+- o
+- w
+- /
+- i
+- n
+- v
+- a
+- r
+- i
+- a
+- n
+- t
+-  
+- t
+- e
+- s
+- t
+- s
+- ;
+-  
+- m
+- e
+- a
+- s
+- u
+- r
+- e
+-  
+- r
+- e
+- g
+- r
+- e
+- s
+- s
+- i
+- o
+- n
+- s
+-  
+- b
+- e
+- f
+- o
+- r
+- e
+-  
+- f
+- u
+- r
+- t
+- h
+- e
+- r
+-  
+- r
+- e
+- f
+- a
+- c
+- t
+- o
+- r
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### BE-006 — Write outcome and safe retries
+
+**Disposition:** Partial. **Area:** Reliability. **Effort:** M.
+
+**Remaining action:** Define shared command idempotency/history/reconciliation semantics through BE005. Latest private snapshot receipt is not unlimited historical command deduplication or admission/referral transaction protection.
+
+**Current local correction/evidence boundary:** Opt-in atomic latest-mutation receipts recover identical committed retry while retaining ETag protection and mismatch refusal.
+
+**Dependencies:** BE-005
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- L
+- o
+- s
+- t
+-  
+- r
+- e
+- s
+- p
+- o
+- n
+- s
+- e
+-  
+- t
+- h
+- e
+- n
+-  
+- r
+- e
+- t
+- r
+- y
+-  
+- r
+- e
+- t
+- u
+- r
+- n
+- s
+-  
+- t
+- h
+- e
+-  
+- o
+- r
+- i
+- g
+- i
+- n
+- a
+- l
+-  
+- r
+- e
+- s
+- u
+- l
+- t
+-  
+- o
+- n
+- c
+- e
+- ;
+-  
+- r
+- e
+- p
+- l
+- a
+- y
+-  
+- c
+- a
+- n
+- n
+- o
+- t
+-  
+- d
+- u
+- p
+- l
+- i
+- c
+- a
+- t
+- e
+-  
+- a
+- n
+-  
+- a
+- d
+- m
+- i
+- s
+- s
+- i
+- o
+- n
+-  
+- o
+- r
+-  
+- r
+- e
+- f
+- e
+- r
+- r
+- a
+- l
+- .
+
+**Verification required:**
+
+- R
+- e
+- s
+- p
+- o
+- n
+- s
+- e
+- -
+- l
+- o
+- s
+- s
+-  
+- a
+- n
+- d
+-  
+- d
+- u
+- p
+- l
+- i
+- c
+- a
+- t
+- e
+- -
+- c
+- l
+- i
+- c
+- k
+- /
+- r
+- e
+- t
+- r
+- y
+-  
+- t
+- e
+- s
+- t
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### BE-008 — Stored session deletion and retention
+
+**Disposition:** Partial. **Area:** Privacy. **Effort:** M.
+
+**Remaining action:** Approve retention/expiry/legal-hold/backup policy; validate storage soft-delete/versioning/backups and metadata purge; implement lifecycle and verify recovery/deletion against policy.
+
+**Current local correction/evidence boundary:** Owner-private conditional content erasure/deletion implemented with conflict-safe tombstone semantics.
+
+**Dependencies:** BE-002
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- O
+- w
+- n
+- e
+- d
+-  
+- s
+- y
+- n
+- t
+- h
+- e
+- t
+- i
+- c
+-  
+- r
+- e
+- c
+- o
+- r
+- d
+- s
+-  
+- c
+- a
+- n
+-  
+- b
+- e
+-  
+- d
+- e
+- l
+- e
+- t
+- e
+- d
+-  
+- a
+- n
+- d
+-  
+- e
+- x
+- p
+- i
+- r
+- e
+-  
+- a
+- s
+-  
+- a
+- g
+- r
+- e
+- e
+- d
+- ;
+-  
+- a
+- c
+- c
+- e
+- s
+- s
+-  
+- i
+- s
+-  
+- a
+- u
+- d
+- i
+- t
+- e
+- d
+- ;
+-  
+- b
+- a
+- c
+- k
+- u
+- p
+-  
+- h
+- a
+- n
+- d
+- l
+- i
+- n
+- g
+-  
+- i
+- s
+-  
+- s
+- p
+- e
+- c
+- i
+- f
+- i
+- e
+- d
+- .
+
+**Verification required:**
+
+- P
+- r
+- o
+- v
+- i
+- d
+- e
+- r
+-  
+- c
+- o
+- n
+- f
+- i
+- g
+- u
+- r
+- a
+- t
+- i
+- o
+- n
+-  
+- i
+- n
+- s
+- p
+- e
+- c
+- t
+- i
+- o
+- n
+-  
+- p
+- l
+- u
+- s
+-  
+- s
+- a
+- f
+- e
+-  
+- s
+- t
+- a
+- g
+- i
+- n
+- g
+-  
+- e
+- x
+- p
+- i
+- r
+- y
+- /
+- d
+- e
+- l
+- e
+- t
+- i
+- o
+- n
+-  
+- t
+- e
+- s
+- t
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### BE-009 — Backend request failure diagnostics
+
+**Disposition:** Partial. **Area:** Observability. **Effort:** M.
+
+**Remaining action:** Assign alert owner and verify deployed collection/retention/access and synthetic forced-failure alert route; local logging does not prove hosted observability.
+
+**Current local correction/evidence boundary:** Backend emits correlated allowlisted request/outcome and adapter diagnostics; synthetic failures exercised without payload/token leakage.
+
+**Dependencies:** No additional prerequisite recorded; retain the named scope/authority conditions.
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- S
+- y
+- n
+- t
+- h
+- e
+- t
+- i
+- c
+-  
+- f
+- o
+- r
+- c
+- e
+- d
+-  
+- s
+- t
+- o
+- r
+- a
+- g
+- e
+- /
+- J
+- W
+- K
+- S
+-  
+- f
+- a
+- i
+- l
+- u
+- r
+- e
+- s
+-  
+- p
+- r
+- o
+- d
+- u
+- c
+- e
+-  
+- a
+-  
+- t
+- r
+- a
+- c
+- e
+- a
+- b
+- l
+- e
+-  
+- e
+- v
+- e
+- n
+- t
+-  
+- w
+- i
+- t
+- h
+- o
+- u
+- t
+-  
+- t
+- o
+- k
+- e
+- n
+- s
+- ,
+-  
+- p
+- a
+- y
+- l
+- o
+- a
+- d
+- s
+-  
+- o
+- r
+-  
+- p
+- a
+- t
+- i
+- e
+- n
+- t
+-  
+- c
+- o
+- n
+- t
+- e
+- n
+- t
+- ;
+-  
+- o
+- w
+- n
+- e
+- r
+-  
+- a
+- l
+- e
+- r
+- t
+-  
+- r
+- o
+- u
+- t
+- e
+-  
+- d
+- o
+- c
+- u
+- m
+- e
+- n
+- t
+- e
+- d
+- .
+
+**Verification required:**
+
+- L
+- o
+- g
+-  
+- r
+- e
+- d
+- a
+- c
+- t
+- i
+- o
+- n
+-  
+- a
+- s
+- s
+- e
+- r
+- t
+- i
+- o
+- n
+- s
+-  
+- a
+- n
+- d
+-  
+- W
+- a
+- r
+- d
+- -
+- o
+- n
+- l
+- y
+-  
+- s
+- t
+- a
+- g
+- i
+- n
+- g
+-  
+- f
+- a
+- i
+- l
+- u
+- r
+- e
+- /
+- a
+- l
+- e
+- r
+- t
+-  
+- e
+- v
+- i
+- d
+- e
+- n
+- c
+- e
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### CAP-002 — Alert intervention recording
+
+**Disposition:** Requires owner decision. **Area:** Application functionality. **Effort:** M.
+
+**Remaining action:** Resolve exact original owner/takeover/publication holds and approve each missing capability contract/scope; implement agreed events/roles/provenance or formally retain unavailable controls outside pilot scope.
+
+**Current local correction/evidence boundary:** User approved isolated Linux ownership log for parallel task; original Windows candidates/ownership holds and explicit prototype controls preserved. Alert intervention remains truthfully unavailable.
+
+**Dependencies:** BE-005, BE-010
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- I
+- n
+- -
+- s
+- c
+- o
+- p
+- e
+-  
+- i
+- n
+- t
+- e
+- r
+- v
+- e
+- n
+- t
+- i
+- o
+- n
+-  
+- u
+- p
+- d
+- a
+- t
+- e
+- s
+-  
+- l
+- i
+- n
+- k
+- e
+- d
+-  
+- a
+- l
+- e
+- r
+- t
+- /
+- h
+- i
+- s
+- t
+- o
+- r
+- y
+-  
+- w
+- i
+- t
+- h
+-  
+- p
+- e
+- n
+- d
+- i
+- n
+- g
+- /
+- e
+- r
+- r
+- o
+- r
+-  
+- h
+- a
+- n
+- d
+- l
+- i
+- n
+- g
+- ;
+-  
+- o
+- u
+- t
+- -
+- o
+- f
+- -
+- s
+- c
+- o
+- p
+- e
+-  
+- c
+- o
+- n
+- t
+- r
+- o
+- l
+- s
+-  
+- r
+- e
+- m
+- a
+- i
+- n
+-  
+- c
+- l
+- e
+- a
+- r
+- l
+- y
+-  
+- u
+- n
+- a
+- v
+- a
+- i
+- l
+- a
+- b
+- l
+- e
+- .
+
+**Verification required:**
+
+- R
+- o
+- l
+- e
+- ,
+-  
+- r
+- e
+- p
+- e
+- a
+- t
+- -
+- c
+- l
+- i
+- c
+- k
+- ,
+-  
+- r
+- e
+- f
+- u
+- s
+- e
+- d
+- -
+- a
+- c
+- t
+- i
+- o
+- n
+- ,
+-  
+- l
+- i
+- n
+- k
+- e
+- d
+- -
+- r
+- e
+- c
+- o
+- r
+- d
+-  
+- a
+- n
+- d
+-  
+- b
+- r
+- o
+- w
+- s
+- e
+- r
+-  
+- t
+- e
+- s
+- t
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### CAP-004 — Operational Settings preview controls
+
+**Disposition:** Requires owner decision. **Area:** Clinical / application functionality. **Effort:** L.
+
+**Remaining action:** Resolve exact original owner/takeover/publication holds and approve each missing capability contract/scope; implement agreed events/roles/provenance or formally retain unavailable controls outside pilot scope.
+
+**Current local correction/evidence boundary:** User approved isolated Linux ownership log for parallel task; original Windows candidates/ownership holds and explicit prototype controls preserved. Alert intervention remains truthfully unavailable.
+
+**Dependencies:** BE-003, BE-005
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- E
+- v
+- e
+- r
+- y
+-  
+- a
+- p
+- p
+- r
+- o
+- v
+- e
+- d
+-  
+- s
+- e
+- t
+- t
+- i
+- n
+- g
+-  
+- h
+- a
+- s
+-  
+- a
+- u
+- t
+- h
+- o
+- r
+- i
+- t
+- a
+- t
+- i
+- v
+- e
+-  
+- r
+- e
+- a
+- d
+- /
+- w
+- r
+- i
+- t
+- e
+-  
+- b
+- e
+- h
+- a
+- v
+- i
+- o
+- u
+- r
+-  
+- a
+- n
+- d
+-  
+- r
+- o
+- l
+- e
+-  
+- g
+- u
+- a
+- r
+- d
+- s
+- ;
+-  
+- p
+- r
+- e
+- v
+- i
+- e
+- w
+- -
+- o
+- n
+- l
+- y
+-  
+- c
+- o
+- n
+- t
+- r
+- o
+- l
+- s
+-  
+- c
+- l
+- e
+- a
+- r
+- l
+- y
+-  
+- e
+- x
+- c
+- l
+- u
+- d
+- e
+- d
+- ;
+-  
+- n
+- o
+-  
+- f
+- a
+- l
+- s
+- e
+-  
+- s
+- a
+- v
+- e
+- d
+-  
+- d
+- e
+- f
+- a
+- u
+- l
+- t
+- s
+- .
+
+**Verification required:**
+
+- S
+- e
+- t
+- t
+- i
+- n
+- g
+- →
+- a
+- c
+- t
+- u
+- a
+- l
+-  
+- w
+- o
+- r
+- k
+- f
+- l
+- o
+- w
+-  
+- b
+- e
+- h
+- a
+- v
+- i
+- o
+- r
+-  
+- t
+- e
+- s
+- t
+- s
+- ,
+-  
+- i
+- n
+- v
+- a
+- l
+- i
+- d
+-  
+- c
+- h
+- a
+- n
+- g
+- e
+- ,
+-  
+- r
+- e
+- v
+- o
+- k
+- e
+- d
+-  
+- p
+- e
+- r
+- m
+- i
+- s
+- s
+- i
+- o
+- n
+-  
+- a
+- n
+- d
+-  
+- m
+- u
+- l
+- t
+- i
+- -
+- u
+- s
+- e
+- r
+-  
+- p
+- r
+- o
+- p
+- a
+- g
+- a
+- t
+- i
+- o
+- n
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### CAP-005 — WA Health pathways / directories / PAS / HMDC
+
+**Disposition:** Unverified external. **Area:** Integration. **Effort:** XL.
+
+**Remaining action:** Verify exact Ward client/device configuration and operational reference/integration owners, approval/version/API boundaries; execute named synthetic acceptance only in authorised environment.
+
+**Current local correction/evidence boundary:** Native cloud devices/agent activation and external PAS/HMDC/reference/bookings capabilities remain inaccessible/unverified. Static reference records do not prove integration.
+
+**Dependencies:** GOV-002, GOV-003
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- E
+- a
+- c
+- h
+-  
+- r
+- e
+- q
+- u
+- i
+- r
+- e
+- d
+-  
+- f
+- e
+- e
+- d
+- /
+- p
+- a
+- t
+- h
+- w
+- a
+- y
+-  
+- h
+- a
+- s
+-  
+- a
+- p
+- p
+- r
+- o
+- v
+- e
+- d
+-  
+- c
+- o
+- n
+- t
+- r
+- a
+- c
+- t
+- ,
+-  
+- s
+- e
+- r
+- v
+- i
+- c
+- e
+-  
+- o
+- w
+- n
+- e
+- r
+- s
+- h
+- i
+- p
+- ,
+-  
+- t
+- e
+- s
+- t
+-  
+- a
+- n
+- d
+-  
+- f
+- a
+- i
+- l
+- u
+- r
+- e
+-  
+- f
+- a
+- l
+- l
+- b
+- a
+- c
+- k
+- ;
+-  
+- o
+- p
+- t
+- i
+- o
+- n
+- a
+- l
+-  
+- i
+- n
+- t
+- e
+- g
+- r
+- a
+- t
+- i
+- o
+- n
+- s
+-  
+- e
+- x
+- p
+- l
+- i
+- c
+- i
+- t
+- l
+- y
+-  
+- d
+- e
+- f
+- e
+- r
+- r
+- e
+- d
+- .
+
+**Verification required:**
+
+- A
+- p
+- p
+- r
+- o
+- v
+- e
+- d
+-  
+- r
+- e
+- f
+- e
+- r
+- e
+- n
+- c
+- e
+-  
+- v
+- a
+- l
+- i
+- d
+- a
+- t
+- i
+- o
+- n
+- ,
+-  
+- c
+- o
+- n
+- n
+- e
+- c
+- t
+- o
+- r
+-  
+- s
+- a
+- n
+- d
+- b
+- o
+- x
+-  
+- t
+- e
+- s
+- t
+- s
+-  
+- a
+- n
+- d
+-  
+- m
+- a
+- n
+- u
+- a
+- l
+-  
+- f
+- a
+- l
+- l
+- b
+- a
+- c
+- k
+-  
+- r
+- e
+- h
+- e
+- a
+- r
+- s
+- a
+- l
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### CAP-006 — Unwired global export / notification / admin surfaces
+
+**Disposition:** Requires owner decision. **Area:** Application functionality. **Effort:** L.
+
+**Remaining action:** Resolve exact original owner/takeover/publication holds and approve each missing capability contract/scope; implement agreed events/roles/provenance or formally retain unavailable controls outside pilot scope.
+
+**Current local correction/evidence boundary:** User approved isolated Linux ownership log for parallel task; original Windows candidates/ownership holds and explicit prototype controls preserved. Alert intervention remains truthfully unavailable.
+
+**Dependencies:** No additional prerequisite recorded; retain the named scope/authority conditions.
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- P
+- e
+- r
+- -
+- c
+- o
+- n
+- t
+- r
+- o
+- l
+-  
+- d
+- i
+- s
+- p
+- o
+- s
+- i
+- t
+- i
+- o
+- n
+-  
+- a
+- n
+- d
+-  
+- o
+- w
+- n
+- e
+- r
+-  
+- a
+- p
+- p
+- r
+- o
+- v
+- a
+- l
+- ;
+-  
+- i
+- m
+- p
+- l
+- e
+- m
+- e
+- n
+- t
+- e
+- d
+-  
+- a
+- c
+- t
+- i
+- o
+- n
+- s
+-  
+- h
+- a
+- v
+- e
+-  
+- a
+- c
+- t
+- u
+- a
+- l
+-  
+- r
+- e
+- c
+- o
+- r
+- d
+- s
+- /
+- d
+- o
+- w
+- n
+- l
+- o
+- a
+- d
+- s
+- /
+- f
+- e
+- e
+- d
+- b
+- a
+- c
+- k
+- ,
+-  
+- e
+- x
+- c
+- l
+- u
+- d
+- e
+- d
+-  
+- a
+- c
+- t
+- i
+- o
+- n
+- s
+-  
+- c
+- a
+- n
+- n
+- o
+- t
+-  
+- f
+- a
+- l
+- s
+- e
+- l
+- y
+-  
+- c
+- l
+- a
+- i
+- m
+-  
+- c
+- o
+- m
+- p
+- l
+- e
+- t
+- i
+- o
+- n
+- .
+
+**Verification required:**
+
+- P
+- e
+- r
+- -
+- c
+- o
+- n
+- t
+- r
+- o
+- l
+-  
+- i
+- n
+- t
+- e
+- r
+- a
+- c
+- t
+- i
+- o
+- n
+- ,
+-  
+- o
+- u
+- t
+- p
+- u
+- t
+-  
+- p
+- r
+- o
+- v
+- e
+- n
+- a
+- n
+- c
+- e
+- ,
+-  
+- p
+- r
+- i
+- v
+- a
+- c
+- y
+- ,
+-  
+- e
+- r
+- r
+- o
+- r
+- s
+-  
+- a
+- n
+- d
+-  
+- p
+- e
+- r
+- m
+- i
+- s
+- s
+- i
+- o
+- n
+-  
+- t
+- e
+- s
+- t
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### DEV-002 — Canonical blocked Notion work / owner recovery
+
+**Disposition:** Requires owner decision. **Area:** Task governance. **Effort:** S.
+
+**Remaining action:** Resolve exact original owner/takeover/publication holds and approve each missing capability contract/scope; implement agreed events/roles/provenance or formally retain unavailable controls outside pilot scope.
+
+**Current local correction/evidence boundary:** User approved isolated Linux ownership log for parallel task; original Windows candidates/ownership holds and explicit prototype controls preserved. Alert intervention remains truthfully unavailable.
+
+**Dependencies:** No additional prerequisite recorded; retain the named scope/authority conditions.
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- E
+- v
+- e
+- r
+- y
+-  
+- b
+- l
+- o
+- c
+- k
+- e
+- d
+-  
+- i
+- t
+- e
+- m
+-  
+- h
+- a
+- s
+-  
+- o
+- w
+- n
+- e
+- r
+- -
+- a
+- p
+- p
+- r
+- o
+- v
+- e
+- d
+-  
+- r
+- e
+- t
+- a
+- i
+- n
+- /
+- c
+- l
+- o
+- s
+- e
+- /
+- r
+- e
+- b
+- a
+- s
+- e
+-  
+- d
+- e
+- c
+- i
+- s
+- i
+- o
+- n
+-  
+- a
+- n
+- d
+-  
+- c
+- u
+- r
+- r
+- e
+- n
+- t
+-  
+- e
+- v
+- i
+- d
+- e
+- n
+- c
+- e
+- ;
+-  
+- n
+- o
+-  
+- h
+- i
+- s
+- t
+- o
+- r
+- i
+- c
+- a
+- l
+-  
+- a
+- p
+- p
+- r
+- o
+- v
+- a
+- l
+-  
+- s
+- i
+- l
+- e
+- n
+- t
+- l
+- y
+-  
+- r
+- e
+- u
+- s
+- e
+- d
+- .
+
+**Verification required:**
+
+- C
+- a
+- n
+- o
+- n
+- i
+- c
+- a
+- l
+-  
+- t
+- r
+- a
+- c
+- k
+- e
+- r
+-  
+- r
+- e
+- v
+- i
+- e
+- w
+-  
+- w
+- i
+- t
+- h
+-  
+- a
+- t
+- t
+- r
+- i
+- b
+- u
+- t
+- a
+- b
+- l
+- e
+-  
+- r
+- e
+- c
+- o
+- r
+- d
+- s
+- ;
+-  
+- e
+- x
+- t
+- e
+- r
+- n
+- a
+- l
+-  
+- u
+- p
+- d
+- a
+- t
+- e
+- s
+-  
+- o
+- n
+- l
+- y
+-  
+- s
+- e
+- p
+- a
+- r
+- a
+- t
+- e
+- l
+- y
+-  
+- a
+- u
+- t
+- h
+- o
+- r
+- i
+- s
+- e
+- d
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### DEV-003 — Native coding agents / remote device readiness
+
+**Disposition:** Unverified external. **Area:** Development tooling. **Effort:** M.
+
+**Remaining action:** Verify exact Ward client/device configuration and operational reference/integration owners, approval/version/API boundaries; execute named synthetic acceptance only in authorised environment.
+
+**Current local correction/evidence boundary:** Native cloud devices/agent activation and external PAS/HMDC/reference/bookings capabilities remain inaccessible/unverified. Static reference records do not prove integration.
+
+**Dependencies:** No additional prerequisite recorded; retain the named scope/authority conditions.
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- E
+- a
+- c
+- h
+-  
+- i
+- n
+- t
+- e
+- n
+- d
+- e
+- d
+-  
+- a
+- g
+- e
+- n
+- t
+-  
+- s
+- t
+- a
+- r
+- t
+- s
+-  
+- W
+- a
+- r
+- d
+- -
+- o
+- n
+- l
+- y
+-  
+- o
+- w
+- n
+- e
+- d
+-  
+- b
+- r
+- a
+- n
+- c
+- h
+- ,
+-  
+- v
+- e
+- r
+- i
+- f
+- i
+- e
+- s
+-  
+- s
+- o
+- u
+- r
+- c
+- e
+- /
+- s
+- e
+- r
+- v
+- e
+- r
+-  
+- i
+- d
+- e
+- n
+- t
+- i
+- t
+- y
+-  
+- a
+- n
+- d
+-  
+- a
+- p
+- p
+- l
+- i
+- c
+- a
+- b
+- l
+- e
+-  
+- i
+- n
+- s
+- t
+- r
+- u
+- c
+- t
+- i
+- o
+- n
+- s
+- ;
+-  
+- n
+- o
+-  
+- s
+- h
+- a
+- r
+- e
+- d
+-  
+- i
+- n
+- s
+- t
+- a
+- l
+- l
+- /
+- s
+- o
+- u
+- r
+- c
+- e
+-  
+- c
+- o
+- l
+- l
+- i
+- s
+- i
+- o
+- n
+- .
+
+**Verification required:**
+
+- D
+- e
+- v
+- i
+- c
+- e
+- -
+- l
+- o
+- c
+- a
+- l
+-  
+- d
+- r
+- y
+-  
+- r
+- u
+- n
+-  
+- a
+- n
+- d
+-  
+- r
+- e
+- c
+- o
+- r
+- d
+- e
+- d
+-  
+- v
+- e
+- r
+- s
+- i
+- o
+- n
+- s
+- /
+- c
+- h
+- e
+- c
+- k
+- s
+- ,
+-  
+- n
+- o
+-  
+- a
+- c
+- c
+- e
+- s
+- s
+-  
+- t
+- o
+-  
+- u
+- n
+- r
+- e
+- l
+- a
+- t
+- e
+- d
+-  
+- p
+- r
+- o
+- j
+- e
+- c
+- t
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### DEV-004 — Historical registers and exhaustive semantic verification
+
+**Disposition:** Partial. **Area:** Audit / task governance. **Effort:** XL.
+
+**Remaining action:** Finish exact scenario/mutation/visual verification for each explicitly uncertain substantive historical claim; use frozen current evidence and sibling/type/DOM guards, add confirmed residuals with ownership preserved. An explicit disposition is not proof every historical claim was resolved.
+
+**Current local correction/evidence boundary:** Every1264 original historical candidate now has an explicit distinct disposition in the combined historical reconciliation; manifests/headings/method context are separated from substantive claims. Exact rechecks exposed search, settings-history and graph-coverage findings retained in the master.
+
+**Dependencies:** NEW-SETTINGS-001, NEW-QA-001
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- E
+- v
+- e
+- r
+- y
+-  
+- h
+- i
+- s
+- t
+- o
+- r
+- i
+- c
+- a
+- l
+-  
+- c
+- a
+- n
+- d
+- i
+- d
+- a
+- t
+- e
+-  
+- h
+- a
+- s
+-  
+- c
+- u
+- r
+- r
+- e
+- n
+- t
+-  
+- p
+- i
+- n
+- n
+- e
+- d
+-  
+- e
+- v
+- i
+- d
+- e
+- n
+- c
+- e
+-  
+- a
+- n
+- d
+-  
+- r
+- e
+- s
+- o
+- l
+- v
+- e
+- d
+- /
+- s
+- u
+- p
+- e
+- r
+- s
+- e
+- d
+- e
+- d
+- /
+- c
+- o
+- n
+- f
+- i
+- r
+- m
+- e
+- d
+- /
+- n
+- o
+- t
+- -
+- a
+- p
+- p
+- l
+- i
+- c
+- a
+- b
+- l
+- e
+-  
+- d
+- e
+- c
+- i
+- s
+- i
+- o
+- n
+- ;
+-  
+- c
+- o
+- n
+- f
+- i
+- r
+- m
+- e
+- d
+-  
+- r
+- e
+- s
+- i
+- d
+- u
+- a
+- l
+- s
+-  
+- a
+- d
+- d
+- e
+- d
+-  
+- t
+- o
+-  
+- m
+- a
+- s
+- t
+- e
+- r
+- .
+
+**Verification required:**
+
+- F
+- i
+- l
+- e
+- -
+- b
+- y
+- -
+- f
+- i
+- l
+- e
+-  
+- s
+- e
+- m
+- a
+- n
+- t
+- i
+- c
+-  
+- r
+- e
+- v
+- i
+- e
+- w
+- ,
+-  
+- t
+- a
+- r
+- g
+- e
+- t
+- e
+- d
+-  
+- s
+- c
+- e
+- n
+- a
+- r
+- i
+- o
+- s
+- /
+- m
+- u
+- t
+- a
+- t
+- i
+- o
+- n
+- s
+-  
+- a
+- n
+- d
+-  
+- r
+- e
+- c
+- o
+- n
+- c
+- i
+- l
+- i
+- a
+- t
+- i
+- o
+- n
+-  
+- v
+- a
+- l
+- i
+- d
+- a
+- t
+- o
+- r
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### DOC-003 — Screen verification provenance
+
+**Disposition:** Partial. **Area:** Documentation / QA. **Effort:** S.
+
+**Remaining action:** Complete fresh verification of the remaining screen/state/viewport/theme combinations in the34screen matrix. Preserve actual revisions/dirty inputs and distinct scoped evidence; broad WCAG/assistive-technology/Firefox/WebKit acceptance remains QA-002.
+
+**Current local correction/evidence boundary:** Optional broad render-input fingerprinting and scoped current browser proof are recorded. The maintained JSON preserves34historical verified records, adds current scope to5mapped screens and2supplementary route checks, and distinguishes folder hashes from all-input fingerprints. Current merged scoped Chromium proof passed; no historical provenance backfill or34screen/WCAG claim.
+
+**Dependencies:** No additional prerequisite recorded; retain the named scope/authority conditions.
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- R
+- e
+- l
+- e
+- a
+- s
+- e
+-  
+- s
+- c
+- r
+- e
+- e
+- n
+-  
+- m
+- a
+- t
+- r
+- i
+- x
+-  
+- s
+- t
+- a
+- t
+- e
+- s
+-  
+- c
+- u
+- r
+- r
+- e
+- n
+- t
+- /
+- s
+- t
+- a
+- l
+- e
+- /
+- u
+- n
+- v
+- e
+- r
+- i
+- f
+- i
+- e
+- d
+-  
+- p
+- l
+- a
+- i
+- n
+- l
+- y
+- ;
+-  
+- s
+- c
+- r
+- e
+- e
+- n
+- s
+- h
+- o
+- t
+- s
+-  
+- a
+- n
+- d
+-  
+- b
+- r
+- o
+- w
+- s
+- e
+- r
+-  
+- t
+- e
+- s
+- t
+- s
+-  
+- m
+- a
+- t
+- c
+- h
+-  
+- r
+- e
+- c
+- o
+- r
+- d
+- e
+- d
+-  
+- c
+- o
+- m
+- m
+- i
+- t
+- .
+
+**Verification required:**
+
+- G
+- e
+- n
+- e
+- r
+- a
+- t
+- o
+- r
+-  
+- c
+- o
+- n
+- t
+- r
+- a
+- c
+- t
+-  
+- t
+- e
+- s
+- t
+- s
+-  
+- a
+- n
+- d
+-  
+- v
+- i
+- s
+- u
+- a
+- l
+-  
+- e
+- v
+- i
+- d
+- e
+- n
+- c
+- e
+-  
+- r
+- e
+- v
+- i
+- e
+- w
+-  
+- a
+- g
+- a
+- i
+- n
+- s
+- t
+-  
+- a
+- c
+- c
+- e
+- p
+- t
+- e
+- d
+-  
+- a
+- p
+- p
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### NEW-OBSERVABILITY-001 — Next request error instrumentation
+
+**Disposition:** Partial. **Area:** Infrastructure. **Effort:** M.
+
+**Remaining action:** Complete sink/alert/retention ownership through OPS002 and verify exact deployed synthetic signal after configuration; source registration alone does not prove hosted delivery.
+
+**Current local correction/evidence boundary:** Root adds onRequestError handler with incident UUID and allowlisted labels; focused11/11 metadata/failure-isolation tests pass. Coherent source registration/docs commit3c30811 integrated.
+
+**Dependencies:** OPS-002
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- No error/token/body/route/clinical fields exported; failures isolated; deployed synthetic alert reaches owner when commissioned.
+
+**Verification required:**
+
+- F
+- o
+- c
+- u
+- s
+- e
+- d
+-  
+- r
+- e
+- g
+- r
+- e
+- s
+- s
+- i
+- o
+- n
+-  
+- p
+- l
+- u
+- s
+-  
+- f
+- i
+- n
+- a
+- l
+-  
+- i
+- n
+- t
+- e
+- g
+- r
+- a
+- t
+- e
+- d
+-  
+- v
+- e
+- r
+- i
+- f
+- i
+- c
+- a
+- t
+- i
+- o
+- n
+- ;
+-  
+- n
+- o
+-  
+- h
+- o
+- s
+- t
+- e
+- d
+- /
+- c
+- l
+- i
+- n
+- i
+- c
+- a
+- l
+-  
+- c
+- l
+- a
+- i
+- m
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### OPS-002 — End-to-end error monitoring
+
+**Disposition:** Partial. **Area:** Observability. **Effort:** M.
+
+**Remaining action:** Choose privacy-reviewed Ward sink, retention/residency/access/sampling/quotas and alert owner, then test deployed ingestion plus acknowledged alert. No Sentry absence inferred from connector unavailability.
+
+**Current local correction/evidence boundary:** Root request-error instrumentation emits privacy-bounded metadata/incident IDs; backend diagnostics are implemented. Focused instrumentation11/11 passes. No SDK/vendor sink configured. Coherent root local instrumentation/docs commit3c30811 now integrated.
+
+**Dependencies:** BE-009
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- C
+- o
+- n
+- t
+- r
+- o
+- l
+- l
+- e
+- d
+-  
+- s
+- y
+- n
+- t
+- h
+- e
+- t
+- i
+- c
+-  
+- f
+- a
+- i
+- l
+- u
+- r
+- e
+-  
+- r
+- e
+- a
+- c
+- h
+- e
+- s
+-  
+- s
+- c
+- r
+- u
+- b
+- b
+- e
+- d
+-  
+- m
+- o
+- n
+- i
+- t
+- o
+- r
+- i
+- n
+- g
+-  
+- a
+- n
+- d
+-  
+- o
+- w
+- n
+- e
+- r
+-  
+- w
+- i
+- t
+- h
+- i
+- n
+-  
+- t
+- a
+- r
+- g
+- e
+- t
+- ;
+-  
+- n
+- o
+-  
+- c
+- l
+- i
+- n
+- i
+- c
+- a
+- l
+-  
+- p
+- a
+- y
+- l
+- o
+- a
+- d
+- /
+- b
+- r
+- o
+- w
+- s
+- e
+- r
+-  
+- r
+- e
+- c
+- o
+- r
+- d
+- i
+- n
+- g
+- .
+
+**Verification required:**
+
+- F
+- a
+- u
+- l
+- t
+-  
+- i
+- n
+- j
+- e
+- c
+- t
+- i
+- o
+- n
+-  
+- l
+- o
+- c
+- a
+- l
+- l
+- y
+- /
+- s
+- t
+- a
+- g
+- i
+- n
+- g
+- ,
+-  
+- s
+- c
+- r
+- u
+- b
+-  
+- t
+- e
+- s
+- t
+- s
+- ,
+-  
+- a
+- l
+- e
+- r
+- t
+-  
+- a
+- c
+- k
+- n
+- o
+- w
+- l
+- e
+- d
+- g
+- e
+- m
+- e
+- n
+- t
+-  
+- d
+- r
+- i
+- l
+- l
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### OPS-004 — Release rollback / incident response
+
+**Disposition:** Unverified external. **Area:** Operations. **Effort:** M.
+
+**Remaining action:** Perform exact Ward-only provider checks and configuration/restore/rollback/security drills in original criteria after access/authority; do not classify inaccessible services as absent or healthy hosting as end-to-end proof.
+
+**Current local correction/evidence boundary:** Original audit identifies existing provider evidence and explicitly inaccessible configuration; no provider mutation performed.
+
+**Dependencies:** BE-002, OPS-001
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- S
+- y
+- n
+- t
+- h
+- e
+- t
+- i
+- c
+-  
+- i
+- n
+- c
+- i
+- d
+- e
+- n
+- t
+-  
+- a
+- n
+- d
+-  
+- r
+- o
+- l
+- l
+- b
+- a
+- c
+- k
+-  
+- p
+- r
+- e
+- s
+- e
+- r
+- v
+- e
+-  
+- i
+- n
+- t
+- e
+- g
+- r
+- i
+- t
+- y
+- ,
+-  
+- c
+- o
+- m
+- m
+- u
+- n
+- i
+- c
+- a
+- t
+- e
+-  
+- d
+- o
+- w
+- n
+- t
+- i
+- m
+- e
+-  
+- a
+- n
+- d
+-  
+- m
+- e
+- e
+- t
+-  
+- a
+- g
+- r
+- e
+- e
+- d
+-  
+- t
+- a
+- r
+- g
+- e
+- t
+- s
+- .
+
+**Verification required:**
+
+- S
+- t
+- a
+- g
+- i
+- n
+- g
+-  
+- r
+- o
+- l
+- l
+- b
+- a
+- c
+- k
+-  
+- d
+- r
+- i
+- l
+- l
+- ,
+-  
+- r
+- e
+- p
+- l
+- a
+- y
+- /
+- r
+- e
+- c
+- o
+- n
+- c
+- i
+- l
+- i
+- a
+- t
+- i
+- o
+- n
+-  
+- a
+- n
+- d
+-  
+- e
+- s
+- c
+- a
+- l
+- a
+- t
+- i
+- o
+- n
+-  
+- t
+- a
+- b
+- l
+- e
+- t
+- o
+- p
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### OPS-005 — Capacity limits and edge abuse controls
+
+**Disposition:** Unverified external. **Area:** Infrastructure / security. **Effort:** M.
+
+**Remaining action:** Perform exact Ward-only provider checks and configuration/restore/rollback/security drills in original criteria after access/authority; do not classify inaccessible services as absent or healthy hosting as end-to-end proof.
+
+**Current local correction/evidence boundary:** Original audit identifies existing provider evidence and explicitly inaccessible configuration; no provider mutation performed.
+
+**Dependencies:** BE-011, BE-006
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- E
+- x
+- p
+- e
+- c
+- t
+- e
+- d
+-  
+- c
+- o
+- n
+- c
+- u
+- r
+- r
+- e
+- n
+- t
+-  
+- s
+- y
+- n
+- t
+- h
+- e
+- t
+- i
+- c
+-  
+- s
+- t
+- a
+- f
+- f
+-  
+- l
+- o
+- a
+- d
+-  
+- s
+- t
+- a
+- y
+- s
+-  
+- r
+- e
+- s
+- p
+- o
+- n
+- s
+- i
+- v
+- e
+- ;
+-  
+- e
+- x
+- c
+- e
+- s
+- s
+- i
+- v
+- e
+-  
+- r
+- e
+- q
+- u
+- e
+- s
+- t
+- s
+-  
+- r
+- e
+- t
+- u
+- r
+- n
+-  
+- s
+- a
+- f
+- e
+-  
+- b
+- o
+- u
+- n
+- d
+- e
+- d
+-  
+- r
+- e
+- s
+- p
+- o
+- n
+- s
+- e
+-  
+- a
+- n
+- d
+-  
+- c
+- o
+- s
+- t
+-  
+- a
+- l
+- e
+- r
+- t
+- s
+-  
+- f
+- i
+- r
+- e
+- .
+
+**Verification required:**
+
+- N
+- o
+- n
+- i
+- n
+- t
+- r
+- u
+- s
+- i
+- v
+- e
+-  
+- a
+- u
+- t
+- h
+- o
+- r
+- i
+- s
+- e
+- d
+-  
+- s
+- t
+- a
+- g
+- i
+- n
+- g
+-  
+- l
+- o
+- a
+- d
+-  
+- t
+- e
+- s
+- t
+- s
+-  
+- a
+- n
+- d
+-  
+- c
+- o
+- n
+- f
+- i
+- g
+- u
+- r
+- a
+- t
+- i
+- o
+- n
+-  
+- i
+- n
+- s
+- p
+- e
+- c
+- t
+- i
+- o
+- n
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### QA-002 — Ward browser compatibility and accessibility acceptance
+
+**Disposition:** Partial. **Area:** QA / accessibility. **Effort:** L.
+
+**Remaining action:** Install/run Firefox/WebKit where download access is available (current CDN403); complete supported browser/assistive technology/zoom/dialog/error acceptance. Do not claim whole-app WCAG compliance from seven geometry tests.
+
+**Current local correction/evidence boundary:** Dedicated Ward Firefox/WebKit configuration and runner wiring added. Actual Chromium phone320/390/tablet768 geometry/keyboard tests7/7 pass, with precise source/browser provenance.
+
+**Dependencies:** No additional prerequisite recorded; retain the named scope/authority conditions.
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- C
+- r
+- i
+- t
+- i
+- c
+- a
+- l
+-  
+- t
+- a
+- s
+- k
+- s
+-  
+- c
+- o
+- m
+- p
+- l
+- e
+- t
+- e
+-  
+- w
+- i
+- t
+- h
+-  
+- n
+- o
+-  
+- i
+- n
+- a
+- c
+- c
+- e
+- s
+- s
+- i
+- b
+- l
+- e
+-  
+- a
+- c
+- t
+- i
+- o
+- n
+- ,
+-  
+- m
+- i
+- s
+- s
+- i
+- n
+- g
+-  
+- f
+- o
+- c
+- u
+- s
+- ,
+-  
+- m
+- i
+- s
+- l
+- e
+- a
+- d
+- i
+- n
+- g
+-  
+- a
+- n
+- n
+- o
+- u
+- n
+- c
+- e
+- m
+- e
+- n
+- t
+- s
+-  
+- o
+- r
+-  
+- d
+- o
+- c
+- u
+- m
+- e
+- n
+- t
+-  
+- o
+- v
+- e
+- r
+- f
+- l
+- o
+- w
+-  
+- a
+- t
+-  
+- s
+- u
+- p
+- p
+- o
+- r
+- t
+- e
+- d
+-  
+- s
+- i
+- z
+- e
+- s
+- .
+
+**Verification required:**
+
+- C
+- r
+- o
+- s
+- s
+- -
+- b
+- r
+- o
+- w
+- s
+- e
+- r
+-  
+- s
+- y
+- n
+- t
+- h
+- e
+- t
+- i
+- c
+-  
+- E
+- 2
+- E
+- ,
+-  
+- a
+- u
+- t
+- o
+- m
+- a
+- t
+- e
+- d
+-  
+- a
+- c
+- c
+- e
+- s
+- s
+- i
+- b
+- i
+- l
+- i
+- t
+- y
+-  
+- p
+- l
+- u
+- s
+-  
+- m
+- a
+- n
+- u
+- a
+- l
+-  
+- k
+- e
+- y
+- b
+- o
+- a
+- r
+- d
+- /
+- s
+- c
+- r
+- e
+- e
+- n
+- -
+- r
+- e
+- a
+- d
+- e
+- r
+-  
+- c
+- h
+- e
+- c
+- k
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### QA-003 — Representative performance and large-state limits
+
+**Disposition:** Partial. **Area:** QA / performance. **Effort:** M.
+
+**Remaining action:** Implement actual approved shared backend first; execute all ten authenticated conflict/retry/revoke/reconnect scenarios and synthetic representative load/capacity limits on target environment.
+
+**Current local correction/evidence boundary:** New domain/HTTP/client/browser regressions improve local correctness. They do not establish shared-user concurrency or representative operating load.
+
+**Dependencies:** BE-002, BE-005, OPS-001
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- D
+- o
+- c
+- u
+- m
+- e
+- n
+- t
+- e
+- d
+-  
+- d
+- a
+- t
+- a
+- s
+- e
+- t
+- /
+- u
+- s
+- e
+- r
+-  
+- l
+- i
+- m
+- i
+- t
+- s
+- ,
+-  
+- t
+- i
+- m
+- i
+- n
+- g
+- s
+-  
+- a
+- n
+- d
+-  
+- r
+- e
+- c
+- o
+- v
+- e
+- r
+- y
+-  
+- m
+- e
+- e
+- t
+-  
+- a
+- g
+- r
+- e
+- e
+- d
+-  
+- t
+- a
+- r
+- g
+- e
+- t
+- s
+- ;
+-  
+- o
+- v
+- e
+- r
+- s
+- i
+- z
+- e
+- d
+-  
+- u
+- p
+- d
+- a
+- t
+- e
+-  
+- l
+- e
+- a
+- v
+- e
+- s
+-  
+- p
+- r
+- i
+- o
+- r
+-  
+- v
+- a
+- l
+- i
+- d
+-  
+- s
+- t
+- a
+- t
+- e
+- .
+
+**Verification required:**
+
+- L
+- o
+- c
+- a
+- l
+-  
+- p
+- r
+- o
+- f
+- i
+- l
+- i
+- n
+- g
+-  
+- a
+- n
+- d
+-  
+- a
+- u
+- t
+- h
+- o
+- r
+- i
+- s
+- e
+- d
+-  
+- i
+- s
+- o
+- l
+- a
+- t
+- e
+- d
+-  
+- s
+- t
+- a
+- g
+- i
+- n
+- g
+-  
+- l
+- o
+- a
+- d
+- /
+- s
+- i
+- z
+- e
+-  
+- b
+- o
+- u
+- n
+- d
+- a
+- r
+- y
+-  
+- t
+- e
+- s
+- t
+- s
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### QA-004 — Host JWT / security contract verification
+
+**Disposition:** Unverified external. **Area:** QA / security. **Effort:** M.
+
+**Remaining action:** Perform exact Ward-only provider checks and configuration/restore/rollback/security drills in original criteria after access/authority; do not classify inaccessible services as absent or healthy hosting as end-to-end proof.
+
+**Current local correction/evidence boundary:** Original audit identifies existing provider evidence and explicitly inaccessible configuration; no provider mutation performed.
+
+**Dependencies:** BE-011, BE-001, BE-003
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- A
+- l
+- l
+-  
+- i
+- n
+- v
+- a
+- l
+- i
+- d
+-  
+- t
+- o
+- k
+- e
+- n
+-  
+- c
+- l
+- a
+- s
+- s
+- e
+- s
+-  
+- d
+- e
+- n
+- i
+- e
+- d
+- ;
+-  
+- a
+- p
+- p
+- r
+- o
+- v
+- e
+- d
+-  
+- i
+- d
+- e
+- n
+- t
+- i
+- t
+- y
+-  
+- w
+- o
+- r
+- k
+- s
+-  
+- o
+- n
+- l
+- y
+-  
+- i
+- n
+-  
+- s
+- c
+- o
+- p
+- e
+- ;
+-  
+- p
+- r
+- o
+- d
+- u
+- c
+- t
+- i
+- o
+- n
+-  
+- C
+- S
+- P
+- /
+- c
+- a
+- c
+- h
+- e
+- /
+- C
+- O
+- R
+- S
+-  
+- h
+- e
+- a
+- d
+- e
+- r
+- s
+-  
+- v
+- e
+- r
+- i
+- f
+- i
+- e
+- d
+- ;
+-  
+- n
+- o
+-  
+- t
+- o
+- k
+- e
+- n
+-  
+- l
+- o
+- g
+- g
+- e
+- d
+- .
+
+**Verification required:**
+
+- L
+- o
+- c
+- a
+- l
+-  
+- t
+- e
+- s
+- t
+-  
+- J
+- W
+- K
+- S
+-  
+- f
+- i
+- x
+- t
+- u
+- r
+- e
+- ,
+-  
+- s
+- y
+- n
+- t
+- h
+- e
+- t
+- i
+- c
+-  
+- s
+- t
+- a
+- g
+- i
+- n
+- g
+-  
+- a
+- c
+- c
+- o
+- u
+- n
+- t
+- s
+-  
+- a
+- n
+- d
+-  
+- p
+- a
+- s
+- s
+- i
+- v
+- e
+-  
+- r
+- e
+- s
+- p
+- o
+- n
+- s
+- e
+- -
+- h
+- e
+- a
+- d
+- e
+- r
+-  
+- c
+- a
+- p
+- t
+- u
+- r
+- e
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### RT-008 — Discharge status accessibility
+
+**Disposition:** Partial. **Area:** Frontend. **Effort:** S.
+
+**Remaining action:** Verify blocked-to-unblocked and reverse with unchanged total using target screen reader and keyboard; record assistive technology/version and focus evidence.
+
+**Current local correction/evidence boundary:** Separate polite pipeline state summary and DOM checks added; existing shown-count announcement retained.
+
+**Dependencies:** No additional prerequisite recorded; retain the named scope/authority conditions.
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- B
+- l
+- o
+- c
+- k
+- e
+- d
+- →
+- u
+- n
+- b
+- l
+- o
+- c
+- k
+- e
+- d
+-  
+- a
+- n
+- d
+-  
+- r
+- e
+- v
+- e
+- r
+- s
+- e
+-  
+- w
+- i
+- t
+- h
+-  
+- u
+- n
+- c
+- h
+- a
+- n
+- g
+- e
+- d
+-  
+- s
+- h
+- o
+- w
+- n
+-  
+- t
+- o
+- t
+- a
+- l
+-  
+- y
+- i
+- e
+- l
+- d
+-  
+- a
+- p
+- p
+- r
+- o
+- p
+- r
+- i
+- a
+- t
+- e
+-  
+- a
+- n
+- n
+- o
+- u
+- n
+- c
+- e
+- m
+- e
+- n
+- t
+-  
+- a
+- n
+- d
+-  
+- p
+- r
+- e
+- s
+- e
+- r
+- v
+- e
+-  
+- f
+- o
+- c
+- u
+- s
+- .
+
+**Verification required:**
+
+- S
+- c
+- r
+- e
+- e
+- n
+-  
+- r
+- e
+- a
+- d
+- e
+- r
+-  
+- o
+- r
+-  
+- l
+- i
+- v
+- e
+- -
+- r
+- e
+- g
+- i
+- o
+- n
+-  
+- D
+- O
+- M
+-  
+- c
+- h
+- a
+- n
+- g
+- e
+-  
+- c
+- h
+- e
+- c
+- k
+-  
+- p
+- l
+- u
+- s
+-  
+- b
+- r
+- o
+- w
+- s
+- e
+- r
+-  
+- k
+- e
+- y
+- b
+- o
+- a
+- r
+- d
+-  
+- i
+- n
+- t
+- e
+- r
+- a
+- c
+- t
+- i
+- o
+- n
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### SEC-003 — ESLint glob / braces dependency chain
+
+**Disposition:** Partial. **Area:** Security. **Effort:** S.
+
+**Remaining action:** Review supported upstream patch by22Oct2026 or immediately on release/config/input changes; install/test when available. Owner accepts any broader tooling risk. No unsafe Next14 downgrade.
+
+**Current local correction/evidence boundary:** Actual development-only glob reachability assessed; bounded exception retains supported Next16 and literal lint roots. Five audit package entries correspond to one open braces advisory.
+
+**Dependencies:** No additional prerequisite recorded; retain the named scope/authority conditions.
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- S
+- u
+- p
+- p
+- o
+- r
+- t
+- e
+- d
+-  
+- f
+- i
+- x
+-  
+- r
+- e
+- m
+- o
+- v
+- e
+- s
+-  
+- a
+- d
+- v
+- i
+- s
+- o
+- r
+- y
+-  
+- o
+- r
+-  
+- d
+- a
+- t
+- e
+- d
+-  
+- e
+- x
+- c
+- e
+- p
+- t
+- i
+- o
+- n
+-  
+- d
+- o
+- c
+- u
+- m
+- e
+- n
+- t
+- s
+-  
+- e
+- x
+- p
+- o
+- s
+- u
+- r
+- e
+- ,
+-  
+- m
+- i
+- t
+- i
+- g
+- a
+- t
+- i
+- o
+- n
+- ,
+-  
+- o
+- w
+- n
+- e
+- r
+-  
+- a
+- n
+- d
+-  
+- r
+- e
+- c
+- h
+- e
+- c
+- k
+-  
+- d
+- a
+- t
+- e
+- .
+
+**Verification required:**
+
+- n
+- p
+- m
+-  
+- e
+- x
+- p
+- l
+- a
+- i
+- n
+-  
+- b
+- r
+- a
+- c
+- e
+- s
+- ,
+-  
+- t
+- a
+- r
+- g
+- e
+- t
+- e
+- d
+-  
+- l
+- i
+- n
+- t
+-  
+- g
+- l
+- o
+- b
+-  
+- t
+- e
+- s
+- t
+- s
+-  
+- a
+- n
+- d
+-  
+- d
+- e
+- p
+- e
+- n
+- d
+- e
+- n
+- c
+- y
+-  
+- r
+- e
+- v
+- i
+- e
+- w
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### SPEC-005 — Queue ordering policy reconciliation
+
+**Disposition:** Requires owner decision. **Area:** Frontend/domain. **Effort:** S.
+
+**Remaining action:** Owner must explicitly name ordering for Referral and Patient/Movement tabs and tie-breaks; then change comparator/captions/tests only within that decision.
+
+**Current local correction/evidence boundary:** Existing referral FIFO and movement urgency-first semantics preserved.
+
+**Existing task/decision:** WF-32 / D-32 versus historical item37
+
+**Dependencies:** Owner policy scope decision
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- Current decision names ordering for Referral and Patient/Movement tabs separately.
+- Queue captions, comparator and tests assert same scope and tie-break behavior.
+
+**Verification required:**
+
+- Mixed-age/mixed-tier/mixed-flag fixture for both queues; user-visible sort captions.
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+### SPEC-007 — Community clinician allocation
+
+**Disposition:** Partial. **Area:** Frontend/community. **Effort:** M.
+
+**Remaining action:** Approve and implement referral-level clinician identity/assignment and recorded review outcome/history/permissions. Demonstration care-directory appointment assignment is not referral assignment.
+
+**Current local correction/evidence boundary:** Misleading clinician/caseload selector removed; acceptance clearly records team decision only. Review opens actual dossier. Unsupported assignment remains expressly disclosed.
+
+**Dependencies:** No additional prerequisite recorded; retain the named scope/authority conditions.
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- UI never claims clinician allocation unless record contains selected staff identity and audit.
+- Chosen synthetic clinician survives navigation/reload under applicable persistence mode; concurrent version checked when shared backend introduced.
+
+**Verification required:**
+
+- Choose different clinician, accept, inspect model/audit; stale record and invalid staff assignment cases.
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+### SPEC-012 — Community review/assignment capabilities
+
+**Disposition:** Partial. **Area:** Frontend/community. **Effort:** L.
+
+**Remaining action:** Approve and implement referral-level clinician identity/assignment and recorded review outcome/history/permissions. Demonstration care-directory appointment assignment is not referral assignment.
+
+**Current local correction/evidence boundary:** Misleading clinician/caseload selector removed; acceptance clearly records team decision only. Review opens actual dossier. Unsupported assignment remains expressly disclosed.
+
+**Existing task/decision:** Historical community Review/Assign lead; freshly confirmed still deliberately unwired
+
+**Dependencies:** No additional prerequisite recorded; retain the named scope/authority conditions.
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- Approved review records reviewer/time/outcome; assignment records responsible service/staff.
+- UI updates worklist/counts from authoritative state and preserves history.
+- Unsupported demonstration remains visibly disclosed.
+
+**Verification required:**
+
+- Workflow review → assignment → follow-up, cancellation, denied service access and concurrency once shared.
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
+
+
+## P3 — remaining tasks
+
+### OPT-001 — Review approvals for higher-risk releases
+
+**Disposition:** Deferred optional. **Area:** Repository governance. **Effort:** S.
+
+**Remaining action:** Consider required human reviewer approvals at the appropriate release stage with repository-owner approval; not a blocker to synthetic local development.
+
+**Current local correction/evidence boundary:** Ruleset checks/thread resolution remain intact; no external access/governance change performed.
+
+**Dependencies:** No additional prerequisite recorded; retain the named scope/authority conditions.
+
+**Original acceptance criteria (retain the completed parts; finish the remaining scope above):**
+
+- A
+- p
+- p
+- r
+- o
+- v
+- e
+- d
+-  
+- g
+- o
+- v
+- e
+- r
+- n
+- a
+- n
+- c
+- e
+-  
+- p
+- o
+- l
+- i
+- c
+- y
+-  
+- e
+- n
+- f
+- o
+- r
+- c
+- e
+- d
+-  
+- w
+- i
+- t
+- h
+-  
+- a
+-  
+- t
+- e
+- s
+- t
+-  
+- P
+- R
+- ;
+-  
+- a
+- u
+- t
+- h
+- o
+- r
+- i
+- s
+- e
+- d
+-  
+- e
+- m
+- e
+- r
+- g
+- e
+- n
+- c
+- y
+-  
+- r
+- o
+- u
+- t
+- e
+-  
+- d
+- o
+- c
+- u
+- m
+- e
+- n
+- t
+- e
+- d
+- .
+
+**Verification required:**
+
+- R
+- u
+- l
+- e
+- s
+- e
+- t
+-  
+- r
+- e
+- a
+- d
+- b
+- a
+- c
+- k
+-  
+- a
+- n
+- d
+-  
+- n
+- o
+- n
+- m
+- e
+- r
+- g
+- i
+- n
+- g
+-  
+- t
+- e
+- s
+- t
+-  
+- P
+- R
+-  
+- i
+- n
+-  
+- s
+- e
+- p
+- a
+- r
+- a
+- t
+- e
+- l
+- y
+-  
+- a
+- u
+- t
+- h
+- o
+- r
+- i
+- s
+- e
+- d
+-  
+- w
+- o
+- r
+- k
+- .
+
+**Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence.
+
+## Related records
+
+- [Local remediation receipt](remediation-2026-10-08.md).
+- [Current roadmap](../roadmap.md).
+- [Production-readiness requirements](../governance/PRODUCTION-READINESS.md).
+
+The original full 93-item register and local evidence archive remain available in the audit handoff; this repository document carries every remaining ID and its exact remaining action. It creates no GitHub issues and changes no external task ownership.
