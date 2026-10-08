@@ -1,5 +1,29 @@
 # Engine: reducer, events, state and persistence
 
+## Reducer and recovery boundaries — 9 October 2026
+
+`ward-flow-reducer.ts` remains the public state/reducer facade. It checks role permission before
+ordinary command payloads, retains the protected-record path and generation/resource-revision
+guards, and appends the audit result after command handling. Internal event families now delegate to:
+
+- `ward-flow-settings-reducer.ts`: clock advance, scenario reset/selection and configuration.
+  Seed and refusal operations come from the main reducer; handlers share its audit decision.
+- `ward-flow-capacity-reducer.ts`: capacity confirmation, intake constraints, refresh requests,
+  morning rollups and ward buzz requests. Caller ward scope, number bounds and revision checks
+  retain their original order. A refresh/buzz records a synthetic in-app request.
+- `ward-flow-bed-release-reducer.ts`: flag, confirm, revert, block, unblock, preparation and release.
+  Shared resolution checks the named release and caller ward scope; command handlers retain
+  stay identity, occupancy, live-release uniqueness and legal transition checks. Main-reducer
+  replacement operations preserve unit/release writes and resource revision handling.
+
+`ward-flow-storage-validation.ts` separately validates nested containers, header/counters,
+record shapes, identifiers, cross-record links, capacity bounds, audit data and persistence privacy.
+It retains optional-versus-null handling, validation order and the exclusion of stored refusals and
+typed CAD/repatriation records. Recovery rejects invalid payloads; it does not repair them.
+
+The detailed historical map below retains its original line numbers. These internal extractions
+preserve the existing public interfaces and event behaviour.
+
 Final boundary repairs: protected departures use the approved scoped projection; transfer movements record their own arrival history/closure rather than copying earlier stages. The stage guard uses syntax-tree ancestry and drives the protected transfer. Care clock fields are covered by the re-anchor contract; coding supports a not-applicable receiver and rejects incompatible leave endings. Final offline evidence is in the dated WA audit report.
 
 ## WA remediation update — 3 October 2026
