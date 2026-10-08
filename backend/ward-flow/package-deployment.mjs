@@ -22,7 +22,27 @@ const files = [
   "package-lock.json",
   "node_modules",
 ];
-const result = spawnSync("zip", ["-qr", archive, ...files], { cwd: root, encoding: "utf8" });
+// Windows does not include the Unix zip command. Python's standard library
+// preserves the same explicit runtime-only file list without another package.
+const windowsZip = `
+import sys
+from pathlib import Path
+from zipfile import ZipFile, ZIP_DEFLATED
+root = Path.cwd()
+with ZipFile(sys.argv[1], "w", ZIP_DEFLATED) as archive:
+    for name in sys.argv[2:]:
+        source = root / name
+        entries = [source] if source.is_file() else source.rglob("*")
+        for entry in entries:
+            if entry.is_file():
+                archive.write(entry, entry.relative_to(root).as_posix())
+`;
+const result =
+  process.platform === "win32"
+    ? spawnSync("python", ["-c", windowsZip, archive, ...files], { cwd: root, encoding: "utf8" })
+    : spawnSync("zip", ["-qr", archive, ...files], { cwd: root, encoding: "utf8" });
 if (result.error || result.status !== 0)
-  throw new Error("Backend packaging failed; install locked backend dependencies and zip first");
+  throw new Error(
+    "Backend packaging failed; install locked backend dependencies and Python on Windows or zip elsewhere",
+  );
 console.log(`Prepared ${archive}; no .env, tests or setup settings included`);
