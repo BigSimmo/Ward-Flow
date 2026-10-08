@@ -26,13 +26,50 @@ export interface ResolvedPatientNow {
   currentStageIndex: number;
 }
 
-export function movementNextSteps(movement: Movement, acceptedUnit?: Unit): PatientNowRecord["next"] {
+function movementVerdict(movement: Movement, acceptedUnit?: Unit, departed = false): PatientNowRecord["verdict"] {
+  if (departed)
+    return { tone: "warn", short: "Departed", title: "Departure recorded; no current ward stay.", gates: [] };
+  if (movement.closure?.outcome === "did_not_proceed")
+    return {
+      tone: "warn",
+      short: "Movement Closed",
+      title: movement.closure.reason || "Movement did not proceed.",
+      gates: [],
+    };
+  if (movement.stage === "arrived")
+    return {
+      tone: "good",
+      short: "Arrived",
+      title: `Arrival recorded at ${acceptedUnit?.name ?? "destination ward"}.`,
+      gates: [],
+    };
+  if (movement.stage === "moving")
+    return {
+      tone: "good",
+      short: "In Transit",
+      title: `En route to ${acceptedUnit?.name ?? "receiving unit"}.`,
+      gates: [],
+    };
+  if (acceptedUnit)
+    return { tone: "good", short: "Bed Accepted", title: `Bed allocated at ${acceptedUnit.name}.`, gates: [] };
+  return { tone: "warn", short: "Seeking Bed", title: "Placement request active across network wards.", gates: [] };
+}
+
+export function movementNextSteps(movement: Movement, acceptedUnit?: Unit, departed = false): PatientNowRecord["next"] {
+  if (departed)
+    return [
+      {
+        w: "Departure recorded",
+        d: "No current ward stay. Review recorded discharge and community follow-up separately.",
+        tone: "good",
+      },
+    ];
   if (movement.closure) {
     return [
       {
         w: "Movement Closed",
         d: movement.closure.reason || "Movement completed.",
-        tone: "good" as const,
+        tone: movement.closure.outcome === "did_not_proceed" ? ("warn" as const) : ("good" as const),
       },
     ];
   }
@@ -160,23 +197,12 @@ export function resolvePatientNowRecord(
     const originEdName = originEd?.name ?? "Emergency Department";
     const acceptedUnit = movement.acceptedUnitId ? liveUnit(movement.acceptedUnitId) : undefined;
 
-    let verdictTone: "danger" | "good" | "warn" = "warn";
-    let verdictShort = "Seeking Bed";
-    let verdictTitle = "Placement request active across network wards.";
-
-    if (movement.stage === "arrived") {
-      verdictTone = "good";
-      verdictShort = "Arrived";
-      verdictTitle = `Arrival recorded at ${acceptedUnit?.name ?? "destination ward"}.`;
-    } else if (movement.stage === "moving") {
-      verdictTone = "good";
-      verdictShort = "In Transit";
-      verdictTitle = `En route to ${acceptedUnit?.name ?? "receiving unit"}.`;
-    } else if (acceptedUnit) {
-      verdictTone = "good";
-      verdictShort = "Bed Accepted";
-      verdictTitle = `Bed allocated at ${acceptedUnit.name}.`;
-    }
+    const linkedAdmission = [...admissions]
+      .reverse()
+      .find((admission) => admission.id === movement.admissionId || admission.movementId === movement.id);
+    const departed = linkedAdmission?.state === "departed";
+    const verdict = movementVerdict(movement, acceptedUnit, departed);
+    const historical = departed || movement.closure?.outcome === "did_not_proceed";
 
     const dynamicRecord: PatientNowRecord = {
       id: movement.id,
@@ -195,12 +221,7 @@ export function resolvePatientNowRecord(
         ? `${movement.withdrawnReferrals.length} referral withdrawals recorded. See the movement for details.`
         : null,
       lastSeen: null,
-      verdict: {
-        tone: verdictTone,
-        short: verdictShort,
-        title: verdictTitle,
-        gates: [],
-      },
+      verdict,
       reason: `Movement request: ${movement.cohort} cohort, ${movement.security === "Secure" ? "secure" : "open"} bed. Origin: ${originEdName}.`,
       ring: [
         {
@@ -221,7 +242,7 @@ export function resolvePatientNowRecord(
           : []),
       ],
       ladder: "Review the current movement for escalation and next actions",
-      next: movementNextSteps(movement, acceptedUnit),
+      next: movementNextSteps(movement, acceptedUnit, departed),
       transport: movement.transport
         ? [
             ["Status", transportLeg(movement.transport) ?? "Booked"],
@@ -245,11 +266,11 @@ export function resolvePatientNowRecord(
       escortRequired: movement.transport?.escortRequired,
       presentations: [
         {
-          date: "Current Presentation",
+          date: historical ? "Previous Presentation" : "Current Presentation",
           year: 2026.62,
-          current: true,
+          current: !historical,
           where: originEdName,
-          to: acceptedUnit?.name ?? "Seeking bed",
+          to: acceptedUnit?.name ?? (historical ? "No admission recorded" : "Seeking bed"),
           los: waitedStr,
           losFull: `${waitedStr} at ${originEdName}`,
           source: "Emergency Department",
@@ -273,7 +294,11 @@ export function resolvePatientNowRecord(
             outcome: uid === movement.acceptedUnitId ? "Accepted" : "Referred — see movement for response",
             why: "",
           })),
-          outcome: acceptedUnit ? `Accepted by ${acceptedUnit.name}` : "Placement requested",
+          outcome: historical
+            ? verdict.title
+            : acceptedUnit
+              ? `Accepted by ${acceptedUnit.name}`
+              : "Placement requested",
           team: "Team not recorded here",
           story: `Acute placement request initiated at ${originEdName}.`,
         },
@@ -309,6 +334,7 @@ export function resolvePatientNowRecord(
       liveMovement: movement,
       livePatient,
       liveReferral: referral,
+      liveAdmission: linkedAdmission,
       displayName,
       preferredName,
       currentStageIndex: stageIdx,
@@ -379,26 +405,8 @@ export function resolvePatientNowRecord(
           ? liveUnit(activeAdmission.unitId)
           : undefined;
 
-      let verdictTone: "danger" | "good" | "warn" = "warn";
-      let verdictShort = "Seeking Bed";
-      let verdictTitle = "Placement request active across network wards.";
-
-      if (latestDeparture) {
-        verdictShort = "Departed";
-        verdictTitle = "Departure recorded; no current ward stay.";
-      } else if (activeMovement.stage === "arrived") {
-        verdictTone = "good";
-        verdictShort = "Arrived";
-        verdictTitle = `Arrival recorded at ${acceptedUnit?.name ?? "destination ward"}.`;
-      } else if (activeMovement.stage === "moving") {
-        verdictTone = "good";
-        verdictShort = "In Transit";
-        verdictTitle = `En route to ${acceptedUnit?.name ?? "receiving unit"}.`;
-      } else if (acceptedUnit) {
-        verdictTone = "good";
-        verdictShort = "Bed Accepted";
-        verdictTitle = `Bed allocated at ${acceptedUnit.name}.`;
-      }
+      const verdict = movementVerdict(activeMovement, acceptedUnit, latestDeparture);
+      const historical = latestDeparture || activeMovement.closure?.outcome === "did_not_proceed";
 
       const dynamicRecord: PatientNowRecord = {
         id: patient.id,
@@ -417,12 +425,7 @@ export function resolvePatientNowRecord(
           ? `${activeMovement.withdrawnReferrals.length} referral withdrawals recorded. See the movement for details.`
           : null,
         lastSeen: null,
-        verdict: {
-          tone: verdictTone,
-          short: verdictShort,
-          title: verdictTitle,
-          gates: [],
-        },
+        verdict,
         reason: `Movement request: ${activeMovement.cohort} cohort, ${activeMovement.security === "Secure" ? "secure" : "open"} bed. Origin: ${originEdName}.`,
         ring: [
           {
@@ -443,7 +446,7 @@ export function resolvePatientNowRecord(
             : []),
         ],
         ladder: "Review the current movement for escalation and next actions",
-        next: movementNextSteps(activeMovement, acceptedUnit),
+        next: movementNextSteps(activeMovement, acceptedUnit, latestDeparture),
         transport: activeMovement.transport
           ? [
               ["Status", transportLeg(activeMovement.transport) ?? "Booked"],
@@ -467,11 +470,11 @@ export function resolvePatientNowRecord(
         escortRequired: activeMovement.transport?.escortRequired,
         presentations: [
           {
-            date: "Current Presentation",
+            date: historical ? "Previous Presentation" : "Current Presentation",
             year: 2026.62,
-            current: true,
+            current: !historical,
             where: originEdName,
-            to: acceptedUnit?.name ?? "Seeking bed",
+            to: acceptedUnit?.name ?? (historical ? "No admission recorded" : "Seeking bed"),
             los: waitedStr,
             losFull: `${waitedStr} at ${originEdName}`,
             source: "Emergency Department",
@@ -486,7 +489,11 @@ export function resolvePatientNowRecord(
               outcome: uid === activeMovement.acceptedUnitId ? "Accepted" : "Referred — see movement for response",
               why: "",
             })),
-            outcome: acceptedUnit ? `Accepted by ${acceptedUnit.name}` : "Placement requested",
+            outcome: historical
+              ? verdict.title
+              : acceptedUnit
+                ? `Accepted by ${acceptedUnit.name}`
+                : "Placement requested",
             team: "Team not recorded here",
             story: `Acute placement request initiated at ${originEdName}.`,
           },

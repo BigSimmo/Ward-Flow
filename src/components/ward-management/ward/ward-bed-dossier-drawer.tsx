@@ -24,14 +24,6 @@ interface WardBedDossierDrawerProps {
   onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
 }
 
-const WAITING_MATCH = {
-  name: "Aaron K.",
-  detail: "34yo male",
-  source: "Emergency Dept (Psychiatric Assessment Team)",
-  status: "Medically cleared",
-  wait: "Wait recorded",
-};
-
 function recordedBlocker(value: string | undefined): BedReleaseBlocker {
   if (value && (BED_RELEASE_BLOCKERS as readonly string[]).includes(value)) {
     return value as BedReleaseBlocker;
@@ -62,18 +54,17 @@ export function WardBedDossierDrawer({
   bedDrawerRef,
   onKeyDown,
 }: WardBedDossierDrawerProps) {
-  const [candidateAllocated, setCandidateAllocated] = useState(false);
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(recordedBlocker(bedItem?.blockReason));
 
   useWardModalFocus(true, bedDrawerRef, onClose);
 
   const bedLabel = `Bed ${String(selectedBed).padStart(2, "0")}`;
-  const isReady = bedItem?.status === "ready" || (!bedItem?.patientAlias && selectedBed === 20);
+  const isReady = bedItem?.status === "ready";
   const occupantAlias = bedItem?.patientAlias ?? "No occupant recorded";
   const isOccupied = Boolean(bedItem?.patientAlias);
   const isAwayAtEd = bedItem?.awayAtEdHours !== null && bedItem?.awayAtEdHours !== undefined;
-  const title = isReady ? WAITING_MATCH.name : occupantAlias;
+  const title = isReady ? "Ready bed" : occupantAlias;
   const knownAs =
     bedItem?.preferredName && bedItem.preferredName !== occupantAlias ? `Known as ${bedItem.preferredName}` : null;
 
@@ -122,7 +113,7 @@ export function WardBedDossierDrawer({
               </h2>
               <p className={styles.drawerKicker}>
                 {isReady
-                  ? "Waiting to come in. This bed is empty and offered."
+                  ? "No patient is allocated by this drawer. Review current referrals with the flow coordinator."
                   : [knownAs, bedItem?.stayBand, isAwayAtEd ? "Away at an emergency department" : null]
                       .filter(Boolean)
                       .join(" · ") || "On this ward"}
@@ -138,23 +129,19 @@ export function WardBedDossierDrawer({
           <div className={styles.drawerBody}>
             <div className={styles.card}>
               <div className={styles.cardHead}>
-                <h3 className={styles.cardTitle}>Person waiting</h3>
+                <h3 className={styles.cardTitle}>Placement review</h3>
               </div>
               <dl className={styles.factList}>
-                <Fact wide label="Who" value={`${WAITING_MATCH.name} · ${WAITING_MATCH.detail}`} />
-                <Fact wide label="Source" value={WAITING_MATCH.source} />
-                <Fact label="Status" value={WAITING_MATCH.status} />
-                <Fact label="Wait" value={WAITING_MATCH.wait} />
+                <Fact wide label="Candidate" value="No patient match is recorded for this bed." />
+                <Fact
+                  wide
+                  label="Allocation"
+                  value="The flow coordinator reviews eligibility and current capacity before recording a shared bed reservation."
+                />
               </dl>
-              {candidateAllocated ? (
-                <div className={`${styles.alertBanner} ${styles.alertSuccess}`}>
-                  <span>Allocated to {WAITING_MATCH.name}. Bed locked for transit.</span>
-                </div>
-              ) : (
-                <button type="button" className={styles.btnPrimaryAction} onClick={() => setCandidateAllocated(true)}>
-                  Allocate this bed to {WAITING_MATCH.name} &rarr;
-                </button>
-              )}
+              <Link href="/mockups/ward-flow/referrals" className={styles.btnPrimaryAction}>
+                Review current referrals &rarr;
+              </Link>
             </div>
 
             <div className={styles.card}>

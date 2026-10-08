@@ -3891,14 +3891,7 @@ export function ReferralIntakeForm() {
                             ) : null}
                             <div className={pageStyles.destMetadataPanel}>
                               <p className={`${styles.destinationNote} ${pageStyles.destinationNote}`}>
-                                <span>
-                                  {option.catchment.sentence.includes("approved-hospital column is not seeded")
-                                    ? "Statewide hospital catchment · Direct acute triage & admission pathway"
-                                    : option.catchment.sentence.includes("No suburb chosen yet")
-                                      ? "No patient suburb selected yet · Catchment clinic unlinked"
-                                      : option.catchment.sentence}
-                                </span>
-                                <span className="sr-only">{option.catchment.sentence}</span>
+                                <span>{option.catchment.sentence}</span>
                               </p>
                               {option.suggested ? (
                                 <p className={`${styles.destinationNote} ${pageStyles.destinationNote}`}>

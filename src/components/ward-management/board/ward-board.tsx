@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Field, Select, TextInput } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import {
@@ -33,7 +34,7 @@ import {
   headlineAvailable,
   sinceYesterday,
 } from "@/components/ward-management/ward-board-derivations";
-import { calendarDateOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, formatInstant, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
@@ -55,6 +56,8 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { wardSites } from "@/components/ward-management/ward-sites";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
+
+import { parseReleaseDayInstant } from "@/components/ward-management/ward/release-day";
 
 import { asAtStamp, WardDailySheet } from "./ward-daily-sheet";
 import { StrandedPrompts } from "./stranded-prompts";
@@ -1058,6 +1061,11 @@ export function WardBoard({
    * person, and so nothing in this component ever has an ordinal to print.
    */
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [dateEdit, setDateEdit] = useState<{
+    admissionId: string;
+    time: string;
+    day: "recorded" | "today" | "tomorrow";
+  } | null>(null);
   /*
    * The destination this ward would record, defaulted to the FIRST of the five rather than to
    * nothing. A "choose one" placeholder would be the safer-looking option and is the wrong one
@@ -1151,6 +1159,7 @@ export function WardBoard({
   const closeDetail = useCallback(() => {
     focusBackTo.current = selectedKey;
     setSelectedKey(null);
+    setDateEdit(null);
   }, [selectedKey]);
 
   /* Escape closes the slide-out from anywhere inside the board's three zones — the tiles and the
@@ -2844,19 +2853,93 @@ export function WardBoard({
                           >
                             Record a blocker
                           </button>
-                          {/* This opened the old return-date dialog, whose Save recorded a LEAVE bed
-                              for a person whose discharge date was being moved: the wrong record.
-                              That dialog went with "Set a return date" (Josh, leave-bed Q4, 25 Sept),
-                              and moving a discharge date is not wired yet. */}
-                          <button
-                            type="button"
-                            className={styles.detailSecondaryBtn}
-                            aria-disabled="true"
-                            title="Not wired in this prototype."
-                            onClick={(event) => event.preventDefault()}
-                          >
-                            Move the date
-                          </button>
+                          {dateEdit?.admissionId === selectedTile.key ? (
+                            <form
+                              onSubmit={(event) => {
+                                event.preventDefault();
+                                const admission = admissions.find((row) => row.id === selectedTile.key);
+                                const today = parseReleaseDayInstant(
+                                  now,
+                                  dateEdit.day === "tomorrow" ? "tomorrow" : "today",
+                                  dateEdit.time,
+                                );
+                                if (!admission || today === undefined) return;
+                                const expectedDischargeAt =
+                                  dateEdit.day === "recorded" && admission.expectedDischargeAt !== null
+                                    ? today +
+                                      (Math.floor(admission.expectedDischargeAt / MINUTES_PER_DAY) -
+                                        Math.floor(now / MINUTES_PER_DAY)) *
+                                        MINUTES_PER_DAY
+                                    : today;
+                                dispatchAndReport(
+                                  () =>
+                                    dispatch({
+                                      type: "UPDATE_EXPECTED_DISCHARGE",
+                                      role: "ward",
+                                      actingUnitId: unit.id,
+                                      now,
+                                      admissionId: admission.id,
+                                      expectedDischargeAt,
+                                    }),
+                                  "Expected departure updated.",
+                                  "Expected departure updated.",
+                                );
+                                setDateEdit(null);
+                              }}
+                            >
+                              <Field label="Departure day">
+                                <Select
+                                  aria-label="Departure day"
+                                  value={dateEdit.day}
+                                  onChange={(event) =>
+                                    setDateEdit({
+                                      ...dateEdit,
+                                      day: event.target.value as "recorded" | "today" | "tomorrow",
+                                    })
+                                  }
+                                >
+                                  <option value="recorded">Keep recorded day</option>
+                                  <option value="today">Today</option>
+                                  <option value="tomorrow">Tomorrow</option>
+                                </Select>
+                              </Field>
+                              <Field label="Expected departure time">
+                                <TextInput
+                                  aria-label="Expected departure time"
+                                  type="time"
+                                  required
+                                  value={dateEdit.time}
+                                  onChange={(event) => setDateEdit({ ...dateEdit, time: event.target.value })}
+                                />
+                              </Field>
+                              <button type="submit" className={styles.detailSecondaryBtn}>
+                                Save departure date
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.detailSecondaryBtn}
+                                onClick={() => setDateEdit(null)}
+                              >
+                                Cancel date change
+                              </button>
+                            </form>
+                          ) : (
+                            <button
+                              type="button"
+                              className={styles.detailSecondaryBtn}
+                              onClick={() => {
+                                const admission = admissions.find((row) => row.id === selectedTile.key);
+                                if (admission)
+                                  setDateEdit({
+                                    admissionId: admission.id,
+                                    time: formatInstant(admission.expectedDischargeAt ?? now),
+                                    day: admission.expectedDischargeAt === null ? "today" : "recorded",
+                                  });
+                              }}
+                            >
+                              Move the date
+                            </button>
+                          )}
                           <div data-testid="ward-board-away-at-ed" style={{ flex: "1 1 100%" }}>
                             {selectedOccupant.awayAtEdHours === null ? (
                               <button
