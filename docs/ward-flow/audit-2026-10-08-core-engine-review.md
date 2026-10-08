@@ -226,6 +226,26 @@ Scope: `ward-flow-events.ts` (role table), `ward-audit.ts`, `ward-flow-roles.ts`
 - **A1-14. Either side can add corrections to the other side's referral** (`:2430`; reducer 7173). No `referralSenderRole` check, unlike `RECORD_REFERRER_WITHDRAWAL`.
 - **A1-15. Coordinator cockpit records its decisions as "Ward manager"** (`patients/patient-transit-operations.tsx:169`, 302, 589). Hard-coded role `ward`, so override acceptances are attributed to a ward.
 
+## Area 2 findings: saving and loading state
+
+Scope: storage validation, persistence classification, scenario file, `shell/ward-facade.ts`, `ward-flow-provider.tsx`, `src/lib/cloud-scenario-vault.ts`, `backend/ward-flow`, and the other session/local storage writers. Five items were confirmed by a throwaway script; the rest by reading. The other storage writers (`access-record.ts`, `patient-query-handoff.ts`, `referral-intake.tsx`, `hub-browser-memory.ts`, `use-dirty-state-guard.ts`) store no typed text. Backend token checks are sound, sessions are per user and no SQL is built from input.
+
+- **A2-1. Scenario save always fails after a drawer referral** (`ward-flow-storage-validation.ts:89`). The validator misreads `Referral.intake` fields (string `expectedAt`/`estimatedAt`, `medicalClearance` without `at`) and rejects the whole world. Confirmed by script. Defeats the D-18 save route for the main typed-text flow.
+- **A2-2. Free-text discharge barrier reaches session storage and reloads** (reducer 8483). Extends S2-12: the validator never checks `dischargeBarrier`, so the text survives reload and file load. Confirmed by script.
+- **A2-3. Classification comment undercounts unchecked safe-event fields** (`ward-flow-persistence-classification.ts:100`). Also unchecked: `RECORD_ED_OUTCOME.outcome`, `RECORD_LEAVE_BED.kind`, `SET_STEP_DOWN_CANDIDATE.stepDownCandidate`, `STAND_DOWN_BROADCAST_ALERT.stoodDownByRole`. `RECORD_LEAVE_BED` with typed `kind` accepted and persisted (confirmed by script).
+- **A2-4. `null` times load and raise false legal alerts** (`ward-flow-storage-validation.ts:86`). Any `*At`/`*Minutes` key may be `null`; a `null` `legalForm.dueAt` shows "Legal due time passed". Confirmed by script.
+- **A2-5. Many closed-list fields are not checked on load** (`:336`). Admission sex, legal status, closure/examination/ED outcome, leave-bed kind, bed-release fields, buzz message, intake constraints, destination sex/unit, referral age band/source/region/site. Confirmed by script; this is what makes slice-1 findings 9–13 reachable through stored or imported state.
+- **A2-6. A failed save leaves an older snapshot that reload silently restores** (`ward-flow-provider.tsx:840`).
+- **A2-7. "Clear transient cache" is undone within 30 seconds** (`settings/settings-screen.tsx:708`). The save effect rewrites the world on the next tick.
+- **A2-8. Backend returns 503 instead of 409 on racing first saves** (`backend/ward-flow/database.mjs:224`). Azure answers 409 to `if-none-match: *`; only 412 is handled. The fake storage in `backend.test.mjs` returns 412, so the test cannot catch it. Based on Azure's documented codes; not run.
+- **A2-9. Cloud vault bypasses all save/load protections** (`src/lib/cloud-scenario-vault.ts:22`). No version or validation on load; uploads ignore the typed-text lock. Not yet wired (waits on WF-29).
+- **A2-10. "Since last look" survives reset and file load** (`coordinator/since-last-look.ts:15`). Reused ids are treated as already seen; unrelated records show as new.
+- **A2-11. Whole world serialised to storage every 30 seconds with no change** (`ward-flow-provider.tsx:829`). Performance.
+- **A2-12. A new BroadcastChannel per dispatch re-renders every other tab** (`:674`). Tabs share no state, so this is wasted work.
+- **A2-13. Validator re-types lists that exist as constants** (`ward-flow-storage-validation.ts:535`). Adding a broadcast category would make every saved day with it fail to load.
+- **A2-14. Unused `WardFlowClockProvider` computes a different time** (`ward-flow-provider.tsx:1013`). Dead code with a latent clock bug.
+- **A2-15. Reload after midnight discards the day with a "damaged" message** (`:404`). Dropping the day is deliberate; the wording misleads.
+
 ## Next steps
 
 1. Reproduce the two stranded-in-transit findings (slice-1 finding 1 and S2-6) and the unreleasable seeded bed (S2-1) with failing reducer tests, then fix them.
