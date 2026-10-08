@@ -84,11 +84,23 @@ export type HeroStatProps = {
   onToggle?: () => void;
   expanded?: boolean;
   controls?: string;
+  /** One line (value beside label), for a second hero row of toggles. */
+  inline?: boolean;
   className?: string;
 };
 
 /** A count on the hero band: mono value over a label, hairline separators between items. */
-export function HeroStat({ value, label, tone, trend, onToggle, expanded, controls, className }: HeroStatProps) {
+export function HeroStat({
+  value,
+  label,
+  tone,
+  trend,
+  onToggle,
+  expanded,
+  controls,
+  inline = false,
+  className,
+}: HeroStatProps) {
   const body = (
     <>
       <span className={styles.valueLine}>
@@ -102,9 +114,9 @@ export function HeroStat({ value, label, tone, trend, onToggle, expanded, contro
       </span>
     </>
   );
-  if (!onToggle) return <div className={cx(styles.stat, className)}>{body}</div>;
+  if (!onToggle) return <div className={cx(styles.stat, inline && styles.inline, className)}>{body}</div>;
   return (
-    <div className={cx(styles.stat, className)}>
+    <div className={cx(styles.stat, inline && styles.inline, className)}>
       <button
         type="button"
         className={styles.statToggle}

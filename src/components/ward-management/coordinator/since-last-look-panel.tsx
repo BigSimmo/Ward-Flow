@@ -1,7 +1,7 @@
 "use client";
 
 import { History } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { createBrowserStore } from "@/lib/client-store-factory";
 
@@ -15,6 +15,7 @@ import {
   LAST_LOOK_STORAGE_KEY,
   parseLastLookSnapshot,
   takeLastLookSnapshot,
+  type ChangesSinceLastLook,
   type LastLookSnapshot,
   type LastLookWorld,
 } from "./since-last-look";
@@ -91,15 +92,23 @@ function ActivityTimeline({ lines }: { lines: readonly SinceActivityLine[] }) {
   );
 }
 
-export function SinceLastLookPanel({
-  world,
-  now,
-  activity = [],
-}: {
-  world: LastLookWorld;
-  now: Instant;
-  activity?: readonly SinceActivityLine[];
-}) {
+/** Total new things since the last look, for the hero's "New events" count. */
+export function sinceLastLookCount(changes: ChangesSinceLastLook | undefined): number {
+  if (!changes) return 0;
+  return (
+    changes.newReferralIds.length +
+    changes.newMovementIds.length +
+    changes.bedsFreed.reduce((sum, entry) => sum + entry.count, 0) +
+    changes.newDelays.length +
+    changes.newEscalationIds.length
+  );
+}
+
+/**
+ * Remembers the picture when the coordinator leaves Home and compares it with now. Lives on the
+ * screen, not the panel, so the hero can count new events while the panel itself is closed.
+ */
+export function useSinceLastLook(world: LastLookWorld, now: Instant) {
   const current = useMemo(() => takeLastLookSnapshot(world, now), [world, now]);
   const latest = useRef(current);
   useEffect(() => {
@@ -129,7 +138,37 @@ export function SinceLastLookPanel({
   }, []);
 
   const changes = useMemo(() => changesSinceLastLook(previous, current, world), [previous, current, world]);
+  const markSeen = useCallback(() => writeSnapshot(latest.current), []);
+  return { changes, markSeen };
+}
 
+export function SinceLastLookPanel({
+  changes,
+  now,
+  activity = [],
+  onMarkSeen,
+  placement = "column",
+}: {
+  changes: ChangesSinceLastLook | undefined;
+  now: Instant;
+  activity?: readonly SinceActivityLine[];
+  onMarkSeen: () => void;
+  /** `band`: opened from the hero's New events count. `column`: the phone card under the queue. */
+  placement?: "band" | "column";
+}) {
+  if (!changes && placement === "band") {
+    // A first look has nothing to compare with yet; the recent activity still reads.
+    return (
+      <Card className={styles.sinceCard} data-placement={placement} data-testid="ward-since-last-look">
+        <CardHead icon={History} title="Since you looked" aside={<Badge variant="mono">First look</Badge>} />
+        <p className={styles.sinceQuiet}>
+          <StatusGlyph tone="neutral" size={9} />
+          New events count from your next look.
+        </p>
+        <ActivityTimeline lines={activity} />
+      </Card>
+    );
+  }
   if (!changes) return null;
 
   const since = formatInstantWithDay(changes.since, now);
@@ -138,7 +177,7 @@ export function SinceLastLookPanel({
 
   if (!hasAnyChange(changes)) {
     return (
-      <Card className={styles.sinceCard} data-testid="ward-since-last-look">
+      <Card className={styles.sinceCard} data-placement={placement} data-testid="ward-since-last-look">
         <CardHead icon={History} title="Since you looked" aside={<Badge variant="mono">{ago}</Badge>} />
         <p className={styles.sinceQuiet}>
           <StatusGlyph tone="success" size={9} />
@@ -194,7 +233,12 @@ export function SinceLastLookPanel({
   }
 
   return (
-    <Card className={styles.sinceCard} aria-label="Since you last looked" data-testid="ward-since-last-look">
+    <Card
+      className={styles.sinceCard}
+      data-placement={placement}
+      aria-label="Since you last looked"
+      data-testid="ward-since-last-look"
+    >
       <CardHead
         icon={History}
         title="Since you looked"
@@ -216,7 +260,7 @@ export function SinceLastLookPanel({
       </ul>
       <ActivityTimeline lines={activity} />
       <div className={styles.cardFoot}>
-        <Button variant="sec" size="sm" onClick={() => writeSnapshot(current)}>
+        <Button variant="sec" size="sm" onClick={onMarkSeen}>
           Mark as seen
         </Button>
       </div>
