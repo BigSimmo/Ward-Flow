@@ -70,6 +70,10 @@ The coordinator's remembered snapshot separately checks its existing header, ID 
 counts. Comparison separates newly freed beds and one delay row per movement. The stored schema
 and its exclusion of names, notes and typed text remain unchanged.
 
+Statistics separately reads finite pull/arrival instants and tallies each movement's declines.
+Missing measurements remain absent, negative gaps remain counted as incoherent, exact referral IDs
+are retained and unsupported decline reasons still fail rather than disappearing from totals.
+
 Final boundary repairs: protected departures use the approved scoped projection; transfer movements record their own arrival history/closure rather than copying earlier stages. The stage guard uses syntax-tree ancestry and drives the protected transfer. Care clock fields are covered by the re-anchor contract; coding supports a not-applicable receiver and rejects incompatible leave endings. Final offline evidence is in the dated WA audit report.
 
 ## WA remediation update — 3 October 2026
