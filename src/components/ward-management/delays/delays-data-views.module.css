@@ -1979,3 +1979,124 @@ span.workspaceMeasure,
   font-weight: 600;
   text-align: right;
 }
+
+/* Phone (simplified): the waiting list as stacked rows. Each row leads with the person, the ED
+ * wait on the right, then the blocker with the urgency, then where they are waiting from, with the
+ * inspect control at the end. Selection boxes, the responsible team badge and the last update stay
+ * on the larger screen, as do the owner, cause and sort selects; the marks and the search stay.
+ * Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .waitingPanel .toolbar > .selectLabel {
+    display: none;
+  }
+
+  .waitingPanel .search {
+    width: 100%;
+    height: var(--spacing-tap, 3rem);
+  }
+
+  .markBar {
+    flex-wrap: wrap;
+  }
+
+  .markBar button {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .waitingTable {
+    --ward-table-min-width: 0;
+    display: block;
+    width: 100%;
+  }
+
+  .waitingTable thead {
+    display: none;
+  }
+
+  .waitingTable tbody {
+    display: block;
+  }
+
+  .waitingTable tbody tr:not(.detailRow) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto var(--spacing-tap, 3rem);
+    grid-template-areas:
+      "name wait open"
+      "cause urgency open"
+      "from from open";
+    column-gap: var(--wf-s-2);
+    row-gap: 2px;
+    align-items: center;
+    padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-2) var(--wf-s-3);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .waitingTable tbody tr:not(.detailRow) > :is(th, td) {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .waitingTable tbody tr:not(.detailRow) > .checkboxCell,
+  .waitingTable tbody tr:not(.detailRow) > .ownerColumn,
+  .waitingTable tbody tr:not(.detailRow) > td:has(> .update) {
+    display: none;
+  }
+
+  .waitingTable tbody tr > th {
+    grid-area: name;
+  }
+
+  .waitingTable tbody tr > .wait {
+    grid-area: wait;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .waitingTable tbody tr > .cause {
+    grid-area: cause;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .waitingTable tbody tr > td:has(> .urgency) {
+    grid-area: urgency;
+    justify-self: end;
+  }
+
+  .waitingTable tbody tr > .fromColumn {
+    grid-area: from;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--wf-ink-3);
+  }
+
+  .waitingTable tbody tr > td:has(> .openLink) {
+    grid-area: open;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .waitingTable tbody tr > td:has(> .openLink) > .openLink {
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+  }
+
+  .waitingTable tbody tr > td:only-child {
+    grid-column: 1 / -1;
+    grid-area: auto;
+  }
+
+  .waitingTable tbody tr.detailRow {
+    display: block;
+  }
+
+  .waitingTable tbody tr.detailRow > td {
+    display: block;
+  }
+}

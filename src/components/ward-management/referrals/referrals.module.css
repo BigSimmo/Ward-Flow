@@ -8692,3 +8692,108 @@ input.historyField:focus-visible {
     min-height: var(--ward-tap);
   }
 }
+
+/* Phone (8 Oct 2026): the referral board fits 390px. The two hero tracks stack, one per row, and
+   each scrolls sideways on its own; the cohort chips are one sideways row; a decided row ends in an
+   ellipsis instead of clipping the ward name mid-word. Desktop is untouched. */
+@media (max-width: 48rem) {
+  /* Live sits beside the title rather than on a row of its own. The shared Hero's first row is
+     title, figures, aside; a grid puts the aside in the title row's right column. */
+  .screen[data-ward-design="v6"] .v6HeroWrap > section > div:first-child {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .screen[data-ward-design="v6"] .v6HeroWrap > section > div:first-child > div:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+
+  .screen[data-ward-design="v6"] .v6HeroWrap > section > div:first-child > div:last-child:not(:nth-child(2)) {
+    grid-row: 1;
+    grid-column: 2;
+    flex: none;
+  }
+
+  .screen[data-ward-design="v6"] .v6Tracks {
+    flex: 1 1 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--wf-s-2);
+  }
+
+  .screen[data-ward-design="v6"] .v6Tracks > * {
+    width: 100%;
+  }
+
+  .screen[data-ward-design="v6"] .v6FilterBar.v6FilterBar {
+    gap: var(--wf-s-2);
+  }
+
+  .screen[data-ward-design="v6"] .v6Search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .screen[data-ward-design="v6"] .v6Cohorts {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    margin-inline: calc(-1 * var(--wf-s-3));
+    padding-inline: var(--wf-s-3);
+  }
+
+  .screen[data-ward-design="v6"] .v6Cohorts::-webkit-scrollbar {
+    display: none;
+  }
+
+  .screen[data-ward-design="v6"] .v6Cohorts > * {
+    flex: none;
+  }
+
+  .screen[data-ward-design="v6"] .v6FilterActions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  .screen[data-ward-design="v6"] .v6RowLine {
+    display: block;
+  }
+
+  .screen[data-ward-design="v6"] .v6RowLine > svg {
+    display: inline-block;
+    margin-right: var(--wf-s-1);
+    vertical-align: -1px;
+  }
+
+  /* New referral: a fieldset's default min-width is its content, which pushed the page to 409px.
+     Every step fits the screen and stacks into one column. */
+  .screen[data-referral-view="intake"] fieldset {
+    min-width: 0;
+  }
+
+  /* Where to refer is a fieldset card of its own; on a phone it takes the same edges as the
+     other steps instead of adding a second inset. */
+  .screen[data-referral-view="intake"] .intakeDecision > .choiceCard {
+    padding: 0;
+  }
+
+  /* Section titles keep their full text; the quieter meta beside them truncates first. */
+  .screen[data-ward-design="v6"] .v6Section > div:first-child h2 {
+    flex: none;
+  }
+
+  /* The outcome takes the second line and ends in an ellipsis. */
+  .screen[data-ward-design="v6"] .v6RowOutcome {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .screen[data-ward-design="v6"] .v6RowOutcome > span {
+    display: inline;
+  }
+}

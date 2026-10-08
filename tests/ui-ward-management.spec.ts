@@ -236,9 +236,11 @@ test.describe("@mockup Ward Flow command view", () => {
     // cc4deaecaf (23 Sept): at 40rem and below "the phone starts with the task" — the views move
     // behind the rail's Menu button, which opens the same "More pages" sheet. The tap-target floor
     // is what this test guards, so open whichever door this width offers, then measure.
+    // Phone (8 Oct 2026): at 48rem and below the rail is hidden and the header bar's Menu button
+    // opens the same sheet.
     const opener = (await nav.isVisible())
       ? page.getByRole("button", { name: /^All pages/iu })
-      : page.getByTestId("ward-rail").getByRole("button", { name: "Menu", exact: true });
+      : page.getByTestId("ward-bar-phone-menu");
     if (await opener.isVisible()) {
       await opener.click();
       await expect(page.getByTestId("ward-rail-more-pages")).toBeVisible();

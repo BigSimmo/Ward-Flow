@@ -278,6 +278,19 @@
   font-weight: 600;
 }
 
+/* Phone (8 Oct 2026): the cross-link keeps a 48px tap height. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .crossLink {
+    padding-top: var(--wf-s-2);
+  }
+
+  .crossLink a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--spacing-tap, 3rem);
+  }
+}
+
 /*
  * Print: ink-on-paper, no rail, no chrome, no interactive control. The global print reset in
  * globals.css already hides every `header`/`nav`/`button` element (which drops the Print

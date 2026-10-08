@@ -1239,3 +1239,12 @@
     display: none;
   }
 }
+
+/* Phone (simplified): the pressure card (owners, wait spread, recorded times) stays; the waiting
+ * by catchment charts and the runway behind the same tabs stay on the larger screen. Desktop is
+ * unchanged. */
+@media (max-width: 48rem) {
+  .graphPanel {
+    display: none;
+  }
+}

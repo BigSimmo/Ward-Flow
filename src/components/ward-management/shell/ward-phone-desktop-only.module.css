@@ -1,0 +1,59 @@
+/* Phone only (48rem and below). Above it the card never paints, so desktop is unchanged. */
+.ground {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .ground {
+    display: block;
+    flex: 1 0 auto;
+    min-height: 100dvh;
+    padding: var(--wf-s-4);
+    background: var(--ground);
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-4);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    color: var(--wf-ink-1);
+    font-family: var(--wf-font);
+  }
+
+  .icon {
+    width: 20px;
+    height: 20px;
+    color: var(--wf-ink-2);
+  }
+
+  .title {
+    margin: 0;
+    font-size: var(--wf-fs-16);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .line {
+    margin: 0;
+    font-size: var(--wf-fs-13);
+    color: var(--wf-ink-2);
+  }
+
+  .actions {
+    display: flex;
+    gap: var(--wf-s-2);
+    margin-top: var(--wf-s-2);
+  }
+
+  /* The page under the card stays mounted but out of sight until Show anyway. */
+  .ground ~ :global([data-ward-ground]) {
+    display: none;
+  }
+}

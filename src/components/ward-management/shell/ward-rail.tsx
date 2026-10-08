@@ -14,8 +14,10 @@ import {
   Menu,
   PanelLeftOpen,
   Plus,
+  RotateCcwClock,
   Settings,
   SunMoon,
+  Wrench,
 } from "lucide-react";
 
 import { Sheet } from "@/components/ui/sheet";
@@ -53,7 +55,7 @@ import {
   type ServiceBedAlert,
 } from "./ward-service-bed-alerts";
 import { useServiceScope } from "./ward-service-store";
-import { openWardDrawer, closeWardDrawer } from "./ward-drawer-bus";
+import { openWardDrawer, closeWardDrawer, subscribeWardMenu } from "./ward-drawer-bus";
 import styles from "./ward-rail.module.css";
 
 export type { ServiceBedAlert } from "./ward-service-bed-alerts";
@@ -380,6 +382,17 @@ export function WardRail() {
     // shapes, so this keeps it focused rather than handing off to a different node.
     toggleRef.current?.focus();
   }, []);
+
+  // Phone bar (8 Oct 2026): the rail row is hidden under 48rem and the bar's own Menu button opens
+  // this same sheet, so the navigation has one home.
+  useEffect(
+    () =>
+      subscribeWardMenu((trigger) => {
+        moreTriggerRef.current = trigger;
+        setMoreOpen(true);
+      }),
+    [],
+  );
 
   // Keeps the root attribute in sync with the remembered preference on every mount and whenever
   // it changes elsewhere (another tab, the toggle below, Settings).
@@ -1089,6 +1102,33 @@ export function WardRail() {
           ) : null;
         })}
         <div className={styles.sheetUtility}>
+          {/* Phone only: the bar drops Activity and Tools under 48rem, so they live here. */}
+          <button
+            type="button"
+            className={`${styles.sheetUtilityLink} ${styles.sheetPhoneOnly}`}
+            data-testid="ward-rail-sheet-activity"
+            onClick={() => {
+              setMoreOpen(false);
+              openWardDrawer("activity");
+            }}
+          >
+            <RotateCcwClock aria-hidden="true" strokeWidth={1.75} />
+            <span>Activity</span>
+            <ChevronRight aria-hidden="true" className={styles.sheetChevron} />
+          </button>
+          <button
+            type="button"
+            className={`${styles.sheetUtilityLink} ${styles.sheetPhoneOnly}`}
+            data-testid="ward-rail-sheet-tools"
+            onClick={() => {
+              setMoreOpen(false);
+              openWardDrawer("tools");
+            }}
+          >
+            <Wrench aria-hidden="true" strokeWidth={1.75} />
+            <span>Tools</span>
+            <ChevronRight aria-hidden="true" className={styles.sheetChevron} />
+          </button>
           <Link href={settingsHref()} className={styles.sheetUtilityLink} onClick={() => setMoreOpen(false)}>
             <Settings aria-hidden="true" strokeWidth={1.75} />
             <span>Settings</span>
