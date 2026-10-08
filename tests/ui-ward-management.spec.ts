@@ -294,7 +294,7 @@ test.describe("@mockup Ward Flow command view", () => {
     // and Moodjar. FSH Adult Secure is no longer in it: WF-001 is a Female Adult movement
     // and FSH Adult Secure is Male only, so the sex_designation gate added in 6cc80c774 excludes
     // it and Moodjar (next in unit order) takes the freed slot.
-    const shortlist = network.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = network.getByRole("complementary", { name: "Placement", exact: true });
     await expect(shortlist).toContainText("WF-001");
     await expect(shortlist.getByRole("columnheader", { name: /Dabakarn/ })).toBeVisible();
     // Eligibility is a binary verdict, not a score: gates are not commensurable, so no row

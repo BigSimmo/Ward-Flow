@@ -168,13 +168,13 @@ describe("network diagram, referral placement", () => {
 
     // Before selection the placement panel is not merely empty — it is not the aside on screen.
     expect(screen.queryByRole("complementary", { name: "Referral placement" })).toBeNull();
-    expect(screen.getByRole("complementary", { name: "Explainable shortlist" })).toBeInTheDocument();
+    expect(screen.getByRole("complementary", { name: "Placement" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId(`ward-network-referral-${SUBJECT.id}`));
 
     const aside = screen.getByRole("complementary", { name: "Referral placement" });
     expect(
-      screen.queryByRole("complementary", { name: "Explainable shortlist" }),
+      screen.queryByRole("complementary", { name: "Placement" }),
       "both asides were on screen at once — the movement panel did not stand down",
     ).toBeNull();
 

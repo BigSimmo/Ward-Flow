@@ -382,13 +382,13 @@ export function CoordinatorScreen() {
                 <div className={`${styles.shortlistColumn} ${shortlistStyles.shortlistColumn ?? ""}`}>
                   <aside
                     className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
-                    aria-label={selectedReferral ? "Referral placement" : "Explainable shortlist"}
+                    aria-label={selectedReferral ? "Referral placement" : "Placement"}
                     // Journeys prove which movement the panel is for by this attribute.
                     data-subject-movement={selectedReferral ? undefined : selectedMovement?.id}
                   >
                     <div className={`${styles.sheetHandle} ${shortlistStyles.sheetHandle ?? ""}`} aria-hidden="true" />
                     <header className={styles.shortlistHeader}>
-                      <h2>{selectedReferral ? "Referral placement" : "Explainable shortlist"}</h2>
+                      <h2>{selectedReferral ? "Referral placement" : "Placement"}</h2>
                       <button
                         type="button"
                         className={buttonClass({ variant: "ghost", size: "sm" })}

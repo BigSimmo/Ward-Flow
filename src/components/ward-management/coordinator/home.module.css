@@ -912,7 +912,9 @@ button.registerRow:hover {
   width: 100%;
   min-height: 0;
   max-height: 100%;
-  overflow: auto;
+  /* Clip, not auto: a scroll container here would trap Placement's action bar, which holds to
+     the bottom of the window while the ward list scrolls with the page. */
+  overflow: clip;
   padding: var(--wf-s-3) var(--wf-s-4);
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-lg);
