@@ -259,6 +259,9 @@
     overscroll-behavior-x: contain;
     scrollbar-width: none;
   }
+  .tab {
+    height: 2.75rem;
+  }
   .seg::-webkit-scrollbar,
   .trk::-webkit-scrollbar,
   .tabs::-webkit-scrollbar {
