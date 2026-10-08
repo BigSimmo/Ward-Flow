@@ -72,6 +72,7 @@ describe("search operational projections and location filters", () => {
       id: "SYN-SEARCH-HOLD",
       state: "pulled" as const,
       movementId: booked.id,
+      patientId: booked.patientId ?? null,
       unitId: booked.acceptedUnitId!,
     };
     const movement: Movement = {
@@ -85,6 +86,21 @@ describe("search operational projections and location filters", () => {
     expect(matchesSetting(result(movement), "inpatient", [admission])).toBe(false);
     expect(movementSearchState(movement, [{ ...admission, state: "departed" }]).hasBedHold).toBe(false);
     expect(movementSearchState(movement, [{ ...admission, movementId: "WF-other" }]).hasBedHold).toBe(false);
+  });
+
+  it("preserves WF-318's valid authored null-backpointer hold without widening runtime joins", () => {
+    const movement = seed.movements.find((m) => m.id === "WF-318")!;
+    const admission = seed.admissions.find((a) => a.id === movement.admissionId)!;
+    expect(admission.state).toBe("pulled");
+    expect(admission.movementId).toBeNull();
+    expect(admission.patientId).toBe(movement.patientId);
+    expect(movementSearchState(movement, seed.admissions).hasBedHold).toBe(true);
+    expect(movementSearchState(movement, seed.admissions).holdStatus).toBe("Bed hold active");
+    expect(
+      movementSearchState({ ...movement, admissionId: "AD-ARR-01" }, [{ ...admission, id: "AD-ARR-01" }]).hasBedHold,
+    ).toBe(false);
+    expect(movementSearchState(movement, [{ ...admission, patientId: "PT-other" }]).hasBedHold).toBe(false);
+    expect(movementSearchState(movement, [{ ...admission, unitId: "other" }]).hasBedHold).toBe(false);
   });
 
   it("an actual sending stay is inpatient until collection, then becomes transit", () => {

@@ -14,6 +14,7 @@ import {
 } from "@/components/ward-management/patients/patient-now-records";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
 
 export interface ResolvedPatientNow {
   record: PatientNowRecord;
@@ -26,7 +27,12 @@ export interface ResolvedPatientNow {
   currentStageIndex: number;
 }
 
-function movementVerdict(movement: Movement, acceptedUnit?: Unit, departed = false): PatientNowRecord["verdict"] {
+function movementVerdict(
+  movement: Movement,
+  acceptedUnit?: Unit,
+  departed = false,
+  admissions: readonly Admission[] = [],
+): PatientNowRecord["verdict"] {
   if (departed)
     return { tone: "warn", short: "Departed", title: "Departure recorded; no current ward stay.", gates: [] };
   if (movement.closure?.outcome === "did_not_proceed")
@@ -50,8 +56,16 @@ function movementVerdict(movement: Movement, acceptedUnit?: Unit, departed = fal
       title: `En route to ${acceptedUnit?.name ?? "receiving unit"}.`,
       gates: [],
     };
-  if (acceptedUnit)
-    return { tone: "good", short: "Bed Accepted", title: `Bed allocated at ${acceptedUnit.name}.`, gates: [] };
+  if (acceptedUnit) {
+    return movementHasBedHold(movement, admissions)
+      ? { tone: "good", short: "Bed Held", title: `Bed held at ${acceptedUnit.name}.`, gates: [] }
+      : {
+          tone: "warn",
+          short: "Accepted, Awaiting Bed",
+          title: `Acceptance recorded at ${acceptedUnit.name}; no bed hold recorded.`,
+          gates: [],
+        };
+  }
   return { tone: "warn", short: "Seeking Bed", title: "Placement request active across network wards.", gates: [] };
 }
 
@@ -201,7 +215,7 @@ export function resolvePatientNowRecord(
       .reverse()
       .find((admission) => admission.id === movement.admissionId || admission.movementId === movement.id);
     const departed = linkedAdmission?.state === "departed";
-    const verdict = movementVerdict(movement, acceptedUnit, departed);
+    const verdict = movementVerdict(movement, acceptedUnit, departed, admissions);
     const historical = departed || movement.closure?.outcome === "did_not_proceed";
 
     const dynamicRecord: PatientNowRecord = {
@@ -405,7 +419,7 @@ export function resolvePatientNowRecord(
           ? liveUnit(activeAdmission.unitId)
           : undefined;
 
-      const verdict = movementVerdict(activeMovement, acceptedUnit, latestDeparture);
+      const verdict = movementVerdict(activeMovement, acceptedUnit, latestDeparture, admissions);
       const historical = latestDeparture || activeMovement.closure?.outcome === "did_not_proceed";
 
       const dynamicRecord: PatientNowRecord = {

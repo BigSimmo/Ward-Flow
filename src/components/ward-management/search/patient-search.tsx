@@ -563,7 +563,13 @@ export function PatientSearchPage() {
     selectedRow === null
       ? null
       : requestedPreview && (requestedSelectedId === null || selectedId === requestedSelectedId)
-        ? requestedPreview
+        ? requestedPreview.kind === "person"
+          ? {
+              kind: "person",
+              patient:
+                patients.find((patient) => patient.id === requestedPreview.patient.id) ?? requestedPreview.patient,
+            }
+          : selectedRow.originalSubject
         : selectedRow.originalSubject;
 
   const activeFilterCount = useMemo(() => {
@@ -1107,6 +1113,7 @@ Clinical Note: ${p.clinicalNote}`;
                   movements={movements}
                   patients={patients}
                   units={units}
+                  admissions={admissions}
                   now={now}
                   dayZero={dayZero}
                   onClose={() => setPreview(null)}

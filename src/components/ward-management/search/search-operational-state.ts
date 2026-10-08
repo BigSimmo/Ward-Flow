@@ -2,6 +2,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { transportStatusLabel } from "@/components/ward-management/ward-derivations";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
 
 /** The current physical location and destination commitment are separate facts. Acceptance
  * does not reserve a bed, and a requested vehicle has not collected the patient. */
@@ -16,20 +17,7 @@ export function movementSearchState(movement: Movement, admissions: readonly Adm
   const sourceAdmission = admissions.find(
     (admission) => admission.id === movement.sourceAdmissionId && admission.state === "occupied",
   );
-  const heldAdmission = admissions.find(
-    (admission) =>
-      admission.id === movement.admissionId &&
-      admission.movementId === movement.id &&
-      admission.unitId === movement.acceptedUnitId &&
-      admission.state === "pulled",
-  );
-  // Authored demonstration movements predate admissionId (ward-model.ts). Their explicit
-  // pulled/later stage records the hold. A linked live admission is checked instead of guessed.
-  const legacyHeld =
-    movement.admissionId === undefined &&
-    movement.acceptedUnitId !== undefined &&
-    ["pulled", "handover_ready", "moving"].includes(movement.stage);
-  const hasBedHold = movement.closure === undefined && (heldAdmission !== undefined || legacyHeld);
+  const hasBedHold = movementHasBedHold(movement, admissions);
   // A stopped journey records collection but no onward location. It must not put the person
   // back in ED simply because cancellation ended the active transport leg.
   const departedWithoutArrival = job?.collectedAt !== undefined && job.arrivedAt === undefined;
