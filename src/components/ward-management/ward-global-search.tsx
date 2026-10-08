@@ -557,14 +557,18 @@ export function WardGlobalSearch({
     return g;
   }, [tasks, recentsVersion]);
 
+  // A chosen kind with nothing for the current query falls back to All, so a new query never shows
+  // a false "No matches" while the chips beside it count real results.
+  const activeKind: KindFilter = (kindCounts.get(kindFilter) ?? 0) > 0 ? kindFilter : "all";
+
   const groups = useMemo(() => {
     if (isStart) return startGroups;
-    const filter = KIND_FILTERS.find((candidate) => candidate.key === kindFilter) ?? KIND_FILTERS[0];
+    const filter = KIND_FILTERS.find((candidate) => candidate.key === activeKind) ?? KIND_FILTERS[0];
     if (filter.key === "all") {
       return allGroups.map((group) => ({ ...group, items: group.items.slice(0, MAX_RESULTS_PER_GROUP) }));
     }
     return allGroups.filter((group) => filter.groups.includes(group.key));
-  }, [isStart, startGroups, allGroups, kindFilter]);
+  }, [isStart, startGroups, allGroups, activeKind]);
 
   const options = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
@@ -756,10 +760,12 @@ export function WardGlobalSearch({
         select(options[activeIndex].href);
       }
     } else if (event.key === "Tab" && !event.shiftKey && !isStart && groups.length > 1) {
-      // Tab jumps to the next group's first row, the way the palette's footer says it does.
+      // Tab jumps to the next group's first row, the way the palette's footer says it does. From the
+      // last group it is an ordinary Tab, so focus moves on and onBlur closes the palette.
       const current = activeIndex >= 0 ? options[activeIndex] : undefined;
       const groupAt = current ? groups.findIndex((group) => group.items.includes(current)) : -1;
-      const next = groups[(groupAt + 1) % groups.length];
+      if (groupAt === groups.length - 1) return;
+      const next = groups[groupAt + 1];
       event.preventDefault();
       setHoverIndex(-1);
       setActiveIndex(options.indexOf(next.items[0]));
@@ -796,7 +802,7 @@ export function WardGlobalSearch({
                   key={filter.key}
                   type="button"
                   className={styles.kind}
-                  aria-pressed={kindFilter === filter.key}
+                  aria-pressed={activeKind === filter.key}
                   data-empty={count === 0 || undefined}
                   disabled={count === 0 && filter.key !== "all"}
                   onClick={() => chooseKind(filter.key)}

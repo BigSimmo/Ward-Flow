@@ -521,6 +521,29 @@ describe("WardGlobalSearch palette (option B)", () => {
     expect(screen.getAllByTestId(/^ward-global-search-result-(ward|ed|community)-/)).toHaveLength(placeCount);
   });
 
+  it("falls back to All when the chosen kind has nothing for a new query", () => {
+    const { input } = renderPalette();
+    fireEvent.change(input, { target: { value: "ward" } });
+    fireEvent.click(screen.getByTestId("ward-global-search-kind-places"));
+    fireEvent.change(input, { target: { value: movementQuery } });
+
+    expect(screen.getByTestId("ward-global-search-kind-all")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByTestId("ward-global-search-empty")).not.toBeInTheDocument();
+    expect(screen.getByTestId(`ward-global-search-result-movement-${movementQuery}`)).toBeInTheDocument();
+  });
+
+  it("lets Tab leave the search once the last group is reached", () => {
+    const { input } = renderPalette();
+    fireEvent.change(input, { target: { value: "ward" } });
+    const groupCount = screen.getAllByTestId(/^ward-global-search-group-/).length;
+    expect(groupCount).toBeGreaterThan(1);
+
+    for (let step = 0; step < groupCount; step += 1) {
+      expect(fireEvent.keyDown(input, { key: "Tab" })).toBe(false);
+    }
+    expect(fireEvent.keyDown(input, { key: "Tab" })).toBe(true);
+  });
+
   it("remembers an opened record for the session and offers it under Recent before typing", () => {
     clearGlobalSearchRecents();
     const { input, onNavigate } = renderPalette();
