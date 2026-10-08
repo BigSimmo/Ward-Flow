@@ -172,7 +172,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
       titleAction={<ChangeService current={service} />}
       eyebrowLabel="Health service"
       eyebrowDetail={
-        <span data-testid="ward-statistics-service-identity">
+        <span className={detail.siteIdentity} data-testid="ward-statistics-service-identity">
           <span className={detail.eyebrowSites} aria-hidden="true">
             {serviceSites.map((site) => shortSiteName(site.name)).join(", ") || "No hospital recorded"}
           </span>

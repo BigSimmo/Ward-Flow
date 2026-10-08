@@ -3,7 +3,6 @@
  * finder. Tokens only; the wf primitives carry everything else.
  */
 .page {
-  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
@@ -95,9 +94,13 @@
 
 /* Native tables on the v6 table classes. */
 .tableWrap {
-  position: relative;
   min-width: 0;
   overflow-x: auto;
+}
+
+.tableWrap:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
 }
 
 .table {

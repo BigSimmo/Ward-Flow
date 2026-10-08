@@ -3850,7 +3850,6 @@
 }
 
 .screen[data-ward-design="v6"] .panel {
-  min-width: 0;
   margin-bottom: 0 !important;
   border: 1px solid var(--wf-line) !important;
   border-radius: var(--wf-r-lg) !important;
@@ -4657,15 +4656,6 @@
 }
 
 @media (max-width: 820px) {
-  .screen[data-ward-design="v6"] .panelHeader {
-    flex-wrap: wrap;
-  }
-
-  .screen[data-ward-design="v6"] .panelHeaderTitle {
-    min-width: 0;
-    white-space: normal !important;
-  }
-
   .screen[data-ward-design="v6"] .workGrid {
     grid-template-columns: minmax(0, 1fr);
   }

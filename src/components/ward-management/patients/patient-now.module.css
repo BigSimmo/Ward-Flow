@@ -4229,10 +4229,7 @@
 
 /* The seven stages size to their labels, so no label is cut short. */
 .v6Steps {
-  position: relative;
   display: flex;
-  min-width: 0;
-  max-width: 100%;
   justify-content: space-between;
   gap: var(--wf-s-1);
   margin: 0;
@@ -4746,10 +4743,6 @@
 
   .v6Steps {
     overflow-x: auto;
-  }
-
-  .v6GateTitle {
-    white-space: normal;
   }
 
   .v6HeroTabsRow {
