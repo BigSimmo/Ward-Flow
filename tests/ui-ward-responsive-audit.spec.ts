@@ -26,9 +26,11 @@ async function assertKeyboardTableScroll(page: Page) {
 }
 
 test.describe("@mockup Ward responsive containment", () => {
+  test.use({ colorScheme: "light" });
   for (const [label, route] of routes) {
     test(`${label} fits phone and tablet without concealing its local scrolling regions`, async ({
       page,
+      browser,
     }, testInfo) => {
       // CI serves a built application. The explicit local proof also permits first-route dev
       // compilation without classifying compilation time as a layout failure.
@@ -37,12 +39,16 @@ test.describe("@mockup Ward responsive containment", () => {
       await page.goto(`/mockups/ward-flow${route}`, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
 
+      const geometry: { viewport: number; document: number }[] = [];
       for (const width of [320, 390, 768]) {
         await page.setViewportSize({ width, height: 844 });
         await expect
           .poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth))
           .toBeLessThanOrEqual(1);
         await assertKeyboardTableScroll(page);
+        geometry.push(
+          await page.evaluate(() => ({ viewport: innerWidth, document: document.documentElement.scrollWidth })),
+        );
       }
 
       if (route === "/statistics/service/East%20Metro") {
@@ -51,7 +57,25 @@ test.describe("@mockup Ward responsive containment", () => {
 
       // One phone evidence image per affected route, kept with the test result, never committed.
       await page.setViewportSize({ width: 390, height: 844 });
-      await testInfo.attach("phone-layout", { body: await page.screenshot(), contentType: "image/png" });
+      const screenshot = testInfo.outputPath("phone-layout.png");
+      await page.screenshot({ path: screenshot });
+      await testInfo.attach("phone-layout", { path: screenshot, contentType: "image/png" });
+      await testInfo.attach("viewport-evidence", {
+        body: JSON.stringify({ route, geometry, browserVersion: browser.version(), colourScheme: "light" }),
+        contentType: "application/json",
+      });
+
+      // Check the remaining service fix in dark appearance once, without repeating the
+      // superseded phone-design screenshot matrix.
+      if (route === "/statistics/service/East%20Metro") {
+        await page.emulateMedia({ colorScheme: "dark" });
+        await expect
+          .poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth))
+          .toBeLessThanOrEqual(1);
+        const darkScreenshot = testInfo.outputPath("phone-layout-dark.png");
+        await page.screenshot({ path: darkScreenshot });
+        await testInfo.attach("phone-layout-dark", { path: darkScreenshot, contentType: "image/png" });
+      }
     });
   }
 });
