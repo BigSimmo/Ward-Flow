@@ -39,6 +39,10 @@ guards, and appends the audit result after command handling. Internal event fami
   Reason membership, histories and the legal audit outcome are retained. These commands do not
   allocate/release beds or change movement stage. The reason-list contract test follows runtime
   reducer imports and attributes checks to each case or type-narrowed event handler.
+- `ward-flow-legal-form-records-reducer.ts`: receipt, receipt correction and typed paper expiry.
+  Supported-form checks, zero-valued receipts, correction history, later-only extensions and
+  legacy-clock handling are retained. No deadline is calculated. The legal-authorship companion
+  test follows the same runtime reducer imports and rejects invented literal form codes.
 
 `ward-flow-storage-validation.ts` separately validates nested containers, header/counters,
 record shapes, identifiers, cross-record links, capacity bounds, audit data and persistence privacy.
