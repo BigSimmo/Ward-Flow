@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, relative, resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
+import { collectWardModuleGraph } from "./helpers/ward-module-graph";
 
 /**
  * FD-23 AT THE SCREEN BOUNDARY — a ward-facing surface may reach referral data only through the
@@ -78,9 +79,11 @@ import { describe, expect, it } from "vitest";
  *     the TRANSITIVE local import graph, following `@/…` and `./…` specifiers, exactly as
  *     `tests/ward-referral-matching.test.ts` does for the D15 bed-release contract — the precedent
  *     in this repo, and the one whose own comments record what a weaker version of it missed.
- *     `collectModuleGraph`, `scanSource` and the two tests that pin the comment scanner are lifted
- *     from there deliberately: by that file's own account, its earlier extractor was found passing
+ *     The original graph walk, `scanSource` and its comment-scanner tests came from there:
+ *     by that file's own account, its earlier extractor was found passing
  *     33 of 33 with a genuine bed-release import sitting in the graph, one level up.
+ *     NEW-QA-001 now shares an AST graph walk that also follows literal dynamic/import-type edges
+ *     and refuses computed dynamic paths. The existing vocabulary/comment contracts stay intact.
  *
  * (c) **Receiving it through props or context.** No import graph can see this one:
  *     `useWardFlow()` hands every consumer the full `referrals: Referral[]`, because the
@@ -426,21 +429,12 @@ function resolveLocalImport(specifier: string, fromFile: string): string | null 
 
 /** Every file transitively reachable from `entryFiles` via local imports, mapped to its source. */
 function collectModuleGraph(entryFiles: readonly string[]): Map<string, string> {
-  const visited = new Map<string, string>();
-  const queue = [...entryFiles];
-  while (queue.length > 0) {
-    const file = queue.shift()!;
-    if (visited.has(file)) continue;
-    const source = readFileSync(file, "utf8");
-    visited.set(file, source);
-    for (const statement of moduleEdgeStatementsOf(source)) {
-      const specifier = specifierOf(statement);
-      if (!specifier) continue;
-      const resolved = resolveLocalImport(specifier, file);
-      if (resolved && !visited.has(resolved)) queue.push(resolved);
-    }
-  }
-  return visited;
+  // Keep the established vocabulary and role subtraction rules. Widen the graph walk itself
+  // to literal dynamic imports/import types, refusing unresolved computed dynamic boundaries.
+  return collectWardModuleGraph(entryFiles, {
+    readSource: (file) => readFileSync(file, "utf8"),
+    resolveSpecifier: resolveLocalImport,
+  });
 }
 
 /** The ward's OWN code: reachable from a ward-facing entry and from no surface allowed to see
