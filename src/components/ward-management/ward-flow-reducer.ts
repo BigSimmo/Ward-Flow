@@ -1236,6 +1236,20 @@ function movementSourceAdmission(state: WardFlowState, movement: Movement): Admi
  * split `RELEASE_PULL`'s own case already kept between its unit/admission writes and its movement
  * write.
  */
+/**
+ * Whether a movement holds a reserved bed, by the same rule `releasePulledBedAndAdmission` uses.
+ * A seeded journey hand-authored as far as `pulled` or later carries no `admissionId` (fabricating
+ * one would invent an occupant), so `admissionId` alone cannot answer this (review finding S2-1).
+ */
+function movementHoldsBedByStage(movement: Movement): boolean {
+  return (
+    movement.stage === "pulled" ||
+    movement.stage === "handover_ready" ||
+    movement.stage === "moving" ||
+    movement.admissionId !== undefined
+  );
+}
+
 function releasePulledBedAndAdmission(state: WardFlowState, movement: Movement, now: Instant): WardFlowState {
   if (!movement.acceptedUnitId) return state;
   // Fix round (2026-09-16 audit): this used to decide a bed was held from `movement.stage` alone.
@@ -8020,7 +8034,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `movement ${movement.id} was not stopped by STOP_TRANSPORT, so there is no held bed to release this way`,
         );
       }
-      if (movement.admissionId === undefined) {
+      // A stopped journey is closed, so its blocker can no longer change: while it still reads
+      // "awaiting release" the bed has not been released, with or without an `admissionId`.
+      const heldBedOutstanding =
+        movement.admissionId !== undefined ||
+        (movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease &&
+          movementHoldsBedByStage(movement));
+      if (!heldBedOutstanding) {
         return reject(state, event, `movement ${movement.id} holds no bed — it may already have been released`);
       }
       // Same claim-not-proof discipline as RELEASE_PULL and CANCEL_TRANSPORT: this compares what
@@ -8134,7 +8154,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `movement ${movement.id} was not diverted, so there is no diverted bed to release this way`,
         );
       }
-      if (movement.admissionId === undefined) {
+      // A diverted journey stays open until this release closes it, so the closure is the
+      // released marker; a seeded journey with no `admissionId` still holds its bed by stage.
+      if (movement.closure !== undefined || !movementHoldsBedByStage(movement)) {
         return reject(state, event, `movement ${movement.id} holds no bed — it may already have been released`);
       }
       if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId) {

@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { DIVERSION_REASONS, TRANSPORT_WHEREABOUTS } from "@/components/ward-management/ward-change-reasons";
 
 const now = 642;
 type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
@@ -152,5 +153,46 @@ describe("S1-1: discharge is refused while an outbound journey is on the road", 
       leavingDestination: "discharged-to-the-community",
     });
     expect(h.state.admissions.find((a) => a.id === admission.id)?.state).toBe("departed");
+  });
+});
+
+describe("S2-1: a seeded journey with no admission record can still release its bed", () => {
+  const SEEDED = "WF-006"; // hand-authored to `moving`, collected, no admissionId
+
+  it("releases a diverted seeded journey once, refunding the bed and closing it", () => {
+    const h = harness();
+    const seeded = h.state.movements.find((m) => m.id === SEEDED)!;
+    expect(seeded.admissionId).toBeUndefined();
+    const unitId = seeded.acceptedUnitId!;
+    const before = h.state.units.find((u) => u.id === unitId)!.allocatable.value;
+    h.ok({
+      type: "RECORD_DIVERSION",
+      role: "officer",
+      movementId: SEEDED,
+      reason: DIVERSION_REASONS[0],
+      place: TRANSPORT_WHEREABOUTS[1],
+    });
+    h.ok({ type: "RELEASE_DIVERTED_BED", role: "coordinator", movementId: SEEDED });
+    expect(h.state.movements.find((m) => m.id === SEEDED)?.closure?.outcome).toBe("did_not_proceed");
+    expect(h.state.units.find((u) => u.id === unitId)!.allocatable.value).toBe(before + 1);
+    expect(h.send({ type: "RELEASE_DIVERTED_BED", role: "coordinator", movementId: SEEDED })).toMatch(/holds no bed/);
+    expect(h.state.units.find((u) => u.id === unitId)!.allocatable.value).toBe(before + 1);
+  });
+
+  it("releases a stopped seeded journey once, refunding the bed", () => {
+    const h = harness();
+    const unitId = h.state.movements.find((m) => m.id === SEEDED)!.acceptedUnitId!;
+    const before = h.state.units.find((u) => u.id === unitId)!.allocatable.value;
+    h.ok({
+      type: "STOP_TRANSPORT",
+      role: "coordinator",
+      movementId: SEEDED,
+      reason: "The referral was withdrawn",
+      whereabouts: TRANSPORT_WHEREABOUTS[1],
+    });
+    h.ok({ type: "RELEASE_HELD_BED", role: "coordinator", movementId: SEEDED });
+    expect(h.state.units.find((u) => u.id === unitId)!.allocatable.value).toBe(before + 1);
+    expect(h.send({ type: "RELEASE_HELD_BED", role: "coordinator", movementId: SEEDED })).toMatch(/holds no bed/);
+    expect(h.state.units.find((u) => u.id === unitId)!.allocatable.value).toBe(before + 1);
   });
 });
