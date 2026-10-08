@@ -8924,12 +8924,6 @@ input.historyField:focus-visible {
     font-size: var(--wf-fs-12);
   }
 
-  /* Match view, Bed placement tab. The long governance paragraph stays on desktop; the page
-     footer still says the screen places nobody and is not a medical device. */
-  .screen[data-ward-design="v6"][data-referral-view="register"] .governanceDisclosure {
-    display: none;
-  }
-
   .screen[data-ward-design="v6"] .tierTitleGroup {
     flex-direction: column;
     flex-wrap: nowrap;
