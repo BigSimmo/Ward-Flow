@@ -34,7 +34,7 @@ import {
   headlineAvailable,
   sinceYesterday,
 } from "@/components/ward-management/ward-board-derivations";
-import { calendarDateOf, formatInstant, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, minuteOfDay, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
@@ -358,6 +358,12 @@ type Occupant = {
 function expectedInstant(admission: Admission): Instant | null {
   const expected = admission.expectedDischargeAt;
   return expected === null || !Number.isFinite(expected) ? null : expected;
+}
+
+/** HTML time inputs accept HH:mm only; the editor stores and saves the departure day separately. */
+function departureTimeInputValue(instant: Instant): string {
+  const clockMinutes = minuteOfDay(instant);
+  return `${String(Math.floor(clockMinutes / 60)).padStart(2, "0")}:${String(clockMinutes % 60).padStart(2, "0")}`;
 }
 
 /**
@@ -2932,7 +2938,7 @@ export function WardBoard({
                                 if (admission)
                                   setDateEdit({
                                     admissionId: admission.id,
-                                    time: formatInstant(admission.expectedDischargeAt ?? now),
+                                    time: departureTimeInputValue(admission.expectedDischargeAt ?? now),
                                     day: admission.expectedDischargeAt === null ? "today" : "recorded",
                                   });
                               }}
