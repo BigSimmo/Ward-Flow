@@ -500,6 +500,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const activityTriggerRef = useRef<HTMLButtonElement>(null);
   const tasksTriggerRef = useRef<HTMLButtonElement>(null);
   const toolsTriggerRef = useRef<HTMLButtonElement>(null);
+  // Phone: Activity and Tools open from the Menu sheet, so focus returns to the Menu button.
+  const phoneMenuRef = useRef<HTMLButtonElement>(null);
   const referralReturnFocusRef = useRef<HTMLElement>(null);
   const figuresTabRef = useRef<HTMLButtonElement>(null);
   const servicePanelRef = useRef<HTMLDivElement>(null);
@@ -1205,7 +1207,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
       <button
         type="button"
-        className={`${styles.phoneOnly} ${styles.phoneMenu}`}
+        ref={phoneMenuRef}
+        className={styles.phoneOnly}
         aria-label="Menu"
         aria-haspopup="dialog"
         aria-controls="ward-rail-more-pages"
@@ -1232,7 +1235,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         }
         placement="right"
         testId="ward-bar-activity-sheet"
-        returnFocusRef={activityTriggerRef}
+        returnFocusRef={isPhone ? phoneMenuRef : activityTriggerRef}
         descriptionContent={
           <p className={styles.activityFreshness} data-tone={activityTone}>
             <span>
@@ -1594,7 +1597,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         descriptionContent={<p className={styles.activityFreshness}>Whole network</p>}
         placement="right"
         testId="ward-bar-tools-sheet"
-        returnFocusRef={toolsTriggerRef}
+        returnFocusRef={isPhone ? phoneMenuRef : toolsTriggerRef}
         desktopBackdropClassName={styles.drawerBackdrop}
         contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide}`}
         headerClassName={styles.drawerHeader}
@@ -1717,7 +1720,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               className={styles.toolItem}
               onClick={() => {
                 setReferralCategory("ward");
-                referralReturnFocusRef.current = toolsTriggerRef.current;
+                referralReturnFocusRef.current = isPhone ? phoneMenuRef.current : toolsTriggerRef.current;
                 openPopover("referral");
               }}
             >

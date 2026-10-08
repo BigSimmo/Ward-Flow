@@ -204,8 +204,6 @@ const RAIL_GROUPS = [
 ] as const;
 const COMPACT_CORE_ENTRY_IDS = new Set<string>(RAIL_GROUPS.flatMap((group) => group.entries.map(([id]) => id)));
 const NARROW_CORE_ENTRY_IDS = new Set(["command", "movements", "capacity"]);
-// Phone plan tier 3 (8 Oct 2026): wide-screen pages leave the phone menu. Desktop keeps them.
-const PHONE_HIDDEN_ENTRY_IDS = new Set(["governance", "statistics"]);
 
 const CLOSED_RAIL_CARD_MEDIA_QUERY = "(min-width: 1001px)";
 const GOVERNANCE_HREF = WARD_VIEWS.find((view) => view.id === "governance")?.href ?? WARD_HOME_HREF;
@@ -553,16 +551,7 @@ export function WardRail() {
       </Link>
     );
     return (
-      <li
-        key={entry.id}
-        className={
-          options.sheet && PHONE_HIDDEN_ENTRY_IDS.has(entry.id)
-            ? styles.phoneHiddenEntry
-            : options.compactExtra
-              ? styles.compactExtra
-              : undefined
-        }
-      >
+      <li key={entry.id} className={options.compactExtra ? styles.compactExtra : undefined}>
         <Tooltip
           content={hoverCard}
           placement="right"

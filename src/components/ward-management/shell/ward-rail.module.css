@@ -2219,10 +2219,6 @@
   .sheetPhoneOnly {
     display: flex;
   }
-
-  .phoneHiddenEntry {
-    display: none;
-  }
 }
 
 @media (forced-colors: active) {
