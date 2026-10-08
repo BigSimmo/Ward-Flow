@@ -37,6 +37,10 @@ Never enter or upload real patient information.
 
 ## Local checks
 
+The request handler keeps origin, routing and sign-in checks before authenticated storage
+operations. Snapshot writes separately check content type, body limits, synthetic classification
+and revision bounds. Refused input never reaches the store; mocked tests exercise these boundaries.
+
 `npm test` runs the focused API tests without connecting to Azure. The package
 requires Node 22. Copy `.env.example` to an ignored `.env` only for local use;
 never add access tokens or passwords to it. Local calls to Azure Storage need

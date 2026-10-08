@@ -66,42 +66,54 @@ export function createHandler({ config, store, authenticate }) {
     }
     // Blob names are case-sensitive; one logical session must map to one blob.
     const sessionId = match?.[1].toLowerCase();
-    try {
-      if (path === "/readyz" && request.method === "GET") {
-        await store.ready();
-        return respond(200, { storage: "ready" });
-      }
-      if (!match) return respond(405, { error: "Method not allowed" });
-      if (request.method === "GET") {
-        const result = await store.read(owner, sessionId);
-        return result ? respond(200, result) : respond(404, { error: "Session not found" });
-      }
-      if (request.method !== "PUT") return respond(405, { error: "Method not allowed" });
-      if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json")
-        return respond(415, { error: "JSON required" });
-      let body;
-      try {
-        body = await readBody(request);
-      } catch (error) {
-        return respond(error.message === "too_large" ? 413 : 400, { error: "Invalid snapshot" });
-      }
-      if (
-        !object(body) ||
-        body.classification !== "synthetic" ||
-        !object(body.payload) ||
-        !Number.isSafeInteger(body.expectedRevision) ||
-        body.expectedRevision < 0 ||
-        body.expectedRevision >= 2_147_483_646
-      )
-        return respond(400, { error: "A synthetic snapshot and valid revision are required" });
-      const revision = await store.save(owner, sessionId, body.expectedRevision, body.payload);
-      return revision === null
-        ? respond(409, { error: "Session changed; reload before saving" })
-        : respond(200, { revision });
-    } catch {
-      return respond(503, { error: "Storage unavailable; changes were not confirmed saved" });
-    }
+    return handleAuthenticatedRequest(request, { path, match, sessionId, owner, store, respond });
   };
+}
+
+async function handleAuthenticatedRequest(request, context) {
+  const { path, match, owner, sessionId, store, respond } = context;
+  try {
+    if (path === "/readyz" && request.method === "GET") {
+      await store.ready();
+      return respond(200, { storage: "ready" });
+    }
+    if (!match) return respond(405, { error: "Method not allowed" });
+    if (request.method === "GET") {
+      const result = await store.read(owner, sessionId);
+      return result ? respond(200, result) : respond(404, { error: "Session not found" });
+    }
+    if (request.method !== "PUT") return respond(405, { error: "Method not allowed" });
+    return await saveSnapshot(request, context);
+  } catch {
+    return respond(503, { error: "Storage unavailable; changes were not confirmed saved" });
+  }
+}
+
+function invalidSnapshot(body) {
+  return (
+    !object(body) ||
+    body.classification !== "synthetic" ||
+    !object(body.payload) ||
+    !Number.isSafeInteger(body.expectedRevision) ||
+    body.expectedRevision < 0 ||
+    body.expectedRevision >= 2_147_483_646
+  );
+}
+
+async function saveSnapshot(request, { owner, sessionId, store, respond }) {
+  if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json")
+    return respond(415, { error: "JSON required" });
+  let body;
+  try {
+    body = await readBody(request);
+  } catch (error) {
+    return respond(error.message === "too_large" ? 413 : 400, { error: "Invalid snapshot" });
+  }
+  if (invalidSnapshot(body)) return respond(400, { error: "A synthetic snapshot and valid revision are required" });
+  const revision = await store.save(owner, sessionId, body.expectedRevision, body.payload);
+  return revision === null
+    ? respond(409, { error: "Session changed; reload before saving" })
+    : respond(200, { revision });
 }
 
 export function listen(handler, config) {
