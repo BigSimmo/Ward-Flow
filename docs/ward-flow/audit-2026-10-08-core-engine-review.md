@@ -20,6 +20,7 @@ All paths are under `src/components/ward-management/`. A local-only scaffold bra
 - Slice 1: reviewed. 14 findings below, plus a clean conventions check.
 - Slice 2: reviewed. 15 findings below, plus a clean conventions check.
 - All 29 findings checked on 8 October 2026: 21 reproduced by replaying them against the real reducer, 7 confirmed by reading the code, 1 only partly confirmed. See [Verification](#verification).
+- Areas 1–4 reviewed on 8 October 2026: 60 further findings (15 each), recorded below. The ranked list of all 88 issues is [`audit-2026-10-08-issue-list.md`](audit-2026-10-08-issue-list.md).
 - No findings fixed yet.
 
 ## Slice 1 findings
