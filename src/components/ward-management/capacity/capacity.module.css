@@ -1219,3 +1219,11 @@
     white-space: normal;
   }
 }
+
+/* Phone: the ward table these hero figures highlight is hidden, so they read as plain figures. */
+@media (max-width: 48rem) {
+  .heroStatButton {
+    pointer-events: none;
+    cursor: default;
+  }
+}
