@@ -103,6 +103,7 @@ describe("the settings screen", () => {
 
   it("links to the real handover route, not to a drawing", () => {
     renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Profile and shift/ }));
     const link = within(screen.getByTestId("ward-settings-handover")).getByRole("link", { name: /handover/i });
     expect(link.getAttribute("href")).toBe("/mockups/ward-flow/handover");
     expect(link.getAttribute("href")).not.toMatch(/\.html$/);
@@ -159,6 +160,7 @@ describe("the settings screen", () => {
 describe("the settings screen's thresholds panel", () => {
   it("renders a row for each published threshold and no others", () => {
     renderSettings();
+    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
     const panel = screen.getByTestId("ward-settings-thresholds");
     expect(within(panel).getAllByRole("row").length, "no rows rendered").toBeGreaterThan(1);
     expect(within(panel).queryByTestId("ward-settings-threshold-ed-access-target")).toBeInTheDocument();
@@ -189,14 +191,15 @@ describe("the settings screen's thresholds panel", () => {
     expect(row.textContent, "the internal token leaked to the screen").not.toMatch(/nothing-reaches-it/);
   });
 
-  it("says figures here change only through the controls above, because the ED row now genuinely can, and carries no button of its own", () => {
+  it("says figures here change only through the Rules tab, because the ED row there genuinely can, and carries no button of its own", () => {
     renderSettings();
     // Task 9 of the audit-wiring plan, 2026-09-16: "Nothing here can be changed from this
     // screen" went false the day the ED access target row above this table became a real
     // control writing the same figure this table reads — so the panel now says where a change
     // actually happens and that it is recorded, rather than claiming nothing can change at all.
+    // Workspaces rebuild (8 Oct 2026): the editable rules moved to their own tab.
     expect(screen.getByTestId("ward-settings-thresholds").textContent).toMatch(
-      /change only through the controls above/i,
+      /change only through the Rules tab, and every change is recorded/i,
     );
     expect(within(screen.getByTestId("ward-settings-thresholds")).queryAllByRole("button")).toHaveLength(0);
   });
@@ -221,48 +224,33 @@ describe("D5 — no MHA section numbers, invented form codes, or the word 'statu
 });
 
 /**
- * Elevations: Touch Envelopes, Focus-Visible, and Informational Callout Contrast
+ * Elevations: touch envelopes, focus-visible and the informational note. Since the Workspaces
+ * rebuild (8 Oct 2026) the switches, steppers and segmented controls are the shared wf primitives,
+ * which carry their own focus rings and sizes; this screen's CSS owns only its own extras.
  */
-describe("settings screen elevations: 44px touch envelopes, focus-visible, and high-contrast callouts", () => {
+describe("settings screen elevations: touch envelopes, focus-visible, and the reference note", () => {
   const cssPath = path.join(process.cwd(), "src", "components", "ward-management", "settings", "settings.module.css");
   const cssContent = fs.readFileSync(cssPath, "utf-8");
 
-  it("enforces explicit 44px min-height and min-width touch envelopes for interactive controls", () => {
-    expect(cssContent).toMatch(/\.switchToggle\s*\{[^}]*min-width:\s*44px;/);
-    expect(cssContent).toMatch(/\.switchToggle\s*\{[^}]*min-height:\s*44px;/);
-    expect(cssContent).toMatch(/\.choice\s*\{[^}]*min-height:\s*44px;/);
-    expect(cssContent).toMatch(/\.choice\s*\{[^}]*min-width:\s*44px;/);
-    expect(cssContent).toMatch(/\.segBtn\s*\{[^}]*min-height:\s*44px;/);
-    expect(cssContent).toMatch(/\.segBtn\s*\{[^}]*min-width:\s*44px;/);
-    expect(cssContent).toMatch(/input\[type="radio"\]\s*\{[^}]*min-height:\s*44px;/);
-    expect(cssContent).toMatch(/input\[type="radio"\]\s*\{[^}]*min-width:\s*44px;/);
+  it("gives the small reset icon a press area that reaches the tap envelope", () => {
+    expect(cssContent).toMatch(/\.resetButton\s*\{[^}]*position:\s*relative;/);
+    expect(cssContent).toMatch(/\.resetButton::after\s*\{[^}]*inset:\s*-10px;/);
   });
 
-  it("enforces enhanced keyboard focus-visible indicator with 2px accent outline and 2px offset", () => {
-    const focusPattern = /outline:\s*2px solid var\(--accent\);\s*outline-offset:\s*2px;/;
-    expect(cssContent).toMatch(focusPattern);
-
-    expect(cssContent).toMatch(/\.switchToggle[^{]*:focus-visible[^}]*outline:\s*2px solid var\(--accent\);/);
-    expect(cssContent).toMatch(/\.choice:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--accent\);/);
-    expect(cssContent).toMatch(/\.segBtn:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--accent\);/);
-    expect(cssContent).toMatch(/input\[type="radio"\]:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--accent\);/);
+  it("draws a 2px focus ring on every control this screen styles itself", () => {
+    for (const selector of ["resetButton", "rangeInput", "saveLink", "tableWrap"]) {
+      expect(cssContent, `.${selector} has no focus ring`).toMatch(
+        new RegExp(`\\.${selector}:focus-visible\\s*\\{[^}]*outline:\\s*2px solid var\\(--wf-focus-ring\\);`),
+      );
+    }
   });
 
-  it("defines high-contrast informational callout cards with tone variants and forced-colors support", () => {
-    expect(cssContent).toMatch(/\.calloutCard,\s*\.infoCallout\s*\{[^}]*background:\s*var\(--surface-2\);/);
-    expect(cssContent).toMatch(/\.calloutCard,\s*\.infoCallout\s*\{[^}]*border:\s*1px solid var\(--line-strong\);/);
-    expect(cssContent).toMatch(/\.calloutCard\[data-tone="warn"\]/);
-    expect(cssContent).toMatch(/\.calloutCard\[data-tone="accent"\]/);
-    expect(cssContent).toMatch(/\.calloutCard\[data-tone="good"\]/);
-    expect(cssContent).toMatch(/\.calloutCard\[data-tone="danger"\]/);
-  });
-
-  it("renders informational callout cards in the settings screen with proper tone and structure", () => {
+  it("renders the reference note with its tone, saying where figures change", () => {
     renderSettings();
-    const thresholdsPanel = screen.getByTestId("ward-settings-thresholds");
-    const callout = thresholdsPanel.querySelector('[data-tone="accent"]');
+    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
+    const callout = screen.getByTestId("ward-settings-thresholds").querySelector('[data-tone="accent"]');
     expect(callout).toBeInTheDocument();
-    expect(callout?.textContent).toContain("Figures here change only through the controls above");
+    expect(callout?.textContent).toContain("Figures here change only through the Rules tab");
   });
 });
 
@@ -273,6 +261,7 @@ describe("accessibility switches when browser storage refuses writes", () => {
     });
     try {
       renderSettings();
+      fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
       const control = screen.getByRole("switch", { name: /Reduce motion/ });
       expect(control).toHaveAttribute("aria-checked", "false");
       fireEvent.click(control);
