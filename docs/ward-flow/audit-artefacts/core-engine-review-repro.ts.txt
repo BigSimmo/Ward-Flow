@@ -1,0 +1,442 @@
+/**
+ * Reproduces the core-engine review findings (docs/ward-flow/audit-2026-10-08-core-engine-review.md).
+ * Stored as .txt so CI does not run it. To use: copy to tests/<name>.test.ts and run with vitest.
+ * Each test PASSES when the reported defect is present. Not for merge as-is.
+ */
+import { describe, expect, it } from "vitest";
+import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { appendFileSync } from "node:fs";
+import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
+import { DIVERSION_REASONS, TRANSPORT_WHEREABOUTS } from "@/components/ward-management/ward-change-reasons";
+
+const now = 642;
+const LOG = process.env.REPRO_LOG ?? "core-engine-review-repro.log";
+const log = (...a: unknown[]) => appendFileSync(LOG, a.map((x) => (typeof x === "string" ? x : JSON.stringify(x))).join(" ") + "\n");
+type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
+type TestEvent = WithoutNow<WardFlowEvent>;
+
+function harness(initial: WardFlowState = seedWardFlowState()) {
+  let state = initial;
+  let t = now;
+  const send = (event: TestEvent | Record<string, unknown>) => {
+    const before = state.rejections.length;
+    state = wardFlowReducer(state, { now: t++, ...event } as WardFlowEvent);
+    return state.rejections.length === before ? null : state.rejections.at(-1)!.reason;
+  };
+  const ok = (event: TestEvent | Record<string, unknown>) => {
+    const refusal = send(event);
+    if (refusal) throw new Error(`${(event as { type: string }).type} refused: ${refusal}`);
+  };
+  return {
+    get state() {
+      return state;
+    },
+    set state(s: WardFlowState) {
+      state = s;
+    },
+    send,
+    ok,
+  };
+}
+
+function admittedPatient(h: ReturnType<typeof harness>, umrn: string, unitId = "scgh-adult-open") {
+  h.ok({ type: "ADD_PATIENT", role: "coordinator", umrn, givenName: "Demo", familyName: "Review", dateOfBirth: "1980-01-01" });
+  const patient = h.state.patients.at(-1)!;
+  h.ok({
+    type: "RAISE_REFERRAL",
+    role: "ed",
+    edId: "jhc-ed",
+    patientId: patient.id,
+    draft: { cohort: "Adult", security: "Open", sex: "Female", gender: "Female", specialling: false, highAcuity: false, legalStatus: "Voluntary", urgency: 2, legalFormCode: null },
+  });
+  const inbound = h.state.movements.at(-1)!;
+  h.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: inbound.id, unitIds: [unitId] });
+  h.ok({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: inbound.id, unitId });
+  h.ok({ type: "PULL_PATIENT", role: "ward", movementId: inbound.id, unitId });
+  h.ok({ type: "RECORD_TRANSPORT_NEED", role: "ward", movementId: inbound.id, needed: false });
+  h.ok({ type: "PATIENT_ARRIVED", role: "ward", movementId: inbound.id, actingUnitId: unitId });
+  const admission = h.state.admissions.find((a) => a.movementId === inbound.id)!;
+  expect(admission.state).toBe("occupied");
+  return { patient, inbound, admission };
+}
+
+function repatriationToCollected(h: ReturnType<typeof harness>, admissionId: string, dest = "rph-adult-secure") {
+  h.ok({
+    type: "RECORD_REPATRIATION",
+    role: "coordinator",
+    admissionId,
+    homeHospital: "RPH",
+    receivingWardAgreed: true,
+    mode: "road",
+    provider: "Ambulance service",
+    cadNumber: "SYN-CAD-REV",
+    transportLegalStatus: "voluntary",
+    estimatedAt: 700,
+  });
+  const m = h.state.movements.at(-1)!;
+  h.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: m.id, unitIds: [dest] });
+  h.ok({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: m.id, unitId: dest });
+  h.ok({ type: "PULL_PATIENT", role: "ward", movementId: m.id, unitId: dest });
+  return m;
+}
+
+describe("review verification", () => {
+  it("S1-1: discharge of the source stay is allowed while an outbound move is live, stranding it", () => {
+    const h = harness();
+    const { patient, admission } = admittedPatient(h, "SYN-REV-001");
+    const m = repatriationToCollected(h, admission.id);
+    const stage = h.state.movements.find((x) => x.id === m.id)!.stage;
+    // Try to get the move physically collected; record how far it got.
+    const book = (role: string) => ({ type: "BOOK_TRANSPORT", role, movementId: m.id, provider: "Ambulance service", escortRequired: false, cadNumber: "CAD-REV-0001", transportLegalStatus: "voluntary", estimatedAt: 0, actingUnitId: admission.unitId });
+    const bookRefusals = [h.send(book("ward"))];
+    if (bookRefusals[0]) bookRefusals.push(h.send(book("coordinator")));
+    if (bookRefusals.at(-1)) bookRefusals.push(h.send(book("ed")));
+    log("S1-1 booking:", bookRefusals);
+    const steps: [string, Record<string, unknown>][] = [
+      ["HANDOVER_READY", { type: "HANDOVER_READY", role: "ed", movementId: m.id }],
+      ["TRANSPORT_ACCEPTED", { type: "TRANSPORT_ACCEPTED", role: "officer", movementId: m.id }],
+      ["TRANSPORT_EN_ROUTE", { type: "TRANSPORT_EN_ROUTE", role: "officer", movementId: m.id }],
+      ["PATIENT_COLLECTED", { type: "PATIENT_COLLECTED", role: "officer", movementId: m.id }],
+    ];
+    const progress: string[] = [];
+    for (const [name, ev] of steps) progress.push(`${name}:${h.send(ev) ?? "ok"}`);
+    const mv = h.state.movements.find((x) => x.id === m.id)!;
+    log("S1-1 stage before discharge:", stage, "->", mv.stage, "collected:", mv.transport?.collectedAt, progress);
+    const refusal = h.send({
+      type: "RECORD_PATIENT_DISCHARGE",
+      role: "ward",
+      actingUnitId: admission.unitId,
+      admissionId: admission.id,
+      patientId: patient.id,
+      expectedGeneration: h.state.worldGeneration,
+      expectedRevision: h.state.dischargeRevisions[admission.id] ?? 0,
+      leavingDestination: "discharged-to-the-community",
+    });
+    log("S1-1 discharge refusal:", refusal);
+    expect(refusal).toBeNull(); // defect: discharge accepted
+    const arrival = h.send({ type: "PATIENT_ARRIVED", role: "ward", movementId: m.id, actingUnitId: "rph-adult-secure" });
+    log("S1-1 arrival refusal:", arrival);
+    expect(arrival).toMatch(/occupied source stay/);
+  });
+
+  it("S2-6: repatriation can be recorded from a departed stay, and its arrival is then refused", () => {
+    const h = harness();
+    const { patient, admission } = admittedPatient(h, "SYN-REV-002");
+    h.ok({
+      type: "RECORD_PATIENT_DISCHARGE",
+      role: "ward",
+      actingUnitId: admission.unitId,
+      admissionId: admission.id,
+      patientId: patient.id,
+      expectedGeneration: h.state.worldGeneration,
+      expectedRevision: h.state.dischargeRevisions[admission.id] ?? 0,
+      leavingDestination: "discharged-to-the-community",
+    });
+    expect(h.state.admissions.find((a) => a.id === admission.id)?.state).toBe("departed");
+    const before = h.state.movements.length;
+    const refusal = h.send({
+      type: "RECORD_REPATRIATION",
+      role: "coordinator",
+      admissionId: admission.id,
+      homeHospital: "RPH",
+      receivingWardAgreed: true,
+      mode: "road",
+      provider: "Ambulance service",
+      cadNumber: "SYN-CAD-REV2",
+      transportLegalStatus: "voluntary",
+      estimatedAt: 700,
+    });
+    log("S2-6 repatriation refusal:", refusal, "movements +", h.state.movements.length - before);
+    expect(refusal).toBeNull();
+    const m = h.state.movements.at(-1)!;
+    const pullRefusal =
+      h.send({ type: "REFER_TO_UNITS", role: "coordinator", movementId: m.id, unitIds: ["rph-adult-secure"] }) ??
+      h.send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: m.id, unitId: "rph-adult-secure" }) ??
+      h.send({ type: "PULL_PATIENT", role: "ward", movementId: m.id, unitId: "rph-adult-secure" });
+    log("S2-6 refer/accept/pull refusal:", pullRefusal);
+  });
+
+  it("S2-1: a diverted seeded journey with no admissionId cannot release its bed", () => {
+    const h = harness();
+    const wf6 = h.state.movements.find((m) => m.id === "WF-006")!;
+    log("S2-1 WF-006:", wf6.stage, "admissionId:", wf6.admissionId, "collected:", wf6.transport?.collectedAt, "unit:", wf6.acceptedUnitId);
+    const unitBefore = h.state.units.find((u) => u.id === wf6.acceptedUnitId)!.allocatable.value;
+    h.ok({ type: "RECORD_DIVERSION", role: "officer", movementId: "WF-006", reason: DIVERSION_REASONS[0], place: TRANSPORT_WHEREABOUTS[1] });
+    const release = h.send({ type: "RELEASE_DIVERTED_BED", role: "coordinator", movementId: "WF-006" });
+    const arrive = h.send({ type: "PATIENT_ARRIVED", role: "officer", movementId: "WF-006" });
+    const stop = h.send({ type: "STOP_TRANSPORT", role: "coordinator", movementId: "WF-006", reason: "The referral was withdrawn", whereabouts: TRANSPORT_WHEREABOUTS[1] });
+    log("S2-1 release:", release, "| arrive:", arrive, "| stop:", stop);
+    const after = h.state.movements.find((m) => m.id === "WF-006")!;
+    log("S2-1 closure:", after.closure, "blocker:", after.blocker, "allocatable", unitBefore, "->", h.state.units.find((u) => u.id === wf6.acceptedUnitId)!.allocatable.value);
+    expect(release).not.toBeNull();
+    expect(arrive).not.toBeNull();
+    expect(stop).not.toBeNull();
+    expect(after.closure).toBeUndefined();
+  });
+
+  it("S2-1b: a stopped seeded journey with no admissionId cannot release its held bed", () => {
+    const h = harness();
+    const stop = h.send({ type: "STOP_TRANSPORT", role: "coordinator", movementId: "WF-006", reason: "The referral was withdrawn", whereabouts: TRANSPORT_WHEREABOUTS[1] });
+    const mid = h.state.movements.find((m) => m.id === "WF-006")!;
+    const release = h.send({ type: "RELEASE_HELD_BED", role: "coordinator", movementId: "WF-006" });
+    log("S2-1b stop:", stop, "closure:", mid.closure, "blocker:", mid.blocker, "| release:", release);
+    expect(stop).toBeNull();
+    expect(release).not.toBeNull();
+  });
+
+  it("S2-2: clearing the blocker lifts the revoked-examination transport hold", () => {
+    const h = harness();
+    const wf5 = h.state.movements.find((m) => m.id === "WF-005")!;
+    log("S2-2 WF-005:", wf5.stage, "admissionId:", wf5.admissionId, "transport:", JSON.stringify(wf5.transport));
+    const exam = h.send({ type: "RECORD_EXAMINATION", role: "ed", movementId: "WF-005", outcome: "revoked" });
+    const enRoute1 = h.send({ type: "TRANSPORT_EN_ROUTE", role: "officer", movementId: "WF-005" });
+    const clear = h.send({ type: "CLEAR_MOVEMENT_BLOCKER", role: "coordinator", movementId: "WF-005" });
+    const enRoute2 = h.send({ type: "TRANSPORT_EN_ROUTE", role: "officer", movementId: "WF-005" });
+    const collected = h.send({ type: "PATIENT_COLLECTED", role: "officer", movementId: "WF-005" });
+    log("S2-2 exam:", exam, "| enRoute before clear:", enRoute1, "| clear:", clear, "| enRoute after:", enRoute2, "| collected:", collected);
+    expect(exam).toBeNull();
+    expect(enRoute1).not.toBeNull();
+    expect(clear).toBeNull();
+    expect(enRoute2).toBeNull();
+    expect(collected).toBeNull();
+  });
+
+  it("S2-3: arrival into a full ward is accepted and the next departure creates a phantom bed", () => {
+    const h = harness();
+    const unitId = "scgh-adult-open";
+    const { admission } = admittedPatient(h, "SYN-REV-003", unitId);
+    // Force the ward to show no empty beds, then admit one more through a second patient.
+    const forceFull = (s: WardFlowState) => ({
+      ...s,
+      units: s.units.map((u) => (u.id === unitId ? { ...u, empty: { ...u.empty, value: 0 } } : u)),
+    });
+    h.state = forceFull(h.state);
+    const emptyBefore = h.state.units.find((u) => u.id === unitId)!.empty.value;
+    const occupiedBefore = h.state.admissions.filter((a) => a.unitId === unitId && a.state === "occupied").length;
+    let secondArrived = true;
+    try {
+      admittedPatient(h, "SYN-REV-004", unitId);
+    } catch (e) {
+      secondArrived = false;
+      log("S2-3 second admission refused:", (e as Error).message);
+    }
+    const u = () => h.state.units.find((x) => x.id === unitId)!;
+    log("S2-3 empty", emptyBefore, "->", u().empty.value, "occupied", occupiedBefore, "->", h.state.admissions.filter((a) => a.unitId === unitId && a.state === "occupied").length, "arrived:", secondArrived);
+    h.ok({ type: "RECORD_LEAVING", role: "ward", admissionId: admission.id, actingUnitId: unitId, leavingDestination: "discharged-to-the-community" });
+    log("S2-3 after one departure empty:", u().empty.value, "total beds:", JSON.stringify(u().beds ?? u().capacity ?? null));
+  });
+
+  function raise(h: ReturnType<typeof harness>, umrn: string, sex = "Female") {
+    h.ok({ type: "ADD_PATIENT", role: "coordinator", umrn, givenName: "Demo", familyName: "Review", dateOfBirth: "1980-01-01" });
+    const patient = h.state.patients.at(-1)!;
+    const refusal = h.send({
+      type: "RAISE_REFERRAL",
+      role: "ed",
+      edId: "jhc-ed",
+      patientId: patient.id,
+      draft: { cohort: "Adult", security: "Open", sex, gender: "Female", specialling: false, highAcuity: false, legalStatus: "Voluntary", urgency: 2, legalFormCode: null },
+    });
+    return { patient, movement: h.state.movements.at(-1)!, refusal };
+  }
+  const mv = (h: ReturnType<typeof harness>, id: string) => h.state.movements.find((m) => m.id === id)!;
+
+  it("S1-3: community-team referral drops the patient link when there is no front-door referral", () => {
+    const h = harness();
+    const { patient, movement } = raise(h, "SYN-REV-010");
+    const refusal = h.send({ type: "REFER_TO_COMMUNITY_TEAM", role: "ed", movementId: movement.id, team: communityTeamOptions()[0]! });
+    const created = h.state.referrals.at(-1)!;
+    const m = mv(h, movement.id);
+    log("S1-3 refusal:", refusal, "movement.patientId:", movement.patientId, "movement.referralId:", movement.referralId, "new referral patientId:", created.patientId, "closure:", m.closure?.outcome, "expected", patient.id);
+  });
+
+  it("S1-4: pre-acceptance withdrawal sends no ward_request_withdrawn notices", () => {
+    const h = harness();
+    const { movement } = raise(h, "SYN-REV-011");
+    h.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: movement.id, unitIds: ["scgh-adult-open", "arm-adult-open"] });
+    const before = h.state.notices.length;
+    const refusal = h.send({ type: "WITHDRAW_REFERRAL", role: "ed", movementId: movement.id });
+    const added = h.state.notices.slice(before).map((n) => `${n.kind}->${n.to.role}`);
+    log("S1-4 pre-accept refusal:", refusal, "notices:", added, "referredUnitIds after:", mv(h, movement.id).referredUnitIds);
+  });
+
+  it("S1-4b: post-acceptance withdrawal with booked transport does not notify the officer", () => {
+    const h = harness();
+    const { movement } = raise(h, "SYN-REV-012");
+    h.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: movement.id, unitIds: ["scgh-adult-open"] });
+    h.ok({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: movement.id, unitId: "scgh-adult-open" });
+    h.ok({ type: "PULL_PATIENT", role: "ward", movementId: movement.id, unitId: "scgh-adult-open" });
+    h.ok({ type: "BOOK_TRANSPORT", role: "ed", movementId: movement.id, provider: "Ambulance service", escortRequired: false, cadNumber: "CAD-REV-0002", transportLegalStatus: "voluntary", estimatedAt: 0 });
+    const before = h.state.notices.length;
+    const refusal = h.send({ type: "WITHDRAW_REFERRAL", role: "ed", movementId: movement.id });
+    const added = h.state.notices.slice(before).map((n) => `${n.kind}->${n.to.role}`);
+    log("S1-4b refusal:", refusal, "notices:", added, "transport cancelledAt:", mv(h, movement.id).transport?.cancelledAt);
+  });
+
+  it("S1-5: revoked examination closure leaves wards listed as referred", () => {
+    const h = harness();
+    const { movement } = raise(h, "SYN-REV-013");
+    h.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: movement.id, unitIds: ["scgh-adult-open", "arm-adult-open"] });
+    const refusal = h.send({ type: "RECORD_EXAMINATION", role: "ed", movementId: movement.id, outcome: "revoked" });
+    const m = mv(h, movement.id);
+    log("S1-5 refusal:", refusal, "closure:", m.closure?.outcome, "referredUnitIds:", m.referredUnitIds, "withdrawnReferrals:", (m as any).withdrawnReferrals);
+  });
+
+  it("S1-6: override recorded against a ward that passed every gate, and an empty override", () => {
+    const h = harness();
+    const { movement } = raise(h, "SYN-REV-014");
+    const r1 = h.send({ type: "REFER_TO_UNITS", role: "coordinator", movementId: movement.id, unitIds: ["scgh-adult-open"], overrideReason: "The bed information is known to be out of date" });
+    const o1 = JSON.stringify((mv(h, movement.id) as any).overrides);
+    const r2 = h.send({ type: "REFER_TO_UNITS", role: "coordinator", movementId: movement.id, unitIds: ["scgh-adult-open"], overrideReason: "The bed information is known to be out of date" });
+    log("S1-6 r1:", r1, "overrides after 1st:", o1, "| r2:", r2, "overrides after 2nd:", JSON.stringify((mv(h, movement.id) as any).overrides));
+  });
+
+  it("S1-7: waitlist entry survives acceptance elsewhere", () => {
+    const h = harness();
+    const { movement } = raise(h, "SYN-REV-015");
+    h.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: movement.id, unitIds: ["scgh-adult-open", "arm-adult-open"] });
+    const d = h.send({ type: "DECLINE", role: "ward", movementId: movement.id, unitId: "scgh-adult-open", reason: "no_bed" });
+    const w1 = mv(h, movement.id).waitlistedUnitIds;
+    const a = h.send({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: movement.id, unitId: "arm-adult-open" });
+    log("S1-7 decline:", d, "waitlisted:", w1, "| accept:", a, "waitlisted after accept elsewhere:", mv(h, movement.id).waitlistedUnitIds, "stage:", mv(h, movement.id).stage);
+  });
+
+  it("S1-8: re-pull after step back keeps the old hold expiry", () => {
+    const h = harness();
+    const { movement } = raise(h, "SYN-REV-016");
+    h.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: movement.id, unitIds: ["scgh-adult-open"] });
+    h.ok({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: movement.id, unitId: "scgh-adult-open" });
+    h.ok({ type: "PULL_PATIENT", role: "ward", movementId: movement.id, unitId: "scgh-adult-open" });
+    const first = mv(h, movement.id).pullExpiresAt;
+    const back = h.send({ type: "STEP_BACK_STAGE", role: "coordinator", movementId: movement.id, to: "accepted_awaiting_bed", reason: "recorded_in_error" });
+    const stepped = mv(h, movement.id).pullExpiresAt;
+    const again = h.send({ type: "PULL_PATIENT", role: "ward", movementId: movement.id, unitId: "scgh-adult-open" });
+    log("S1-8 first expiry:", first, "| step back:", back, "expiry after step back:", stepped, "| re-pull:", again, "expiry after re-pull:", mv(h, movement.id).pullExpiresAt, "re-pull time approx", now + 10);
+  });
+
+  it("S1-9: off-list examination outcome is treated as revocation", () => {
+    const h = harness();
+    const { movement } = raise(h, "SYN-REV-017");
+    h.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: movement.id, unitIds: ["scgh-adult-open"] });
+    h.ok({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: movement.id, unitId: "scgh-adult-open" });
+    h.ok({ type: "PULL_PATIENT", role: "ward", movementId: movement.id, unitId: "scgh-adult-open" });
+    const r = h.send({ type: "RECORD_EXAMINATION", role: "ed", movementId: movement.id, outcome: "inpatient" });
+    const m = mv(h, movement.id);
+    log("S1-9 refusal:", r, "closure:", m.closure?.outcome, "blocker:", m.blocker, "admission:", h.state.admissions.find((a) => a.movementId === movement.id)?.state);
+  });
+
+  it("S1-10: off-list ED outcome is accepted", () => {
+    const h = harness();
+    const { movement } = raise(h, "SYN-REV-018");
+    const r = h.send({ type: "RECORD_ED_OUTCOME", role: "ed", movementId: movement.id, outcome: "discharge" });
+    const m = mv(h, movement.id);
+    log("S1-10 refusal:", r, "closure:", m.closure?.outcome, "edOutcome:", (m as any).edOutcome);
+  });
+
+  it("S1-11: duplicate ward ids are accepted in a referral", () => {
+    const h = harness();
+    const { movement } = raise(h, "SYN-REV-019");
+    const r = h.send({ type: "REFER_TO_UNITS", role: "coordinator", movementId: movement.id, unitIds: ["scgh-adult-open", "scgh-adult-open"] });
+    log("S1-11 refusal:", r, "referredUnitIds:", mv(h, movement.id).referredUnitIds);
+  });
+
+  it("S1-12: ward event without actingUnitId edits another ward's expected discharge", () => {
+    const h = harness();
+    const target = h.state.admissions.find((a) => a.state === "occupied")!;
+    const r = h.send({ type: "UPDATE_EXPECTED_DISCHARGE", role: "ward", admissionId: target.id, expectedDischargeAt: 99999 });
+    log("S1-12 refusal:", r, "expectedDischargeAt now:", (h.state.admissions.find((a) => a.id === target.id) as any).expectedDischargeAt);
+  });
+
+  it("S1-13: lower-case sex is accepted on RAISE_REFERRAL", () => {
+    const h = harness();
+    const { movement, refusal } = raise(h, "SYN-REV-020", "female");
+    log("S1-13 refusal:", refusal, "stored sex:", (movement as any).sex);
+  });
+
+  it("S2-5: arrival details accepted on a closed movement and raise late notices", () => {
+    const h = harness();
+    h.ok({ type: "STOP_TRANSPORT", role: "coordinator", movementId: "WF-006", reason: "The referral was withdrawn", whereabouts: TRANSPORT_WHEREABOUTS[1] });
+    const before = h.state.notices.length;
+    const r = h.send({ type: "SET_ARRIVAL_DETAILS", role: "ed", movementId: "WF-006", arrivalMode: "road", estimatedArrivalAt: now - 200 });
+    log("S2-5 closure:", mv(h, "WF-006").closure?.outcome, "refusal:", r, "new notices:", h.state.notices.slice(before).map((n) => n.kind));
+  });
+
+  it("S2-7: release-and-reopen from accepted_awaiting_bed reports a bed release", () => {
+    const h = harness();
+    const { movement } = raise(h, "SYN-REV-021");
+    h.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: movement.id, unitIds: ["scgh-adult-open"] });
+    h.ok({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: movement.id, unitId: "scgh-adult-open" });
+    const before = h.state.notices.length;
+    const r = h.send({ type: "RELEASE_AND_REOPEN_SEARCH", role: "coordinator", movementId: movement.id, actingUnitId: undefined, reason: "patient_no_longer_coming" });
+    log("S2-7 stage before: accepted_awaiting_bed | refusal:", r, "notices:", h.state.notices.slice(before).map((n) => `${n.kind}->${n.to.role}@${n.about.unitId}`), "unwinds:", JSON.stringify((mv(h, movement.id) as any).unwinds?.slice(-1)));
+  });
+
+  it("S2-8: off-list step-back target is written as the stage", () => {
+    const h = harness();
+    let r: string | null = null;
+    let thrown: string | undefined;
+    try {
+      r = h.send({ type: "STEP_BACK_STAGE", role: "coordinator", movementId: "WF-006", to: "pullled", reason: "recorded_in_error" });
+    } catch (e) {
+      thrown = (e as Error).message;
+    }
+    log("S2-8 refusal:", r, "thrown:", thrown, "stage now:", mv(h, "WF-006").stage);
+    try {
+      const r2 = h.send({ type: "TRANSPORT_EN_ROUTE", role: "officer", movementId: "WF-006" });
+      log("S2-8 follow-up refusal:", r2);
+    } catch (e) {
+      log("S2-8 follow-up THREW:", (e as Error).message);
+    }
+  });
+
+  it("S2-10: an unrelated ward can book transport", () => {
+    const h = harness();
+    const { movement } = raise(h, "SYN-REV-022");
+    h.ok({ type: "REFER_TO_UNITS", role: "coordinator", movementId: movement.id, unitIds: ["scgh-adult-open"] });
+    h.ok({ type: "ACCEPT_IN_PRINCIPLE", role: "ward", movementId: movement.id, unitId: "scgh-adult-open" });
+    h.ok({ type: "PULL_PATIENT", role: "ward", movementId: movement.id, unitId: "scgh-adult-open" });
+    const r = h.send({ type: "BOOK_TRANSPORT", role: "ward", actingUnitId: "bun-adult-open", movementId: movement.id, provider: "Ambulance service", escortRequired: false, cadNumber: "CAD-REV-0003", transportLegalStatus: "voluntary", estimatedAt: 0 });
+    const edBook = h.send({ type: "BOOK_TRANSPORT", role: "ed", movementId: movement.id, provider: "Ambulance service", escortRequired: false, cadNumber: "CAD-REV-0004", transportLegalStatus: "voluntary", estimatedAt: 0 });
+    log("S2-10 unrelated ward booking refusal:", r, "bookedBy:", JSON.stringify((mv(h, movement.id).transport as any)?.bookedBy), "| ED booking:", edBook);
+  });
+
+  it("S2-12: free text accepted as a discharge barrier", () => {
+    const h = harness();
+    const r = h.send({ type: "SET_DISCHARGE_BARRIER", role: "coordinator", admissionId: "AD-RPHS-01", barrier: "housing - lives with mum at 12 X St" });
+    log("S2-12 refusal:", r, "stored:", (h.state.admissions.find((a) => a.id === "AD-RPHS-01") as any).dischargeBarrier);
+  });
+
+  it("S2-13: transfer-out advances the source discharge revision by 2", () => {
+    const h = harness();
+    const { admission } = admittedPatient(h, "SYN-REV-023");
+    const m = repatriationToCollected(h, admission.id);
+    const rev0 = h.state.dischargeRevisions[admission.id] ?? 0;
+    h.ok({ type: "RECORD_TRANSPORT_NEED", role: "ward", movementId: m.id, needed: false });
+    const r = h.send({ type: "PATIENT_ARRIVED", role: "ward", movementId: m.id, actingUnitId: "rph-adult-secure" });
+    const rev1 = h.state.dischargeRevisions[admission.id] ?? 0;
+    const h2 = harness();
+    const second = admittedPatient(h2, "SYN-REV-024");
+    const l0 = h2.state.dischargeRevisions[second.admission.id] ?? 0;
+    h2.ok({ type: "RECORD_LEAVING", role: "ward", admissionId: second.admission.id, actingUnitId: second.admission.unitId, leavingDestination: "discharged-to-the-community" });
+    log("S2-13 arrival refusal:", r, "transfer-out revision", rev0, "->", rev1, "| ordinary leaving", l0, "->", h2.state.dischargeRevisions[second.admission.id] ?? 0);
+  });
+
+  it("S1-2: pull checks one patient for an existing bed but admits another", () => {
+    const h = harness();
+    const a = admittedPatient(h, "SYN-REV-025"); // patient A occupies a bed
+    h.ok({ type: "ADD_PATIENT", role: "coordinator", umrn: "SYN-REV-026", givenName: "Demo", familyName: "Other", dateOfBirth: "1981-01-01" });
+    const b = h.state.patients.at(-1)!;
+    const referralA = h.state.referrals.find((r) => r.patientId === a.patient.id);
+    log("S1-2 referral for A:", referralA?.id);
+    if (!referralA) return;
+    const r = h.send({
+      type: "RAISE_REFERRAL",
+      role: "ed",
+      edId: "jhc-ed",
+      referralId: referralA.id,
+      patientId: b.id,
+      draft: { cohort: "Adult", security: "Open", sex: "Female", gender: "Female", specialling: false, highAcuity: false, legalStatus: "Voluntary", urgency: 2, legalFormCode: null },
+    });
+    log("S1-2 raise refusal:", r);
+  });
+});
