@@ -330,6 +330,25 @@ function BedAlertMeter({ percent }: { percent: number }) {
   );
 }
 
+/** The Ward Flow mark: a care cross whose right arm runs on as an arrow, for flow (8 October 2026). */
+function WardFlowMark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={className}
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.25}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M8 3.5v13M3 10h13.5" />
+      <path d="M13 6.5 16.5 10 13 13.5" />
+    </svg>
+  );
+}
+
 export function WardRail() {
   const pathname = usePathname() ?? "";
   const { units, bedReleases, movements, configuration } = useWardFlow();
@@ -346,8 +365,6 @@ export function WardRail() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [activePersona, setActivePersona] = useState<string>("chen");
   const [roleSwitcherOpen, setRoleSwitcherOpen] = useState<boolean>(false);
-  const [capacityToast, setCapacityToast] = useState<string | null>(null);
-  const capacityToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userCardRef = useRef<HTMLDivElement>(null);
   const isClosedRailCardViewport = useSyncExternalStore(
     subscribeToClosedRailCards,
@@ -603,18 +620,35 @@ export function WardRail() {
       data-testid="ward-rail"
     >
       <div className={styles.brand}>
-        <Link
-          href={WARD_HOME_HREF}
-          className={styles.brandLink}
-          aria-label="Ward Flow home"
-          title="Ward Flow Western Australia"
-        >
-          <span className={styles.brandEmblem} aria-hidden="true">
-            <Plus className={styles.emblemGlyph} strokeWidth={2} aria-hidden="true" />
-          </span>
-          <span className={styles.brandTitle}>Ward Flow</span>
-          <span className={styles.brandStateText}>WA</span>
-        </Link>
+        {/* Closed desktop strip (Josh, 8 October 2026): the mark opens the full rail. Everywhere
+            else it stays the home link. */}
+        {!open && isClosedRailCardViewport ? (
+          <button
+            type="button"
+            className={styles.brandLink}
+            aria-label="Ward Flow, open the menu"
+            title="Open the menu"
+            data-testid="ward-rail-brand-open"
+            onClick={() => setOpen(true)}
+          >
+            <span className={styles.brandEmblem} aria-hidden="true">
+              <WardFlowMark className={styles.emblemGlyph} />
+            </span>
+          </button>
+        ) : (
+          <Link
+            href={WARD_HOME_HREF}
+            className={styles.brandLink}
+            aria-label="Ward Flow home"
+            title="Ward Flow Western Australia"
+          >
+            <span className={styles.brandEmblem} aria-hidden="true">
+              <WardFlowMark className={styles.emblemGlyph} />
+            </span>
+            <span className={styles.brandTitle}>Ward Flow</span>
+            <span className={styles.brandStateText}>WA</span>
+          </Link>
+        )}
         <button
           type="button"
           className={`${styles.moreTrigger} ${styles.mobileMenu}`}
@@ -729,13 +763,7 @@ export function WardRail() {
             onClick={() => {
               const nextOpen = !alertsOpen;
               setAlertsOpen(nextOpen);
-              if (nextOpen) {
-                const message = `Bed alerts: ${alertCountLabel}. ${metroLabel}. ${hottestLabel}.`;
-                setCapacityToast(message);
-                announceToWardShell(message);
-                if (capacityToastTimerRef.current) clearTimeout(capacityToastTimerRef.current);
-                capacityToastTimerRef.current = setTimeout(() => setCapacityToast(null), 2600);
-              }
+              if (nextOpen) announceToWardShell(`Bed alerts: ${alertCountLabel}. ${metroLabel}. ${hottestLabel}.`);
             }}
           >
             {alertCount > 0 ? <Dot tone="warning" /> : null}
@@ -889,12 +917,6 @@ export function WardRail() {
           ))}
         </nav>
       </div>
-
-      {capacityToast ? (
-        <div className={styles.capacityToast} role="status" data-testid="ward-rail-capacity-toast">
-          {capacityToast}
-        </div>
-      ) : null}
 
       <div className={styles.railFoot}>
         <div className={styles.utilityLinks}>
