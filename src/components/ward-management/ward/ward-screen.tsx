@@ -6,16 +6,11 @@ import Link from "next/link";
 import { useEffect, useCallback, useRef, useState, type FormEvent } from "react";
 
 import {
-  BED_PREPARATION_NOTES,
-  BED_RELEASE_BLOCKERS,
-  type BedPreparationNote,
   type BedReleaseBlocker,
   type ReleasePullReason,
   OVERRIDE_REASONS,
   type OverrideReason,
-  WARD_INTAKE_CONSTRAINTS,
   wardIntakeConstraintLabels,
-  type WardIntakeConstraint,
 } from "@/components/ward-management/ward-change-reasons";
 import {
   calendarDateOf,
@@ -32,8 +27,6 @@ import {
 import { designationSummary } from "@/components/ward-management/ward-bed-designation";
 import {
   BED_RELEASE_BLOCKED_FIGURE_LABEL,
-  BED_RELEASE_BLOCKED_LABEL,
-  bedReleaseStateLabels,
   isOpen,
   overridesAgainstUnit,
   stageCopy,
@@ -45,19 +38,12 @@ import { Hero, buttonClass } from "@/components/wf";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import {
-  BED_RELEASE_WAITING_ON,
-  type BedReleaseWaitingOn,
-  type DeclineReason,
-  type Movement,
-  type Rejection,
-} from "@/components/ward-management/ward-model";
+import type { DeclineReason, Movement, Rejection } from "@/components/ward-management/ward-model";
 import { edById, siteByCode, WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
 import {
   daysInBed as admissionStayDays,
   stayBand,
   isPastExpectedDischarge,
-  LEAVING_DESTINATIONS,
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
@@ -69,17 +55,6 @@ import { WardNotificationCenter } from "./ward-notification-center";
 import { handoverScopeValue } from "@/components/ward-management/handover/handover-page";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-/**
- * Task F1 (owner answer 32): the release/leave forms used to parse an `<input type="time">`'s
- * `HH:MM` straight into an `Instant` with `hours * 60 + minutes` — a bare minute of demo DAY
- * ZERO, never the clock's own current day. Once the demo clock rolled past midnight once, a
- * ward typing "14:00" meaning later today stamped a release with an instant hours in the PAST,
- * because the parse had no way to say which day "14:00" meant. Replaced by
- * `parseReleaseDayInstant`, which takes the same `HH:MM` text plus an explicit Today/Tomorrow
- * choice and resolves it against `now`'s own day — see this module's doc comment for the full
- * defect and the worked example that proves the fix.
- */
-import { RELEASE_DAYS, parseReleaseDayInstant, releaseTimeAlreadyPassed, type ReleaseDay } from "./release-day";
 import { WardAnswerView } from "./ward-answer-view";
 import styles from "./ward.module.css";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
@@ -130,31 +105,6 @@ function arrivalIsLate(movement: Movement, now: Instant): boolean {
  * all write to, so a ward reading its own action back is now structurally the same read as
  * anyone else reading it.
  */
-
-/**
- * 🔴 **THE DAILY RETURN'S THREE QUESTIONS, DECLARED ONCE — A4.**
- *
- * The panel asks five things and counts three, and **the three is correct**: rows 4 and 5 record an
- * individual item (a bed coming free, somebody on leave), not an ANSWER ACT somebody performed.
- * See the comment beside those rows for why counting them would build a progress bar that can never
- * reach the end on a perfectly correct ward. **That reasoning is not what A4 changes.**
- *
- * ⚠️ **What A4 changes is that the number 3 used to be typed.** The denominator was the literal `3`
- * in the panel's label while the questions were a union in `useState`'s type argument — **two places
- * that had to agree, with nothing forcing them to.** A fourth question would have left the screen
- * confidently announcing "of 3", which is the class of wrong statement this project cares most
- * about, and no existing test would have caught it: one pins `/\bof 3 confirmed\b/` and would simply
- * have kept passing.
- *
- * 🔴 **Both now derive from this array, so they cannot disagree.** Add a fourth question here and the
- * denominator moves with it. **The order is the order the rows render in** and is not incidental —
- * the panel asks them in this sequence every morning.
- */
-const DAILY_RETURN_QUESTIONS = ["empty", "allocatable", "constraints"] as const;
-
-/** The key of one daily-return question. Derived from the array above rather than declared beside
- *  it, so there is no second list to keep in step. */
-type DailyReturnQuestion = (typeof DAILY_RETURN_QUESTIONS)[number];
 
 export function WardScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
   if (presentation === "answer") {
@@ -233,10 +183,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
   const [declineReason, setDeclineReason] = useState<DeclineReason | undefined>(undefined);
   const [capacityRevision, setCapacityRevision] = useState(() => unit?.allocatable.revision ?? 0);
-  const [dailyCapacityObservation, setDailyCapacityObservation] = useState(() => ({
-    value: unit?.allocatable.value ?? 0,
-    revision: unit?.allocatable.revision ?? 0,
-  }));
   const [capacityValue, setCapacityValue] = useState<string>(() => String(unit?.allocatable.value ?? 0));
 
   // Task 3: the undo the prototype has never had. Keyed by movementId, same pattern as
@@ -244,51 +190,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // at a time.
   const [releaseOpenFor, setReleaseOpenFor] = useState<string | undefined>(undefined);
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | undefined>(undefined);
-  // Task 11 (spec item 9): the bed-release flag. Not keyed by movement id — unlike decline,
-  // release and cancel above, this is not about any one referral, it is about this ward's own
-  // bed stock, so one form per screen is enough.
-  const [bedReleaseWaitingOn, setBedReleaseWaitingOn] = useState<BedReleaseWaitingOn | undefined>(undefined);
-  // The stay the release belongs to (owner ruling 25 Sept 2026: a bed release names the patient
-  // whose discharge frees it, and it is never guessed). Chosen by the ward in the form below.
-  const [bedReleaseAdmissionId, setBedReleaseAdmissionId] = useState<string | undefined>(undefined);
-  const [bedReleaseBlocker, setBedReleaseBlocker] = useState<BedReleaseBlocker | undefined>(undefined);
-  // Fix round 2 (P1): the ward's own estimate of when this bed will actually be free, collected
-  // exactly like `leaveExpectedReturn` below and parsed the same way via
-  // `parseReleaseDayInstant` — see `ward-flow-events.ts`'s `FLAG_BED_RELEASE.expectedAt` doc
-  // comment for why this is a fact about the BED, not the departing patient.
-  const [bedReleaseExpectedAt, setBedReleaseExpectedAt] = useState<string>("");
-  // Task F1 (owner answer 32): the day the typed time belongs to. Defaults to "today" — the
-  // common case, and the one that keeps every existing test that never touches this control
-  // (it fills only the time) submitting exactly the instant it always has.
-  const [bedReleaseDay, setBedReleaseDay] = useState<ReleaseDay>("today");
-  // Task 5: the block form on an EXISTING release row. Keyed by release id, same one-open-at-a-time
-  // pattern as `declineOpenFor`/`releaseOpenFor` above.
-  const [blockOpenFor, setBlockOpenFor] = useState<string | undefined>(undefined);
-  const [blockChoice, setBlockChoice] = useState<BedReleaseBlocker | undefined>(undefined);
-  // Josh, 26 Sept 2026 (answer 1A): "Discharged" asks where the named person is going, then records
-  // that they have left; that departure completes the release. The row already names the person, so
-  // nothing is guessed, and nothing is recorded until a destination is chosen.
-  const [dischargeOpenFor, setDischargeOpenFor] = useState<string | undefined>(undefined);
-  const [dischargeDestination, setDischargeDestination] = useState<LeavingDestination | undefined>(undefined);
   const dischargeCheckRef = useRef<{ prior: number; success: string; who: string; codes: string[] } | null>(null);
   const [dischargeToken, setDischargeToken] = useState(0);
-  // Bed-model rework (2026-08-28): the reversal form on an existing CONFIRMED release row, same
-  // one-open-at-a-time pattern as the block form above. It exists because forbidding the
-  // reversal never stopped wards reversing a decision — it only stopped them recording it.
-  const [revertOpenFor, setRevertOpenFor] = useState<string | undefined>(undefined);
-  const [revertChoice, setRevertChoice] = useState<BedReleaseWaitingOn | undefined>(undefined);
-  // List 3 (2026-08-28): the preparation-note picker, one row open at a time — the same
-  // open-for/choice pair the block and revert forms above already use.
-  const [preparationOpenFor, setPreparationOpenFor] = useState<string | undefined>(undefined);
-  const [preparationChoice, setPreparationChoice] = useState<BedPreparationNote | undefined>(undefined);
-  // Task 5: the small leave-bed form. Not keyed by anything — like the flag-bed-release form
-  // above, this is about this ward's own bed stock, so one form per screen is enough.
-  const [leaveExpectedReturn, setLeaveExpectedReturn] = useState<string>("");
-  // Task F1 (owner answer 32): the leave form's own Today/Tomorrow choice, same rule and same
-  // default as `bedReleaseDay` above — kept as a separate state so the two forms' choices never
-  // leak into each other.
-  const [leaveDay, setLeaveDay] = useState<ReleaseDay>("today");
-  const [leaveAdmissionId, setLeaveAdmissionId] = useState<string>("");
   const [answerIndex, setAnswerIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"attn" | "coming" | "out" | "beds" | "return">(
     departurePlanning ? "return" : "attn",
@@ -495,49 +398,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     }
   }
 
-  /**
-   * Rebuild to `mockup-ward-entry.html` (2026-09-04): the "Confirm today's numbers" panel.
-   *
-   * ⚠️ ALL THREE QUESTIONS ARE TRACKED HERE, LOCALLY, RATHER THAN DERIVED FROM `unit.allocatable`
-   * OR `unit.empty` DIRECTLY. Two reasons, one per field:
-   *
-   * - `unit.empty.source` is DOCUMENTED AS ALWAYS `"feed"` (`ward-model.ts`: "Physically empty
-   *   beds, per the feed") — this model has no ward-side event that confirms it, so there is no
-   *   real state to read a "confirmed today" flag from. Inventing one on `Unit` is a model change
-   *   this task's file scope (`ward/` and `wards/` only) does not reach.
-   * - There is no "anything limiting intake" field on `Unit` at all.
-   *
-   * So this panel's confirmed-count is session-local bookkeeping, seeded to 0 on every mount —
-   * which is also what makes "0 of 3 confirmed since this page opened" a state this screen can
-   * always reach — quoted as the label ACTUALLY renders since 2026-09-07, because this comment said
-   * "confirmed today" for a day after that word was removed from the chip for being false, and a
-   * reader searching the old string would have found only this paragraph and taken it as current —
-   * the
-   * exact state the bed-list CTA below must remain available through. The "allocatable" question
-   * is the one REAL exception: confirming it also dispatches the same `CONFIRM_CAPACITY` event
-   * the capacity form further down the page already sends, so pressing it has a genuine effect on
-   * `unit.allocatable`, not only on this panel's own count.
-   */
-  /*
-   * ⚠️ **SESSION STATE, AND EVERY CHIP READING IT NOW SAYS SO.** This set is `useState(() => new
-   * Set())` — it resets on every mount. The three chips it drives used to read
-   * "Not yet confirmed today" (twice) and "Never answered on this ward", which are claims about the
-   * DAY and about the WARD'S HISTORY. Neither is knowable from here: a ward that answered a minute
-   * ago, navigated away and came back, was told it had never answered at all.
-   *
-   * ⚠️ **AND FOR THE CONSTRAINTS ANSWER THERE IS NO FIELD TO READ.** `Unit` records nothing about
-   * whether the ward has ever answered it, so the wording is the whole of the available fix — the
-   * real repair is a model field and an event that writes it, which is not this component's to make.
-   * `empty` and `allocatable` DO have real provenance (`CapacityFigure.confirmedAt`), and it is
-   * shown by `WardFreshness` beneath each chip; what these chips report is only whether somebody
-   * re-confirmed in THIS session, which is now what they say.
-   */
-  const [confirmedToday, setConfirmedToday] = useState<ReadonlySet<DailyReturnQuestion>>(() => new Set());
-  // Owner Answer 18 (second round, 2026-09-17): a fixed multiple-choice list, chosen never typed,
-  // replacing the old free-text draft. Starts empty every mount, same as the free-text box it
-  // replaces — the ward re-states its answer rather than editing a pre-filled one.
-  const [constraintsDraft, setConstraintsDraft] = useState<readonly WardIntakeConstraint[]>([]);
-
   /*
    * THE WARD'S OWN REFUSAL SURFACE for `ACCEPT_IN_PRINCIPLE` and `PULL_PATIENT` — until now this
    * screen dispatched both and never read `rejections` at all, so a ward whose accept or pull was
@@ -602,24 +462,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // screen shows. `capacity.held` is NOT Closed (it still counts a live pull's empty bed), and
   // "Held" is reserved for a bed kept for a patient on leave.
   const states = bedStates(unit, admissions, bedReleases, leaveBeds);
-  // Who a bed release can name: people occupying a bed on this ward with no live release already
-  // (the reducer refuses anyone else). Named from the record, the same way the bed list names them.
-  const bedReleaseCandidates = (admissions ?? [])
-    .filter(
-      (admission) =>
-        admission.unitId === unit.id &&
-        admission.state === "occupied" &&
-        !bedReleases.some((release) => release.admissionId === admission.id && release.state !== "discharged"),
-    )
-    .map((admission) => {
-      const linkedMovement = admission.referralId
-        ? movements.find((movement) => movement.id === admission.referralId)
-        : undefined;
-      return {
-        admissionId: admission.id,
-        label: `${resolvePatientIdentity(linkedMovement ?? admission).displayName} · ${admission.id}`,
-      };
-    });
   // Visual-fix pass: the capacity board (`CapacityView` in `ward-management-modes.tsx`) was just
   // corrected to source Confirmed/Expected from `capacityBreakdown()` rather than `unitCapacity()`'s
   // raw, state-and-timing-blind `potential` count — this screen used to be the one place still
@@ -641,15 +483,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // this list (spec D10's "removes it from the pending list"), never rendered with dead controls.
   const pendingBedReleases = bedReleases.filter(
     (release) => release.unitId === unit.id && release.state !== "discharged",
-  );
-
-  // List 3 (2026-08-28): this unit's own beds that have already been DISCHARGED. They are the only
-  // beds a preparation note applies to — the note says what a free bed is being made ready for.
-  // They are deliberately a SEPARATE list from `pendingBedReleases` above rather than being
-  // restored to it: `discharged` is still terminal for every lifecycle control, and nothing in this
-  // section moves a stage.
-  const dischargedBedReleases = bedReleases.filter(
-    (release) => release.unitId === unit.id && release.state === "discharged",
   );
 
   // Task 5: this unit's own beds currently occupied by someone on approved leave — read here only
@@ -725,9 +558,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
    * stamp names a release from the same population as the number above it.
    */
   const releasesCountedToday = pendingBedReleases.filter((release) => releaseBand(release, now) !== "beyond-today");
-  const releasesComingFree = breakdown.confirmedToday + breakdown.expectedToday;
-  const lastFlaggedRelease = releasesCountedToday.at(-1);
-  const lastRecordedLeaveBed = unitLeaveBeds.at(-1);
 
   // Task 5, spec D12: every REQUEST_CAPACITY_REFRESH raised against this unit, live from the
   // provider. `refreshRequests` only ever grows (the reducer never removes an entry), so the last
@@ -1328,10 +1158,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               onClick={() => {
                 setCapacityValue(String(unit.allocatable.value));
                 setCapacityRevision(unit.allocatable.revision ?? 0);
-                setDailyCapacityObservation({
-                  value: unit.allocatable.value,
-                  revision: unit.allocatable.revision ?? 0,
-                });
               }}
             >
               Start a new capacity observation from the current count
@@ -1344,100 +1170,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     );
   };
 
-  /** "Beds empty right now" — local acknowledgment only; see the state doc comment above for why. */
-  function confirmEmptyToday() {
-    setConfirmedToday((current) => new Set([...current, "empty"]));
-  }
-
-  /** Reaffirm the observation captured when the daily questions opened. A changed
-   * revision requires a new observation rather than restoring the old count. */
-  const currentCapacityRevision = unit.allocatable.revision ?? 0;
-  function confirmAllocatableToday() {
-    dispatch({
-      type: "CONFIRM_CAPACITY",
-      role: "ward",
-      now,
-      unitId: wardUnitId,
-      actingUnitId: unitId,
-      value: dailyCapacityObservation.value,
-      expectedRevision: dailyCapacityObservation.revision,
-    });
-    if (dailyCapacityObservation.revision === currentCapacityRevision)
-      setConfirmedToday((current) => new Set([...current, "allocatable"]));
-  }
-
-  /** The mockup's single-tap "nothing has changed" button — both bed-count questions at once. */
-  function confirmBothBedCounts() {
-    confirmEmptyToday();
-    confirmAllocatableToday();
-  }
-
-  /**
-   * "Anything limiting who can come in right now." Owner Answer 18 (second round, 2026-09-17)
-   * replaced the free-text box with a fixed list — no code chosen is a valid, recorded answer
-   * (the mockup's own earlier note said blank "does not stop you opening the ward below"; the
-   * equivalent here is submitting with nothing ticked), so this never refuses the submit the way
-   * `submitDecline`/`submitCapacity` above refuse an incomplete form.
-   */
-  function saveConstraints(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    dispatch({
-      type: "RECORD_WARD_INTAKE_CONSTRAINTS",
-      role: "ward",
-      now,
-      unitId: wardUnitId,
-      actingUnitId: unitId,
-      codes: constraintsDraft,
-    });
-    setConfirmedToday((current) => new Set([...current, "constraints"]));
-  }
-
-  function toggleConstraintOption(code: WardIntakeConstraint, checked: boolean) {
-    setConstraintsDraft((current) => (checked ? [...current, code] : current.filter((existing) => existing !== code)));
-  }
-
-  function submitBedRelease(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!bedReleaseWaitingOn) return;
-    // Task F1 (owner answer 32): same parse-and-bail discipline as `submitLeaveBed`'s own
-    // `expectedReturn` below — an empty or malformed time input refuses the submit rather than
-    // guessing a value. `parseReleaseDayInstant` resolves the typed time against the Today/
-    // Tomorrow choice AND the live `now`, not a fixed day — see that module's doc comment.
-    const expectedAt = parseReleaseDayInstant(now, bedReleaseDay, bedReleaseExpectedAt);
-    if (expectedAt === undefined) return;
-    // Owner rulings 2026-09-25: a bed release names the patient whose stay it belongs to
-    // (`BedRelease.admissionId`), and it is never guessed. The ward picks the person in the form;
-    // with nobody picked the submit is refused with a plain message and records nothing (Josh
-    // chose "Refuse", 25 Sept, 20:33 AWST).
-    const chosenAdmissionId = bedReleaseAdmissionId;
-    if (chosenAdmissionId === undefined) {
-      setToastMessage("Choose the patient whose bed is coming free. Nothing was recorded.");
-      return;
-    }
-    // `actingUnitId` is this screen's own route parameter, exactly like `submitCapacity` above —
-    // it states which ward the caller says it is; it does not prove it. FLAG_BED_RELEASE is
-    // ward-only, so this comparison always runs (see the reducer's own comment on the case).
-    // `blocker` is optional here (Phase 5, spec D3) — a bed flagged with a blocker records a
-    // held release; a bed flagged with none is a plain prediction. Task 5 redesigns this panel
-    // to make that choice explicit; this is the minimum needed to keep it compiling and honest.
-    dispatch({
-      type: "FLAG_BED_RELEASE",
-      role: "ward",
-      now,
-      unitId: wardUnitId,
-      actingUnitId: unitId,
-      admissionId: chosenAdmissionId,
-      waitingOn: bedReleaseWaitingOn,
-      expectedAt,
-      blocker: bedReleaseBlocker,
-    });
-    setBedReleaseAdmissionId(undefined);
-    setBedReleaseWaitingOn(undefined);
-    setBedReleaseBlocker(undefined);
-    setBedReleaseDay("today");
-    setBedReleaseExpectedAt("");
-  }
-
   // Task 5 (spec D10): the ward moving its OWN bed release through its own lifecycle —
   // `actingUnitId` is this screen's own route parameter, exactly like `submitCapacity` and
   // `submitBedRelease` above. `expected -> confirmed` is the only transition
@@ -1446,69 +1178,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // the row does not itself offer.
   function confirmBedRelease(releaseId: string) {
     dispatch({ type: "CONFIRM_BED_RELEASE", role: "ward", now, releaseId, actingUnitId: unitId });
-  }
-
-  // Bed-model rework (2026-08-28): the reversal. `confirmed -> expected`, recorded like any
-  // other change. What the discharge is waiting on has to be restated because a expected release
-  // carries it and a confirmed release does not — this row's own picker supplies it, defaulting to
-  // nothing so the ward states the fact rather than inheriting one. "Nothing outstanding" is a
-  // real choice in that picker, so a ward reversing an unobstructed discharge has a value to give.
-  function revertBedRelease(event: FormEvent<HTMLFormElement>, releaseId: string) {
-    event.preventDefault();
-    if (!revertChoice) return;
-    dispatch({
-      type: "REVERT_BED_RELEASE",
-      role: "ward",
-      now,
-      releaseId,
-      actingUnitId: unitId,
-      waitingOn: revertChoice,
-    });
-    setRevertOpenFor(undefined);
-    setRevertChoice(undefined);
-  }
-
-  // List 3 (2026-08-28): recording what a released bed is being made ready for.
-  //
-  // **This changes no bed figure and must never be made to.** `capacityBreakdown` derives
-  // `availableNow` from the unit's own fields and never reads a release, and matching never reads
-  // a `BedRelease` at all — the bed stays offered, stays counted, and stays allocatable the whole
-  // time it is being cleaned. That is the owner's own clinical answer to Q4: pulling the next
-  // patient takes hours anyway, so holding the bed back would invent a delay that does not exist.
-  function submitBedPreparation(event: FormEvent<HTMLFormElement>, releaseId: string) {
-    event.preventDefault();
-    if (!preparationChoice) return;
-    dispatch({
-      type: "SET_BED_PREPARATION",
-      role: "ward",
-      now,
-      releaseId,
-      actingUnitId: unitId,
-      preparing: true,
-      note: preparationChoice,
-    });
-    setPreparationOpenFor(undefined);
-    setPreparationChoice(undefined);
-  }
-
-  // The bed has finished being made ready. `preparing: false` forces the note null in the reducer,
-  // because "not being made ready, waiting on a clean" is a contradiction.
-  function finishBedPreparation(releaseId: string) {
-    dispatch({
-      type: "SET_BED_PREPARATION",
-      role: "ward",
-      now,
-      releaseId,
-      actingUnitId: unitId,
-      preparing: false,
-    });
-    setPreparationOpenFor(undefined);
-    setPreparationChoice(undefined);
-  }
-
-  function toggleBedPreparation(releaseId: string) {
-    setPreparationOpenFor((current) => (current === releaseId ? undefined : releaseId));
-    setPreparationChoice(undefined);
   }
 
   // Bed-model rework (2026-08-28): lifting the blocked flag. The stage is untouched — a confirmed
@@ -1532,39 +1201,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     return `${who} (bed not recorded)`;
   }
 
-  function toggleDischargeRelease(releaseId: string) {
-    setDischargeOpenFor((current) => (current === releaseId ? undefined : releaseId));
-    setDischargeDestination(undefined);
-  }
-
-  function submitDischargeRelease(event: FormEvent<HTMLFormElement>, admissionId: string, who: string) {
-    event.preventDefault();
-    if (!dischargeDestination) return;
-    // The codes come from the ward-scoped projection (D-14), never a patient link read here. Patient
-    // code first: a generated patient code contains the admission code. A person the projection did
-    // not resolve keeps the codes, rather than becoming "Unknown Patient" in the message.
-    const resolved = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId));
-    dischargeCheckRef.current = {
-      prior: rejections.length,
-      success: `Recorded: ${who} has left the ward.`,
-      who,
-      codes: resolved.patient ? [resolved.patient.id, admissionId] : [],
-    };
-    if (recordWardDeparture) recordWardDeparture(admissionId, unitId, dischargeDestination);
-    else
-      dispatch({
-        type: "RECORD_LEAVING",
-        role: "ward",
-        now,
-        admissionId,
-        actingUnitId: unitId,
-        leavingDestination: dischargeDestination,
-      });
-    setDischargeOpenFor(undefined);
-    setDischargeDestination(undefined);
-    setDischargeToken((token) => token + 1);
-  }
-
   function handleDrawerRecordLeft(admissionId: string, who: string) {
     if (!drawerLeavingDestination) return;
     const resolved = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId));
@@ -1586,56 +1222,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       });
     setDischargeToken((token) => token + 1);
     closeBedDrawer();
-  }
-
-  function toggleBlockRelease(releaseId: string) {
-    setBlockOpenFor((current) => (current === releaseId ? undefined : releaseId));
-    setBlockChoice(undefined);
-  }
-
-  function toggleRevertRelease(releaseId: string) {
-    setRevertOpenFor((current) => (current === releaseId ? undefined : releaseId));
-    setRevertChoice(undefined);
-  }
-
-  function submitBlockRelease(event: FormEvent<HTMLFormElement>, releaseId: string) {
-    event.preventDefault();
-    if (!blockChoice) return;
-    // Bed-model rework (2026-08-28): this sets the blocked FLAG and moves no stage. The form
-    // renders on any unreleased row, and `discharged` rows never reach this list at all.
-    dispatch({ type: "BLOCK_BED_RELEASE", role: "ward", now, releaseId, actingUnitId: unitId, blocker: blockChoice });
-    setBlockOpenFor(undefined);
-    setBlockChoice(undefined);
-  }
-
-  // Task 5 (spec D10): a small leave-bed form — unit implied by the route, exactly like
-  // `submitBedRelease` above never asking which ward it is acting as.
-  function submitLeaveBed(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    // Task F1 (owner answer 32): same day-aware resolve as `submitBedRelease` above, and the
-    // same instant-only-not-guessed refusal.
-    const expectedReturn = parseReleaseDayInstant(now, leaveDay, leaveExpectedReturn);
-    if (expectedReturn === undefined) return;
-    // Owner ruling 2026-09-25: a leave bed names the stay it belongs to, and it is never guessed.
-    // Patient must be explicitly chosen from the form dropdown.
-    const isLeaveAdmissionValid = otherOccupants.some((a) => a.id === leaveAdmissionId);
-    const chosenAdmissionId: string | undefined = isLeaveAdmissionValid ? leaveAdmissionId : undefined;
-    if (chosenAdmissionId === undefined) {
-      setToastMessage("Choose the patient who is on leave. Nothing was recorded.");
-      return;
-    }
-    dispatch({
-      type: "RECORD_LEAVE_BED",
-      role: "ward",
-      now,
-      unitId: wardUnitId,
-      actingUnitId: unitId,
-      admissionId: chosenAdmissionId,
-      expectedReturn,
-    });
-    setLeaveExpectedReturn("");
-    setLeaveDay("today");
-    setLeaveAdmissionId("");
   }
 
   // Task 5 addendum (binding spec's Data flow section: "Leave beds follow the same path with a

@@ -7,14 +7,15 @@ objective; it is not a new task/status ledger.
 - Repository: `BigSimmo/Ward-Flow`.
 - Base: `e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` (`origin/main` inspected locally).
 - Branch: `codex/documentation-repair-20261008`, isolated from the original checkout.
-- Stage: documentation implementation delivered; local verification executed.
-- Status: Blocked for broad readiness by 34 existing Ward-screen lint warnings. All nine
-  documentation findings are implemented. No ownership conflict; exact file claims are
+- Stage: documentation implementation delivered; continuing local readiness repair.
+- Status: In progress. The owner requested continuation after the lint blocker was reported.
+  All nine documentation findings are implemented. No ownership conflict; exact file claims are
   recorded in the execution workspace's local log through `WARD_SIGNOUT_FILE`.
 - Scope: nine documentation findings, maintained Context7 guidance, navigation and
-  targeted maintenance improvements. Preserve historical records and approved product rules.
-- Next action: review the local documentation repair. Resolve the existing application lint
-  warnings before claiming broad readiness; publication and deployment remain separate stages.
+  targeted maintenance improvements; the requested continuation clears the reported lint blocker.
+  Preserve historical records and approved product rules.
+- Next action: remove unreachable local Ward-screen scaffolding, verify active interactions and
+  complete selected local gates. Publication and deployment remain separate stages.
 
 ## Evidence contract
 
@@ -110,12 +111,31 @@ clean-tree FULL gate. Its evidence is local and scoped to that commit:
 | Commit hooks                       | Staged scan, nine tooling lint files, four scoped typecheck files and generated-doc checks passed |
 | Broad lint                         | Blocked: 34 warnings in unchanged `src/components/ward-management/ward/ward-screen.tsx`           |
 
-The final follow-up changes only this checkpoint and `docs/wiring-conventions.md`; documentation
-gates and owned formatting cover that follow-up. The source, tooling and tests remain identical
-to the unit/browser-verified implementation commit. The browser runner and the temporary
+The documentation-stage follow-up at `58322f4` changed only this checkpoint and
+`docs/wiring-conventions.md`; documentation gates and owned formatting covered it. At that
+commit, source, tooling and tests were identical to the unit/browser-verified implementation. The browser runner and the temporary
 identity-verified development server were stopped; the original checkout remains untouched.
 
 Execution logs and the immutable FULL receipt are retained in the execution workspace at
 `/workspace/review-artifacts/`, including `docs-repair-full-unit-receipt.json`,
 `docs-repair-browser.log` and `docs-repair-acceptance.log`. The initial acceptance log stopped
 at lint; the separate logs above supply the later typecheck, FULL and browser evidence.
+
+## Owner-requested continuation — clearing the lint blocker
+
+The owner requested implementation again after the blocker was reported. Continue the same
+`WF-DOCS-20261008` task and branch; no publication or deployment was requested.
+
+Removed unreachable private handlers, their unused state/derived values and unused imports from
+`ward/ward-screen.tsx`. Shared exports, reducers, models and styles remain intact. All 28 retained
+function declarations are structurally unchanged. The six JSX roots are unchanged apart from one
+obsolete local observation update in the capacity reset button; its active value/revision updates
+remain intact. Existing arrival, discharge, capacity, refusal and focus paths retain their handlers.
+
+The focused screen lint passed with zero warnings. Eight existing test files passed, covering
+64 tests across the Ward screen, morning rollup, refusal, bed release, daily-return rows, leave
+records and day-aware release parsing. No tests were deleted or lint rules weakened.
+
+Next: preserve the clean candidate, then execute the selected gate against `origin/main`.
+New evidence is stored under `/workspace/review-artifacts/docs-repair-lint-*`, including
+`docs-repair-lint-structure.json` and `docs-repair-lint-focused-tests.log`.
