@@ -1,3 +1,4 @@
+import { reduceLeaveBedEvent } from "./ward-flow-leave-bed-reducer";
 import { reduceBedReleaseEvent } from "./ward-flow-bed-release-reducer";
 import { reduceCapacityEvent } from "./ward-flow-capacity-reducer";
 import { reduceSettingsEvent } from "./ward-flow-settings-reducer";
@@ -5354,63 +5355,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         replaceUnit,
         replaceBedRelease,
       });
+    case "RECORD_LEAVE_BED":
+      return reduceLeaveBedEvent(state, event, { reject, findUnit, findAdmission, findLeaveBed, nextLeaveBedId });
 
-    case "RECORD_LEAVE_BED": {
-      // Same claim-not-proof discipline as FLAG_BED_RELEASE's own field: this compares what the
-      // caller SAID it was acting as against the unit the leave bed is being recorded against.
-      if (event.actingUnitId !== event.unitId) {
-        return reject(
-          state,
-          event,
-          `RECORD_LEAVE_BED was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}`,
-        );
-      }
-      const unit = findUnit(state, event.unitId);
-      if (!unit) return reject(state, event, `no unit found for id ${event.unitId}`);
-      // Owner ruling 2026-09-25: a leave bed names the stay it belongs to, never a guessed one.
-      const onLeave = findAdmission(state, event.admissionId);
-      if (!onLeave) return reject(state, event, `no admission found for id ${event.admissionId}`);
-      if (onLeave.unitId !== event.unitId) {
-        return reject(
-          state,
-          event,
-          `RECORD_LEAVE_BED names admission ${onLeave.id} on unit ${onLeave.unitId}, not unit ${event.unitId}`,
-        );
-      }
-      if (onLeave.state !== "occupied") {
-        return reject(
-          state,
-          event,
-          `admission ${onLeave.id} is ${onLeave.state}, and only somebody occupying a bed can be on leave from it`,
-        );
-      }
-      const current = state.leaveBeds.find((bed) => bed.admissionId === onLeave.id);
-      if (current) return reject(state, event, `admission ${onLeave.id} is already on leave (${current.id})`);
-      const sequence = state.leaveBedSequence + 1;
-      const created: LeaveBed = {
-        id: nextLeaveBedId(sequence),
-        unitId: unit.id,
-        admissionId: onLeave.id,
-        expectedReturn: event.expectedReturn,
-        confirmedAt: event.now,
-        confirmedBy: `NUM ${unit.name}`,
-        kind: event.kind ?? "off_ward",
-      };
-      return { ...state, leaveBeds: [...state.leaveBeds, created], leaveBedSequence: sequence };
-    }
+    case "END_LEAVE_BED":
+      return reduceLeaveBedEvent(state, event, { reject, findUnit, findAdmission, findLeaveBed, nextLeaveBedId });
 
-    case "END_LEAVE_BED": {
-      const leaveBed = findLeaveBed(state, event.leaveBedId);
-      if (!leaveBed) return reject(state, event, `no leave bed found for id ${event.leaveBedId}`);
-      if (event.actingUnitId !== leaveBed.unitId) {
-        return reject(
-          state,
-          event,
-          `END_LEAVE_BED was raised acting as unit ${event.actingUnitId} but leave bed ${leaveBed.id} belongs to unit ${leaveBed.unitId}`,
-        );
-      }
-      return { ...state, leaveBeds: state.leaveBeds.filter((candidate) => candidate.id !== leaveBed.id) };
-    }
     case "REQUEST_CAPACITY_REFRESH":
       return reduceCapacityEvent(state, event, { reject, findUnit, replaceUnit });
 

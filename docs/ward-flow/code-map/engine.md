@@ -15,6 +15,9 @@ guards, and appends the audit result after command handling. Internal event fami
   Shared resolution checks the named release and caller ward scope; command handlers retain
   stay identity, occupancy, live-release uniqueness and legal transition checks. Main-reducer
   replacement operations preserve unit/release writes and resource revision handling.
+- `ward-flow-leave-bed-reducer.ts`: record and end leave. Creation keeps the named occupied
+  stay, caller ward and one-leave-per-stay checks, and uses the main reducer's sequence-based
+  identifier operation. Ending leave removes only the matching leave record.
 
 `ward-flow-storage-validation.ts` separately validates nested containers, header/counters,
 record shapes, identifiers, cross-record links, capacity bounds, audit data and persistence privacy.
