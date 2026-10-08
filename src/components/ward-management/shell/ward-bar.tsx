@@ -1017,7 +1017,14 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             setOpenPanel((current) => (current === "service" || current === "primary" ? null : current))
           }
         >
-          <WardGlobalSearch movements={movements} patients={patients} units={units} placeholder="Search" />
+          <WardGlobalSearch
+            movements={movements}
+            patients={patients}
+            units={units}
+            tasks={tasksItems}
+            now={now}
+            placeholder="Search"
+          />
         </div>
       </div>
 
