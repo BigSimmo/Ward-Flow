@@ -6714,3 +6714,518 @@ tr.qRow:focus-visible {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ─── Phone (≤48rem), 8 Oct 2026: phone board 05. The board becomes stacked rows (tier, name and
+ * status line, time in ED and bay, then the next step); the filter chips scroll sideways; the
+ * draft note leaves the phone view. Desktop is untouched. ─── */
+@media (max-width: 48rem) {
+  .boardChips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+
+  .boardChips > .boardChip {
+    flex: none;
+    height: auto;
+    min-height: 2.75rem;
+    white-space: nowrap;
+  }
+
+  /* Larger screen mode has no meaning on a phone. */
+  .ph .fullscreenToggleBtn {
+    display: none;
+  }
+
+  .boardWrap .boardTable .nextCell .rowExpand {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .boardTools .draftNote {
+    display: none;
+  }
+
+  .boardTools .patientSort select {
+    min-height: 2.75rem;
+  }
+
+  .tableWrap.boardWrap {
+    min-height: 0;
+    overflow-x: visible;
+  }
+
+  .boardWrap .boardTable,
+  .boardWrap .boardTable tbody {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .boardWrap .boardTable colgroup,
+  .boardWrap .boardTable thead {
+    display: none;
+  }
+
+  .boardWrap .boardTable tr.qRow {
+    display: grid;
+    grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+    grid-template-areas:
+      "tier name time"
+      "tier name bay"
+      "next next next";
+    grid-template-rows: auto 1fr auto;
+    align-items: start;
+    column-gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-3);
+    border-bottom: 1px solid var(--wf-line);
+    background: var(--wf-surface);
+  }
+
+  .boardWrap .boardTable tr.qRow > td {
+    display: block;
+    min-width: 0;
+    width: auto;
+    max-width: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+  }
+
+  .boardWrap .boardTable tr.qRow > td:nth-child(5),
+  .boardWrap .boardTable tr.qRow > td:nth-child(6),
+  .boardWrap .boardTable tr.qRow > td:nth-child(7),
+  .boardWrap .boardTable tr.qRow > td:nth-child(8) {
+    display: none;
+  }
+
+  .boardWrap .boardTable tr.qRow > .tierCell {
+    grid-area: tier;
+    text-align: left;
+  }
+
+  .boardWrap .boardTable tr.qRow > .patientIdentity {
+    grid-area: name;
+  }
+
+  .boardWrap .boardTable tr.qRow > .compactTime {
+    grid-area: time;
+    text-align: right;
+  }
+
+  .boardWrap .boardTable tr.qRow > .bayCell {
+    grid-area: bay;
+    justify-self: end;
+  }
+
+  .boardWrap .boardTable tr.qRow .bayNumber {
+    height: auto;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: 500 var(--wf-fs-11) / 1.4 var(--wf-mono);
+    color: var(--wf-ink-2);
+  }
+
+  .boardWrap .boardTable tr.qRow .bayNumber::before {
+    content: "Bay\00a0";
+    font-family: var(--wf-font);
+  }
+
+  .boardWrap .boardTable tr.qRow .accessWarning {
+    margin-top: 0;
+    white-space: nowrap;
+  }
+
+  /* The name opens the patient; its hit area grows to 44px without moving the text. */
+  .boardWrap .boardTable tr.qRow .patientName {
+    padding-block: 13px;
+    margin-block: -13px;
+  }
+
+  .boardWrap .boardTable tr.qRow > .nextCell {
+    grid-area: next;
+  }
+
+  .boardWrap .boardTable tr.qRow > .nextCell:not(:empty) {
+    margin-top: var(--wf-s-1);
+  }
+
+  .boardWrap .boardTable .nextCell .nextGroup {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .boardWrap .boardTable tr:not(.qRow) {
+    display: block;
+  }
+
+  .boardWrap .boardTable tr:not(.qRow) > td {
+    display: block;
+    width: auto;
+    max-width: none;
+  }
+
+  .boardWrap .boardTable .expandedRow > td {
+    box-shadow: none;
+  }
+
+  /* Needs you: compact rows. The explanatory sentence leaves the phone view; the flag, the
+   * person, the time and the next step stay. */
+  .attentionRow,
+  .attentionRow[data-tone] {
+    padding: var(--wf-s-3);
+  }
+
+  .attentionHeader {
+    grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+    column-gap: var(--wf-s-2);
+  }
+
+  .attentionStamp,
+  .attentionStamp[data-tone] {
+    max-width: none;
+    white-space: nowrap;
+    align-self: start;
+  }
+
+  .attentionBody .attentionWhy {
+    display: none;
+  }
+
+  .attentionBody {
+    gap: 0;
+  }
+
+  .attentionBody,
+  .attentionFooter {
+    padding-top: 0;
+  }
+
+  .attentionFooter :is(.attentionNext, .attentionRecord) {
+    min-height: 2.75rem;
+  }
+
+  /* Lists: the name keeps its 44px target; the dot and the time line up with it, and the facts
+   * under it read as plain tokens rather than a wrapped run of dividers. */
+  .lstWrap .lstRow .tick {
+    margin-top: 1.125rem;
+  }
+
+  .lstWrap .lstRow .lstEnd {
+    padding-top: 0.75rem;
+  }
+
+  .lstWrap .meta {
+    gap: 2px var(--wf-s-2);
+  }
+
+  .lstWrap .meta > * + * {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  /* Seen in the last 24 hours: filters scroll sideways; the time gutter narrows. */
+  .seenToolbar .seenFilterTabs {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+
+  .seenFilterTabs > * {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .seenToolbar {
+    min-width: 0;
+  }
+
+  .seenToolbar > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .seenStream .seenItemRow {
+    grid-template-columns: 3.5rem 1.25rem minmax(0, 1fr);
+    gap: var(--wf-s-2);
+  }
+
+  .seenStream .seenTransportContent {
+    display: block;
+  }
+
+  /* Statewide capacity: each unit becomes a two-line row (name and ready beds, then cohort,
+   * security and total beds). */
+  .capacityFilterBar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+
+  .capacityFilterBar > * {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .capacityTableWrap .capacityTable,
+  .capacityTableWrap .capacityTable tbody {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .capacityTableWrap .capacityTable thead {
+    display: none;
+  }
+
+  .capacityTableWrap .capacityTable tr.capacityRow {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "unit unit ready"
+      "cohort security beds";
+    align-items: baseline;
+    column-gap: var(--wf-s-1);
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .lowerPair .capacityTableWrap .capacityTable tr.capacityRow > :is(th, td) {
+    display: block;
+    width: auto;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .capacityTableWrap .capacityTable tr.capacityRow > th {
+    grid-area: unit;
+  }
+
+  .capacityTableWrap .capacityTable tr.capacityRow > td:nth-child(2) {
+    grid-area: cohort;
+  }
+
+  .capacityTableWrap .capacityTable tr.capacityRow > td:nth-child(3) {
+    grid-area: security;
+  }
+
+  .capacityTableWrap .capacityTable tr.capacityRow > td:nth-child(3)::before {
+    content: "·\00a0";
+    color: var(--wf-ink-3);
+  }
+
+  .capacityTableWrap .capacityTable tr.capacityRow > td:nth-child(4) {
+    grid-area: ready;
+    text-align: right;
+  }
+
+  .capacityTableWrap .capacityTable tr.capacityRow > td:nth-child(5) {
+    grid-area: beds;
+    text-align: right;
+  }
+
+  .capacityTableWrap .capacityTable .bedCapacityCell {
+    display: block;
+  }
+
+  .capacityTableWrap :is(.readyPill, .zeroPill)::after {
+    content: "\00a0ready";
+    font-family: var(--wf-font);
+    font-weight: 400;
+    color: var(--wf-ink-2);
+  }
+
+  .capacityTableWrap .bedTotalNum::after {
+    content: "\00a0 beds";
+    font-family: var(--wf-font);
+  }
+
+  /* ─── Phone polish (8 Oct 2026, second pass) ───
+   * 12px gutters. Every board control reaches the 48px tap height. Needs you reads as one calm
+   * list inside its panel rather than a stack of tinted cards, with the person and their details
+   * on one line and the wait as plain mono text. Lists rows keep their facts on one line. The
+   * 24-hour audit stream and the read-only statewide capacity table (each a nested scroller here)
+   * are left to the larger screen; Capacity has its own page. */
+  .main {
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .boardChips > .boardChip {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .boardTools .patientSearch {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .boardTools .patientSearch input {
+    align-self: stretch;
+    height: auto;
+  }
+
+  .boardTools .patientSort select {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .boardWrap .boardTable .nextCell .nextGroup {
+    flex-wrap: nowrap;
+  }
+
+  /* The editable presentation line gets the same grown hit area as the name above it. */
+  .boardWrap .boardTable tr.qRow .patientIdentity > button:not(.patientName) {
+    padding-block: 7px;
+    margin-block: -7px;
+  }
+
+  .boardWrap .boardTable .nextCell .rowExpand {
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+    margin-left: auto;
+  }
+
+  .attentionList {
+    gap: 0;
+  }
+
+  .attentionList .attentionRow,
+  .attentionList .attentionRow[data-tone] {
+    gap: var(--wf-s-1);
+    padding: var(--wf-s-3) var(--wf-s-3) 0;
+    border: 0;
+    border-bottom: 1px solid var(--wf-line);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .attentionList .attentionRow:last-child {
+    border-bottom: 0;
+  }
+
+  .attentionList .attentionRow:not(:has(.attentionFooter > *)) {
+    padding-bottom: var(--wf-s-3);
+  }
+
+  /* The person and their details share one line. */
+  .attentionList .attentionMeta {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .attentionList .attentionMeta > .attentionDemographics::before {
+    content: "·\00a0";
+  }
+
+  .attentionList .attentionMeta > * {
+    flex: none;
+  }
+
+  .attentionList .attentionMeta > :last-child:not(:first-child) {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* The wait sits on the title line only, so the person's line can use the full width. */
+  .attentionList .attentionHeader > .attentionMeta {
+    grid-column: 2 / -1;
+  }
+
+  .attentionList .attentionHeader > .attentionStamp {
+    grid-row: 1;
+  }
+
+  .attentionList .attentionStamp,
+  .attentionList .attentionStamp[data-tone] {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .attentionList .attentionFooter :is(.attentionNext, .attentionRecord) {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .departmentListTabs .tabBtn {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  /* The time sits beside the name, so the facts under the name get the full row width. */
+  .lstWrap .lstRow {
+    grid-template-columns: 0.875rem minmax(0, 1fr) auto;
+  }
+
+  .lstWrap .lstRow > .tick {
+    grid-row: 1;
+    grid-column: 1;
+    margin-top: 0.375rem;
+  }
+
+  .lstWrap .lstRow > .lstMain {
+    grid-row: 1;
+    grid-column: 2 / -1;
+  }
+
+  .lstWrap .lstRow > .lstEnd {
+    grid-row: 1;
+    grid-column: 3;
+    align-self: start;
+    padding-top: 2px;
+  }
+
+  .lstWrap .lstRow .lstTitle {
+    padding-right: 6.5rem;
+  }
+
+  /* The name keeps its 44px hit area without pushing the facts down. */
+  .lstWrap .lstRow .nameBtn {
+    margin-block: -12px;
+  }
+
+  .lstWrap .lstRow .meta {
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .lstWrap .lstRow .meta > * {
+    flex: none;
+  }
+
+  .lstWrap .lstRow .meta > :last-child:not(:first-child) {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lstWrap .lstRow .lstWhy {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .lowerPair > .seenSection,
+  .lowerPair > .capacitySection {
+    display: none;
+  }
+}

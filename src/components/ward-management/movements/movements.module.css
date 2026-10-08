@@ -3432,3 +3432,272 @@
     padding-left: 0;
   }
 }
+
+/* Phone (8 Oct 2026): a simplified Movements screen. The day band keeps three figures, then Needs
+ * you and the open moves list. The 48 hour timeline (scrubber, Compact and Roomy view, corridors)
+ * the transport side panel and each row's Bed Board link stay on the larger screen. Each worklist row becomes a compact
+ * block: tier, name and wait on the first line, from and to on one line, then the barrier and legal
+ * status, the tags and the two actions. Desktop and tablet are unchanged: everything here sits under 48rem. */
+@media (max-width: 48rem) {
+  .trafficPanel,
+  .secondary {
+    display: none;
+  }
+
+  .dayStat {
+    padding: 0 0 0 var(--wf-s-3);
+    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  }
+
+  .dayStat:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .dayStat:nth-child(n + 4) {
+    display: none;
+  }
+
+  /* Worklist head: the title on its own line, the two tabs as one segmented row under it. */
+  .wlCard > :first-child {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+  }
+
+  .wlCard > :first-child > :has(> .boardTabs) {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+
+  .boardTabs {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    width: 100%;
+    padding: var(--wf-s-1);
+  }
+
+  .boardTab {
+    flex: 1 1 0;
+    justify-content: center;
+    width: auto;
+    min-height: 44px;
+    border-radius: var(--wf-r-xs);
+  }
+
+  /* Arrange: legend and three options in one row that scrolls sideways if it must. */
+  .orderBar {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    min-width: 0;
+    padding: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .orderLegend {
+    flex: 0 0 auto;
+  }
+
+  .orderBtn {
+    flex: 0 0 auto;
+    min-height: 44px;
+  }
+
+  .wlRow {
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-3);
+  }
+
+  .wlLine {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: var(--wf-s-3);
+    row-gap: 2px;
+    align-items: start;
+  }
+
+  .wlLine > :first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .wlLine > :nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .wlLine > :nth-child(3),
+  .wlLine > :nth-child(4) {
+    grid-column: 2 / -1;
+  }
+
+  .wlLine > :nth-child(3) {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--wf-s-2);
+  }
+
+  .wlLine > :nth-child(3) {
+    grid-row: 2;
+  }
+
+  .wlLine > :nth-child(4) {
+    grid-row: 3;
+  }
+
+  .wlLine > :nth-child(3) > * {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .wlLine > :nth-child(3) > :first-child {
+    flex: 0 0 auto;
+    max-width: 60%;
+  }
+
+  .wlWait {
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  .wlMeter {
+    display: none;
+  }
+
+  .wlMeta {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--wf-s-2);
+    padding-left: 0;
+  }
+
+  .wlTags {
+    flex-wrap: wrap;
+    row-gap: 2px;
+    padding-left: calc(var(--wf-h-chip) + var(--wf-s-3));
+  }
+
+  .wlTag,
+  .wlTagText {
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* The two record actions share one row; the Bed Board link stays on the larger screen. */
+  .wlActions {
+    justify-content: flex-end;
+    gap: var(--wf-s-2);
+  }
+
+  .wlActions > * {
+    flex: 0 0 auto;
+    min-height: 44px;
+  }
+
+  .wlActions > .wlLink {
+    display: none;
+  }
+}
+
+/* Phone: the drawer head keeps the name and identity readable. Its stage tag repeats the Current
+ * movement card's tag just below, so on phone only the urgency line stays beside the close button. */
+@media (max-width: 48rem) {
+  .drawerHeaderStatusWrap > .corridorStatusTag {
+    display: none;
+  }
+
+  .drawerHeaderStatusWrap {
+    margin-right: 0;
+  }
+
+  .drawerUrgencyText {
+    white-space: nowrap;
+  }
+}
+
+/* Phone polish (8 Oct 2026, second pass): 12px side gutters, the Live chip in the hero's top
+ * corner, round tier markers, the Arrange options as one segmented row, and worklist rows trimmed
+ * to the person, the place, the barrier and the transport line. A row's stage and owner tags stay
+ * on the larger screen and in the record. Desktop is unchanged: everything here sits under 48rem. */
+@media (max-width: 48rem) {
+  .main {
+    padding-inline: var(--wf-s-3);
+  }
+
+  .dayHero {
+    position: relative;
+  }
+
+  .dayHero > :first-child > :last-child:not(:first-child) {
+    position: absolute;
+    top: var(--wf-s-3);
+    right: var(--wf-s-3);
+    width: auto;
+  }
+
+  .needsYouItem {
+    padding: var(--wf-s-2) var(--wf-s-3);
+    font-size: var(--wf-fs-13);
+    line-height: var(--wf-lh-13);
+  }
+
+  .needsYouItem > :first-child,
+  .wlLine > :first-child > * {
+    border-radius: var(--wf-r-pill);
+  }
+
+  .orderBar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2px;
+    padding: var(--wf-s-1);
+    border: 1px solid var(--wf-line);
+    background: var(--wf-track);
+    overflow: visible;
+  }
+
+  .orderLegend {
+    display: none;
+  }
+
+  .orderBtn {
+    justify-content: center;
+    min-width: 0;
+    padding: 0 var(--wf-s-2);
+    overflow: hidden;
+  }
+
+  .orderBtn > span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .wlSearch {
+    flex: 1 1 100%;
+  }
+
+  .wlRow {
+    gap: var(--wf-s-1);
+  }
+
+  .wlTags {
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .wlTag {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .wlTagText {
+    display: none;
+  }
+
+  .wlMeta {
+    gap: var(--wf-s-1);
+  }
+}

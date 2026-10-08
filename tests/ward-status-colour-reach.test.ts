@@ -140,11 +140,10 @@ const RECORDED: readonly { readonly file: string; readonly measured: number; rea
   },
   {
     file: "ward-global-search.module.css",
-    measured: 2,
+    measured: 0,
     because:
-      "Recorded 2026-09-25 (test fixer). Two DIRECT reaches (success background and text, ~line " +
-      "490), not fallbacks. The search screen is owned by the remove-invented-data thread, so this " +
-      "records them rather than editing its file; re-pointing them at --ward-* aliases is its work.",
+      "CLEARED 2026-10-08. The search palette rebuild (option B) replaced the ready-beds pill that " +
+      "held the two direct success reaches; the palette reads v6 --wf-* tokens and glyphs only.",
   },
 ];
 

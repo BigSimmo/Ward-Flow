@@ -88,26 +88,44 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     ]);
   });
 
-  it("places the exceptions drawer between State Bedflow and the shortlist panel, matching the drawing", () => {
-    // The drawer has no heading of its own (see the file comment above), so its position can only
-    // be proven by real DOM order, not by extending the heading-text list above.
+  it("reads queue, State Bedflow, then the shortlist on the far right once a patient is selected", () => {
+    // Owner, 8 Oct 2026. Proven by real DOM order, asserted both ways so a reversed pair cannot pass.
     renderCoordinator();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
     const body = screen.getByTestId("ward-coordinator-body");
+    const queue = within(body).getByTestId("ward-queue-row-WF-001");
     const statewideFlow = within(body).getByLabelText("State Bedflow");
-    const registers = within(body).getByTestId("ward-coordinator-registers");
     const shortlist = within(body).getByLabelText("Explainable shortlist");
 
-    // Node.compareDocumentPosition: bit 4 (0x04, DOCUMENT_POSITION_FOLLOWING) means "the other
-    // node follows this one" — asserted both ways so a reversed pair cannot pass by accident.
     expect(
-      statewideFlow.compareDocumentPosition(registers) & Node.DOCUMENT_POSITION_FOLLOWING,
-      "the exceptions drawer must follow State Bedflow",
+      queue.compareDocumentPosition(statewideFlow) & Node.DOCUMENT_POSITION_FOLLOWING,
+      "State Bedflow must follow the priority queue",
     ).toBeTruthy();
     expect(
-      registers.compareDocumentPosition(shortlist) & Node.DOCUMENT_POSITION_FOLLOWING,
-      "the shortlist panel must follow the exceptions drawer",
+      statewideFlow.compareDocumentPosition(shortlist) & Node.DOCUMENT_POSITION_FOLLOWING,
+      "the shortlist panel must follow State Bedflow",
     ).toBeTruthy();
+  });
+
+  it("keeps the registers closed until the hero's Exceptions count opens them, above the columns", () => {
+    renderCoordinator();
+    const body = screen.getByTestId("ward-coordinator-body");
+    expect(within(body).queryByTestId("ward-coordinator-registers")).toBeNull();
+
+    const toggle = within(body).getByRole("button", { name: /Exceptions/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    const registers = within(body).getByTestId("ward-coordinator-registers");
+    const statewideFlow = within(body).getByLabelText("State Bedflow");
+    expect(
+      registers.compareDocumentPosition(statewideFlow) & Node.DOCUMENT_POSITION_FOLLOWING,
+      "the registers strip must sit above the columns",
+    ).toBeTruthy();
+
+    fireEvent.click(toggle);
+    expect(within(body).queryByTestId("ward-coordinator-registers")).toBeNull();
   });
 
   it("keeps the shortlist panel's heading as 'Explainable shortlist' once a patient is selected", () => {

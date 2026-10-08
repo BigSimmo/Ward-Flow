@@ -169,6 +169,10 @@ export function HomeBedflow({
     const fit = candidate?.verdict.eligible === true;
     const dim = movement !== undefined && !candidate && !isAccepted && !isReferred;
     const selected = selectedUnitId === unit.id;
+    const isBest = fit && bestFit?.unit.id === unit.id;
+    // A gentle tint marks where this patient can go: fitting wards, the recorded destination and
+    // outstanding referrals. Everything else stays plain or dimmed.
+    const highlight = isAccepted ? "accepted" : isReferred ? "referred" : fit ? "fit" : undefined;
     const segments: StackSegment[] = [
       { id: "ready", value: states.ready, fill: "ready", label: "Ready" },
       { id: "pulled", value: states.pulled, hatch: true, label: "Pulled" },
@@ -186,7 +190,11 @@ export function HomeBedflow({
           : undefined;
 
     return (
-      <li key={unit.id} className={cx(styles.unitRow, selected && styles.unitRowSelected, dim && styles.unitRowDim)}>
+      <li
+        key={unit.id}
+        className={cx(styles.unitRow, selected && styles.unitRowSelected, dim && styles.unitRowDim)}
+        data-highlight={highlight}
+      >
         <button
           type="button"
           className={styles.unitMain}
@@ -200,8 +208,11 @@ export function HomeBedflow({
           onClick={() => onSelectUnit(unit.id)}
         >
           <span className={styles.unitName}>
-            <span className={styles.unitNameText} title={unit.name}>
-              {unit.name}
+            <span className={styles.unitNameLine}>
+              <span className={styles.unitNameText} title={unit.name}>
+                {unit.name}
+              </span>
+              {isBest ? <span className={styles.unitBestTag}>Best fit</span> : null}
             </span>
             <span className={styles.unitSub}>
               {unit.cohort} {unitKind(unit)} · {unit.beds} beds
@@ -291,6 +302,7 @@ export function HomeBedflow({
             0,
           );
           const occupied = occupancyByService.get(group.service);
+          const groupFits = group.units.filter((unit) => byUnitId.get(unit.id)?.verdict.eligible === true).length;
           const bodyId = `ward-bedflow-group-${group.service.replace(/\s+/g, "-").toLowerCase()}`;
           return (
             <section key={group.service} className={styles.group} aria-label={group.service}>
@@ -304,6 +316,11 @@ export function HomeBedflow({
                 <Icon icon={open ? ChevronDown : ChevronRight} size={14} />
                 <span className={styles.groupName}>{group.service}</span>
                 <span className={styles.groupCount}>{group.units.length} wards</span>
+                {movement ? (
+                  <span className={styles.groupFit} data-none={groupFits === 0 ? "true" : undefined}>
+                    {groupFits === 0 ? "None fit" : `${groupFits} fit`}
+                  </span>
+                ) : null}
                 <span className={styles.groupFigures}>
                   <span className={styles.mono}>{ready}</span> ready
                   {occupied !== undefined ? (

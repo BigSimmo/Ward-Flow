@@ -10,7 +10,12 @@ Reuse [the product task ledger](ward-flow-task-ledger.md) and existing task chec
 
 At start, reuse the original objective/task ID. At checkpoint, blocker, resume and completion, update that same record; retries and terminal assistant turns are not new tasks or proof of completion. One project owns each task. Link dependencies as project plus task ID instead of copying them into other project lists. Keep Completed/Cancelled history; open views hide those states.
 
-A single uninterrupted scoped reversible task with no unresolved ownership, new provider/publication action or substantial recovery need may collapse its checkpoint updates into one brief final receipt, but still persists a minimal start receipt (or has one created automatically) so a hard interruption leaves a record to resume. Substantial work also uses one canonical checkpoint. A pause, blocker, transfer or scope change still needs a prompt update; the compact route preserves file claims and project gates.
+For one uninterrupted, scoped, reversible task with no unresolved ownership, new provider/publication
+boundary or substantial recovery need, a final compact summary may carry start and completion metadata.
+A separate formal start export and Notion reconciliation are optional for ordinary interactive work.
+Substantial work keeps a recoverable checkpoint under the same task identity. A pause, blocker,
+transfer or scope change requires a prompt checkpoint identifying state, blocker, next action and
+evidence. This route preserves file claims and project gates; a checkpoint is not another ledger.
 
 Status is In progress, Blocked, Needs you, Paused, Completed or Cancelled. Record Task/title, Blocker, Next action, Owner and source/evidence links in the canonical source where authorised. Preserve Last verified unless new evidence actually verifies the state. Completion needs evidence of the task's acceptance; completion, user acceptance, merge, release and deployment remain separate.
 
@@ -19,11 +24,6 @@ When code/config/instructions change, refresh the relevant maintained document a
 Complete the requested stage: a delivered audit, evidenced Fast Preview or verified local
 engineering task can complete without publication/deployment. Integration, publication,
 deployment and user acceptance require their own applicable authority and evidence.
-
-For one uninterrupted scoped reversible task with no unresolved ownership, new provider/
-publication boundary or substantial recovery need, one final compact contribution may carry
-start/completion metadata. A genuine pause, blocker, transfer or scope change needs an immediate
-update; substantial work retains meaningful checkpoints. Reuse the original task identity.
 
 Last verified requires newly checked evidence, including a new immutable run-evidence location
 within the same stable task when source/evidence otherwise match. Timestamp-only refresh is invalid.

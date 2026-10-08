@@ -205,3 +205,47 @@ table.pinTable {
     min-height: var(--ward-tap, 48px);
   }
 }
+
+/* Phone polish (8 Oct 2026): CSV export is left to the larger screen so the card titles keep
+ * their room, the search takes its own row, and the bar charts give the bars the width.
+ * Under 48rem only. */
+@media (max-width: 48rem) {
+  .headControls > button {
+    display: none;
+  }
+
+  .toolbarTight {
+    padding: 0 var(--wf-s-3) var(--wf-s-3);
+  }
+
+  .toolbarTight > .wardSearch,
+  .chooserAnchor .chooserSearch {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .toolbarTight > [role="radiogroup"] {
+    flex: 1 1 100%;
+  }
+
+  .chart {
+    padding: var(--wf-s-3);
+  }
+
+  /* BarList sets its label column inline; on phone the bars need the width. */
+  .chart > figure > div {
+    --wf-bar-label: 8.5rem !important;
+  }
+
+  .pinSelect {
+    width: 8.5rem;
+  }
+
+  .chooserLink {
+    padding: 0 var(--wf-s-3);
+  }
+
+  .chooserGrid li {
+    border-right: 0;
+  }
+}

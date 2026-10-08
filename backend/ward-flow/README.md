@@ -37,8 +37,11 @@ Never enter or upload real patient information.
 
 ## Local checks
 
-`npm test` runs the focused API tests without connecting to Azure. The package
-requires Node 22. Copy `.env.example` to an ignored `.env` only for local use;
+From the repository root, `npm run test:backend` runs the focused API tests without connecting
+to Azure. From `backend/ward-flow/`, the equivalent command is `npm test`; root `npm test`
+instead runs the UI repository's unit suite. The backend package accepts Node `>=22`, while
+the root toolchain requires Node `>=24.15.0 <25` and npm `11.x`.
+Copy `.env.example` to an ignored `.env` only for local use;
 never add access tokens or passwords to it. Local calls to Azure Storage need
 an Azure identity with data access to the existing account.
 

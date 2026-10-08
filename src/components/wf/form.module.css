@@ -428,6 +428,13 @@
   }
 }
 
+/* Phone (8 Oct 2026): text fields reach a 44px tap height. */
+@media (max-width: 48rem) {
+  .in {
+    height: 2.75rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .in,
   .track,

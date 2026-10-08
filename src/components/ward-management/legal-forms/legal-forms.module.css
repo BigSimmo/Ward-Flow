@@ -747,3 +747,154 @@
   outline-offset: 2px;
   border-radius: var(--wf-r-xs);
 }
+
+/* Phone (8 Oct 2026): the expiring forms list first. The form type register, warning windows,
+   by-department counts and the eight-hour timeline are left to the larger screen; each row becomes
+   name and form on two lines with the time left beside them. Above 48rem nothing changes. */
+@media (max-width: 48rem) {
+  .heroStat.heroStat {
+    padding: 0 0 0 var(--wf-s-3);
+  }
+
+  .heroStat.heroStat:first-child {
+    padding-left: 0;
+  }
+
+  .main {
+    padding: var(--wf-s-3);
+  }
+
+  /* Compact hero: the live chip sits on the eyebrow line, the view switch and the one action
+   * share the last row. */
+  .phoneHero {
+    position: relative;
+  }
+
+  .heroAside {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--wf-s-2);
+    width: 100%;
+  }
+
+  .heroAside > :first-child {
+    position: absolute;
+    top: var(--wf-s-3);
+    right: var(--wf-s-4);
+  }
+
+  .heroControls {
+    display: contents;
+  }
+
+  .layout > .column:first-child,
+  .layout > .column:nth-child(2) > :first-child {
+    display: none;
+  }
+
+  .headRow {
+    display: none;
+  }
+
+  /* DataRow sets its columns inline, so the phone layout has to override them. */
+  .rowList > .row {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    row-gap: 2px;
+  }
+
+  .row:has(.rowAction) {
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+  }
+
+  /* Name and UMRN share one line, so each row is three lines rather than four. */
+  .row > :nth-child(2) {
+    grid-column: 1;
+    grid-row: 1;
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--wf-s-2);
+  }
+
+  .row > :nth-child(2) > .name {
+    min-width: 0;
+  }
+
+  .row > :nth-child(2) > .sub {
+    flex: none;
+  }
+
+  .row > :nth-child(3) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .row > :nth-child(4) {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+
+  .row > .rowAction {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+
+  .layout [data-testid="ward-legal-selected"] {
+    scroll-margin-top: var(--wf-s-4);
+  }
+
+  /* Selected form footer: Dossier and Open move share a row, the one primary takes the next. */
+  .layout div:has(> .footSpacer),
+  .layout div:has(> * > [data-testid="ward-legal-forms-register-confirm"]) {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .footSpacer {
+    display: none;
+  }
+
+  .footSpacer + * {
+    flex: 1 1 100%;
+  }
+
+  .layout div:has(> * > [data-testid="ward-legal-forms-register-confirm"]) {
+    justify-content: flex-end;
+  }
+
+  .fieldPair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Card heads: the title keeps its full width and the count line beside it truncates. */
+  .groupStack div:has(> h2) {
+    flex: none;
+  }
+
+  .groupStack div:has(> .meta) {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
+  .rowList > .row {
+    padding-top: var(--wf-s-1);
+    padding-bottom: var(--wf-s-1);
+  }
+
+  .recordForm div:has(> select),
+  .recordForm div:has(> input:not([type="checkbox"], [type="radio"])) {
+    height: var(--spacing-tap, 3rem);
+  }
+}
+
+/* Narrow phones (360px): the action drops its icon so the switch and the action keep one row. */
+@media (max-width: 24rem) {
+  .heroAside button > svg {
+    display: none;
+  }
+}

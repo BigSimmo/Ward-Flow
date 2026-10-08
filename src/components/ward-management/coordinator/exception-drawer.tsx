@@ -44,6 +44,8 @@ type ExceptionDrawerProps = {
   open: boolean;
   onToggle: () => void;
   onSelectMovement: (movementId: string) => void;
+  /** `band`: the desktop strip under the Home hero. `column`: the phone card under the queue. */
+  placement?: "band" | "column";
 };
 
 /**
@@ -78,6 +80,7 @@ export function ExceptionDrawer({
   open,
   onToggle,
   onSelectMovement,
+  placement = "column",
 }: ExceptionDrawerProps) {
   const [activeTab, setActiveTab] = useState<RegisterTabId>("exceptions");
   // Owner, 26 Sept 2026: resolves a silence reminder's bare movement id to the patient's name.
@@ -114,6 +117,7 @@ export function ExceptionDrawer({
   return (
     <Card
       className={styles.registersCard}
+      data-placement={placement}
       aria-label="Declines, overrides and exceptions"
       data-testid="ward-coordinator-registers"
     >

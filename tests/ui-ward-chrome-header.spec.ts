@@ -199,6 +199,30 @@ const OPENERS: ReadonlyArray<readonly [string, string, string]> = [
   ["ward-bar-tools-trigger", "ward-bar-tools-sheet", "the Tools drawer"],
 ];
 
+/**
+ * Phone (8 Oct 2026): at 48rem (768px) and below the bar drops Activity and Tools, and its Menu
+ * button opens the page sheet that carries them as rows. Everything else stays in the bar.
+ */
+const PHONE_BAR_MAX_WIDTH = 768;
+const PHONE_MENU_ROWS: Readonly<Record<string, string>> = {
+  "ward-bar-activity-trigger": "ward-rail-sheet-activity",
+  "ward-bar-tools-trigger": "ward-rail-sheet-tools",
+};
+const PHONE_MENU: readonly [string, string, string] = ["ward-bar-phone-menu", "ward-rail-more-pages", "the phone Menu"];
+
+function barOpeners(width: number): ReadonlyArray<readonly [string, string, string]> {
+  return width <= PHONE_BAR_MAX_WIDTH
+    ? [...OPENERS.filter(([testId]) => !(testId in PHONE_MENU_ROWS)), PHONE_MENU]
+    : OPENERS;
+}
+
+async function openFromBar(page: Page, testId: string, width: number) {
+  const row = width <= PHONE_BAR_MAX_WIDTH ? PHONE_MENU_ROWS[testId] : undefined;
+  if (!row) return page.getByTestId(testId).click();
+  await page.getByTestId(PHONE_MENU[0]).click();
+  await page.getByTestId(row).click();
+}
+
 test.describe("@mockup Ward shell bar", () => {
   test.describe.configure({ timeout: 90_000 });
 
@@ -393,11 +417,10 @@ test.describe("@mockup Ward shell bar", () => {
       await gotoWardChrome(page);
 
       for (const [triggerId, panelId, label] of OPENERS) {
-        const trigger = page.getByTestId(triggerId);
         const panel = page.getByTestId(panelId);
 
         await expect(panel, `${label} must start closed`).toHaveCount(0);
-        await trigger.click();
+        await openFromBar(page, triggerId, width);
         await expect(
           panel,
           `${label} did not open after a real click on ${triggerId} at ${width}px — the control ` +
@@ -433,7 +456,7 @@ test.describe("@mockup Ward shell bar", () => {
     await gotoWardChrome(page);
 
     const boxes: { label: string; x: number; right: number }[] = [];
-    for (const [testId, , label] of OPENERS) {
+    for (const [testId, , label] of barOpeners(375)) {
       const box = await page.getByTestId(testId).boundingBox();
       expect(box, `${label} has no measurable box at 375px`).not.toBeNull();
       boxes.push({ label, x: box!.x, right: box!.x + box!.width });
@@ -519,7 +542,7 @@ test.describe("@mockup Ward shell bar", () => {
 
       const controls: ReadonlyArray<readonly [Locator, string]> = [
         [searchInput(page), "the global search input"],
-        ...OPENERS.map(([testId, , label]) => [page.getByTestId(testId), label] as const),
+        ...barOpeners(width).map(([testId, , label]) => [page.getByTestId(testId), label] as const),
       ];
 
       const failures: string[] = [];
@@ -527,7 +550,18 @@ test.describe("@mockup Ward shell bar", () => {
         await expect(control, `${label} is not visible at ${width}px`).toBeVisible();
         const box = await control.boundingBox();
         expect(box, `${label} has no measurable box at ${width}px`).not.toBeNull();
-        const smallerDimension = Math.min(box!.width, box!.height);
+        // Phone (8 Oct 2026): the Service selector is the title's one-line scope, and its tap area
+        // is an absolutely positioned ::before that reaches past the text. Measure that area.
+        const reach = await control.evaluate((element) => {
+          const before = getComputedStyle(element, "::before");
+          if (before.position !== "absolute") return { x: 0, y: 0 };
+          const outset = (value: string) => Math.max(0, -(Number.parseFloat(value) || 0));
+          return {
+            x: outset(before.left) + outset(before.right),
+            y: outset(before.top) + outset(before.bottom),
+          };
+        });
+        const smallerDimension = Math.min(box!.width + reach.x, box!.height + reach.y);
         if (smallerDimension < 48) {
           failures.push(`${label}: ${Math.round(box!.width)}x${Math.round(box!.height)}px`);
         }
@@ -605,7 +639,7 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   await gotoWardChrome(page);
   const bar = page.getByTestId("ward-bar");
   await expect(bar.getByTestId("ward-bar-figures-trigger")).toHaveCount(0);
-  await page.getByTestId("ward-bar-tools-trigger").click();
+  await openFromBar(page, "ward-bar-tools-trigger", 390);
   const tools = page.getByRole("dialog", { name: "Tools" });
   await tools.getByTestId("ward-bar-figures-trigger").click();
   const figures = tools.getByRole("button", { name: "Figures", exact: true });
@@ -613,7 +647,7 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   await expect(figures).toBeFocused();
   await expect(tools.getByTestId("ward-stats-drawer-content")).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByTestId("ward-bar-tools-trigger")).toBeFocused();
+  await expect(page.getByTestId(PHONE_MENU[0])).toBeFocused();
 
   await page.getByTestId("ward-bar-tasks-trigger").click();
   const tasks = page.getByRole("dialog", { name: "Tasks", exact: true });
@@ -633,8 +667,8 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
 test("@mockup compact Referrals opens from Tools and retains a draft across sections", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 568 });
   await gotoWardChrome(page, "/mockups/ward-flow/delays");
-  const toolsTrigger = page.getByTestId("ward-bar-tools-trigger");
-  await toolsTrigger.click();
+  const toolsTrigger = page.getByTestId(PHONE_MENU[0]);
+  await openFromBar(page, "ward-bar-tools-trigger", 390);
   const tools = page.getByRole("dialog", { name: "Tools", exact: true });
   const toolsBox = await tools.boundingBox();
   expect(toolsBox?.height).toBeGreaterThanOrEqual(566);

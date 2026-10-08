@@ -56,7 +56,10 @@ on unchanged code, following the React mockup rule in `AGENTS.md`.
   `path/to/file (approved takeover by Josh: <scope>)` on your own line, preserve the other session's
   edits and reconcile them through the authorised integration process. A folder-wide marker does not grant a takeover.
   Once the exact task ownership is handed back or integrated, append `RELEASED <date> | <owner> | <branch> | <reason>; repo=BigSimmo/Ward-Flow` to the shared
-  append-only log. The current full rulebook is `AGENTS.md`.
+  append-only log. Follow [AGENTS.md](../../AGENTS.md) for the single-user exception:
+  `SKIP_SIGNOUT_GUARD=1` is an explicit per-commit opt-in, never a hook default. Concurrent
+  agent work retains sign-out and overlap protection. On another machine, `WARD_SIGNOUT_FILE`
+  selects that environment's shared local log; never treat an unavailable desktop log as clearance.
 - Reuse dependencies only from a trusted checkout of the same Ward Flow commit and lockfile.
   Never link to the old Database checkout; follow the current repository setup instructions.
 - Within an approved task a thread edits and commits freely on its own branch. It does not touch
@@ -80,11 +83,14 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
 - Stage explicit paths. **Never `git add -A` or `git add .`. Never `git stash`.** Verify the
   destination and applicable authority before any push.
 - Never merge or rebase other branches into your branch.
-- If the pre-commit hook refuses because another agent's files are unstaged, say so and name the files.
-  Do not work around it.
-- Retain the test-deletion/truncation guard. An intentionally reduced test count uses the existing
-  exact reduction approval in `diff-integrity.json`; ordinary refactors that preserve coverage
-  remain subject to its aggregate and per-file limits. Use `--base <reviewed base>`.
+- The pre-commit checks inspect a disposable staged snapshot. Unrelated unstaged or untracked
+  files do not by themselves block an owned commit. Preserve peers' files. If a real ownership
+  conflict or required check blocks the commit, record its exact paths and reason in the existing
+  task checkpoint; never overwrite a peer's files to clear a guard.
+- Retain the test-deletion/truncation guard. Test-count floors are advisory by default and strict
+  with `DIFF_INTEGRITY_STRICT=1`; truncation artefacts and unreadable before-state still fail.
+  An approved reduction uses the existing exact record in `diff-integrity.json`. An advisory
+  result is not a passing strict result. Use `--base <reviewed base>`.
 
 ## 4. Integration in the dedicated repository
 
@@ -170,8 +176,11 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
 ## 6. Owner rules that fail builds or reviews
 
 - **D4:** an unconnected control says exactly "Not wired in this prototype."
-- **D5:** no Mental Health Act section numbers, and no computed legal time limits. The app shows only
-  times a person typed.
+- **D5:** no Mental Health Act section numbers or computed legal limits, except the
+  [owner-approved D-29 synthetic demo](decisions.md#d-29-act-time-limits-shown-as-a-labelled-synthetic-demo-4-october-2026).
+  Only sourced periods and section references in `legal-forms/act-periods-demo.ts` and its
+  permitted test are exempt. Show "Synthetic demo, not legally checked". Typed expiry remains
+  the record; the engine never writes computed `dueAt`. Everything else in D5 is unchanged.
 - **No typed text in browser storage** (called D-11 in helper briefs; owner ruling D-11 itself is the
   two-ledger rule). New events are classified in `ward-flow-persistence-classification.ts`, and any id
   or free-text field needs review.

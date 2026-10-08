@@ -27,3 +27,29 @@
     row-gap: var(--wf-s-2);
   }
 }
+
+/* Phone: the ribbon is one child of the hero's three-column stats grid, so it spans the grid and
+ * lays its own figures out as three equal columns: Ready now, Occupied and Ready by the end of
+ * the day shift (the beds coming free). 1:1 specialling and the age of the figure stay on the
+ * larger screen. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .ribbon {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 0;
+  }
+
+  .cell {
+    min-width: 0;
+  }
+
+  .ribbon > div:nth-child(4),
+  .ribbon > div:nth-child(6) {
+    display: none;
+  }
+
+  .ribbon > div:nth-child(5) {
+    display: flex;
+  }
+}

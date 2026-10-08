@@ -441,3 +441,42 @@
     border: 1px solid CanvasText;
   }
 }
+
+/* Phone polish (8 Oct 2026): the bedflow head wraps to two rows, title and the Ready only switch
+ * first, then the health service chips across the full width, so the title is never squeezed out.
+ * Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .bedflow > div:first-child {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+    padding: var(--wf-s-3);
+  }
+
+  .bedflow > div:first-child > div:last-child,
+  .headControls {
+    display: contents;
+  }
+
+  .bedflow .countTag {
+    display: none;
+  }
+
+  .headControls > :first-child {
+    order: 3;
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .serviceGrid {
+    gap: var(--wf-s-2);
+    padding: 0 var(--wf-s-2) var(--wf-s-2);
+  }
+
+  .unitGrid th:first-child {
+    width: 46%;
+  }
+
+  .unitGrid th:nth-child(2) {
+    width: auto;
+  }
+}

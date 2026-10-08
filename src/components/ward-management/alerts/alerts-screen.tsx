@@ -1047,6 +1047,7 @@ function AlertsWorkspace() {
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
+          className={styles.heroBand}
           eyebrow="Alerts"
           title={
             needsYouCount === 0

@@ -1217,3 +1217,226 @@
     break-inside: avoid;
   }
 }
+
+/* Phone (8 Oct 2026): today's releases first. The hero keeps three status figures in one row,
+   the admission-records population and the quick blocker chips are left to the larger screen
+   (the status tabs still filter Blocked), and each release row becomes a compact block: ward
+   first, then timing and stage side by side. Desktop and tablet above 48rem are unchanged. */
+@media (max-width: 48rem) {
+  /* 12px gutters on phone. */
+  .main {
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-3);
+  }
+
+  /* Compact hero: the board time sits on the eyebrow line, so the band is title, counts and one
+   * action. The emptied aside and the hidden population switch no longer add row gaps. */
+  .phoneHero {
+    position: relative;
+  }
+
+  .phoneHero > div:first-child,
+  .phoneHero > div:last-child {
+    row-gap: 0;
+  }
+
+  .asOf {
+    position: absolute;
+    top: var(--wf-s-3);
+    right: var(--wf-s-4);
+    line-height: var(--wf-lh-11);
+  }
+
+  .kpiStrip {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: var(--wf-s-2);
+  }
+
+  .kpi {
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0 0 0 var(--wf-s-3);
+  }
+
+  .kpi:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .kpi:nth-child(n + 4) {
+    display: none;
+  }
+
+  .kpiLabel {
+    min-width: 0;
+    max-width: 100%;
+    font-size: var(--wf-fs-11);
+  }
+
+  .kpiLabel > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .populationSwitch {
+    display: none;
+  }
+
+  .main > .filterCard {
+    display: block;
+    padding: var(--wf-s-3);
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--wf-s-2);
+  }
+
+  .filterField {
+    display: block;
+  }
+
+  .filterField .filterLabelText {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .filterSelect {
+    width: 100%;
+    height: var(--spacing-tap, 3rem);
+  }
+
+  .clearButton {
+    grid-column: 1 / -1;
+    justify-self: start;
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .quickFilterBar {
+    display: none;
+  }
+
+  .panelHeader {
+    padding: 0 var(--wf-s-3);
+  }
+
+  /* Five status tabs fit the width once their counts move off screen; the counts stay in the
+   * accessible name and show on the hero and the group headings. */
+  .statusFilters {
+    flex: 1 1 auto;
+    justify-content: space-between;
+    gap: var(--wf-s-2);
+  }
+
+  .statusFilters .tabCountBadge {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Row card: place and stage share the top line, the timing runs underneath. */
+  .workTable tr:not(.groupRow) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--wf-s-1) var(--wf-s-3);
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .workTable td,
+  .workTable td:first-child,
+  .workTable td:nth-child(2),
+  .workTable td:nth-child(3) {
+    width: auto;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .workTable td:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .workTable td:nth-child(3) {
+    grid-column: 2;
+    grid-row: 1;
+    max-width: 10.5rem;
+  }
+
+  .workTable td.timingCell {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--wf-s-1);
+    min-width: 0;
+  }
+
+  .timingCell .overdue {
+    flex: none;
+    margin: 0 0 0 auto;
+  }
+
+  .stageCluster {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .stageCluster .blocker,
+  .stageCluster .secondary {
+    font-size: var(--wf-fs-12);
+    line-height: var(--wf-lh-12);
+    color: var(--wf-ink-2);
+  }
+
+  /* The whole row opens the record; the name keeps a 44px hit area without growing the row. */
+  .workTable .recordButton {
+    min-height: 2.75rem;
+    margin: calc((2.75rem - var(--wf-lh-13)) / -2) 0;
+  }
+
+  .workTable td:only-child {
+    grid-column: 1 / -1;
+  }
+
+  .workTable td:not(:first-child)::before {
+    content: none;
+  }
+
+  .workTable .groupRow,
+  .workTable .groupRow th {
+    display: block;
+    width: auto;
+  }
+
+  .workTable .groupRow th {
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .registerFooter {
+    gap: var(--wf-s-1) var(--wf-s-3);
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .footNote {
+    margin-left: 0;
+  }
+}
+
+/* Narrow phones (360px): the five status tabs still fit on one line. */
+@media (max-width: 24rem) {
+  .statusFilters button {
+    font-size: var(--wf-fs-12);
+  }
+}

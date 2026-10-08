@@ -516,7 +516,15 @@ function queuedCardIds(page: Page): Promise<string[]> {
 async function openRailSheetIfNeeded(page: Page, rail: Locator): Promise<boolean> {
   const morePages = rail.getByRole("button", { name: /^All pages/iu });
   const menu = rail.getByRole("button", { name: "Menu", exact: true });
-  const opener = (await morePages.isVisible()) ? morePages : (await menu.isVisible()) ? menu : undefined;
+  // Phone (8 Oct 2026): at 48rem and below the rail is hidden and the header bar's Menu opens the sheet.
+  const barMenu = page.getByTestId("ward-bar-phone-menu");
+  const opener = (await morePages.isVisible())
+    ? morePages
+    : (await menu.isVisible())
+      ? menu
+      : (await barMenu.isVisible())
+        ? barMenu
+        : undefined;
   if (!opener) return false;
   await opener.click();
   await expect(page.getByTestId("ward-rail-more-pages")).toBeVisible();
@@ -525,7 +533,10 @@ async function openRailSheetIfNeeded(page: Page, rail: Locator): Promise<boolean
 
 async function goToBoardViaPhoneRail(page: Page) {
   const rail = page.getByTestId("ward-rail");
-  await expect(rail, "the shell rail must be on the phone screen").toBeVisible();
+  await expect(
+    rail.or(page.getByTestId("ward-bar-phone-menu")).filter({ visible: true }),
+    "the shell rail or the bar's phone Menu must be on the phone screen",
+  ).toHaveCount(1);
   // ⚠️ **TWO INDEPENDENT DRIFTS, BOTH FROM THE OWNER-REQUESTED GROUPED RAIL (2026-09-13,
   // `shell/ward-rail.tsx`'s `RAIL_GROUPS`).** First, the label is now "Referral Board" (capital
   // B, `RAIL_GROUPS`' own literal), not "Referral board" — a case-sensitive regex with no `i` flag
@@ -985,7 +996,10 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // the phone screen rather than behind a button. This still navigates by tapping a real rail
     // link at 375px, which is what "through the coordinator's own rail" was asserting.
     const ledgerRail = page.getByTestId("ward-rail");
-    await expect(ledgerRail, "the shell rail must be on the phone screen").toBeVisible();
+    await expect(
+      ledgerRail.or(page.getByTestId("ward-bar-phone-menu")).filter({ visible: true }),
+      "the shell rail or the bar's phone Menu must be on the phone screen",
+    ).toHaveCount(1);
     // "Out of area" is in the "Oversight" group of the owner-requested grouped rail
     // (2026-09-13, `shell/ward-rail.tsx`'s `RAIL_GROUPS`), which is not inline below 1000px — see
     // `goToBoardViaPhoneRail`'s own comment on the same drift. Open "More pages" first if it is

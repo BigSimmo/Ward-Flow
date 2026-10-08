@@ -42,3 +42,36 @@
   gap: var(--wf-s-3);
   min-width: 0;
 }
+
+/* Phone (8 Oct 2026): the section chooser and the Live chip share one row, and the Samples switch
+ * is left to the larger screen. 12px page gutters. Under 48rem only. */
+@media (max-width: 48rem) {
+  .page {
+    padding: var(--wf-s-3);
+  }
+
+  .statsHero > div:last-child {
+    flex-wrap: nowrap;
+  }
+
+  .statsHero > div:last-child > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .statsHero > div:last-child > div:last-child {
+    flex: none;
+    width: auto;
+    margin-left: 0;
+  }
+
+  .navSlot > * {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .statsHero .divider,
+  .statsHero .divider ~ * {
+    display: none;
+  }
+}

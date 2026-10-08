@@ -92,6 +92,12 @@ jobs:
         run: npm run docs:check-scripts
       - name: Check Ward document links
         run: npm run check:ward-doc-links
+      - name: Check maintained document links and anchors
+        run: npm run docs:check-links
+      - name: Check maintained architecture coverage
+        run: npm run docs:check-index
+      - name: Check script inventory
+        run: npm run docs:check-inventory
       - name: Check Ward screen verification record
         run: node scripts/ward-flow/screen-verification.mjs --check
       - name: Review dependency changes

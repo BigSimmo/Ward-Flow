@@ -647,7 +647,7 @@ export function WardNetworkWorkspace() {
             ) : null}
             <button
               type="button"
-              className={buttonClass({ variant: "light", size: "sm" })}
+              className={`${buttonClass({ variant: "light", size: "sm" })} ${thirdEdition.findBed}`}
               onClick={() => setView("placement")}
             >
               <Search size={14} aria-hidden="true" />

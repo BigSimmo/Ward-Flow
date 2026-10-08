@@ -124,7 +124,8 @@ function recordOverride() {
  * harmless here either way — the tab is reachable and clickable regardless).
  */
 function openOverridesTab() {
-  fireEvent.click(screen.getByRole("button", { name: /Today’s answers/ }));
+  // Desktop: the registers open from the hero's Exceptions count (owner, 8 Oct 2026).
+  fireEvent.click(screen.getByRole("button", { name: /Exceptions/, expanded: false }));
   fireEvent.click(screen.getByRole("tab", { name: /Overrides/ }));
 }
 

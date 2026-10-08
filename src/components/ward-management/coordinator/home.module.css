@@ -593,6 +593,54 @@
   box-shadow: inset 3px 0 0 var(--wf-pri-1);
 }
 
+/* Where the selected patient can go: a soft tint, never a stripe. Selection keeps its own look. */
+.unitRow[data-highlight="fit"]:not(.unitRowSelected) {
+  background: color-mix(in srgb, var(--wf-success) 7%, var(--wf-surface));
+}
+
+.unitRow[data-highlight="accepted"]:not(.unitRowSelected) {
+  background: color-mix(in srgb, var(--wf-success) 12%, var(--wf-surface));
+}
+
+.unitRow[data-highlight="referred"]:not(.unitRowSelected) {
+  background: color-mix(in srgb, var(--wf-info) 9%, var(--wf-surface));
+}
+
+.unitNameLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.unitNameLine > .unitNameText {
+  min-width: 0;
+}
+
+.unitBestTag {
+  flex: 0 0 auto;
+  padding: 0 var(--wf-s-2);
+  border: 1px solid color-mix(in srgb, var(--wf-success) 45%, transparent);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-success-ink);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.groupFit {
+  color: var(--wf-success-ink);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.groupFit[data-none="true"] {
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+
 .unitRowDim .unitNameText,
 .unitRowDim .unitSub,
 .unitRowDim .unitReady,
@@ -917,7 +965,14 @@ button.registerRow:hover {
   }
 
   .body {
-    padding: var(--wf-s-2);
+    padding: var(--wf-s-3);
+  }
+
+  /* "Open in Delays" gains an invisible 16px above and below: a 48px tap area, same layout. */
+  .footLink {
+    display: inline-block;
+    margin-block: calc(-1 * var(--wf-s-4));
+    padding-block: var(--wf-s-4);
   }
 
   .registersToggle {
@@ -942,6 +997,24 @@ button.registerRow:hover {
 
   .registersPanel[data-open="false"] {
     display: none;
+  }
+
+  /* Phone (8 Oct 2026): the queue flows with the page, so there is one scroller, the window. */
+  .queueList {
+    max-height: none;
+    overflow-y: visible;
+    overscroll-behavior: auto;
+  }
+
+  /* Compact hero: same figures and actions, tighter spacing. The hero is the first child of the
+     body; these structural selectors reach the shared Hero's row without editing it. */
+  .body > section:first-child {
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .body > section:first-child > div {
+    row-gap: var(--wf-s-2);
   }
 }
 
@@ -983,4 +1056,86 @@ button.registerRow:hover {
 
 .sinceText {
   min-width: 0;
+}
+
+/* ---------- desktop column order (8 Oct 2026) ---------- */
+
+.registersBand,
+.flowWide,
+.flowCol {
+  min-width: 0;
+}
+
+@media (min-width: 64rem) {
+  /* At rest State bedflow takes the two right columns. With a patient open the shortlist takes
+     the right column and the queue keeps its width. */
+  .flowWide {
+    grid-column: span 2;
+  }
+
+  .grid[data-shortlist-open="true"] {
+    grid-template-columns: minmax(0, 314fr) minmax(0, 400fr) minmax(0, 400fr);
+  }
+
+  /* Wide bedflow: the bed bar takes the spare width so names never truncate. */
+  .flowWide .unitMain {
+    grid-template-columns: minmax(14rem, 16rem) minmax(0, 1fr) 3.5rem;
+  }
+
+  /* Narrow bedflow: the legend drops under the title and the bar shortens so names fit. */
+  .grid[data-shortlist-open="true"] .flowHead {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-1);
+  }
+
+  .grid[data-shortlist-open="true"] .flowLegend {
+    flex-basis: 100%;
+  }
+
+  .grid[data-shortlist-open="true"] .unitMain {
+    grid-template-columns: minmax(0, 1fr) 3.5rem 3rem;
+    gap: var(--wf-s-2);
+  }
+
+  /* Registers strip under the hero, opened from its Exceptions count. Rows run three across with
+     titles on one line, two rows in view and the rest a scroll away. */
+  .registersCard[data-placement="band"] .registersPanel {
+    position: relative;
+  }
+
+  .registersCard[data-placement="band"] .registerPanel > .registerList {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-height: 6.6rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .registersCard[data-placement="band"] .registerList > li {
+    min-width: 0;
+    border-right: 1px solid var(--wf-line);
+  }
+
+  .registersCard[data-placement="band"] .registerList > li:nth-child(3n) {
+    border-right: 0;
+  }
+
+  .registersCard[data-placement="band"] .registerTitle,
+  .registersCard[data-placement="band"] .registerSub {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .registersCard[data-placement="band"] .cardFoot {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 2.75rem;
+    border: 0;
+  }
+
+  .registersCard[data-placement="band"] .footMeta {
+    display: none;
+  }
 }

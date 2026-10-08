@@ -1585,3 +1585,55 @@
     }
   }
 }
+
+/* Phone polish (8 Oct 2026), placement workspace: the stage strip reads as two columns of
+ * label-and-count lines, the waiting and referral lists scroll inside their own panels instead of
+ * running thousands of pixels down the page, and the schematic constellation stays on the larger
+ * screen. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .pipeline {
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-2);
+  }
+
+  .pipelineStage,
+  .pipelineStage:first-child {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--wf-s-2);
+    min-height: var(--spacing-tap, 3rem);
+    padding: 0 var(--wf-s-3);
+  }
+
+  .pipelineStage .pipelineLabel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pipelineStage strong,
+  .pipelineLeftPathway strong {
+    font-size: var(--wf-fs-16);
+    line-height: var(--wf-lh-16);
+  }
+
+  .pipelineLeftPathway {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--wf-s-2);
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .queueList {
+    max-height: 24rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .canvasPanel {
+    display: none;
+  }
+}

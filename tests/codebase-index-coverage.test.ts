@@ -2,25 +2,23 @@ import { describe, expect, it } from "vitest";
 import { coverageGaps, schemaTableGaps, trackedRootDirectoryNames } from "../scripts/check-codebase-index-coverage.mjs";
 
 const index = `
-## Top-level layout
+## Ward repository layout
 
 Roots: \`src/\`, \`docs/\`, \`.agents/\`.
 
-## Application architecture
-
-### Product pages (\`src/app/\`)
+## Ward route groups
 
 Routes: \`/documents\`, \`/reference/colour-coding\`.
 
-### API routes (\`src/app/api/\`)
+## Ward API routes
 
 Routes: \`/api/answer\`.
 
-## \`src/lib/\` module map
+## Ward library modules
 
 Modules: \`observability/\`, \`validation/\`, \`extractors/document.ts\`.
 
-## Supabase
+## Historical provenance
 
 ### Schema tables
 
@@ -48,7 +46,7 @@ describe("coverageGaps", () => {
   });
 
   it("does not count a bare name that appears only in prose", () => {
-    const withProse = index.replace("## `src/lib/` module map", "## `src/lib/` module map\n\nIngestion is important.");
+    const withProse = index.replace("## Ward library modules", "## Ward library modules\n\nIngestion is important.");
     const gaps = coverageGaps(withProse, [{ kind: "lib", dir: "src/lib", name: "ingestion" }]);
     expect(gaps.map((gap) => gap.full)).toEqual(["src/lib/ingestion"]);
   });
@@ -59,9 +57,35 @@ describe("coverageGaps", () => {
     expect(gaps.map((gap) => gap.full)).toEqual(["src/app/api/medications"]);
   });
 
+  it("fails coverage when a maintained section boundary is missing or reversed", () => {
+    const group = [{ kind: "root", dir: ".", name: "src" }];
+    const missing = index.replace("## Ward route groups", "## Renamed route groups");
+    const reversed = "## Ward route groups\n" + missing;
+    for (const text of [missing, reversed]) {
+      expect(coverageGaps(text, group).map((gap) => gap.full)).toEqual(["./src"]);
+    }
+  });
+
   it("honours the allowlist", () => {
     const gaps = coverageGaps(index, [{ kind: "route", dir: "src/app", name: "icons" }], new Set(["src/app/icons"]));
     expect(gaps).toEqual([]);
+  });
+
+  it("does not count historical-only paths or fall back to a historical section", () => {
+    const history = [
+      "<!-- docs-script-refs:historical-start -->",
+      "## Ward library modules",
+      "`src/lib/ingestion/`",
+      "## Historical provenance",
+      "<!-- docs-script-refs:historical-end -->",
+    ].join("\n");
+    const group = [{ kind: "lib", dir: "src/lib", name: "ingestion" }];
+    expect(coverageGaps(index + history, group).map((gap) => gap.full)).toEqual(["src/lib/ingestion"]);
+    expect(coverageGaps(history, group).map((gap) => gap.full)).toEqual(["src/lib/ingestion"]);
+  });
+
+  it("rejects malformed history instead of treating it as current coverage", () => {
+    expect(() => coverageGaps(index + "<!-- docs-script-refs:historical-start -->", [])).toThrow(/Unclosed/);
   });
 
   it("checks tracked repository-root directories in the top-level layout section", () => {

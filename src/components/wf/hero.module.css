@@ -242,6 +242,68 @@
   }
 }
 
+/* Phone layout (8 Oct 2026): title first, then three figures in one row, then the aside
+ * (LiveChip, pause, one light button) as a left-aligned row. Figures past the third are left to
+ * the larger screen. Desktop and tablet are unchanged: everything here sits under 48rem. */
+@media (max-width: 48rem) {
+  .hero {
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  }
+  .row {
+    flex-wrap: wrap;
+    gap: var(--wf-s-3);
+  }
+  .titleBlock {
+    flex: 1 1 100%;
+    padding: 0;
+  }
+  .stats,
+  .statsEnd {
+    order: 2;
+    flex: 1 1 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    justify-content: stretch;
+    overflow: hidden;
+  }
+  .stat {
+    padding: 0 0 0 var(--wf-s-3);
+    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  }
+  .stat:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .stat:nth-child(n + 4) {
+    display: none;
+  }
+
+  /* A flex label cannot show an ellipsis, so on phone the label is a block line and the glyph
+   * sits inline before the text. */
+  .label {
+    display: block;
+    max-width: 100%;
+  }
+
+  .label > * {
+    display: inline-flex;
+    vertical-align: middle;
+    margin-right: 5px;
+  }
+  .aside {
+    order: 3;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+  .bar {
+    flex: 1 1 100%;
+  }
+}
+
 @media (forced-colors: active) {
   .hero {
     border: 1px solid CanvasText;
@@ -251,5 +313,50 @@
   }
   .current {
     outline: 2px solid CanvasText;
+  }
+}
+
+/* A stat that opens a panel: a soft pill that reads as a control, chevron turns when open. */
+.statToggle {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  margin: calc(-1 * var(--wf-s-1)) calc(-1 * var(--wf-s-2));
+  padding: var(--wf-s-1) var(--wf-s-2);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
+  border-radius: var(--wf-r-md);
+  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.statToggle:hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+}
+
+.statToggle[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
+  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+}
+
+.statToggle:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+}
+
+.statChevron {
+  transition: transform 160ms ease;
+}
+
+.statToggle[aria-expanded="true"] .statChevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statChevron {
+    transition: none;
   }
 }
