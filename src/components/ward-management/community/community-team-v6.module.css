@@ -485,3 +485,58 @@ div.workspace > .side {
     min-height: var(--spacing-tap, 3rem);
   }
 }
+
+/* Phone (≤48rem), 8 Oct 2026: a shorter hero. The figures share one row of three and the four team
+ * actions sit on one row that scrolls sideways, with Intake referral first. Desktop is untouched. */
+@media (max-width: 48rem) {
+  .heroStats {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 0;
+    width: 100%;
+  }
+
+  .heroStats > * {
+    padding-left: var(--wf-s-3);
+    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  }
+
+  .heroStats > :first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  /* The label truncates with an ellipsis instead of being cut mid word. */
+  .heroStats > * > span:last-child {
+    display: block;
+  }
+
+  /* Inline-size containment keeps the row's buttons from widening the hero band; the row scrolls. */
+  .actions {
+    display: flex;
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    gap: var(--wf-s-2);
+    min-width: 0;
+    max-width: 100%;
+    contain: inline-size;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+
+  .actions > * {
+    flex: none;
+    min-height: 2.75rem;
+  }
+
+  .actions > :last-child {
+    order: -1;
+  }
+
+  .heroMenuButton {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}

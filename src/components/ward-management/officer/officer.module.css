@@ -942,3 +942,100 @@
     display: block;
   }
 }
+
+/* Phone (≤48rem), 8 Oct 2026: the hero figures share one row of three, and each job becomes a
+ * two-line row (patient and route on the left; waiting time and stage on the right). The job number,
+ * provider, escort and CAD stay in the selected job's detail. Desktop is untouched. */
+@media (max-width: 48rem) {
+  .heroStats {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 0;
+    width: 100%;
+  }
+
+  .heroStats .heroStat {
+    padding-left: var(--wf-s-3);
+    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  }
+
+  .heroStats .heroStat:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  /* The label truncates with an ellipsis instead of being cut mid word. */
+  .heroStats .heroStat > span:last-child {
+    display: block;
+  }
+
+  .tableScroll {
+    overflow-x: visible;
+  }
+
+  .jobsTable,
+  .jobsTable tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .jobsTable thead {
+    display: none;
+  }
+
+  .jobsTable tbody .jobRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "who wait"
+      "who stage";
+    align-items: center;
+    column-gap: var(--wf-s-3);
+    min-height: var(--spacing-tap, 3rem);
+    padding: var(--wf-s-2) var(--wf-s-4);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .jobsTable tbody .jobRow > td {
+    display: block;
+    min-width: 0;
+    max-width: none;
+    width: auto;
+    height: auto;
+    padding: 0;
+    border: 0;
+  }
+
+  .jobsTable tbody .jobRow > td:nth-child(1),
+  .jobsTable tbody .jobRow > td:nth-child(3),
+  .jobsTable tbody .jobRow > td:nth-child(5),
+  .jobsTable tbody .jobRow > td:nth-child(6) {
+    display: none;
+  }
+
+  .jobsTable tbody .jobRow > td:nth-child(2) {
+    grid-area: who;
+  }
+
+  .jobsTable tbody .jobRow > td:nth-child(4) {
+    grid-area: stage;
+    justify-self: end;
+    font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    color: var(--wf-ink-2);
+  }
+
+  .jobsTable tbody .jobRow > td.waiting {
+    grid-area: wait;
+    justify-self: end;
+    text-align: right;
+  }
+
+  .jobsTable .selectButton {
+    min-height: 0;
+  }
+
+  .toolbar > button {
+    min-height: 2.75rem;
+  }
+}

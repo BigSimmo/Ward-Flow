@@ -678,3 +678,10 @@
     white-space: normal;
   }
 }
+
+/* Phone (≤48rem), 8 Oct 2026: the hero actions start at the left edge like every other hero row. */
+@media (max-width: 48rem) {
+  .heroActions {
+    justify-content: flex-start;
+  }
+}

@@ -743,3 +743,192 @@
     background: GrayText;
   }
 }
+
+/* Phone (≤48rem), phone board 04: roles become stacked rows (favourite, role and where, then the
+ * shift and cover state on the right); search takes the full width with the two filters under it;
+ * the 24-hour cover chart stays on larger screens. Desktop is untouched. */
+@media (max-width: 48rem) {
+  .main {
+    padding: var(--wf-s-3);
+  }
+
+  .rosterCard > div:first-child {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+  }
+
+  .rosterCard > div:first-child > :last-child {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .headActions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .headActions > * {
+    min-width: 0;
+  }
+
+  .search {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .favouritesChip,
+  .roleSelect {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    min-height: var(--ward-tap, 3rem);
+  }
+
+  .main [data-testid="ward-on-call-cover"] {
+    display: none;
+  }
+
+  .tableScroll {
+    position: relative;
+    overflow-x: visible;
+  }
+
+  .rosterTable,
+  .rosterTable tbody,
+  .edTable,
+  .edTable tbody {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .rosterTable thead,
+  .edTable thead {
+    display: none;
+  }
+
+  .rosterRow {
+    display: grid;
+    grid-template-columns: var(--ward-tap, 3rem) minmax(0, 1fr) auto;
+    grid-template-areas:
+      "star role shift"
+      "star service shift";
+    align-items: center;
+    column-gap: var(--wf-s-2);
+    padding: var(--wf-s-1) var(--wf-s-3) var(--wf-s-1) var(--wf-s-1);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .rosterTable tbody .rosterRow > td {
+    display: block;
+    min-width: 0;
+    max-width: none;
+    width: auto;
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .rosterRow > td.starCol {
+    grid-area: star;
+  }
+
+  .rosterRow > td:nth-child(3) {
+    grid-area: role;
+    align-self: end;
+  }
+
+  .rosterRow > td.serviceCell {
+    grid-area: service;
+    align-self: start;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    color: var(--wf-ink-3);
+  }
+
+  .rosterRow > td.shiftCell {
+    grid-area: shift;
+    text-align: right;
+  }
+
+  .rosterTable tbody .rosterRow > td.purposeCell,
+  .rosterTable tbody .rosterRow > td:last-child {
+    display: none;
+  }
+
+  .rosterRow .roleButton {
+    justify-content: center;
+    min-height: 2.75rem;
+    width: 100%;
+  }
+
+  .rosterRow .shiftState {
+    justify-content: flex-end;
+  }
+
+  .edTable tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "site open"
+      "service open";
+    align-items: center;
+    column-gap: var(--wf-s-2);
+    padding: var(--wf-s-1) var(--wf-s-3);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .tableScroll .edTable tr > td {
+    display: block;
+    min-width: 0;
+    max-width: none;
+    width: auto;
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .edTable tr > td.siteCell {
+    grid-area: site;
+    align-self: end;
+  }
+
+  .edTable tr > td:nth-child(2) {
+    grid-area: service;
+    align-self: start;
+    font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    color: var(--wf-ink-3);
+  }
+
+  .tableScroll .edTable tr > td:nth-child(3) {
+    display: none;
+  }
+
+  .edTable tr > td.workspaceCell {
+    grid-area: open;
+  }
+
+  .edTable tr > td.emptyTableState {
+    grid-column: 1 / -1;
+  }
+
+  /* Roster foot: the count line and the disclosure stack instead of squeezing the count away. */
+  .rosterCard > :has(.footMeta) {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .rosterCard > :has(.footMeta) > * {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+
+  .disclosure {
+    white-space: normal;
+  }
+}
