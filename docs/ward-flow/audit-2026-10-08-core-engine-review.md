@@ -19,6 +19,7 @@ All paths are under `src/components/ward-management/`. A local-only scaffold bra
 
 - Slice 1: reviewed. 14 findings below, plus a clean conventions check.
 - Slice 2: reviewed. 15 findings below, plus a clean conventions check.
+- All 29 findings checked on 8 October 2026: 21 reproduced by replaying them against the real reducer, 7 confirmed by reading the code, 1 only partly confirmed. See [Verification](#verification).
 - No findings fixed yet.
 
 ## Slice 1 findings
@@ -166,6 +167,44 @@ The referral path's `security` gate tests capacity (a free locked bed), while `e
 ## Conventions check (slice 2)
 
 No breaches of the `src/components/ward-management/CLAUDE.md` rules were found. The free-text fields in this slice are already on the typed-text list in the persistence classification.
+
+## Verification
+
+Each finding was replayed against the real reducer from the standard seed, using [`audit-artefacts/core-engine-review-repro.ts.txt`](audit-artefacts/core-engine-review-repro.ts.txt) (25 scenarios; each passes while its defect is present). Findings that could not practically be replayed were checked by reading the code. No finding was rejected.
+
+| Finding | Verdict                       | Evidence                                                                                                                                                                                                                       |
+| ------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1       | Reproduced                    | Repatriation booked, accepted, en route and collected; discharge of the source stay accepted; arrival then refused ("needs the patient's occupied source stay").                                                               |
+| 2       | Confirmed by code             | `RAISE_REFERRAL` sets `patientId: event.patientId ?? raisedFrom?.patientId` with no check that they match; `PULL_PATIENT` checks one and admits the other.                                                                     |
+| 3       | Reproduced                    | Walk-in referred to a community team: the new referral has no `patientId`.                                                                                                                                                     |
+| 4       | Reproduced                    | Pre-acceptance withdrawal from two wards: no notices. Post-acceptance with booked transport: transport cancelled, only the ward told, no officer notice.                                                                       |
+| 5       | Reproduced                    | Revoked examination at destination review: closed, but `referredUnitIds` still lists both wards and `withdrawnReferrals` is empty.                                                                                             |
+| 6       | Reproduced                    | Override recorded against a fully eligible ward; repeating the referral appends an override with `unitIds: []`.                                                                                                                |
+| 7       | Reproduced                    | Ward waitlisted (no bed), another ward accepts: the first ward stays waitlisted.                                                                                                                                               |
+| 8       | Reproduced                    | Pull, step back, pull again: hold expiry unchanged (886), not restarted.                                                                                                                                                       |
+| 9       | Reproduced                    | Off-list outcome `inpatient` at `pulled`: movement closed as did not proceed and the admission removed.                                                                                                                        |
+| 10      | Reproduced                    | Off-list ED outcome `discharge` accepted, stored and the movement closed.                                                                                                                                                      |
+| 11      | Reproduced                    | `referredUnitIds` stored as `["scgh-adult-open","scgh-adult-open"]`.                                                                                                                                                           |
+| 12      | Reproduced                    | Ward-role update with no `actingUnitId` changed another ward's expected discharge date.                                                                                                                                        |
+| 13      | Reproduced                    | Lower-case `female` accepted and stored.                                                                                                                                                                                       |
+| 14      | Confirmed by code             | Constant is 24; its own comment cites the owner's 48.                                                                                                                                                                          |
+| S2-1    | Reproduced                    | WF-006 diverted: release, arrival and stop all refused; movement stays open. WF-006 stopped: `RELEASE_HELD_BED` refused ("holds no bed").                                                                                      |
+| S2-2    | Reproduced                    | WF-005: revoked examination blocks en route; clearing the blocker is accepted; en route and collection then succeed.                                                                                                           |
+| S2-3    | Reproduced, needs a full ward | With the ward showing 0 empty beds, an arrival is accepted (empty stays 0, occupants 18 → 19); one departure then shows 1 empty bed. Only happens when a ward shows no empty beds at arrival, which the code allows.           |
+| S2-4    | Confirmed by code             | The cascade cancels transport and closes movements with no notices and leaves `acceptedUnitId`/`referredUnitIds` set.                                                                                                          |
+| S2-5    | Reproduced                    | On a movement closed as did not proceed, a past estimate raised `arrival_late_referrer` and `arrival_late_ward`.                                                                                                               |
+| S2-6    | **Partly confirmed**          | A repatriation from a departed stay is recorded, referred and accepted, but `PULL_PATIENT` refuses it. So no patient is stranded in transit; it leaves an open movement that can never progress. Lower severity than reported. |
+| S2-7    | Reproduced                    | From accepted-awaiting-bed: `pull_released` recorded, ED told "bed released", notice `unitId` undefined, no ward notice.                                                                                                       |
+| S2-8    | Reproduced                    | Stage written as `pullled`; the next transport event throws `Cannot read properties of undefined (reading 'label')`.                                                                                                           |
+| S2-9    | Confirmed by code             | `eligibility()` line 231 tests `unitHasLockedBeds`; the referral path line 601 tests `lockedBedsFree(unit) > 0`.                                                                                                               |
+| S2-10   | Reproduced                    | Unrelated ward booked transport (`bookedBy` that ward); the ED's own booking then refused as already booked.                                                                                                                   |
+| S2-11   | Confirmed by code             | `ACCEPT_REFERRAL` and `DECLINE_REFERRAL` carry no `actingUnitId`.                                                                                                                                                              |
+| S2-12   | Reproduced                    | Free text stored as `dischargeBarrier`.                                                                                                                                                                                        |
+| S2-13   | Reproduced                    | Transfer-out revision 1 → 3; ordinary leaving 1 → 2.                                                                                                                                                                           |
+| S2-14   | Confirmed by code             | `referralWithdrawable` reads only the referral, so it cannot see the reducer's collected-movement refusal.                                                                                                                     |
+| S2-15   | Confirmed by code             | Reducer trusts `stoodDownByRole`; `alerts-screen.tsx` dispatches both `role` and `stoodDownByRole` as `coordinator` whoever is viewing.                                                                                        |
+
+Findings 9–13, S2-8 and S2-12 need a dispatch with a value the TypeScript types do not allow. They matter only if a screen, imported scenario or stored state can produce such a value; today they are defensive gaps rather than reachable bugs.
 
 ## Next steps
 
