@@ -4,7 +4,36 @@ import { useRef } from "react";
 import { AlertTriangle, RotateCcw, X } from "lucide-react";
 
 import { useWardModalFocus } from "../ward-modal-focus";
-import styles from "./settings.module.css";
+import { defaultWardConfiguration } from "../ward-configuration";
+import { MORNING_ROLLUP_TIME_MINUTES } from "../ward-model";
+import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "../ward-operational-defaults";
+import styles from "./settings-modals.module.css";
+
+function shortDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  const rest = minutes % 60;
+  return rest === 0 ? `${minutes / 60}h` : `${Math.floor(minutes / 60)}h ${rest}m`;
+}
+
+function clock24(minutes: number): string {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+}
+
+/** The values a restore writes, read from the same defaults the engine uses. */
+function restoredValues(): readonly (readonly [string, string])[] {
+  const defaults = defaultWardConfiguration();
+  return [
+    ["ED wait target", `${defaults.edAccessTargetMinutes / 60}h`],
+    ["Wards asked at once", String(defaults.parallelReferralCap)],
+    ["Pull hold", shortDuration(defaults.pullHoldMinutes)],
+    ["Morning count", clock24(defaults.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES)],
+    ["First warning", shortDuration(defaults.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)],
+    ["Second warning", shortDuration(defaults.dueSoonMinutes ?? DUE_SOON_MINUTES)],
+    ["Theme", "Auto"],
+    ["Sidebar", "Open"],
+    ["Buzz sound", "On"],
+  ];
+}
 
 export interface ResetBaselineModalProps {
   readonly isOpen: boolean;
@@ -40,7 +69,7 @@ export function ResetBaselineModal({ isOpen, onClose, onConfirm }: ResetBaseline
           <div className={styles.resetHeaderMeta}>
             <div className={styles.dangerBadge}>
               <AlertTriangle size={14} aria-hidden="true" />
-              <span>Destructive Action</span>
+              <span>Saves and records</span>
             </div>
             <h3 id="reset-modal-title" className={styles.modalTitle}>
               Restore all defaults?
@@ -53,38 +82,18 @@ export function ResetBaselineModal({ isOpen, onClose, onConfirm }: ResetBaseline
 
         <div className={styles.modalBody}>
           <p id="reset-modal-desc">
-            This restores the ED access target, parallel referral cap and pulled-bed hold, then saves those coordination
-            rules. It also resets this browser&rsquo;s appearance theme and navigation rail. The coordination-rule
-            change is recorded in the audit trail.
+            This saves the six coordination rules at their defaults and records the change in the audit. It also resets
+            this browser&rsquo;s theme, sidebar and buzz sound.
           </p>
 
           <div className={styles.baselineParametersCard}>
-            <span className={styles.baselineListTitle}>Factory Baseline Targets</span>
+            <span className={styles.baselineListTitle}>Defaults</span>
             <ul className={styles.baselineList}>
-              <li>
-                <span>Emergency Department access target:</span> <strong>4 hours</strong>
-              </li>
-              <li>
-                <span>Parallel referral cap:</span> <strong>4 units</strong>
-              </li>
-              <li>
-                <span>Pulled-bed hold duration:</span> <strong>90 minutes</strong>
-              </li>
-              <li>
-                <span>Morning rollup deadline:</span> <strong>09:30 AM</strong>
-              </li>
-              <li>
-                <span>First due-time warning (urgent):</span> <strong>30 min</strong>
-              </li>
-              <li>
-                <span>Second due-time warning (soon):</span> <strong>1 h</strong>
-              </li>
-              <li>
-                <span>Appearance theme:</span> <strong>System default (Auto)</strong>
-              </li>
-              <li>
-                <span>Navigation rail:</span> <strong>Expanded (Open)</strong>
-              </li>
+              {restoredValues().map(([name, value]) => (
+                <li key={name}>
+                  <span>{name}</span> <strong>{value}</strong>
+                </li>
+              ))}
             </ul>
           </div>
         </div>

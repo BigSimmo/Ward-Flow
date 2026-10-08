@@ -1771,7 +1771,7 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
       resolve(process.cwd(), "src/components/ward-management/settings/settings-screen.tsx"),
       "utf8",
     );
-    expect(source).toContain("Save coordination rules");
+    expect(source).toContain(`type: "SET_CONFIGURATION"`);
     expect(source).toContain("edAccessTargetMinutes");
     expect(source).toContain("morningRollupDeadlineMinutes");
   });

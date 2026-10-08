@@ -24,6 +24,8 @@ function settings() {
 }
 it("shows operational runtime defaults without editable display overrides", () => {
   settings();
+  fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
+  fireEvent.click(screen.getByRole("tab", { name: /Fixed defaults/ }));
   expect(screen.queryByRole("button", { name: "Edit defaults" })).not.toBeInTheDocument();
   for (const item of OPERATIONAL_DEFAULTS) {
     expect(screen.getByTestId(`ward-settings-operational-default-${item.name}`)).toHaveTextContent(item.display);
@@ -31,8 +33,12 @@ it("shows operational runtime defaults without editable display overrides", () =
 });
 it("discloses that board refresh is not wired and does not pretend to save a cadence", () => {
   settings();
+  fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
   const row = screen.getByTestId("setting-wallboard-refresh-row");
   expect(row).toHaveTextContent("Not wired in this prototype.");
-  fireEvent.click(within(row).getByRole("button", { name: /15s/ }));
+  const option = within(row).getByRole("radio", { name: "15s" });
+  expect(option).toHaveAttribute("aria-disabled", "true");
+  fireEvent.click(option);
+  expect(option).toHaveAttribute("aria-checked", "false");
   expect(localStorage.getItem("ward_flow_wallboard_refresh")).toBeNull();
 });
