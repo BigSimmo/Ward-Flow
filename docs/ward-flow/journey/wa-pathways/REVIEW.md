@@ -14,8 +14,9 @@ to general medical care, AOD care, housing, aged care, justice and services outs
 
 The old diagram is an engine-centred source map: referrals, bed decisions, movements,
 transport, admission records and their actions. Its source snapshot includes 111 map boxes,
-98 action descriptions and 11 state-machine diagrams. Those counts do not establish current
-event completeness or current browser behaviour. This review inspected the existing source;
+98 action descriptions and 11 state-machine diagrams. The connection audit statically matches
+98 role-map labels and 98 distinct reducer case labels to the catalogue; this does not establish
+complete guard, caller, UI or runtime behaviour. This review inspected the existing source;
 the old file-protocol page could not be inspected with the browser tool's URL policy.
 
 The broader WA model distinguishes **physical location**, **care responsibility** and
@@ -32,8 +33,9 @@ The revised controls retain the original diagram style alongside the detailed WA
 - **Master map:** all 111 original boxes and 161 original connections, with their original
   positions, lane colours and SVG symbols. Fit-width, whole-map, readable-size and zoom controls
   are explicit. Search highlights without removing branches; selecting a box shows its source
-  wording and neighbours. This is the preserved prototype source snapshot, not a fresh audit
-  of current engine behaviour or a clinical bed-release rule.
+  wording and neighbours. Nine source-supported continuations form a purple dashed audit overlay;
+  all eight existing double-arrow return directions are now included in the neighbour list.
+  The overlay can be hidden. Remaining historical defect wording is unvalidated.
 
 The detailed WA views remain available:
 
@@ -51,7 +53,7 @@ The detailed WA views remain available:
 
 ## Finite coverage, without an unsupported claim of perfection
 
-The model has **40 categories, 293 explicit conditional links, 18 entry families, 10 legal
+The model has **40 categories, 409 explicit conditional links, 18 entry families, 10 legal
 decision families, 14 exception families and eight interaction checklists**. It retains
 reassessment, re-entry, self-category transfers, leave and return loops. It includes planned
 discharge, shared follow-up, external handover, declined/disengaged care, unknown whereabouts
@@ -59,8 +61,8 @@ and confirmed death as distinct outcomes or circumstances.
 
 [The route register](pathways.csv) lists each link and its conditions.
 [The ordered-pair register](connections.csv) covers all **1,600 category pairs**, including
-same-category pairs. A pair without a direct link says **no direct link modelled**, not
-that the route is impossible. A route count is not a count of distinct lifelong patient journeys:
+same-category pairs. Every pair has a disposition and explanation, with a pair checker in the
+Review & sources view. Unconfirmed direct interfaces remain unconfirmed; they are not impossible. A route count is not a count of distinct lifelong patient journeys:
 loops can repeat indefinitely.
 
 **WA pathway family** means a public WA source explicitly describes that type of pathway.
@@ -69,9 +71,13 @@ connection** means an inferred/proposed interface requiring local confirmation; 
 service-category context without claiming that the cited document authorises the exact link.
 No combination of drawn edges is a clinical recommendation or legal authority.
 
+See [the connection audit](CONNECTION-AUDIT.md) for the 116 added WA links, nine added
+master connections, unresolved interfaces and evidence limits. Downloadable registers include
+[added links](connection-audit.csv) and [master connections](master-connections.csv).
+
 ## Research basis and outstanding operational detail
 
-The 26-reference source register in [data.mjs](data.mjs) and the wireframe preserves direct
+The 30-reference source register in [data.mjs](data.mjs) and the wireframe preserves direct
 official links, findings, access date and limitations. It includes WA Health, MHC, WACHS,
 CAHS, NMHS, SMHS, the Chief Psychiatrist, WA legislation, MHT and MIRT. The review date is
 8 October 2026. Some sources were accessible only as official search-index excerpts; these

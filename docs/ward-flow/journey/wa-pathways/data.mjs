@@ -2400,6 +2400,506 @@ for (const id of [
   );
 }
 
+// Connection audit additions. Keep the earlier register intact and identify new routes explicitly.
+export const baselineEdgeCount = edges.length;
+sources.push(
+  {
+    id: "youth-entry-audit",
+    title: "NMHS youth service referral interfaces",
+    url: "https://www.nmhs.health.wa.gov.au/Hospitals-and-Services/Mental-Health/Specialties/Youth",
+    finding:
+      "Youth HITH accepts referral from inpatient, community, CAMHS, ED and private psychiatrists. Youth outreach has wider referral entry points.",
+    limitation:
+      "Full page inspected. Youth HITH is for ages 16–24 with programme-specific consent, accommodation, risk and catchment criteria. Youth outreach has different exclusions; these programmes are not interchangeable.",
+    checked: "2026-10-08",
+  },
+  {
+    id: "cahs-entry-audit",
+    title: "CAHS mental health referral routes",
+    url: "https://www.cahs.health.wa.gov.au/For-health-professionals/Referrals-to-our-services/Mental-Health",
+    finding:
+      "Ward 5A lists GP, therapist, specialist, school and community-organisation referrals. Medical/surgical liaison referrals request consultation rather than a psychiatric bed.",
+    limitation:
+      "Full page inspected. A referral is not acceptance or a guaranteed direct admission. Age, catchment, clinical suitability and receiving-service arrangements still apply.",
+    checked: "2026-10-08",
+  },
+  {
+    id: "pch-eating-audit",
+    title: "PCH eating-disorder continuum and transitions",
+    url: "https://www.pch.health.wa.gov.au/Our-services/Mental-Health/Eating-Disorders-Service",
+    finding:
+      "Outpatient, day and inpatient care; medical instability may require hospital care. Coordinators arrange ongoing community, youth or private care and suitable inpatient settings.",
+    limitation:
+      "Full page inspected. PCH describes referral by age 16 with care up to 18; the generic CAHS referral summary uses different age wording. Verify the current service criteria rather than encode a universal cut-off. Medical Ward 4A and psychiatric Ward 5A are distinct.",
+    checked: "2026-10-08",
+  },
+  {
+    id: "residential-audit",
+    title: "MHC residential mental health support",
+    url: "https://www.mhc.wa.gov.au/getting-help/other-support-services/residential-services-for-mental-health",
+    finding:
+      "Community Care Units provide transitional high-support rehabilitation; Community Supported Residential Units provide supported accommodation. They are distinct from acute wards.",
+    limitation:
+      "Full page inspected. Category context only; local providers must confirm referral and acceptance. The rehabilitation and supported-living categories do not assert identical admission rules.",
+    checked: "2026-10-08",
+  },
+);
+const auditLink = (from, to, label, type, sourceIds, note, basis = "design") => {
+  if (edges.some((e) => e.from === from && e.to === to && e.type === type))
+    throw new Error(`Audit duplicates existing route: ${from}/${to}/${type}`);
+  edges.push({ ...link(from, to, label, type, sourceIds, note, basis), auditAdded: true });
+};
+for (const from of ["primary", "school", "ngo"])
+  auditLink(
+    from,
+    "child",
+    "Request planned child inpatient assessment",
+    "referral",
+    ["cahs-entry-audit"],
+    "The published referral family includes this referrer. The team decides suitability and urgency; this is not permission to bypass emergency assessment when needed.",
+    "documented",
+  );
+for (const from of ["youth", "child", "private", "medical"])
+  auditLink(
+    from,
+    "hith",
+    "Refer for youth home admission assessment",
+    "referral",
+    ["youth-entry-audit"],
+    "Only a person meeting the youth HITH programme's age, catchment, consent, stable accommodation and assessed suitability criteria. A hospital referral does not itself transfer admission responsibility.",
+    "documented",
+  );
+auditLink(
+  "primary",
+  "hith",
+  "Private psychiatrist requests youth HITH assessment",
+  "referral",
+  ["youth-entry-audit"],
+  "Applies to the private-psychiatrist subset of this category, not every GP or psychologist. Youth programme criteria and acceptance must be confirmed.",
+  "documented",
+);
+for (const from of ["primary", "school", "ngo"])
+  auditLink(
+    from,
+    "outreach",
+    "Request youth intensive outreach assessment",
+    "referral",
+    ["youth-entry-audit"],
+    "Youth-specific referral family; check the named programme's criteria and exclusions. Outreach is not HITH, and referral does not change the person's physical location.",
+    "documented",
+  );
+auditLink(
+  "triage",
+  "followup",
+  "Time-limited child crisis follow-up",
+  "referral",
+  ["crisis"],
+  "For the child crisis service's assessed population. A follow-up clinic is not a universal outcome of every triage call.",
+  "documented",
+);
+auditLink(
+  "triage",
+  "private",
+  "Refer after child crisis assessment",
+  "referral",
+  ["crisis"],
+  "Private facilities are one described assessment outcome; service suitability, acceptance and funding remain separate.",
+  "documented",
+);
+for (const from of ["child", "youth", "private"])
+  auditLink(
+    from,
+    "eating",
+    "Eating-disorder consultation / continuing specialist care",
+    "shared",
+    ["pch-eating-audit"],
+    "Age-appropriate specialist consultation with agreed responsibilities; the eating-disorder box is a team/programme and does not identify an inpatient bed.",
+  );
+auditLink(
+  "eating",
+  "ed",
+  "Urgent reassessment outside the outpatient programme",
+  "transfer",
+  ["pch-eating-audit"],
+  "Use the appropriate emergency service for age, location and urgency. The outpatient service is not an emergency response service.",
+  "documented",
+);
+auditLink(
+  "eating",
+  "medical",
+  "Arrange medically indicated inpatient care",
+  "transfer",
+  ["pch-eating-audit"],
+  "Assessment and accepting medical team determine the appropriate setting; medical admission and psychiatric consultation remain distinct.",
+  "documented",
+);
+for (const to of ["child", "youth", "acute"])
+  auditLink(
+    "eating",
+    to,
+    "Coordinate a suitable mental health inpatient setting",
+    "referral",
+    ["pch-eating-audit"],
+    "A coordination proposal for the appropriate age/service category. The published continuum does not authorise admission to every ward represented here.",
+  );
+auditLink(
+  "day",
+  "eating",
+  "Return to eating-disorder outpatient coordination",
+  "shared",
+  ["pch-eating-audit"],
+  "Only the eating-disorder day-programme subset of this category; retain the agreed specialist care coordinator.",
+  "documented",
+);
+auditLink(
+  "eating",
+  "primary",
+  "Transition to age-appropriate private / primary care",
+  "shared",
+  ["pch-eating-audit"],
+  "Private practitioner transition is described. The responsible receiving practitioner and remaining specialist tasks must be confirmed.",
+  "documented",
+);
+auditLink(
+  "eating",
+  "closed",
+  "Complete this specialist programme episode",
+  "closure",
+  ["pch-eating-audit"],
+  "Completion or age transition closes only the reviewed specialist episode, with any continuing care explicitly handed over.",
+  "documented",
+);
+auditLink(
+  "regional",
+  "eating",
+  "Country specialist eating-disorder consultation",
+  "shared",
+  ["pch-eating-audit"],
+  "Country consultation is described; consult eligibility and programme acceptance. Remote consultation does not itself move the person.",
+  "documented",
+);
+
+// Conditional interfaces missing from the earlier category register; exact local routes remain proposals.
+for (const [from, to, type, label, sourceIds, note] of [
+  [
+    "medical",
+    "child",
+    "referral",
+    "Request child mental health inpatient assessment",
+    ["cahs-entry-audit"],
+    "Medical/surgical liaison is consultation, not admission. A separate inpatient assessment, suitability decision and accepting team are required.",
+  ],
+  [
+    "medical",
+    "primary",
+    "shared",
+    "Medical discharge / continuing primary care handover",
+    ["handover"],
+    "The medical team and receiving practitioner agree the actual follow-up; no automatic psychiatric episode closure.",
+  ],
+  [
+    "medical",
+    "supported",
+    "discharge",
+    "Return to accepted supported accommodation",
+    ["handover"],
+    "Residence suitability, medical needs, support availability and responsible care provider confirmed.",
+  ],
+  [
+    "medical",
+    "agedcare",
+    "discharge",
+    "Return or move to accepted aged care",
+    ["handover"],
+    "Requires the receiving facility's capacity and agreement; psychiatric diagnosis alone does not establish aged-care eligibility.",
+  ],
+  [
+    "hith",
+    "medical",
+    "transfer",
+    "Physical deterioration / medical admission",
+    ["hith", "handover"],
+    "Urgent needs assessed and a medical receiving service identified; ED assessment may be required first.",
+  ],
+  [
+    "hith",
+    "followup",
+    "shared",
+    "HITH discharge follow-up responsibility",
+    ["handover"],
+    "The home admission episode, follow-up work and community responsibility are separately confirmed.",
+  ],
+  [
+    "hith",
+    "primary",
+    "shared",
+    "HITH to primary care handover",
+    ["handover"],
+    "Confirm prescriber, monitoring and the receiving provider; discharge does not silently transfer all tasks.",
+  ],
+  [
+    "susd",
+    "primary",
+    "shared",
+    "Residential support to primary care handover",
+    ["susd", "handover"],
+    "Residential support is distinct from a hospital admission; agree the health and support tasks.",
+  ],
+  [
+    "susd",
+    "medical",
+    "transfer",
+    "Medical deterioration during residential support",
+    ["handover"],
+    "Medical or ED assessment according to urgency; no assumed direct inpatient acceptance.",
+  ],
+  [
+    "cmh",
+    "rehab",
+    "referral",
+    "Assess high-support rehabilitation / CCU suitability",
+    ["residential-audit", "inpatient"],
+    "Confirm the specific clinical rehabilitation or CCU programme, eligibility and receiving-provider agreement; these are not one admission system.",
+  ],
+  [
+    "supported",
+    "rehab",
+    "referral",
+    "Reassess a need for rehabilitation / higher support",
+    ["residential-audit"],
+    "Programme-specific proposal; a housing provider cannot authorise a hospital admission.",
+  ],
+  [
+    "supported",
+    "home",
+    "discharge",
+    "Move to an agreed independent living arrangement",
+    ["residential-audit"],
+    "Confirm the actual housing destination, necessary support and responsible providers.",
+  ],
+  [
+    "unhoused",
+    "outreach",
+    "referral",
+    "Arrange outreach at the actual location",
+    ["community"],
+    "Named service accepts the referral and a safe contact plan; this does not establish HITH eligibility.",
+  ],
+  [
+    "safehaven",
+    "primary",
+    "referral",
+    "Agree continuing primary care assessment",
+    ["handover"],
+    "Proposed handover; confirm the centre's actual scope and the receiving practitioner's access.",
+  ],
+  [
+    "safehaven",
+    "outreach",
+    "referral",
+    "Agree intensive community assessment",
+    ["community"],
+    "Proposed referral, not a guaranteed local Safe Haven pathway or admitted treatment.",
+  ],
+  [
+    "aodres",
+    "primary",
+    "shared",
+    "AOD residential discharge health handover",
+    ["aod", "handover"],
+    "Keep addiction, physical and mental health work assigned across providers.",
+  ],
+  [
+    "aodres",
+    "supported",
+    "discharge",
+    "Accepted housing after residential AOD treatment",
+    ["handover"],
+    "The receiving residence agrees its support remit; AOD treatment is not itself housing acceptance.",
+  ],
+  [
+    "day",
+    "primary",
+    "shared",
+    "Day / specialist programme health handover",
+    ["handover"],
+    "The relevant programme, clinician and GP agree their continuing work.",
+  ],
+  [
+    "day",
+    "cmh",
+    "shared",
+    "Specialist programme / community team coordination",
+    ["handover"],
+    "Parallel care or transition with a named lead; no physical move assumed.",
+  ],
+  [
+    "forensic",
+    "forensiccommunity",
+    "discharge",
+    "Lawfully authorised community discharge",
+    ["forensic"],
+    "A physical discharge proposal distinct from existing shared care. Applicable court/statutory authority, conditions, placement and receiving team must be verified.",
+  ],
+  [
+    "custody",
+    "home",
+    "discharge",
+    "Release from custody with a care plan",
+    ["forensic", "handover"],
+    "The justice authority decides release; health teams arrange confirmed continuing care and actual destination.",
+  ],
+  [
+    "custody",
+    "supported",
+    "discharge",
+    "Authorised custody release to agreed support",
+    ["forensic", "handover"],
+    "Separate justice release authority, housing acceptance and clinical handover; no health-service power to release implied.",
+  ],
+  [
+    "forensiccommunity",
+    "ed",
+    "transfer",
+    "Emergency reassessment during forensic community care",
+    ["forensic", "handover"],
+    "Confirm urgency, the receiving emergency service and applicable legal restrictions; this is not automatic forensic recall.",
+  ],
+  [
+    "leave",
+    "medical",
+    "transfer",
+    "Medical care during temporary absence",
+    ["missing", "handover"],
+    "Urgency, actual location and lawful transfer determined; the original admission and bed remain separate decisions.",
+  ],
+  [
+    "declined",
+    "home",
+    "review",
+    "Record known departure to the actual home",
+    ["missing", "handover"],
+    "Known whereabouts does not imply an approved discharge or capacity/legal assessment; retain the reviewed outcome.",
+  ],
+  [
+    "declined",
+    "primary",
+    "referral",
+    "Agree a primary care re-entry route",
+    ["handover"],
+    "Declined or discontinued specialist care does not establish refusal of all health care; confirm consent, urgency and the receiving practitioner.",
+  ],
+])
+  auditLink(from, to, label, type, sourceIds, note);
+
+for (const from of ["child", "youth", "older", "perinatal", "private", "picu", "rehab"])
+  auditLink(
+    from,
+    "regional",
+    "Agreed country / home-hospital transfer",
+    "transfer",
+    ["transfer"],
+    "Only when the named country service can meet this person's needs and accepts responsibility. No assumption that a regional hospital supplies every specialty or security level.",
+  );
+for (const from of ["child", "youth", "older", "perinatal", "private", "rehab", "regional", "medical"])
+  auditLink(
+    from,
+    "interstate",
+    "Agreed cross-border receiving-care handover",
+    "transfer",
+    ["transfer", "handover"],
+    "Proposal requiring a named receiving service, relevant jurisdictional authority, funding, clinical suitability and transport plan; no interstate agreement inferred.",
+  );
+for (const to of ["youth", "older", "perinatal", "private", "rehab"])
+  auditLink(
+    "regional",
+    to,
+    "Refer to an age / need-appropriate specialist ward",
+    "referral",
+    ["transfer"],
+    "Specialist assessment and accepting ward required. Country location does not determine eligibility or bypass a necessary ED/medical assessment.",
+  );
+for (const [to, type] of [
+  ["home", "discharge"],
+  ["cmh", "shared"],
+  ["primary", "shared"],
+  ["followup", "shared"],
+  ["supported", "discharge"],
+  ["missing", "review"],
+  ["declined", "review"],
+  ["death", "closure"],
+])
+  auditLink(
+    "picu",
+    to,
+    "PICU: reviewed onward care or actual event",
+    type,
+    ["handover", "missing"],
+    "Direct onward care is a conditional proposal, not a recommendation to omit acute step-down. For refusal/absence/death record the actual event and applicable legal/safety response; no automatic discharge or bed release.",
+  );
+for (const to of [
+  "acute",
+  "picu",
+  "child",
+  "youth",
+  "older",
+  "perinatal",
+  "private",
+  "forensic",
+  "rehab",
+  "hith",
+  "medical",
+  "regional",
+  "susd",
+  "aodres",
+  "supported",
+  "agedcare",
+])
+  auditLink(
+    "missing",
+    to,
+    "Located: review return to the actual responsible setting",
+    "review",
+    ["missing"],
+    "This is not a choice of any destination. Match the actual originating/accepted service, verify whereabouts and lawful return/acceptance, reassess needs and confirm admission and bed state. Review may lead to another assessed destination instead.",
+  );
+for (const from of ["regional", "medical", "susd", "aodres", "supported", "agedcare"])
+  auditLink(
+    from,
+    "missing",
+    "Unknown whereabouts / unexpected non-return review",
+    "review",
+    ["missing"],
+    "Proposed interface for an actual event; the WA mental-health missing policy's applicability depends on the episode and service. Other settings require their own safeguarding/emergency policy.",
+  );
+for (const from of ["regional", "medical", "susd", "aodres"])
+  auditLink(
+    from,
+    "declined",
+    "Refused / discontinued care: record reviewed outcome",
+    "review",
+    ["handover"],
+    "Record what actually occurred, with capacity, legal status, safeguarding and ongoing care reviewed. Refusal does not automatically permit departure or establish detention.",
+  );
+for (const from of ["mhoa", "regional", "susd", "supported"])
+  auditLink(
+    from,
+    "death",
+    "Record confirmed death in the responsible episode",
+    "closure",
+    ["data"],
+    "A possible recorded outcome, not an anticipated treatment pathway. Confirm the event and jurisdictional notifications; no bed-release/coding timing inferred.",
+  );
+for (const from of ["acute", "medical", "private", "rehab", "susd", "aodres", "custody"])
+  auditLink(
+    from,
+    "unhoused",
+    "Record an actual departure without stable accommodation",
+    "review",
+    ["handover"],
+    "Visibility of the actual situation is not endorsement of an unsafe discharge. Record confirmed whereabouts, unresolved housing need, responsible care/support and escalation; do not substitute a fictional home destination.",
+  );
+
 export const entryRoutes = [
   [
     "Self-presentation / self-referral",
@@ -2699,4 +3199,5 @@ export default {
   overlays,
   legalTransitions,
   gaps,
+  baselineEdgeCount,
 };

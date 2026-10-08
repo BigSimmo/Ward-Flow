@@ -248,6 +248,20 @@
         color: var(--ink);
         min-width: 0;
       }
+      input[type="checkbox"] {
+        width: 18px;
+        min-height: 18px;
+        margin-right: 7px;
+        vertical-align: middle;
+      }
+      .audit-pair-controls > label {
+        flex: 1 1 240px;
+        min-width: 0;
+        max-width: 100%;
+      }
+      .audit-pair-controls select {
+        max-width: 100%;
+      }
       .btn {
         min-height: 44px;
         padding: 9px 14px;
@@ -1178,9 +1192,13 @@
               <div class="symbol-legend" id="master-legend"></div>
               <p class="small">
                 Solid arrows continue the route; dotted lines are automatic consequences in this source snapshot; dashed
-                lines mark the original special links. Double arrows return. A bar marks an ending. These historical
-                prototype findings have not been re-audited against today's app.
+                lines mark the original special links. Double arrows return. A bar marks an ending. Purple dashed arrows
+                are added audit connections; select either box for the condition. Other historical findings remain
+                unvalidated.
               </p>
+              <label class="small"
+                ><input id="master-audit-toggle" type="checkbox" checked /> Show added audit connections</label
+              >
             </details>
             <div class="master-detail" id="master-detail" aria-live="polite"></div>
             <p class="tiny muted">
@@ -1342,7 +1360,8 @@
           boundary: "External system interface",
           endpoint: "Episode outcome",
         })[node.kind];
-      const tags = (edge) => `<span class="tag ${edge.basis === "design" ? "design" : ""}">${basis(edge)}</span>`;
+      const tags = (edge) =>
+        `<span class="tag ${edge.basis === "design" ? "design" : ""}">${basis(edge)}</span>${edge.auditAdded ? '<span class="tag">Added in audit</span>' : ""}`;
       const announce = (message) => {
         $("#announcement").textContent = message;
       };
@@ -1432,6 +1451,7 @@
         note: ["#6d6257", "Notes", "M 7 2 L 7 12 M 2.7 4.5 L 11.3 9.5 M 11.3 4.5 L 2.7 9.5"],
       };
       const masterById = new Map(DATA.prototype.stages.nodes.map((n) => [n.id, n]));
+      const masterDirected = DATA.audit.masterDirected;
       const masterColour = (lane) => (masterLanes[lane] || masterLanes.expected)[0];
       function symbol(lane) {
         const spec = masterLanes[lane];
@@ -1512,7 +1532,7 @@
           return;
         }
         const neighbours = (incoming) =>
-          DATA.prototype.stages.edges
+          masterDirected
             .filter((e) => (incoming ? e.to : e.from) === selected.id)
             .map((e) => masterById.get(incoming ? e.from : e.to))
             .filter(Boolean);
@@ -1523,18 +1543,21 @@
             )
             .join(" ") || '<span class="small muted">None in this snapshot.</span>';
         const actions = DATA.prototype.actionRecords.filter((a) => a.nodes?.includes(selected.id));
+        const additions = DATA.audit.masterAdditions.filter((e) => e.from === selected.id || e.to === selected.id);
+        const gaps = DATA.audit.masterGaps.filter((g) => g.node === selected.id);
         $("#master-detail").innerHTML =
-          `<h3 class="symbol-row">${symbol(selected.lane)}${escape(selected.label)}</h3>${selected.sub ? `<p class="small">${escape(selected.sub)}</p>` : ""}<p class="tiny muted">Original source wording. ${escape(masterLanes[selected.lane]?.[1] || "Map heading")} · ${escape(selected.id)}</p>${selected.patient ? `<p class="small"><b>Person:</b> ${escape(selected.patient)}</p>` : ""}${selected.bed ? `<p class="small"><b>Bed:</b> ${escape(selected.bed)}</p>` : ""}<details><summary>Connected boxes and source actions · ${actions.length} action records</summary><p class="small"><b>Incoming:</b></p><div class="row">${list(neighbours(true))}</div><p class="small"><b>Onward:</b></p><div class="row">${list(neighbours(false))}</div><p class="small muted">See the WA connection views for the separately researched conditions and handovers. These original links are prototype references.</p></details>`;
+          `<h3 class="symbol-row">${symbol(selected.lane)}${escape(selected.label)}</h3>${selected.sub ? `<p class="small">${escape(selected.sub)}</p>` : ""}<p class="tiny muted">Original source wording. ${escape(masterLanes[selected.lane]?.[1] || "Map heading")} · ${escape(selected.id)}</p>${selected.patient ? `<p class="small"><b>Person:</b> ${escape(selected.patient)}</p>` : ""}${selected.bed ? `<p class="small"><b>Bed:</b> ${escape(selected.bed)}</p>` : ""}${additions.map((e) => `<details ${additions.length === 1 ? "open" : ""}><summary>Added connection: ${escape(e.label)}</summary><p class="small">${escape(e.condition)}</p><p class="small"><b>Action owner:</b> ${escape((DATA.prototype.actionRecords.find((a) => a.event === e.event)?.roles || []).map((role) => ({ ed: "ED clinician", ward: "ward team", coordinator: "flow coordinator", referrer: "referrer" })[role] || role).join(", "))}. The receiving service separately confirms its decision.</p><p class="tiny muted">Source event ${escape(e.event)} · ${escape(e.source)}</p><div class="row">${list([masterById.get(e.from), masterById.get(e.to)])}</div></details>`).join("")}${gaps.map((g) => `<div class="gap"><b>${escape(g.title)}</b><p class="small">${escape(g.detail)}</p></div>`).join("")}<details><summary>Connected boxes and source actions · ${actions.length} action records</summary><p class="small"><b>Incoming:</b></p><div class="row">${list(neighbours(true))}</div><p class="small"><b>Onward:</b></p><div class="row">${list(neighbours(false))}</div><p class="small muted">Includes the return direction of existing double arrows and the identified audit continuations. WA care-map links have separately researched conditions.</p>${actions.length ? `<h4>Catalogued actions at this box</h4><ul class="small">${actions.map((a) => `<li>${escape(a.name)} <span class="tiny muted">(${escape(a.event)})</span></li>`).join("")}</ul>` : ""}</details>`;
       }
       function renderMaster() {
         const { nodes, edges, width, height } = DATA.prototype.stages;
         $("#master-description").textContent =
-          `All ${nodes.length} original boxes and ${edges.length} original connections, in their original positions. The symbols and lane colours are retained alongside the broader WA care model.`;
+          `All ${nodes.length} original boxes and ${edges.length} original connecting paths retained, plus ${DATA.audit.masterAdditions.length} audit connections. Every box, symbol, position and lane colour is preserved.`;
         $("#master-legend").innerHTML = Object.entries(masterLanes)
           .map(([lane, spec]) => `<span>${symbol(lane)}${spec[1]}</span>`)
           .join("");
         const onward = new Set(edges.filter((e) => e.from !== e.to).map((e) => e.from));
         for (const edge of edges) if (edge.both) onward.add(edge.to);
+        for (const edge of DATA.audit.masterAdditions) onward.add(edge.from);
         const ends = new Set(
           nodes
             .filter(
@@ -1560,12 +1583,37 @@
           })
           .join("");
         const canvas = $("#master-canvas");
+        const auditLines = DATA.audit.masterAdditions
+          .map((e) => {
+            const a = masterById.get(e.from),
+              b = masterById.get(e.to);
+            const ay = a.y + a.h / 2,
+              by = b.y + b.h / 2;
+            const right = e.to === "placement";
+            const ax = right ? a.x : a.x;
+            const bx = right ? b.x + b.w : b.x + b.w;
+            const d =
+              e.from === "edToCommunity"
+                ? `M ${a.x} ${ay} H 1248 V 1436 H 546 V ${by} H ${bx}`
+                : `M ${ax} ${ay} H ${e.channel} V ${by} H ${bx}`;
+            return `<path class="master-audit-edge" data-audit-id="${e.id}" d="${d}" fill="none" stroke="#7b4a95" stroke-width="2" stroke-dasharray="10 4 2 4" marker-end="url(#master-audit-arrow)"><title>${escape(e.label + ": " + e.condition)}</title></path>`;
+          })
+          .join("");
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
-        canvas.innerHTML = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-hidden="true" style="position:absolute;left:0;top:0"><defs>${defs}</defs>${masks}${lines}</svg>${nodes.map((n) => `<${n.lane === "heading" ? "div" : "button"} ${n.lane === "heading" ? "" : `type="button" data-master-node="${n.id}" aria-label="Read original box: ${escape(n.label)}"`} class="master-node" data-lane="${n.lane}" data-original-id="${n.id}" aria-current="${n.id === state.masterNode}" style="--lane:${masterColour(n.lane)};left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px">${symbol(n.lane)}<b>${escape(n.label)}</b>${n.sub ? `<small>${escape(n.sub)}</small>` : ""}</${n.lane === "heading" ? "div" : "button"}>`).join("")}`;
+        canvas.innerHTML = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-hidden="true" style="position:absolute;left:0;top:0"><defs>${defs}<marker id="master-audit-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#7b4a95"/></marker></defs>${masks}${lines}<g id="master-audit-overlay">${auditLines}</g></svg>${nodes.map((n) => `<${n.lane === "heading" ? "div" : "button"} ${n.lane === "heading" ? "" : `type="button" data-master-node="${n.id}" aria-label="Read original box: ${escape(n.label)}"`} class="master-node" data-lane="${n.lane}" data-original-id="${n.id}" aria-current="${n.id === state.masterNode}" style="--lane:${masterColour(n.lane)};left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px">${symbol(n.lane)}<b>${escape(n.label)}</b>${n.sub ? `<small>${escape(n.sub)}</small>` : ""}</${n.lane === "heading" ? "div" : "button"}>`).join("")}`;
+        $("#master-audit-overlay").style.display = $("#master-audit-toggle").checked ? "" : "none";
         updateMasterMatches();
         renderMasterDetail();
       }
+      $("#master-audit-toggle").addEventListener("change", () => {
+        $("#master-audit-overlay").style.display = $("#master-audit-toggle").checked ? "" : "none";
+        announce(
+          $("#master-audit-toggle").checked
+            ? "Added audit connections shown."
+            : "Original connecting paths shown alone.",
+        );
+      });
       function updateMasterMatches() {
         const query = state.masterQuery.trim().toLowerCase();
         let matches = 0;
@@ -1717,7 +1765,14 @@
           )
           .join("");
         $("#review-body").innerHTML =
-          `<div class="grid2">${cards}</div><details open><summary>Review findings and remaining gaps</summary><p class="small">The older diagram focuses on prototype referrals, bed search, transport and admission actions. This model adds the wider care settings, re-entry loops, non-hospital alternatives and explicit boundaries. It separates physical movement from shared care and administrative outcomes.</p>${DATA.gaps.map((gap) => `<div class="gap">${escape(gap)}</div>`).join("")}</details><details><summary>Every mapped way into care · ${DATA.entryRoutes.length} entry families</summary><div class="scroll-table"><table><thead><tr><th>Entry</th><th>People involved</th><th>Assessment / route</th></tr></thead><tbody>${DATA.entryRoutes.map((entry) => `<tr><td>${escape(entry.label)}</td><td>${escape(entry.actors)}</td><td>${escape(entry.route)}<br />${entry.sourceIds.map((id) => `<a href="${escape(sourceById.get(id).url)}" target="_blank" rel="noopener noreferrer">${escape(sourceById.get(id).title)}</a>`).join(" · ")}</td></tr>`).join("")}</tbody></table></div></details><details><summary>Legal status and care decisions · ${DATA.legalTransitions.length} decision families</summary><p class="small muted">A design checklist of decisions to verify. Full current statutory text and local legal procedures were not audited; this is not a legal algorithm.</p>${DATA.legalTransitions.map((row) => `<div class="source-card"><h3>${escape(row.trigger)}</h3><p>${escape(row.options)}</p><p class="muted">${escape(row.condition)}</p></div>`).join("")}</details><details><summary>When the planned pathway changes · ${DATA.exceptions.length} exception families</summary>${DATA.exceptions.map((row) => `<div class="source-card"><h3>${escape(row.label)}</h3><p>${escape(row.response)}</p></div>`).join("")}</details><details><summary>Interaction checklists · ${DATA.interactions.length} kinds</summary>${DATA.interactions.map((i) => `<div class="source-card"><h3>${escape(i.title)}</h3><ol class="small">${i.steps.map((s) => `<li>${escape(s)}</li>`).join("")}</ol><p class="tiny muted">Possible failures: ${escape(i.failures.join(" · "))}</p></div>`).join("")}</details><details><summary>WA source register · ${DATA.sources.length} references</summary><p class="small muted">Source access dates refer to this review. Public pages, historic publications and search excerpts have different evidence limits, recorded below.</p>${DATA.sources.map((s) => `<article class="source-card"><h3><a href="${escape(s.url)}" target="_blank" rel="noopener noreferrer">${escape(s.title)} ↗</a></h3><p>${escape(s.finding)}</p><p class="source-warning">${escape(s.limitation)}</p><span class="tiny muted">${escape(s.id)} · checked ${escape(s.checked)}</span></article>`).join("")}</details><details><summary>Prototype reference and reproducibility</summary><p class="small">Existing source snapshot: ${DATA.prototype.nodes} map boxes, ${DATA.prototype.actions} listed actions and ${DATA.prototype.machines} state-machine diagrams. Counts describe those source files, not all current executable engine events.</p><p class="small muted">${escape(DATA.prototype.status)}. The original explorer is preserved. This broader WA map is not installed into the Ward Flow app.</p><p class="tiny muted">Base ${escape(DATA.provenance.base)}<br />Branch ${escape(DATA.provenance.branch)}<br />Inputs SHA-256 ${escape(DATA.provenance.inputHash)}</p></details>`;
+          `<details open><summary>Connection audit · ${DATA.audit.addedLinks} added WA links · ${DATA.audit.masterAdditions.length} added master connections</summary><p class="small">${DATA.audit.baselineLinks} previous links retained; ${DATA.audit.totalLinks} now explicit. The layout and original map geometry are unchanged.</p>${DATA.audit.findings.map((finding) => `<p class="small">${escape(finding)}</p>`).join("")}<p class="small">Static catalogue check: ${DATA.audit.eventCoverage.roles} role entries and ${DATA.audit.eventCoverage.cases} distinct reducer case labels; ${DATA.audit.eventCoverage.unmappedRoles.length} uncatalogued role entries, ${DATA.audit.eventCoverage.unmappedCases.length} uncatalogued case labels. ${escape(DATA.audit.eventCoverage.method)}</p><h3>Check any pair</h3><p class="small muted">Every ordered pair has a disposition. Unconfirmed direct routes remain unconfirmed; a graph example does not authorise a patient journey.</p><div class="row audit-pair-controls"><label>From <select id="pair-from" aria-label="Audit origin">${DATA.nodes.map((n) => `<option value="${n.id}">${escape(n.label)}</option>`).join("")}</select></label><label>To <select id="pair-to" aria-label="Audit destination">${DATA.nodes.map((n) => `<option value="${n.id}">${escape(n.label)}</option>`).join("")}</select></label></div><div id="pair-result" class="source-card" aria-live="polite"></div><button class="btn" type="button" id="download-added">Download added links CSV</button> <button class="btn" type="button" id="download-master">Download master connections CSV</button><h3 style="margin-top:18px">Connections still requiring confirmation</h3>${DATA.audit.unresolved.map((gap) => `<div class="gap">${escape(gap)}</div>`).join("")}</details><div class="grid2">${cards}</div><details><summary>Review findings and remaining gaps</summary><p class="small">The older diagram focuses on prototype referrals, bed search, transport and admission actions. This model adds the wider care settings, re-entry loops, non-hospital alternatives and explicit boundaries. It separates physical movement from shared care and administrative outcomes.</p>${DATA.gaps.map((gap) => `<div class="gap">${escape(gap)}</div>`).join("")}</details><details><summary>Every mapped way into care · ${DATA.entryRoutes.length} entry families</summary><div class="scroll-table"><table><thead><tr><th>Entry</th><th>People involved</th><th>Assessment / route</th></tr></thead><tbody>${DATA.entryRoutes.map((entry) => `<tr><td>${escape(entry.label)}</td><td>${escape(entry.actors)}</td><td>${escape(entry.route)}<br />${entry.sourceIds.map((id) => `<a href="${escape(sourceById.get(id).url)}" target="_blank" rel="noopener noreferrer">${escape(sourceById.get(id).title)}</a>`).join(" · ")}</td></tr>`).join("")}</tbody></table></div></details><details><summary>Legal status and care decisions · ${DATA.legalTransitions.length} decision families</summary><p class="small muted">A design checklist of decisions to verify. Full current statutory text and local legal procedures were not audited; this is not a legal algorithm.</p>${DATA.legalTransitions.map((row) => `<div class="source-card"><h3>${escape(row.trigger)}</h3><p>${escape(row.options)}</p><p class="muted">${escape(row.condition)}</p></div>`).join("")}</details><details><summary>When the planned pathway changes · ${DATA.exceptions.length} exception families</summary>${DATA.exceptions.map((row) => `<div class="source-card"><h3>${escape(row.label)}</h3><p>${escape(row.response)}</p></div>`).join("")}</details><details><summary>Interaction checklists · ${DATA.interactions.length} kinds</summary>${DATA.interactions.map((i) => `<div class="source-card"><h3>${escape(i.title)}</h3><ol class="small">${i.steps.map((s) => `<li>${escape(s)}</li>`).join("")}</ol><p class="tiny muted">Possible failures: ${escape(i.failures.join(" · "))}</p></div>`).join("")}</details><details><summary>WA source register · ${DATA.sources.length} references</summary><p class="small muted">Source access dates refer to this review. Public pages, historic publications and search excerpts have different evidence limits, recorded below.</p>${DATA.sources.map((s) => `<article class="source-card"><h3><a href="${escape(s.url)}" target="_blank" rel="noopener noreferrer">${escape(s.title)} ↗</a></h3><p>${escape(s.finding)}</p><p class="source-warning">${escape(s.limitation)}</p><span class="tiny muted">${escape(s.id)} · checked ${escape(s.checked)}</span></article>`).join("")}</details><details><summary>Prototype reference and reproducibility</summary><p class="small">Existing source snapshot: ${DATA.prototype.nodes} map boxes, ${DATA.prototype.actions} listed actions and ${DATA.prototype.machines} state-machine diagrams. Counts describe those source files, not all current executable engine events.</p><p class="small muted">${escape(DATA.prototype.status)}. The original explorer is preserved. This broader WA map is not installed into the Ward Flow app.</p><p class="tiny muted">Base ${escape(DATA.provenance.base)}<br />Branch ${escape(DATA.provenance.branch)}<br />Inputs SHA-256 ${escape(DATA.provenance.inputHash)}</p></details>`;
+      }
+      function renderPairAudit() {
+        const pair = DATA.audit.orderedPairs.find(
+          (p) => p.from === $("#pair-from").value && p.to === $("#pair-to").value,
+        );
+        $("#pair-result").innerHTML =
+          `<h4>${escape(pair.status)}</h4><p class="small">${escape(pair.reasoning)}</p>${pair.routeIds.map((id) => `<p class="small">${escape(edgeById.get(id).label)} · ${escape(interactionById.get(edgeById.get(id).type).title)} · ${escape(basis(edgeById.get(id)))}</p>`).join("")}${pair.structuralExample.length ? `<p class="small">Structural graph example: ${escape(pair.structuralExample.map(nodeName).join(" → "))}</p>` : ""}<p class="tiny muted">${escape(pair.exampleLimit)}</p>`;
       }
       function csv(rows) {
         return (
@@ -1898,22 +1953,16 @@
       );
       $("#download-pairs").addEventListener("click", () =>
         download("wa-mental-health-connection-pairs.csv", [
-          ["from", "to", "status", "direct_route_ids"],
-          ...DATA.nodes.flatMap((from) =>
-            DATA.nodes.map((to) => {
-              const direct = DATA.edges.filter((e) => e.from === from.id && e.to === to.id);
-              return [
-                from.label,
-                to.label,
-                direct.length
-                  ? "Explicit conditional link(s)"
-                  : from.id === to.id
-                    ? "No same-category link modelled"
-                    : "No direct link modelled; not evidence of impossibility",
-                direct.map((e) => e.id).join(" | "),
-              ];
-            }),
-          ),
+          ["from", "to", "status", "direct_route_ids", "reasoning", "structural_example_only", "example_limit"],
+          ...DATA.audit.orderedPairs.map((p) => [
+            nodeName(p.from),
+            nodeName(p.to),
+            p.status,
+            p.routeIds.join(" | "),
+            p.reasoning,
+            p.structuralExample.map(nodeName).join(" -> "),
+            p.exampleLimit,
+          ]),
         ]),
       );
       document.addEventListener("keydown", (event) => {
@@ -1967,6 +2016,42 @@
       }
       renderOverall();
       renderReview();
+      $("#pair-from").addEventListener("change", renderPairAudit);
+      $("#pair-to").addEventListener("change", renderPairAudit);
+      $("#pair-from").value = "youth";
+      $("#pair-to").value = "hith";
+      renderPairAudit();
+      $("#download-added").addEventListener("click", () =>
+        download("wa-added-connection-audit.csv", [
+          ["id", "from", "to", "interaction", "route", "basis", "conditions", "source_ids"],
+          ...DATA.edges
+            .filter((e) => e.auditAdded)
+            .map((e) => [
+              e.id,
+              nodeName(e.from),
+              nodeName(e.to),
+              e.type,
+              e.label,
+              e.basis,
+              [...e.guards, e.note].join(" | "),
+              e.sourceIds.join(" | "),
+            ]),
+        ]),
+      );
+      $("#download-master").addEventListener("click", () =>
+        download("wa-master-connections.csv", [
+          ["id", "from_box", "to_box", "disposition", "event_or_annotation", "condition", "source"],
+          ...masterDirected.map((e) => [
+            e.id,
+            e.from,
+            e.to,
+            e.disposition,
+            e.event || e.note,
+            e.condition || "Original schematic link; inspect source wording and applicable workflow conditions.",
+            e.source || "docs/ward-flow/journey/stages.json",
+          ]),
+        ]),
+      );
       restoreHash();
       window.addEventListener("hashchange", restoreHash);
     </script>
