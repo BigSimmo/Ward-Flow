@@ -943,6 +943,24 @@ button.registerRow:hover {
   .registersPanel[data-open="false"] {
     display: none;
   }
+
+  /* Phone (8 Oct 2026): the queue flows with the page, so there is one scroller, the window. */
+  .queueList {
+    max-height: none;
+    overflow-y: visible;
+    overscroll-behavior: auto;
+  }
+
+  /* Compact hero: same figures and actions, tighter spacing. The hero is the first child of the
+     body; these structural selectors reach the shared Hero's row without editing it. */
+  .body > section:first-child {
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .body > section:first-child > div {
+    row-gap: var(--wf-s-2);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

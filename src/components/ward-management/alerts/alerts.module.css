@@ -771,6 +771,125 @@
   }
 }
 
+/* Phone (8 Oct 2026, board 03): conditions as a tight 2 x 2 grid, glyph first, figure on the
+   right; the role filter is one row that scrolls sideways; rows put owner and actions on one line. */
+@media (max-width: 48rem) {
+  .tile {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 2px var(--wf-s-2);
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .tileHead {
+    grid-column: 1;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .tileHead > svg {
+    flex: none;
+    order: -1;
+  }
+
+  .tileLabel {
+    font-size: var(--wf-fs-12);
+    line-height: var(--wf-lh-12);
+  }
+
+  .tileValue {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    font-size: var(--wf-fs-16);
+    line-height: var(--wf-lh-16);
+  }
+
+  .tileSub {
+    grid-column: 1;
+    font-size: var(--wf-fs-11);
+    line-height: var(--wf-lh-11);
+  }
+
+  .filterBar {
+    gap: var(--wf-s-1) var(--wf-s-3);
+  }
+
+  .filterGroup {
+    flex: 1 1 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--wf-s-1);
+  }
+
+  .chipRow {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    margin-inline: calc(-1 * var(--wf-s-2));
+    padding-inline: var(--wf-s-2);
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      var(--wf-ink-1) var(--wf-s-2),
+      var(--wf-ink-1) calc(100% - var(--wf-s-4)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      var(--wf-ink-1) var(--wf-s-2),
+      var(--wf-ink-1) calc(100% - var(--wf-s-4)),
+      transparent 100%
+    );
+  }
+
+  .chipRow::-webkit-scrollbar {
+    display: none;
+  }
+
+  .chipRow > * {
+    flex: none;
+  }
+
+  .alertCard {
+    gap: var(--wf-s-2);
+  }
+
+  .alertActions {
+    flex-wrap: wrap;
+  }
+
+  .actionGap {
+    display: none;
+  }
+
+  .alertRow {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--wf-s-1) var(--wf-s-3);
+    min-height: 0;
+  }
+
+  .alertRow .alertContent {
+    grid-column: 2 / span 2;
+  }
+
+  .alertRow .ownerCell {
+    grid-column: 2;
+    max-width: none;
+  }
+
+  .alertRow .rowActions {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .alertRow:last-child {
+    border-bottom: 0;
+  }
+}
+
 @media print {
   .inspectorOverlay,
   .modalOverlay,

@@ -5115,6 +5115,85 @@
   .v6SelectBox {
     height: calc(var(--ward-tap) + 2px);
   }
+
+  /* Phone (8 Oct 2026): Live sits beside the title instead of on a row of its own. The shared
+     Hero's first row is title, figures, aside; a grid puts the aside in the title row. */
+  .v6HeroWrap > section > div:first-child {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .v6HeroWrap > section > div:first-child > div:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+
+  .v6HeroWrap > section > div:first-child > div:last-child:not(:nth-child(2)) {
+    grid-row: 1;
+    grid-column: 2;
+    flex: none;
+  }
+
+  /* Filters: the chips and the selects are each one sideways row, so the block is three short
+     rows (chips, selects, density) instead of four. Every control keeps its full label. */
+  .v6FilterBar.v6FilterBar {
+    gap: var(--wf-s-2);
+  }
+
+  .v6Chips,
+  .v6Selects {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    margin-inline: calc(-1 * var(--wf-s-3));
+    padding-inline: var(--wf-s-3);
+  }
+
+  .v6Chips::-webkit-scrollbar,
+  .v6Selects::-webkit-scrollbar {
+    display: none;
+  }
+
+  .v6Chips > *,
+  .v6Selects > * {
+    flex: none;
+  }
+
+  .v6Selects > .v6SelectBox {
+    max-width: none;
+  }
+
+  .v6BarDivider {
+    display: none;
+  }
+
+  .v6BarEnd {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  /* Results head: the count and the sort switch take their own row under the title, and the
+     sort switch scrolls sideways inside the card instead of running past its edge. */
+  .v6Results > div:first-child {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+  }
+
+  .v6Results > div:first-child > div:nth-child(2) {
+    flex: 1 1 auto;
+  }
+
+  .v6Results > div:first-child > div:last-child {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .v6Results > div:first-child > div:last-child > :last-child {
+    min-width: 0;
+  }
 }
 
 @media (pointer: coarse) {
