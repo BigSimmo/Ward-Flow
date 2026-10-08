@@ -7,20 +7,25 @@ import { useState } from "react";
 
 import { buttonClass, Button } from "@/components/wf";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import { WARD_HOME_HREF, resolveWardScreenTitle } from "@/components/ward-management/ward-nav";
+import {
+  WARD_ADD_PERSON_HREF,
+  WARD_HOME_HREF,
+  WARD_NAV,
+  WARD_VIEWS,
+  resolveWardScreenTitle,
+} from "@/components/ward-management/ward-nav";
 import styles from "./ward-phone-desktop-only.module.css";
 
 /**
- * Phone plan tier 3 (Josh, 8 Oct 2026): pages built for a wide screen. On a phone a direct link
- * shows this card instead of a broken layout; Show anyway still opens the page. Hidden above
- * 48rem, so desktop and tablet never see it.
+ * Phone plan tier 3 (Josh, 8 Oct 2026): Statistics, Governance and Add a patient are built for a
+ * wide screen. On a phone a direct link shows this card instead of a broken layout; Show anyway
+ * still opens the page. Hidden above 48rem, so desktop and tablet never see it.
  */
-const DESKTOP_ONLY_PREFIXES = [
-  "/mockups/ward-flow/statistics",
-  "/mockups/ward-flow/governance",
-  "/mockups/ward-flow/people/new",
-  "/mockups/ward-flow/sovereign",
-] as const;
+const DESKTOP_ONLY_PREFIXES: readonly string[] = [
+  WARD_NAV.find((item) => item.id === "statistics")?.href,
+  WARD_VIEWS.find((view) => view.id === "governance")?.href,
+  WARD_ADD_PERSON_HREF,
+].filter((href): href is string => Boolean(href));
 
 export function isPhoneDesktopOnlyPath(pathname: string): boolean {
   return DESKTOP_ONLY_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
