@@ -5930,3 +5930,70 @@
     min-height: var(--spacing-tap, 3rem);
   }
 }
+
+/* Phone (simplified board): the band keeps three figures in equal columns (Ready now, Occupied,
+ * Coming in), and the page keeps the day's figures, the worth-a-look prompts, the shift work and
+ * who is going out and coming in. The bed grid with its filters, order and legend, the bed
+ * dossier and the duplicate shift brief button at the top stay on the larger screen (the shift
+ * brief stays at the foot of the page). Desktop is unchanged. */
+@media screen and (max-width: 48rem) {
+  .screen .header {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: var(--wf-s-1);
+  }
+
+  .screen .header > .siteName,
+  .screen .header > .unitName,
+  .screen .header > .designation {
+    grid-column: 1 / -1;
+  }
+
+  .screen .header > .headline {
+    grid-column: 1;
+    grid-row: auto;
+    flex-direction: column;
+    justify-self: stretch;
+    min-width: 0;
+    margin-top: var(--wf-s-2);
+  }
+
+  .screen .header > .bandStats {
+    grid-column: 2 / -1;
+    grid-row: auto;
+    justify-self: stretch;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+    margin-top: var(--wf-s-2);
+  }
+
+  .screen .header > .bandStats > div {
+    min-width: 0;
+    padding: 0 0 0 var(--wf-s-3);
+  }
+
+  .screen .header > .bandStats > div:nth-child(2),
+  .screen .header > .bandStats > div:nth-child(4) {
+    display: none;
+  }
+
+  .screen .header > .bandStats dt {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .screen .header > .asAt {
+    margin-top: var(--wf-s-2);
+  }
+
+  .screen .topDailySheetButton {
+    display: none;
+  }
+
+  .screen .gridColumn,
+  .screen .detail,
+  .screen .zonesOpen .detail {
+    display: none;
+  }
+}

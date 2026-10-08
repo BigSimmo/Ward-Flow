@@ -1176,3 +1176,46 @@
     background: CanvasText;
   }
 }
+
+/* Phone (simplified): the headline figures, where the mismatch is (as two tiles a row, the total
+ * across the foot) and the next 48 hours with the beds freeing today. The bed map, the ward table
+ * with its filters and columns, and the bed meeting sheet launcher stay on the larger screen.
+ * Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .capacityHero [data-testid="bed-meeting-sheet-open"] {
+    display: none;
+  }
+
+  .capacityGrid > :first-child,
+  .wardsSection {
+    display: none;
+  }
+
+  .screen .gapTable {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .screen .gapTable tr {
+    padding: var(--wf-s-3);
+    border-top: 1px solid var(--wf-line);
+    border-left: 0;
+  }
+
+  .screen .gapTable tbody tr:nth-child(even) {
+    border-left: 1px solid var(--wf-line);
+  }
+
+  .screen .gapTable tbody tr:first-child,
+  .screen .gapTable tbody tr:nth-child(2) {
+    border-top: 0;
+  }
+
+  .screen .gapTable tfoot tr {
+    grid-column: 1 / -1;
+  }
+
+  /* The need wraps at a word rather than losing its last word to an ellipsis. */
+  .screen .gapTable tr > :first-child {
+    white-space: normal;
+  }
+}

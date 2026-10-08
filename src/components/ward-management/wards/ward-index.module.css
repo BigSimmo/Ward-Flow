@@ -500,3 +500,31 @@
     width: 3rem;
   }
 }
+
+/* Phone (simplified): one list of wards. The health service chips and the search stay; the cards
+ * or table switch and the status, cohort and order rows stay on the larger screen, so the list
+ * starts within the first screen. Each card keeps its name, figures and Enter. Desktop is
+ * unchanged. */
+@media (max-width: 48rem) {
+  .filters {
+    gap: var(--wf-s-2);
+  }
+
+  .filterRow:first-child > :nth-child(3),
+  .filterRow + .filterRow {
+    display: none;
+  }
+
+  .search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .cardGrid {
+    gap: var(--wf-s-2);
+  }
+
+  .cardFoot {
+    padding-top: 0;
+  }
+}
