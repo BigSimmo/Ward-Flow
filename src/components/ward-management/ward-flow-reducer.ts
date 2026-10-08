@@ -1,3 +1,4 @@
+import { reduceTransportStopEvent } from "./ward-flow-transport-stop-reducer";
 import { reduceTransportBookingEvent } from "./ward-flow-transport-booking-reducer";
 import { reduceExpectFlagsEvent } from "./ward-flow-expect-flags-reducer";
 import { reduceArrivalDetailsEvent } from "./ward-flow-arrival-details-reducer";
@@ -47,7 +48,6 @@ import { reduceInboxEvent } from "./ward-inbox-reducer";
 import {
   CANCEL_TRANSPORT_REASONS,
   RELEASE_PULL_REASONS,
-  STOP_TRANSPORT_REASONS,
   TRANSPORT_WHEREABOUTS,
   DIVERSION_REASONS,
   GENDER_PLACEMENT_REASONS,
@@ -6095,127 +6095,14 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       return appendNotices(next, transportNotices);
     }
-
-    /**
-     * THE REFERRER OR THE COORDINATOR STOPS A COLLECTED JOURNEY — WLQ-38 (owner, 2026-09-15). See
-     * this event's own doc comment in `ward-flow-events.ts` for the ruling and for why `ed` is
-     * permitted by role alone. `EVENT_ROLE.STOP_TRANSPORT` already restricts the caller to
-     * `coordinator`/`ed` before this case runs, so — unlike `WITHDRAW_REFERRAL` above, which must
-     * permit four roles pre-acceptance and narrow two of them away after — nothing here re-checks
-     * `event.role`.
-     */
-    case "STOP_TRANSPORT": {
-      const movement = findMovement(state, event.movementId);
-      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-      if (movement.closure) {
-        return reject(state, event, `cannot stop transport for a closed movement (${movement.closure.reason})`);
-      }
-      if (!movement.transport) {
-        return reject(state, event, `movement ${movement.id} has no transport job to stop`);
-      }
-      if (movement.transport.collectedAt === undefined) {
-        return reject(
-          state,
-          event,
-          `movement ${movement.id}'s transport has not been collected yet; use CANCEL_TRANSPORT instead`,
-        );
-      }
-      // Belt and braces alongside the `movement.closure` check above: `PATIENT_ARRIVED` always sets
-      // both `transport.arrivedAt` and `movement.closure` in the same update (see `TransportJob`'s
-      // own doc comment), so this can only ever fire if that invariant is ever broken elsewhere —
-      // and if it is, refusing here on the right symptom beats silently trusting the wrong field.
-      if (movement.transport.arrivedAt !== undefined) {
-        return reject(state, event, `movement ${movement.id}'s patient has already arrived`);
-      }
-      if (movement.transport.diversion) {
-        return reject(
-          state,
-          event,
-          `movement ${movement.id} was diverted; use RELEASE_DIVERTED_BED rather than STOP_TRANSPORT`,
-        );
-      }
-      if (movement.transport.cancelledAt !== undefined) {
-        return reject(state, event, `transport for movement ${movement.id} was already stopped or cancelled`);
-      }
-      if (!STOP_TRANSPORT_REASONS.includes(event.reason)) {
-        // Runtime membership, not merely the type — the same discipline every other reason-carrying
-        // event in this file holds to, because `vitest run` alone involves no `tsc`.
-        return reject(state, event, `STOP_TRANSPORT reason must be chosen from STOP_TRANSPORT_REASONS`);
-      }
-      if (!TRANSPORT_WHEREABOUTS.includes(event.whereabouts)) {
-        // Build plan item 31 (T3, 2026-09-17): the same runtime-membership discipline as the reason
-        // check just above, for the same reason — `vitest run` alone involves no `tsc`, so a type
-        // guarantee alone would never catch a hand-built or malformed dispatch.
-        return reject(state, event, `STOP_TRANSPORT whereabouts must be chosen from TRANSPORT_WHEREABOUTS`);
-      }
-
-      // Owner answer 8 (second round, 2026-09-17): the bed no longer comes back automatically here
-      // — see `STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease`'s own doc comment.
-      // `acceptedUnitId` and `admissionId` are left exactly as `movement` already carries them, so
-      // whatever bed is held stays held until a `RELEASE_HELD_BED` from the coordinator, the ward,
-      // or the referrer.
-      const stoppedTransport = movement.transport;
-      const stopped: Movement = {
-        ...movement,
-        transport: {
-          ...stoppedTransport,
-          // Both written together: `cancelledAt` is the general "this job is over" signal every
-          // other reader (`transportStatusLabel`, `orphanedTransport`) already understands, and
-          // `stoppedAt`/`stoppedBy`/`stopReason`/`stoppedWhereabouts` are this event's own more
-          // specific record of who stopped it, why, and where the patient is — see `TransportJob`'s
-          // own doc comment on all four.
-          cancelledAt: event.now,
-          stoppedAt: event.now,
-          stoppedBy: event.role,
-          stopReason: event.reason,
-          stoppedWhereabouts: event.whereabouts,
-        },
-        closure: {
-          at: event.now,
-          outcome: "did_not_proceed",
-          // The reason IS the closure reason: `STOP_TRANSPORT_REASONS`' three members are already
-          // full sentences (Ward Lead's own wording), so restating them differently here would be
-          // two strings for one fact.
-          reason: event.reason,
-        },
-        // ACTIVE, not "None — …": the journey is over but the bed is still held pending a release
-        // decision — this overwrites WLQ-4's `examinationRevokedAwaitingRelease` sentence if it was
-        // standing, which is correct: that flag was about the SAME bed, and this is the newer,
-        // more specific fact about it now.
-        blocker: STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease,
-      };
-      const next = replaceMovement(state, movement.id, stopped);
-      // Communication addendum §1.3's own principle, extended by WLQ-38 and by build plan item 31 —
-      // see `NoticeKind`'s own doc comment for the addendum-row debt this records. The officer is
-      // ALWAYS told where the patient now is (the officer is the one who reported it and the one
-      // who has to act on it, the same "no placeId, a single role" shape `transport_cancelled_officer`
-      // already holds — see `Addressee`'s own doc comment). The receiving ward, if there is one,
-      // believed a patient was on the way; it is not coming — unchanged from WLQ-38.
-      const stopNotices: Notice[] = [
-        makeNotice(
-          event.now,
-          state.notices.length,
-          "transport_stopped_officer",
-          { role: "officer" },
-          { movementId: movement.id },
-          `Transport for ${movement.id} was stopped (${event.reason}). Where the patient is now: ${event.whereabouts}.`,
-        ),
-      ];
-      if (movement.acceptedUnitId !== undefined) {
-        const receivingUnitId = movement.acceptedUnitId;
-        stopNotices.push(
-          makeNotice(
-            event.now,
-            state.notices.length,
-            "transport_stopped_ward",
-            { role: "ward", placeId: receivingUnitId },
-            { movementId: movement.id, unitId: receivingUnitId },
-            `The transport bringing your patient for ${movement.id} was stopped (${event.reason}); the patient is not coming.`,
-          ),
-        );
-      }
-      return appendNotices(next, stopNotices);
-    }
+    case "STOP_TRANSPORT":
+      return reduceTransportStopEvent(state, event, {
+        reject,
+        findMovement,
+        replaceMovement,
+        makeNotice,
+        appendNotices,
+      });
 
     /**
      * RELEASES A BED `STOP_TRANSPORT` LEFT HELD — owner answer 8 (second round, 2026-09-17). See
