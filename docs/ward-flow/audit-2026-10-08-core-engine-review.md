@@ -18,7 +18,7 @@ All paths are under `src/components/ward-management/`. A local-only scaffold bra
 ## Status
 
 - Slice 1: reviewed. 14 findings below, plus a clean conventions check.
-- Slice 2: not yet reviewed.
+- Slice 2: reviewed. 15 findings below, plus a clean conventions check.
 - No findings fixed yet.
 
 ## Slice 1 findings
@@ -95,7 +95,80 @@ Close calls not counted as breaches:
 - The `legalClock` comment at `ward-model.ts:1659–1663` says the clock is computed from an entered start. That arithmetic has been removed, so the comment is out of date.
 - Finding 14 above.
 
+## Slice 2 findings
+
+Reviewed the same way as slice 1: one reviewer, one pass, no verification pass, no test reproduction. Line numbers refer to `src/components/ward-management/ward-flow-reducer.ts` at `e7b7f32` unless another file is named. Findings S2-4 and S2-7 repeat slice-1 findings 4 and 5 (missing notices, wards left listed as referred), and S2-8 repeats the runtime-check gap of slice-1 findings 9–13.
+
+### S2-1. Seeded journeys that are stopped or diverted can never release their bed (line 8120) — most serious
+
+`RELEASE_DIVERTED_BED` and `RELEASE_HELD_BED` (line 8006) refuse any movement with no `admissionId`. Seeded `moving` movements (WF-006, WF-014, WF-031 and every generated `moving` record) hold a bed with no `admissionId`, a case `releasePulledBedAndAdmission`'s stage rule covers explicitly.
+
+Scenario: seeded WF-006 (stage `moving`, `collectedAt` set, no `admissionId`) is diverted with `RECORD_DIVERSION`. `RELEASE_DIVERTED_BED` refuses ("holds no bed"), `PATIENT_ARRIVED` refuses (diverted) and `STOP_TRANSPORT` refuses (diverted). The movement stays open, awaiting release, and its bed is never refunded. After `STOP_TRANSPORT` the same movement is closed awaiting release, `RELEASE_HELD_BED` refuses, and rgh-adult-secure permanently loses one allocatable bed.
+
+### S2-2. Revoked-examination transport hold can be cleared through the blocker text (line 4675)
+
+The hold is keyed partly on the free-text `movement.blocker`, which `RECORD_MOVEMENT_BLOCKER` and `CLEAR_MOVEMENT_BLOCKER` can overwrite. `PATIENT_COLLECTED` also skips the `awaitingRelease` half of the check that `TRANSPORT_ACCEPTED` and `TRANSPORT_EN_ROUTE` apply (lines 4552 and 4602).
+
+Scenario: seeded WF-005 (handover ready, transport accepted, no `admissionId`) gets a revoked examination, so `TRANSPORT_EN_ROUTE` is refused. A coordinator then clears the blocker, which is accepted, and both `TRANSPORT_EN_ROUTE` and `PATIENT_COLLECTED` succeed. A patient whose examination was revoked is collected and taken to the ward.
+
+### S2-3. Arrival into a full ward creates a phantom free bed later (line 4861)
+
+`PATIENT_ARRIVED` accepts an arrival into a ward with no empty beds but clamps the empty count at 0, while `departAdmission` always adds one back. A ward of 20 beds with 20 occupants takes a 21st arrival (empty stays 0); after one departure it shows one ready bed while 20 people still occupy 20 beds, and a coordinator can pull another patient into it.
+
+### S2-4. Referrer withdrawal cascade skips notices and leaves wards referred (line 7135)
+
+`RECORD_REFERRER_WITHDRAWAL` closes linked open movements and cancels live transport without notifying the transport officer or the accepting or referred wards. It also leaves `acceptedUnitId` and `referredUnitIds` set and writes no `withdrawnReferrals`, unlike `WITHDRAW_REFERRAL` and `CANCEL_TRANSPORT`.
+
+### S2-5. Arrival details accepted on closed movements (line 8379)
+
+`SET_ARRIVAL_DETAILS` has no closure guard, although `EVALUATE_ARRIVAL_LATENESS` has one. On a movement closed as did not proceed, an estimate more than 60 minutes in the past raises "arrival late" notices for a patient who is not coming. On any open pulled movement the call clears `pullExpiresAt`, so an expired hold is never flagged. A `NaN` estimate is stored as-is.
+
+### S2-6. Repatriation can be recorded from a stay that is not occupied (line 8967)
+
+`RECORD_REPATRIATION` never checks the admission's state. From a departed, pulled or waitlisted stay it creates a return movement that can be referred, accepted, pulled and transported, but `PATIENT_ARRIVED` always refuses it ("Repatriation arrival needs the patient's occupied source stay"). The patient is stranded in transit with a bed held at the destination. This is the same end state as slice-1 finding 1.
+
+### S2-7. Release-and-reopen from accepted-awaiting-bed misreports a bed release (line 8810)
+
+From `accepted_awaiting_bed` with no bed held, `RELEASE_AND_REOPEN_SEARCH` still records a `pull_released` unwind and tells the ED "Bed released". It never notifies the ward whose acceptance it erases (`WITHDRAW_ACCEPTANCE` does), and it addresses the notice with `event.actingUnitId`, which is undefined for a coordinator.
+
+### S2-8. Step-back target not checked at runtime (line 8183)
+
+`STEP_BACK_STAGE` never checks `event.to` against `MOVEMENT_STAGES`. An off-list value gives index -1, passes the "strictly earlier" test and is written as the stage. Every later `stageCopy[movement.stage].label` lookup then throws, so dispatches for that movement crash instead of refusing.
+
+### S2-9. Security gate means different things on the two eligibility paths (`ward-eligibility.ts:601`)
+
+The referral path's `security` gate tests capacity (a free locked bed), while `eligibility()` tests only whether the ward has locked beds. The comments say both paths ask the same question. Because `security` is a suitability gate, an override reason gets past a capacity fact on the referral path: a mixed ward with all 4 locked beds occupied passes on the movement path, fails on the referral path, and passes there once any override reason is given.
+
+### S2-10. Any ward can book transport for any movement (line 7523)
+
+`BOOK_TRANSPORT` accepts any real ward as booker, with no link to the movement. An unrelated ward becomes the recorded booker that `CANCEL_TRANSPORT` trusts, so the ED's own booking is refused as "already booked" and the unrelated ward can later cancel it. The receiving ward can also book and cancel its own inbound transport, contrary to TR-D6 and WLQ-11.
+
+### S2-11. Ward callers can accept or decline referrals for any ward (line 6354)
+
+`ACCEPT_REFERRAL` and `DECLINE_REFERRAL` carry no `actingUnitId`, so a ward caller can accept, decline or waitlist on behalf of any unit. Every other ward-scoped event in this slice compares `actingUnitId` with the target unit.
+
+### S2-12. Discharge barrier stored without a vocabulary check (line 8472)
+
+`SET_DISCHARGE_BARRIER` stores `event.barrier` with no membership check, although `isDischargeBarrier` exists and the field is documented as chosen from `DISCHARGE_BARRIERS`, never typed. It also accepts departed or pulled stays. Because the event is classified as text-safe, free text sent by an untyped dispatch would be saved to session storage.
+
+### S2-13. Transfer-out advances the discharge revision twice (line 4937)
+
+`PATIENT_ARRIVED` increments the source stay's `dischargeRevisions` again after `departAdmission` has already done so. A transfer-out advances the revision by 2 where an ordinary discharge advances it by 1, so a client expecting N+1 after its own write is told its read is stale.
+
+### S2-14. Withdraw control offered where the reducer refuses (`ward-referrals.ts:124`)
+
+`referralWithdrawable` claims to mirror the reducer's refusals but omits `RECORD_REFERRER_WITHDRAWAL`'s refusal when a linked movement has been collected (reducer line 7123). The screen shows a withdraw button that does nothing when pressed.
+
+### S2-15. Stand-down recorded against a role that did not act (`alerts/ward-broadcast-reducer.ts:146`)
+
+`STAND_DOWN_BROADCAST_ALERT` records `event.stoodDownByRole ?? event.role` without checking it matches the acting role. `alerts-screen.tsx` hard-codes `stoodDownByRole: 'coordinator'`, so any role standing down an alert is recorded as the coordinator.
+
+## Conventions check (slice 2)
+
+No breaches of the `src/components/ward-management/CLAUDE.md` rules were found. The free-text fields in this slice are already on the typed-text list in the persistence classification.
+
 ## Next steps
 
-1. Review slice 2 the same way, against its scaffold base.
-2. Reproduce finding 1 with a failing reducer test, then fix it. Treat the other findings the same way, in order.
+1. Reproduce the two stranded-in-transit findings (slice-1 finding 1 and S2-6) and the unreleasable seeded bed (S2-1) with failing reducer tests, then fix them.
+2. Work through the remaining findings the same way, in order of severity.
+3. Optionally repeat both slices with a real ultrareview from Claude Code on a PC, which checks each finding independently.
