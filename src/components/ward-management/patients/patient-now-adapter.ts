@@ -338,7 +338,14 @@ export function resolvePatientNowRecord(
       [...patientAdmissions].reverse().find((a) => a.state !== "departed");
     const newestMovement = [...patientMovements].reverse();
     const activeMovement = activeAdmission
-      ? newestMovement.find((m) => m.id === activeAdmission.movementId || m.admissionId === activeAdmission.id)
+      ? (newestMovement.find(
+          (m) =>
+            !m.closure &&
+            m.stage !== "arrived" &&
+            (m.id === activeAdmission.movementId ||
+              m.admissionId === activeAdmission.id ||
+              m.sourceAdmissionId === activeAdmission.id),
+        ) ?? newestMovement.find((m) => m.id === activeAdmission.movementId || m.admissionId === activeAdmission.id))
       : (newestMovement.find((m) => !m.closure) ?? newestMovement[0]);
     const linkedReferral = referrals.find((r) => r.id === (activeMovement?.referralId ?? activeAdmission?.referralId));
     const latestDeparture =
