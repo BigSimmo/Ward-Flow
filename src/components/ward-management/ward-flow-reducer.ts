@@ -1,3 +1,4 @@
+import { reduceReferralRecordsEvent } from "./ward-flow-referral-records-reducer";
 import { reduceAdmissionAbsenceEvent } from "./ward-flow-admission-absence-reducer";
 import { reduceMovementFlagsEvent } from "./ward-flow-movement-flags-reducer";
 import { reduceLeaveBedEvent } from "./ward-flow-leave-bed-reducer";
@@ -2361,59 +2362,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         referralSequence: sequence,
       };
     }
+    case "RECORD_MEDICAL_CLEARANCE":
+      return reduceReferralRecordsEvent(state, event, { reject, findReferral, replaceReferral });
 
-    case "RECORD_MEDICAL_CLEARANCE": {
-      const referral = findReferral(state, event.referralId);
-      if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
-      // ⚠️ RE-RECORDING IS ALLOWED AND OVERWRITING IS THE POINT. Unlike `RECORD_EXAMINATION`
-      // above, which refuses a second examination as a data-integrity fault, a medical clearance
-      // is a CURRENT STATE that legitimately changes: a patient cleared at 09:00 can deteriorate
-      // by 11:00, and refusing the correction would leave the board asserting something the
-      // department no longer believes. The `at` stamp is the answer's own time, so the record says
-      // WHEN it was true rather than implying it always has been.
-      const updated: Referral = {
-        ...referral,
-        medicalClearance: { cleared: event.cleared, at: event.now },
-      };
-      const next = replaceReferral(state, referral.id, updated);
-      return {
-        ...next,
-        movements: next.movements.map((movement) =>
-          movement.referralId === referral.id &&
-          (movement.patientId === undefined || movement.patientId === referral.patientId)
-            ? { ...movement, medicalClearance: updated.medicalClearance }
-            : movement,
-        ),
-      };
-    }
-
-    /**
-     * 🔴 THE ONLY WRITER OF `Referral.inDepartmentAt`, AND THE ONLY DOOR FROM "EXPECT" TO
-     * "REFERRAL".
-     *
-     * Product owner, 2026-09-07: "When expects arrive and are marked as arrived, they become
-     * referrals." Before this case existed nothing could move a patient between those lists —
-     * `triagedAt` is written only inside `RECEIVE_REFERRAL`, so a referral created without one
-     * could never acquire one, and an expects list built on triage could only ever grow.
-     */
-    case "RECORD_ARRIVED_IN_DEPARTMENT": {
-      const referral = findReferral(state, event.referralId);
-      if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
-      /*
-       * ⚠️ IDEMPOTENT, AND THE FIRST RECORDING WINS.
-       *
-       * Two clinicians noticing the same patient is ordinary, not an error, so a second recording
-       * is a no-op rather than a rejection — a refusal would read on screen as though the first one
-       * had failed. And the EARLIER time is kept: the question this field answers is "since when
-       * has this person been in the department", so overwriting with a later observation would
-       * shorten a wait that actually happened. That is the opposite of `RECORD_MEDICAL_CLEARANCE`
-       * above, which overwrites deliberately because clearance is a current state that changes;
-       * arrival is a fact about the past and does not un-happen.
-       */
-      if (referral.inDepartmentAt !== undefined) return state;
-      const updated: Referral = { ...referral, inDepartmentAt: event.now };
-      return replaceReferral(state, referral.id, updated);
-    }
+    case "RECORD_ARRIVED_IN_DEPARTMENT":
+      return reduceReferralRecordsEvent(state, event, { reject, findReferral, replaceReferral });
 
     case "RECORD_TRANSPORT_NEED": {
       const movement = findMovement(state, event.movementId);
@@ -6383,30 +6336,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
       return replaceReferral(state, referral.id, corrected);
     }
-
-    case "RECORD_LOCAL_BED_SOUGHT": {
-      // Phase 8 (spec D8-6). Optional by design: nothing requires this to have happened, nothing
-      // reads its absence as a failing, and `ACCEPT_REFERRAL` neither checks it nor cares. It is
-      // a record that a coordinator looked closer to home, and when.
-      const referral = findReferral(state, event.referralId);
-      if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
-      // A search for a local bed is a thing done while the referral is still undecided. Recording
-      // one against an already-decided referral would be recording it after the fact, so the
-      // refused state is named exactly as `ACCEPT_REFERRAL`/`DECLINE_REFERRAL` name theirs.
-      if (referralState(referral) !== "queued") {
-        return reject(state, event, `referral ${referral.id} was already decided (${referralState(referral)})`);
-      }
-      // One-shot, the same discipline `ACCEPT_REFERRAL`'s already-decided guard uses: a second
-      // record would silently overwrite the first, losing the time and role of the search that
-      // actually happened.
-      if (referral.localBedSought !== undefined) {
-        return reject(state, event, `referral ${referral.id} already records a local bed search`);
-      }
-      // `by` is the raising ROLE, taken from the event rather than from any caller-supplied
-      // string, so a person's name cannot be written here even by a caller that wanted to.
-      const sought: Referral = { ...referral, localBedSought: { at: event.now, by: event.role } };
-      return replaceReferral(state, referral.id, sought);
-    }
+    case "RECORD_LOCAL_BED_SOUGHT":
+      return reduceReferralRecordsEvent(state, event, { reject, findReferral, replaceReferral });
 
     case "RECORD_ESCALATION": {
       const movement = findMovement(state, event.movementId);

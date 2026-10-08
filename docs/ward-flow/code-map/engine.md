@@ -24,6 +24,10 @@ guards, and appends the audit result after command handling. Internal event fami
 - `ward-flow-admission-absence-reducer.ts`: record a trip to an emergency department and return.
   The named admission and caller ward checks remain. Going requires an occupied bed; returning
   checks the recorded absence. Both keep ward occupancy and capacity unchanged.
+- `ward-flow-referral-records-reducer.ts`: medical clearance, department arrival and local bed
+  search. Clearance updates only the linked patient's movements. Arrival keeps its first instant;
+  local search remains optional and can be recorded once while the referral is undecided.
+  Correction notes remain in the facade under the existing static history-authoring guard.
 
 `ward-flow-storage-validation.ts` separately validates nested containers, header/counters,
 record shapes, identifiers, cross-record links, capacity bounds, audit data and persistence privacy.
