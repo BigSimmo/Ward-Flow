@@ -126,7 +126,7 @@ function Journey({ stage }: { stage: MovementStage }) {
         return (
           <li
             key={step}
-            className={styles.step}
+            className={styles.journeyStep}
             data-state={state}
             aria-current={state === "current" ? "step" : undefined}
           >
@@ -254,19 +254,25 @@ function MovementPreview({
 
 function PersonPreview({
   patient,
+  patients,
   movements,
   units,
   now,
   onOpen,
 }: {
   patient: Patient;
+  patients: readonly Patient[];
   movements: readonly Movement[];
   units: Unit[];
   now?: number;
   onOpen: PreviewProps["onOpen"];
 }) {
   const name = patientDisplayName(patient);
-  const openMovement = movements.find((movement) => movement.patientId === patient.id && isOpen(movement));
+  // Through the shared resolver, never the raw patient link (D-14 default-deny).
+  const openMovement = movements.find(
+    (movement) =>
+      isOpen(movement) && resolveSubjectPatient(movement, { patients, movements }).patient?.id === patient.id,
+  );
   const origin = openMovement ? edById(openMovement.originEdId) : undefined;
   const destination = openMovement ? destinationUnit(openMovement, units) : undefined;
   const wait = openMovement ? waited(openMovement, now) : null;
@@ -511,7 +517,14 @@ export function GlobalSearchPreview({ item, patients, movements, units, now, onO
   if (item.kind === "person") {
     const patient = patients.find((candidate) => candidate.id === item.id);
     body = patient ? (
-      <PersonPreview patient={patient} movements={movements} units={units} now={now} onOpen={onOpen} />
+      <PersonPreview
+        patient={patient}
+        patients={patients}
+        movements={movements}
+        units={units}
+        now={now}
+        onOpen={onOpen}
+      />
     ) : null;
   } else if (item.kind === "movement" || item.kind === "task") {
     const movementId = item.kind === "task" ? item.movementId : item.id;
