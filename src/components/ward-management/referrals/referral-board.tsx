@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AlignJustify, ClipboardList, Search, X } from "lucide-react";
 
@@ -15,6 +15,9 @@ import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { genderReviewNeeded, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import { referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
+import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
@@ -393,7 +396,7 @@ const useSplitDetailLayout = createBrowserStore<boolean>(
 );
 
 export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFirst?: boolean } = {}) {
-  const { referrals, units, dispatch, rejections, movements = [], patients = [] } = useWardFlow();
+  const { referrals, units, dispatch, rejections, movements = [], patients = [], admissions = [] } = useWardFlow();
   const now = useWardFlowClock();
   const queued = referralQueueOrder(referrals);
   // `undefined` = nobody has chosen yet; `null` = the coordinator closed the detail. Only the first
@@ -752,6 +755,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   units={units}
                   movements={movements}
                   patients={patients}
+                  admissions={admissions}
                   onResetFilters={resetFilters}
                 />
               )}
@@ -1094,6 +1098,7 @@ function QueuedSection({
   units = [],
   movements = [],
   patients = [],
+  admissions = [],
   onResetFilters,
 }: {
   queued: Referral[];
@@ -1104,9 +1109,15 @@ function QueuedSection({
   units?: Unit[];
   movements?: Movement[];
   patients?: Patient[];
+  admissions?: Admission[];
   onResetFilters?: () => void;
 }) {
   const sectionRef = useRef<HTMLElement | null>(null);
+  // One records object per render of the list, so the patient resolver's index is built once.
+  const readmissionRecords = useMemo(
+    () => ({ admissions, patients, referrals: queued, movements, units }),
+    [admissions, patients, queued, movements, units],
+  );
   const [overflowing, setOverflowing] = useState(false);
 
   const measureOverflow = useCallback(() => {
@@ -1212,6 +1223,10 @@ function QueuedSection({
                       <span className={styles.patientTableMeta}>
                         <strong>{patientInfo.displayName}</strong>
                       </span>
+                      <ReadmissionFlag
+                        flag={referralReadmissionFlag(referral, readmissionRecords)}
+                        testId={`ward-referral-board-readmission-${referral.id}`}
+                      />
                       {refusals.length > 0 ? (
                         <span
                           className={styles.outcomeDetailRefusals}
@@ -1300,6 +1315,11 @@ function QueuedSection({
                       <span className={styles.v6RowName}>
                         <strong>{patientInfo.displayName}</strong>
                         <span className={styles.v6RowId}>{referral.id}</span>
+                        <ReadmissionFlag
+                          flag={referralReadmissionFlag(referral, readmissionRecords)}
+                          expandable={false}
+                          testId={`ward-referral-board-card-readmission-${referral.id}`}
+                        />
                       </span>
                       <span className={styles.v6RowRoute}>
                         {sendingHospital} to {referralDestinationLabels(referral).join(" · ")}

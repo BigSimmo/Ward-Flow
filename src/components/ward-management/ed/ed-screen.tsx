@@ -6,7 +6,9 @@ import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
 
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { Fragment, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { movementReadmissionFlag } from "@/components/ward-management/ward-readmission";
+import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 
 import { designationSummary } from "@/components/ward-management/ward-bed-designation";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
@@ -1233,8 +1235,14 @@ export function EdScreen({ edId }: EdScreenProps) {
     dispatch,
     configuration,
     patients: registryPatients,
+    admissions,
   } = useWardFlow();
   const now = useWardFlowClock();
+  // One records object for the queue's 28 day readmission flags, so the resolver index is built once.
+  const readmissionRecords = useMemo(
+    () => ({ admissions, patients: registryPatients, referrals, movements, units }),
+    [admissions, registryPatients, referrals, movements, units],
+  );
   const accessTarget = configuration.edAccessTargetMinutes;
   // The configured pull hold; until 25 Sept 2026 the transit badges said "4h hold" whatever it was.
   const holdLabel =
@@ -3376,6 +3384,10 @@ export function EdScreen({ edId }: EdScreenProps) {
                               <b className={styles.umrnInline}>{patientInfo.umrn}</b> &middot; {movement.cohort}{" "}
                               &middot; {movement.security}
                             </span>
+                            <ReadmissionFlag
+                              flag={movementReadmissionFlag(movement, readmissionRecords)}
+                              testId={`ward-ed-readmission-${movement.id}`}
+                            />
                             <EdPresentation
                               testId={`ward-ed-outstanding-${movement.id}`}
                               kind={item.kind}
