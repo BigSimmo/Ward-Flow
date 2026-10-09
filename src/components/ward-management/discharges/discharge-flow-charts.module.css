@@ -1,0 +1,376 @@
+/*
+ * Discharge charts under the table (direction A). v3 chart rules: status colours only, direct
+ * labels, rounded bar ends, four faint gridlines, mono numbers, one dashed mean line. Tokens only.
+ */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 3rem;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  flex-wrap: wrap;
+}
+
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+}
+
+.title svg {
+  color: var(--wf-ink-3);
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--radius-pill);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  margin: 0 0 0 auto;
+  padding: 0;
+  list-style: none;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend b {
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+}
+
+.swatchExpected {
+  background: var(--wf-data-2);
+}
+
+.swatchBlocked {
+  background: var(--wf-danger);
+}
+
+.swatchWeekend {
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.meanKey {
+  display: inline-block;
+  width: 16px;
+  border-top: 2px dashed var(--wf-ink-3);
+}
+
+.scroller {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.plot {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 34rem;
+  min-height: 15rem;
+  padding: var(--wf-s-4) var(--wf-s-4) 0 2.5rem;
+}
+
+.grid {
+  position: absolute;
+  inset: var(--wf-s-4) var(--wf-s-4) 2.25rem 2.5rem;
+  pointer-events: none;
+}
+
+.gridLine {
+  position: absolute;
+  right: 0;
+  left: 0;
+  border-top: 1px solid var(--wf-line);
+  opacity: 0.6;
+}
+
+.gridValue {
+  position: absolute;
+  top: -0.5rem;
+  left: -2rem;
+  width: 1.5rem;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-11) / 1 var(--wf-mono);
+  text-align: right;
+}
+
+.meanLine {
+  position: absolute;
+  right: 0;
+  left: 0;
+  border-top: 2px dashed var(--wf-ink-3);
+}
+
+.day {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--wf-r-md) var(--wf-r-md) 0 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.day[data-weekend] {
+  background: var(--wf-surface-2);
+}
+
+.day:hover {
+  background: var(--wf-hover);
+}
+
+.day[aria-pressed="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 0 0 0 1px var(--wf-accent-strong);
+}
+
+.day:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.stack {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.total {
+  flex-shrink: 0;
+  margin-bottom: 4px;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.barExpected,
+.barBlocked {
+  display: block;
+  flex-shrink: 0;
+  width: min(1.5rem, 60%);
+  min-height: 3px;
+}
+
+.barExpected {
+  border-radius: 6px 6px 0 0;
+  background: var(--wf-data-2);
+}
+
+.barBlocked {
+  background: var(--wf-danger);
+}
+
+/* Rounded ends on whichever segment sits at the top or bottom. */
+.barBlocked:nth-child(2) {
+  border-radius: 6px 6px 0 0;
+}
+
+.barExpected:last-child,
+.barBlocked:last-child {
+  border-bottom-right-radius: 2px;
+  border-bottom-left-radius: 2px;
+}
+
+.dayLabel {
+  height: 2.25rem;
+  padding-top: var(--wf-s-1);
+  border-top: 1px solid var(--wf-line-ctl);
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.day[data-past] .dayLabel {
+  color: var(--wf-danger-ink);
+}
+
+.day[aria-pressed="true"] .dayLabel {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: var(--wf-s-2);
+  list-style: none;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: minmax(6rem, 38%) minmax(0, 1fr) 2rem;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0 var(--wf-s-2);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.barRow:hover {
+  background: var(--wf-hover);
+}
+
+.barRow[aria-pressed="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 0 0 0 1px var(--wf-accent-strong);
+}
+
+.barRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.barLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--wf-surface-2);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--wf-danger);
+}
+
+.barValue {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  text-align: right;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-4);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 2.75rem;
+  margin-top: auto;
+  padding: 0 var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.foot > :last-child:not(:first-child) {
+  margin-left: auto;
+}
+
+/* Touch widths: every bar is a 48px tap target. */
+@media (max-width: 62.5rem) {
+  .barRow {
+    min-height: var(--ward-tap, 3rem);
+  }
+}
+
+/* Phone: the plot scrolls sideways inside its card, each day keeps a 48px tap column. */
+@media (max-width: 40rem) {
+  .legend {
+    margin-left: 0;
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  .plot {
+    min-width: calc(15 * var(--ward-tap, 3rem));
+    min-height: 13rem;
+  }
+
+  .day {
+    min-width: var(--ward-tap, 3rem);
+  }
+}
+
+@media (forced-colors: active) {
+  .barExpected,
+  .barBlocked,
+  .fill {
+    background: CanvasText;
+  }
+
+  .day[aria-pressed="true"],
+  .barRow[aria-pressed="true"] {
+    outline: 2px solid Highlight;
+  }
+}
+
+@media print {
+  .foot {
+    display: none;
+  }
+}
