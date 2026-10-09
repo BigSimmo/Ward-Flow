@@ -268,10 +268,9 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
 
     await goViaRail(page, "/mockups/ward-flow/referrals", "ward-referral-board-screen");
     await expectNoReloadSince(page, "referral slide-out -> referral board");
-    // The board is what "reaches the coordinator" means here — real cards, not a table (the
-    // "served register" rework, `referrals.module.css`, keeps the table mounted only for print;
-    // `ward-referral-board-queued-cards` is the live representation at every width now).
-    await expect(page.getByTestId("ward-referral-board-queued-cards")).toBeVisible();
+    // The board is what "reaches the coordinator" means here. Option A (9 Oct 2026) shows the queue
+    // as a table on desktop and as cards only on a phone, so at this desktop width the table is live.
+    await expect(page.getByTestId("ward-referral-board-queued-table")).toBeVisible();
 
     // --- Step 2: the ED raises the bed request — the referral that continues through every
     // remaining step. The rail's Emergency entry opens the All EDs page (9 Oct 2026), and Peel

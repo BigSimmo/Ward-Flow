@@ -1,0 +1,21 @@
+/* The queue's two layouts: the table while it has room, the cards on a phone. */
+.tableScroll {
+  overflow-x: auto;
+}
+
+.cards {
+  display: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 48rem) {
+  .tableScroll {
+    display: none;
+  }
+
+  .cards {
+    display: block;
+  }
+}

@@ -516,6 +516,21 @@ function queuedCardIds(page: Page): Promise<string[]> {
     );
 }
 
+/**
+ * Opens the referral slide-out over the board. Option A (9 Oct 2026) keeps the board's own New
+ * referral for desktop and leaves the phone to the bar's New referral, whose "To a ward" entry opens
+ * the same slide-out in place.
+ */
+async function openNewReferralFromBoard(page: Page) {
+  const boardNew = page.getByTestId("ward-referral-board-new");
+  if (await boardNew.isVisible()) {
+    await boardNew.click();
+    return;
+  }
+  await page.getByTestId("ward-bar-primary-action").click();
+  await page.getByTestId("ward-bar-primary-menu-ward").click();
+}
+
 /** Back to the board through the coordinator's own rail, as a phone user reaches it.
  *
  * 🔴 **THE PHONE RAIL CHANGED SHAPE ENTIRELY ON 2026-09-11, AND THIS HELPER'S FIRST TWO LINES
@@ -729,7 +744,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
 
     // --- Step 1: the referral slide-out, opened in place through the board's own "New referral"
     // <Link>. The board stays mounted underneath it; nothing navigates. ---
-    await page.getByTestId("ward-referral-board-new").click();
+    await openNewReferralFromBoard(page);
     const sheet = page.getByTestId("ward-bar-referral-sheet");
     await expect(sheet).toBeVisible({ timeout: 15_000 });
     await expectNoReloadSince(page, "board -> referral slide-out");
@@ -924,6 +939,13 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await expect(decidedHeadingAfter).toContainText(String(SEEDED_DECIDED_SHOWN));
     await expect(decidedHeadingAfter).toContainText(String(SEEDED_DECIDED_STRUCTURAL + 1));
     expect(await queuedCardIds(page)).not.toContain(referralId);
+    // Option A (9 Oct 2026): decided referrals live in the board's History tab. On a phone the
+    // referral detail covers the board, so it is closed first.
+    await page.getByRole("button", { name: "Close referral detail (Esc)" }).click();
+    await page
+      .getByTestId("ward-referral-board-screen")
+      .getByRole("tab", { name: /^History/u })
+      .click();
     const decidedCard = page.getByTestId(`ward-referral-board-decided-card-${referralId}`);
     await expect(decidedCard).toBeVisible();
     await expect(decidedCard).toContainText("Accepted");
@@ -998,7 +1020,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
 
     // Raise a referral from the far home region, through the board's own "New referral" link,
     // which opens the slide-out in place over the board.
-    await page.getByTestId("ward-referral-board-new").click();
+    await openNewReferralFromBoard(page);
     // Age band and home region are what this journey is actually about; the rest are answered
     // because R2.1 requires every question to be, and the `FAR_PLACEMENT` search has already
     // excluded sex-designated and forensic units, so none of them changes the acceptance below.
@@ -1302,7 +1324,8 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
   test("the referral board's Tier card is inked differently from the plain fields on its own card", async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
+    // Option A (9 Oct 2026): the cards are the phone's queue, so this is measured at phone width.
+    await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/mockups/ward-flow/referrals", { waitUntil: "load" });
 
     const cards = page.getByTestId("ward-referral-board-queued-cards");
@@ -1509,19 +1532,26 @@ test.describe("@mockup Referral board — what survives onto paper", () => {
     // `ward-referral-board-select-${id}` (the table row's own button) is hidden on screen now,
     // at every width, not only the phone one this test resizes to further down for its own,
     // separate reason.
-    await expect(page.getByTestId(`ward-referral-board-card-select-${id}`)).toBeVisible();
+    // Option A (9 Oct 2026) shows the queue as a table on desktop again, so at this width the
+    // table row's own button is the live one.
+    const rowButton = page.getByTestId(`ward-referral-board-select-${id}`);
+    await expect(rowButton).toBeVisible();
+    // Option A names the row by the patient (D-39: a person, never an internal id), and that name
+    // is the row button's own text.
+    const rowName = ((await rowButton.textContent()) ?? "").trim();
+    expect(rowName.length, `the queued row for ${id} names nobody on screen`).toBeGreaterThan(0);
 
     await page.emulateMedia({ media: "print" });
 
     /*
      * `getByText` rather than the testid: the testid is on the BUTTON, and the question is whether
-     * its text reaches the page. Scoped to the table so the card's copy of the same id cannot
+     * its text reaches the page. Scoped to the table so the card's copy of the same name cannot
      * satisfy it — the two halves broke independently and must be provable independently.
      */
     const table = page.getByTestId("ward-referral-board-queued-table");
     await expect(
-      table.getByText(id, { exact: true }).first(),
-      `the referral id ${id} is not on the printed sheet — the row's select button is hiding its own content`,
+      table.getByText(rowName, { exact: true }).first(),
+      `the patient named on ${id}'s row is not on the printed sheet — the row's select button is hiding its own content`,
     ).toBeVisible();
 
     /*
