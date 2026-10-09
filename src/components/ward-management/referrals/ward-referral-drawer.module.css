@@ -2181,6 +2181,25 @@ details.refCard > summary {
   font-size: var(--wf-fs-12);
 }
 
+/* Autosaved draft and its age: tab memory only (D-18). */
+.draftStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  white-space: nowrap;
+}
+
+/* Use my details, beside the contact card title. */
+.useMyDetails {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
 .railCount strong {
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-16);
