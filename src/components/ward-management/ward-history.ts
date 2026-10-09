@@ -126,7 +126,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RELEASE_BED: { category: "bed", plainWording: "Bed freed and returned to unit capacity" },
   RECORD_LEAVE_BED: { category: "bed", plainWording: "Patient leave of absence bed hold recorded" },
   END_LEAVE_BED: { category: "bed", plainWording: "Leave of absence bed hold concluded" },
-  RECORD_ABSENT_WITHOUT_LEAVE: { category: "patient", plainWording: "Absent without leave recorded, bed held" },
+  RECORD_ABSENT_WITHOUT_LEAVE: { category: "both", plainWording: "Absent without leave recorded, bed held" },
   RECORD_ABSENCE_STEP: { category: "patient", plainWording: "Missing person step recorded" },
   RECORD_COMMUNITY_TREATMENT_ORDER: { category: "patient", plainWording: "Community treatment order recorded" },
   END_COMMUNITY_TREATMENT_ORDER: { category: "patient", plainWording: "Community treatment order ended" },
