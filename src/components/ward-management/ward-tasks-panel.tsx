@@ -36,8 +36,16 @@ import styles from "./ward-tasks-panel.module.css";
  */
 export function WardTasksPanel() {
   const router = useRouter();
-  const { movements, patients, referrals, units, dispatch, inboxAcknowledgements, inboxCompletions, plannedAdmissions } =
-    useWardFlow();
+  const {
+    movements,
+    patients,
+    referrals,
+    units,
+    dispatch,
+    inboxAcknowledgements,
+    inboxCompletions,
+    plannedAdmissions,
+  } = useWardFlow();
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
   const openerRef = useRef<HTMLButtonElement>(null);

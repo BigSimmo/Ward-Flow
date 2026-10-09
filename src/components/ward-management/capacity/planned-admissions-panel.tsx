@@ -220,7 +220,8 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         const patient = patients.find((candidate) => candidate.id === draft.patientId);
         sex = recordedSexOf(patient?.sex);
         // The age group comes from the record's date of birth on today's calendar date.
-        if (patient && dayZero instanceof Date) ageBand = patientCohort(patient.dateOfBirth, calendarDateOf(now, dayZero));
+        if (patient && dayZero instanceof Date)
+          ageBand = patientCohort(patient.dateOfBirth, calendarDateOf(now, dayZero));
       }
       dispatch({
         type: "BOOK_PLANNED_ADMISSION",
@@ -504,9 +505,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                 )}
               </>
             ) : (
-              <p className={styles.formWho}>
-                {changing ? whoText(changing) : "This booking is no longer listed."}
-              </p>
+              <p className={styles.formWho}>{changing ? whoText(changing) : "This booking is no longer listed."}</p>
             )}
             <Field label="Reason">
               <Select

@@ -1301,7 +1301,8 @@ export function buildActionInbox(
   }
 
   // Stream D: a booked planned admission whose expected arrival has passed with no arrival
-  // recorded. `movementId` carries the booking's own id: there is no movement behind it.
+  // recorded. There is no movement behind the row — leave `movementId` empty so movement-only
+  // surfaces skip it, and carry the booking on `plannedAdmission`.
   for (const planned of plannedAdmissions.filter((booking) => plannedAdmissionIsOverdue(booking, now))) {
     const unit = units.find((candidate) => candidate.id === planned.unitId);
     items.push({
@@ -1314,6 +1315,7 @@ export function buildActionInbox(
       owner: unit?.name ?? "Ward",
       movementId: "",
       plannedAdmission: planned,
+      // `WARD_CAPACITY_HREF`, spelled out: ward-nav reaches this file through ward-facade.
       href: "/mockups/ward-flow/capacity",
       ...(planned.initials !== null ? { personLabel: `Initials ${planned.initials}` } : {}),
     });

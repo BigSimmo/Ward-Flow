@@ -244,16 +244,18 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "Planned admissions reducer (stream D, coordinator ruling A, 9 Oct 2026; flagged for Josh in " +
       "the PR): like PULL_PATIENT, CONVERT_PLANNED_ADMISSION copies the booking's own patientId onto " +
       "the Admission it creates. BOOK checks that patientId exists in state.patients and refuses a " +
-      "second waiting booking; CONVERT refuses when that person already holds a pulled or occupied " +
-      "stay. Reads compare ids only, write state, render nothing and disclose no other stay or referral.",
+      "second waiting booking or a person who holds a pulled or occupied stay; CONVERT refuses when " +
+      "that person holds such a stay or is on an open movement; the forecast helper drops a linked " +
+      "booking already counted through a waiting movement. Each is a yes/no on ids: reads compare ids " +
+      "only, write state, render nothing and disclose no other stay, movement or referral.",
   },
   {
     file: "capacity/planned-admissions-panel.tsx",
     reason:
       "Planned admissions panel (stream D, coordinator ruling A, 9 Oct 2026; flagged for Josh in the " +
       "PR): coordinator Capacity screen only, mirroring the PULL_PATIENT picker. It reads patientId " +
-      "solely to (1) drop people with a pulled/occupied stay or a waiting booking from the booking " +
-      "picker, a yes/no that shows no ward, bed or referral, and (2) name a booked person through " +
+      "solely to (1) drop people with a pulled/occupied stay, an open movement or a waiting booking " +
+      "from the booking picker, a yes/no that shows no ward, bed or referral, and (2) name a booked person through " +
       "usePatientOf, never printing the id. Void if rendered on a ward screen.",
   },
 ].map((entry) => ({ ...entry, file: resolve(WARD_DIR, entry.file) }));

@@ -90,4 +90,47 @@ describe("planned admissions panel", () => {
     expect(screen.queryByTestId("ward-planned-PA-SEED-03")).toBeNull();
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
   });
+
+  it("keeps an overdue booking's own day when it is changed, and saves other edits", () => {
+    renderPanel();
+    fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-03")).getByRole("button", { name: "Change" }));
+    // Seed: due 09:30 today and already past. The form shows that day and time, not "now".
+    expect(screen.getByTestId("ward-planned-day")).toHaveValue("0");
+    expect(screen.getByTestId("ward-planned-time")).toHaveValue("09:30");
+    fireEvent.change(screen.getByTestId("ward-planned-stay"), { target: { value: "9" } });
+    fireEvent.click(screen.getByTestId("ward-planned-submit"));
+    expect(screen.queryByTestId("ward-planned-form-refusal")).toBeNull();
+    expect(screen.getByTestId("ward-planned-PA-SEED-03")).toHaveTextContent(/arrival not recorded/);
+  });
+
+  it("refuses an expected stay that is not a whole number of days, with a message", () => {
+    renderPanel();
+    fireEvent.click(screen.getByTestId("ward-planned-book"));
+    fireEvent.change(screen.getByTestId("ward-planned-who"), { target: { value: "initials" } });
+    fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "gh" } });
+    fireEvent.change(screen.getByTestId("ward-planned-stay"), { target: { value: "abc" } });
+    fireEvent.click(screen.getByTestId("ward-planned-submit"));
+    expect(screen.getByTestId("ward-planned-form-refusal")).toHaveTextContent(
+      /Enter the expected stay as a whole number of days/,
+    );
+    expect(screen.queryByTestId("ward-planned-PA-01")).toBeNull();
+  });
+
+  it("opens the overdue booking in the Alerts drawer with its own facts, not a movement's", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <AlertsScreen />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: /for Initials RK$/ })[0]!);
+    const drawer = screen.getByRole("dialog");
+    expect(drawer).toHaveTextContent("Initials RK");
+    const booking = within(drawer).getByTestId("alerts-drawer-booking");
+    expect(booking).toHaveTextContent("Legal status");
+    expect(booking).toHaveTextContent("Voluntary");
+    expect(booking).toHaveTextContent("Planned ward");
+    expect(drawer).not.toHaveTextContent("Emergency Dept");
+    expect(drawer).not.toHaveTextContent("Declines logged");
+    expect(drawer.textContent).not.toMatch(/PA-SEED/);
+  });
 });

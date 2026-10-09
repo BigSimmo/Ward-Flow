@@ -31,10 +31,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import {
-  PLANNED_ADMISSION_REASON_LABELS,
-  type PlannedAdmission,
-} from "@/components/ward-management/ward-admissions";
+import { PLANNED_ADMISSION_REASON_LABELS, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { edById } from "@/components/ward-management/ward-sites";
 import {
   WA_BROADCAST_TEMPLATES,
@@ -493,7 +490,12 @@ function AlertRows({
 
         if (prominent) {
           return (
-            <li key={item.id} className={styles.alertCard} data-tone={item.tone} data-movement-id={item.movementId || undefined}>
+            <li
+              key={item.id}
+              className={styles.alertCard}
+              data-tone={item.tone}
+              data-movement-id={item.movementId || undefined}
+            >
               <div className={styles.cardTop}>
                 <StatusGlyph tone={severityGlyph(item)} />
                 <div className={styles.alertContent}>
@@ -541,7 +543,12 @@ function AlertRows({
         }
 
         return (
-          <li key={item.id} className={styles.alertRow} data-tone={item.tone} data-movement-id={item.movementId || undefined}>
+          <li
+            key={item.id}
+            className={styles.alertRow}
+            data-tone={item.tone}
+            data-movement-id={item.movementId || undefined}
+          >
             <StatusGlyph tone={severityGlyph(item)} />
             <div className={styles.alertContent}>
               <span className={styles.alertHead}>
@@ -1507,7 +1514,9 @@ function AlertsWorkspace() {
                       <dl className={styles.drawerGrid} data-testid="alerts-drawer-booking">
                         <div>
                           <dt>Planned ward</dt>
-                          <dd>{state.units.find((unit) => unit.id === selectedBooking.unitId)?.name ?? "Not recorded"}</dd>
+                          <dd>
+                            {state.units.find((unit) => unit.id === selectedBooking.unitId)?.name ?? "Not recorded"}
+                          </dd>
                         </div>
                         <div>
                           <dt>Expected arrival</dt>
@@ -1531,32 +1540,32 @@ function AlertsWorkspace() {
                         </div>
                       </dl>
                     ) : (
-                    <dl className={styles.drawerGrid}>
-                      <div>
-                        <dt>Origin ED or setting</dt>
-                        <dd>{selectedMovement?.originEdId ?? "Emergency Dept"}</dd>
-                      </div>
-                      <div>
-                        <dt>Assigned role</dt>
-                        <dd>{selectedAlert.owner}</dd>
-                      </div>
-                      <div>
-                        <dt>Legal status</dt>
-                        <dd>{selectedMovement?.legalStatus ?? "Voluntary"}</dd>
-                      </div>
-                      <div>
-                        <dt>Declines logged</dt>
-                        <dd>{selectedMovement ? `${selectedMovement.declines.length} units` : "0 units"}</dd>
-                      </div>
-                      <div>
-                        <dt>Board time</dt>
-                        <dd>{formatInstantWithDay(now, now)}</dd>
-                      </div>
-                      <div>
-                        <dt>Escalation</dt>
-                        <dd>{selectedMovement?.escalation ? "Tier 2 escalated" : "Tier 1 standard"}</dd>
-                      </div>
-                    </dl>
+                      <dl className={styles.drawerGrid}>
+                        <div>
+                          <dt>Origin ED or setting</dt>
+                          <dd>{selectedMovement?.originEdId ?? "Emergency Dept"}</dd>
+                        </div>
+                        <div>
+                          <dt>Assigned role</dt>
+                          <dd>{selectedAlert.owner}</dd>
+                        </div>
+                        <div>
+                          <dt>Legal status</dt>
+                          <dd>{selectedMovement?.legalStatus ?? "Voluntary"}</dd>
+                        </div>
+                        <div>
+                          <dt>Declines logged</dt>
+                          <dd>{selectedMovement ? `${selectedMovement.declines.length} units` : "0 units"}</dd>
+                        </div>
+                        <div>
+                          <dt>Board time</dt>
+                          <dd>{formatInstantWithDay(now, now)}</dd>
+                        </div>
+                        <div>
+                          <dt>Escalation</dt>
+                          <dd>{selectedMovement?.escalation ? "Tier 2 escalated" : "Tier 1 standard"}</dd>
+                        </div>
+                      </dl>
                     )}
                   </Inset>
                 </div>

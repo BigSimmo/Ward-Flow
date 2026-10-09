@@ -82,7 +82,9 @@ describe("draftTiming", () => {
     for (const stayDays of ["", "abc", "2.5", "0", "-3", "1e2", "366"]) {
       const timing = draftTiming({ ...DRAFT, stayDays }, NOW);
       expect(timing.ok).toBe(false);
-      expect(!timing.ok && timing.refusal).toMatch(/^Enter the expected stay as a whole number of days from 1 to \d+\.$/);
+      expect(!timing.ok && timing.refusal).toMatch(
+        /^Enter the expected stay as a whole number of days from 1 to \d+\.$/,
+      );
     }
     expect(draftTiming({ ...DRAFT, stayDays: " 14 " }, NOW)).toMatchObject({ ok: true, expectedStayDays: 14 });
   });

@@ -61,8 +61,7 @@ export function plannedDayOffsets(currentOffset: number): number[] {
 }
 
 export type DraftTiming =
-  | { ok: true; expectedArrivalAt: Instant; expectedStayDays: number }
-  | { ok: false; refusal: string };
+  { ok: true; expectedArrivalAt: Instant; expectedStayDays: number } | { ok: false; refusal: string };
 
 /** The arrival instant and stay the draft names, or the sentence that says what to fix. */
 export function draftTiming(draft: PlannedAdmissionDraft, now: Instant): DraftTiming {

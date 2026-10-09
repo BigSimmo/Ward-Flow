@@ -25,7 +25,11 @@ import { describe, expect, it } from "vitest";
  * graph. It runs in the full suite.
  */
 
-const REDUCER = "src/components/ward-management/ward-flow-reducer.ts";
+const REDUCERS = [
+  "src/components/ward-management/ward-flow-reducer.ts",
+  // Stream D (9 Oct 2026): planned-admission events live in their own reducer module.
+  "src/components/ward-management/capacity/planned-admissions-reducer.ts",
+] as const;
 const EVENTS = "src/components/ward-management/ward-flow-events.ts";
 
 /**
@@ -51,6 +55,9 @@ const LIST_FOR_TYPE: Readonly<Record<string, string>> = {
   LegalFormReceiptCorrectionReason: "LEGAL_FORM_RECEIPT_CORRECTION_REASONS",
   // Wave 4 diversions (T4a): RECORD_DIVERSION's own fixed list.
   DiversionReason: "DIVERSION_REASONS",
+  // Stream D (9 Oct 2026): planned admission book/change and cancel reasons.
+  PlannedAdmissionReason: "PLANNED_ADMISSION_REASONS",
+  PlannedAdmissionCancelReason: "PLANNED_ADMISSION_CANCEL_REASONS",
 };
 
 /** Strips comments so prose naming a constant cannot be read as code naming it. */
@@ -58,9 +65,9 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//gu, " ").replace(/\/\/[^\n]*/gu, " ");
 }
 
-/** Every `case "X":` in the reducer, with the line it starts on. */
-function reducerCases(): Array<{ name: string; line: number }> {
-  const lines = stripComments(readFileSync(REDUCER, "utf8")).split("\n");
+/** Every `case "X":` in one reducer file, with the line it starts on. */
+function reducerCasesIn(path: string): Array<{ name: string; line: number }> {
+  const lines = stripComments(readFileSync(path, "utf8")).split("\n");
   const found: Array<{ name: string; line: number }> = [];
   lines.forEach((text, index) => {
     const match = /case "([A-Z][A-Z0-9_]*)":/u.exec(text);
@@ -69,17 +76,24 @@ function reducerCases(): Array<{ name: string; line: number }> {
   return found;
 }
 
+/** Every `case "X":` across the reducers this guard watches. */
+function reducerCases(): Array<{ name: string; line: number }> {
+  return REDUCERS.flatMap((path) => reducerCasesIn(path));
+}
+
 /** Every membership check on an event reason, attributed to the case it sits inside. */
 function reasonChecks(): Array<{ event: string; list: string }> {
-  const lines = stripComments(readFileSync(REDUCER, "utf8")).split("\n");
-  const cases = reducerCases();
   const checks: Array<{ event: string; list: string }> = [];
-  lines.forEach((text, index) => {
-    const match = /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.exec(text);
-    if (!match) return;
-    const owning = [...cases].reverse().find((entry) => entry.line < index);
-    checks.push({ event: owning?.name ?? "(no enclosing case)", list: match[1] });
-  });
+  for (const path of REDUCERS) {
+    const lines = stripComments(readFileSync(path, "utf8")).split("\n");
+    const cases = reducerCasesIn(path);
+    lines.forEach((text, index) => {
+      const match = /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.exec(text);
+      if (!match) return;
+      const owning = [...cases].reverse().find((entry) => entry.line < index);
+      checks.push({ event: owning?.name ?? "(no enclosing case)", list: match[1] });
+    });
+  }
   return checks;
 }
 
@@ -191,10 +205,16 @@ describe("reason membership checks", () => {
     );
     // And a comment naming a constant must not be counted as a check.
     expect(reasonChecks().length).toBe(
-      readFileSync(REDUCER, "utf8")
-        .split("\n")
-        .filter((line) => !line.trim().startsWith("*") && /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.test(line))
-        .length,
+      REDUCERS.reduce(
+        (total, path) =>
+          total +
+          readFileSync(path, "utf8")
+            .split("\n")
+            .filter(
+              (line) => !line.trim().startsWith("*") && /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.test(line),
+            ).length,
+        0,
+      ),
     );
   });
 });

@@ -26,14 +26,7 @@ import { adjustSexMix, mixSexOf } from "../ward-eligibility";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
-import {
-  COHORTS,
-  RECORDED_SEXES,
-  type LegalStatus,
-  type Movement,
-  type MovementId,
-  type Unit,
-} from "../ward-model";
+import { COHORTS, RECORDED_SEXES, type LegalStatus, type Movement, type MovementId, type Unit } from "../ward-model";
 
 export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
 

@@ -20,6 +20,8 @@ import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/compon
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { EVENT_HISTORY_TABLE, selectBedHistory, selectPatientHistory } from "@/components/ward-management/ward-history";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
+import { shellFigures } from "@/components/ward-management/shell/ward-facade";
 import { patientDisplayName } from "@/components/ward-management/ward-patients";
 import { shiftInstants } from "@/components/ward-management/ward-reanchor";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -538,7 +540,9 @@ describe("review follow-up: who may be booked and converted", () => {
       unitId: UNIT,
     });
     expect(lastRejection(refused)).toMatch(/every free bed at .* is still being made ready/);
-    expect(lastRejection(refused)).toContain(`(${free} pending); a patient cannot be admitted to a bed that is not open`);
+    expect(lastRejection(refused)).toContain(
+      `(${free} pending); a patient cannot be admitted to a bed that is not open`,
+    );
     expect(refused.admissions).toBe(allPending.admissions);
   });
 
@@ -633,6 +637,30 @@ describe("review follow-up: the forecast does not count a person twice", () => {
 });
 
 describe("review follow-up: the restore fence", () => {
+  it("restores a converted arrival after that person has left the ward", () => {
+    const arrived = apply(book(seedWardFlowState()), {
+      type: "CONVERT_PLANNED_ADMISSION",
+      role: "ward",
+      actingUnitId: UNIT,
+      now: NOW,
+      plannedAdmissionId: "PA-01",
+      unitId: UNIT,
+    });
+    const admissionId = newest(arrived).admissionId!;
+    const left = apply(arrived, {
+      type: "RECORD_LEAVING",
+      role: "ward",
+      now: NOW + 60,
+      admissionId,
+      actingUnitId: UNIT,
+      leavingDestination: "discharged-to-the-community",
+    });
+    expect(left.rejections).toEqual([]);
+    expect(left.admissions.find((admission) => admission.id === admissionId)!.state).toBe("departed");
+    expect(newest(left).state).toBe("arrived");
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(left)))).toBe(true);
+  });
+
   it("refuses an arrived booking whose admission is swapped for another stay", () => {
     const arrived = apply(seedWardFlowState(), {
       type: "CONVERT_PLANNED_ADMISSION",
@@ -646,7 +674,8 @@ describe("review follow-up: the restore fence", () => {
     const swapped = JSON.parse(JSON.stringify(arrived)) as WardFlowState;
     const booking = swapped.plannedAdmissions.find((planned) => planned.id === "PA-SEED-03")!;
     const other = swapped.admissions.find(
-      (admission) => admission.unitId === UNIT && admission.state === "occupied" && admission.id !== booking.admissionId,
+      (admission) =>
+        admission.unitId === UNIT && admission.state === "occupied" && admission.id !== booking.admissionId,
     )!;
     booking.admissionId = other.id;
     expect(isValidStoredWardFlowState(swapped)).toBe(false);
@@ -728,5 +757,34 @@ describe("review follow-up: history finds planned admission events", () => {
       "Planned admission changed",
       "Planned admission arrived on ward",
     ]);
+  });
+});
+
+describe("review follow-up: callers beyond Alerts count the overdue booking", () => {
+  it("adds the seeded overdue arrival to the shell Tasks figure and the search Tasks group", () => {
+    const state = seedWardFlowState();
+    const input = {
+      movements: state.movements,
+      units: state.units,
+      referrals: state.referrals,
+      bedReleases: state.bedReleases,
+      leaveBeds: state.leaveBeds,
+      now: NOW,
+    };
+    const without = shellFigures(input).tasks.value;
+    expect(shellFigures({ ...input, plannedAdmissions: state.plannedAdmissions }).tasks.value).toBe(without + 1);
+
+    const search = searchWardFlow({
+      query: "tasks",
+      patients: state.patients,
+      movements: state.movements,
+      units: state.units,
+      now: NOW,
+      limitPerGroup: 500,
+      plannedAdmissions: state.plannedAdmissions,
+    });
+    const planned = search.tasks.find((result) => result.task.id === "planned-arrival-PA-SEED-03")!;
+    // A planned row opens Capacity, never a movement page.
+    expect(planned.href).toBe("/mockups/ward-flow/capacity");
   });
 });
