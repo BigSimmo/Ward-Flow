@@ -5,6 +5,7 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-flow-reducer";
+import { wardPlannedAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -164,7 +165,9 @@ describe("the Alerts screen reports on every condition it watches, firing or not
     const rows =
       countInCategory("bed_pull_expired") +
       countInCategory("destinations_declined") +
-      countInCategory("transport_awaiting_departure");
+      countInCategory("transport_awaiting_departure") +
+      // Planned admissions past their expected arrival (stream D) also draw a row.
+      buildActionInbox([], NOW, allUnits(), { plannedAdmissions: wardPlannedAdmissions }).length;
     expect(rows, "no inbox row in the fixture — every assertion in this file would be vacuous").toBeGreaterThan(0);
 
     const { container } = renderScreen();

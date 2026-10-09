@@ -1,5 +1,11 @@
 import type { CareChange } from "./ward-care-journey";
-import type { DischargeBarrier, LeavingDestination, FollowUpState } from "@/components/ward-management/ward-admissions";
+import type {
+  DischargeBarrier,
+  LeavingDestination,
+  FollowUpState,
+  PlannedAdmissionCancelReason,
+  PlannedAdmissionReason,
+} from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
@@ -2099,6 +2105,74 @@ export type WardFlowEvent =
     }
   | {
       /**
+       * Book a known future admission (stream D, 9 October 2026). Names either an existing
+       * synthetic patient or initials only, never both. `initials` is typed text, so this event is
+       * on the typed-text persistence list. Holds no bed until `CONVERT_PLANNED_ADMISSION`.
+       */
+      type: "BOOK_PLANNED_ADMISSION";
+      role: WardFlowRole;
+      now: Instant;
+      patientId?: PatientId | null;
+      initials?: string | null;
+      sex: RecordedSex;
+      reason: PlannedAdmissionReason;
+      unitId: string;
+      expectedArrivalAt: Instant;
+      expectedStayDays: number;
+      legalStatus: LegalStatus;
+      /** The age group booked for: from the record for a linked patient, recorded for initials. */
+      ageBand: Cohort;
+      /**
+       * The demo calendar's date at `now` ("yyyy-mm-dd", from `calendarDateOf(now, dayZero)`).
+       * Required with `patientId`: the reducer holds no calendar, and refuses an `ageBand` that the
+       * record's date of birth does not give on the expected arrival's date, counted from this one.
+       * Not about the person; never displayed.
+       */
+      calendarDate?: string;
+      /** Required when the caller is a ward: the ward it is booking for. */
+      actingUnitId?: string;
+    }
+  | {
+      /** Change a booked planned admission's ward, reason, arrival, stay or legal status. */
+      type: "CHANGE_PLANNED_ADMISSION";
+      role: WardFlowRole;
+      now: Instant;
+      plannedAdmissionId: string;
+      reason: PlannedAdmissionReason;
+      unitId: string;
+      expectedArrivalAt: Instant;
+      expectedStayDays: number;
+      legalStatus: LegalStatus;
+      /** As on `BOOK_PLANNED_ADMISSION`: required when a linked booking's arrival moves to another day. */
+      calendarDate?: string;
+      actingUnitId?: string;
+    }
+  | {
+      /** Cancel a booked planned admission, with a reason chosen from a fixed list. */
+      type: "CANCEL_PLANNED_ADMISSION";
+      role: WardFlowRole;
+      now: Instant;
+      plannedAdmissionId: string;
+      /** The booking's own ward, so bed history finds the event; refused if it is not the booking's. */
+      unitId: string;
+      reason: PlannedAdmissionCancelReason;
+      actingUnitId?: string;
+    }
+  | {
+      /**
+       * The planned person has arrived: the booking becomes an ordinary occupied `Admission` on its
+       * ward, taking one empty and allocatable bed. Refused when the ward has no bed to give.
+       */
+      type: "CONVERT_PLANNED_ADMISSION";
+      role: WardFlowRole;
+      now: Instant;
+      plannedAdmissionId: string;
+      /** The booking's own ward, so bed history finds the event; refused if it is not the booking's. */
+      unitId: string;
+      actingUnitId?: string;
+    }
+  | {
+      /**
        * Advisory checklist (9 Oct 2026): records that a carer, personal support person or the
        * Mental Health Advocacy Service was told about an involuntary patient's admission, transfer
        * or discharge, or that it does not apply. A record of what a person says happened; nothing
@@ -2623,6 +2697,12 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
   ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager", "executive"],
   STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
+  // Planned admissions (stream D): booked and managed by the coordinator, bed manager or the
+  // receiving ward; the ward or coordinator records the arrival.
+  BOOK_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
+  CHANGE_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
+  CANCEL_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
+  CONVERT_PLANNED_ADMISSION: ["ward", "coordinator"],
   // Advisory carer/PSP/MHAS checklist (9 Oct 2026): recorded where the move is completed — the
   // ward (arrivals, discharges board) or the coordinator (movements).
   RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],

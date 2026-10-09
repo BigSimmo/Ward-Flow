@@ -68,7 +68,8 @@ type WardTasksDrawerProps = {
   now: Instant;
   dispatch: Dispatch<WardFlowEvent>;
   onClose: () => void;
-  onSelectMovement: (movementId: string, action?: "refer" | "contact") => void;
+  /** `href` is a row's own destination when it is not about a movement (a planned admission). */
+  onSelectMovement: (movementId: string, action?: "refer" | "contact", href?: string) => void;
   /** Opens a discharged stay on the discharges board, for rows that carry `admissionId`. */
   onSelectDischarge?: (admissionId: string) => void;
   records?: {
@@ -191,6 +192,8 @@ export function WardTasksDrawer({
    *  its movement. */
   function openItem(item: InboxItem) {
     if (item.admissionId !== undefined && onSelectDischarge) onSelectDischarge(item.admissionId);
+    // A planned admission row has its own destination (Capacity); every other row opens its movement.
+    else if (item.href !== undefined) onSelectMovement(item.movementId, undefined, item.href);
     else onSelectMovement(item.movementId);
   }
 
@@ -267,7 +270,9 @@ export function WardTasksDrawer({
             className={`${styles.btn} ${styles.btnIcon}`}
             aria-label="Refer"
             title="Refer"
-            onClick={() => onSelectMovement(item.movementId, "refer")}
+            onClick={() => {
+              onSelectMovement(item.movementId, "refer");
+            }}
           >
             <Send aria-hidden="true" />
           </button>
@@ -277,7 +282,9 @@ export function WardTasksDrawer({
           className={`${styles.btn} ${styles.btnIcon}`}
           aria-label="Contact"
           title="Contact"
-          onClick={() => onSelectMovement(item.movementId, "contact")}
+          onClick={() => {
+            onSelectMovement(item.movementId, "contact");
+          }}
         >
           <Phone aria-hidden="true" />
         </button>
@@ -345,7 +352,9 @@ export function WardTasksDrawer({
               type="button"
               className={styles.pick}
               aria-pressed={contact === pick}
-              onClick={() => setContact(pick)}
+              onClick={() => {
+                setContact(pick);
+              }}
             >
               {pick}
             </button>
@@ -374,7 +383,10 @@ export function WardTasksDrawer({
   function renderRow(item: InboxItem) {
     const movement = records?.movements.find((row) => row.id === item.movementId);
     const admission = item.admissionId ? records?.admissions?.find((row) => row.id === item.admissionId) : undefined;
-    const patient = records ? resolveSubjectPatient(movement ?? admission, records) : undefined;
+    // A planned admission row has no movement or stay: the booking itself names the person.
+    const patient = records
+      ? resolveSubjectPatient(movement ?? admission ?? item.plannedAdmission, records)
+      : undefined;
     const Icon = rowIcon(item);
     const isFact = item.kind === "fact";
     const ackHistory = acknowledgements[item.id] ?? [];
@@ -495,7 +507,9 @@ export function WardTasksDrawer({
             <button
               type="button"
               className={`${styles.btn} ${isExpanded && !latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
-              onClick={() => acknowledge(item.id)}
+              onClick={() => {
+                acknowledge(item.id);
+              }}
             >
               <UserCheck aria-hidden="true" />
               Acknowledge
@@ -507,7 +521,9 @@ export function WardTasksDrawer({
               type="button"
               data-testid={`ward-task-reopen-${item.id}`}
               className={styles.btn}
-              onClick={() => reopen(item.id)}
+              onClick={() => {
+                reopen(item.id);
+              }}
             >
               <RotateCcw aria-hidden="true" />
               Reopen
@@ -517,7 +533,9 @@ export function WardTasksDrawer({
               type="button"
               data-testid={`ward-task-complete-${item.id}`}
               className={`${styles.btn} ${isExpanded ? styles.btnPrimary : ""}`}
-              onClick={() => complete(item.id)}
+              onClick={() => {
+                complete(item.id);
+              }}
             >
               <CheckCircle2 aria-hidden="true" />
               Mark done
@@ -526,7 +544,7 @@ export function WardTasksDrawer({
           <button
             type="button"
             className={`${styles.btn} ${isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
-            aria-label="Open patient"
+            aria-label={item.plannedAdmission ? "Open planned admission in Capacity" : "Open patient"}
             onClick={() => {
               openItem(item);
             }}
@@ -644,7 +662,9 @@ export function WardTasksDrawer({
                   type="button"
                   className={styles.segment}
                   aria-pressed={taskFilter === value}
-                  onClick={() => setTaskFilter(value)}
+                  onClick={() => {
+                    setTaskFilter(value);
+                  }}
                 >
                   {label} <span className={styles.count}>{count}</span>
                 </button>

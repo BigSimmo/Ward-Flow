@@ -30,12 +30,15 @@ import {
   isLeavingDestination,
   isFollowUpState,
   daysInBed,
+  PLANNED_ADMISSION_CANCEL_REASONS,
+  PLANNED_ADMISSION_REASONS,
   type LeavingDestination,
 } from "./ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
+import { reducePlannedAdmissionEvent } from "./capacity/planned-admissions-reducer";
 import { reduceInboxEvent } from "./ward-inbox-reducer";
 import type { InboxOwnershipEntry, InboxSnoozeEntry } from "./ward-inbox-snooze";
 import {
@@ -171,11 +174,16 @@ import {
   remainingHighAcuityCapacity,
   remainingSpeciallingCapacity,
   type Admission,
+  type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
 import { GENDERS } from "@/components/ward-management/ward-patients";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { combineWardPatients } from "@/components/ward-management/ward-patients-seed";
-import { generatedOccupantPatients, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import {
+  generatedOccupantPatients,
+  wardAdmissions,
+  wardPlannedAdmissions,
+} from "@/components/ward-management/ward-admissions-seed";
 
 /**
  * Every seeded person: the hand-authored patients plus the generated ones the admission and
@@ -522,6 +530,14 @@ export type WardFlowState = WardAuditState & {
   /** Monotonic sequence counter for broadcast IDs (e.g. BCAST-1). */
   broadcastSequence: number;
   /**
+   * Known future admissions (stream D, 9 October 2026), booked ahead of arrival. A booking holds
+   * no bed; `CONVERT_PLANNED_ADMISSION` turns one into an occupied admission. Never removed: a
+   * cancelled or arrived booking stays, marked, so the calendar's history holds.
+   */
+  plannedAdmissions: PlannedAdmission[];
+  /** Monotonic id source for `BOOK_PLANNED_ADMISSION` ("PA-NN"), the same discipline as the others. */
+  plannedAdmissionSequence: number;
+  /**
    * Advisory carer, personal support person and MHAS notification records (9 Oct 2026).
    * `RECORD_SUPPORT_NOTIFICATION` appends here. Optional so stored sessions from before it still
    * load; holds typed text, so a non-empty list is never persisted (see storage validation).
@@ -650,6 +666,9 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     clinicalContacts: [],
     broadcastAlerts: [],
     broadcastSequence: 0,
+    // Seeded bookings name standard-night wards, so the network scenarios start with none.
+    plannedAdmissions: network ? [] : structuredClone(wardPlannedAdmissions),
+    plannedAdmissionSequence: 0,
   };
   return network ? seed : applyRulingsDemoOverlay(seed, NOW_ANCHOR);
 }
@@ -793,6 +812,12 @@ function subjectId(event: WardFlowEvent): string {
     case "ACKNOWLEDGE_BROADCAST_ALERT":
     case "STAND_DOWN_BROADCAST_ALERT":
       return event.alertId;
+    case "BOOK_PLANNED_ADMISSION":
+      return event.unitId;
+    case "CHANGE_PLANNED_ADMISSION":
+    case "CANCEL_PLANNED_ADMISSION":
+    case "CONVERT_PLANNED_ADMISSION":
+      return event.plannedAdmissionId;
     default:
       return "movementId" in event ? (event.movementId as string) : "none";
   }
@@ -984,8 +1009,20 @@ function pullOverrides(
   ];
 }
 
+/** The planned admissions module, handed this reducer's own rejection and placement refusal. */
+function reducePlannedAdmission(state: WardFlowState, event: WardFlowEvent, decision: AuditDecision): WardFlowState {
+  return (
+    reducePlannedAdmissionEvent(state, event, decision, reject, (movement, unit, now) =>
+      eligibilityRefusal({ type: "CONVERT_PLANNED_ADMISSION" }, movement, unit, now),
+    ) ?? state
+  );
+}
+
 function eligibilityRefusal(
-  event: OverridableWardFlowEvent,
+  // A planned-admission conversion reuses this refusal with no override path at all.
+  event:
+    | Pick<OverridableWardFlowEvent, "type" | "overrideReason">
+    | { type: "CONVERT_PLANNED_ADMISSION"; overrideReason?: undefined },
   movement: Movement,
   unit: Unit,
   now: Instant,
@@ -9714,6 +9751,25 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const next = reduceBroadcastAlertEvent(state, event, decision, reject);
       if (next) return next;
       return state;
+    }
+
+    case "BOOK_PLANNED_ADMISSION": {
+      if (!PLANNED_ADMISSION_REASONS.includes(event.reason))
+        return reject(state, event, `${event.type} reason must be chosen from the listed reasons`);
+      return reducePlannedAdmission(state, event, decision);
+    }
+    case "CHANGE_PLANNED_ADMISSION": {
+      if (!PLANNED_ADMISSION_REASONS.includes(event.reason))
+        return reject(state, event, `${event.type} reason must be chosen from the listed reasons`);
+      return reducePlannedAdmission(state, event, decision);
+    }
+    case "CANCEL_PLANNED_ADMISSION": {
+      if (!PLANNED_ADMISSION_CANCEL_REASONS.includes(event.reason))
+        return reject(state, event, `${event.type} reason must be chosen from the listed reasons`);
+      return reducePlannedAdmission(state, event, decision);
+    }
+    case "CONVERT_PLANNED_ADMISSION": {
+      return reducePlannedAdmission(state, event, decision);
     }
   }
   return state;

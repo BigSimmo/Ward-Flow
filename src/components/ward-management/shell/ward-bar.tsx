@@ -530,6 +530,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     dispatch,
     inboxAcknowledgements,
     inboxCompletions,
+    plannedAdmissions,
     inboxOwnership,
     inboxSnoozes,
     configuration,
@@ -637,10 +638,28 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     const open = movements.filter(isOpen);
     // Stream A, 9 Oct 2026: decision targets join the same list.
     return [
-      ...buildActionInbox(open, now, units, { movements, admissions, patients, referrals, supportNotifications }),
+      ...buildActionInbox(open, now, units, {
+        movements,
+        admissions,
+        patients,
+        referrals,
+        supportNotifications,
+        plannedAdmissions,
+      }),
       ...decisionTargetInboxItems(open, now, configuration),
     ];
-  }, [movements, now, units, role, admissions, patients, referrals, supportNotifications, configuration]);
+  }, [
+    movements,
+    now,
+    units,
+    role,
+    plannedAdmissions,
+    admissions,
+    patients,
+    referrals,
+    supportNotifications,
+    configuration,
+  ]);
   // Snoozed rows stay in the drawer's own Snoozed section and leave the badge until they return.
   const tasksActiveCount = useMemo(
     () => partitionSnoozed(tasksItems, inboxSnoozes, now).active.length,
@@ -956,7 +975,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   );
 
   const openMovement = useCallback(
-    (movementId: string, action?: "refer" | "contact") => {
+    (movementId: string, action?: "refer" | "contact", href?: string) => {
       // A task row is an in-drawer navigation affordance. Close the Sheet in the same event before
       // routing so its portal cannot remain over the destination while the new page mounts.
       setOpenPanel(null);
@@ -966,7 +985,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         window.history.replaceState(nextState, "");
       }
       router.push(
-        `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
+        href ??
+          `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
       );
     },
     [router],
@@ -1228,6 +1248,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             referrals={referrals}
             units={units}
             tasks={tasksItems}
+            plannedAdmissions={plannedAdmissions}
             now={now}
             placeholder="Search"
           />

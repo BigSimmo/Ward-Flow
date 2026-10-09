@@ -43,6 +43,7 @@ import type { Movement, Referral } from "@/components/ward-management/ward-model
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { PLANNED_ADMISSION_REASON_LABELS, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import {
   resolveSubjectPatient,
   withUmrnInPlaceOfMovementIds,
@@ -179,23 +180,28 @@ function roleMatches(item: InboxItem, role: string): boolean {
  * and the rest invented a person the model does not hold (25 September 2026 audit, A1 and A7). A
  * movement linked to nobody now says so, in the resolver's own words.
  */
+/** The records the resolver reads, built once per render so its per-state index is reused. */
+type AlertResolverState = {
+  patients?: Patient[];
+  referrals?: Referral[];
+  movements?: Movement[];
+};
+
 function resolveAlertPatient(
   movement: Movement | undefined,
   movementId: string | undefined,
-  patientsList?: Patient[],
-  referralsList?: Referral[],
-  movementsList?: Movement[],
+  resolverState: AlertResolverState,
   unitsList?: readonly { id: string; name: string }[],
+  plannedAdmission?: PlannedAdmission,
 ): { displayName: string; umrn: string; location: string; routeTarget: string } {
   const mid = movement?.id ?? movementId ?? "";
-  const info = resolveSubjectPatient(movement ?? { id: mid }, {
-    patients: patientsList,
-    referrals: referralsList,
-    movements: movementsList,
-  });
+  const info = resolveSubjectPatient(plannedAdmission ?? movement ?? { id: mid }, resolverState);
 
   let location = "";
-  if (movement) {
+  if (plannedAdmission) {
+    // A booking is about its own ward, never a movement's ED or accepted unit.
+    location = unitsList?.find((u) => u.id === plannedAdmission.unitId)?.name ?? "";
+  } else if (movement) {
     if (movement.originEdId) {
       location = edById(movement.originEdId)?.name ?? movement.originEdId;
     } else if (movement.acceptedUnitId) {
@@ -234,15 +240,15 @@ function getCategoryBadge(item: InboxItem): { tone: "danger" | "warn" | "accent"
 
 function getPatientDisplayName(
   movement: Movement | undefined,
-  referralsList: Referral[],
-  patientsList: Patient[],
+  resolverState: AlertResolverState,
   unitsList?: readonly { id: string; name: string }[],
-  state: { units?: readonly { id: string; name: string }[] } = { units: unitsList },
+  plannedAdmission?: PlannedAdmission,
+  personLabel?: string,
 ): string {
-  if (!movement) return "Patient not recorded";
-  const p = resolveAlertPatient(movement, movement.id, patientsList, referralsList, undefined, state.units);
+  if (!movement && !plannedAdmission) return "Patient not recorded";
+  const p = resolveAlertPatient(movement, movement?.id, resolverState, unitsList, plannedAdmission);
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-  return `${p.displayName} (UMRN: ${p.umrn}) · ${p.location}`;
+  return `${personLabel ?? p.displayName} (UMRN: ${p.umrn}) · ${p.location}`;
 }
 
 /**
@@ -328,6 +334,7 @@ function AlertRows({
   prominent?: boolean;
 }) {
   const [openQuickMenuId, setOpenQuickMenuId] = useState<string | null>(null);
+  const resolverState = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const quickMenuRef = useRef<HTMLDivElement>(null);
   const quickMenuTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -372,7 +379,14 @@ function AlertRows({
         const categoryBadge = getCategoryBadge(item);
         const overdueText = extractOverdue(item.detail);
         const movement = movements?.find((m) => m.id === item.movementId);
-        const patientInfo = resolveAlertPatient(movement, item.movementId, patients, referrals, movements, state.units);
+        const resolvedPatient = resolveAlertPatient(
+          movement,
+          item.movementId,
+          resolverState,
+          state.units,
+          item.plannedAdmission,
+        );
+        const patientInfo = item.personLabel ? { ...resolvedPatient, displayName: item.personLabel } : resolvedPatient;
 
         const actionVerb =
           categoryBadge.label === "Form Due Time Passed"
@@ -550,7 +564,12 @@ function AlertRows({
 
         if (prominent) {
           return (
-            <li key={item.id} className={styles.alertCard} data-tone={item.tone} data-movement-id={item.movementId}>
+            <li
+              key={item.id}
+              className={styles.alertCard}
+              data-tone={item.tone}
+              data-movement-id={item.movementId || undefined}
+            >
               <div className={styles.cardTop}>
                 <StatusGlyph tone={severityGlyph(item)} />
                 <div className={styles.alertContent}>
@@ -604,7 +623,12 @@ function AlertRows({
         }
 
         return (
-          <li key={item.id} className={styles.alertRow} data-tone={item.tone} data-movement-id={item.movementId}>
+          <li
+            key={item.id}
+            className={styles.alertRow}
+            data-tone={item.tone}
+            data-movement-id={item.movementId || undefined}
+          >
             <StatusGlyph tone={severityGlyph(item)} />
             <div className={styles.alertContent}>
               <span className={styles.alertHead}>
@@ -657,15 +681,16 @@ function AlertsWorkspace() {
   } = state;
   const now = useWardFlowClock();
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
+  const plannedAdmissions = state.plannedAdmissions;
   const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   // Every computed row, then the snoozed ones set aside: they leave the active list and come back
   // by themselves when their return time passes (stream A, 9 Oct 2026).
   const allInbox = useMemo(
     () => [
-      ...buildActionInbox(openMovements, now, units),
+      ...buildActionInbox(openMovements, now, units, { plannedAdmissions }),
       ...decisionTargetInboxItems(openMovements, now, configuration),
     ],
-    [openMovements, now, units, configuration],
+    [openMovements, now, units, plannedAdmissions, configuration],
   );
   const { active: inbox, snoozed: snoozedInbox } = useMemo(
     () => partitionSnoozed(allInbox, inboxSnoozes, now),
@@ -833,6 +858,7 @@ function AlertsWorkspace() {
   const unlawful = useMemo(() => itemsInCategory(inbox, "destination_unlawful"), [inbox]);
   const pullExpired = useMemo(() => itemsInCategory(inbox, "bed_pull_expired"), [inbox]);
   const transport = useMemo(() => itemsInCategory(inbox, "transport_awaiting_departure"), [inbox]);
+  const plannedOverdue = useMemo(() => itemsInCategory(inbox, "planned_arrival_overdue"), [inbox]);
   const referralTargets = useMemo(() => itemsInCategory(inbox, "target_referral_decision"), [inbox]);
   const otherTargets = useMemo(
     () => [
@@ -857,7 +883,7 @@ function AlertsWorkspace() {
   const overrides = movements.flatMap((movement: Movement) => movement.overrides);
   const untriaged = (state.referrals ?? []).filter((referral) => referral.triagedAt === undefined);
   const needsYouCount = legal.length + declined.length + unlawful.length + referralTargets.length;
-  const otherRolesCount = pullExpired.length + transport.length + otherTargets.length;
+  const otherRolesCount = pullExpired.length + transport.length + otherTargets.length + plannedOverdue.length;
   const totalActive = needsYouCount + otherRolesCount;
 
   // Prolonged ED stays (>24h)
@@ -868,7 +894,7 @@ function AlertsWorkspace() {
   // Tier counts
   const tier1Count = legal.length + unlawful.length;
   const tier2Count = declined.length + pullExpired.length + decisionTargets.length;
-  const tier3Count = transport.length;
+  const tier3Count = transport.length + plannedOverdue.length;
 
   // Role counts: alerts only, never a running decision-target countdown.
   const alertRows = inbox.filter((item) => !isPendingDecisionTargetItem(item));
@@ -926,13 +952,13 @@ function AlertsWorkspace() {
   }, [legal, declined, unlawful, referralTargets, pendingReferralTargets, tierFilter, roleFilter]);
 
   const filteredOtherRoles = useMemo(() => {
-    const allOther = [...pullExpired, ...transport, ...otherTargets, ...pendingOtherTargets];
+    const allOther = [...pullExpired, ...transport, ...plannedOverdue, ...otherTargets, ...pendingOtherTargets];
     return allOther.filter((item) => {
       if (tierFilter !== "all" && tierOfItem(item) !== tierFilter) return false;
       if (roleFilter !== "all" && !roleMatches(item, roleFilter)) return false;
       return true;
     });
-  }, [pullExpired, transport, otherTargets, pendingOtherTargets, tierFilter, roleFilter]);
+  }, [pullExpired, transport, plannedOverdue, otherTargets, pendingOtherTargets, tierFilter, roleFilter]);
 
   // Selected alert details
   const selectedMovement = useMemo(() => {
@@ -940,9 +966,17 @@ function AlertsWorkspace() {
     return openMovements.find((m) => m.id === selectedAlert.movementId);
   }, [selectedAlert, openMovements]);
 
+  const selectedResolverState = useMemo(() => ({ patients, referrals }), [patients, referrals]);
   const selectedPatientName = useMemo(() => {
-    return getPatientDisplayName(selectedMovement, referrals, patients, state.units);
-  }, [selectedMovement, referrals, patients, state.units]);
+    return getPatientDisplayName(
+      selectedMovement,
+      selectedResolverState,
+      state.units,
+      selectedAlert?.plannedAdmission,
+      selectedAlert?.personLabel,
+    );
+  }, [selectedMovement, selectedResolverState, state.units, selectedAlert]);
+  const selectedBooking = selectedAlert?.plannedAdmission;
 
   const selectedSeverity = useMemo(() => {
     return selectedAlert ? getAlertSeverity(selectedAlert) : { tone: "accent" as const, label: "Routine" };
@@ -1492,6 +1526,12 @@ function AlertsWorkspace() {
                     none="No accepted transport leg is still waiting to leave."
                     items={transport}
                   />
+                  <ConditionContext
+                    title="Planned arrival not recorded"
+                    watches="Watches booked planned admissions whose expected arrival time has passed with no arrival recorded."
+                    none="No booked planned admission is past its expected arrival."
+                    items={plannedOverdue}
+                  />
                   <section className={styles.condition} aria-label="Referral awaiting triage">
                     <h3 className={styles.conditionTitle}>
                       <Check size={14} aria-hidden="true" className={styles.watchMark} />
@@ -1553,7 +1593,7 @@ function AlertsWorkspace() {
             <div className={styles.panelBody} role="region" aria-label="Alerts for other roles" tabIndex={0}>
               <AlertRows
                 items={filteredOtherRoles}
-                empty="No bed-hold or accepted-transport alert is firing for another role."
+                empty="No bed-hold, accepted-transport or planned-arrival alert is firing for another role."
                 onAction={handleOpenAction}
                 onQuickAction={handleQuickAction}
                 onSnooze={handleSnooze}
@@ -1586,14 +1626,16 @@ function AlertsWorkspace() {
               {snoozedInbox.map((item) => {
                 const entry = activeSnooze(inboxSnoozes[item.id], now, item.since);
                 const movement = movements.find((candidate) => candidate.id === item.movementId);
-                const patientInfo = resolveAlertPatient(
+                const resolvedPatient = resolveAlertPatient(
                   movement,
                   item.movementId,
-                  patients,
-                  referrals,
-                  movements,
+                  { patients, referrals, movements },
                   units,
+                  item.plannedAdmission,
                 );
+                const patientInfo = item.personLabel
+                  ? { ...resolvedPatient, displayName: item.personLabel }
+                  : resolvedPatient;
                 return (
                   <li
                     key={item.id}
@@ -1704,32 +1746,63 @@ function AlertsWorkspace() {
                 <div className={styles.drawerSection}>
                   <h3 className={styles.drawerSectionTitle}>Case Parameters &amp; Tracking</h3>
                   <Inset>
-                    <dl className={styles.drawerGrid}>
-                      <div>
-                        <dt>Origin ED or setting</dt>
-                        <dd>{selectedMovement?.originEdId ?? "Emergency Dept"}</dd>
-                      </div>
-                      <div>
-                        <dt>Assigned role</dt>
-                        <dd>{selectedAlert.owner}</dd>
-                      </div>
-                      <div>
-                        <dt>Legal status</dt>
-                        <dd>{selectedMovement?.legalStatus ?? "Voluntary"}</dd>
-                      </div>
-                      <div>
-                        <dt>Declines logged</dt>
-                        <dd>{selectedMovement ? `${selectedMovement.declines.length} units` : "0 units"}</dd>
-                      </div>
-                      <div>
-                        <dt>Board time</dt>
-                        <dd>{formatInstantWithDay(now, now)}</dd>
-                      </div>
-                      <div>
-                        <dt>Escalation</dt>
-                        <dd>{selectedMovement?.escalation ? "Tier 2 escalated" : "Tier 1 standard"}</dd>
-                      </div>
-                    </dl>
+                    {selectedBooking ? (
+                      <dl className={styles.drawerGrid} data-testid="alerts-drawer-booking">
+                        <div>
+                          <dt>Planned ward</dt>
+                          <dd>
+                            {state.units.find((unit) => unit.id === selectedBooking.unitId)?.name ?? "Not recorded"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Expected arrival</dt>
+                          <dd>{formatInstantWithDay(selectedBooking.expectedArrivalAt, now)}</dd>
+                        </div>
+                        <div>
+                          <dt>Reason</dt>
+                          <dd>{PLANNED_ADMISSION_REASON_LABELS[selectedBooking.reason]}</dd>
+                        </div>
+                        <div>
+                          <dt>Legal status</dt>
+                          <dd>{selectedBooking.legalStatus}</dd>
+                        </div>
+                        <div>
+                          <dt>Expected stay</dt>
+                          <dd>{selectedBooking.expectedStayDays} days</dd>
+                        </div>
+                        <div>
+                          <dt>Assigned role</dt>
+                          <dd>{selectedAlert.owner}</dd>
+                        </div>
+                      </dl>
+                    ) : (
+                      <dl className={styles.drawerGrid}>
+                        <div>
+                          <dt>Origin ED or setting</dt>
+                          <dd>{selectedMovement?.originEdId ?? "Emergency Dept"}</dd>
+                        </div>
+                        <div>
+                          <dt>Assigned role</dt>
+                          <dd>{selectedAlert.owner}</dd>
+                        </div>
+                        <div>
+                          <dt>Legal status</dt>
+                          <dd>{selectedMovement?.legalStatus ?? "Voluntary"}</dd>
+                        </div>
+                        <div>
+                          <dt>Declines logged</dt>
+                          <dd>{selectedMovement ? `${selectedMovement.declines.length} units` : "0 units"}</dd>
+                        </div>
+                        <div>
+                          <dt>Board time</dt>
+                          <dd>{formatInstantWithDay(now, now)}</dd>
+                        </div>
+                        <div>
+                          <dt>Escalation</dt>
+                          <dd>{selectedMovement?.escalation ? "Tier 2 escalated" : "Tier 1 standard"}</dd>
+                        </div>
+                      </dl>
+                    )}
                   </Inset>
                 </div>
 

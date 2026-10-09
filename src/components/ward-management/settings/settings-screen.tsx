@@ -273,6 +273,13 @@ export function SettingsScreen() {
     setToastMessage(message);
     toastTimeoutRef.current = setTimeout(() => setToastMessage(null), 3200);
   }, []);
+  // A toast still showing when the screen closes must not set state after unmount.
+  useEffect(
+    () => () => {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    },
+    [],
+  );
   const onPreview = useCallback((name: string) => showToast(`${name}: ${NOT_WIRED}`), [showToast]);
 
   // Open the tab named in the address (#alerts), and keep the address in step.
@@ -1166,7 +1173,11 @@ export function SettingsScreen() {
           onConfirm={handleConfirmReset}
         />
         {isOperatorModalOpen ? (
-          <OperatorSwitcherModal isOpen={isOperatorModalOpen} onClose={() => setIsOperatorModalOpen(false)} />
+          <OperatorSwitcherModal
+            isOpen={isOperatorModalOpen}
+            onClose={() => setIsOperatorModalOpen(false)}
+            onPreview={onPreview}
+          />
         ) : null}
         <WardPrototypeFooter
           testId="ward-settings-governance"
