@@ -771,7 +771,7 @@ export function OfficerScreen() {
   const arrivalsLeft = (at: Instant) => `${((at - arrivalsStart) / arrivalsSpan) * 100}%`;
   const hourTicks: Instant[] = [];
   for (let tick = Math.ceil(arrivalsStart / 60) * 60; tick <= arrivalsEnd; tick += 60) hourTicks.push(tick);
-  const dueSoon = arrivals.filter((item) => item.eta >= now && item.eta <= now + 180).length;
+  const upcoming = arrivals.filter((item) => item.eta >= now).length;
   const firstUpcoming = arrivals.findIndex((item) => item.eta >= now);
 
   const topJob = sortedJobs[0];
@@ -1573,7 +1573,7 @@ export function OfficerScreen() {
                 id="ward-officer-arrivals-heading"
                 title="Arrivals"
                 icon={undefined}
-                meta={`${dueSoon} due in the next 3h`}
+                meta={`${upcoming} still to come`}
                 aside={<span className={styles.headNote}>Ward ETA first, else booking estimate</span>}
               />
               <CardBody>
