@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
  */
 const RAIL_CSS = "src/components/ward-management/shell/ward-rail.module.css";
 const BAR_CSS = "src/components/ward-management/shell/ward-bar.module.css";
+const SHARED_ACCESS_CSS = "src/components/ward-management/ward-shared-access.module.css";
 
 function read(path: string): string {
   return readFileSync(path, "utf8");
@@ -50,6 +51,15 @@ describe("Wave-2 chrome tap targets — rail Raise Referral and home link", () =
     const body = exactRuleBody(css, "brandLink");
     expect(body).toMatch(/min-height:\s*var\(--ward-tap/);
     expect(body).not.toMatch(/min-height:\s*(?:36px|2\.25rem|44px)\b/);
+  });
+});
+
+describe("Shared access chrome tap targets — toolbar and notice buttons", () => {
+  it(".toolbar button and .notice button pin min-height to --ward-tap (48px floor)", () => {
+    const css = read(SHARED_ACCESS_CSS);
+    const rule = css.match(/^\.toolbar button,\s*\.notice button\s*\{([^}]+)\}/m);
+    expect(rule, "missing combined toolbar and notice button rule").not.toBeNull();
+    expect(rule?.[1]).toMatch(/min-height:\s*var\(--ward-tap\)\s*;/);
   });
 });
 

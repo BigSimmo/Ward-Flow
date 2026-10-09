@@ -38,7 +38,7 @@
 
 .toolbar button,
 .notice button {
-  min-height: 44px;
+  min-height: var(--ward-tap);
   padding: 0.5rem 0.8rem;
   border: 1px solid var(--line-strong);
   border-radius: 0.75rem;
