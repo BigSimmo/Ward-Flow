@@ -444,6 +444,12 @@ describe("who may raise which event", () => {
     ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager", "executive"],
     STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
     UPDATE_EXPECTED_DISCHARGE: ["ward", "coordinator"],
+    // Stream D planned admissions, 9 Oct 2026: booked and managed by the coordinator, bed manager
+    // or the receiving ward; arrival recorded by the ward or coordinator.
+    BOOK_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
+    CHANGE_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
+    CANCEL_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
+    CONVERT_PLANNED_ADMISSION: ["ward", "coordinator"],
     // Advisory carer/PSP/MHAS checklist, 9 Oct 2026 (stream B): recorded where the move completes.
     RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
   };
