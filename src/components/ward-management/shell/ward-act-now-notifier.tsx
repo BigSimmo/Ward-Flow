@@ -34,7 +34,9 @@ export function WardActNowNotifier() {
     const prior = previous.current;
     previous.current = new Set(actNow.map((item) => item.id));
     if (prior === null || !enabled) return;
-    showActNowNotification(newActNowItems(prior, actNow), () => router.push(WARD_ALERTS_HREF));
+    showActNowNotification(newActNowItems(prior, actNow), () => {
+      router.push(WARD_ALERTS_HREF);
+    });
   }, [actNow, enabled, router]);
 
   return null;

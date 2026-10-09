@@ -156,4 +156,40 @@ describe("decision targets through the real event walk", () => {
     };
     expect(decisionTargetReading(booked, NOW + 5, defaults)).toBeUndefined();
   });
+
+  it("restarts the referral decision clock after a decline and re-refer", () => {
+    const first = referred();
+    const declineAt = NOW + defaults.referralDecisionTargetMinutes + 30;
+    const declined = step(first, { type: "DECLINE", role: "ward", unitId: UNIT, reason: "no_bed" }, declineAt);
+    // Re-refer to the same unit after its decline: capacity was already opened for UNIT above.
+    const reReferAt = declineAt + 15;
+    const reReferred = step(
+      declined,
+      {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        unitIds: [UNIT],
+        genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
+        genderPlacementChecked: true,
+      },
+      reReferAt,
+    );
+    const reading = decisionTargetReading(movement(reReferred), reReferAt + 5, defaults);
+    expect(reading).toMatchObject({
+      step: "referral_decision",
+      startedAt: declineAt,
+      overdue: false,
+    });
+  });
+
+  it("does not start a transport booking target when no transport is needed", () => {
+    const state = referred();
+    const pulled = {
+      ...movement(state),
+      stage: "pulled" as const,
+      stageChanges: [{ at: NOW, to: "pulled" as const, by: "ward" }],
+      transportNeed: { needed: false, at: NOW },
+    };
+    expect(decisionTargetReading(pulled, NOW + 5, defaults)).toBeUndefined();
+  });
 });

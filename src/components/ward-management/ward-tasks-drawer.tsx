@@ -521,7 +521,9 @@ export function WardTasksDrawer({
               type="button"
               data-testid={`ward-task-own-${item.id}`}
               className={styles.btn}
-              onClick={() => takeOwnership(item.id)}
+              onClick={() => {
+                takeOwnership(item.id);
+              }}
             >
               <UserRound aria-hidden="true" />
               Take
@@ -532,9 +534,9 @@ export function WardTasksDrawer({
               subject={`${item.title}, ${patient?.displayName ?? "patient not linked"}`}
               actNow={inboxItemIsActNow(item.id)}
               now={now}
-              onSnooze={(until, reason) =>
-                dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason })
-              }
+              onSnooze={(until, reason) => {
+                dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason });
+              }}
             />
           ) : null}
           {renderMovementActions(item, movement)}
@@ -659,7 +661,9 @@ export function WardTasksDrawer({
                 aria-label="Sort tasks"
                 data-testid="ward-tasks-sort"
                 value={sortMode}
-                onChange={(event) => setSortMode(event.target.value as DueSortMode)}
+                onChange={(event) => {
+                  setSortMode(event.target.value as DueSortMode);
+                }}
               >
                 {DUE_SORT_OPTIONS.map((option) => (
                   <option key={option.id} value={option.id}>
@@ -766,7 +770,9 @@ export function WardTasksDrawer({
                             type="button"
                             className={styles.btn}
                             data-testid={`ward-task-unsnooze-${item.id}`}
-                            onClick={() => returnSnoozed(item.id)}
+                            onClick={() => {
+                              returnSnoozed(item.id);
+                            }}
                           >
                             Return now
                           </button>

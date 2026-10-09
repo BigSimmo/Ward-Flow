@@ -17,7 +17,7 @@ import {
   type InboxSnoozeEntry,
   type InboxSnoozeReason,
 } from "./ward-inbox-snooze";
-import { ACT_NOW_SNOOZE_CAP_MINUTES } from "./ward-operational-defaults";
+import { RED_ROW_SNOOZE_CAP_MINUTES } from "./ward-operational-defaults";
 
 import styles from "./inbox-snooze-control.module.css";
 
@@ -57,7 +57,12 @@ export function InboxSnoozeControl({
       {(close) => (
         <div className={styles.body}>
           <Field label="Reason">
-            <Select value={reason} onChange={(event) => setReason(event.target.value as InboxSnoozeReason | "")}>
+            <Select
+              value={reason}
+              onChange={(event) => {
+                setReason(event.target.value as InboxSnoozeReason | "");
+              }}
+            >
               <option value="">Choose a reason</option>
               {SNOOZE_REASONS.map((entry) => (
                 <option key={entry.id} value={entry.id}>
@@ -71,7 +76,7 @@ export function InboxSnoozeControl({
               const until = snoozeUntilFor(preset.id, now);
               const allowed = snoozeAllowed(until, now, actNow);
               const disabledReason = !allowed
-                ? `Act now: ${splitDuration(ACT_NOW_SNOOZE_CAP_MINUTES)} at most`
+                ? `Act now: ${splitDuration(RED_ROW_SNOOZE_CAP_MINUTES)} at most`
                 : reason === ""
                   ? "Choose a reason first"
                   : undefined;

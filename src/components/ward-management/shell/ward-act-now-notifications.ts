@@ -60,7 +60,9 @@ const usePreferenceStore = createBrowserStore(subscribe, getActNowNotificationPr
 
 export function useActNowNotificationPreference(): [boolean, (enabled: boolean) => void] {
   const enabled = usePreferenceStore();
-  const setEnabled = useCallback((next: boolean) => setActNowNotificationPreference(next), []);
+  const setEnabled = useCallback((next: boolean) => {
+    setActNowNotificationPreference(next);
+  }, []);
   return [enabled, setEnabled];
 }
 
@@ -93,7 +95,7 @@ export function newActNowItems(previousIds: ReadonlySet<string>, current: readon
 
 /** The words a notification shows: the alert title only, never who it is about. */
 export function actNowNotificationText(items: readonly InboxItem[]): { title: string; body: string } {
-  const body = items.length === 1 ? items[0]!.title : `${items.length} new act-now alerts`;
+  const body = items.length === 1 ? items[0]?.title : `${items.length} new act-now alerts`;
   return { title: "Ward Flow: act now", body: `${body}. Synthetic demo data.` };
 }
 

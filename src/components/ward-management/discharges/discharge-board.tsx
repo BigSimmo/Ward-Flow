@@ -858,7 +858,9 @@ function DischargeWorkspace() {
                 value={sortMode}
                 boxClassName={pageStyles.filterSelect}
                 data-testid="ward-discharges-sort"
-                onChange={(event) => setSortMode(event.target.value as DueSortMode)}
+                onChange={(event) => {
+                  setSortMode(event.target.value as DueSortMode);
+                }}
               >
                 {DUE_SORT_OPTIONS.map((option) => (
                   <option key={option.id} value={option.id}>

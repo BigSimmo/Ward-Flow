@@ -20,7 +20,7 @@ import {
   DUE_SOON_RANGE_MINUTES,
   DUE_SOON_URGENT_MINUTES,
   DUE_SOON_URGENT_RANGE_MINUTES,
-  REFERRAL_DECISION_TARGET_MINUTES,
+  WARD_ANSWER_TARGET_MINUTES,
   TRANSFER_ACCEPTANCE_TARGET_MINUTES,
   TRANSPORT_BOOKED_TARGET_MINUTES,
 } from "../src/components/ward-management/ward-operational-defaults";
@@ -34,7 +34,7 @@ describe("defaultWardConfiguration", () => {
       morningRollupDeadlineMinutes: MORNING_ROLLUP_TIME_MINUTES,
       dueSoonUrgentMinutes: DUE_SOON_URGENT_MINUTES,
       dueSoonMinutes: DUE_SOON_MINUTES,
-      referralDecisionTargetMinutes: REFERRAL_DECISION_TARGET_MINUTES,
+      referralDecisionTargetMinutes: WARD_ANSWER_TARGET_MINUTES,
       transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
       transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
     });
@@ -137,7 +137,7 @@ describe("validateConfiguration", () => {
       morningRollupDeadlineMinutes: MORNING_ROLLUP_TIME_MINUTES,
       dueSoonUrgentMinutes: DUE_SOON_URGENT_MINUTES,
       dueSoonMinutes: DUE_SOON_MINUTES,
-      referralDecisionTargetMinutes: REFERRAL_DECISION_TARGET_MINUTES,
+      referralDecisionTargetMinutes: WARD_ANSWER_TARGET_MINUTES,
       transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
       transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
     });
@@ -156,7 +156,7 @@ describe("validateConfiguration", () => {
       ...stored,
       dueSoonUrgentMinutes: DUE_SOON_URGENT_MINUTES,
       dueSoonMinutes: DUE_SOON_MINUTES,
-      referralDecisionTargetMinutes: REFERRAL_DECISION_TARGET_MINUTES,
+      referralDecisionTargetMinutes: WARD_ANSWER_TARGET_MINUTES,
       transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
       transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
     });

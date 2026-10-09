@@ -418,18 +418,20 @@ function AlertRows({
                   options[next]?.focus();
                 }}
               >
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={styles.quickActionMenuItem}
-                  onClick={() => {
-                    setOpenQuickMenuId(null);
-                    onQuickAction?.(item, "own", patientInfo.displayName);
-                  }}
-                >
-                  <UserRound size={14} aria-hidden="true" />
-                  <span>{isOwned ? "Take ownership again" : "Take ownership"}</span>
-                </button>
+                {!isOwned ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={styles.quickActionMenuItem}
+                    onClick={() => {
+                      setOpenQuickMenuId(null);
+                      onQuickAction?.(item, "own", patientInfo.displayName);
+                    }}
+                  >
+                    <UserRound size={14} aria-hidden="true" />
+                    <span>Take ownership</span>
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   role="menuitem"
@@ -522,7 +524,9 @@ function AlertRows({
             subject={`${item.title}, ${patientInfo.displayName}`}
             actNow={inboxItemIsActNow(item.id)}
             now={now}
-            onSnooze={(until, reason) => onSnooze(item, until, reason)}
+            onSnooze={(until, reason) => {
+              onSnooze(item, until, reason);
+            }}
           />
         ) : null;
 
@@ -862,6 +866,9 @@ function AlertsWorkspace() {
       setBroadcastRequest(null);
       setBroadcastModalOpen(false);
       if (action === "own") {
+        // Same floor as Tasks: the reducer refuses a repeat take by the same owner. Only toast when
+        // this coordinator does not already own the row.
+        if (currentInboxOwner(inboxOwnership[item.id])?.by === WARD_FLOW_ROLE_LABELS.coordinator) return;
         dispatch({ type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now, inboxItemId: item.id });
         setBroadcastSuccessNotice(`You own "${item.title}" for ${patientName}.`);
       } else if (action === "escalate") {
@@ -871,7 +878,7 @@ function AlertsWorkspace() {
         setBroadcastSuccessNotice(`Alert "${item.title}" acknowledged and retained on active watch.`);
       }
     },
-    [dispatch, now],
+    [dispatch, now, inboxOwnership],
   );
 
   // Filtered collections
