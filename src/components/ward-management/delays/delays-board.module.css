@@ -586,7 +586,7 @@ button.stat:hover .statV {
 }
 
 .tbl tbody tr[data-delays-row-matches="true"] td {
-  background: var(--wf-subtle, var(--ward-subtle));
+  background: var(--ward-subtle);
 }
 
 .tbl tbody tr[data-delays-row-matches="false"] td {

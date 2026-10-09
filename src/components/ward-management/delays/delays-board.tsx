@@ -202,13 +202,10 @@ function WaitBar({ row }: { row: BoardRow }) {
 function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[]; now: Instant }) {
   const all = rowEvents(row, units, now);
   const keep = all.length <= 3 ? all : [all[0], ...all.slice(-2)];
-  const due = row.dueIn;
-  const dueAhead = due !== undefined && due >= 0 ? due : undefined;
-  const capped = dueAhead !== undefined && dueAhead > row.waited * 0.6;
-  const total = Math.max(
-    1,
-    due === undefined ? row.waited : due < 0 ? row.waited - due : capped ? row.waited * 1.32 : row.waited + dueAhead!,
-  );
+  // Only a time still ahead is drawn as due; one already passed is marked once by the block below.
+  const due = row.dueIn !== undefined && row.dueIn >= 0 ? row.dueIn : undefined;
+  const capped = due !== undefined && due > row.waited * 0.6;
+  const total = Math.max(1, due === undefined ? row.waited : capped ? row.waited * 1.32 : row.waited + due);
   const at = (minutes: number) => Math.min(100, (minutes / total) * 100);
   const nowP = at(row.waited);
   const lastP = at(row.waited - row.quiet);
@@ -229,11 +226,8 @@ function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[]; now: I
     labels.push({
       p: dueP,
       time: formatInstantWithDay(now + due, now),
-      text:
-        due < 0
-          ? `Form ${row.movement.legalForm.code} overdue, ${splitDuration(-due)} past deadline`
-          : `Form ${row.movement.legalForm.code} due, ${splitDuration(due)} left`,
-      tone: due < 0 ? "danger" : (dueTone(due) ?? "warning"),
+      text: `Form ${row.movement.legalForm.code} due, ${splitDuration(due)} left`,
+      tone: dueTone(due) ?? "warning",
     });
   // A recorded legal time that has already passed stays on the journey, marked where it fell.
   const passed = row.dueIn !== undefined && row.dueIn < 0 && row.movement.legalForm ? -row.dueIn : undefined;
