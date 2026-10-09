@@ -31,7 +31,7 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { foldPatientSearchText, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
-import { referralState } from "@/components/ward-management/ward-referrals";
+import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { durMinutes } from "@/components/wf";
@@ -226,6 +226,7 @@ export function buildCensus(state: {
     const operational = movementSearchState(movement, admissions);
     if (operational.sourceAdmission) coveredAdmissions.add(operational.sourceAdmission.id);
     const moving = operational.holdStatus === "In-Transit";
+    const unknownLocation = operational.setting === "unknown";
     const accepted = movement.acceptedUnitId ? unitOf.get(movement.acceptedUnitId) : undefined;
     const cause = causeById.get(movement.id);
     const [next, glyph] = nextStepFor(cause, movement, moving);
@@ -254,8 +255,14 @@ export function buildCensus(state: {
       service: movementOriginService(movement),
       transport: operational.transportStatus,
       escort: Boolean(movement.transport?.escortRequired),
-      where: moving ? "In transit" : source ? source.name : edText,
-      whereSub: moving ? `From ${edText}` : source ? "Ward transfer" : movementOriginService(movement),
+      where: moving ? "In transit" : unknownLocation ? "Location unknown" : source ? source.name : edText,
+      whereSub: moving
+        ? `From ${edText}`
+        : unknownLocation
+          ? "Journey stopped before arrival"
+          : source
+            ? "Ward transfer"
+            : movementOriginService(movement),
       to: accepted ? accepted.name : asked > 0 ? `Asked ${plural(asked, "ward")}` : "No ward yet",
       toSub: accepted
         ? moving
@@ -287,27 +294,41 @@ export function buildCensus(state: {
   }
 
   for (const referral of referrals) {
-    if (referralState(referral) !== "queued") continue;
+    const referralOutcome = referralState(referral);
+    const acceptedDestination = referral.destinations.find((addressing) => addressing.state === "accepted");
+    if (referralOutcome !== "queued" && !acceptedDestination) continue;
+    if (referralOutcome === "queued" && !referral.destinations.some(isAwaitingAnswer)) continue;
+    const referralPatient = resolve(referral).patient;
+    if (referralPatient && busy.has(referralPatient.id)) continue;
     const who = person(referral);
     const community = isCommunityReferral(referral);
     const where = community ? `${referral.originSiteCode} Community` : `${referral.originSiteCode} ED`;
     const waited = Math.max(0, now - referral.raisedAt);
-    const sent = referral.destinations.length;
+    const awaiting = referral.destinations.filter(isAwaitingAnswer);
+    const wardCount = awaiting.filter((addressing) => addressing.destination.kind === "psychiatric_ward").length;
+    const edCount = awaiting.filter((addressing) => addressing.destination.kind === "emergency_department").length;
+    const destinationText = wardCount > 0 && edCount > 0
+      ? `${plural(wardCount, "ward")} and ${plural(edCount, "ED")}`
+      : wardCount > 0
+        ? plural(wardCount, "ward")
+        : plural(edCount, "ED");
     rows.push({
       key: referral.id,
       kind: "referral",
-      group: "wait",
+      group: acceptedDestination ? "found" : "wait",
       tier: tierOf(referral.urgency),
       ...who,
       service: referralOriginService(referral.originSiteCode),
       transport: null,
       escort: false,
-      where,
-      whereSub: referralOriginService(referral.originSiteCode),
-      to: `Sent to ${plural(sent, "ward")}`,
-      toSub: "Awaiting answer",
-      next: "Ward to answer",
-      nextWho: "Ward",
+      where: acceptedDestination?.acceptedUnitId
+        ? unitOf.get(acceptedDestination.acceptedUnitId)?.name ?? "Ward"
+        : where,
+      whereSub: acceptedDestination ? "Accepted, awaiting movement" : referralOriginService(referral.originSiteCode),
+      to: acceptedDestination ? "Bed found" : `Sent to ${destinationText}`,
+      toSub: acceptedDestination ? "Awaiting movement" : "Awaiting answer",
+      next: acceptedDestination ? "Movement to arrange" : wardCount > 0 ? "Ward to answer" : "ED to answer",
+      nextWho: acceptedDestination ? "Bed desk" : wardCount > 0 ? "Ward" : "ED",
       glyph: "wait",
       legal: "Not recorded",
       legalSub: "On the referral",
@@ -373,6 +394,8 @@ export function buildCensus(state: {
       });
       continue;
     }
+    const admissionPatient = resolve(admission).patient;
+    if (admissionPatient && busy.has(admissionPatient.id)) continue;
     const who = person(admission);
     const unit = unitOf.get(admission.unitId);
     const past = isPastExpectedDischarge(admission, now);
@@ -395,8 +418,8 @@ export function buildCensus(state: {
       service: null,
       transport: null,
       escort: false,
-      where: unit?.name ?? "Ward not recorded",
-      whereSub: siteName(unit?.siteCode),
+      where: away ? "Emergency department" : unit?.name ?? "Ward not recorded",
+      whereSub: away ? `${unit?.name ?? "Ward"} bed retained` : siteName(unit?.siteCode),
       to:
         edd === null
           ? "No date set"
