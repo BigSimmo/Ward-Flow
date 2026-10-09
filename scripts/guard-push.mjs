@@ -69,12 +69,37 @@ const MAIN_REMOTE_REF = "refs/remotes/origin/main";
 export const WARD_FLOW_IDENTITY_ANCHOR = "e735c1f8d34df005becf720b96752626a4f1dcc8";
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+/** Strip Cursor Cloud / gh credential prefixes so destination checks read the repo, not the token. */
+export function stripGithubCredentialPrefix(remoteUrl) {
+  if (typeof remoteUrl !== "string" || !/^https:\/\//i.test(remoteUrl)) return remoteUrl;
+  // Parse rather than pattern-match: `https://attacker.example?@github.com/...` connects to
+  // attacker.example, and only the URL parser reports the host Git will actually contact.
+  let parsed;
+  try {
+    parsed = new URL(remoteUrl);
+  } catch {
+    return remoteUrl;
+  }
+  if (
+    parsed.protocol !== "https:" ||
+    parsed.hostname !== "github.com" ||
+    parsed.port !== "" ||
+    parsed.search !== "" ||
+    parsed.hash !== "" ||
+    !/^https:\/\/[^@/?#\s]+@github\.com\//i.test(remoteUrl)
+  ) {
+    return remoteUrl;
+  }
+  return `https://github.com${parsed.pathname}`;
+}
+
 /** Canonical HTTPS, scp-style and ssh:// Ward-Flow URLs; shared with the sign-out ownership checks. */
 export function isCanonicalWardFlowRemote(remoteUrl) {
+  const normalized = stripGithubCredentialPrefix(remoteUrl);
   return (
-    typeof remoteUrl === "string" &&
+    typeof normalized === "string" &&
     /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)BigSimmo\/Ward-Flow(?:\.git)?$/i.test(
-      remoteUrl,
+      normalized,
     )
   );
 }
