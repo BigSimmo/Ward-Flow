@@ -24,6 +24,12 @@ import { Sheet } from "@/components/ui/sheet";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Dot, durMinutes } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
+import {
+  APP_THEME_COLORS,
+  readThemeCookie,
+  resolveThemePreference,
+  THEME_STORAGE_KEY,
+} from "@/lib/theme";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -57,6 +63,26 @@ import {
 import { useServiceScope } from "./ward-service-store";
 import { openWardDrawer, closeWardDrawer, subscribeWardMenu } from "./ward-drawer-bus";
 import styles from "./ward-rail.module.css";
+
+function restoreClinicalAppearance() {
+  let stored: string | null = null;
+  try {
+    stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+  } catch {
+    // Fall through to the cookie and then the OS preference.
+  }
+  if (stored !== "light" && stored !== "dark") {
+    stored = readThemeCookie(document.cookie);
+  }
+  const prefersDark = typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const theme = resolveThemePreference(stored, prefersDark);
+  const root = document.documentElement;
+  root.removeAttribute("data-theme");
+  root.classList.toggle("dark", theme === "dark");
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+    meta.setAttribute("content", APP_THEME_COLORS[theme]);
+  });
+}
 
 export type { ServiceBedAlert } from "./ward-service-bed-alerts";
 
@@ -427,12 +453,19 @@ export function WardRail() {
 
   useLayoutEffect(() => {
     syncRootAppearance(appearance);
-    if (appearance !== "auto" || typeof window.matchMedia !== "function") return;
+    if (appearance !== "auto" || typeof window.matchMedia !== "function") {
+      return () => {
+        restoreClinicalAppearance();
+      };
+    }
     // Auto follows the OS live, so both theme layers move together when it changes.
     const query = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => syncRootAppearance("auto");
     query.addEventListener?.("change", onChange);
-    return () => query.removeEventListener?.("change", onChange);
+    return () => {
+      query.removeEventListener?.("change", onChange);
+      restoreClinicalAppearance();
+    };
   }, [appearance]);
 
   useEffect(() => {
