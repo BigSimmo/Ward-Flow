@@ -99,7 +99,7 @@ export function DischargeDayChart({
                 data-weekend={day.weekend || undefined}
                 data-past={day.key === "past" || undefined}
                 aria-pressed={pressed}
-                aria-label={`${day.name}: ${total} expected${day.blocked ? `, ${day.blocked} blocked` : ""}`}
+                aria-label={`${day.name}: ${total} due, ${day.expected} expected${day.blocked ? `, ${day.blocked} blocked` : ""}`}
                 onClick={() => (pressed ? onClear() : onSelect(day.key))}
               >
                 <span className={styles.stack} aria-hidden="true">

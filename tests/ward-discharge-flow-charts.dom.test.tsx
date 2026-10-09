@@ -34,9 +34,9 @@ describe("Discharges charts under the table (direction A)", () => {
     const chart = screen.getByTestId("ward-discharge-day-chart");
     const day = within(chart)
       .getAllByRole("button", { pressed: false })
-      .find((button) => /: [1-9]\d* expected/u.test(button.getAttribute("aria-label") ?? ""));
+      .find((button) => /: [1-9]\d* due/u.test(button.getAttribute("aria-label") ?? ""));
     expect(day).toBeDefined();
-    const expected = Number(/: (\d+) expected/u.exec(day!.getAttribute("aria-label") ?? "")?.[1]);
+    const expected = Number(/: (\d+) due/u.exec(day!.getAttribute("aria-label") ?? "")?.[1]);
     fireEvent.click(day!);
     // A click on a chart moves to the people view.
     expect(screen.getByRole("button", { name: /^Admission records/u })).toHaveAttribute("aria-pressed", "true");
