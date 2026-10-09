@@ -6400,8 +6400,9 @@
   }
 }
 
-/* Phone: Find takes the first row, the tabs and actions wrap onto the rows below so none is
- * hidden off screen. Desktop is unchanged. */
+/* Phone: Home and Decisions take the first row. The tool row wraps below them with Find on its
+ * own full-width line first and the actions after it, so none is hidden off screen. Desktop is
+ * unchanged. */
 @media (max-width: 48rem) {
   .tabBarWrap {
     flex-direction: row;

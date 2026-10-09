@@ -1,6 +1,6 @@
 import { useContext, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { popSheet, pushSheet } from "@/components/ui/sheet-focus";
+import { isTopmostSheet, popSheet, pushSheet } from "@/components/ui/sheet-focus";
 import { Copy, FileText, Printer, X } from "lucide-react";
 import { buttonClass, Card, CardHead, CountBubble, Icon, StatusGlyph, type WfTone } from "@/components/wf";
 import { dayOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
@@ -834,6 +834,8 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
+      // Another overlay opened over the brief owns the keyboard; one Escape closes only that one.
+      if (!isTopmostSheet(sheetId)) return;
       if (event.key === "Escape") {
         onClose();
         return;
@@ -863,7 +865,7 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  }, [onClose, sheetId]);
 
   useEffect(() => {
     if (copyState === "idle") return;

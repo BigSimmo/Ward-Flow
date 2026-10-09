@@ -249,9 +249,12 @@ export function WardHomeTab({
   }
 
   const capacityConfirmed = unit.allocatable.confirmedAt !== undefined;
+  // Done only when the figures were confirmed during this shift; an older confirmation is not.
+  const capacityConfirmedThisShift =
+    unit.allocatable.confirmedAt !== undefined && unit.allocatable.confirmedAt >= currentShiftStartInstant(now);
   const referralsClear = incoming.length === 0;
   const shiftChecks = [
-    capacityConfirmed,
+    capacityConfirmedThisShift,
     morningRollupConfirmed,
     referralsClear,
     localChecks.drugs !== null,
@@ -544,9 +547,6 @@ export function WardHomeTab({
   }
   const laterToday: TodoRow[] = [];
   const doneRows: TodoRow[] = [];
-  // Done only when the figures were confirmed during this shift; an older confirmation is not.
-  const capacityConfirmedThisShift =
-    unit.allocatable.confirmedAt !== undefined && unit.allocatable.confirmedAt >= currentShiftStartInstant(now);
   if (capacityConfirmedThisShift) {
     doneRows.push({
       key: "capacity",

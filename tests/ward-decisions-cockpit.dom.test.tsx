@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { WardDecisionsCockpit } from "@/components/ward-management/ward/ward-decisions-cockpit";
+import { WardDecisionsCockpit, openDecisionCount } from "@/components/ward-management/ward/ward-decisions-cockpit";
 
 import type { Unit } from "@/components/ward-management/ward-model";
 
@@ -137,6 +137,25 @@ describe("ward decisions cockpit", () => {
     fireEvent.click(screen.getByRole("button", { name: "Leave, 14:00–18:00" }));
     expect(screen.getByRole("region", { name: "Leave" })).toHaveTextContent("Bed on leave");
     expect(screen.getAllByText("Nothing due").length).toBeGreaterThan(0);
+  });
+
+  it("counts open decisions once for the tab badge and the heading", () => {
+    const base = { intakes: [], departures: [], rollupOverdue: false, rollupConfirmed: false };
+    expect(openDecisionCount({ ...base, rollupActionable: false })).toBe(0);
+    expect(openDecisionCount({ ...base, rollupActionable: true })).toBe(1);
+    expect(openDecisionCount({ ...base, rollupConfirmed: true, rollupActionable: true })).toBe(0);
+    expect(
+      openDecisionCount({
+        ...base,
+        rollupActionable: false,
+        intakes: [{ id: "i1", title: "A" }],
+        departures: [
+          { id: "d1", title: "B", badge: "Ready" },
+          { id: "d2", title: "C", badge: "Blocked" },
+          { id: "d3", title: "D", badge: "Done" },
+        ],
+      }),
+    ).toBe(3);
   });
 
   it("counts a held-up discharge in the heading as well as its window", () => {

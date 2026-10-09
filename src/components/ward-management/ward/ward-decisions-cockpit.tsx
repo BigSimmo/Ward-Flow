@@ -26,6 +26,31 @@ export interface IntakeDecision {
 }
 
 /**
+ * How many decisions are still open: referrals to answer, discharges ready or held up, and the
+ * morning rollup until it is confirmed (overdue, or due and actionable). Leave rows are for
+ * awareness only and never count. The Decisions tab badge and the cockpit heading both read this,
+ * so they always agree with the windows' own counts.
+ */
+export function openDecisionCount({
+  intakes,
+  departures,
+  rollupOverdue,
+  rollupConfirmed,
+  rollupActionable,
+}: {
+  intakes: readonly IntakeDecision[];
+  departures: readonly DepartureDecision[];
+  rollupOverdue: boolean;
+  rollupConfirmed: boolean;
+  rollupActionable: boolean;
+}): number {
+  const rollupOpen = !rollupConfirmed && (rollupOverdue || rollupActionable) ? 1 : 0;
+  return (
+    intakes.length + departures.filter((row) => row.badge === "Ready" || row.badge === "Blocked").length + rollupOpen
+  );
+}
+
+/**
  * Bed projection for the Departures window. Shown only when the screen supplies it: the cockpit
  * never works out a bed figure of its own.
  */
@@ -403,9 +428,15 @@ function Queue({
 
   const isOpen = (item: DecisionItem) => item.group !== "done" && !item.info;
   const openCount = (id: WindowId) => items[id].filter(isOpen).length;
-  // The heading's total is the windows' own counts added up, so it never says Done beside a window
-  // that still has something to decide.
-  const dueCount = WINDOWS.reduce((total, entry) => total + openCount(entry.id), 0);
+  // The heading's total is the same count the Decisions tab badge shows, and it equals the windows'
+  // own counts added up, so it never says Done beside a window that still has something to decide.
+  const dueCount = openDecisionCount({
+    intakes,
+    departures,
+    rollupOverdue,
+    rollupConfirmed,
+    rollupActionable: onConfirmRollup !== undefined,
+  });
   const windowTone = (id: WindowId): WfTone => {
     const open = items[id].filter(isOpen);
     if (open.length === 0) return "success";

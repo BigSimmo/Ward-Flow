@@ -66,7 +66,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { WardAnswerView } from "./ward-answer-view";
 import styles from "./ward.module.css";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
-import { WardDecisionsCockpit } from "./ward-decisions-cockpit";
+import { WardDecisionsCockpit, openDecisionCount } from "./ward-decisions-cockpit";
 import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon";
 import { WardHomeTab, wardActNowCount, type WardFlowTab, type WardShiftView } from "./ward-home-tab";
 import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
@@ -1295,10 +1295,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     title: resolvePatientIdentity(movement).displayName,
     onAccept: () => handleAcceptInPrinciple(movement.id, unit.id),
   }));
-  const decisionsDue =
-    intakeDecisions.length +
-    departureDecisions.filter((row) => row.badge === "Ready").length +
-    (!isRollupConfirmedToday && morningRollupDeadlinePassed ? 1 : 0);
+  // The same count the Decisions cockpit heading and windows show.
+  const decisionsDue = openDecisionCount({
+    intakes: intakeDecisions,
+    departures: departureDecisions,
+    rollupOverdue: !isRollupConfirmedToday && morningRollupDeadlinePassed,
+    rollupConfirmed: isRollupConfirmedToday,
+    rollupActionable: true,
+  });
   const decisionsDueLabel =
     decisionsDue > 0 ? `${decisionsDue} decisions due this shift` : "No decisions due this shift";
 
