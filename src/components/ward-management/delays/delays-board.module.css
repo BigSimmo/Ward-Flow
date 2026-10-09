@@ -1085,6 +1085,28 @@ button.stat:hover .statV {
   font-size: var(--wf-fs-12);
 }
 
+/* Candidate wards: the reason can be long, so it sits under the name, and the whole list scrolls
+   rather than being cut to a count (shortlistCandidates forbids truncation). */
+.candidates {
+  max-height: 16rem;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.candidates li {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.candidates li > .lg {
+  max-width: 100%;
+}
+
+.candidates small {
+  max-width: none;
+}
+
 .inlineAction {
   color: var(--wf-accent-ink);
   font-size: var(--wf-fs-12);
@@ -1839,6 +1861,11 @@ button.gLaneL:hover {
 /* Print: the global print sheet hides every <button>, but these buttons carry the board's facts
  * (names, group headings, counts, dots), so they are kept. Action-only controls stay hidden. */
 @media print {
+  .candidates {
+    max-height: none;
+    overflow: visible;
+  }
+
   .stat,
   .own,
   .brow,

@@ -64,6 +64,7 @@ import {
   rowEvents,
   runwayBins,
   wardLines,
+  candidateWards,
   wardSummary,
   waitTone,
   type BoardFilters,
@@ -324,6 +325,8 @@ function PersonPanel({
   const silenceReminder = answerSilenceReminder(movement, referrals, now);
   const cleared = isCleared(movement, referrals);
   const lines = wardLines(row, units);
+  const candidates = useMemo(() => candidateWards(movement, units, now), [movement, units, now]);
+  const [unavailableOpen, setUnavailableOpen] = useState(false);
   const pullHolder = units.find((unit) => unit.id === movement.acceptedUnitId);
   const legalForm = movement.legalForm;
 
@@ -484,6 +487,63 @@ function PersonPanel({
               ))}
             </ul>
           )}
+        </div>
+
+        {/* Candidate wards: the coordinator shortlist's own verdicts for the wards not yet asked.
+            Eligible and overridable wards are both actionable, so neither is collapsed or cut to a
+            count (see shortlistCandidates); the list scrolls instead. Wards no reason can buy sit
+            behind a disclosure that states how many, each with the gate that blocks it. */}
+        <div className={styles.sec} data-testid={`delays-candidates-${movement.id}`}>
+          <h4 className={styles.h4r}>
+            Candidate wards
+            <span className={styles.mut}>{`${candidates.offerable.length} could take this person`}</span>
+          </h4>
+          {candidates.offerable.length === 0 ? (
+            <p className={styles.mute}>No other ward could take this person now.</p>
+          ) : (
+            <ul className={`${styles.wards} ${styles.candidates}`} aria-label="Wards that could take this person">
+              {candidates.offerable.map((candidate) => (
+                <li key={candidate.unitId}>
+                  <span className={styles.lg}>
+                    <Glyph tone={candidate.tone} />
+                    <span className={styles.ell}>{candidate.name}</span>
+                  </span>
+                  <small>
+                    {candidate.text}
+                    {candidate.waitlist ? ". In catchment, waitlist for a locked bed" : ""}
+                  </small>
+                </li>
+              ))}
+            </ul>
+          )}
+          {candidates.unavailable.length > 0 ? (
+            <>
+              <button
+                type="button"
+                className={styles.lnk}
+                aria-expanded={unavailableOpen}
+                onClick={() => {
+                  setUnavailableOpen((open) => !open);
+                }}
+                data-testid={`delays-candidates-unavailable-${movement.id}`}
+              >
+                {`${candidates.unavailable.length} ${candidates.unavailable.length === 1 ? "ward cannot" : "wards cannot"} take this person`}
+              </button>
+              {unavailableOpen ? (
+                <ul className={`${styles.wards} ${styles.candidates}`} aria-label="Wards that cannot take this person">
+                  {candidates.unavailable.map((ward) => (
+                    <li key={ward.unitId}>
+                      <span className={styles.lg}>
+                        <Glyph tone="closed" />
+                        <span className={styles.ell}>{ward.name}</span>
+                      </span>
+                      <small>{`Unavailable: ${ward.reason}`}</small>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </>
+          ) : null}
         </div>
 
         {cause === "bed_pull_expired" && pullHolder ? (

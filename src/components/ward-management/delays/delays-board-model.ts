@@ -16,7 +16,13 @@ import {
   SILENT_WARD_FIRST_REMINDER_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
 import { edHealthService } from "@/components/ward-management/ward-service-scope";
-import { stageCopy } from "@/components/ward-management/ward-derivations";
+import {
+  blockingGate,
+  shortlistCandidates,
+  stageCopy,
+  type ShortlistCandidate,
+} from "@/components/ward-management/ward-derivations";
+import { candidateReason } from "@/components/ward-management/ward-eligibility";
 import { edById } from "@/components/ward-management/ward-sites";
 import {
   DELAY_CAUSE_ORDER,
@@ -391,6 +397,57 @@ export function wardLines(row: BoardRow, units: readonly Unit[]): WardLine[] {
     lines.push({ unitId, name: unitName(units, unitId), tone: "neutral", text: "Asked, no answer yet" });
   }
   return lines;
+}
+
+/** A ward this person could still be offered, from the coordinator shortlist's own verdicts. */
+export type CandidateWard = {
+  unitId: string;
+  name: string;
+  tone: "success" | "warning";
+  /** "Eligible now", or the recorded reason an override would need. */
+  text: string;
+  /** In catchment with no free locked bed: kept and marked rather than rejected (WF-01). */
+  waitlist: boolean;
+};
+
+export type CandidateWards = {
+  offerable: CandidateWard[];
+  /** Wards no recorded reason can buy, each with the gate that actually blocks it. */
+  unavailable: { unitId: string; name: string; reason: string }[];
+};
+
+/**
+ * The person panel's candidate wards. Every ward the shortlist judges, in the shortlist's own order,
+ * minus the wards already in the Wards section (accepted, declined or asked). Nothing is cut to a
+ * count: `shortlistCandidates` forbids truncation, and an overridable ward dropped off the end is
+ * the defect that rule exists to prevent. Unavailable wards are kept apart with their blocking gate.
+ */
+export function candidateWards(movement: Movement, units: Unit[], now: Instant): CandidateWards {
+  const asked = new Set<string>([
+    ...movement.referredUnitIds,
+    ...movement.declines.map((decline) => decline.unitId),
+    ...(movement.acceptedUnitId === undefined ? [] : [movement.acceptedUnitId]),
+  ]);
+  const fresh = shortlistCandidates(movement, units, now).filter((candidate) => !asked.has(candidate.unit.id));
+  const offerable = fresh
+    .filter((candidate) => candidate.availability !== "unavailable")
+    .map((candidate: ShortlistCandidate) => ({
+      unitId: candidate.unit.id,
+      name: candidate.unit.name,
+      tone: candidate.verdict.eligible ? ("success" as const) : ("warning" as const),
+      text: candidate.verdict.eligible
+        ? "Eligible now"
+        : `Override needs a reason: ${candidateReason(candidate.verdict)}`,
+      waitlist: candidate.waitlist === true,
+    }));
+  const unavailable = fresh
+    .filter((candidate) => candidate.availability === "unavailable")
+    .map((candidate) => ({
+      unitId: candidate.unit.id,
+      name: candidate.unit.name,
+      reason: blockingGate(candidate.verdict)?.detail ?? candidateReason(candidate.verdict),
+    }));
+  return { offerable, unavailable };
 }
 
 /** One line for the table's Wards column. */

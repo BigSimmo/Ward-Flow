@@ -3,13 +3,19 @@ import { describe, expect, it, vi } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { delayGroups, legalDeadlineMinutes, ownerOf } from "@/components/ward-management/delays/delays-derivations";
-import { OVER_8H, boardRows, isPinned, runwayBins } from "@/components/ward-management/delays/delays-board-model";
+import {
+  OVER_8H,
+  boardRows,
+  candidateWards,
+  isPinned,
+  runwayBins,
+} from "@/components/ward-management/delays/delays-board-model";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { showEveryDelayRow } from "./helpers/delays-interactions";
+import { inspectDelayPerson, showEveryDelayRow } from "./helpers/delays-interactions";
 import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 /**
@@ -154,6 +160,37 @@ describe("the Delays board's data views", () => {
     for (const person of people) {
       expect(within(person.closest("tr")!).getAllByRole("cell"), "a person's row lost its cells").toHaveLength(6);
     }
+  });
+
+  it("the person panel lists candidate wards for someone no ward has been asked about", () => {
+    const fresh = OPEN.find(
+      (movement) =>
+        movement.referredUnitIds.length === 0 &&
+        movement.declines.length === 0 &&
+        movement.acceptedUnitId === undefined,
+    );
+    expect(fresh, "everyone in the fixture has been referred somewhere").toBeDefined();
+    const expected = candidateWards(fresh!, allUnits(), NOW_ANCHOR);
+    expect(expected.offerable.length, "nobody could take this person, so this proves nothing").toBeGreaterThan(0);
+    expect(expected.unavailable.length, "no unavailable ward, so the disclosure is untested").toBeGreaterThan(0);
+
+    renderDelays();
+    const panel = inspectDelayPerson(fresh!.id);
+    expect(within(panel).getByText("No ward asked yet")).toBeInTheDocument();
+    const section = within(panel).getByTestId(`delays-candidates-${fresh!.id}`);
+    const offerable = within(section).getByRole("list", { name: "Wards that could take this person" });
+    // Every offerable ward, none cut to a count.
+    expect(within(offerable).getAllByRole("listitem")).toHaveLength(expected.offerable.length);
+    expect(offerable).toHaveTextContent(expected.offerable[0].name);
+
+    const disclosure = within(section).getByTestId(`delays-candidates-unavailable-${fresh!.id}`);
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(disclosure).toHaveTextContent(`${expected.unavailable.length} ward`);
+    expect(within(section).queryByRole("list", { name: "Wards that cannot take this person" })).toBeNull();
+    fireEvent.click(disclosure);
+    const blocked = within(section).getByRole("list", { name: "Wards that cannot take this person" });
+    expect(within(blocked).getAllByRole("listitem")).toHaveLength(expected.unavailable.length);
+    expect(blocked).toHaveTextContent(`Unavailable: ${expected.unavailable[0].reason}`);
   });
 
   it("a dot on the spread graph opens that person's row and panel", () => {

@@ -11,6 +11,7 @@ import {
   bandCounts,
   boardCatchments,
   boardRows,
+  candidateWards,
   filterRows,
   isPinned,
   ownerTiles,
@@ -22,7 +23,7 @@ import {
   wardSummary,
 } from "@/components/ward-management/delays/delays-board-model";
 import { currentDueSoonThresholds } from "@/components/ward-management/ward-clock";
-import { isOpen } from "@/components/ward-management/ward-derivations";
+import { isOpen, shortlistCandidates } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -169,5 +170,45 @@ describe("the Delays board model", () => {
     expect(spreadX(7 * OVER_24H)).toBeCloseTo(98);
     expect(spreadX(30 * OVER_24H)).toBeCloseTo(98);
     expect(spreadX(2 * OVER_24H)).toBeGreaterThan(86);
+  });
+
+  /**
+   * Candidate wards (owner request, 9 October 2026): the person panel lists the wards still open to
+   * this person from the coordinator shortlist's own verdicts. It must never invent a ward, drop one,
+   * or cut the list to a count, and it must not repeat a ward the Wards section already shows.
+   */
+  it("lists every shortlisted ward not yet asked, in the shortlist's order, with nothing cut", () => {
+    let checked = 0;
+    for (const movement of OPEN) {
+      const asked = new Set([
+        ...movement.referredUnitIds,
+        ...movement.declines.map((decline) => decline.unitId),
+        ...(movement.acceptedUnitId === undefined ? [] : [movement.acceptedUnitId]),
+      ]);
+      const shortlist = shortlistCandidates(movement, UNITS, NOW_ANCHOR).filter((c) => !asked.has(c.unit.id));
+      const { offerable, unavailable } = candidateWards(movement, UNITS, NOW_ANCHOR);
+      const listed = [...offerable.map((ward) => ward.unitId), ...unavailable.map((ward) => ward.unitId)];
+      expect(new Set(listed).size, `${movement.id} lists a ward twice`).toBe(listed.length);
+      for (const id of listed) expect(asked.has(id), `${movement.id} repeats asked ward ${id}`).toBe(false);
+      expect(
+        offerable.map((ward) => ward.unitId),
+        `${movement.id} reordered or dropped an offerable ward`,
+      ).toEqual(shortlist.filter((c) => c.availability !== "unavailable").map((c) => c.unit.id));
+      expect(unavailable.map((ward) => ward.unitId)).toEqual(
+        shortlist.filter((c) => c.availability === "unavailable").map((c) => c.unit.id),
+      );
+      for (const ward of offerable) {
+        const verdict = shortlist.find((c) => c.unit.id === ward.unitId)!.verdict;
+        expect(ward.tone).toBe(verdict.eligible ? "success" : "warning");
+        if (!verdict.eligible) expect(ward.text).toMatch(/^Override needs a reason: \S/u);
+      }
+      for (const ward of unavailable) expect(ward.reason.length).toBeGreaterThan(0);
+      checked += listed.length;
+    }
+    expect(checked, "no candidate ward anywhere in the fixture, so this proves nothing").toBeGreaterThan(0);
+    expect(
+      OPEN.some((movement) => candidateWards(movement, UNITS, NOW_ANCHOR).offerable.some((w) => w.tone === "warning")),
+      "no overridable candidate in the fixture",
+    ).toBe(true);
   });
 });
