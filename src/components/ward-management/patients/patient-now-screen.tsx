@@ -11,7 +11,7 @@ import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward
 import { edById } from "@/components/ward-management/ward-sites";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { Movement, TransportProvider, TransportLegalStatus } from "@/components/ward-management/ward-model";
-import { TRANSPORT_PROVIDERS, ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
+import { ABSENCE_STEP_LABELS, TRANSPORT_PROVIDERS, ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
 import { UploadFormsModal } from "@/components/ward-management/referrals/upload-forms-modal";
 import type { Patient, PatientId } from "@/components/ward-management/ward-patients";
@@ -311,8 +311,12 @@ export function PatientNowScreen({
   // Copy handover summary
   function handleCopySummary() {
     const urgencyLabel = urgencyTier ? `Tier ${urgencyTier}` : "urgency not recorded";
+    const absence = stayLeaveBed?.absentWithoutLeave;
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-    const text = `Ward Flow Handover Summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext Action: ${record.next[0]?.w ?? "Review"}`;
+    const text =
+      mode === "awol" && absence
+        ? `Missing Person Summary — ${displayName}\nAbsent without leave since: ${clock(absence.since)}\nWard: ${resolved.liveAdmission ? units.find((unit) => unit.id === resolved.liveAdmission?.unitId)?.name ?? "Not recorded" : "Not recorded"}\nCompleted steps: ${absence.steps.length > 0 ? absence.steps.map((step) => ABSENCE_STEP_LABELS[step.step]).join(", ") : "None"}`
+        : `Ward Flow Handover Summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext Action: ${record.next[0]?.w ?? "Review"}`;
     navigator.clipboard?.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
