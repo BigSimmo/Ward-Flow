@@ -278,6 +278,16 @@ describe("community treatment order (D-38)", () => {
     });
     expect(ended.patients.find((p) => p.id === patient.id)!.communityTreatmentOrder?.endedAt).toBe(NOW + 2);
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(ended)))).toBe(true);
+
+    // Ended Form 5A stays on the Documents register; a second record must not overwrite it.
+    const afterEnded = wardFlowReducer(ended, {
+      type: "RECORD_COMMUNITY_TREATMENT_ORDER",
+      role: "community",
+      now: NOW + 3,
+      patientId: patient.id,
+    });
+    expect(afterEnded.rejections[0]?.reason).toMatch(/ended Form 5A/);
+    expect(afterEnded.patients.find((p) => p.id === patient.id)!.communityTreatmentOrder?.endedAt).toBe(NOW + 2);
   });
 
   it("refuses a saved order with a lapse time or any field beyond form, time and role", () => {
