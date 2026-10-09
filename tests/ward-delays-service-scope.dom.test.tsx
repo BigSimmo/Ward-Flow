@@ -224,10 +224,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
     expect(listedIds().sort()).toEqual(MEMBER_OPEN.map((movement) => movement.id).sort());
     for (const movement of MEMBER_OPEN) {
       const row = screen.getByTestId(`delays-row-${movement.id}`);
-      expect(row).toHaveAttribute(
-        "data-delays-row-matches",
-        movement.security === "Secure" ? "true" : "false",
-      );
+      expect(row).toHaveAttribute("data-delays-row-matches", movement.security === "Secure" ? "true" : "false");
     }
   });
 

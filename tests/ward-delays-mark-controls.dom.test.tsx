@@ -132,7 +132,11 @@ describe("the Delays board's filters never leave a stale one pressed", () => {
     expect(screen.getByTestId("delays-owner-wards")).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Remove filter Wards" })).toBeInTheDocument();
     expect(shownCount()).toBe(`${lockedWards.length} of ${OPEN.length}`);
-    expect(new Set(listedIds())).toEqual(new Set(lockedWards.map((movement) => movement.id)));
+    // Filters highlight rather than hide (2026-09-07 ruling), so the intersection is the rows marked as matching.
+    const matching = listedIds().filter(
+      (id) => screen.getByTestId(`delays-row-${id}`).getAttribute("data-delays-row-matches") === "true",
+    );
+    expect(new Set(matching)).toEqual(new Set(lockedWards.map((movement) => movement.id)));
   });
 
   it("pressing an owner tile moves the owner filter, so two tiles never read pressed at once", () => {

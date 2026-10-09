@@ -124,9 +124,7 @@ describe("the Delays board's data views", () => {
     renderDelays();
     const lane = within(graphs()).getByRole("button", { name: /^Wards\b/u });
     fireEvent.click(lane);
-    const expected = new Set(
-      ROWS.filter((row) => ownerOf(row.cause) === "wards").map((row) => row.movement.id),
-    );
+    const expected = new Set(ROWS.filter((row) => ownerOf(row.cause) === "wards").map((row) => row.movement.id));
     expectHighlight(expected);
     expect(lane).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("delays-owner-wards"), "the tile and the lane disagree").toHaveAttribute(
@@ -317,7 +315,10 @@ describe("the Delays board's data views", () => {
     expect(screen.getByTestId(`delays-row-${open.movement.id}`)).toHaveAttribute("data-delays-row-matches", "false");
     fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
     showEveryDelayRow();
-    expect(screen.queryByTestId(`delays-detail-${open.movement.id}`), "the panel stayed open after clearing").toBeNull();
+    expect(
+      screen.queryByTestId(`delays-detail-${open.movement.id}`),
+      "the panel stayed open after clearing",
+    ).toBeNull();
   });
 
   it("a headline count with nobody behind it is plain text, never a button that empties the table", () => {

@@ -233,7 +233,7 @@ function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[]; now: I
         due < 0
           ? `Form ${row.movement.legalForm.code} overdue, ${splitDuration(-due)} past deadline`
           : `Form ${row.movement.legalForm.code} due, ${splitDuration(due)} left`,
-      tone: due < 0 ? "danger" : dueTone(due) ?? "warning",
+      tone: due < 0 ? "danger" : (dueTone(due) ?? "warning"),
     });
   // A recorded legal time that has already passed stays on the journey, marked where it fell.
   const passed = row.dueIn !== undefined && row.dueIn < 0 && row.movement.legalForm ? -row.dueIn : undefined;
@@ -860,10 +860,13 @@ export function DelaysBoard({
   const [chosenFilters, setFilters] = useState<BoardFilters>(NO_FILTERS);
   // A blocker filter whose group has emptied (the person was recategorised) stops applying, so no
   // chip names a cause the board no longer shows.
-  const filters =
-    chosenFilters.cause !== null && !rows.some((row) => row.cause === chosenFilters.cause)
-      ? { ...chosenFilters, cause: null }
-      : chosenFilters;
+  const filters = useMemo(
+    () =>
+      chosenFilters.cause !== null && !rows.some((row) => row.cause === chosenFilters.cause)
+        ? { ...chosenFilters, cause: null }
+        : chosenFilters,
+    [chosenFilters, rows],
+  );
   // Clear a stored blocker filter once it stops applying, so a later change cannot bring it back.
   // Adjusting state during render is React's pattern for state derived from changed props.
   if (chosenFilters.cause !== null && !rows.some((row) => row.cause === chosenFilters.cause))
@@ -1111,7 +1114,7 @@ export function DelaysBoard({
   };
 
   const byWait = (a: BoardRow, b: BoardRow) => b.waited - a.waited;
-  let body: ReactNode[] = [];
+  const body: ReactNode[] = [];
   if (!flat) {
     for (const group of groups) {
       const list = rows.filter((row) => row.cause === group.cause).sort(byWait);
