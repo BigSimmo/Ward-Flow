@@ -122,6 +122,17 @@ async function ensureToolsOpen(page: Page) {
     .click();
 }
 
+/**
+ * Ward Hub (9 Oct 2026): the Arrivals tab was folded into the Home tab's Ward flow card. The full
+ * arrivals view still exists and opens from that card's Admissions pane via "All arrivals".
+ */
+async function openAllArrivals(page: Page) {
+  await page.locator("#tabBtn-attn").click();
+  await page.getByRole("radio", { name: /^Admissions/u }).click();
+  await page.getByRole("button", { name: "All arrivals", exact: true }).click();
+  await expect(page.locator("#tab-coming")).toHaveAttribute("data-active", "true");
+}
+
 async function ensureToolsClosed(page: Page) {
   const trigger = page.getByTestId("ward-bar-tools-trigger");
   if ((await trigger.getAttribute("aria-expanded")) === "true") {
@@ -372,7 +383,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // control sits outside the "Update ward figures and bed records" disclosure (unlike the
     // capacity-confirmation and bed-release forms `ui-ward-discharges.spec.ts`/
     // `ui-ward-roles.spec.ts` open first), so no extra click is needed to reach it. ---
-    await page.locator("#tabBtn-coming").click();
+    await openAllArrivals(page);
     const pullButton = wardScreen.getByTestId(`ward-pull-${movementId}`);
     await expect(pullButton).toBeVisible();
     await expect(pullButton).not.toHaveAttribute("aria-disabled", "true");
