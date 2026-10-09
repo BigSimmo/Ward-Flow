@@ -274,18 +274,23 @@ export function HandoverPrintSheet({
     if (column.id === "pt") {
       const rest = text.startsWith(row.name) ? text.slice(row.name.length) : ` ${text}`;
       return (
-        <button
-          type="button"
-          className={styles.rowButton}
-          aria-label={`Open ${row.name} ${row.umrn}`}
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpenPatient(row.id);
-          }}
-        >
-          {marked ? <b>{row.name}</b> : row.name}
-          {rest}
-        </button>
+        <>
+          <span className={styles.printableIdentity}>
+            {marked ? <b>{row.name}</b> : row.name}
+            {rest}
+          </span>
+          <button
+            type="button"
+            className={styles.rowButton}
+            aria-label={`Open ${row.name} ${row.umrn}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenPatient(row.id);
+            }}
+          >
+            Open
+          </button>
+        </>
       );
     }
     if (column.id === "st") {

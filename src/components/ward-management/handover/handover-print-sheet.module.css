@@ -393,6 +393,19 @@
     page-break-after: always;
   }
 
+  /* The global print reset hides headers and buttons; keep sheet metadata and identity text. */
+  .ph {
+    display: flex !important;
+  }
+
+  .printableIdentity {
+    display: inline !important;
+  }
+
+  .rowButton {
+    display: none !important;
+  }
+
   .port {
     height: 1120px;
   }
