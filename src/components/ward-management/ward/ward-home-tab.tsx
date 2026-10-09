@@ -795,7 +795,9 @@ export function WardHomeTab({
                     data-miss={matchesQuery(row) ? undefined : "true"}
                     aria-haspopup="dialog"
                     aria-label={row.accessibleName}
-                    onClick={() => onSelectBed?.(Number(row.bed.bedNumber))}
+                    onClick={() => {
+                      onSelectBed?.(Number(row.bed.bedNumber));
+                    }}
                   >
                     <span className={styles.bedTileTop} aria-hidden="true">
                       <b>{row.number}</b>
@@ -837,7 +839,9 @@ export function WardHomeTab({
                           className={styles.bedTableBed}
                           aria-haspopup="dialog"
                           aria-label={row.accessibleName}
-                          onClick={() => onSelectBed?.(Number(row.bed.bedNumber))}
+                          onClick={() => {
+                            onSelectBed?.(Number(row.bed.bedNumber));
+                          }}
                         >
                           {row.glyph ? <StatusGlyph tone={row.glyph} size={9} /> : <span className={styles.glyphGap} />}
                           {row.number}
@@ -1218,7 +1222,13 @@ export function WardHomeTab({
                   <span>
                     {confirmedOut} confirmed · {heldRows.length} held up
                   </span>
-                  <button type="button" className={styles.keyLink} onClick={() => onOpenDischarges?.()}>
+                  <button
+                    type="button"
+                    className={styles.keyLink}
+                    onClick={() => {
+                      onOpenDischarges?.();
+                    }}
+                  >
                     All discharges
                   </button>
                 </>
