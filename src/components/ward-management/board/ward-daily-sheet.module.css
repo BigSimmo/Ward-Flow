@@ -380,7 +380,19 @@
   }
 }
 
+:global(.ward-daily-sheet-portal) {
+  display: contents;
+}
+
 @media print {
+  body.printing-dialog > *:not(:global(.ward-daily-sheet-portal)) {
+    display: none !important;
+  }
+
+  :global(.ward-daily-sheet-portal) {
+    display: block;
+  }
+
   .scrim {
     position: static;
     display: block;

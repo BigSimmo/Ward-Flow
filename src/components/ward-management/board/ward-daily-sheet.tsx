@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { Copy, FileText, Printer, X } from "lucide-react";
 import { buttonClass, Card, CardHead, CountBubble, Icon, StatusGlyph, type WfTone } from "@/components/wf";
 import { dayOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
@@ -821,6 +822,11 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
   }, []);
 
   useEffect(() => {
+    document.body.classList.add("printing-dialog");
+    return () => document.body.classList.remove("printing-dialog");
+  }, []);
+
+  useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         onClose();
@@ -872,9 +878,10 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
     );
   }
 
-  return (
-    // The scrim is the centring frame; only a click that starts AND ends on the scrim itself closes,
-    // so a text selection dragged out of the brief does not dismiss it.
+  return createPortal(
+    <div className="ward-daily-sheet-portal">
+    {/* The scrim is the centring frame; only a click that starts AND ends on the scrim itself closes,
+    so a text selection dragged out of the brief does not dismiss it. */}
     <div
       className={styles.scrim}
       data-testid="ward-daily-sheet-scrim"
@@ -947,5 +954,7 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
         </div>
       </div>
     </div>
+    </div>,
+    document.body,
   );
 }
