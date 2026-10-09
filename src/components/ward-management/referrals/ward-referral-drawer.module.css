@@ -1163,6 +1163,37 @@
   justify-self: start;
 }
 
+/* Medical clearance checklist: item name left, Done / To follow / Not done right, one row each. */
+.checkList {
+  display: grid;
+  gap: var(--wf-s-2);
+}
+
+.checkList > .radioField > legend {
+  width: auto;
+  margin: 0;
+  line-height: 32px;
+}
+
+.checkList > .radioField > .segmented {
+  clear: none;
+  float: right;
+  width: min(100%, 17rem);
+}
+
+@container referral-sheet (max-width: 30rem) {
+  .checkList > .radioField > legend {
+    width: 100%;
+    line-height: var(--wf-lh-12);
+    margin-bottom: 6px;
+  }
+
+  .checkList > .radioField > .segmented {
+    float: none;
+    width: 100%;
+  }
+}
+
 .segmentedFull {
   width: 100%;
   box-sizing: border-box;

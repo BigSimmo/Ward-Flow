@@ -2,12 +2,14 @@
 
 import {
   Activity,
+  Ambulance,
   BedDouble,
   CheckCircle2,
   ChevronDown,
   Copy,
   Eye,
   FileText,
+  HeartHandshake,
   Hospital,
   Inbox,
   Info,
@@ -18,6 +20,7 @@ import {
   Send,
   Shield,
   Siren,
+  Stethoscope,
   Truck,
   User,
   UserPlus,
@@ -94,11 +97,21 @@ import { discardReferralDraft, keepReferralDraft, readKeptReferralDraft } from "
 import { referralIsbarText, referralLetterText, type ReferralTextInput } from "./referral-letter";
 import { StatusGlyph, type WfTone } from "@/components/wf";
 import {
+  CLEARANCE_CHECKS,
+  CLEARANCE_CHECK_LABELS,
+  CLEARANCE_STATUSES,
+  CLEARANCE_STATUS_LABELS,
+  ED_ARRIVAL_MODES,
+  FIRST_CONTACT_TARGETS,
   REFERRAL_RISK_FLAGS,
   referralContactError,
   referralIntakeError,
+  type ClearanceChecklist,
   type ReferralContact,
   type ReferralIntakeDetails,
+  type ReferralNeeds,
+  clearanceChecklistWords,
+  referralNeedsWords,
 } from "./referral-submission";
 
 /**
@@ -523,6 +536,46 @@ function SelectBox({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** One answer from a short list, as a segmented row. Nothing is chosen until the referrer picks. */
+function Choice<T extends string>({
+  legend,
+  name,
+  options,
+  value,
+  onChange,
+  labels,
+}: {
+  legend: string;
+  name: string;
+  options: readonly T[];
+  value: T | undefined;
+  onChange: (value: T) => void;
+  labels?: Partial<Record<T, string>>;
+}) {
+  return (
+    <fieldset className={styles.radioField}>
+      <legend>{legend}</legend>
+      <div className={styles.segmented}>
+        {options.map((option) => (
+          <label key={option} data-selected={value === option}>
+            <input
+              type="radio"
+              name={name}
+              value={option}
+              checked={value === option}
+              onChange={() => onChange(option)}
+            />
+            {labels?.[option] ?? option}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+const YES_NO = ["Yes", "No"] as const;
+const yesNo = (value: boolean | undefined) => (value === undefined ? undefined : value ? "Yes" : "No");
+
 function CardHead({
   icon: Icon,
   title,
@@ -600,7 +653,20 @@ type KeptDraft = {
   transport: string;
   transitNote: string;
   riskFlags: Record<string, boolean>;
+  clearanceChecks: ClearanceChecklist;
+  communityNeeds: CommunityNeeds;
+  edNeeds: EdNeeds;
 };
+
+type CommunityNeeds = Omit<Extract<ReferralNeeds, { kind: "community" }>, "kind">;
+type EdNeeds = Omit<Extract<ReferralNeeds, { kind: "ed" }>, "kind">;
+
+/** The needs card's answers as the record holds them, for the destination chosen. */
+function needsFor(destination: DrawerCategory, community: CommunityNeeds, ed: EdNeeds): ReferralNeeds | undefined {
+  if (destination === "community") return { kind: "community", ...community };
+  if (destination === "ed") return { kind: "ed", ...ed };
+  return undefined;
+}
 
 /** The pick key for a person: their open movement when they have one, else the record itself. */
 function patientKeyFor(
@@ -758,6 +824,9 @@ function WardReferralDrawerContent({
   const [transport, setTransport] = useState(kept?.transport ?? defaultPatient.transportVal);
   const [transitNote, setTransitNote] = useState(kept?.transitNote ?? defaultPatient.transitNote);
   const [riskFlags, setRiskFlags] = useState<Record<string, boolean>>(kept?.riskFlags ?? defaultPatient.riskFlags);
+  const [clearanceChecks, setClearanceChecks] = useState<ClearanceChecklist>(kept?.clearanceChecks ?? {});
+  const [communityNeeds, setCommunityNeeds] = useState<CommunityNeeds>(kept?.communityNeeds ?? {});
+  const [edNeeds, setEdNeeds] = useState<EdNeeds>(kept?.edNeeds ?? {});
 
   const draftNow: KeptDraft = {
     activePatientKey,
@@ -789,6 +858,9 @@ function WardReferralDrawerContent({
     transport,
     transitNote,
     riskFlags,
+    clearanceChecks,
+    communityNeeds,
+    edNeeds,
   };
   // What the draft looked like on opening. A restored draft is never clean, so closing it asks again.
   const [openingDraft] = useState(() => (kept ? "" : JSON.stringify(draftNow)));
@@ -925,6 +997,9 @@ function WardReferralDrawerContent({
     setTransport(p.transportVal);
     setTransitNote(p.transitNote);
     setRiskFlags(p.riskFlags);
+    setClearanceChecks({});
+    setCommunityNeeds({});
+    setEdNeeds({});
 
     if (onSelectPatient) {
       onSelectPatient(key);
@@ -1136,6 +1211,7 @@ function WardReferralDrawerContent({
       setAttempted((current) => ({ ...current, contact: true }));
       return;
     }
+    const needs = needsFor(destType, communityNeeds, edNeeds);
     const intake: ReferralIntakeDetails = {
       catchment: { teamName: catchmentTeam.trim(), service: catchmentService || undefined, confirmed: true },
       reasonForReferral: doctorNote,
@@ -1158,8 +1234,10 @@ function WardReferralDrawerContent({
       ...(destType === "ward"
         ? {
             arrival: { transport, reference: transitNote, estimatedAt: arrivalEta ? `${arrivalEta}+08:00` : undefined },
+            ...(Object.keys(clearanceChecks).length ? { clearanceChecklist: clearanceChecks } : {}),
           }
         : {}),
+      ...(needs && referralNeedsWords(needs).length ? { needs } : {}),
     };
     const intakeError = referralIntakeError(intake);
     if (intakeError) {
@@ -1262,6 +1340,11 @@ function WardReferralDrawerContent({
       : recipientLabels.length === 1
         ? recipientLabels[0]!.split(" · ").at(-1)!
         : `${recipientLabels.length} chosen`;
+  // Shown only once a ward referral has answered any clearance item.
+  const checksDone =
+    destType === "ward" && Object.keys(clearanceChecks).length
+      ? CLEARANCE_CHECKS.filter((check) => clearanceChecks[check] === "done").length
+      : undefined;
   const readyRows: { label: string; value: string; state: "done" | "follow" | "needed" }[] = [
     { label: "Refer to", value: destination.label, state: "done" },
     {
@@ -1285,15 +1368,18 @@ function WardReferralDrawerContent({
       label: destination.check,
       value: needed.documentation
         ? `${needed.documentation} to answer`
-        : documentation.medical === "no"
-          ? "Clearance to follow"
-          : "Answered",
+        : checksDone !== undefined
+          ? `${checksDone} of ${CLEARANCE_CHECKS.length} done`
+          : documentation.medical === "no"
+            ? "Clearance to follow"
+            : "Answered",
       state: needed.documentation ? "needed" : documentation.medical === "no" ? "follow" : "done",
     },
     { label: "Your contact", value: contactNeeded ? "Needed" : contact.name, state: contactNeeded ? "needed" : "done" },
     { label: destination.places, value: placeRow, state: selectedDestinations.length ? "done" : "needed" },
   ];
   const readyDone = readyRows.filter((row) => row.state !== "needed").length;
+  const draftNeeds = needsFor(destType, communityNeeds, edNeeds);
   const letterInput: ReferralTextInput = {
     destinationPhrase: destination.phrase,
     patientName: patientRecord ? currentPatient.name : "",
@@ -1308,6 +1394,8 @@ function WardReferralDrawerContent({
     history: clinicalSummary,
     risks: recordedFlags.map((key) => RISK_FLAG_LABELS[key]),
     clearance: clearance.label,
+    clearanceChecklist: destType === "ward" ? clearanceChecklistWords(clearanceChecks) : "",
+    needs: draftNeeds ? referralNeedsWords(draftNeeds) : [],
     referrer: { name: contact.name, role: contact.role, phone: contact.phone },
   };
   async function copyText(text: string, done: string) {
@@ -2575,6 +2663,82 @@ function WardReferralDrawerContent({
                       </div>
                     </section>
                   )}
+                  {destType === "community" && (
+                    <section className={styles.refCard} data-testid="ward-referral-needs">
+                      <CardHead icon={HeartHandshake} title="Follow-up needs">
+                        <span className={styles.asideText}>Optional</span>
+                      </CardHead>
+                      <div className={styles.cardBody}>
+                        <div className={styles.fieldGrid}>
+                          <Choice
+                            legend="First contact within"
+                            name={`${sectionId}-first-contact`}
+                            options={FIRST_CONTACT_TARGETS}
+                            value={communityNeeds.firstContact}
+                            onChange={(firstContact) => setCommunityNeeds((n) => ({ ...n, firstContact }))}
+                          />
+                          <Choice
+                            legend="Home visit"
+                            name={`${sectionId}-home-visit`}
+                            options={YES_NO}
+                            value={yesNo(communityNeeds.homeVisit)}
+                            onChange={(v) => setCommunityNeeds((n) => ({ ...n, homeVisit: v === "Yes" }))}
+                          />
+                          <Choice
+                            legend="Interpreter"
+                            name={`${sectionId}-interpreter`}
+                            options={YES_NO}
+                            value={yesNo(communityNeeds.interpreter)}
+                            onChange={(v) => setCommunityNeeds((n) => ({ ...n, interpreter: v === "Yes" }))}
+                          />
+                          <Choice
+                            legend="Contact the carer"
+                            name={`${sectionId}-carer`}
+                            options={YES_NO}
+                            value={yesNo(communityNeeds.carerContact)}
+                            onChange={(v) => setCommunityNeeds((n) => ({ ...n, carerContact: v === "Yes" }))}
+                          />
+                        </div>
+                      </div>
+                    </section>
+                  )}
+                  {destType === "ed" && (
+                    <section className={styles.refCard} data-testid="ward-referral-needs">
+                      <CardHead icon={Ambulance} title="ED needs">
+                        <span className={styles.asideText}>Optional</span>
+                      </CardHead>
+                      <div className={styles.cardBody}>
+                        <div className={styles.fieldGrid}>
+                          <Choice
+                            legend="Coming by"
+                            name={`${sectionId}-coming-by`}
+                            options={ED_ARRIVAL_MODES}
+                            labels={{ "Mental Health Transport": "MH Transport", "Family or carer": "Family" }}
+                            value={edNeeds.comingBy}
+                            onChange={(comingBy) => setEdNeeds((n) => ({ ...n, comingBy }))}
+                          />
+                          <Choice
+                            legend="Medical review before psychiatry"
+                            name={`${sectionId}-medical-first`}
+                            options={YES_NO}
+                            value={yesNo(edNeeds.medicalReviewFirst)}
+                            onChange={(v) => setEdNeeds((n) => ({ ...n, medicalReviewFirst: v === "Yes" }))}
+                          />
+                          <Field label="Expected arrival, AWST" htmlFor={`${sectionId}-ed-arrival`}>
+                            <input
+                              id={`${sectionId}-ed-arrival`}
+                              type="time"
+                              className={styles.fieldInput}
+                              value={edNeeds.expectedArrival ?? ""}
+                              onChange={(e) =>
+                                setEdNeeds((n) => ({ ...n, expectedArrival: e.target.value || undefined }))
+                              }
+                            />
+                          </Field>
+                        </div>
+                      </div>
+                    </section>
+                  )}
                 </div>
 
                 <div
@@ -2582,6 +2746,30 @@ function WardReferralDrawerContent({
                   className={styles.sectionPanel}
                   hidden={previewOpen || confirmationOpen || activeSection !== "documentation"}
                 >
+                  {destType === "ward" && (
+                    <section className={styles.refCard} data-testid="ward-referral-clearance-checklist">
+                      <CardHead icon={Stethoscope} title="Medical clearance checklist">
+                        <span className={styles.chip}>
+                          <span className={styles.mono}>{checksDone ?? 0}</span> of {CLEARANCE_CHECKS.length} done
+                        </span>
+                      </CardHead>
+                      <div className={styles.cardBody} data-tight="true">
+                        <div className={styles.checkList}>
+                          {CLEARANCE_CHECKS.map((check) => (
+                            <Choice
+                              key={check}
+                              legend={CLEARANCE_CHECK_LABELS[check]}
+                              name={`${sectionId}-clearance-${check}`}
+                              options={CLEARANCE_STATUSES}
+                              labels={CLEARANCE_STATUS_LABELS}
+                              value={clearanceChecks[check]}
+                              onChange={(status) => setClearanceChecks((c) => ({ ...c, [check]: status }))}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </section>
+                  )}
                   <DocumentationPanel
                     key={activePatientKey}
                     draft={documentation}

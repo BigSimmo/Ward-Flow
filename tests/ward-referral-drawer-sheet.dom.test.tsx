@@ -5,6 +5,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
 import { referralIsbarText, referralLetterText } from "@/components/ward-management/referrals/referral-letter";
+import { referralIntakeError } from "@/components/ward-management/referrals/referral-submission";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /*
@@ -169,6 +170,74 @@ describe("referral slide-out, option B", () => {
     });
     await waitFor(() => expect(document.body.textContent).toMatch(/Synthetica, Demo/));
     expect(screen.getByLabelText("Age band")).toBeInTheDocument();
+  });
+});
+
+describe("needs cards and the clearance checklist", () => {
+  it("lists six clearance items for a ward referral and counts those done", () => {
+    renderDrawer();
+    fireEvent.click(steps().getByRole("button", { name: "Clearance" }));
+    const checklist = screen.getByTestId("ward-referral-clearance-checklist");
+    expect(within(checklist).getAllByRole("group")).toHaveLength(6);
+    expect(checklist).toHaveTextContent("0 of 6 done");
+    fireEvent.click(within(within(checklist).getByRole("group", { name: "ECG" })).getByLabelText("Done"));
+    fireEvent.click(within(within(checklist).getByRole("group", { name: "Bloods" })).getByLabelText("To follow"));
+    expect(checklist).toHaveTextContent("1 of 6 done");
+    fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
+    expect(screen.getByTestId("ward-referral-letter-preview")).toHaveTextContent(
+      "Clearance checklist: Bloods to follow, ECG done",
+    );
+  });
+
+  it("asks a community team's follow-up needs and puts them in the letter", () => {
+    renderDrawer({ initialDestination: "community" });
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    const needs = screen.getByTestId("ward-referral-needs");
+    expect(needs).toHaveTextContent("Follow-up needs");
+    fireEvent.click(
+      within(within(needs).getByRole("group", { name: "First contact within" })).getByLabelText("72 hours"),
+    );
+    fireEvent.click(within(within(needs).getByRole("group", { name: "Interpreter" })).getByLabelText("Yes"));
+    expect(screen.queryByTestId("ward-referral-clearance-checklist")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
+    expect(screen.getByTestId("ward-referral-letter-preview")).toHaveTextContent(
+      "Needs: First contact within 72 hours, Interpreter needed",
+    );
+  });
+
+  it("asks how the person reaches an ED", () => {
+    renderDrawer({ initialDestination: "ed" });
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    const needs = screen.getByTestId("ward-referral-needs");
+    expect(needs).toHaveTextContent("ED needs");
+    expect(within(needs).getByRole("group", { name: "Coming by" })).toBeInTheDocument();
+    expect(within(needs).getByLabelText("Expected arrival, AWST")).toBeInTheDocument();
+  });
+
+  it("accepts a known checklist and needs, and refuses ones the record does not know", () => {
+    const base = {
+      catchment: { teamName: "Synthetic team", confirmed: true as const },
+      reasonForReferral: "",
+      legalStatus: "Voluntary",
+      riskFlags: [],
+      medicalClearance: { cleared: true },
+      triageAndRampCompleted: true,
+      charts: (["medication", "observation"] as const).map((kind) => ({
+        kind,
+        name: `${kind}.pdf`,
+        mimeType: "application/pdf" as const,
+        sizeBytes: 3,
+        base64: "AAAA",
+      })),
+      additionalDocuments: false,
+      referrer: { name: "A", email: "a@example.invalid", phone: "08 9000 0000", role: "RN", location: "ED" },
+    };
+    expect(referralIntakeError({ ...base, clearanceChecklist: { ecg: "maybe" as never } })).toBe(
+      "Check the medical clearance checklist.",
+    );
+    expect(referralIntakeError({ ...base, needs: { kind: "ed", expectedArrival: "25:00" } })).toBe(
+      "Check the ED needs.",
+    );
   });
 });
 

@@ -23,6 +23,10 @@ export type ReferralTextInput = {
   readonly risks: readonly string[];
   /** "Cleared", "Pending" or "Not answered". */
   readonly clearance: string;
+  /** "Physical examination done, Bloods to follow", or blank when no item was answered. */
+  readonly clearanceChecklist?: string;
+  /** What the receiving team or ED asked to know, one phrase each. */
+  readonly needs?: readonly string[];
   readonly referrer: { readonly name: string; readonly role: string; readonly phone: string };
 };
 
@@ -53,6 +57,8 @@ export function referralLetterText(input: ReferralTextInput, draftedAt: string):
     `Reason: ${value(input.reason)}`,
     `Risks: ${input.risks.length ? input.risks.join(", ") : "None selected"}`,
     `Medical clearance: ${value(input.clearance)}`,
+    ...(input.clearanceChecklist?.trim() ? [`Clearance checklist: ${input.clearanceChecklist.trim()}`] : []),
+    ...(input.needs?.length ? [`Needs: ${input.needs.join(", ")}`] : []),
     "",
     "HISTORY",
     value(input.history),
@@ -71,7 +77,7 @@ export function referralIsbarText(
     `I: ${value(input.patientName)}, ${value(input.ageSex)}, UMRN ${value(input.umrn)}. ${sent.referralId} sent ${sent.sentAt} to ${to}.`,
     `S: ${value(input.urgency)}. ${value(input.legalStatus)}.`,
     `B: ${value(input.history)}`,
-    `A: Risks ${input.risks.length ? input.risks.join(", ").toLowerCase() : "none selected"}. Medical clearance ${value(input.clearance).toLowerCase()}.`,
-    `R: ${value(input.reason)}.${sent.decisionDue ? ` Decision due ${sent.decisionDue}.` : ""}`,
+    `A: Risks ${input.risks.length ? input.risks.join(", ").toLowerCase() : "none selected"}. Medical clearance ${value(input.clearance).toLowerCase()}${input.clearanceChecklist?.trim() ? ` (${input.clearanceChecklist.trim().toLowerCase()})` : ""}.`,
+    `R: ${value(input.reason)}.${input.needs?.length ? ` ${input.needs.join(", ")}.` : ""}${sent.decisionDue ? ` Decision due ${sent.decisionDue}.` : ""}`,
   ].join("\n");
 }
