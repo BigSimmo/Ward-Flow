@@ -1,576 +1,474 @@
-/* ─────────────────────────────────────────────────────────────
-   WARD BED DOSSIER DRAWER — OVERHAULED CLINICAL COMMAND
-   Supports Occupied Inpatient Dossier (4 tabs) and Ready Bed Console
-   ───────────────────────────────────────────────────────────── */
+/* Bed dossier drawer: a glass sheet on the right (a bottom sheet on a phone) holding solid cards.
+   v6 tokens only. No coloured stripes or edges; status is a glyph beside a word. */
 
 .drawerScrim {
   position: fixed;
   inset: 0;
-  background: var(--scrim);
-  backdrop-filter: blur(2px);
+  background: var(--wf-scrim);
   z-index: 80;
   display: none;
-  opacity: 0;
-  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .drawerScrim.show {
   display: block;
-  opacity: 1;
 }
 
 .drawer {
   position: fixed;
-  top: 10px;
-  right: 10px;
-  bottom: 10px;
-  width: min(92vw, 34rem);
-  background: color-mix(in oklab, var(--surface) 84%, transparent);
-  border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
-  border-radius: 28px;
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--surface) 80%, transparent),
-    0 24px 60px -28px rgb(var(--ward-shadow-rgb) / 0.55);
-  backdrop-filter: blur(22px);
-  z-index: 90;
-  transform: translateX(110%);
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(460px, 100vw);
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--wf-glass);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  border-left: 1px solid var(--wf-line-2);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  z-index: 90;
+  transform: translateX(110%);
+  transition: transform var(--wf-m-base, 0.22s) var(--wf-ease, ease);
 }
 
 .drawer.show {
   transform: translateX(0);
 }
 
-/* Header */
+.grab {
+  display: none;
+}
+
+/* Header: badge, name and line, previous, next, close. */
 .drawerHead {
-  position: sticky;
-  top: 0;
-  z-index: 5;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px 12px;
-  background: color-mix(in oklab, var(--surface) 55%, transparent);
-  border-bottom: 1px solid color-mix(in oklab, var(--ink) 6%, transparent);
-  backdrop-filter: blur(16px);
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
   flex-shrink: 0;
 }
 
-.drawerTitleGroup {
-  display: flex;
+.drawerBedBadge {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-width: 0;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  box-shadow: inset 0 1px 0 var(--wf-hl);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* A free bed reads as a dashed outline, the same as its tile. */
+.drawerBedBadgeReady {
+  border-style: dashed;
+  border-color: var(--wf-data-ready);
 }
 
 .drawerHeading {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   min-width: 0;
-}
-
-.drawerKicker {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--muted);
-}
-
-.drawerBedBadge {
-  padding: 3px 8px;
-  border-radius: var(--pill, 999px);
-  background: var(--ink);
-  color: var(--surface);
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.drawerBedBadgeReady {
-  background: var(--good);
-  color: var(--text-inverse);
+  flex: 1 1 auto;
 }
 
 .drawerTitle {
-  font-family: var(--display, sans-serif);
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--ink);
   margin: 0;
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  color: var(--wf-ink-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.drawerCloseBtn {
-  min-height: var(--ward-tap, 40px);
-  padding: 0 14px;
-  border: 1px solid color-mix(in oklab, var(--ink) 10%, transparent);
-  border-radius: var(--pill, 999px);
-  background: color-mix(in oklab, var(--surface) 70%, transparent);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ink-soft);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.12s ease;
-  flex-shrink: 0;
-}
-
-.drawerCloseBtn:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-  border-color: var(--ink);
-}
-
-/* Hero Banner */
-.heroBanner {
-  padding: 14px 18px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.heroStayRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.heroStayCounter {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.heroStayNumber {
-  font-size: 26px;
-  font-weight: 800;
-  font-family: var(--mono);
-  color: var(--ink);
-  line-height: 1;
-}
-
-.heroStayUnit {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.heroStayBandBadge {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: var(--pill, 999px);
-  background: var(--surface);
-  border: 1px solid var(--line-strong, var(--line));
-  color: var(--ink-soft);
-}
-
-.patientName {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--ink);
+.drawerKicker {
   margin: 0;
-}
-
-.chipsRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.chip {
-  font-size: 11.5px;
-  padding: 2px 8px;
-  border-radius: var(--r2, 6px);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  color: var(--ink-soft);
-  font-family: var(--mono);
-}
-
-.chipAccent {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-color: var(--line);
-  font-weight: 600;
-}
-
-.alertBanner {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.alertDanger {
-  background: var(--danger-soft);
-  border: 1px solid var(--danger-border);
-  color: var(--danger);
-}
-
-.alertWarn {
-  background: var(--warn-soft);
-  border: 1px solid var(--warn-border);
-  color: var(--warn);
-}
-
-.alertSuccess {
-  background: var(--good-soft);
-  border: 1px solid var(--good-border);
-  color: var(--good);
-}
-
-/* Command Tabs Nav */
-.tabsNav {
-  display: flex;
-  align-items: center;
-  padding: 0 14px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  gap: 4px;
-  flex-shrink: 0;
-  overflow-x: auto;
-}
-
-.tabBtn {
-  padding: 10px 12px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--muted);
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
   white-space: nowrap;
-  transition: all 0.15s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drawer .pill {
+  border-radius: var(--wf-r-pill);
+}
+
+/* Fact tiles */
+.facts {
   display: flex;
-  align-items: center;
   gap: 6px;
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+  flex-shrink: 0;
 }
 
-.tabBtn:hover {
-  color: var(--ink);
-}
-
-.tabBtn.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-}
-
-:global([data-theme="dark"]) .tabBtn.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-}
-
-/* Drawer Body */
-.drawerBody {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  padding: 12px;
-  gap: 10px;
-  scrollbar-width: thin;
-}
-
-/* Clinical Cards */
-.card {
-  background: color-mix(in oklab, var(--surface) 70%, transparent);
-  border: 1px solid color-mix(in oklab, var(--ink) 7%, transparent);
-  border-radius: 20px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  box-shadow: 0 12px 28px -22px rgb(var(--ward-shadow-rgb) / 0.5);
-}
-
-.cardHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.cardTitle {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* Action Card & Buttons */
-.actionCard {
-  background: color-mix(in oklab, var(--surface) 80%, transparent);
-  border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
-  border-radius: 18px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  box-shadow: 0 10px 24px -20px rgb(var(--ward-shadow-rgb) / 0.45);
-}
-
-.actionLabel {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.selectInput {
-  width: 100%;
-  padding: 8px 12px;
-  border-radius: 16px;
-  border: 1px solid color-mix(in oklab, var(--ink) 10%, transparent);
-  background: color-mix(in oklab, var(--surface) 72%, transparent);
-  color: var(--ink);
-  font-size: 13px;
-  font-family: var(--body);
-}
-
-.btnPrimaryAction {
-  padding: 10px 14px;
-  border-radius: var(--pill, 999px);
-  background: var(--ink);
-  color: var(--surface);
-  border: none;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.btnPrimaryAction:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-.btnGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.blockerEditor {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.btnSecondary {
-  padding: 8px 10px;
-  border-radius: var(--pill, 999px);
-  background: color-mix(in oklab, var(--surface) 80%, transparent);
-  border: 1px solid color-mix(in oklab, var(--ink) 10%, transparent);
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.btnSecondary:hover {
-  background: var(--surface-2);
-  border-color: var(--ink);
-}
-
-/* Fact Lists & DLs */
-.factList {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin: 0;
-}
-
-.factRow {
+.fact {
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
   padding: 8px 10px;
-  border-radius: 14px;
-  background: color-mix(in oklab, var(--surface) 62%, transparent);
+  border-radius: var(--wf-r-md);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
 }
 
-.factRowWide {
-  grid-column: 1 / -1;
+.factLabel {
+  font-size: var(--wf-fs-11);
+  line-height: var(--wf-lh-11);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
 }
 
-@media (max-width: 420px) {
-  .factList {
-    grid-template-columns: 1fr;
-  }
-}
-
-.factDt {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--muted);
-}
-
-.factDd {
-  font-size: 13px;
-  color: var(--ink);
-  font-weight: 500;
-  margin: 0;
-}
-
-.factGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-/* Vital signs disclaimer banner */
-.vitalSignsNotice {
-  padding: 8px 12px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  font-size: 12px;
-  color: var(--muted);
-  font-style: italic;
-}
-
-/* Ready Vacant Bed Console */
-.readyConsoleCard {
-  background: var(--surface);
-  border: 1px solid var(--good-border);
-  border-radius: var(--r1, 8px);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.readyHeaderRow {
+.factValue {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.readyStatusTitle {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--good);
-  margin: 0;
-}
-
-.readyMetaGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.readyMetaItem {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  padding: 8px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.readyMetaLabel {
-  font-size: 10.5px;
-  text-transform: uppercase;
-  color: var(--muted);
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--wf-fs-13);
   font-weight: 600;
 }
 
-.readyMetaVal {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.allocationCandidateCard {
-  background: var(--surface-2);
-  border: 1px solid var(--line-strong, var(--line));
-  border-radius: var(--r2, 6px);
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.candidateTitle {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.candidateSub {
-  font-size: 12px;
-  color: var(--ink-soft);
-}
-
-/* Drawer Foot */
-.drawerFoot {
-  padding: 10px 12px;
-  border-top: 1px solid color-mix(in oklab, var(--ink) 6%, transparent);
-  background: color-mix(in oklab, var(--surface) 55%, transparent);
-  backdrop-filter: blur(16px);
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+.factValue svg {
   flex-shrink: 0;
 }
 
-.footerSyncText {
-  font-size: 11.5px;
-  color: var(--muted);
-  font-family: var(--mono);
+/* Pill tabs */
+.tabsWrap {
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+  flex-shrink: 0;
 }
 
-.footerLink {
-  display: inline-flex;
-  align-items: center;
-  min-height: 36px;
-  padding: 0 14px;
-  border-radius: var(--pill, 999px);
-  background: color-mix(in oklab, var(--accent) 12%, transparent);
-  font-size: 12px;
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: var(--wf-s-1);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  border: 1px solid var(--wf-line);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
+}
+
+.tab {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--wf-ink-1);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.tabOn {
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
   font-weight: 600;
-  color: var(--accent);
-  text-decoration: none;
+  box-shadow:
+    inset 0 1px 0 var(--wf-hl),
+    0 1px 2px color-mix(in srgb, var(--wf-ink-1) 12%, transparent),
+    0 0 0 1px var(--wf-line-ctl);
 }
 
-.footerLink:hover {
-  text-decoration: underline;
+/* Body: scrolls between the fixed head and foot. */
+.drawerBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  scrollbar-width: thin;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+/* Solid cards on the glass */
+.card {
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  box-shadow: var(--wf-e1);
+  min-width: 0;
+}
+
+.cardTitle {
+  margin: 0;
+  padding: 10px 14px 0;
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.cardInner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 14px 12px;
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 0;
+  padding: 8px 14px 12px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.kvDt {
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.kvDd {
+  margin: 0;
+  min-width: 0;
+  font-weight: 500;
+  color: var(--wf-ink-1);
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ell {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.select {
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-12);
+  min-width: 0;
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 12px;
+}
+
+.editor .select {
+  flex: 1 1 auto;
+}
+
+.done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 14px 12px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-success-ink);
+}
+
+.done svg {
+  flex-shrink: 0;
+}
+
+.empty {
+  margin: 0;
+  padding: 8px 14px 12px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Timeline */
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 4px 14px 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline li {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 8.5rem) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 32px;
+  font-size: var(--wf-fs-12);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.timeline li:last-child {
+  border-bottom: 0;
+}
+
+.timelineAt {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Footer: one primary, then the bed's other actions, then the patient page. */
+.drawerFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--wf-line-2);
+  background: var(--wf-glass-thick);
+  flex-shrink: 0;
+}
+
+.footSpacer {
+  flex: 1 1 0;
+}
+
+/* Phone: a bottom sheet about 90vh tall with rounded top corners. */
+@media (max-width: 700px) {
+  .drawer {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 90vh;
+    border: 1px solid var(--wf-line-2);
+    border-bottom: 0;
+    border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+    transform: translateY(110%);
+  }
+
+  .drawer.show {
+    transform: translateY(0);
+  }
+
+  .grab {
+    display: block;
+    flex-shrink: 0;
+    width: 36px;
+    height: 4px;
+    margin: 8px auto 0;
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-line-3);
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .drawerFoot > :global(*) {
+    flex: 1 1 auto;
+  }
+
+  .footSpacer {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    transition: none;
+  }
+}
+
+/* The destination "Record that they have left" will record, always in view above the actions. */
+.footDestination {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.footDestination strong {
+  overflow: hidden;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+}
+
+.footChange {
+  flex: none;
+  height: 24px;
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.footChange:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }

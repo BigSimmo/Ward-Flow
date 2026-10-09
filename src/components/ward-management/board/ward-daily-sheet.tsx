@@ -1,4 +1,6 @@
-import { useContext, useMemo } from "react";
+import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Copy, FileText, Printer, X } from "lucide-react";
+import { buttonClass, Card, CardHead, CountBubble, Icon, StatusGlyph, type WfTone } from "@/components/wf";
 import { dayOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
@@ -16,7 +18,7 @@ import { arrowTargets, sinceYesterday } from "@/components/ward-management/ward-
 import { releaseBand } from "@/components/ward-management/ward-bed-availability";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 
-import styles from "./board.module.css";
+import styles from "./ward-daily-sheet.module.css";
 
 /**
  * THE WARD'S DAILY SHEET — the page a charge nurse carries into the morning meeting.
@@ -185,73 +187,71 @@ export function asAtStamp(now: Instant): { time: string | null; dayNote: string 
   };
 }
 
+const TNUM = { fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' } as const;
+
 /** One person's line on the sheet. Deliberately shorter than the board's own `PersonEntry`: a
  *  handover sheet is read aloud, so each row is the day count, who they are and the one fact that
  *  put them in this group. The full plan — who set the date, how often it moved, whether the ward
- *  confirmed it — is on the "Who is in these beds" pages that follow, and is not repeated here. */
-function SheetPerson({ person, testId }: { person: DailySheetPerson; testId: string }) {
+ *  confirmed it — is on the "Who is in these beds" pages that follow, and is not repeated here.
+ *
+ *  The glyph is the group's shape (StatusGlyph is `aria-hidden`): the heading and the words in the
+ *  row carry the meaning, the shape only lets a scanning eye find the group again. */
+function SheetPerson({ person, testId, tone }: { person: DailySheetPerson; testId: string; tone: WfTone }) {
   return (
-    <li className={styles.sheetRow} data-testid={testId}>
-      <p className={styles.sheetRowLead}>
-        {/* `dayNumber`, never `days`. `days` is a DURATION and is 0 for everybody admitted since
-         *  yesterday; this line is an ORDINAL, and printing the duration here read "Day 0". Both
-         *  arrive as props — this file still derives nothing. See `stayDayNumber`. */}
-        {person.dayNumber === null ? (
-          "No stay yet — not arrived"
-        ) : (
-          <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
-            Day {person.dayNumber}
-          </span>
-        )}
-        {person.bandLabel !== null && (
-          <span
-            className={styles.sheetRowBand}
-            style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
-          >
-            {person.bandLabel}
-          </span>
-        )}
-      </p>
-      {/*
-       * DIRECTLY AFTER THE LEAD, and above everything else about them, because it changes what
-       * every line below it means: a day count, a discharge plan and a diagnosis all read
-       * differently about somebody who is not on the ward.
-       *
-       * Only for the people it applies to — two on a twenty-bed ward — rather than a line on every
-       * row saying "on the ward". This sheet already spills to a second page at 22 and 24 beds, so
-       * a line per occupant would cost a page to state the ordinary case.
-       *
-       * Says the bed is still theirs in the same breath, as the board's panel does: "away" on a
-       * bed sheet otherwise reads as "so the bed is free", and it is not — the ward is holding it.
-       */}
-      {person.awayAtEdHours !== null && (
-        <p className={styles.sheetRowAway} data-testid={`${testId}-away`}>
-          {person.awayAtEdHours === 0
-            ? "At an emergency department — the bed is still theirs."
-            : `At an emergency department, ${person.awayAtEdHours} ${person.awayAtEdHours === 1 ? "hour" : "hours"} — the bed is still theirs.`}
+    <li className={styles.row} data-testid={testId}>
+      <span className={styles.rowGlyph}>
+        <StatusGlyph tone={tone} />
+      </span>
+      <div className={styles.rowText}>
+        <p className={styles.rowLead}>
+          {/* `dayNumber`, never `days`. `days` is a DURATION and is 0 for everybody admitted since
+           *  yesterday; this line is an ORDINAL, and printing the duration here read "Day 0". Both
+           *  arrive as props — this file still derives nothing. See `stayDayNumber`. */}
+          {person.dayNumber === null ? (
+            <span className={styles.rowLeadText}>No stay yet — not arrived</span>
+          ) : (
+            <span className={styles.rowLeadText} style={TNUM}>
+              Day {person.dayNumber}
+            </span>
+          )}
+          {person.bandLabel !== null && (
+            <span className={styles.rowValue} style={TNUM}>
+              {person.bandLabel}
+            </span>
+          )}
         </p>
-      )}
-      <p className={styles.sheetRowLine}>{personFacts(person)}</p>
-      {/* "Tentative" leads the line, as it does on the board's own panel and for the same reason: a
-        reader scanning a column takes the first words of each row, so a qualification at the end is
-        the half that gets skipped — and a broad ICD-10-AM block read as settled is exactly the
-        misreading this field had to be justified against. Both states are stated; silence would
-        leave a reader unable to tell "nobody wrote one down" from "this sheet does not show them". */}
-      <p className={styles.sheetRowLine}>
-        {person.tentativeDiagnosis !== null
-          ? `Tentative diagnosis: ${person.tentativeDiagnosis}.`
-          : "Tentative diagnosis: none recorded."}
-      </p>
-      {person.blockReason !== null && <p className={styles.sheetRowLine}>Held up by: {person.blockReason}.</p>}
-      {person.pastDate && person.expectedDays !== null && (
-        <p className={styles.sheetRowLine}>
-          <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
-            {-person.expectedDays}
-          </span>{" "}
-          day
-          {person.expectedDays === -1 ? "" : "s"} past the ward&apos;s expected date.
+        {/*
+         * DIRECTLY AFTER THE LEAD, and above everything else about them, because it changes what
+         * every line below it means: a day count, a discharge plan and a diagnosis all read
+         * differently about somebody who is not on the ward. Only for the people it applies to, and
+         * it says the bed is still theirs in the same breath: "away" on a bed sheet otherwise reads
+         * as "so the bed is free", and it is not — the ward is holding it.
+         */}
+        {person.awayAtEdHours !== null && (
+          <p className={styles.rowAway} data-testid={`${testId}-away`}>
+            {person.awayAtEdHours === 0
+              ? "At an emergency department — the bed is still theirs."
+              : `At an emergency department, ${person.awayAtEdHours} ${person.awayAtEdHours === 1 ? "hour" : "hours"} — the bed is still theirs.`}
+          </p>
+        )}
+        <p className={styles.rowLine}>{personFacts(person)}</p>
+        {/* "Tentative" leads the line, as it does on the board's own panel and for the same reason: a
+          reader scanning a column takes the first words of each row, so a qualification at the end is
+          the half that gets skipped. Both states are stated; silence would leave a reader unable to
+          tell "nobody wrote one down" from "this sheet does not show them". */}
+        <p className={styles.rowLine}>
+          {person.tentativeDiagnosis !== null
+            ? `Tentative diagnosis: ${person.tentativeDiagnosis}.`
+            : "Tentative diagnosis: none recorded."}
         </p>
-      )}
+        {person.blockReason !== null && <p className={styles.rowLine}>Held up by: {person.blockReason}.</p>}
+        {person.pastDate && person.expectedDays !== null && (
+          <p className={styles.rowLine}>
+            <span style={TNUM}>{-person.expectedDays}</span> day
+            {person.expectedDays === -1 ? "" : "s"} past the ward&apos;s expected date.
+          </p>
+        )}
+      </div>
     </li>
   );
 }
@@ -265,6 +265,7 @@ function SheetGroup({
   testId,
   emptyText,
   people,
+  tone,
   note,
 }: {
   heading: string;
@@ -272,37 +273,63 @@ function SheetGroup({
   testId: string;
   emptyText: string;
   people: readonly DailySheetPerson[];
+  tone: WfTone;
   note?: string;
 }) {
   return (
-    <section className={styles.sheetGroup} aria-labelledby={headingId} data-testid={testId}>
-      <h3 id={headingId} className={styles.sheetGroupHeading}>
-        {heading}
-      </h3>
+    <Card className={styles.group} aria-labelledby={headingId} data-testid={testId}>
+      <CardHead
+        level={3}
+        eyebrow
+        id={headingId}
+        title={heading}
+        meta={<CountBubble n={people.length} />}
+        className={styles.groupHead}
+      />
       <p
-        className={styles.sheetGroupCount}
+        className={people.length === 0 ? styles.empty : styles.visuallyHidden}
         data-testid={`${testId}-count`}
-        style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
+        style={TNUM}
       >
         {people.length === 0 ? (
           emptyText
         ) : (
           <>
-            <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>{people.length}</span>{" "}
-            on this ward.
+            <span style={TNUM}>{people.length}</span> on this ward.
           </>
         )}
       </p>
       {people.length > 0 && (
-        <ol className={styles.sheetList}>
+        <ol className={styles.rows}>
           {people.map((person) => (
-            <SheetPerson key={person.key} person={person} testId={`${testId}-${person.key}`} />
+            <SheetPerson key={person.key} person={person} tone={tone} testId={`${testId}-${person.key}`} />
           ))}
         </ol>
       )}
-      {note !== undefined && <p className={styles.sheetNote}>{note}</p>}
-    </section>
+      {note !== undefined && <p className={styles.note}>{note}</p>}
+    </Card>
   );
+}
+
+/** One figure tile. The label sits after a space so the tile's text reads as a phrase
+ *  ("3 left this ward") to a screen reader, a copy and the tests; CSS capitalises it on screen. */
+function FigureTile({ value, label, testId }: { value: number; label: string; testId?: string }) {
+  return (
+    <div className={styles.tile} data-testid={testId}>
+      <strong className={styles.tileValue} style={TNUM}>
+        {value}
+      </strong>{" "}
+      <span className={styles.tileLabel} title={label}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+/** The going-out tile names its basis in words, exactly as the card below does: "4 beds" without
+ *  "confirmed" or "expected" beside it is two different claims sharing a number. */
+function outgoingTileLabel(basis: string): string {
+  return /\s*today$/iu.test(basis) ? `${basis.replace(/\s*today$/iu, "")} free today` : `${basis} to free`;
 }
 
 export type WardDailySheetProps = {
@@ -329,6 +356,13 @@ export type WardDailySheetProps = {
   /** Optional interactive print trigger callback */
   onPrint?: () => void;
   onClose?: () => void;
+  /**
+   * Rendered inside a modal body whose header already carries the title and the "as at" stamp.
+   * The sheet then drops its own visible heading and intro (the heading stays for assistive
+   * technology) and its panel edge. Defaults to true when `onClose` is passed — the ward page's
+   * modal — and false on the board, where the sheet is its own printed page.
+   */
+  embedded?: boolean;
 };
 
 /**
@@ -343,7 +377,8 @@ export type WardDailySheetProps = {
  * Nothing here is a control: a sheet is read, not operated, and the board is where anything is
  * done — so there is no button on this component at all, which is also why the global print reset
  * (`header, nav, button { display: none !important }`) can take nothing away from it. That reset is
- * why the sheet is a `<section>` and its title an `<h2>`, never a `<header>`.
+ * why the sheet is a `<section>` and its title an `<h2>`, never a `<header>`. The dialog's Copy,
+ * Print and Close live in `WardDailySheetDialog`, outside this section.
  */
 /**
  * The person facts line — sex and home region — in the ONE place both renderings read it.
@@ -378,7 +413,10 @@ export function WardDailySheet({
   shiftTimestamp,
   unit,
   onPrint,
+  onClose,
+  embedded,
 }: WardDailySheetProps) {
+  const isEmbedded = embedded ?? onClose !== undefined;
   const currentNow = now ?? 0;
   // Prefer the provider's live admissions when this sheet is opened from ward-screen's unit-only
   // path; the frozen seed is only a last resort for isolated renders without a provider.
@@ -467,153 +505,165 @@ export function WardDailySheet({
   return (
     <section
       id="ward-daily-sheet"
-      className={styles.sheet}
+      className={`${styles.sheet} ${isEmbedded ? styles.embedded : styles.standalone}`}
       aria-labelledby="ward-daily-sheet-heading"
       data-testid="ward-daily-sheet"
-      style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
+      style={TNUM}
     >
-      <h2 id="ward-daily-sheet-heading" className={styles.sheetHeading}>
+      <h2 id="ward-daily-sheet-heading" className={isEmbedded ? styles.visuallyHidden : styles.heading}>
         Shift brief
       </h2>
-      <p className={styles.sheetIntro}>Live at the moment stamped above. Nothing here is held from an earlier hour.</p>
+      {isEmbedded ? null : (
+        <p className={styles.intro}>Live at the moment stamped above. Nothing here is held from an earlier hour.</p>
+      )}
 
-      {resolvedTimestamp ? (
-        <p
-          className={styles.sheetNote}
-          data-testid="ward-daily-sheet-shift-timestamp"
-          style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
-        >
-          Shift timestamp:{" "}
-          <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
-            {resolvedTimestamp}
-          </span>
+      {resolvedTimestamp && !isEmbedded ? (
+        <p className={styles.stamp} data-testid="ward-daily-sheet-shift-timestamp" style={TNUM}>
+          Shift timestamp: <span style={TNUM}>{resolvedTimestamp}</span>
         </p>
       ) : null}
 
-      <p
-        className={styles.sheetSince}
-        data-testid="ward-daily-sheet-since"
-        style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
-      >
-        <span>
-          <strong>{resolvedMovement.discharged}</strong> left this ward
-        </span>
-        <span>
-          <strong>{resolvedMovement.pulled}</strong> bed{resolvedMovement.pulled === 1 ? "" : "s"} given away
-        </span>
-        <span>
-          <strong>{resolvedMovement.datesMoved}</strong> expected date{resolvedMovement.datesMoved === 1 ? "" : "s"}{" "}
-          moved
-        </span>
-      </p>
+      {/* FIGURE TILES. Every value is a prop or the count of a row list the board already built;
+        nothing here is arithmetic. The three since-yesterday tiles keep their test id on a wrapper
+        that takes no box, so the line still reads "3 left this ward" end to end. */}
+      <div className={styles.tiles}>
+        <FigureTile value={resolvedOutgoingCount} label={outgoingTileLabel(resolvedOutgoingBasis)} />
+        <FigureTile value={resolvedIncomingPulled} label="pulled" />
+        <FigureTile value={resolvedIncomingWaitlisted} label="waiting, no bed" />
+        <div className={styles.tileGroup} data-testid="ward-daily-sheet-since" style={TNUM}>
+          <FigureTile value={resolvedMovement.discharged} label="left this ward" />
+          <FigureTile
+            value={resolvedMovement.pulled}
+            label={`bed${resolvedMovement.pulled === 1 ? "" : "s"} given away`}
+          />
+          <FigureTile
+            value={resolvedMovement.datesMoved}
+            label={`expected date${resolvedMovement.datesMoved === 1 ? "" : "s"} moved`}
+          />
+        </div>
+      </div>
 
-      <div className={styles.sheetGroups}>
+      <div className={styles.groups}>
         {/* WHO CAME IN. The two states are kept apart on the sheet exactly as they are on the board:
           a pulled bed is already gone from this ward's count while a waitlisted person holds
           nothing, and one undifferentiated "incoming" number would let a meeting plan against a bed
           that is already spoken for. */}
-        <section
-          className={styles.sheetGroup}
-          aria-labelledby="ward-daily-sheet-in-heading"
-          data-testid="ward-daily-sheet-in"
-        >
-          <h3 id="ward-daily-sheet-in-heading" className={styles.sheetGroupHeading}>
-            Who came in
-          </h3>
-          <p
-            className={styles.sheetGroupCount}
-            data-testid="ward-daily-sheet-in-count"
-            style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
-          >
+        <Card className={styles.group} aria-labelledby="ward-daily-sheet-in-heading" data-testid="ward-daily-sheet-in">
+          <CardHead
+            level={3}
+            eyebrow
+            id="ward-daily-sheet-in-heading"
+            title="Who came in"
+            meta={<CountBubble n={incomingTotal} />}
+            className={styles.groupHead}
+          />
+          <div data-testid="ward-daily-sheet-in-count" style={TNUM}>
             {incomingTotal === 0 ? (
-              "Nobody is recorded as coming in to this ward."
+              <p className={styles.empty}>Nobody is recorded as coming in to this ward.</p>
             ) : (
-              <>
-                <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
-                  {incomingTotal}
-                </span>{" "}
-                coming in:{" "}
-                <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
-                  {resolvedIncomingPulled}
-                </span>{" "}
-                with the bed already given away,{" "}
-                <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
-                  {resolvedIncomingWaitlisted}
-                </span>{" "}
-                waiting with no bed given.
-              </>
+              <ul className={styles.rows}>
+                <li className={styles.row}>
+                  <span className={styles.rowGlyph}>
+                    <StatusGlyph tone="info" />
+                  </span>
+                  <p className={styles.rowLead}>
+                    <span className={styles.rowLeadText}>Bed already given away</span>{" "}
+                    <span className={styles.rowValue} style={TNUM}>
+                      {resolvedIncomingPulled}
+                    </span>
+                  </p>
+                </li>
+                <li className={styles.row}>
+                  <span className={styles.rowGlyph}>
+                    <StatusGlyph tone="neutral" />
+                  </span>
+                  <p className={styles.rowLead}>
+                    <span className={styles.rowLeadText}>Waiting with no bed given</span>{" "}
+                    <span className={styles.rowValue} style={TNUM}>
+                      {resolvedIncomingWaitlisted}
+                    </span>
+                  </p>
+                </li>
+              </ul>
             )}
-          </p>
-          <p className={styles.sheetNote}>
+          </div>
+          <p className={styles.note}>
             No arrival time is shown: the record holds when a bed was given away, and nothing about when anybody will
             get here.
           </p>
-        </section>
+        </Card>
 
         {/* WHO IS GOING. Beds first — the figure the ward is judged on — then where the people in
           these beds are expected to head, which is the part a community team is waiting for. */}
-        <section
-          className={styles.sheetGroup}
+        <Card
+          className={styles.group}
           aria-labelledby="ward-daily-sheet-out-heading"
           data-testid="ward-daily-sheet-out"
         >
-          <h3 id="ward-daily-sheet-out-heading" className={styles.sheetGroupHeading}>
-            Who is going
-          </h3>
-          {/* The basis is named in WORDS, from the same label the board's toggle prints, because a
-            sheet has no toggle on it and "4 beds" without "confirmed" or "expected" is two
-            different claims sharing a number. */}
-          <p
-            className={styles.sheetGroupCount}
-            data-testid="ward-daily-sheet-out-count"
-            style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
-          >
-            {resolvedOutgoingBasis}:{" "}
-            <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
-              {resolvedOutgoingCount}
-            </span>{" "}
-            bed
-            {resolvedOutgoingCount === 1 ? "" : "s"} expected to free today.
-          </p>
+          <CardHead
+            level={3}
+            eyebrow
+            id="ward-daily-sheet-out-heading"
+            title="Who is going"
+            meta={<CountBubble n={resolvedOutgoingCount} />}
+            className={styles.groupHead}
+          />
+          <ul className={styles.rows}>
+            {/* The basis is named in WORDS, from the same label the board's toggle prints, because a
+              sheet has no toggle on it and "4 beds" without "confirmed" or "expected" is two
+              different claims sharing a number. */}
+            <li className={styles.row}>
+              <span className={styles.rowGlyph}>
+                <StatusGlyph tone="success" />
+              </span>
+              <p className={styles.rowLead} data-testid="ward-daily-sheet-out-count" style={TNUM}>
+                <span className={styles.rowLeadText}>
+                  {resolvedOutgoingBasis}: <span style={TNUM}>{resolvedOutgoingCount}</span> bed
+                  {resolvedOutgoingCount === 1 ? "" : "s"} expected to free today.
+                </span>
+              </p>
+            </li>
+          </ul>
           {resolvedDestinations.length === 0 ? (
-            <p className={styles.sheetRowLine}>
-              Nobody in these beds has an expected date inside the board&apos;s window.
-            </p>
+            <p className={styles.empty}>Nobody in these beds has an expected date inside the board&apos;s window.</p>
           ) : (
-            <ul className={styles.sheetDestinations} data-testid="ward-daily-sheet-destinations">
+            <ul className={styles.rows} data-testid="ward-daily-sheet-destinations">
               {resolvedDestinations.map((target) => (
                 <li
                   key={target.region}
-                  className={styles.sheetRowLine}
+                  className={styles.row}
                   data-testid={`ward-daily-sheet-destination-${target.region}`}
-                  style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}
+                  style={TNUM}
                 >
-                  {target.region}:{" "}
-                  <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
-                    {target.count}
-                  </span>{" "}
-                  {target.count === 1 ? "person" : "people"}, soonest{" "}
-                  {target.nearestDays === 0 ? (
-                    "due now or overdue"
-                  ) : (
-                    <>
-                      in{" "}
-                      <span style={{ fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1' }}>
-                        {target.nearestDays}
-                      </span>{" "}
-                      day
-                      {target.nearestDays === 1 ? "" : "s"}
-                    </>
-                  )}
+                  <span className={styles.rowGlyph}>
+                    <StatusGlyph tone="neutral" />
+                  </span>
+                  <span className={styles.rowText}>
+                    <span className={`${styles.rowLead} ${styles.rowLeadText}`}>
+                      {target.region}
+                      <span className={styles.visuallyHidden}>: </span>
+                    </span>
+                    <span className={styles.rowLine} style={{ display: "block" }}>
+                      <span style={TNUM}>{target.count}</span> {target.count === 1 ? "person" : "people"}, soonest{" "}
+                      {target.nearestDays === 0 ? (
+                        "due now or overdue"
+                      ) : (
+                        <>
+                          in <span style={TNUM}>{target.nearestDays}</span> day
+                          {target.nearestDays === 1 ? "" : "s"}
+                        </>
+                      )}
+                    </span>
+                  </span>
                 </li>
               ))}
             </ul>
           )}
-          <p className={styles.sheetNote}>
+          <p className={styles.note}>
             Beds are not people: a bed release records nothing about who is leaving. The destinations above are where
             the people currently in these beds are expected to head.
           </p>
-        </section>
+        </Card>
 
         <SheetGroup
           heading="Who is stuck"
@@ -621,6 +671,7 @@ export function WardDailySheet({
           testId="ward-daily-sheet-stuck"
           emptyText="Nobody on this ward is recorded as held up."
           people={groups.heldUp}
+          tone="danger"
           note="Held-up reasons are about the BED, from a fixed list. An absent reason is silence, never a finding that nothing is outstanding."
         />
 
@@ -630,6 +681,7 @@ export function WardDailySheet({
           testId="ward-daily-sheet-overdue"
           emptyText="Nobody on this ward is past the ward's own expected date."
           people={groups.overdue}
+          tone="warning"
           note="The expected date is the ward's own revisable plan. It carries no legal or contractual weight, and being past it is not a failure of anything."
         />
 
@@ -639,65 +691,48 @@ export function WardDailySheet({
           testId="ward-daily-sheet-no-date"
           emptyText="Everybody in a bed on this ward has an expected date."
           people={groups.noDate}
+          tone="neutral"
           note="An absent date means nobody has set one. It never reads as a plan to stay, and the system never guesses one."
         />
-      </div>
 
-      {/*
-       * OFF THE WARD — A LINE, NOT A COLUMN. Owner, 2026-08-30: "Remove the away column."
-       *
-       * **The column goes and the FACT stays, and that is not over-caution.** Measured before
-       * changing it: of the two people seeded away, one has an ordinary discharge date and no
-       * blocker, so they appear in NONE of the four groups above. Deleting the group outright
-       * removes them from the printed sheet entirely — and a patient silently absent from the
-       * sheet that is read aloud at handover is the one failure nobody in the room can see. An
-       * unwanted line, by contrast, costs a line and is deleted in seconds.
-       *
-       * So it stops being a sixth grid cell and becomes one sentence under the grid. The reading
-       * order the owner approved is untouched, the page cost drops from a column to a line, and
-       * the handover can still answer "and where is she?".
-       *
-       * Says the bed is still theirs, as every other rendering of this fact does: "off the ward"
-       * on a bed sheet otherwise reads as "so the bed is free", and it is not.
-       */}
-      <p className={styles.sheetAwayLine} data-testid="ward-daily-sheet-away">
-        <strong>Off the ward:</strong>{" "}
-        {groups.awayFromWard.length === 0
-          ? "none."
-          : `${groups.awayFromWard
-              .map((person) => personFacts(person))
-              .join("; ")} — at an emergency department. The bed stays theirs.`}
-      </p>
+        {/*
+         * OFF THE WARD — A LINE, NOT A GROUP. Owner, 2026-08-30: "Remove the away column."
+         *
+         * **The column goes and the FACT stays, and that is not over-caution.** Of the two people
+         * seeded away, one has an ordinary discharge date and no blocker, so they appear in NONE of
+         * the groups above. Deleting the line removes them from the printed sheet entirely — and a
+         * patient silently absent from the sheet that is read aloud at handover is the one failure
+         * nobody in the room can see.
+         *
+         * It flows last in the card columns as one short card, a sibling AFTER every group and never
+         * nested inside one (tests/ward-daily-sheet-placement.dom.test.tsx). It carries no heading of
+         * its own, so D19's five-heading reading order is untouched. Says the bed is still theirs, as
+         * every other rendering of this fact does.
+         */}
+        <p className={styles.awayCard} data-testid="ward-daily-sheet-away">
+          <strong>Off the ward:</strong>{" "}
+          {groups.awayFromWard.length === 0
+            ? "none."
+            : `${groups.awayFromWard
+                .map((person) => personFacts(person))
+                .join("; ")} — at an emergency department. The bed stays theirs.`}
+        </p>
+      </div>
 
       {/* The honest limit of the sheet, on the sheet. D10's editable half — the ward's one-minute
         update — is not here, and its absence must not read as "there is nothing to update". */}
-      <p className={styles.sheetNote} data-testid="ward-daily-sheet-limits">
+      <p className={styles.footnote} data-testid="ward-daily-sheet-limits">
         This sheet is read-only. Updating a discharge date, or confirming that nothing has changed, is not done from
         here.
       </p>
 
       {onPrint ? (
-        <div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem" }}>
+        <div className={styles.printRow}>
           <button
             type="button"
             onClick={onPrint}
             data-testid="ward-daily-sheet-print"
-            style={{
-              minHeight: "var(--ward-tap, 48px)",
-              minWidth: "var(--ward-tap, 48px)",
-              padding: "0.5rem 1rem",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "var(--radius-md, 0.375rem)",
-              border: "1px solid var(--line-strong, var(--line, currentColor))",
-              background: "var(--surface, Canvas)",
-              color: "var(--ink, CanvasText)",
-              fontVariantNumeric: "tabular-nums",
-              fontFeatureSettings: '"tnum" 1',
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
+            className={buttonClass({ variant: "sec", size: "sm" })}
           >
             Print daily sheet
           </button>
@@ -731,5 +766,186 @@ export function WardDailySheet({
         }
       `}</style>
     </section>
+  );
+}
+
+export type WardDailySheetDialogProps = WardDailySheetProps & {
+  onClose: () => void;
+};
+
+const subscribeNever = () => () => {};
+const clipboardAvailable = () =>
+  typeof navigator !== "undefined" && typeof navigator.clipboard?.writeText === "function";
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * THE SHIFT BRIEF AS A DIALOG — the ward page's "Shift brief" button.
+ *
+ * A centred glass dialog over a scrim on desktop and a full-screen solid sheet on a phone. It adds
+ * the chrome the sheet itself must never carry (Copy, Print, Close — the sheet holds no control, see
+ * `WardDailySheet`) and nothing else: every figure is still the sheet's, from the same props.
+ *
+ * Rendered in-tree, never through a portal: portalled content leaves the shell's print reset
+ * (tests/ward-shell-print-ancestor.test.ts), and this dialog's job includes being printed.
+ *
+ * - Escape and the scrim close it; Tab stays inside it; focus returns to the opener on close.
+ * - Copy writes the brief's own rendered text to the clipboard. It is offered only where the
+ *   clipboard API exists, and only on desktop (CSS hides it on a phone).
+ * - Print is `window.print()`, the ward page's existing behaviour.
+ * - The stamp reads the SAME instant the figures read (DB-12) and prints no calendar date
+ *   (see `asAtStamp`): "day N of this demonstration", never a weekday or a month.
+ */
+export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetDialogProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const scrimPressRef = useRef(false);
+  // Read on the client only; the server snapshot says no clipboard, so nothing is offered blind.
+  const canCopy = useSyncExternalStore(subscribeNever, clipboardAvailable, () => false);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const wardName = sheetProps.unit?.name ?? null;
+  const title = wardName === null ? "Shift brief" : `${wardName} shift brief`;
+  const stamp = sheetProps.now !== undefined ? asAtStamp(sheetProps.now) : null;
+  const stampLine =
+    stamp === null || stamp.time === null
+      ? null
+      : [`As at ${stamp.time}`, stamp.dayNote, sheetProps.shiftTimestamp ?? null].filter(Boolean).join(" · ");
+
+  // Focus moves into the dialog on open and returns to whatever opened it on close.
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    panelRef.current?.focus();
+    return () => {
+      if (opener && opener.isConnected) opener.focus();
+    };
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || panelRef.current === null) return;
+      const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+        (element) => element.offsetParent !== null || element === document.activeElement,
+      );
+      if (focusable.length === 0) {
+        event.preventDefault();
+        panelRef.current.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (!panelRef.current.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && (active === first || active === panelRef.current)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (copyState === "idle") return;
+    const timer = window.setTimeout(() => setCopyState("idle"), 2000);
+    return () => window.clearTimeout(timer);
+  }, [copyState]);
+
+  function copyBrief() {
+    const sheet = panelRef.current?.querySelector<HTMLElement>('[data-testid="ward-daily-sheet"]');
+    if (!sheet || typeof navigator.clipboard?.writeText !== "function") {
+      setCopyState("failed");
+      return;
+    }
+    const text = [title, stampLine, sheet.innerText.trim()].filter(Boolean).join("\n\n");
+    navigator.clipboard.writeText(text).then(
+      () => setCopyState("copied"),
+      () => setCopyState("failed"),
+    );
+  }
+
+  return (
+    // The scrim is the centring frame; only a click that starts AND ends on the scrim itself closes,
+    // so a text selection dragged out of the brief does not dismiss it.
+    <div
+      className={styles.scrim}
+      data-testid="ward-daily-sheet-scrim"
+      onPointerDown={(event) => {
+        scrimPressRef.current = event.target === event.currentTarget;
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget && scrimPressRef.current) onClose();
+        scrimPressRef.current = false;
+      }}
+    >
+      <div
+        ref={panelRef}
+        className={styles.dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ward-daily-sheet-dialog-title"
+        tabIndex={-1}
+        data-testid="ward-daily-sheet-modal"
+      >
+        <div className={styles.dialogHead}>
+          <Icon icon={FileText} size={20} className={styles.dialogIcon} />
+          <div className={styles.dialogTitleWrap}>
+            <h2 id="ward-daily-sheet-dialog-title" className={styles.dialogTitle}>
+              {title}
+            </h2>
+            {stampLine ? (
+              <span className={styles.dialogStamp} data-testid="ward-daily-sheet-dialog-stamp" style={TNUM}>
+                {stampLine}
+              </span>
+            ) : null}
+          </div>
+          <div className={styles.dialogActions}>
+            {canCopy ? (
+              <button
+                type="button"
+                className={buttonClass({ variant: "ghost", size: "sm", className: styles.copyButton })}
+                onClick={copyBrief}
+                data-testid="ward-daily-sheet-copy"
+              >
+                <Icon icon={Copy} size={14} />
+                <span aria-live="polite">
+                  {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy"}
+                </span>
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className={buttonClass({ variant: "sec", size: "sm" })}
+              onClick={() => (sheetProps.onPrint ? sheetProps.onPrint() : window.print())}
+              aria-label="Print shift brief"
+              data-testid="ward-daily-sheet-print"
+            >
+              <Icon icon={Printer} size={14} />
+              <span>Print</span>
+            </button>
+            <button
+              type="button"
+              className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true })}
+              onClick={onClose}
+              aria-label="Close shift brief"
+              data-testid="ward-daily-sheet-close"
+            >
+              <Icon icon={X} size={16} />
+            </button>
+          </div>
+        </div>
+        <div className={styles.dialogBody}>
+          <WardDailySheet {...sheetProps} onPrint={undefined} embedded />
+        </div>
+      </div>
+    </div>
   );
 }

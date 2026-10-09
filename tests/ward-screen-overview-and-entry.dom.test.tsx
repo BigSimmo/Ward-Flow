@@ -205,15 +205,13 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(screen.queryByRole("link", { name: "Bed board" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Live Capacity Telemetry" })).toBeInTheDocument();
 
-    // Operational Tabs exist
-    const bedBoardTab = screen.getByRole("tab", { name: /Bed Board & Roster/i });
-    expect(bedBoardTab).toBeInTheDocument();
-    expect(bedBoardTab).toHaveAttribute("aria-selected", "false");
-
-    fireEvent.click(bedBoardTab);
-
-    // Bed Board tab is now active
-    expect(bedBoardTab).toHaveAttribute("aria-selected", "true");
+    // Ward Hub (9 Oct 2026): the full bed list is no longer a tab; Every bed opens it from Home.
+    expect(screen.queryByRole("tab", { name: /Bed Board & Roster/i })).not.toBeInTheDocument();
+    const bedList = document.getElementById("tab-beds")!;
+    expect(bedList).toHaveAttribute("data-active", "false");
+    fireEvent.click(screen.getByRole("button", { name: "Full bed list" }));
+    expect(bedList).toHaveAttribute("data-active", "true");
+    expect(screen.getByRole("tab", { name: "Home (Worth Your Attention)" })).toHaveAttribute("aria-selected", "true");
 
     // Interactive Bed Matrix is visible
     /*
@@ -259,7 +257,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(screen.queryByTestId("bed-telemetry-drawer")).not.toBeInTheDocument();
   });
 
-  it("shows the shift log and awaiting answers side by side, with no switch between them (v6 ward home)", () => {
+  it("keeps the shift log and awaiting answers on Home, neither behind a tab (Ward Hub)", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId={RPH_ADULT_SECURE} />

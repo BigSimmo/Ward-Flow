@@ -22,6 +22,10 @@ export type HeroProps = {
   bar?: ReactNode;
   /** Optional second row, right: LiveChip, switches, onHero and light buttons. */
   barAside?: ReactNode;
+  /** Optional quiet foot line under a hairline, left: a short meta line such as the shift. */
+  foot?: ReactNode;
+  /** Optional foot line, right: freshness or a small link. */
+  footAside?: ReactNode;
   /** Heading level of the title. Defaults to 2. */
   level?: 1 | 2;
   /** `data-testid` on the hero section, so a page needs no wrapper element to find it. */
@@ -42,6 +46,8 @@ export function Hero({
   aside,
   bar,
   barAside,
+  foot,
+  footAside,
   level = 2,
   testId,
   className,
@@ -69,6 +75,12 @@ export function Hero({
           {barAside ? <div className={styles.aside}>{barAside}</div> : null}
         </div>
       ) : null}
+      {foot || footAside ? (
+        <div className={cx(styles.row, styles.foot)}>
+          {foot ? <div className={styles.footMain}>{foot}</div> : null}
+          {footAside ? <div className={styles.footAside}>{footAside}</div> : null}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -82,6 +94,11 @@ export type HeroStatProps = {
   trend?: ReactNode;
   /** Makes the stat a toggle that shows or hides the panel named by `controls`. */
   onToggle?: () => void;
+  /**
+   * With `onToggle`, makes the stat a pressed filter instead of a disclosure: `aria-pressed`
+   * replaces `aria-expanded` and the chevron is dropped.
+   */
+  pressed?: boolean;
   expanded?: boolean;
   controls?: string;
   /** One line (value beside label), for a second hero row of toggles. */
@@ -98,9 +115,11 @@ export function HeroStat({
   onToggle,
   expanded,
   controls,
+  pressed,
   inline = false,
   className,
 }: HeroStatProps) {
+  const isFilter = pressed !== undefined;
   const body = (
     <>
       <span className={styles.valueLine}>
@@ -110,7 +129,7 @@ export function HeroStat({
       <span className={styles.label}>
         {tone ? <StatusGlyph tone={tone} size={9} /> : null}
         {label}
-        {onToggle ? <ChevronDown className={styles.statChevron} size={14} aria-hidden="true" /> : null}
+        {onToggle && !isFilter ? <ChevronDown className={styles.statChevron} size={14} aria-hidden="true" /> : null}
       </span>
     </>
   );
@@ -120,7 +139,8 @@ export function HeroStat({
       <button
         type="button"
         className={styles.statToggle}
-        aria-expanded={expanded}
+        aria-expanded={isFilter ? undefined : expanded}
+        aria-pressed={isFilter ? pressed : undefined}
         aria-controls={controls}
         onClick={onToggle}
       >

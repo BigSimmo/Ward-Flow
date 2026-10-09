@@ -75,6 +75,17 @@ async function ensureToolsOpen(page: Page): Promise<void> {
  * "Tools" title) is never covered by anything, because it is part of the drawer that would be
  * doing the covering.
  */
+/**
+ * Ward Hub (9 Oct 2026): the Arrivals tab was folded into the Home tab's Ward flow card. The full
+ * arrivals view still exists and opens from that card's Admissions pane via "All arrivals".
+ */
+async function openAllArrivals(page: Page) {
+  await page.locator("#tabBtn-attn").click();
+  await page.getByRole("radio", { name: /^Admissions/u }).click();
+  await page.getByRole("button", { name: "All arrivals", exact: true }).click();
+  await expect(page.locator("#tab-coming")).toHaveAttribute("data-active", "true");
+}
+
 async function ensureToolsClosed(page: Page): Promise<void> {
   const trigger = page.getByTestId("ward-bar-tools-trigger");
   if ((await trigger.getAttribute("aria-expanded")) === "true") {
@@ -157,7 +168,7 @@ test.describe("@mockup Ward screen", () => {
     await page.clock.pauseAt(new Date("2026-08-26T10:00:00Z"));
     const wardScreen = await gotoWard(page, "rph-adult-secure");
 
-    await page.locator("#tabBtn-coming").click();
+    await openAllArrivals(page);
     const card = wardScreen.getByTestId("ward-accepted-WF-003");
     await expect(card).toBeVisible();
     await card.getByTestId("ward-pull-WF-003").click();
@@ -1068,7 +1079,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await incoming.getByRole("button", { name: "Accept in principle" }).click();
 
     // --- Step 4: Ward — hold a bed. ---
-    await page.locator("#tabBtn-coming").click();
+    await openAllArrivals(page);
     const accepted = page.getByTestId("ward-accepted-WF-315");
     await expect(accepted).toBeVisible();
     await accepted.getByRole("button", { name: "Pull a bed" }).click();
@@ -1214,7 +1225,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // query looked for a testid the ward screen no longer renders, while line 83 of this same
     // file already used the current one. The file contradicted itself and only a browser run
     // could see it.
-    await page.locator("#tabBtn-coming").click();
+    await openAllArrivals(page);
     const pullButton = wardScreen.getByTestId("ward-pull-WF-003");
     await expect(pullButton).toBeVisible();
     await expect(pullButton).not.toHaveAttribute("aria-disabled");
@@ -1240,7 +1251,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // --- Step 4: the Hold control must stop advertising an action the reducer would now
     // refuse — the reviewer's Proof 2 ("hold button ... aria-disabled = null ... nothing
     // happened"). It must carry BOTH aria-disabled and a stated reason naming this ward. ---
-    await page.locator("#tabBtn-coming").click();
+    await openAllArrivals(page);
     await expect(pullButton).toHaveAttribute("aria-disabled", "true");
     await expect(pullButton).toHaveAttribute("title", /No allocatable bed remains at Dabakarn/);
 

@@ -9,6 +9,9 @@ import type { Unit } from "@/components/ward-management/ward-model";
 
 import styles from "./ward-telemetry-ribbon.module.css";
 
+/** The bed board filters a hero pill can switch on. */
+export type WardBedFilter = "all" | "look" | "leaving" | "free";
+
 interface WardTelemetryRibbonProps {
   unit: Unit;
   capacity: {
@@ -17,15 +20,33 @@ interface WardTelemetryRibbonProps {
   };
   staffedSpecialling: number;
   now: Instant;
+  /** The bed board's current filter, so the matching pill shows pressed. */
+  filter?: WardBedFilter;
+  /** Switches the bed board's filter. Without it the figures are plain counts. */
+  onFilter?: (filter: WardBedFilter) => void;
+  /** Items in This shift's Act now column. Shown only with `onActNow`. */
+  actNow?: number;
+  /** Opens This shift's to do list. */
+  onActNow?: () => void;
 }
 
 /**
- * The ward's counts on the v6 hero band (design/pages-v6/Ward.png): Ready now, Occupied, 1:1
- * specialling, ready by the end of the day shift, and how long since the figure was confirmed.
- * Every value is derived from the record; the ready-bed figure carries how many of those beds are
- * still being made ready, for a screen reader, as every ready figure on this screen does.
+ * The ward's counts on the hero band (Ward Hub, 9 Oct 2026). Each figure is a pill that filters
+ * the bed board below: Ready now, Occupied and Ready by the end of the day shift, then Act now,
+ * which opens the shift's to do list. Every value is derived from the record; the ready-bed figure
+ * carries how many of those beds are still being made ready, for a screen reader, as every ready
+ * figure on this screen does. Specialling sits on each bed, and the figure's age in the foot line.
  */
-export function WardTelemetryRibbon({ unit, capacity, staffedSpecialling, now }: WardTelemetryRibbonProps) {
+export function WardTelemetryRibbon({
+  unit,
+  capacity,
+  staffedSpecialling,
+  now,
+  filter = "all",
+  onFilter,
+  actNow = 0,
+  onActNow,
+}: WardTelemetryRibbonProps) {
   const { bedReleases } = useWardFlow();
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const shiftEnd = dayShiftEndInstant(now);
@@ -33,6 +54,53 @@ export function WardTelemetryRibbon({ unit, capacity, staffedSpecialling, now }:
     (release) => release.unitId === unit.id && release.state !== "discharged" && release.expectedAt <= shiftEnd,
   ).length;
   const confirmedByWard = unit.allocatable.source === "ward";
+
+  if (onFilter) {
+    const pick = (next: WardBedFilter) => onFilter(filter === next && next !== "all" ? "all" : next);
+    return (
+      <div className={styles.pills} role="region" aria-label="Live Capacity Telemetry">
+        <span className={styles.srOnly}>{pendingPreparation} being made ready</span>
+        <div className={styles.cell} data-testid="ward-hero" aria-labelledby="ward-hero-title">
+          <HeroStat
+            inline
+            value={<span data-testid="ward-hero-ready">{capacity.available}</span>}
+            label={<span id="ward-hero-title">Ready now</span>}
+            tone="success"
+            pressed={filter === "free"}
+            onToggle={() => pick("free")}
+          />
+        </div>
+        <HeroStat
+          inline
+          value={capacity.occupied}
+          label="Occupied"
+          pressed={filter === "all"}
+          onToggle={() => pick("all")}
+        />
+        <HeroStat
+          inline
+          value={capacity.available + freeingByShiftEnd}
+          label={`Ready by ${formatInstantWithDay(shiftEnd, now)}`}
+          pressed={filter === "leaving"}
+          onToggle={() => pick("leaving")}
+        />
+        {onActNow ? (
+          <HeroStat
+            inline
+            value={actNow}
+            label="Act now"
+            tone={actNow > 0 ? "danger" : "success"}
+            pressed={false}
+            onToggle={onActNow}
+          />
+        ) : null}
+        <span className={styles.srOnly}>
+          {staffedSpecialling} on 1:1 specialling. {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))}{" "}
+          {confirmedByWard ? "since confirmed" : "since last figure"}.
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.ribbon} role="region" aria-label="Live Capacity Telemetry">

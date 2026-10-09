@@ -337,7 +337,8 @@
   background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
 }
 
-.statToggle[aria-expanded="true"] {
+.statToggle[aria-expanded="true"],
+.statToggle[aria-pressed="true"] {
   border-color: color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
   background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
 }
@@ -383,5 +384,49 @@
 @media (prefers-reduced-motion: reduce) {
   .statChevron {
     transition: none;
+  }
+}
+
+.statToggle[aria-pressed="true"] .value,
+.statToggle[aria-pressed="true"] .label {
+  color: var(--wf-hero-ink);
+}
+
+/* Foot line: a quiet meta row under a hairline, such as the shift and when figures were confirmed. */
+.foot {
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-hero-ink-2);
+}
+
+.footMain {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footAside {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-left: auto;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-family: var(--wf-mono);
+}
+
+@media (max-width: 48rem) {
+  .foot {
+    order: 4;
+  }
+  .footAside {
+    display: none;
   }
 }
