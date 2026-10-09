@@ -729,6 +729,13 @@ export function WardHomeTab({
                     { id: "look", label: "Needs a look", count: bedRows.filter((row) => row.look).length },
                     { id: "leaving", label: "Leaving", count: bedRows.filter((row) => row.leaving).length },
                     { id: "free", label: "Free", count: bedRows.filter((row) => row.free).length },
+                    // The hero's Occupied and Ready by pills set filters this group does not list,
+                    // so the active one joins it while on and a radio is always checked.
+                    ...(bedFilter === "occupied"
+                      ? [{ id: "occupied" as const, label: "Occupied", count: shownBeds.length }]
+                      : bedFilter === "shift-end"
+                        ? [{ id: "shift-end" as const, label: "Ready by shift end", count: shownBeds.length }]
+                        : []),
                   ]}
                   value={bedFilter}
                   onChange={setBedFilter}
