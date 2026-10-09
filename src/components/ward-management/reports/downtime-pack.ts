@@ -25,6 +25,8 @@ export type DowntimeWard = {
   service: string;
   beds: number;
   counts: BedStateCounts;
+  /** Of `counts.ready`: released beds still being made ready (frozen with the pack). */
+  pendingPreparation: number;
 };
 
 export type DowntimeEdLine = {
@@ -62,7 +64,7 @@ export type DowntimeLegalLine = {
 export type DowntimePack = {
   generatedAt: Instant;
   wards: DowntimeWard[];
-  totals: BedStateCounts & { beds: number };
+  totals: BedStateCounts & { beds: number; pendingPreparation: number };
   edQueue: DowntimeEdLine[];
   pendingMoves: DowntimeMoveLine[];
   legalForms: DowntimeLegalLine[];
@@ -87,13 +89,17 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
   const unitName = (id: string | undefined) => (id ? (units.find((unit) => unit.id === id)?.name ?? id) : "");
 
   const wards = units
-    .map((unit) => ({
-      unitId: unit.id,
-      name: unit.name,
-      service: unitHealthService(unit) ?? "Service not recorded",
-      beds: unit.beds,
-      counts: bedStates(unit, admissions, bedReleases, leaveBeds),
-    }))
+    .map((unit) => {
+      const counts = bedStates(unit, admissions, bedReleases, leaveBeds);
+      return {
+        unitId: unit.id,
+        name: unit.name,
+        service: unitHealthService(unit) ?? "Service not recorded",
+        beds: unit.beds,
+        counts,
+        pendingPreparation: counts.beingMadeReady,
+      };
+    })
     .sort((a, b) => a.service.localeCompare(b.service) || a.name.localeCompare(b.name));
 
   const totals = wards.reduce(
@@ -104,9 +110,10 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
       closed: sum.closed + ward.counts.closed,
       occupied: sum.occupied + ward.counts.occupied,
       beingMadeReady: sum.beingMadeReady + ward.counts.beingMadeReady,
+      pendingPreparation: sum.pendingPreparation + ward.pendingPreparation,
       onLeave: sum.onLeave + ward.counts.onLeave,
     }),
-    { beds: 0, ready: 0, pulled: 0, closed: 0, occupied: 0, beingMadeReady: 0, onLeave: 0 },
+    { beds: 0, ready: 0, pulled: 0, closed: 0, occupied: 0, beingMadeReady: 0, pendingPreparation: 0, onLeave: 0 },
   );
 
   const open = movements.filter(isOpen);

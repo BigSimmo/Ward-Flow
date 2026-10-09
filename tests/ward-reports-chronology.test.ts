@@ -136,6 +136,67 @@ describe("PIR chronology: one person's records", () => {
     expect(row?.recordedAt).toBe(NOW_ANCHOR + 7);
   });
 
+  it("keeps distinct same-minute session acts that share a record", () => {
+    const state = seedWardFlowState();
+    const at = NOW_ANCHOR + 11;
+    const ready: WardFlowEvent = {
+      type: "HANDOVER_READY",
+      role: "ed",
+      now: at,
+      movementId: MOVEMENT,
+    };
+    const accepted: WardFlowEvent = {
+      type: "TRANSPORT_ACCEPTED",
+      role: "officer",
+      now: at,
+      movementId: MOVEMENT,
+    };
+    const chronology = patientChronology(
+      inputFor(state, {
+        auditEvents: null,
+        eventLog: [eventLogEntryFor(ready, true), eventLogEntryFor(accepted, true)],
+      }),
+    );
+    const session = chronology.rows.filter((row) => row.source === "Session log").map((row) => row.action);
+    expect(session).toHaveLength(2);
+    expect(new Set(session).size).toBe(2);
+  });
+
+  it("shows the original receipt time when a form receipt was corrected", () => {
+    const state = seedWardFlowState();
+    const receivedAt = NOW_ANCHOR - 120;
+    const correctedAt = NOW_ANCHOR - 30;
+    const patched: WardFlowState = {
+      ...state,
+      movements: state.movements.map((movement) =>
+        movement.id === MOVEMENT
+          ? {
+              ...movement,
+              legalFormReceivedAt: undefined,
+              legalFormReceiptCorrections: [
+                {
+                  at: correctedAt,
+                  by: "coordinator",
+                  reason: "recorded_in_error",
+                  receivedAt,
+                },
+              ],
+            }
+          : movement,
+      ),
+    };
+    const row = patientChronology(inputFor(patched)).rows.find(
+      (candidate) => candidate.action === "Form receipt time corrected",
+    );
+    expect(row).toMatchObject({
+      recordedAt: correctedAt,
+      after: "Cleared",
+      source: "Record",
+    });
+    expect(row?.before).toMatch(/\d/);
+    expect(row?.before).not.toBe("Not recorded");
+  });
+
   it("never lists another person's records, even from the session log", () => {
     const state = seedWardFlowState();
     const other = state.movements.find((movement) => movement.id !== MOVEMENT)!;

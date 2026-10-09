@@ -45,6 +45,10 @@ describe("downtimePack", () => {
     }
     expect(pack.totals.beds).toBe(state.units.reduce((sum, unit) => sum + unit.beds, 0));
     expect(pack.totals.ready).toBe(pack.wards.reduce((sum, ward) => sum + ward.counts.ready, 0));
+    expect(pack.totals.pendingPreparation).toBe(pack.wards.reduce((sum, ward) => sum + ward.pendingPreparation, 0));
+    for (const ward of pack.wards) {
+      expect(ward.pendingPreparation).toBe(ward.counts.beingMadeReady);
+    }
   });
 
   it("keeps the ED queue to open movements still in the department, longest wait first per ED", () => {

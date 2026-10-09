@@ -157,7 +157,11 @@ export function WeeklyReportScreen() {
               </div>
             </dl>
           </StatCard>
-          <StatCard title="Delayed discharge" icon={BedDouble} meta="Past the expected discharge date">
+          <StatCard
+            title="Delayed discharge"
+            icon={BedDouble}
+            meta="Current expected date applied to the week (not a dated plan history)"
+          >
             <dl className={styles.figures}>
               <div className={styles.figure}>
                 <dt>Bed days</dt>

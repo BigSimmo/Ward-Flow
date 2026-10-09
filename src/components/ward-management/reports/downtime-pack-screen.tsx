@@ -75,7 +75,14 @@ export function DowntimePackScreen() {
           titleMeta={<span data-testid="ward-downtime-generated">Generated {at(pack.generatedAt)}</span>}
           stats={
             <>
-              <HeroStat value={pack.totals.ready} label="Beds ready" />
+              <HeroStat
+                value={pack.totals.ready}
+                label={
+                  pack.totals.pendingPreparation > 0
+                    ? `Beds ready · ${pack.totals.pendingPreparation} being made ready`
+                    : "Beds ready"
+                }
+              />
               <HeroStat value={pack.edQueue.length} label="In ED" />
               <HeroStat value={pack.pendingMoves.length} label="Moves pending" />
               <HeroStat value={pack.legalForms.length} label="Legal forms" />
@@ -116,7 +123,11 @@ export function DowntimePackScreen() {
             id="downtime-beds"
             icon={BedDouble}
             title="Beds by ward"
-            meta={`${pack.totals.ready} ready · ${pack.totals.occupied} occupied of ${pack.totals.beds}`}
+            meta={
+              pack.totals.pendingPreparation > 0
+                ? `${pack.totals.ready} ready · ${pack.totals.pendingPreparation} being made ready · ${pack.totals.occupied} occupied of ${pack.totals.beds}`
+                : `${pack.totals.ready} ready · ${pack.totals.occupied} occupied of ${pack.totals.beds}`
+            }
           />
           <div className={styles.tableWrap}>
             <table className={`${tableClasses.table} ${styles.table}`} data-testid="ward-downtime-beds">
@@ -130,6 +141,9 @@ export function DowntimePackScreen() {
                   </th>
                   <th scope="col" className={styles.num}>
                     Ready
+                  </th>
+                  <th scope="col" className={styles.num}>
+                    Being made ready
                   </th>
                   <th scope="col" className={styles.num}>
                     Occupied
@@ -152,6 +166,7 @@ export function DowntimePackScreen() {
                     <td className={styles.muted}>{ward.service}</td>
                     <td className={styles.num}>{ward.beds}</td>
                     <td className={styles.num}>{ward.counts.ready}</td>
+                    <td className={styles.num}>{ward.pendingPreparation}</td>
                     <td className={styles.num}>{ward.counts.occupied}</td>
                     <td className={styles.num}>{ward.counts.onLeave}</td>
                     <td className={styles.num}>{ward.counts.pulled}</td>

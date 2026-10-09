@@ -56,6 +56,10 @@ export function edWaitEnd(movement: Movement, now: Instant): Instant {
   const departed = movement.stageChanges.find((change) => change.to === "moving" || change.to === "arrived");
   if (departed) return departed.at;
   if (movement.closure) return movement.closure.at;
+  // Already past the ED wait without a departure time recorded — do not treat them as still waiting.
+  if (movement.stage === "moving" || movement.stage === "arrived") {
+    return movement.acceptedAt ?? movement.openedAt;
+  }
   return now;
 }
 
@@ -130,29 +134,35 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
     }));
 
   let outOfAreaMinutes = 0;
-  let outOfAreaPeople = 0;
+  const outOfAreaPeopleIds = new Set<string>();
   let delayedMinutes = 0;
-  let delayedPeople = 0;
+  const delayedPeopleIds = new Set<string>();
   let occupiedMinutes = 0;
   for (const stay of stays) {
     const minutes = overlapMinutes(stay.from, stay.to, week);
     occupiedMinutes += minutes;
+    const personKey = stay.admission.patientId ?? stay.admission.id;
     const unit = units.find((candidate) => candidate.id === stay.admission.unitId);
     const band =
       unit && stay.admission.homeRegion !== null ? travelBand(stay.admission.homeRegion, unit.siteCode) : undefined;
     if (band !== undefined && OUT_OF_AREA_BANDS.includes(band) && minutes > 0) {
       outOfAreaMinutes += minutes;
-      outOfAreaPeople += 1;
+      outOfAreaPeopleIds.add(personKey);
     }
+    // Current expected-discharge date applied across the stay: the admission holds only the latest
+    // plan, so a past week's delayed days can change when that date is moved. Labelled as such on
+    // the screen — not a historical audit of when the plan was set.
     const expected = stay.admission.expectedDischargeAt;
     if (expected !== null && Number.isFinite(expected)) {
       const late = overlapMinutes(Math.max(expected, stay.from), stay.to, week);
       if (late > 0) {
         delayedMinutes += late;
-        delayedPeople += 1;
+        delayedPeopleIds.add(personKey);
       }
     }
   }
+  const outOfAreaPeople = outOfAreaPeopleIds.size;
+  const delayedPeople = delayedPeopleIds.size;
 
   // Declines and overrides: placement ones on the movement, referral ones on each addressing.
   const weekMovements = movements.map((movement) => ({

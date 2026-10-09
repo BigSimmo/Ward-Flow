@@ -335,6 +335,8 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
       recordedAt: finite(correction.at),
       who: whoLabel(correction.by),
       action: "Form receipt time corrected",
+      before: chronologyTime(finite(correction.receivedAt), dayZero),
+      after: "Cleared",
       reason: reasonLabel(correction.reason),
     });
   }
@@ -539,20 +541,25 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     for (const draft of auditRows(input.auditEvents, recordKeys)) drafts.push({ draft, source: "Audit" });
   }
 
-  // A session act already shown at the same moment on the same record is not repeated.
-  const seen = new Set(drafts.map(({ draft }) => `${draft.record}@${draft.recordedAt ?? draft.occurredAt}`));
+  // A session act already shown at the same moment for the same action on the same record is not
+  // repeated. Matching only record and time would drop a distinct act (e.g. transport accepted in
+  // the same minute as handover ready) that has no audit or history row of its own.
+  const seen = new Set(
+    drafts.map(({ draft }) => `${draft.record}@${draft.recordedAt ?? draft.occurredAt}@${draft.action}`),
+  );
   for (const entry of input.eventLog) {
     const record = logRecord(entry, recordIds);
     const at = finite(entry.now);
     if (record === null) continue;
-    if (entry.accepted && seen.has(`${record}@${at}`)) continue;
     const wording = EVENT_HISTORY_TABLE[entry.type]?.plainWording ?? entry.type;
+    const action = entry.accepted ? wording : `${wording} (refused)`;
+    if (entry.accepted && seen.has(`${record}@${at}@${action}`)) continue;
     drafts.push({
       draft: {
         record,
         recordedAt: at,
         who: whoLabel(entry.role),
-        action: entry.accepted ? wording : `${wording} (refused)`,
+        action,
       },
       source: "Session log",
     });

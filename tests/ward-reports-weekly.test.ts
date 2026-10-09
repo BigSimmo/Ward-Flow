@@ -117,6 +117,10 @@ describe("weeklyOperationsReport", () => {
     });
     expect(edWaitEnd(moved, NOW)).toBe(300);
     expect(edWaitEnd(f.movement("WF-F", { openedAt: 0 }), NOW)).toBe(NOW);
+    // Already moving with no stage-change row: do not pretend they are still waiting until now.
+    expect(
+      edWaitEnd(f.movement("WF-F2", { openedAt: 0, acceptedAt: 90, stage: "moving", stageChanges: [] }), NOW),
+    ).toBe(90);
   });
 
   it("adds out-of-area and delayed discharge bed days from stays overlapping the week", () => {
@@ -136,6 +140,32 @@ describe("weeklyOperationsReport", () => {
     expect(report.occupancy.occupiedBedDays).toBe(7 + 3.5);
     expect(report.occupancy.averagePercent).toBe(Math.round(((7 + 3.5) / (f.unit.beds * 7)) * 100));
     expect(report.occupancy.now).toEqual(occupiedBeds([f.unit], [far, near], [], []));
+  });
+
+  it("counts a transferred person once in out-of-area and delayed-discharge people totals", () => {
+    const f = fixture();
+    expect(f.farRegion).toBeDefined();
+    const person = "PT-TRANSFER";
+    const first = f.admission("AD-T1", {
+      patientId: person,
+      homeRegion: f.farRegion!,
+      arrivedAt: week.start,
+      leftAt: week.start + 2 * DAY,
+      state: "departed",
+      expectedDischargeAt: week.start - DAY,
+    });
+    const second = f.admission("AD-T2", {
+      patientId: person,
+      homeRegion: f.farRegion!,
+      arrivedAt: week.start + 2 * DAY,
+      leftAt: null,
+      state: "occupied",
+      expectedDischargeAt: week.start - DAY,
+    });
+    const report = weeklyOperationsReport(inputOf(f, { admissions: [first, second] }), week);
+    expect(report.outOfArea.people).toBe(1);
+    expect(report.delayedDischarge.people).toBe(1);
+    expect(report.outOfArea.bedDays).toBe(7);
   });
 
   it("counts declines and overrides by reason inside the week only", () => {

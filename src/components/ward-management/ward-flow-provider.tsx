@@ -31,6 +31,7 @@ import {
   type WardRecordActor,
 } from "./ward-discharge-records";
 import { readAuditEvents, readAuditReviews, type AuditEvent, type AuditReview } from "./ward-audit";
+import { forgetDowntimePack } from "./reports/downtime-pack";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { absoluteWallClockMinutes, applyDueSoonThresholds, demoDayZero } from "@/components/ward-management/ward-clock";
@@ -805,6 +806,9 @@ function WardFlowWorld({
           // Anything dispatched before adoption is replayed on the restored day through the same
           // tracker, so its log entry and typed-text lock survive, and a now-stale action is refused
           // on screen rather than lost.
+          // Drop any downtime pack taken against the seed world before this remount; the reports
+          // screen will take a fresh snapshot from the restored session.
+          forgetDowntimePack();
           let restored: WardFlowContainer = {
             world: saved.state,
             typedTextSeen: false,
