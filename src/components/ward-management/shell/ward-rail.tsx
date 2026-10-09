@@ -442,9 +442,9 @@ export function WardRail() {
     const onChange = () => {
       syncRootAppearance("auto");
     };
-    query.addEventListener?.("change", onChange);
+    query.addEventListener("change", onChange);
     return () => {
-      query.removeEventListener?.("change", onChange);
+      query.removeEventListener("change", onChange);
     };
   }, [appearance]);
 
