@@ -208,7 +208,9 @@ Eight `WardFlowRole`s (`ward-flow-roles.ts`): coordinator, ed, ward, officer, co
 bed_manager, executive, demo. **There is no signed-in identity: the role is the route you are
 on** (`ward-chrome-role.ts`). Three separate layers:
 
-- **Action permission:** `EVENT_ROLE` in the reducer.
+- **Action permission:** `EVENT_ROLE` in the reducer. Screens ask `canDispatch` / `useRoleGate`
+  (`ward-role-permissions.ts`, `ward-role-gate.tsx`) with the route's role and show a disallowed
+  action disabled with a reason; listed cross-role pairs stay available (feature 11).
 - **Chrome and nav order:** `ward-chrome-role.ts`, `ward-nav-role-order.ts` (reorders, never
   hides), `ward-place.ts`.
 - **Record reads:** `WardRecordActor` in `ward-discharge-records.ts`.

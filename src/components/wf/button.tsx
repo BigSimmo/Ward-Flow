@@ -141,6 +141,19 @@ export function Button(props: ButtonProps) {
   );
 }
 
+/**
+ * The visible reason `Button` shows beside a disabled action, for a native `<button>` that cannot
+ * become a `Button` without changing its look. Point the button's `aria-describedby` at `id`.
+ */
+export function DisabledReason({ id, children }: { id: string; children: ReactNode }) {
+  return (
+    <span className={styles.reason} id={id}>
+      <Icon icon={Lock} size={14} />
+      {children}
+    </span>
+  );
+}
+
 export type SplitButtonProps = {
   /** Main action label. */
   children: ReactNode;
