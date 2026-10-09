@@ -85,8 +85,9 @@ export function createHandler({ config, store, authenticate, sharedStore }) {
     const sessionId = match?.[1].toLowerCase();
     try {
       if (path === "/readyz" && request.method === "GET") {
-        await (sharedStore ?? store).ready();
-        return respond(200, sharedStore ? { database: "ready" } : { storage: "ready" });
+        await store.ready();
+        if (sharedStore) await sharedStore.ready();
+        return respond(200, sharedStore ? { storage: "ready", database: "ready" } : { storage: "ready" });
       }
       if (!match) return respond(405, { error: "Method not allowed" });
       if (request.method === "GET") {

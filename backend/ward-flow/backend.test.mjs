@@ -308,6 +308,69 @@ test("readiness contacts storage on every probe", async () => {
   await assert.rejects(store.ready(), /container unavailable/);
 });
 
+test("nonshared readiness reports storage readiness", async () => {
+  const { handler } = setup();
+  const response = await handler(
+    new Request("http://localhost/readyz", { headers: { authorization: "Bearer accepted" } }),
+  );
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { storage: "ready" });
+});
+
+test("shared readiness probes both active stores on every authenticated request", async () => {
+  const testAccount = {
+    authorization: "Bearer synthetic-readiness-coordinator",
+    objectId: environment.WARD_ALLOWED_OBJECT_ID,
+  };
+  const probes = [];
+  let storageHealthy = true;
+  let databaseHealthy = true;
+  const handler = createHandler({
+    config,
+    authenticate: async (authorization) => {
+      assert.equal(authorization, testAccount.authorization);
+      return testAccount.objectId;
+    },
+    store: {
+      ready: async () => {
+        probes.push("storage");
+        if (!storageHealthy) throw new Error("synthetic Blob diagnostic");
+      },
+    },
+    sharedStore: {
+      ready: async () => {
+        probes.push("database");
+        if (!databaseHealthy) throw new Error("synthetic PostgreSQL diagnostic");
+      },
+    },
+  });
+  const probe = () =>
+    handler(new Request("http://localhost/readyz", { headers: { authorization: testAccount.authorization } }));
+  let response = await probe();
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { storage: "ready", database: "ready" });
+  assert.deepEqual(probes, ["storage", "database"]);
+
+  storageHealthy = false;
+  response = await probe();
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { error: "Storage unavailable; changes were not confirmed saved" });
+  assert.deepEqual(probes, ["storage", "database", "storage"]);
+
+  storageHealthy = true;
+  databaseHealthy = false;
+  response = await probe();
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { error: "Storage unavailable; changes were not confirmed saved" });
+  assert.deepEqual(probes, ["storage", "database", "storage", "storage", "database"]);
+
+  databaseHealthy = true;
+  response = await probe();
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { storage: "ready", database: "ready" });
+  assert.deepEqual(probes, ["storage", "database", "storage", "storage", "database", "storage", "database"]);
+});
+
 test("storage account must be on the fixed Ward Flow allowlist, not merely agree between the two variables", () => {
   assert.deepEqual([...APPROVED_STORAGE_ACCOUNTS], ["wflowdev7273a083aue"]);
   const approved = readConfig({
