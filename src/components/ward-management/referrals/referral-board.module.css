@@ -430,10 +430,12 @@
 }
 
 /* The queue table. Fixed layout so the wait and tier columns line up; text truncates, never wraps.
-   Its scroller and the phone swap to cards live in referral-queue.module.css. */
+   Its scroller and the phone swap to cards live in referral-queue.module.css. The threshold is the
+   shared block's custom property, and the cell rules carry thead or tbody, so none of this depends
+   on which stylesheet the production build happens to load last. */
 .table {
   width: 100%;
-  min-width: 44rem;
+  --ward-table-min-width: 44rem;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -467,7 +469,7 @@
 }
 
 /* Cell padding and dividers come from the canonical `.table` rule in ward-table.module.css. */
-.table th {
+.table thead th {
   color: var(--wf-ink-3);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   text-align: left;
@@ -476,7 +478,7 @@
   text-overflow: ellipsis;
 }
 
-.table td {
+.table tbody td {
   vertical-align: middle;
   min-width: 0;
   overflow: hidden;
