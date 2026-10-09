@@ -12,7 +12,7 @@
 | Screen (mockup) | Route | Verified on | By | Widths | Themes | Verdict | Historical drawing | Local implementation hash at look | Checked revision |
 |---|---|---|---|---|---|---|---|---|---|
 | `command-third-edition.html` | `/` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | 38ca886993fb | not recorded |
-| `delays-third-edition.html` | `/delays` | 2026-10-09 | Claude Code (rendered Chromium review of the October 2026 Delays board) | 1440, 820, 390 | light, dark | matches | UNAGEABLE - no hash recorded | not recorded | 2a373b10acaeb300c4f6a84d8f0e8e13f8906c25 |
+| `delays-third-edition.html` | `/delays` | 2026-10-09 | Claude Code (rendered Chromium review of the October 2026 Delays board after owner ruling D-38) | 1440, 820, 390 | light, dark | matches | UNAGEABLE - no hash recorded | not recorded | e224769281694905d11f2d292155e61cd2776863 |
 | `movement-third-edition.html` | `/movements` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | 5bb5b8c8b097 | not recorded |
 | `capacity-third-edition.html` | `/capacity` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | e6542c7321e3 | not recorded |
 | `ward-third-edition.html` | `/ward/[unitId]` | 2026-10-02 | Codex coordinator and independent screen/source reviewers | 1920 | light | deviates | UNAGEABLE - no hash recorded | 078d4ec59fd2 | not recorded |
