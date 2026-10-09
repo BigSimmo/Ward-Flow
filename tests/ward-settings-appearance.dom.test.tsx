@@ -10,8 +10,15 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/mockups/ward-flow",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { applyAppearance } from "@/components/ward-management/shell/ward-bar";
+import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { APP_THEME_COLORS } from "@/lib/theme";
 
@@ -98,6 +105,19 @@ describe("the settings screen's appearance control", () => {
     fireEvent.click(within(panel).getByRole("radio", { name: "Light" }));
     expect(themeAttribute()).toBe("light");
     expect(root.classList.contains("dark"), ".dark left on with Light chosen").toBe(false);
+  });
+
+  it("hands the root back when the ward shell unmounts", () => {
+    const { unmount } = render(
+      <WardFlowProvider>
+        <WardRail />
+      </WardFlowProvider>,
+    );
+    act(() => applyAppearance("dark"));
+    expect(themeAttribute()).toBe("dark");
+
+    unmount();
+    expect(themeAttribute(), "the ward theme stayed on a page outside Ward Flow").toBeNull();
   });
 
   /**

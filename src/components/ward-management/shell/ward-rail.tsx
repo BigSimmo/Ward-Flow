@@ -425,6 +425,15 @@ export function WardRail() {
     document.documentElement.setAttribute("data-rail", open ? "open" : "closed");
   }, [open]);
 
+  // Leaving Ward Flow hands the root back: other pages carry no ward theme, and their own theme
+  // hook resets `.dark` when it mounts.
+  useEffect(
+    () => () => {
+      document.documentElement.removeAttribute("data-theme");
+    },
+    [],
+  );
+
   useLayoutEffect(() => {
     syncRootAppearance(appearance);
     if (appearance !== "auto" || typeof window.matchMedia !== "function") return;
