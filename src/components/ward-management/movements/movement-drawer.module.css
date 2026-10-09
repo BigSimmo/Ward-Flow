@@ -457,12 +457,12 @@
   border-radius: var(--wf-r-pill);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-12) inherit;
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
 }
 
 .select:focus-visible {
-  outline: none;
-  box-shadow: var(--wf-focus-ring);
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 /* The record: the five sections the drawing ships, kept compact. */
