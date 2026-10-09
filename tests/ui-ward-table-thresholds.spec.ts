@@ -688,7 +688,7 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
 });
 
 /**
- * Owner ruling D-38 (9 October 2026): Delays filters narrow the table, so whenever they hide anyone
+ * Owner ruling D-41 (9 October 2026): Delays filters narrow the table, so whenever they hide anyone
  * the table must say how many and offer Show everyone. On a phone the note did not wrap and its
  * button was clipped off the cell, leaving the hidden people with no way back. jsdom cannot see
  * that, so this clicks it in a real browser at phone and desktop widths.
