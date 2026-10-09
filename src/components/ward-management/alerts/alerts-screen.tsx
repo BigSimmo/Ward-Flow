@@ -196,19 +196,6 @@ function getCategoryBadge(item: InboxItem): { tone: "danger" | "warn" | "accent"
   return { tone: "accent", label: "Operational Alert" };
 }
 
-function getPatientDisplayName(
-  movement: Movement | undefined,
-  referralsList: Referral[],
-  patientsList: Patient[],
-  unitsList?: readonly { id: string; name: string }[],
-  state: { units?: readonly { id: string; name: string }[] } = { units: unitsList },
-): string {
-  if (!movement) return "Patient not recorded";
-  const p = resolveAlertPatient(movement, movement.id, patientsList, referralsList, undefined, state.units);
-  // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-  return `${p.displayName} (UMRN: ${p.umrn}) · ${p.location}`;
-}
-
 /**
  * A labelled context section that remains reachable whether or not its condition has rows.
  * `watches` is permanent scope text; `none` appears only when the measured set is empty.
@@ -815,9 +802,21 @@ function AlertsWorkspace() {
     return openMovements.find((m) => m.id === selectedAlert.movementId);
   }, [selectedAlert, openMovements]);
 
-  const selectedPatientName = useMemo(() => {
-    return getPatientDisplayName(selectedMovement, referrals, patients, state.units);
-  }, [selectedMovement, referrals, patients, state.units]);
+  const selectedPatientInfo = useMemo(() => {
+    if (!selectedAlert) return null;
+    const resolved = resolveAlertPatient(
+      selectedMovement,
+      selectedAlert.movementId,
+      patients,
+      referrals,
+      openMovements,
+      state.units,
+      selectedAlert.plannedAdmission,
+    );
+    return selectedAlert.personLabel ? { ...resolved, displayName: selectedAlert.personLabel } : resolved;
+  }, [selectedAlert, selectedMovement, referrals, patients, openMovements, state.units]);
+
+  const selectedPatientName = selectedPatientInfo?.displayName ?? "Patient not recorded";
 
   const selectedSeverity = useMemo(() => {
     return selectedAlert ? getAlertSeverity(selectedAlert) : { tone: "accent" as const, label: "Routine" };
@@ -1502,7 +1501,7 @@ function AlertsWorkspace() {
                       </div>
                       <div>
                         <dt>Legal status</dt>
-                        <dd>{selectedMovement?.legalStatus ?? "Voluntary"}</dd>
+                        <dd>{selectedMovement?.legalStatus ?? selectedAlert.plannedAdmission?.legalStatus ?? "Voluntary"}</dd>
                       </div>
                       <div>
                         <dt>Declines logged</dt>
