@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -70,13 +70,15 @@ describe("Referral legal information does not infer authority from a bed request
     const id = screen.getByTestId("new-referral").textContent!;
     expect(id).not.toBe(priorId);
     const row = screen.getByTestId(`ward-referral-board-row-${id}`);
-    fireEvent.click(within(row).getByRole("button", { name: id }));
-    // v6 (Referrals.png): legal status is a labelled fact ("Legal status" over "Not recorded").
+    fireEvent.click(screen.getByTestId(`ward-referral-board-select-${id}`));
+    expect(row).toHaveAttribute("data-referral-id", id);
+    // Option A (9 Oct 2026): legal status is a labelled cell in the decision strip ("Legal status" over "Not recorded").
     const legalStatus = screen.getByTestId("ward-referral-detail-legal-status");
     expect(legalStatus).toBeVisible();
     expect(legalStatus.textContent).toMatch(/Legal status\s*Not recorded/);
     expect(screen.queryByText(/Voluntary Status|Involuntary \(MHA 2014\)/)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: "Legal forms" }));
+    // Option A moved the recorded legal information into the Patient tab.
+    fireEvent.click(screen.getByRole("tab", { name: "Patient" }));
     expect(screen.getByText("Consent or detention authority")).toBeVisible();
     expect(screen.getByText("Not recorded in this referral")).toBeVisible();
     expect(screen.getByText("Register check not recorded on this referral.")).toBeVisible();

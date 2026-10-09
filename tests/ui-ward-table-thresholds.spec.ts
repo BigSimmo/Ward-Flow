@@ -347,10 +347,10 @@ test.describe("@mockup every ward table's threshold still describes the table it
      * above, the cross-check, and the owned-table pin below all still run against every table
      * unexempted.
      */
-    const DISPLAY_NONE_LIVE_TESTIDS = new Set([
-      "ward-referral-board-queued-table",
-      "ward-referral-board-decided-table",
-    ]);
+    // Option A (9 Oct 2026) made the queued table the live desktop queue again, so it is measured
+    // like any other table. Only the decided table, which sits in the History tab and is otherwise
+    // print-only, stays exempt.
+    const DISPLAY_NONE_LIVE_TESTIDS = new Set(["ward-referral-board-decided-table"]);
 
     const unmovedAll = Object.entries(seen).flatMap(([route, tables]) =>
       tables.filter((table) => table.sentinelWidthPx !== SENTINEL_PX).map((table) => ({ route, table })),
@@ -363,7 +363,7 @@ test.describe("@mockup every ward table's threshold still describes the table it
     const exempted = unmovedAll.filter((entry) => DISPLAY_NONE_LIVE_TESTIDS.has(entry.table.testId));
     expect(
       exempted.map((entry) => entry.table.testId).sort(),
-      "the display:none exemption is meant for exactly the two referral-board tables named above",
+      "the display:none exemption is meant for exactly the referral-board table named above",
     ).toEqual([...DISPLAY_NONE_LIVE_TESTIDS].sort());
 
     const unmoved = unmovedAll
@@ -711,8 +711,15 @@ test("@mockup the Delays hidden-count note keeps Show everyone reachable at ever
 test("@mockup print-only referral tables have measurable thresholds", async ({ page }) => {
   await page.goto("/mockups/ward-flow/referrals");
   await page.waitForLoadState("networkidle");
-  await page.emulateMedia({ media: "print" });
-  for (const id of ["ward-referral-board-queued-table", "ward-referral-board-decided-table"]) {
+  // Option A (9 Oct 2026) puts each table in its own view tab, so open that tab before measuring.
+  const views = [
+    ["ward-referral-board-queued-table", /^Queue/u],
+    ["ward-referral-board-decided-table", /^History/u],
+  ] as const;
+  for (const [id, tab] of views) {
+    await page.emulateMedia({ media: "screen" });
+    await page.getByTestId("ward-referral-board-screen").getByRole("tab", { name: tab }).click();
+    await page.emulateMedia({ media: "print" });
     const table = page.getByTestId(id).locator("table");
     await expect(table).toBeVisible();
     const measured = await table.evaluate((node) => {
