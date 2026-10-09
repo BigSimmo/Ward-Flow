@@ -204,14 +204,19 @@ describe("WardBarMount — the layout-level route resolution, D-16", () => {
     expect(control.hasAttribute("href")).toBe(false);
   });
 
-  it("resolves a route this list does not cover (Handover) to no primary-action button at all", () => {
-    route.pathname = "/mockups/ward-flow/handover";
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardLiveRegion />
-        <WardBarMount />
-      </WardFlowProvider>,
-    );
-    expect(screen.queryByTestId("ward-bar-primary-action")).toBeNull();
-  });
+  // Universal header (Josh, 9 Oct 2026): every page offers New referral. A route the list does not
+  // cover, or one marked "none", falls back to it on desktop as it already did on the phone.
+  it.each(["/mockups/ward-flow/handover", "/mockups/ward-flow/discharges", "/mockups/ward-flow/people/pt-0001"])(
+    "resolves %s, which has no action of its own, to New referral",
+    (pathname) => {
+      route.pathname = pathname;
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <WardLiveRegion />
+          <WardBarMount />
+        </WardFlowProvider>,
+      );
+      expect(screen.getByTestId("ward-bar-primary-action")).toHaveTextContent("New referral");
+    },
+  );
 });
