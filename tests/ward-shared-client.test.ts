@@ -36,11 +36,13 @@ describe("shared workspace connection", () => {
   });
   it("retries an uncertain save with the exact command ID and expected revision", async () => {
     const requests: string[] = [];
+    let nextCommandId = 0;
+    const commandId = vi.fn(() => `test-id-${++nextCommandId}`);
     let view: SharedView | undefined;
     const client = new SharedWorkspaceClient({
       baseUrl: "https://example.test",
       token: async () => "test",
-      commandId: () => "test-id",
+      commandId,
       changed: (next) => {
         view = next;
       },
@@ -59,6 +61,13 @@ describe("shared workspace connection", () => {
     await client.retry();
     expect(requests).toHaveLength(2);
     expect(requests[0]).toBe(requests[1]);
+    const firstRequest = JSON.parse(requests[0]);
+    const secondRequest = JSON.parse(requests[1]);
+    expect(firstRequest.commandId).toBe("test-id-1");
+    expect(secondRequest.commandId).toBe(firstRequest.commandId);
+    expect(firstRequest.expectedRevision).toBe(1);
+    expect(secondRequest.expectedRevision).toBe(1);
+    expect(commandId).toHaveBeenCalledOnce();
     expect(view?.snapshot?.revision).toBe(2);
     expect(view?.status).toBe("ready");
     client.dispose();
