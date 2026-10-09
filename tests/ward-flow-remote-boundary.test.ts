@@ -122,6 +122,7 @@ describe("Ward-Flow push destination", () => {
     "https://github.com/BigSimmo/Ward-Flow",
     "git@github.com:BigSimmo/Ward-Flow.git",
     "ssh://git@github.com/BigSimmo/Ward-Flow.git",
+    "https://x-access-token:ghs_example@github.com/BigSimmo/Ward-Flow.git",
   ])("accepts canonical destination %s", (remoteUrl) => {
     expect(wardFlowRemoteVerdict(remoteUrl).ok).toBe(true);
   });
@@ -133,7 +134,7 @@ describe("Ward-Flow push destination", () => {
     "https://github.com/other/Ward-Flow.git",
     "https://github.com/BigSimmo/Ward-Flow.git.evil.example",
     "https://github.com.evil.example/BigSimmo/Ward-Flow.git",
-    "https://user:token@github.com/BigSimmo/Ward-Flow.git",
+    "https://user:token@github.com/BigSimmo/PsychSift.git",
     "http://github.com/BigSimmo/Ward-Flow.git",
     "file:///tmp/Ward-Flow.git",
   ])("rejects unknown or wrong destination %s", (remoteUrl) => {

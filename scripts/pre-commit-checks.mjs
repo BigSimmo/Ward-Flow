@@ -71,12 +71,19 @@ const normalizedFolder = (value) => value.trim().replace(/\\/g, "/").replace(/\/
 // tests/public-signout-boundary.test.ts asserts both stay identical to guard-push.mjs.
 export const WARD_FLOW_IDENTITY_ANCHOR = "e735c1f8d34df005becf720b96752626a4f1dcc8";
 
+/** Strip Cursor Cloud / gh credential prefixes so destination checks read the repo, not the token. */
+export function stripGithubCredentialPrefix(remoteUrl) {
+  if (typeof remoteUrl !== "string") return remoteUrl;
+  return remoteUrl.replace(/^https:\/\/[^@/]+@github\.com\//i, "https://github.com/");
+}
+
 /** Canonical HTTPS, scp-style and ssh:// Ward-Flow URLs, matching the push guard. */
 export function isCanonicalWardFlowRemote(remoteUrl) {
+  const normalized = stripGithubCredentialPrefix(remoteUrl);
   return (
-    typeof remoteUrl === "string" &&
+    typeof normalized === "string" &&
     /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)BigSimmo\/Ward-Flow(?:\.git)?$/i.test(
-      remoteUrl,
+      normalized,
     )
   );
 }
