@@ -16,6 +16,12 @@ vi.mock("next/link", () => ({
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import {
+  defaultHandoverShift,
+  handoverAt,
+  handoverCutoff,
+  handoverHasPassed,
+} from "@/components/ward-management/handover/handover-model";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -179,5 +185,22 @@ describe("Handover page", () => {
     renderHandover();
     await user.click(screen.getByRole("tab", { name: /Beds/ }));
     expect(screen.getByTestId("ward-handover-beds")).toBeInTheDocument();
+  });
+});
+
+describe("Handover shift after the last handover of the day", () => {
+  // 23:30: all three of today's handovers have started, so the next one is tomorrow's 07:00.
+  const lateEvening = NOW_ANCHOR - (NOW_ANCHOR % (24 * 60)) + 23 * 60 + 30;
+
+  it("defaults to tomorrow morning's handover, which has not passed and can be signed", () => {
+    expect(defaultHandoverShift(lateEvening)).toBe("am");
+    expect(handoverAt("am", lateEvening)).toBe(lateEvening + 7 * 60 + 30);
+    expect(handoverHasPassed("am", lateEvening)).toBe(false);
+    expect(handoverCutoff("am", lateEvening)).toBe(handoverAt("am", lateEvening));
+  });
+
+  it("keeps the morning handover as today's before 23:00", () => {
+    expect(handoverHasPassed("am", NOW_ANCHOR)).toBe(true);
+    expect(handoverAt("am", NOW_ANCHOR)).toBe(NOW_ANCHOR - (NOW_ANCHOR % (24 * 60)) + 7 * 60);
   });
 });

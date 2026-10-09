@@ -39,12 +39,18 @@ export function handoverShift(id: HandoverShiftId) {
   return HANDOVER_SHIFTS.find((shift) => shift.id === id) ?? HANDOVER_SHIFTS[1]!;
 }
 
-/** Today's instant for a handover. */
+const LAST_HANDOVER_MINUTE = HANDOVER_SHIFTS[HANDOVER_SHIFTS.length - 1]!.minute;
+
+/**
+ * The instant of a handover: today's, except that once the last one of the day has started the
+ * morning handover means tomorrow's, so the next handover can still be chosen and signed.
+ */
 export function handoverAt(id: HandoverShiftId, now: Instant): Instant {
-  return now - minuteOfDay(now) + handoverShift(id).minute;
+  const today = now - minuteOfDay(now) + handoverShift(id).minute;
+  return id === "am" && minuteOfDay(now) >= LAST_HANDOVER_MINUTE ? today + 24 * 60 : today;
 }
 
-/** The next handover still to come today, or the morning one when all three have passed. */
+/** The next handover still to come, which after the last one of the day is tomorrow morning's. */
 export function defaultHandoverShift(now: Instant): HandoverShiftId {
   return HANDOVER_SHIFTS.find((shift) => handoverAt(shift.id, now) > now)?.id ?? "am";
 }
@@ -56,8 +62,7 @@ export function handoverHasPassed(id: HandoverShiftId, now: Instant): boolean {
 /** "Due by" reads to the chosen handover, or to the next one still to come when it has passed. */
 export function handoverCutoff(id: HandoverShiftId, now: Instant): Instant {
   if (!handoverHasPassed(id, now)) return handoverAt(id, now);
-  const next = HANDOVER_SHIFTS.find((shift) => handoverAt(shift.id, now) > now);
-  return next === undefined ? handoverAt("am", now) + 24 * 60 : handoverAt(next.id, now);
+  return handoverAt(defaultHandoverShift(now), now);
 }
 
 /** "New since" is the handover before the chosen one. */
