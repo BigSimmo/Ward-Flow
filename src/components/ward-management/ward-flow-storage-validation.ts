@@ -362,6 +362,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
           "pulledAt",
           "arrivedAt",
           "awayAtEmergencyDepartmentSince",
+          "absentWithoutLeaveSince",
           "expectedDischargeAt",
           "dischargeDateSetAt",
           "dischargeConfirmedAt",

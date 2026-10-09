@@ -687,6 +687,8 @@ function subjectId(event: WardFlowEvent): string {
     case "RECORD_LEAVING":
     case "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT":
     case "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT":
+    case "RECORD_ABSENT_WITHOUT_LEAVE":
+    case "RECORD_RETURNED_FROM_ABSENCE":
     case "RECORD_REPATRIATION":
       return event.admissionId;
     case "END_LEAVE_BED":
@@ -1842,6 +1844,7 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
             dischargeDateMoves: 0,
             blockReason: null,
             awayAtEmergencyDepartmentSince: null,
+            absentWithoutLeaveSince: null,
             careJourney: { ...emptyCareJourney(), followUp: careJourney.followUp },
           },
         ],
@@ -4384,6 +4387,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // for a medical problem. This person has not reached the ward at all yet, which is what
         // `state: "pulled"` and a null `arrivedAt` already say.
         awayAtEmergencyDepartmentSince: null,
+        absentWithoutLeaveSince: null,
         expectedDischargeAt: null,
         dischargeDateMoves: 0,
         dischargeDateSetAt: null,
@@ -5351,6 +5355,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (admission.awayAtEmergencyDepartmentSince !== null) {
         return reject(state, event, `admission ${admission.id} is already recorded as away at an emergency department`);
       }
+      if (admission.absentWithoutLeaveSince !== null) {
+        return reject(state, event, `admission ${admission.id} is recorded as absent without leave`);
+      }
       return replaceAdmission(state, admission.id, { ...admission, awayAtEmergencyDepartmentSince: event.now });
     }
 
@@ -5377,6 +5384,53 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // path ever moved an away admission's state. A flag nobody can clear is the defect being
       // repaired, so the clearing half is guarded on the flag itself and nothing else.
       return replaceAdmission(state, admission.id, { ...admission, awayAtEmergencyDepartmentSince: null });
+    }
+
+    // ABSENT WITHOUT LEAVE, AND BACK AGAIN. Mirrors the emergency-department pair above: the bed
+    // stays occupied, no unit figure moves, and only the recorded time (`event.now`) is stored. No
+    // legal period or deadline is derived from it (D5).
+    case "RECORD_ABSENT_WITHOUT_LEAVE": {
+      const admission = findAdmission(state, event.admissionId);
+      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      if (event.actingUnitId !== admission.unitId) {
+        return reject(
+          state,
+          event,
+          `RECORD_ABSENT_WITHOUT_LEAVE was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
+        );
+      }
+      if (admission.state !== "occupied") {
+        return reject(
+          state,
+          event,
+          `admission ${admission.id} is ${admission.state}, and only somebody occupying a bed can be absent from it`,
+        );
+      }
+      if (admission.absentWithoutLeaveSince !== null) {
+        return reject(state, event, `admission ${admission.id} is already recorded as absent without leave`);
+      }
+      if (admission.awayAtEmergencyDepartmentSince !== null) {
+        return reject(state, event, `admission ${admission.id} is recorded as away at an emergency department`);
+      }
+      return replaceAdmission(state, admission.id, { ...admission, absentWithoutLeaveSince: event.now });
+    }
+
+    case "RECORD_RETURNED_FROM_ABSENCE": {
+      const admission = findAdmission(state, event.admissionId);
+      if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      if (event.actingUnitId !== admission.unitId) {
+        return reject(
+          state,
+          event,
+          `RECORD_RETURNED_FROM_ABSENCE was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}`,
+        );
+      }
+      if (admission.absentWithoutLeaveSince === null) {
+        return reject(state, event, `admission ${admission.id} is not recorded as absent without leave`);
+      }
+      // Guarded on the flag alone, as the emergency-department return is: a flag nobody can clear
+      // is worse than the state check would be worth.
+      return replaceAdmission(state, admission.id, { ...admission, absentWithoutLeaveSince: null });
     }
 
     case "CONFIRM_CAPACITY": {

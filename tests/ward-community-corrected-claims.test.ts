@@ -600,6 +600,7 @@ function blankAdmission(id: string): Admission {
     pulledAt: 0,
     arrivedAt: 0,
     awayAtEmergencyDepartmentSince: null,
+    absentWithoutLeaveSince: null,
     expectedDischargeAt: null,
     dischargeDateMoves: 0,
     dischargeDateSetAt: null,

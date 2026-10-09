@@ -321,6 +321,7 @@ function fullWardWith(occupant: Person, sexMix: Unit["sexMix"] = { Female: 1, Ma
     pulledAt: NOW - 700,
     arrivedAt: NOW - 600,
     awayAtEmergencyDepartmentSince: null,
+    absentWithoutLeaveSince: null,
     expectedDischargeAt: null,
     dischargeDateMoves: 0,
     dischargeDateSetAt: null,

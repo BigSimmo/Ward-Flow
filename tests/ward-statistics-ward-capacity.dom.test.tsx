@@ -62,6 +62,7 @@ const ADMISSION_BASE = {
   tentativeDiagnosis: null,
   state: "occupied",
   awayAtEmergencyDepartmentSince: null,
+  absentWithoutLeaveSince: null,
   expectedDischargeAt: null,
   dischargeDateMoves: 0,
   dischargeDateSetAt: null,

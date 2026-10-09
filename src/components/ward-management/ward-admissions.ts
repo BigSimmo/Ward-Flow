@@ -592,6 +592,13 @@ export type Admission = {
    */
   awayAtEmergencyDepartmentSince: Instant | null;
   /**
+   * When the ward recorded this person as absent without leave, or `null` while they are on the
+   * ward or nothing is recorded. Like `awayAtEmergencyDepartmentSince` it is a fact about the
+   * PERSON, not the bed: the bed stays occupied and no capacity figure reads it. Only the time the
+   * ward recorded is held — no legal period or deadline is ever derived from it (D5).
+   */
+  absentWithoutLeaveSince: Instant | null;
+  /**
    * When the ward currently expects this person to leave. A WARD'S OWN PLAN, revisable at will
    * and carrying no legal or contractual weight of any kind — never a deadline, never a target,
    * never a figure derived from any statute. `null` means nobody has set one, which is a real and
@@ -709,6 +716,7 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   pulledAt: true,
   arrivedAt: true,
   awayAtEmergencyDepartmentSince: true,
+  absentWithoutLeaveSince: true,
   expectedDischargeAt: true,
   dischargeDateMoves: true,
   dischargeDateSetAt: true,

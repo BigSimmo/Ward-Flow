@@ -342,6 +342,7 @@ describe("the community hub says a bed is PULLED for somebody who has not arrive
       pulledAt: NOW_ANCHOR - 30,
       arrivedAt: null,
       awayAtEmergencyDepartmentSince: null,
+      absentWithoutLeaveSince: null,
       expectedDischargeAt: null,
       dischargeDateMoves: 0,
       dischargeDateSetAt: null,

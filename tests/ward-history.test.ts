@@ -15,10 +15,11 @@ const NOW = 700;
 
 describe("Ward Flow Read-Only Plain History", () => {
   describe("EVENT_HISTORY_TABLE completeness and classification", () => {
-    it("classifies all 98 event types into bed, patient, both or neither with plain wording", () => {
+    it("classifies all 100 event types into bed, patient, both or neither with plain wording", () => {
       const allEventTypes = Object.keys(EVENT_ROLE) as Array<WardFlowEvent["type"]>;
       // 97 -> 96 on 2026-09-25: OVERRIDE_LEGAL_MISMATCH removed (owner ruling).
-      expect(allEventTypes.length).toBe(98);
+      // 98 -> 100 on 2026-10-09: RECORD_ABSENT_WITHOUT_LEAVE and RECORD_RETURNED_FROM_ABSENCE added.
+      expect(allEventTypes.length).toBe(100);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

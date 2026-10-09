@@ -80,6 +80,7 @@ const BASE: Omit<Admission, "id" | "pulledAt" | "arrivedAt"> = {
   tentativeDiagnosis: null,
   state: "occupied",
   awayAtEmergencyDepartmentSince: null,
+  absentWithoutLeaveSince: null,
   expectedDischargeAt: null,
   dischargeDateMoves: 0,
   dischargeDateSetAt: null,

@@ -43,6 +43,7 @@ function anAdmission(overrides: Partial<Admission>): Admission {
     homeRegion: null,
     tentativeDiagnosis: null,
     awayAtEmergencyDepartmentSince: null,
+    absentWithoutLeaveSince: null,
     dischargeDateMoves: 0,
     dischargeDateSetBy: null,
     dischargeConfirmedAt: null,

@@ -72,6 +72,7 @@ function anAdmission(overrides: Partial<Admission>): Admission {
     pulledAt: 10 * DAY,
     arrivedAt: 10 * DAY,
     awayAtEmergencyDepartmentSince: null,
+    absentWithoutLeaveSince: null,
     expectedDischargeAt: null,
     dischargeDateMoves: 0,
     dischargeDateSetAt: null,

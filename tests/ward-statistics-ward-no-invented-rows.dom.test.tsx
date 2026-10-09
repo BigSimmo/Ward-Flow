@@ -45,6 +45,7 @@ function realAdmission(unit: Unit): Admission {
     pulledAt: NOW_ANCHOR - 60,
     arrivedAt: NOW_ANCHOR - 60,
     awayAtEmergencyDepartmentSince: null,
+    absentWithoutLeaveSince: null,
     expectedDischargeAt: null,
     dischargeDateMoves: 0,
     dischargeDateSetAt: null,

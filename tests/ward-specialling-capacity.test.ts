@@ -508,6 +508,7 @@ describe("specialling capacity — giving the slot back", () => {
       pulledAt: NOW - 600,
       arrivedAt: NOW - 480,
       awayAtEmergencyDepartmentSince: null,
+      absentWithoutLeaveSince: null,
       expectedDischargeAt: null,
       dischargeDateMoves: 0,
       dischargeDateSetAt: null,

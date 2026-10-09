@@ -102,6 +102,7 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   //    looked at that file; see this set's own comment for what each one was getting wrong.
   "pulledAt",
   "awayAtEmergencyDepartmentSince",
+  "absentWithoutLeaveSince",
   "expectedDischargeAt",
   "dischargeDateSetAt",
   "dischargeConfirmedAt",

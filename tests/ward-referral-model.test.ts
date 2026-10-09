@@ -502,6 +502,9 @@ describe("front-door contract — an ED may close to all admissions, never refus
     CLEAR_MOVEMENT_BLOCKER: false,
     RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: false,
     RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: false,
+    // Recording an occupant absent without leave, and back. Refuses nobody: the bed is held.
+    RECORD_ABSENT_WITHOUT_LEAVE: false,
+    RECORD_RETURNED_FROM_ABSENCE: false,
     RAISE_REFERRAL: false,
     RECORD_EXAMINATION: false,
     RECORD_LEGAL_FORM_RECEIVED: false,

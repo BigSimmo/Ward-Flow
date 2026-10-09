@@ -1496,6 +1496,31 @@ export type WardFlowEvent =
     }
   | {
       /**
+       * A WARD RECORDS ONE OF ITS OWN OCCUPANTS AS ABSENT WITHOUT LEAVE, AND KEEPS THE BED.
+       * Mirrors `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT`: it sets `Admission.absentWithoutLeaveSince`
+       * to `now` and moves no capacity figure. It carries no reason and no legal period (D5).
+       */
+      type: "RECORD_ABSENT_WITHOUT_LEAVE";
+      role: WardFlowRole;
+      now: Instant;
+      /** The admission recorded as absent. */
+      admissionId: string;
+      /** Compared against the admission's own `unitId`, as for the emergency-department pair. */
+      actingUnitId: string;
+    }
+  | {
+      /** The other half: clears `Admission.absentWithoutLeaveSince` back to `null` ("on the ward").
+       *  As with the emergency-department return, no "returned at" instant is stored. */
+      type: "RECORD_RETURNED_FROM_ABSENCE";
+      role: WardFlowRole;
+      now: Instant;
+      /** The admission coming back. */
+      admissionId: string;
+      /** Same claim-not-proof discipline as the event above. */
+      actingUnitId: string;
+    }
+  | {
+      /**
        * SOMEBODY SAYS WHAT IS ACTUALLY HOLDING THIS PATIENT UP.
        *
        * ⚠️ **`Movement.blocker`, NOT `BedRelease.blocker`.** Two different fields share that name:
@@ -2239,6 +2264,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // can enter with either.
   RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: ["ward"],
   RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: ["ward"],
+  // Same reasoning as the emergency-department pair directly above: the ward holding the bed is
+  // the only party that records its own occupant absent, or back.
+  RECORD_ABSENT_WITHOUT_LEAVE: ["ward"],
+  RECORD_RETURNED_FROM_ABSENCE: ["ward"],
   /*
    * Mirrors `WITHDRAW_REFERRAL` below exactly, and for the same reason: whoever may raise a
    * movement may say what is holding it up, plus the coordinator. The four are not

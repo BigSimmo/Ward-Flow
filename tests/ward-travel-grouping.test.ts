@@ -441,6 +441,7 @@ describe("the out-of-area ledger", () => {
       movementId: null,
       patientId: null,
       awayAtEmergencyDepartmentSince: null,
+      absentWithoutLeaveSince: null,
       sex: "Female",
       homeRegion: "Perth Metropolitan",
       // `null` on purpose: nothing in this file reads or asserts on the tentative diagnosis, so a

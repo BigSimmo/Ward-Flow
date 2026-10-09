@@ -113,6 +113,7 @@ function emptyAdmission(
     homeRegion: "Perth Metropolitan",
     tentativeDiagnosis: null,
     awayAtEmergencyDepartmentSince: null,
+    absentWithoutLeaveSince: null,
     expectedDischargeAt: null,
     dischargeDateMoves: 0,
     dischargeDateSetAt: null,

@@ -285,6 +285,9 @@ describe("who may raise which event", () => {
     CLEAR_MOVEMENT_BLOCKER: ["ed", "community", "ward", "coordinator", "officer"],
     RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: ["ward"],
     RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: ["ward"],
+    // The ward holding the bed records its own occupant absent without leave, and back.
+    RECORD_ABSENT_WITHOUT_LEAVE: ["ward"],
+    RECORD_RETURNED_FROM_ABSENCE: ["ward"],
     RELEASE_BED: ["ward"],
     // Owner answer 8 (second round, 2026-09-17): the coordinator, the ward, or the referrer.
     RELEASE_HELD_BED: ["coordinator", "ward", "ed"],

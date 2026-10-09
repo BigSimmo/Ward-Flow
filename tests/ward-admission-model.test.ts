@@ -58,6 +58,7 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     // deliberately, the same discipline `tentativeDiagnosis` above already holds to.
     bedKind: "locked",
     awayAtEmergencyDepartmentSince: null,
+    absentWithoutLeaveSince: null,
     state: "occupied",
     pulledAt: DAY_ZERO,
     arrivedAt: DAY_ZERO,
@@ -576,6 +577,9 @@ describe("Admission privacy — structural", () => {
     // member of that union is about the BED, and this bed stays occupied because the ward is
     // holding it. Nothing in `bedIsOccupied` or any availability figure may ever read it.
     "awayAtEmergencyDepartmentSince",
+    // Added 2026-10-09: the same shape as the field above — a recorded instant about the person,
+    // never a bed state and never a legal period (D5).
+    "absentWithoutLeaveSince",
     "expectedDischargeAt",
     "dischargeDateMoves",
     "dischargeDateSetAt",
@@ -600,6 +604,7 @@ describe("Admission privacy — structural", () => {
       // Populated, not null — this fixture's whole job is to carry EVERY field at a real value, so
       // a null here would leave the new field indistinguishable from an absent one.
       awayAtEmergencyDepartmentSince: 9 * 60,
+      absentWithoutLeaveSince: 10 * 60,
       id: "ADM-CANON",
       unitId: "rph-adult-open",
       // TRUE, not false — this fixture's whole job is to carry EVERY field at a real value.
