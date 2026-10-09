@@ -25,6 +25,12 @@ afterEach(cleanup);
  * implementation.
  */
 
+/** A hero highlight's count: the pill's value precedes its label inside one toggle button. */
+function heroCount(label: string): number {
+  const pill = screen.getByText(label).closest("button");
+  return Number(pill?.textContent?.match(/^\d+/)?.[0] ?? Number.NaN);
+}
+
 describe("officer screen KPI captions match their populations", () => {
   it("the seeded fixture carries the two-state split this test depends on", () => {
     // Ground truth, read off `ward-movements.ts` directly: of the 13 officer jobs (transport
@@ -69,16 +75,13 @@ describe("officer screen KPI captions match their populations", () => {
       </WardFlowProvider>,
     );
 
-    // v6 (7 Oct 2026): the hero stat's own label now names the population ("Accepted, not
-    // collected"), where the old card split it into "Active Transit Runs" over "Dispatched or In
-    // Transit". The hero stat is a value line followed by its label.
-    const label = screen.getByText("Accepted, not collected");
-    const value = label.previousElementSibling;
+    // Transport page A (9 Oct 2026): the accepted-not-collected population is split across two
+    // hero highlights, "Crew to send" (accepted, crew not yet sent) and "Crew en route". Together
+    // they must still count those jobs only.
     // Before the 16 Sept fix the value was 8 (every open job, including WF-005/WF-015 which nobody
     // has yet collected) — a number the caption beside it did not cover.
     // 2 → 5: the 17 Sept sample-data addition, WF-021/WF-025/WF-030 (accepted-only).
-    expect(value?.textContent).toBe("5");
-    expect(label.textContent).toBe("Accepted, not collected");
+    expect(heroCount("Crew to send") + heroCount("Crew en route")).toBe(5);
   });
 
   it("renders the not-yet-accepted count as those jobs only, not every not-yet-collected job", () => {
@@ -88,12 +91,9 @@ describe("officer screen KPI captions match their populations", () => {
       </WardFlowProvider>,
     );
 
-    const label = screen.getByText("Not yet accepted");
-    const value = label.previousElementSibling;
     // Before the 16 Sept fix the value was 2 (WF-005 and WF-015, both already accepted — a crew is
     // already assigned) under a caption that was no longer true of an accepted job.
-    expect(value?.textContent).toBe("0");
-    expect(label.textContent).toBe("Not yet accepted");
+    expect(heroCount("Not accepted")).toBe(0);
   });
 
   it("keeps the on-board count exactly the collected-not-arrived jobs, unchanged", () => {
@@ -229,7 +229,8 @@ describe("officer screen's refusals region has its own accessible name", () => {
     );
 
     fireEvent.click(screen.getByTestId("force-already-accepted-rejection"));
-    // v6: refusals sit on the Jobs card's Refused tab.
+    // Transport page A: refusals sit on the Jobs card's History tab, under Refused.
+    fireEvent.click(screen.getByRole("tab", { name: /^History/ }));
     fireEvent.click(screen.getByRole("tab", { name: /^Refused/ }));
 
     const refusals = screen.getByTestId("ward-officer-refusals");
@@ -316,6 +317,7 @@ describe("item 31: the officer's own arrival wording reads Delivered, not Arrive
     );
 
     fireEvent.click(screen.getByTestId("force-not-yet-collected-rejection"));
+    fireEvent.click(screen.getByRole("tab", { name: /^History/ }));
     fireEvent.click(screen.getByRole("tab", { name: /^Refused/ }));
 
     const refusals = screen.getByTestId("ward-officer-refusals");
