@@ -48,6 +48,16 @@ export function packCount(movement: Movement): number {
   return PACK_SLOTS.filter((slot) => packForm(movement, slot.key) !== undefined).length;
 }
 
+/** Josh, 9 Oct 2026: a voluntary transfer needs no forms. An unrecorded status still needs the pack. */
+export function packRequired(movement: Movement): boolean {
+  return movement.transport?.transportLegalStatus !== "voluntary";
+}
+
+/** A required pack with at least one slot still empty. */
+export function packOutstanding(movement: Movement): boolean {
+  return packRequired(movement) && packCount(movement) < PACK_SLOTS.length;
+}
+
 function formNameFor(slot: PackSlot, code: string | undefined): string {
   if (slot.key === "risk") return "Risk assessment";
   const chosen = code ?? slot.codes[0]!;
