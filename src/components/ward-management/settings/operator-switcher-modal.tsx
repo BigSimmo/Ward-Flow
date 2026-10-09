@@ -575,7 +575,12 @@ function DeskFacts({ desk, now, accessTargetMinutes }: { desk: Desk; now: number
   if (desk.role === "ward") {
     const age = desk.confirmedAt != null ? now - desk.confirmedAt : null;
     facts = [
-      ["Ready", desk.ready ?? 0, "ward confirmed"],
+      [
+        "Ready",
+        desk.ready ?? 0,
+        // The figure stays as the ward confirmed it; the beds still being cleaned are said beside it.
+        desk.pendingPreparation ? `${desk.pendingPreparation} still being made ready` : "ward confirmed",
+      ],
       ["Occupied", desk.occupied ?? 0],
       ["Closed", desk.closed ?? 0, `of ${desk.beds ?? 0} beds`],
       [

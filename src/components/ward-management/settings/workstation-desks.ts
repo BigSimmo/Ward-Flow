@@ -38,6 +38,8 @@ export type Desk = {
   occupied?: number;
   closed?: number;
   beds?: number;
+  /** Inside `ready`: beds still being made ready, which a pull is refused against. */
+  pendingPreparation?: number;
   confirmedAt?: Instant;
   stale?: boolean;
   /** ED and coordinator figures, from the ED home summaries. */
@@ -115,6 +117,7 @@ export function workstationDesks(input: {
       occupied: entry.occupied,
       closed: entry.closed,
       beds: entry.beds,
+      pendingPreparation: entry.pendingPreparation,
       confirmedAt: entry.confirmedAt,
       stale: entry.stale,
     }));
