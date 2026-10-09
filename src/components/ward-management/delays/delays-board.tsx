@@ -815,7 +815,8 @@ export function DelaysBoard({
 
   const nameOf = (movement: Movement) => `${patientOf(movement).formalName} ${patientOf(movement).umrn}`;
   const shown = filterRows(rows, filters, bins, nameOf);
-  const selected = selectedId === null ? null : (rows.find((row) => row.movement.id === selectedId) ?? null);
+  // A person the filters hide is never shown as open: their panel closes rather than sit beside no row.
+  const selected = selectedId === null ? null : (shown.find((row) => row.movement.id === selectedId) ?? null);
   const filtered = hasFilters(filters);
 
   const set = (patch: Partial<BoardFilters>) => setFilters((current) => ({ ...current, ...patch }));
@@ -851,6 +852,8 @@ export function DelaysBoard({
   const reveal = (id: string) => {
     const row = rows.find((candidate) => candidate.movement.id === id);
     if (row === undefined) return;
+    // Opening someone the filters hide shows everyone first, so their row is there to open.
+    if (!shown.some((candidate) => candidate.movement.id === id)) setFilters(NO_FILTERS);
     setSelectedId(id);
     setOpenGroups((current) => ({ ...current, [row.cause]: true }));
     setMoreGroups((current) => ({ ...current, [row.cause]: true }));
@@ -1167,7 +1170,7 @@ export function DelaysBoard({
               `Over ${H8}`,
               "warning",
               filters.threshold === 1,
-              () => toggle("threshold", 1),
+              over8 > 0 || filters.threshold === 1 ? () => toggle("threshold", 1) : undefined,
               "delays-stat-over8",
             )}
             {heroStat(
@@ -1175,7 +1178,7 @@ export function DelaysBoard({
               `Over ${H24}`,
               "danger",
               filters.threshold === 3,
-              () => toggle("threshold", 3),
+              over24 > 0 || filters.threshold === 3 ? () => toggle("threshold", 3) : undefined,
               "delays-stat-over24",
             )}
             {heroStat(

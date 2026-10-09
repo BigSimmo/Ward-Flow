@@ -165,6 +165,56 @@ describe("the Delays board's data views", () => {
     expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${OPEN.length} of ${OPEN.length}`);
   });
 
+  it("opening a person the filters hide shows everyone first, so their row is there", () => {
+    renderDelays();
+    // Longest quiet lists the seven quietest; take the first of them a locked-bed filter hides.
+    const topQuiet = ROWS.filter((row) => row.silent)
+      .sort((a, b) => b.quiet - a.quiet)
+      .slice(0, 7);
+    const target = topQuiet.find((row) => !row.locked);
+    expect(target, "every one of the quietest needs a locked bed, so the filter cannot hide them").toBeDefined();
+    showEveryDelayRow();
+    const name = screen.getByTestId(`delays-select-${target!.movement.id}`).querySelector("b")?.textContent ?? "";
+    expect(name).not.toBe("");
+
+    fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
+    expect(within(waiting()).queryByTestId(`delays-select-${target!.movement.id}`)).toBeNull();
+
+    const rail = screen.getByRole("region", { name: "Escalations and resolved" });
+    const button = within(rail)
+      .getAllByRole("button")
+      .find((candidate) => candidate.textContent?.startsWith(name));
+    expect(button, "the hidden person is not in Longest quiet").toBeDefined();
+    fireEvent.click(button!);
+
+    expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${OPEN.length} of ${OPEN.length}`);
+    expect(screen.getByTestId(`delays-select-${target!.movement.id}`)).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId(`delays-detail-${target!.movement.id}`)).toBeInTheDocument();
+  });
+
+  it("a filter that hides the open person closes their panel rather than leave it beside no row", () => {
+    renderDelays();
+    const open = ROWS.find((row) => !row.locked)!;
+    showEveryDelayRow();
+    fireEvent.click(screen.getByTestId(`delays-select-${open.movement.id}`));
+    expect(screen.getByTestId(`delays-detail-${open.movement.id}`)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
+    expect(screen.queryByTestId(`delays-detail-${open.movement.id}`)).toBeNull();
+  });
+
+  it("a headline count with nobody behind it is plain text, never a button that empties the table", () => {
+    const short = OPEN.filter((movement) => NOW_ANCHOR - movement.openedAt < OVER_8H);
+    expect(short.length, "nobody has waited under 8h").toBeGreaterThan(0);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DelaysScreen movements={short} />
+      </WardFlowProvider>,
+    );
+    for (const id of ["delays-stat-over8", "delays-stat-over24"]) {
+      expect(screen.getByTestId(id).tagName, `${id} is a button at zero`).not.toBe("BUTTON");
+    }
+  });
+
   it("moves between people with the arrow keys, Home and End", () => {
     renderDelays();
     const people = within(waiting()).getAllByTestId(/^delays-select-/u);
