@@ -151,8 +151,9 @@ repo-wide guards.
 
 **Route:** `/delays` (also the landing point for `/queue`, `/exceptions` and `/escalation`
 redirects — see `delays-alias.ts` and the `escalation/` entry below). **Mockup:**
-`delays-third-edition.html`. **Dispatches:** none found directly in this folder (grep for
-`dispatch(` in `delays-screen.tsx` returns nothing); it reads and presents only. **Reads:**
+the approved Delays page mockup (October 2026, built live in October 2026; earlier
+`delays-third-edition.html`). **Dispatches:** `RECORD_ESCALATION` from `delays-screen.tsx`
+(Escalate to State bed coordination desk in the person's panel); everything else reads and presents. **Reads:**
 its own `delays-derivations.ts`, plus `ward-derivations.ts` selectors via the shared
 `ward-service-scope-bar`/`ward-service-store`. **Tests:** the dozen `ward-delays-*` files,
 `ward-bar-zero-is-reachable.test.ts`, `ward-facade-agrees-with-screens.test.ts`,
@@ -170,43 +171,36 @@ figures/links), and by `ward-nav-counts.ts` and `ward-service-scope.ts`.
   `DELAY_OWNERS`, `ownerOf`, `delayGroups`, `legalDeadlineMinutes`. A comment flags a past defect:
   an earlier plan imported `Instant` from `ward-model` instead of `ward-clock`, a type error Vitest
   (no typecheck) never caught — a live pitfall pattern for this codebase.
-- **`src/components/ward-management/delays/delays-screen.tsx`** — the shared scoped
-  population, marks, waiting/blocker workspace, recorded-person details and existing coordination
-  actions. The owner-approved October structure permanently places an action runway above one
-  three-tab graph panel. Explicit queue drill-down scopes the worklist with a visible reset;
-  marking continues highlighting records without hiding them. Lower activity/hold sections remain intact.
-- **`src/components/ward-management/delays/delays-coordination.tsx`** and
-  **`delays-coordination.module.css`** — the permanent action runway, Catchment Pressure / Crisis
-  Radar / Wait Timeline tabs and graph inspectors. Catchments count each person once by origin ED,
-  including additional services or unrecorded origins. Navy total and amber over-eight-hour series
-  share one linear scale. Radar preserves recorded legal-time precedence, uses four-hour counted
-  clusters on a linear elapsed-wait axis, and retains long waits in an explicit beyond-window list.
-  Interval inspection exposes every member; person actions open actual movement routes. Summary Cards,
-  Combined and the runway mode toggle are removed. Selection is local to each graph; graph filters
-  do not silently change the worklist. Views retain local state across tab switches.
-  The approved light palette lives in `ckb-v2-tokens.css`, reaches the screen through
-  Delays-only `ward-tokens.module.css` aliases, and follows dark/forced-colour themes.
-  Owner controls compose the shared field primitive. Radar window and interval labels derive
-  from the same values used by its population and scale calculations.
-  Scoped print rules retain data-carrying headers, radar counts and patient-name buttons through
-  the app's transitional chrome hide, and keep themed labels readable on white paper.
-- **`src/components/ward-management/delays/delays-data-views.tsx`** — `DelaysWaitTimeline`
-  and `DelaysTableWorkspace`: the data-bound paged timeline plus the existing Focus table / Action
-  workspace. The embedded timeline matches the approved graph closeup with a separate triage column,
-  owner/search/sort controls, correctly ending solid/hatched bars and a closable selected-record strip.
-  Arrival alone is not a later recorded change. Shared worklist filters, selection, pagination and
-  the canonical table cell rules remain in use. The optional cell divider token draws the
-  embedded timeline's column boundaries; long scales keep the review label beside the column title.
-  Coordination tools remain in place. Focus table and Action workspace switch only the lower
-  worklist layout; both retain the approved shared `WardRail`/`WardBar`, backdrop and graph geometry.
-  The screen does not expose a table-layout flag to the legacy global shell-variant selectors.
+- **`src/components/ward-management/delays/delays-screen.tsx`** — the data scope (chosen
+  service), the old-bookmark banner, the Q-12 Attention population (severe causes network-wide plus
+  urgent movements outside the service), the one write (`RECORD_ESCALATION`) and the page shell.
+  Renders `DelaysBoard`. `SYSTEMIC_HOLDS` stays empty until a hold can be recorded.
+- **`src/components/ward-management/delays/delays-board.tsx`**, **`delays-board-parts.tsx`** and
+  **`delays-board.module.css`** — the approved Delays page mockup, built live: hero counts that
+  filter (Over 8h, Over 24h, due within the urgent warning, past recorded time), four "whose move"
+  tiles, the Waiting table grouped by blocker (or Longest wait, with recorded legal times pinned)
+  with a timeline under the open row, and a rail holding the Escalated / Attention / Resolved /
+  System registers plus Longest quiet, which becomes the person's panel when a row is open (a sheet
+  below 64rem). The person's panel lists their wards (accepted, declined, asked) and then
+  Candidate wards: every other ward from `shortlistCandidates`, eligible or overridable with the
+  reason, never cut to a count, plus a disclosure for wards no reason can buy. Filters narrow the table and it always states how many are hidden, with "Show
+  everyone" (owner ruling D-38, 9 October 2026, superseding the 2026-09-07 highlight rule here).
+  Below 40rem each row becomes a card.
+- **`src/components/ward-management/delays/delays-board-graphs.tsx`** — the three graphs under the
+  table: Wait spread (dots by whose move or catchment, linear to 24h then compressed to 7d), Next 4
+  hours (half-hour runway of who crosses 8h or 24h and which recorded legal times fall due, with
+  the over-8h projection) and Where and whose move (catchment by owner or blocker). Each narrows
+  the same table; a dot opens that person's row.
+- **`src/components/ward-management/delays/delays-board-model.ts`** — pure board derivations over
+  `delayGroups`: rows with wait, quiet time and recorded legal time, 8/12/24h bands, owner tiles,
+  catchments, filters, runway bins and projection, ward summaries, candidate wards and row events. Tested by
+  `tests/ward-delays-board-model.test.ts`.
 - **`src/components/ward-management/delays/delays-view-model.ts`** — pure origin counts,
   radar precedence/intervals/outliers and common linear timeline geometry. All durations use minutes.
+  The board uses its `CatchmentOrigin` type and `overTwelveHoursMinutes`; the radar and timeline
+  helpers served the old Delays views (`delays-data-views.tsx`, `delays-coordination.tsx`), deleted
+  on 9 October 2026 (D-38), and are now reached only by `tests/ward-delays-view-model.test.ts`.
   Exact window-end records stay in the final interval; longer waits are never clamped onto the axis.
-- **`src/components/ward-management/delays/delays-data-views.module.css`** — scoped table,
-  timeline, queue, responsive, print and forced-colour styles. Wide tables scroll within their panels.
-  Regression tests cover population reconciliation, minute thresholds, deadline precedence, interval
-  boundaries and no-update geometry, alongside existing scope/mark/inspection tests.
 - **`src/components/ward-management/delays/delays.module.css`** (5406 lines) — the largest CSS
   module in this map; styles for `delays-screen.tsx`.
 
