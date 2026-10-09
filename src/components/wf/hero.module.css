@@ -258,6 +258,11 @@
     flex: 1 1 100%;
     padding: 0;
   }
+  /* The figure title keeps its line; a long meta drops below it rather than squeezing it. */
+  .titleLine {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
   .stats,
   .statsEnd {
     order: 2;
@@ -295,6 +300,7 @@
   .aside {
     order: 3;
     flex: 1 1 100%;
+    min-width: 0;
     flex-wrap: wrap;
     justify-content: flex-start;
     margin-left: 0;

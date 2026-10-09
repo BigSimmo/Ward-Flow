@@ -2,92 +2,64 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  MapPin,
-  ShieldCheck,
-  TriangleAlert,
-  PhoneCall,
-  ArrowRight,
-  ChevronDown,
-  ExternalLink,
-  Route,
-  Building2,
-  BedSingle,
-  Truck,
-  Clock,
-} from "lucide-react";
+import { BedSingle, ChevronRight, Flag, Lock, PhoneCall, ShieldCheck, Truck, X } from "lucide-react";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Sheet } from "@/components/ui/sheet";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
-import { isOpen, referralForMovement, stageCopy } from "@/components/ward-management/ward-derivations";
+import {
+  isOpen,
+  movementHealthService,
+  referralForMovement,
+  stageCopy,
+  transportLeg,
+  transportNeedState,
+} from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { edById, edShortName, siteByCode } from "@/components/ward-management/ward-sites";
+import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   URGENT_MARK_REASONS,
   changeReasonLabels,
   type UrgentMarkReason,
 } from "@/components/ward-management/ward-change-reasons";
+import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "@/components/ward-management/ward-model";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import { StatusGlyph, buttonClass, type WfTone } from "@/components/wf";
 
-import styles from "./movements.module.css";
+import { movementNextStep, nextStepTarget } from "./movement-next-step";
+import { declineReasonLabels } from "./movement-workspace-derivations";
+import d from "./movement-drawer.module.css";
 
 /**
- * Review fix-forward item 10 (2026-09-17): the same accessible-reason discipline
- * `ward-management-console.tsx`'s own `URGENT_FLAG_UNCHOSEN` already holds to — an `aria-disabled`
- * button with no further explanation tells an assistive-technology reader the button exists and
- * nothing about why it does not respond, the same shape `CANCEL_TRANSPORT_UNCHOSEN` fixed on the
- * console page first.
+ * Review fix-forward item 10 (2026-09-17): an `aria-disabled` button with no further explanation
+ * tells an assistive-technology reader the button exists and nothing about why it does not respond.
  */
 const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent first.";
 
+/** D4: the exact words for a control this prototype shows but does not connect. */
+const NOT_WIRED = "Not wired in this prototype.";
+
 /**
- * **TASK M6 — the per-movement detail drawer.**
+ * **The patient pop-up (Movements overhaul, option A, 9 Oct 2026).** Opened from a worklist row,
+ * a timeline bar or a Needs you item. It answers four questions in order, from fields the record
+ * holds and nothing else: where the patient is in the journey and how long they have waited
+ * against the configured ED access target, the route and transport leg, the legal authority with
+ * its RECORDED expiry only (D5), and the one next step with who owns it.
  *
- * **SIX of the drawing's seven sections ship here.** *Watch and flag* is still held: nothing in this
- * model records that somebody is watching a movement, so the section has no state to read. 🔴 **It
- * is not stubbed** — a section heading over nothing reads as a category that exists and happens to
- * be empty, which is the opposite of what is true. **It is named in the footer instead, so a reader
- * comparing this against the drawing does not have to guess whether it was dropped, forgotten, or
- * refused.**
+ * **It records one thing itself, the urgent flag** (M7, owner ruling 2026-09-12: Chase the ward,
+ * Add to a shortlist and Record an override were declined). Pull bed, Refer and Escalate open
+ * the Patient page, where those forms and the pull's gate checks and override reason already live. Every other step belongs to
+ * ED, the receiving ward or transport, so the pop-up names the owner and offers nothing it is not
+ * allowed to record. Call ward desk is Preview: there is no ward desk number in the model.
  *
- * **M7 ships *What you can do*, and it carries ONE action out of the drawing's four — OWNER RULING
- * 2026-09-12.** He accepted the recommendation on all three that had one:
- *
- *   - ✅ **Flag as urgent** — built below. The field, the event and the ranking rule already existed.
- *   - ❌ **Chase the ward** — declined. It is probably the same act as escalating, in softer words,
- *     and two controls for one act teach a coordinator that one of them does something else.
- *   - ❌ **Add to a shortlist** — declined. A stored list can disagree with the derived one the
- *     engine trusts, and then a coordinator is holding two answers to the same question.
- *   - ❌ **Record an override** — DECLINED, and it needed a second round to get there. The owner's
- *     blanket "yes to all your recommendations" covered the three above, which were recommendations;
- *     **this one was a QUESTION back to him, and a yes does not answer a question.** It was put to
- *     him again on its own and he ruled *"drop it as you recommend"*, 2026-09-12.
- *
- *     🔴 **The reason, because it is the part that could change — and it was stated WRONG first
- *     time.** This said an override is attached to *a placement*. **There is no placement in this
- *     model.** `Override` hangs off a `Movement`, and its keyed field is `unitIds` — the model's own
- *     words, *"the units referred to despite a failing gate — THE PARTIES OVERRIDDEN"*. **So an
- *     override records a REFERRAL made against a failing gate, and names the wards it was made to.**
- *     ⚠️ **Corrected after an adversarial review, which is the right outcome for a reason stated as
- *     "the part that can change": it is the part that most needs to be right.**
- *
- *     **The conclusion survives the correction intact** — a standalone control still has nothing to
- *     attach to. It would record that somebody overrode something, without the something. ⚠️ **And this system cannot yet say WHICH
- *     check was overridden even when one happens properly** — the Alerts screen renders that gap by
- *     name. A way to create overrides pointing at nothing would widen it.
- *
- *     ✅ **So this is worth revisiting on one trigger and no other: the day an override records the
- *     gate it overrode.** Until then the answer stays no.
- *
- * ⚠️ **THE DRAWER DOES NOT REPLACE THE WORKSPACE ROUTE, IT LINKS TO IT** (Q-4). The row keeps its
- * existing "Review patient" link unchanged; this is a second, faster face on the same record. **The
- * urgent flag is now the one thing it can change** — it was true until M7 that this drawer recorded
- * nothing at all, and that sentence has been removed from the footer rather than left to age.
+ * The record sections below keep the five the drawing ships (Person, Journey, Which wards were
+ * asked, Escalation, Transport leg). *Watch and flag* is still not built and is named in the foot,
+ * because nothing records that somebody is watching a movement.
  */
 
 /**
@@ -141,61 +113,32 @@ export function personLine(movement: Movement, referrals: Referral[], patients: 
   return patient.umrn ? `${patientDisplayName(patient)} · UMRN: ${patient.umrn}` : patientDisplayName(patient);
 }
 
+/** The six steps a coordinator reads, in order. Arrival is the end of the track, not a step. */
+const STEPS: { stage: Movement["stage"]; label: string }[] = [
+  { stage: "placement_requested", label: "Referred" },
+  { stage: "destination_review", label: "Review" },
+  { stage: "accepted_awaiting_bed", label: "Accepted" },
+  { stage: "pulled", label: "Pulled" },
+  { stage: "handover_ready", label: "Handover" },
+  { stage: "moving", label: "Moving" },
+];
+
+const LEG_WORD: Record<string, string> = {
+  Requested: "Requested",
+  Accepted: "Booked",
+  "En route": "En route",
+  Collected: "Collected",
+  Arrived: "Arrived",
+  Cancelled: "Cancelled",
+};
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className={styles.drawerSection}>
-      <h3 className={styles.drawerSectionTitle}>{title}</h3>
+    <section className={d.section}>
+      <h3 className={d.sectionTitle}>{title}</h3>
       {children}
     </section>
   );
-}
-
-function getProgressPercent(stage: Movement["stage"]): string {
-  switch (stage) {
-    case "placement_requested":
-      return "15%";
-    case "destination_review":
-      return "30%";
-    case "accepted_awaiting_bed":
-      return "45%";
-    case "pulled":
-      return "60%";
-    case "handover_ready":
-      return "75%";
-    case "moving":
-      return "88%";
-    case "arrived":
-      return "100%";
-  }
-}
-
-function getWhereaboutsText(
-  movement: Movement,
-  originFullName: string,
-  originShort: string,
-  acceptedUnitName: string | undefined,
-  siteName: string | undefined,
-): string {
-  const dest = acceptedUnitName ? `${acceptedUnitName}${siteName ? ` (${siteName})` : ""}` : "destination unit";
-  if (movement.stage === "moving") {
-    const provider = movement.transport?.provider ?? "Transport Service";
-    const cad = movement.transport?.cadNumber ? ` (${movement.transport.cadNumber})` : "";
-    const escort = movement.transport?.escortRequired ? "Clinical escort onboard." : "Standard transit crew.";
-    return `In transit via ${provider}${cad}. ${escort} Departed ${originShort} heading to ${dest}.`;
-  }
-  if (movement.stage === "handover_ready") {
-    const transportStatus = movement.transport
-      ? `in departure bay awaiting ${movement.transport.provider} collection.`
-      : "awaiting transport booking.";
-    return `At ${originShort}. Clinical handover complete; ${transportStatus}`;
-  }
-  if (movement.stage === "arrived") {
-    return `Arrived at ${dest}. Inpatient admission complete.`;
-  }
-  if (movement.stage === "accepted_awaiting_bed" || movement.stage === "pulled") {
-    return `At ${originShort}. Bed allocated at ${dest}; assembling handover and transport booking.`;
-  }
-  return `At ${originFullName} undergoing destination review. Awaiting receiving ward agreement.`;
 }
 
 export function MovementDrawer({
@@ -205,313 +148,390 @@ export function MovementDrawer({
   referrals,
   patients,
   edAccessTargetMinutes,
+  legalUrgentMinutes,
   dispatch,
   onClose,
+  onFocusMovement,
 }: {
   movement: Movement | undefined;
+  /** Focuses this movement on the coordinator screen before its link opens (escalation lives there). */
+  onFocusMovement?: (movementId: string) => void;
   now: Instant;
   /** Threaded from the screen for the same reason `units` is — one provider reader per screen. */
   referrals: Referral[];
   patients: readonly Patient[];
   /**
-   * The LIVE units, threaded from the screen rather than read from the fixture here.
-   *
-   * The one-source-of-truth guard reddened on this file the moment M6 met the fold. It was right
-   * to: `unitById` reads the module fixture, and a drawer that names a ward from the fixture while
-   * the board behind it names the same ward from reducer state will disagree with itself the first
-   * time a unit changes - with every other gate green, because both calls return a `Unit`.
-   *
-   * Threaded as a prop rather than pulled with `useWardFlow` here, matching `TransportRow` on the
-   * screen that owns this drawer: the parent already holds the live array, and one reader of the
-   * provider per screen keeps the source obvious.
+   * The LIVE units, threaded from the screen rather than read from the fixture, so the pop-up and
+   * the board behind it name a ward from the same reducer state.
    */
   units: Unit[];
   /**
    * Coordinator-configured ED access target, threaded from the screen's `configuration` rather
-   * than the module default. Reading the default constant here would ignore a saved settings
-   * change (`tests/ward-configuration-read-sites.test.ts`).
+   * than the module default (`tests/ward-configuration-read-sites.test.ts`).
    */
   edAccessTargetMinutes: number;
-  /**
-   * Threaded from the screen for the same reason `units` and `referrals` are — one provider reader
-   * per screen, so the thing this drawer writes to is visibly the same store the board behind it
-   * reads from.
-   */
+  /** Settings' `dueSoonUrgentMinutes`: how close a recorded legal expiry turns the line amber. */
+  legalUrgentMinutes: number;
+  /** The same store the board behind this pop-up reads from. */
   dispatch: (event: WardFlowEvent) => void;
   onClose: () => void;
 }) {
-  // Item 37 (2026-09-17): the flag now needs a reason chosen from URGENT_MARK_REASONS, same
-  // draft-until-dispatched discipline as every other reason picker in this codebase. Declared
-  // before the early return below so hook order never depends on whether `movement` resolves.
+  // Item 37 (2026-09-17): the flag needs a reason chosen from URGENT_MARK_REASONS. Declared before
+  // the early return so hook order never depends on whether `movement` resolves.
   const [urgentFlagReason, setUrgentFlagReason] = useState<UrgentMarkReason | undefined>(undefined);
 
   if (movement === undefined) return null;
 
   const open = isOpen(movement);
+  const closure = movement.closure;
   const originEd = edById(movement.originEdId);
+  const originLabel = departmentLabel(movement.originEdId, originEd?.name);
+  const originSite = originEd?.siteCode ? siteByCode(originEd.siteCode) : undefined;
   const accepted =
     movement.acceptedUnitId === undefined
       ? undefined
       : units.find((candidate) => candidate.id === movement.acceptedUnitId);
+  const acceptedSite = accepted ? siteByCode(accepted.siteCode)?.name : undefined;
+  // Owner, 26 Sept 2026: the patient's name, not the WF journey number. D-39: the UMRN.
+  const subject = resolveSubjectPatient(movement, { patients, referrals });
+  const titleId = `ward-movement-drawer-title-${movement.id}`;
+  const recordHref = `/mockups/ward-flow/movements/${movement.id}`;
 
-  // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-  const subjectPatient = resolveSubjectPatient(movement, { patients, referrals });
+  const step = movementNextStep(movement);
+  const blocker = movement.blocker.trim();
+  const hasBlocker = blocker !== "" && !BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === blocker);
 
-  const originFullName = departmentLabel(movement.originEdId, originEd?.name);
-  const originShort = originEd ? edShortName(originEd) : movement.originEdId;
-  const originSite = originEd?.siteCode ? siteByCode(originEd.siteCode) : undefined;
-  const originHospitalName =
-    originSite?.name ?? (originEd?.name ? originEd.name.replace(/ Emergency Department$/i, "") : undefined);
-  const originDeptName = originEd ? "Emergency Department" : originFullName;
-  const destSiteName = accepted ? siteByCode(accepted.siteCode)?.name : undefined;
+  // Wait against the configured access target, with the named 8 hour severe-pressure mark.
+  const waited = Math.max((closure ? closure.at : now) - movement.openedAt, 0);
+  const waitTone: "danger" | "warning" | undefined = closure
+    ? undefined
+    : waited >= edAccessTargetMinutes
+      ? "danger"
+      : waited >= ED_SEVERE_PRESSURE_WAIT_MINUTES
+        ? "warning"
+        : undefined;
+  const waitWord = closure
+    ? "in journey before it ended"
+    : waitTone === "danger"
+      ? `past the ${splitDuration(edAccessTargetMinutes)} target`
+      : waitTone === "warning"
+        ? `over ${splitDuration(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`
+        : "waited";
+  const severeMark = Math.min(100, (ED_SEVERE_PRESSURE_WAIT_MINUTES / edAccessTargetMinutes) * 100);
 
-  const isNoBlocker =
-    !movement.blocker ||
-    movement.blocker === "No blocker" ||
-    movement.blocker.startsWith("None —") ||
-    movement.blocker.startsWith("None -");
+  // Transport: the leg's latest recorded step and when.
+  const leg = movement.transport;
+  const legState = transportLeg(leg);
+  // The time of the step the derived state names: a cancel or an arrival, not the step before it.
+  const legAt = leg
+    ? (leg.cancelledAt ?? leg.arrivedAt ?? leg.collectedAt ?? leg.enRouteAt ?? leg.acceptedAt)
+    : undefined;
+  const need = transportNeedState(movement);
+  const via = leg
+    ? `${leg.provider}${leg.escortRequired ? " · escort required" : " · no escort"}`
+    : need === "not_needed"
+      ? "No transport needed"
+      : movement.stage === "handover_ready"
+        ? "Transport not booked"
+        : "Transport not recorded";
 
-  const waitMinutes = Math.max(now - movement.openedAt, 0);
-  const totalWaitFormatted = splitDuration(waitMinutes);
-  const pastAccessTarget = waitMinutes > edAccessTargetMinutes;
+  // Legal: the register title plus the recorded expiry only. Never a computed limit (D5).
+  const dueAt = movement.legalForm?.dueAt;
+  const legalTone: WfTone | undefined =
+    dueAt === undefined || closure
+      ? undefined
+      : dueAt < now
+        ? "danger"
+        : dueAt - now < legalUrgentMinutes
+          ? "warning"
+          : undefined;
+  const legalTitle = movement.legalForm
+    ? legalFormName(movement.legalForm)
+    : movement.legalStatus === "Voluntary"
+      ? "Voluntary"
+      : "No legal form recorded";
+  const legalWhen =
+    dueAt === undefined
+      ? movement.legalForm
+        ? "no recorded expiry"
+        : ""
+      : dueAt < now
+        ? `recorded expiry passed ${splitDuration(now - dueAt)} ago`
+        : `recorded expiry ${formatInstantWithDay(dueAt, now)}`;
 
-  const progressPct = getProgressPercent(movement.stage);
+  // Every ward ever asked: live requests, recorded declines and the accepting ward. A decline
+  // removes the ward from the live list, so the live list alone would read "None yet".
+  const declinedIds = new Set(movement.declines.map((decline) => decline.unitId));
+  const askedIds = new Set([...movement.referredUnitIds, ...declinedIds]);
+  if (movement.acceptedUnitId) askedIds.add(movement.acceptedUnitId);
+  const asked = askedIds.size;
+  const pending = movement.referredUnitIds.length;
+  const wardsAsked = accepted
+    ? asked <= 1
+      ? "Accepted"
+      : `${asked}, accepted`
+    : asked === 0
+      ? "None yet"
+      : pending === 0
+        ? `${asked}, all declined`
+        : `${asked}, ${declinedIds.size} declined`;
 
-  const stageTagClass = movement.flaggedUrgent
-    ? styles.tagRed
-    : movement.stage === "moving"
-      ? styles.tagBlue
-      : movement.stage === "handover_ready" || movement.stage === "arrived"
-        ? styles.tagGreen
-        : styles.tagAmber;
+  // Only an arrival completes the track. A movement that did not proceed keeps the stage it held.
+  const currentStep =
+    closure?.outcome === "arrived" || movement.stage === "arrived"
+      ? STEPS.length
+      : STEPS.findIndex((s) => s.stage === movement.stage);
 
-  const patientFirstName =
-    subjectPatient.formalName.split(",")[1]?.trim() ||
-    subjectPatient.formalName.split(" ")[0] ||
-    subjectPatient.formalName;
+  let nextAction: React.ReactNode = null;
+  if (step && open) {
+    if (step.kind !== "wait") {
+      const target = nextStepTarget(step, movement.id);
+      nextAction = (
+        <Link
+          className={buttonClass({ variant: "pri", className: d.wide })}
+          href={target.href}
+          onClick={step.kind === "escalate" ? () => onFocusMovement?.(movement.id) : undefined}
+        >
+          {step.label} on {target.where}
+          <ChevronRight size={14} aria-hidden="true" />
+        </Link>
+      );
+    } else {
+      nextAction = (
+        <p className={d.waiting}>
+          <StatusGlyph tone="neutral" size={9} />
+          <span>
+            Next: <strong>{step.label}</strong>, waiting on {step.owner}
+          </span>
+        </p>
+      );
+    }
+  }
 
   return (
     <Sheet
       open
       onClose={onClose}
-      contentClassName={styles.drawerSheetContent}
-      bodyClassName={styles.drawerSheetBody}
-      title={`${subjectPatient.formalName} — what is recorded`}
-      headerLeading={<div className={styles.drawerAvatarMonogram}>{subjectPatient.formalName.charAt(0)}</div>}
-      descriptionContent={
-        <div className={styles.drawerSubline}>
-          {subjectPatient.umrn ? <span className={styles.drawerUmrnBadge}>UMRN: {subjectPatient.umrn}</span> : null}
-          <span>
-            {movement.cohort} · {movement.sex} · {movement.security === "Secure" ? "Needs locked bed" : "Open ward"}
-          </span>
-          {movement.legalForm ? (
-            <span className={styles.drawerLegalTag}>{legalFormName(movement.legalForm)}</span>
-          ) : null}
-        </div>
-      }
-      headerActions={
-        <div className={styles.drawerHeaderStatusWrap}>
-          <span className={`${styles.corridorStatusTag} ${stageTagClass}`}>
-            <span className={styles.statusDot} />
-            {movement.flaggedUrgent ? "URGENT FLAG" : stageCopy[movement.stage].label.toUpperCase()}
-          </span>
-          <span className={styles.drawerUrgencyText}>Urgency {movement.urgency} of 3</span>
-        </div>
-      }
+      labelledBy={titleId}
+      placement="responsive-right"
+      contentClassName={d.panel}
+      bodyClassName={d.body}
     >
-      {/* 🚀 Visual Hero: Current Movement (Simplified & Project Aligned) */}
-      <div className={styles.corridorCard}>
-        <div className={styles.corridorTitleRow}>
-          <span className={styles.corridorSectionTitle}>
-            <Route className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>Current movement</span>
-          </span>
-          <span className={`${styles.corridorStatusTag} ${stageTagClass}`}>
-            <span className={styles.statusDot} />
-            {movement.flaggedUrgent ? "URGENT" : stageCopy[movement.stage].label.toUpperCase()}
-          </span>
-        </div>
-
-        {/* 2-Hub Physical Highway */}
-        <div className={styles.corridorGrid}>
-          {/* Origin Hub */}
-          <div className={styles.corridorHub}>
-            <div className={styles.hubRole}>
-              <Building2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>Departing from</span>
-            </div>
-            <div className={styles.hubName}>{originDeptName}</div>
-            <div className={styles.hubMeta}>{originHospitalName ?? originFullName}</div>
-            <div className={styles.hubFoot}>
-              <span>
-                {movement.stage === "moving" || movement.stage === "arrived" ? "Departed:" : "Opened:"}{" "}
-                <strong>{formatInstantWithDay(movement.openedAt, now)}</strong>
-              </span>
-            </div>
-          </div>
-
-          {/* Highway Vector */}
-          <div className={styles.corridorHighway}>
-            <span className={styles.transitBadge}>
-              <Truck className="h-3 w-3 shrink-0" aria-hidden="true" />
-              <span>
-                {movement.transport?.provider ??
-                  (movement.transportNeed?.needed === false ? "Walking Transfer" : "Transport Leg")}
-              </span>
+      <div className={d.head} data-closed={closure ? "true" : undefined}>
+        <div className={d.who}>
+          <h2 id={titleId} className={d.name}>
+            {subject.formalName} <span className="sr-only">— what is recorded</span>
+          </h2>
+          <p className={d.subline}>
+            <span className={d.mono}>{subject.umrn}</span>
+            <span className={d.trunc}>
+              {" "}
+              · {movement.cohort} · {movement.sex}
             </span>
-            <div className={styles.transitTrack}>
-              <div className={styles.transitFill} style={{ width: progressPct }} />
-            </div>
-            <div className={styles.transitVehicle}>
-              {movement.transport?.cadNumber ? `CAD #${movement.transport.cadNumber}` : "Dispatch Pending"}
-            </div>
-            <div className={styles.transitEta}>{stageCopy[movement.stage].label}</div>
-          </div>
+            {movement.security === "Secure" ? (
+              <Lock size={13} className={d.lock} aria-label="Needs a locked bed" />
+            ) : null}
+          </p>
+        </div>
+        <span className={d.tier} data-tier={movement.urgency} title={`Urgency tier ${movement.urgency}`}>
+          <span className="sr-only">Urgency tier </span>
+          <span aria-hidden="true">T</span>
+          {movement.urgency}
+        </span>
+        <Link className={buttonClass({ variant: "ghost", size: "sm" })} href={recordHref} title="Open the Patient page">
+          <span className={d.linkText}>Patient</span>
+          <ChevronRight size={14} aria-hidden="true" />
+        </Link>
+        <button
+          type="button"
+          className={buttonClass({ variant: "sec", size: "sm", iconOnly: true })}
+          onClick={onClose}
+          aria-label="Close"
+          data-sheet-autofocus="true"
+        >
+          <X size={14} aria-hidden="true" />
+        </button>
+      </div>
 
-          {/* Target Hub */}
-          <div className={accepted ? styles.corridorHubAccepted : styles.corridorHub}>
-            <div className={styles.hubRole}>
-              <BedSingle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>{accepted ? "Destination ward" : "Awaiting ward"}</span>
-            </div>
-            <div className={styles.hubName}>{accepted ? accepted.name : "Awaiting Ward"}</div>
-            <div className={styles.hubMeta}>
-              {accepted ? (destSiteName ?? "Specialist Inpatient Unit") : "Statewide bed pool"}
-            </div>
-            <div className={styles.hubFoot}>
-              <span>
-                Status:{" "}
-                <strong>{accepted ? (movement.stage === "arrived" ? "Admitted" : "Bed Prepared") : "In Review"}</strong>
+      {closure ? (
+        <p className={d.closed}>
+          <StatusGlyph tone={closure.outcome === "arrived" ? "success" : "closed"} size={9} />
+          <span className={d.trunc}>
+            {closure.outcome === "arrived" ? "Arrived" : "Did not proceed"} {formatInstantWithDay(closure.at, now)} ·{" "}
+            {closure.reason}
+          </span>
+        </p>
+      ) : (
+        <div className={d.status}>
+          <p className={d.statusLine}>
+            <StatusGlyph tone={movement.flaggedUrgent ? "danger" : "neutral"} size={9} />
+            <strong>{stageCopy[movement.stage].label}</strong>
+            {legState && legAt !== undefined ? (
+              <span className={d.trunc}>
+                · {LEG_WORD[legState] ?? legState} <span className={d.mono}>{formatInstantWithDay(legAt, now)}</span>
               </span>
-              {accepted ? (
-                <Link
-                  href={`/mockups/ward-flow/board/${accepted.id}`}
-                  className={styles.corridorWardLink}
-                  title={`Open ${accepted.name} Bed Board`}
-                >
-                  <span>Board</span>
-                  <ArrowRight className="h-3 w-3" aria-hidden="true" />
-                </Link>
-              ) : null}
-            </div>
-          </div>
+            ) : null}
+            <span className={d.spacer} />
+            {waitTone ? <StatusGlyph tone={waitTone} size={9} /> : null}
+            <span className={d.waitValue}>{splitDuration(waited)}</span>
+            <span className={d.waitWord} data-tone={waitTone}>
+              {waitWord}
+            </span>
+          </p>
+          <span className={d.meter} data-tone={waitTone} aria-hidden="true">
+            <i style={{ width: `${Math.min(100, (waited / edAccessTargetMinutes) * 100).toFixed(0)}%` }} />
+            <b style={{ left: `${severeMark.toFixed(1)}%` }} />
+          </span>
+          <span className={d.ticks} aria-hidden="true">
+            <span>Opened {formatInstantWithDay(movement.openedAt, now)}</span>
+            <span>{splitDuration(edAccessTargetMinutes)} target</span>
+          </span>
         </div>
+      )}
 
-        {/* Whereabouts Beacon */}
-        <div className={styles.whereaboutsBanner}>
-          <div className={styles.whereaboutsIconBox}>
-            <MapPin className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <div className={styles.whereaboutsContent}>
-            <div className={styles.whereaboutsHeading}>Where is {patientFirstName} right now?</div>
-            <p className={styles.whereaboutsText}>
-              {getWhereaboutsText(movement, originFullName, originShort, accepted?.name, destSiteName)}
-            </p>
-          </div>
-        </div>
+      <ol className={d.journeySteps} aria-label="Journey stage">
+        {STEPS.map((s, index) => (
+          <li
+            key={s.stage}
+            className={d.journeyStep}
+            data-state={index < currentStep ? "done" : index === currentStep ? "current" : undefined}
+            aria-current={index === currentStep ? "step" : undefined}
+          >
+            <span className={d.dot} aria-hidden="true" />
+            <span className={d.stepLabel}>{s.label}</span>
+          </li>
+        ))}
+      </ol>
+
+      <div className={d.route}>
+        <StatusGlyph tone="neutral" size={9} />
+        <span className={d.place} title={originLabel}>
+          {originEd ? `${originEd.siteCode} ED` : originLabel}
+          {originSite ? <small>{originSite.name}</small> : null}
+        </span>
+        <span className={d.time}>{formatInstantWithDay(movement.openedAt, now)}</span>
+        <span className={d.line} aria-hidden="true" />
+        <span className={d.via}>
+          <Truck size={14} aria-hidden="true" />
+          <span className={d.trunc}>{via}</span>
+        </span>
+        <StatusGlyph tone={accepted ? "info" : "closed"} size={9} />
+        <span className={d.place}>
+          {accepted ? accepted.name : "Destination pending"}
+          {acceptedSite ? <small>{acceptedSite}</small> : null}
+        </span>
+        <span className={d.time}>{closure ? formatInstantWithDay(closure.at, now) : ""}</span>
       </div>
 
-      {/* Dual Detail Deck: Transport & Escort + Wait Time & Target */}
-      <div className={styles.telemetryDeck}>
-        <div className={styles.telemetryBox}>
-          <div className={styles.telemetryTitle}>
-            <Truck className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>Transport &amp; escort</span>
+      <div className={d.facts}>
+        <p className={d.legal} data-tone={legalTone}>
+          {legalTone ? <StatusGlyph tone={legalTone} size={9} /> : <ShieldCheck size={14} aria-hidden="true" />}
+          <span className={d.trunc}>
+            <strong>{legalTitle}</strong>
+            {legalWhen ? ` · ${legalWhen}` : ""}
+          </span>
+        </p>
+        <dl className={d.grid}>
+          <div>
+            <dt>Whose move</dt>
+            <dd>{step ? step.owner : "Nobody, closed"}</dd>
           </div>
-          <div className={styles.telemetryItem}>
-            <span className={styles.telemetryLabel}>Carrier:</span>
-            <strong>
-              {movement.transport?.provider ??
-                (movement.transportNeed?.needed === false ? "Walking transfer" : "Not yet booked")}
-            </strong>
+          <div>
+            <dt>Owner</dt>
+            <dd>{movement.owner.trim() || "Not recorded"}</dd>
           </div>
-          <div className={styles.telemetryItem}>
-            <span className={styles.telemetryLabel}>CAD booking #:</span>
-            <strong className={styles.telemetryMono}>{movement.transport?.cadNumber ?? "—"}</strong>
+          <div>
+            <dt>Transport</dt>
+            <dd>
+              {legState && legAt !== undefined
+                ? `${LEG_WORD[legState] ?? legState} ${formatInstantWithDay(legAt, now)}`
+                : legState
+                  ? (LEG_WORD[legState] ?? legState)
+                  : "Not recorded"}
+            </dd>
           </div>
-          <div className={styles.telemetryItem}>
-            <span className={styles.telemetryLabel}>Clinical escort:</span>
-            <strong className={movement.transport?.escortRequired ? styles.textDanger : undefined}>
-              {movement.transport?.escortRequired ? "Escort required (Nurse + Security)" : "None needed"}
-            </strong>
+          <div>
+            <dt>CAD</dt>
+            <dd className={d.mono}>{leg?.cadNumber ?? "Not recorded"}</dd>
           </div>
-          {movement.legalForm ? (
-            <div className={styles.telemetryItem}>
-              <span className={styles.telemetryLabel}>Legal form:</span>
-              <strong className={styles.textAccent}>{legalFormName(movement.legalForm)}</strong>
-            </div>
+          <div>
+            <dt>Wards asked</dt>
+            <dd>{wardsAsked}</dd>
+          </div>
+          <div>
+            <dt>Service</dt>
+            <dd>{movementHealthService(movement) ?? "Not identified"}</dd>
+          </div>
+        </dl>
+        {hasBlocker && !closure ? (
+          <p className={d.blocker}>
+            <StatusGlyph tone={waitTone === "danger" ? "danger" : "warning"} size={9} />
+            <span className={d.trunc} title={movement.blocker}>
+              {movement.blocker}
+            </span>
+          </p>
+        ) : null}
+      </div>
+
+      <section className={d.actions} aria-labelledby={`${titleId}-actions`}>
+        <h3 id={`${titleId}-actions`} className={d.sectionTitle}>
+          What you can do
+        </h3>
+        {nextAction}
+        <div className={d.row}>
+          {accepted ? (
+            <Link
+              href={`/mockups/ward-flow/board/${accepted.id}`}
+              className={buttonClass({ variant: "sec", size: "sm" })}
+              title={`Open ${accepted.name} Bed Board`}
+            >
+              <BedSingle size={14} aria-hidden="true" />
+              Ward board
+            </Link>
           ) : null}
+          <button
+            type="button"
+            className={buttonClass({ variant: "sec", size: "sm", className: d.preview })}
+            aria-disabled="true"
+            title={`Preview. ${NOT_WIRED}`}
+            onClick={ignoreUnavailableActivation}
+          >
+            <PhoneCall size={14} aria-hidden="true" />
+            Call ward desk
+          </button>
         </div>
-
-        <div className={styles.telemetryBox}>
-          <div className={styles.telemetryTitle}>
-            <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>Wait time &amp; transfer target</span>
-          </div>
-          <div className={styles.telemetryItem}>
-            <span className={styles.telemetryLabel}>Time waiting:</span>
-            <strong className={styles.telemetryMono}>{totalWaitFormatted}</strong>
-          </div>
-          <div className={styles.telemetryItem}>
-            <span className={styles.telemetryLabel}>ED access target:</span>
-            <span className={styles.telemetryMono}>{splitDuration(edAccessTargetMinutes)}</span>
-          </div>
-          <div className={styles.telemetryItem}>
-            <span className={styles.telemetryLabel}>Target status:</span>
-            <strong className={pastAccessTarget ? styles.textDanger : styles.textGood}>
-              {pastAccessTarget
-                ? `Past access target by ${splitDuration(waitMinutes - edAccessTargetMinutes)}`
-                : `Within access target (${splitDuration(edAccessTargetMinutes - waitMinutes)} left)`}
-            </strong>
-          </div>
-        </div>
-      </div>
-
-      {/* Delay Barrier / Transfer Status Banner */}
-      <div className={`${styles.flowCheckBanner} ${isNoBlocker ? styles.flowCheckGood : styles.flowCheckBlocked}`}>
-        {isNoBlocker ? (
-          <ShieldCheck className="h-5 w-5 shrink-0" aria-hidden="true" />
-        ) : (
-          <TriangleAlert className="h-5 w-5 shrink-0" aria-hidden="true" />
-        )}
-        <div>
-          <strong>{isNoBlocker ? "Transfer status:" : "Delay barrier:"}</strong>{" "}
-          {isNoBlocker
-            ? `All checks clear. Bed allocated at ${
-                accepted ? accepted.name : "receiving ward"
-              }. Transport and handover ready.`
-            : movement.blocker}
-        </div>
-      </div>
-
-      {/* Modal Action Bar */}
-      <div className={styles.drawerActionBar}>
-        <div className={styles.actionGroupLeft}>
+        <div className={d.urgent}>
+          <p className={d.urgentLine}>
+            <Flag size={14} aria-hidden="true" />
+            <span>
+              {movement.flaggedUrgent
+                ? open
+                  ? "Flagged urgent. This patient leads the queue ahead of every urgency tier, including tier 1."
+                  : "Flagged urgent. This movement is no longer in the queue, so the flag orders nothing now. Removing it changes only the record."
+                : open
+                  ? "Not flagged. This patient is ordered by urgency tier and waiting time, like everybody else."
+                  : "Not flagged, and this movement is no longer running, so it is not in the queue at all. Flagging it would change nothing."}
+            </span>
+          </p>
           {movement.flaggedUrgent ? (
             <button
               type="button"
-              className={styles.actionUrgentRemove}
+              className={buttonClass({ variant: "sec", size: "sm" })}
               data-testid="ward-movement-drawer-urgent-toggle"
               onClick={() =>
-                dispatch({
-                  type: "CLEAR_MOVEMENT_URGENT_FLAG",
-                  role: "coordinator",
-                  now,
-                  movementId: movement.id,
-                })
+                dispatch({ type: "CLEAR_MOVEMENT_URGENT_FLAG", role: "coordinator", now, movementId: movement.id })
               }
             >
-              <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span>Remove the urgent flag</span>
+              Remove the urgent flag
             </button>
           ) : open ? (
-            <div className={styles.drawerReasonRow} style={{ marginTop: 0 }}>
+            <div className={d.urgentPick}>
               <label className="sr-only" htmlFor="ward-movement-drawer-urgent-reason">
                 Why is this urgent?
               </label>
               <select
                 id="ward-movement-drawer-urgent-reason"
-                className={styles.drawerReasonSelect}
+                className={d.select}
                 data-testid="ward-movement-drawer-urgent-reason"
                 value={urgentFlagReason ?? ""}
                 onChange={(chosen) => {
@@ -521,7 +541,7 @@ export function MovementDrawer({
                   );
                 }}
               >
-                <option value="">Choose why this is urgent…</option>
+                <option value="">Choose why this is urgent</option>
                 {URGENT_MARK_REASONS.map((reason) => (
                   <option key={reason} value={reason}>
                     {changeReasonLabels[reason]}
@@ -530,7 +550,7 @@ export function MovementDrawer({
               </select>
               <button
                 type="button"
-                className={styles.actionUrgentBtn}
+                className={buttonClass({ variant: "sec", size: "sm" })}
                 data-testid="ward-movement-drawer-urgent-toggle"
                 aria-disabled={urgentFlagReason === undefined ? "true" : undefined}
                 aria-describedby={urgentFlagReason === undefined ? "ward-movement-drawer-urgent-blocked" : undefined}
@@ -550,8 +570,7 @@ export function MovementDrawer({
                       }
                 }
               >
-                <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>Flag this patient as urgent</span>
+                Flag this patient as urgent
               </button>
               {urgentFlagReason === undefined ? (
                 <span id="ward-movement-drawer-urgent-blocked" className="sr-only">
@@ -561,192 +580,102 @@ export function MovementDrawer({
             </div>
           ) : null}
         </div>
+      </section>
 
-        <div className={styles.actionGroupRight}>
-          <button
-            type="button"
-            className={styles.actionBtnSecondary}
-            title="Call ward desk"
-            onClick={() => {
-              window.location.href = "tel:0894313333";
-            }}
-          >
-            <PhoneCall className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>Call Ward Desk</span>
-          </button>
-
-          {accepted ? (
-            <Link
-              href={`/mockups/ward-flow/board/${accepted.id}`}
-              className={styles.actionBtnPrimary}
-              title={`Open ${accepted.name} Bed Board`}
-            >
-              <span>Open {accepted.name}</span>
-              <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
-            </Link>
-          ) : null}
-
-          <Link
-            href={`/mockups/ward-flow/movements/${movement.id}`}
-            className={styles.actionBtnSecondary}
-            title="Open movement in full workspace"
-          >
-            <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>Workspace</span>
-          </Link>
-
-          <button type="button" className={styles.actionBtnSecondary} onClick={onClose}>
-            Dismiss
-          </button>
-        </div>
-      </div>
-
-      {/* Statutory & Clinical Audit Register (5 Sections) */}
-      <details className={styles.auditAccordion}>
-        <summary className={styles.auditSummary}>
-          <div className={styles.auditSummaryLabel}>
-            <strong>Statutory &amp; Clinical Audit Register</strong>
-            <span className={styles.auditSummaryBadge}>5 Sections</span>
-          </div>
-          <ChevronDown className={styles.auditSummaryChevron} aria-hidden="true" />
-        </summary>
-        <div className={styles.auditBody}>
-          <Section title="Person">
-            <p className={styles.drawerLine}>{personLine(movement, referrals, patients)}</p>
-            <ul className={styles.drawerList}>
-              <li>Sex recorded as {movement.sex}</li>
-              <li>
-                {movement.cohort} · {movement.security === "Secure" ? "needs a locked bed" : "open ward"}
-              </li>
-              <li>Urgency {movement.urgency} of 3</li>
-              <li>Owned by {movement.owner}</li>
-            </ul>
-            <p className={styles.drawerAbsent}>
-              Every person in this prototype is invented. Nobody named here is a real patient.
-            </p>
-          </Section>
-
-          <Section title="Journey">
-            <p className={styles.drawerLine}>
-              {stageCopy[movement.stage].label} · opened {formatInstantWithDay(movement.openedAt, now)} · from{" "}
-              {departmentLabel(movement.originEdId, originEd?.name)}
-            </p>
-            {movement.stageChanges.length === 0 ? (
-              <p className={styles.drawerAbsent}>
-                No stage change has been recorded, so this movement has not moved since it opened.
-              </p>
-            ) : (
-              <ul className={styles.drawerList}>
-                {movement.stageChanges.map((change) => (
-                  <li key={`${change.at} ${change.to}`}>
-                    {change.from === undefined ? "Opened" : stageCopy[change.from].label} → {stageCopy[change.to].label}{" "}
-                    · {formatInstantWithDay(change.at, now)} · {change.by}
-                    {change.reason === undefined ? "" : ` · ${change.reason}`}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
-
-          <Section title="Which wards were asked">
-            {movement.referredUnitIds.length === 0 ? (
-              <p className={styles.drawerAbsent}>No ward has been asked yet.</p>
-            ) : (
-              <ul className={styles.drawerList}>
-                {movement.referredUnitIds.map((unitId) => {
-                  const unit = units.find((candidate) => candidate.id === unitId);
-                  const decline = movement.declines.find((entry) => entry.unitId === unitId);
-                  return (
-                    <li key={unitId}>
-                      {wardLabel(unitId, unit?.name)}
-                      {movement.acceptedUnitId === unitId
-                        ? " · accepted"
-                        : decline
-                          ? ` · refused — ${decline.reason}`
-                          : " · no answer yet"}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            {accepted === undefined ? null : (
-              <p className={styles.drawerLine}>
-                Accepted destination: {accepted.name}{" "}
-                <Link
-                  href={`/mockups/ward-flow/board/${accepted.id}`}
-                  className={styles.jumpToWardLink}
-                  title={`Open ${accepted.name} Bed Board`}
-                >
-                  Open on Ward Board →
-                </Link>
-              </p>
-            )}
-          </Section>
-
-          <Section title="Escalation">
-            {movement.escalation === undefined ? (
-              <p className={styles.drawerAbsent}>
-                Nothing has been escalated on this movement. That is a record, not a gap.
-              </p>
-            ) : (
-              <p className={styles.drawerLine}>
-                Escalated to {movement.escalation.contact} on {formatInstantWithDay(movement.escalation.at, now)}, after{" "}
-                {movement.escalation.triedUnitIds.length}{" "}
-                {movement.escalation.triedUnitIds.length === 1 ? "ward was" : "wards were"} tried.
-              </p>
-            )}
-          </Section>
-
-          <Section title="Transport leg">
-            {movement.transport === undefined ? (
-              <p className={styles.drawerAbsent}>
-                No transport leg has been booked, so there is nothing to say about a vehicle.
-              </p>
-            ) : (
-              <p className={styles.drawerLine}>
-                {movement.transport.provider}
-                {movement.transport.escortRequired ? " · escort required" : ""}
-                {movement.transport.formRequired ? " · a form is required" : ""}
-                {movement.transport.acceptedAt === undefined
-                  ? ""
-                  : ` · accepted ${formatInstantWithDay(movement.transport.acceptedAt, now)}`}
-              </p>
-            )}
-            {movement.legalForm === undefined ? null : (
-              <p className={styles.drawerLine}>Legal authority: {legalFormName(movement.legalForm)}</p>
-            )}
-          </Section>
-
-          <Section title="What you can do">
-            <p className={styles.drawerLine}>
-              {movement.flaggedUrgent
-                ? open
-                  ? "Flagged urgent. This patient leads the queue ahead of every urgency tier, including tier 1."
-                  : "Flagged urgent. This movement is no longer in the queue, so the flag orders nothing now — removing it changes only the record."
-                : open
-                  ? "Not flagged. This patient is ordered by urgency tier and waiting time, like everybody else."
-                  : "Not flagged — and this movement is no longer running, so it is not in the queue at all. Flagging it would change nothing."}
-            </p>
-            <p className={styles.drawerAbsent}>
-              This is the only thing this drawer changes. Everything else about this movement is done in the full
-              workspace.
-            </p>
-          </Section>
-
-          <p className={styles.drawerFoot}>
-            <strong>One section the drawing carries is not built</strong> — <em>Watch and flag</em>. Nothing in this
-            system records that somebody is watching a movement, so there is no state for it to show;{" "}
-            <Link className={styles.action} href={`/mockups/ward-flow/movements/${movement.id}`}>
-              the full workspace
-            </Link>{" "}
-            is where this movement is worked on.
+      <div className={d.record}>
+        <Section title="Person">
+          <p className={d.text}>{personLine(movement, referrals, patients)}</p>
+          <p className={d.muted}>
+            Sex recorded as {movement.sex} · {movement.cohort} ·{" "}
+            {movement.security === "Secure" ? "needs a locked bed" : "open ward"} · urgency {movement.urgency} of 3
           </p>
-        </div>
-      </details>
+        </Section>
 
-      <div className={styles.syntheticFootnote}>
-        Invented synthetic demonstration data for WA Health psychiatric bed flow evaluation. Zero real patient
-        information.
+        <Section title="Journey">
+          {movement.stageChanges.length === 0 ? (
+            <p className={d.muted}>
+              No stage change has been recorded, so this movement has not moved since it opened.
+            </p>
+          ) : (
+            <ul className={d.list}>
+              {[...movement.stageChanges].reverse().map((change) => (
+                <li key={`${change.at} ${change.to}`}>
+                  <span className={d.mono}>{formatInstantWithDay(change.at, now)}</span>
+                  <span
+                    className={d.trunc}
+                    title={`${change.from === undefined ? "Opened" : stageCopy[change.from].label} to ${stageCopy[change.to].label} · ${change.by}${change.reason === undefined ? "" : ` · ${change.reason}`}`}
+                  >
+                    {change.from === undefined ? "Opened" : stageCopy[change.from].label} to{" "}
+                    {stageCopy[change.to].label}
+                    {` · ${change.by}`}
+                    {change.reason === undefined ? "" : ` · ${change.reason}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+
+        <Section title="Which wards were asked">
+          {askedIds.size === 0 ? (
+            <p className={d.muted}>No ward has been asked yet.</p>
+          ) : (
+            <ul className={d.list}>
+              {[...askedIds].map((unitId) => {
+                const unit = units.find((candidate) => candidate.id === unitId);
+                const decline = movement.declines.findLast((entry) => entry.unitId === unitId);
+                const answer =
+                  movement.acceptedUnitId === unitId
+                    ? "Accepted"
+                    : decline
+                      ? `Declined, ${declineReasonLabels[decline.reason] ?? decline.reason}`
+                      : "No answer yet";
+                return (
+                  <li key={unitId}>
+                    <StatusGlyph
+                      tone={movement.acceptedUnitId === unitId ? "success" : decline ? "closed" : "neutral"}
+                      size={9}
+                    />
+                    <span className={d.trunc} title={`${wardLabel(unitId, unit?.name)} · ${answer}`}>
+                      <strong>{wardLabel(unitId, unit?.name)}</strong> · {answer}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Section>
+
+        <Section title="Escalation">
+          {movement.escalation === undefined ? (
+            <p className={d.muted}>Nothing has been escalated on this movement. That is a record, not a gap.</p>
+          ) : (
+            <p className={d.text}>
+              Escalated to {movement.escalation.contact} on {formatInstantWithDay(movement.escalation.at, now)}, after{" "}
+              {movement.escalation.triedUnitIds.length}{" "}
+              {movement.escalation.triedUnitIds.length === 1 ? "ward was" : "wards were"} tried.
+            </p>
+          )}
+        </Section>
+
+        <Section title="Transport leg">
+          {leg === undefined ? (
+            <p className={d.muted}>No transport leg has been booked, so there is nothing to say about a vehicle.</p>
+          ) : (
+            <p className={d.text}>
+              {leg.provider}
+              {leg.escortRequired ? " · escort required" : ""}
+              {leg.formRequired ? " · a form is required" : ""}
+              {leg.acceptedAt === undefined ? "" : ` · accepted ${formatInstantWithDay(leg.acceptedAt, now)}`}
+            </p>
+          )}
+        </Section>
+
+        <p className={d.foot}>
+          <strong>Watch and flag is not built.</strong> Nothing in this system records that somebody is watching a
+          movement, so there is no state for it to show. Every person in this prototype is invented. Nobody named here
+          is a real patient.
+        </p>
       </div>
     </Sheet>
   );
