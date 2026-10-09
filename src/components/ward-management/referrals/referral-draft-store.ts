@@ -96,7 +96,9 @@ export function useReferralDraftAutosave<T>({
       setKeptAt(at);
       setNowMs(at ?? Date.now());
     }, REFERRAL_DRAFT_AUTOSAVE_MS);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [active, draftJson, initialKeptAt, initialKeptJson]);
 
   // Unmounting with a change still waiting keeps it at once, so no close path loses it.
@@ -107,7 +109,9 @@ export function useReferralDraftAutosave<T>({
   useEffect(
     () => () => {
       if (stopped.current || !activeRef.current) return;
-      if (latest.current.draftJson !== lastKeptJson.current) keepReferralDraft(latest.current.draft);
+      if (latest.current.draftJson !== lastKeptJson.current) {
+        keepReferralDraft(latest.current.draft);
+      }
     },
     [],
   );
@@ -118,7 +122,9 @@ export function useReferralDraftAutosave<T>({
     const interval = window.setInterval(() => {
       setNowMs(Date.now());
     }, 30_000);
-    return () => window.clearInterval(interval);
+    return () => {
+      window.clearInterval(interval);
+    };
   }, [keptAt]);
 
   const stop = useCallback(() => {
