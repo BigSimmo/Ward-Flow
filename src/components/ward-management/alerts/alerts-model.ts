@@ -3,6 +3,7 @@ import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
+import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { currentInboxOwner, type InboxOwnershipEntry } from "@/components/ward-management/ward-inbox-snooze";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -12,7 +13,7 @@ import { edById } from "@/components/ward-management/ward-sites";
  * the queue and who it belongs to, read only from the row's id and the model's own links.
  */
 
-export type AlertKind = "legal" | "declines" | "unsuitable" | "hold" | "transport" | "target" | "running";
+export type AlertKind = "legal" | "declines" | "unsuitable" | "hold" | "transport" | "planned" | "target" | "running";
 
 /** The queue's three groups: act now (red), waiting (amber, counted) and running targets (listed, never counted). */
 export type AlertGroup = "act" | "wait" | "running";
@@ -23,6 +24,7 @@ const KIND_PREFIXES: [AlertKind, string][] = [
   ["unsuitable", INBOX_CATEGORIES.destination_unlawful.idPrefix],
   ["hold", INBOX_CATEGORIES.bed_pull_expired.idPrefix],
   ["transport", INBOX_CATEGORIES.transport_awaiting_departure.idPrefix],
+  ["planned", INBOX_CATEGORIES.planned_arrival_overdue.idPrefix],
   // The running countdowns share a stem with the overdue rows, so they are matched first.
   ["running", INBOX_CATEGORIES.target_pending_referral_decision.idPrefix],
   ["running", INBOX_CATEGORIES.target_pending_transfer_acceptance.idPrefix],
@@ -49,8 +51,22 @@ export function alertGroupOf(item: InboxItem): AlertGroup {
 
 /** The movement an inbox id names, for the categories whose remainder is a movement id. */
 export function movementIdOfInboxId(id: string): string | undefined {
-  const prefix = KIND_PREFIXES.find(([, candidate]) => id.startsWith(candidate))?.[1];
-  return prefix ? id.slice(prefix.length) : undefined;
+  const match = KIND_PREFIXES.find(([, candidate]) => id.startsWith(candidate));
+  // A planned arrival row names a booking, never a movement.
+  if (!match || match[0] === "planned") return undefined;
+  return id.slice(match[1].length);
+}
+
+/** The booking a planned arrival row names, and the initials it is shown by when no patient is linked. */
+export function bookingOfInboxId(
+  id: string,
+  bookings: readonly PlannedAdmission[] | undefined,
+): { planned: PlannedAdmission; personLabel?: string } | undefined {
+  const prefix = INBOX_CATEGORIES.planned_arrival_overdue.idPrefix;
+  if (!id.startsWith(prefix)) return undefined;
+  const planned = bookings?.find((booking) => booking.id === id.slice(prefix.length));
+  if (!planned) return undefined;
+  return { planned, personLabel: planned.initials !== null ? `Initials ${planned.initials}` : undefined };
 }
 
 /** Short name for a condition, used in History and the Today chart. */
@@ -60,6 +76,7 @@ export const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   unsuitable: "Destination unsuitable",
   hold: "Bed hold expired",
   transport: "Transport not yet left",
+  planned: "Planned arrival not recorded",
   target: "Decision target overdue",
   running: "Decision target running",
 };
@@ -102,16 +119,28 @@ export type AlertSubject = {
 
 /**
  * Who an alert is about, read only from the model's own links. A movement linked to nobody says
- * so in the resolver's own words (25 September 2026 audit, A1 and A7).
+ * so in the resolver's own words (25 September 2026 audit, A1 and A7). A planned arrival is about
+ * its booking and its own ward, never a movement's ED or accepted unit.
  */
 export function resolveAlertSubject(
   movement: Movement | undefined,
   movementId: string | undefined,
   lookup: { patients?: readonly Patient[]; referrals?: readonly Referral[]; movements?: readonly Movement[] },
   units: readonly { id: string; name: string }[],
+  booking?: { planned: PlannedAdmission; personLabel?: string },
 ): AlertSubject {
-  const info = resolveSubjectPatient(movement ?? { id: movementId ?? "" }, lookup);
   const unitName = (id: string | undefined) => (id ? (units.find((unit) => unit.id === id)?.name ?? id) : undefined);
+  if (booking) {
+    const info = resolveSubjectPatient(booking.planned, lookup);
+    return {
+      displayName: booking.personLabel ?? info.displayName,
+      umrn: info.umrn,
+      from: unitName(booking.planned.unitId) ?? "Ward not recorded",
+      legalStatus: booking.planned.legalStatus,
+      patientHref: info.patient ? `/mockups/ward-flow/people/${encodeURIComponent(info.patient.id)}` : undefined,
+    };
+  }
+  const info = resolveSubjectPatient(movement ?? { id: movementId ?? "" }, lookup);
   const origin = movement?.originEdId ? (edById(movement.originEdId)?.name ?? movement.originEdId) : undefined;
   const to = unitName(movement?.acceptedUnitId);
   return {
@@ -140,6 +169,8 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
       return { kind: "release", label: "Release bed" };
     case "transport":
       return { kind: "link", label: "Open transport", href: "/mockups/ward-flow/transport" };
+    case "planned":
+      return { kind: "link", label: "Open bookings", href: item.href ?? "/mockups/ward-flow/capacity" };
     default:
       if (item.id.includes("referral-decision")) {
         return { kind: "link", label: "Open referral", href: "/mockups/ward-flow/referrals" };

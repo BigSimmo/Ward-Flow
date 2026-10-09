@@ -228,24 +228,44 @@ button.check[aria-pressed="true"] {
 .toolbar {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: var(--wf-s-2);
-  padding: var(--wf-s-2) var(--wf-s-4);
+  padding: var(--wf-s-2) var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line);
 }
 
 .toolbarRule {
   align-self: stretch;
   width: 1px;
-  margin: 0 var(--wf-s-1);
+  margin: 0;
   background: var(--wf-line);
 }
 
+/* One line: the owner chips scroll inside their row rather than wrap the toolbar. */
 .chipRow {
+  position: relative;
   display: flex;
+  flex: 0 1 auto;
   align-items: center;
   gap: var(--wf-s-1);
   min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chipRow::-webkit-scrollbar {
+  display: none;
+}
+
+.chipRow > * {
+  flex: none;
+}
+
+.toolbar > * {
+  flex-shrink: 0;
+}
+
+.toolbar > .chipRow {
+  flex-shrink: 1;
 }
 
 .tabBody {
@@ -409,9 +429,20 @@ button.check[aria-pressed="true"] {
   font-size: var(--wf-fs-13);
 }
 
+.ageTop > .mono {
+  white-space: nowrap;
+}
+
+.age > .quiet {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .ageBar {
   display: inline-block;
-  flex: none;
+  flex: 0 1 44px;
+  min-width: 16px;
   width: 44px;
   height: 4px;
   border-radius: var(--wf-r-pill);

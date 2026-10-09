@@ -48,9 +48,9 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     expect(highlighted.length).toBeGreaterThan(0);
     for (const row of highlighted) expect(row).toHaveAttribute("data-tone", "danger");
     expect(container.querySelectorAll("li[data-alert-id]")).toHaveLength(total);
-    expect(screen.getByText(`${highlighted.length} highlighted`)).toBeInTheDocument();
+    const clear = screen.getByRole("button", { name: `Clear highlights, ${highlighted.length} highlighted` });
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    fireEvent.click(clear);
     expect(container.querySelectorAll("li[data-highlighted]")).toHaveLength(0);
 
     const owners = screen.getByRole("group", { name: "Highlight by owner" });

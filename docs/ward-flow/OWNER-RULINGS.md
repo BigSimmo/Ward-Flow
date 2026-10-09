@@ -24,7 +24,7 @@ specifically so that distinction survives. A file's own title (also quoted) is u
 tell: `owner-question-*` and `owner-*-to-settle-*` files are frequently still open.
 
 ⚠️ **IDs are NOT globally unique across this corpus.** The same token has been issued
-independently in more than one file 45 time(s) below (e.g. `D-1`).
+independently in more than one file 46 time(s) below (e.g. `D-1`).
 Where that happens every occurrence is listed, in the order discovered — confirm which file's
 instance is the one you mean before citing it.
 
@@ -188,17 +188,18 @@ safe global key across 30 files.
 | `D-37` ⚠️ **2 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1411 | D-37 · _Clinically ready, not yet gone_ — PRESENTATION, and the heading must name its subject |
 | ↳ | `decisions.md`:457 | D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026) |
-| `D-38` ⚠️ **3 occurrences — not unique** | | |
+| `D-38` ⚠️ **2 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1417 | D-38 · _People currently in a hospital bed_ on community team statistics — an aggregate that identifies at small N |
-| ↳ | `decisions.md`:484 | D-38. Delays board filters narrow the table and state the hidden count (9 October 2026) |
-| ↳ | `decisions.md`:497 | D-38. Leave, absent without leave and CTO on the Patient page (9 October 2026) |
+| ↳ | `decisions.md`:484 | D-38. Leave, absent without leave and CTO on the Patient page (9 October 2026) |
 | `D-39` ⚠️ **2 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1437 | D-39 · _Contacts_ and _Time to first contact_ — HELD, build neither |
-| ↳ | `decisions.md`:515 | D-39. Patients are identified by UMRN, never by a WF number (9 October 2026) |
+| ↳ | `decisions.md`:502 | D-39. Patients are identified by UMRN, never by a WF number (9 October 2026) |
 | `D-40` ⚠️ **2 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1445 | D-40 · An empty check array never claims reconciliation — on either shell surface |
-| ↳ | `decisions.md`:545 | D-40. A second community treatment order keeps the first (9 October 2026) |
-| `D-41` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1478 | D-41 · `corridorCounts` is extended, and its POPULATION changes |
+| ↳ | `decisions.md`:532 | D-40. A second community treatment order keeps the first (9 October 2026) |
+| `D-41` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1478 | D-41 · `corridorCounts` is extended, and its POPULATION changes |
+| ↳ | `decisions.md`:543 | D-41. Delays board filters narrow the table and state the hidden count (9 October 2026) |
 | `D-42` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1490 | D-42 · _Referrals into this ward_ renders bare counts. No share. |
 | `D-43` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1724 | D-43 · Ward Lead ruling — the bed board's ordinal contradiction is a LANE TASK |
 | `D-44` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1791 | D-44 · The community scope note is reworded and the comparison panel stays |
@@ -517,10 +518,10 @@ safe global key across 30 files.
 - `D-35` — line 436, heading: "D-35. Deferral of Regional Multi-Leg Transport & RFDS Repatriation (6 October 2026)"
 - `D-36` — line 442, heading: "D-36. Affirmation of External Governance & Clinical Safety Hard Gates (6 October 2026)"
 - `D-37` — line 457, heading: "D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026)"
-- `D-38` — line 484, heading: "D-38. Delays board filters narrow the table and state the hidden count (9 October 2026)"
-- `D-38` — line 497, heading: "D-38. Leave, absent without leave and CTO on the Patient page (9 October 2026)"
-- `D-39` — line 515, heading: "D-39. Patients are identified by UMRN, never by a WF number (9 October 2026)"
-- `D-40` — line 545, heading: "D-40. A second community treatment order keeps the first (9 October 2026)"
+- `D-38` — line 484, heading: "D-38. Leave, absent without leave and CTO on the Patient page (9 October 2026)"
+- `D-39` — line 502, heading: "D-39. Patients are identified by UMRN, never by a WF number (9 October 2026)"
+- `D-40` — line 532, heading: "D-40. A second community treatment order keeps the first (9 October 2026)"
+- `D-41` — line 543, heading: "D-41. Delays board filters narrow the table and state the hidden count (9 October 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 

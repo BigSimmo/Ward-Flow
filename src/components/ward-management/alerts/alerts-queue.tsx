@@ -43,8 +43,14 @@ const OWNER_SHORT: Record<string, string> = {
   "Ward nurse in charge": "Ward NIC",
 };
 
-export function ownerShort(owner: string): string {
-  return OWNER_SHORT[owner] ?? owner;
+/** A short owner name for chips and rows. A planned arrival is owned by its booking ward, named in full beneath. */
+export function ownerShort(owner: string, bookingWard = false): string {
+  return OWNER_SHORT[owner] ?? (bookingWard ? "Ward" : owner);
+}
+
+/** True when the row is a planned arrival still held by the ward the engine addressed it to. */
+export function ownedByBookingWard(entry: QueueEntry): boolean {
+  return entry.item.plannedAdmission !== undefined && entry.owner === entry.item.owner;
 }
 
 export function groupTone(group: AlertGroup): WfTone {
@@ -129,7 +135,8 @@ function selectOnRowClick(entry: QueueEntry, handlers: QueueHandlers) {
 
 function rowData(entry: QueueEntry, handlers: QueueHandlers) {
   return {
-    "data-movement-id": entry.item.movementId,
+    // A planned arrival row has no movement behind it.
+    "data-movement-id": entry.item.movementId || undefined,
     "data-alert-id": entry.item.id,
     "data-tone": entry.item.tone,
     "data-selected": handlers.selectedId === entry.item.id ? "true" : undefined,
@@ -192,7 +199,7 @@ export function AlertRow({
         </span>
       </span>
       <span className={styles.cell}>
-        <span className={styles.cellMain}>{ownerShort(entry.owner)}</span>
+        <span className={styles.cellMain}>{ownerShort(entry.owner, ownedByBookingWard(entry))}</span>
         <span className={styles.quiet}>{state ?? entry.owner}</span>
       </span>
       <Age entry={entry} now={now} maxAge={maxAge} />

@@ -32,6 +32,7 @@ import { bedMeetingSheet } from "./bed-meeting-derivations";
 import { BedMeetingSheetLauncher } from "./bed-meeting-sheet";
 import { bedsForecast } from "./beds-forecast";
 import { BedsForecastPanel } from "./beds-forecast-panel";
+import { PlannedAdmissionsPanel } from "./planned-admissions-panel";
 import {
   bedKindGaps,
   bedKindTotals,
@@ -79,7 +80,8 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
  * real figures renders correctly without this file needing to change.
  */
 export function CapacityScreen() {
-  const { movements, units, bedReleases, admissions, leaveBeds, dispatch, worldGeneration } = useWardFlow();
+  const { movements, units, bedReleases, admissions, leaveBeds, dispatch, worldGeneration, plannedAdmissions } =
+    useWardFlow();
   const { now, paused, togglePause } = usePageLive();
   const patientOf = usePatientOf();
   /**
@@ -167,7 +169,8 @@ export function CapacityScreen() {
   const gapTotals = bedKindTotals(gapRows);
   // Smart feature 10: whole-network, like the mismatch band above it, so a service scope never
   // changes it.
-  const forecast = bedsForecast(units, bedReleases, admissions, movements, now);
+  // Stream D: booked planned admissions due in each window count as beds needed.
+  const forecast = bedsForecast(units, bedReleases, admissions, movements, now, plannedAdmissions ?? []);
   const shortfalls = gapRows.filter((row) => row.gap < 0);
 
   // ⚠️ `bedReleases` PASSED DELIBERATELY. "Expected to free today" is not a fact `Unit` carries —
@@ -814,6 +817,7 @@ export function CapacityScreen() {
             </WardPanel>
           </div>
         </div>
+        <PlannedAdmissionsPanel key={worldGeneration} now={now} />
         <WardPrototypeFooter testId="ward-capacity-governance" note="Statewide bed capacity · Not a medical device" />
       </main>
     </div>

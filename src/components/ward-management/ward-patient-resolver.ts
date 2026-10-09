@@ -1,6 +1,6 @@
 import { patientDisplayName, type Patient, type PatientId } from "./ward-patients";
 import type { Movement, Referral } from "./ward-model";
-import type { Admission } from "./ward-admissions";
+import type { Admission, PlannedAdmission } from "./ward-admissions";
 
 /** A boolean consistency check for one already-linked episode record. It exposes no patient
  * identity, other referral destinations, history, place or count. Keep identity reads inside
@@ -25,6 +25,8 @@ interface ResolvedIndex {
   referralMap: Map<string, Referral | typeof DUPLICATE>;
   movementMap: Map<string, Movement | typeof DUPLICATE>;
   formattedMap: Map<Patient, ResolvedPatientInfo>;
+  /** Stream D: a converted planned admission, by the admission it became. */
+  bookingByAdmissionId: Map<string, PlannedAdmission>;
 }
 
 const stateIndexCache = new WeakMap<object, ResolvedIndex>();
@@ -33,6 +35,7 @@ export function buildPatientResolverIndex(state: {
   patients?: readonly Patient[];
   referrals?: readonly Referral[];
   movements?: readonly Movement[];
+  plannedAdmissions?: readonly PlannedAdmission[];
 }): ResolvedIndex {
   const patientMap = new Map<string, Patient | typeof DUPLICATE>();
   const referralMap = new Map<string, Referral | typeof DUPLICATE>();
@@ -69,7 +72,12 @@ export function buildPatientResolverIndex(state: {
     }
   }
 
-  return { patientMap, referralMap, movementMap, formattedMap };
+  const bookingByAdmissionId = new Map<string, PlannedAdmission>();
+  for (const booking of state.plannedAdmissions ?? []) {
+    if (booking.admissionId !== null) bookingByAdmissionId.set(booking.admissionId, booking);
+  }
+
+  return { patientMap, referralMap, movementMap, formattedMap, bookingByAdmissionId };
 }
 
 function getOrBuildIndex(
@@ -77,6 +85,7 @@ function getOrBuildIndex(
     patients?: readonly Patient[];
     referrals?: readonly Referral[];
     movements?: readonly Movement[];
+    plannedAdmissions?: readonly PlannedAdmission[];
   },
 ): ResolvedIndex {
   let index = stateIndexCache.get(state);
@@ -85,6 +94,16 @@ function getOrBuildIndex(
     stateIndexCache.set(state, index);
   }
   return index;
+}
+
+/** A person known by initials only (a planned admission booked that way): no record, no UMRN. */
+function initialsOnlyPatient(initials: string): ResolvedPatientInfo {
+  return {
+    displayName: `Initials ${initials}`,
+    formalName: `Initials ${initials}`,
+    umrn: "UMRN not recorded",
+    initials,
+  };
 }
 
 const UNKNOWN_PATIENT: ResolvedPatientInfo = Object.freeze({
@@ -130,6 +149,17 @@ function resolveSubjectWithIndex(subject: PatientResolutionSubject, index: Resol
     else collect(match);
   }
 
+  // Stream D: a stay converted from a planned admission links back through that booking, and a
+  // booking itself may hold initials only. Either way the initials are the only name there is.
+  if (!ids.size && !invalidLink && subject.id) {
+    const booking = subject.id.startsWith("PA-")
+      ? (subject as Partial<PlannedAdmission>)
+      : index.bookingByAdmissionId.get(subject.id);
+    if (booking?.patientId) ids.add(booking.patientId);
+    else if (typeof booking?.initials === "string" && booking.initials.length > 0)
+      return initialsOnlyPatient(booking.initials);
+  }
+
   if (!ids.size && !movementId && !(subject as { referralId?: string }).referralId && subject.id?.startsWith("PT-")) {
     ids.add(subject.id);
   }
@@ -151,6 +181,7 @@ export function resolveSubjectPatient(
     patients?: readonly Patient[];
     referrals?: readonly Referral[];
     movements?: readonly Movement[];
+    plannedAdmissions?: readonly PlannedAdmission[];
   },
 ): ResolvedPatientInfo {
   if (typeof state !== "object" || state === null) {
@@ -167,6 +198,7 @@ export function createPatientResolver(state: {
   patients?: readonly Patient[];
   referrals?: readonly Referral[];
   movements?: readonly Movement[];
+  plannedAdmissions?: readonly PlannedAdmission[];
 }): (subject: PatientResolutionSubject) => ResolvedPatientInfo {
   const index = typeof state === "object" && state !== null ? getOrBuildIndex(state) : buildPatientResolverIndex({});
   return (subject) => resolveSubjectWithIndex(subject, index);
@@ -224,6 +256,8 @@ export type PatientLookup = {
   patients?: readonly Patient[];
   referrals?: readonly Referral[];
   movements?: readonly Movement[];
+  /** Stream D: initials-only converted stays resolve through the booking that created them. */
+  plannedAdmissions?: readonly PlannedAdmission[];
 };
 
 const MOVEMENT_ID_TOKEN = /(?<![A-Z0-9-])WF-[A-Z0-9-]+/g;

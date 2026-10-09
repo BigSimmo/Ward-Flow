@@ -8,6 +8,7 @@ import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { PLANNED_ADMISSION_REASON_LABELS } from "@/components/ward-management/ward-admissions";
 import { decisionTargetReading } from "@/components/ward-management/ward-decision-targets";
 import { inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
 import {
@@ -90,9 +91,18 @@ export function AlertDetail({
   const unitName = (id: string) => units.find((unit) => unit.id === id)?.name ?? id;
   const subjectLine = `${item.title}, ${subject.displayName}`;
 
+  const booking = item.plannedAdmission;
   const facts: [string, string][] = [];
-  facts.push(["From", subject.from]);
-  if (subject.to) facts.push(["To", subject.to]);
+  if (booking) {
+    facts.push(["Planned ward", subject.from]);
+    facts.push(["Expected arrival", formatInstantWithDay(booking.expectedArrivalAt, now)]);
+    facts.push(["Reason", PLANNED_ADMISSION_REASON_LABELS[booking.reason]]);
+    facts.push(["Expected stay", `${booking.expectedStayDays} days`]);
+    facts.push(["Legal status", booking.legalStatus]);
+  } else {
+    facts.push(["From", subject.from]);
+    if (subject.to) facts.push(["To", subject.to]);
+  }
   if (movement?.transport) {
     facts.push(["Provider", movement.transport.provider]);
     facts.push(["Escort", movement.transport.escortRequired ? "Required" : "Not required"]);
@@ -114,6 +124,12 @@ export function AlertDetail({
     if (movement?.transport?.acceptedAt !== undefined) {
       track.push({ at: movement.transport.acceptedAt, label: "Transport accepted", shape: "wait" });
     }
+  } else if (kind === "planned" && booking) {
+    // A booking made days ahead would stretch the track past reading, so only a same-shift one shows.
+    if (booking.expectedArrivalAt - booking.bookedAt <= 720) {
+      track.push({ at: booking.bookedAt, label: "Booked", shape: "wait" });
+    }
+    track.push({ at: booking.expectedArrivalAt, label: "Expected", shape: "act" });
   } else if (kind === "legal") {
     if (item.dueAt !== undefined) track.push({ at: item.dueAt, label: "Form due", shape: "act" });
   } else if (kind === "target" || kind === "running") {
@@ -219,7 +235,7 @@ export function AlertDetail({
           </ul>
         </section>
       ) : (
-        <dl className={styles.facts}>
+        <dl className={styles.facts} data-testid={booking ? "alerts-drawer-booking" : undefined}>
           {facts.map(([label, value]) => (
             <div key={label}>
               <dt>{label}</dt>

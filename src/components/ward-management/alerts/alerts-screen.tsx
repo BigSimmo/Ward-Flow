@@ -69,11 +69,20 @@ import {
   isQueueItem,
   minutesText,
   movementIdOfInboxId,
+  bookingOfInboxId,
   raisedAt,
   resolveAlertSubject,
   type AlertKind,
 } from "./alerts-model";
-import { AlertCard, AlertRow, GroupHead, ownerShort, type QueueEntry, type QueueHandlers } from "./alerts-queue";
+import {
+  AlertCard,
+  AlertRow,
+  GroupHead,
+  ownedByBookingWard,
+  ownerShort,
+  type QueueEntry,
+  type QueueHandlers,
+} from "./alerts-queue";
 import { AlertDetail, type AlertDetailHandlers } from "./alert-detail";
 import { TimeRing, TodayChart } from "./alerts-visuals";
 
@@ -81,6 +90,7 @@ import styles from "./alerts.module.css";
 import {
   Badge,
   Button,
+  Count,
   Card,
   Checkbox,
   Drawer,
@@ -171,15 +181,16 @@ function AlertsWorkspace() {
   const isPhone = usePhoneLayout();
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
   const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
+  const plannedAdmissions = state.plannedAdmissions;
   // Every computed row this screen covers, then the snoozed ones set aside: they leave the active
   // list and come back by themselves when their return time passes (stream A, 9 Oct 2026).
   const allInbox = useMemo(
     () =>
       [
-        ...buildActionInbox(openMovements, now, units),
+        ...buildActionInbox(openMovements, now, units, { plannedAdmissions }),
         ...decisionTargetInboxItems(openMovements, now, configuration),
       ].filter(isQueueItem),
-    [openMovements, now, units, configuration],
+    [openMovements, now, units, plannedAdmissions, configuration],
   );
   const { active: inbox, snoozed: snoozedInbox } = useMemo(
     () => partitionSnoozed(allInbox, inboxSnoozes, now),
@@ -370,7 +381,10 @@ function AlertsWorkspace() {
   const entryFor = useCallback(
     (item: InboxItem, snoozed: boolean): Omit<QueueEntry, "highlighted"> => {
       const movement = movements.find((candidate: Movement) => candidate.id === item.movementId);
-      const subject = resolveAlertSubject(movement, item.movementId, umrnLookup, units);
+      const booking = item.plannedAdmission
+        ? { planned: item.plannedAdmission, personLabel: item.personLabel }
+        : undefined;
+      const subject = resolveAlertSubject(movement, item.movementId, umrnLookup, units, booking);
       const owner = effectiveOwner(item, inboxOwnership[item.id]);
       return {
         item,
@@ -588,6 +602,13 @@ function AlertsWorkspace() {
       scope: "Watches accepted transport legs that have not departed.",
     },
     {
+      key: "planned",
+      kind: "planned",
+      label: "Planned arrival late",
+      n: countKind("planned"),
+      scope: "Watches booked planned admissions whose expected arrival time has passed with no arrival recorded.",
+    },
+    {
       key: "target",
       kind: "target",
       label: "Target overdue",
@@ -624,7 +645,8 @@ function AlertsWorkspace() {
     const about = (inboxItemId: string) => {
       const movementId = movementIdOfInboxId(inboxItemId);
       const movement = movements.find((candidate: Movement) => candidate.id === movementId);
-      const subject = resolveAlertSubject(movement, movementId, umrnLookup, units);
+      const booking = bookingOfInboxId(inboxItemId, plannedAdmissions);
+      const subject = resolveAlertSubject(movement, movementId, umrnLookup, units, booking);
       const kind = alertKindOf(inboxItemId);
       return `${kind ? ALERT_KIND_LABELS[kind] : "Alert"}, ${subject.displayName} ${subject.umrn}`;
     };
@@ -716,6 +738,7 @@ function AlertsWorkspace() {
     movements,
     umrnLookup,
     units,
+    plannedAdmissions,
     now,
   ]);
 
@@ -917,8 +940,8 @@ function AlertsWorkspace() {
         "wait",
         "Waiting",
         waitEntries,
-        <GroupHead tone="warning" label="Waiting to leave" count={waitEntries.length} />,
-        "No accepted transport is waiting to leave.",
+        <GroupHead tone="warning" label="Waiting" count={waitEntries.length} />,
+        "Nothing is waiting on a transport leg or a planned arrival.",
       )}
       {runningEntries.length > 0
         ? groupSection(
@@ -1230,7 +1253,7 @@ function AlertsWorkspace() {
                       ]}
                     />
                     <span className={styles.toolbarRule} aria-hidden="true" />
-                    <span className={styles.quiet}>Highlight</span>
+                    {anyHighlight ? null : <span className={styles.quiet}>Highlight</span>}
                     <div className={styles.chipRow} role="group" aria-label="Highlight by owner">
                       {owners.map((owner) => (
                         <FilterChip
@@ -1240,17 +1263,23 @@ function AlertsWorkspace() {
                           onPressedChange={() => setOwnerHighlight((current) => (current === owner ? null : owner))}
                           count={allEntries.filter((entry) => entry.owner === owner).length}
                         >
-                          {ownerShort(owner)}
+                          {ownerShort(
+                            owner,
+                            allEntries.some((entry) => entry.owner === owner && ownedByBookingWard(entry)),
+                          )}
                         </FilterChip>
                       ))}
                     </div>
                     {anyHighlight ? (
-                      <>
-                        <span className={styles.quiet}>{highlightedCount} highlighted</span>
-                        <Button size="sm" variant="ghost" className={styles.btnSm} onClick={clearHighlights}>
-                          Clear
-                        </Button>
-                      </>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className={styles.btnSm}
+                        aria-label={`Clear highlights, ${highlightedCount} highlighted`}
+                        onClick={clearHighlights}
+                      >
+                        Clear <Count n={highlightedCount} />
+                      </Button>
                     ) : null}
                   </div>
                   {view === "lanes" ? lanesView : view === "owner" ? ownerView : urgencyView}

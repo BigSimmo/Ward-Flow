@@ -60,12 +60,12 @@
       "route": "/delays",
       "verified": {
         "date": "2026-10-09",
-        "who": "Claude Code (rendered Chromium review of the October 2026 Delays board after owner ruling D-38)",
+        "who": "Claude Code (rendered Chromium review of the October 2026 Delays board after owner ruling D-41)",
         "widths": [1440, 820, 390],
         "themes": ["light", "dark"],
         "verdict": "matches",
         "checkedRevision": "e224769281694905d11f2d292155e61cd2776863",
-        "notes": "Owner ruling D-38 (9 October 2026): Delays filters narrow the Waiting table and the table states how many people are hidden, with Show everyone. This replaces the highlight-only entry at 2a373b10, now in verificationHistory. Checked in real Chromium against the local dev server at this revision with a clean tree: 1440 light, 1440 dark (data-theme=dark), 820 light and 390 light. At each, pressing the Over 8h count narrowed the table from 70 of 70 to 19 of 70, the note read '51 more people are waiting, hidden by the filters above.', Show everyone restored 70 of 70, there were no page errors and no page-level horizontal overflow. This check found and this revision fixes a phone defect: at 390 the note did not wrap, so Show everyone was clipped off the cell; tests/ui-ward-table-thresholds.spec.ts now clicks it at 390 and 1440 and fails without the fix. Layout of the hero, tiles, rail and graphs is not re-reviewed here beyond these views; the full-board captures at d535963 (earlier history entry) remain the layout evidence. Print, forced colours, physical touch, screen readers and hosted deployment were not verified."
+        "notes": "Owner ruling D-41 (9 October 2026): Delays filters narrow the Waiting table and the table states how many people are hidden, with Show everyone. This replaces the highlight-only entry at 2a373b10, now in verificationHistory. Checked in real Chromium against the local dev server at this revision with a clean tree: 1440 light, 1440 dark (data-theme=dark), 820 light and 390 light. At each, pressing the Over 8h count narrowed the table from 70 of 70 to 19 of 70, the note read '51 more people are waiting, hidden by the filters above.', Show everyone restored 70 of 70, there were no page errors and no page-level horizontal overflow. This check found and this revision fixes a phone defect: at 390 the note did not wrap, so Show everyone was clipped off the cell; tests/ui-ward-table-thresholds.spec.ts now clicks it at 390 and 1440 and fails without the fix. Layout of the hero, tiles, rail and graphs is not re-reviewed here beyond these views; the full-board captures at d535963 (earlier history entry) remain the layout evidence. Print, forced colours, physical touch, screen readers and hosted deployment were not verified."
       },
       "verificationHistory": [
         {
@@ -916,8 +916,8 @@
         "widths": [390, 1440],
         "themes": ["light", "dark"],
         "verdict": "deviates",
-        "implementationSha256": "33b310f23e514cb02f0e478e85004da500f7e09f2dec22db343832572ac11eb8",
-        "notes": "Command queue rebuild (round 2 option A, chosen by Josh 9 Oct 2026) on the shared wf components, based on a18cea65. Local dev server at 1440 x 900 and 390 x 844, light and dark: document scroll width equals the viewport at both widths, no console errors. Desktop: hero with Act now, Waiting and Yours figures and the Checking list, queue arranged by urgency, lanes or owner, side panel for the selected alert, Today chart. Phone: urgency cards only, selected alert in a sheet. Deviates from the old third-edition drawing by design; the round 2 mockup is the reference. Screenshots in the project files under design/alerts/build-a. Physical devices, hosted behaviour and deployment are unverified."
+        "implementationSha256": "4a09859cd356691024296210f726c938e5c319ebd08c6d27e58a3ec564faa29f",
+        "notes": "Command queue rebuild (round 2 option A, chosen by Josh 9 Oct 2026) on the shared wf components, merged with main at edc22104 (planned arrivals included). Local dev server at 1440 x 900 and 390 x 844, light and dark: document scroll width equals the viewport at both widths, no console errors. Desktop: hero with Act now, Waiting and Yours figures and the Checking list, queue arranged by urgency, lanes or owner, side panel for the selected alert, Today chart. Phone: urgency cards only, selected alert in a sheet. Deviates from the old third-edition drawing by design; the round 2 mockup is the reference. Screenshots in the project files under design/alerts/build-a. Physical devices, hosted behaviour and deployment are unverified."
       },
       "verificationHistory": [
         {
