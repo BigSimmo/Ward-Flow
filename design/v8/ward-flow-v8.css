@@ -2250,13 +2250,13 @@ svg.gl {
 }
 
 /* ================= v8.1 expression (spec section 14) ================= */
-/* The colour budget: at most three tinted items per screen, and only for act now, a fit or free
-   place, and a hold. The tint fades into the surface so the words stay on near-white. Every other
+/* The colour budget: tint only the items in three states, act now, a fit or free place, and a hold.
+   Past six such items, tint act now only. The tint fades into the surface so the words stay on near-white. Every other
    state stays a glyph. Tints are never a whole card or panel, only the item that carries the state.
    Modifiers are .tint-act, .tint-fit and .tint-hold, so they never pick up the .fit placement row. */
 .tint {
   border: 1.5px solid var(--wf-line-2);
-  background: linear-gradient(180deg, var(--tint), var(--wf-surface) 75%);
+  background: linear-gradient(180deg, var(--tint), var(--wf-surface) 75%), var(--wf-surface);
 }
 .tint.tint-act {
   --tint: var(--wf-act-tint);
@@ -2311,6 +2311,13 @@ svg.gl {
   .tint {
     background: Canvas;
     border-color: CanvasText;
+  }
+  /* keep the selection ring: these beat .tint.tint-* on specificity */
+  .tint.bed.sel,
+  .tint.bed[aria-pressed="true"],
+  .tint.row.sel,
+  .tint.row[aria-selected="true"] {
+    border: 2px solid Highlight;
   }
 }
 @media print {

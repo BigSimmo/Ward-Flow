@@ -80,7 +80,7 @@ Everything else in v7.1 carries over unchanged: the rules, the status glyphs, ra
 3. **Glass for chrome, plus one panel.** Bars, menus, toasts, sheets and the palette. _(v8.1)_ One floating panel in the page body may also be glass, such as the side panel that swaps to the clicked item. Never a table, row or data cell. Phone bars are solid.
 4. **One hero band per page.** Slate while anything is live, quiet when nothing is.
 5. **One primary per area.**
-6. **Colour has a budget.** _(v8.1)_ A dot or glyph by default. Each screen may also tint up to three items with `.tint` and `.tint-act`, `.tint-fit` or `.tint-hold`, and only for act now, a fit or free place, or a hold. Tint the item that carries the state, such as a bed, card or row, never a whole panel. _(Amended)_ Words take the `-ink` partner, never the tone itself.
+6. **Colour has a budget.** _(v8.1)_ A dot or glyph by default. Each screen may also tint the items in three states only: act now, a fit or free place, and a hold, using `.tint` with `.tint-act`, `.tint-fit` or `.tint-hold`. Tint the item that carries the state, such as a bed, card or row, never a whole panel. When more than six items qualify, tint act now only and leave the rest as glyphs. The key figure's panel in the hero is not part of the budget. _(Amended)_ Words take the `-ink` partner, never the tone itself.
 7. **Shape carries status.** One shape per tone everywhere.
 8. **Signal, not explanation.** Titles 5 words at most, actions 6.
 9. **Live and honest.** Values show their age. Stale or offline is marked on the value.
@@ -226,26 +226,26 @@ New in v8: `.tone-*` colours a glyph or mark. `.ink-*` colours words. In high co
 
 **Aliases hold no values.** All legacy names are aliased in one file. Each line is `--old: var(--wf-role)`, with no literal value. Because the `--wf-` role already carries both themes, an alias cannot miss a theme or point at itself (G8). A test forbids literals and cycles in that file.
 
-| Legacy                                                           | v8 role                                                                            | Visible change                             |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------ |
-| `--ink`, `--ward-text`, `--ward-heading`, `--text`               | `--wf-ink-1`                                                                       | None                                       |
-| `--ink-soft`                                                     | `--wf-ink-2`                                                                       | None                                       |
-| `--muted`, `--text-muted`, `--ward-muted`, `--ink3`              | `--wf-ink-3`                                                                       | Slightly darker (`#5f6873` to `#5b646f`)   |
-| `--line`, `--border`                                             | `--wf-line`                                                                        | Lighter hairline (0.11 to 0.08 alpha)      |
-| `--line-strong`, `--ward-border`, `--ward-divider`               | `--wf-line-3`                                                                      | None for `--line-strong`                   |
-| `--surface`, `--surface-2`, `--sunk`                             | `--wf-surface`, `--wf-surface-2`, `--wf-track`                                     | Small                                      |
-| `--accent`, `--accent-ink`, `--accent-soft`                      | `--wf-accent`, `--wf-accent-ink`, `--wf-accent-tint`                               | Small                                      |
-| `--danger`, `--warn`, `--good`                                   | Tone when it colours a glyph or edge. `-ink` when it colours words. Check each use | Yes, per use                               |
-| `--danger-soft`, `--warn-soft`, `--good-soft`                    | `--wf-fit-tint` or `--wf-hold-tint` inside data. Card fills are removed (rule 6)   | Yes                                        |
-| `--lift`, `--ward-shadow`                                        | `--wf-e1`, only in a `box-shadow` slot                                             | Fixes the invalid shadows in `patient-now` |
-| `--focus`                                                        | `--wf-focus-ring`                                                                  | None                                       |
-| `--r1` (10px), `--r2` (6px), `--pill`, `--radius-pill`           | `--wf-r-sm`, `--wf-r-xs`, `--wf-r-pill`                                            | None                                       |
-| `--body`, `--mono`                                               | `--wf-font`, `--wf-mono`                                                           | None                                       |
-| `--t-0`, `--text-xs`, `--text-3xs`                               | `--wf-fs-12`                                                                       | None                                       |
-| `--t-1`, `--t-2` (13.5), `--t-3`, `--t-4`, `--t-5`, `--t-6` (26) | `--wf-fs-13`, `-14`, `-14`, `-16`, `-20`, `-28`                                    | 13.5 to 14, 26 to 28                       |
-| `--ward-space-4`, `-8`, `-12`, `-16`                             | `--wf-s-1` to `--wf-s-4`                                                           | None                                       |
-| `--ward-space-2`, `-6`, `-10`                                    | Inside a control only, as 2, 6 and 10px                                            | None                                       |
-| `--ward-tap`, `--spacing-tap`                                    | `--wf-touch`                                                                       | Check the 48px PsychSift knob. Ward is 44  |
+| Legacy                                                           | v8 role                                                                                                                         | Visible change                             |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `--ink`, `--ward-text`, `--ward-heading`, `--text`               | `--wf-ink-1`                                                                                                                    | None                                       |
+| `--ink-soft`                                                     | `--wf-ink-2`                                                                                                                    | None                                       |
+| `--muted`, `--text-muted`, `--ward-muted`, `--ink3`              | `--wf-ink-3`                                                                                                                    | Slightly darker (`#5f6873` to `#5b646f`)   |
+| `--line`, `--border`                                             | `--wf-line`                                                                                                                     | Lighter hairline (0.11 to 0.08 alpha)      |
+| `--line-strong`, `--ward-border`, `--ward-divider`               | `--wf-line-3`                                                                                                                   | None for `--line-strong`                   |
+| `--surface`, `--surface-2`, `--sunk`                             | `--wf-surface`, `--wf-surface-2`, `--wf-track`                                                                                  | Small                                      |
+| `--accent`, `--accent-ink`, `--accent-soft`                      | `--wf-accent`, `--wf-accent-ink`, `--wf-accent-tint`                                                                            | Small                                      |
+| `--danger`, `--warn`, `--good`                                   | Tone when it colours a glyph or edge. `-ink` when it colours words. Check each use                                              | Yes, per use                               |
+| `--danger-soft`, `--warn-soft`, `--good-soft`                    | `.tint` with `.tint-act`, `.tint-fit` or `.tint-hold` on the item that carries the state (rule 6). Other card fills are removed | Yes                                        |
+| `--lift`, `--ward-shadow`                                        | `--wf-e1`, only in a `box-shadow` slot                                                                                          | Fixes the invalid shadows in `patient-now` |
+| `--focus`                                                        | `--wf-focus-ring`                                                                                                               | None                                       |
+| `--r1` (10px), `--r2` (6px), `--pill`, `--radius-pill`           | `--wf-r-sm`, `--wf-r-xs`, `--wf-r-pill`                                                                                         | None                                       |
+| `--body`, `--mono`                                               | `--wf-font`, `--wf-mono`                                                                                                        | None                                       |
+| `--t-0`, `--text-xs`, `--text-3xs`                               | `--wf-fs-12`                                                                                                                    | None                                       |
+| `--t-1`, `--t-2` (13.5), `--t-3`, `--t-4`, `--t-5`, `--t-6` (26) | `--wf-fs-13`, `-14`, `-14`, `-16`, `-20`, `-28`                                                                                 | 13.5 to 14, 26 to 28                       |
+| `--ward-space-4`, `-8`, `-12`, `-16`                             | `--wf-s-1` to `--wf-s-4`                                                                                                        | None                                       |
+| `--ward-space-2`, `-6`, `-10`                                    | Inside a control only, as 2, 6 and 10px                                                                                         | None                                       |
+| `--ward-tap`, `--spacing-tap`                                    | `--wf-touch`                                                                                                                    | Check the 48px PsychSift knob. Ward is 44  |
 
 **Order, as each screen is touched.**
 
