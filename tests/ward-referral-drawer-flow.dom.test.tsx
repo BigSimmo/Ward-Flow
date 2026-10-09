@@ -1,10 +1,11 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { WardReferralInbox } from "@/components/ward-management/referrals/ward-referral-inbox";
+import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/link", () => ({
@@ -14,6 +15,13 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
+
+// The slide-out autosaves its draft to tab memory, and an unmount keeps a pending change, so each
+// journey unmounts and then drops the draft to start the next one clean.
+afterEach(() => {
+  cleanup();
+  discardReferralDraft();
+});
 
 function Probe() {
   const { referrals, rejections } = useWardFlow();
