@@ -192,10 +192,7 @@ export function WaitRunway({
         {[0, 25, 50, 75].map((left) => (
           <span key={left} className={styles.runwaySeg} style={{ left: `${left}%` }} aria-hidden="true" />
         ))}
-        {placed.map(({ referral, x, lane, minutes }) => {
-          const overdue = isOverdue(referral, now);
-          const name = nameOf(referral);
-          return (
+        {placed.map(({ referral, x, lane, minutes  (
             <button
               key={referral.id}
               type="button"
@@ -242,10 +239,9 @@ export function bedsReadySummary(
   const totals = { Adult: 0, "Older adult": 0, Youth: 0, Locked: 0 };
   let oldest: number | undefined;
   for (const unit of units) {
-    if (!unit.authorised) continue;
     const ready = bedStates(unit, admissions, bedReleases, leaveBeds).ready;
     totals[unit.cohort] += ready;
-    if (unit.lockedBeds > 0 && unit.lockedBeds === unit.beds) totals.Locked += ready;
+    totals.Locked += Math.min(ready, lockedBedsFree(unit));
     const age = Math.max(0, now - unit.allocatable.confirmedAt);
     oldest = oldest === undefined ? age : Math.max(oldest, age);
   }
@@ -879,6 +875,22 @@ export function ReferralTimeline({
 }) {
   const clocks = referralClocks(referral, now);
   const dueAt = referral.raisedAt + decisionWindow(referral);
+  const overdue = isOverdue(referras.sort((a, b) => a.at - b.at);
+}
+
+export function ReferralTimeline({
+  referral,
+  units,
+  now,
+  children,
+}: {
+  referral: Referral;
+  units: Unit[];
+  now: Instant;
+  children?: ReactNode;
+}) {
+  const clocks = referralClocks(referral, now);
+  const dueAt = referral.raisedAt + decisionWindow(referral);
   const overdue = isOverdue(referral, now);
   const open = openArms(referral).length > 0;
   return (
@@ -891,6 +903,13 @@ export function ReferralTimeline({
             <span>{entry.text}</span>
           </li>
         ))}
+        {open && clocks.sinceReferralRunning && overdue ? (
+          <li className={cx(styles.timelineDue, styles.timelineLate)}>
+            <span className={styles.timelineAt}>{formatInstantWithDay(dueAt, now)}</span>
+            <TriangleAlert size={12} aria-hidden="true" />
+            <span>Decision was due (tier {referral.urgency})</span>
+          </li>
+        ) : null}
         {open ? (
           <li className={styles.timelineNow}>
             <span className={styles.timelineAt}>{formatInstantWithDay(now, now)}</span>
@@ -900,13 +919,11 @@ export function ReferralTimeline({
             </span>
           </li>
         ) : null}
-        {open && clocks.sinceReferralRunning ? (
-          <li className={cx(styles.timelineDue, overdue && styles.timelineLate)}>
+        {open && clocks.sinceReferralRunning && !overdue ? (
+          <li className={styles.timelineDue}>
             <span className={styles.timelineAt}>{formatInstantWithDay(dueAt, now)}</span>
-            {overdue ? <TriangleAlert size={12} aria-hidden="true" /> : <StatusGlyph tone="neutral" size={9} />}
-            <span>
-              {overdue ? "Decision was due" : "Decision due"} (tier {referral.urgency})
-            </span>
+            <StatusGlyph tone="neutral" size={9} />
+            <span>Decision due (tier {referral.urgency})</span>
           </li>
         ) : null}
       </ol>
