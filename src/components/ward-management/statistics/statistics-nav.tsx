@@ -12,10 +12,11 @@ import {
   STATISTICS_SERVICE_CHOOSER_HREF,
   STATISTICS_COMMUNITY_CHOOSER_HREF,
 } from "./statistics-sections";
+import { WEEKLY_REPORT_HREF } from "@/components/ward-management/reports/report-routes";
 import { useStatisticsSamples, setStatisticsSamples } from "./statistics-samples";
 import styles from "./statistics-nav.module.css";
 
-export type StatisticsNavSection = "hub" | "overview" | "compare" | "service" | "ward" | "ed" | "community";
+export type StatisticsNavSection = "hub" | "overview" | "compare" | "service" | "ward" | "ed" | "community" | "weekly";
 
 interface StatisticsNavProps {
   currentSection?: StatisticsNavSection;
@@ -33,6 +34,7 @@ function sectionOf(pathname: string): StatisticsNavSection {
   if (pathname.includes("/statistics/ward")) return "ward";
   if (pathname.includes("/statistics/ed")) return "ed";
   if (pathname.includes("/statistics/community")) return "community";
+  if (pathname.includes("/statistics/weekly")) return "weekly";
   return "hub";
 }
 
@@ -119,6 +121,7 @@ export function StatisticsNav({ currentSection, activeSlug, withSamples = true, 
       count: COMMUNITY_TEAM_PAGES.length,
       href: detail("community", "community", STATISTICS_COMMUNITY_CHOOSER_HREF),
     },
+    { id: "weekly", label: "Weekly", href: WEEKLY_REPORT_HREF },
   ] satisfies Array<{ id: StatisticsNavSection; label: string; href: string; count?: number }>;
 
   return (
