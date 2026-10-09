@@ -20,7 +20,7 @@ import {
 } from "../ward-admissions";
 import { finiteInstant, type AuditDecision } from "../ward-audit";
 import { emptyCareJourney } from "../ward-care-journey";
-import { MINUTES_PER_DAY, type Instant } from "../ward-clock";
+import { calendarDateOf, demoDayZero, MINUTES_PER_DAY, type Instant } from "../ward-clock";
 import { adjustSexMix, mixSexOf } from "../ward-eligibility";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
@@ -56,9 +56,16 @@ const LOCKED_FIRST: readonly LegalStatus[] = ["Involuntary inpatient", "Detained
  * patient's cohort comes from their date of birth; initials-only bookings keep the ward's cohort
  * because no age band was recorded on the booking.
  */
-function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit, patient: Patient | null): Movement {
+function plannedAdmissionMovementView(
+  planned: PlannedAdmission,
+  unit: Unit,
+  patient: Patient | null,
+  today: Date,
+): Movement {
   const cohort =
-    patient?.dateOfBirth !== undefined && patient.dateOfBirth !== "" ? patientCohort(patient.dateOfBirth) : unit.cohort;
+    patient?.dateOfBirth !== undefined && patient.dateOfBirth !== ""
+      ? patientCohort(patient.dateOfBirth, today)
+      : unit.cohort;
   return {
     id: `WF-${planned.id}` as MovementId,
     originEdId: "",
@@ -283,7 +290,14 @@ export function reducePlannedAdmissionEvent(
         planned.patientId === null
           ? null
           : (state.patients.find((patient) => patient.id === planned.patientId) ?? null);
-      const view = plannedAdmissionMovementView(planned, unit, linkedPatient);
+      // Age the cohort from the conversion instant, not the wall clock. Session dayZero is not on
+      // reducer state, so the demo day-zero of "now" is the same convention the provider uses.
+      const view = plannedAdmissionMovementView(
+        planned,
+        unit,
+        linkedPatient,
+        calendarDateOf(event.now, demoDayZero(new Date())),
+      );
       // `PULL_PATIENT` lets a recorded override reason take an open bed when no locked bed is free.
       // A booking has no override path, so the same fact is a plain refusal here.
       if (view.security === "Secure" && lockedBedsFree(unit) <= 0)

@@ -711,7 +711,8 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       (row.state === "cancelled") !== (row.cancelReason !== null)
     )
       return false;
-    // An arrived booking must point at an admission on the same ward, still for this person.
+    // An arrived booking must point at an admission on the same ward for this person. The stay may
+    // later be departed without clearing the booking, so do not reject departed admissions.
     if (row.state === "arrived" && text(row.admissionId)) {
       const arrivedAdmission = (value.admissions as RecordValue[]).find(
         (admission) => admission.id === row.admissionId,
@@ -719,8 +720,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       if (
         !arrivedAdmission ||
         arrivedAdmission.unitId !== row.unitId ||
-        (hasPatient && arrivedAdmission.patientId !== row.patientId) ||
-        arrivedAdmission.state === "departed"
+        (hasPatient && arrivedAdmission.patientId !== row.patientId)
       )
         return false;
     }
