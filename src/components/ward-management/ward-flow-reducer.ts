@@ -6157,6 +6157,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       // Absent straight from the ward: the bed is held the same way leave holds it. There is no
       // expected return, so the held bed's return time is the moment the absence was recorded.
+      // Ward surfaces check `absentWithoutLeave` before showing it, so it never reads as leave.
       const unit = findUnit(state, stay.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${stay.unitId}`);
       const sequence = state.leaveBedSequence + 1;

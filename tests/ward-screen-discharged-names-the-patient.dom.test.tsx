@@ -99,6 +99,55 @@ describe("the ward screen's leave list shows no internal id and nothing about th
   });
 });
 
+describe("a bed held for an absence without leave never reads as approved leave (D-38)", () => {
+  it("labels the held bed absent since the recorded time, with no expected return", () => {
+    const occupied = wardAdmissions.find(
+      (admission) =>
+        admission.state === "occupied" &&
+        admission.patientId &&
+        !leaveBeds.some((leaveBed) => leaveBed.admissionId === admission.id),
+    );
+    expect(occupied, "an occupied stay with no leave bed").toBeDefined();
+    function AbsenceProbe() {
+      const { dispatch, leaveBeds: live } = useWardFlow();
+      const held = live.find((leaveBed) => leaveBed.admissionId === occupied!.id);
+      return (
+        <>
+          <output data-testid="held-bed">{held?.id ?? ""}</output>
+          <button
+            type="button"
+            onClick={() =>
+              dispatch({
+                type: "RECORD_ABSENT_WITHOUT_LEAVE",
+                role: "ward",
+                now: NOW_ANCHOR,
+                admissionId: occupied!.id,
+                actingUnitId: occupied!.unitId,
+              })
+            }
+          >
+            Mark synthetic absence
+          </button>
+        </>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <AbsenceProbe />
+        <WardScreen unitId={occupied!.unitId} />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Mark synthetic absence" }));
+    const heldId = screen.getByTestId("held-bed").textContent;
+    expect(heldId, "the absence holds a bed").toBeTruthy();
+    const row = screen.getByTestId(`ward-leave-card-${heldId}`);
+    expect(row).toHaveTextContent("Absent without leave");
+    expect(row).toHaveTextContent("Absent since");
+    expect(row).not.toHaveTextContent("Bed on leave");
+    expect(row).not.toHaveTextContent("Expected return");
+  });
+});
+
 describe("the ward screen's Discharged step names its patient and never guesses (Josh, 1A)", () => {
   it("finds a voluntary and an involuntary release in the seed, so neither test below can pass vacuously", () => {
     expect(VOLUNTARY_RELEASE, "an unblocked expected release for a voluntary patient").toBeDefined();
