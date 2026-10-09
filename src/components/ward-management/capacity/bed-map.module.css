@@ -248,6 +248,10 @@
   scrollbar-width: none;
 }
 
+.serviceWardTrack::-webkit-scrollbar {
+  display: none;
+}
+
 .serviceWardTrack > * {
   flex: 0 0 calc((100% - 3 * var(--wf-s-2)) / 4);
   scroll-snap-align: start;

@@ -11,6 +11,10 @@
   scrollbar-width: none;
 }
 
+.track::-webkit-scrollbar {
+  display: none;
+}
+
 .samples {
   display: inline-flex;
   align-items: center;
