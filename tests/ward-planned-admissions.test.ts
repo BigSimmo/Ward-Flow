@@ -439,7 +439,7 @@ describe("beds forecast counts planned admissions ahead", () => {
 describe("overdue planned arrivals surface in the action inbox", () => {
   it("raises one fact row per booking past its expected arrival, and clears it on arrival", () => {
     const state = seedWardFlowState();
-    const rows = buildActionInbox([], NOW, state.units, state.plannedAdmissions);
+    const rows = buildActionInbox([], NOW, state.units, { plannedAdmissions: state.plannedAdmissions });
     expect(rows.map((row) => row.id)).toEqual(["planned-arrival-PA-SEED-03"]);
     expect(rows[0]).toMatchObject({ kind: "fact", tone: "warning", movementId: "", personLabel: "Initials RK" });
     expect(rows[0]!.title).toBe("Planned arrival not recorded");
@@ -462,14 +462,14 @@ describe("overdue planned arrivals surface in the action inbox", () => {
       unitId: UNIT,
     });
     expect(arrived.rejections).toEqual([]);
-    expect(buildActionInbox([], NOW, arrived.units, arrived.plannedAdmissions)).toEqual([]);
+    expect(buildActionInbox([], NOW, arrived.units, { plannedAdmissions: arrived.plannedAdmissions })).toEqual([]);
   });
 });
 
 describe("an overdue linked booking", () => {
   it("names the linked person through the patient resolver, never the booking id", () => {
     const booked = book(seedWardFlowState(), { initials: null, patientId: "PT-002", expectedArrivalAt: NOW + 5 });
-    const rows = buildActionInbox([], NOW + 60, booked.units, booked.plannedAdmissions);
+    const rows = buildActionInbox([], NOW + 60, booked.units, { plannedAdmissions: booked.plannedAdmissions });
     const row = rows.find((candidate) => candidate.id === "planned-arrival-PA-01")!;
     expect(row.personLabel).toBeUndefined();
     expect(row.detail).not.toMatch(/PA-|PT-/);

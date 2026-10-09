@@ -630,12 +630,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const tasksItems = useMemo(
     () =>
       wardTasksAreActionableForRole(role)
-        ? buildActionInbox(movements.filter(isOpen), now, units, plannedAdmissions, {
+        ? buildActionInbox(movements.filter(isOpen), now, units, {
             movements,
             admissions,
             patients,
             referrals,
             supportNotifications,
+            plannedAdmissions,
           })
         : [],
     [movements, now, units, role, plannedAdmissions, admissions, patients, referrals, supportNotifications],

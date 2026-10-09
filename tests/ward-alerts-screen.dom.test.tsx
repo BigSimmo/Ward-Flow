@@ -167,7 +167,7 @@ describe("the Alerts screen reports on every condition it watches, firing or not
       countInCategory("destinations_declined") +
       countInCategory("transport_awaiting_departure") +
       // Planned admissions past their expected arrival (stream D) also draw a row.
-      buildActionInbox([], NOW, allUnits(), wardPlannedAdmissions).length;
+      buildActionInbox([], NOW, allUnits(), { plannedAdmissions: wardPlannedAdmissions }).length;
     expect(rows, "no inbox row in the fixture — every assertion in this file would be vacuous").toBeGreaterThan(0);
 
     const { container } = renderScreen();

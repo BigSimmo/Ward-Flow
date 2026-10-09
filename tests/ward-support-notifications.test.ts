@@ -292,7 +292,7 @@ describe("outstanding notifications as tasks", () => {
 
   it("joins the action inbox when the caller hands it the records, and the ids acknowledge", () => {
     const state = involuntarySeed();
-    const withRecords = buildActionInbox(state.movements.filter(isOpen), NOW, state.units, [], state);
+    const withRecords = buildActionInbox(state.movements.filter(isOpen), NOW, state.units, state);
     expect(withRecords.some((item) => item.id === supportNotificationTaskId("admission", "WF-300"))).toBe(true);
     expect(
       buildActionInbox(state.movements.filter(isOpen), NOW, state.units).some((item) => item.id.startsWith("notify-")),

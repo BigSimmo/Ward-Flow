@@ -231,13 +231,13 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
       seed.movements.filter(isOpen),
       NOW_ANCHOR,
       seed.units,
-      seed.plannedAdmissions,
       {
         movements: seed.movements,
         admissions: seed.admissions,
         patients: seed.patients,
         referrals: seed.referrals,
         supportNotifications: seed.supportNotifications,
+        plannedAdmissions: seed.plannedAdmissions,
       },
     ).length;
     expect(expectedCount).toBeGreaterThan(1);

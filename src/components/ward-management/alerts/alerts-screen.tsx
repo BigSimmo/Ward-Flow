@@ -593,7 +593,7 @@ function AlertsWorkspace() {
   const plannedAdmissions = state.plannedAdmissions;
   const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const inbox = useMemo(
-    () => buildActionInbox(openMovements, now, units, plannedAdmissions),
+    () => buildActionInbox(openMovements, now, units, { plannedAdmissions }),
     [openMovements, now, units, plannedAdmissions],
   );
   const feedNotices = useMemo(() => [...notices].sort((a, b) => b.raisedAt - a.raisedAt), [notices]);

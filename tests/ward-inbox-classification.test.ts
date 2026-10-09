@@ -109,8 +109,10 @@ describe("every action-inbox category is classified as a fact or a commitment", 
       movementsCoveringEveryCategory(),
       NOW,
       allUnits(),
-      seedWardFlowState().plannedAdmissions,
-      recordsCoveringSupportNotifications(),
+      {
+        ...recordsCoveringSupportNotifications(),
+        plannedAdmissions: seedWardFlowState().plannedAdmissions,
+      },
     );
 
     // ANTI-VACUITY. Without this the whole test passes over an empty array — the enumeration

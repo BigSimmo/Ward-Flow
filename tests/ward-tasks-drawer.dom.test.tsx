@@ -265,7 +265,7 @@ describe("carer, PSP and MHAS rows open the right checklist", () => {
       movement.id === "WF-300" ? { ...movement, legalStatus: "Involuntary inpatient" } : movement,
     ),
   };
-  const notificationItems = buildActionInbox(state.movements.filter(isOpen), NOW_ANCHOR, state.units, [], state).filter(
+  const notificationItems = buildActionInbox(state.movements.filter(isOpen), NOW_ANCHOR, state.units, state).filter(
     (item) => item.id.startsWith("notify-"),
   );
 

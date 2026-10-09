@@ -82,7 +82,10 @@ export function WardSidebarNav({
     placeMovements,
     now,
     units,
-    role === "ed" ? [] : plannedAdmissions.filter((planned) => planned.unitId === placeId),
+    {
+      plannedAdmissions:
+        role === "ed" ? [] : plannedAdmissions.filter((planned) => planned.unitId === placeId),
+    },
   );
 
   return (

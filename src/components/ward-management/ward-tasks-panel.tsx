@@ -59,7 +59,7 @@ export function WardTasksPanel() {
   }, [open]);
 
   const items = useMemo(
-    () => buildActionInbox(movements.filter(isOpen), now, units, plannedAdmissions),
+    () => buildActionInbox(movements.filter(isOpen), now, units, { plannedAdmissions }),
     [movements, now, units, plannedAdmissions],
   );
 

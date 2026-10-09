@@ -201,12 +201,13 @@ export function CoordinatorScreen() {
   // The work list is network-wide and open movements only, never scoped to the ED filter.
   const actionInbox = useMemo(
     () =>
-      buildActionInbox(openMovements, now, units, plannedAdmissions, {
+      buildActionInbox(openMovements, now, units, {
         movements,
         admissions,
         patients,
         referrals,
         supportNotifications,
+        plannedAdmissions,
       }).map((item) => {
         if (!item.id.startsWith("bed-pull-") && item.title !== "Bed pull expired") return item;
         return {

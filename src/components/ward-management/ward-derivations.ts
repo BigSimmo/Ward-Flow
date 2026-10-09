@@ -1186,15 +1186,25 @@ export type InboxItem = {
  * legitimately carries a deadline falls due. This is the coordinator's work list, not a report:
  * every qualifying movement gets its own row.
  */
+/**
+ * Optional fourth argument for `buildActionInbox`: support-notification fields (#159) plus planned
+ * admissions (stream D). One records object carries both; call sites that need either set of rows
+ * pass that object rather than two positional extras. Every field is optional so a planned-only
+ * caller need not invent empty support-notification collections.
+ */
+export type ActionInboxRecords = Partial<Omit<Parameters<typeof supportNotificationInboxItems>[0], "units">> & {
+  plannedAdmissions?: readonly PlannedAdmission[];
+};
+
 export function buildActionInbox(
   movements: Movement[],
   now: Instant,
   units: Unit[],
-  plannedAdmissions: readonly PlannedAdmission[] = [],
-  /** Optional: the whole record, to add outstanding carer/PSP/MHAS notification rows. */
-  records?: Omit<Parameters<typeof supportNotificationInboxItems>[0], "units">,
+  /** Optional: planned admissions and/or support-notification fields for extra inbox rows. */
+  records?: ActionInboxRecords,
 ): InboxItem[] {
   const items: InboxItem[] = [];
+  const plannedAdmissions = records?.plannedAdmissions ?? [];
 
   // A legal status change can make an already-accepted destination unlawful — see
   // `destinationNoLongerLawful`'s own doc comment. This never re-sorts or un-accepts the
@@ -1331,7 +1341,28 @@ export function buildActionInbox(
 
   // Advisory carer/PSP/MHAS notifications still to record for recent involuntary moves. These are
   // about COMPLETED moves, so they read every movement in `records`, not the caller's open list.
-  if (records) items.push(...supportNotificationInboxItems({ ...records, units }, now));
+  // Only when the caller passed the notification record fields — `{ plannedAdmissions }` alone is
+  // enough for overdue bookings and must not be treated as a support-notification source.
+  if (
+    records?.movements &&
+    records.admissions &&
+    records.patients &&
+    records.referrals
+  ) {
+    items.push(
+      ...supportNotificationInboxItems(
+        {
+          movements: records.movements,
+          admissions: records.admissions,
+          patients: records.patients,
+          referrals: records.referrals,
+          supportNotifications: records.supportNotifications,
+          units,
+        },
+        now,
+      ),
+    );
+  }
 
   return items;
 }
