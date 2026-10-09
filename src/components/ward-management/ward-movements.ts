@@ -1255,7 +1255,16 @@ function routineMovements(count: number, startIndex: number): Movement[] {
     // must be lawful for THIS movement's status, and the status is what decides that. Passing the
     // STATUS rather than a caller-computed boolean keeps `requiresAuthorisedDestination` the one
     // place that decides what the status requires.
-    const legalStatus: LegalStatus = index % 3 === 0 ? "Referred for psychiatric examination" : "Voluntary";
+    //
+    // Arrived slots that would have been "Referred for psychiatric examination" are instead
+    // Involuntary inpatient: the carer/PSP/MHAS checklist only covers involuntary arrivals, and
+    // "Referred for psychiatric examination" is not involuntary (9 Oct 2026).
+    const referred = index % 3 === 0;
+    const legalStatus: LegalStatus = referred
+      ? stage === "arrived"
+        ? "Involuntary inpatient"
+        : "Referred for psychiatric examination"
+      : "Voluntary";
     const id: `WF-${string}` = `WF-${String(index).padStart(3, "0")}`;
     // Ward seed-audit follow-up, task T2 (D:/Temp/claude/seed-patient-link-audit.md, section 3):
     // every routine movement now names a patient. WF-308 is the one exception — it re-uses the

@@ -402,9 +402,9 @@ describe("DischargeBoard", () => {
     ).toBeGreaterThan(0);
 
     const excluded = screen.getByTestId("ward-discharge-excluded");
-    expect(
-      within(excluded).getByText(new RegExp(`^${expectedExcluded} expected in 2\\+ days$`)),
-    ).toHaveTextContent(new RegExp(`^${expectedExcluded}\\b`));
+    expect(within(excluded).getByText(new RegExp(`^${expectedExcluded} expected in 2\\+ days$`))).toHaveTextContent(
+      new RegExp(`^${expectedExcluded}\\b`),
+    );
     expect(excluded.textContent?.toLowerCase()).not.toContain("none");
   });
 
@@ -472,9 +472,9 @@ describe("DischargeBoard", () => {
     // EVENING_SHIFT_END_MINUTES + 100), so the excluded count must move by exactly one — the half
     // of the spec's promise the earlier excluded-count test cannot exercise on its own.
     const excluded = screen.getByTestId("ward-discharge-excluded");
-    expect(
-      within(excluded).getByText(new RegExp(`^${excludedBefore + 1} expected in 2\\+ days$`)),
-    ).toHaveTextContent(new RegExp(`^${excludedBefore + 1}\\b`));
+    expect(within(excluded).getByText(new RegExp(`^${excludedBefore + 1} expected in 2\\+ days$`))).toHaveTextContent(
+      new RegExp(`^${excludedBefore + 1}\\b`),
+    );
     expect(excluded.textContent?.toLowerCase()).not.toContain("none");
 
     // Being counted and being listed are different things (D5): the new release is `expected`,
@@ -662,10 +662,9 @@ describe("DischargeBoard", () => {
     // here and risk drifting from silently.
     const before = groupDischarges(seededBedReleases, NOW_ANCHOR);
     const dischargedBefore = before["discharged-today"].length;
-    expect(
-      dischargedBefore,
-      "no discharged-today row exists in the live seed to exercise this drop",
-    ).toBeGreaterThan(0);
+    expect(dischargedBefore, "no discharged-today row exists in the live seed to exercise this drop").toBeGreaterThan(
+      0,
+    );
 
     // ⚠️ ASSERTED BEFORE THE CLOCK MOVES, so "the group is empty afterwards" cannot pass because it
     // was empty all along — the row has to be there first for its disappearance to mean anything.
@@ -715,5 +714,26 @@ describe("DischargeBoard", () => {
       .reduce((sum, count) => sum + count, 0);
     const expectedListedAfter = after.blocked.length + after.confirmed.length + after.expected.length;
     expect(listedAfter).toBe(expectedListedAfter);
+  });
+});
+
+describe("a Tasks link to one discharged stay", () => {
+  it("opens that stay's detail, with its carer, PSP and MHAS checklist", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DischargeBoard initialAdmissionId="AD-LEFT-01" />
+      </WardFlowProvider>,
+    );
+    const checklist = screen.getByTestId("ward-support-notifications");
+    expect(within(checklist).getByText(/Discharge · Advisory/)).toBeInTheDocument();
+  });
+
+  it("opens nothing for an id that names no stay", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DischargeBoard initialAdmissionId="AD-NOPE" />
+      </WardFlowProvider>,
+    );
+    expect(screen.queryByTestId("ward-support-notifications")).not.toBeInTheDocument();
   });
 });
