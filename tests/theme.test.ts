@@ -109,4 +109,43 @@ describe("theme helpers", () => {
     expect(toggle).toHaveBeenCalledWith("dark", true);
     expect(setAttribute).toHaveBeenCalledWith("content", APP_THEME_COLORS.dark);
   });
+
+  describe("the ward appearance pin", () => {
+    function boot(pathname: string, stored: Record<string, string>, prefersDark: boolean) {
+      const classes = new Set<string>();
+      const attributes = new Map<string, string>();
+      const run = new Function("localStorage", "window", "document", THEME_BOOTSTRAP_SCRIPT);
+      run(
+        { getItem: (key: string) => stored[key] ?? null },
+        { location: { pathname }, matchMedia: () => ({ matches: prefersDark }) },
+        {
+          cookie: "",
+          documentElement: {
+            classList: { toggle: (name: string, on: boolean) => (on ? classes.add(name) : classes.delete(name)) },
+            setAttribute: (name: string, value: string) => attributes.set(name, value),
+          },
+          querySelectorAll: () => [],
+        },
+      );
+      return { dark: classes.has("dark"), dataTheme: attributes.get("data-theme") ?? null };
+    }
+
+    it("paints a ward page in the ward choice, over the clinical one", () => {
+      const stored = { "ward-flow-appearance": "dark", [THEME_STORAGE_KEY]: "light" };
+      expect(boot("/mockups/ward-flow/hub", stored, false)).toEqual({ dark: true, dataTheme: "dark" });
+    });
+
+    it("follows the OS on a ward page with no ward choice, as WardRail does", () => {
+      expect(boot("/mockups/ward-flow", { [THEME_STORAGE_KEY]: "dark" }, false)).toEqual({
+        dark: false,
+        dataTheme: null,
+      });
+    });
+
+    it("leaves other pages, including sign-in, to the clinical choice", () => {
+      const stored = { "ward-flow-appearance": "dark", [THEME_STORAGE_KEY]: "light" };
+      expect(boot("/mockups/ward-flow-sign-in", stored, true)).toEqual({ dark: false, dataTheme: null });
+      expect(boot("/", stored, true)).toEqual({ dark: false, dataTheme: null });
+    });
+  });
 });
