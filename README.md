@@ -1,5 +1,7 @@
 # Ward Flow
 
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/BigSimmo/Ward-Flow?utm_source=badge)
+
 A ward and bed-coordination prototype for mental health services: referrals, patient movements, transport, delays and capacity.
 
 **All patient data is synthetic. This is a development prototype, not an approved system for real patient care.**
