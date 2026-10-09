@@ -331,6 +331,13 @@
   margin-left: auto;
 }
 
+/* Touch widths: every bar is a 48px tap target. */
+@media (max-width: 62.5rem) {
+  .barRow {
+    min-height: var(--ward-tap, 3rem);
+  }
+}
+
 /* Phone: the plot scrolls sideways inside its card, each day keeps a 48px tap column. */
 @media (max-width: 40rem) {
   .legend {
@@ -346,10 +353,6 @@
 
   .day {
     min-width: var(--ward-tap, 3rem);
-  }
-
-  .barRow {
-    min-height: var(--ward-tap, 3rem);
   }
 }
 
