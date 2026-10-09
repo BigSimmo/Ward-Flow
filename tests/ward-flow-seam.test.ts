@@ -82,6 +82,11 @@ const APPROVED_SHARED_MODULES = new Map([
 const APPROVED_ROUTE_REFERENCES = new Map([
   ["src/lib/developer-area/headers.ts", "route list for the developer-area header"],
   ["src/proxy.ts", "the constellation-to-network redirect kept for historical deep links"],
+  [
+    "src/lib/theme.ts",
+    "the pre-paint theme script reads the ward appearance pin only on ward routes, so ward pages paint " +
+      "their chosen theme first time and every other page keeps the clinical pin",
+  ],
   /*
    * ⚠️ THESE TWO ARE NOT OUTSIDE WARD FLOW — THEY ARE WARD FLOW, SITED ELSEWHERE ON PURPOSE, and
    * they are here because the literal this guard matches (`mockups/ward-flow`) is a PREFIX of
@@ -300,7 +305,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // 7 -> 8 in the standalone app: its not-found fallback names the only product route.
     // 8 -> 7 on 2026-09-28: the developer-key gate went, and with it link-access-shared.ts's
     // default destination.
-    expect(APPROVED_ROUTE_REFERENCES.size).toBe(7);
+    // 7 -> 8 on 2026-10-09: the pre-paint theme script reads the ward appearance pin on ward routes
+    // only, so ward pages paint their theme first time without overriding other pages.
+    expect(APPROVED_ROUTE_REFERENCES.size).toBe(8);
     expect(wardFiles.length).toBeGreaterThan(50);
     expect(allSourceFiles.length).toBeGreaterThan(wardFiles.length);
   });

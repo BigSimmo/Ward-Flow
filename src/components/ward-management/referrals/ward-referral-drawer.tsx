@@ -742,9 +742,11 @@ function WardReferralDrawerContent({
   // A Refer link names its person: it reopens a kept draft only when that draft is for the same
   // person, and never someone else's.
   const [storedDraft] = useState(() => readKeptReferralDraft<KeptDraft>());
-  const kept = !initialPatientId
-    ? storedDraft
-    : prefillKey !== null && storedDraft?.activePatientKey === prefillKey
+  const kept =
+    !initialPatientId ||
+    (storedDraft !== null &&
+      ((prefillKey !== null && storedDraft.activePatientKey === prefillKey) ||
+        storedDraft.activePatientKey === `${PATIENT_KEY_PREFIX}${initialPatientId}`))
       ? storedDraft
       : null;
   // Another person's kept draft stays as it was: this sheet does not autosave over it.

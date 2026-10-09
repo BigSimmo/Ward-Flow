@@ -114,11 +114,14 @@ const STEP_BACK_UNCHOSEN = "Choose both the target stage and the reason first.";
 export function MovementWorkspaceCockpit({
   movementId,
   embedded = false,
+  role = "coordinator",
 }: {
   movementId: MovementId;
   embedded?: boolean;
+  /** Who is acting in this cockpit — ward embeds must not attribute as coordinator. */
+  role?: "ward" | "coordinator";
 }) {
-  const { dispatch, movements, units, patients, referrals } = useWardFlow();
+  const { dispatch, movements, units, patients, referrals, admissions } = useWardFlow();
   const now = useWardFlowClock();
 
   const patient: Movement | undefined = movements.find((candidate) => candidate.id === movementId);
@@ -637,8 +640,17 @@ export function MovementWorkspaceCockpit({
               </p>
             </div>
           ) : null}
-          {/* Advisory carer/PSP/MHAS checklist: renders only for an involuntary patient's completed arrival. */}
-          <SupportNotificationChecklist movementId={patient.id} />
+          {/* Advisory carer/PSP/MHAS checklist: arrival when this movement qualifies; discharge when the linked stay has left. */}
+          <SupportNotificationChecklist movementId={patient.id} role={role} />
+          {patient.admissionId ? (
+            <SupportNotificationChecklist admissionId={patient.admissionId} role={role} />
+          ) : (
+            admissions
+              .filter((admission) => admission.movementId === patient.id)
+              .map((admission) => (
+                <SupportNotificationChecklist key={admission.id} admissionId={admission.id} role={role} />
+              ))
+          )}
         </section>
 
         {/* =========================================================================

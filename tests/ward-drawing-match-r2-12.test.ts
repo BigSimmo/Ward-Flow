@@ -7,15 +7,17 @@ import { describe, expect, it } from "vitest";
  * Looking still owns visual fidelity; this stops the tab strip drifting without a drawing change.
  */
 describe("Ward screen — perfected tab order (R2-12)", () => {
-  it("keeps the five operational tabs in drawing order with drawing labels", () => {
+  // Ward Hub (Josh, 9 Oct 2026, approved Bed board mockup): Arrivals, Discharges and Beds moved
+  // onto Home as the Ward flow panel and the bed board, so two tabs remain.
+  it("keeps the two operational tabs in drawing order with drawing labels", () => {
     const source = readFileSync(resolve(process.cwd(), "src/components/ward-management/ward/ward-screen.tsx"), "utf8");
     const tabIds = [...source.matchAll(/id="tabBtn-([^"]+)"/g)].map((m) => m[1]);
-    expect(tabIds).toEqual(["attn", "coming", "out", "beds", "return"]);
+    expect(tabIds).toEqual(["attn", "return"]);
 
     const labels = [...source.matchAll(/id="tabBtn-[^"]+"[\s\S]*?<span>([^<]+)<\/span>/g)].map((m) =>
       m[1].replace(/&rsquo;/g, "\u2019").replace(/&amp;/g, "&"),
     );
-    expect(labels).toEqual(["Home", "Arrivals", "Discharges", "Beds", "Decisions"]);
+    expect(labels).toEqual(["Home", "Decisions"]);
   });
 
   it("keeps Today’s return panel flex basis at 20rem", () => {

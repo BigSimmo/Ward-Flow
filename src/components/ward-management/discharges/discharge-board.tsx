@@ -347,12 +347,16 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   useEffect(() => {
     if (openedFromLinkRef.current || initialAdmissionId === undefined || !linkedRecordExists) return;
     openedFromLinkRef.current = true;
-    setPopulation("records");
+    // Opening is a guarded, audited receipt (an external write), so it cannot run during render;
+    // the selection shows its outcome, once.
+    let handle: DischargeOpenHandle;
     try {
-      setSelected({ admissionId: initialAdmissionId, handle: openDischargeRecord(RECORD_ACTOR, initialAdmissionId) });
+      handle = openDischargeRecord(RECORD_ACTOR, initialAdmissionId);
     } catch {
-      setSelected({ admissionId: initialAdmissionId, handle: { generation: -1, requestId: -1 } });
+      handle = { generation: -1, requestId: -1 };
     }
+    setPopulation("records");
+    setSelected({ admissionId: initialAdmissionId, handle });
   }, [initialAdmissionId, linkedRecordExists, openDischargeRecord]);
   const services = [...new Set(units.map(healthServiceLabel))].sort();
   const scopedUnits = units.filter((unit) => service === "all" || healthServiceLabel(unit) === service);

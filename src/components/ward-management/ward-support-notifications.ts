@@ -106,6 +106,14 @@ export function legalStatusTextIsInvoluntary(legalStatus: string | undefined): b
   return /^involuntary\b/i.test(legalStatus.trim()) || legalStatus === "Detained awaiting examination";
 }
 
+/**
+ * Whether a movement's closed legal-status vocabulary is involuntary for this checklist: detained
+ * awaiting examination or an involuntary inpatient. "Referred for psychiatric examination" is not.
+ */
+export function movementLegalStatusIsInvoluntary(legalStatus: Movement["legalStatus"] | undefined): boolean {
+  return legalStatus === "Detained awaiting examination" || legalStatus === "Involuntary inpatient";
+}
+
 function movementArrivedAt(movement: Movement): Instant | undefined {
   if (movement.closure?.outcome === "arrived") return movement.closure.at;
   if (movement.stage === "arrived") return movement.transport?.arrivedAt ?? movement.closure?.at;
@@ -130,7 +138,7 @@ export function movementSupportNotificationSubject(
   referrals: readonly Referral[],
 ): SupportNotificationSubject | undefined {
   // Involuntary statuses only: "Referred for psychiatric examination" is not one.
-  if (!legalStatusTextIsInvoluntary(movement.legalStatus)) return undefined;
+  if (!movementLegalStatusIsInvoluntary(movement.legalStatus)) return undefined;
   const completedAt = movementArrivedAt(movement);
   if (completedAt === undefined) return undefined;
   return {
@@ -156,7 +164,7 @@ export function admissionSupportNotificationSubject(
     records.movements.find((movement) => movement.admissionId === admission.id);
   const patient = createPatientResolver(records)(admission).patient;
   const involuntary =
-    legalStatusTextIsInvoluntary(patient?.legalStatus) || legalStatusTextIsInvoluntary(linked?.legalStatus);
+    legalStatusTextIsInvoluntary(patient?.legalStatus) || movementLegalStatusIsInvoluntary(linked?.legalStatus);
   if (!involuntary) return undefined;
   return {
     occasion: "discharge",

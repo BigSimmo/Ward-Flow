@@ -42,8 +42,8 @@ function told(overrides: Partial<NotificationEvent> = {}): NotificationEvent {
 }
 
 /**
- * The seed's arrivals are voluntary or referred for examination, so none is covered. WF-300 is
- * marked an involuntary inpatient here to give the arrival cases a subject.
+ * WF-300 as an involuntary inpatient, whatever the seed says, so the arrival cases keep their
+ * subject if the seed's statuses change.
  */
 function involuntarySeed(): WardFlowState {
   const state = seedWardFlowState();
@@ -55,6 +55,17 @@ function involuntarySeed(): WardFlowState {
   };
 }
 
+/** WF-321 as an arrival referred for examination rather than an involuntary inpatient. */
+function referredSeed(): WardFlowState {
+  const state = seedWardFlowState();
+  return {
+    ...state,
+    movements: state.movements.map((movement): Movement =>
+      movement.id === "WF-321" ? { ...movement, legalStatus: "Referred for psychiatric examination" } : movement,
+    ),
+  };
+}
+
 function lastRejection(state: WardFlowState): string | undefined {
   return state.rejections.at(-1)?.reason;
 }
@@ -62,20 +73,19 @@ function lastRejection(state: WardFlowState): string | undefined {
 describe("which moves the checklist covers", () => {
   it("covers involuntary arrivals and discharges only, not a referral for examination", () => {
     const seed = seedWardFlowState();
-    // The seed's two non-voluntary arrivals are referred for examination: not involuntary patients.
-    for (const id of ["WF-300", "WF-321"]) {
-      expect(seed.movements.find((movement) => movement.id === id)?.legalStatus).toBe(
-        "Referred for psychiatric examination",
-      );
-    }
-    expect(supportNotificationSubjects(seed).map((subject) => `${subject.occasion}:${subject.subjectId}`)).toEqual([
-      "discharge:AD-LEFT-01",
-    ]);
     expect(
-      supportNotificationSubjects(involuntarySeed())
+      supportNotificationSubjects(seed)
         .map((subject) => `${subject.occasion}:${subject.subjectId}`)
         .sort(),
-    ).toEqual(["admission:WF-300", "discharge:AD-LEFT-01"]);
+    ).toEqual(["admission:WF-300", "admission:WF-321", "discharge:AD-LEFT-01"]);
+    for (const subject of supportNotificationSubjects(seed).filter((entry) => entry.occasion !== "discharge")) {
+      expect(seed.movements.find((movement) => movement.id === subject.subjectId)?.legalStatus).toBe(
+        "Involuntary inpatient",
+      );
+    }
+    // The same arrival referred for examination is not covered: that status is not involuntary.
+    const referred = referredSeed();
+    expect(supportNotificationSubjects(referred).some((subject) => subject.subjectId === "WF-321")).toBe(false);
   });
 
   it("calls an arrival from a ward a transfer", () => {
@@ -105,7 +115,8 @@ describe("which moves the checklist covers", () => {
         (entry) => entry.subjectId === "WF-300",
       )?.occasion;
     expect(occasionWith(transferReferral)).toBe("transfer");
-    const { originUnitId: _sendingWard, ...withoutSendingWard } = transferReferral;
+    const withoutSendingWard: Referral = { ...transferReferral };
+    delete withoutSendingWard.originUnitId;
     expect(occasionWith(withoutSendingWard)).toBe("admission");
   });
 
@@ -179,7 +190,9 @@ describe("RECORD_SUPPORT_NOTIFICATION", () => {
     );
     expect(lastRejection(wardFlowReducer(state, told({ movementId: "WF-001" })))).toMatch(/not a completed arrival/);
     // Referred for examination is not an involuntary status.
-    expect(lastRejection(wardFlowReducer(state, told({ movementId: "WF-321" })))).toMatch(/not a completed arrival/);
+    expect(lastRejection(wardFlowReducer(referredSeed(), told({ movementId: "WF-321" })))).toMatch(
+      /not a completed arrival/,
+    );
     expect(lastRejection(wardFlowReducer(state, told({ occasion: "transfer" })))).toMatch(
       /is a admission, not a transfer/,
     );

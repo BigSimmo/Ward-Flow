@@ -6228,55 +6228,231 @@
   }
 }
 
-/* Phone polish (8 Oct 2026): the ward band packs into title, three figures, then one row holding
- * the ward's one-line description and Confirm numbers. The "Open bed list" link repeats the
- * Decisions tab and the figures above it, so it stays on the larger screen. `.wardHero` carries
- * phone rules only. Desktop is unchanged. */
+/* Phone polish (8 Oct 2026): the ward page keeps a little more width on phone. */
 @media (max-width: 48rem) {
   .screen .main {
     padding-inline: var(--wf-s-3);
   }
-
-  .wardHero {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    column-gap: var(--wf-s-3);
+}
+/* Ward Hub header (9 Oct 2026): the hero band holds the ward name with its switch, the Live chip
+ * and Confirm numbers, a row of count pills that filter the bed board, and one quiet foot line
+ * for the shift and when the figures were confirmed. Under it one tool row: Home and Decisions as
+ * pills on the left, Find and the ward's own actions on the right. Same tokens as every v6 page. */
+@media screen {
+  .wardSwitch {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+    color: var(--wf-hero-ink);
+    cursor: pointer;
+    align-self: center;
   }
 
-  .wardHero > div {
-    display: contents;
+  .wardSwitch:hover,
+  .wardSwitch[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
   }
 
-  .wardHero > div:first-child > :nth-child(1) {
-    order: 1;
-    flex: 1 1 100%;
-  }
-
-  .wardHero > div:first-child > :nth-child(2) {
-    order: 2;
-    flex: 1 1 100%;
-  }
-
-  .wardHero > div:last-child > :nth-child(1) {
-    order: 3;
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
-  .wardHero > div:first-child > :nth-child(3) {
-    order: 4;
-    flex: 0 0 auto;
-    margin-left: 0;
-  }
-
-  .wardHero > div:last-child > :nth-child(2) {
-    display: none;
+  .wardSwitch:focus-visible {
+    outline: 2px solid var(--wf-hero-ink);
+    outline-offset: 2px;
   }
 
   .heroMeta {
     display: block;
     min-width: 0;
     font-size: var(--wf-fs-12);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .heroMetaIcon {
+    display: inline-block;
+    margin-right: var(--wf-s-2);
+    vertical-align: -3px;
+  }
+
+  .heroBedListLink {
+    font-size: inherit;
+    text-decoration: none;
+    border-bottom: 1px dotted color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
+  }
+
+  .tabBarWrap {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--wf-s-3);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .tabList {
+    flex: none;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface-2);
+  }
+
+  .tabBtn,
+  .tabBtn:hover {
+    min-height: 32px;
+    padding: 0 var(--wf-s-3);
+    border: 1px solid transparent;
+    border-radius: var(--wf-r-pill);
+    background: transparent;
+    box-shadow: none;
+    font-size: var(--wf-fs-13);
+    color: var(--wf-ink-2);
+  }
+
+  .tabBtn:hover {
+    color: var(--wf-ink-1);
+  }
+
+  .tabBtn[aria-selected="true"] {
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-e1);
+    color: var(--wf-ink-1);
+    font-weight: 600;
+  }
+
+  .tabBtn:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .tabBadge,
+  .tabBtn[aria-selected="true"] .tabBadge {
+    min-width: 18px;
+    padding: 1px 6px;
+    border: 0;
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-line);
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-11) / 16px var(--wf-mono);
+    text-align: center;
+  }
+
+  .tabTools {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: var(--wf-s-1);
+    min-width: 0;
+    padding: 0;
+  }
+
+  .tabTools > :is(a, button),
+  .tabTools > div > button {
+    gap: var(--wf-s-2);
+    white-space: nowrap;
+  }
+
+  .findBox {
+    flex: 0 1 15rem;
+    min-width: 9rem;
+    height: 32px;
+    border-radius: var(--wf-r-pill);
+    margin-right: var(--wf-s-1);
+  }
+
+  .notificationCountBadge {
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--wf-line);
+    color: var(--wf-ink-1);
+    font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  }
+
+  .subViewBar {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    min-width: 0;
+  }
+
+  .subViewTitle {
+    margin: 0;
+    font-size: var(--wf-fs-16);
+    font-weight: 600;
+    color: var(--wf-ink-1);
+  }
+}
+
+@media (max-width: 64rem) {
+  .toolWide {
+    display: none !important;
+  }
+}
+
+/* Phone: Home and Decisions take the first row. The tool row wraps below them with Find on its
+ * own full-width line first and the actions after it, so none is hidden off screen. Desktop is
+ * unchanged. */
+@media (max-width: 48rem) {
+  .tabBarWrap {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--wf-s-2);
+    padding: 0;
+  }
+
+  .tabList {
+    width: auto;
+    mask-image: none;
+    padding-inline-end: 3px;
+  }
+
+  .tabTools {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    border-top: 0;
+    padding: 0;
+  }
+
+  .findBox {
+    flex: 1 1 100%;
+    order: -1;
+    height: var(--spacing-tap, 3rem);
+    margin-right: 0;
+  }
+
+  .tabTools {
+    flex-wrap: wrap;
+    overflow: visible;
+    mask-image: none;
+  }
+
+  .tabBtn,
+  .tabBtn:hover,
+  .tabBtn[aria-selected="true"] {
+    min-height: var(--spacing-tap, 3rem);
+  }
+}
+
+/* Touch screens: the ward switch and the find box keep the 48px tap target. */
+@media (pointer: coarse) {
+  .wardSwitch {
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+  }
+
+  .findBox {
+    height: var(--spacing-tap, 3rem);
   }
 }

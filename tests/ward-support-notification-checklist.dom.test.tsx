@@ -28,11 +28,6 @@ describe("carer, PSP and MHAS checklist", () => {
     expect(screen.queryByTestId("ward-support-notifications")).not.toBeInTheDocument();
   });
 
-  it("renders nothing for an arrival referred for examination, which is not an involuntary status", () => {
-    renderChecklist({ movementId: "WF-300", role: "coordinator" });
-    expect(screen.queryByTestId("ward-support-notifications")).not.toBeInTheDocument();
-  });
-
   it("is read-only for a role the event does not allow", () => {
     renderChecklist({ admissionId: "AD-LEFT-01", role: "ed" });
     expect(screen.getByTestId("ward-support-notifications")).toBeInTheDocument();

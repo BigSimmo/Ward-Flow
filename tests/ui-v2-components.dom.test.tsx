@@ -16,6 +16,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { Progress, StageList } from "@/components/ui/progress";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Select } from "@/components/ui/select";
+import { Sheet } from "@/components/ui/sheet";
 import { Tabs } from "@/components/ui/tabs";
 import { SearchField, TextField } from "@/components/ui/text-field";
 import { ToastProvider, useToast } from "@/components/ui/toast";
@@ -978,6 +979,23 @@ describe("Tooltip", () => {
     await userEvent.keyboard("{Escape}");
     expect(onKeyDown).toHaveBeenCalled();
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
+
+  it("closes on Escape without closing the Sheet it sits in, even when opened by hover", async () => {
+    const onClose = vi.fn();
+    render(
+      <Sheet open onClose={onClose} title="Movement">
+        <Tooltip content="Measured placement only.">
+          <button type="button">Hover me</button>
+        </Tooltip>
+      </Sheet>,
+    );
+    await userEvent.hover(screen.getByRole("button", { name: "Hover me" }));
+    await screen.findByRole("tooltip");
+
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it("places a presentation-only card to the right without duplicating the trigger description", async () => {
