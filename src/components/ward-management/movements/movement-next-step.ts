@@ -6,8 +6,9 @@ import type { Movement } from "@/components/ward-management/ward-model";
  * it, read only from the record's own stage, referrals, declines, escalation and transport leg.
  *
  * `kind` says what the Movements page may do about it. Only the coordinator's own steps carry an
- * action, and each opens the Patient page, where the pull (with its gate checks and override
- * reason), referral and escalation forms already live. Every other step belongs to
+ * action. Pull and refer open the Patient page, where the pull (with its gate checks and override
+ * reason) and referral forms live; escalate opens the coordinator screen focused on the movement,
+ * where the escalation picker lives (see `nextStepTarget`). Every other step belongs to
  * another team (ED, the receiving ward or transport), so the page names the owner and offers
  * nothing it is not allowed to record. "Chase the ward" stays out (owner ruling, 12 Sep 2026).
  */
@@ -28,11 +29,14 @@ export function movementNextStep(movement: Movement): MovementNextStep | null {
       if (movement.escalation !== undefined) {
         return { label: "Escalated", owner: movement.escalation.contact, kind: "wait" };
       }
-      const asked = movement.referredUnitIds.length;
-      if (asked > 0 && movement.declines.length >= asked) {
-        return { label: "Escalate", owner: COORDINATOR_OWNER, kind: "escalate" };
+      // A live request means a ward still owes an answer, whatever earlier wards said. With none
+      // left, every ward asked has declined (or the request was withdrawn): the coordinator escalates.
+      if (movement.referredUnitIds.length > 0) {
+        return { label: "Ward answer", owner: "Receiving ward", kind: "wait" };
       }
-      return { label: "Ward answer", owner: "Receiving ward", kind: "wait" };
+      return movement.declines.length > 0
+        ? { label: "Escalate", owner: COORDINATOR_OWNER, kind: "escalate" }
+        : { label: "Refer to wards", owner: COORDINATOR_OWNER, kind: "refer" };
     }
     case "accepted_awaiting_bed":
       return movement.acceptedUnitId === undefined
@@ -63,4 +67,11 @@ export function movementNextStep(movement: Movement): MovementNextStep | null {
 /** True when the next step is the coordinator's own, so it belongs in "Next in my queue". */
 export function isCoordinatorStep(step: MovementNextStep | null): step is MovementNextStep {
   return step !== null && step.owner === COORDINATOR_OWNER;
+}
+
+/** Where a coordinator step is recorded: escalation lives on the coordinator screen, the rest on the Patient page. */
+export function nextStepTarget(step: MovementNextStep, movementId: string): { href: string; where: string } {
+  return step.kind === "escalate"
+    ? { href: "/mockups/ward-flow", where: "the coordinator screen" }
+    : { href: `/mockups/ward-flow/movements/${movementId}`, where: "the Patient page" };
 }

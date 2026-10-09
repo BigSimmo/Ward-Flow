@@ -333,7 +333,7 @@
   padding: 0 var(--wf-s-2) 0 var(--wf-s-3);
   border: 1px solid var(--wf-line-3);
   border-radius: var(--wf-r-pill);
-  background: var(--wf-hl);
+  background: var(--wf-accent-tint);
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
   white-space: nowrap;
@@ -384,7 +384,8 @@
 }
 
 .row[data-highlight="true"] {
-  background: var(--wf-hl);
+  background: var(--wf-accent-tint);
+  box-shadow: inset 2px 0 0 var(--wf-accent);
 }
 
 .row[data-selected="true"] {

@@ -31,7 +31,7 @@ import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "@/components/ward-manageme
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { StatusGlyph, buttonClass, type WfTone } from "@/components/wf";
 
-import { movementNextStep } from "./movement-next-step";
+import { movementNextStep, nextStepTarget } from "./movement-next-step";
 import d from "./movement-drawer.module.css";
 
 /**
@@ -149,8 +149,11 @@ export function MovementDrawer({
   edAccessTargetMinutes,
   dispatch,
   onClose,
+  onFocusMovement,
 }: {
   movement: Movement | undefined;
+  /** Focuses this movement on the coordinator screen before its link opens (escalation lives there). */
+  onFocusMovement?: (movementId: string) => void;
   now: Instant;
   /** Threaded from the screen for the same reason `units` is — one provider reader per screen. */
   referrals: Referral[];
@@ -246,17 +249,22 @@ export function MovementDrawer({
         ? `recorded expiry passed ${splitDuration(now - dueAt)} ago`
         : `recorded expiry ${formatInstantWithDay(dueAt, now)}`;
 
-  const declined = movement.declines.length;
-  const asked = movement.referredUnitIds.length;
+  // Every ward ever asked: live requests, recorded declines and the accepting ward. A decline
+  // removes the ward from the live list, so the live list alone would read "None yet".
+  const declinedIds = new Set(movement.declines.map((decline) => decline.unitId));
+  const askedIds = new Set([...movement.referredUnitIds, ...declinedIds]);
+  if (movement.acceptedUnitId) askedIds.add(movement.acceptedUnitId);
+  const asked = askedIds.size;
+  const pending = movement.referredUnitIds.length;
   const wardsAsked = accepted
-    ? asked === 0
+    ? asked <= 1
       ? "Accepted"
       : `${asked}, accepted`
     : asked === 0
       ? "None yet"
-      : declined >= asked
+      : pending === 0
         ? `${asked}, all declined`
-        : `${asked}, ${declined} declined`;
+        : `${asked}, ${declinedIds.size} declined`;
 
   // Only an arrival completes the track. A movement that did not proceed keeps the stage it held.
   const currentStep =
@@ -267,9 +275,14 @@ export function MovementDrawer({
   let nextAction: React.ReactNode = null;
   if (step && open) {
     if (step.kind !== "wait") {
+      const target = nextStepTarget(step, movement.id);
       nextAction = (
-        <Link className={buttonClass({ variant: "pri", className: d.wide })} href={recordHref}>
-          {step.label} on the Patient page
+        <Link
+          className={buttonClass({ variant: "pri", className: d.wide })}
+          href={target.href}
+          onClick={step.kind === "escalate" ? () => onFocusMovement?.(movement.id) : undefined}
+        >
+          {step.label} on {target.where}
           <ChevronRight size={14} aria-hidden="true" />
         </Link>
       );
@@ -324,6 +337,7 @@ export function MovementDrawer({
           className={buttonClass({ variant: "sec", size: "sm", iconOnly: true })}
           onClick={onClose}
           aria-label="Close"
+          data-sheet-autofocus="true"
         >
           <X size={14} aria-hidden="true" />
         </button>

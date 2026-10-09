@@ -65,7 +65,7 @@ import {
 } from "@/components/wf";
 import { MovementDrawer } from "./movement-drawer";
 import { MovementHorizonGantt } from "./movement-horizon-gantt";
-import { isCoordinatorStep, movementNextStep } from "./movement-next-step";
+import { isCoordinatorStep, movementNextStep, nextStepTarget } from "./movement-next-step";
 import flow from "./movement-flow.module.css";
 import styles from "./movements.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -247,7 +247,7 @@ function bedReadyNote(items: Movement[]): string {
  * Delays merge's own 30-of-42 audit as exactly the failure mode this guards against.
  */
 export function MovementsScreen() {
-  const { movements, units, referrals, patients, dispatch, configuration } = useWardFlow();
+  const { movements, units, referrals, patients, dispatch, configuration, setFocusMovementId } = useWardFlow();
   const now = useWardFlowClock();
   // Task 6 of the audit-wiring plan, 2026-09-16: StageRow's wait-meter bar and its "of N hours"
   // caption are read against the coordinator-configured ED access target, not a bare 24h literal.
@@ -646,6 +646,7 @@ export function MovementsScreen() {
       reveal={reveal}
       consumeReveal={consumeReveal}
       onOpenDetail={openDetail}
+      onFocusMovement={setFocusMovementId}
       marked={isMarked(movement)}
       selected={detailId === movement.id}
     />
@@ -684,7 +685,8 @@ export function MovementsScreen() {
   // the open records: the longest wait, the next recorded legal expiry (a typed `dueAt`, never a
   // computed limit, D5), and the coordinator's own queue of next steps.
   const movingCount = openMovements.filter((movement) => movement.stage === "moving").length;
-  const longestWaiting = byLongestWait(openMovements, now)[0];
+  // The earliest opened open movement, not the worklist order (which puts legal expiry first).
+  const longestWaiting = [...openMovements].sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id))[0];
   const nextExpiry = openMovements
     .filter((movement) => movement.legalForm?.dueAt !== undefined && movement.legalForm.dueAt >= now)
     .sort((a, b) => a.legalForm!.dueAt! - b.legalForm!.dueAt!)[0];
@@ -1050,7 +1052,7 @@ export function MovementsScreen() {
                 <div role="tabpanel" id="movements-pane-every" aria-labelledby="movements-tab-every">
                   <div className={styles.movementListBody} tabIndex={0} role="region" aria-label="Movement records">
                     {searchedTotal === 0 ? (
-                      <p className={styles.absent}>No movement matches “{search.trim()}”.</p>
+                      <p className={styles.absent}>No movement matches “{search.trim()}”. Every row is still shown.</p>
                     ) : null}
                     {order === "cause"
                       ? shownCauseGroups.map((group) => (
@@ -1146,10 +1148,15 @@ export function MovementsScreen() {
                   >
                     {worklistClosedToday.length === 0 ? (
                       <p className={styles.absent}>No movement has resolved today{inServiceSuffix(service)}.</p>
-                    ) : shownClosedToday.length === 0 ? (
-                      <p className={styles.absent}>No resolved movement matches “{search.trim()}”.</p>
                     ) : (
-                      <WardRecordList>{capRows(shownClosedToday, LIST_CAP).map(renderRow)}</WardRecordList>
+                      <>
+                        {matchesSearch !== null && !shownClosedToday.some(matchesSearch) ? (
+                          <p className={styles.absent}>
+                            No resolved movement matches “{search.trim()}”. Every row is still shown.
+                          </p>
+                        ) : null}
+                        <WardRecordList>{capRows(shownClosedToday, LIST_CAP).map(renderRow)}</WardRecordList>
+                      </>
                     )}
                   </div>
                 </div>
@@ -1567,6 +1574,7 @@ export function MovementsScreen() {
           edAccessTargetMinutes={configuration.edAccessTargetMinutes}
           dispatch={dispatch}
           onClose={closeDetail}
+          onFocusMovement={setFocusMovementId}
         />
       </main>
     </div>
@@ -1675,6 +1683,7 @@ function StageRow({
   reveal,
   consumeReveal,
   onOpenDetail,
+  onFocusMovement,
   marked,
   selected,
 }: {
@@ -1689,6 +1698,8 @@ function StageRow({
   reveal: { id: string; request: number } | null;
   consumeReveal: (request: number) => boolean;
   onOpenDetail: (id: string) => void;
+  /** Focuses a movement on the coordinator screen, where an escalation is recorded. */
+  onFocusMovement: (id: string) => void;
   /** Matched by the search or the hero highlight. Marked rows are tinted, never filtered. */
   marked: boolean;
   selected: boolean;
@@ -1935,8 +1946,9 @@ function StageRow({
         ) : step.kind !== "wait" ? (
           <Link
             className={buttonClass({ variant: "sec", size: "sm" })}
-            href={`/mockups/ward-flow/movements/${movement.id}`}
-            title={`${step.label} on the Patient page`}
+            href={nextStepTarget(step, movement.id).href}
+            title={`${step.label} on ${nextStepTarget(step, movement.id).where}`}
+            onClick={step.kind === "escalate" ? () => onFocusMovement(movement.id) : undefined}
           >
             {step.label}
           </Link>
