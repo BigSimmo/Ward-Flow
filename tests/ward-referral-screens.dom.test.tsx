@@ -452,6 +452,13 @@ describe("ReferralBoard", () => {
     ]);
   });
 
+  it("offers the highlight search on the Queue tab only, since it highlights queue rows", () => {
+    renderBoard();
+    expect(screen.getByRole("searchbox", { name: "Highlight referrals" })).toBeInTheDocument();
+    openHistory();
+    expect(screen.queryByRole("searchbox", { name: "Highlight referrals" })).not.toBeInTheDocument();
+  });
+
   it("renders the decided cards in the same order as the decided table, for the phone view", () => {
     const { container } = renderBoard();
     const cards = Array.from(container.querySelectorAll("[data-testid^='ward-referral-board-decided-card-']"));

@@ -762,19 +762,22 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     { id: "history", label: "History", count: decidedTotal },
                   ]}
                 />
-                <TextInput
-                  type="search"
-                  icon={Search}
-                  boxClassName={a.search}
-                  placeholder="Name, UMRN, hospital or suburb"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    if (e.target.value) setHighlight(null);
-                  }}
-                  onClear={() => setSearchQuery("")}
-                  aria-label="Highlight referrals"
-                />
+                {/* The search highlights queue rows only, so History (at most ten rows) does not offer it. */}
+                {view === "queue" ? (
+                  <TextInput
+                    type="search"
+                    icon={Search}
+                    boxClassName={a.search}
+                    placeholder="Name, UMRN, hospital or suburb"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      if (e.target.value) setHighlight(null);
+                    }}
+                    onClear={() => setSearchQuery("")}
+                    aria-label="Highlight referrals"
+                  />
+                ) : null}
                 <span className={a.toolbarNote}>
                   {anyHighlight && view === "queue" ? (
                     <>
