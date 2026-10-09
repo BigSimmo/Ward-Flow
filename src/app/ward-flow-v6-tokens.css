@@ -310,27 +310,15 @@
 
 /*
  * Scrollbars: thin and pale on every page, day and night (Josh, 9 Oct 2026). The thumb is the
- * middle hairline token, so it follows the theme, and the track is clear. Zero specificity, so
- * a component that hides or styles its own scrollbar keeps its own rule. Appearance only: wheel,
- * touch and keyboard scrolling are unchanged. Safari before scrollbar-color uses the WebKit form.
+ * middle hairline token, so it follows the theme, and the track is clear. Zero specificity, so a
+ * component's own scrollbar-width or scrollbar-color (including none) still wins. In Chromium these
+ * standard properties replace any ::-webkit-scrollbar styling, which is intended: every scrollbar
+ * matches. Safari without scrollbar-color keeps its native overlay bars, which are already thin and
+ * pale. Appearance only: wheel, touch and keyboard scrolling are unchanged.
  */
 :root {
   scrollbar-color: var(--wf-line-2) transparent;
 }
 :where(*) {
   scrollbar-width: thin;
-}
-@supports not (scrollbar-color: auto) {
-  :where(*)::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  :where(*)::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  :where(*)::-webkit-scrollbar-thumb {
-    border: 2px solid transparent;
-    border-radius: var(--wf-r-pill);
-    background: var(--wf-line-2) padding-box;
-  }
 }
