@@ -23,32 +23,45 @@
 .fleetPanel {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--wf-s-1);
-  padding: var(--wf-s-1);
-  border: 1px solid var(--wf-hero-edge);
-  border-radius: var(--wf-r-md);
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.fleetLabel {
+  margin-right: var(--wf-s-1);
+  color: var(--wf-hero-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .fleetButton {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
   min-width: 0;
-  padding: var(--wf-s-1) var(--wf-s-2);
-  border: 1px solid transparent;
-  border-radius: var(--wf-r-sm);
-  background: none;
+  min-height: 1.875rem;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-hero-edge);
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
   color: var(--wf-hero-ink);
   text-align: left;
   cursor: pointer;
 }
 
 .fleetButton:hover {
-  border-color: var(--wf-hero-edge);
+  border-color: var(--wf-hero-ink-2);
 }
 
 .fleetButton[aria-pressed="true"] {
-  border-color: var(--wf-hero-ink-2);
+  border-color: var(--wf-hero-ink);
+  background: var(--wf-hero-ink);
+  color: var(--wf-hero-2, var(--wf-ink-1));
+}
+
+.fleetButton[aria-pressed="true"] .fleetCounts {
+  color: inherit;
 }
 
 .fleetButton:focus-visible {
@@ -61,42 +74,118 @@
   white-space: nowrap;
 }
 
-.fleetDot {
-  white-space: pre;
-}
-
-.heroStats {
-  display: flex;
-  align-items: stretch;
-  min-width: 0;
-}
-
-.trackScroll {
-  min-width: 0;
-  max-width: 100%;
-  overflow-x: auto;
-}
-
-.trackScroll > * {
-  width: max-content;
-  max-width: none;
-}
-
 .fleetCounts {
-  display: flex;
-  flex-wrap: wrap;
   color: var(--wf-hero-ink-2);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   white-space: nowrap;
+}
+
+/* ---- Hero: highlight pills and page tools ---- */
+
+.heroPills {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.heroPill {
+  flex: none;
+}
+
+.shortLabel {
+  display: none;
+}
+
+.heroTools {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.nextArrival {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-hero-edge);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-hero-ink);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.nextArrival b {
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+.nextArrivalPlace {
+  overflow: hidden;
+  max-width: 10rem;
+  text-overflow: ellipsis;
+}
+
+.preview {
+  display: inline-flex;
+  align-items: center;
+  height: 1.375rem;
+  padding: 0 var(--wf-s-2);
+  border: 1px dashed var(--wf-line-3);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.onHeroPreview {
+  border-color: var(--wf-hero-ink-2);
+  color: var(--wf-hero-ink-2);
+}
+
+.previewButton {
+  border-style: dashed;
+}
+
+.eyebrow {
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.warnText {
+  color: var(--wf-warning-ink);
+}
+
+/* The Next action card is the phone's first piece of work; the desktop table already leads. */
+.nextCard {
+  display: none;
 }
 
 /* ---- Layout ---- */
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--wf-s-3);
   align-items: start;
+}
+
+/* The job panel opens beside the table only once a patient is chosen. */
+.layout[data-open="true"] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 27.5rem);
+}
+
+.scrim,
+.grab,
+.jobEscort {
+  display: none;
 }
 
 .leftColumn,
@@ -112,7 +201,8 @@
 }
 
 @media (max-width: 62.5rem) {
-  .layout {
+  .layout,
+  .layout[data-open="true"] {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -142,8 +232,19 @@
 }
 
 .tabsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
   padding: 0 var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
+}
+
+.tabsRow > :first-child {
+  flex: none;
+}
+
+.tabsRow .headNote {
+  margin-left: auto;
 }
 
 .toolbar {
@@ -155,8 +256,26 @@
 }
 
 .searchBox {
-  flex: 1 1 14rem;
+  flex: 0 1 18rem;
   min-width: 10rem;
+}
+
+.highlightNote {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.toolbarSpacer {
+  flex: 1;
+}
+
+.sortLabel {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
 .placeholder {
@@ -174,37 +293,121 @@
   overflow-x: auto;
 }
 
+.jobsTable {
+  table-layout: fixed;
+}
+
 .jobsTable th:nth-child(1) {
-  width: 6.75rem;
+  width: 19%;
 }
 
 .jobsTable th:nth-child(3) {
-  width: 13%;
+  width: 14%;
 }
 
 .jobsTable th:nth-child(4) {
-  width: 10.75rem;
+  width: 12%;
 }
 
 .jobsTable th:nth-child(5) {
-  width: 4.5rem;
+  width: 18%;
 }
 
 .jobsTable th:nth-child(6) {
-  width: 5rem;
+  width: 7.5rem;
 }
 
-.jobsTable th:nth-child(7) {
-  width: 5.5rem;
+/* With the job panel open the table narrows: the forms column keeps its dots only. */
+.layout[data-open="true"] .jobsTable th:nth-child(1) {
+  width: 22%;
+}
+
+.layout[data-open="true"] .jobsTable th:nth-child(3) {
+  width: 17%;
+}
+
+.layout[data-open="true"] .jobsTable th:nth-child(4) {
+  width: 4.5rem;
+}
+
+.layout[data-open="true"] .jobsTable th:nth-child(5) {
+  width: 15%;
+}
+
+.layout[data-open="true"] .formsCell > span:last-child {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .jobRow {
   position: relative;
 }
 
-.jobId {
+/* A highlight lights the row; it never removes one. */
+.jobRow[data-highlight="true"] > td {
+  background: var(--wf-accent-tint);
+}
+
+.jobRow > td:last-child {
+  position: relative;
+  z-index: 1;
+}
+
+.jobUmrn {
   color: var(--wf-ink-2);
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+.jobRouteTo {
+  color: var(--wf-ink-1);
+}
+
+.jobRouteFrom {
+  color: var(--wf-ink-2);
+}
+
+.jobMeta {
+  display: block;
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stageFor {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  white-space: nowrap;
+}
+
+.formsCell,
+.etaCell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  white-space: nowrap;
+}
+
+.formDots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.formsCell [data-complete="true"] {
+  color: var(--wf-ink-2);
+}
+
+.etaCell b {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-13) var(--wf-mono);
+}
+
+.etaNote {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
 .selectButton {
@@ -246,15 +449,10 @@
 }
 
 .jobRoute {
+  display: block;
   overflow: hidden;
   color: var(--wf-ink-2);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.clip {
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -263,16 +461,15 @@
   font-family: var(--wf-mono);
 }
 
-.waiting {
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
-  white-space: nowrap;
-}
-
 .stageCell {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-2);
+  column-gap: var(--wf-s-2);
+}
+
+.stageFor {
+  flex-basis: 100%;
 }
 
 .stepper {
@@ -307,7 +504,19 @@
   font-weight: 600;
 }
 
-/* ---- Refused and cancelled tabs ---- */
+/* ---- History: delivered today, refused and cancelled ---- */
+
+.historyHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.historyHead > :last-child {
+  margin-left: auto;
+}
 
 .refusals,
 .cancelledSection {
@@ -409,10 +618,32 @@
   border-bottom: 1px solid var(--wf-line);
 }
 
+.arrivalRow {
+  position: relative;
+}
+
 .arrivalWho {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.arrivalWho:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.arrivalWho > svg,
+.arrivalTime,
+.arrivalKind,
+.arrivalNow {
+  display: none;
 }
 
 .arrivalWho strong {
@@ -425,7 +656,7 @@
 .arrivalWho span {
   overflow: hidden;
   color: var(--wf-ink-2);
-  font: 400 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -456,6 +687,13 @@
 }
 
 /* ---- Job panel ---- */
+
+/* The patient's name gets the full line; UMRN and legal status sit beneath it. */
+.detailHead > div:first-child {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
 
 .detailBody {
   display: flex;
@@ -609,16 +847,137 @@
   color: var(--wf-ink-1);
 }
 
-.docs {
+/* ---- Forms pack ---- */
+
+.sectionHead {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-1);
+  align-items: center;
+  gap: var(--wf-s-2);
 }
 
-.docsNote {
-  flex-basis: 100%;
+.sectionHead .sectionTitle {
+  margin: 0;
+}
+
+.sectionNote {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  margin-left: auto;
   color: var(--wf-ink-2);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.pack {
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.slot {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 3.25rem;
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.slotText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.slotText strong {
+  overflow: hidden;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slotText > span {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.packFoot {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-2) var(--wf-s-3);
+  background: var(--wf-surface-2);
+  white-space: nowrap;
+}
+
+.packCount {
+  margin-right: auto;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.packCount b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+}
+
+.codeChoice {
+  display: flex;
+  gap: var(--wf-s-2);
+}
+
+.codeChoice button {
+  flex: 1;
+  min-height: var(--spacing-tap, 3rem);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.codeChoice button[aria-checked="true"] {
+  border-color: var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+
+.drop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px dashed var(--wf-line-3);
+  border-radius: var(--wf-r-md);
+  cursor: pointer;
+}
+
+.drop > span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.drop > span > span {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.drop input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.drop:focus-within {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 .divertForm {
@@ -784,48 +1143,399 @@
   box-shadow: var(--wf-e2);
 }
 
-/* ---- Phone ---- */
-
-@media (max-width: 40rem) {
-  .heroStats {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: var(--wf-s-3);
-    width: 100%;
+/*
+ * ---- Phone (48rem and under), 9 Oct 2026 Transport page A ----
+ * The officer's main device. Designed as its own layout, not the desktop stacked: the hero keeps
+ * three highlights (To accept, Late, Forms) and the next arrival, a Next action card leads, each job
+ * is a three line card with its next step in reach, arrivals read as a timed list, and the job opens
+ * as a bottom sheet with the stage actions pinned above the home indicator.
+ */
+@media (max-width: 48rem) {
+  .main {
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-3);
   }
 
-  .heroStats .heroStat {
-    border-left: 0;
-    padding-left: 0;
-  }
-
-  .fleetButton {
-    min-height: var(--spacing-tap, 3rem);
-  }
-
-  .fleetCounts {
-    flex-direction: column;
-  }
-
-  .fleetDot {
+  .screen .deskOnly {
     display: none;
   }
 
-  /*
-   * The stage actions stay in reach on a phone: pinned to the screen's bottom edge, above the
-   * home indicator, as the officer page has always done. The page and the toast make room for it.
-   */
-  .actionRow {
+  /* Hero: three highlights in one row, short labels, the provider row left to the larger screen. */
+  .dispatchHero > div:has(.fleetPanel) {
+    display: none;
+  }
+
+  .heroPills {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    overflow: visible;
+  }
+
+  .heroPills > .heroPill:not(.deskOnly) {
+    display: flex;
+    padding: 0;
+    border-left: 0;
+  }
+
+  .heroPill > button {
+    width: 100%;
+    min-height: var(--spacing-tap, 3rem);
+    margin: 0;
+  }
+
+  .heroPill .longLabel {
+    display: none;
+  }
+
+  .heroPill .shortLabel {
+    display: inline;
+  }
+
+  .heroTools {
+    flex: 1 1 100%;
+  }
+
+  .nextArrival {
+    flex: 1 1 auto;
+    height: 2.75rem;
+  }
+
+  .nextArrivalPlace {
+    flex: 1 1 auto;
+    max-width: none;
+  }
+
+  .dispatchHero {
+    position: relative;
+  }
+
+  .copyButton {
+    position: absolute;
+    top: var(--wf-s-3);
+    right: var(--wf-s-3);
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .copyButton .longLabel {
+    display: none;
+  }
+
+  /* Next action: the first piece of work, one tap from done. */
+  .nextCard {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  }
+
+  .nextCardHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--wf-s-2);
+    margin-bottom: var(--wf-s-1);
+  }
+
+  .nextCardStage {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--wf-s-1);
+    color: var(--wf-ink-1);
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  }
+
+  .nextCardName {
+    overflow: hidden;
+    font: 600 var(--wf-fs-16) / 1.3 var(--wf-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nextCardLine {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-1);
+    min-width: 0;
+    overflow: hidden;
+    color: var(--wf-ink-2);
+    font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+    white-space: nowrap;
+  }
+
+  .nextCardLine.warnText {
+    color: var(--wf-warning-ink);
+  }
+
+  .nextCardActions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: var(--wf-s-2);
+    margin-top: var(--wf-s-3);
+  }
+
+  .nextCardActions > * {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  /* Jobs: tabs and a full width search; sort stays on the larger screen. */
+  .tabsRow {
+    padding: 0 var(--wf-s-3);
+  }
+
+  .tabsRow .headNote,
+  .arrivalsCard .headNote,
+  .toolbarSpacer,
+  .sortLabel,
+  .sortControl {
+    display: none;
+  }
+
+  .toolbar {
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .searchBox {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .tableScroll {
+    overflow: visible;
+  }
+
+  .jobsTable,
+  .jobsTable tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .jobsTable thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  /* Each job is a card: patient and ETA, the route, then stage, forms and the next step. */
+  .jobsTable .jobRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "who who eta"
+      "route route route"
+      "stage forms next";
+    align-items: center;
+    column-gap: var(--wf-s-3);
+    row-gap: 2px;
+    padding: var(--wf-s-3);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .jobsTable .jobRow.jobRow > td {
+    display: block;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .jobRow[data-highlight="true"],
+  .jobsTable .jobRow[aria-selected="true"] {
+    background: var(--wf-accent-tint);
+  }
+
+  .jobRow > td:nth-child(1) {
+    grid-area: who;
+  }
+
+  .jobRow > td:nth-child(2) {
+    grid-area: route;
+  }
+
+  .jobRow > td:nth-child(3) {
+    grid-area: stage;
+    margin-top: var(--wf-s-1);
+  }
+
+  .jobRow > td:nth-child(4) {
+    grid-area: forms;
+    margin-top: var(--wf-s-1);
+  }
+
+  .jobRow > td:nth-child(5) {
+    grid-area: eta;
+    justify-self: end;
+  }
+
+  .jobRow > td:nth-child(6) {
+    grid-area: next;
+    margin-top: var(--wf-s-1);
+  }
+
+  .jobRow > td:nth-child(6) button {
+    min-height: 2.75rem;
+  }
+
+  .selectButton {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--wf-s-2);
+  }
+
+  .jobName {
+    font-size: var(--wf-fs-14);
+  }
+
+  .jobUmrn {
+    flex: none;
+  }
+
+  .jobMeta {
+    display: none;
+  }
+
+  /* The meta line is dropped on a phone card, so escort keeps its own visible marker. */
+  .jobEscort {
+    display: inline-block;
+    margin-top: var(--wf-s-1);
+    color: var(--wf-ink-1);
+    font-size: var(--wf-fs-12);
+    font-weight: 600;
+  }
+
+  .stageCell {
+    flex-wrap: nowrap;
+  }
+
+  .stageFor {
+    flex-basis: auto;
+  }
+
+  .formsCell > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  /* Arrivals: a timed list with a Now divider; the runway is left to the larger screen. */
+  .arrivalsAxis,
+  .arrivalTrack {
+    display: none;
+  }
+
+  .arrivalRow {
+    display: block;
+    min-height: 0;
+  }
+
+  .arrivalWho {
+    display: grid;
+    grid-template-columns: 3.25rem auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--wf-s-2);
+    width: 100%;
+    min-height: var(--spacing-tap, 3rem);
+    padding: var(--wf-s-2) 0;
+  }
+
+  .arrivalTime {
+    display: block;
+    grid-row: 1 / span 2;
+    font: 600 var(--wf-fs-14) / var(--wf-lh-13) var(--wf-mono);
+  }
+
+  .arrivalWho > svg {
+    display: block;
+    grid-row: 1 / span 2;
+  }
+
+  .arrivalWho strong {
+    grid-column: 3;
+    font-size: var(--wf-fs-13);
+  }
+
+  .arrivalWho > span {
+    grid-column: 3;
+  }
+
+  .arrivalWho > .arrivalKind {
+    display: block;
+    grid-column: 4;
+    grid-row: 1 / span 2;
+  }
+
+  .arrivalNow {
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    padding-top: var(--wf-s-1);
+    color: var(--wf-accent-ink);
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  }
+
+  .arrivalNow::after {
+    flex: 1;
+    border-top: 1px dashed var(--wf-accent);
+    content: "";
+  }
+
+  /* The job opens as a bottom sheet over the list. */
+  .scrim {
     position: fixed;
+    inset: 0;
     z-index: var(--z-overlay);
+    display: block;
+    background: var(--wf-scrim);
+  }
+
+  /* A modal bottom sheet, like the other pages' .detail sheets; not an action row. */
+  .detail {
+    position: fixed;
     right: 0;
     bottom: 0;
     left: 0;
-    padding: var(--wf-s-2) var(--wf-s-3) max(var(--wf-s-2), var(--safe-area-bottom));
+    z-index: var(--z-overlay);
+    height: 92dvh;
+    padding-bottom: calc(var(--spacing-tap, 3rem) + 2 * var(--wf-s-2) + var(--safe-area-bottom, 0px));
+    border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+    box-shadow: var(--wf-e3);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .grab {
+    display: block;
+    flex: none;
+    width: 2.25rem;
+    height: 4px;
+    margin: var(--wf-s-2) auto 0;
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-line-3);
+  }
+
+  /* The stage actions stay in reach: pinned to the screen's bottom edge, above the home indicator. */
+  .actionRow {
+    position: fixed;
+    z-index: var(--z-popover);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    gap: var(--wf-s-1);
+    padding: var(--wf-s-2) var(--wf-s-3) max(var(--wf-s-2), var(--safe-area-bottom, 0px));
     border-top: 1px solid var(--wf-line);
     background: var(--wf-surface);
     box-shadow: var(--wf-e2);
-    gap: var(--wf-s-1);
   }
 
   .actionButton {
@@ -837,40 +1547,17 @@
     font-size: var(--wf-fs-12);
   }
 
-  .main:has(.actionRow) {
-    padding-bottom: calc(var(--spacing-tap, 3rem) + 2 * var(--wf-s-2) + var(--safe-area-bottom) + var(--wf-s-4));
-  }
-
   .screen:has(.actionRow) .toast {
-    bottom: calc(var(--spacing-tap, 3rem) + 2 * var(--wf-s-2) + var(--safe-area-bottom) + var(--wf-s-3));
+    bottom: calc(var(--spacing-tap, 3rem) + 2 * var(--wf-s-2) + var(--safe-area-bottom, 0px) + var(--wf-s-3));
   }
 
   .facts,
-  .planGrid,
-  .modalFields {
+  .planGrid {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .facts > div:nth-child(odd) {
     border-right: 0;
-  }
-
-  .jobsTable th:nth-child(3),
-  .jobsTable td:nth-child(3),
-  .jobsTable th:nth-child(5),
-  .jobsTable td:nth-child(5),
-  .jobsTable th:nth-child(6),
-  .jobsTable td:nth-child(6) {
-    display: none;
-  }
-
-  .selectButton {
-    min-height: var(--spacing-tap, 3rem);
-    justify-content: center;
-  }
-
-  .arrivals {
-    --arr-who: 7rem;
   }
 }
 
@@ -940,127 +1627,5 @@
 
   .layout {
     display: block;
-  }
-}
-
-/* Phone (≤48rem), 8 Oct 2026: the hero figures share one row of three, and each job becomes a
- * two-line row (patient and route on the left; waiting time and stage on the right). The job number,
- * provider, escort and CAD stay in the selected job's detail. Desktop is untouched. */
-@media (max-width: 48rem) {
-  .heroStats {
-    display: grid;
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    row-gap: 0;
-    width: 100%;
-  }
-
-  .heroStats .heroStat {
-    padding-left: var(--wf-s-3);
-    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
-  }
-
-  .heroStats .heroStat:first-child {
-    padding-left: 0;
-    border-left: 0;
-  }
-
-  /* The label truncates with an ellipsis instead of being cut mid word. */
-  .heroStats .heroStat > span:last-child {
-    display: block;
-  }
-
-  .tableScroll {
-    overflow-x: visible;
-  }
-
-  .jobsTable,
-  .jobsTable tbody {
-    display: block;
-    width: 100%;
-  }
-
-  .jobsTable thead {
-    display: none;
-  }
-
-  .jobsTable tbody .jobRow {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "who wait"
-      "who stage";
-    align-items: center;
-    column-gap: var(--wf-s-3);
-    min-height: var(--spacing-tap, 3rem);
-    padding: var(--wf-s-2) var(--wf-s-4);
-    border-bottom: 1px solid var(--wf-line);
-  }
-
-  .jobsTable tbody .jobRow > td {
-    display: block;
-    min-width: 0;
-    max-width: none;
-    width: auto;
-    height: auto;
-    padding: 0;
-    border: 0;
-  }
-
-  .jobsTable tbody .jobRow > td:nth-child(1),
-  .jobsTable tbody .jobRow > td:nth-child(3),
-  .jobsTable tbody .jobRow > td:nth-child(5),
-  .jobsTable tbody .jobRow > td:nth-child(6) {
-    display: none;
-  }
-
-  .jobsTable tbody .jobRow > td:nth-child(2) {
-    grid-area: who;
-  }
-
-  .jobsTable tbody .jobRow > td:nth-child(4) {
-    grid-area: stage;
-    justify-self: end;
-    font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-    color: var(--wf-ink-2);
-  }
-
-  .jobsTable tbody .jobRow > td.waiting {
-    grid-area: wait;
-    justify-self: end;
-    text-align: right;
-  }
-
-  .jobsTable .selectButton {
-    min-height: 0;
-  }
-
-  .toolbar > button {
-    min-height: 2.75rem;
-  }
-}
-
-/* Phone polish (8 Oct 2026, second pass): 12px side gutters and a compact hero. Transport handover
- * moves to the hero's top corner, and the provider filter (a secondary way to narrow the jobs)
- * stays on the larger screen, so the band holds the title, three figures and the stage tabs.
- * Desktop is unchanged: everything here sits under 48rem. */
-@media (max-width: 48rem) {
-  .main {
-    padding-inline: var(--wf-s-3);
-  }
-
-  .main > section:first-child {
-    position: relative;
-  }
-
-  .main > section:first-child > :first-child > :last-child:has(> button) {
-    position: absolute;
-    top: var(--wf-s-3);
-    right: var(--wf-s-3);
-    width: auto;
-  }
-
-  .main > section:first-child > :last-child:has(> * > .fleetPanel) > :last-child {
-    display: none;
   }
 }
