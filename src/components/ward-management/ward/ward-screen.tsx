@@ -36,6 +36,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { Hero, LiveChip, Menu, TextInput, buttonClass, durMinutes } from "@/components/wf";
 import {
   currentShift,
@@ -172,6 +173,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     dayZero,
   } = useWardFlow();
   const now = useWardFlowClock();
+  // Feature 11: Raise referral dispatches as `community`; this ward route keeps it through the
+  // listed cross-role pair in `ward-role-permissions.ts`.
+  const raiseReferralGate = useRoleGate()("RECEIVE_REFERRAL");
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const [dismissedBuzzes, setDismissedBuzzes] = useState<number[]>([]);
   // Item 44, build plan task F3 (§2 "Bed board, ward page and all seven statistics screens: a
@@ -285,7 +289,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   }, []);
 
   function handleRaiseWardReferral() {
-    if (!unit) return;
+    if (!unit || !raiseReferralGate.allowed) return;
     dispatch({
       type: "RECEIVE_REFERRAL",
       role: "community",
@@ -1664,10 +1668,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 className={buttonClass({ variant: "sec", size: "sm" })}
                 onClick={handleRaiseWardReferral}
                 title="Record a ward-to-ward referral with this ward as the sending ward."
+                {...raiseReferralGate.buttonProps}
               >
                 <Send size={16} aria-hidden="true" />
                 Raise referral
               </button>
+              {raiseReferralGate.note}
             </div>
           </nav>
         </section>

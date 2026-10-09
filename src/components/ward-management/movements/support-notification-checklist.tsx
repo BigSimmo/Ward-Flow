@@ -7,7 +7,8 @@ import { usePathname } from "next/navigation";
 import { Button, Field, Segmented, StatusGlyph, TextInput, type WfTone } from "@/components/wf";
 import { formatInstant, formatInstantWithDay } from "../ward-clock";
 import { wardChromeRole } from "../ward-chrome-role";
-import { EVENT_ROLE, type WardFlowRole } from "../ward-flow-events";
+import type { WardFlowRole } from "../ward-flow-events";
+import { canDispatch } from "../ward-role-permissions";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import {
   SUPPORT_NOTIFICATION_OCCASION_LABELS,
@@ -71,7 +72,7 @@ export function SupportNotificationChecklist({
 }) {
   const routeRole = wardChromeRole(usePathname() ?? "");
   const role = roleOverride ?? routeRole;
-  const canRecord = EVENT_ROLE.RECORD_SUPPORT_NOTIFICATION.includes(role);
+  const canRecord = canDispatch(role, "RECORD_SUPPORT_NOTIFICATION");
   const { movements, admissions, patients, referrals, supportNotifications, dispatch, rejections } = useWardFlow();
   const now = useWardFlowClock();
   const headingId = useId();
