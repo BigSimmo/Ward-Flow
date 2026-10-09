@@ -40,9 +40,10 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import {
   TRANSPORT_PROVIDERS,
   type Movement,
@@ -354,7 +355,7 @@ const LEG_TONE: Record<OfficerLeg, WfTone> = {
  * forms pack yet.
  */
 export function OfficerScreen() {
-  const { movements, units, dispatch, rejections, patients, referrals } = useWardFlow();
+  const { movements, units, dispatch, rejections, patients, referrals, dayZero } = useWardFlow();
   const officerPatientName = useCallback(
     (movement: Movement) => {
       const info = resolveSubjectPatient(movement, { patients, referrals, movements });
@@ -508,6 +509,15 @@ export function OfficerScreen() {
   // Between the phone sheet and the two-column layout the panel stacks above the lists, so a
   // newly chosen job is scrolled into view rather than opening off-screen.
   const sideRef = useRef<HTMLDivElement>(null);
+  const [isPhone, setIsPhone] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(max-width: 48rem)");
+    const update = () => setIsPhone(query.matches);
+    update();
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
+  }, []);
   useEffect(() => {
     if (selectedId === undefined || typeof window.matchMedia !== "function") return;
     if (!window.matchMedia("(min-width: 48.0625rem) and (max-width: 62.5rem)").matches) return;
@@ -594,7 +604,11 @@ export function OfficerScreen() {
         if (formModalJob) {
           setFormModalJob(null);
           lastTriggerRef.current?.focus();
-        } else if (selectedId !== undefined && !document.querySelector('[role="dialog"][aria-modal="true"]')) {
+        } else if (
+          selectedId !== undefined &&
+          !isPhone &&
+          !document.querySelector('[role="dialog"][aria-modal="true"]')
+        ) {
           setSelectedId(undefined);
         }
       } else if (
@@ -611,7 +625,7 @@ export function OfficerScreen() {
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [formModalJob, selectedId]);
+  }, [formModalJob, isPhone, selectedId]);
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -731,12 +745,12 @@ export function OfficerScreen() {
       const transport = movement.transport!;
       const expected = expectedArrival(movement);
       const eta = expected
-        ? `${expected.booked ? "est." : "ward ETA"} ${formatInstantWithDay(expected.at, now)}${late(movement) ? ", late" : ""}`
+        ? `${expected.booked ? "est." : "ward ETA"} ${formatSheetMoment(expected.at, dayZero)}${late(movement) ? ", late" : ""}`
         : "no ETA";
       return `${officerPatientName(movement)} (${umrnFor(movement)}): ${originShortFor(movement)} to ${destinationLabelFor(movement)}, ${transportLeg(transport)}, ${transport.provider}${transport.escortRequired ? ", escort" : ""}, ${eta}, forms ${packCount(movement)} of ${PACK_SLOTS.length}`;
     });
     const text = [
-      `Transport handover ${formatInstantWithDay(now, now)}. ${jobs.length} open, ${inCustody} on board, ${crewEnRoute} en route, ${pastEta} past ward ETA.`,
+      `Transport handover ${formatSheetMoment(now, dayZero)}. ${jobs.length} open, ${inCustody} on board, ${crewEnRoute} en route, ${pastEta} past ward ETA.`,
       ...lines,
     ].join("\n");
     const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
@@ -1122,6 +1136,7 @@ export function OfficerScreen() {
   );
 
   const panelOpen = selectedJob !== undefined && selectedJob.transport !== undefined;
+  useWardModalFocus(isPhone && panelOpen, sideRef, closeJob);
 
   return (
     <div className={styles.screen} data-testid="ward-officer-screen" data-ward-design="v8">
@@ -1660,6 +1675,8 @@ export function OfficerScreen() {
               <div ref={sideRef} className={styles.side}>
                 <Card
                   className={styles.detail}
+                  role={isPhone ? "dialog" : undefined}
+                  aria-modal={isPhone ? "true" : undefined}
                   aria-labelledby="ward-officer-detail-heading"
                   data-testid="ward-officer-detail"
                 >
