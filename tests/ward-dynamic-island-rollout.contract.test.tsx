@@ -1738,10 +1738,11 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
       resolve(process.cwd(), "src/components/ward-management/handover/handover-page.tsx"),
       "utf8",
     );
-    expect(source).toContain("Caseload in Scope");
-    expect(source).toContain("Unoccupied Beds");
-    expect(source).toContain("1:1 Specialling Roster");
-    expect(source).toContain("Form expiries passed");
+    // Refined Handover A (9 Oct 2026): the hero counts are the meeting-order groups.
+    expect(source).toContain("ward-handover-kpi-strip");
+    expect(source).toContain("Act now");
+    expect(source).toContain("Waiting for a bed");
+    expect(source).toContain("Moving");
   });
 
   it("Integration Screen 2: DischargeBoard mounts with WardFlowProvider and renders KPI testIds", () => {
