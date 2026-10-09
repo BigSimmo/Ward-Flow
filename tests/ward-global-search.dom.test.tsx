@@ -544,6 +544,16 @@ describe("WardGlobalSearch palette (option B)", () => {
     expect(fireEvent.keyDown(input, { key: "Tab" })).toBe(true);
   });
 
+  it("offers Cancel while open, which clears the field and closes the palette", () => {
+    const { input } = renderPalette();
+    fireEvent.change(input, { target: { value: "ward" } });
+    fireEvent.click(screen.getByTestId("ward-global-search-cancel"));
+
+    expect(input).toHaveValue("");
+    expect(screen.queryByTestId("ward-global-search-popup")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-global-search-cancel")).not.toBeInTheDocument();
+  });
+
   it("remembers an opened record for the session and offers it under Recent before typing", () => {
     clearGlobalSearchRecents();
     const { input, onNavigate } = renderPalette();

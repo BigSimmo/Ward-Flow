@@ -639,22 +639,100 @@
   height: 14px;
 }
 
-/* Phone and narrow tablets: one column, no preview, the palette spans the screen under the bar. */
+/* Shown only by the compact bar (ward-bar.module.css) while the palette is open. */
+.cancel {
+  display: none;
+}
+
+/*
+ * Phone and narrow tablets (Josh, 9 Oct 2026): a full screen sheet under the bar instead of a
+ * floating palette. One column, no preview, two line rows at a 52px tap height, chips that scroll
+ * sideways, solid surface so rows read over a busy page, and the footer clear of the home indicator.
+ */
 @media (max-width: 48rem) {
+  .scrim {
+    display: none;
+  }
+
   .popup {
-    width: calc(100vw - 1rem);
-    max-height: calc(100dvh - 5rem);
-    border-radius: var(--wf-r-lg);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: none;
+    margin-top: -8px;
+    transform: none;
+    border: 0;
+    border-radius: 0;
+    background: var(--wf-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+    animation: wgsFade var(--wf-m-base) var(--wf-ease);
+  }
+
+  .kinds {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .kind {
+    height: 34px;
+    padding: 0 12px;
+    font-size: var(--wf-fs-13);
   }
 
   .split[data-has-preview] {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .listPane {
+    padding: 4px 8px 8px;
+    overscroll-behavior: contain;
+  }
+
+  .group {
+    align-items: flex-end;
+    height: 32px;
+    padding-bottom: 4px;
+  }
+
+  .option {
+    min-height: 52px;
+    padding: 6px 8px;
+    gap: 12px;
+  }
+
+  .resultContent {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+  }
+
+  .resultTitle {
+    max-width: 100%;
+    font-size: var(--wf-fs-14);
+    line-height: var(--wf-lh-14);
+  }
+
+  .resultMeta {
+    line-height: var(--wf-lh-12);
+  }
+
   .previewPane,
   .resultKind,
-  .footerHints {
+  .footerHints,
+  .actionHint {
     display: none;
+  }
+
+  .resultsFooter {
+    min-height: 48px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .fullSearch {
+    font-size: var(--wf-fs-13);
   }
 }
 
