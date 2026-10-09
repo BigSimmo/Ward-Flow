@@ -7,6 +7,11 @@ import {
   SERVICE_ON_CALL_ROLES,
   type OnCallRole,
 } from "../src/components/ward-management/on-call/on-call-roster";
+import {
+  MOCK_NUMBER_PREFIX,
+  SHOW_MOCK_CONTACTS,
+  buildOnCallDirectory,
+} from "../src/components/ward-management/on-call/on-call-directory";
 import { HEALTH_SERVICES } from "../src/components/ward-management/ward-model";
 
 /**
@@ -29,6 +34,16 @@ import { HEALTH_SERVICES } from "../src/components/ward-management/ward-model";
  *
  * ⚠️ **AND IT WAS MUTATION-TESTED:** a plausible Australian mobile was pasted into the screen by
  * hand, this file went red, and the paste was reverted with `git show HEAD:<path>`.
+ *
+ * ## 9 October 2026: mock contact records (owner request, design A1)
+ *
+ * The owner asked for the On-call page to carry contact records and the time each is available
+ * until. They are MOCKS, and the last case below is what keeps them so: every number the directory
+ * renders is built by one function as `08 0000` plus a serial (an unassigned exchange that cannot
+ * reach anyone) and every email by one function on the reserved `.invalid` domain. **No literal
+ * number or address is written in the source, so the source scan above is unchanged and still
+ * applies in full.** The screen has no tel or mail link, and Call copies and says it is not wired.
+ * `OnCallRole` still holds no contact field: the records live in `on-call-directory.ts`.
  */
 
 const ON_CALL_DIR = join(process.cwd(), "src/components/ward-management/on-call");
@@ -237,5 +252,35 @@ describe("the on-call screen holds no people and nothing to ring", () => {
       withSome.length,
       "every service is empty, so 'named as having none' cannot discriminate — it would be true of all",
     ).toBeGreaterThan(0);
+  });
+
+  /**
+   * 🔴 **EVERY RECORDED LINE IS A MOCK THAT CANNOT REACH A PERSON.** If a real or plausible number
+   * ever enters the directory, it fails the pattern here, whatever source file it came from.
+   */
+  it("🔴 every directory number is an unassigned mock and every email is undeliverable", () => {
+    const entries = buildOnCallDirectory();
+    const numbers = entries.flatMap((entry) => entry.lines.map((line) => line.number));
+    const emails = entries.flatMap((entry) => (entry.email ? [entry.email] : []));
+    expect(numbers.length, "the directory holds no lines, so this case checks nothing").toBeGreaterThan(50);
+    expect(MOCK_NUMBER_PREFIX).toBe(["08", "0000"].join(" "));
+    for (const number of numbers) {
+      if (!SHOW_MOCK_CONTACTS) {
+        expect(number).toBeNull();
+        continue;
+      }
+      expect(number, `${String(number)} is not in the unassigned mock range`).toMatch(/^08 0000 \d{4}$/u);
+    }
+    // With SHOW_MOCK_CONTACTS off every slot is null, so only held numbers must be unique.
+    const held = numbers.filter((number) => number !== null);
+    expect(new Set(held).size, "two lines share a number, so one row would ring another's line").toBe(held.length);
+    for (const email of emails) expect(email).toMatch(/^[a-z0-9.]+@example\.invalid$/u);
+    for (const entry of entries) {
+      for (const { pattern } of REACHABLE_SHAPES.slice(0, 4)) {
+        expect(pattern.test(`${entry.name} ${entry.place} ${entry.note}`), `${entry.id} carries contact wording`).toBe(
+          false,
+        );
+      }
+    }
   });
 });

@@ -114,7 +114,9 @@ const PINNED: Record<string, string | readonly string[] | null> = {
   // (52rem) and an ED directory table (48rem). The latest folded app is the design reference.
   // Re-pinned 2026-10-07 (v6 On-call): the roster table shares its row with the role panel
   // (46rem) and the ED directory sits in the narrower lower card (36rem).
-  "on-call/on-call.module.css": ["46rem", "36rem"],
+  // Re-pinned 2026-10-09 (On-call A1): one directory table beside the contact card, 40rem; the
+  // separate ED table is gone (EPIC and ED liaison lines are rows of the directory).
+  "on-call/on-call.module.css": "40rem",
   "out-of-area/out-of-area.module.css": "30rem",
   /* The out-of-area register inspector redesign (PR #25) makes the ledger a fluid, fixed-layout
    * table that fits its panel at every desktop width; the narrow-screen case is handled by the
