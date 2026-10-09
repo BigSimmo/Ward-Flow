@@ -183,6 +183,11 @@ export type AuditEvent = AuditBase &
     | { category: "record-access"; action: "OPEN_DISCHARGE_RECORD"; details: { requestId: number | null } }
     | { category: "review"; action: "REVIEW_AUDIT_EVENT"; details: { decision: AuditReview["decision"] | null } }
     | {
+        category: "inbox";
+        action: "TAKE_INBOX_ITEM_OWNERSHIP" | "SNOOZE_INBOX_ITEM" | "UNSNOOZE_INBOX_ITEM";
+        details: { inboxItemId: string; reason?: string; until?: Instant };
+      }
+    | {
         category: "configuration";
         action: "SET_CONFIGURATION";
         details: {
@@ -247,6 +252,10 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
       return "review";
     case "SET_CONFIGURATION":
       return "configuration";
+    case "TAKE_INBOX_ITEM_OWNERSHIP":
+    case "SNOOZE_INBOX_ITEM":
+    case "UNSNOOZE_INBOX_ITEM":
+      return "inbox";
     default:
       return null;
   }
@@ -409,6 +418,19 @@ export function appendAudit(
         category: "review",
         action: event.type,
         details: { decision: reviewDecision(event.decision) },
+      };
+      break;
+    case "TAKE_INBOX_ITEM_OWNERSHIP":
+    case "SNOOZE_INBOX_ITEM":
+    case "UNSNOOZE_INBOX_ITEM":
+      captured = {
+        ...base,
+        category: "inbox",
+        action: event.type,
+        details: {
+          inboxItemId: event.inboxItemId,
+          ...(event.type === "SNOOZE_INBOX_ITEM" ? { reason: event.reason, until: event.until } : {}),
+        },
       };
       break;
     case "SET_CONFIGURATION":
