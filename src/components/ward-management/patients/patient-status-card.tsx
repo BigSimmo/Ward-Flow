@@ -489,7 +489,13 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
         value: legalValue(undefined, patient),
         sub: "As recorded",
         clear: true,
-        action: patient ? { kind: "button", label: "Record CTO", onClick: () => ctx.onRecordCto() } : undefined,
+        // An order here can only be an ended one (an active order shows the CTO mode). The reducer
+        // refuses a second Form 5A so the Closed form stays on the record.
+        action: !patient
+          ? undefined
+          : patient.communityTreatmentOrder
+            ? { kind: "unavailable", label: "Record CTO", reason: "An ended Form 5A is already on the record" }
+            : { kind: "button", label: "Record CTO", onClick: () => ctx.onRecordCto() },
       },
     ],
   };
