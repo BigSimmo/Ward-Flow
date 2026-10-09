@@ -7,6 +7,8 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
+import { movementUmrn } from "../src/components/ward-management/ward-patient-resolver";
+
 import {
   seedWardFlowState,
   wardFlowReducer,
@@ -439,7 +441,9 @@ describe("Fix 5: RECORD_REFERRER_WITHDRAWAL cascades to every linked open moveme
       referralId,
     });
     expect(attempt.rejections.length).toBeGreaterThan(0);
-    expect(attempt.rejections[0].reason).toContain(movementId);
+    // D-39: the refusal names the patient by UMRN, never by the WF journey number.
+    expect(attempt.rejections[0].reason).toContain(movementUmrn(movementId, collected));
+    expect(attempt.rejections[0].reason).not.toContain(movementId);
     expect(attempt.movements).toEqual(collected.movements);
     expect(attempt.units).toEqual(collected.units);
     expect(attempt.admissions).toEqual(collected.admissions);

@@ -140,7 +140,10 @@ capacity figure anywhere in this group is real.
 - **`src/components/ward-management/ward-patient-resolver.ts`** (81 lines, 14 importers) —
   Resolves a patient and display information (name, UMRN, initials, sex/gender) from any clinical
   subject — a `Movement`, `Referral`, `Admission`, or a raw id — against live state, in one place
-  rather than each screen re-deriving it. Key export: `resolveSubjectPatient`.
+  rather than each screen re-deriving it. Key exports: `resolveSubjectPatient`, `movementUmrn` and
+  `withUmrnInPlaceOfMovementIds` (D-39: a patient is shown by UMRN, never by the `WF-...` journey
+  id, which stays internal). `ward-patient-name.ts` wraps these as the `usePatientOf` and
+  `useUmrnText` hooks.
 
 ## Referrals and catchment
 
