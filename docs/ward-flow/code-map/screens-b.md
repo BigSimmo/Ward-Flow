@@ -184,7 +184,7 @@ figures/links), and by `ward-nav-counts.ts` and `ward-service-scope.ts`.
   below 64rem). The person's panel lists their wards (accepted, declined, asked) and then
   Candidate wards: every other ward from `shortlistCandidates`, eligible or overridable with the
   reason, never cut to a count, plus a disclosure for wards no reason can buy. Filters narrow the table and it always states how many are hidden, with "Show
-  everyone" (owner ruling D-38, 9 October 2026, superseding the 2026-09-07 highlight rule here).
+  everyone" (owner ruling D-41, 9 October 2026, superseding the 2026-09-07 highlight rule here).
   Below 40rem each row becomes a card.
 - **`src/components/ward-management/delays/delays-board-graphs.tsx`** — the three graphs under the
   table: Wait spread (dots by whose move or catchment, linear to 24h then compressed to 7d), Next 4
@@ -199,7 +199,7 @@ figures/links), and by `ward-nav-counts.ts` and `ward-service-scope.ts`.
   radar precedence/intervals/outliers and common linear timeline geometry. All durations use minutes.
   The board uses its `CatchmentOrigin` type and `overTwelveHoursMinutes`; the radar and timeline
   helpers served the old Delays views (`delays-data-views.tsx`, `delays-coordination.tsx`), deleted
-  on 9 October 2026 (D-38), and are now reached only by `tests/ward-delays-view-model.test.ts`.
+  on 9 October 2026 (D-41), and are now reached only by `tests/ward-delays-view-model.test.ts`.
   Exact window-end records stay in the final interval; longer waits are never clamped onto the axis.
 - **`src/components/ward-management/delays/delays.module.css`** (5406 lines) — the largest CSS
   module in this map; styles for `delays-screen.tsx`.
