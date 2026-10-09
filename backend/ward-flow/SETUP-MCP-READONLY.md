@@ -39,6 +39,8 @@ Use the exact server hostname, database `wardflow_dev`, verified database login 
 
 For an approved host that already has Azure CLI and `psql`, the following PowerShell example obtains the token into memory, runs only the fixed check file and clears it afterwards. Fill the three non-secret placeholders locally. Use the approved reader's isolated CLI profile; Azure CLI must already be signed in as that identity. An Azure login must not change MFA or Security Defaults.
 
+Start the dedicated PowerShell shell from the Ward Flow repository root on the approved host so the relative SQL file path resolves correctly.
+
 ```powershell
 $azureCli = 'PATH_TO_APPROVED_AZURE_CLI'
 $env:AZURE_CONFIG_DIR = 'PATH_TO_READER_ONLY_CLI_PROFILE'
