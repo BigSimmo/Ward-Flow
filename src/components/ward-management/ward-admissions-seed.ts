@@ -1,14 +1,16 @@
 import { DISCHARGE_ROLE_LABELS } from "@/components/ward-management/ward-admissions";
-import type { Admission, FollowUpRecord, LeavingDestination } from "@/components/ward-management/ward-admissions";
+import type {
+  Admission,
+  FollowUpRecord,
+  LeavingDestination,
+  PlannedAdmission,
+} from "@/components/ward-management/ward-admissions";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { HomeRegion, MovementId, ReferralGender, Sex } from "@/components/ward-management/ward-model";
 import type { Patient, PatientId } from "@/components/ward-management/ward-patients";
-import {
-  generateSeedPatient,
-  type GeneratedSeedPatientCohort,
-} from "@/components/ward-management/ward-patients-seed";
+import { generateSeedPatient, type GeneratedSeedPatientCohort } from "@/components/ward-management/ward-patients-seed";
 
 /**
  * The synthetic people occupying beds across the network.
@@ -481,7 +483,13 @@ const occupiedBeds: Admission[] = [
     // confirmed, with blocked counted alongside it rather than subtracted from it. Without this
     // one line that rule has no seeded case and a derivation that quietly dropped blocked releases
     // out of the confirmed count would pass every test in this repository.
-    ["Female", "South West", 34, -2, { blockReason: "Awaiting accommodation", confirmedHoursAgo: 26, patientId: "PT-G-AD-RPHS-01" }],
+    [
+      "Female",
+      "South West",
+      34,
+      -2,
+      { blockReason: "Awaiting accommodation", confirmedHoursAgo: 26, patientId: "PT-G-AD-RPHS-01" },
+    ],
     // Confirmed and NOT blocked, so the blocked cross-cut above is compared against something.
     ["Male", "Mid West", 5, 3, { confirmedHoursAgo: 4, patientId: "PT-028" }],
     ["Male", "Peel", null, null, { patientId: "PT-G-AD-RPHS-03" }],
@@ -722,7 +730,13 @@ const occupiedBeds: Admission[] = [
     ["Female", "Mid West", 45, 6, { patientId: "PT-G-AD-GRYS-01" }],
     ["Male", "Kimberley", 130, -2, { patientId: "PT-G-AD-GRYS-02" }],
     ["Female", "South West", 5, 9, { patientId: "PT-G-AD-GRYS-03" }],
-    ["Male", "Goldfields-Esperance", 20, 2, { blockReason: "Awaiting receiving-service acceptance", patientId: "PT-G-AD-GRYS-04" }],
+    [
+      "Male",
+      "Goldfields-Esperance",
+      20,
+      2,
+      { blockReason: "Awaiting receiving-service acceptance", patientId: "PT-G-AD-GRYS-04" },
+    ],
     ["Female", "Pilbara", 60, 8, { patientId: "PT-G-AD-GRYS-05" }],
     ["Male", "Peel", 2, null, { patientId: "PT-G-AD-GRYS-06" }],
     ["Female", "Wheatbelt", 95, 3, { patientId: "PT-G-AD-GRYS-07" }],
@@ -758,7 +772,13 @@ const occupiedBeds: Admission[] = [
     ["Male", "Great Southern", 210, 10, { patientId: "PT-G-AD-BUNA-02" }],
     ["Female", "Mid West", 17, 4, { patientId: "PT-G-AD-BUNA-03" }],
     ["Male", "Kimberley", 75, 2, { patientId: "PT-G-AD-BUNA-04" }],
-    ["Female", "South West", 4, 5, { blockReason: "Awaiting family or carer arrangement", patientId: "PT-G-AD-BUNA-05" }],
+    [
+      "Female",
+      "South West",
+      4,
+      5,
+      { blockReason: "Awaiting family or carer arrangement", patientId: "PT-G-AD-BUNA-05" },
+    ],
     ["Male", "Goldfields-Esperance", 9, null, { patientId: "PT-G-AD-BUNA-06" }],
     ["Female", "Pilbara", 115, 1, { patientId: "PT-G-AD-BUNA-07" }],
   ]),
@@ -770,7 +790,13 @@ const occupiedBeds: Admission[] = [
     ["Male", "Perth Metropolitan", 3, null, { patientId: "PT-G-AD-BRMS-05" }],
   ]),
   ...unitOccupants("ger-adult-open", "GERA", ADULT_OPEN_DIAGNOSES, [
-    ["Female", "Mid West", 91, 5, { blockReason: "Awaiting family or carer arrangement", patientId: "PT-G-AD-GERA-01" }],
+    [
+      "Female",
+      "Mid West",
+      91,
+      5,
+      { blockReason: "Awaiting family or carer arrangement", patientId: "PT-G-AD-GERA-01" },
+    ],
     ["Female", "Great Southern", 12, 4, { patientId: "PT-G-AD-GERA-02" }],
     ["Female", "Mid West", null, 6, { patientId: "PT-G-WF-318" }],
     ["Female", "Kimberley", 130, -2, { patientId: "PT-G-AD-GERA-04" }],
@@ -942,6 +968,80 @@ const waitlist: Admission[] = [
 /** Pulled beds held by routineMovements-generated WF-304/311/318/325 (stageFields admissionId). */
 
 export const wardAdmissions: Admission[] = [...occupiedBeds, ...departures, ...waitlist];
+
+/**
+ * Three synthetic planned admissions for the calendar (stream D, 9 October 2026), authored against
+ * `WARD_ADMISSIONS_ANCHOR` like every instant above. One links an existing synthetic patient with
+ * no live stay; two carry initials only. The respite booking's expected arrival is earlier today,
+ * so the seeded day already shows one planned arrival overdue in the action inbox.
+ *
+ * Every figure is invented: the stay lengths are a ward's own plan, not a legal period.
+ */
+export const wardPlannedAdmissions: PlannedAdmission[] = [
+  {
+    id: "PA-SEED-01",
+    patientId: null,
+    initials: "JM",
+    sex: "Male",
+    reason: "court_ordered",
+    unitId: "rph-adult-secure",
+    expectedArrivalAt: MINUTES_PER_DAY + 10 * 60,
+    expectedStayDays: 28,
+    legalStatus: "Involuntary inpatient",
+    ageBand: "Adult",
+    state: "booked",
+    bookedAt: WARD_ADMISSIONS_ANCHOR - 2 * MINUTES_PER_DAY,
+    bookedBy: "Flow coordinator",
+    changedAt: null,
+    changeCount: 0,
+    cancelledAt: null,
+    cancelReason: null,
+    convertedAt: null,
+    admissionId: null,
+  },
+  {
+    id: "PA-SEED-02",
+    patientId: "PT-007",
+    initials: null,
+    sex: "Female",
+    reason: "planned_ect",
+    unitId: "scgh-adult-open",
+    expectedArrivalAt: 3 * MINUTES_PER_DAY + 8 * 60 + 30,
+    expectedStayDays: 21,
+    legalStatus: "Voluntary",
+    ageBand: "Adult",
+    state: "booked",
+    bookedAt: WARD_ADMISSIONS_ANCHOR - 5 * MINUTES_PER_DAY,
+    bookedBy: "Ward manager",
+    changedAt: null,
+    changeCount: 0,
+    cancelledAt: null,
+    cancelReason: null,
+    convertedAt: null,
+    admissionId: null,
+  },
+  {
+    id: "PA-SEED-03",
+    patientId: null,
+    initials: "RK",
+    sex: "Female",
+    reason: "respite",
+    unitId: "fre-adult-open",
+    expectedArrivalAt: 9 * 60 + 30,
+    expectedStayDays: 7,
+    legalStatus: "Voluntary",
+    ageBand: "Adult",
+    state: "booked",
+    bookedAt: WARD_ADMISSIONS_ANCHOR - MINUTES_PER_DAY,
+    bookedBy: "Flow coordinator",
+    changedAt: null,
+    changeCount: 0,
+    cancelledAt: null,
+    cancelReason: null,
+    convertedAt: null,
+    admissionId: null,
+  },
+];
 
 /**
  * The cohort of the ward an occupant is in, read from the standard ward id's own suffix: every

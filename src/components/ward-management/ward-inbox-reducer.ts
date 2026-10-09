@@ -60,6 +60,9 @@ export const INBOX_CATEGORIES = {
   destinations_declined: { idPrefix: "declines-", kind: "fact" },
   /** Transport accepted and not yet departed. */
   transport_awaiting_departure: { idPrefix: "transport-", kind: "fact" },
+  /** A planned admission whose expected arrival has passed without the arrival being recorded.
+   *  Its row's remainder is a planned-admission id, not a movement id (stream D). */
+  planned_arrival_overdue: { idPrefix: "planned-arrival-", kind: "fact" },
   /** Stream A, 9 Oct 2026: a referral not answered within its decision target (default, set in Settings). */
   target_referral_decision: { idPrefix: "target-referral-decision-", kind: "fact" },
   /** An accepted transfer whose bed has not been pulled within its target. */
@@ -103,6 +106,8 @@ export const INBOX_REVIEW_CATEGORIES: readonly (keyof typeof INBOX_CATEGORIES)[]
   // Carer, PSP and MHAS notification tasks (9 Oct 2026) are advisory, amber rows.
   "support_notification_arrival",
   "support_notification_discharge",
+  // Stream D: an overdue planned arrival is an amber row, so it snoozes like other review rows.
+  "planned_arrival_overdue",
 ];
 
 /** Whether a row is act-now (red), read from its id alone so the reducer can enforce the snooze cap. */
@@ -121,7 +126,17 @@ export function inboxRowExists(state: WardFlowState, inboxItemId: string): boole
     const admissionId = inboxItemId.slice(dischargePrefix.length);
     return state.admissions.some((admission) => admission.id === admissionId);
   }
+  // Stream D: a planned arrival row names its booking, not a movement.
+  if (plannedRowBooking(state, inboxItemId) !== undefined) return true;
   return inboxRowMovementId(state.movements, inboxItemId) !== undefined;
+}
+
+/** The booking a planned-arrival row id names (stream D), when that booking exists. */
+function plannedRowBooking(state: WardFlowState, inboxItemId: string) {
+  const plannedPrefix = INBOX_CATEGORIES.planned_arrival_overdue.idPrefix;
+  if (!inboxItemId.startsWith(plannedPrefix)) return undefined;
+  const plannedAdmissionId = inboxItemId.slice(plannedPrefix.length);
+  return (state.plannedAdmissions ?? []).find((planned) => planned.id === plannedAdmissionId);
 }
 
 /** The movement an inbox row id names (longest matching category prefix), when that movement exists. */
@@ -168,6 +183,10 @@ export function inboxOccurrenceSince(movement: Movement, inboxItemId: string): I
 }
 
 function inboxRowSince(state: WardFlowState, inboxItemId: string): Instant | undefined {
+  // A planned arrival row's occurrence starts at its expected arrival, so moving the booking starts
+  // a new one and an earlier snooze or owner no longer applies.
+  const planned = plannedRowBooking(state, inboxItemId);
+  if (planned) return planned.expectedArrivalAt;
   const movementId = inboxRowMovementId(state.movements, inboxItemId);
   const movement = state.movements.find((candidate) => candidate.id === movementId);
   return movement ? inboxOccurrenceSince(movement, inboxItemId) : undefined;
@@ -217,11 +236,14 @@ export function reduceInboxEvent(
       }
       const inboxCategory = Object.values(INBOX_CATEGORIES).find((entry) => inboxItemId.startsWith(entry.idPrefix));
       const inboxMovementId = inboxCategory ? inboxItemId.slice(inboxCategory.idPrefix.length) : undefined;
-      // A discharge notification row names its stay, which may have no movement.
+      // A discharge notification row names its stay, which may have no movement; a planned arrival
+      // row names its booking (stream D).
       const namesRecord =
         inboxCategory === INBOX_CATEGORIES.support_notification_discharge
           ? state.admissions.some((admission) => admission.id === inboxMovementId)
-          : state.movements.some((movement: Movement) => movement.id === inboxMovementId);
+          : inboxCategory === INBOX_CATEGORIES.planned_arrival_overdue
+            ? (state.plannedAdmissions ?? []).some((planned) => planned.id === inboxMovementId)
+            : state.movements.some((movement: Movement) => movement.id === inboxMovementId);
       if (!inboxCategory || !namesRecord) {
         return reject(
           state,

@@ -1152,6 +1152,60 @@ export function candidateEvents(
       );
     case "STAND_DOWN_BROADCAST_ALERT":
       return state.broadcastAlerts.map((alert) => ({ type, role, now, alertId: alert.id }));
+    /*
+     * Stream D planned admissions (9 Oct 2026): a booking on each ward, a change, cancel and arrival
+     * for each booking still waiting — read from live state, like the broadcast trio above.
+     */
+    case "BOOK_PLANNED_ADMISSION":
+      return unitIds.map((unitId) => ({
+        type,
+        role,
+        now,
+        initials: "AB",
+        sex: "Female" as const,
+        reason: "respite" as const,
+        unitId,
+        expectedArrivalAt: now + 60,
+        expectedStayDays: 3,
+        legalStatus: "Voluntary" as const,
+        ageBand: state.units.find((unit) => unit.id === unitId)?.cohort ?? ("Adult" as const),
+      }));
+    case "CHANGE_PLANNED_ADMISSION":
+      return state.plannedAdmissions
+        .filter((planned) => planned.state === "booked")
+        .map((planned) => ({
+          type,
+          role,
+          now,
+          plannedAdmissionId: planned.id,
+          reason: planned.reason,
+          unitId: planned.unitId,
+          expectedArrivalAt: Math.max(now, planned.expectedArrivalAt),
+          expectedStayDays: planned.expectedStayDays,
+          legalStatus: planned.legalStatus,
+        }));
+    case "CANCEL_PLANNED_ADMISSION":
+      return state.plannedAdmissions
+        .filter((planned) => planned.state === "booked")
+        .map((planned) => ({
+          type,
+          role,
+          now,
+          plannedAdmissionId: planned.id,
+          unitId: planned.unitId,
+          reason: "rebooked" as const,
+        }));
+    case "CONVERT_PLANNED_ADMISSION":
+      return state.plannedAdmissions
+        .filter((planned) => planned.state === "booked")
+        .map((planned) => ({
+          type,
+          role,
+          now,
+          plannedAdmissionId: planned.id,
+          unitId: planned.unitId,
+          actingUnitId: planned.unitId,
+        }));
     // Advisory carer/PSP/MHAS checklist (9 Oct 2026). Targets one movement or one admission —
     // candidates are built from live subjects so the reducer's own guards decide acceptance.
     case "RECORD_SUPPORT_NOTIFICATION": {
