@@ -1,0 +1,97 @@
+/* Feature 3 shared-board status line. Shared mode only; design tokens only. */
+.status {
+  position: fixed;
+  inset-inline-start: var(--wf-s-3);
+  inset-block-end: var(--wf-s-3);
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  max-width: min(32rem, calc(100vw - 2 * var(--wf-s-3)));
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+}
+
+.dot {
+  flex-shrink: 0;
+  width: var(--wf-s-2);
+  height: var(--wf-s-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-success);
+}
+
+.status[data-tone="busy"] .dot {
+  background: var(--wf-info);
+}
+
+.status[data-tone="warning"] {
+  border-color: var(--wf-warning);
+}
+
+.status[data-tone="warning"] .dot {
+  background: var(--wf-warning);
+}
+
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.label {
+  color: var(--wf-ink-2);
+}
+
+.input {
+  min-height: var(--ward-tap, 3rem);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+}
+
+.button {
+  min-height: var(--ward-tap, 3rem);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-accent);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-accent);
+  color: var(--wf-on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.input:focus-visible,
+.button:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.message {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--wf-danger-ink);
+}

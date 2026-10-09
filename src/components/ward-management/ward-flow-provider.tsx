@@ -76,6 +76,23 @@ import {
   readScenarioFile,
   type ScenarioFileBuild,
 } from "@/components/ward-management/ward-flow-scenario-file";
+import {
+  adoptSharedWorld,
+  applyRemoteEvents,
+  confirmPendingHead,
+  detachShared,
+  initialSharedSync,
+  markRefusedByBoard,
+  recordLocalDispatch,
+  sharedSyncView,
+  type SharedSync,
+} from "@/components/ward-management/shared/ward-flow-shared-sync";
+import {
+  useWardFlowSharedSync,
+  type SharedHostAction,
+} from "@/components/ward-management/shared/use-ward-flow-shared-sync";
+import type { SharedJoinResponse } from "@/components/ward-management/shared/ward-flow-shared-core";
+import { WardSharedSyncStatus } from "@/components/ward-management/shell/ward-shared-sync-status";
 
 /**
  * The screens never see the raw reducer state or the clock's internal offsets — they see the
@@ -206,6 +223,13 @@ type WardFlowProviderProps = {
    * re-reading the wall clock on every render.
    */
   initialNow?: Instant;
+  /**
+   * Feature 3, shared live state. Set by the ward-flow layout from the server environment: enabled
+   * only when `DATABASE_URL` is set there. Omitted or disabled, the provider is exactly the
+   * per-browser prototype: no network call, browser-session saving as before. A pinned
+   * `initialNow` (tests, screenshots) never joins a shared board either.
+   */
+  shared?: { enabled: boolean; buildId: string };
 };
 
 export const WARD_FLOW_DEMO_STORAGE_KEY = "ward-flow-demo-state-v1";
@@ -293,7 +317,28 @@ type WardFlowContainer = {
    *  replays them on top of it, so an action taken in the first moments after load is applied (or
    *  refused, visibly) rather than silently dropped with the seed it landed on. */
   preAdoptionEvents?: readonly WardFlowEvent[];
+  /** Feature 3: present only in shared mode. The confirmed server world, this browser's pending
+   *  events and the sync status (`ward-flow-shared-sync.ts`). Browser-session storage is never read
+   *  or written while this is present; the shared board is the saved copy. */
+  shared?: SharedSync;
 };
+
+/** Feature 3: a fresh id per page load, used only to make this browser's event ids unique. */
+function newSharedClientId(): string {
+  const random = globalThis.crypto?.randomUUID?.();
+  return random ?? `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
+}
+
+/**
+ * The screens' remount key. Unchanged for the local prototype ("seed", then "restored" once a
+ * changed saved day is adopted). On a shared board each adopted world remounts the screens once,
+ * for the same reason: they seed one-time drafts from provider data.
+ */
+function screensKey(container: WardFlowContainer): string {
+  const adoptions = container.shared?.adoptions ?? 0;
+  if (adoptions > 0) return `shared-${adoptions}`;
+  return container.sessionRestored ? "restored" : "seed";
+}
 
 /**
  * The one container change that is not a `WardFlowEvent`: adopting the saved session after
@@ -309,15 +354,87 @@ type AdoptSessionAction = {
  *  (`ward-flow-scenario-file.ts`) never reaches the reducer, the event log or a role check. */
 type LoadScenarioFileAction = { type: "LOAD_SCENARIO_FILE_INTERNAL"; world: WardFlowState; restoredElapsed: number };
 
+/** Feature 3: the sync hook's answers. Private symbol key, like `ADOPT_SESSION`, so no screen's
+ *  event can take this path. */
+const SHARED_SYNC: unique symbol = Symbol("ward-flow-shared-sync");
+type SharedSyncAction = { type: "SHARED_SYNC_INTERNAL"; [SHARED_SYNC]: SharedHostAction };
+
+/** One screen event through the tracker, plus the shared queue when this browser is on the board. */
+function dispatchEventIntoContainer(container: WardFlowContainer, event: WardFlowEvent): WardFlowContainer {
+  const next = trackWardFlowTypedTextDispatch(container, event);
+  if (!container.shared) return next;
+  const accepted = next.world.rejections.length === container.world.rejections.length;
+  return { ...next, shared: recordLocalDispatch(container.shared, event, accepted) };
+}
+
+/**
+ * Applies one sync answer. Every branch returns a NEW `shared` object, even when nothing else
+ * changed: the hook waits for that identity change before its next request.
+ */
+function reduceSharedSyncAction(container: WardFlowContainer, action: SharedHostAction): WardFlowContainer {
+  const shared = container.shared;
+  if (!shared) return container;
+  // A failed first join leaves the first-render seed in place and lets the app work on this device.
+  const settled = { sessionAdopted: true, preAdoptionEvents: undefined };
+  const rejoin = (sync: SharedSync): WardFlowContainer => ({ ...container, shared: { ...sync, status: "joining" } });
+  // A detached browser stays detached until reload; a late answer to an earlier request changes
+  // nothing. Confirmations and remote events only mean something to a browser on the board.
+  if (
+    shared.status === "detached" ||
+    ((action.kind === "confirmed" || action.kind === "remote") && shared.status !== "live")
+  )
+    return { ...container, shared: { ...shared } };
+  switch (action.kind) {
+    case "adopt": {
+      if (shared.status !== "joining") return { ...container, shared: { ...shared } };
+      const adopted = adoptSharedWorld(shared, action.join);
+      let next: WardFlowContainer = {
+        ...container,
+        world: adopted.world,
+        shared: adopted.sync,
+        typedTextSeen: false,
+        restoredElapsed: action.restoredElapsed,
+        recoveryNotice: undefined,
+        ...settled,
+      };
+      // Anything done in the first moments after load is replayed on the shared world, so it is
+      // shared (or refused, visibly) rather than lost with the seed it landed on.
+      for (const event of container.preAdoptionEvents ?? []) next = dispatchEventIntoContainer(next, event);
+      return next;
+    }
+    case "confirmed": {
+      const confirmed = confirmPendingHead(shared, container.world, action.eventId, action.seq);
+      return confirmed ? { ...container, world: confirmed.world, shared: confirmed.sync } : rejoin(shared);
+    }
+    case "remote": {
+      const applied = applyRemoteEvents(shared, container.world, action.records);
+      if (!applied) return rejoin(shared);
+      return { ...container, world: applied.world, shared: { ...applied.sync } };
+    }
+    case "status":
+      return {
+        ...container,
+        shared: { ...shared, status: action.status },
+        ...(action.status === "joining" ? {} : settled),
+      };
+    case "detach":
+      return { ...container, shared: detachShared(shared, action.reason), ...settled };
+    case "refused-by-board":
+      return { ...container, shared: markRefusedByBoard(shared) };
+  }
+}
+
 function wardFlowContainerReducer(
   container: WardFlowContainer,
-  action: WardFlowEvent | AdoptSessionAction | LoadScenarioFileAction,
+  action: WardFlowEvent | AdoptSessionAction | LoadScenarioFileAction | SharedSyncAction,
 ): WardFlowContainer {
   if (ADOPT_SESSION in action) return action[ADOPT_SESSION](container);
+  if (SHARED_SYNC in action) return reduceSharedSyncAction(container, action[SHARED_SYNC]);
   if (action.type === "LOAD_SCENARIO_FILE_INTERNAL")
     // A loaded world may hold typed text, so it is treated exactly as a session that has typed:
     // browser saving stays off until a genuine reseed (D-18). The file is the presenter's copy.
-    // It also counts as adopted, so a late browser restore can never replace it.
+    // It also counts as adopted, so a late browser restore can never replace it. On a shared
+    // board it also takes this browser off the board: the file is not shared.
     return {
       ...container,
       world: action.world,
@@ -327,8 +444,9 @@ function wardFlowContainerReducer(
       recoveryNotice: undefined,
       sessionAdopted: true,
       preAdoptionEvents: undefined,
+      shared: container.shared ? detachShared(container.shared, "scenario-file") : undefined,
     };
-  const next = trackWardFlowTypedTextDispatch(container, action);
+  const next = dispatchEventIntoContainer(container, action);
   if (container.sessionAdopted) return next;
   return { ...next, preAdoptionEvents: [...(container.preAdoptionEvents ?? []), action] };
 }
@@ -567,7 +685,7 @@ function nextOpenRequestSequence(auditEvents: WardFlowState["auditEvents"]): num
  * a patient's AGE (`person-screen.tsx`), so a placeholder would paint a wrong age for a frame.
  * **A visibly wrong clinical figure for one frame is worse than a rare console error.**
  */
-export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps) {
+export function WardFlowProvider({ children, initialNow, shared }: WardFlowProviderProps) {
   useEffect(() => {
     clearWardFlowDraftCaches();
   }, []);
@@ -633,6 +751,7 @@ export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps
       anchorOffsetMinutes={anchorOffsetMinutes}
       mountedAtAbsolute={adopted?.mountedAtAbsolute ?? null}
       initialNow={initialNow}
+      shared={shared}
     >
       {children}
     </WardFlowWorld>
@@ -644,7 +763,11 @@ function WardFlowWorld({
   initialNow,
   anchorOffsetMinutes,
   mountedAtAbsolute,
+  shared,
 }: WardFlowProviderProps & { anchorOffsetMinutes: number; mountedAtAbsolute: number | null }) {
+  // Feature 3: fixed for the life of this mount. A pinned clock never joins a shared board.
+  const sharedMode = shared?.enabled === true && initialNow === undefined;
+  const sharedBuildId = shared?.buildId ?? "local";
   /**
    * How far the demo's day sits from the day the fixture was authored on. Read ONCE, at mount, so
    * every instant the app shows moves together; re-reading it per render would let the seed and the
@@ -678,7 +801,7 @@ function WardFlowWorld({
    * same "computed exactly once per mount, then stable for the life of the mount" guarantee,
    * without ever touching a ref.
    */
-  const [dayZero] = useState<Date>(() => demoDayZero(new Date()));
+  const [localDayZero] = useState<Date>(() => demoDayZero(new Date()));
 
   // `trackWardFlowTypedTextDispatch` is a plain top-level function — pure, no closure over any
   // per-mount ref — so it can be passed directly; its own identity being stable or not is
@@ -695,7 +818,14 @@ function WardFlowWorld({
       typedTextSeen: false,
       restoredElapsed: 0,
       sessionAdopted: initialNow !== undefined,
+      shared: sharedMode ? initialSharedSync(newSharedClientId()) : undefined,
     }),
+  );
+  // On a shared board every browser counts instants from the board's day 0, not its own.
+  const sharedDayZeroMs = container.shared?.dayZeroMs;
+  const dayZero = useMemo(
+    () => (sharedDayZeroMs === undefined ? localDayZero : new Date(sharedDayZeroMs)),
+    [sharedDayZeroMs, localDayZero],
   );
   const state = container.world;
   // Screens dispatch only `WardFlowEvent`s; the file-load action stays internal to this provider.
@@ -812,8 +942,10 @@ function WardFlowWorld({
    * `sessionAdopted` gates the storage write below until it has run.
    */
   useEffect(() => {
-    if (initialNow !== undefined || mountedAtAbsolute === null) return;
-    const { saved, recoveryNotice } = tryReadDemoState(dayZero, mountedAtAbsolute);
+    // Shared mode never reads browser storage: the shared board is the saved copy, and the sync
+    // hook below adopts it instead.
+    if (initialNow !== undefined || mountedAtAbsolute === null || sharedMode) return;
+    const { saved, recoveryNotice } = tryReadDemoState(localDayZero, mountedAtAbsolute);
     // Never move the allocator backwards: a record opened before adoption already used its number.
     if (saved)
       openRequestSequence.current = Math.max(
@@ -857,12 +989,14 @@ function WardFlowWorld({
     // downtime screen is told and takes a fresh pack from the restored world, whether or not the
     // tree is re-keyed below. A saved day identical to the seed only costs a retaken snapshot.
     if (saved) forgetDowntimePack();
-  }, [initialNow, mountedAtAbsolute, dayZero]);
+  }, [initialNow, mountedAtAbsolute, localDayZero, sharedMode]);
 
   const [focusMovementId, setFocusMovementId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (initialNow !== undefined || mountedAtAbsolute === null || !container.sessionAdopted) return;
+    // Shared mode never writes browser storage, whatever the sync status (feature 3).
+    if (sharedMode) return;
     // Default deny, locked on dispatch (see `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`'s own comment): once
     // this session has DISPATCHED one typed-text-carrying event — accepted or refused — storage is
     // cleared immediately and never written to again until a genuine reseed re-enables it — checked
@@ -887,7 +1021,31 @@ function WardFlowWorld({
     now,
     elapsed,
     storageUnavailable,
+    sharedMode,
   ]);
+
+  // Feature 3: the sync loop. Inert (no request) unless this mount is in shared mode.
+  const sendShared = useCallback(
+    (action: SharedHostAction) => dispatchContainer({ type: "SHARED_SYNC_INTERNAL", [SHARED_SYNC]: action }),
+    [dispatchContainer],
+  );
+  const onSharedAdopt = useCallback((join: SharedJoinResponse) => {
+    // Record-request ids continue past every receipt already on the shared world (see
+    // `nextOpenRequestSequence`), and a downtime pack from the seed no longer describes it.
+    openRequestSequence.current = Math.max(
+      openRequestSequence.current,
+      nextOpenRequestSequence(join.state.auditEvents),
+    );
+    forgetDowntimePack();
+  }, []);
+  const sharedSync = useWardFlowSharedSync({
+    sync: container.shared,
+    buildId: sharedBuildId,
+    localDayZeroMs: localDayZero.getTime(),
+    mountedAtAbsolute,
+    send: sendShared,
+    onAdopt: onSharedAdopt,
+  });
 
   // Audit finding ISSUE-P1-83, defect 3e: `useCallback`, not a fresh function every render — this
   // sits in the `value` useMemo's own dependency array below, so an unstable reference defeated that
@@ -1041,6 +1199,14 @@ function WardFlowWorld({
 
   return (
     <WardFlowContext.Provider value={value}>
+      {container.shared ? (
+        <WardSharedSyncStatus
+          view={sharedSyncView(container.shared)}
+          network={sharedSync.network}
+          onSubmitCode={sharedSync.submitCode}
+          onRetry={sharedSync.retry}
+        />
+      ) : null}
       {(storageUnavailable || container.recoveryNotice) && (
         <p role="status">{storageUnavailable ? STORAGE_UNAVAILABLE : container.recoveryNotice}</p>
       )}
@@ -1052,7 +1218,7 @@ function WardFlowWorld({
          * must start again from the restored world rather than keep the seed's. A first visit, or a
          * reload with nothing changed, never takes this path, so its tree is never rebuilt.
          */}
-        <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+        <Fragment key={screensKey(container)}>{children}</Fragment>
       </WardFlowClockContext.Provider>
     </WardFlowContext.Provider>
   );

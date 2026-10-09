@@ -9,6 +9,7 @@ import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-reg
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardGround } from "@/components/ward-management/ward-shell";
+import { sharedModeForBrowser } from "@/lib/ward-flow-shared/config";
 
 import styles from "./ward-flow-layout.module.css";
 
@@ -101,8 +102,11 @@ import styles from "./ward-flow-layout.module.css";
  * deletion.md`'s decision, not this task's.
  */
 export default function WardFlowMockupLayout({ children }: { children: ReactNode }) {
+  // Feature 3: shared live state is on only when the server has `DATABASE_URL`. Read per request
+  // (the parent `/mockups` layout already reads headers, so this tree is dynamic). Only a boolean
+  // and the build id reach the browser.
   return (
-    <WardFlowProvider>
+    <WardFlowProvider shared={sharedModeForBrowser()}>
       <WardAccessibility />
       <WardLiveRegion />
       <WardActNowNotifier />
