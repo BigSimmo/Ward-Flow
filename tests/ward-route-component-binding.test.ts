@@ -89,7 +89,7 @@ const PINNED: Record<string, string | null> = {
   delays: "DelaysScreen",
   discharges: "DischargeBoard",
   "on-call": "OnCallScreen",
-  ed: "redirect:/mockups/ward-flow/ed/peel-ed",
+  ed: "EdIndex",
   "ed/[edId]": "EdScreen",
   escalation: "redirect:/mockups/ward-flow/delays?from=escalation",
   exceptions: "redirect:/mockups/ward-flow/delays?from=exceptions",

@@ -263,9 +263,11 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expect(page.getByTestId("ward-referral-board-queued-cards")).toBeVisible();
 
     // --- Step 2: the ED raises the bed request — the referral that continues through every
-    // remaining step. Peel Health Campus ED is the rail's own fixed example department, so this
-    // is a real `<Link>` jump, not a typed id. ---
-    await goViaRail(page, "/mockups/ward-flow/ed/peel-ed", "ward-ed-screen");
+    // remaining step. The rail's Emergency entry opens the All EDs page (9 Oct 2026), and Peel
+    // Health Campus ED is opened from its card there, so both are real `<Link>` jumps, not a typed id. ---
+    await goViaRail(page, "/mockups/ward-flow/ed", "ward-ed-index");
+    await page.getByTestId("ed-index-link-peel-ed").click();
+    await waitForScreen(page, "ward-ed-screen");
     await expectNoReloadSince(page, "referral board -> Peel ED");
 
     // `ward-ed-outbox-row-*` is the WRONG list to watch here: `outbox` is `patients.filter((m) =>
