@@ -226,7 +226,7 @@ describe("the on-call screen", () => {
       .getAllByRole("button", { name: /Sir Charles Gairdner Hospital/u })
       .find((button) => button.hasAttribute("aria-expanded"))!;
     fireEvent.click(group);
-    expect(screen.queryByTestId("ward-on-call-row-scgh-sw")).toBeNull();
+    expect(row("scgh-sw")).toHaveAttribute("data-collapsed", "true");
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Switchboard" } });
     expect(row("scgh-sw")).toBeVisible();
   });

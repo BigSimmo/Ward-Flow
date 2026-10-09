@@ -498,6 +498,11 @@
   background: var(--wf-hover);
 }
 
+/* A collapsed group hides its lines on screen only; print lists every line. */
+.rowCollapsed {
+  display: none;
+}
+
 .rowHighlight > td,
 .rowHighlight {
   background: color-mix(in srgb, var(--wf-accent) 9%, var(--wf-surface));
@@ -1746,6 +1751,9 @@
   }
   .panel {
     position: static;
+  }
+  .rowCollapsed {
+    display: table-row;
   }
 }
 

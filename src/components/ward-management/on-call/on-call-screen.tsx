@@ -876,18 +876,17 @@ function DirectoryTable({
                         </th>
                       </tr>
                     ) : null}
-                    {group.rows.map((entry) =>
-                      isCollapsed && !isHighlighted(entry) ? null : (
-                        <DirectoryRow
-                          key={entry.id}
-                          entry={entry}
-                          actions={actions}
-                          byRole={byRole || tab === "mine"}
-                          selected={entry.id === selectedId}
-                          highlighted={isHighlighted(entry)}
-                        />
-                      ),
-                    )}
+                    {group.rows.map((entry) => (
+                      <DirectoryRow
+                        key={entry.id}
+                        entry={entry}
+                        actions={actions}
+                        byRole={byRole || tab === "mine"}
+                        selected={entry.id === selectedId}
+                        highlighted={isHighlighted(entry)}
+                        collapsed={isCollapsed && !isHighlighted(entry)}
+                      />
+                    ))}
                   </Fragment>
                 );
               })}
@@ -912,12 +911,14 @@ function DirectoryRow({
   byRole,
   selected,
   highlighted,
+  collapsed,
 }: {
   entry: DirectoryEntry;
   actions: ContactActions;
   byRole: boolean;
   selected: boolean;
   highlighted: boolean;
+  collapsed: boolean;
 }) {
   const name = byRole && !isWardRow(entry) && entry.siteCode ? entry.groupTitle : entry.name;
   const sub = byRole
@@ -935,8 +936,14 @@ function DirectoryRow({
   return (
     <tr
       data-testid={`ward-on-call-row-${entry.id}`}
-      className={cx(styles.row, selected && tableClasses.selected, highlighted && styles.rowHighlight)}
+      className={cx(
+        styles.row,
+        selected && tableClasses.selected,
+        highlighted && styles.rowHighlight,
+        collapsed && styles.rowCollapsed,
+      )}
       aria-selected={selected}
+      data-collapsed={collapsed || undefined}
       onClick={(event) => {
         if ((event.target as HTMLElement).closest("button")) return;
         actions.onPick(entry.id);
