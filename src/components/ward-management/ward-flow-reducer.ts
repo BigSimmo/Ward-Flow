@@ -1,6 +1,6 @@
 import { referralIntakeError } from "./referrals/referral-submission";
 import { recordedMovementMedicalClearance } from "./ward-medical-clearance";
-import { movementPatientIdentityMatchesRecord } from "./ward-patient-resolver";
+import { movementPatientIdentityMatchesRecord, withUmrnInPlaceOfMovementIds } from "./ward-patient-resolver";
 import {
   validCareChange,
   careChangeRefusal,
@@ -785,7 +785,8 @@ function makeRejection(state: WardFlowState, event: WardFlowEvent, reason: strin
     at: event.now,
     movementId: subject,
     attempted: event.type,
-    reason,
+    // D-39: a refusal names the patient by UMRN, never by the WF journey number it was keyed on.
+    reason: withUmrnInPlaceOfMovementIds(reason, state),
   };
 }
 

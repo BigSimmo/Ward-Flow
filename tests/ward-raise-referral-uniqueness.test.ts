@@ -11,6 +11,8 @@
 // resolves and refuses correctly.
 import { describe, expect, it } from "vitest";
 
+import { movementUmrn } from "../src/components/ward-management/ward-patient-resolver";
+
 import { ED_DECLINE_REASONS } from "../src/components/ward-management/ward-model";
 import {
   seedWardFlowState,
@@ -101,8 +103,9 @@ describe("RAISE_REFERRAL refuses a second journey while an earlier one is still 
     expect(second.rejections).toHaveLength(1);
     expect(
       second.rejections[0].reason,
-      `refused, but the reason never names the open movement ${firstMovement.id}: ${second.rejections[0].reason}`,
-    ).toContain(firstMovement.id);
+      `refused, but the reason never names the open movement's patient: ${second.rejections[0].reason}`,
+      // D-39: named by UMRN ("UMRN not recorded" when the journey has no linked patient), never by its WF number.
+    ).toContain(movementUmrn(firstMovement, first));
     // And no second movement was ever appended — the refusal is a real refusal, not a cosmetic one.
     expect(second.movements).toHaveLength(first.movements.length);
   });
@@ -299,7 +302,7 @@ describe("ACCEPT_REFERRAL (ward arm) refuses while a linked movement is open", (
       unitId: "bty-youth",
     });
     expect(accepted.rejections.slice(raised.rejections.length)).toHaveLength(1);
-    expect(accepted.rejections.at(-1)?.reason).toContain(linkedMovement.id);
+    expect(accepted.rejections.at(-1)?.reason).toContain(movementUmrn(linkedMovement, accepted));
     const referralAfter = accepted.referrals.find((r) => r.id === referral.id)!;
     expect(
       referralAfter.destinations.find((d) => d.destination.kind === "psychiatric_ward")?.state,

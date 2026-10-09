@@ -253,6 +253,23 @@
 }
 
 /*
+ * Health service colours (design system v8, token group G4). A dot beside the service name, never
+ * a fill and never alone. Day values are each service's own brand colour, read from its website
+ * stylesheet; Statewide is the WA Health corporate green. Night values are lighter partners so no
+ * two services share a hue. light-dark() follows the theme of the element that uses it. No red:
+ * red means act now. All at least 4.7:1 on the surface.
+ */
+:root {
+  --wf-svc-north: light-dark(#990057, #f472b6);
+  --wf-svc-south: light-dark(#5a2476, #c084fc);
+  --wf-svc-east: light-dark(#00825e, #34d399);
+  --wf-svc-wachs: light-dark(#005b94, #38bdf8);
+  --wf-svc-cahs: light-dark(#0076be, #a5d8ff);
+  --wf-svc-private: light-dark(#475569, #94a3b8);
+  --wf-svc-statewide: light-dark(#005b38, #a3d9b8);
+}
+
+/*
  * The hero band is deep slate in both themes, so status dots and focus inside it use the night
  * values (spec section 3). Components switch to these inside `.hero` through src/components/wf.
  */

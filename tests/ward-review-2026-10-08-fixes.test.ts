@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { DIVERSION_REASONS, TRANSPORT_WHEREABOUTS } from "@/components/ward-management/ward-change-reasons";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
@@ -144,7 +145,9 @@ describe("S1-1: discharge is refused while an outbound journey is on the road", 
       actingUnitId: admission.unitId,
       leavingDestination: "discharged-to-the-community",
     });
-    expect(refusal).toMatch(new RegExp(`in transit \\(movement ${movement.id}\\)`));
+    // D-39: the refusal names the patient by UMRN, never by the WF journey number.
+    expect(refusal).toContain(`in transit (movement ${movementUmrn(movement, h.state)})`);
+    expect(refusal).not.toContain(movement.id);
   });
 
   it("still allows an ordinary discharge with no journey on the road", () => {
