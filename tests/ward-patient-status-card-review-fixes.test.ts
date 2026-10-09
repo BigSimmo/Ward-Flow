@@ -124,4 +124,23 @@ describe("gate board status card review fixes", () => {
     expect(legalOnLeave("arrived")).toBe("Involuntary inpatient, Form 1A");
     expect(legalOnLeave("did_not_proceed")).toBe("Voluntary patient");
   });
+
+  it("does not offer Record CTO when an ended Form 5A already holds the single order slot", () => {
+    const legalAction = (patient: PatientStatusContext["patient"]) =>
+      buildPatientStatus("idle", ctx(base, { patient })).cells.find((cell) => cell.key === "legal")?.action;
+    expect(legalAction({} as PatientStatusContext["patient"])?.kind).toBe("button");
+    const ended = legalAction({
+      communityTreatmentOrder: {
+        form: "5A",
+        recordedAt: NOW_ANCHOR - 120,
+        recordedBy: "Community",
+        endedAt: NOW_ANCHOR - 60,
+      },
+    } as PatientStatusContext["patient"]);
+    expect(ended).toEqual({
+      kind: "unavailable",
+      label: "Record CTO",
+      reason: "An ended Form 5A is already on the record",
+    });
+  });
 });
