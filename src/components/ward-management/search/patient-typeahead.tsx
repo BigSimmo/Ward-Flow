@@ -365,7 +365,7 @@ export function PatientTypeahead({
         foot, standard §8.3) are BOTH visual. A screen-reader user reaches neither, which is why
         the marker has to be in the sentence at all.
       */}
-      <p className="sr-only" role="status" aria-live="polite">
+      {suggestions ? <p className="sr-only" role="status" aria-live="polite">
         {query.length === 0 || refused
           ? ""
           : matches.length > 0
@@ -373,7 +373,7 @@ export function PatientTypeahead({
             : near.length > 0
               ? `Nobody matches. ${near.length} invented ${near.length === 1 ? "name is" : "names are"} one keystroke away.`
               : "Nobody matches."}
-      </p>
+      </p> : null}
 
       {showPopup ? (
         <div className={styles.popup} data-testid="ward-patient-typeahead-popup">
