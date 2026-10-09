@@ -1,34 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Clock, Copy, History, Lock, UserPlus, UsersRound, X } from "lucide-react";
-
 import {
-  Avatar,
-  Button,
-  Card,
-  CardBody,
-  CardFoot,
-  CardHead,
-  Count,
-  EmptyState,
-  FilterChip,
-  Hero,
-  HeroStat,
-  HeroTrack,
-  Icon,
-  LiveChip,
-  Segmented,
-  Select,
-  StatusGlyph,
-  TierTile,
-  Timeline,
-  Timer,
-  buttonClass,
-  cx,
-  durMinutes,
-} from "@/components/wf";
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
+import { UserPlus } from "lucide-react";
+
+import { Card, Drawer, Hero, Icon, LiveChip, buttonClass, cx } from "@/components/wf";
 
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
 import type { Movement, MovementStage, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -42,6 +26,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import {
   calendarDateOf,
+  formatInstant,
   formatInstantWithDay,
   formatRemaining,
   minutesUntil,
@@ -49,6 +34,7 @@ import {
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
   findPatients,
+  foldPatientSearchText,
   patientDisplayName,
   patientAgeYears,
   type Patient,
@@ -60,7 +46,6 @@ import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { edById } from "@/components/ward-management/ward-sites";
-import { formTitleForCode } from "@/lib/form-register";
 import {
   LONG_WAIT_MINUTES,
   LONG_WAIT_TEXT,
@@ -92,9 +77,33 @@ import {
 import { referralState } from "@/components/ward-management/ward-referrals";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
-import styles from "./search.module.css";
+import {
+  CENSUS_GROUPS,
+  CENSUS_HIGHLIGHTS,
+  buildCensus,
+  censusLine,
+  parseDob,
+  sortCensusRows,
+  type CensusGroup,
+  type CensusHighlight,
+  type CensusRow,
+  type CensusSort,
+} from "./patient-census";
+import {
+  CensusDetail,
+  CensusEmpty,
+  CensusHistory,
+  CensusMapPills,
+  CensusTable,
+  FlowChip,
+  PhoneCensus,
+  PhoneDobField,
+  SearchAdornment,
+  ShiftSummary,
+} from "./patient-census-view";
 
-const MS_PER_MINUTE = 60_000;
+import styles from "./search.module.css";
+import cs from "./census.module.css";
 
 const ACCESS_RECORD_EMPTY = "No searches submitted this session. Press Enter in the search field to record a search.";
 
@@ -159,34 +168,6 @@ const SHOW_FACETS: readonly ShowFacet[] = [
 
 type KpiFacet = "all" | "live" | "unplaced" | "notin" | "breaches";
 
-function isCommunityReferral(referral: Referral): boolean {
-  return (
-    referral.originSiteCode.includes("CMHT") ||
-    referral.originSiteCode.includes("Clinic") ||
-    (referral.homeRegion as unknown as string) === "Community"
-  );
-}
-
-function matchesKpiFacet(result: PatientSearchResult, facet: KpiFacet, now: number): boolean {
-  if (facet === "live") {
-    if (result.kind === "movement" && !isOpen(result.movement)) return false;
-    if (result.kind === "referral" && isCommunityReferral(result.referral)) return false;
-  }
-  if (facet === "unplaced") {
-    if (result.kind === "movement" && (result.movement.acceptedUnitId || !isOpen(result.movement))) return false;
-    if (result.kind === "referral" && result.referral.destinations.some((d) => d.acceptedUnitId)) return false;
-  }
-  if (facet === "notin") {
-    if (result.kind === "movement") return false;
-    if (result.kind === "referral" && !isCommunityReferral(result.referral)) return false;
-  }
-  if (facet === "breaches") {
-    if (result.kind === "movement" && waitedHours(result.movement, now) * 60 < LONG_WAIT_MINUTES) return false;
-    if (result.kind === "referral") return false;
-  }
-  return true;
-}
-
 function originDepartmentText(movement: Movement): string {
   const originEd = edById(movement.originEdId);
   return departmentLabel(movement.originEdId, originEd && `${originEd.name} (${originEd.siteCode})`);
@@ -199,10 +180,6 @@ function recordedAge(patient: Patient | undefined, today: Date): number | null {
   if (!patient) return null;
   const years = patientAgeYears(patient, today);
   return Number.isFinite(years) && years >= 0 ? years : null;
-}
-
-function ageSexText(p: { age: number | null; sex: string | null }): string {
-  return `${p.age === null ? "Age not recorded" : `${p.age}y`} · ${p.sex ?? "Sex not recorded"}`;
 }
 
 export interface UnifiedCaseloadPatient {
@@ -246,7 +223,7 @@ export interface UnifiedCaseloadPatient {
 }
 
 export function PatientSearchPage() {
-  const { movements, referrals, units, patients, admissions, dayZero } = useWardFlow();
+  const { movements, referrals, units, patients, admissions, plannedAdmissions = [], dayZero } = useWardFlow();
   const now = useWardFlowClock();
   const [text, setText] = useState("");
   const [stage, setStage] = useState<MovementStage | "">("");
@@ -258,18 +235,40 @@ export function PatientSearchPage() {
   const [legalFilter, setLegalFilter] = useState<string>("all");
   const [waitFilter, setWaitFilter] = useState<string>("all");
   const [tierFilter, setTierFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"wait-desc" | "tier-asc" | "form-asc" | "name-asc" | "urm-asc" | "opened-desc">(
-    "wait-desc",
-  );
-  const [viewMode, setViewMode] = useState<"cards" | "dense">("cards");
+  // The legacy list's order. The census sorts itself (`censusSort`); this keeps the inert record list stable.
+  const sortBy = "wait-desc" as "wait-desc" | "tier-asc" | "form-asc" | "name-asc" | "urm-asc" | "opened-desc";
+  const viewMode = "cards" as "cards" | "dense";
   const [requestedPreview, setPreview] = useState<PreviewSelection | null>(null);
   const [requestedSelectedId, setSelectedId] = useState<string | null>(null);
   const [copyNote, setCopyNote] = useState<string | null>(null);
   const [accessRecord, setAccessRecord] = useState<AccessEntry[]>([]);
+  // Below the two column layout the record card would sit under every row, so a tap opens it in a
+  // drawer instead, and focus goes back to the row on close.
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsTriggerRef = useRef<HTMLElement | null>(null);
+  const [dobOn, setDobOn] = useState(false);
+  const [dob, setDob] = useState("");
+  const [soleDismissedFor, setSoleDismissedFor] = useState<string | null>(null);
+  const [highlight, setHighlight] = useState<CensusHighlight | null>(null);
+  const [censusSort, setCensusSort] = useState<CensusSort>("wait");
+  const [tab, setTab] = useState<"now" | "history">("now");
+  const [openGroups, setOpenGroups] = useState<Record<CensusGroup, boolean>>({
+    wait: true,
+    found: true,
+    move: true,
+    ward: false,
+    off: false,
+  });
+  const [showAllWard, setShowAllWard] = useState(false);
+  const [flashKey, setFlashKey] = useState<string | null>(null);
+  const [phoneGroup, setPhoneGroup] = useState<CensusGroup>("wait");
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const showToast = (msg: string) => setCopyNote(msg);
 
   useEffect(() => {
+    // The record drawer is modal: the search behind it stays put until it closes.
+    if (detailsOpen) return;
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if ((e.key === "/" || (e.key === "k" && (e.metaKey || e.ctrlKey))) && !e.altKey) {
         const target = e.target as HTMLElement | null;
@@ -284,7 +283,7 @@ export function PatientSearchPage() {
     };
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, []);
+  }, [detailsOpen]);
 
   const query: MovementSearchQuery = useMemo(
     () => ({
@@ -297,29 +296,33 @@ export function PatientSearchPage() {
 
   const isChip = isQuickChipQuery(text);
 
-  const baseResults = useMemo(
-    () => searchPatients(movements, referrals, units, isChip ? { ...query, text: "" } : query),
-    [movements, referrals, units, query, isChip],
-  );
+  /*
+   * Each row's person, as the table shows them: display name and record number. The engine's own
+   * text match reads the record's id, department, ward, stage and owner, none of which holds the
+   * name, so typing a name the table shows used to empty the table (9 Oct 2026).
+   */
+  const subjectWords = useMemo(() => {
+    const words = new Map<string, string>();
+    const context = { patients, referrals, movements };
+    for (const movement of movements) {
+      const info = resolveSubjectPatient(movement, context);
+      words.set(movement.id, foldPatientSearchText(`${info.displayName} ${info.umrn}`));
+    }
+    for (const referral of referrals) {
+      const info = resolveSubjectPatient(referral, context);
+      words.set(referral.id, foldPatientSearchText(`${info.displayName} ${info.umrn}`));
+    }
+    return words;
+  }, [patients, referrals, movements]);
 
-  const passes = (result: PatientSearchResult, skip: { facet?: boolean; presence?: boolean } = {}) =>
-    (!isChip || matchesQuickChip(result, text, now)) &&
-    (skip.facet || matchesKpiFacet(result, activeKpiFacet, now)) &&
-    (skip.presence || presenceFilter === "all" || matchesPresence(result, presenceFilter)) &&
-    (serviceFilter === "all" || matchesService(result, serviceFilter)) &&
-    (settingFilter === "all" || matchesSetting(result, settingFilter, admissions)) &&
-    (legalFilter === "all" || matchesLegal(result, legalFilter)) &&
-    (waitFilter === "all" || matchesWait(result, waitFilter, now));
-
-  const presenceCounts = {
-    live: baseResults.filter((r) => passes(r, { presence: true }) && matchesPresence(r, "live")).length,
-    community: baseResults.filter((r) => passes(r, { presence: true }) && matchesPresence(r, "community")).length,
-    all: baseResults.filter((r) => passes(r, { presence: true })).length,
-  };
-  const facetCounts = {
-    unplaced: baseResults.filter((r) => passes(r, { facet: true }) && matchesKpiFacet(r, "unplaced", now)).length,
-    breaches: baseResults.filter((r) => passes(r, { facet: true }) && matchesKpiFacet(r, "breaches", now)).length,
-  };
+  const baseResults = useMemo(() => {
+    const needle = foldPatientSearchText(text);
+    if (isChip || needle === "") return searchPatients(movements, referrals, units, { ...query, text: "" });
+    const byRecord = new Set(searchPatients(movements, referrals, units, query).map(resultId));
+    return searchPatients(movements, referrals, units, { ...query, text: "" }).filter(
+      (result) => byRecord.has(resultId(result)) || (subjectWords.get(resultId(result)) ?? "").includes(needle),
+    );
+  }, [movements, referrals, units, query, isChip, text, subjectWords]);
 
   const results = useMemo(() => {
     return baseResults.filter((result) => {
@@ -359,6 +362,7 @@ export function PatientSearchPage() {
       if (settingFilter !== "all" && !matchesSetting(result, settingFilter, admissions)) return false;
       if (legalFilter !== "all" && !matchesLegal(result, legalFilter)) return false;
       if (waitFilter !== "all" && !matchesWait(result, waitFilter, now)) return false;
+      if (tierFilter !== "all" && !matchesTier(result, tierFilter)) return false;
       return true;
     });
   }, [
@@ -371,6 +375,7 @@ export function PatientSearchPage() {
     settingFilter,
     legalFilter,
     waitFilter,
+    tierFilter,
     now,
     admissions,
   ]);
@@ -556,22 +561,6 @@ export function PatientSearchPage() {
     return { total, live, unplaced, notIn, past, breaches, holds, transit };
   }, [unifiedCaseload]);
 
-  // Derive the fallback from the current filtered population instead of synchronising state in an effect.
-  const selectedRow = unifiedCaseload.find((row) => row.id === requestedSelectedId) ?? unifiedCaseload[0] ?? null;
-  const selectedId = selectedRow?.id ?? null;
-  const preview: PreviewSelection | null =
-    selectedRow === null
-      ? null
-      : requestedPreview && (requestedSelectedId === null || selectedId === requestedSelectedId)
-        ? requestedPreview.kind === "person"
-          ? {
-              kind: "person",
-              patient:
-                patients.find((patient) => patient.id === requestedPreview.patient.id) ?? requestedPreview.patient,
-            }
-          : selectedRow.originalSubject
-        : selectedRow.originalSubject;
-
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (text) count++;
@@ -584,6 +573,7 @@ export function PatientSearchPage() {
     if (legalFilter !== "all") count++;
     if (waitFilter !== "all") count++;
     if (tierFilter !== "all") count++;
+    if (dobOn && parseDob(dob) !== null) count++;
     return count;
   }, [
     text,
@@ -596,6 +586,8 @@ export function PatientSearchPage() {
     legalFilter,
     waitFilter,
     tierFilter,
+    dobOn,
+    dob,
   ]);
 
   const resetAllFilters = () => {
@@ -609,121 +601,328 @@ export function PatientSearchPage() {
     setTierFilter("all");
     setPresenceFilter("all");
     setActiveKpiFacet("all");
+    setDob("");
+    setDobOn(false);
   };
 
-  const applyKpiFacet = (facet: KpiFacet) => {
-    setActiveKpiFacet((prev) => (prev === facet && facet !== "all" ? "all" : facet));
+  // The counts beside each stage and department match the same way the table does, name included.
+  const { stageCounts, allStagesCount, departmentCounts, allDepartmentsCount } = useMemo(() => {
+    const needle = isChip ? "" : foldPatientSearchText(text);
+    const countMovements = (stage?: MovementStage, edId?: string) => {
+      const byRecord = new Set(searchMovements(movements, units, { text, stage, edId }).map((m) => m.id));
+      return searchMovements(movements, units, { text: "", stage, edId }).filter(
+        (m) =>
+          text.trim() === "" ||
+          byRecord.has(m.id) ||
+          (needle !== "" && (subjectWords.get(m.id) ?? "").includes(needle)),
+      ).length;
+    };
+    return {
+      stageCounts: new Map<MovementStage, number>(
+        SELECTABLE_STAGES.map((candidate) => [candidate, countMovements(candidate, query.edId)]),
+      ),
+      allStagesCount: countMovements(undefined, query.edId),
+      departmentCounts: new Map<string, number>(
+        allEmergencyDepartments().map((ed) => [ed.id, countMovements(query.stage, ed.id)]),
+      ),
+      allDepartmentsCount: countMovements(query.stage, undefined),
+    };
+  }, [movements, units, text, isChip, subjectWords, query.stage, query.edId]);
+
+  // ═══ THE CENSUS (Josh's pick, 9 Oct 2026: direction A with search bar 1) ═══
+  // Every person the app holds, grouped by where they are now. The movement and referral rows are
+  // the same records as `unifiedCaseload` above, so every search and filter that narrows that list
+  // narrows these rows the same way; the bed and record rows answer the typed name or UMRN.
+  const census = useMemo(
+    () => buildCensus({ movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero }),
+    [movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero],
+  );
+  const isPhone = usePhoneLayout();
+  const needle = isChip ? "" : foldPatientSearchText(text);
+  const dobIso = dobOn ? parseDob(dob) : null;
+  const searching = needle !== "" || dobIso !== null;
+  // Ward and person rows carry no stage, department, service, legal, wait or tier, so those filters
+  // leave them out; a setting or presence filter keeps the ward rows it names.
+  const legacyNarrowing =
+    isChip ||
+    stage !== "" ||
+    edId !== "" ||
+    activeKpiFacet !== "all" ||
+    serviceFilter !== "all" ||
+    legalFilter !== "all" ||
+    waitFilter !== "all" ||
+    tierFilter !== "all";
+
+  const caseIds = useMemo(() => new Set(unifiedCaseload.map((row) => row.id)), [unifiedCaseload]);
+  const peopleIds = useMemo(() => new Set<string>(people.map((person) => person.id)), [people]);
+  const visibleRows = useMemo(() => {
+    const lifted = highlightTest(highlight);
+    return sortCensusRows(
+      (refusal ? [] : census.rows).filter((row) => {
+        if (row.kind === "movement" || row.kind === "referral") {
+          // A place shown in the census also finds the case, not only the legacy record search.
+          if (!caseIds.has(row.key) && !(needle.length >= 2 && row.placeText.includes(needle))) return false;
+        } else {
+          if (legacyNarrowing) return false;
+          const onWard = row.kind === "admission" && row.group === "ward";
+          if (settingFilter === "inpatient" && !(onWard && !row.awayAtEd)) return false;
+          if (settingFilter === "ed" && !(onWard && row.awayAtEd)) return false;
+          if (settingFilter !== "all" && settingFilter !== "inpatient" && settingFilter !== "ed") return false;
+          if (presenceFilter !== "all" && !(presenceFilter === "live" && onWard)) return false;
+          if (
+            needle !== "" &&
+            !row.searchText.includes(needle) &&
+            !(row.patientRecordId !== null && peopleIds.has(row.patientRecordId)) &&
+            !(needle.length >= 2 && row.placeText.includes(needle))
+          ) {
+            return false;
+          }
+        }
+        return dobIso === null || (row.dob ?? "").startsWith(dobIso);
+      }),
+      censusSort,
+      lifted,
+    );
+  }, [
+    census,
+    refusal,
+    caseIds,
+    peopleIds,
+    legacyNarrowing,
+    settingFilter,
+    presenceFilter,
+    needle,
+    dobIso,
+    censusSort,
+    highlight,
+  ]);
+
+  const groupTotals = countGroups(census.rows);
+  const groupMatches = countGroups(visibleRows);
+  const liveCount = census.rows.length - groupTotals.off;
+  const highlightCounts = Object.fromEntries(
+    CENSUS_HIGHLIGHTS.map((chip) => [chip.id, census.rows.filter(chip.test).length]),
+  ) as Record<CensusHighlight, number>;
+
+  // A search that finds exactly one person opens them; otherwise the panel shows this shift until a
+  // row is chosen.
+  // Closing that detail keeps it closed until the search itself changes.
+  const searchKey = `${needle}|${dobIso ?? ""}`;
+  const selectedCensus =
+    visibleRows.find((row) => row.key === requestedSelectedId) ??
+    (searching && visibleRows.length === 1 && soleDismissedFor !== searchKey ? visibleRows[0]! : null);
+  const selectedId = selectedCensus?.key ?? null;
+  const selectedRow = unifiedCaseload.find((row) => row.id === selectedId) ?? null;
+  // The drawer belongs to the row that opened it. If that row leaves the results the drawer closes,
+  // and the open flag is cleared here (during render, not in an effect) so the shortcut comes back
+  // and the drawer cannot reopen by itself if the row later returns.
+  const drawerOpen = detailsOpen && requestedSelectedId !== null && selectedId === requestedSelectedId;
+  if (detailsOpen && !drawerOpen) setDetailsOpen(false);
+  const preview: PreviewSelection | null =
+    selectedRow === null
+      ? requestedPreview?.kind === "person"
+        ? {
+            kind: "person",
+            patient: patients.find((patient) => patient.id === requestedPreview.patient.id) ?? requestedPreview.patient,
+          }
+        : null
+      : requestedPreview && (requestedSelectedId === null || selectedId === requestedSelectedId)
+        ? requestedPreview.kind === "person"
+          ? {
+              kind: "person",
+              patient:
+                patients.find((patient) => patient.id === requestedPreview.patient.id) ?? requestedPreview.patient,
+            }
+          : selectedRow.originalSubject
+        : selectedRow.originalSubject;
+
+  const selectRow = (row: CensusRow, trigger?: HTMLElement) => {
+    setSelectedId(row.key);
+    setExpandedKey((current) => (current === row.key ? null : row.key));
+    if (trigger && !isPhone && previewCardHidden()) {
+      detailsTriggerRef.current = trigger;
+      setDetailsOpen(true);
+    }
+    const movement = row.kind === "movement" ? movements.find((m) => m.id === row.key) : undefined;
+    const referral = row.kind === "referral" ? referrals.find((r) => r.id === row.key) : undefined;
+    const person = row.patientRecordId ? patients.find((p) => p.id === row.patientRecordId) : undefined;
+    setPreview(
+      movement
+        ? { kind: "movement", movement }
+        : referral
+          ? { kind: "referral", referral }
+          : person
+            ? { kind: "person", patient: person }
+            : null,
+    );
   };
 
-  const selectedPatient = useMemo(() => {
-    return unifiedCaseload.find((p) => p.id === selectedId) ?? unifiedCaseload[0] ?? null;
-  }, [unifiedCaseload, selectedId]);
+  const jumpToRow = (row: CensusRow) => {
+    setTab("now");
+    setOpenGroups((current) => ({ ...current, [row.group]: true }));
+    if (row.group === "ward") setShowAllWard(true);
+    selectRow(row);
+    setFlashKey(row.key);
+    window.setTimeout(() => {
+      document
+        .querySelector(`[data-id="${CSS.escape(row.key)}"]`)
+        ?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 30);
+    window.setTimeout(() => setFlashKey(null), 1800);
+  };
 
-  const handleSelectPatient = (p: UnifiedCaseloadPatient) => {
-    setSelectedId(p.id);
-    if (p.originalSubject.kind === "movement") {
-      setPreview({ kind: "movement", movement: p.originalSubject.movement });
-    } else if (p.originalSubject.kind === "referral") {
-      setPreview({ kind: "referral", referral: p.originalSubject.referral });
+  const jumpToGroup = (group: CensusGroup) => {
+    setTab("now");
+    setPhoneGroup(group);
+    setOpenGroups((current) => ({ ...current, [group]: true }));
+    window.setTimeout(() => {
+      document
+        .getElementById(`ward-patient-search-group-${group}`)
+        ?.scrollIntoView({ block: "start", behavior: "smooth" });
+    }, 30);
+  };
+
+  const copyText = (body: string, done: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(body).then(
+        () => showToast(done),
+        () => showToast("Copy was blocked by the browser"),
+      );
     } else {
-      setPreview({ kind: "person", patient: p.originalSubject.patient });
+      showToast("Copy was blocked by the browser");
     }
   };
-
-  // Copy Summary Handler
-  const copyPatientSummary = () => {
-    if (!selectedPatient) return;
-    const p = selectedPatient;
-    const summaryText = `[Ward Flow Clinical Summary]
-Patient: ${p.name} (${p.urm}) | ${ageSexText(p)}${p.indigenous ? " · ATSI" : ""}
-Legal Status: ${p.legalStatus} (${p.legalExpires}) | ${p.urgency} Acuity
-Current Site: ${p.origin} | Wait: ${p.waitHours > 0 ? p.waitHours.toFixed(1) + "h" : "None"} ${p.waitHours * 60 >= LONG_WAIT_MINUTES ? `(waiting ${LONG_WAIT_TEXT})` : ""}
-Target Ward: ${p.destinationName} (${p.holdStatus} - ${p.stage})
-Conveyance: ${p.transportStatus}${p.nurseEscort ? " · Nurse escort" : ""}
-Clinical Note: ${p.clinicalNote}`;
-
-    if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard
-        .writeText(summaryText)
-        .then(() => {
-          showToast("Patient summary copied to clipboard.");
-        })
-        .catch(() => {
-          showToast("Patient summary copied.");
-        });
-    } else {
-      showToast("Patient summary copied.");
-    }
+  const copyRow = (row: CensusRow) => copyText(`${censusLine(row)} (synthetic)`, "Summary copied");
+  const copyList = () => {
+    const chip = CENSUS_HIGHLIGHTS.find((entry) => entry.id === highlight);
+    const list = chip
+      ? visibleRows.filter(chip.test)
+      : visibleRows.filter((row) => row.group !== "ward" && row.group !== "off");
+    copyText(
+      [`Patients at ${formatInstant(now)} (synthetic)`, ...list.map((row) => `- ${censusLine(row)}`)].join("\n"),
+      `${list.length} ${list.length === 1 ? "row" : "rows"} copied`,
+    );
   };
 
-  // Statutory texts derivation
-  const statutoryDetails = useMemo(() => {
-    if (!selectedPatient) {
-      return { title: "No legal form recorded", req: "Not recorded" };
+  // While a search runs on the phone, a group with no match gives way to the first one with any.
+  const phoneGroupShown =
+    searching && groupMatches[phoneGroup] === 0
+      ? (CENSUS_GROUPS.find((group) => groupMatches[group.id] > 0)?.id ?? phoneGroup)
+      : phoneGroup;
+  const historyCount = census.closedToday.length + accessRecord.length;
+  const addPatientClick = (event: ReactMouseEvent<HTMLAnchorElement>) => {
+    if (isNewTabClick(event)) {
+      handOffTypedPatientQuery("", "carried");
+      return;
     }
-    const code = selectedPatient.legalStatus.replace(/^Form\s+/i, "").trim();
-    const registerTitle = formTitleForCode(code);
-    if (registerTitle) {
-      return {
-        title: registerTitle,
-        req: "Recorded on this patient. This prototype does not hold what the form authorises.",
-      };
-    }
-    // Any status without a form. "Voluntary admission agreement" with "Consent verified", and a
-    // completed statutory discharge, used to be typed in here (25 September 2026 audit, A5).
-    return { title: "No legal form recorded", req: "Not recorded" };
-  }, [selectedPatient]);
-
-  const formatSiteAcronym = (rawSite: string): string => {
-    if (!rawSite) return "Unknown Site";
-    const s = rawSite.trim();
-    if (/Sir Charles Gairdner/i.test(s) || /SCGH/i.test(s)) return "SCGH ED";
-    if (/Royal Perth/i.test(s) || /\bRPH\b/i.test(s)) return "RPH ED";
-    if (/Peel Health/i.test(s) || /\bPEEL\b/i.test(s)) return "PEEL ED";
-    if (/Rockingham/i.test(s) || /\bRGH\b/i.test(s)) return "RGH ED";
-    if (/Armadale/i.test(s) || /\bARM\b/i.test(s) || /\bAKG\b/i.test(s)) return "ARM ED";
-    if (/Joondalup/i.test(s) || /\bJHC\b/i.test(s)) return "JHC ED";
-    if (/Midland/i.test(s) || /\bSJGM\b/i.test(s)) return "SJGM ED";
-    if (/Fiona Stanley/i.test(s) || /\bFSH\b/i.test(s)) return "FSH ED";
-    if (/Graylands/i.test(s)) return "Graylands";
-    if (/East Metro CMHT|EMHS CMHT/i.test(s)) return "EMHS CMHT";
-    if (/North Metro CMHT|NMHS CMHT/i.test(s)) return "NMHS CMHT";
-    if (/South Metro CMHT|SMHS CMHT/i.test(s)) return "SMHS CMHT";
-    if (/WACHS CMHT/i.test(s)) return "WACHS CMHT";
-    return s
-      .replace(/Emergency Department/i, "ED")
-      .replace(/Hospital/i, "")
-      .trim();
+    handOffTypedPatientQuery(text, "carried");
   };
 
-  const stageCounts = useMemo(() => {
-    const map = new Map<MovementStage, number>();
-    for (const candidate of SELECTABLE_STAGES) {
-      map.set(candidate, searchMovements(movements, units, { text, stage: candidate, edId: query.edId }).length);
-    }
-    return map;
-  }, [movements, units, text, query.edId]);
-
-  const allStagesCount = useMemo(
-    () => searchMovements(movements, units, { text, edId: query.edId }).length,
-    [movements, units, text, query.edId],
+  const searchForm = (
+    <form
+      className={cx(cs.searchForm, isPhone && cs.searchFormPhone)}
+      role="search"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const words = `${text} ${dobOn ? dob : ""}`.trim();
+        if (words.length === 0) return;
+        setAccessRecord((l) => recordSearch(l, { words, text, dob: dobOn ? dob : undefined, at: now }));
+      }}
+    >
+      <PatientTypeahead
+        patients={patients}
+        referrals={referrals}
+        value={text}
+        onValueChange={(next) => {
+          setText(next);
+          setTab("now");
+        }}
+        label="Search"
+        placeholder={dobOn ? "Family or given name" : "Name, UMRN or place"}
+        offerAddPerson={false}
+        suggestions={false}
+        adornment={
+          <SearchAdornment
+            dobOn={dobOn}
+            onDobToggle={() => setDobOn((on) => !on)}
+            dob={dob}
+            onDob={setDob}
+            count={searching ? visibleRows.length : null}
+            empty={text.length === 0}
+            phone={isPhone}
+          />
+        }
+      />
+      {isPhone && dobOn ? <PhoneDobField dob={dob} onDob={setDob} /> : null}
+      <span className="sr-only">Find a person by name or record number</span>
+      {/* The census, not the typeahead, says how many people a search found. */}
+      <p className="sr-only" role="status" aria-live="polite">
+        {!searching || refusal
+          ? ""
+          : visibleRows.length === 0
+            ? "Nobody matches."
+            : `${visibleRows.length} invented ${visibleRows.length === 1 ? "person" : "people"} found.`}
+      </p>
+    </form>
   );
 
-  const departmentCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const ed of allEmergencyDepartments()) {
-      map.set(ed.id, searchMovements(movements, units, { text, stage: query.stage, edId: ed.id }).length);
-    }
-    return map;
-  }, [movements, units, text, query.stage]);
-
-  const allDepartmentsCount = useMemo(
-    () => searchMovements(movements, units, { text, stage: query.stage }).length,
-    [movements, units, text, query.stage],
+  const history = (
+    <CensusHistory
+      searches={accessRecord}
+      closed={census.closedToday}
+      now={now}
+      onRerun={(entry) => {
+        setText(entry.text ?? entry.words);
+        setDob(entry.dob ?? "");
+        setDobOn(entry.dob !== undefined);
+        setTab("now");
+      }}
+    />
   );
-
-  const nowMs = now * MS_PER_MINUTE;
-  const selectedTier = selectedPatient ? tierNumber(selectedPatient.urgency) : null;
+  const empty = (
+    <CensusEmpty
+      query={`${text} ${dobOn ? dob : ""}`.trim()}
+      onReset={resetAllFilters}
+      addHref={WARD_ADD_PERSON_HREF}
+      onAdd={addPatientClick}
+    />
+  );
+  const refusalNotice = refusal ? (
+    <p className={cs.notice} role="status" aria-live="polite" data-testid="ward-patient-search-refusal">
+      {refusal.sentence}
+    </p>
+  ) : null;
+  const detailOrSummary = (closeable: boolean) =>
+    selectedCensus ? (
+      <CensusDetail
+        row={selectedCensus}
+        now={now}
+        onClose={
+          closeable
+            ? () => {
+                setSelectedId(null);
+                setSoleDismissedFor(searchKey);
+              }
+            : undefined
+        }
+        onCopy={copyRow}
+        copyNote={copyNote}
+      />
+    ) : (
+      <ShiftSummary
+        rows={census.rows}
+        closedToday={census.closedToday}
+        now={now}
+        highlight={highlight}
+        highlightCounts={highlightCounts}
+        onSelect={jumpToRow}
+        onHighlight={(chip) => {
+          setTab("now");
+          setHighlight((current) => (current === chip ? null : chip));
+        }}
+        onHistory={() => setTab("history")}
+      />
+    );
 
   return (
     <div
@@ -736,93 +935,38 @@ Clinical Note: ${p.clinicalNote}`;
         <h1 className="sr-only">Patient Search</h1>
         <div data-testid="ward-patient-search-cockpit" className={styles.v6HeroWrap}>
           <Hero
-            className={styles.v6Hero}
-            eyebrow="Caseload"
-            title="Statewide patients"
-            stats={
+            className={cx(cs.censusHero, isPhone && cs.heroPhone)}
+            eyebrow="Statewide census"
+            title={`${liveCount} patients now`}
+            aside={
               <>
-                <HeroStat value={yieldMetrics.live} label="Live in hospital" className={styles.v6HeroStat} />
-                <HeroStat value={yieldMetrics.unplaced} label="No ward yet" className={styles.v6HeroStat} />
-                <HeroStat
-                  value={yieldMetrics.breaches}
-                  label={`Waiting ${LONG_WAIT_TEXT}`}
-                  tone={yieldMetrics.breaches > 0 ? "warning" : undefined}
-                  className={styles.v6HeroStat}
-                />
+                {isPhone ? null : <FlowChip closed={census.closedToday} onOpen={() => setTab("history")} />}
+                <LiveChip state="live" onHero />
+                {isPhone ? null : (
+                  <Link
+                    href={WARD_ADD_PERSON_HREF}
+                    className={buttonClass({ variant: "light", size: "sm" })}
+                    data-testid="ward-patient-search-add"
+                    onClick={addPatientClick}
+                  >
+                    <Icon icon={UserPlus} size={14} />
+                    <span>Add patient</span>
+                  </Link>
+                )}
               </>
             }
-            aside={<LiveChip state="live" onHero />}
             bar={
-              <div className={styles.v6HeroBar}>
-                <form
-                  className={styles.v6SearchForm}
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    const words = text.trim();
-                    if (words.length === 0) return;
-                    setAccessRecord((l) => recordSearch(l, { words, at: now }));
-                  }}
-                >
-                  <PatientTypeahead
-                    patients={patients}
-                    referrals={referrals}
-                    value={text}
-                    onValueChange={setText}
-                    label="Search"
-                    placeholder="Search name, UMRN, ED or ward"
-                    offerAddPerson={false}
+              <div className={cs.heroBar}>
+                {searchForm}
+                {isPhone ? null : (
+                  <CensusMapPills
+                    totals={groupTotals}
+                    matched={groupMatches}
+                    searching={searching}
+                    onJump={jumpToGroup}
                   />
-                  <span className="sr-only">Find a person by name or record number</span>
-                </form>
-                {accessRecord.length > 0 ? (
-                  <div className={styles.v6Session} aria-label="Searched this session">
-                    <span className={styles.v6SessionLabel}>
-                      <Icon icon={History} size={14} />
-                      This session
-                    </span>
-                    {accessRecord.slice(0, 4).map((entry) => (
-                      <button
-                        key={`${entry.at}-${entry.words}`}
-                        type="button"
-                        className={styles.v6SessionChip}
-                        onClick={() => setText(entry.words)}
-                      >
-                        <span className={styles.v6SessionWords}>{entry.words}</span>
-                        <span className={styles.v6SessionAt}>{formatInstantWithDay(entry.at, now)}</span>
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
+                )}
               </div>
-            }
-            barAside={
-              <>
-                <HeroTrack
-                  label="Who to show"
-                  items={[
-                    { id: "live", label: "Live", count: presenceCounts.live },
-                    { id: "community", label: "Community", count: presenceCounts.community },
-                    { id: "all", label: "All", count: presenceCounts.all },
-                  ]}
-                  value={presenceFilter === "live" || presenceFilter === "community" ? presenceFilter : "all"}
-                  onChange={(next) => setPresenceFilter(next)}
-                />
-                <Link
-                  href={WARD_ADD_PERSON_HREF}
-                  className={buttonClass({ variant: "light", className: styles.v6AddLink })}
-                  data-testid="ward-patient-search-add"
-                  onClick={(event) => {
-                    if (isNewTabClick(event)) {
-                      handOffTypedPatientQuery("", "carried");
-                      return;
-                    }
-                    handOffTypedPatientQuery(text, "carried");
-                  }}
-                >
-                  <Icon icon={UserPlus} size={16} />
-                  <span>Add patient</span>
-                </Link>
-              </>
             }
           />
 
@@ -919,39 +1063,10 @@ Clinical Note: ${p.clinicalNote}`;
                 </option>
               ))}
             </select>
-          </div>
 
-          {refusal ? (
-            <p className={styles.v6Refusal} data-testid="ward-patient-search-refusal-filter-bar">
-              {refusal.sentence}
-            </p>
-          ) : null}
-        </div>
-
-        <Card className={styles.v6FilterBar} aria-label="Filters">
-          <div className={styles.v6Chips}>
-            <FilterChip
-              pressed={activeKpiFacet === "unplaced"}
-              onPressedChange={() => applyKpiFacet("unplaced")}
-              count={facetCounts.unplaced}
-              tone="neutral"
-            >
-              No ward yet
-            </FilterChip>
-            <FilterChip
-              pressed={activeKpiFacet === "breaches"}
-              onPressedChange={() => applyKpiFacet("breaches")}
-              count={facetCounts.breaches}
-              tone="warning"
-            >
-              Waiting {LONG_WAIT_TEXT}
-            </FilterChip>
-          </div>
-          <span className={styles.v6BarDivider} aria-hidden="true" />
-          <div className={styles.v6Selects}>
-            <Select
+            <label htmlFor="ward-patient-search-setting">Setting</label>
+            <select
               id="ward-patient-search-setting"
-              boxClassName={styles.v6SelectBox}
               value={settingFilter}
               onChange={(e) => setSettingFilter(e.target.value)}
               aria-label="Setting"
@@ -963,10 +1078,11 @@ Clinical Note: ${p.clinicalNote}`;
               <option value="community">Community</option>
               <option value="scheduled">Scheduled</option>
               <option value="discharged">Discharged</option>
-            </Select>
-            <Select
+            </select>
+
+            <label htmlFor="ward-patient-search-service">Service</label>
+            <select
               id="ward-patient-search-service"
-              boxClassName={styles.v6SelectBox}
               value={serviceFilter}
               onChange={(e) => setServiceFilter(e.target.value)}
               aria-label="Service"
@@ -976,10 +1092,11 @@ Clinical Note: ${p.clinicalNote}`;
               <option value="North Metro">North Metro</option>
               <option value="South Metro">South Metro</option>
               <option value="WACHS">WACHS</option>
-            </Select>
-            <Select
+            </select>
+
+            <label htmlFor="ward-patient-search-legal">Legal Status</label>
+            <select
               id="ward-patient-search-legal"
-              boxClassName={styles.v6SelectBox}
               value={legalFilter}
               onChange={(e) => setLegalFilter(e.target.value)}
               aria-label="Legal Status"
@@ -990,10 +1107,11 @@ Clinical Note: ${p.clinicalNote}`;
                   {opt.label} ({unifiedCaseload.filter((p) => p.legalStatus === opt.value).length})
                 </option>
               ))}
-            </Select>
-            <Select
+            </select>
+
+            <label htmlFor="ward-patient-search-tier">Acuity Tier</label>
+            <select
               id="ward-patient-search-tier"
-              boxClassName={styles.v6SelectBox}
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value)}
               aria-label="Acuity Tier"
@@ -1002,389 +1120,209 @@ Clinical Note: ${p.clinicalNote}`;
               <option value="Tier 1">Tier 1</option>
               <option value="Tier 2">Tier 2</option>
               <option value="Tier 3">Tier 3</option>
-            </Select>
+            </select>
+
+            <button
+              type="button"
+              onClick={resetAllFilters}
+              data-testid="ward-patient-search-reset-filters"
+              aria-label={activeFilterCount > 0 ? `Reset ${activeFilterCount} active filters` : "Reset"}
+            >
+              Reset ({activeFilterCount})
+            </button>
           </div>
-          <div className={styles.v6BarEnd}>
-            {activeFilterCount > 0 ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={X}
-                onClick={resetAllFilters}
-                aria-label={`Reset ${activeFilterCount} active filters`}
-                data-testid="ward-patient-search-reset-filters"
-              >
-                Reset ({activeFilterCount})
-              </Button>
-            ) : (
-              <button
-                type="button"
-                className="sr-only"
-                onClick={resetAllFilters}
-                data-testid="ward-patient-search-reset-filters"
-              >
-                Reset
-              </button>
-            )}
-            <Segmented
-              label="Row density"
-              items={[
-                { id: "cards", label: "Comfort" },
-                { id: "dense", label: "Dense" },
-              ]}
-              value={viewMode}
-              onChange={setViewMode}
-            />
-          </div>
-        </Card>
 
-        <div className={styles.v6Layout}>
-          <Card
-            className={styles.v6Results}
-            aria-labelledby="ward-patient-search-results-console-title"
-            data-testid="ward-patient-search-results-console"
-          >
-            <CardHead
-              id="ward-patient-search-results-console-title"
-              icon={UsersRound}
-              title="Results"
-              aside={<Count n={unifiedCaseload.length} />}
-              action={
-                <Segmented
-                  label="Sort patient records"
-                  items={[
-                    { id: "wait-desc", label: "Longest wait" },
-                    { id: "tier-asc", label: "Tier" },
-                    { id: "form-asc", label: "Form ending" },
-                    { id: "name-asc", label: "Name" },
-                  ]}
-                  value={sortBy === "wait-desc" || sortBy === "tier-asc" || sortBy === "form-asc" ? sortBy : "name-asc"}
-                  onChange={setSortBy}
-                />
-              }
-            />
-
-            {refusal ? (
-              <p className={styles.v6Status} role="status" aria-live="polite" data-testid="ward-patient-search-refusal">
-                {refusal.sentence}
-              </p>
-            ) : null}
-
-            {/* The people, movement and referral sections, the full record preview and the session's
-                search record. `inert` (25 Sept 2026): out of the tab order and the accessibility tree,
-                so the results are not read twice. */}
-            <div className="sr-only" inert>
-              <PeopleSection
-                people={people}
-                query={text}
-                otherMatches={results.length}
-                onPreview={(p) => {
-                  setSelectedId(p.id);
-                  setPreview({ kind: "person", patient: p });
-                }}
-                selectedPatientId={preview?.kind === "person" ? preview.patient.id : null}
-                referrals={referrals}
-                movements={movements}
-              />
-              {!refusal && (
-                <ResultsSection
-                  results={results}
-                  units={units}
-                  now={now}
-                  viewMode={viewMode}
-                  patients={patients}
-                  referrals={referrals}
-                  onPreviewMovement={(m) => {
-                    setSelectedId(m.id);
-                    setPreview({ kind: "movement", movement: m });
-                  }}
-                  selectedMovementId={preview?.kind === "movement" ? preview.movement.id : null}
-                  onPreviewReferral={(r) => {
-                    setSelectedId(r.id);
-                    setPreview({ kind: "referral", referral: r });
-                  }}
-                  selectedReferralId={preview?.kind === "referral" ? preview.referral.id : null}
-                />
-              )}
-              {preview && (
-                <RecordPreview
-                  selection={preview}
-                  referrals={referrals}
-                  movements={movements}
-                  patients={patients}
-                  units={units}
-                  admissions={admissions}
-                  now={now}
-                  dayZero={dayZero}
-                  onClose={() => setPreview(null)}
-                />
-              )}
-              <AccessRecordPanel entries={accessRecord} now={now} />
-            </div>
-
-            {refusal ? null : unifiedCaseload.length === 0 ? (
-              <EmptyState
-                className={styles.v6Empty}
-                title="No matching records"
-                meta="No patient records match the current search and filters."
-                action={
-                  <Button size="sm" onClick={resetAllFilters}>
-                    Reset all filters
-                  </Button>
-                }
-              />
-            ) : (
-              <CardBody flush>
-                <div className={styles.v6Head} aria-hidden="true">
-                  <span>Tier</span>
-                  <span>Patient</span>
-                  <span>Where now</span>
-                  <span>Legal</span>
-                  <span>Stage</span>
-                  <span className={styles.v6End}>Waiting</span>
-                </div>
-                {viewMode === "dense" ? (
-                  <div className={styles.v6List} role="table" aria-label="Dense caseload list">
-                    {unifiedCaseload.map((p) => renderRow(p, true))}
-                  </div>
-                ) : (
-                  <div className={styles.v6List} aria-label="Caseload cards">
-                    {unifiedCaseload.map((p) => renderRow(p, false))}
-                  </div>
-                )}
-              </CardBody>
-            )}
-            <CardFoot meta={`${unifiedCaseload.length} ${unifiedCaseload.length === 1 ? "record" : "records"}`}>
-              <span className={styles.v6Muted}>Names are invented</span>
-            </CardFoot>
-          </Card>
-
-          <Card className={styles.v6Preview} role="region" aria-label="Patient details">
-            {selectedPatient ? (
-              <>
-                <div className={styles.v6PreviewHead}>
-                  <Avatar name={selectedPatient.name} size="lg" decorative />
-                  <div className={styles.v6PreviewId}>
-                    <h2 className={styles.v6PreviewName}>{selectedPatient.name}</h2>
-                    <span className={styles.v6Sub}>
-                      <span className={styles.v6Mono}>{selectedPatient.urm}</span> · {ageSexText(selectedPatient)} ·{" "}
-                      {selectedPatient.service}
-                    </span>
-                  </div>
-                </div>
-                <div className={styles.v6PreviewStatus}>
-                  {selectedTier !== null ? <TierTile tier={selectedTier} /> : null}
-                  <span className={styles.v6Stage}>
-                    <StatusGlyph tone={stageTone(selectedPatient)} size={9} />
-                    {selectedPatient.stage}
-                  </span>
-                  <span className={styles.v6PreviewWait}>
-                    <Icon icon={Clock} size={14} />
-                    {selectedPatient.waitHours > 0 ? (
-                      <Timer
-                        at={selectedPatient.openedAtInstant * MS_PER_MINUTE}
-                        now={nowMs}
-                        direction="waiting"
-                        hideFlagWord
-                      />
-                    ) : (
-                      "No wait"
-                    )}
-                  </span>
-                </div>
-                <dl className={styles.v6Facts}>
-                  <div>
-                    <dt>Where now</dt>
-                    <dd>{formatSiteAcronym(selectedPatient.origin)}</dd>
-                    <dd className={styles.v6Sub}>Opened {selectedPatient.openedAt}</dd>
-                  </div>
-                  <div>
-                    <dt>Heading to</dt>
-                    <dd>{selectedPatient.destinationName}</dd>
-                    <dd className={styles.v6Sub}>{selectedPatient.holdStatus}</dd>
-                  </div>
-                  <div>
-                    <dt>Legal authority</dt>
-                    <dd>{selectedPatient.legalStatus}</dd>
-                    <dd className={styles.v6Sub}>{statutoryDetails.title}</dd>
-                  </div>
-                  <div>
-                    <dt>Transport</dt>
-                    <dd>{selectedPatient.transportStatus}</dd>
-                    {selectedPatient.nurseEscort ? <dd className={styles.v6Sub}>Nurse escort</dd> : null}
-                  </div>
-                </dl>
-                <div className={styles.v6PreviewSection}>
-                  <span className={styles.v6SectionHead}>Legal due time</span>
-                  <span className={cx(/left|overdue/.test(selectedPatient.legalExpires) && styles.v6Mono)}>
-                    {selectedPatient.legalExpires === "Voluntary status"
-                      ? "Not detained"
-                      : selectedPatient.legalExpires}
-                  </span>
-                </div>
-                <div className={styles.v6PreviewSection}>
-                  <span className={styles.v6SectionHead}>Latest</span>
-                  <Timeline
-                    label="Latest for this record"
-                    holdNew={false}
-                    items={[
-                      {
-                        id: `${selectedPatient.id}-opened`,
-                        at: selectedPatient.openedAt,
-                        tone: "info",
-                        text: `Record active from ${formatSiteAcronym(selectedPatient.origin)}`,
-                      },
-                    ]}
-                  />
-                </div>
-                {selectedPatient.communityTeam ? (
-                  <div className={styles.v6PreviewSection}>
-                    <span className={styles.v6SectionHead}>Community team</span>
-                    <span>{selectedPatient.communityTeam}</span>
-                  </div>
-                ) : null}
-                <CardFoot
-                  meta={
-                    copyNote ? (
-                      <span role="status" aria-live="polite">
-                        {copyNote}
-                      </span>
-                    ) : undefined
-                  }
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={Copy}
-                    iconOnly
-                    aria-label="Copy summary"
-                    title="Copy summary"
-                    onClick={copyPatientSummary}
-                  />
-                  {selectedPatient.originalSubject.kind === "movement" ? (
-                    <Link
-                      className={buttonClass({ size: "sm" })}
-                      href={`/mockups/ward-flow/movements/${selectedPatient.originalSubject.movement.id}`}
-                    >
-                      Open movement
-                    </Link>
-                  ) : (
-                    <Link className={buttonClass({ size: "sm" })} href="/mockups/ward-flow/referrals/new">
-                      New referral
-                    </Link>
-                  )}
-                  {selectedPatient.personRecordId ? (
-                    <Link
-                      className={buttonClass({ variant: "pri", size: "sm" })}
-                      href={`/mockups/ward-flow/people/${selectedPatient.personRecordId}`}
-                    >
-                      Open patient
-                    </Link>
-                  ) : null}
-                </CardFoot>
-              </>
-            ) : (
-              <EmptyState title="Nothing selected" meta="Choose a row to see the record." />
-            )}
-          </Card>
+          {refusal ? (
+            <p className={styles.v6Refusal} data-testid="ward-patient-search-refusal-filter-bar">
+              {refusal.sentence}
+            </p>
+          ) : null}
         </div>
+
+        {/* The people, movement and referral sections, the full record preview and the session's
+            search record. `inert` (25 Sept 2026): out of the tab order and the accessibility tree,
+            so the results are not read twice. */}
+        <div className="sr-only" inert>
+          <PeopleSection
+            people={people}
+            query={text}
+            otherMatches={results.length}
+            onPreview={(p) => {
+              setSelectedId(p.id);
+              setPreview({ kind: "person", patient: p });
+            }}
+            selectedPatientId={preview?.kind === "person" ? preview.patient.id : null}
+            referrals={referrals}
+            movements={movements}
+          />
+          {!refusal && (
+            <ResultsSection
+              results={results}
+              units={units}
+              now={now}
+              viewMode={viewMode}
+              patients={patients}
+              referrals={referrals}
+              onPreviewMovement={(m) => {
+                setSelectedId(m.id);
+                setPreview({ kind: "movement", movement: m });
+              }}
+              selectedMovementId={preview?.kind === "movement" ? preview.movement.id : null}
+              onPreviewReferral={(r) => {
+                setSelectedId(r.id);
+                setPreview({ kind: "referral", referral: r });
+              }}
+              selectedReferralId={preview?.kind === "referral" ? preview.referral.id : null}
+            />
+          )}
+          {preview && (
+            <RecordPreview
+              selection={preview}
+              referrals={referrals}
+              movements={movements}
+              patients={patients}
+              units={units}
+              admissions={admissions}
+              now={now}
+              dayZero={dayZero}
+              onClose={() => setPreview(null)}
+            />
+          )}
+          <AccessRecordPanel entries={accessRecord} now={now} />
+        </div>
+
+        {isPhone ? (
+          <PhoneCensus
+            rows={visibleRows}
+            totals={groupTotals}
+            matched={groupMatches}
+            searching={searching}
+            needle={needle}
+            group={phoneGroupShown}
+            onGroup={setPhoneGroup}
+            highlight={highlight}
+            onHighlight={setHighlight}
+            highlightCounts={highlightCounts}
+            lifted={highlightTest(highlight)}
+            expandedKey={expandedKey}
+            onExpand={(row) => selectRow(row)}
+            onCopy={copyRow}
+            copyNote={copyNote}
+            tab={tab}
+            onTab={setTab}
+            history={history}
+            historyCount={historyCount}
+            empty={refusalNotice ?? empty}
+          />
+        ) : (
+          <div className={cs.layout}>
+            <CensusTable
+              rows={refusal ? [] : visibleRows}
+              totalPeople={census.rows.length}
+              searching={searching}
+              needle={needle}
+              sort={censusSort}
+              onSort={setCensusSort}
+              highlight={highlight}
+              onHighlight={setHighlight}
+              highlightCounts={highlightCounts}
+              lifted={highlightTest(highlight)}
+              openGroups={openGroups}
+              onToggleGroup={(group, open) => setOpenGroups((current) => ({ ...current, [group]: open }))}
+              showAllWard={showAllWard}
+              onShowAllWard={() => setShowAllWard(true)}
+              selectedKey={selectedId}
+              flashKey={flashKey}
+              onSelect={selectRow}
+              tab={tab}
+              onTab={setTab}
+              liveCount={liveCount}
+              historyCount={historyCount}
+              history={history}
+              onCopyList={copyList}
+              copyNote={selectedCensus ? null : copyNote}
+              empty={refusal ? null : empty}
+              notice={refusalNotice}
+            />
+            <Card className={cs.side} role="region" aria-label="Patient details" data-preview-card>
+              {detailOrSummary(true)}
+            </Card>
+          </div>
+        )}
+
+        <Drawer
+          open={drawerOpen}
+          onClose={() => {
+            setDetailsOpen(false);
+          }}
+          title="Patient details"
+          closeLabel="Close patient details"
+          closeButtonClassName={styles.v6DetailsDrawerClose}
+          returnFocusRef={detailsTriggerRef}
+          testId="ward-patient-search-details"
+        >
+          <div className={styles.v6DetailsSheet}>{detailOrSummary(false)}</div>
+        </Drawer>
 
         <WardPrototypeFooter
           testId="ward-patient-search-governance"
-          note="Demonstration records only — Not a medical device. Cross-setting index across people, movements and active referrals."
+          note="Demonstration records only — Not a medical device. Cross-setting index across people, movements, active referrals and beds."
         />
       </main>
     </div>
   );
-
-  function renderRow(p: UnifiedCaseloadPatient, dense: boolean) {
-    const isSelected = p.id === selectedId;
-    const tier = tierNumber(p.urgency);
-    const cell = dense ? ({ role: "cell" } as const) : {};
-    const select = () => handleSelectPatient(p);
-    return (
-      <div
-        key={p.id}
-        className={cx(styles.v6Row, dense && styles.v6RowDense, isSelected && styles.selected)}
-        data-id={p.id}
-        data-testid={`ward-patient-search-case-${p.id}`}
-        onClick={select}
-        onKeyDown={(e: ReactKeyboardEvent<HTMLDivElement>) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            select();
-          }
-        }}
-        tabIndex={0}
-        {...(dense
-          ? { role: "row", "aria-selected": isSelected }
-          : { role: "button", "aria-pressed": isSelected, "aria-label": `Patient ${p.name}` })}
-      >
-        <span {...cell} className={styles.v6TierCell}>
-          {tier !== null ? <TierTile tier={tier} /> : <span className={styles.v6Muted}>{p.urgency}</span>}
-        </span>
-        <span {...cell} className={styles.v6Cell}>
-          <span className={styles.v6Name}>
-            {p.name}
-            {p.confidential ? (
-              <span className={styles.v6Restricted} data-testid={`ward-patient-confidential-${p.id}`}>
-                <Icon icon={Lock} size={14} />
-                Restricted
-              </span>
-            ) : null}
-          </span>
-          {dense ? null : (
-            <span className={styles.v6Sub}>
-              <span className={styles.v6Mono}>{p.urm}</span> · {ageSexText(p)} · {p.service}
-            </span>
-          )}
-        </span>
-        <span {...cell} className={styles.v6Cell}>
-          <span className={styles.v6Strong}>{formatSiteAcronym(p.origin)}</span>
-          {dense ? null : (
-            <span className={styles.v6Sub}>
-              {p.destinationName !== "No ward yet"
-                ? p.destinationName
-                : p.presence === "past"
-                  ? "Discharged"
-                  : "No ward yet"}
-            </span>
-          )}
-        </span>
-        <span {...cell} className={styles.v6Cell}>
-          <span className={styles.v6Strong}>{p.legalStatus}</span>
-          {dense ? null : (
-            <span className={cx(styles.v6Sub, /left|overdue/.test(p.legalExpires) && styles.v6Mono)}>
-              {p.legalExpires === "Voluntary status" ? "Not detained" : p.legalExpires}
-            </span>
-          )}
-        </span>
-        <span {...cell} className={styles.v6Cell}>
-          <span className={styles.v6Stage}>
-            <StatusGlyph tone={stageTone(p)} size={9} />
-            {p.stage}
-          </span>
-          {dense ? null : <span className={styles.v6Sub}>{p.holdStatus}</span>}
-        </span>
-        <span {...cell} className={cx(styles.v6Cell, styles.v6End)}>
-          <span className={styles.v6Wait}>{p.waitHours > 0 ? durMinutes(Math.round(p.waitHours * 60)) : "—"}</span>
-          {dense ? null : <span className={styles.v6Sub}>waiting</span>}
-        </span>
-      </div>
-    );
-  }
 }
 
-function tierNumber(urgency: string): number | null {
-  const match = /^Tier (\d)$/.exec(urgency);
-  return match ? Number(match[1]) : null;
+const PHONE_QUERY = "(max-width: 40rem)";
+
+function subscribePhone(onChange: () => void) {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
+  const list = window.matchMedia(PHONE_QUERY);
+  list.addEventListener("change", onChange);
+  return () => list.removeEventListener("change", onChange);
 }
 
-/** Colour as a glyph: placed and moving are good news, everything else waits in neutral. */
-function stageTone(p: UnifiedCaseloadPatient): "success" | "info" | "neutral" {
-  if (p.holdStatus === "Bed hold active") return "success";
-  if (p.setting === "transit") return "info";
-  return "neutral";
+/** Phone is its own design (Josh, 9 Oct 2026): below 40rem the census renders its phone layout. */
+function usePhoneLayout(): boolean {
+  return useSyncExternalStore(
+    subscribePhone,
+    () =>
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia(PHONE_QUERY).matches,
+    () => false,
+  );
+}
+
+function highlightTest(highlight: CensusHighlight | null): (row: CensusRow) => boolean {
+  const chip = CENSUS_HIGHLIGHTS.find((entry) => entry.id === highlight);
+  return chip ? chip.test : () => false;
+}
+
+function countGroups(rows: readonly CensusRow[]): Record<CensusGroup, number> {
+  const counts: Record<CensusGroup, number> = { wait: 0, found: 0, move: 0, ward: 0, off: 0 };
+  for (const row of rows) counts[row.group] += 1;
+  return counts;
+}
+
+/**
+ * The stylesheet decides when the page is one column, from the page's own width, and hides the side
+ * card then. A tap opens the drawer exactly when that card cannot be seen.
+ */
+function previewCardHidden(): boolean {
+  if (typeof document === "undefined") return false;
+  const card = document.querySelector<HTMLElement>("[data-preview-card]");
+  return card !== null && getComputedStyle(card).display === "none";
+}
+
+function resultId(result: PatientSearchResult): string {
+  return result.kind === "movement" ? result.movement.id : result.referral.id;
+}
+
+/** The Tier select holds "Tier 1" to "Tier 3", the same words each row shows. */
+function matchesTier(result: PatientSearchResult, tier: string): boolean {
+  const urgency = result.kind === "movement" ? result.movement.urgency : result.referral.urgency;
+  return `Tier ${urgency}` === tier;
 }
 
 function getPatientPresence(
