@@ -78,7 +78,10 @@ describe("Figures in the Tools workspace", () => {
     expect(launch.textContent).toMatch(/deadline passed|due within/i);
     fireEvent.click(launch);
     expect(within(tools).getByRole("button", { name: "Figures" })).toHaveAttribute("aria-pressed", "true");
-    expect(await within(tools).findByRole("heading", { name: "Beds and capacity" })).toBeVisible();
+    // `NetworkFigures` is a `next/dynamic` import of the Tools workspace module, so its first paint
+    // waits for that chunk. Testing Library's default 1 s wait was too short on a loaded CI runner
+    // (shard 4, 9 Oct 2026): the heading arrived late, not missing. Wait for it as long as it takes.
+    expect(await within(tools).findByRole("heading", { name: "Beds and capacity" }, { timeout: 15_000 })).toBeVisible();
     for (const heading of ["Waits and recorded limits", "Beds and capacity", "Flow and discharges"]) {
       expect(within(tools).getByRole("heading", { name: heading })).toBeVisible();
     }

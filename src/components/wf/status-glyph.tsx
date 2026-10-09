@@ -2,7 +2,7 @@ import styles from "./status-glyph.module.css";
 
 /**
  * v6 rule 7: each tone has one shape everywhere. Triangle act now, filled amber circle at risk,
- * tick done, dot moving, ring waiting, cross declined or closed. The glyph is decoration: the word
+ * tick done, capsule moving, ring waiting, cross declined or closed. The glyph is decoration: the word
  * or value beside it carries the meaning, so it is always `aria-hidden`.
  */
 export type WfTone = "danger" | "warning" | "success" | "info" | "neutral" | "closed";
@@ -23,7 +23,7 @@ export function StatusGlyph({ tone, size = 10, className }: { tone: WfTone; size
           strokeLinejoin="round"
         />
       )}
-      {tone === "info" && <circle cx="5" cy="5" r="3.4" fill="currentColor" />}
+      {tone === "info" && <rect x="0.6" y="2.9" width="8.8" height="4.2" rx="2.1" fill="currentColor" />}
       {tone === "neutral" && <circle cx="5" cy="5" r="3.4" fill="none" stroke="currentColor" strokeWidth="1.5" />}
       {tone === "closed" && (
         <path d="M2 2 8 8M8 2 2 8" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
