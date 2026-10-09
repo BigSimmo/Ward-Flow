@@ -3798,6 +3798,13 @@
   font-size: var(--t-1);
 }
 
+.patientList,
+.denseContainer,
+.inspectorContent {
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+}
+
 .patientList::-webkit-scrollbar,
 .denseContainer::-webkit-scrollbar,
 .inspectorContent::-webkit-scrollbar {
