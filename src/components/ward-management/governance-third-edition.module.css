@@ -429,6 +429,10 @@
   flex-wrap: wrap;
 }
 
+.registerCard > .filterRow {
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
 .filterLabel {
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
@@ -450,10 +454,10 @@
 .eventHeader,
 .eventRow {
   display: grid;
-  grid-template-columns: 6.5rem minmax(9rem, 1.2fr) minmax(9rem, 1.4fr) minmax(8rem, 1fr) 8rem 9.5rem;
+  grid-template-columns: 5.5rem minmax(7rem, 1.3fr) minmax(7rem, 1.3fr) minmax(6rem, 1fr) 6.5rem 8rem;
   align-items: center;
   gap: var(--wf-s-3);
-  min-width: 52rem;
+  min-width: 44rem;
   padding: 0 var(--wf-s-4);
   box-sizing: border-box;
 }
@@ -657,7 +661,164 @@
   border-width: 0;
 }
 
+/* Tabs build (9 Oct 2026): reviewed ring, gaps by site, register and report previews. */
+.reviewedRing {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  color: var(--wf-hero-ink);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.reviewedRing strong {
+  font: 650 var(--wf-fs-16) / 1.1 var(--wf-mono);
+}
+
+.reviewedRing span {
+  color: var(--wf-hero-ink-2);
+}
+
+.ringDial {
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+  border-radius: 50%;
+  --done: 0deg;
+  background: conic-gradient(var(--wf-hero-success) var(--done), var(--wf-hero-edge) 0);
+  -webkit-mask: radial-gradient(circle at center, transparent 12px, var(--wf-ink-1) 13px);
+  mask: radial-gradient(circle at center, transparent 12px, var(--wf-ink-1) 13px);
+}
+
+.stackGap {
+  display: grid;
+  align-content: start;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.gapTable th,
+.gapTable td {
+  white-space: nowrap;
+}
+
+/* Requirement columns size to their pill; the site column takes the rest. */
+.gapTable th:not(:first-child),
+.gapTable td:not(:first-child) {
+  width: 1%;
+  max-width: none;
+  overflow: visible;
+}
+
+.gapPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-height: 1.5rem;
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+
+.gapPill[data-tone="none"] {
+  border-color: transparent;
+  background: none;
+  color: var(--wf-ink-3);
+}
+
+.gapValue {
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.tileGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.tile {
+  display: grid;
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.tile .gapValue {
+  font-size: var(--wf-fs-16);
+}
+
+.tileLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gapPeople {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gapPeople li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.previewGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+}
+
+.previewGrid[data-columns="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.previewCard {
+  border-style: dashed;
+}
+
+.previewLines {
+  display: grid;
+  gap: var(--wf-s-1);
+}
+
+.previewLines > span {
+  height: 0.5rem;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+}
+
+.previewLines > span:nth-child(2) {
+  width: 80%;
+}
+
+.previewLines > span:nth-child(3) {
+  width: 60%;
+}
+
 @media (max-width: 62.5625rem) {
+  .previewGrid,
+  .previewGrid[data-columns="2"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .govLayout {
     grid-template-columns: minmax(0, 1fr);
   }

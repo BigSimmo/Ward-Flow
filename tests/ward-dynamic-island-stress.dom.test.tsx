@@ -476,13 +476,16 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
         </WardFlowProvider>,
       );
 
-      // v6 hero: the urgency filter is the hero's "Forms shown" switch (All / Expiring).
-      const expiringBtn = screen.getByRole("radio", { name: /^Expiring/u });
-      expect(expiringBtn).toBeDefined();
+      // Forms hero (9 Oct 2026): the view switch (Clocks / Checklist / History) and the urgency
+      // pills, which highlight rows and never hide them.
+      const checklistBtn = screen.getByRole("radio", { name: /^Checklist/u });
+      fireEvent.click(checklistBtn);
+      expect(checklistBtn.getAttribute("aria-checked")).toBe("true");
+      expect(screen.getByRole("region", { name: "Checklist" })).toBeInTheDocument();
 
-      fireEvent.click(expiringBtn);
-      // Urgency filter is now active
-      expect(expiringBtn.getAttribute("aria-checked")).toBe("true");
+      const actNow = screen.getByRole("button", { name: /Act now/u });
+      fireEvent.click(actNow);
+      expect(actNow.getAttribute("aria-pressed")).toBe("true");
     });
 
     it("Mounts CapacityScreen with WardFlowProvider and verifies co-existence of HUD and Gap Table", () => {

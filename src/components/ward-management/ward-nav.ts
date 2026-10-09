@@ -372,7 +372,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * shortlist, the console and half a dozen other screens, each showing one movement's own form and
    * none of the others'.
    */
-  { id: "legal-forms", href: "/mockups/ward-flow/legal-forms", label: "Legal forms", group: "board" },
+  { id: "legal-forms", href: "/mockups/ward-flow/legal-forms", label: "Forms", group: "board" },
 ];
 
 /**
