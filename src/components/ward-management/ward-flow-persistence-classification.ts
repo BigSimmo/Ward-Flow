@@ -221,6 +221,11 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RELEASE_DIVERTED_BED",
   "RELEASE_PULL",
   "REOPEN_INBOX_ITEM",
+  // Stream A, 9 Oct 2026: `inboxItemId` is an id (reviewed above), `until` a number and `reason` a
+  // closed union (`InboxSnoozeReason`) offered by a `<select>`, never typed text.
+  "TAKE_INBOX_ITEM_OWNERSHIP",
+  "SNOOZE_INBOX_ITEM",
+  "UNSNOOZE_INBOX_ITEM",
   "REQUEST_CAPACITY_REFRESH",
   "RESET_SCENARIO",
   "REVERT_BED_RELEASE",

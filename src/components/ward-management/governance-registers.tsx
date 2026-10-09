@@ -21,6 +21,7 @@ import type {
 } from "./ward-audit";
 import { LEAVING_DESTINATIONS } from "./ward-admissions";
 import { legalFormReceiptCorrectionReasonLabels } from "./ward-change-reasons";
+import { snoozeReasonLabel } from "./ward-inbox-snooze";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { movementHref, unitHref } from "./shell/ward-facade";
 import {
@@ -177,6 +178,7 @@ const categoryLabels: Record<AuditCategory, string> = {
   "record-access": "Record access",
   review: "Review",
   configuration: "Configuration",
+  inbox: "Action item",
 };
 const outcomeLabels = {
   accepted: "Accepted",
@@ -223,6 +225,9 @@ const actionLabels: Record<AuditEvent["action"], string> = {
   OPEN_DISCHARGE_RECORD: "Open discharge record",
   REVIEW_AUDIT_EVENT: "Review event",
   SET_CONFIGURATION: "Change configuration",
+  TAKE_INBOX_ITEM_OWNERSHIP: "Take action item",
+  SNOOZE_INBOX_ITEM: "Snooze action item",
+  UNSNOOZE_INBOX_ITEM: "Return snoozed action item",
 };
 const reviewLabels = { reviewed: "Reviewed", "follow-up-required": "Follow-up required" } as const;
 const display = (value: string | number | boolean | null | undefined) =>
@@ -465,6 +470,23 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
             <BedFacts facts={event.details.after} now={now} />
           </section>
         </div>
+      );
+    case "inbox":
+      return (
+        <FactList
+          facts={[
+            [
+              "Action",
+              event.action === "TAKE_INBOX_ITEM_OWNERSHIP"
+                ? "Ownership taken"
+                : event.action === "SNOOZE_INBOX_ITEM"
+                  ? "Snoozed"
+                  : "Returned from snooze",
+            ],
+            ["Reason", event.details.reason === null ? "Not recorded" : snoozeReasonLabel(event.details.reason)],
+            ["Back at", event.details.until === null ? "Not recorded" : formatInstantWithDay(event.details.until, now)],
+          ]}
+        />
       );
     case "configuration": {
       const fields = (value: WardConfiguration | null): (readonly [string, ReactNode])[] =>

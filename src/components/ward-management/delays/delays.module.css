@@ -1312,7 +1312,7 @@
 
 .wardQueryStatusCandidate {
   background: var(--good-soft);
-  color: var(--good-ink);
+  color: var(--wf-success-ink);
   border: 1px solid var(--good);
 }
 

@@ -1,0 +1,190 @@
+import { Timer } from "lucide-react";
+
+import { splitDuration, type Instant } from "./ward-clock";
+import type { WardConfiguration } from "./ward-configuration";
+import type { InboxItem } from "./ward-derivations";
+import { transportNeedState } from "./ward-derivations";
+import { INBOX_CATEGORIES } from "./ward-inbox-reducer";
+import type { Movement } from "./ward-model";
+
+/**
+ * DECISION TARGETS — stream A, 9 Oct 2026.
+ *
+ * A labelled default target per step of a movement, set in Settings (`WardConfiguration`). Each is
+ * a prototype default, never a clinical, legal or service standard. A step's clock starts at a
+ * time the record itself holds and stops when the record shows the step done:
+ *
+ *   - Referral decision: from `referralDecisionOpenedAt` when a refer opens a fresh wait (first
+ *     referral, or re-refer after every ward declined or withdrew) until a ward accepts or every
+ *     referred ward has answered. Falls back to `referredAt` on older records. Adding wards while
+ *     others are still live does not restart it.
+ *   - Transfer acceptance: from `acceptedAt` (acceptance in principle) until the bed is pulled.
+ *   - Transport booked: from the recorded move to `pulled` until a transport job is booked.
+ *     A pulled movement recorded as needing no transport has no booking target.
+ *
+ * A step whose start time the record does not hold has no target running. Nothing is backfilled
+ * from `openedAt`, the same discipline `Movement.referredAt` documents.
+ */
+export type DecisionTargetStep = "referral_decision" | "transfer_acceptance" | "transport_booked";
+
+type StepDefinition = {
+  readonly step: DecisionTargetStep;
+  readonly label: string;
+  readonly configKey: keyof Pick<
+    WardConfiguration,
+    "referralDecisionTargetMinutes" | "transferAcceptanceTargetMinutes" | "transportBookedTargetMinutes"
+  >;
+  readonly category: "target_referral_decision" | "target_transfer_acceptance" | "target_transport_booked";
+  /** The running (not yet overdue) row's own category, so its id never matches the overdue row's. */
+  readonly pendingCategory:
+    "target_pending_referral_decision" | "target_pending_transfer_acceptance" | "target_pending_transport_booked";
+  readonly owner: string;
+  readonly overdueTitle: string;
+};
+
+export const DECISION_TARGET_STEPS: readonly StepDefinition[] = [
+  {
+    step: "referral_decision",
+    label: "Referral decision",
+    configKey: "referralDecisionTargetMinutes",
+    category: "target_referral_decision",
+    pendingCategory: "target_pending_referral_decision",
+    owner: "Coordinator",
+    overdueTitle: "Referral decision overdue",
+  },
+  {
+    step: "transfer_acceptance",
+    label: "Transfer acceptance",
+    configKey: "transferAcceptanceTargetMinutes",
+    category: "target_transfer_acceptance",
+    pendingCategory: "target_pending_transfer_acceptance",
+    owner: "Accepting ward",
+    overdueTitle: "Transfer acceptance overdue",
+  },
+  {
+    step: "transport_booked",
+    label: "Transport booked",
+    configKey: "transportBookedTargetMinutes",
+    category: "target_transport_booked",
+    pendingCategory: "target_pending_transport_booked",
+    owner: "Sending team",
+    overdueTitle: "Transport booking overdue",
+  },
+];
+
+export type DecisionTargetReading = {
+  step: DecisionTargetStep;
+  label: string;
+  startedAt: Instant;
+  dueAt: Instant;
+  targetMinutes: number;
+  /** Negative once overdue. */
+  minutesLeft: number;
+  overdue: boolean;
+  /** `42m left` or `1h 05m overdue`: a duration with units, never a clock time. */
+  text: string;
+};
+
+const DECIDING_STAGES: readonly Movement["stage"][] = ["placement_requested", "destination_review"];
+
+function lastPulledAt(movement: Movement): Instant | undefined {
+  let pulledAt: Instant | undefined;
+  for (const change of movement.stageChanges) {
+    if (change.to === "pulled") pulledAt = change.at;
+  }
+  return pulledAt;
+}
+
+/** When the step this movement is waiting on started, or undefined when no target is running. */
+function pendingStep(movement: Movement): { step: DecisionTargetStep; startedAt: Instant } | undefined {
+  if (movement.closure || movement.stage === "arrived") return undefined;
+  if (
+    movement.referredAt !== undefined &&
+    movement.acceptedUnitId === undefined &&
+    movement.referredUnitIds.length > 0 &&
+    DECIDING_STAGES.includes(movement.stage)
+  ) {
+    // Prefer the act that opened this wait (`REFER_TO_UNITS`); fall back for older records.
+    const startedAt = movement.referralDecisionOpenedAt ?? movement.referredAt;
+    return { step: "referral_decision", startedAt };
+  }
+  if (
+    movement.stage === "accepted_awaiting_bed" &&
+    movement.acceptedUnitId !== undefined &&
+    movement.acceptedAt !== undefined
+  ) {
+    return { step: "transfer_acceptance", startedAt: movement.acceptedAt };
+  }
+  if (movement.stage === "pulled") {
+    // No booking is owed when the ward has recorded that no transport is needed.
+    if (transportNeedState(movement) === "not_needed") return undefined;
+    const booked = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
+    const pulledAt = lastPulledAt(movement);
+    if (!booked && pulledAt !== undefined) return { step: "transport_booked", startedAt: pulledAt };
+  }
+  return undefined;
+}
+
+/** The decision target running on this movement right now, read against the configured defaults. */
+export function decisionTargetReading(
+  movement: Movement,
+  now: Instant,
+  configuration: WardConfiguration,
+): DecisionTargetReading | undefined {
+  const pending = pendingStep(movement);
+  if (!pending) return undefined;
+  const definition = DECISION_TARGET_STEPS.find((entry) => entry.step === pending.step);
+  if (!definition) return undefined;
+  const targetMinutes = configuration[definition.configKey];
+  const dueAt = pending.startedAt + targetMinutes;
+  const minutesLeft = dueAt - now;
+  const overdue = minutesLeft < 0;
+  return {
+    step: pending.step,
+    label: definition.label,
+    startedAt: pending.startedAt,
+    dueAt,
+    targetMinutes,
+    minutesLeft,
+    overdue,
+    text: overdue ? `${splitDuration(-minutesLeft)} overdue` : `${splitDuration(minutesLeft)} left`,
+  };
+}
+
+/**
+ * One inbox row per open movement with a running decision target. Pending (not yet overdue) rows
+ * are warning tone with the step label and countdown in `detail`; overdue rows are act-now danger
+ * with the overdue title. The two have different ids (a pending row uses the step's pending
+ * category), so a snoozed or acknowledged countdown does not carry over to the overdue row and the
+ * act-now notifier still sees it as new. Concatenated onto `buildActionInbox`'s rows by every screen that lists
+ * alerts or tasks, so a newly referred patient with no other alert still has a reachable countdown
+ * on Alerts and in Tasks. Browser notifications still filter danger only. Callers pass open
+ * movements only, the same scoping `buildActionInbox` requires.
+ */
+export function decisionTargetInboxItems(
+  movements: readonly Movement[],
+  now: Instant,
+  configuration: WardConfiguration,
+): InboxItem[] {
+  const items: InboxItem[] = [];
+  for (const movement of movements) {
+    const reading = decisionTargetReading(movement, now, configuration);
+    if (!reading) continue;
+    const definition = DECISION_TARGET_STEPS.find((entry) => entry.step === reading.step);
+    if (!definition) continue;
+    const category = INBOX_CATEGORIES[reading.overdue ? definition.category : definition.pendingCategory];
+    items.push({
+      id: `${category.idPrefix}${movement.id}`,
+      kind: category.kind,
+      tone: reading.overdue ? "danger" : "warning",
+      icon: Timer,
+      title: reading.overdue ? definition.overdueTitle : definition.label,
+      detail: `${reading.text} · target ${splitDuration(reading.targetMinutes)}, default set in Settings`,
+      owner: definition.owner,
+      movementId: movement.id,
+      dueAt: reading.dueAt,
+      since: reading.startedAt,
+    });
+  }
+  return items;
+}
