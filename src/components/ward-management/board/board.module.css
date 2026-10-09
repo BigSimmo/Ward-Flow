@@ -3034,7 +3034,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: var(--wf-line-2) transparent;
   scrollbar-width: thin;
 }
 
