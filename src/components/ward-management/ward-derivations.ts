@@ -1132,6 +1132,8 @@ export type InboxItem = {
   detail: string;
   owner: string;
   movementId: string;
+  /** Admission-keyed destination for discharge tasks. */
+  admissionId?: string;
   /**
    * 🔴 **WHETHER THIS ROW CAN BE TICKED OFF AT ALL** — ward-lead task, 2026-09-06. A `"fact"` is a
    * live clinical or legal truth that leaves this list when it stops being true; a `"commitment"`

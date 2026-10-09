@@ -51,6 +51,14 @@ export function WardTasksPanel() {
 
   const items = useMemo(() => buildActionInbox(movements.filter(isOpen), now, units), [movements, now, units]);
 
+  const openDischarge = useCallback(
+    (admissionId: string) => {
+      setOpen(false);
+      router.push(`/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(admissionId)}`);
+    },
+    [router],
+  );
+
   const openMovement = useCallback(
     (movementId: string, action?: "refer" | "contact") => {
       setOpen(false);
@@ -92,6 +100,7 @@ export function WardTasksPanel() {
           dispatch={dispatch}
           onClose={() => setOpen(false)}
           onSelectMovement={openMovement}
+          onSelectDischarge={openDischarge}
           records={{ movements, patients, referrals, units }}
           withBackdrop
         />

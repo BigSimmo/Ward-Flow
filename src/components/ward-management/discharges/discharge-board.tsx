@@ -3,6 +3,7 @@ import { DischargeCareJourney } from "./discharge-care-journey";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronRight, ClipboardList, Plus, Truck, X } from "lucide-react";
 import { MissingValue } from "@/components/ui/missing-value";
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
@@ -317,6 +318,7 @@ function DischargeWorkspace() {
   const { bedReleases, units, dayZero, readDischargeRecords, openDischargeRecord, readDischargeRecord, dispatch } =
     useWardFlow();
   const now = useWardFlowClock();
+  const searchParams = useSearchParams();
   const [planningOpen, setPlanningOpen] = useState(false);
   const [planningUnitId, setPlanningUnitId] = useState("");
   const [population, setPopulation] = useState<Population>("releases");
@@ -339,6 +341,12 @@ function DischargeWorkspace() {
   const planDropdownRef = useRef<HTMLDivElement>(null);
   const guarded = readDischargeRecords(RECORD_ACTOR);
   const records = guarded.status === "allowed" ? guarded.value : [];
+  useEffect(() => {
+    const admissionId = searchParams.get("admissionId");
+    if (!admissionId || !records.some((record) => record.admissionId === admissionId)) return;
+    setPopulation("records");
+    setSelected({ admissionId, handle: openDischargeRecord(RECORD_ACTOR, admissionId) });
+  }, [searchParams, records, openDischargeRecord]);
   const services = [...new Set(units.map(healthServiceLabel))].sort();
   const scopedUnits = units.filter((unit) => service === "all" || healthServiceLabel(unit) === service);
   const inScope = (unitId: string) => {

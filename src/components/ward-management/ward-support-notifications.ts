@@ -115,7 +115,7 @@ function movementArrivedAt(movement: Movement): Instant | undefined {
 
 /** The arrival this checklist covers, for one movement, or undefined when it does not apply. */
 export function movementSupportNotificationSubject(movement: Movement): SupportNotificationSubject | undefined {
-  if (movement.legalStatus === "Voluntary") return undefined;
+  if (!legalStatusTextIsInvoluntary(movement.legalStatus)) return undefined;
   const completedAt = movementArrivedAt(movement);
   if (completedAt === undefined) return undefined;
   return {
@@ -219,7 +219,7 @@ export function supportNotificationTaskId(occasion: SupportNotificationOccasion,
 
 /**
  * One Tasks row per recent move (within the lookback) that still has a party with nothing recorded.
- * Moves without a movement to open are left to the discharges board, where the checklist sits.
+ * Discharge tasks open the admission-keyed checklist on the discharges board.
  */
 export function supportNotificationInboxItems(
   records: NotificationRecords & {
@@ -231,14 +231,15 @@ export function supportNotificationInboxItems(
   const items: InboxItem[] = [];
   for (const subject of supportNotificationSubjects(records)) {
     if (subject.completedAt > now || now - subject.completedAt > SUPPORT_NOTIFICATION_TASK_LOOKBACK_MINUTES) continue;
-    if (subject.movementId === undefined) continue;
+    const destinationId = subject.occasion === "discharge" ? subject.admissionId : subject.movementId;
+    if (destinationId === undefined) continue;
     const missing = outstandingSupportParties(
       supportNotificationChecklist(records.supportNotifications, subject.occasion, subject.subjectId),
     );
     if (missing.length === 0) continue;
     const unit = subject.unitId ? records.units.find((candidate) => candidate.id === subject.unitId) : undefined;
     items.push({
-      id: supportNotificationTaskId(subject.occasion, subject.movementId),
+      id: supportNotificationTaskId(subject.occasion, destinationId),
       kind: taskCategory(subject.occasion).kind,
       tone: "warning",
       icon: BellRing,
@@ -246,7 +247,8 @@ export function supportNotificationInboxItems(
       // No record id in the text: the drawer names the person through the patient resolver.
       detail: `${missing.map((party) => SUPPORT_NOTIFICATION_PARTY_SHORT[party]).join(", ")} not recorded${unit ? ` · ${unit.name}` : ""}`,
       owner: "Ward",
-      movementId: subject.movementId,
+      movementId: destinationId,
+      ...(subject.occasion === "discharge" && subject.admissionId ? { admissionId: subject.admissionId } : {}),
     });
   }
   return items;

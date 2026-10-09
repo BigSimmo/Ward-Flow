@@ -47,6 +47,7 @@ type WardTasksDrawerProps = {
   dispatch: Dispatch<WardFlowEvent>;
   onClose: () => void;
   onSelectMovement: (movementId: string, action?: "refer" | "contact") => void;
+  onSelectDischarge?: (admissionId: string) => void;
   records?: {
     movements: readonly Movement[];
     patients: readonly Patient[];
@@ -366,7 +367,11 @@ export function WardTasksDrawer({
               type="button"
               data-testid={`ward-task-${item.id}`}
               className={styles.rowTitle}
-              onClick={() => onSelectMovement(item.movementId)}
+              onClick={() =>
+                item.admissionId && onSelectDischarge
+                  ? onSelectDischarge(item.admissionId)
+                  : onSelectMovement(item.movementId)
+              }
             >
               {item.title}
             </button>
