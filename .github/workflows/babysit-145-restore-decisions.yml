@@ -18,13 +18,10 @@ jobs:
       - name: Assemble decisions.md from parts when complete
         run: |
           set -euo pipefail
-          if [ ! -f docs/ward-flow/.restore-parts/part-3.txt ]; then
+          if [ ! -f docs/ward-flow/.restore-parts/part-21.txt ]; then
             echo "Waiting for all parts"; exit 0
           fi
-          cat docs/ward-flow/.restore-parts/part-0.txt \
-              docs/ward-flow/.restore-parts/part-1.txt \
-              docs/ward-flow/.restore-parts/part-2.txt \
-              docs/ward-flow/.restore-parts/part-3.txt > docs/ward-flow/decisions.md
+          cat docs/ward-flow/.restore-parts/part-*.txt > docs/ward-flow/decisions.md
           wc -c docs/ward-flow/decisions.md
           rm -rf docs/ward-flow/.restore-parts
           rm -f .github/workflows/babysit-145-restore-decisions.yml
