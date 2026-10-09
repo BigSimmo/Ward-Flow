@@ -129,7 +129,7 @@ export function FormsPack({ movement, now, who }: { movement: Movement; now: Ins
             icon={Send}
             className={styles.previewButton}
             aria-disabled="true"
-            title="Sending the pack to a transport officer is not wired in this prototype."
+            title="Not wired in this prototype."
             onClick={(event) => event.preventDefault()}
           >
             Send to officer
@@ -179,7 +179,7 @@ function PackUploadDialog({
     setCode(slot.codes[index]);
     event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]')[index]?.focus();
   };
-  const ready = file !== null && file.size > 0 && (!needsCode || code !== undefined);
+  const ready = file !== null && file.size > 0 && file.name.trim() !== "" && (!needsCode || code !== undefined);
   const titleId = `ward-officer-pack-upload-title-${movement.id}`;
 
   return (

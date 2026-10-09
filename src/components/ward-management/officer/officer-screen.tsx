@@ -635,7 +635,8 @@ export function OfficerScreen() {
       ) {
         e.preventDefault();
         setJobsTab("jobs");
-        searchInputRef.current?.focus();
+        // The field sits in the Jobs panel, which only renders once the tab switch commits.
+        requestAnimationFrame(() => searchInputRef.current?.focus());
       }
     }
     window.addEventListener("keydown", handleKeyDown);
@@ -1139,9 +1140,7 @@ export function OfficerScreen() {
       label={
         <>
           <span className={styles.longLabel}>{label}</span>
-          <span className={styles.shortLabel} aria-hidden="true">
-            {short}
-          </span>
+          <span className={styles.shortLabel}>{short}</span>
         </>
       }
       tone={tone}
@@ -1189,7 +1188,7 @@ export function OfficerScreen() {
                 icon={Truck}
                 className={cx(styles.previewButton, styles.deskOnly)}
                 aria-disabled="true"
-                title="Bookings are logged by the sending team on the ED or patient page. Logging one here is not wired in this prototype."
+                title="Not wired in this prototype."
                 onClick={(event) => event.preventDefault()}
               >
                 Log booking

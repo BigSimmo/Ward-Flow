@@ -932,7 +932,7 @@
 
 .codeChoice button {
   flex: 1;
-  min-height: var(--wf-h-md);
+  min-height: var(--spacing-tap, 3rem);
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-pill);
   background: var(--wf-surface);
