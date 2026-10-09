@@ -266,13 +266,13 @@ export function reduceInboxEvent(
     case "UNSNOOZE_INBOX_ITEM": {
       const inboxItemId = event.inboxItemId.trim();
       const history = state.inboxSnoozes[inboxItemId];
-      if (!activeSnooze(history, event.now)) {
+      if (!history || !activeSnooze(history, event.now)) {
         return reject(state, event, `inbox row ${inboxItemId} is not snoozed, so there is nothing to return`);
       }
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       const entry: InboxSnoozeEntry = { at: event.now, by: WARD_FLOW_ROLE_LABELS[event.role], kind: "returned" };
-      return { ...state, inboxSnoozes: { ...state.inboxSnoozes, [inboxItemId]: [...(history ?? []), entry] } };
+      return { ...state, inboxSnoozes: { ...state.inboxSnoozes, [inboxItemId]: [...history, entry] } };
     }
 
     default:
