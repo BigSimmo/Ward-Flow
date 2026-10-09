@@ -19,10 +19,10 @@ import { newActNowItems, showActNowNotification, useActNowNotificationPreference
  */
 export function WardActNowNotifier() {
   const router = useRouter();
-  const { movements, units, configuration, inboxSnoozes } = useWardFlow();
+  const { movements, units, configuration, inboxSnoozes, sessionAdopted, worldGeneration } = useWardFlow();
   const now = useWardFlowClock();
   const [enabled] = useActNowNotificationPreference();
-  const previous = useRef<Set<string> | null>(null);
+  const previous = useRef<{ generation: number; ids: Set<string> } | null>(null);
 
   const actNow = useMemo(() => {
     const open = movements.filter(isOpen);
@@ -31,11 +31,16 @@ export function WardActNowNotifier() {
   }, [movements, units, configuration, inboxSnoozes, now]);
 
   useEffect(() => {
+    if (!sessionAdopted) {
+      previous.current = null;
+      return;
+    }
     const prior = previous.current;
-    previous.current = new Set(actNow.map((item) => item.id));
-    if (prior === null || !enabled) return;
-    showActNowNotification(newActNowItems(prior, actNow), () => router.push(WARD_ALERTS_HREF));
-  }, [actNow, enabled, router]);
+    const ids = new Set(actNow.map((item) => item.id));
+    previous.current = { generation: worldGeneration, ids };
+    if (prior === null || prior.generation !== worldGeneration || !enabled) return;
+    showActNowNotification(newActNowItems(prior.ids, actNow), () => router.push(WARD_ALERTS_HREF));
+  }, [actNow, enabled, router, sessionAdopted, worldGeneration]);
 
   return null;
 }

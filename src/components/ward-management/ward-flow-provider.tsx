@@ -88,6 +88,7 @@ import {
  */
 type WardFlowContextValue = {
   worldGeneration: number;
+  sessionAdopted: boolean;
   recordWardDeparture(admissionId: string, actingUnitId: string, leavingDestination: LeavingDestination): void;
   readDischargeRecords(actor: WardRecordActor, unitId?: string): RecordRead<readonly DischargeRecord[]>;
   openDischargeRecord(actor: WardRecordActor, admissionId: string): DischargeOpenHandle;
@@ -216,8 +217,9 @@ export const WARD_FLOW_DEMO_STORAGE_KEY = "ward-flow-demo-state-v1";
 // exactly like every other version mismatch above, never guessed or backfilled.
 // v6 (2026-10-08): explicit deterioration/pause, recorded ATS and corroborated
 // arrival/capacity conflicts; reciprocal runtime admission links are validated.
-// Old automatic saves are refused rather than silently migrating clinical facts.
-const WARD_FLOW_DEMO_STORAGE_VERSION = 6;
+// v7 (2026-10-09): inbox ownership and snooze histories were added. v6 saves are safely migrated
+// by filling only those absent maps; malformed maps are still rejected by the shape validator.
+const WARD_FLOW_DEMO_STORAGE_VERSION = 7;
 
 /**
  * What actually goes to `sessionStorage`. Carries the world's calendar day ALONGSIDE the state, not
@@ -403,6 +405,21 @@ function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number): DemoRead {
       parsed = JSON.parse(raw);
     } catch {
       return { recoveryNotice: SAVE_REJECTED };
+    }
+    // v6 had no inbox history maps. Validate the old state first, then add only the two new
+    // empty maps; no clinical field is inferred or rewritten.
+    if (
+      isPlainObject(parsed) &&
+      parsed.version === 6 &&
+      isValidStoredWardFlowState(parsed.state) &&
+      !Object.prototype.hasOwnProperty.call(parsed.state, "inboxOwnership") &&
+      !Object.prototype.hasOwnProperty.call(parsed.state, "inboxSnoozes")
+    ) {
+      parsed = { ...parsed, version: WARD_FLOW_DEMO_STORAGE_VERSION, state: {
+        ...parsed.state,
+        inboxOwnership: {},
+        inboxSnoozes: {},
+      } };
     }
     if (
       !isValidDemoPayload(parsed) ||
@@ -901,6 +918,7 @@ function WardFlowWorld({
   const value = useMemo<WardFlowContextValue>(
     () => ({
       worldGeneration: state.worldGeneration,
+      sessionAdopted: container.sessionAdopted === true,
       recordWardDeparture: (admissionId, actingUnitId, leavingDestination) => {
         const read = selectDischargeRecord(state, { role: "ward", actingUnitId }, admissionId);
         if (read.status === "allowed" && read.value.identity.kind === "legacy-anonymous") {
@@ -987,6 +1005,7 @@ function WardFlowWorld({
       // `react-hooks/exhaustive-deps` flagged the individual fields as redundant once `state` was
       // added, not as a reason to remove `state` and go back to naming fields one at a time.
       state,
+      container.sessionAdopted,
       // The log grows even when an event leaves `state` untouched (a no-op), so it is its own dep.
       container.eventLog,
       now,

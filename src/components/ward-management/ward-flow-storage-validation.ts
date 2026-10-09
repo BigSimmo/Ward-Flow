@@ -193,13 +193,13 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
         "dischargeRevisions",
         "inboxAcknowledgements",
         "inboxCompletions",
-        "inboxOwnership",
-        "inboxSnoozes",
         "morningRollupConfirmations",
       ],
       object,
     )
   )
+    return false;
+  if (("inboxOwnership" in value && !object(value.inboxOwnership)) || ("inboxSnoozes" in value && !object(value.inboxSnoozes)))
     return false;
   const state = value as unknown as WardFlowState;
   for (const name of [
