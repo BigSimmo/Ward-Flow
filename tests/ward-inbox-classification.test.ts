@@ -96,10 +96,14 @@ function movementsCoveringEveryCategory(): Movement[] {
   ];
 }
 
-/** Every row any inbox builder emits: `buildActionInbox` plus the decision-target rows screens append. */
+/** Every row any inbox builder emits: `buildActionInbox` (with the seeded planned admissions) plus the
+ *  decision-target rows screens append. */
 function allInboxRows(movements: Movement[]): InboxItem[] {
   return [
-    ...buildActionInbox(movements, NOW, allUnits(), recordsCoveringSupportNotifications()),
+    ...buildActionInbox(movements, NOW, allUnits(), {
+      ...recordsCoveringSupportNotifications(),
+      plannedAdmissions: seedWardFlowState().plannedAdmissions,
+    }),
     ...decisionTargetInboxItems(movements, NOW, defaultWardConfiguration()),
   ];
 }
@@ -152,6 +156,8 @@ describe("every action-inbox category is classified as a fact or a commitment", 
    * decided what kind of thing the new row is — which is the point.
    */
   it("gives every row a kind, and every row's kind is the one its category declares", () => {
+    // The seeded planned admissions include one past its expected arrival (stream D), which is the
+    // only producer of the planned-arrival category.
     const items = allInboxRows(movementsCoveringEveryCategory());
 
     // ANTI-VACUITY. Without this the whole test passes over an empty array — the enumeration

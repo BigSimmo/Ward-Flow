@@ -37,6 +37,7 @@
  * different moments.
  */
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import type {
   BedRelease,
   HealthService,
@@ -124,6 +125,7 @@ export type ShellFigureInput = {
   readonly bedReleases: readonly BedRelease[];
   readonly leaveBeds: readonly LeaveBed[];
   readonly now: Instant;
+  readonly plannedAdmissions?: readonly PlannedAdmission[];
 };
 
 /**
@@ -180,7 +182,12 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
     delaysNeedingAttention: required("delays"),
     referralsWaiting: required("referrals"),
     tasks: {
-      value: buildActionInbox(input.movements.filter(isOpen), input.now, input.units).length,
+      value: buildActionInbox(
+        input.movements.filter(isOpen),
+        input.now,
+        input.units,
+        input.plannedAdmissions ? { plannedAdmissions: input.plannedAdmissions } : undefined,
+      ).length,
       noun: TASKS_NOUN,
     },
   };

@@ -311,6 +311,7 @@ function facadeFigures(state: WardFlowState) {
     bedReleases: state.bedReleases,
     leaveBeds: state.leaveBeds,
     now: NOW,
+    plannedAdmissions: state.plannedAdmissions,
   });
 }
 
