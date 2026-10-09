@@ -234,7 +234,7 @@
   --ward-divider: var(--line);
   --ward-muted: var(--muted);
 
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: var(--wf-line-2) transparent;
 }
 
 [data-ward-design="third-edition"] .tableScroll[data-ward-scroll-hint="true"] {
