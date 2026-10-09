@@ -313,15 +313,24 @@
       "mockup": "patient-search-third-edition.html",
       "route": "/search",
       "verified": {
-        "date": "2026-10-02",
-        "who": "Codex coordinator and independent screen/source reviewers",
-        "widths": [1920, 390],
+        "date": "2026-10-09",
+        "who": "Claude Code (cloud session), local Chromium",
+        "widths": [1440, 390],
         "themes": ["light", "dark"],
-        "verdict": "deviates",
-        "implementationSha256": "f30037abb65a775f0b3b5e08db3a18b773d41548633f91a35cfba3db4254a24c",
-        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+        "verdict": "matches",
+        "checkedRevision": "26d970644d19eea814f58dd3b335272eaa32ba77",
+        "notes": "Patient search restyle and fixes on branch claude/modest-fermat-ipbc87. Checked against the current accepted app at 1440 x 900 and 390 x 844 in light and dark: rest, typed 'pallow' with suggestions open, filtered table (17 rows, 0 before the fix), row picked (side card on desktop, kit Drawer on phone), no-match empty state and the phone filter card. Page never scrolled sideways at 390. tests/ui-ward-search.spec.ts passed 6 of 6 in chromium-mockups against the local dev server. Tablet widths between 48rem and 64rem, physical devices, hosted CI and deployment are unverified."
       },
       "verificationHistory": [
+        {
+          "date": "2026-10-02",
+          "who": "Codex coordinator and independent screen/source reviewers",
+          "widths": [1920, 390],
+          "themes": ["light", "dark"],
+          "verdict": "deviates",
+          "implementationSha256": "f30037abb65a775f0b3b5e08db3a18b773d41548633f91a35cfba3db4254a24c",
+          "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+        },
         {
           "date": "2026-09-22",
           "who": "Antigravity Builder Agent, independent adversarial reviewer",
