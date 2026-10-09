@@ -50,7 +50,7 @@ describe("unified Patient Now clinical flight deck", () => {
     expect(screen.queryByRole("link", { name: "Open the movement" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("tab")).toHaveLength(5);
     expect(screen.getByTestId("ward-patient-live-status")).toHaveAttribute("data-live", "true");
-    expect(screen.getByText("LIVE BEDFLOW")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-state-pill")).toHaveTextContent("Finding a bed");
     expect(screen.getByRole("heading", { name: "Transit operations" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Clinical overview" }));
     expect(screen.getByRole("heading", { name: /This presentation/ })).toBeInTheDocument();
@@ -79,7 +79,7 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(screen.getByRole("button", { name: "Confirm arrival · receiving ward" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("arrived");
     expect(screen.getByTestId("ward-patient-live-status")).toHaveAttribute("data-live", "false");
-    expect(screen.getByText("NOT IN LIVE BEDFLOW")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-state-pill")).toHaveTextContent("On ward");
     expect(screen.queryByRole("button", { name: "Confirm arrival · receiving ward" })).not.toBeInTheDocument();
   });
   it("requires a step-back reason and preserves the reserved bed when correcting only the stage", () => {
@@ -121,7 +121,7 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(screen.getByLabelText("Confirm this bed search is no longer required"));
     fireEvent.click(screen.getByRole("button", { name: /^Withdraw referral$/ }));
     expect(screen.getByTestId("ward-patient-live-status")).toHaveAttribute("data-live", "false");
-    expect(screen.getByText("NOT IN LIVE BEDFLOW")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-state-pill")).toHaveTextContent("Not active");
     expect(screen.getByText("Referral closed · no active transfer")).toBeInTheDocument();
   });
   it("legacy movement route renders the same dossier", async () => {

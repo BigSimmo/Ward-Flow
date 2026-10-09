@@ -91,18 +91,19 @@ function explicitIdentity(id: string) {
 }
 
 describe("the patient-now screen", () => {
-  it("keeps the summary guidance and movement destination together when switching records", () => {
+  // Gate board (Josh, 9 Oct 2026): the status card names the mode the movement's own stage puts it in.
+  it("keeps the status card and the placement action together when switching records", () => {
     const { unmount } = renderScreen({ movementId: "WF-009" });
     let summary = within(screen.getByRole("region", { name: "Patient summary" }));
-    expect(summary.getByRole("region", { name: /Next steps/ })).toHaveTextContent(
-      "Review next cohort-matching bed releases across network.",
-    );
+    expect(summary.getByTestId("ward-patient-status-card")).toHaveAttribute("data-mode", "finding");
+    expect(summary.getByTestId("ward-patient-state-pill")).toHaveTextContent("Finding a bed");
     expect(summary.getByRole("button", { name: "Place them" })).toBeInTheDocument();
     unmount();
 
     renderScreen({ movementId: "WF-004" });
     summary = within(screen.getByRole("region", { name: "Patient summary" }));
-    expect(summary.getByRole("region", { name: /Next steps/ })).toHaveTextContent("Bed Pull Confirmation");
+    expect(summary.getByTestId("ward-patient-status-card")).toHaveAttribute("data-mode", "held");
+    expect(summary.getByTestId("ward-patient-state-pill")).toHaveTextContent("Bed held");
     expect(summary.getByRole("button", { name: "Place them" })).toBeInTheDocument();
   });
 
@@ -121,25 +122,26 @@ describe("the patient-now screen", () => {
     // PT-005 has no record of any kind since the seed-link work (T1-T3, 25 Sept 2026) gave PT-001 one.
     renderScreen({ patientId: "PT-005" });
     const summary = within(screen.getByRole("region", { name: "Patient summary" }));
-    expect(summary.getByText("No next steps recorded.")).toBeInTheDocument();
+    expect(summary.getByText("No open referral or bed")).toBeInTheDocument();
     expect(summary.queryByRole("link", { name: "Open the movement" })).not.toBeInTheDocument();
   });
 
   it("distinguishes a patient record without asserting active community care", () => {
     renderScreen({ patientId: "PT-005" });
     const root = screen.getByTestId("ward-person-screen");
-    expect(within(root).getByRole("link", { name: "+ Raise Inpatient Referral" })).toHaveAttribute(
-      "href",
-      "/mockups/ward-flow/referrals/new?patientId=PT-005",
-    );
-    expect(screen.getByTestId("ward-community-masthead")).toBeInTheDocument();
+    for (const name of ["New referral", "Start referral"]) {
+      expect(within(root).getByRole("link", { name })).toHaveAttribute(
+        "href",
+        "/mockups/ward-flow/referrals/new?patientId=PT-005",
+      );
+    }
     expect(screen.getByTestId("ward-community-overview-card")).toBeInTheDocument();
     expect(root).toHaveAttribute("data-bedflow", "inactive");
-    expect(within(root).getByText("NOT IN LIVE BEDFLOW")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-person-identity")).toHaveAttribute("data-quiet", "true");
+    expect(screen.getByTestId("ward-patient-state-pill")).toHaveTextContent("Not active");
     expect(within(root).queryByText("Sarah Jenkins, RN (CNS)")).not.toBeInTheDocument();
-    expect(within(root).getByRole("heading", { name: "Record at a glance" })).toBeInTheDocument();
-    fireEvent.click(within(root).getByRole("button", { name: "View patient details" }));
-    expect(within(root).getByRole("tab", { name: "Details" })).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(within(root).getByRole("button", { name: "Documents" }));
+    expect(within(root).getByRole("tab", { name: /Documents/ })).toHaveAttribute("aria-selected", "true");
   });
 
   it("has the page shell for the default movement record (WF-009)", () => {
@@ -155,7 +157,7 @@ describe("the patient-now screen", () => {
     expect(within(root).queryByText("Cannot be moved. Two things are missing.")).not.toBeInTheDocument();
     expect(within(root).queryByText("All gates cleared")).not.toBeInTheDocument();
     expect(within(root).queryByText("Ready for transfer")).not.toBeInTheDocument();
-    expect(within(root).getByText("Transfer readiness not assessed here")).toBeInTheDocument();
+    expect(within(screen.getByTestId("ward-patient-status-card")).getByText("Cannot move yet")).toBeInTheDocument();
   });
 
   it("states ward and emergency department names read from the data layer, not typed a second time", () => {
@@ -181,7 +183,7 @@ describe("the patient-now screen", () => {
     renderScreen({ movementId: "WF-004" });
     const root = screen.getByTestId("ward-person-screen");
     expect(within(root).queryByText("Nothing is holding this movement up.")).not.toBeInTheDocument();
-    expect(within(root).getByText("Transfer readiness not assessed here")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-status-card")).toHaveAttribute("data-mode", "held");
     expect(within(root).queryByText("Cannot be moved. Two things are missing.")).not.toBeInTheDocument();
     // P1-1: WF-004 is its own person, not WF-009's story replayed under a different button.
     expect(

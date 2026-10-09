@@ -1,31 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import {
-  AlertCircle,
-  BedDouble,
-  Check,
-  Clock,
-  Copy,
-  FileText,
-  FileUp,
-  Gauge,
-  MapPin,
-  Scale,
-  ShieldCheck,
-  TriangleAlert,
-  Truck,
-} from "lucide-react";
+import { AlertCircle, BedDouble, Check, Clock, Copy, FileText, FileUp } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { PatientHistoryTab, PatientCommunityTab, PatientDetailsTab, PatientDocumentsTab } from "./patient-dossier-tabs";
 import { PatientClinicalSummary } from "./patient-clinical-summary";
-import { PatientTrackerFacts } from "./patient-tracker-facts";
-import { PatientRecordOverview } from "./patient-record-overview";
 import { PatientFlightHeader } from "./patient-flight-header";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { edById } from "@/components/ward-management/ward-sites";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { formatInstant } from "@/components/ward-management/ward-clock";
 import type { Movement, TransportProvider, TransportLegalStatus } from "@/components/ward-management/ward-model";
 import { TRANSPORT_PROVIDERS, ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
@@ -39,6 +24,16 @@ import { PersonScreen } from "./person-screen";
 import { PatientTransitOperations } from "./patient-transit-operations";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
+import {
+  PATIENT_MODES,
+  PatientNowBoard,
+  PatientNowRail,
+  PatientStatePill,
+  PatientStatusCard,
+  PatientWardStays,
+  buildGateContext,
+  type GateActions,
+} from "./patient-gate-board";
 import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -147,7 +142,7 @@ export function PatientNowScreen({
   initialExampleId = "WF-009",
   initialTaskAction,
 }: PatientNowScreenProps) {
-  const { patients, movements, referrals, admissions, units, dispatch, dayZero, rejections } = useWardFlow();
+  const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } = useWardFlow();
   const now = useWardFlowClock();
 
   // `now` is a demo-clock `Instant` (minutes from `dayZero`), not a wall-clock millisecond
@@ -168,7 +163,7 @@ export function PatientNowScreen({
   }
 
   const [activeTab, setActiveTab] = useState<TabKey>(initialTaskAction === "contact" ? "community" : "now");
-  const [nowView, setNowView] = useState<"auto" | "clinical" | "operations">(
+  const [nowView, setNowView] = useState<"auto" | "board" | "clinical" | "operations">(
     initialTaskAction === "refer" ? "operations" : "auto",
   );
   const operationsRef = useRef<HTMLDivElement | null>(null);
@@ -277,7 +272,7 @@ export function PatientNowScreen({
 
   // Pulled bed derived values
   const isLiveBedflow = Boolean(liveMovement && !liveMovement.closure && liveMovement.stage !== "arrived");
-  const effectiveNowView = nowView === "auto" ? (isLiveBedflow ? "operations" : "clinical") : nowView;
+  const effectiveNowView = nowView === "auto" ? "board" : nowView;
   const isPulled = isLiveBedflow && liveMovement?.pullExpiresAt !== undefined;
 
   const acceptingUnit = liveMovement?.acceptedUnitId
@@ -305,7 +300,9 @@ export function PatientNowScreen({
   function handleCopySummary() {
     const urgencyLabel = urgencyTier ? `Tier ${urgencyTier}` : "urgency not recorded";
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-    const text = `Ward Flow Handover Summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext Action: ${record.next[0]?.w ?? "Review"}`;
+    const text = isLiveBedflow
+      ? `Ward Flow handover, ${displayName} (${urgencyLabel})\nState: ${PATIENT_MODES[gate.mode].label}\nSince movement opened: ${waitedStr}\nNext: ${record.next[0]?.w ?? "Review"}`
+      : `Ward Flow summary, ${displayName}\nState: ${PATIENT_MODES[gate.mode].label}${gateWardName ? `\nWard: ${gateWardName}` : ""}\nLegal status: ${livePatient?.legalStatus ?? "Not recorded"}`;
     navigator.clipboard?.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -394,13 +391,42 @@ export function PatientNowScreen({
   };
 
   const originName = liveMovement ? (edById(liveMovement.originEdId)?.name ?? "Origin not recorded") : undefined;
-  const tierTone = urgencyTier === 1 ? "danger" : urgencyTier === 2 ? "warning" : "neutral";
+  const gate = buildGateContext({
+    patient: livePatient,
+    movement: liveMovement,
+    isLiveBedflow,
+    liveAdmission: resolved.liveAdmission,
+    admissions,
+    leaveBeds,
+    units,
+    now,
+    originName,
+    record,
+  });
+  const modeMeta = PATIENT_MODES[gate.mode];
+  const quietHero = !modeMeta.open;
+  const gateWardName = gate.admission ? units.find((unit) => unit.id === gate.admission!.unitId)?.name : undefined;
+  const gateActions: GateActions = {
+    openPlacement: openOperations,
+    openClearance: (event) => {
+      clearanceTriggerRef.current = event.currentTarget;
+      setClearanceDraft("");
+      setClearanceAttested(false);
+      setShowClearanceModal(true);
+    },
+    openArrivalTime: () => setShowArrivalTimeModal(true),
+    openUploadForms: () => setShowUploadFormsModal(true),
+    openTab: (tab) => {
+      setActiveTab(tab);
+      requestAnimationFrame(() => document.getElementById(`pntab-${tab}`)?.focus());
+    },
+  };
   const documentCount = record.documents.length + uploadedForms.length;
   const expandedStage = isLiveBedflow && expandedStageIndex !== null ? STAGES[expandedStageIndex] : undefined;
   const expandedStageDetail = expandedStage ? getStageBedflowDetail(expandedStage.id, liveMovement) : undefined;
   const tabs: Array<{ key: TabKey; label: string; count?: number }> = [
-    { key: "now", label: "Now", count: (liveMovement?.withdrawnReferrals.length ?? 0) + 1 },
-    { key: "history", label: "History", count: record.presentations.length },
+    { key: "now", label: "Now" },
+    { key: "history", label: "History", count: record.presentations.length + gate.stays.length },
     { key: "community", label: "Community", count: record.community.teams.length },
     { key: "details", label: "Details" },
     { key: "documents", label: "Documents", count: documentCount },
@@ -432,7 +458,7 @@ export function PatientNowScreen({
             patient={livePatient}
             displayToday={displayToday}
             isLiveBedflow={isLiveBedflow}
-            location={originName ?? livePatient?.suburb}
+            location={isLiveBedflow ? originName : (gateWardName ?? livePatient?.suburb)}
             statusDetail={
               isLiveBedflow
                 ? `Stage ${currentStageIndex + 1} / 7 · ${STAGES[currentStageIndex].label}`
@@ -442,12 +468,14 @@ export function PatientNowScreen({
                     ? "Referral closed · no active transfer"
                     : "No active transfer"
             }
+            statePill={<PatientStatePill mode={gate.mode} />}
+            quiet={quietHero}
             facts={
               isLiveBedflow && liveMovement ? (
                 <span className={styles.v6HeroFacts}>
-                  <span className={styles.v6HeroFact}>
-                    <StatusGlyph tone={tierTone} size={9} />
-                    Tier {urgencyTier ?? "not recorded"} · {(liveMovement.security ?? "not recorded").toLowerCase()}
+                  <span className={styles.v6HeroTier}>
+                    <b>T{urgencyTier ?? "?"}</b>
+                    {(liveMovement.security ?? "Security not recorded").toLowerCase()}
                   </span>
                   {liveMovement.specialling ? (
                     <span className={styles.v6HeroFact}>
@@ -461,7 +489,31 @@ export function PatientNowScreen({
                     since opened
                   </span>
                 </span>
-              ) : null
+              ) : gate.admission ? (
+                <span className={styles.v6HeroFacts}>
+                  {gate.admission.specialling ? (
+                    <span className={styles.v6HeroFact}>
+                      <StatusGlyph tone="warning" size={9} />
+                      1:1 specialling
+                    </span>
+                  ) : null}
+                  {gate.admission.arrivedAt !== null ? (
+                    <span className={styles.v6HeroFact}>
+                      <Clock size={14} aria-hidden="true" />
+                      <strong className={styles.v6HeroWait}>
+                        Day {Math.floor((now - gate.admission.arrivedAt) / 1440) + 1}
+                      </strong>
+                      on the ward
+                    </span>
+                  ) : null}
+                </span>
+              ) : (
+                <span className={styles.v6HeroFacts}>
+                  <span className={styles.v6HeroFact}>
+                    As at <strong className={styles.v6HeroWait}>{formatInstant(now)}</strong>
+                  </span>
+                </span>
+              )
             }
             steps={
               isLiveBedflow ? (
@@ -561,11 +613,11 @@ export function PatientNowScreen({
             }
             actions={
               <>
-                <LiveChip state="live" onHero />
+                {modeMeta.open ? <LiveChip state="live" onHero /> : null}
                 <Button variant="onHero" size="sm" icon={Copy} onClick={handleCopySummary}>
-                  {copied ? "Copied" : "Copy handover"}
+                  {copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary"}
                 </Button>
-                {liveMovement ? (
+                {liveMovement && isLiveBedflow ? (
                   <Button
                     variant="light"
                     size="sm"
@@ -575,6 +627,14 @@ export function PatientNowScreen({
                   >
                     Place them
                   </Button>
+                ) : gate.admission ? (
+                  <Link
+                    href={`/mockups/ward-flow/ward/${encodeURIComponent(gate.admission.unitId)}`}
+                    className={buttonClass({ variant: "light", size: "sm" })}
+                    data-testid="ward-person-open-ward"
+                  >
+                    Open ward
+                  </Link>
                 ) : (
                   <Link
                     href={
@@ -585,18 +645,12 @@ export function PatientNowScreen({
                     className={buttonClass({ variant: "light", size: "sm" })}
                     data-testid="ward-person-refer-outpatient"
                   >
-                    + Raise Inpatient Referral
+                    New referral
                   </Link>
                 )}
               </>
             }
           />
-          {!liveMovement && (
-            <div className={styles.v6Notice} data-testid="ward-community-masthead">
-              Patient record only. No linked movement is displayed; active community care is not established by this
-              record.
-            </div>
-          )}
 
           {expandedStage && expandedStageDetail ? (
             <Card
@@ -635,187 +689,11 @@ export function PatientNowScreen({
             </Card>
           ) : null}
 
-          {/* The readiness and next step cards stay on every tab: their shortcuts open Now, Details and
-              Documents. The facts strip belongs to Now, as in the v6 tab mockups. */}
-          <div className={styles.v6SummaryRow}>
-            {/* Readiness: the movement's own gate verdict, or the plain statement that none is recorded. */}
-            <Card className={styles.v6Gates}>
-              <CardHead
-                icon={TriangleAlert}
-                title={
-                  <span className={styles.v6GateTitle} data-tone={record.verdict.tone}>
-                    {record.verdict.title}
-                  </span>
-                }
-                aside={
-                  <Badge tone={record.verdict.gates.length > 0 ? "danger" : "neutral"}>
-                    {record.verdict.gates.length > 0
-                      ? `${record.verdict.gates.length} missing gates`
-                      : "No gate assessment recorded"}
-                  </Badge>
-                }
-              />
-              {record.verdict.gates.length > 0 ? (
-                <ul className={styles.v6GateList}>
-                  {record.verdict.gates.map((gate, i) => (
-                    <li key={i} className={styles.v6Gate}>
-                      <StatusGlyph tone="closed" size={10} />
-                      <div className={styles.v6GateText}>
-                        <strong>
-                          {gate.label} <span className={styles.v6GateVerdict}>{gate.verdict}</span>
-                        </strong>
-                        <span>{gate.detail}</span>
-                      </div>
-                      {gate.label.toLowerCase().includes("bed") ? (
-                        <Button size="sm" onClick={openOperations}>
-                          View movement referrals
-                        </Button>
-                      ) : (
-                        <button
-                          ref={clearanceTriggerRef}
-                          type="button"
-                          className={buttonClass({ size: "sm" })}
-                          onClick={() => setShowClearanceModal(true)}
-                        >
-                          Request ED clearance
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className={styles.v6GateClear}>
-                  <strong>Transfer readiness not assessed here</strong>
-                  <span>
-                    {fillTemplate(record.verdict.none ?? "No movement gate assessment is recorded.", templateContext)}
-                  </span>
-                </div>
-              )}
-            </Card>
-
-            <Card className={styles.v6Next}>
-              <div className={styles.v6NextBody} role="region" aria-label="Next steps">
-                <span className={styles.v6Eyebrow}>Next step</span>
-                {record.next[0] ? (
-                  <>
-                    <strong>Next: {fillTemplate(record.next[0].w, templateContext)}</strong>
-                    <span>{fillTemplate(record.next[0].d, templateContext)}</span>
-                  </>
-                ) : (
-                  <span>No next steps recorded.</span>
-                )}
-              </div>
-              <div className={styles.v6QuickLinks}>
-                <button
-                  type="button"
-                  className={styles.v6QuickLink}
-                  onClick={() => {
-                    const target = liveMovement ? "now" : "details";
-                    setActiveTab(target);
-                    if (liveMovement) setNowView("clinical");
-                    requestAnimationFrame(() => document.getElementById(`pntab-${target}`)?.focus());
-                  }}
-                >
-                  <ShieldCheck size={15} aria-hidden="true" />
-                  {liveMovement ? "Clinical checks" : "Patient details"}
-                  <span className={styles.v6QuickLinkMeta}>
-                    {liveMovement
-                      ? liveMovement.medicalClearance
-                        ? liveMovement.medicalClearance.cleared
-                          ? "Clearance recorded"
-                          : "Not cleared"
-                        : "Unassessed"
-                      : "Record"}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.v6QuickLink}
-                  onClick={() => {
-                    setActiveTab("documents");
-                    requestAnimationFrame(() => document.getElementById("pntab-documents")?.focus());
-                  }}
-                >
-                  <FileText size={15} aria-hidden="true" />
-                  Documents
-                  <span className={styles.v6QuickLinkMeta}>{documentCount}</span>
-                </button>
-              </div>
-            </Card>
-          </div>
-
-          {/* The movement facts strip: where now, priority, legal authority, transport or hold. */}
-          <Card className={styles.v6Facts} aria-label="Current bedflow snapshot" hidden={activeTab !== "now"}>
-            <div className={styles.v6Fact}>
-              <MapPin size={16} aria-hidden="true" className={styles.v6FactIcon} />
-              <div>
-                <span className={styles.v6Eyebrow}>{isLiveBedflow ? "Where now" : "Record context"}</span>
-                <strong>{originName ?? livePatient?.suburb ?? "Location not recorded"}</strong>
-                <small>
-                  {liveMovement
-                    ? `To ${acceptingUnit?.name ?? "destination under review"}`
-                    : "No active bedflow journey"}
-                </small>
-              </div>
-            </div>
-            <div className={styles.v6Fact}>
-              <Gauge size={16} aria-hidden="true" className={styles.v6FactIcon} />
-              <div>
-                <span className={styles.v6Eyebrow}>Priority and need</span>
-                <strong>
-                  {isLiveBedflow
-                    ? `Tier ${urgencyTier ?? "not recorded"} · ${liveMovement?.security ?? "Not recorded"}`
-                    : "No transfer priority"}
-                </strong>
-                <small>
-                  {isLiveBedflow
-                    ? `${waitedStr} since opened${liveMovement?.specialling ? " · 1:1 specialling" : ""}`
-                    : "Clinical record available below"}
-                </small>
-              </div>
-            </div>
-            <div className={styles.v6Fact}>
-              <Scale size={16} aria-hidden="true" className={styles.v6FactIcon} />
-              <div>
-                <span className={styles.v6Eyebrow}>Legal authority</span>
-                <strong>{liveMovement?.legalStatus ?? livePatient?.legalStatus ?? "Not recorded"}</strong>
-                <small>
-                  {liveMovement?.legalForm
-                    ? `Form ${liveMovement.legalForm.code}${liveMovement.legalForm.dueAt !== undefined ? ` · due ${clock(liveMovement.legalForm.dueAt)} AWST` : ""}`
-                    : "No legal form recorded"}
-                </small>
-              </div>
-            </div>
-            <div className={styles.v6Fact} data-attention={isLiveBedflow && (isHoldExpired || isOverdue)}>
-              <Truck size={16} aria-hidden="true" className={styles.v6FactIcon} />
-              <div>
-                <span className={styles.v6Eyebrow}>{isLiveBedflow ? "Transport or hold" : "Care link"}</span>
-                <strong>
-                  {isLiveBedflow
-                    ? isTransportBooked
-                      ? `${displayProvider} · ${displayEta ?? "ETA pending"}`
-                      : hasArrivalPlan
-                        ? `Arrival ${clock(liveMovement!.arrivalDetails!.estimatedArrivalAt)} AWST`
-                        : pullExpiresAt !== undefined
-                          ? pullHoldRemainingLabel(pullExpiresAt, now)
-                          : "Not booked"
-                    : (livePatient?.catchmentCommunityTeam ?? "Not recorded")}
-                </strong>
-                <small>
-                  {isLiveBedflow
-                    ? liveMovement?.arrivalDetails?.trackingNumber
-                      ? liveMovement.arrivalDetails.trackingNumber
-                      : displayCadNumber
-                        ? `CAD ${displayCadNumber}`
-                        : "CAD not recorded"
-                    : "Recorded catchment · care status unconfirmed"}
-                </small>
-              </div>
-            </div>
-          </Card>
+          {/* The Gate board status card: the verdict, the gates and one action per gate, Now only. */}
+          {activeTab === "now" ? <PatientStatusCard ctx={gate} actions={gateActions} /> : null}
 
           {/* Pulled Bed & Arrival Coordination Section */}
-          {isPulled && (
+          {activeTab === "now" && isPulled && (
             <details className={styles.arrivalDisclosure}>
               <summary>Arrival plan & transport documents</summary>
               <div className={styles.pulledBanner} data-testid="ward-patient-pulled-banner">
@@ -951,9 +829,16 @@ export function PatientNowScreen({
                 aria-labelledby="pntab-now"
                 hidden={activeTab !== "now"}
               >
-                {liveMovement && (
+                {liveMovement && isLiveBedflow ? (
                   <>
-                    <div className={styles.nowViewSwitch} role="group" aria-label="Now view">
+                    <div className={styles.v6NowSwitch} role="group" aria-label="Now view">
+                      <button
+                        type="button"
+                        aria-pressed={effectiveNowView === "board"}
+                        onClick={() => setNowView("board")}
+                      >
+                        Gate board
+                      </button>
                       <button
                         type="button"
                         aria-pressed={effectiveNowView === "clinical"}
@@ -964,7 +849,6 @@ export function PatientNowScreen({
                       <button type="button" aria-pressed={effectiveNowView === "operations"} onClick={openOperations}>
                         Transit operations
                       </button>
-                      <span>One record · clinical context and bedflow</span>
                     </div>
                     <div
                       id="patient-operations"
@@ -976,17 +860,11 @@ export function PatientNowScreen({
                       <PatientTransitOperations key={liveMovement.id} movement={liveMovement} />
                     </div>
                   </>
-                )}
-                {!liveMovement ? (
-                  <PatientRecordOverview
-                    patient={livePatient}
-                    record={record}
-                    onOpen={(tab) => {
-                      setActiveTab(tab);
-                      requestAnimationFrame(() => document.getElementById(`pntab-${tab}`)?.focus());
-                    }}
-                  />
-                ) : (
+                ) : null}
+                <div hidden={Boolean(liveMovement && isLiveBedflow) && effectiveNowView !== "board"}>
+                  <PatientNowBoard ctx={gate} actions={gateActions} />
+                </div>
+                {!liveMovement || !isLiveBedflow ? null : (
                   <div className={styles.clinicalView} hidden={effectiveNowView !== "clinical"}>
                     <PatientClinicalSummary
                       movement={liveMovement}
@@ -1238,6 +1116,7 @@ export function PatientNowScreen({
                 aria-labelledby="pntab-history"
                 hidden={activeTab !== "history"}
               >
+                <PatientWardStays ctx={gate} />
                 <PatientHistoryTab record={record} movement={liveMovement} />
               </div>
 
@@ -1307,54 +1186,11 @@ export function PatientNowScreen({
             </div>
           </section>
           {activeTab === "now" ? (
-            <div className={styles.v6Rail}>
-              <Card className={styles.v6RailCard} id="pnJourney" aria-labelledby="pnJourneyH">
-                <div className={styles.v6RailStatus} data-live={isLiveBedflow}>
-                  <span className={styles.v6Eyebrow}>
-                    <StatusGlyph tone={isLiveBedflow ? "success" : "neutral"} size={9} />
-                    {isLiveBedflow ? "LIVE BEDFLOW" : "NOT IN LIVE BEDFLOW"}
-                  </span>
-                  <h2 id="pnJourneyH">{isLiveBedflow ? "Live journey" : "Record overview"}</h2>
-                  <p>
-                    {isLiveBedflow
-                      ? `Tier ${urgencyTier ?? "not recorded"} · ${waitedStr} since opened`
-                      : "No active placement or transport. Patient information remains available."}
-                  </p>
-                </div>
-                {!isLiveBedflow ? (
-                  <div className={styles.v6RailFacts} data-testid="ward-community-overview-card">
-                    <dl>
-                      <div>
-                        <dt>Recorded catchment</dt>
-                        <dd>{livePatient?.catchmentCommunityTeam ?? "Not recorded"}</dd>
-                      </div>
-                      <div>
-                        <dt>Transfer status</dt>
-                        <dd>
-                          {liveMovement?.stage === "arrived"
-                            ? "Arrived"
-                            : liveMovement?.closure
-                              ? "Closed"
-                              : "No linked movement"}
-                        </dd>
-                      </div>
-                    </dl>
-                    <p>Review History, Community and Documents for recorded information.</p>
-                  </div>
-                ) : null}
-                {isLiveBedflow && liveMovement && (
-                  <PatientTrackerFacts
-                    movement={liveMovement}
-                    now={now}
-                    destination={acceptingUnit?.name}
-                    bedState={
-                      admissions.find((a) => a.id === liveMovement.admissionId || a.movementId === liveMovement.id)
-                        ?.state
-                    }
-                    onCoordinate={openOperations}
-                  />
-                )}
-              </Card>
+            <div
+              className={styles.v6Rail}
+              data-testid={isLiveBedflow ? "ward-patient-now-rail" : "ward-community-overview-card"}
+            >
+              <PatientNowRail ctx={gate} actions={gateActions} />
             </div>
           ) : null}
         </div>

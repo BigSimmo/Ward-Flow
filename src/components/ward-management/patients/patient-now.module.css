@@ -4651,6 +4651,9 @@
 }
 
 .v6TabPane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
   min-width: 0;
 }
 
@@ -5009,5 +5012,101 @@
     min-height: var(--spacing-tap, 3rem);
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+/* Gate board header (9 Oct 2026): state pill beside the name, quiet light band when nothing is open. */
+.v6TitleMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  white-space: nowrap;
+}
+
+.v6HeroWrap .v6HeroQuiet {
+  --wf-hero-1: var(--wf-surface);
+  --wf-hero-2: var(--wf-surface);
+  --wf-hero-edge: var(--wf-line-2);
+  --wf-hero-ink: var(--wf-ink-1);
+  --wf-hero-ink-2: var(--wf-ink-2);
+  --wf-hero-ink-3: var(--wf-ink-3);
+  --wf-danger: inherit;
+  --wf-warning: inherit;
+  --wf-success: inherit;
+  --wf-info: inherit;
+  --wf-neutral: inherit;
+  --wf-focus-ring: inherit;
+  box-shadow: var(--wf-e1);
+}
+
+.v6HeroTier {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px 0 4px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 24%, transparent);
+  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+  font-weight: 600;
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.v6HeroTier b {
+  display: inline-grid;
+  place-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
+  font: 700 var(--wf-fs-11) / 1 var(--wf-mono);
+}
+
+.v6NowSwitch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  align-self: flex-start;
+}
+
+.v6NowSwitch button {
+  min-height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 550 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.v6NowSwitch button[aria-pressed="true"] {
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  box-shadow:
+    0 0 0 1px var(--wf-line-2),
+    0 1px 2px color-mix(in srgb, var(--wf-ink-1) 8%, transparent);
+}
+
+.v6NowSwitch button:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .v6NowSwitch {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    align-self: stretch;
+  }
+
+  .v6NowSwitch button {
+    flex: 1 0 auto;
   }
 }

@@ -475,6 +475,18 @@ mappings, verification commands and screenshot capture are documented in
 `tests/ward-patient-flight-deck.dom.test.tsx` drives referral through arrival and verifies
 reasoned step-back / release capacity behaviour against the shared reducer.
 
+**9 October 2026 update (Gate board):** `patient-gate-board.tsx` and its CSS module derive one of
+nine modes from engine state (finding a bed, bed held, in transit, on ward, on leave, at ED, absent
+without leave, not active, on a CTO) and render the status card, the mode's Now cards, the Now rail
+(Legal now, Who to call, Why they're here) and History's ward stays. Open movements default to the
+Gate board view; Clinical overview and Transit operations stay one tap away. Ward actions dispatch
+`RECORD_LEAVE_BED`, `END_LEAVE_BED`, `RECORD_AWAY_AT_EMERGENCY_DEPARTMENT`,
+`RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT`, `RECORD_ABSENT_WITHOUT_LEAVE`,
+`RECORD_RETURNED_FROM_ABSENCE` and `UPDATE_EXPECTED_DISCHARGE`. The screen no longer renders
+`patient-record-overview.tsx` or `patient-tracker-facts.tsx`; both files are now unreferenced and
+left in place for an owner-approved cleanup. `tests/ward-patient-gate-board.dom.test.tsx` covers
+the ward modes.
+
 **Routes:** `/people/new` (renders `AddPatientForm` from `add-patient.tsx`) and
 `/people/[patientId]` (renders `PatientNowScreen` from `patient-now-screen.tsx` by default, or
 `PersonScreen` from `person-screen.tsx` when the URL carries `?view=governed` or `?view=legacy` —

@@ -42,21 +42,21 @@ function tab(name: string) {
   return within(document.getElementById(`pnpane-${name.toLowerCase()}`)!);
 }
 describe("polished patient dossier tabs", () => {
-  it("opens clinical checks and documents locally from the patient brief with focus handoff", async () => {
+  it("opens documents from the Legal now card and clinical checks from the Now view, with focus handoff", async () => {
     setup();
     fireEvent.click(screen.getByRole("button", { name: /^Documents/ }));
     await waitFor(() => expect(screen.getByRole("tab", { name: /^Documents/ })).toHaveFocus());
     expect(screen.getByRole("region", { name: "Documents and legal authority" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: /^Clinical checks/ }));
-    await waitFor(() => expect(screen.getByRole("tab", { name: /^Now/ })).toHaveFocus());
+    fireEvent.click(screen.getByRole("tab", { name: /^Now/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Clinical overview" }));
     expect(screen.getByRole("region", { name: "Clinical handover overview" })).toBeVisible();
   });
-  it("makes the record-only brief shortcut open patient details", async () => {
+  it("keeps a record with nothing open on the quiet Gate board, without placement controls", async () => {
     setup("PT-005");
-    fireEvent.click(screen.getByRole("button", { name: /^Patient details/ }));
-    await waitFor(() => expect(screen.getByRole("tab", { name: /^Details/ })).toHaveFocus());
+    expect(screen.getByTestId("ward-patient-status-card")).toHaveAttribute("data-mode", "inactive");
+    expect(screen.queryByRole("button", { name: "Clinical overview" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /^Details/ }));
     expect(screen.getByRole("region", { name: "Patient details" })).toBeVisible();
-    expect(screen.queryByRole("button", { name: /^Clinical checks/ })).not.toBeInTheDocument();
   });
   it("searches history and makes unmatched filters explicit without losing the episode", () => {
     setup();
@@ -127,9 +127,9 @@ describe("polished patient dossier tabs", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(clinical.getByText("Clearance recorded")).toBeVisible();
     expect(trigger).toHaveFocus();
-    expect(
-      screen.getByText("Clearance recorded", { selector: "[data-patient-tracker-facts] strong" }),
-    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Gate board" }));
+    const status = screen.getByTestId("ward-patient-status-card");
+    expect(within(status.querySelector('[data-cell="clearance"]') as HTMLElement).getByText("Cleared")).toBeVisible();
   });
   it("closes the clearance dialog on Escape and returns focus to its trigger", () => {
     setup();

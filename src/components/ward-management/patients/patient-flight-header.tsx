@@ -28,6 +28,8 @@ export function PatientFlightHeader({
   steps,
   tabs,
   actions,
+  statePill,
+  quiet = false,
 }: {
   displayName: string;
   preferredName?: string | null;
@@ -43,14 +45,25 @@ export function PatientFlightHeader({
   steps?: ReactNode;
   tabs: ReactNode;
   actions?: ReactNode;
+  /** The record's state pill (Finding a bed, On ward, Not active), beside the name. */
+  statePill?: ReactNode;
+  /** Quiet light band for a record with nothing open. */
+  quiet?: boolean;
 }) {
   return (
-    <div className={styles.v6HeroWrap} data-testid="ward-person-identity">
+    <div className={styles.v6HeroWrap} data-testid="ward-person-identity" data-quiet={quiet}>
       <Hero
         level={1}
-        className={styles.v6Hero}
+        className={quiet ? `${styles.v6Hero} ${styles.v6HeroQuiet}` : styles.v6Hero}
         title={displayName}
-        titleMeta={preferredName ? `known as ${preferredName}` : undefined}
+        titleMeta={
+          preferredName || statePill ? (
+            <span className={styles.v6TitleMeta}>
+              {preferredName ? <span>known as {preferredName}</span> : null}
+              {statePill}
+            </span>
+          ) : undefined
+        }
         eyebrow={
           <span className={styles.v6IdLine}>
             {patient ? (
@@ -77,7 +90,7 @@ export function PatientFlightHeader({
           <>
             {facts}
             <div
-              className={isLiveBedflow ? "sr-only" : styles.v6LiveState}
+              className="sr-only"
               role="status"
               aria-atomic="true"
               data-live={isLiveBedflow}
