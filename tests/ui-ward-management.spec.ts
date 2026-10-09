@@ -323,7 +323,9 @@ test.describe("@mockup Ward Flow command view", () => {
     // Selecting another movement re-routes the diagram and swaps the shortlist. WF-002 is
     // South Metro; Fremantle Older Adult is its one same-service eligible candidate.
     await network.getByTestId("ward-network-queue-WF-002").click();
-    await expect(shortlist).toContainText("WF-002");
+    // D-39: WF-002 is linked through RF-012 to PT-058, so the panel names UM100058, not WF-002.
+    await expect(shortlist).toContainText("UM100058");
+    await expect(shortlist).not.toContainText("WF-002");
     await expect(network.getByTestId("ward-network-card-fre-older-adult")).toHaveAttribute("data-routed", "true");
     // This row compares health services against the *origin* ED, not the patient's catchment
     // (catchment is where a patient lives, not where they presented) — named for what it
