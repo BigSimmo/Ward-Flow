@@ -78,7 +78,7 @@ const TOKEN_LAYERS = [
   "src/app/globals.css",
   "src/app/ckb-v2-tokens.css",
   "src/app/ward-flow-shell-tokens.module.css",
-  "src/app/ward-flow-v6-tokens.css",
+  "src/app/ward-flow-tokens.css",
 ];
 
 /** A declaration: `--name:` at the start of a rule, after a brace, or after a semicolon. */

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Two-way token sync between src/app/ward-flow-v6-tokens.css (the source of truth) and the Figma
+ * Two-way token sync between src/app/ward-flow-tokens.css (the source of truth) and the Figma
  * file "Ward Flow v6 live". Figma Professional has no Variables REST API, so Claude reads and
  * writes the Figma side through the Figma MCP on Josh's device. This script only handles the code side.
  * Procedure: docs/agents/figma-sync.md. Map: design/figma/figma-sync.json.
@@ -18,11 +18,13 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-export const CSS_PATH = resolve(ROOT, "src/app/ward-flow-v6-tokens.css");
+export const CSS_PATH = resolve(ROOT, "src/app/ward-flow-tokens.css");
 export const TOKENS_PATH = resolve(ROOT, "design/figma/tokens.json");
 
 // Figma-only helper variables. Code derives these with color-mix, so a pull never writes them.
 const FIGMA_ONLY = [/^--wf-alpha-/, /^--wf-status-.+-(tint|edge)$/];
+// Code-only colour parts that build shadows, glass and the backdrop. Figma never edits these.
+const CODE_ONLY = [/^--wf-(sh|ring|rim|glow)-/, /^--wf-(press|sheen-top)$/];
 
 const norm = (selector) => selector.replace(/\s+/g, " ").trim();
 const DAY = ":root, .day";
@@ -61,6 +63,34 @@ function role(path) {
   return null;
 }
 
+/**
+ * The two arguments of a `light-dark(day, night)` value with their offsets inside `value`, or null.
+ * v8 tokens hold both themes in one declaration, so each argument is edited in place on its own.
+ */
+function lightDarkArgs(value) {
+  const m = value.match(/^light-dark\(/);
+  if (!m || !value.endsWith(")")) return null;
+  const inner = value.slice(m[0].length, -1);
+  let depth = 0;
+  for (let i = 0; i < inner.length; i++) {
+    if (inner[i] === "(") depth++;
+    else if (inner[i] === ")") depth--;
+    else if (inner[i] === "," && depth === 0) {
+      const part = (from, to) => {
+        const raw = inner.slice(from, to);
+        const lead = raw.length - raw.trimStart().length;
+        return {
+          value: raw.trim(),
+          start: m[0].length + from + lead,
+          end: m[0].length + from + lead + raw.trim().length,
+        };
+      };
+      return [part(0, i), part(i + 1, inner.length)];
+    }
+  }
+  return null;
+}
+
 /** Every --wf-* declaration in the day, night and shared blocks, with its value offsets. */
 export function parseCss(css) {
   const { text, out } = blocks(css);
@@ -73,7 +103,21 @@ export function parseCss(css) {
     let m;
     while ((m = re.exec(text)) && m.index < block.end) {
       const valueStart = m.index + m[0].indexOf(m[2], m[1].length);
-      decls.push({ name: m[1], value: m[2].trim(), where, valueStart, valueEnd: valueStart + m[2].trimEnd().length });
+      const value = m[2].trim();
+      const pair = where === "shared" ? lightDarkArgs(value) : null;
+      if (pair) {
+        pair.forEach((arg, index) =>
+          decls.push({
+            name: m[1],
+            value: arg.value,
+            where: index === 0 ? "day" : "night",
+            valueStart: valueStart + arg.start,
+            valueEnd: valueStart + arg.end,
+          }),
+        );
+        continue;
+      }
+      decls.push({ name: m[1], value, where, valueStart, valueEnd: valueStart + m[2].trimEnd().length });
     }
   }
   return decls;
@@ -167,7 +211,7 @@ export function exportTokens(css) {
   const decls = parseCss(css);
   const tokens = { Colour: { Day: {}, Night: {} }, Size: {} };
   for (const d of decls) {
-    if (d.where === "night") continue;
+    if (d.where === "night" || CODE_ONLY.some((re) => re.test(d.name))) continue;
     const rgba = toRgba(d.value);
     if (rgba) {
       tokens.Colour.Day[d.name] = formatColour(rgba);
@@ -177,7 +221,7 @@ export function exportTokens(css) {
     }
   }
   for (const d of decls) {
-    const rgba = d.where === "night" && toRgba(d.value);
+    const rgba = d.where === "night" && !CODE_ONLY.some((re) => re.test(d.name)) && toRgba(d.value);
     if (rgba) tokens.Colour.Night[d.name] = formatColour(rgba);
   }
   return tokens;
@@ -265,7 +309,7 @@ export function main(argv = process.argv.slice(2), { stdout = console.log, stder
         const result = applyTokens(css, incoming);
         writeAtomically(CSS_PATH, result.css);
         for (const s of result.skipped) stderr(`[figma-tokens] skipped ${s}`);
-        stdout(`[figma-tokens] applied ${result.applied} change(s) to src/app/ward-flow-v6-tokens.css`);
+        stdout(`[figma-tokens] applied ${result.applied} change(s) to src/app/ward-flow-tokens.css`);
       }
       return 0;
     }

@@ -5,7 +5,7 @@
     "url": "https://www.figma.com/design/UfpjjBWlvb3NMp3Nuvktzu"
   },
   "tokens": {
-    "css": "src/app/ward-flow-v6-tokens.css",
+    "css": "src/app/ward-flow-tokens.css",
     "export": "design/figma/tokens.json",
     "collections": {
       "Colour": { "modes": ["Day", "Night"] },

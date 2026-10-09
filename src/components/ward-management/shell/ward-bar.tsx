@@ -33,6 +33,7 @@ import { standingFigures } from "@/components/ward-management/ward-standing-stri
 import { Sheet } from "@/components/ui/sheet";
 import { StatusGlyph, type WfTone } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
+import { readStoredThemePreference, setThemePreference, subscribeThemePreference } from "@/lib/theme-client";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -251,74 +252,30 @@ const SERVICE_SWATCH_KEY: Record<HealthService, "north" | "south" | "east" | "wa
  *  identical wording rather than each typing a close paraphrase. */
 const NOT_WIRED_SUFFIX = "is not wired in this prototype.";
 
-const APPEARANCE_STORAGE_KEY = "ward-flow-appearance";
-const appearanceChangeEvent = "ward-flow-appearance-change";
-
-// An external store, not `useState` + a mount effect: React's own `set-state-in-effect` guard
-// (`react-hooks/set-state-in-effect`) refuses a component reading a browser-only value with
-// "read once in a `useState` initialiser, then correct after mount" — the SSR/hydration pattern
-// `WardFlowProvider`'s own header comment documents at length for the clock. `useRailOpenStore`
-// in `ward-rail.tsx` already solved the identical problem (a `localStorage`-backed preference
-// that must not differ between server and client) this same way; this mirrors it exactly rather
-// than inventing a second pattern for one more preference.
-let appearanceInMemoryFallback: WardAppearance | null = null;
-
-function getAppearanceSnapshot(): WardAppearance {
-  if (appearanceInMemoryFallback !== null) return appearanceInMemoryFallback;
-  try {
-    const stored = window.localStorage.getItem(APPEARANCE_STORAGE_KEY);
-    return stored === "light" || stored === "dark" ? stored : "auto";
-  } catch {
-    return "auto";
-  }
-}
-
-function subscribeAppearance(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  window.addEventListener(appearanceChangeEvent, onChange);
-  return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener(appearanceChangeEvent, onChange);
-  };
-}
-
-/**
- * Exported for Lane D's Settings appearance control (2026-09-12) — this store and
- * `applyAppearance` below are the ONLY writers of the appearance preference, and that is the point.
+/*
+ * The ward appearance controls (Tools, rail, Settings, Community) are views over the app's ONE theme
+ * switch in `@/lib/theme-client` (design system v8, section 4). Before v8 the ward kept its own key
+ * and set only `data-theme`, while the older token layers followed a separate `.dark` preference, so
+ * a ward pin could render the shell in one theme and the page in the other. Now there is one stored
+ * preference and one writer, `setThemePreference`, which applies `data-theme`, `.dark` and
+ * `theme-color` together and notifies every subscriber, in this tab and others.
  *
- * 🔴 **A SECOND WRITER ON THE SAME STORAGE KEY IS NOT AN ACCEPTABLE SUBSTITUTE.** One that omits
- * the `dispatchEvent` in `applyAppearance` updates its own screen and leaves this bar's Tools
- * control showing the stale value until a reload — two controls disagreeing inside one session,
- * with the stored value correct underneath, and invisible to every gate this repository has.
- *
- * ⚠️ **`APPEARANCE_STORAGE_KEY` STAYS PRIVATE, deliberately.** Lane D's two-keys catcher would pass
- * BY CONSTRUCTION if the key were importable — it can only fail while the two sides spell the key
- * independently. **A guard that can only succeed is worse than no guard.**
+ * The ward names the follow-the-OS choice "auto"; the app names it "system". These two functions are
+ * the only translation between them.
  */
+function getAppearanceSnapshot(): WardAppearance {
+  const preference = readStoredThemePreference();
+  return preference === "system" ? "auto" : preference;
+}
+
 export const useAppearanceStore = createBrowserStore(
-  subscribeAppearance,
+  subscribeThemePreference,
   getAppearanceSnapshot,
   "auto" as WardAppearance,
 );
 
 export function applyAppearance(next: WardAppearance) {
-  if (next === "auto") document.documentElement.removeAttribute("data-theme");
-  else document.documentElement.setAttribute("data-theme", next);
-  try {
-    if (next === "auto") {
-      window.localStorage.removeItem(APPEARANCE_STORAGE_KEY);
-      appearanceInMemoryFallback = null;
-    } else {
-      window.localStorage.setItem(APPEARANCE_STORAGE_KEY, next);
-      appearanceInMemoryFallback = null;
-    }
-  } catch {
-    // Private browsing or quota exhaustion — remember the choice in memory for this render, the
-    // same fallback `use-ward-sidebar-collapsed.ts` and `ward-rail.tsx`'s rail-open store already
-    // accept for the identical reason: it just will not survive a reload.
-    appearanceInMemoryFallback = next;
-  }
-  window.dispatchEvent(new Event(appearanceChangeEvent));
+  setThemePreference(next === "auto" ? "system" : next);
 }
 
 export type WardBarProps = {

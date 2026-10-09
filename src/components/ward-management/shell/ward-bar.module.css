@@ -8,7 +8,7 @@
  * line icons in ink, never on tiles. Colour is a dot or glyph, never a fill.
  *
  * Colours, radii and shadows come from the global v6 layer (`--wf-*`,
- * `src/app/ward-flow-v6-tokens.css`). Font sizes stay on the shell's seven `--t-N` steps
+ * `src/app/ward-flow-tokens.css`). Font sizes stay on the shell's seven `--t-N` steps
  * (`tests/ward-shell-third-edition.dom.test.tsx`, assertion 6), which `.bar` and the portalled
  * drawer roots get by composing `wardShellTokens`.
  *

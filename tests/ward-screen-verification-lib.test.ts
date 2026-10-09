@@ -233,7 +233,7 @@ describe("conservative render input provenance", () => {
       "src/components/ward-management/ward-flow-reducer.ts": "export const engine = 1;\n",
       "src/components/ward-management/shell/rail.tsx": "export const shell = 1;\n",
       "src/app/globals.css": ":root { --fixture: 1; }\n",
-      "src/app/ward-flow-v6-tokens.css": ":root { --wf-fixture: 1; }\n",
+      "src/app/ward-flow-tokens.css": ":root { --wf-fixture: 1; }\n",
       "package.json": "{}\n",
       "package-lock.json": "{}\n",
       "next.config.ts": "export default {};\n",
@@ -250,7 +250,7 @@ describe("conservative render input provenance", () => {
 
   it.each([
     "src/app/globals.css",
-    "src/app/ward-flow-v6-tokens.css",
+    "src/app/ward-flow-tokens.css",
     "src/components/ward-management/shell/rail.tsx",
     "src/components/ward-management/ward-flow-reducer.ts",
     "package.json",

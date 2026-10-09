@@ -752,7 +752,7 @@ describe("assertion 6 — no text below 12px in the shell's CSS modules", () => 
   // parsed as neither a literal length nor been checked against the token pattern at all. Fixed to
   // require the token form outright and to fail if the file set carries no declarations to check.
   // 7 October 2026: the v6 rail restyle moved `ward-rail.module.css` onto the global v6 type scale
-  // (`--wf-fs-N` in `src/app/ward-flow-v6-tokens.css`, where N is the pixel size). The 12px floor
+  // (`--wf-fs-N` in `src/app/ward-flow-tokens.css`, where N is the pixel size). The 12px floor
   // still holds: a v6 step is accepted only at 12 or above, so `--wf-fs-11` fails here.
   it("every font-size declaration across the shell's CSS modules is a --t-N or a 12px-or-larger --wf-fs-N token", () => {
     let totalDeclarations = 0;

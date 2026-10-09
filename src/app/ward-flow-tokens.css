@@ -1,0 +1,333 @@
+/*
+ * Ward Flow design tokens, v8 (approved 9 October 2026). Synthetic prototype.
+ * Source of truth: design/v8/ward-flow-v8.css and design/v8/design-system-v8.md. This file carries the
+ * token blocks only; component rules live in the CSS Modules in src/components/wf/.
+ *
+ * One theme switch. Every colour token is a light-dark(day, night) pair, resolved by color-scheme:
+ * <html data-theme="light|dark"> pins the theme, no attribute follows the OS, .day and .night force a
+ * subtree, and print forces day. src/lib/theme.ts sets data-theme before first paint and mirrors it
+ * to the legacy .dark class. Never hard-code a colour, radius or shadow beside these tokens.
+ */
+
+/* ================= 1. Tokens that never change with the theme ================= */
+:root {
+  color-scheme: light dark;
+
+  /* type: six sizes, 12px floor. Uppercase is a treatment at 12, never a licence to go smaller. */
+  --wf-fs-12: 12px;
+  --wf-fs-13: 13px;
+  --wf-fs-14: 14px;
+  --wf-fs-16: 16px;
+  --wf-fs-20: 20px;
+  --wf-fs-28: 28px;
+  --wf-lh-12: 16px;
+  --wf-lh-13: 18px;
+  --wf-lh-14: 20px;
+  --wf-lh-16: 22px;
+  --wf-lh-20: 26px;
+  --wf-lh-28: 32px;
+  --wf-font: var(--font-geist-sans, Geist), Geist, "Segoe UI", system-ui, sans-serif;
+  --wf-mono: var(--font-geist-mono, "Geist Mono"), "Geist Mono", ui-monospace, Consolas, monospace;
+
+  /* radius: softer in v7, unchanged in v8. Controls are pills. */
+  --wf-r-xs: 6px;
+  --wf-r-sm: 10px;
+  --wf-r-md: 12px;
+  --wf-r-lg: 16px;
+  --wf-r-xl: 22px;
+  --wf-r-pill: 999px;
+
+  /* space: 4, 8, 12, 16 between parts. Insets inside a control may step by 2. */
+  --wf-s-1: 4px;
+  --wf-s-2: 8px;
+  --wf-s-3: 12px;
+  --wf-s-4: 16px;
+
+  /* sizes */
+  --wf-h-chip: 22px;
+  --wf-h-sm: 30px;
+  --wf-h-md: 36px;
+  --wf-h-lg: 44px;
+  --wf-touch: 44px;
+  --wf-row: 52px;
+  --wf-row-compact: 44px;
+  --wf-row-group: 40px;
+  --wf-count: 20px;
+
+  /* layout */
+  --wf-panel: clamp(300px, 27%, 400px);
+  --wf-panel-wide: clamp(340px, 33.333%, 480px);
+  --wf-drawer: 480px;
+  --wf-drawer-wide: 760px;
+  --wf-bar-phone-top: 56px;
+  --wf-bar-phone: 52px;
+
+  /* breakpoints. Media queries cannot read custom properties, so these record the only three
+     values a stylesheet may use, written with range syntax: (width <= 40rem), (width <= 48rem),
+     (width >= 64rem). Scripts read them for matchMedia. 48rem is the phone rule for components. */
+  --wf-bp-phone: 40rem;
+  --wf-bp-narrow: 48rem;
+  --wf-bp-wide: 64rem;
+
+  /* z-index ladder. Pick a rung, never a number. 110 is the top. */
+  --wf-z-raised: 1;
+  --wf-z-sticky: 20;
+  --wf-z-bar: 60;
+  --wf-z-overlay: 80;
+  --wf-z-popover: 95;
+  --wf-z-modal: 100;
+  --wf-z-toast: 105;
+  --wf-z-tip: 110;
+
+  /* motion */
+  --wf-m-fast: 120ms;
+  --wf-m-base: 200ms;
+  --wf-m-slow: 320ms;
+  --wf-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --wf-ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* the hero band is deep slate in both themes */
+  --wf-hero-ink: #fff;
+  --wf-hero-ink-2: #c3d1de;
+  --wf-hero-ink-3: #a3b8cc;
+  --wf-hero-danger: #e27a68;
+  --wf-hero-warning: #d9a441;
+  --wf-hero-success: #4cb383;
+  --wf-hero-info: #7fa3c8;
+  --wf-hero-neutral: #8fa0b1;
+  --wf-on-hero-fill: rgba(255, 255, 255, 0.08);
+  --wf-on-hero-line: rgba(255, 255, 255, 0.2);
+  --wf-on-hero-hl: rgba(255, 255, 255, 0.1);
+  --wf-on-hero-ink: #d5e0ea;
+  --wf-on-hero-track: rgba(0, 0, 0, 0.2);
+  --wf-on-hero-div: rgba(255, 255, 255, 0.14);
+  /* white parts on the hero (pressed pills, light button) */
+  --wf-light-1: #fff;
+  --wf-light-2: #eef2f6;
+  --wf-light-edge: rgba(255, 255, 255, 0.6);
+  --wf-light-ink: #1f3346;
+  --wf-light-danger: #c4513f;
+  --wf-light-warning: #ac720a;
+  --wf-light-success: #2f8a5f;
+  --wf-light-info: #4f7398;
+  --wf-light-neutral: #6b7f93;
+
+  /* named control shadows (v7 left 13 raw shadows in rules; v8 names every one) */
+  --wf-e-pri:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(16, 30, 44, 0.22), 0 4px 10px -6px rgba(16, 30, 44, 0.45);
+  --wf-e-pri-press: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  --wf-e-hero: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 18px 36px -26px rgba(16, 30, 44, 0.7);
+  --wf-e-on-hero: inset 0 1px 0 var(--wf-on-hero-hl), 0 2px 6px -3px rgba(0, 0, 0, 0.4);
+  --wf-e-on-hero-press: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --wf-e-light: inset 0 1px 0 var(--wf-light-1), 0 2px 6px -2px rgba(0, 0, 0, 0.35);
+  --wf-e-well: inset 0 1px 2px rgba(16, 24, 40, 0.06);
+  --wf-e-knob: 0 1px 2px rgba(16, 24, 40, 0.3);
+  --wf-e-tip: 0 6px 16px -6px rgba(16, 24, 40, 0.45);
+  --wf-e-bar: 0 6px 16px -12px rgba(16, 24, 40, 0.35);
+}
+
+/* ================= 2. Colour tokens: light-dark(day, night) ================= */
+:root {
+  --wf-canvas: light-dark(#e8ecf0, #0d141b);
+  --wf-surface: light-dark(#fdfdfe, #141d26);
+  --wf-surface-2: light-dark(#f6f8fa, #18232e);
+  --wf-track: light-dark(#eceff3, #223040);
+  --wf-hover: light-dark(#f2f5f8, #1b2733);
+  --wf-selected: light-dark(#eef3f8, #1f2e3c);
+
+  --wf-line: light-dark(rgba(22, 30, 40, 0.08), rgba(255, 255, 255, 0.07));
+  --wf-line-2: light-dark(rgba(22, 30, 40, 0.15), rgba(255, 255, 255, 0.13));
+  --wf-line-3: light-dark(rgba(22, 30, 40, 0.26), rgba(255, 255, 255, 0.24));
+  --wf-hl: light-dark(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.06));
+
+  --wf-ink-1: light-dark(#161a20, #e9eef3);
+  --wf-ink-2: light-dark(#414953, #bcc8d4);
+  --wf-ink-3: light-dark(#5b646f, #93a4b5);
+  --wf-ink-off: light-dark(#828a94, #6e7d8d);
+  --wf-line-ctl: light-dark(#828a94, #6e7d8d);
+
+  --wf-accent: light-dark(#2f4c66, #8fb0d4);
+  --wf-accent-strong: light-dark(#2b4762, #8fb0d4);
+  --wf-accent-tint: light-dark(#e6edf4, #1f3042);
+  --wf-accent-ink: light-dark(#27405a, #b9cfe6);
+  /* v8: ink on an accent fill. Night was white on #8fb0d4 at 2.25:1; it is now 8.2:1. */
+  --wf-on-accent: light-dark(#fff, #0d141b);
+  /* v8: ink on the primary gradient, white in both themes (7.1 and 5.3:1 at worst) */
+  --wf-on-pri: #fff;
+  --wf-pri-1: light-dark(#3a5b7b, #4b6f93);
+  --wf-pri-2: light-dark(#2b4762, #3a5b7b);
+  --wf-pri-edge: light-dark(#223a51, #56799d);
+
+  --wf-hero-1: light-dark(#22384d, #22374d);
+  --wf-hero-2: light-dark(#1c2f41, #1c2e41);
+  --wf-hero-edge: light-dark(#172736, rgba(143, 176, 212, 0.18));
+
+  /* tones colour glyphs, edges and marks (3:1 or better). Text always uses the -ink partner. */
+  --wf-danger: light-dark(#c4513f, #e27a68);
+  --wf-danger-ink: light-dark(#9a3424, #f2a495);
+  --wf-warning: light-dark(#ac720a, #d9a441);
+  --wf-warning-ink: light-dark(#7a5208, #f0cc85);
+  --wf-success: light-dark(#2f8a5f, #4cb383);
+  --wf-success-ink: light-dark(#1c6343, #8fd6b3);
+  --wf-info: light-dark(#4f7398, #7fa3c8);
+  --wf-info-ink: light-dark(#27405a, #b9cfe6);
+  --wf-neutral: light-dark(#6b7f93, #8fa0b1);
+  --wf-neutral-ink: light-dark(#414953, #bcc8d4);
+
+  /* soft highlight tints inside data only, never a card fill */
+  --wf-fit-tint: light-dark(rgba(47, 138, 95, 0.07), rgba(76, 179, 131, 0.09));
+  --wf-fit-edge: light-dark(rgba(47, 138, 95, 0.32), rgba(76, 179, 131, 0.36));
+  --wf-hold-tint: light-dark(rgba(172, 114, 10, 0.07), rgba(217, 164, 65, 0.09));
+  --wf-hold-edge: light-dark(rgba(172, 114, 10, 0.34), rgba(217, 164, 65, 0.36));
+
+  /* data ramp. v8: every series step clears 3:1 on surface and surface-2 in both themes.
+     --wf-data-rest is the old light step, for a remainder that is never the only mark of a value. */
+  --wf-data-1: light-dark(#2f4c66, #8fb0d4);
+  --wf-data-2: light-dark(#557089, #6a8bad);
+  --wf-data-3: light-dark(#788ea4, #55728f);
+  --wf-data-rest: light-dark(#c9d3dd, #2a3a4b);
+  --wf-data-ready: light-dark(#2f8a5f, #4cb383);
+  --wf-data-closed: light-dark(#a99058, #a88f55);
+
+  /* service colours: a dot or stripe beside the service name, never on its own (ruling B-7).
+     Day values are the health services' own colours. Night values are lifted to read on slate. */
+  --wf-svc-east: light-dark(#00825e, #34d399);
+  --wf-svc-north: light-dark(#990057, #f472b6);
+  --wf-svc-south: light-dark(#5a2476, #c084fc);
+  --wf-svc-wachs: light-dark(#005b94, #38bdf8);
+  --wf-svc-cahs: light-dark(#0076be, #8ab4ff);
+  --wf-svc-statewide: light-dark(#0071a5, #5fc9d6);
+  --wf-svc-private: light-dark(#475569, #94a3b8);
+
+  /* glass, scrim, sheen and backdrop, built from colour parts so they follow the theme too */
+  --wf-glass-thin: light-dark(rgba(253, 253, 254, 0.86), rgba(20, 29, 38, 0.86));
+  --wf-glass: light-dark(rgba(253, 253, 254, 0.88), rgba(22, 32, 42, 0.88));
+  --wf-glass-thick: light-dark(rgba(250, 251, 253, 0.92), rgba(24, 34, 45, 0.92));
+  --wf-rim-1: light-dark(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.24));
+  --wf-rim-2: light-dark(rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06));
+  --wf-rim-3: light-dark(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  --wf-sheen-top: light-dark(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.07));
+  --wf-scrim: light-dark(rgba(22, 30, 40, 0.12), rgba(0, 0, 0, 0.35));
+  --wf-glow-1: light-dark(rgba(143, 176, 212, 0.32), rgba(79, 115, 152, 0.28));
+  --wf-glow-2: light-dark(rgba(150, 196, 180, 0.2), rgba(76, 179, 131, 0.08));
+  --wf-glass-rim: linear-gradient(180deg, var(--wf-rim-1), var(--wf-rim-2) 45%, var(--wf-rim-3));
+  --wf-sheen: linear-gradient(180deg, var(--wf-sheen-top), transparent 46%);
+  --wf-backdrop:
+    radial-gradient(1200px 520px at 8% -10%, var(--wf-glow-1), transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, var(--wf-glow-2), transparent 55%), var(--wf-canvas);
+
+  --wf-tip-bg: light-dark(rgba(22, 30, 40, 0.92), rgba(36, 48, 62, 0.97));
+  --wf-tip-ink: light-dark(#fff, #e9eef3);
+  --wf-tip-ring: light-dark(rgba(22, 30, 40, 0), rgba(255, 255, 255, 0.13));
+  --wf-focus-ring: var(--wf-accent);
+
+  /* elevation. Day lifts with soft tint, night with a dark ring. Each layer the other theme does not
+     use is transparent, so every value is exactly the v7 value and no night block is needed. */
+  --wf-sh-a: light-dark(rgba(16, 24, 40, 0.03), transparent);
+  --wf-sh-b: light-dark(rgba(16, 24, 40, 0.05), transparent);
+  --wf-sh-c: light-dark(rgba(16, 24, 40, 0.06), transparent);
+  --wf-sh-d: light-dark(rgba(16, 24, 40, 0.22), transparent);
+  --wf-sh-e: light-dark(rgba(16, 24, 40, 0.24), rgba(0, 0, 0, 0.6));
+  --wf-sh-f: light-dark(rgba(16, 24, 40, 0.14), transparent);
+  --wf-sh-g: light-dark(rgba(16, 24, 40, 0.3), transparent);
+  --wf-sh-n1: light-dark(transparent, rgba(0, 0, 0, 0.6));
+  --wf-sh-n2: light-dark(transparent, rgba(0, 0, 0, 0.7));
+  --wf-ring-1: light-dark(transparent, rgba(0, 0, 0, 0.2));
+  --wf-ring-2: light-dark(transparent, rgba(0, 0, 0, 0.35));
+  --wf-ring-3: light-dark(transparent, rgba(0, 0, 0, 0.18));
+  --wf-press: light-dark(rgba(16, 24, 40, 0.08), rgba(0, 0, 0, 0.35));
+  --wf-e1:
+    inset 0 1px 0 var(--wf-hl), 0 0 0 1px var(--wf-ring-1), 0 1px 1px var(--wf-sh-a), 0 2px 6px -2px var(--wf-sh-b),
+    0 12px 28px -20px var(--wf-sh-d), 0 12px 28px -18px var(--wf-sh-n1);
+  --wf-e2:
+    inset 0 1px 0 var(--wf-hl), 0 0 0 1px var(--wf-ring-2), 0 1px 2px var(--wf-sh-c), 0 10px 24px -10px var(--wf-sh-e);
+  --wf-e3:
+    inset 0 1px 0 var(--wf-hl), 0 0 0 0.5px var(--wf-sh-f), 0 0 0 1px var(--wf-ring-2), 0 2px 4px var(--wf-sh-c),
+    0 24px 48px -12px var(--wf-sh-g), 0 28px 60px -18px var(--wf-sh-n2);
+  --wf-e-raise: inset 0 1px 0 var(--wf-hl), 0 0 0 1px var(--wf-ring-3), 0 1px 2px var(--wf-sh-c);
+  --wf-e-press: inset 0 1px 2px var(--wf-press);
+}
+
+/* ================= 3. The one theme switch ================= */
+/* <html data-theme="light|dark"> pins the theme; no attribute follows the OS. .day and .night force
+   a subtree. The app sets data-theme before first paint and mirrors it to the legacy .dark class
+   until the legacy layers are retired (spec section 4). */
+:root[data-theme="light"],
+.day {
+  color-scheme: light;
+}
+:root[data-theme="dark"],
+.night {
+  color-scheme: dark;
+}
+
+/* Deprecated aliases. Remove when nothing reads them (spec section 9). */
+:root {
+  --wf-fs-11: var(--wf-fs-12);
+  --wf-lh-11: var(--wf-lh-12);
+}
+
+@keyframes wfPulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--wf-success) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@keyframes wfSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes wfShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+@keyframes wfFlash {
+  0% {
+    background-color: var(--wf-accent-tint);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Preferences that change token values. Component responses live with each component. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --wf-m-fast: 0ms;
+    --wf-m-base: 0ms;
+    --wf-m-slow: 0ms;
+  }
+}
+@media (prefers-contrast: more) {
+  :root {
+    --wf-line: var(--wf-line-ctl);
+    --wf-line-2: var(--wf-line-ctl);
+    --wf-line-3: var(--wf-ink-2);
+  }
+}
+@media (pointer: coarse) {
+  :root {
+    --wf-h-sm: var(--wf-touch);
+    --wf-h-md: var(--wf-touch);
+    --wf-h-chip: 32px;
+  }
+}
+/* Print is day: every light-dark() token resolves to its day value. */
+@media print {
+  :root,
+  :root[data-theme],
+  .day,
+  .night {
+    color-scheme: light !important;
+  }
+}

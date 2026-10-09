@@ -223,7 +223,7 @@
 
   --wf-tip-bg: light-dark(rgba(22, 30, 40, 0.92), rgba(36, 48, 62, 0.97));
   --wf-tip-ink: light-dark(#fff, #e9eef3);
-  --wf-tip-ring: light-dark(transparent, rgba(255, 255, 255, 0.13));
+  --wf-tip-ring: light-dark(rgba(22, 30, 40, 0), rgba(255, 255, 255, 0.13));
   --wf-focus-ring: var(--wf-accent);
 
   /* elevation. Day lifts with soft tint, night with a dark ring. Each layer the other theme does not

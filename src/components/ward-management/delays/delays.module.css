@@ -1879,7 +1879,7 @@
 /* =====================================================================
    v6 LAYER (7 Oct 2026). Inside the Delays main the older third-edition
    and delays tokens resolve to the v6 set, so day and night both follow
-   ward-flow-v6-tokens.css. The screen still paints no ground of its own.
+   ward-flow-tokens.css. The screen still paints no ground of its own.
    ===================================================================== */
 .screen[data-ward-design="v6"] > * {
   --surface: var(--wf-surface);

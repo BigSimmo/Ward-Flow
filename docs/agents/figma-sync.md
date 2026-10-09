@@ -16,7 +16,7 @@ into tiles of at most 2000px so Figma keeps full resolution). The editable phone
 
 - Map: `design/figma/figma-sync.json` (file key, collections, naming rule, component and screen map).
 - Tokens: `node scripts/figma-tokens.mjs --export | --diff <file> | --apply <file>`.
-- Source CSS: `src/app/ward-flow-v6-tokens.css`. Components: `src/components/wf/`.
+- Source CSS: `src/app/ward-flow-tokens.css`. Components: `src/components/wf/`.
 - Load the `figma-use` skill before any `use_figma` call. Synthetic data only.
 
 Figma variables: collection **Colour** (modes Day, Night) and **Size**. Each variable's WEB code
@@ -61,7 +61,7 @@ syntax is `var(--wf-name)`, which is the key in the token JSON. Skip `alpha/*` a
 
 2. `node scripts/figma-tokens.mjs --diff figma-pull.json` and show Josh the changed tokens.
 3. `node scripts/figma-tokens.mjs --apply figma-pull.json`, then
-   `npx vitest run tests/figma-tokens.test.ts` and `npm run format -- --files src/app/ward-flow-v6-tokens.css`.
+   `npx vitest run tests/figma-tokens.test.ts` and `npm run format -- --files src/app/ward-flow-tokens.css`.
    Invalid collection shapes, sizes or colours fail before any CSS is written. Writes replace the
    complete file atomically; a malformed pull leaves source CSS unchanged. Partial valid pulls
    are allowed. Figma helper variables remain ignored.

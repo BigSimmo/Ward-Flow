@@ -19,12 +19,12 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
  * EXISTS, NOT A SECOND ONE THAT LOOKS LIKE IT.**
  *
  * The approved drawing scripts this control against `localStorage["ward-flow-settings-appearance"]`.
- * The control that is really built and really wired, in the Tools drawer, uses
- * `"ward-flow-appearance"`. ⚠️ **Built as scripted, the two would silently diverge — while the
+ * The control that is really built and really wired uses the app's one theme preference
+ * (`"clinical-kb-theme"`, owned by `src/lib/theme-client.ts` since design system v8). ⚠️ **Built as scripted, the two would silently diverge — while the
  * drawing's own copy tells the reader "changing it here changes it there too".**
  *
- * 🔴 **AND THE SUBTLER HALF SURVIVES GETTING THE KEY RIGHT.** `applyAppearance` ends by dispatching
- * `ward-flow-appearance-change`; a second writer on the correct key that omits that dispatch updates
+ * 🔴 **AND THE SUBTLER HALF SURVIVES GETTING THE KEY RIGHT.** The one writer ends by dispatching
+ * `clinical-kb-theme-change`; a second writer on the correct key that omits that dispatch updates
  * its own screen and leaves the Tools control showing the old value until a reload. **Two controls
  * disagreeing inside one session with the stored value correct underneath.**
  *
@@ -74,9 +74,14 @@ describe("the settings screen's appearance control", () => {
 
     fireEvent.click(within(panel).getByRole("radio", { name: "Dark" }));
 
-    expect(window.localStorage.getItem("ward-flow-appearance"), "the real key was not written").toBe("dark");
+    expect(window.localStorage.getItem("clinical-kb-theme"), "the real key was not written").toBe("dark");
     expect(window.localStorage.getItem("ward-flow-settings-appearance"), "a second key was written").toBeNull();
+    expect(window.localStorage.getItem("ward-flow-appearance"), "the retired ward key was written").toBeNull();
     expect(themeAttribute(), "the theme the whole app branches on did not change").toBe("dark");
+    expect(
+      document.documentElement.classList.contains("dark"),
+      "the legacy layers were left on the other theme (design system v8, one switch)",
+    ).toBe(true);
   });
 
   /**
@@ -91,10 +96,11 @@ describe("the settings screen's appearance control", () => {
     const panel = screen.getByTestId("ward-settings-appearance");
 
     fireEvent.click(within(panel).getByRole("radio", { name: "Light" }));
-    expect(window.localStorage.getItem("ward-flow-appearance")).toBe("light");
+    expect(window.localStorage.getItem("clinical-kb-theme")).toBe("light");
+    expect(document.documentElement.classList.contains("dark"), "a light pin left .dark on").toBe(false);
 
     fireEvent.click(within(panel).getByRole("radio", { name: "Auto" }));
-    expect(window.localStorage.getItem("ward-flow-appearance"), "auto was stored as a value").toBeNull();
+    expect(window.localStorage.getItem("clinical-kb-theme"), "auto was stored as a value").toBeNull();
     expect(themeAttribute(), "data-theme survived a return to auto").toBeNull();
   });
 

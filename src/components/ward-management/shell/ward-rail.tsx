@@ -44,6 +44,8 @@ import { WARD_NAV_ICONS, WARD_VIEW_ICONS } from "@/components/ward-management/wa
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 
 import { announceToWardShell } from "./ward-live-region";
+import { applyThemeToDocument } from "@/lib/theme-client";
+
 import { applyAppearance, useAppearanceStore } from "./ward-bar";
 import { edHref, handoverHref, patientHref, settingsHref } from "./ward-facade";
 import {
@@ -425,9 +427,10 @@ export function WardRail() {
     document.documentElement.setAttribute("data-rail", open ? "open" : "closed");
   }, [open]);
 
+  // The pre-paint script already applied the pin. Re-applying after hydration is idempotent and
+  // keeps data-theme, .dark and theme-color together if anything changed them in between.
   useLayoutEffect(() => {
-    if (appearance === "auto") document.documentElement.removeAttribute("data-theme");
-    else document.documentElement.setAttribute("data-theme", appearance);
+    applyThemeToDocument(appearance === "auto" ? "system" : appearance);
   }, [appearance]);
 
   useEffect(() => {

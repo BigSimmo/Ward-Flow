@@ -31,6 +31,18 @@ import { literalsIn } from "./helpers/ast-string-literals";
  */
 
 const WARD_SOURCE = join(process.cwd(), "src", "components", "ward-management");
+const APP_SOURCE = join(process.cwd(), "src");
+
+/**
+ * ✅ **DESIGN SYSTEM v8 MOVED THE ONE OWNER UP A LEVEL, AND THIS GUARD MOVED WITH IT.** Before v8 the
+ * ward kept its own key and the rest of the app kept another, so a ward pin painted the shell in one
+ * theme and the page in the other. Now the whole app has ONE stored preference, owned by
+ * `src/lib/theme.ts` (the key) and `src/lib/theme-client.ts` (the only writer). The ward controls
+ * are views over it. The old ward key survives only as a one-time migration in the pre-paint script.
+ */
+const THEME_KEY = "clinical-kb-theme";
+const LEGACY_WARD_KEY = "ward-flow-appearance";
+const ONE_WRITER = "@/lib/theme-client";
 
 /** Anything that looks like a persisted appearance/theme preference, however it is spelled. */
 const APPEARANCE_KEY = /^ward-flow-[a-z-]*(appearance|theme)[a-z-]*$/u;
@@ -41,59 +53,65 @@ function walk(dir: string): string[] {
   );
 }
 
-const SOURCE_FILES = walk(WARD_SOURCE).filter((file) => file.endsWith(".ts") || file.endsWith(".tsx"));
+const isSource = (file: string) => file.endsWith(".ts") || file.endsWith(".tsx");
+const SOURCE_FILES = walk(WARD_SOURCE).filter(isSource);
+const APP_FILES = walk(APP_SOURCE).filter(isSource);
 
-/** Every appearance-shaped key literal in ward source, with the file that spells it. */
-function appearanceKeys(): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const file of SOURCE_FILES) {
-    for (const literal of literalsIn(file)) {
-      // The change EVENT shares the prefix and is not a storage key; excluding it by its own
-      // suffix rather than by an allowlist, so a new event name is excluded for the same reason.
-      if (!APPEARANCE_KEY.test(literal) || literal.endsWith("-change")) continue;
-      const relative = file
-        .split(sep)
-        .join("/")
-        .replace(`${process.cwd().split(sep).join("/")}/`, "");
-      found.set(literal, [...(found.get(literal) ?? []), relative]);
-    }
-  }
-  return found;
+const relative = (file: string) =>
+  file
+    .split(sep)
+    .join("/")
+    .replace(`${process.cwd().split(sep).join("/")}/`, "");
+
+/** Every file under `files` that spells `match` as a string literal. */
+function spelledIn(files: string[], match: (literal: string) => boolean): string[] {
+  return files.filter((file) => literalsIn(file).some(match)).map(relative);
 }
 
 describe("the appearance preference has exactly one key", () => {
   /**
-   * ⚠️ **THE ANTI-VACUITY FLOOR, AND IT COMES FIRST ON PURPOSE.** "No two keys" is satisfied by
-   * NO keys — by a rename, a move, or this walk pointing at the wrong directory. 🔴 **A guard that
-   * passes hardest when its subject has vanished is the shape this repository has measured twice.**
+   * ⚠️ **THE ANTI-VACUITY FLOOR, AND IT COMES FIRST ON PURPOSE.** "No second key" is satisfied by NO
+   * keys — by a rename, a move, or this walk pointing at the wrong directory. 🔴 **A guard that passes
+   * hardest when its subject has vanished is the shape this repository has measured twice.**
    */
-  it("finds the real appearance key at all, so the check below is not passing over nothing", () => {
+  it("finds the real key, its owner and the ward controls that call it", () => {
     expect(SOURCE_FILES.length, "the ward source walk found no files").toBeGreaterThan(100);
-    const keys = appearanceKeys();
-    expect([...keys.keys()], "no appearance storage key found in ward source").toContain("ward-flow-appearance");
+    expect(
+      spelledIn(APP_FILES, (l) => l === THEME_KEY),
+      "the app theme key vanished",
+    ).toEqual(["src/lib/theme.ts"]);
+    expect(
+      spelledIn(SOURCE_FILES, (l) => l === ONE_WRITER),
+      "no ward control calls the one theme writer",
+    ).toContain("src/components/ward-management/shell/ward-bar.tsx");
   });
 
-  it("spells that key in exactly one file, so there is one owner for the value", () => {
-    const keys = appearanceKeys();
-    const report = [...keys.entries()].map(([key, files]) => `  ${key} — ${files.join(", ")}`).join("\n");
-
+  it("spells no appearance key of its own anywhere in ward source", () => {
+    const own = SOURCE_FILES.flatMap((file) =>
+      literalsIn(file)
+        // The old change EVENT shared the prefix and was not a storage key; excluded by its suffix.
+        .filter((literal) => APPEARANCE_KEY.test(literal) && !literal.endsWith("-change"))
+        .map((literal) => `  ${literal} — ${relative(file)}`),
+    );
     expect(
-      [...keys.keys()].sort(),
-      "more than one appearance preference key exists in ward source, so two controls can " +
-        "disagree while both look correct. There is one real key and every surface calls the one " +
-        `owner of it — never a second key that looks similar:\n${report}`,
-    ).toEqual(["ward-flow-appearance"]);
+      own,
+      "a ward file spells its own appearance key, so two controls can disagree while both look " +
+        "correct. Every surface reads and writes the app's one preference through " +
+        `${ONE_WRITER}:\n${own.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  it("keeps the old ward key only as the pre-paint migration", () => {
+    expect(spelledIn(APP_FILES, (l) => l === LEGACY_WARD_KEY)).toEqual(["src/lib/theme.ts"]);
   });
 
   /**
-   * 🔴 **THE CONTROL. Without it, a rename of the real key or a broken walk would leave both
-   * assertions above green over an empty set** — and the second one would then be asserting that a
-   * key nobody has is the only key anybody has.
+   * 🔴 **THE CONTROL. Without it, a broken pattern would leave the assertions above green over an
+   * empty set.**
    */
   it("would catch a second key if one were added", () => {
     const withASecond = ["ward-flow-appearance", "ward-flow-settings-appearance"];
     expect(withASecond.filter((key) => APPEARANCE_KEY.test(key))).toHaveLength(2);
-    expect(withASecond).not.toEqual(["ward-flow-appearance"]);
   });
 
   /**

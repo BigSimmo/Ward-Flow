@@ -8,7 +8,7 @@ import { OverlayRoot } from "@/components/ui/overlay-root";
 import { PRIVATE_APP_ROBOTS_METADATA } from "@/lib/crawler-policy";
 import { BRAND_DESCRIPTION, BRAND_NAME } from "@/lib/brand";
 import "./globals.css";
-import "./ward-flow-v6-tokens.css";
+import "./ward-flow-tokens.css";
 
 const geistSans = localFont({
   src: "../fonts/geist-latin.woff2",
@@ -40,7 +40,9 @@ const baseMetadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: BRAND_NAME,
-    statusBarStyle: "black-translucent",
+    // "default" lets iOS pick status bar text that reads on the page. "black-translucent" forced
+    // white text, which disappeared on the light theme (design system v8, section 4).
+    statusBarStyle: "default",
   },
 };
 
@@ -91,11 +93,15 @@ export default async function RootLayout({
   const clinicalTheme = cookieStore.get(THEME_COOKIE_NAME)?.value;
   const isDark = clinicalTheme === "dark";
   const themeClass = isDark ? "dark" : "";
+  // A pinned theme is painted on the server too, so v8 tokens (which follow data-theme through
+  // color-scheme) and the legacy .dark layers agree from the first byte.
+  const pinnedTheme = clinicalTheme === "light" || clinicalTheme === "dark" ? clinicalTheme : undefined;
 
   return (
     <html
       lang="en-AU"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased ckb-v2 ${themeClass}`}
+      data-theme={pinnedTheme}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>

@@ -30,20 +30,26 @@ export const THEME_STORAGE_KEY = "clinical-kb-theme";
 export const THEME_COOKIE_NAME = "clinical-theme";
 
 /**
- * Runs before paint. Storage is deliberately isolated so privacy modes that
- * throw on localStorage still receive their OS-selected theme. When localStorage
- * has no explicit pin, fall back to the `clinical-theme` cookie so a
- * cookie-only preference (matching RootLayout) is not immediately overwritten.
- *
- * Both catches swallow deliberately, and each says so inline. This runs before
- * React mounts, so there is no logger or toast to report to, and every failure
- * here means the same thing: no explicit pin was readable, so the next fallback
- * in the chain (cookie, then the OS preference) applies. Surfacing the error
- * instead would trade a correct default appearance for a broken first paint.
- * Keep the inline notes to one short clause — this string ships in every
- * page's `<head>`.
+ * Storage key the ward shell used before v8 joined the two theme switches. The pre-paint script
+ * moves a stored ward choice into `THEME_STORAGE_KEY` once, then deletes it, so nobody loses their
+ * pin. Nothing else may read or write it.
  */
-export const THEME_BOOTSTRAP_SCRIPT = `(function(){var t=null;try{t=localStorage.getItem("${THEME_STORAGE_KEY}");}catch(e){/* storage blocked (private/partitioned) - fall through to the cookie, then the OS preference */}if(t!=="light"&&t!=="dark"){try{var m=document.cookie.match(/(?:^|; )${THEME_COOKIE_NAME}=(light|dark)(?:;|$)/);if(m)t=m[1];}catch(e){/* cookie access blocked (sandboxed frame) - the OS preference below applies */}}var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);var c=d?"${APP_THEME_COLORS.dark}":"${APP_THEME_COLORS.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",c);});})();`;
+export const LEGACY_WARD_APPEARANCE_KEY = "ward-flow-appearance";
+
+/**
+ * Runs before paint and is the first half of the one theme switch (design system v8, section 4).
+ * It resolves the pin (stored choice, else the legacy ward choice, else the cookie, else the OS) and
+ * applies all three outputs together: `data-theme` on <html> when pinned, the legacy `.dark` class
+ * for the older token layers, and the browser `theme-color`. In Auto it keeps `.dark` and
+ * `theme-color` in step when the OS changes, so no React hook needs to be mounted for that. An
+ * explicit `data-theme` means a pin, so the OS listener leaves it alone.
+ *
+ * Every catch swallows deliberately, and each says so inline. This runs before React mounts, so
+ * there is no logger or toast to report to, and every failure here means the same thing: no
+ * explicit pin was readable, so the next fallback applies. Keep the inline notes to one short
+ * clause — this string ships in every page's `<head>`.
+ */
+export const THEME_BOOTSTRAP_SCRIPT = `(function(){var K="${THEME_STORAGE_KEY}",L="${LEGACY_WARD_APPEARANCE_KEY}",t=null;try{t=localStorage.getItem(K);if(t!=="light"&&t!=="dark"){var w=localStorage.getItem(L);if(w==="light"||w==="dark"){t=w;localStorage.setItem(K,w);try{document.cookie="${THEME_COOKIE_NAME}="+w+"; path=/; max-age=31536000; SameSite=Lax";}catch(e){/* cookie blocked - storage still holds the pin */}}if(w!==null)localStorage.removeItem(L);}}catch(e){/* storage blocked (private/partitioned) - fall through to the cookie, then the OS preference */}if(t!=="light"&&t!=="dark"){t=null;try{var m=document.cookie.match(/(?:^|; )${THEME_COOKIE_NAME}=(light|dark)(?:;|$)/);if(m)t=m[1];}catch(e){/* cookie access blocked (sandboxed frame) - the OS preference below applies */}}var r=document.documentElement,q=null;try{q=window.matchMedia("(prefers-color-scheme: dark)");}catch(e){/* no matchMedia - treat the OS as light */}function paint(d){r.classList.toggle("dark",d);var c=d?"${APP_THEME_COLORS.dark}":"${APP_THEME_COLORS.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(x){x.setAttribute("content",c);});}if(r.setAttribute){if(t)r.setAttribute("data-theme",t);else r.removeAttribute("data-theme");}paint(t?t==="dark":!!(q&&q.matches));try{q.addEventListener("change",function(){if(!r.getAttribute("data-theme"))paint(q.matches);});}catch(e){/* old browser - Auto follows the OS on the next load */}})();`;
 
 export function resolveThemePreference(storedTheme: string | null | undefined, prefersDark: boolean): ResolvedTheme {
   if (storedTheme === "light" || storedTheme === "dark") return storedTheme;

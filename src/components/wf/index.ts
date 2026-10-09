@@ -1,6 +1,6 @@
 /**
  * Ward Flow v6 primitives. Build every page from these; never copy a primitive into a screen.
- * Contract: design/build/components.md in the project files. Tokens: src/app/ward-flow-v6-tokens.css.
+ * Contract: design/build/components.md in the project files. Tokens: src/app/ward-flow-tokens.css.
  */
 export { cx } from "./cx";
 export { dur, durMinutes, clk, durParts } from "./format";
