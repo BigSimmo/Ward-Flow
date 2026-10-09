@@ -1,8 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AlignJustify, ClipboardList, Search, X } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  ClipboardList,
+  Copy,
+  Hand,
+  ListOrdered,
+  Lock,
+  Megaphone,
+  Scale,
+  Search,
+  TriangleAlert,
+  Truck,
+  Users,
+  X,
+} from "lucide-react";
 
 import {
   dayOf,
@@ -13,9 +28,9 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
+import { ReferralQueueCards, ReferralQueueTable } from "./referral-queue-layouts";
 import { genderReviewNeeded, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
-import type { Admission } from "@/components/ward-management/ward-admissions";
 import { createReadmissionIndex, referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -39,8 +54,6 @@ import {
   referralDestinationLabels,
   referralState,
   referralSuburbLabel,
-  candidateAccepts,
-  referralCandidates,
   referralClocks,
 } from "@/components/ward-management/ward-referrals";
 import {
@@ -49,17 +62,14 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import {
   Avatar,
-  Badge,
   Button,
   Card,
   CardHead,
   ColumnChart,
   Count,
   EmptyState,
-  FilterChip,
   Hero,
-  HeroStat,
-  HeroTrack,
+  Kbd,
   LiveChip,
   StatusGlyph,
   TabPanel,
@@ -73,21 +83,38 @@ import {
 } from "@/components/wf";
 
 import { ReferralMatchView, ReferralHistoryAndCorrections } from "./referral-match";
-import { getReferralPriority, PriorityGlyph, referralPriorityLabel } from "./referral-priority";
+import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
+import {
+  BedMeetingSheet,
+  BedsReady,
+  DecisionClock,
+  HeroTools,
+  IsbarSheet,
+  NOT_WIRED,
+  REFERRAL_SOURCE_WORDS,
+  ReferralAlerts,
+  ReferralPatientTab,
+  ReferralTimeline,
+  ShortcutsSheet,
+  SummaryButton,
+  WaitCell,
+  WaitRunway,
+  askingForShort,
+  bedsReadySummary,
+  declineReasonWords,
+  isOverdue,
+  needWords,
+  openArms,
+  readyUnitCount,
+  referralTimeline,
+  wardArm,
+  type MeetingRow,
+} from "./referral-board-parts";
 import styles from "./referrals.module.css";
+import a from "./referral-board.module.css";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-
-/**
- * Owner answer 2026-09-25 (R7, Q2): gender identity shown beside sex, never merged into it. Empty
- * for a referral with no ward arm, whose Sex cell already says no bed was asked for.
- */
-function referralGenderSuffix(referral: Referral): string {
-  const ward = referral.destinations.find((addressing) => addressing.destination.kind === "psychiatric_ward");
-  if (!ward || ward.destination.kind !== "psychiatric_ward") return "";
-  return ` · Gender: ${ward.destination.gender ?? "Not recorded"}`;
-}
 
 /**
  * Bed board decision 9A (Josh, 26 September 2026): the waiting list flags a queued referral whose
@@ -326,30 +353,6 @@ function OutcomeDetail({
  * they are shown a pattern to copy that looks safe because it cites a real precedent. State the
  * property this file has; cite a neighbour only with the commit that fixes what it is being cited for.
  */
-type ClinicalSynopsis = {
-  synopsis: string;
-  clinician: string;
-  legalDoc: string;
-  isHighAcuity?: boolean;
-  isLegalOrder?: boolean;
-  isSecureBed?: boolean;
-};
-
-function getClinicalSummary(referral: Referral): ClinicalSynopsis {
-  return {
-    synopsis: referral.history?.trim() ? referral.history : "Clinical narrative not recorded.",
-    clinician: referral.intake?.referrer.name ?? "Not recorded",
-    legalDoc: referral.intake?.legalStatus ?? "Legal document details are not recorded on this referral.",
-  };
-}
-
-const STREAMS = [
-  ["all", "All"],
-  ["community_team", "Community"],
-  ["emergency_department", "Emergency"],
-  ["psychiatric_ward", "Ward"],
-] as const;
-
 const MS_PER_MINUTE = 60_000;
 
 /**
@@ -362,13 +365,18 @@ function referralDueAt(referral: Referral, now: Instant): Instant | undefined {
   return referral.raisedAt + Math.min(OVERDUE_AFTER_MINUTES_BY_TIER[referral.urgency], OVERDUE_AFTER_ANY_TIER_MINUTES);
 }
 
-/** Age band and sex, with gender beside sex when the ward arm records a different one (R7). */
+/**
+ * Age band and sex, with gender beside sex on a ward referral (R7): named when it differs, and
+ * said to be unrecorded when it is missing, so "not recorded" never reads as "same as sex".
+ */
 function demographicLabel(referral: Referral): string {
-  const ward = referral.destinations.find((d) => d.destination.kind === "psychiatric_ward");
-  const gender = ward && ward.destination.kind === "psychiatric_ward" ? ward.destination.gender : undefined;
+  const ward = wardArm(referral)?.destination;
   const sex = referralSexCell(referral);
-  const showGender = gender && gender.toLowerCase() !== sex.toLowerCase() && gender.toLowerCase() !== "not recorded";
-  return showGender ? `${referral.ageBand}, ${sex} (${gender})` : `${referral.ageBand}, ${sex}`;
+  const base = `${referral.ageBand}, ${sex}`;
+  if (!ward) return base;
+  const gender = ward.gender?.trim();
+  if (!gender || gender.toLowerCase() === "not recorded") return `${base}, gender not recorded`;
+  return gender.toLowerCase() === sex.toLowerCase() ? base : `${base} (${gender})`;
 }
 
 /** The referral's due time as a countdown, or how far past it is, from the shared Timer. */
@@ -395,8 +403,65 @@ const useSplitDetailLayout = createBrowserStore<boolean>(
   false,
 );
 
+type HighlightKey = "overdue" | "tier1" | "ward" | "ed" | "community" | "refused";
+type InspectorTab = "place" | "patient" | "timeline";
+type BoardSheet = "meeting" | "summary" | "keys" | null;
+
+const HIGHLIGHT_LABELS: readonly (readonly [HighlightKey, string])[] = [
+  ["overdue", "Overdue"],
+  ["tier1", "Tier 1"],
+  ["ward", "Ward bed"],
+  ["ed", "ED"],
+  ["community", "Community"],
+  ["refused", "Refused once"],
+];
+
+function highlightTest(key: HighlightKey, referral: Referral, now: Instant): boolean {
+  switch (key) {
+    case "overdue":
+      return isOverdue(referral, now);
+    case "tier1":
+      return referral.urgency === 1;
+    case "ward":
+      return openArms(referral).some((arm) => arm.destination.kind === "psychiatric_ward");
+    case "ed":
+      return openArms(referral).some((arm) => arm.destination.kind === "emergency_department");
+    case "community":
+      return openArms(referral).some((arm) => arm.destination.kind === "community_team");
+    case "refused":
+      return declinedAddressings(referral).length > 0;
+  }
+}
+
+function isTyping(target: EventTarget | null): boolean {
+  const element = target as HTMLElement | null;
+  if (!element) return false;
+  return (
+    element.tagName === "INPUT" ||
+    element.tagName === "TEXTAREA" ||
+    element.tagName === "SELECT" ||
+    element.isContentEditable === true
+  );
+}
+
+/**
+ * Option A (Josh, 9 October 2026): the statewide referral queue as a dense table with a decision
+ * panel beside it. The hero carries the page's own tools: highlight pills, the waiting runway,
+ * beds ready statewide, Next overdue and the bed meeting list. Filters highlight and never hide a
+ * referral; the queue stays longest wait first with the tier only breaking ties (D-32).
+ */
 export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFirst?: boolean } = {}) {
-  const { referrals, units, dispatch, rejections, movements = [], patients = [], admissions = [] } = useWardFlow();
+  const {
+    referrals,
+    units,
+    dispatch,
+    rejections,
+    movements = [],
+    patients = [],
+    admissions = [],
+    bedReleases = [],
+    leaveBeds = [],
+  } = useWardFlow();
   const now = useWardFlowClock();
   const queued = referralQueueOrder(referrals);
   // `undefined` = nobody has chosen yet; `null` = the coordinator closed the detail. Only the first
@@ -411,21 +476,20 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
         ? queued[0]?.id
         : undefined
       : (chosenReferralId ?? undefined);
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "accepted" | "declined" | "waitlisted">("all");
-  const [streamFilter, setStreamFilter] = useState<
-    "all" | "community_team" | "emergency_department" | "psychiatric_ward"
-  >("all");
-  const [chipFilter, setChipFilter] = useState<"all" | "tier1" | "beds" | "older" | "community_ed">("all");
+  const [view, setView] = useState<"queue" | "history">("queue");
+  const [highlight, setHighlight] = useState<HighlightKey | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [denseView, setDenseView] = useState(false);
-  const [inspectorTab, setInspectorTab] = useState<"placement" | "dossier" | "mha">("placement");
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>("place");
+  const [sheet, setSheet] = useState<BoardSheet>(null);
+  const [umrnCopied, setUmrnCopied] = useState(false);
   const triggerRef = useRef<HTMLElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
 
   const handleSelect = useCallback((referralId: string) => {
     triggerRef.current = document.activeElement as HTMLElement | null;
     setSelectedReferralId(referralId);
-    setInspectorTab("placement");
+    setInspectorTab("place");
+    setUmrnCopied(false);
   }, []);
 
   const closeDetail = useCallback(() => {
@@ -436,95 +500,24 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     }
   }, []);
 
-  const resetFilters = useCallback(() => {
+  const clearHighlights = useCallback(() => {
     setSearchQuery("");
-    setChipFilter("all");
-    setStatusFilter("all");
-    setStreamFilter("all");
+    setHighlight(null);
   }, []);
 
-  useEffect(() => {
-    if (!selectedReferralId) return;
-    if (detailRef.current) {
-      detailRef.current.scrollTop = 0;
-      if (typeof window !== "undefined" && window.innerWidth <= 768) {
-        if (typeof detailRef.current.scrollIntoView === "function") {
-          detailRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        }
-      }
-    }
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        closeDetail();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedReferralId, closeDetail]);
-
-  const matchesStream = (referral: Referral) =>
-    streamFilter === "all" || referral.destinations.some((arm) => arm.destination.kind === streamFilter);
-  const isWaitlisted = (referral: Referral) =>
-    referral.destinations.some(
-      (arm) =>
-        arm.state === "queued" &&
-        arm.withdrawnAt === undefined &&
-        arm.waitlistedAt !== undefined &&
-        (streamFilter === "all" || arm.destination.kind === streamFilter),
-    );
-  const decided = recentlyDecidedReferrals(referrals);
-  // The DENOMINATOR, uncapped. `decided` above is already truncated to the display limit, so its
-  // length names how many rows are shown and cannot name how many have been decided.
-  const allDecided = decidedReferrals(referrals);
-  const decidedTotal = allDecided.length;
-  const selectedReferral = selectedReferralId
-    ? referrals.find((referral) => referral.id === selectedReferralId)
-    : undefined;
-  const selectedPatientInfo = resolveSubjectPatient(selectedReferral, { patients, referrals, movements });
-  const selectedWardAddressing = selectedReferral?.destinations.find(
-    (addressing) => addressing.destination.kind === "psychiatric_ward",
+  // One state object, so the resolver's identity-keyed index is built once per render, not per row.
+  const resolverState = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
+  const nameOf = useCallback(
+    (referral: Referral) => resolveSubjectPatient(referral, resolverState).displayName,
+    [resolverState],
   );
-  const readyVacanciesCount =
-    selectedReferral && selectedWardAddressing && selectedWardAddressing.destination.kind === "psychiatric_ward"
-      ? referralCandidates(selectedReferral, selectedWardAddressing.destination, units, now).filter(candidateAccepts)
-          .length
-      : 0;
-
-  const pendingCount = queued.filter((r) => matchesStream(r) && !isWaitlisted(r)).length;
-  const allCount = referrals.filter(matchesStream).length;
-  const acceptedTotal = allDecided.filter((r) => matchesStream(r) && referralState(r) === "accepted").length;
-  const declinedTotal = allDecided.filter((r) => matchesStream(r) && referralState(r) === "declined").length;
-
-  const tier1Count = queued.filter((r) => r.urgency === 1).length;
-  const bedRequestsCount = queued.filter((r) =>
-    r.destinations.some((d) => d.destination.kind === "psychiatric_ward"),
-  ).length;
-  const olderAdultCount = queued.filter((r) => r.ageBand === "Older adult").length;
-
-  const showQueued = statusFilter === "all" || statusFilter === "pending" || statusFilter === "waitlisted";
-  const showDecided = statusFilter === "all" || statusFilter === "accepted" || statusFilter === "declined";
-
-  const filteredDecided =
-    statusFilter === "accepted"
-      ? decided.filter((r) => referralState(r) === "accepted")
-      : statusFilter === "declined"
-        ? decided.filter((r) => referralState(r) === "declined")
-        : decided;
-
-  const filteredDecidedTotal =
-    statusFilter === "accepted"
-      ? allDecided.filter((r) => matchesStream(r) && referralState(r) === "accepted").length
-      : statusFilter === "declined"
-        ? allDecided.filter((r) => matchesStream(r) && referralState(r) === "declined").length
-        : decidedTotal;
 
   const matchesSearch = (referral: Referral) => {
-    if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase().trim();
+    if (!q) return false;
     const siteName = (siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode).toLowerCase();
     const destinations = referralDestinationLabels(referral).join(" ").toLowerCase();
-    const pat = resolveSubjectPatient(referral, { patients, referrals, movements });
+    const pat = resolveSubjectPatient(referral, resolverState);
     return (
       referral.id.toLowerCase().includes(q) ||
       pat.displayName.toLowerCase().includes(q) ||
@@ -537,36 +530,27 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
       destinations.includes(q)
     );
   };
+  const anyHighlight = searchQuery.trim() !== "" || highlight !== null;
+  const isHighlighted = (referral: Referral) =>
+    searchQuery.trim() !== "" ? matchesSearch(referral) : highlight !== null && highlightTest(highlight, referral, now);
+  const highlightedCount = anyHighlight ? queued.filter(isHighlighted).length : 0;
 
-  const matchesChip = (referral: Referral) => {
-    switch (chipFilter) {
-      case "tier1":
-        return referral.urgency === 1;
-      case "beds":
-        return referral.destinations.some((d) => d.destination.kind === "psychiatric_ward");
-      case "older":
-        return referral.ageBand === "Older adult";
-      case "community_ed":
-        return referral.destinations.some((d) => d.destination.kind !== "psychiatric_ward");
-      case "all":
-      default:
-        return true;
-    }
-  };
-
-  const displayQueued = queued.filter(
-    (r) =>
-      matchesSearch(r) &&
-      matchesChip(r) &&
-      matchesStream(r) &&
-      (statusFilter === "waitlisted" ? isWaitlisted(r) : statusFilter !== "pending" || !isWaitlisted(r)),
+  const decided = recentlyDecidedReferrals(referrals);
+  // The DENOMINATOR, uncapped. `decided` above is already truncated to the display limit, so its
+  // length names how many rows are shown and cannot name how many have been decided.
+  const allDecided = decidedReferrals(referrals);
+  const decidedTotal = allDecided.length;
+  const selectedReferral = selectedReferralId
+    ? referrals.find((referral) => referral.id === selectedReferralId)
+    : undefined;
+  const selectedPatientInfo = resolveSubjectPatient(selectedReferral, resolverState);
+  const selectedReadyUnits = selectedReferral ? readyUnitCount(selectedReferral, units, now) : undefined;
+  const readmissionIndex = useMemo(
+    () => createReadmissionIndex({ admissions, patients, referrals, movements, units }),
+    [admissions, patients, referrals, movements, units],
   );
-  const displayDecided = filteredDecided.filter((r) => matchesSearch(r) && matchesChip(r) && matchesStream(r));
 
-  const communityEdCount = queued.filter((r) =>
-    r.destinations.some((d) => d.destination.kind !== "psychiatric_ward"),
-  ).length;
-  const waitlistedCount = queued.filter((referral) => matchesStream(referral) && isWaitlisted(referral)).length;
+  const overdueQueued = queued.filter((referral) => isOverdue(referral, now));
   const oldestQueued =
     queued.length > 0
       ? queued.reduce((oldest, r) => (r.raisedAt < oldest.raisedAt ? r : oldest), queued[0])
@@ -598,12 +582,85 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     label: String(hour).padStart(2, "0"),
     value: decidedToday.filter((r) => Math.floor(minuteOfDay(referralDecidedAt(r)!) / 60) === hour).length,
   }));
-  const filtersApplied = searchQuery !== "" || chipFilter !== "all" || statusFilter !== "all";
-  const selectedDueAt = selectedReferral ? referralDueAt(selectedReferral, now) : undefined;
+  const bedsSummary = useMemo(
+    () => bedsReadySummary(units, admissions, bedReleases, leaveBeds, now),
+    [units, admissions, bedReleases, leaveBeds, now],
+  );
+  const meetingRows: MeetingRow[] = queued.map((referral) => {
+    const person = resolveSubjectPatient(referral, resolverState);
+    return { referral, name: person.displayName, umrn: person.umrn };
+  });
   const selectedPriority = selectedReferral ? getReferralPriority(selectedReferral, now) : undefined;
 
-  const toggleChip = (chip: Exclude<typeof chipFilter, "all">) => (pressed: boolean) =>
-    setChipFilter(pressed ? chip : "all");
+  function selectAt(step: 1 | -1) {
+    if (queued.length === 0) return;
+    const index = queued.findIndex((referral) => referral.id === selectedReferralId);
+    const next = index === -1 ? (step === 1 ? 0 : queued.length - 1) : (index + step + queued.length) % queued.length;
+    handleSelect(queued[next]!.id);
+  }
+
+  function selectNextOverdue() {
+    if (overdueQueued.length === 0) return;
+    const index = queued.findIndex((referral) => referral.id === selectedReferralId);
+    const after = queued.slice(index + 1).find((referral) => isOverdue(referral, now));
+    setView("queue");
+    handleSelect((after ?? overdueQueued[0]!).id);
+  }
+
+  useEffect(() => {
+    if (!selectedReferralId) return;
+    if (detailRef.current) {
+      detailRef.current.scrollTop = 0;
+      if (typeof window !== "undefined" && window.innerWidth <= 768) {
+        if (typeof detailRef.current.scrollIntoView === "function") {
+          detailRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      // A sheet over the page closes first; the referral stays open behind it.
+      if (e.key === "Escape" && sheet === null && !e.defaultPrevented) {
+        e.preventDefault();
+        closeDetail();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedReferralId, closeDetail, sheet]);
+
+  const onShortcutKey = useEffectEvent((e: KeyboardEvent) => {
+    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || sheet !== null || isTyping(e.target)) return;
+    const key = e.key.toLowerCase();
+    if (key === "j" || key === "k") {
+      e.preventDefault();
+      setView("queue");
+      selectAt(key === "j" ? 1 : -1);
+    } else if (selectedReferralId && (key === "1" || key === "2" || key === "3")) {
+      e.preventDefault();
+      setInspectorTab(key === "1" ? "place" : key === "2" ? "patient" : "timeline");
+    } else if (key === "o") {
+      e.preventDefault();
+      selectNextOverdue();
+    } else if (key === "s" && selectedReferralId) {
+      e.preventDefault();
+      setSheet("summary");
+    } else if (key === "m") {
+      e.preventDefault();
+      setSheet("meeting");
+    } else if (e.key === "?") {
+      e.preventDefault();
+      setSheet("keys");
+    }
+  });
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => onShortcutKey(e);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const selectedUmrn = selectedPatientInfo.umrn;
+  const umrnCopyable = /^UM\d{6}$/.test(selectedUmrn);
 
   return (
     <div
@@ -611,130 +668,86 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
       data-testid="ward-referral-board-screen"
       data-referral-view="register"
       data-ward-design="v6"
-      data-ward-rebuilt-screen="referrals"
-      data-dense-view={denseView ? "true" : "false"}
+      data-referral-layout="queue-panel"
     >
       <main id="main-content" className={styles.main}>
         <h1 className="sr-only">Referrals</h1>
         <div className={styles.v6HeroWrap} data-testid="ward-referral-kpis">
           <Hero
             eyebrow="Referrals"
-            title="Referral queue"
-            stats={
-              <>
-                <HeroStat value={pendingCount} label="Awaiting decision" />
-                <HeroStat
-                  value={oldestClocks ? durMinutes(oldestClocks.sinceReferral) : "None"}
-                  label={oldestClocks?.sinceReferralRunning === false ? "Oldest, clock stopped" : "Oldest waiting"}
-                  tone={oldestQueued && getReferralPriority(oldestQueued, now) === "overdue" ? "danger" : undefined}
-                />
-                <HeroStat value={tier1Count} label="Tier 1 waiting" />
-                <HeroStat value={decidedToday.length} label="Decided today" />
+            title={`${queued.length} awaiting decision`}
+            titleMeta={
+              <span className={a.heroMeta}>
+                Oldest <b>{oldestClocks ? durMinutes(oldestClocks.sinceReferral) : "none"}</b>
                 {medianDecision !== undefined ? (
-                  <HeroStat value={durMinutes(medianDecision)} label="Median decision" />
+                  <span className={a.heroMedian}>
+                    {" "}
+                    · median decision <b>{durMinutes(medianDecision)}</b>
+                  </span>
                 ) : null}
+              </span>
+            }
+            className={a.heroA}
+            aside={
+              <>
+                <LiveChip state="live" onHero />
+                <Link
+                  className={cx(buttonClass({ variant: "light", size: "sm" }), a.heroNew)}
+                  href={WARD_REFERRAL_INTAKE_HREF}
+                  data-testid="ward-referral-board-new"
+                >
+                  New referral
+                </Link>
               </>
             }
-            aside={<LiveChip state="live" onHero />}
             bar={
-              <div className={styles.v6Tracks}>
-                <HeroTrack
-                  label="Referral streams"
-                  value={streamFilter}
-                  onChange={(kind) => {
-                    setStreamFilter(kind);
-                    setSelectedReferralId(null);
-                  }}
-                  items={STREAMS.map(([kind, label]) => ({
-                    id: kind,
-                    label,
-                    count:
-                      kind === "all"
-                        ? referrals.length
-                        : referrals.filter((referral) =>
-                            referral.destinations.some((arm) => arm.destination.kind === kind),
-                          ).length,
-                  }))}
-                />
-                <HeroTrack
-                  label="Filter referrals by status"
-                  value={statusFilter}
-                  onChange={setStatusFilter}
-                  items={[
-                    { id: "all", label: "All", count: allCount },
-                    { id: "pending", label: "Awaiting", count: pendingCount },
-                    { id: "waitlisted", label: "Waitlisted", count: waitlistedCount },
-                    { id: "accepted", label: "Accepted", count: acceptedTotal },
-                    { id: "declined", label: "Declined", count: declinedTotal },
-                  ]}
-                />
+              <div className={a.pills} role="group" aria-label="Highlight referrals">
+                {HIGHLIGHT_LABELS.map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={a.pill}
+                    aria-pressed={highlight === key}
+                    data-testid={`ward-referral-highlight-${key}`}
+                    onClick={() => {
+                      setSearchQuery("");
+                      setHighlight((current) => (current === key ? null : key));
+                    }}
+                  >
+                    <span className={a.pillCount}>{queued.filter((r) => highlightTest(key, r, now)).length}</span>
+                    {key === "overdue" ? <TriangleAlert size={12} aria-hidden="true" /> : null}
+                    {label}
+                  </button>
+                ))}
               </div>
             }
             barAside={
-              <span className={styles.v6OrderNote} data-testid="ward-referral-board-order-note">
-                Longest wait first
-              </span>
+              <HeroTools
+                overdueCount={overdueQueued.length}
+                onNextOverdue={selectNextOverdue}
+                onMeeting={() => setSheet("meeting")}
+              />
+            }
+            foot={
+              <div className={a.heroBand}>
+                <WaitRunway
+                  queued={queued}
+                  now={now}
+                  selectedId={selectedReferralId}
+                  isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
+                  nameOf={nameOf}
+                  onSelect={(id) => {
+                    setView("queue");
+                    handleSelect(id);
+                  }}
+                />
+                <BedsReady summary={bedsSummary} />
+              </div>
             }
           />
         </div>
 
-        <Card className={styles.v6FilterBar} aria-label="Referral register controls">
-          <TextInput
-            type="search"
-            icon={Search}
-            boxClassName={styles.v6Search}
-            placeholder="ID, hospital, cohort or suburb"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onClear={() => setSearchQuery("")}
-            aria-label="Search referrals"
-          />
-          <div className={styles.v6Cohorts} role="group" aria-label="Quick filter cohorts">
-            <span className={styles.v6CohortLabel}>Cohort</span>
-            <FilterChip pressed={chipFilter === "tier1"} onPressedChange={toggleChip("tier1")} count={tier1Count}>
-              Tier 1
-            </FilterChip>
-            <FilterChip pressed={chipFilter === "beds"} onPressedChange={toggleChip("beds")} count={bedRequestsCount}>
-              Bed requests
-            </FilterChip>
-            <FilterChip pressed={chipFilter === "older"} onPressedChange={toggleChip("older")} count={olderAdultCount}>
-              Older adult
-            </FilterChip>
-            <FilterChip
-              pressed={chipFilter === "community_ed"}
-              onPressedChange={toggleChip("community_ed")}
-              count={communityEdCount}
-            >
-              Community or ED
-            </FilterChip>
-          </div>
-          <div className={styles.v6FilterActions}>
-            {filtersApplied ? (
-              <Button variant="ghost" size="sm" onClick={resetFilters}>
-                Reset filters
-              </Button>
-            ) : null}
-            <Button
-              variant="sec"
-              size="sm"
-              icon={AlignJustify}
-              aria-pressed={denseView}
-              onClick={() => setDenseView((v) => !v)}
-              data-testid="ward-referral-dense-toggle"
-            >
-              Dense
-            </Button>
-            <Link
-              className={buttonClass({ variant: "sec", size: "sm" })}
-              href={WARD_REFERRAL_INTAKE_HREF}
-              data-testid="ward-referral-board-new"
-            >
-              New referral
-            </Link>
-          </div>
-        </Card>
-
-        <div className={styles.registerLayout}>
+        <div className={cx(styles.registerLayout, a.layout)}>
           {selectedReferral ? (
             <div
               className={styles.detailBackdrop}
@@ -744,92 +757,167 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
             />
           ) : null}
           <div className={styles.registerQueue} role="region" aria-label="Referral queues" tabIndex={0}>
-            <Card className={styles.v6QueueCard}>
-              {showQueued && (
+            <Card className={cx(styles.v6QueueCard, a.queueCard)}>
+              <div className={a.toolbar}>
+                <Tabs
+                  label="Referral views"
+                  idPrefix="ward-referral-view"
+                  className={a.viewTabs}
+                  value={view}
+                  onChange={setView}
+                  items={[
+                    { id: "queue", label: "Queue", count: queued.length },
+                    { id: "history", label: "History", count: decidedTotal },
+                  ]}
+                />
+                {/* The search highlights queue rows only, so History (at most ten rows) does not offer it. */}
+                {view === "queue" ? (
+                  <TextInput
+                    type="search"
+                    icon={Search}
+                    boxClassName={a.search}
+                    placeholder="Name, UMRN, hospital or suburb"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      if (e.target.value) setHighlight(null);
+                    }}
+                    onClear={() => setSearchQuery("")}
+                    aria-label="Highlight referrals"
+                  />
+                ) : null}
+                <span className={a.toolbarNote}>
+                  {anyHighlight && view === "queue" ? (
+                    <>
+                      <span data-testid="ward-referral-highlight-note">
+                        <b>
+                          {highlightedCount} of {queued.length}
+                        </b>{" "}
+                        highlighted · all still shown
+                      </span>
+                      <Button variant="ghost" size="sm" onClick={clearHighlights}>
+                        Clear
+                      </Button>
+                    </>
+                  ) : (
+                    <span className={a.orderNote} data-testid="ward-referral-board-order-note">
+                      <ListOrdered size={14} aria-hidden="true" />
+                      <b>Longest wait first</b> · tier breaks ties
+                    </span>
+                  )}
+                </span>
+              </div>
+              <TabPanel idPrefix="ward-referral-view" id="queue" hidden={view !== "queue"}>
                 <QueuedSection
                   queued={queued}
+                  now={now}
+                  selectedId={selectedReferralId}
+                  onSelect={handleSelect}
+                  units={units}
+                  movements={movements}
+                  patients={patients}
                   allReferrals={referrals}
-                  displayQueued={displayQueued}
-                  now={now}
-                  selectedId={selectedReferralId}
-                  onSelect={handleSelect}
-                  units={units}
-                  movements={movements}
-                  patients={patients}
-                  admissions={admissions}
-                  onResetFilters={resetFilters}
+                  readmissionIndex={readmissionIndex}
+                  isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
                 />
-              )}
-              {showDecided && (
+              </TabPanel>
+              <TabPanel idPrefix="ward-referral-view" id="history" className={a.history} hidden={view !== "history"}>
                 <DecidedSection
-                  decided={filteredDecided}
-                  displayDecided={displayDecided}
-                  decidedTotal={filteredDecidedTotal}
+                  decided={decided}
+                  decidedTotal={decidedTotal}
                   units={units}
                   movements={movements}
                   patients={patients}
                   now={now}
                   selectedId={selectedReferralId}
                   onSelect={handleSelect}
-                  onResetFilters={resetFilters}
                 />
-              )}
-              {decisionsByHour.length > 0 ? (
-                <div className={styles.v6Chart}>
-                  <h3 className={styles.v6Eyebrow}>Decisions by hour</h3>
-                  <ColumnChart
-                    columns={decisionsByHour}
-                    height={72}
-                    label="Referral decisions recorded today, by hour"
-                  />
-                </div>
-              ) : null}
+                {decisionsByHour.length > 0 ? (
+                  <div className={styles.v6Chart}>
+                    <h3 className={styles.v6Eyebrow}>Decisions by hour</h3>
+                    <ColumnChart
+                      columns={decisionsByHour}
+                      height={72}
+                      label="Referral decisions recorded today, by hour"
+                    />
+                  </div>
+                ) : null}
+              </TabPanel>
+              <div className={a.queueFoot}>
+                <span className={a.keyHint}>
+                  <Kbd>J</Kbd>
+                  <Kbd>K</Kbd> move
+                </span>
+                <span className={a.keyHint}>
+                  <Kbd>Esc</Kbd> close
+                </span>
+                <button type="button" className={a.keyLink} onClick={() => setSheet("keys")}>
+                  <Kbd>?</Kbd> all shortcuts
+                </button>
+                <span className={a.footNote}>Filters highlight. Every referral stays in the list.</span>
+              </div>
             </Card>
           </div>
 
           <div
             ref={detailRef}
-            className={styles.registerDetail}
+            className={cx(styles.registerDetail, a.detail)}
             role="region"
             aria-label="Selected referral detail"
             tabIndex={0}
             data-has-selection={selectedReferral ? "true" : "false"}
           >
             {selectedReferral ? (
-              <Card className={styles.v6DetailCard}>
-                <div className={styles.registerDetailHeaderWrap}>
-                  <div className={styles.v6DetailHead}>
+              <Card className={cx(styles.v6DetailCard, a.panel)}>
+                <div className={a.panelTop}>
+                  <div className={a.panelHead}>
                     <Avatar name={selectedPatientInfo.displayName} size="lg" decorative />
-                    <div className={styles.v6DetailWho}>
-                      <h2 className={styles.v6DetailName}>
+                    <div className={a.panelWho}>
+                      <h2 className={a.panelName}>
                         {selectedPatientInfo.displayName}
-                        <Badge variant="mono" size="sm">
-                          {selectedReferral.id}
-                        </Badge>
+                        <span className="sr-only"> {selectedReferral.id}</span>
                       </h2>
-                      <p className={styles.v6DetailMeta}>
-                        {[
-                          selectedPatientInfo.umrn,
-                          demographicLabel(selectedReferral),
-                          selectedReferral.homeRegion,
-                        ].join(" · ")}
+                      <p className={a.panelMeta}>
+                        {umrnCopyable ? (
+                          <button
+                            type="button"
+                            className={a.umrn}
+                            title="Copy UMRN"
+                            aria-label={`Copy UMRN ${selectedUmrn}`}
+                            onClick={() => {
+                              void navigator.clipboard
+                                ?.writeText(selectedUmrn)
+                                .then(() => setUmrnCopied(true))
+                                .catch(() => setUmrnCopied(false));
+                            }}
+                          >
+                            <span className={a.mono}>{selectedUmrn}</span>
+                            {umrnCopied ? (
+                              <Check size={12} aria-hidden="true" />
+                            ) : (
+                              <Copy size={12} aria-hidden="true" />
+                            )}
+                          </button>
+                        ) : (
+                          <span>{selectedUmrn}</span>
+                        )}
+                        <span aria-hidden="true">·</span>
+                        <span className={a.truncate}>{demographicLabel(selectedReferral)}</span>
                       </p>
                     </div>
                     <span
-                      className={styles.v6DetailTier}
+                      className={a.panelTier}
                       data-priority={selectedPriority}
                       data-testid={`ward-referral-inspector-priority-${selectedReferral.id}`}
                       title={urgencyTierLabel(selectedReferral.urgency)}
                     >
-                      <TierTile tier={selectedReferral.urgency} />
-                      {selectedPriority === "overdue" ? <StatusGlyph tone="danger" size={9} /> : null}
-                      <span>{referralPriorityLabel(selectedPriority ?? "routine")}</span>
-                    </span>
-                    <span className={styles.v6DetailWait}>
-                      <span className={styles.v6WaitFigure}>{referralWaitLine(selectedReferral, now)}</span>
-                      {selectedDueAt !== undefined ? (
-                        <span className={styles.v6Due}>due {formatInstantWithDay(selectedDueAt, now)}</span>
-                      ) : null}
+                      <span aria-hidden="true">
+                        <TierTile tier={selectedReferral.urgency} />
+                      </span>
+                      <span className="sr-only">
+                        {urgencyTierLabel(selectedReferral.urgency)},{" "}
+                        {referralPriorityLabel(selectedPriority ?? "routine")}
+                      </span>
                     </span>
                     {(() => {
                       const accepted = acceptedAddressing(selectedReferral);
@@ -848,6 +936,16 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       );
                     })()}
                     <Button
+                      variant="sec"
+                      size="sm"
+                      icon={Hand}
+                      disabledReason={NOT_WIRED}
+                      reasonDisplay="tooltip"
+                      className={a.preview}
+                    >
+                      Claim
+                    </Button>
+                    <Button
                       variant="ghost"
                       size="sm"
                       icon={X}
@@ -858,47 +956,50 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     />
                   </div>
 
-                  <dl className={styles.v6Facts}>
+                  <ReferralAlerts
+                    referral={selectedReferral}
+                    readmission={
+                      <ReadmissionFlag
+                        flag={referralReadmissionFlag(selectedReferral, readmissionIndex)}
+                        expandable={false}
+                      />
+                    }
+                  />
+                  {referralState(selectedReferral) === "queued" ? (
+                    <DecisionClock referral={selectedReferral} now={now} />
+                  ) : null}
+
+                  <dl className={a.strip}>
                     <div>
-                      <dt>Origin</dt>
+                      <dt>From</dt>
                       <dd>{siteByCode(selectedReferral.originSiteCode)?.name ?? selectedReferral.originSiteCode}</dd>
-                      <dd className={styles.v6FactSub}>Sent {formatInstantWithDay(selectedReferral.raisedAt, now)}</dd>
+                      <dd className={a.stripSub}>{REFERRAL_SOURCE_WORDS[selectedReferral.source]}</dd>
                     </div>
                     <div>
                       <dt>Asking for</dt>
-                      <dd>{referralDestinationLabels(selectedReferral).join(" · ")}</dd>
-                      {selectedWardAddressing && selectedWardAddressing.destination.kind === "psychiatric_ward" ? (
-                        <dd className={styles.v6FactSub}>
-                          {selectedReferral.ageBand}{" "}
-                          {selectedWardAddressing.destination.secureBedNeeded ? "secure" : "open"}
-                        </dd>
-                      ) : null}
+                      <dd>{askingForShort(selectedReferral)}</dd>
+                      <dd className={a.stripSub}>{needWords(selectedReferral).join(", ") || "No bed needs"}</dd>
                     </div>
                     <div data-testid="ward-referral-detail-legal-status">
                       <dt>Legal status</dt>
-                      <dd>Not recorded</dd>
-                    </div>
-                    <div>
-                      <dt>Home</dt>
-                      <dd>{referralSuburbLabel(selectedReferral.suburb)}</dd>
-                      <dd className={styles.v6FactSub}>{selectedReferral.homeRegion}</dd>
+                      <dd>{selectedReferral.intake?.legalStatus?.trim() || "Not recorded"}</dd>
                     </div>
                   </dl>
 
                   <Tabs
-                    label="Referral inspector modes"
+                    label="Referral detail"
                     idPrefix="ward-referral-inspector"
-                    className={styles.v6Tabs}
+                    className={a.panelTabs}
                     value={inspectorTab}
                     onChange={setInspectorTab}
                     items={[
+                      { id: "place", label: wardArm(selectedReferral) ? "Place" : "Decide", count: selectedReadyUnits },
+                      { id: "patient", label: "Patient" },
                       {
-                        id: "placement",
-                        label: "Bed placement",
-                        count: readyVacanciesCount > 0 ? readyVacanciesCount : undefined,
+                        id: "timeline",
+                        label: "Timeline",
+                        count: referralTimeline(selectedReferral, units).length,
                       },
-                      { id: "dossier", label: "Clinical dossier" },
-                      { id: "mha", label: "Legal forms" },
                     ]}
                   />
                 </div>
@@ -907,9 +1008,9 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   key={`${selectedReferral.id}-${inspectorTab}`}
                   idPrefix="ward-referral-inspector"
                   id={inspectorTab}
-                  className={styles.registerDetailBody}
+                  className={cx(styles.registerDetailBody, a.panelBody)}
                 >
-                  {inspectorTab === "placement" ? (
+                  {inspectorTab === "place" ? (
                     <ReferralMatchView
                       key={selectedReferral.id}
                       referral={selectedReferral}
@@ -921,148 +1022,48 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                       hideDossierHeader
                     />
                   ) : null}
-
-                  {inspectorTab === "dossier" ? (
-                    <div className={styles.v6TabBody}>
-                      {(() => {
-                        const clinicalInfo = getClinicalSummary(selectedReferral);
-                        const wardDest =
-                          selectedWardAddressing && selectedWardAddressing.destination.kind === "psychiatric_ward"
-                            ? selectedWardAddressing.destination
-                            : undefined;
-                        const requests = [
-                          wardDest?.highAcuityNursingNeeded ? "High-acuity nursing requested" : undefined,
-                          wardDest?.involuntaryBedNeeded ? "Involuntary bed requested" : undefined,
-                          wardDest?.secureBedNeeded ? "Secure bed requested" : undefined,
-                          selectedReferral.transportNeeded ? "Transport requested" : undefined,
-                        ].filter((request): request is string => request !== undefined);
-                        return (
-                          <>
-                            <section className={styles.v6Section} aria-labelledby="ward-referral-dossier-summary">
-                              <div className={styles.v6SectionHead}>
-                                <h3 id="ward-referral-dossier-summary">Referral summary</h3>
-                                <span>From the referrer. No risk scores.</span>
-                              </div>
-                              <dl className={styles.v6Grid}>
-                                <div>
-                                  <dt>Referring clinician</dt>
-                                  <dd>{clinicalInfo.clinician}</dd>
-                                </div>
-                                <div>
-                                  <dt>Facility</dt>
-                                  <dd>
-                                    {siteByCode(selectedReferral.originSiteCode)?.name ??
-                                      selectedReferral.originSiteCode}
-                                  </dd>
-                                </div>
-                                <div>
-                                  <dt>Direct contact</dt>
-                                  <dd>Not recorded</dd>
-                                </div>
-                                <div>
-                                  <dt>Referral raised</dt>
-                                  <dd>{formatInstantWithDay(selectedReferral.raisedAt, now)}</dd>
-                                </div>
-                              </dl>
-                            </section>
-
-                            {requests.length > 0 ? (
-                              <section className={styles.v6Section} aria-labelledby="ward-referral-dossier-requests">
-                                <div className={styles.v6SectionHead}>
-                                  <h3 id="ward-referral-dossier-requests">Requested</h3>
-                                </div>
-                                <ul className={styles.v6Badges}>
-                                  {requests.map((request) => (
-                                    <li key={request}>
-                                      <Badge variant="plain">{request}</Badge>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </section>
-                            ) : null}
-
-                            <section className={styles.v6Section} aria-labelledby="ward-referral-dossier-timeline">
-                              <div className={styles.v6SectionHead}>
-                                <h3 id="ward-referral-dossier-timeline">Referral timeline</h3>
-                                <span>{referralWaitLine(selectedReferral, now)}</span>
-                              </div>
-                              <ul className={styles.v6Checks}>
-                                <li>
-                                  <StatusGlyph tone="success" size={10} />
-                                  <span className={styles.v6CheckText}>
-                                    <strong>Referral raised</strong>
-                                    <span>
-                                      From {selectedReferral.source.replace(/_/g, " ")} · {selectedReferral.homeRegion}
-                                    </span>
-                                  </span>
-                                  <span className={styles.v6CheckState}>
-                                    {formatInstantWithDay(selectedReferral.raisedAt, now)}
-                                  </span>
-                                </li>
-                                <li>
-                                  <StatusGlyph tone="info" size={10} />
-                                  <span className={styles.v6CheckText}>
-                                    <strong>Referral clock</strong>
-                                    <span>{urgencyTierLabel(selectedReferral.urgency)}</span>
-                                  </span>
-                                  <span className={styles.v6CheckState}>{referralWaitLine(selectedReferral, now)}</span>
-                                </li>
-                                <li>
-                                  <StatusGlyph tone="neutral" size={10} />
-                                  <span className={styles.v6CheckText}>
-                                    <strong>Destination responses</strong>
-                                    <span>Asked of {referralDestinationLabels(selectedReferral).join(" · ")}</span>
-                                  </span>
-                                  <span className={styles.v6CheckState}>{outcomeLabel(selectedReferral)}</span>
-                                </li>
-                              </ul>
-                            </section>
-
-                            <ReferralHistoryAndCorrections referral={selectedReferral} now={now} dispatch={dispatch} />
-                          </>
-                        );
-                      })()}
-                    </div>
+                  {inspectorTab === "patient" ? (
+                    <ReferralPatientTab referral={selectedReferral} now={now} readyUnits={selectedReadyUnits} />
                   ) : null}
-
-                  {inspectorTab === "mha" ? (
-                    <div className={styles.v6TabBody}>
-                      <section className={styles.v6Section} aria-labelledby="ward-referral-legal-checks">
-                        <div className={styles.v6SectionHead}>
-                          <h3 id="ward-referral-legal-checks">Recorded legal information</h3>
-                          <span>For the receiving unit</span>
-                        </div>
-                        <p className={styles.v6Lead}>
-                          Referral details do not establish consent, detention authority or a register check.
-                        </p>
-                        <ul className={styles.v6Checks}>
-                          <li>
-                            <StatusGlyph tone="neutral" size={10} />
-                            <span className={styles.v6CheckText}>
-                              <strong>Consent or detention authority</strong>
-                              <span>Referral raised {formatInstantWithDay(selectedReferral.raisedAt, now)}</span>
-                            </span>
-                            <span className={styles.v6CheckState}>Not recorded in this referral</span>
-                          </li>
-                          <li>
-                            <StatusGlyph tone="neutral" size={10} />
-                            <span className={styles.v6CheckText}>
-                              <strong>Chief Psychiatrist register check</strong>
-                              <span>Register check not recorded on this referral.</span>
-                            </span>
-                            <span className={styles.v6CheckState}>Not recorded</span>
-                          </li>
-                        </ul>
-                      </section>
-                      <section className={styles.v6Section} aria-labelledby="ward-referral-legal-doc">
-                        <div className={styles.v6SectionHead}>
-                          <h3 id="ward-referral-legal-doc">Legal documentation</h3>
-                        </div>
-                        <p className={styles.v6Lead}>{getClinicalSummary(selectedReferral).legalDoc}</p>
-                      </section>
-                    </div>
+                  {inspectorTab === "timeline" ? (
+                    <ReferralTimeline referral={selectedReferral} units={units} now={now}>
+                      <ReferralHistoryAndCorrections referral={selectedReferral} now={now} dispatch={dispatch} />
+                    </ReferralTimeline>
                   ) : null}
                 </TabPanel>
+
+                <div className={a.panelFoot}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={Megaphone}
+                    disabledReason={NOT_WIRED}
+                    reasonDisplay="tooltip"
+                    className={a.preview}
+                  >
+                    Escalate
+                  </Button>
+                  <span className={a.spacer} />
+                  <SummaryButton onClick={() => setSheet("summary")} />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={ChevronRight}
+                    onClick={() => selectAt(1)}
+                    title="Next referral (J)"
+                  >
+                    Next
+                  </Button>
+                </div>
+                <IsbarSheet
+                  open={sheet === "summary"}
+                  onClose={() => setSheet(null)}
+                  referral={selectedReferral}
+                  name={selectedPatientInfo.displayName}
+                  umrn={selectedUmrn}
+                  demographics={demographicLabel(selectedReferral)}
+                  now={now}
+                />
               </Card>
             ) : (
               <Card className={styles.v6DetailCard}>
@@ -1081,6 +1082,15 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
           </div>
         </div>
 
+        <BedMeetingSheet
+          open={sheet === "meeting"}
+          onClose={() => setSheet(null)}
+          rows={meetingRows}
+          now={now}
+          summary={bedsSummary}
+        />
+        <ShortcutsSheet open={sheet === "keys"} onClose={() => setSheet(null)} />
+
         <WardPrototypeFooter
           testId="ward-referral-board-governance"
           note="It places nobody; coordinators record referral decisions one at a time · Not a medical device"
@@ -1093,275 +1103,293 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
 function QueuedSection({
   queued,
   allReferrals = queued,
-  displayQueued = queued,
   now,
   selectedId,
   onSelect,
   units = [],
   movements = [],
   patients = [],
-  admissions = [],
-  onResetFilters,
+  readmissionIndex,
+  isHighlighted = () => false,
 }: {
   queued: Referral[];
   /** Every referral, not just the queue: a prior stay links to its person through its own referral. */
   allReferrals?: Referral[];
-  displayQueued?: Referral[];
   now: Instant;
   selectedId: string | undefined;
   onSelect: (referralId: string) => void;
   units?: Unit[];
   movements?: Movement[];
   patients?: Patient[];
-  admissions?: Admission[];
-  onResetFilters?: () => void;
+  readmissionIndex: ReturnType<typeof createReadmissionIndex>;
+  isHighlighted?: (referral: Referral) => boolean;
 }) {
-  const sectionRef = useRef<HTMLElement | null>(null);
-  // One readmission index per list, built from every referral so a prior stay whose referral has
-  // left the queue still resolves to its person.
-  const readmissionIndex = useMemo(
-    () => createReadmissionIndex({ admissions, patients, referrals: allReferrals, movements, units }),
-    [admissions, patients, allReferrals, movements, units],
+  const queuedResolverState = useMemo(
+    () => ({ patients, referrals: allReferrals, movements }),
+    [patients, allReferrals, movements],
   );
-  const [overflowing, setOverflowing] = useState(false);
-
-  const measureOverflow = useCallback(() => {
-    const scroller = sectionRef.current?.querySelector<HTMLElement>('[data-ward-primitive="table"]') ?? null;
-    setOverflowing(scroller !== null && scroller.scrollWidth > scroller.clientWidth + 1);
-  }, []);
-
-  useLayoutEffect(() => {
-    measureOverflow();
-  }, [measureOverflow, queued.length]);
-
-  useEffect(() => {
-    window.addEventListener("resize", measureOverflow);
-    return () => window.removeEventListener("resize", measureOverflow);
-  }, [measureOverflow]);
-
-  useEffect(() => {
-    const table = sectionRef.current?.querySelector<HTMLElement>('[data-ward-primitive="table"] table') ?? null;
-    if (!table || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => measureOverflow());
-    observer.observe(table);
-    return () => observer.disconnect();
-  }, [measureOverflow, queued.length]);
-
   return (
-    <section ref={sectionRef} className={styles.v6Section} data-testid="ward-referral-board-queued">
-      <CardHead
-        icon={ClipboardList}
-        title={
-          <>
-            Awaiting decision{" "}
-            <Count
-              n={displayQueued.length === queued.length ? queued.length : `${displayQueued.length} of ${queued.length}`}
-            />
-            {overflowing ? <span className={styles.v6HeadNote}> · scroll sideways for the rest</span> : null}
-          </>
-        }
-        meta="Decision due by tier"
-      />
+    <section className={styles.v6Section} data-testid="ward-referral-board-queued">
+      <h2 className="sr-only">
+        Awaiting decision <Count n={queued.length} />
+      </h2>
       {queued.length === 0 ? (
         <p className={styles.v6Empty} data-testid="ward-referral-board-queued-empty">
           None. No referral is currently queued.
         </p>
-      ) : displayQueued.length === 0 ? (
-        <EmptyState
-          className={styles.v6EmptyState}
-          title="No queued referrals match the current search or filters."
-          action={
-            onResetFilters ? (
-              <Button variant="sec" size="sm" onClick={onResetFilters}>
-                Reset filters
-              </Button>
-            ) : undefined
-          }
-        />
       ) : (
         <>
-          <WardTable
-            className={`${styles.table} ${styles.queuedTable}`}
-            wrapperClassName={styles.tableScroll}
-            testId="ward-referral-board-queued-table"
-            overflowing={overflowing}
-          >
+          <ReferralQueueTable>
+            <colgroup>
+              <col className={a.colTier} />
+              <col className={a.colPatient} />
+              <col className={a.colWait} />
+              <col className={a.colFrom} />
+              <col className={a.colAsk} />
+              <col className={a.colNeeds} />
+              <col className={a.colFit} />
+            </colgroup>
             <thead>
               <tr>
-                <th scope="col">Referral</th>
                 <th scope="col">Tier</th>
+                <th scope="col">Patient</th>
                 <th scope="col">Since referral</th>
-                <th scope="col">Sending hospital</th>
-                <th scope="col">Assigned bed</th>
-                <th scope="col">Age band</th>
-                <th scope="col">Sex and gender</th>
-                <th scope="col">Home region</th>
+                <th scope="col">From</th>
+                <th scope="col">Asking for</th>
+                <th scope="col">Needs</th>
+                <th scope="col">Fit</th>
               </tr>
             </thead>
             <tbody>
-              {displayQueued.map((referral) => {
-                const patientInfo = resolveSubjectPatient(referral, { patients, referrals: queued, movements });
+              {queued.map((referral) => {
+                const patientInfo = resolveSubjectPatient(referral, queuedResolverState);
                 const refusals = refusalLines(referral);
-                const accepted = acceptedAddressing(referral);
-                const linkedMovement = movements.find((m) => m.referralId === referral.id && !m.closure);
-                const unitId = accepted?.acceptedUnitId ?? linkedMovement?.acceptedUnitId;
-                const assignedUnit = unitId ? units.find((u) => u.id === unitId) : undefined;
-                const assignedBedLabel = assignedUnit ? assignedUnit.name : "Awaiting bed";
                 const sendingHospital = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
+                const selected = referral.id === selectedId;
+                const priority = getReferralPriority(referral, now);
+                const ready = readyUnitCount(referral, units, now);
+                const ward = wardArm(referral)?.destination;
+                const needs = [
+                  ward?.secureBedNeeded ? { icon: Lock, label: "Secure bed requested" } : undefined,
+                  ward?.involuntaryBedNeeded ? { icon: Scale, label: "Involuntary bed requested" } : undefined,
+                  ward?.highAcuityNursingNeeded ? { icon: Users, label: "High acuity nursing requested" } : undefined,
+                  referral.transportNeeded ? { icon: Truck, label: "Transport requested" } : undefined,
+                ].filter((need): need is { icon: typeof Lock; label: string } => need !== undefined);
 
                 return (
                   <tr
                     key={referral.id}
-                    className={referral.id === selectedId ? styles.selectedRow : undefined}
+                    className={cx(a.row, selected && a.rowOn, isHighlighted(referral) && a.rowHl)}
                     data-testid={`ward-referral-board-row-${referral.id}`}
+                    data-referral-id={referral.id}
+                    data-highlighted={isHighlighted(referral) ? "true" : undefined}
+                    onClick={() => onSelect(referral.id)}
                   >
                     <td>
-                      <button
-                        type="button"
-                        className={styles.rowSelectButton}
-                        data-testid={`ward-referral-board-select-${referral.id}`}
-                        aria-pressed={referral.id === selectedId}
-                        onClick={() => onSelect(referral.id)}
+                      <span
+                        className={a.tier}
+                        data-priority={priority}
+                        data-testid={`ward-referral-board-priority-${referral.id}`}
+                        title={`${urgencyTierLabel(referral.urgency)} · ${referralPriorityLabel(priority)}`}
                       >
-                        {referral.id}
-                      </button>
-                      <span className={styles.patientTableMeta}>
-                        <strong>{patientInfo.displayName}</strong>
+                        <span aria-hidden="true">
+                          <TierTile tier={referral.urgency} />
+                        </span>
+                        <span className="sr-only">
+                          {urgencyTierLabel(referral.urgency)}, {referralPriorityLabel(priority)}
+                        </span>
+                      </span>
+                    </td>
+                    <td>
+                      <span className={a.who}>
+                        <button
+                          type="button"
+                          className={a.rowSelect}
+                          data-testid={`ward-referral-board-select-${referral.id}`}
+                          aria-pressed={selected}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onSelect(referral.id);
+                          }}
+                        >
+                          {patientInfo.displayName}
+                        </button>
+                        <span className={a.sub}>
+                          <span className={a.mono}>{patientInfo.umrn}</span> · {demographicLabel(referral)}
+                        </span>
                       </span>
                       <ReadmissionFlag
                         flag={referralReadmissionFlag(referral, readmissionIndex)}
                         testId={`ward-referral-board-readmission-${referral.id}`}
                       />
-                      {refusals.length > 0 ? (
-                        <span
-                          className={styles.outcomeDetailRefusals}
-                          data-testid={`ward-referral-board-refusals-${referral.id}`}
-                        >
-                          {`${QUEUED_REFUSED_LEAD} — ${refusals.join(" · ")}`}
-                        </span>
-                      ) : null}
                       {referralNeedsGenderReview(referral) ? (
-                        <span
-                          className={styles.outcomeDetailRefusals}
-                          data-testid={`ward-referral-board-review-${referral.id}`}
-                        >
+                        <span className={a.rowNote} data-testid={`ward-referral-board-review-${referral.id}`}>
                           {GENDER_REVIEW_FLAG}
                         </span>
                       ) : null}
                     </td>
-                    <td className={styles.tierCell}>
-                      <div className={styles.tierCellContent}>
-                        <span
-                          className={styles.priorityBadge}
-                          data-priority={getReferralPriority(referral, now)}
-                          data-testid={`ward-referral-board-priority-${referral.id}`}
-                        >
-                          <PriorityGlyph priority={getReferralPriority(referral, now)} />
-                          <span className={styles.priorityText}>
-                            {referralPriorityLabel(getReferralPriority(referral, now))}
-                          </span>
-                        </span>
-                        <span className={styles.tierText}>{urgencyTierLabel(referral.urgency)}</span>
-                      </div>
-                    </td>
-                    <td className={styles.waitCell} data-testid={`ward-referral-board-wait-${referral.id}`}>
-                      <span className={styles.waitBadge}>{referralWaitLine(referral, now)}</span>
-                    </td>
-                    <td className={styles.hospitalCell} data-testid={`ward-referral-board-hospital-${referral.id}`}>
-                      {sendingHospital}
-                    </td>
-                    <td className={styles.bedCell} data-testid={`ward-referral-board-bed-${referral.id}`}>
-                      <span className={assignedUnit ? styles.bedAssignedBadge : styles.bedUnassignedBadge}>
-                        {assignedBedLabel}
+                    <td data-testid={`ward-referral-board-wait-${referral.id}`}>
+                      <span className="sr-only">{referralWaitLine(referral, now)}</span>
+                      <span aria-hidden="true">
+                        <WaitCell referral={referral} now={now} />
                       </span>
                     </td>
-                    <td>{referral.ageBand}</td>
-                    <td>
-                      {referralSexCell(referral)}
-                      {referralGenderSuffix(referral)}
+                    <td data-testid={`ward-referral-board-hospital-${referral.id}`}>
+                      <span className={a.who}>
+                        <span className={a.truncate} title={sendingHospital}>
+                          {sendingHospital}
+                        </span>
+                        <span className={a.sub}>{REFERRAL_SOURCE_WORDS[referral.source]}</span>
+                      </span>
                     </td>
-                    <td>{referral.homeRegion}</td>
+                    <td>
+                      <span className={a.arms}>
+                        {referral.destinations.map((arm, index) => {
+                          const open = arm.state === "queued" && arm.withdrawnAt === undefined;
+                          const refused = arm.state === "declined";
+                          if (!open && !refused) return null;
+                          const words = `${shortKind(arm.destination.kind)}${
+                            open && arm.waitlistedAt !== undefined ? ", waitlisted" : refused ? " refused" : ""
+                          }`;
+                          return (
+                            <span
+                              key={`${arm.destination.kind}-${index}`}
+                              className={cx(a.arm, refused && a.armNo)}
+                              title={
+                                refused
+                                  ? `${referralDestinationLabel(arm.destination)} refused: ${declineReasonWords(arm.declineReason)}`
+                                  : referralDestinationLabel(arm.destination)
+                              }
+                            >
+                              <StatusGlyph tone={refused ? "closed" : "neutral"} size={9} />
+                              {words}
+                            </span>
+                          );
+                        })}
+                      </span>
+                      {refusals.length > 0 ? (
+                        <span className="sr-only" data-testid={`ward-referral-board-refusals-${referral.id}`}>
+                          {`${QUEUED_REFUSED_LEAD} — ${refusals.join(" · ")}`}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td>
+                      {needs.length > 0 ? (
+                        <span className={a.needs}>
+                          {needs.map((need) => (
+                            <span key={need.label} title={need.label}>
+                              <need.icon size={14} aria-hidden="true" />
+                              <span className="sr-only">{need.label}</span>
+                            </span>
+                          ))}
+                        </span>
+                      ) : (
+                        <span className={a.none}>
+                          <span className="sr-only">None recorded</span>
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      {ready === undefined ? (
+                        <span className={a.none} title="No ward bed asked for">
+                          <span className="sr-only">No ward bed asked for</span>
+                        </span>
+                      ) : (
+                        <span className={a.fit}>
+                          <b>{ready}</b> ready
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
-          </WardTable>
+          </ReferralQueueTable>
 
-          <ul className={cx(styles.cardList, styles.v6List)} data-testid="ward-referral-board-queued-cards">
-            {displayQueued.map((referral) => {
-              const patientInfo = resolveSubjectPatient(referral, { patients, referrals: queued, movements });
+          <ReferralQueueCards>
+            {queued.map((referral) => {
+              const patientInfo = resolveSubjectPatient(referral, queuedResolverState);
               const refusals = refusalLines(referral);
               const accepted = acceptedAddressing(referral);
               const linkedMovement = movements.find((m) => m.referralId === referral.id && !m.closure);
               const unitId = accepted?.acceptedUnitId ?? linkedMovement?.acceptedUnitId;
               const assignedUnit = unitId ? units.find((u) => u.id === unitId) : undefined;
-              const sendingHospital = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
-              const dueAt = referralDueAt(referral, now);
               const selected = referral.id === selectedId;
+              const dueAt = referralDueAt(referral, now);
 
               return (
-                <li key={referral.id} className={cx(styles.v6Item, selected && styles.v6ItemOn)}>
+                <li
+                  key={referral.id}
+                  className={cx(a.card, selected && a.cardOn, isHighlighted(referral) && a.cardHl)}
+                  data-highlighted={isHighlighted(referral) ? "true" : undefined}
+                >
                   <button
                     type="button"
-                    className={styles.v6Row}
+                    className={a.cardButton}
                     data-testid={`ward-referral-board-card-select-${referral.id}`}
                     aria-pressed={selected}
                     onClick={() => onSelect(referral.id)}
                   >
                     <span
-                      className={styles.v6RowTier}
+                      className={a.cardTier}
                       data-tier={referral.urgency}
                       data-testid={`ward-referral-board-card-tier-${referral.id}`}
                       title={urgencyTierLabel(referral.urgency)}
                     >
                       <TierTile tier={referral.urgency} />
                     </span>
-                    <span className={styles.v6RowMain}>
-                      <span className={styles.v6RowName}>
+                    <span className={a.cardMain}>
+                      <span className={a.cardName}>
                         <strong>{patientInfo.displayName}</strong>
-                        <span className={styles.v6RowId}>{referral.id}</span>
                         <ReadmissionFlag
                           flag={referralReadmissionFlag(referral, readmissionIndex)}
                           expandable={false}
                           testId={`ward-referral-board-card-readmission-${referral.id}`}
                         />
                       </span>
-                      <span className={styles.v6RowRoute}>
-                        {sendingHospital} to {referralDestinationLabels(referral).join(" · ")}
+                      <span className={a.cardRoute}>
+                        {referral.originSiteCode} to {askingForShort(referral)}
                       </span>
-                      <span
-                        className={styles.v6RowFacts}
-                        data-testid={`ward-referral-board-card-service-${referral.id}`}
-                      >
+                      <span className={a.cardFacts} data-testid={`ward-referral-board-card-service-${referral.id}`}>
                         {referralPersonFactsStatingSex(referral).join(" · ")}
                         {assignedUnit ? ` · Bed at ${assignedUnit.name}` : ""}
                       </span>
                     </span>
-                    <span className={styles.v6RowClock}>
-                      <span className={styles.v6RowWait} data-testid={`ward-referral-board-card-wait-${referral.id}`}>
+                    <span className={a.cardClock}>
+                      <span className={a.cardWait} data-testid={`ward-referral-board-card-wait-${referral.id}`}>
                         {referralWaitLine(referral, now)}
                       </span>
                       {dueAt !== undefined ? <DueTimer dueAt={dueAt} now={now} /> : null}
                     </span>
                   </button>
                   {refusals.length > 0 ? (
-                    <span className={styles.v6RowNote} data-testid={`ward-referral-board-card-refusals-${referral.id}`}>
+                    <span className={a.cardNote} data-testid={`ward-referral-board-card-refusals-${referral.id}`}>
                       {`${QUEUED_REFUSED_LEAD} — ${refusals.join(" · ")}`}
                     </span>
                   ) : null}
                   {referralNeedsGenderReview(referral) ? (
-                    <span className={styles.v6RowNote} data-testid={`ward-referral-board-card-review-${referral.id}`}>
+                    <span className={a.cardNote} data-testid={`ward-referral-board-card-review-${referral.id}`}>
                       {GENDER_REVIEW_FLAG}
                     </span>
                   ) : null}
                 </li>
               );
             })}
-          </ul>
+          </ReferralQueueCards>
         </>
       )}
     </section>
   );
+}
+
+const SHORT_KIND: Record<Referral["destinations"][number]["destination"]["kind"], string> = {
+  psychiatric_ward: "Ward bed",
+  emergency_department: "ED review",
+  community_team: "Community",
+};
+
+function shortKind(kind: Referral["destinations"][number]["destination"]["kind"]): string {
+  return SHORT_KIND[kind];
 }
 
 function DecidedSection({

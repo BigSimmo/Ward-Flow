@@ -209,6 +209,9 @@ describe("the breakpoint scale", () => {
     // derived — both its columns are text that reflows to a phone, so it is the capacity/movements
     // case exactly, not the coordinator case with a fixed-width diagram in the middle column.
     "src/components/ward-management/legal-forms/legal-forms.module.css: 64",
+    // 2026-10-09: the Referrals queue beside its decision panel (option A). Inherited 64, the
+    // capacity/movements case: both columns are text, and below 64rem the panel slides over.
+    "src/components/ward-management/referrals/referral-board.module.css: 64",
     // Third-edition Command's drawing changes from the stacked phone/tablet surface at 1000px to
     // its two-column laptop arrangement at 1001px. 62.5625rem is that literal 1001px boundary;
     // retaining the one-pixel separation keeps both media ranges unambiguous. Q004 applies that
