@@ -195,7 +195,7 @@ describe("read-only report screens", () => {
     const table = within(screen.getByTestId("ward-downtime-beds"));
     const head = table.getAllByRole("columnheader").map((cell) => cell.textContent);
     expect(head).toEqual(
-      expect.arrayContaining(["Ready", "Being made ready", "Occupied", "Held on leave", "Pulled", "Closed"]),
+      expect.arrayContaining(["Ready", "Being made ready", "Occupied", "On leave", "Pulled", "Closed"]),
     );
     expect(head).not.toContain("Held");
     const row = table.getByRole("row", { name: /Sample ward/u });

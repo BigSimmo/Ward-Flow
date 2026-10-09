@@ -159,7 +159,7 @@ export function DowntimePackScreen() {
                     {BED_STATE_LABELS.occupied}
                   </th>
                   <th scope="col" className={styles.num} title={BED_STATE_DETAILS.onLeave}>
-                    Held on leave
+                    {BED_STATE_LABELS.onLeave}
                   </th>
                   <th scope="col" className={styles.num} title={BED_STATE_DETAILS.pulled}>
                     {BED_STATE_LABELS.pulled}
@@ -187,7 +187,8 @@ export function DowntimePackScreen() {
             </table>
           </div>
           <p className={styles.empty}>
-            Being made ready beds are counted in Ready; held on leave beds are counted in Occupied
+            Beds in “Being made ready” are counted in Ready. Beds “On leave” are held for a patient on leave and counted
+            in Occupied.
           </p>
         </Card>
 
