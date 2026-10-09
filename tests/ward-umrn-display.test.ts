@@ -26,7 +26,7 @@ describe("UMRN in place of a WF journey number", () => {
       `Transport for ${umrn} was cancelled.`,
     );
     expect(withUmrnInPlaceOfMovementIds("no movement found for id WF-NOPE", state)).toBe(
-      "no movement found for id WF-NOPE",
+      "no movement found for id UMRN not recorded",
     );
     // A patient id that happens to contain a journey number is not a journey id.
     expect(withUmrnInPlaceOfMovementIds(`PT-G-${linked.id}`, state)).toBe(`PT-G-${linked.id}`);
