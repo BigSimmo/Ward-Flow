@@ -588,7 +588,7 @@ export function PatientDetailsTab({
               value={all.length - missing}
               aria-label="Recorded patient and placement fields"
             />
-            <Button size="sm" aria-pressed={missingOnly} onClick={() => setMissingOnly(!missingOnly)}>
+            <Button size="sm" aria-pressed={missingOnly} onClick={() => { setMissingOnly(!missingOnly); }}>
               Missing information
             </Button>
             <CopyFact
