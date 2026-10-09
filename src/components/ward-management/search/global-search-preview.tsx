@@ -407,17 +407,13 @@ function WardPreview({
         {incoming.length > 0 ? (
           <>
             <dt>Accepted</dt>
-            <dd>
-              {incoming.map((movement) => movementUmrn(movement, { patients, referrals, movements })).join(", ")}
-            </dd>
+            <dd>{incoming.map((movement) => movementUmrn(movement, { patients, referrals, movements })).join(", ")}</dd>
           </>
         ) : null}
         {referred.length > 0 ? (
           <>
             <dt>Referred</dt>
-            <dd>
-              {referred.map((movement) => movementUmrn(movement, { patients, referrals, movements })).join(", ")}
-            </dd>
+            <dd>{referred.map((movement) => movementUmrn(movement, { patients, referrals, movements })).join(", ")}</dd>
           </>
         ) : null}
       </dl>

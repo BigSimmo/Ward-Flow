@@ -7,10 +7,7 @@ import { type Patient } from "@/components/ward-management/ward-patients";
 import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
-import {
-  resolveSubjectPatient,
-  type ResolvedPatientInfo,
-} from "@/components/ward-management/ward-patient-resolver";
+import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 
 import styles from "./ward-notification-center.module.css";
@@ -96,9 +93,7 @@ function rewriteNoticeUmrns(
     const id = token.replace(/-+$/, "");
     const movement = movements.find((candidate) => candidate.id === id);
     if (!movement) return token;
-    const info = resolveIdentity
-      ? resolveIdentity(movement)
-      : resolveSubjectPatient(movement, { movements, patients });
+    const info = resolveIdentity ? resolveIdentity(movement) : resolveSubjectPatient(movement, { movements, patients });
     if (info.umrn === "UMRN not recorded") return token;
     return info.umrn + token.slice(id.length);
   });
