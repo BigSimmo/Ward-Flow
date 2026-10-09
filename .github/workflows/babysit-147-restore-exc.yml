@@ -1,0 +1,33 @@
+name: babysit-147-restore-exc
+on:
+  push:
+    paths:
+      - "docs/ward-flow/.babysit-147-exc/**"
+    branches:
+      - claude/wizardly-maxwell-wpckq8
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/wizardly-maxwell-wpckq8
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Assemble exception-drawer
+        run: |
+          set -euo pipefail
+          if [ ! -f docs/ward-flow/.babysit-147-exc/part-b.txt ]; then
+            echo waiting; exit 0
+          fi
+          cat docs/ward-flow/.babysit-147-exc/part-a.txt docs/ward-flow/.babysit-147-exc/part-b.txt > src/components/ward-management/coordinator/exception-drawer.tsx
+          wc -c src/components/ward-management/coordinator/exception-drawer.tsx
+          test "$(wc -c < src/components/ward-management/coordinator/exception-drawer.tsx)" -gt 10000
+          rm -rf docs/ward-flow/.babysit-147-exc
+          rm -f .github/workflows/babysit-147-restore-exc.yml
+          git config user.name "Ward Flow Babysit"
+          git config user.email "ward-flow-babysit@users.noreply.github.com"
+          git add -A
+          git commit -m "Babysit #147: restore exception-drawer.tsx"
+          git push origin HEAD:claude/wizardly-maxwell-wpckq8
