@@ -29,6 +29,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { WardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import { daysInBed } from "../src/components/ward-management/ward-admissions";
 import {
@@ -85,7 +86,9 @@ describe("RECORD_DIVERSION: has no transport job to divert (line 7358)", () => {
       reason: DIVERSION_REASONS[0],
       place: TRANSPORT_WHEREABOUTS[0],
     });
-    expect(added(before, after)).toEqual([`movement ${MOVEMENT_NO_TRANSPORT} has no transport job to divert`]);
+    expect(added(before, after)).toEqual([
+      `movement ${movementUmrn(MOVEMENT_NO_TRANSPORT, seeded)} has no transport job to divert`,
+    ]);
   });
 
   it("CONTROL: the same event succeeds once the movement has a collected transport job", () => {

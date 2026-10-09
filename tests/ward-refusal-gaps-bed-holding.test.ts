@@ -22,6 +22,7 @@
 import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -72,7 +73,7 @@ describe("DECLINE refuses to waitlist a movement at more wards than the cap", ()
     unitId: "arm-adult-open",
     reason: "no_bed",
   } as never;
-  const message = "movement WF-001 is already waitlisted at 2 wards; release one before waitlisting another";
+  const message = `movement ${movementUmrn("WF-001", seedWardFlowState())} is already waitlisted at 2 wards; release one before waitlisting another`;
 
   it("refuses a third waitlist once the cap is two", () => {
     const capped = walk(waitlistedTwiceAndReferredThird(), [
@@ -164,7 +165,7 @@ describe("RELEASE_AND_REOPEN_SEARCH refuses an unlisted reason and a ward acting
     const seeded = seedWardFlowState();
     const asWard = { ...release, role: "ward" };
     expect(added(seeded, wardFlowReducer(seeded, { ...asWard, actingUnitId: "rph-adult-secure" } as never))).toEqual([
-      `RELEASE_AND_REOPEN_SEARCH was raised acting as unit rph-adult-secure but movement WF-004's bed is at ${heldAt}`,
+      `RELEASE_AND_REOPEN_SEARCH was raised acting as unit rph-adult-secure but movement ${movementUmrn("WF-004", seeded)}'s bed is at ${heldAt}`,
     ]);
     expect(added(seeded, wardFlowReducer(seeded, { ...asWard, actingUnitId: heldAt } as never))).toEqual([]);
   });

@@ -340,7 +340,7 @@ export function resolvePatientNowRecord(
     const resolvedPatient = resolveSubjectPatient(movement, { patients, referrals, movements });
     const livePatient = resolvedPatient.patient;
     const displayName =
-      resolvedPatient.formalName !== "Unknown Patient" ? resolvedPatient.formalName : `Movement ${movement.id}`;
+      resolvedPatient.formalName !== "Unknown Patient" ? resolvedPatient.formalName : "Patient not recorded";
     const preferredName = livePatient?.preferredName;
 
     return {
