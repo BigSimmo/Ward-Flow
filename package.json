@@ -151,7 +151,10 @@
     "brace-expansion@5": "^5.0.12",
     "fast-uri": "^3.1.7",
     "js-yaml": "^4.3.2",
-    "undici": "^8.10.2"
+    "undici": "^8.10.2",
+    "@codspeed/vitest-plugin": {
+      "vite": "^8.2.2"
+    }
   },
   "devDependencies": {
     "@babel/parser": "^8.0.4",
