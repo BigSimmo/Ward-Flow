@@ -10,7 +10,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import styles from "./ward-telemetry-ribbon.module.css";
 
 /** The bed board filters a hero pill can switch on. */
-export type WardBedFilter = "all" | "look" | "leaving" | "free";
+export type WardBedFilter = "all" | "look" | "leaving" | "free" | "occupied" | "shift-end";
 
 interface WardTelemetryRibbonProps {
   unit: Unit;
@@ -74,15 +74,15 @@ export function WardTelemetryRibbon({
           inline
           value={capacity.occupied}
           label="Occupied"
-          pressed={filter === "all"}
-          onToggle={() => pick("all")}
+          pressed={filter === "occupied"}
+          onToggle={() => pick("occupied")}
         />
         <HeroStat
           inline
           value={capacity.available + freeingByShiftEnd}
           label={`Ready by ${formatInstantWithDay(shiftEnd, now)}`}
-          pressed={filter === "leaving"}
-          onToggle={() => pick("leaving")}
+          pressed={filter === "shift-end"}
+          onToggle={() => pick("shift-end")}
         />
         {onActNow ? (
           <HeroStat

@@ -4,7 +4,7 @@ import { WardReferralInbox } from "../referrals/ward-referral-inbox";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronDown, Clock, FileText, ListChecks, Printer, Search, Send } from "lucide-react";
+import { ChevronDown, ChevronLeft, Clock, FileText, ListChecks, Printer, Search, Send } from "lucide-react";
 import { useEffect, useCallback, useRef, useState, type FormEvent } from "react";
 
 import {
@@ -309,8 +309,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (selectedBed !== null) {
       const bedNum = selectedBed;
       setSelectedBed(null);
+      // The drawer hands focus back to whatever opened it (a tile, a list row, a Ward flow row).
+      // Only when that is gone does focus fall back to the bed's own tile, if it is still drawn.
       setTimeout(() => {
-        bedTriggerRefs.current.get(bedNum)?.focus();
+        const active = document.activeElement;
+        if (active instanceof HTMLElement && active !== document.body && active.isConnected) return;
+        const tile = bedTriggerRefs.current.get(bedNum);
+        if (tile?.isConnected) tile.focus();
       }, 0);
     }
   }, [selectedBed]);
@@ -1432,7 +1437,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 filter={activeTab === "attn" ? bedFilter : undefined}
                 onFilter={(next) => {
                   setBedFilter(next);
-                  if (next === "leaving") setFlowTab("discharges");
+                  if (next === "shift-end") setFlowTab("discharges");
                   showHome("bed-capacity");
                 }}
                 actNow={actNowCount}
@@ -1462,7 +1467,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 </Link>
                 {" · "}
                 {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
-                <span>Roster not recorded</span> ·{" "}
+                <span>Roster not recorded</span> · {staffedSpecialling} on 1:1 specialling ·{" "}
                 {unit.authorised ? "authorised for involuntary" : "not set up for involuntary admissions (demo)"}
                 {(unit.intakeConstraints ?? []).length > 0
                   ? ` · ${(unit.intakeConstraints ?? [])
@@ -1489,7 +1494,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   role="tab"
                   id="tabBtn-attn"
                   aria-selected={activeTab !== "return"}
-                  aria-controls="tab-attn"
+                  aria-controls={
+                    activeTab === "coming"
+                      ? "tab-coming"
+                      : activeTab === "out"
+                        ? "tab-out"
+                        : activeTab === "beds"
+                          ? "tab-beds"
+                          : "tab-attn"
+                  }
                   aria-label="Home (Worth Your Attention)"
                   onClick={() => setActiveTab("attn")}
                 >
@@ -1666,6 +1679,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             onOpenBeds={() => setActiveTab("beds")}
             registerBedTrigger={(bedNumber, element) => {
               if (element) bedTriggerRefs.current.set(bedNumber, element);
+              else bedTriggerRefs.current.delete(bedNumber);
             }}
             figures={
               <section aria-label="Ward figures, right now" className={styles.figuresFoot} data-ward-primitive="panel">
@@ -1850,6 +1864,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         <section
           className={styles.tabPanel}
           id="tab-coming"
+          role="tabpanel"
           aria-label="All arrivals"
           data-active={activeTab === "coming"}
         >
@@ -1859,7 +1874,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               className={buttonClass({ variant: "ghost", size: "sm" })}
               onClick={() => setActiveTab("attn")}
             >
-              <ArrowLeft size={16} aria-hidden="true" />
+              <ChevronLeft size={16} aria-hidden="true" />
               Home
             </button>
             <h2 className={styles.subViewTitle}>All arrivals</h2>
@@ -1885,14 +1900,20 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         </section>
 
         {/* ───────── TAB 3: ON THE WAY OUT ───────── */}
-        <section className={styles.tabPanel} id="tab-out" aria-label="All discharges" data-active={activeTab === "out"}>
+        <section
+          className={styles.tabPanel}
+          id="tab-out"
+          role="tabpanel"
+          aria-label="All discharges"
+          data-active={activeTab === "out"}
+        >
           <div className={styles.subViewBar}>
             <button
               type="button"
               className={buttonClass({ variant: "ghost", size: "sm" })}
               onClick={() => setActiveTab("attn")}
             >
-              <ArrowLeft size={16} aria-hidden="true" />
+              <ChevronLeft size={16} aria-hidden="true" />
               Home
             </button>
             <h2 className={styles.subViewTitle}>All discharges</h2>
@@ -1913,6 +1934,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         <section
           className={styles.tabPanel}
           id="tab-beds"
+          role="tabpanel"
           aria-label="Full bed list"
           data-active={activeTab === "beds"}
         >
@@ -1922,7 +1944,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               className={buttonClass({ variant: "ghost", size: "sm" })}
               onClick={() => setActiveTab("attn")}
             >
-              <ArrowLeft size={16} aria-hidden="true" />
+              <ChevronLeft size={16} aria-hidden="true" />
               Home
             </button>
             <h2 className={styles.subViewTitle}>Full bed list</h2>

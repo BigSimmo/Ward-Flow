@@ -381,6 +381,11 @@
 }
 
 @media print {
+  /* While the brief is open it is a direct child of the body, so only it prints. */
+  :global(body):has(> .scrim) > :not(.scrim) {
+    display: none !important;
+  }
+
   .scrim {
     position: static;
     display: block;

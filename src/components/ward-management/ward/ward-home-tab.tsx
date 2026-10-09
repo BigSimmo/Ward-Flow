@@ -11,6 +11,7 @@ import { DECLINE_REASONS } from "@/components/ward-management/ward-model";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import {
   restrictionNotice,
   eligibilityWarning,
@@ -338,8 +339,18 @@ export function WardHomeTab({
   logRows.sort((left, right) => right.at - left.at);
 
   // Every bed: one tile per bed from the same list the bed board draws, so both always agree.
+  const shiftEnd = dayShiftEndInstant(now);
+  // The same releases the hero's "Ready by" figure counts, so its pill shows the beds it counted.
+  const freeingByShiftEnd = new Set(
+    bedReleases
+      .filter(
+        (release) => release.unitId === unit.id && release.state !== "discharged" && release.expectedAt <= shiftEnd,
+      )
+      .map((release) => release.admissionId),
+  );
   const bedRows = (bedsList ?? []).map((bed) => {
     const free = bed.status === "ready";
+    const readyByShiftEnd = free || (bed.admissionId !== undefined && freeingByShiftEnd.has(bed.admissionId));
     const leaving = !free && (bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0));
     const awayAtEd = bed.awayAtEdHours != null;
     const look =
@@ -376,14 +387,27 @@ export function WardHomeTab({
     const accessibleName = [bed.bedLabel, stateWord, days ? `day ${bed.stayDays}` : "", note]
       .filter(Boolean)
       .join(", ");
-    return { bed, free, leaving, look, stateWord, days, note, glyph, number, name, accessibleName };
+    return { bed, free, leaving, look, readyByShiftEnd, stateWord, days, note, glyph, number, name, accessibleName };
   });
   const [innerBedFilter, setInnerBedFilter] = useState<WardBedFilter>("all");
   const bedFilter = bedFilterProp ?? innerBedFilter;
   const setBedFilter = onBedFilterChange ?? setInnerBedFilter;
-  const shownBeds = bedRows.filter((row) =>
-    bedFilter === "all" ? true : bedFilter === "look" ? row.look : bedFilter === "leaving" ? row.leaving : row.free,
-  );
+  const shownBeds = bedRows.filter((row) => {
+    switch (bedFilter) {
+      case "look":
+        return row.look;
+      case "leaving":
+        return row.leaving;
+      case "free":
+        return row.free;
+      case "occupied":
+        return row.bed.status === "occupied" || row.bed.status === "leave";
+      case "shift-end":
+        return row.readyByShiftEnd;
+      default:
+        return true;
+    }
+  });
   const query = bedQuery.trim().toLowerCase();
   const matchesQuery = (row: (typeof bedRows)[number]) =>
     query === "" ||
