@@ -75,6 +75,7 @@ export function CoordinatorScreen() {
     setFocusMovementId,
     configuration,
     scenario,
+    plannedAdmissions,
     patients,
     supportNotifications,
   } = useWardFlow();
@@ -206,6 +207,7 @@ export function CoordinatorScreen() {
         patients,
         referrals,
         supportNotifications,
+        plannedAdmissions,
       }).map((item) => {
         if (!item.id.startsWith("bed-pull-") && item.title !== "Bed pull expired") return item;
         return {
@@ -214,7 +216,7 @@ export function CoordinatorScreen() {
           detail: `${item.detail} · Release the bed or set a new reserved time`,
         };
       }),
-    [openMovements, now, units, movements, admissions, patients, referrals, supportNotifications],
+    [openMovements, now, units, plannedAdmissions, movements, admissions, patients, referrals, supportNotifications],
   );
   const silenceReminders = useMemo(() => {
     const notes = new Map<string, string>();
