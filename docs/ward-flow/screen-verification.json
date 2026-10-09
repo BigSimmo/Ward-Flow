@@ -1,5 +1,33 @@
 {
   "_howToUse": "Inspect the running screen against the current accepted app using the scope in SCREEN-DEFINITION-OF-DONE.md. Record the actual date, reviewer, widths, themes, verdict and notes, plus checkedRevision as the full 40-character commit SHA actually inspected and any dirty inputs. Do not invent missing historical revisions. Historical mockups may explain a past comparison but do not govern current appearance. mockupSha256 only ages the drawing; optional implementationSha256 from `node scripts/ward-flow/screen-verification.mjs --hash <mockup>` only ages the mapped screen folder and route page, excluding shared shell, global styles and transitive imports. Neither hash nor a generator check proves whole-screen appearance or behaviour. Use notes to identify the accepted baseline and evidence. Never label a hash match CURRENT.",
+  "_shellFillEvidence": {
+    "date": "2026-10-09",
+    "who": "Claude Code thread session (blank band below short pages, PR #167)",
+    "scope": "Shared shell only: src/components/ward-management/ward-shell.module.css `.shell > :last-child { flex-grow: 1 }`. Applies to every ward route; no per-screen appearance change intended.",
+    "checkedRevision": "adc182c654f43dd001b42e33e03015055e996d7a",
+    "dirtyInputs": [
+      " M src/components/ward-management/ward-shell.module.css (identical to the rule committed in 8fcc3ca9888060ce754f700330fdf4b54406392d)"
+    ],
+    "routes": 41,
+    "widths": [1440, 1355, 390],
+    "heights": {
+      "1440": 1800,
+      "1355": 1016,
+      "390": 844
+    },
+    "themes": ["light", "dark"],
+    "themeWidthScopes": {
+      "light": [1440, 1355, 390],
+      "dark": [1440]
+    },
+    "browser": {
+      "family": "Chromium",
+      "version": "141.0.7390.37"
+    },
+    "runtime": "Local next dev server from npm run ensure; Playwright; before state produced by overriding the rule to flex-grow 0 on the same page load",
+    "result": "passed",
+    "notes": "Desktop: no gap left between the screen root and the bottom of .shell on any short route (All EDs, Wards, Patient WF-009, Community, Community Albany, Out of area, Transport officer, Movement WF-004, Ward answer, Home, Command, Delays); pixels above each route's original content bottom unchanged apart from live clock noise. Statistics routes use a display: contents root on the same ground and never showed a band. Phone 390: screen and document heights identical with and without the rule on all 41 routes. Before and after capture: project file design/blank-space/all-eds-before-after.png. Unverified: hosted deployment, physical devices, print."
+  },
   "screens": [
     {
       "mockup": "command-third-edition.html",
