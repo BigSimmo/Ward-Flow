@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { SupportNotificationChecklist } from "@/components/ward-management/movements/support-notification-checklist";
-import { clockTextToInstantNotAfter } from "@/components/ward-management/ward-support-notifications";
+import { clockTextOnDay } from "@/components/ward-management/ward-support-notifications";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 function renderChecklist(props: Parameters<typeof SupportNotificationChecklist>[0]) {
@@ -15,10 +15,10 @@ function renderChecklist(props: Parameters<typeof SupportNotificationChecklist>[
 }
 
 describe("carer, PSP and MHAS checklist", () => {
-  it("shows three outstanding parties for an involuntary arrival, advisory, with no legal deadline", () => {
-    renderChecklist({ movementId: "WF-300", role: "coordinator" });
+  it("shows three outstanding parties for an involuntary discharge, advisory, with no legal deadline", () => {
+    renderChecklist({ admissionId: "AD-LEFT-01", role: "coordinator" });
     const panel = screen.getByTestId("ward-support-notifications");
-    expect(within(panel).getByText(/Admission · Advisory · 0 of 3/)).toBeInTheDocument();
+    expect(within(panel).getByText(/Discharge · Advisory · 0 of 3/)).toBeInTheDocument();
     expect(within(panel).getAllByText("Not recorded")).toHaveLength(3);
     expect(panel.textContent).not.toMatch(/due|deadline|overdue|within \d+ (hours|days)/i);
   });
@@ -28,8 +28,32 @@ describe("carer, PSP and MHAS checklist", () => {
     expect(screen.queryByTestId("ward-support-notifications")).not.toBeInTheDocument();
   });
 
-  it("records who was told, then not applicable with a reason", () => {
+  it("renders nothing for an arrival referred for examination, which is not an involuntary status", () => {
     renderChecklist({ movementId: "WF-300", role: "coordinator" });
+    expect(screen.queryByTestId("ward-support-notifications")).not.toBeInTheDocument();
+  });
+
+  it("is read-only for a role the event does not allow", () => {
+    renderChecklist({ admissionId: "AD-LEFT-01", role: "ed" });
+    expect(screen.getByTestId("ward-support-notifications")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Record / })).not.toBeInTheDocument();
+  });
+
+  it("keeps the day told, so a contact two days ago is saved on that day", () => {
+    renderChecklist({ admissionId: "AD-LEFT-01", role: "ward" });
+    fireEvent.click(screen.getByRole("button", { name: "Record Carer" }));
+    const form = screen.getByRole("form", { name: "Record Carer" });
+    fireEvent.change(within(form).getByLabelText("Who was told"), { target: { value: "Synthetic carer" } });
+    fireEvent.click(within(form).getByRole("radio", { name: "2 days ago" }));
+    fireEvent.change(within(form).getByLabelText(/Time told/), { target: { value: "09:15" } });
+    fireEvent.click(within(form).getByRole("button", { name: "Save" }));
+    const shown = screen.getByTestId("ward-support-notification-carer").textContent ?? "";
+    expect(shown).toContain("09:15");
+    expect(shown).not.toBe("Told Synthetic carer · 09:15");
+  });
+
+  it("records who was told, then not applicable with a reason", () => {
+    renderChecklist({ admissionId: "AD-LEFT-01", role: "coordinator" });
     fireEvent.click(screen.getByRole("button", { name: "Record Carer" }));
     const form = screen.getByRole("form", { name: "Record Carer" });
     expect(within(form).getByRole("button", { name: "Save" })).toBeDisabled();
@@ -61,13 +85,27 @@ describe("carer, PSP and MHAS checklist", () => {
   });
 });
 
-describe("clock time to instant", () => {
-  it("takes today's time when it has passed and yesterday's when it has not", () => {
+describe("clock time on a chosen day", () => {
+  it("places the typed time on today, yesterday or the day before, and refuses anything else", () => {
     const now = 3 * 1440 + 600; // 10:00 on day 3
-    expect(clockTextToInstantNotAfter("09:00", now)).toBe(3 * 1440 + 540);
-    expect(clockTextToInstantNotAfter("10:00", now)).toBe(now);
-    expect(clockTextToInstantNotAfter("11:00", now)).toBe(2 * 1440 + 660);
-    expect(clockTextToInstantNotAfter("9:00", now)).toBeNull();
-    expect(clockTextToInstantNotAfter("24:00", now)).toBeNull();
+    expect(clockTextOnDay("09:00", 0, now)).toBe(3 * 1440 + 540);
+    expect(clockTextOnDay("10:00", 0, now)).toBe(now);
+    expect(clockTextOnDay("11:00", 0, now)).toBe(3 * 1440 + 660);
+    expect(clockTextOnDay("11:00", 1, now)).toBe(2 * 1440 + 660);
+    expect(clockTextOnDay("23:30", 2, now)).toBe(1 * 1440 + 1410);
+    expect(clockTextOnDay("9:00", 0, now)).toBeNull();
+    expect(clockTextOnDay("24:00", 0, now)).toBeNull();
+    expect(clockTextOnDay("09:00", 3, now)).toBeNull();
+  });
+
+  it("says so, and keeps the form open, when today's time is later than now", () => {
+    renderChecklist({ admissionId: "AD-LEFT-01", role: "coordinator" });
+    fireEvent.click(screen.getByRole("button", { name: "Record Carer" }));
+    const form = screen.getByRole("form", { name: "Record Carer" });
+    fireEvent.change(within(form).getByLabelText("Who was told"), { target: { value: "Synthetic carer" } });
+    fireEvent.change(within(form).getByLabelText(/Time told/), { target: { value: "23:59" } });
+    fireEvent.click(within(form).getByRole("button", { name: "Save" }));
+    expect(screen.getByRole("form", { name: "Record Carer" })).toBeInTheDocument();
+    expect(screen.getByText("That time is later than now")).toBeInTheDocument();
   });
 });

@@ -395,6 +395,76 @@ describe("referral draft autosave (9 Oct 2026)", () => {
     expect(readKeptReferralDraft()).toBeNull();
   });
 
+  it("autosaves again after Discard draft restarts the sheet", () => {
+    vi.useFakeTimers();
+    renderDrawer();
+    typeReason("Discarded first reason");
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Discard draft" }));
+    expect(readKeptReferralDraft()).toBeNull();
+    // Discard restarts the sheet (a fresh draft and a fresh autosave), in the same drawer.
+    typeReason("Second reason after restart");
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    expect(readKeptReferralDraft()).not.toBeNull();
+    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept");
+  });
+
+  it("drops the kept copy when the draft is edited back to how it opened", () => {
+    vi.useFakeTimers();
+    renderDrawer();
+    typeReason("Briefly typed reason");
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    expect(readKeptReferralDraft()).not.toBeNull();
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "" } });
+    // The open step is part of the draft too, so step back to where the sheet opened.
+    fireEvent.click(steps().getByRole("button", { name: "Patient" }));
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    expect(readKeptReferralDraft()).toBeNull();
+    expect(screen.queryByTestId("ward-referral-draft-status")).not.toBeInTheDocument();
+  });
+
+  it("reopens a person's Refer link on their own kept draft", () => {
+    vi.useFakeTimers();
+    const first = renderDrawer({ initialPatientId: "PT-010" });
+    typeReason("Same person synthetic reason");
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    first.unmount();
+    renderDrawer({ initialPatientId: "PT-010" });
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Same person synthetic reason");
+  });
+
+  it("never opens or autosaves over another person's kept draft", () => {
+    vi.useFakeTimers();
+    const first = renderDrawer({ initialPatientId: "PT-010" });
+    typeReason("First person synthetic reason");
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    first.unmount();
+    const kept = readKeptReferralDraft();
+
+    const second = renderDrawer({ initialPatientId: "PT-003" });
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("");
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Second person reason" } });
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    second.unmount();
+    expect(readKeptReferralDraft()).toBe(kept);
+  });
+
   it("says the draft's age in units", () => {
     expect(referralDraftAgeText(0, 20_000)).toBe("just now");
     expect(referralDraftAgeText(0, 4 * 60_000)).toBe("4m ago");

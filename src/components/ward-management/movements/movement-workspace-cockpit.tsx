@@ -638,7 +638,7 @@ export function MovementWorkspaceCockpit({
             </div>
           ) : null}
           {/* Advisory carer/PSP/MHAS checklist: renders only for an involuntary patient's completed arrival. */}
-          <SupportNotificationChecklist movementId={patient.id} role="coordinator" />
+          <SupportNotificationChecklist movementId={patient.id} />
         </section>
 
         {/* =========================================================================

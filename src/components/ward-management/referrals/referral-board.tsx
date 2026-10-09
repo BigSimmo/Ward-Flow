@@ -16,7 +16,7 @@ import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { genderReviewNeeded, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
+import { createReadmissionIndex, referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -748,6 +748,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
               {showQueued && (
                 <QueuedSection
                   queued={queued}
+                  allReferrals={referrals}
                   displayQueued={displayQueued}
                   now={now}
                   selectedId={selectedReferralId}
@@ -1091,6 +1092,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
 
 function QueuedSection({
   queued,
+  allReferrals = queued,
   displayQueued = queued,
   now,
   selectedId,
@@ -1102,6 +1104,8 @@ function QueuedSection({
   onResetFilters,
 }: {
   queued: Referral[];
+  /** Every referral, not just the queue: a prior stay links to its person through its own referral. */
+  allReferrals?: Referral[];
   displayQueued?: Referral[];
   now: Instant;
   selectedId: string | undefined;
@@ -1113,10 +1117,11 @@ function QueuedSection({
   onResetFilters?: () => void;
 }) {
   const sectionRef = useRef<HTMLElement | null>(null);
-  // One records object per render of the list, so the patient resolver's index is built once.
-  const readmissionRecords = useMemo(
-    () => ({ admissions, patients, referrals: queued, movements, units }),
-    [admissions, patients, queued, movements, units],
+  // One readmission index per list, built from every referral so a prior stay whose referral has
+  // left the queue still resolves to its person.
+  const readmissionIndex = useMemo(
+    () => createReadmissionIndex({ admissions, patients, referrals: allReferrals, movements, units }),
+    [admissions, patients, allReferrals, movements, units],
   );
   const [overflowing, setOverflowing] = useState(false);
 
@@ -1224,7 +1229,7 @@ function QueuedSection({
                         <strong>{patientInfo.displayName}</strong>
                       </span>
                       <ReadmissionFlag
-                        flag={referralReadmissionFlag(referral, readmissionRecords)}
+                        flag={referralReadmissionFlag(referral, readmissionIndex)}
                         testId={`ward-referral-board-readmission-${referral.id}`}
                       />
                       {refusals.length > 0 ? (
@@ -1316,7 +1321,7 @@ function QueuedSection({
                         <strong>{patientInfo.displayName}</strong>
                         <span className={styles.v6RowId}>{referral.id}</span>
                         <ReadmissionFlag
-                          flag={referralReadmissionFlag(referral, readmissionRecords)}
+                          flag={referralReadmissionFlag(referral, readmissionIndex)}
                           expandable={false}
                           testId={`ward-referral-board-card-readmission-${referral.id}`}
                         />

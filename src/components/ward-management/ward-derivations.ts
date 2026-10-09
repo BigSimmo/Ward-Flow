@@ -1133,6 +1133,11 @@ export type InboxItem = {
   owner: string;
   movementId: string;
   /**
+   * Set on a discharge notification row: the discharged stay it is about. The Tasks drawer opens
+   * that stay's checklist on the discharges board instead of the movement page.
+   */
+  admissionId?: string;
+  /**
    * 🔴 **WHETHER THIS ROW CAN BE TICKED OFF AT ALL** — ward-lead task, 2026-09-06. A `"fact"` is a
    * live clinical or legal truth that leaves this list when it stops being true; a `"commitment"`
    * is a human undertaking that leaves when the person says they finished. See `InboxItemKind` and

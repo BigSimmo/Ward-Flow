@@ -109,7 +109,7 @@ import { StatusGlyph, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
-import { priorDischargeWithinWindow } from "@/components/ward-management/ward-readmission";
+import { createReadmissionIndex, priorDischargeWithinWindow } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import {
   CLEARANCE_CHECKS,
@@ -736,11 +736,19 @@ function WardReferralDrawerContent({
   } = useWardFlow();
   const now = useWardFlowClock();
 
-  // A Refer link names its person, so it never reopens someone else's kept draft.
-  const [kept] = useState(() => (initialPatientId ? null : readKeptReferralDraft<KeptDraft>()));
   const [prefillKey] = useState(() =>
     initialPatientId ? patientKeyFor(initialPatientId, { movements, patients, referrals }) : null,
   );
+  // A Refer link names its person: it reopens a kept draft only when that draft is for the same
+  // person, and never someone else's.
+  const [storedDraft] = useState(() => readKeptReferralDraft<KeptDraft>());
+  const kept = !initialPatientId
+    ? storedDraft
+    : prefillKey !== null && storedDraft?.activePatientKey === prefillKey
+      ? storedDraft
+      : null;
+  // Another person's kept draft stays as it was: this sheet does not autosave over it.
+  const keepsAnotherPersonsDraft = storedDraft !== null && kept === null;
   const initialPatientKey =
     kept?.activePatientKey ??
     prefillKey ??
@@ -934,7 +942,8 @@ function WardReferralDrawerContent({
   } = useReferralDraftAutosave({
     draft: draftNow,
     draftJson,
-    active: dirty,
+    enabled: !keepsAnotherPersonsDraft,
+    dirty,
     initialKeptAt: initialKept?.at ?? null,
     initialKeptJson: initialKept?.json ?? null,
   });
@@ -1385,11 +1394,11 @@ function WardReferralDrawerContent({
   // D-19: one place-free, count-free sentence about the person already named on this form.
   const alreadyOpen = patientRecord ? duplicateSentence({ patientId: patientRecord.id, referrals }) : undefined;
   // 28 day readmission: this person's most recent discharge in the 28 days before now, if any.
-  const readmissionRecords = useMemo(
-    () => ({ admissions, patients, referrals, movements, units }),
+  const readmissionIndex = useMemo(
+    () => createReadmissionIndex({ admissions, patients, referrals, movements, units }),
     [admissions, patients, referrals, movements, units],
   );
-  const readmissionFlag = patientRecord ? priorDischargeWithinWindow(patientRecord, now, readmissionRecords) : null;
+  const readmissionFlag = patientRecord ? priorDischargeWithinWindow(patientRecord, now, readmissionIndex) : null;
   const placeRow =
     selectedDestinations.length === 0
       ? "Choose"

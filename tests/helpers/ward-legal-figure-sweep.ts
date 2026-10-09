@@ -1105,6 +1105,36 @@ export function candidateEvents(
       );
     case "STAND_DOWN_BROADCAST_ALERT":
       return state.broadcastAlerts.map((alert) => ({ type, role, now, alertId: alert.id }));
+    /*
+     * Added 9 October 2026 (carer, PSP and MHAS checklist): one told record per departed stay and
+     * per movement. The reducer refuses any move the advisory checklist does not cover, so only
+     * an involuntary patient's completed move is accepted. It carries no legal form or expiry.
+     */
+    case "RECORD_SUPPORT_NOTIFICATION":
+      return [
+        ...state.admissions
+          .filter((admission) => admission.state === "departed")
+          .map((admission) => ({
+            type,
+            role,
+            now,
+            occasion: "discharge" as const,
+            admissionId: admission.id,
+            party: "carer" as const,
+            outcome: "told" as const,
+            who: "Synthetic carer",
+          })),
+        ...movementIds.map((movementId) => ({
+          type,
+          role,
+          now,
+          occasion: "admission" as const,
+          movementId,
+          party: "carer" as const,
+          outcome: "told" as const,
+          who: "Synthetic carer",
+        })),
+      ];
     default:
       return [];
   }

@@ -1,10 +1,9 @@
-import { BellRing } from "lucide-react";
+import { BellRing, type LucideIcon } from "lucide-react";
 
 import type { Admission } from "./ward-admissions";
 import { MINUTES_PER_DAY, type Instant } from "./ward-clock";
-import type { InboxItem } from "./ward-derivations";
 import type { WardFlowRole } from "./ward-flow-roles";
-import { INBOX_CATEGORIES } from "./ward-inbox-reducer";
+import { INBOX_CATEGORIES, type InboxItemKind } from "./ward-inbox-reducer";
 import { SUPPORT_NOTIFICATION_TASK_LOOKBACK_MINUTES } from "./ward-operational-defaults";
 import type { Movement, Referral, Unit } from "./ward-model";
 import { createPatientResolver } from "./ward-patient-resolver";
@@ -113,13 +112,29 @@ function movementArrivedAt(movement: Movement): Instant | undefined {
   return undefined;
 }
 
+/**
+ * A ward-to-ward move: a recorded sending stay, or a psychiatric-ward referral that names its
+ * sending ward (the same two routes the reducer's `movementSourceAdmission` reads).
+ */
+function arrivalIsTransfer(movement: Movement, referrals: readonly Referral[]): boolean {
+  if (movement.sourceAdmissionId !== undefined) return true;
+  const referral = movement.referralId
+    ? referrals.find((candidate) => candidate.id === movement.referralId)
+    : undefined;
+  return referral?.source === "psychiatric_ward" && Boolean(referral.originUnitId);
+}
+
 /** The arrival this checklist covers, for one movement, or undefined when it does not apply. */
-export function movementSupportNotificationSubject(movement: Movement): SupportNotificationSubject | undefined {
-  if (movement.legalStatus === "Voluntary") return undefined;
+export function movementSupportNotificationSubject(
+  movement: Movement,
+  referrals: readonly Referral[],
+): SupportNotificationSubject | undefined {
+  // Involuntary statuses only: "Referred for psychiatric examination" is not one.
+  if (!legalStatusTextIsInvoluntary(movement.legalStatus)) return undefined;
   const completedAt = movementArrivedAt(movement);
   if (completedAt === undefined) return undefined;
   return {
-    occasion: movement.sourceAdmissionId !== undefined ? "transfer" : "admission",
+    occasion: arrivalIsTransfer(movement, referrals) ? "transfer" : "admission",
     subjectId: movement.id,
     completedAt,
     movementId: movement.id,
@@ -141,7 +156,7 @@ export function admissionSupportNotificationSubject(
     records.movements.find((movement) => movement.admissionId === admission.id);
   const patient = createPatientResolver(records)(admission).patient;
   const involuntary =
-    legalStatusTextIsInvoluntary(patient?.legalStatus) || (linked !== undefined && linked.legalStatus !== "Voluntary");
+    legalStatusTextIsInvoluntary(patient?.legalStatus) || legalStatusTextIsInvoluntary(linked?.legalStatus);
   if (!involuntary) return undefined;
   return {
     occasion: "discharge",
@@ -157,7 +172,7 @@ export function admissionSupportNotificationSubject(
 export function supportNotificationSubjects(records: NotificationRecords): SupportNotificationSubject[] {
   const subjects: SupportNotificationSubject[] = [];
   for (const movement of records.movements) {
-    const subject = movementSupportNotificationSubject(movement);
+    const subject = movementSupportNotificationSubject(movement, records.referrals);
     if (subject) subjects.push(subject);
   }
   for (const admission of records.admissions) {
@@ -168,16 +183,16 @@ export function supportNotificationSubjects(records: NotificationRecords): Suppo
 }
 
 /**
- * The most recent instant, at or before `now`, whose clock time is the typed `HH:MM`: today's if
- * that has passed, otherwise yesterday's. Null for anything that is not a 24-hour clock time.
+ * The instant for a typed `HH:MM` on the day `daysAgo` before `now`'s day (0 today, 1 yesterday,
+ * 2 the day before). Null for anything that is not a 24-hour clock time or a whole day 0 to 2. May
+ * be later than `now` (today, a time still to come); the caller says so rather than moving the day.
  */
-export function clockTextToInstantNotAfter(text: string, now: Instant): Instant | null {
+export function clockTextOnDay(text: string, daysAgo: number, now: Instant): Instant | null {
   const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(text.trim());
-  if (!match) return null;
+  if (!match || !Number.isInteger(daysAgo) || daysAgo < 0 || daysAgo > 2) return null;
   const typed = Number(match[1]) * 60 + Number(match[2]);
   const nowOfDay = ((Math.floor(now) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
-  const candidate = Math.floor(now) - nowOfDay + typed;
-  return (candidate > now ? candidate - MINUTES_PER_DAY : candidate) as Instant;
+  return (Math.floor(now) - nowOfDay - daysAgo * MINUTES_PER_DAY + typed) as Instant;
 }
 
 /** The latest record for each party on one move. */
@@ -209,17 +224,36 @@ function taskCategory(occasion: SupportNotificationOccasion) {
 }
 
 /**
- * The id of the Tasks row for one move: a category prefix and the movement id, the shape
- * `ACKNOWLEDGE_INBOX_ITEM` checks. One movement has at most one arrival and one linked discharge,
- * so the two prefixes keep the ids distinct.
+ * The id of the Tasks row for one move: a category prefix and the record it is about, the shape
+ * `ACKNOWLEDGE_INBOX_ITEM` checks. Admission and transfer rows name the movement; discharge rows
+ * name the discharged stay's admission id.
  */
-export function supportNotificationTaskId(occasion: SupportNotificationOccasion, movementId: string): string {
-  return `${taskCategory(occasion).idPrefix}${movementId}`;
+export function supportNotificationTaskId(occasion: SupportNotificationOccasion, recordId: string): string {
+  return `${taskCategory(occasion).idPrefix}${recordId}`;
 }
 
 /**
+ * The Tasks row this module builds. It has the shape of `InboxItem` (`ward-derivations.ts`),
+ * which appends these rows, and is spelled out here so this module never imports
+ * `ward-derivations` back (no import cycle). The compiler checks the fit where they are appended.
+ */
+export type SupportNotificationInboxRow = {
+  id: string;
+  kind: InboxItemKind;
+  tone: "warning";
+  icon: LucideIcon;
+  title: string;
+  detail: string;
+  owner: string;
+  movementId: string;
+  admissionId?: string;
+};
+
+/**
  * One Tasks row per recent move (within the lookback) that still has a party with nothing recorded.
- * Moves without a movement to open are left to the discharges board, where the checklist sits.
+ * Admission and transfer rows are keyed and routed by their movement. Discharge rows are keyed by
+ * the discharged stay (so a stay with no linked movement still gets one) and carry `admissionId`,
+ * so the Tasks drawer opens the discharge checklist on the discharges board, not the movement page.
  */
 export function supportNotificationInboxItems(
   records: NotificationRecords & {
@@ -227,18 +261,19 @@ export function supportNotificationInboxItems(
     supportNotifications?: readonly SupportNotificationRecord[];
   },
   now: Instant,
-): InboxItem[] {
-  const items: InboxItem[] = [];
+): SupportNotificationInboxRow[] {
+  const items: SupportNotificationInboxRow[] = [];
   for (const subject of supportNotificationSubjects(records)) {
     if (subject.completedAt > now || now - subject.completedAt > SUPPORT_NOTIFICATION_TASK_LOOKBACK_MINUTES) continue;
-    if (subject.movementId === undefined) continue;
+    const key = subject.occasion === "discharge" ? subject.admissionId : subject.movementId;
+    if (key === undefined) continue;
     const missing = outstandingSupportParties(
       supportNotificationChecklist(records.supportNotifications, subject.occasion, subject.subjectId),
     );
     if (missing.length === 0) continue;
     const unit = subject.unitId ? records.units.find((candidate) => candidate.id === subject.unitId) : undefined;
     items.push({
-      id: supportNotificationTaskId(subject.occasion, subject.movementId),
+      id: supportNotificationTaskId(subject.occasion, key),
       kind: taskCategory(subject.occasion).kind,
       tone: "warning",
       icon: BellRing,
@@ -246,7 +281,9 @@ export function supportNotificationInboxItems(
       // No record id in the text: the drawer names the person through the patient resolver.
       detail: `${missing.map((party) => SUPPORT_NOTIFICATION_PARTY_SHORT[party]).join(", ")} not recorded${unit ? ` · ${unit.name}` : ""}`,
       owner: "Ward",
-      movementId: subject.movementId,
+      // A discharge with no linked movement has none to name; the row opens by `admissionId`.
+      movementId: subject.movementId ?? "",
+      ...(subject.occasion === "discharge" ? { admissionId: key } : {}),
     });
   }
   return items;

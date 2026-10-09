@@ -7,7 +7,7 @@ import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { Fragment, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { movementReadmissionFlag } from "@/components/ward-management/ward-readmission";
+import { createReadmissionIndex, movementReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 
 import { designationSummary } from "@/components/ward-management/ward-bed-designation";
@@ -1238,9 +1238,9 @@ export function EdScreen({ edId }: EdScreenProps) {
     admissions,
   } = useWardFlow();
   const now = useWardFlowClock();
-  // One records object for the queue's 28 day readmission flags, so the resolver index is built once.
-  const readmissionRecords = useMemo(
-    () => ({ admissions, patients: registryPatients, referrals, movements, units }),
+  // One index for the queue's 28 day readmission flags, built once per change of the records.
+  const readmissionIndex = useMemo(
+    () => createReadmissionIndex({ admissions, patients: registryPatients, referrals, movements, units }),
     [admissions, registryPatients, referrals, movements, units],
   );
   const accessTarget = configuration.edAccessTargetMinutes;
@@ -3385,7 +3385,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                               &middot; {movement.security}
                             </span>
                             <ReadmissionFlag
-                              flag={movementReadmissionFlag(movement, readmissionRecords)}
+                              flag={movementReadmissionFlag(movement, readmissionIndex)}
                               testId={`ward-ed-readmission-${movement.id}`}
                             />
                             <EdPresentation

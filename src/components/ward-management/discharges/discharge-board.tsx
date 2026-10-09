@@ -306,14 +306,15 @@ function RecordedDischargeMilestones({
   );
 }
 
-export function DischargeBoard() {
+/** `initialAdmissionId`: a Tasks link (`?admissionId=`) opens that stay's detail once on arrival. */
+export function DischargeBoard({ initialAdmissionId }: { initialAdmissionId?: string } = {}) {
   const { worldGeneration } = useWardFlow();
   // Remount clears every selected handle and DTO synchronously on a reset/scenario change.
   // This board has one fixed coordinator actor; it does not offer a role switch.
-  return <DischargeWorkspace key={`${worldGeneration}:${RECORD_ACTOR.role}`} />;
+  return <DischargeWorkspace key={`${worldGeneration}:${RECORD_ACTOR.role}`} initialAdmissionId={initialAdmissionId} />;
 }
 
-function DischargeWorkspace() {
+function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: string }) {
   const { bedReleases, units, dayZero, readDischargeRecords, openDischargeRecord, readDischargeRecord, dispatch } =
     useWardFlow();
   const now = useWardFlowClock();
@@ -339,6 +340,20 @@ function DischargeWorkspace() {
   const planDropdownRef = useRef<HTMLDivElement>(null);
   const guarded = readDischargeRecords(RECORD_ACTOR);
   const records = guarded.status === "allowed" ? guarded.value : [];
+  // Opens the linked stay once, on arrival; after that the coordinator's own choices stand.
+  const openedFromLinkRef = useRef(false);
+  const linkedRecordExists =
+    initialAdmissionId !== undefined && records.some((record) => record.admissionId === initialAdmissionId);
+  useEffect(() => {
+    if (openedFromLinkRef.current || initialAdmissionId === undefined || !linkedRecordExists) return;
+    openedFromLinkRef.current = true;
+    setPopulation("records");
+    try {
+      setSelected({ admissionId: initialAdmissionId, handle: openDischargeRecord(RECORD_ACTOR, initialAdmissionId) });
+    } catch {
+      setSelected({ admissionId: initialAdmissionId, handle: { generation: -1, requestId: -1 } });
+    }
+  }, [initialAdmissionId, linkedRecordExists, openDischargeRecord]);
   const services = [...new Set(units.map(healthServiceLabel))].sort();
   const scopedUnits = units.filter((unit) => service === "all" || healthServiceLabel(unit) === service);
   const inScope = (unitId: string) => {
@@ -1488,7 +1503,7 @@ function DischargeWorkspace() {
                       <SupportNotificationChecklist
                         key={`notify-${activeRecord.id}`}
                         admissionId={activeRecord.admissionId}
-                        role="coordinator"
+                        role={RECORD_ACTOR.role}
                       />
                     </div>
                   </>

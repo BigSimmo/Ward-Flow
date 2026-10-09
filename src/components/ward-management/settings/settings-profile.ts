@@ -35,7 +35,8 @@ export type ProfileLookup =
 
 /** The profile for the role this route gives, or why there is none. */
 export function profileForChromeRole(role: WardChromeRole): ProfileLookup {
-  const profile = PROFILES[role];
+  // Own keys only, so a role name can never reach an inherited property.
+  const profile = Object.hasOwn(PROFILES, role) ? PROFILES[role] : undefined;
   return profile
     ? { status: "available", profile }
     : { status: "unavailable", reason: `No profile set for ${CHROME_ROLE_LABELS[role]}` };

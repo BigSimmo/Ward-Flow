@@ -9489,7 +9489,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           return reject(state, event, "an admission or transfer notification names the movement, not an admission");
         const movement = findMovement(state, event.movementId);
         if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
-        const subject = movementSupportNotificationSubject(movement);
+        const subject = movementSupportNotificationSubject(movement, state.referrals);
         if (!subject)
           return reject(state, event, `movement ${movement.id} is not a completed arrival of an involuntary patient`);
         if (subject.occasion !== event.occasion)
