@@ -685,6 +685,9 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   // admission it became.
   for (const row of value.plannedAdmissions as RecordValue[]) {
     const hasPatient = text(row.patientId);
+    const arrivedAdmission = text(row.admissionId)
+      ? (value.admissions as RecordValue[]).find((admission) => admission.id === row.admissionId)
+      : undefined;
     const hasInitials = text(row.initials);
     if (
       !unitIds.has(row.unitId) ||
@@ -707,6 +710,10 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       (hasInitials && !PLANNED_ADMISSION_INITIALS_PATTERN.test(row.initials as string)) ||
       (!hasInitials && row.initials !== null) ||
       (row.state === "arrived") !== (text(row.admissionId) && admissionIds.has(row.admissionId)) ||
+      (row.state === "arrived" &&
+        (!arrivedAdmission ||
+          arrivedAdmission.unitId !== row.unitId ||
+          arrivedAdmission.patientId !== (hasPatient ? row.patientId : null))) ||
       (row.state !== "arrived" && row.admissionId !== null) ||
       (row.state === "cancelled") !== (row.cancelReason !== null)
     )
