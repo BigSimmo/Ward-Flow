@@ -632,7 +632,7 @@ describe("the Delays screen", () => {
  *   - In October 2026 the owner approved the Delays page mockup and asked for it to be built live.
  *     That mockup filters: the table reads "N of M", a graph cell narrows it, "Nobody matches".
  *
- *   - On 2026-10-09 the owner ruled (decisions.md D-38): keep filtering, and show the hidden count.
+ *   - On 2026-10-09 the owner ruled (decisions.md D-41): keep filtering, and show the hidden count.
  *     For this board that supersedes the 2026-09-07 highlight rule. A Cursor agent had briefly
  *     switched the board to highlight-only the same morning; that change was reversed.
  *
