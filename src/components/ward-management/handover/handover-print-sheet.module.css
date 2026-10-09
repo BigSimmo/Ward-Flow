@@ -189,9 +189,6 @@
   margin: var(--wf-s-1) 0 0;
   font-size: var(--wf-fs-12);
   color: var(--wf-danger-ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .sum div {

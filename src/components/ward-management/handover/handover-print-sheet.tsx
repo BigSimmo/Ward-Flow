@@ -89,14 +89,14 @@ const itemHeight = (item: PaperItem) => (item.kind === "group" ? 22 : item.kind 
  * header, footer and table head, balanced so the last page is not a stub. A group that carries over
  * repeats its header marked "continued"; an ISBAR line stays with its patient.
  */
-function paginate(items: PaperItem[], orientation: PrintOptions["orientation"]): PaperItem[][] {
+function paginate(items: PaperItem[], orientation: PrintOptions["orientation"], firstPageNote = 0): PaperItem[][] {
   const height = PAPER[orientation].height;
   const avail = height - 30 - 24 - 58 - 34 - 22;
-  const total = items.reduce((sum, item) => sum + itemHeight(item), 34);
+  const total = items.reduce((sum, item) => sum + itemHeight(item), 34 + firstPageNote);
   const count = Math.max(1, Math.ceil(total / avail));
   const target = Math.min(avail, Math.ceil(total / count) + 30);
   const pages: PaperItem[][] = [[]];
-  let used = 34;
+  let used = 34 + firstPageNote;
   let current: RowGroup | null = null;
   items.forEach((item, index) => {
     if (item.kind === "group") current = item.group;
@@ -274,9 +274,14 @@ export function HandoverPrintSheet({
   }, []);
   const scale = Math.min(1, (previewWidth ?? paper.width * 0.75) / paper.width);
 
+  /* The outside-scope line wraps rather than truncates, so page 1 reserves its estimated height. */
+  const outsideText = outsideAct.map((row) => `${row.name} ${row.umrn}`).join(", ");
+  const outsideHeight = outsideText
+    ? 4 + 16 * Math.ceil(((outsideText.length + 28) * 6.5) / (PAPER[options.orientation].width - 60))
+    : 0;
   const pages = useMemo(
-    () => paginate(paperItems(groups, options, isHighlighted, anyHighlight), options.orientation),
-    [groups, options, isHighlighted, anyHighlight],
+    () => paginate(paperItems(groups, options, isHighlighted, anyHighlight), options.orientation, outsideHeight),
+    [groups, options, isHighlighted, anyHighlight, outsideHeight],
   );
   const extraPages = useMemo(() => {
     if (!options.beds && !options.holds && !options.signatures) return [];
@@ -442,7 +447,7 @@ export function HandoverPrintSheet({
       ) : null}
       {index === 0 && outsideAct.length ? (
         <p className={styles.outside}>
-          <b>Act now outside this scope:</b> {outsideAct.map((row) => `${row.name} ${row.umrn}`).join(", ")}
+          <b>Act now outside this scope:</b> {outsideText}
         </p>
       ) : null}
       <table>
