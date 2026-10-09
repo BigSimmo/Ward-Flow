@@ -11,9 +11,9 @@
     "routes": 41,
     "widths": [1440, 1355, 390],
     "heights": {
-      "1440": 1800,
+      "390": 844,
       "1355": 1016,
-      "390": 844
+      "1440": 1800
     },
     "themes": ["light", "dark"],
     "themeWidthScopes": {
@@ -830,15 +830,25 @@
       "mockup": "on-call-third-edition.html",
       "route": "/on-call",
       "verified": {
-        "date": "2026-10-02",
-        "who": "Codex coordinator and independent screen/source reviewers",
-        "widths": [1920],
-        "themes": ["light"],
-        "verdict": "deviates",
-        "implementationSha256": "1cfa67f3f126b88f453df358392791f871c2d3297b5b47245ba53aa87adb50e6",
-        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+        "date": "2026-10-09",
+        "who": "Claude Code (thread: On-call page overhaul)",
+        "widths": [1440, 390],
+        "themes": ["light", "dark"],
+        "verdict": "matches",
+        "checkedRevision": "01189aeddecff820d9f5b3f92dc97d7cd6de4c51",
+        "implementationSha256": "da5ca5c1f48fbe5c569a3595cb74fb98f8242dd53f41ca22c8daa64aa0946cbf",
+        "notes": "On-call rebuilt as the contacts directory from the owner-picked option A1 mockup (9 Oct 2026), replacing the third-edition roster. Baseline is the A1 mockup plus the current v8 shell. Checked in a local dev server (Node 22, next dev): desktop 1440 light and dark, desktop with the downtime sheet open, desktop with Cover at 03:00, phone 390 x 844 light including the contact sheet. Phone dark, 820 tablet, print, forced colours, physical devices, hosted behaviour and deployment are unverified. Captures were taken at 423ab92; the recorded revision adds only wording and class-name changes for repository content guards, covered by the DOM tests, not re-captured. All numbers and emails are synthetic mocks guarded by tests/ward-on-call-holds-no-people.test.ts; the owner decision to show mock numbers was pending at the time of this record."
       },
       "verificationHistory": [
+        {
+          "date": "2026-10-02",
+          "who": "Codex coordinator and independent screen/source reviewers",
+          "widths": [1920],
+          "themes": ["light"],
+          "verdict": "deviates",
+          "implementationSha256": "1cfa67f3f126b88f453df358392791f871c2d3297b5b47245ba53aa87adb50e6",
+          "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+        },
         {
           "date": "2026-09-24",
           "who": "Antigravity Builder Agent, independent adversarial reviewer",
