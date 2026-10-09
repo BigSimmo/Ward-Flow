@@ -1038,3 +1038,18 @@
   font: 600 var(--wf-fs-12) var(--wf-mono);
   color: var(--wf-ink-2);
 }
+
+/* Compact controls keep their look but take a full tap target (CLAUDE.md, 48px). */
+.heroChip,
+.groupButton {
+  position: relative;
+}
+
+.heroChip::after,
+.groupButton::after {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto;
+  height: var(--spacing-tap, 3rem);
+  transform: translateY(-50%);
+}

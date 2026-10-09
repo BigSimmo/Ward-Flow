@@ -835,3 +835,20 @@
     transition: none;
   }
 }
+
+/* Compact controls keep their look but take a full tap target (CLAUDE.md, 48px). */
+.shiftChip,
+.bannerAction,
+.secHead {
+  position: relative;
+}
+
+.shiftChip::after,
+.bannerAction::after,
+.secHead::after {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto;
+  height: var(--spacing-tap, 3rem);
+  transform: translateY(-50%);
+}

@@ -110,6 +110,7 @@ import {
   type HandoverRow,
   type HandoverShiftId,
   type HandoverSort,
+  handoverSignedAt,
 } from "./handover-model";
 import { HandoverFlowPanel, HandoverSignOffPanel, type SignOffCheck } from "./handover-panels";
 import { HandoverBeds } from "./handover-beds";
@@ -447,7 +448,14 @@ export function HandoverPage() {
     [admissions, wards, patients, referrals, now],
   );
   const wardOf = useCallback((unitId: string) => allWards.find((ward) => ward.id === unitId), [allWards]);
-  const readyBeds = useCallback((unitId: string) => wardOf(unitId)?.ready ?? 0, [wardOf]);
+  // Beds a pull can take now: free beds still being made ready are refused by the engine.
+  const readyBeds = useCallback(
+    (unitId: string) => {
+      const ward = wardOf(unitId);
+      return ward ? Math.max(0, ward.ready - ward.pendingPreparation) : 0;
+    },
+    [wardOf],
+  );
   const ctx: ColumnContext = useMemo(() => ({ now, cutoff, readyBeds }), [now, cutoff, readyBeds]);
 
   /* highlight, never hide */
@@ -503,16 +511,16 @@ export function HandoverPage() {
       const next = index < 0 ? 0 : Math.max(0, Math.min(visibleOrder.length - 1, index + direction));
       const id = visibleOrder[next]!.id;
       setSelectedId(id);
+      if (wide || isPhoneWidth) setDrawerOpen(true);
       if (typeof document !== "undefined") {
         document.querySelector(`[data-row-id="${CSS.escape(id)}"]`)?.scrollIntoView?.({ block: "nearest" });
       }
     },
-    [visibleOrder, selectedId],
+    [visibleOrder, selectedId, wide, isPhoneWidth, setDrawerOpen],
   );
 
   /* sign-off */
-  const lastSignOff = handoverSignOffs.length ? handoverSignOffs[handoverSignOffs.length - 1]! : null;
-  const signedAt = lastSignOff !== null && lastSignOff.at >= newSince ? lastSignOff.at : null;
+  const signedAt = handoverSignedAt(handoverSignOffs, shift, now);
   const handleSignOff = useCallback(() => {
     const recorded = recordHandoverSignOff(dispatch, now);
     if (recorded === null) {
@@ -578,9 +586,9 @@ export function HandoverPage() {
       const key = event.key.toLowerCase();
       if (event.key === "Escape") {
         if (drawerOpen) setDrawerOpen(false);
+        else if (sheetOpen) setSheetOpen(false);
         else if (selectedId !== null) setSelectedId(null);
         else if (present) setPresent(false);
-        else if (sheetOpen) setSheetOpen(false);
         return;
       }
       if (isPhoneWidth) return;
@@ -619,7 +627,16 @@ export function HandoverPage() {
           id: "feeds",
           done: false,
           text: `${staleWards.length} ward feed${staleWards.length === 1 ? "" : "s"} older than 15 minutes`,
-          action: { label: "Check beds", onClick: () => setTab("beds") },
+          // The phone keeps its own Beds tab and has no print sheet, so these links are desktop only.
+          action: isPhoneWidth
+            ? undefined
+            : {
+                label: "Check beds",
+                onClick: () => {
+                  setDrawerOpen(false);
+                  setTab("beds");
+                },
+              },
         }
       : { id: "feeds", done: true, text: "Every ward feed is current" },
     takenAt !== null
@@ -628,7 +645,15 @@ export function HandoverPage() {
           id: "print",
           done: false,
           text: "No printed copy yet",
-          action: { label: "Print handover", onClick: () => setSheetOpen(true) },
+          action: isPhoneWidth
+            ? undefined
+            : {
+                label: "Print handover",
+                onClick: () => {
+                  setDrawerOpen(false);
+                  setSheetOpen(true);
+                },
+              },
         },
     meetings.length
       ? { id: "meet", done: true, text: `Meeting timed, ${meetings[0]!.minutes} min` }
@@ -799,6 +824,7 @@ export function HandoverPage() {
           onCloseDrawer={() => setDrawerOpen(false)}
           flowPanel={flowPanel}
           signOffPanel={signOffPanel}
+          outsideAct={scope.kind !== "network" ? outsideAct : []}
         />
       </main>
     );
@@ -1173,6 +1199,7 @@ export function HandoverPage() {
         ctx={ctx}
         wards={wards}
         held={held}
+        outsideAct={scope.kind !== "network" ? outsideAct : []}
         isHighlighted={isHighlighted}
         anyHighlight={anyHighlight}
         scopeLabel={scopeLabel}
@@ -1193,7 +1220,7 @@ export function HandoverPage() {
         onOpenPatient={(id) => {
           setSheetOpen(false);
           setTab("pts");
-          setSelectedId(id);
+          pick(id);
         }}
         onBack={() => setSheetOpen(false)}
         onPrinted={(at) => setTakenAt(at)}
@@ -1211,7 +1238,7 @@ export function HandoverPage() {
           now={now}
           onOpenPatient={(id) => {
             setTab("pts");
-            setSelectedId(id);
+            pick(id);
           }}
         />
       </TabPanel>
@@ -1273,8 +1300,7 @@ function HandoverHistory({
   now: Instant;
 }) {
   const unsigned = HANDOVER_SHIFTS.filter((shift) => {
-    const at = handoverAt(shift.id, now);
-    return at <= now && !signOffs.some((record) => record.at >= at - 8 * 60 && record.at <= at + 60);
+    return handoverAt(shift.id, now) <= now && handoverSignedAt(signOffs, shift.id, now) === null;
   });
   return (
     <Card as="section" aria-label="Handover history" data-testid="ward-handover-history">

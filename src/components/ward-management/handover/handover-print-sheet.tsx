@@ -118,6 +118,58 @@ function paginate(items: PaperItem[], orientation: PrintOptions["orientation"]):
   return pages;
 }
 
+type ExtraEntry =
+  { kind: "ward"; ward: HandoverWard } | { kind: "hold"; hold: HeldDischarge } | { kind: "noHolds" } | { kind: "sigs" };
+type ExtraSectionId = "beds" | "holds" | "sigs";
+type ExtraSection = { id: ExtraSectionId; entries: ExtraEntry[]; continued: boolean };
+
+const EXTRA_SECTION: Record<ExtraEntry["kind"], ExtraSectionId> = {
+  ward: "beds",
+  hold: "holds",
+  noHolds: "holds",
+  sigs: "sigs",
+};
+/* Heading plus table head, one table row, and the two signature lines with their heading. */
+const EXTRA_HEAD = 50;
+const extraHeight = (entry: ExtraEntry) => (entry.kind === "sigs" ? 105 : 23);
+
+/**
+ * Flow Beds by ward, Discharges held up and the signature lines over as many pages as they need.
+ * Landscape keeps two columns (beds left, holds and signatures right); portrait stacks them. A
+ * section that carries over repeats its heading marked "continued". Returns pages of columns.
+ */
+function paginateExtra(streams: ExtraEntry[][], orientation: PrintOptions["orientation"]): ExtraSection[][][] {
+  const avail = PAPER[orientation].height - 30 - 24 - 58 - 22;
+  const columns = streams.map((stream) => {
+    const pages: ExtraSection[][] = [[]];
+    const seen = new Set<ExtraSectionId>();
+    let used = 0;
+    for (const entry of stream) {
+      const id = EXTRA_SECTION[entry.kind];
+      let page = pages[pages.length - 1]!;
+      let section = page[page.length - 1]?.id === id ? page[page.length - 1]! : null;
+      const need = (section ? 0 : EXTRA_HEAD) + extraHeight(entry);
+      if (used + need > avail && page.length > 0) {
+        page = [];
+        pages.push(page);
+        section = null;
+        used = 0;
+      }
+      if (section === null) {
+        section = { id, entries: [], continued: seen.has(id) };
+        seen.add(id);
+        page.push(section);
+        used += EXTRA_HEAD;
+      }
+      section.entries.push(entry);
+      used += extraHeight(entry);
+    }
+    return pages;
+  });
+  const count = Math.max(...columns.map((pages) => pages.length));
+  return Array.from({ length: count }, (_, index) => columns.map((pages) => pages[index] ?? []));
+}
+
 const GROUP_TONE: Record<HandoverGroupId, WfTone> = {
   act: "danger",
   due: "warning",
@@ -154,6 +206,8 @@ export type HandoverPrintSheetProps = {
   ctx: ColumnContext;
   wards: HandoverWard[];
   held: HeldDischarge[];
+  /** Act-now patients the scope leaves out; the copy names them so narrowing never hides them. */
+  outsideAct: HandoverRow[];
   isHighlighted: (row: HandoverRow) => boolean;
   anyHighlight: boolean;
   scopeLabel: string;
@@ -185,6 +239,7 @@ export function HandoverPrintSheet({
   ctx,
   wards,
   held,
+  outsideAct,
   isHighlighted,
   anyHighlight,
   scopeLabel,
@@ -223,8 +278,20 @@ export function HandoverPrintSheet({
     () => paginate(paperItems(groups, options, isHighlighted, anyHighlight), options.orientation),
     [groups, options, isHighlighted, anyHighlight],
   );
-  const extraPage = options.beds || options.holds || options.signatures;
-  const totalPages = pages.length + (extraPage ? 1 : 0);
+  const extraPages = useMemo(() => {
+    if (!options.beds && !options.holds && !options.signatures) return [];
+    const beds: ExtraEntry[] = options.beds ? wards.map((ward) => ({ kind: "ward", ward })) : [];
+    const rest: ExtraEntry[] = [
+      ...(options.holds
+        ? held.length === 0
+          ? [{ kind: "noHolds" } as const]
+          : held.map((hold) => ({ kind: "hold", hold }) as const)
+        : []),
+      ...(options.signatures ? [{ kind: "sigs" } as const] : []),
+    ];
+    return paginateExtra(landscape ? [beds, rest] : [[...beds, ...rest]], options.orientation);
+  }, [options.beds, options.holds, options.signatures, options.orientation, landscape, wards, held]);
+  const totalPages = pages.length + extraPages.length;
 
   const rows = useMemo(() => {
     const seen = new Map<string, HandoverRow>();
@@ -373,6 +440,11 @@ export function HandoverPrintSheet({
           ))}
         </div>
       ) : null}
+      {index === 0 && outsideAct.length ? (
+        <p className={styles.outside}>
+          <b>Act now outside this scope:</b> {outsideAct.map((row) => `${row.name} ${row.umrn}`).join(", ")}
+        </p>
+      ) : null}
       <table>
         {tableHead}
         <tbody>
@@ -389,110 +461,122 @@ export function HandoverPrintSheet({
     </article>
   ));
 
-  if (extraPage) {
+  const continued = (section: ExtraSection, title: string) => (section.continued ? `${title}, continued` : title);
+  const renderSection = (section: ExtraSection) => {
+    if (section.id === "beds") {
+      return (
+        <div key="beds">
+          <h3>{continued(section, "Beds by ward")}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Ward</th>
+                <th scope="col" style={{ width: 70 }}>
+                  In beds
+                </th>
+                <th scope="col" style={{ width: 56 }}>
+                  Ready
+                </th>
+                <th scope="col" style={{ width: 80 }}>
+                  Updated
+                </th>
+                <th scope="col" style={{ width: 50 }}>
+                  Held
+                </th>
+                <th scope="col" style={{ width: 70 }}>
+                  Past EDD
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {section.entries.map((entry) =>
+                entry.kind === "ward" ? (
+                  <tr key={entry.ward.id}>
+                    <td>{entry.ward.name}</td>
+                    <td className={styles.mn}>
+                      {entry.ward.occupied}/{entry.ward.beds}
+                    </td>
+                    <td className={styles.mn}>{entry.ward.ready}</td>
+                    <td className={styles.mn}>{formatInstantWithDay(entry.ward.confirmedAt, now)}</td>
+                    <td className={styles.mn}>{entry.ward.held}</td>
+                    <td className={styles.mn}>{entry.ward.pastEdd}</td>
+                  </tr>
+                ) : null,
+              )}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    if (section.id === "holds") {
+      return (
+        <div key="holds">
+          <h3>{continued(section, "Discharges held up")}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Patient</th>
+                <th scope="col" style={{ width: 150 }}>
+                  Ward
+                </th>
+                <th scope="col" style={{ width: 180 }}>
+                  Hold
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {section.entries.map((entry) =>
+                entry.kind === "noHolds" ? (
+                  <tr key="none">
+                    <td colSpan={3}>No discharges held up</td>
+                  </tr>
+                ) : entry.kind === "hold" ? (
+                  <tr key={entry.hold.admission.id}>
+                    <td>
+                      {entry.hold.name} <span className={styles.mnInline}>{entry.hold.umrn}</span>
+                    </td>
+                    <td>{entry.hold.ward}</td>
+                    <td>{entry.hold.reason}</td>
+                  </tr>
+                ) : null,
+              )}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    return (
+      <div key="sigs">
+        <h3>Handover</h3>
+        {[0, 1].map((line) => (
+          <div key={line} className={styles.sig}>
+            <div>Given by</div>
+            <div>Received by</div>
+            <div>Time</div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  extraPages.forEach((columnsOnPage, index) => {
+    const pageNumber = pages.length + index + 1;
     pageNodes.push(
       <article
-        key="p-extra"
+        key={`p-extra-${index}`}
         className={cx("day", styles.paper, !landscape && styles.port)}
-        aria-label={`Page ${totalPages}`}
+        aria-label={`Page ${pageNumber}`}
       >
-        {header(totalPages)}
+        {header(pageNumber)}
         <div className={landscape ? styles.cols2 : styles.cols1}>
-          {options.beds ? (
-            <div>
-              <h3>Beds by ward</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Ward</th>
-                    <th scope="col" style={{ width: 70 }}>
-                      In beds
-                    </th>
-                    <th scope="col" style={{ width: 56 }}>
-                      Ready
-                    </th>
-                    <th scope="col" style={{ width: 80 }}>
-                      Updated
-                    </th>
-                    <th scope="col" style={{ width: 50 }}>
-                      Held
-                    </th>
-                    <th scope="col" style={{ width: 70 }}>
-                      Past EDD
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {wards.map((ward) => (
-                    <tr key={ward.id}>
-                      <td>{ward.name}</td>
-                      <td className={styles.mn}>
-                        {ward.occupied}/{ward.beds}
-                      </td>
-                      <td className={styles.mn}>{ward.ready}</td>
-                      <td className={styles.mn}>{formatInstantWithDay(ward.confirmedAt, now)}</td>
-                      <td className={styles.mn}>{ward.held}</td>
-                      <td className={styles.mn}>{ward.pastEdd}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-          <div>
-            {options.holds ? (
-              <>
-                <h3>Discharges held up</h3>
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">Patient</th>
-                      <th scope="col" style={{ width: 150 }}>
-                        Ward
-                      </th>
-                      <th scope="col" style={{ width: 180 }}>
-                        Hold
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {held.length === 0 ? (
-                      <tr>
-                        <td colSpan={3}>No discharges held up</td>
-                      </tr>
-                    ) : (
-                      held.map((hold) => (
-                        <tr key={hold.admission.id}>
-                          <td>
-                            {hold.name} <span className={styles.mnInline}>{hold.umrn}</span>
-                          </td>
-                          <td>{hold.ward}</td>
-                          <td>{hold.reason}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </>
-            ) : null}
-            {options.signatures ? (
-              <>
-                <h3>Handover</h3>
-                {[0, 1].map((line) => (
-                  <div key={line} className={styles.sig}>
-                    <div>Given by</div>
-                    <div>Received by</div>
-                    <div>Time</div>
-                  </div>
-                ))}
-              </>
-            ) : null}
-          </div>
+          {columnsOnPage.map((sections, column) => (
+            <div key={column}>{sections.map(renderSection)}</div>
+          ))}
         </div>
         {footer}
       </article>,
     );
-  }
+  });
 
   const print = () => {
     flushSync(() => onPrinted(now));

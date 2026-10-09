@@ -21,6 +21,7 @@ import {
   handoverAt,
   handoverCutoff,
   handoverHasPassed,
+  handoverSignedAt,
 } from "@/components/ward-management/handover/handover-model";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -202,5 +203,31 @@ describe("Handover shift after the last handover of the day", () => {
   it("keeps the morning handover as today's before 23:00", () => {
     expect(handoverHasPassed("am", NOW_ANCHOR)).toBe(true);
     expect(handoverAt("am", NOW_ANCHOR)).toBe(NOW_ANCHOR - (NOW_ANCHOR % (24 * 60)) + 7 * 60);
+  });
+});
+
+describe("Handover sign-off belongs to one handover", () => {
+  const midnight = NOW_ANCHOR - (NOW_ANCHOR % (24 * 60));
+  const at2000 = midnight + 20 * 60;
+
+  it("counts a sign-off only for the handover whose window holds it", () => {
+    const signOffs = [{ at: midnight + 20 * 60 }];
+    expect(handoverSignedAt(signOffs, "ev", at2000)).toBe(midnight + 20 * 60);
+    expect(handoverSignedAt(signOffs, "pm", at2000)).toBeNull();
+  });
+
+  it("finds an earlier handover's sign-off after a later one is recorded", () => {
+    const signOffs = [{ at: midnight + 14 * 60 }, { at: midnight + 20 * 60 }];
+    expect(handoverSignedAt(signOffs, "pm", at2000)).toBe(midnight + 14 * 60);
+  });
+
+  it("prints the patient cell and sheet header despite the global print rule", () => {
+    const css = readFileSync(
+      resolve(process.cwd(), "src/components/ward-management/handover/handover-print-sheet.module.css"),
+      "utf8",
+    );
+    const print = css.slice(css.lastIndexOf("@media print"));
+    expect(print).toMatch(/\.ph \{\s*display: flex !important;/);
+    expect(print).toMatch(/\.rowButton \{\s*display: block !important;/);
   });
 });

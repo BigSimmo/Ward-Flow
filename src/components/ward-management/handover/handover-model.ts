@@ -13,7 +13,7 @@ import {
   minuteOfDay,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { transportLeg } from "@/components/ward-management/ward-derivations";
+import { transportLeg, unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type {
@@ -75,6 +75,24 @@ export function handoverCutoff(id: HandoverShiftId, now: Instant): Instant {
 /** "New since" is the handover before the chosen one. */
 export function handoverNewSince(id: HandoverShiftId, now: Instant): Instant {
   return handoverAt(id, now) - 8 * 60;
+}
+
+/**
+ * When this handover was signed off, or null. Sign-off closes once the handover starts, so a
+ * record belongs to the handover whose window (from the one before it up to its start) holds it.
+ */
+export function handoverSignedAt(
+  signOffs: readonly { at: Instant }[],
+  id: HandoverShiftId,
+  now: Instant,
+): Instant | null {
+  const from = handoverNewSince(id, now);
+  const to = handoverAt(id, now);
+  let signed: Instant | null = null;
+  for (const record of signOffs) {
+    if (record.at >= from && record.at <= to && (signed === null || record.at > signed)) signed = record.at;
+  }
+  return signed;
 }
 
 /* ------------------------------------------------------------------ rows */
@@ -147,7 +165,6 @@ export function toHandoverRow(
   const identity = resolveSubjectPatient(movement, { patients, referrals });
   const ed = edNames(movement.originEdId);
   const accepted = movement.acceptedUnitId;
-  const declinedIds = new Set(movement.declines.map((decline) => decline.unitId));
   const leg = transportLeg(movement.transport);
   const toUnit = accepted === undefined ? undefined : units.find((unit) => unit.id === accepted);
   return {
@@ -170,11 +187,7 @@ export function toHandoverRow(
     obs: movement.flaggedUrgent ? "Urgent" : movement.specialling ? "1:1 specialling" : "Standard",
     to: accepted === undefined ? undefined : { unitId: accepted, name: unitName(units, accepted) },
     asked:
-      accepted === undefined
-        ? movement.referredUnitIds
-            .filter((id) => !declinedIds.has(id))
-            .map((id) => ({ unitId: id, name: unitName(units, id) }))
-        : [],
+      accepted === undefined ? movement.referredUnitIds.map((id) => ({ unitId: id, name: unitName(units, id) })) : [],
     declines: movement.declines.map((decline) => ({
       unitId: decline.unitId,
       name: unitName(units, decline.unitId),
@@ -263,9 +276,9 @@ export function destinationText(row: HandoverRow): string {
   return "No ward asked yet";
 }
 
-/** Short due text for the table: a bed hold first, then a typed form time. */
+/** Short due text for the table: whichever comes first of a bed hold and a typed form time. */
 export function dueShort(row: HandoverRow, now: Instant): string | null {
-  if (row.pullExpiresAt !== undefined) {
+  if (row.pullExpiresAt !== undefined && (row.formDueAt === undefined || row.pullExpiresAt <= row.formDueAt)) {
     const left = row.pullExpiresAt - now;
     return left <= 0
       ? `Pull over by ${durMinutes(-left)}`
@@ -275,19 +288,25 @@ export function dueShort(row: HandoverRow, now: Instant): string | null {
   return null;
 }
 
+/** Long due text for the panel: the bed hold and the typed form time, both when both are held. */
 export function dueLong(row: HandoverRow, now: Instant): string | null {
+  const parts: string[] = [];
   if (row.pullExpiresAt !== undefined) {
     const left = row.pullExpiresAt - now;
-    return left <= 0
-      ? `Pull expired ${durMinutes(-left)} ago`
-      : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}, ${durMinutes(left)} left`;
+    parts.push(
+      left <= 0
+        ? `Pull expired ${durMinutes(-left)} ago`
+        : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}, ${durMinutes(left)} left`,
+    );
   }
   if (row.formDueAt !== undefined) {
-    return row.formDueAt <= now
-      ? `Form ${row.formCode} time passed`
-      : `Form ${row.formCode} due ${formatInstantWithDay(row.formDueAt, now)} as typed`;
+    parts.push(
+      row.formDueAt <= now
+        ? `Form ${row.formCode} time passed`
+        : `Form ${row.formCode} due ${formatInstantWithDay(row.formDueAt, now)} as typed`,
+    );
   }
-  return null;
+  return parts.length ? parts.join(". ") : null;
 }
 
 /** The one next step each journey is waiting on, from its stage and the times it holds. */
@@ -390,7 +409,7 @@ export type HandoverChip = "spec" | "form" | "dec" | "day" | "mine" | "esc";
 
 export const HANDOVER_CHIPS: { id: HandoverChip; label: string; test: (row: HandoverRow, now: Instant) => boolean }[] =
   [
-    { id: "spec", label: "1:1", test: (row) => row.obs === "1:1 specialling" },
+    { id: "spec", label: "1:1", test: (row) => row.movement.specialling },
     { id: "form", label: "Form recorded", test: (row) => row.formCode !== undefined },
     { id: "dec", label: "Declined", test: (row) => row.declines.length > 0 },
     { id: "day", label: "Over a day", test: (row, now) => now - row.openedAt >= MINUTES_PER_DAY },
@@ -417,7 +436,8 @@ export type HandoverSort = "wait" | "tier" | "due";
 export type HandoverGrouping = "meet" | "ed" | "ward" | "owner" | "none";
 
 export function sortRows(rows: HandoverRow[], sort: HandoverSort): HandoverRow[] {
-  const dueKey = (row: HandoverRow) => row.pullExpiresAt ?? row.formDueAt ?? Number.MAX_SAFE_INTEGER;
+  const dueKey = (row: HandoverRow) =>
+    Math.min(row.pullExpiresAt ?? Number.MAX_SAFE_INTEGER, row.formDueAt ?? Number.MAX_SAFE_INTEGER);
   const compare: Record<HandoverSort, (a: HandoverRow, b: HandoverRow) => number> = {
     wait: (a, b) => a.openedAt - b.openedAt,
     tier: (a, b) => a.tier - b.tier || a.openedAt - b.openedAt,
@@ -500,11 +520,11 @@ export function toHandoverWard(
     beds: unit.beds,
     occupied: here.length,
     empty: unit.empty.value,
-    ready: unit.allocatable.value,
+    ready: Math.min(unit.allocatable.value, unit.empty.value),
     pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
     confirmedAt: unit.empty.confirmedAt,
     staleAfter: unit.empty.staleAfterMinutes,
-    held: unit.held,
+    held: unitCapacity(unit, bedReleases).held,
     longStays: here.filter((admission) => (daysInBed(admission, now) ?? 0) >= 7).length,
     pastEdd: here.filter((admission) => admission.expectedDischargeAt !== null && admission.expectedDischargeAt < now)
       .length,

@@ -66,6 +66,8 @@ export type HandoverPhoneProps = {
   onCloseDrawer: () => void;
   flowPanel: ReactNode | null;
   signOffPanel: ReactNode;
+  /** Act-now patients the scope leaves out, so narrowing never hides them from the handover. */
+  outsideAct: HandoverRow[];
 };
 
 type PhoneTab = "pts" | "beds";
@@ -76,10 +78,11 @@ const GROUP_TONE: Record<string, WfTone> = {
   bed: "neutral",
   acc: "neutral",
   mov: "info",
+  out: "danger",
 };
 
 /** Act now and Due show full cards and start open; the other groups are compact and start closed. */
-const CARD_GROUPS = new Set(["act", "due"]);
+const CARD_GROUPS = new Set(["act", "due", "out"]);
 
 const pct = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0);
 
@@ -464,6 +467,7 @@ export function HandoverPhone({
   onCloseDrawer,
   flowPanel,
   signOffPanel,
+  outsideAct,
 }: HandoverPhoneProps) {
   const [tab, setTab] = useState<PhoneTab>("pts");
   const [shiftSheetOpen, setShiftSheetOpen] = useState(false);
@@ -602,6 +606,21 @@ export function HandoverPhone({
                   onPick={onPick}
                 />
               ))}
+            {outsideAct.length ? (
+              <GroupSection
+                group={{
+                  id: "out",
+                  title: "Act now outside this scope",
+                  why: "Left out by the scope, never hidden from the handover",
+                  rows: outsideAct,
+                }}
+                open={isOpen("out")}
+                onToggle={() => setToggled((prev) => ({ ...prev, out: !isOpen("out") }))}
+                ctx={ctx}
+                isHighlighted={isHighlighted}
+                onPick={onPick}
+              />
+            ) : null}
             <p className={styles.note}>Print, filters and columns are on desktop</p>
           </div>
         ) : (

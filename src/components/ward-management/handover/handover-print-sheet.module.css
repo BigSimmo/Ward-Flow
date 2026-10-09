@@ -185,6 +185,15 @@
   overflow: hidden;
 }
 
+.outside {
+  margin: var(--wf-s-1) 0 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-danger-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .sum div {
   flex: 1;
   min-width: 0;
@@ -371,6 +380,17 @@
 /* ------------------------------------------------------------------ print */
 
 @media print {
+  /* The global print rule hides every header and button. On the sheet the header carries the
+     page number, time taken and synthetic data label, and the patient cell is a button, so both
+     come back on paper. */
+  .ph {
+    display: flex !important;
+  }
+
+  .rowButton {
+    display: block !important;
+  }
+
   .stack {
     display: block;
     gap: 0;

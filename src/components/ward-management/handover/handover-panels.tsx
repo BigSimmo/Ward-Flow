@@ -28,8 +28,8 @@ const STEPS: { stage: MovementStage; label: string }[] = [
   { stage: "destination_review", label: "Review" },
   { stage: "accepted_awaiting_bed", label: "Accepted" },
   { stage: "pulled", label: "Pulled" },
+  { stage: "handover_ready", label: "Ready" },
   { stage: "moving", label: "Moving" },
-  { stage: "handover_ready", label: "Arrived" },
 ];
 
 function Stepper({ stage }: { stage: MovementStage }) {
