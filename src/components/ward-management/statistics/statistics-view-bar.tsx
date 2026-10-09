@@ -21,9 +21,9 @@ function viewFromHash(hash: string): StatisticsView {
 }
 
 /**
- * The Summary view, kept in the address as an anchor (#journey, #map; the bed board has none), so a
- * view can be linked, bookmarked and reached with Back. Read after mount, so the server render and
- * the first client render agree on the bed board.
+ * The Summary view, kept in the address as an anchor (#journey, #map; the bed board is the default
+ * and #board also opens it), so a view can be linked, bookmarked and reached with Back. Read after
+ * mount, so the server render and the first client render agree on the bed board.
  */
 export function useStatisticsView() {
   const [view, setView] = useState<StatisticsView>("board");
@@ -81,7 +81,7 @@ export function StatisticsViewBar({
         return (
           <a
             key={item.id}
-            href={item.id === "board" ? "#" : `#${item.id}`}
+            href={`#${item.id}`}
             className={cx(styles.item, on && styles.on)}
             aria-current={on ? "page" : undefined}
             aria-keyshortcuts={item.key}

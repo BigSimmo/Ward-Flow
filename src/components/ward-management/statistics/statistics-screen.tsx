@@ -473,12 +473,16 @@ export function StatisticsScreen({
 
         <StatisticsViewBar view={view} onChoose={chooseView} />
 
+        {/* Each view's anchor exists whichever view shows, so its link always has a target. */}
+        {view === "board" ? null : <div id="board" hidden />}
         {view === "journey" ? (
           <StatisticsJourneyView onShowBoard={() => chooseView("board")} />
-        ) : view === "map" ? (
-          <StatisticsMapView />
         ) : (
-          <>
+          <div id="journey" hidden />
+        )}
+        {view === "map" ? <StatisticsMapView /> : <div id="map" hidden />}
+        {view !== "board" ? null : (
+          <div id="board" className={styles.stack}>
             <FlushRow layout="lead2" id="beds">
               <div className={styles.stack} data-testid="ward-statistics-patients">
                 <StatisticsCapacityChart
@@ -1001,7 +1005,7 @@ export function StatisticsScreen({
                 </CardBody>
               </StatCard>
             </div>
-          </>
+          </div>
         )}
 
         <WardPrototypeFooter testId="ward-statistics-footer" note="Synthetic prototype. Every figure is invented." />
