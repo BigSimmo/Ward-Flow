@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { EventEmitter } from "node:events";
 import { APPROVED_STORAGE_ACCOUNTS, readConfig } from "./config.mjs";
-import { createHandler } from "./server.mjs";
+import { createHandler, registerShutdown } from "./server.mjs";
 import { createStore } from "./database.mjs";
 import { handleHttp } from "./function.mjs";
 import { createAuthenticator } from "./auth.mjs";
@@ -369,6 +370,97 @@ test("shared readiness probes both active stores on every authenticated request"
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { storage: "ready", database: "ready" });
   assert.deepEqual(probes, ["storage", "database", "storage", "storage", "database", "storage", "database"]);
+});
+
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  test(`${signal} stops the listener before ending the pool exactly once`, async (t) => {
+    const signals = new EventEmitter();
+    const server = new EventEmitter();
+    const order = [];
+    let finishClose;
+    server.close = t.mock.fn((callback) => {
+      order.push("server");
+      finishClose = callback;
+    });
+    const pool = { end: t.mock.fn(async () => order.push("pool")) };
+    const close = registerShutdown(server, pool, signals);
+    signals.emit(signal);
+    const shutdown = close();
+    signals.emit(signal === "SIGINT" ? "SIGTERM" : "SIGINT");
+    assert.equal(close(), shutdown);
+    assert.deepEqual(order, ["server"]);
+    assert.equal(pool.end.mock.callCount(), 0);
+    finishClose();
+    await shutdown;
+    assert.deepEqual(order, ["server", "pool"]);
+    assert.equal(server.close.mock.callCount(), 1);
+    assert.equal(pool.end.mock.callCount(), 1);
+    assert.equal(signals.exitCode, undefined);
+  });
+}
+
+test("listener startup errors still end the pool when the server is not running", async (t) => {
+  const messages = [];
+  t.mock.method(console, "error", (...args) => messages.push(args));
+  const signals = new EventEmitter();
+  const server = new EventEmitter();
+  server.close = t.mock.fn((callback) =>
+    callback(Object.assign(new Error("synthetic close diagnostic"), { code: "ERR_SERVER_NOT_RUNNING" })),
+  );
+  const pool = { end: t.mock.fn(async () => {}) };
+  const close = registerShutdown(server, pool, signals);
+  server.emit("error", new Error("synthetic listener diagnostic"));
+  signals.emit("SIGTERM");
+  await close();
+  assert.equal(signals.exitCode, 1);
+  assert.equal(server.close.mock.callCount(), 1);
+  assert.equal(pool.end.mock.callCount(), 1);
+  assert.deepEqual(messages, [["Backend listener unavailable"]]);
+});
+
+test("pool shutdown rejection is caught and logged without raw diagnostics", async (t) => {
+  const messages = [];
+  t.mock.method(console, "error", (...args) => messages.push(args));
+  const signals = new EventEmitter();
+  const server = new EventEmitter();
+  server.close = t.mock.fn((callback) => callback());
+  const pool = {
+    end: t.mock.fn(async () => {
+      throw new Error("synthetic private pool diagnostic");
+    }),
+  };
+  const close = registerShutdown(server, pool, signals);
+  signals.emit("SIGINT");
+  await assert.doesNotReject(close());
+  await close();
+  assert.equal(signals.exitCode, 1);
+  assert.equal(pool.end.mock.callCount(), 1);
+  assert.deepEqual(messages, [["Backend shutdown unavailable"]]);
+});
+
+test("listener close errors still end the pool and produce sanitized shutdown failure", async (t) => {
+  const messages = [];
+  t.mock.method(console, "error", (...args) => messages.push(args));
+  const signals = new EventEmitter();
+  const server = new EventEmitter();
+  server.close = t.mock.fn((callback) => callback(new Error("synthetic listener close diagnostic")));
+  const pool = { end: t.mock.fn(async () => {}) };
+  const close = registerShutdown(server, pool, signals);
+  await close();
+  assert.equal(signals.exitCode, 1);
+  assert.equal(pool.end.mock.callCount(), 1);
+  assert.deepEqual(messages, [["Backend shutdown unavailable"]]);
+});
+
+test("nonshared shutdown closes the listener without a pool", async (t) => {
+  const signals = new EventEmitter();
+  const server = new EventEmitter();
+  server.close = t.mock.fn((callback) => callback());
+  const close = registerShutdown(server, undefined, signals);
+  signals.emit("SIGTERM");
+  await close();
+  assert.equal(server.close.mock.callCount(), 1);
+  assert.equal(signals.exitCode, undefined);
 });
 
 test("storage account must be on the fixed Ward Flow allowlist, not merely agree between the two variables", () => {

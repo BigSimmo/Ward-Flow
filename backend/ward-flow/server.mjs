@@ -146,7 +146,38 @@ export function listen(handler, config) {
   return server.listen(config.port, config.host);
 }
 
+export function registerShutdown(server, pool, signals = process) {
+  let shutdown;
+  const close = () => {
+    shutdown ??= (async () => {
+      try {
+        await new Promise((resolve, reject) => {
+          server.close((error) => {
+            if (error && error.code !== "ERR_SERVER_NOT_RUNNING") reject(error);
+            else resolve();
+          });
+        });
+      } finally {
+        await pool?.end();
+      }
+    })().catch(() => {
+      console.error("Backend shutdown unavailable");
+      signals.exitCode = 1;
+    });
+    return shutdown;
+  };
+  signals.once("SIGINT", close);
+  signals.once("SIGTERM", close);
+  server.on("error", () => {
+    console.error("Backend listener unavailable");
+    signals.exitCode = 1;
+    void close();
+  });
+  return close;
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  let pool;
   try {
     const config = readConfig();
     const storage = await openStorage(config.storage);
@@ -155,25 +186,22 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     if (config.shared) {
       const { createPostgresPool, createWorkspaceStore } = await import("./postgres.mjs");
       const engine = await import("./dist/engine.mjs");
-      sharedStore = createWorkspaceStore(createPostgresPool(config.postgres), {
+      pool = createPostgresPool(config.postgres);
+      sharedStore = createWorkspaceStore(pool, {
         workspaceId: config.workspaceId,
         engine,
       });
     }
     const server = listen(createHandler({ config, store: createStore(storage), authenticate, sharedStore }), config);
-    const close = () => {
-      server.close();
-    };
-    process.once("SIGINT", close);
-    process.once("SIGTERM", close);
-    server.on("error", () => {
-      console.error("Backend listener unavailable");
-      close();
-      process.exitCode = 1;
-    });
+    registerShutdown(server, pool);
     server.on("listening", () => console.log("Ward Flow backend listening; authenticated readiness check required"));
   } catch {
     console.error("Backend configuration or identity unavailable");
     process.exitCode = 1;
+    try {
+      await pool?.end();
+    } catch {
+      console.error("Backend shutdown unavailable");
+    }
   }
 }
