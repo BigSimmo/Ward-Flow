@@ -381,9 +381,13 @@ export function WardHomeTab({
   const [innerBedFilter, setInnerBedFilter] = useState<WardBedFilter>("all");
   const bedFilter = bedFilterProp ?? innerBedFilter;
   const setBedFilter = onBedFilterChange ?? setInnerBedFilter;
-  const shownBeds = bedRows.filter((row) =>
-    bedFilter === "all" ? true : bedFilter === "look" ? row.look : bedFilter === "leaving" ? row.leaving : row.free,
-  );
+  const shownBeds = bedRows.filter((row) => {
+    if (bedFilter === "all") return true;
+    if (bedFilter === "look") return row.look;
+    if (bedFilter === "leaving") return row.leaving;
+    if (bedFilter === "occupied") return row.bed.status === "occupied" || row.bed.status === "leave";
+    return row.free;
+  });
   const query = bedQuery.trim().toLowerCase();
   const matchesQuery = (row: (typeof bedRows)[number]) =>
     query === "" ||
