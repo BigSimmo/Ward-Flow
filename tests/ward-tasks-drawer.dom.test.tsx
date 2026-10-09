@@ -182,7 +182,9 @@ describe("task workspace state filters and actions", () => {
       acknowledgements: { [critical.id]: [{ at: NOW_ANCHOR, by: "Bed coordinator" }] },
     });
     expect(within(drawer).queryByRole("textbox", { name: "Search tasks" })).toBeNull();
-    fireEvent.change(within(drawer).getByRole("combobox"), { target: { value: "acknowledged" } });
+    fireEvent.change(within(drawer).getByRole("combobox", { name: "Filter task state" }), {
+      target: { value: "acknowledged" },
+    });
     expect(within(drawer).getByTestId(`ward-task-${critical.id}`)).toBeVisible();
     fireEvent.click(within(drawer).getByRole("button", { name: /^Review/u }));
     expect(within(drawer).getByText("No matching tasks")).toBeVisible();
@@ -192,7 +194,9 @@ describe("task workspace state filters and actions", () => {
 
   it("offers completed tasks without allowing live facts to be marked done", () => {
     const { drawer } = renderDrawer();
-    fireEvent.change(within(drawer).getByRole("combobox"), { target: { value: "completed" } });
+    fireEvent.change(within(drawer).getByRole("combobox", { name: "Filter task state" }), {
+      target: { value: "completed" },
+    });
     expect(within(drawer).getByText("No completed tasks")).toBeVisible();
     expect(within(drawer).queryByRole("button", { name: "Mark done" })).toBeNull();
   });

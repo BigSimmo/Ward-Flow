@@ -22,6 +22,7 @@ import {
   Wrench,
 } from "lucide-react";
 
+import type { NotificationSupport } from "@/components/ward-management/shell/ward-act-now-notifications";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
@@ -105,11 +106,18 @@ const OTHER_EVENTS: readonly { readonly name: string; readonly inApp: boolean; r
 ];
 
 export function AlertsPane({
+  notifications = false,
+  notificationPermission = "default",
+  onNotificationsChange = () => {},
   buzz,
   onBuzzChange,
   onTestBuzz,
   onPreview,
 }: {
+  /** Stream A, 9 Oct 2026: opt-in browser notifications for new act-now alerts in this tab. */
+  notifications?: boolean;
+  notificationPermission?: NotificationSupport;
+  onNotificationsChange?: (next: boolean) => void;
   buzz: boolean;
   onBuzzChange: (next: boolean) => void;
   onTestBuzz: () => void;
@@ -140,6 +148,24 @@ export function AlertsPane({
                 </span>
               }
             />
+            <SettingRow
+              setting="browser-notifications"
+              title="Browser notifications"
+              sub={
+                notificationPermission === "unsupported"
+                  ? "Not available in this browser"
+                  : notificationPermission === "denied"
+                    ? "Blocked for this site in the browser"
+                    : "New act-now alerts, while this tab is open"
+              }
+              testId="setting-browser-notifications-row"
+            >
+              <Switch
+                checked={notifications && notificationPermission === "granted"}
+                onCheckedChange={onNotificationsChange}
+                label={<SrOnly>Browser notifications</SrOnly>}
+              />
+            </SettingRow>
             <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz" testId="setting-buzz-alert-row">
               <button
                 type="button"

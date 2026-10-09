@@ -13,6 +13,7 @@ import {
   Palette,
   Search,
   SlidersHorizontal,
+  Timer,
   UserRound,
 } from "lucide-react";
 
@@ -43,14 +44,26 @@ import {
 } from "@/components/ward-management/ward-model";
 import {
   BED_HOLD_EXPIRY_MINUTES,
+  DECISION_TARGET_RANGE_MINUTES,
   DUE_SOON_MINUTES,
   DUE_SOON_RANGE_MINUTES,
   DUE_SOON_URGENT_MINUTES,
   DUE_SOON_URGENT_RANGE_MINUTES,
   OCCUPANCY_ALERT_PERCENT,
   OVERDUE_AFTER_MINUTES_BY_TIER,
+  REFERRAL_DECISION_TARGET_MINUTES,
   SILENT_WARD_FIRST_REMINDER_MINUTES,
+  TRANSFER_ACCEPTANCE_TARGET_MINUTES,
+  TRANSPORT_BOOKED_TARGET_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
+import { DECISION_TARGET_STEPS } from "@/components/ward-management/ward-decision-targets";
+import {
+  enableActNowNotifications,
+  notificationSupport,
+  setActNowNotificationPreference,
+  useActNowNotificationPreference,
+  type NotificationSupport,
+} from "@/components/ward-management/shell/ward-act-now-notifications";
 import {
   Avatar,
   Badge,
@@ -143,6 +156,9 @@ function fullRules(value: WardConfiguration) {
     morning: value.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES,
     urgent: value.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
     soon: value.dueSoonMinutes ?? DUE_SOON_MINUTES,
+    referralTarget: value.referralDecisionTargetMinutes ?? REFERRAL_DECISION_TARGET_MINUTES,
+    transferTarget: value.transferAcceptanceTargetMinutes ?? TRANSFER_ACCEPTANCE_TARGET_MINUTES,
+    transportTarget: value.transportBookedTargetMinutes ?? TRANSPORT_BOOKED_TARGET_MINUTES,
   };
 }
 
@@ -160,6 +176,15 @@ function ruleDiffs(before: WardConfiguration, after: WardConfiguration): string[
   }
   if (a.soon !== b.soon) {
     parts.push(`Second warning ${shortDuration(a.soon)} to ${shortDuration(b.soon)}`);
+  }
+  if (a.referralTarget !== b.referralTarget) {
+    parts.push(`Referral decision ${shortDuration(a.referralTarget)} to ${shortDuration(b.referralTarget)}`);
+  }
+  if (a.transferTarget !== b.transferTarget) {
+    parts.push(`Transfer acceptance ${shortDuration(a.transferTarget)} to ${shortDuration(b.transferTarget)}`);
+  }
+  if (a.transportTarget !== b.transportTarget) {
+    parts.push(`Transport booked ${shortDuration(a.transportTarget)} to ${shortDuration(b.transportTarget)}`);
   }
   return parts;
 }
@@ -226,6 +251,12 @@ export function SettingsScreen() {
   const [reducedMotion, setReducedMotion] = useWardAccessibilityPreference("reduced-motion");
   const [highContrast, setHighContrast] = useWardAccessibilityPreference("high-contrast");
   const [audioBuzz, setAudioBuzz] = useAudioBuzzPreference();
+  const [actNowNotifications] = useActNowNotificationPreference();
+  const [notificationPermission, setNotificationPermission] = useState<NotificationSupport>("default");
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the browser permission is only readable after mount
+    setNotificationPermission(notificationSupport());
+  }, []);
 
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = useCallback((message: string) => {
@@ -817,6 +848,52 @@ export function SettingsScreen() {
             </div>
 
             <div className={styles.column}>
+              <Card aria-labelledby="targets-title" data-setting="decision-targets">
+                <CardHead
+                  id="targets-title"
+                  icon={Timer}
+                  title="Decision targets"
+                  meta="Your defaults, not clinical standards"
+                />
+                {DECISION_TARGET_STEPS.map((step) => {
+                  const ruleKey =
+                    step.configKey === "referralDecisionTargetMinutes"
+                      ? "referralTarget"
+                      : step.configKey === "transferAcceptanceTargetMinutes"
+                        ? "transferTarget"
+                        : "transportTarget";
+                  return (
+                    <RuleRow
+                      key={step.step}
+                      setting={`target-${step.step}`}
+                      testId={`setting-target-${step.step}`}
+                      title={step.label}
+                      sub={
+                        step.step === "referral_decision"
+                          ? "Referral to ward answer"
+                          : step.step === "transfer_acceptance"
+                            ? "Acceptance to bed pulled"
+                            : "Bed pulled to transport booked"
+                      }
+                      value={rules[ruleKey]}
+                      saved={saved[ruleKey]}
+                      display={shortDuration(rules[ruleKey])}
+                      noun={`${step.label.toLowerCase()} target`}
+                      range={{
+                        id: `setting-target-${step.step}-range`,
+                        ...DECISION_TARGET_RANGE_MINUTES,
+                        ariaLabel: `${step.label} target in minutes`,
+                        minLabel: shortDuration(DECISION_TARGET_RANGE_MINUTES.min),
+                        maxLabel: shortDuration(DECISION_TARGET_RANGE_MINUTES.max),
+                      }}
+                      onChange={(minutes) => setRule({ [step.configKey]: minutes })}
+                      onReset={() => setRule({ [step.configKey]: saved[ruleKey] })}
+                      usedBy="Alerts, Tasks"
+                    />
+                  );
+                })}
+              </Card>
+
               <Card aria-labelledby="more-title">
                 <CardHead
                   id="more-title"
@@ -949,6 +1026,25 @@ export function SettingsScreen() {
 
         <div className={styles.pane} hidden={tab !== "alerts"} data-pane="alerts">
           <AlertsPane
+            notifications={actNowNotifications}
+            notificationPermission={notificationPermission}
+            onNotificationsChange={(next) => {
+              if (!next) {
+                setActNowNotificationPreference(false);
+                showToast("Browser notifications off.");
+                return;
+              }
+              void enableActNowNotifications().then((answer) => {
+                setNotificationPermission(answer);
+                showToast(
+                  answer === "granted"
+                    ? "Browser notifications on for act-now alerts."
+                    : answer === "unsupported"
+                      ? "This browser cannot show notifications."
+                      : "Notifications are blocked for this site in the browser.",
+                );
+              });
+            }}
             buzz={audioBuzz}
             onBuzzChange={(next) => {
               setAudioBuzz(next);

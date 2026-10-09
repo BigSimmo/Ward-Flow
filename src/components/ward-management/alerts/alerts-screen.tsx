@@ -10,16 +10,27 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
-  Clock,
   Eye,
   FileText,
   MoreHorizontal,
   Radio,
+  UserRound,
   Users,
   X,
 } from "lucide-react";
-import { INBOX_CATEGORIES } from "@/components/ward-management/ward-flow-reducer";
+import { INBOX_CATEGORIES, inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
+import { decisionTargetInboxItems, decisionTargetReading } from "@/components/ward-management/ward-decision-targets";
+import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
+import {
+  activeSnooze,
+  currentInboxOwner,
+  partitionSnoozed,
+  type InboxOwnershipEntry,
+  type InboxSnoozeReason,
+} from "@/components/ward-management/ward-inbox-snooze";
+import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "@/components/ward-management/inbox-snooze-control";
+import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
@@ -99,11 +110,21 @@ function tierOfItem(item: InboxItem): "emergency" | "capacity" | "admin" {
   }
   if (
     item.id.startsWith(INBOX_CATEGORIES.destinations_declined.idPrefix) ||
-    item.id.startsWith(INBOX_CATEGORIES.bed_pull_expired.idPrefix)
+    item.id.startsWith(INBOX_CATEGORIES.bed_pull_expired.idPrefix) ||
+    isDecisionTargetItem(item)
   ) {
     return "capacity";
   }
   return "admin";
+}
+
+/** Stream A, 9 Oct 2026: an overdue decision target (a default set in Settings). */
+function isDecisionTargetItem(item: InboxItem): boolean {
+  return (
+    item.id.startsWith(INBOX_CATEGORIES.target_referral_decision.idPrefix) ||
+    item.id.startsWith(INBOX_CATEGORIES.target_transfer_acceptance.idPrefix) ||
+    item.id.startsWith(INBOX_CATEGORIES.target_transport_booked.idPrefix)
+  );
 }
 
 function getAlertSeverity(item: InboxItem): { tone: "danger" | "warn" | "accent"; label: string } {
@@ -189,6 +210,9 @@ function getCategoryBadge(item: InboxItem): { tone: "danger" | "warn" | "accent"
   if (item.id.startsWith(INBOX_CATEGORIES.transport_awaiting_departure.idPrefix)) {
     return { tone: "accent", label: "Transport Leg" };
   }
+  if (isDecisionTargetItem(item)) {
+    return { tone: "danger", label: "Decision target" };
+  }
   return { tone: "accent", label: "Operational Alert" };
 }
 
@@ -254,7 +278,11 @@ function AlertRows({
   empty,
   onAction,
   onQuickAction,
+  onSnooze,
   acknowledgements,
+  ownership,
+  configuration,
+  now,
   patients,
   referrals,
   movements,
@@ -267,8 +295,12 @@ function AlertRows({
   items: InboxItem[];
   empty: string;
   onAction?: (item: InboxItem, triggerEl: HTMLElement) => void;
-  onQuickAction?: (item: InboxItem, action: "snooze" | "escalate" | "acknowledge", patientName: string) => void;
-  acknowledgements: Record<string, unknown>;
+  onQuickAction?: (item: InboxItem, action: "own" | "escalate" | "acknowledge", patientName: string) => void;
+  onSnooze?: (item: InboxItem, until: Instant, reason: InboxSnoozeReason) => void;
+  acknowledgements: Record<string, readonly { at: Instant; by: string }[]>;
+  ownership?: Record<string, InboxOwnershipEntry[]>;
+  configuration?: WardConfiguration;
+  now: Instant;
   patients?: Patient[];
   referrals?: Referral[];
   movements?: Movement[];
@@ -318,9 +350,8 @@ function AlertRows({
   return (
     <ul className={prominent ? styles.cardRows : styles.rows}>
       {items.map((item) => {
-        const isAcknowledged = Array.isArray(acknowledgements[item.id])
-          ? (acknowledgements[item.id] as unknown[]).length > 0
-          : Boolean(acknowledgements[item.id]);
+        const isAcknowledged = (acknowledgements[item.id]?.length ?? 0) > 0;
+        const isOwned = currentInboxOwner(ownership?.[item.id]) !== undefined;
         const categoryBadge = getCategoryBadge(item);
         const overdueText = extractOverdue(item.detail);
         const movement = movements?.find((m) => m.id === item.movementId);
@@ -335,7 +366,9 @@ function AlertRows({
                 ? "Extend hold"
                 : categoryBadge.label === "Transport Leg"
                   ? "Review leg"
-                  : "Action";
+                  : categoryBadge.label === "Decision target"
+                    ? "Review"
+                    : "Action";
 
         const menu = (
           <div className={styles.quickActionDropdownWrap}>
@@ -391,11 +424,11 @@ function AlertRows({
                   className={styles.quickActionMenuItem}
                   onClick={() => {
                     setOpenQuickMenuId(null);
-                    onQuickAction?.(item, "snooze", patientInfo.displayName);
+                    onQuickAction?.(item, "own", patientInfo.displayName);
                   }}
                 >
-                  <Clock size={14} aria-hidden="true" />
-                  <span>Snooze 30m</span>
+                  <UserRound size={14} aria-hidden="true" />
+                  <span>{isOwned ? "Take ownership again" : "Take ownership"}</span>
                 </button>
                 <button
                   type="button"
@@ -474,6 +507,25 @@ function AlertRows({
           <span className={styles.alertTiming}>{alertDetail(item)}</span>
         );
 
+        const status = (
+          <InboxRowStatus
+            acknowledgements={acknowledgements[item.id]}
+            ownership={ownership?.[item.id]}
+            target={movement && configuration ? decisionTargetReading(movement, now, configuration) : undefined}
+            now={now}
+            className={styles.rowStatus}
+          />
+        );
+
+        const snooze = onSnooze ? (
+          <InboxSnoozeControl
+            subject={`${item.title}, ${patientInfo.displayName}`}
+            actNow={inboxItemIsActNow(item.id)}
+            now={now}
+            onSnooze={(until, reason) => onSnooze(item, until, reason)}
+          />
+        ) : null;
+
         if (prominent) {
           return (
             <li key={item.id} className={styles.alertCard} data-tone={item.tone} data-movement-id={item.movementId}>
@@ -487,6 +539,7 @@ function AlertRows({
                     <span aria-hidden="true"> · </span>
                     <span>Owner {item.owner.toLowerCase()}</span>
                   </span>
+                  {status}
                 </div>
                 {isAcknowledged ? (
                   <Badge tone="success" size="sm">
@@ -509,15 +562,18 @@ function AlertRows({
                     Acknowledge
                   </Button>
                 ) : null}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  icon={AlarmClock}
-                  className={styles.btn}
-                  onClick={() => onQuickAction?.(item, "snooze", patientInfo.displayName)}
-                >
-                  Snooze 30m
-                </Button>
+                {!isOwned ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    icon={UserRound}
+                    className={styles.btn}
+                    onClick={() => onQuickAction?.(item, "own", patientInfo.displayName)}
+                  >
+                    Take
+                  </Button>
+                ) : null}
+                {snooze}
               </div>
             </li>
           );
@@ -537,11 +593,13 @@ function AlertRows({
                 ) : null}
               </span>
               {who}
+              {status}
             </div>
             <span className={styles.ownerCell}>{item.owner}</span>
             <div className={styles.rowActions}>
               {primary}
               {secondaryLink}
+              {snooze}
               {menu}
             </div>
           </li>
@@ -560,10 +618,34 @@ function AlertsWorkspace() {
   usePrintableDisclosures();
 
   const state = useWardFlow();
-  const { movements, units, referrals, patients, dispatch, inboxAcknowledgements, broadcastAlerts, notices } = state;
+  const {
+    movements,
+    units,
+    referrals,
+    patients,
+    dispatch,
+    inboxAcknowledgements,
+    inboxOwnership,
+    inboxSnoozes,
+    configuration,
+    broadcastAlerts,
+    notices,
+  } = state;
   const now = useWardFlowClock();
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
-  const inbox = useMemo(() => buildActionInbox(openMovements, now, units), [openMovements, now, units]);
+  // Every computed row, then the snoozed ones set aside: they leave the active list and come back
+  // by themselves when their return time passes (stream A, 9 Oct 2026).
+  const allInbox = useMemo(
+    () => [
+      ...buildActionInbox(openMovements, now, units),
+      ...decisionTargetInboxItems(openMovements, now, configuration),
+    ],
+    [openMovements, now, units, configuration],
+  );
+  const { active: inbox, snoozed: snoozedInbox } = useMemo(
+    () => partitionSnoozed(allInbox, inboxSnoozes, now),
+    [allInbox, inboxSnoozes, now],
+  );
   const feedNotices = useMemo(() => [...notices].sort((a, b) => b.raisedAt - a.raisedAt), [notices]);
 
   const [tierFilter, setTierFilter] = useState<"all" | "emergency" | "capacity" | "admin">("all");
@@ -726,13 +808,22 @@ function AlertsWorkspace() {
   const unlawful = useMemo(() => itemsInCategory(inbox, "destination_unlawful"), [inbox]);
   const pullExpired = useMemo(() => itemsInCategory(inbox, "bed_pull_expired"), [inbox]);
   const transport = useMemo(() => itemsInCategory(inbox, "transport_awaiting_departure"), [inbox]);
+  const referralTargets = useMemo(() => itemsInCategory(inbox, "target_referral_decision"), [inbox]);
+  const otherTargets = useMemo(
+    () => [
+      ...itemsInCategory(inbox, "target_transfer_acceptance"),
+      ...itemsInCategory(inbox, "target_transport_booked"),
+    ],
+    [inbox],
+  );
+  const decisionTargets = useMemo(() => [...referralTargets, ...otherTargets], [referralTargets, otherTargets]);
 
   const withDeadline = openMovements.filter((movement: Movement) => movement.legalForm?.dueAt !== undefined);
   const declineCandidates = openMovements.filter((movement: Movement) => movement.declines.length > 0).length;
   const overrides = movements.flatMap((movement: Movement) => movement.overrides);
   const untriaged = (state.referrals ?? []).filter((referral) => referral.triagedAt === undefined);
-  const needsYouCount = legal.length + declined.length + unlawful.length;
-  const otherRolesCount = pullExpired.length + transport.length;
+  const needsYouCount = legal.length + declined.length + unlawful.length + referralTargets.length;
+  const otherRolesCount = pullExpired.length + transport.length + otherTargets.length;
   const totalActive = needsYouCount + otherRolesCount;
 
   // Prolonged ED stays (>24h)
@@ -742,7 +833,7 @@ function AlertsWorkspace() {
 
   // Tier counts
   const tier1Count = legal.length + unlawful.length;
-  const tier2Count = declined.length + pullExpired.length;
+  const tier2Count = declined.length + pullExpired.length + decisionTargets.length;
   const tier3Count = transport.length;
 
   // Role counts
@@ -751,15 +842,28 @@ function AlertsWorkspace() {
   const bedManagerCount = inbox.filter((item) => roleMatches(item, "bed_manager")).length;
   const numCount = inbox.filter((item) => roleMatches(item, "num")).length;
 
-  const [snoozedAlertIds, setSnoozedAlertIds] = useState<string[]>([]);
-
-  const handleQuickAction = useCallback(
-    (item: InboxItem, action: "snooze" | "escalate" | "acknowledge", patientName: string) => {
+  const handleSnooze = useCallback(
+    (item: InboxItem, until: Instant, reason: InboxSnoozeReason) => {
       setBroadcastRequest(null);
       setBroadcastModalOpen(false);
-      if (action === "snooze") {
-        setSnoozedAlertIds((prev) => [...prev, item.id]);
-        setBroadcastSuccessNotice(`Alert for ${patientName} snoozed for 30 minutes.`);
+      dispatch({ type: "SNOOZE_INBOX_ITEM", role: "coordinator", now, inboxItemId: item.id, until, reason });
+      setBroadcastSuccessNotice(`"${item.title}" snoozed until ${formatInstantWithDay(until, now)}.`);
+    },
+    [dispatch, now],
+  );
+
+  const handleReturn = useCallback(
+    (item: InboxItem) => dispatch({ type: "UNSNOOZE_INBOX_ITEM", role: "coordinator", now, inboxItemId: item.id }),
+    [dispatch, now],
+  );
+
+  const handleQuickAction = useCallback(
+    (item: InboxItem, action: "own" | "escalate" | "acknowledge", patientName: string) => {
+      setBroadcastRequest(null);
+      setBroadcastModalOpen(false);
+      if (action === "own") {
+        dispatch({ type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now, inboxItemId: item.id });
+        setBroadcastSuccessNotice(`You own "${item.title}" for ${patientName}.`);
       } else if (action === "escalate") {
         setBroadcastSuccessNotice(`Escalated "${item.title}" to Consultant Psychiatrist on-call.`);
       } else if (action === "acknowledge") {
@@ -772,24 +876,22 @@ function AlertsWorkspace() {
 
   // Filtered collections
   const filteredNeedsYou = useMemo(() => {
-    const allNeeds = [...legal, ...declined, ...unlawful];
+    const allNeeds = [...legal, ...declined, ...unlawful, ...referralTargets];
     return allNeeds.filter((item) => {
-      if (snoozedAlertIds.includes(item.id)) return false;
       if (tierFilter !== "all" && tierOfItem(item) !== tierFilter) return false;
       if (roleFilter !== "all" && !roleMatches(item, roleFilter)) return false;
       return true;
     });
-  }, [legal, declined, unlawful, tierFilter, roleFilter, snoozedAlertIds]);
+  }, [legal, declined, unlawful, referralTargets, tierFilter, roleFilter]);
 
   const filteredOtherRoles = useMemo(() => {
-    const allOther = [...pullExpired, ...transport];
+    const allOther = [...pullExpired, ...transport, ...otherTargets];
     return allOther.filter((item) => {
-      if (snoozedAlertIds.includes(item.id)) return false;
       if (tierFilter !== "all" && tierOfItem(item) !== tierFilter) return false;
       if (roleFilter !== "all" && !roleMatches(item, roleFilter)) return false;
       return true;
     });
-  }, [pullExpired, transport, tierFilter, roleFilter, snoozedAlertIds]);
+  }, [pullExpired, transport, otherTargets, tierFilter, roleFilter]);
 
   // Selected alert details
   const selectedMovement = useMemo(() => {
@@ -805,7 +907,8 @@ function AlertsWorkspace() {
     return selectedAlert ? getAlertSeverity(selectedAlert) : { tone: "accent" as const, label: "Routine" };
   }, [selectedAlert]);
 
-  const isSelectedAcknowledged = selectedAlert ? (inboxAcknowledgements[selectedAlert.id]?.length ?? 0) > 0 : false;
+  const selectedAcknowledgement = selectedAlert ? inboxAcknowledgements[selectedAlert.id]?.at(-1) : undefined;
+  const isSelectedAcknowledged = selectedAcknowledgement !== undefined;
 
   // Escape key handler for drawer and modal
   useEffect(() => {
@@ -1060,7 +1163,7 @@ function AlertsWorkspace() {
             <div className={styles.heroStats} role="group" aria-label="Alert summary">
               <HeroStat value={needsYouCount} label="Needs you" tone={needsYouCount > 0 ? "danger" : undefined} />
               <HeroStat value={otherRolesCount} label="Other roles" />
-              <HeroStat value={7} label="Conditions checked" />
+              <HeroStat value={8} label="Conditions checked" />
               <HeroStat value={activeBroadcast ? 1 : 0} label="Directive live" />
             </div>
           }
@@ -1242,7 +1345,11 @@ function AlertsWorkspace() {
                   empty="No high-priority clinical or legal conditions are currently active."
                   onAction={handleOpenAction}
                   onQuickAction={handleQuickAction}
+                  onSnooze={handleSnooze}
                   acknowledgements={inboxAcknowledgements}
+                  ownership={inboxOwnership}
+                  configuration={configuration}
+                  now={now}
                   patients={patients}
                   referrals={referrals}
                   movements={movements}
@@ -1296,8 +1403,8 @@ function AlertsWorkspace() {
                 <summary className={styles.scopeSummary}>
                   <IconTile icon={Eye} />
                   <span className={styles.scopeTitle}>Monitoring scope</span>
-                  <Count n={7} />
-                  <span className={styles.scopeMeta}>7 watched, 1 not</span>
+                  <Count n={8} />
+                  <span className={styles.scopeMeta}>8 watched, 1 not</span>
                   <ChevronDown className={styles.disclosureChevron} aria-hidden="true" size={16} />
                 </summary>
                 <div className={styles.contextGrid}>
@@ -1326,6 +1433,12 @@ function AlertsWorkspace() {
                     watches="Watches bed pulls against the time they were held until."
                     none="No bed hold has lapsed."
                     items={pullExpired}
+                  />
+                  <ConditionContext
+                    title="Decision target overdue"
+                    watches="Watches referral decisions, transfer acceptances and transport bookings against their targets, defaults set in Settings."
+                    none="No running decision target has passed."
+                    items={decisionTargets}
                   />
                   <ConditionContext
                     title="Transport waiting to leave"
@@ -1397,7 +1510,11 @@ function AlertsWorkspace() {
                 empty="No bed-hold or accepted-transport alert is firing for another role."
                 onAction={handleOpenAction}
                 onQuickAction={handleQuickAction}
+                onSnooze={handleSnooze}
                 acknowledgements={inboxAcknowledgements}
+                ownership={inboxOwnership}
+                configuration={configuration}
+                now={now}
                 patients={patients}
                 referrals={referrals}
                 movements={movements}
@@ -1409,6 +1526,38 @@ function AlertsWorkspace() {
             </div>
           </Card>
         </div>
+
+        {snoozedInbox.length > 0 ? (
+          <Card aria-labelledby="alerts-snoozed-title" data-testid="ward-alerts-snoozed">
+            <CardHead
+              id="alerts-snoozed-title"
+              icon={AlarmClock}
+              title="Snoozed"
+              meta={<Count n={snoozedInbox.length} />}
+              aside={<span className={styles.quiet}>Back when due</span>}
+            />
+            <ul className={styles.rows}>
+              {snoozedInbox.map((item) => {
+                const entry = activeSnooze(inboxSnoozes[item.id], now);
+                return (
+                  <li key={item.id} className={styles.alertRow} data-tone={item.tone}>
+                    <StatusGlyph tone="neutral" />
+                    <div className={styles.alertContent}>
+                      <span className={styles.alertTitleText}>{item.title}</span>
+                      {entry ? <span className={styles.alertTiming}>{snoozedLine(entry, now)}</span> : null}
+                    </div>
+                    <span className={styles.ownerCell}>{item.owner}</span>
+                    <div className={styles.rowActions}>
+                      <Button size="sm" className={styles.btn} onClick={() => handleReturn(item)}>
+                        Return now
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+        ) : null}
 
         {/* Alert inspector sheet */}
         {selectedAlert && (
@@ -1499,7 +1648,9 @@ function AlertsWorkspace() {
                 <div className={styles.ackBox}>
                   <span className={styles.ackText}>
                     <StatusGlyph tone={isSelectedAcknowledged ? "success" : "warning"} />
-                    {isSelectedAcknowledged ? "Acknowledged by Duty Coordinator" : "Pending coordinator triage"}
+                    {selectedAcknowledgement
+                      ? `Acknowledged by ${selectedAcknowledgement.by} ${formatInstantWithDay(selectedAcknowledgement.at, now)}`
+                      : "Pending coordinator triage"}
                   </span>
                   {!isSelectedAcknowledged ? (
                     <Button size="sm" className={styles.btn} onClick={handleAcknowledge}>
