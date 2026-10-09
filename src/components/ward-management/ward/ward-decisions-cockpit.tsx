@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { CalendarClock } from "lucide-react";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { CountBubble, Icon, SrOnly, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
@@ -399,7 +399,7 @@ function Queue({
     return "staffing";
   });
 
-  const spec = WINDOWS.find((entry) => entry.id === chosen)!;
+  const spec = WINDOWS.find((entry) => entry.id === chosen) ?? WINDOWS[0];
   const here = items[chosen];
   const open = openCount(chosen);
   const decided = here.length - open;
@@ -410,18 +410,12 @@ function Queue({
     setShowDone(false);
   }
 
-  function onStepKey(event: KeyboardEvent<HTMLButtonElement>, id: WindowId) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      choose(id);
-    }
-  }
-
   let notice: { tone: WfTone; text: string } | null = null;
   if (sent && sent.seq !== dismissedSeq) {
     const done = sent.ids.filter((id) => recorded(sent.kind, id));
     const n = sent.ids.length;
-    const first = sent.titles[sent.ids[0]!] ?? "";
+    const firstId = sent.ids[0];
+    const first = firstId !== undefined ? (sent.titles[firstId] ?? "") : "";
     if (sent.kind === "sign") {
       notice =
         done.length === n
@@ -474,7 +468,6 @@ function Queue({
               aria-label={`${entry.title}, ${entry.hours}`}
               aria-describedby={describedBy}
               onClick={() => choose(entry.id)}
-              onKeyDown={(event) => onStepKey(event, entry.id)}
             >
               <StatusGlyph tone={tone} />
               <span className={styles.stepText}>
