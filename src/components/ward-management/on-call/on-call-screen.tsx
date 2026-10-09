@@ -37,6 +37,7 @@ import {
   windowText,
   groupRows,
   type DirectoryEntry,
+  type DirectorySection,
   type DirectoryTab,
 } from "./on-call-directory";
 import {
@@ -106,6 +107,12 @@ function useIsPhone(): boolean {
   );
 }
 
+const SECTION_LABEL: Record<DirectorySection, string> = {
+  hospitals: "Hospitals",
+  community: "Community",
+  statewide: "Statewide",
+};
+
 export function matchesQuery(entry: DirectoryEntry, query: string): boolean {
   const needle = query.trim().toLowerCase();
   if (!needle) return false;
@@ -113,6 +120,7 @@ export function matchesQuery(entry: DirectoryEntry, query: string): boolean {
     entry.name,
     entry.place,
     entry.groupTitle,
+    entry.siteCode ?? "",
     entry.purpose,
     SERVICE_META[entry.service].short,
     SERVICE_META[entry.service].name,
@@ -179,6 +187,19 @@ export function OnCallScreen() {
     },
     [],
   );
+  useEffect(() => {
+    if (isPhone) return;
+    // "/" focuses search, as the hint beside it says, unless the person is already typing somewhere.
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+      event.preventDefault();
+      document.getElementById(searchId)?.focus();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isPhone, searchId]);
 
   const say = useCallback((text: string) => {
     setNotice(text);
@@ -215,7 +236,9 @@ export function OnCallScreen() {
     const entry = entries.find((item) => item.id === id);
     if (!entry) return;
     setSelectedId(id);
-    if (tab !== "mine" && entry.section !== tab) setTab(entry.section);
+    // My list stays open only for a starred line; anything else opens its own tab so its row shows.
+    const stays = tab === entry.section || (tab === "mine" && favourites.includes(id));
+    if (!stays) setTab(entry.section);
     setCollapsed((current) => {
       if (!current.has(entry.group) && !current.has(`role-${entry.kind}`)) return current;
       const next = new Set(current);
@@ -277,6 +300,15 @@ export function OnCallScreen() {
     mine: favourites.length,
   };
   const queryHits = query.trim() ? entries.filter((entry) => matchesQuery(entry, query)) : [];
+  // Phone shows one tab at a time, so matches in another tab get a button that opens it.
+  const otherSection = queryHits.find((entry) => entry.section !== tab)?.section;
+  const otherHits = otherSection
+    ? {
+        label: SECTION_LABEL[otherSection],
+        count: queryHits.filter((entry) => entry.section === otherSection).length,
+        onShow: () => setTab(otherSection),
+      }
+    : null;
 
   const heroStats = (
     <>
@@ -504,7 +536,8 @@ export function OnCallScreen() {
             actions={actions}
             isHighlighted={isHighlighted}
             queryActive={Boolean(query.trim())}
-            hitCount={queryHits.length}
+            hitCount={tabRows.filter((entry) => matchesQuery(entry, query)).length}
+            otherHits={otherHits}
             onClearQuery={() => setQuery("")}
             onOpen={(id) => setSheetId(id)}
           />
@@ -575,7 +608,7 @@ export function OnCallScreen() {
               meta={
                 <span className={styles.footMeta} data-testid="ward-on-call-count">
                   {tabRows.length} {tabRows.length === 1 ? "contact" : "contacts"} in this tab, {entries.length} in all.{" "}
-                  {atLater ? `Shown as at ${hhmm(minute)}.` : `Shown as at ${hhmm(boardMinute)}, live.`}
+                  {atLater ? `Shown as at ${hhmm(minute)}.` : `Shown as at ${hhmm(boardMinute)}, the board time.`}
                 </span>
               }
             >
@@ -640,7 +673,14 @@ function MatchesPanel({
         <ul className={styles.matches}>
           {hits.slice(0, 30).map((entry) => (
             <li key={entry.id}>
-              <button type="button" className={styles.match} onClick={() => actions.onPick(entry.id)}>
+              <button
+                type="button"
+                className={styles.match}
+                onClick={() => {
+                  actions.onPick(entry.id);
+                  onClear();
+                }}
+              >
                 <span className={styles.roleCell}>
                   <b>{entry.name}</b>
                   <span>{placeOf(entry)}</span>

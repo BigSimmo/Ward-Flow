@@ -707,10 +707,18 @@ export function availability(entry: DirectoryEntry, minute: number): Availabilit
     };
   }
   const current = lineAt(entry, minute);
+  // The answering line can only change where some line's window starts or ends, so only those
+  // minutes are checked, nearest first.
+  const steps = [
+    ...new Set(
+      entry.lines.flatMap((item) =>
+        item.window ? [mod(item.window[0] - minute) || CLOCK_DAY, mod(item.window[1] - minute) || CLOCK_DAY] : [],
+      ),
+    ),
+  ].sort((a, b) => a - b);
   if (current) {
-    let step = 1;
-    for (; step <= CLOCK_DAY; step += 1) if (lineAt(entry, minute + step) !== current) break;
-    if (step > CLOCK_DAY) return { kind: "on", allDay: true, line: current, email: false };
+    const step = steps.find((candidate) => lineAt(entry, minute + candidate) !== current);
+    if (step === undefined) return { kind: "on", allDay: true, line: current, email: false };
     return {
       kind: "on",
       allDay: false,
@@ -722,8 +730,7 @@ export function availability(entry: DirectoryEntry, minute: number): Availabilit
       soon: step <= 60,
     };
   }
-  let step = 1;
-  for (; step <= CLOCK_DAY; step += 1) if (lineAt(entry, minute + step)) break;
+  const step = steps.find((candidate) => lineAt(entry, minute + candidate)) ?? CLOCK_DAY;
   return { kind: "off", email: false, opens: mod(minute + step), wait: step, next: lineAt(entry, minute + step) };
 }
 
@@ -781,7 +788,12 @@ export function escalationChain(entry: DirectoryEntry, all: readonly DirectoryEn
       chain = [find("bedFlow"), find("executive")];
       break;
     case "community":
-      chain = [byId("sw-mherl"), find("bedFlow")];
+      // Each service's own after-hours crisis line first: child teams to CAMHS Crisis Connect,
+      // country teams to Rurallink, everyone else to MHERL.
+      chain = [
+        byId(entry.service === "CAHS" ? "cahs-ccc" : entry.service === "WACHS" ? "sw-rural" : "sw-mherl"),
+        find("bedFlow"),
+      ];
       break;
     case "serviceConsultant":
     case "regional":

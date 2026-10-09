@@ -116,7 +116,7 @@ export function PhoneFocal({
         ? "closed now"
         : "";
   return (
-    <div className={styles.focalWrap}>
+    <div className={styles.focalWrap} id="ward-reach-bed" tabIndex={-1}>
       <div className={styles.focalSeg} role="radiogroup" aria-label="Bed flow for">
         {FOCAL.map(([id, label]) => (
           <button key={id} type="button" role="radio" aria-checked={focalId === id} onClick={() => setFocalId(id)}>
@@ -221,6 +221,7 @@ export function PhoneDirectory({
   isHighlighted,
   queryActive,
   hitCount,
+  otherHits,
   onClearQuery,
   onOpen,
 }: {
@@ -232,24 +233,33 @@ export function PhoneDirectory({
   isHighlighted: (entry: DirectoryEntry) => boolean;
   queryActive: boolean;
   hitCount: number;
+  otherHits: { label: string; count: number; onShow: () => void } | null;
   onClearQuery: () => void;
   onOpen: (id: string) => void;
 }) {
-  const [openKey, setOpenKey] = useState<string | null>(null);
+  // The open group belongs to one tab and grouping; switching either opens that view's first group.
+  const scope = `${tab}:${groupBy}`;
+  const [opened, setOpened] = useState<{ scope: string; key: string } | null>(null);
   const blocks = groupRows(entries, rows, tab, groupBy);
   const firstKey = blocks[0]?.groups[0]?.key;
+  const openKey = opened?.scope === scope ? opened.key : firstKey;
   const byRole = (tab === "hospitals" && groupBy === "role") || tab === "mine";
   if (!rows.length)
     return <p className={styles.phoneEmpty}>Star any line to keep it here. My list stays in this browser.</p>;
   return (
-    <div className={styles.phoneList}>
+    <div className={styles.phoneList} id="ward-reach-switchboard" tabIndex={-1}>
       {queryActive ? (
         <div className={styles.phoneHits}>
           <Icon icon={Search} size={14} />
           <span>
-            <span className={styles.mono}>{hitCount}</span> matches highlighted below
+            <span className={styles.mono}>{hitCount}</span> highlighted below
           </span>
           <span className={styles.spacer} />
+          {otherHits ? (
+            <Button variant="ghost" size="sm" onClick={otherHits.onShow}>
+              {otherHits.count} in {otherHits.label}
+            </Button>
+          ) : null}
           <Button variant="ghost" size="sm" onClick={onClearQuery}>
             Clear
           </Button>
@@ -271,10 +281,7 @@ export function PhoneDirectory({
             </div>
           ) : null}
           {block.groups.map((group) => {
-            const open =
-              tab === "mine" ||
-              (openKey === null ? group.key === firstKey : openKey === group.key) ||
-              (queryActive && group.rows.some(isHighlighted));
+            const open = tab === "mine" || openKey === group.key || (queryActive && group.rows.some(isHighlighted));
             const on = group.rows.filter((entry) => isAnswering(entry, actions.minute)).length;
             return (
               <section key={group.key} className={styles.phoneGroup}>
@@ -283,7 +290,7 @@ export function PhoneDirectory({
                     type="button"
                     className={styles.phoneGroupHead}
                     aria-expanded={open}
-                    onClick={() => setOpenKey(open ? "" : group.key)}
+                    onClick={() => setOpened({ scope, key: open ? "" : group.key })}
                   >
                     {group.code ? <span className={styles.code}>{group.code}</span> : null}
                     <b>{group.title}</b>
@@ -296,18 +303,16 @@ export function PhoneDirectory({
                 ) : null}
                 {open ? (
                   <ul className={styles.phoneRows}>
-                    {group.rows
-                      .filter((entry) => entry.kind !== "referralInbox" || byRole || isHighlighted(entry))
-                      .map((entry) => (
-                        <PhoneRow
-                          key={entry.id}
-                          entry={entry}
-                          actions={actions}
-                          byRole={byRole}
-                          highlighted={isHighlighted(entry)}
-                          onOpen={onOpen}
-                        />
-                      ))}
+                    {group.rows.map((entry) => (
+                      <PhoneRow
+                        key={entry.id}
+                        entry={entry}
+                        actions={actions}
+                        byRole={byRole}
+                        highlighted={isHighlighted(entry)}
+                        onOpen={onOpen}
+                      />
+                    ))}
                   </ul>
                 ) : null}
               </section>

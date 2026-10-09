@@ -3,8 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
 import {
+  availability,
   buildOnCallDirectory,
   escalationChain,
+  lineAt,
   shiftWindow,
   SERVICE_ORDER,
 } from "@/components/ward-management/on-call/on-call-directory";
@@ -170,6 +172,37 @@ describe("the on-call screen", () => {
     expect(panel().getByRole("heading", { name: "Bed flow coordinator" })).toBeVisible();
   });
 
+  it("finds a site by its code, and one click on a match opens its card with a link to that ED", () => {
+    renderOnCall();
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "SCGH" } });
+    expect(row("scgh-epic").className).toMatch(/rowHighlight/u);
+    const match = panel()
+      .getAllByRole("button")
+      .find((button) => button.textContent?.startsWith("EPIC"))!;
+    fireEvent.click(match);
+    expect(screen.getByRole("searchbox")).toHaveValue("");
+    expect(panel().getByRole("heading", { name: "EPIC" })).toBeVisible();
+    expect(
+      panel()
+        .getByRole("link", { name: /^Open .+ workspace$/u })
+        .getAttribute("href"),
+    ).toMatch(/^\/mockups\/ward-flow\/ed\//u);
+  });
+
+  it("focuses search when / is pressed outside a field", () => {
+    renderOnCall();
+    fireEvent.keyDown(document.body, { key: "/" });
+    expect(screen.getByRole("searchbox")).toHaveFocus();
+  });
+
+  it("picking a line that is not starred leaves My list for that line's tab", () => {
+    renderOnCall();
+    fireEvent.click(screen.getByRole("tab", { name: /My list/u }));
+    fireEvent.click(screen.getByTestId("ward-on-call-key-sw-mherl"));
+    expect(screen.getByRole("tab", { name: /Statewide/u })).toHaveAttribute("aria-selected", "true");
+    expect(row("sw-mherl")).toBeVisible();
+  });
+
   it("switches between hospitals, community teams and statewide lines", () => {
     renderOnCall();
     fireEvent.click(screen.getByRole("tab", { name: /Community/u }));
@@ -205,6 +238,36 @@ describe("the on-call screen", () => {
     renderOnCall();
     expect(panel().getByText("Preview order")).toBeVisible();
     expect(panel().getByText("State bed flow coordinator")).toBeVisible();
+  });
+
+  it("finds each line's end at its window boundary, matching a minute-by-minute scan", () => {
+    const entries = buildOnCallDirectory();
+    const day = 24 * 60;
+    for (const entry of entries.filter((item) => item.lines.length > 0)) {
+      for (const minute of [0, 179, 480, 642, 1020, 1350, 1439]) {
+        const now = availability(entry, minute);
+        const current = lineAt(entry, minute);
+        let step = 1;
+        if (current) {
+          while (step <= day && lineAt(entry, minute + step) === current) step += 1;
+          if (step > day) expect(now, entry.id).toMatchObject({ kind: "on", allDay: true });
+          else expect(now, `${entry.id} at ${minute}`).toMatchObject({ kind: "on", left: step });
+        } else {
+          while (step <= day && !lineAt(entry, minute + step)) step += 1;
+          expect(now, `${entry.id} at ${minute}`).toMatchObject({ kind: "off", wait: step });
+        }
+      }
+    }
+  });
+
+  it("sends child and country teams to their own crisis lines first", () => {
+    const entries = buildOnCallDirectory();
+    const team = (service: string) => entries.find((entry) => entry.kind === "community" && entry.service === service)!;
+    const first = (entry: (typeof entries)[number]) => escalationChain(entry, entries)[0]?.id;
+    expect(first(team("CAHS"))).toBe("cahs-ccc");
+    expect(first(team("North Metro"))).toBe("sw-mherl");
+    // The reference pack holds no country team yet, so a North Metro team stands in for one.
+    expect(first({ ...team("North Metro"), service: "WACHS" })).toBe("sw-rural");
   });
 
   it("points a closed line at whoever answers now", () => {

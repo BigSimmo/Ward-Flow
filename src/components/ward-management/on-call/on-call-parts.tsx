@@ -1,6 +1,9 @@
 "use client";
 
-import { Copy, Flag, Mail, PhoneCall, Star, X } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Copy, Flag, Mail, PhoneCall, Star, X } from "lucide-react";
+import { edHref } from "@/components/ward-management/shell/ward-facade";
+import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { Badge, Button, Icon, StatusGlyph, cx, durMinutes } from "@/components/wf";
 import {
   CHECK_DUE_DAYS,
@@ -324,7 +327,7 @@ function EmailBlock({ entry, actions }: { entry: DirectoryEntry; actions: Contac
         <span className={styles.sectionMeta}>
           {window ? (
             <>
-              Read <span className={styles.mono}>{windowText(window)}</span> weekdays
+              Read <span className={styles.mono}>{windowText(window)}</span>
             </>
           ) : (
             "Read daily"
@@ -414,7 +417,10 @@ function SiteBlock({ entry, actions }: { entry: DirectoryEntry; actions: Contact
   const siblings = actions.entries
     .filter((item) => item.group === entry.group && item.id !== entry.id && item.kind !== "referralInbox")
     .slice(0, 8);
-  if (!siblings.length) return null;
+  const department = entry.siteCode
+    ? allEmergencyDepartments().find((item) => item.siteCode === entry.siteCode)
+    : undefined;
+  if (!siblings.length && !department) return null;
   return (
     <section
       className={styles.section}
@@ -422,7 +428,19 @@ function SiteBlock({ entry, actions }: { entry: DirectoryEntry; actions: Contact
     >
       <div className={styles.sectionHead}>
         <span className={styles.eyebrow}>{entry.siteCode ? `Also at ${entry.siteCode}` : "Also in this group"}</span>
-        <span className={styles.sectionMeta}>{siblings.length}</span>
+        {department ? (
+          <Link
+            className={styles.edLink}
+            href={edHref(department.id)}
+            prefetch={false}
+            aria-label={`Open ${department.name} workspace`}
+          >
+            Open ED
+            <Icon icon={ArrowRight} size={14} />
+          </Link>
+        ) : (
+          <span className={styles.sectionMeta}>{siblings.length}</span>
+        )}
       </div>
       <div className={styles.siblings}>
         {siblings.map((item) => (

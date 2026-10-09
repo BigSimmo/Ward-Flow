@@ -271,9 +271,9 @@ describe("the on-call screen holds no people and nothing to ring", () => {
       }
       expect(number, `${String(number)} is not in the unassigned mock range`).toMatch(/^08 0000 \d{4}$/u);
     }
-    expect(new Set(numbers).size, "two lines share a number, so one row would ring another's line").toBe(
-      numbers.length,
-    );
+    // With SHOW_MOCK_CONTACTS off every slot is null, so only held numbers must be unique.
+    const held = numbers.filter((number) => number !== null);
+    expect(new Set(held).size, "two lines share a number, so one row would ring another's line").toBe(held.length);
     for (const email of emails) expect(email).toMatch(/^[a-z0-9.]+@example\.invalid$/u);
     for (const entry of entries) {
       for (const { pattern } of REACHABLE_SHAPES.slice(0, 4)) {
