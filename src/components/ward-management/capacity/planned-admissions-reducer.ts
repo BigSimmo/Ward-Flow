@@ -7,6 +7,7 @@
 // A booking holds no bed. Only `CONVERT_PLANNED_ADMISSION` moves a capacity figure, and it refuses
 // when the ward has no empty, allocatable bed: no booking creates a bed.
 import { lockedBedsFree, openBedsFree } from "../ward-bed-designation";
+import { bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
 import {
   isPlannedAdmissionCancelReason,
   isPlannedAdmissionLegalStatus,
@@ -146,6 +147,14 @@ export function reducePlannedAdmissionEvent(
         if (!state.patients.some((patient) => patient.id === event.patientId))
           return reject(state, event, `no patient found for id ${event.patientId}`);
         if (
+          state.admissions.some(
+            (admission) =>
+              admission.patientId === event.patientId &&
+              (admission.state === "pulled" || admission.state === "occupied"),
+          )
+        )
+          return reject(state, event, "This patient already holds a bed or occupies another ward.");
+        if (
           plannedAdmissions(state).some(
             (planned) => planned.state === "booked" && planned.patientId === event.patientId,
           )
@@ -197,6 +206,8 @@ export function reducePlannedAdmissionEvent(
       if (fields) return reject(state, event, fields);
       const scope = wardScopeRefusal(event, [planned.unitId, event.unitId]);
       if (scope) return reject(state, event, scope);
+      if (event.expectedArrivalAt < event.now && event.expectedArrivalAt !== planned.expectedArrivalAt)
+        return reject(state, event, "CHANGE_PLANNED_ADMISSION expected arrival must not be in the past");
       const changed: PlannedAdmission = {
         ...planned,
         reason: event.reason,
@@ -319,6 +330,16 @@ export function reducePlannedAdmissionEvent(
         plannedAdmissions: plannedAdmissions(state).map((candidate) =>
           candidate.id === planned.id
             ? { ...candidate, state: "arrived" as const, convertedAt: event.now as Instant, admissionId: admission.id }
+            : candidate,
+        ),
+      };
+    }
+
+    default:
+      return null;
+  }
+}
+dAt: event.now as Instant, admissionId: admission.id }
             : candidate,
         ),
       };
