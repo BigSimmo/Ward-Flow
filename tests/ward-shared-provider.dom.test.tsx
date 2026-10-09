@@ -131,8 +131,8 @@ describe("shared provider boundary", () => {
     const draft = screen.getByRole("textbox");
     fireEvent.change(draft, { target: { value: "keep prototype draft" } });
     expect(screen.getByText("Data mode: Prototype")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Live data (unavailable)" }));
-    expect(screen.getByRole("heading", { name: "Live data is not connected" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Hospital records (unavailable)" }));
+    expect(screen.getByRole("heading", { name: "Hospital records are not connected" })).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).toBeNull();
     expect(fake.connection!.dispatch).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Return to prototype" }));

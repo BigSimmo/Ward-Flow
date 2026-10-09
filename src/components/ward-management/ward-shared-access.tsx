@@ -157,20 +157,20 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
               setShowLiveInfo(true);
             }}
           >
-            Live data (unavailable)
+            Hospital records (unavailable)
           </button>
         </div>
       </section>
       {showLiveInfo && (
-        <section className={styles.notice} aria-label="Live data unavailable">
-          <h1>Live data is not connected</h1>
+        <section className={styles.notice} aria-label="Hospital records unavailable">
+          <h1>Hospital records are not connected</h1>
           <p>
-            Live mode uses real hospital records in a separately approved workspace. Prototype mode uses invented
-            records, including when it connects to Azure.
+            Hospital-record mode uses real clinical systems in a separately approved workspace. Prototype mode uses
+            invented records, including when it connects to Azure.
           </p>
           <p>
-            Hospital approval, a separate live database and the clinical data connection must be configured before live
-            mode can open. Selecting this option does not connect or relabel any data.
+            Hospital approval, a separate clinical database and the data connection must be configured before that mode
+            can open. Selecting this option does not connect or relabel any data.
           </p>
           <button
             type="button"
