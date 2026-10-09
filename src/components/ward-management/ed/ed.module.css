@@ -7122,8 +7122,22 @@ tr.qRow:focus-visible {
     flex-wrap: nowrap;
     align-items: baseline;
     min-width: 0;
-    overflow: hidden;
+    /* Clipped sideways only, so the name's taller press area below still catches a tap. */
+    overflow-x: clip;
+    overflow-y: visible;
     white-space: nowrap;
+  }
+
+  /* 9 Oct 2026: the person's name keeps its inline place on the line, and its press area reaches
+   * the 48px tap height. */
+  .attentionList .attentionIdBtn {
+    position: relative;
+  }
+
+  .attentionList .attentionIdBtn::after {
+    content: "";
+    position: absolute;
+    inset: calc((var(--spacing-tap, 3rem) - 100%) / -2) 0;
   }
 
   .attentionList .attentionMeta > .attentionDemographics::before {

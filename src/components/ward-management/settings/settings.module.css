@@ -955,6 +955,15 @@
     grid-template-columns: minmax(0, 1fr) 28px 9.5rem;
   }
 
+  /* Phone (9 Oct 2026): the stepper's minus and plus reach the 48px tap size. */
+  .ruleStepper > span:first-child {
+    height: var(--spacing-tap, 3rem);
+  }
+
+  .ruleStepper > span:first-child > button {
+    width: var(--spacing-tap, 3rem);
+  }
+
   .effectCell {
     grid-column: 1 / -1;
     flex-direction: row;
