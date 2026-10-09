@@ -3664,6 +3664,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // rewritten by a later re-referral — every seeded movement still carries none, and a row
         // without it goes on saying so rather than borrowing `openedAt`.
         referredAt: movement.referredAt ?? event.now,
+        // Preserve the historical first referral while recording the current round separately.
+        referralRoundStartedAt: event.now,
         // OD-3: the reason is KEPT. It used to live in the shortlist panel's own `useState` and be
         // discarded on the next selection, while the governance page said override reasons were
         // recorded. Appended rather than replaced, because a movement can be overridden more than

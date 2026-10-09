@@ -1502,6 +1502,8 @@ export type Movement = {
    * and `pullExpiresAt` and nothing for this.
    */
   referredAt?: Instant;
+  /** Start of the currently outstanding referral round; unlike referredAt, this resets on re-referral. */
+  referralRoundStartedAt?: Instant;
 
   acceptedAt?: Instant;
   declines: Decline[];

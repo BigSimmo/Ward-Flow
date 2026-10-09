@@ -93,7 +93,10 @@ function pendingStep(movement: Movement): { step: DecisionTargetStep; startedAt:
     movement.referredUnitIds.length > 0 &&
     DECIDING_STAGES.includes(movement.stage)
   ) {
-    return { step: "referral_decision", startedAt: movement.referredAt };
+    return {
+      step: "referral_decision",
+      startedAt: movement.referralRoundStartedAt ?? movement.referredAt,
+    };
   }
   if (
     movement.stage === "accepted_awaiting_bed" &&
