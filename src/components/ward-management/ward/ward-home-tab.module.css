@@ -209,6 +209,10 @@
 
 .bedTable {
   composes: table from "../ward-table/ward-table.module.css";
+  /* Measured 9 Oct 2026: the narrowest desktop card (1200px viewport) draws this table at 586px.
+     36rem (576px) sits just under it, so desktop never scrolls, and below it a phone scrolls the
+     six columns sideways instead of squashing Legal, Going out and Now to 18px each. */
+  --ward-table-min-width: 36rem;
   table-layout: fixed;
   /* Deliberately one step larger than the canonical table: tile names read at 13px on the board. */
   font-size: var(--wf-fs-13);
