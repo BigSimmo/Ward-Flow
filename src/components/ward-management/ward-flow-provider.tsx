@@ -965,6 +965,7 @@ function WardFlowWorld({
           patients: state.patients,
           referrals: state.referrals,
           movements: state.movements,
+          plannedAdmissions: state.plannedAdmissions,
         }),
       patients: state.patients,
       admissions: state.admissions,

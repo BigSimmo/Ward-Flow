@@ -8,7 +8,7 @@ import "@testing-library/jest-dom/vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { PlannedAdmissionsPanel } from "@/components/ward-management/capacity/planned-admissions-panel";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 function renderPanel() {
@@ -16,6 +16,18 @@ function renderPanel() {
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <PlannedAdmissionsPanel now={NOW_ANCHOR} />
     </WardFlowProvider>,
+  );
+}
+
+/** Reads the provider's own identity helper so a converted initials-only stay is named on screen. */
+function ConvertedIdentityProbe({ plannedAdmissionId }: { plannedAdmissionId: string }) {
+  const { plannedAdmissions, admissions, resolvePatientIdentity } = useWardFlow();
+  const booking = plannedAdmissions?.find((planned) => planned.id === plannedAdmissionId);
+  const admission = admissions.find((entry) => entry.id === booking?.admissionId);
+  return (
+    <output data-testid="converted-identity">
+      {admission ? resolvePatientIdentity(admission).displayName : "no admission"}
+    </output>
   );
 }
 
@@ -89,6 +101,17 @@ describe("planned admissions panel", () => {
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-03")).getByRole("button", { name: "Arrived" }));
     expect(screen.queryByTestId("ward-planned-PA-SEED-03")).toBeNull();
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
+  });
+
+  it("names a converted initials-only stay through the provider's resolvePatientIdentity", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <PlannedAdmissionsPanel now={NOW_ANCHOR} />
+        <ConvertedIdentityProbe plannedAdmissionId="PA-SEED-03" />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-03")).getByRole("button", { name: "Arrived" }));
+    expect(screen.getByTestId("converted-identity")).toHaveTextContent("Initials RK");
   });
 
   it("keeps an overdue booking's own day when it is changed, and saves other edits", () => {
