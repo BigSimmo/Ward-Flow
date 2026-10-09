@@ -8,7 +8,7 @@ import {
 import { isValidSharedWardFlowState } from "../../src/components/ward-management/ward-shared-state-validation";
 
 export type SharedWorld = { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
-const serialise = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+const serialise = <T>(value: T): T => structuredClone(value);
 export function validCommand(value: unknown): value is Record<string, unknown> & { type: WardFlowEvent["type"] } {
   return (
     !!value &&
@@ -21,22 +21,21 @@ export function validCommand(value: unknown): value is Record<string, unknown> &
 
 function changedFacts(before: WardFlowState, after: WardFlowState) {
   const changes: Record<string, unknown> = {};
-  for (const key of Object.keys(after) as (keyof WardFlowState)[]) {
-    if (
-      ["auditEvents", "auditReviews", "rejections"].includes(key) ||
-      JSON.stringify(before[key]) === JSON.stringify(after[key])
-    )
-      continue;
-    if (Array.isArray(before[key]) && Array.isArray(after[key])) {
-      const previous = before[key] as unknown[];
-      const next = after[key] as unknown[];
-      const previousRows = new Set(previous.map((row) => JSON.stringify(row)));
-      const nextRows = new Set(next.map((row) => JSON.stringify(row)));
-      changes[key] = {
-        before: previous.filter((row) => !nextRows.has(JSON.stringify(row))),
-        after: next.filter((row) => !previousRows.has(JSON.stringify(row))),
+  const skip = new Set(["auditEvents", "auditReviews", "rejections"]);
+  for (const [key, nextValue] of Object.entries(after) as [keyof WardFlowState, WardFlowState[keyof WardFlowState]][]) {
+    if (skip.has(key as string)) continue;
+    const previousValue = before[key];
+    if (JSON.stringify(previousValue) === JSON.stringify(nextValue)) continue;
+    if (Array.isArray(previousValue) && Array.isArray(nextValue)) {
+      const previousSerialized = previousValue.map((row) => JSON.stringify(row));
+      const nextSerialized = nextValue.map((row) => JSON.stringify(row));
+      const previousRows = new Set(previousSerialized);
+      const nextRows = new Set(nextSerialized);
+      changes[key as string] = {
+        before: previousValue.filter((_, index) => !nextRows.has(previousSerialized[index]!)),
+        after: nextValue.filter((_, index) => !previousRows.has(nextSerialized[index]!)),
       };
-    } else changes[key] = { before: before[key], after: after[key] };
+    } else changes[key as string] = { before: previousValue, after: nextValue };
   }
   return changes;
 }
