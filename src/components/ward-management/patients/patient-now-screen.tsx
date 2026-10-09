@@ -295,9 +295,9 @@ export function PatientNowScreen({
   const stayCurrent = mode === "ward" || mode === "leave" || mode === "awol";
   const movementInForce = Boolean(
     liveMovement &&
-      mode !== "idle" &&
-      mode !== "cto" &&
-      (!liveMovement.closure || (liveMovement.closure.outcome === "arrived" && stayCurrent)),
+    mode !== "idle" &&
+    mode !== "cto" &&
+    (!liveMovement.closure || (liveMovement.closure.outcome === "arrived" && stayCurrent)),
   );
   const isPulled = isLiveBedflow && liveMovement?.pullExpiresAt !== undefined;
 

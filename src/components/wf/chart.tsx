@@ -467,7 +467,11 @@ export type DonutProps = {
 export function Donut({ value, size = 56, thickness = 6, fill = "data-1", text, label, className }: DonutProps) {
   const r = (size - thickness) / 2;
   const c = 2 * Math.PI * r;
-  const v = Math.min(1, Math.max(0, value));
+  const v = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
+  // Round caps add thickness/2 at each end, so trim the dash by one thickness. Without this, 0% drew
+  // a dot and anything from about 96% looked full. A full ring uses butt caps so the ends meet.
+  const full = v >= 1;
+  const dash = full ? c : Math.max(0.001, c * v - thickness);
   const shown = text ?? `${Math.round(v * 100)}%`;
   return (
     <span
@@ -478,17 +482,19 @@ export function Donut({ value, size = 56, thickness = 6, fill = "data-1", text, 
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true" focusable="false">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={fillVar("track")} strokeWidth={thickness} />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke={fillVar(fill)}
-          strokeWidth={thickness}
-          strokeLinecap="round"
-          strokeDasharray={`${c * v} ${c}`}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
+        {v > 0 ? (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={fillVar(fill)}
+            strokeWidth={thickness}
+            strokeLinecap={full ? "butt" : "round"}
+            strokeDasharray={`${dash} ${c}`}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+        ) : null}
       </svg>
       <span className={styles.donutValue} aria-hidden="true">
         {shown}

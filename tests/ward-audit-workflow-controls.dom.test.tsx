@@ -85,17 +85,19 @@ describe("ready-bed dossier tells the truth", () => {
   it("offers actual referral review without inventing a patient or reservation", () => {
     const unit = seedWardFlowState().units[0];
     render(
-      <WardBedDossierDrawer
-        selectedBed={1}
-        bedItem={{ bedNumber: 1, bedLabel: "Bed 01", status: "ready", statusText: "Ready" }}
-        unit={unit}
-        onClose={() => {}}
-        drawerLeavingDestination={LEAVING_DESTINATIONS[0].id}
-        setDrawerLeavingDestination={() => {}}
-        onRecordLeft={() => {}}
-        bedDrawerRef={createRef<HTMLElement>()}
-        onKeyDown={() => {}}
-      />,
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardBedDossierDrawer
+          selectedBed={1}
+          bedItem={{ bedNumber: 1, bedLabel: "Bed 01", status: "ready", statusText: "Ready" }}
+          unit={unit}
+          onClose={() => {}}
+          drawerLeavingDestination={LEAVING_DESTINATIONS[0].id}
+          setDrawerLeavingDestination={() => {}}
+          onRecordLeft={() => {}}
+          bedDrawerRef={createRef<HTMLElement>()}
+          onKeyDown={() => {}}
+        />
+      </WardFlowProvider>,
     );
     expect(screen.getByText("No patient match is recorded for this bed.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Review current referrals/ })).toHaveAttribute(
@@ -105,6 +107,96 @@ describe("ready-bed dossier tells the truth", () => {
     expect(document.body).not.toHaveTextContent("Medically cleared");
     expect(document.body).not.toHaveTextContent("Bed locked for transit");
     expect(screen.queryByRole("button", { name: /Allocate/ })).toBeNull();
+  });
+});
+
+describe("bed dossier inbound bed", () => {
+  it("offers no blocker or ED action on a bed with no admission yet", () => {
+    const unit = seedWardFlowState().units[0];
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardBedDossierDrawer
+          selectedBed={4}
+          bedItem={{ bedNumber: 4, bedLabel: "Bed 04", status: "incoming", statusText: "Inbound" }}
+          unit={unit}
+          onClose={() => {}}
+          drawerLeavingDestination={LEAVING_DESTINATIONS[0].id}
+          setDrawerLeavingDestination={() => {}}
+          onRecordLeft={() => {}}
+          bedDrawerRef={createRef<HTMLElement>()}
+          onKeyDown={() => {}}
+        />
+      </WardFlowProvider>,
+    );
+    expect(screen.queryByRole("button", { name: /Record blocker/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Mark at an ED/ })).toBeNull();
+  });
+
+  it("still offers the blocker and ED actions on a bed with an admission", () => {
+    const unit = seedWardFlowState().units[0];
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardBedDossierDrawer
+          selectedBed={5}
+          bedItem={{
+            bedNumber: 5,
+            bedLabel: "Bed 05",
+            status: "occupied",
+            statusText: "Inpatient",
+            admissionId: "synthetic-admission",
+            patientAlias: "Synthetic person",
+          }}
+          unit={unit}
+          onClose={() => {}}
+          drawerLeavingDestination={LEAVING_DESTINATIONS[0].id}
+          setDrawerLeavingDestination={() => {}}
+          onRecordLeft={() => {}}
+          bedDrawerRef={createRef<HTMLElement>()}
+          onKeyDown={() => {}}
+        />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByRole("button", { name: /Record blocker/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Mark at an ED/ })).toBeInTheDocument();
+  });
+});
+
+describe("bed dossier patient page link", () => {
+  it("opens the person's own page, read through the admission, and is absent with no person", () => {
+    const state = seedWardFlowState();
+    const admission = state.admissions.find((row) => row.patientId);
+    expect(admission).toBeDefined();
+    const unit = state.units.find((row) => row.id === admission!.unitId)!;
+    const drawer = (admissionId: string | undefined) => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardBedDossierDrawer
+          selectedBed={3}
+          bedItem={{
+            bedNumber: 3,
+            bedLabel: "Bed 03",
+            status: "occupied",
+            statusText: "Inpatient",
+            admissionId,
+            patientAlias: "Synthetic person",
+          }}
+          unit={unit}
+          onClose={() => {}}
+          drawerLeavingDestination={LEAVING_DESTINATIONS[0].id}
+          setDrawerLeavingDestination={() => {}}
+          onRecordLeft={() => {}}
+          bedDrawerRef={createRef<HTMLElement>()}
+          onKeyDown={() => {}}
+        />
+      </WardFlowProvider>
+    );
+    const view = render(drawer(admission!.id));
+    expect(screen.getByRole("link", { name: /Patient page/ })).toHaveAttribute(
+      "href",
+      `/mockups/ward-flow/people/${encodeURIComponent(String(admission!.patientId))}`,
+    );
+    view.unmount();
+    render(drawer(undefined));
+    expect(screen.queryByRole("link", { name: /Patient page/ })).toBeNull();
   });
 });
 
