@@ -10,7 +10,7 @@
  *      Blocks key files (.env, private keys), provider keys and tokens, and
  *      real-looking patient identifiers: checksum-valid Medicare numbers and
  *      IHIs anywhere outside test fixtures, and labelled URN/UMRN/MRN values
- *      that do not follow the synthetic `UM1nnnnn` convention.
+ *      that do not follow the synthetic `UMnnnnnn` convention (D-39: `UM` plus six digits).
  *   2. ESLint on staged JS/TS files, failing only on ERRORS that land on lines
  *      this commit adds or changes. Several Ward Flow files already carry lint
  *      errors; blocking on those would stop every commit that touches them.
@@ -418,7 +418,7 @@ function jwtRole(payloadSegment) {
 const MEDICARE_FORMATTED_RE = /(?<![\d-])([2-6]\d{3})[ -]?(\d{5})[ -]?(\d)(?:[ -]?(\d))?(?![\d-])/g;
 const IHI_RE = /(?<!\d)(8003\s?60\d{2}\s?\d{4}\s?\d{4})(?!\d)/g;
 const LABELLED_URN_RE = /\b(?:UMRN|URN|MRN)\b["']?\s*(?:[:=#]|no\.?|number)?\s*["'`]?([A-Z]{0,3}\d{5,10})\b/gi;
-const SYNTHETIC_URN_RE = /^(?:UM1\d{5}|(?:TEST|SYN|DEMO|FAKE|X+)\w*)$/i;
+const SYNTHETIC_URN_RE = /^(?:UM\d{6}|(?:TEST|SYN|DEMO|FAKE|X+)\w*)$/i;
 
 /**
  * Scan added lines. Returns [{ file, line, why }]. `fileNames` covers files
@@ -470,7 +470,7 @@ export function scanAddedLines(addedByFile, fileNames = [...addedByFile.keys()])
             findings.push({
               file,
               line,
-              why: `URN/UMRN "${match[1]}" is not in the synthetic UM1nnnnn format (real-looking patient identifier)`,
+              why: `URN/UMRN "${match[1]}" is not in the synthetic UMnnnnnn format (real-looking patient identifier)`,
             });
           }
         }
