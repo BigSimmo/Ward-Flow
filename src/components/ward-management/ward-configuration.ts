@@ -9,10 +9,14 @@ import {
   PULL_HOLD_RANGE_MINUTES,
 } from "@/components/ward-management/ward-model";
 import {
+  DECISION_TARGET_RANGE_MINUTES,
   DUE_SOON_MINUTES,
   DUE_SOON_RANGE_MINUTES,
   DUE_SOON_URGENT_MINUTES,
   DUE_SOON_URGENT_RANGE_MINUTES,
+  WARD_ANSWER_TARGET_MINUTES,
+  TRANSFER_ACCEPTANCE_TARGET_MINUTES,
+  TRANSPORT_BOOKED_TARGET_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
 
 /**
@@ -39,6 +43,13 @@ export type WardConfiguration = {
   /** Minutes before a recorded legal due time when it first shows as due soon. Always later than
    *  `dueSoonUrgentMinutes`. */
   dueSoonMinutes: number;
+  /** Minutes from referral to a ward's answer before the referral decision shows overdue. A
+   *  labelled default set in Settings, not a service standard (stream A, 9 Oct 2026). */
+  referralDecisionTargetMinutes: number;
+  /** Minutes from acceptance in principle to the bed being pulled. Default, set in Settings. */
+  transferAcceptanceTargetMinutes: number;
+  /** Minutes from the bed being pulled to transport being booked. Default, set in Settings. */
+  transportBookedTargetMinutes: number;
 };
 
 /** The keys `WardConfiguration` carries, and no others — the same list `validateConfiguration`
@@ -50,6 +61,9 @@ const CONFIGURATION_KEYS = [
   "morningRollupDeadlineMinutes",
   "dueSoonUrgentMinutes",
   "dueSoonMinutes",
+  "referralDecisionTargetMinutes",
+  "transferAcceptanceTargetMinutes",
+  "transportBookedTargetMinutes",
 ] as const;
 
 /** Keys a stored or older payload may leave out; each takes its default when missing. */
@@ -57,15 +71,26 @@ const OPTIONAL_KEYS: readonly (keyof WardConfiguration)[] = [
   "morningRollupDeadlineMinutes",
   "dueSoonUrgentMinutes",
   "dueSoonMinutes",
+  "referralDecisionTargetMinutes",
+  "transferAcceptanceTargetMinutes",
+  "transportBookedTargetMinutes",
 ];
 
 const OPTIONAL_DEFAULTS: Pick<
   WardConfiguration,
-  "morningRollupDeadlineMinutes" | "dueSoonUrgentMinutes" | "dueSoonMinutes"
+  | "morningRollupDeadlineMinutes"
+  | "dueSoonUrgentMinutes"
+  | "dueSoonMinutes"
+  | "referralDecisionTargetMinutes"
+  | "transferAcceptanceTargetMinutes"
+  | "transportBookedTargetMinutes"
 > = {
   morningRollupDeadlineMinutes: MORNING_ROLLUP_TIME_MINUTES,
   dueSoonUrgentMinutes: DUE_SOON_URGENT_MINUTES,
   dueSoonMinutes: DUE_SOON_MINUTES,
+  referralDecisionTargetMinutes: WARD_ANSWER_TARGET_MINUTES,
+  transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
+  transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
 };
 
 /** Seeds `WardFlowState.configuration` and is what `RESET_SCENARIO`/`SET_SCENARIO` reseed to. */
@@ -77,6 +102,9 @@ export function defaultWardConfiguration(): WardConfiguration {
     morningRollupDeadlineMinutes: MORNING_ROLLUP_TIME_MINUTES,
     dueSoonUrgentMinutes: DUE_SOON_URGENT_MINUTES,
     dueSoonMinutes: DUE_SOON_MINUTES,
+    referralDecisionTargetMinutes: WARD_ANSWER_TARGET_MINUTES,
+    transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
+    transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
   };
 }
 
@@ -89,6 +117,9 @@ const BOUNDS: Record<keyof WardConfiguration, Bounds> = {
   morningRollupDeadlineMinutes: MORNING_ROLLUP_TIME_RANGE_MINUTES,
   dueSoonUrgentMinutes: DUE_SOON_URGENT_RANGE_MINUTES,
   dueSoonMinutes: DUE_SOON_RANGE_MINUTES,
+  referralDecisionTargetMinutes: DECISION_TARGET_RANGE_MINUTES,
+  transferAcceptanceTargetMinutes: DECISION_TARGET_RANGE_MINUTES,
+  transportBookedTargetMinutes: DECISION_TARGET_RANGE_MINUTES,
 };
 
 function isOnStep(value: number, bounds: Bounds): boolean {
@@ -133,6 +164,9 @@ export function validateConfiguration(payload: unknown): WardConfiguration | nul
     morningRollupDeadlineMinutes: read("morningRollupDeadlineMinutes"),
     dueSoonUrgentMinutes: read("dueSoonUrgentMinutes"),
     dueSoonMinutes: read("dueSoonMinutes"),
+    referralDecisionTargetMinutes: read("referralDecisionTargetMinutes"),
+    transferAcceptanceTargetMinutes: read("transferAcceptanceTargetMinutes"),
+    transportBookedTargetMinutes: read("transportBookedTargetMinutes"),
   };
   // The first warning must come before the second, or "due within the hour" would never show.
   if (configuration.dueSoonUrgentMinutes >= configuration.dueSoonMinutes) return null;

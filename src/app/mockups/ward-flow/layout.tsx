@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { WardAccessibility } from "@/components/ward-management/shell/ward-accessibility";
+import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-now-notifier";
 import { WardBarMount } from "@/components/ward-management/shell/ward-bar";
 import { WardPhoneDesktopOnly } from "@/components/ward-management/shell/ward-phone-desktop-only";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
@@ -104,6 +105,7 @@ export default function WardFlowMockupLayout({ children }: { children: ReactNode
     <WardFlowProvider>
       <WardAccessibility />
       <WardLiveRegion />
+      <WardActNowNotifier />
       <div className={styles.shellRow}>
         <WardRail />
         <div className={styles.shellContent}>
