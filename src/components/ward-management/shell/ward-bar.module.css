@@ -175,8 +175,53 @@
   height: 7px;
   flex: none;
   border-radius: 50%;
-  background: var(--wf-success);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-success) 16%, transparent);
+  background: var(--svc);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--svc) 16%, transparent);
+}
+
+/* Each health service's own colour, as a dot beside its name (v8 G4). Statewide, or All
+ * services, uses the WA Health corporate colour. */
+.scopeBadgeBtn,
+.serviceDot {
+  --svc: var(--wf-svc-statewide);
+}
+
+.scopeBadgeBtn[data-service="north"],
+.serviceDot[data-service="north"] {
+  --svc: var(--wf-svc-north);
+}
+
+.scopeBadgeBtn[data-service="south"],
+.serviceDot[data-service="south"] {
+  --svc: var(--wf-svc-south);
+}
+
+.scopeBadgeBtn[data-service="east"],
+.serviceDot[data-service="east"] {
+  --svc: var(--wf-svc-east);
+}
+
+.scopeBadgeBtn[data-service="wachs"],
+.serviceDot[data-service="wachs"] {
+  --svc: var(--wf-svc-wachs);
+}
+
+.scopeBadgeBtn[data-service="cahs"],
+.serviceDot[data-service="cahs"] {
+  --svc: var(--wf-svc-cahs);
+}
+
+.scopeBadgeBtn[data-service="private"],
+.serviceDot[data-service="private"] {
+  --svc: var(--wf-svc-private);
+}
+
+.serviceDot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--svc);
 }
 
 .scopeBadgeLabel {
@@ -246,11 +291,6 @@
   font-size: var(--t-0);
   font-weight: 600;
   color: var(--wf-ink-1);
-}
-
-.popoverHint {
-  font-weight: 400;
-  color: var(--wf-ink-3);
 }
 
 .popoverRule {
@@ -1243,6 +1283,7 @@
   }
 
   .scopeDot,
+  .serviceDot,
   .unread {
     background: CanvasText;
     forced-color-adjust: none;
