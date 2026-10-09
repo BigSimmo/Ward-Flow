@@ -194,7 +194,8 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
       ) : (
         <span className={styles.off}>Not booked</span>
       ),
-    paper: (row) => (row.transport ? `${row.transport.leg ?? "Booked"}${row.transport.escort ? ", escort" : ""}` : ""),
+    paper: (row) =>
+      row.transport ? `${row.transport.leg ?? "Booked"}, ${row.transport.escort ? "escort" : "no escort"}` : "",
   },
 ];
 
