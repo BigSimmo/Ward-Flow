@@ -48,6 +48,18 @@
   flex-grow: 1;
 }
 
+/* Hidden screen reader text stays inside the page (9 Oct 2026). Since #132 the desktop column is
+   the containing block for absolutely positioned descendants, so 1px screen reader spans inside an
+   inner scroll box (Handover snapshot, Movements, Transport, Referrals tables) escaped that box and
+   let the window scroll far past the footer onto bare canvas. `clip` cuts that overflow without
+   making `.shell` a scroll container, so sticky headers still stick. Desktop only, matching #132. */
+@media (min-width: 1001px) {
+  .shell {
+    position: relative;
+    overflow-y: clip;
+  }
+}
+
 .shell [data-ward-primitive="panel"] {
   min-width: 0;
   min-height: 0;
