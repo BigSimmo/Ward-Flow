@@ -43,6 +43,7 @@ import {
 } from "@/components/wf";
 
 import { NOT_WIRED, PreviewTag, ScopeLine, SettingRow } from "./settings-rows";
+import { SETTINGS_DEMO_PROFILE } from "./settings-profile";
 import type { PublishedThreshold, ThresholdState } from "./settings-thresholds";
 
 import styles from "./settings.module.css";
@@ -453,7 +454,7 @@ export function ProfilePane({ onPreview }: { onPreview: OnPreview }) {
           <Card aria-labelledby="profile-title">
             <CardHead id="profile-title" icon={UserRound} title="Profile" />
             <SettingRow setting="role" title="Role" sub="From sign-in once accounts exist">
-              <span className={styles.readout}>State bed coordinator</span>
+              <span className={styles.readout}>{SETTINGS_DEMO_PROFILE.role}</span>
             </SettingRow>
             <SettingRow
               setting="service"

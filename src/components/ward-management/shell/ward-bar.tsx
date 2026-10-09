@@ -89,7 +89,16 @@ const WardMhaCalculator = dynamic(
 
 import { announceToWardShell } from "./ward-live-region";
 import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
-import { digestHref, edHref, handoverHref, movementHref, officerHref, onCallHref, settingsHref } from "./ward-facade";
+import {
+  digestHref,
+  dischargeHref,
+  edHref,
+  handoverHref,
+  movementHref,
+  officerHref,
+  onCallHref,
+  settingsHref,
+} from "./ward-facade";
 import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
@@ -518,6 +527,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     dispatch,
     inboxAcknowledgements,
     inboxCompletions,
+    supportNotifications,
   } = useWardFlow();
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
@@ -617,8 +627,17 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // for exactly this call. A ward/ED/officer route gets an empty inbox: zero badge, and the drawer's
   // own "No outstanding work right now." empty state, never a network list with every action refused.
   const tasksItems = useMemo(
-    () => (wardTasksAreActionableForRole(role) ? buildActionInbox(movements.filter(isOpen), now, units) : []),
-    [movements, now, units, role],
+    () =>
+      wardTasksAreActionableForRole(role)
+        ? buildActionInbox(movements.filter(isOpen), now, units, {
+            movements,
+            admissions,
+            patients,
+            referrals,
+            supportNotifications,
+          })
+        : [],
+    [movements, now, units, role, admissions, patients, referrals, supportNotifications],
   );
   /**
    * The Service selector's own "{n} open" / "none open" option counts (build plan §3 "Service
@@ -942,6 +961,20 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       router.push(
         `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
       );
+    },
+    [router],
+  );
+
+  // A discharge notification task opens the stay's checklist on the discharges board.
+  const openDischarge = useCallback(
+    (admissionId: string) => {
+      setOpenPanel(null);
+      if (typeof window !== "undefined" && window.history && window.history.state?.wardDrawer) {
+        const nextState = { ...window.history.state };
+        delete nextState.wardDrawer;
+        window.history.replaceState(nextState, "");
+      }
+      router.push(dischargeHref(admissionId));
     },
     [router],
   );
@@ -1723,7 +1756,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             dispatch={dispatch}
             onClose={() => closePopover("tasks")}
             onSelectMovement={openMovement}
-            records={{ movements, patients, referrals, units }}
+            onSelectDischarge={openDischarge}
+            records={{ movements, admissions, patients, referrals, units }}
           />
         </div>
       </Sheet>
