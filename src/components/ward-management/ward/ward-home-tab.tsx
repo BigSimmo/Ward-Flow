@@ -11,7 +11,7 @@ import { DECLINE_REASONS } from "@/components/ward-management/ward-model";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
-import { releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
+import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import {
   restrictionNotice,
   eligibilityWarning,
@@ -537,7 +537,10 @@ export function WardHomeTab({
   }
   const laterToday: TodoRow[] = [];
   const doneRows: TodoRow[] = [];
-  if (capacityConfirmed && unit.allocatable.confirmedAt !== undefined) {
+  // Done only when the figures were confirmed during this shift; an older confirmation is not.
+  const capacityConfirmedThisShift =
+    unit.allocatable.confirmedAt !== undefined && unit.allocatable.confirmedAt >= currentShiftStartInstant(now);
+  if (capacityConfirmedThisShift) {
     doneRows.push({
       key: "capacity",
       title: "Capacity numbers",

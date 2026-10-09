@@ -953,13 +953,15 @@ label.todoMain:has(.todoTick:focus-visible) {
   }
 }
 
-/* Touch screens: the view switch and the key links keep the 48px tap target. */
+/* Touch screens: the view switch, the list view's bed buttons and the key links keep the 48px
+ * tap target. */
 @media (pointer: coarse) {
   .viewSwitch button {
     width: var(--spacing-tap, 3rem);
     height: var(--spacing-tap, 3rem);
   }
 
+  .bedTableBed,
   .keyLink {
     height: auto;
     min-height: var(--spacing-tap, 3rem);

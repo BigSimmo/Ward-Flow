@@ -110,6 +110,45 @@ describe("ready-bed dossier tells the truth", () => {
   });
 });
 
+describe("bed dossier patient page link", () => {
+  it("opens the person's own page, read through the admission, and is absent with no person", () => {
+    const state = seedWardFlowState();
+    const admission = state.admissions.find((row) => row.patientId);
+    expect(admission).toBeDefined();
+    const unit = state.units.find((row) => row.id === admission!.unitId)!;
+    const drawer = (admissionId: string | undefined) => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardBedDossierDrawer
+          selectedBed={3}
+          bedItem={{
+            bedNumber: 3,
+            bedLabel: "Bed 03",
+            status: "occupied",
+            statusText: "Inpatient",
+            admissionId,
+            patientAlias: "Synthetic person",
+          }}
+          unit={unit}
+          onClose={() => {}}
+          drawerLeavingDestination={LEAVING_DESTINATIONS[0].id}
+          setDrawerLeavingDestination={() => {}}
+          onRecordLeft={() => {}}
+          bedDrawerRef={createRef<HTMLElement>()}
+          onKeyDown={() => {}}
+        />
+      </WardFlowProvider>
+    );
+    const view = render(drawer(admission!.id));
+    expect(screen.getByRole("link", { name: /Patient page/ })).toHaveAttribute(
+      "href",
+      `/mockups/ward-flow/people/${encodeURIComponent(String(admission!.patientId))}`,
+    );
+    view.unmount();
+    render(drawer(undefined));
+    expect(screen.queryByRole("link", { name: /Patient page/ })).toBeNull();
+  });
+});
+
 function AdmissionProbe({ id }: { id: string }) {
   const { admissions, leaveBeds } = useWardFlow();
   const admission = admissions.find((row) => row.id === id)!;

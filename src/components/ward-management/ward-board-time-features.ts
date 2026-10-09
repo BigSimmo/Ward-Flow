@@ -9,10 +9,12 @@
 import {
   dayOf,
   formatRemaining,
+  minuteOfDay,
   minutesUntil,
   MINUTES_PER_DAY,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Movement } from "@/components/ward-management/ward-model";
 
@@ -22,6 +24,18 @@ export const DAY_SHIFT_END_MINUTE = 15 * 60;
 /** Today's 15:00 as an Instant on the demonstration day that `now` sits on. */
 export function dayShiftEndInstant(now: Instant): Instant {
   return dayOf(now) * MINUTES_PER_DAY + DAY_SHIFT_END_MINUTE;
+}
+
+/** When the shift `now` falls in began, on the one shift pattern every screen uses. */
+export function currentShiftStartInstant(now: Instant): Instant {
+  const minute = minuteOfDay(now);
+  const shift =
+    SHIFT_PATTERN.find(({ startMinute, endMinute }) =>
+      endMinute <= startMinute
+        ? minute >= startMinute || minute < endMinute
+        : minute >= startMinute && minute < endMinute,
+    ) ?? SHIFT_PATTERN[SHIFT_PATTERN.length - 1];
+  return now - ((minute - shift.startMinute + MINUTES_PER_DAY) % MINUTES_PER_DAY);
 }
 
 /**

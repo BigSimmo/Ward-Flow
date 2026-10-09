@@ -237,6 +237,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [dailySheetOpen, setDailySheetOpen] = useState(false);
   const [drawerLeavingDestination, setDrawerLeavingDestination] =
     useState<LeavingDestination>("discharged-to-the-community");
+  // A destination belongs to the bed it was chosen for: opening or stepping to another bed starts
+  // from the default again, so one person's choice is never recorded against the next.
+  const [destinationBed, setDestinationBed] = useState<number | null>(null);
+  if (destinationBed !== selectedBed) {
+    setDestinationBed(selectedBed);
+    setDrawerLeavingDestination("discharged-to-the-community");
+  }
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);

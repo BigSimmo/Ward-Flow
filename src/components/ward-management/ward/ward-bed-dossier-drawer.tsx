@@ -11,6 +11,8 @@ import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { Button, Icon, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
 
 interface WardBedDossierDrawerProps {
@@ -107,7 +109,7 @@ export function WardBedDossierDrawer({
   bedDrawerRef,
   onKeyDown,
 }: WardBedDossierDrawerProps) {
-  const { admissions } = useWardFlow();
+  const { admissions, patients, referrals, movements } = useWardFlow();
   const now = useWardFlowClock();
   const [tab, setTab] = useState<DrawerTab>("over");
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
@@ -235,7 +237,9 @@ export function WardBedDossierDrawer({
     </div>
   );
 
-  const patientHref = `/mockups/ward-flow/ward/${unit.id}/patient/${bedItem?.admissionId ?? selectedBed}`;
+  // The person behind this stay, read through the admission's own link. No record, no link.
+  const person = admission ? resolveSubjectPatient(admission, { patients, referrals, movements }).patient : undefined;
+  const personHref = person ? patientHref(person.id) : null;
 
   return (
     <>
@@ -549,14 +553,16 @@ export function WardBedDossierDrawer({
             </>
           )}
           <span className={styles.footSpacer} />
-          <Link
-            className={buttonClass({ variant: "ghost", size: "lg", className: styles.pill })}
-            href={patientHref}
-            onClick={onClose}
-          >
-            Patient page
-            <Icon icon={ChevronRight} size={14} />
-          </Link>
+          {personHref ? (
+            <Link
+              className={buttonClass({ variant: "ghost", size: "lg", className: styles.pill })}
+              href={personHref}
+              onClick={onClose}
+            >
+              Patient page
+              <Icon icon={ChevronRight} size={14} />
+            </Link>
+          ) : null}
         </footer>
       </aside>
     </>
