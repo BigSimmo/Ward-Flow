@@ -145,6 +145,11 @@ describe("a bed held for an absence without leave never reads as approved leave 
     expect(row).toHaveTextContent("Absent since");
     expect(row).not.toHaveTextContent("Bed on leave");
     expect(row).not.toHaveTextContent("Expected return");
+    const bed = document.querySelector(`[data-admission-id="${occupied!.id}"]`);
+    expect(bed, "the held bed is on the bed grid").not.toBeNull();
+    expect(bed).toHaveAttribute("data-state", "leave");
+    expect(bed).toHaveAccessibleName(/Absent without leave/u);
+    expect(bed).not.toHaveAccessibleName(/On Leave/u);
   });
 });
 

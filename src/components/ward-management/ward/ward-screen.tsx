@@ -783,7 +783,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       statusText = "Ready Vacant";
     } else if (isLeaveSlot) {
       status = "leave";
-      statusText = "On Leave";
+      // D-38: a bed held for an absence without leave is never shown as approved leave.
+      statusText = unitLeaveBeds[leaveSlotIndex].absentWithoutLeave ? "Absent without leave" : "On Leave";
     } else if (isIncomingSlot) {
       status = "incoming";
       statusText = "Inbound";

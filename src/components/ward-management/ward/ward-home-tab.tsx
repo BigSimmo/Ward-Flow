@@ -290,7 +290,9 @@ export function WardHomeTab({
       bed.status === "ready"
         ? "Ready"
         : bed.status === "leave"
-          ? "On leave"
+          ? bed.statusText === "Absent without leave"
+            ? "Absent without leave"
+            : "On leave"
           : bed.status === "incoming"
             ? "Pulled"
             : "Occupied";
