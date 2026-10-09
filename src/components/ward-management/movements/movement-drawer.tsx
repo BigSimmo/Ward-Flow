@@ -215,7 +215,10 @@ export function MovementDrawer({
   // Transport: the leg's latest recorded step and when.
   const leg = movement.transport;
   const legState = transportLeg(leg);
-  const legAt = leg ? (leg.collectedAt ?? leg.enRouteAt ?? leg.acceptedAt) : undefined;
+  // The time of the step the derived state names: a cancel or an arrival, not the step before it.
+  const legAt = leg
+    ? (leg.cancelledAt ?? leg.arrivedAt ?? leg.collectedAt ?? leg.enRouteAt ?? leg.acceptedAt)
+    : undefined;
   const need = transportNeedState(movement);
   const via = leg
     ? `${leg.provider}${leg.escortRequired ? " · escort required" : " · no escort"}`
@@ -255,8 +258,11 @@ export function MovementDrawer({
         ? `${asked}, all declined`
         : `${asked}, ${declined} declined`;
 
+  // Only an arrival completes the track. A movement that did not proceed keeps the stage it held.
   const currentStep =
-    closure || movement.stage === "arrived" ? STEPS.length : STEPS.findIndex((s) => s.stage === movement.stage);
+    closure?.outcome === "arrived" || movement.stage === "arrived"
+      ? STEPS.length
+      : STEPS.findIndex((s) => s.stage === movement.stage);
 
   let nextAction: React.ReactNode = null;
   if (step && open) {
