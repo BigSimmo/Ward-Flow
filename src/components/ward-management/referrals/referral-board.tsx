@@ -748,6 +748,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
               {showQueued && (
                 <QueuedSection
                   queued={queued}
+                  referrals={referrals}
                   displayQueued={displayQueued}
                   now={now}
                   selectedId={selectedReferralId}
@@ -1091,6 +1092,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
 
 function QueuedSection({
   queued,
+  referrals,
   displayQueued = queued,
   now,
   selectedId,
@@ -1102,6 +1104,7 @@ function QueuedSection({
   onResetFilters,
 }: {
   queued: Referral[];
+  referrals: Referral[];
   displayQueued?: Referral[];
   now: Instant;
   selectedId: string | undefined;
@@ -1115,8 +1118,8 @@ function QueuedSection({
   const sectionRef = useRef<HTMLElement | null>(null);
   // One records object per render of the list, so the patient resolver's index is built once.
   const readmissionRecords = useMemo(
-    () => ({ admissions, patients, referrals: queued, movements, units }),
-    [admissions, patients, queued, movements, units],
+    () => ({ admissions, patients, referrals, movements, units }),
+    [admissions, patients, referrals, movements, units],
   );
   const [overflowing, setOverflowing] = useState(false);
 
