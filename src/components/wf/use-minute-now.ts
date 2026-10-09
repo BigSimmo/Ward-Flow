@@ -17,7 +17,8 @@ export function useMinuteNow({ fast = false, paused = false }: { fast?: boolean;
       setNow(t);
       timer = setTimeout(tick, fast ? 1000 - (t % 1000) : 60_000 - (t % 60_000));
     };
-    timer = setTimeout(tick, fast ? 1000 : 60_000 - (Date.now() % 60_000));
+    // Refresh straight away so Resume never shows the frozen time until the next boundary.
+    tick();
     return () => clearTimeout(timer);
   }, [fast, paused]);
   return now;
