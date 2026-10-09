@@ -963,7 +963,7 @@ export function MovementsScreen() {
           />
         </section>
 
-        <div className={styles.columns}>
+        <div className={cx(styles.columns, flow.layout)}>
           <div className={styles.primary}>
             {/* D-f: the scope bar and its "not these figures" sentence moved to the top of the
                 page (see the comment beside the header above) — never here, on the panel they were
@@ -1206,7 +1206,6 @@ export function MovementsScreen() {
               className={styles.sideCard}
             >
               <CardHead
-                icon={sideView === "transport" ? Truck : ChartColumn}
                 title={sideView === "transport" ? "Transport now" : "Shape of the day"}
                 meta={
                   sideView === "shape"
@@ -1221,11 +1220,19 @@ export function MovementsScreen() {
                       type="button"
                       aria-pressed={sideView === "transport"}
                       onClick={() => setSideView("transport")}
+                      aria-label="Transport now"
+                      title="Transport now"
                     >
-                      Transport
+                      <Truck size={14} aria-hidden="true" />
                     </button>
-                    <button type="button" aria-pressed={sideView === "shape"} onClick={() => setSideView("shape")}>
-                      Shape of the day
+                    <button
+                      type="button"
+                      aria-pressed={sideView === "shape"}
+                      onClick={() => setSideView("shape")}
+                      aria-label="Shape of the day"
+                      title="Shape of the day"
+                    >
+                      <ChartColumn size={14} aria-hidden="true" />
                     </button>
                   </div>
                 }
@@ -1870,17 +1877,19 @@ function StageRow({
           <span title={originLabel} aria-label={originLabel}>
             {originEd ? `${originEd.siteCode} ED` : originLabel}
           </span>{" "}
-          to{" "}
           {movement.acceptedUnitId ? (
-            <Link
-              href={`/mockups/ward-flow/board/${movement.acceptedUnitId}`}
-              className={flow.wardLink}
-              title={`Open ${destinationLabel} Bed Board`}
-            >
-              {destinationLabel}
-            </Link>
+            <>
+              to{" "}
+              <Link
+                href={`/mockups/ward-flow/board/${movement.acceptedUnitId}`}
+                className={flow.wardLink}
+                title={`Open ${destinationLabel} Bed Board`}
+              >
+                {destinationLabel}
+              </Link>
+            </>
           ) : (
-            "Destination pending"
+            <span className={flow.pending}>· no destination yet</span>
           )}
         </span>
         <span className={flow.sub} title={routeSub}>

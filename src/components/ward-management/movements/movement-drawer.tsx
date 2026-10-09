@@ -250,7 +250,9 @@ export function MovementDrawer({
   const declined = movement.declines.length;
   const asked = movement.referredUnitIds.length;
   const wardsAsked = accepted
-    ? `${asked}, accepted`
+    ? asked === 0
+      ? "Accepted"
+      : `${asked}, accepted`
     : asked === 0
       ? "None yet"
       : declined >= asked
@@ -323,7 +325,7 @@ export function MovementDrawer({
           {movement.urgency}
         </span>
         <Link className={buttonClass({ variant: "ghost", size: "sm" })} href={recordHref} title="Open the Patient page">
-          Patient
+          <span className={d.linkText}>Patient</span>
           <ChevronRight size={14} aria-hidden="true" />
         </Link>
         <button

@@ -348,8 +348,8 @@
 .grid {
   display: grid;
   grid-template-columns:
-    2.25rem minmax(9.5rem, 1.15fr) minmax(8rem, 1fr) minmax(9rem, 1.3fr)
-    5.75rem 7.25rem 1.75rem;
+    2.25rem minmax(8.5rem, 1.15fr) minmax(5rem, 1fr) minmax(6rem, 1.3fr)
+    5.25rem 7.5rem 1.75rem;
   align-items: center;
   column-gap: var(--wf-s-3);
 }
@@ -665,6 +665,44 @@
 /* ---------- phone: a card per row (never alters the desktop grid above) ---------- */
 
 @media (max-width: 48rem) {
+  /* Phone hero: title, then each tool row scrolls sideways on its own line rather than
+     overlapping. Run sheet is a desk task and stays on the larger screen. */
+  .heroTitleMeta {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* position: relative keeps an sr-only child inside the scroller, so it cannot widen the page. */
+  .heroAside,
+  .stageTrack,
+  .highlights {
+    position: relative;
+    flex-wrap: nowrap;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .jump {
+    flex: none;
+    max-width: 15rem;
+  }
+
+  .heroTools {
+    width: 100%;
+  }
+
+  .heroTools > .previewTool {
+    display: none;
+  }
+
+  .heroTools > :last-child {
+    flex: 1;
+    justify-content: center;
+  }
+
   .columns {
     display: none;
   }
@@ -743,4 +781,34 @@
 .wardLink:hover {
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* The worklist needs the width: Transport now takes a fixed 20rem beside it, and the two stack
+   below 1300px so no column is ever cut off at the right edge. */
+.layout.layout {
+  grid-template-columns: minmax(0, 1fr) 20rem;
+}
+
+@media (max-width: 81.25rem) {
+  .layout.layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .layout.layout > aside {
+    position: static;
+    max-height: none;
+  }
+}
+
+.next :global(a),
+.next :global(button) {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pending {
+  color: var(--wf-ink-3);
+  font-weight: 400;
 }
