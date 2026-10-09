@@ -1,9 +1,16 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
-import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
+import {
+  REFERRAL_DRAFT_AUTOSAVE_MS,
+  discardReferralDraft,
+  readKeptReferralDraft,
+  referralDraftAgeText,
+} from "@/components/ward-management/referrals/referral-draft-store";
+import { UseMyDetailsButton } from "@/components/ward-management/referrals/referral-flow-panels";
+import { SETTINGS_DEMO_PROFILE, profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
 import { referralIsbarText, referralLetterText } from "@/components/ward-management/referrals/referral-letter";
 import { referralIntakeError } from "@/components/ward-management/referrals/referral-submission";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -23,7 +30,12 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-afterEach(() => discardReferralDraft());
+// Unmount first: an unmount with a pending change keeps it (autosave), so discarding before
+// Testing Library's own cleanup would let one test's draft reach the next.
+afterEach(() => {
+  cleanup();
+  discardReferralDraft();
+});
 
 function renderDrawer(props: Partial<Parameters<typeof WardReferralDrawer>[0]> = {}) {
   const onClose = vi.fn();
@@ -333,5 +345,168 @@ describe("referral letter text", () => {
     expect(text.split("\n").map((line) => line.slice(0, 2))).toEqual(["I:", "S:", "B:", "A:", "R:"]);
     expect(text).toContain("RF-024 sent 10:47");
     expect(text).toContain("Decision due 14:47.");
+  });
+});
+
+describe("referral draft autosave (9 Oct 2026)", () => {
+  afterEach(() => vi.useRealTimers());
+
+  function typeReason(value: string) {
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value } });
+  }
+
+  it("keeps the draft in tab memory as the user types, never in browser storage", () => {
+    vi.useFakeTimers();
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    renderDrawer();
+    typeReason("Autosaved synthetic reason");
+    expect(readKeptReferralDraft()).toBeNull();
+    expect(screen.queryByTestId("ward-referral-draft-status")).not.toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    expect(readKeptReferralDraft()).not.toBeNull();
+    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept · just now");
+    expect(screen.getByRole("button", { name: "Discard draft" })).toBeInTheDocument();
+    expect(setItem).not.toHaveBeenCalled();
+    setItem.mockRestore();
+  });
+
+  it("loses nothing when the sheet goes away before the pause ends", () => {
+    vi.useFakeTimers();
+    const first = renderDrawer();
+    typeReason("Unpaused synthetic reason");
+    first.unmount();
+    vi.useRealTimers();
+    renderDrawer();
+    expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Unpaused synthetic reason");
+  });
+
+  it("Discard draft in the rail drops an autosaved draft", () => {
+    vi.useFakeTimers();
+    const first = renderDrawer();
+    typeReason("Discarded synthetic reason");
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Discard draft" }));
+    first.unmount();
+    expect(readKeptReferralDraft()).toBeNull();
+  });
+
+  it("autosaves again after Discard draft restarts the sheet", () => {
+    vi.useFakeTimers();
+    renderDrawer();
+    typeReason("Discarded first reason");
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Discard draft" }));
+    expect(readKeptReferralDraft()).toBeNull();
+    // Discard restarts the sheet (a fresh draft and a fresh autosave), in the same drawer.
+    typeReason("Second reason after restart");
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    expect(readKeptReferralDraft()).not.toBeNull();
+    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept");
+  });
+
+  it("drops the kept copy when the draft is edited back to how it opened", () => {
+    vi.useFakeTimers();
+    renderDrawer();
+    typeReason("Briefly typed reason");
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    expect(readKeptReferralDraft()).not.toBeNull();
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "" } });
+    // The open step is part of the draft too, so step back to where the sheet opened.
+    fireEvent.click(steps().getByRole("button", { name: "Patient" }));
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    expect(readKeptReferralDraft()).toBeNull();
+    expect(screen.queryByTestId("ward-referral-draft-status")).not.toBeInTheDocument();
+  });
+
+  it("reopens a person's Refer link on their own kept draft", () => {
+    vi.useFakeTimers();
+    const first = renderDrawer({ initialPatientId: "PT-010" });
+    typeReason("Same person synthetic reason");
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    first.unmount();
+    renderDrawer({ initialPatientId: "PT-010" });
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Same person synthetic reason");
+  });
+
+  it("never opens or autosaves over another person's kept draft", () => {
+    vi.useFakeTimers();
+    const first = renderDrawer({ initialPatientId: "PT-010" });
+    typeReason("First person synthetic reason");
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    first.unmount();
+    const kept = readKeptReferralDraft();
+
+    const second = renderDrawer({ initialPatientId: "PT-003" });
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("");
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Second person reason" } });
+    act(() => {
+      vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
+    });
+    second.unmount();
+    expect(readKeptReferralDraft()).toBe(kept);
+  });
+
+  it("says the draft's age in units", () => {
+    expect(referralDraftAgeText(0, 20_000)).toBe("just now");
+    expect(referralDraftAgeText(0, 4 * 60_000)).toBe("4m ago");
+    expect(referralDraftAgeText(0, 65 * 60_000)).toBe("1h 05m ago");
+  });
+});
+
+describe("Use my details", () => {
+  it("fills name, role and contact from the coordinator profile", () => {
+    const onFill = vi.fn();
+    render(<UseMyDetailsButton lookup={profileForChromeRole("coordinator")} onFill={onFill} />);
+    fireEvent.click(screen.getByRole("button", { name: /Use my details/ }));
+    const { name, role, phone, email, location } = SETTINGS_DEMO_PROFILE;
+    expect(onFill).toHaveBeenCalledWith({ name, role, phone, email, location });
+  });
+
+  it("shows unavailable with its reason when the role has no profile", () => {
+    const onFill = vi.fn();
+    const lookup = profileForChromeRole("ward");
+    expect(lookup).toEqual({ status: "unavailable", reason: expect.stringMatching(/^No profile set for /) });
+    render(<UseMyDetailsButton lookup={lookup} onFill={onFill} />);
+    const button = screen.getByTestId("ward-referral-use-my-details");
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(button);
+    expect(onFill).not.toHaveBeenCalled();
+    if (lookup.status === "unavailable") expect(document.body).toHaveTextContent(lookup.reason);
+  });
+});
+
+describe("28 day readmission flag in the slide-out", () => {
+  it("flags a person discharged in the last 28 days, with the date and ward on expand", () => {
+    renderDrawer({ initialPatientId: "PT-010" });
+    const flag = screen.getByTestId("ward-referral-readmission");
+    const toggle = within(flag).getByRole("button", { name: /28d readmission/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(flag).toHaveTextContent(/Discharged \d{1,2} \w{3} from /);
+  });
+
+  it("shows no flag for a person with no recent discharge", () => {
+    renderDrawer({ initialPatientId: "PT-003" });
+    expect(screen.queryByTestId("ward-referral-readmission")).not.toBeInTheDocument();
   });
 });

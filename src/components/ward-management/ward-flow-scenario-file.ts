@@ -61,6 +61,12 @@ export function buildScenarioFile(
       ok: false,
       reason: "This scenario includes a repatriation, which cannot be saved to a file yet. Nothing was saved.",
     };
+  if ((state.supportNotifications?.length ?? 0) > 0)
+    return {
+      ok: false,
+      reason:
+        "This scenario includes a carer, PSP or MHAS notification record, which cannot be saved to a file yet. Nothing was saved.",
+    };
   const file: ScenarioFile = {
     format: WARD_FLOW_SCENARIO_FILE_FORMAT,
     version: WARD_FLOW_SCENARIO_FILE_VERSION,

@@ -129,6 +129,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     why: "Chart spacing, and the midday and 16:00 day-part bins the screen names in its own labels.",
     name: /^(?:CHART_\w+|MIDDAY_MINUTES|LATE_AFTERNOON_MINUTES)$/,
   },
+  {
+    id: "typing-pause",
+    why: "The referral draft's autosave pause (9 Oct 2026): how long typing rests before tab memory is updated; never shown, not a limit.",
+    file: /^referrals\/referral-draft-store\.ts$/,
+    name: /^REFERRAL_DRAFT_AUTOSAVE_MS$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;
@@ -223,7 +229,16 @@ export function offencesIn(file: string, source: string): Offence[] {
     const name = TIME_CONSTANT.exec(line)?.[1];
     if (!name) continue;
     if (RULED_ON.some((entry) => entry.file === file && entry.name.test(name))) continue;
-    if (CONSTANT_EXCLUSIONS.some((rule) => rule.file?.test(file) || rule.name?.test(name))) continue;
+    // A rule with both a file and a name applies only to that name in that file.
+    if (
+      CONSTANT_EXCLUSIONS.some(
+        (rule) =>
+          (rule.file !== undefined || rule.name !== undefined) &&
+          (rule.file === undefined || rule.file.test(file)) &&
+          (rule.name === undefined || rule.name.test(name)),
+      )
+    )
+      continue;
     out.push({ file, rule: "time constant", text: clip(line) });
   }
   return out;
