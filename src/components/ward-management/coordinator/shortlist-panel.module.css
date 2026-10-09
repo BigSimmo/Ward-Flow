@@ -2,7 +2,7 @@
   gap: 0.75rem;
   padding: 0.75rem 1rem 1rem;
   scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: var(--wf-line-2) transparent;
   font-variant-numeric: tabular-nums;
 }
 
