@@ -169,13 +169,23 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
       const first = focusable[0]!;
       const last = focusable[focusable.length - 1]!;
 
-      first.focus();
-      fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
-      expect(modal.contains(document.activeElement)).toBe(true);
+      // The Sheet skips elements without layout boxes, which jsdom never gives, so lend them one.
+      const rects = vi
+        .spyOn(HTMLElement.prototype, "getClientRects")
+        .mockReturnValue([new DOMRect(0, 0, 1, 1)] as unknown as DOMRectList);
+      try {
+        // Shift+Tab on first element wraps to last
+        first.focus();
+        fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
+        expect(document.activeElement).toBe(last);
 
-      last.focus();
-      fireEvent.keyDown(window, { key: "Tab", shiftKey: false });
-      expect(modal.contains(document.activeElement)).toBe(true);
+        // Tab on last element wraps to first
+        last.focus();
+        fireEvent.keyDown(window, { key: "Tab", shiftKey: false });
+        expect(document.activeElement).toBe(first);
+      } finally {
+        rects.mockRestore();
+      }
 
       fireEvent.click(within(modal).getByRole("button", { name: "Cancel" }));
 

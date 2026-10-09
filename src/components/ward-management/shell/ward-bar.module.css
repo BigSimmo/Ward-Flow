@@ -248,9 +248,16 @@
   display: none;
 }
 
-/* With page tools present, the page name keeps its full width and the search gives way. */
+/* With page tools present, the page name keeps its full width and the search gives way. Phone
+   hides the tools but the portal still fills the slot, so the title may shrink there. */
 .bar:has(.pageTools:not(:empty)) .title {
   flex-shrink: 0;
+}
+
+@media (max-width: 48rem) {
+  .bar:has(.pageTools:not(:empty)) .title {
+    flex-shrink: 1;
+  }
 }
 
 .mark {

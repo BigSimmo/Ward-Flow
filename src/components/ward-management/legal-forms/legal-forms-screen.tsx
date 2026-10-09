@@ -227,7 +227,8 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const handover = handoverLines(withDeadline, now, nameOf, CHART_WINDOW_MINUTES);
 
   const openRecord = (movementId?: string) => {
-    if (movementId) setRecordDraft((current) => ({ ...current, movement: movementId }));
+    // The generic button starts with no patient, so an earlier shortcut never carries over.
+    setRecordDraft((current) => ({ ...current, movement: movementId ?? "" }));
     setRecordOpen(true);
   };
 
@@ -1032,7 +1033,7 @@ function ChecklistView({
               columns={CHECK_COLUMNS}
               selected={movement.id === selectedId}
               interactive
-              className={cx(styles.row, on && styles.rowHl, highlightOn && !on && styles.rowDim)}
+              className={cx(styles.row, styles.checkRow, on && styles.rowHl, highlightOn && !on && styles.rowDim)}
             >
               <button
                 type="button"
@@ -1050,13 +1051,13 @@ function ChecklistView({
                 const fact = facts.find((entry) => entry.gap === gap);
                 if (!fact) {
                   return (
-                    <span key={gap} className={styles.sub}>
+                    <span key={gap} className={styles.sub} data-label={GAP_LABEL[gap]}>
                       {gap === "written" ? "Not recorded here" : "Not needed"}
                     </span>
                   );
                 }
                 return (
-                  <span key={gap} className={styles.leftLine}>
+                  <span key={gap} className={styles.leftLine} data-label={GAP_LABEL[gap]}>
                     <StatusGlyph tone={fact.at !== undefined ? "success" : "neutral"} size={9} />
                     <span className={cx(styles.sub, fact.at !== undefined && styles.mono)}>
                       {fact.at !== undefined ? formatInstantWithDay(fact.at, now) : "To record"}

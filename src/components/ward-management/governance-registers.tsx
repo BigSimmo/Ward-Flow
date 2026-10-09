@@ -987,7 +987,11 @@ function GovernanceSession({
                 <div className={thirdEdition.emptyBlock}>
                   <ClipboardList aria-hidden="true" size={16} />
                   <h3>Nothing waiting for review</h3>
-                  <p>No override audit is recorded in this session.</p>
+                  <p>
+                    {reviewable.length > 0
+                      ? "Every recorded event has been reviewed."
+                      : "No override audit is recorded in this session."}
+                  </p>
                 </div>
               }
             />
@@ -1339,6 +1343,8 @@ function GovernanceSession({
                 size="sm"
                 onClick={() => {
                   setCategory("configuration");
+                  setOutcome("all");
+                  setReviewFilter("all");
                   choose(null);
                   changeTab("audit");
                 }}

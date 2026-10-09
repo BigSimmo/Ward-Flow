@@ -268,7 +268,9 @@ export function FocusPanel({
   const breached = isLegalDeadlineBreached(movement, now);
   const reading = actPeriodReading(movement, dayZero);
   const facts = recordedFacts(movement);
-  const [draft, setDraft] = useState<WrittenDraft>(BLANK_WRITTEN);
+  // Start from the recorded region, so changing the time never resets a country form to metro.
+  const recordedDraft = (): WrittenDraft => ({ ...BLANK_WRITTEN, region: legalForm?.region ?? BLANK_WRITTEN.region });
+  const [draft, setDraft] = useState<WrittenDraft>(recordedDraft);
   const [changing, setChanging] = useState(false);
   const dateRef = useRef<HTMLInputElement | null>(null);
   const receivedRef = useRef<HTMLButtonElement | null>(null);
@@ -388,7 +390,14 @@ export function FocusPanel({
                   </span>
                 </span>
                 {fact.gap === "written" && fact.at !== undefined && isOwnedLegalFormCode(legalForm?.code) ? (
-                  <Button variant="ghost" size="sm" onClick={() => setChanging((value) => !value)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setDraft(recordedDraft());
+                      setChanging((value) => !value);
+                    }}
+                  >
                     {changing ? "Keep" : "Change"}
                   </Button>
                 ) : null}
