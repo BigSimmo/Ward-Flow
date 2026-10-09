@@ -190,7 +190,8 @@ export const WA_HEALTH_SERVICES_COLOR_KEY = {
       "Child & Adolescent Mental Health (CAMHS)",
       "Community Child Health",
     ],
-    dotColor: "#0076be",
+    // Indigo, not the brand blue, so the CAHS dot stays distinct from the WACHS blue (v8 G4).
+    dotColor: "#4f46e5",
     light: {
       bg: "#f0f9ff",
       border: "#bae6fd",
@@ -201,7 +202,7 @@ export const WA_HEALTH_SERVICES_COLOR_KEY = {
       bg: "rgba(2, 106, 167, 0.15)",
       border: "rgba(56, 189, 248, 0.3)",
       ink: "#bae6fd",
-      dot: "#38bdf8",
+      dot: "#a5b4fc",
     },
     cssVarPrefix: "--svc-cahs",
   },

@@ -11,7 +11,7 @@
 
 import type { ReactNode } from "react";
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -58,7 +58,8 @@ describe("Service panel note names exactly SERVICE_SCOPED_SCREENS (D-e, TEST 6)"
     await user.click(screen.getByTestId("ward-bar-service-trigger"));
 
     const panel = screen.getByTestId("ward-bar-service-panel");
-    const text = panel.textContent ?? "";
+    // The note now lives on the "scopes the lists" hint as its tooltip (owner request, 9 Oct 2026).
+    const text = within(panel).getByText("scopes the lists").getAttribute("title") ?? "";
 
     for (const name of SERVICE_SCOPED_SCREENS) {
       expect(text, `note does not name ${name}, a member of SERVICE_SCOPED_SCREENS`).toContain(name);

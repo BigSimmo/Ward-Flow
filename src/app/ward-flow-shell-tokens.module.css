@@ -163,7 +163,7 @@
   --svc-wachs-border: #bae6fd;
   --svc-wachs-ink: #0369a1;
 
-  --svc-cahs: #0076be; /* CAHS: Primary Blue - #0076be */
+  --svc-cahs: #4f46e5; /* CAHS: indigo, kept apart from the WACHS blue (v8 G4) */
   --svc-cahs-bg: #f0f9ff;
   --svc-cahs-border: #bae6fd;
   --svc-cahs-ink: #026aa7;
@@ -304,12 +304,12 @@
     --svc-wachs-border: rgba(56, 189, 248, 0.3);
     --svc-wachs-ink: #bae6fd;
 
-    --svc-cahs: #38bdf8;
+    --svc-cahs: #a5b4fc;
     --svc-cahs-bg: rgba(2, 106, 167, 0.15);
     --svc-cahs-border: rgba(56, 189, 248, 0.3);
     --svc-cahs-ink: #bae6fd;
 
-    --svc-statewide: #34d399;
+    --svc-statewide: #5fc9d6;
     --svc-statewide-bg: rgba(16, 185, 129, 0.15);
     --svc-statewide-border: rgba(52, 211, 153, 0.3);
     --svc-statewide-ink: #6ee7b7;
@@ -399,12 +399,12 @@
   --svc-wachs-border: rgba(56, 189, 248, 0.3);
   --svc-wachs-ink: #bae6fd;
 
-  --svc-cahs: #38bdf8;
+  --svc-cahs: #a5b4fc;
   --svc-cahs-bg: rgba(2, 106, 167, 0.15);
   --svc-cahs-border: rgba(56, 189, 248, 0.3);
   --svc-cahs-ink: #bae6fd;
 
-  --svc-statewide: #34d399;
+  --svc-statewide: #5fc9d6;
   --svc-statewide-bg: rgba(16, 185, 129, 0.15);
   --svc-statewide-border: rgba(52, 211, 153, 0.3);
   --svc-statewide-ink: #6ee7b7;
@@ -520,7 +520,7 @@
     --svc-wachs-bg: #f0f9ff;
     --svc-wachs-border: #bae6fd;
     --svc-wachs-ink: #0369a1;
-    --svc-cahs: #0076be;
+    --svc-cahs: #4f46e5;
     --svc-cahs-bg: #f0f9ff;
     --svc-cahs-border: #bae6fd;
     --svc-cahs-ink: #026aa7;
