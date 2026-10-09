@@ -703,6 +703,16 @@
     gap: 12px;
   }
 
+  /* No preview pane here, so the previewed tint would only make the first row look chosen.
+     A press shows instead, and a keyboard's active row keeps its own fill. */
+  .option[data-previewed]:not([data-active], :active) {
+    background: none;
+  }
+
+  .option:active {
+    background: var(--wf-hover);
+  }
+
   .resultContent {
     flex-direction: column;
     align-items: stretch;

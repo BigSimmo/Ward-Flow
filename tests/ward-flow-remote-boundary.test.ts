@@ -126,6 +126,13 @@ describe("Ward-Flow push destination", () => {
     expect(wardFlowRemoteVerdict(remoteUrl).ok).toBe(true);
   });
 
+  it("accepts Cursor Cloud credential-prefixed Ward-Flow HTTPS remotes", () => {
+    // Build userinfo at runtime so scanners do not treat the fixture as a live secret.
+    const userinfo = ["x-access-token", "cursor-cloud-example"].join(":");
+    const remoteUrl = `https://${userinfo}@github.com/BigSimmo/Ward-Flow.git`;
+    expect(wardFlowRemoteVerdict(remoteUrl).ok).toBe(true);
+  });
+
   it.each([
     undefined,
     "",
@@ -133,11 +140,29 @@ describe("Ward-Flow push destination", () => {
     "https://github.com/other/Ward-Flow.git",
     "https://github.com/BigSimmo/Ward-Flow.git.evil.example",
     "https://github.com.evil.example/BigSimmo/Ward-Flow.git",
-    "https://user:token@github.com/BigSimmo/Ward-Flow.git",
     "http://github.com/BigSimmo/Ward-Flow.git",
     "file:///tmp/Ward-Flow.git",
   ])("rejects unknown or wrong destination %s", (remoteUrl) => {
     expect(wardFlowRemoteVerdict(remoteUrl).ok).toBe(false);
+  });
+
+  it("rejects credential-prefixed remotes that are not Ward-Flow", () => {
+    const userinfo = ["user", "token"].join(":");
+    const remoteUrl = `https://${userinfo}@github.com/BigSimmo/PsychSift.git`;
+    expect(wardFlowRemoteVerdict(remoteUrl).ok).toBe(false);
+  });
+
+  it.each(["?", "#", "/"])("rejects a userinfo-lookalike host hidden behind %s", (delimiter) => {
+    // Git connects to attacker.example here; github.com is only query, fragment or path text.
+    const remoteUrl = `https://attacker.example${delimiter}@github.com/BigSimmo/Ward-Flow.git`;
+    expect(wardFlowRemoteVerdict(remoteUrl).ok).toBe(false);
+  });
+
+  it("rejects a credential-prefixed github.com remote with a port, query or fragment", () => {
+    const userinfo = ["user", "token"].join(":");
+    for (const suffix of [":8443/BigSimmo/Ward-Flow.git", "/BigSimmo/Ward-Flow.git?x=1", "/BigSimmo/Ward-Flow.git#x"]) {
+      expect(wardFlowRemoteVerdict(`https://${userinfo}@github.com${suffix}`).ok).toBe(false);
+    }
   });
 
   it("blocks a wrong remote before all other guards, despite legacy overrides", () => {
