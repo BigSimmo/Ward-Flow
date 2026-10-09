@@ -27,7 +27,7 @@ if (
   throw new Error("Set the actual Ward Flow coordinator, frontend and administrator identity IDs before running setup");
 if (new URL(config.frontendOrigin).origin !== config.frontendOrigin || !config.frontendOrigin.startsWith("https://"))
   throw new Error("An exact HTTPS frontend origin is required");
-const apiClientId = "9b7b160d-9bc7-4712-b748-17ff3e70b706";
+const apiClientId = "9b7b160d-9bc7-4712-b748-17ff3e70b706"; // gitleaks:allow -- public Entra client ID, not a credential
 
 function az(args, json = true) {
   const result = spawnSync(

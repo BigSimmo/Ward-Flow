@@ -37,3 +37,7 @@
 #     same class as the existing .env.example and backend.test.mjs fingerprints above.
 267d26a416f81ec3b5378521e8a1ebc5b94b74c3:backend/ward-flow/shared-http.test.mjs:generic-api-key:88
 267d26a416f81ec3b5378521e8a1ebc5b94b74c3:backend/ward-flow/azure-setup.mjs:generic-api-key:28
+#   Same two lines in the squashed PR commit after the owner-approved history rewrite (10 Oct 2026);
+#   the lines now carry inline gitleaks:allow so later commits need no new pins.
+b7e1674808dbe0b48459aa0fe65778e933674122:backend/ward-flow/shared-http.test.mjs:generic-api-key:125
+b7e1674808dbe0b48459aa0fe65778e933674122:backend/ward-flow/azure-setup.mjs:generic-api-key:30

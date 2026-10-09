@@ -37,7 +37,7 @@ Record a reviewed effective-privilege report. `infra/verify-reader.sql` provides
 
 Use the exact server hostname, database `wardflow_dev`, verified database login and a trusted CA certificate bundle with hostname verification. On the approved host, acquire the reader's short-lived Entra token at runtime. Do not print, paste, persist or commit it. Do not reuse the administrator's CLI login. Microsoft's token resource is `oss-rdbms`.
 
-For an approved host that already has Azure CLI and `psql`, the following PowerShell example obtains the token into memory, runs only the fixed check file and clears it afterwards. Fill the four non-secret placeholders locally. Use the approved reader's isolated CLI profile; Azure CLI must already be signed in as that identity. An Azure login must not change MFA or Security Defaults.
+For an approved host that already has Azure CLI and `psql`, the following PowerShell example obtains the token into memory, runs only the fixed check file and clears it afterwards. Fill the five non-secret placeholders locally; `APPROVED_SERVER_HOSTNAME` is the `wardflow-dev-aue` flexible server's `.postgres.database.azure.com` name. Use the approved reader's isolated CLI profile; Azure CLI must already be signed in as that identity. An Azure login must not change MFA or Security Defaults.
 
 Start the dedicated PowerShell shell from the Ward Flow repository root on the approved host so the relative SQL file path resolves correctly.
 
@@ -46,7 +46,7 @@ $azureCli = 'PATH_TO_APPROVED_AZURE_CLI'
 $env:AZURE_CONFIG_DIR = 'PATH_TO_READER_ONLY_CLI_PROFILE'
 $env:PGUSER = 'VERIFIED_DATABASE_LOGIN'
 $env:PGSSLROOTCERT = 'PATH_TO_TRUSTED_CA_BUNDLE'
-$env:PGHOST = 'wardflow-dev-aue.postgres.database.azure.com'
+$env:PGHOST = 'APPROVED_SERVER_HOSTNAME'
 $env:PGDATABASE = 'wardflow_dev'
 $env:PGPORT = '5432'
 $env:PGSSLMODE = 'verify-full'

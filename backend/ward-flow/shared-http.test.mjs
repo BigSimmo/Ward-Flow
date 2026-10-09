@@ -122,7 +122,7 @@ test("shared configuration refuses a host that differs from its Ward Flow resour
   const env = {
     AZURE_TENANT_ID: other,
     WARD_ALLOWED_OBJECT_ID: coordinator,
-    WARD_API_AUDIENCE: "9b7b160d-9bc7-4712-b748-17ff3e70b706",
+    WARD_API_AUDIENCE: "9b7b160d-9bc7-4712-b748-17ff3e70b706", // gitleaks:allow -- synthetic API audience (client ID)
     AzureWebJobsStorage__accountName: "wflowdev7273a083aue",
     WARD_SHARED_ENABLED: "true",
     WARD_WORKSPACE_ID: commandId,
