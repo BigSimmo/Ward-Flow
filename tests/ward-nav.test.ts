@@ -78,6 +78,9 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
+import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
+import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
+import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
 
 import {
   WARD_DEVELOPER_HUB_HREF,
@@ -1323,6 +1326,10 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/legal-forms`, render: () => createElement(LegalFormsScreen) },
   { route: `${ROUTE_PREFIX}/alerts`, render: () => createElement(AlertsScreen) },
   { route: `${ROUTE_PREFIX}/sovereign`, render: () => createElement(SovereignShowcaseScreen) },
+  // Read-only reports, 9 Oct 2026 (stream C).
+  { route: `${ROUTE_PREFIX}/statistics/weekly`, render: () => createElement(WeeklyReportScreen) },
+  { route: `${ROUTE_PREFIX}/reports/downtime`, render: () => createElement(DowntimePackScreen) },
+  { route: `${ROUTE_PREFIX}/reports/chronology`, render: () => createElement(PatientChronologyScreen) },
 ];
 
 describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on the map)", () => {
@@ -1409,7 +1416,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
      * — the route scan, this one, and `builtSites`. All three were moved in the same edit. When they
      * are not, two stay right and the third quietly does not, and only running the file finds it.
      */
-    expect(RENDERABLE_ROUTES.length).toBe(36);
+    // 39, not 36: the three read-only reports (statistics/weekly, reports/downtime, reports/chronology), 9 Oct 2026.
+    expect(RENDERABLE_ROUTES.length).toBe(39);
   });
 });
 
