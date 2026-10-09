@@ -486,6 +486,20 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
     "/mockups/ward-flow/ed",
     "The statewide ED index (ed/page.tsx). The rail's Emergency entry opens it through WARD_ED_HREF; this WARD_NAV keeps `ed` as the example department the role switcher uses.",
   ],
+  // Read-only reports (stream C, 9 Oct 2026). Each is a destination inside an existing area, not a
+  // section of the app, so none takes a rail item.
+  [
+    "/mockups/ward-flow/statistics/weekly",
+    "The weekly operations report. Reached from the statistics section track (statistics/statistics-nav.tsx, 'Weekly'), for the same reason as /overview and /compare above.",
+  ],
+  [
+    "/mockups/ward-flow/reports/downtime",
+    "The printable downtime pack. Reached from the Tools drawer's operational shortcuts (tools/ward-tools-workspace.tsx).",
+  ],
+  [
+    "/mockups/ward-flow/reports/chronology",
+    "The PIR patient chronology (D-37, WF-57). Reached from the Tools drawer's operational shortcuts (tools/ward-tools-workspace.tsx).",
+  ],
 ]);
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
