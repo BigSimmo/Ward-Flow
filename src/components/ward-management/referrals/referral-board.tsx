@@ -762,28 +762,25 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                     { id: "history", label: "History", count: decidedTotal },
                   ]}
                 />
-                {/* The search highlights queue rows only, so History (at most ten rows) does not offer it. */}
-                {view === "queue" ? (
-                  <TextInput
-                    type="search"
-                    icon={Search}
-                    boxClassName={a.search}
-                    placeholder="Name, UMRN, hospital or suburb"
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      if (e.target.value) setHighlight(null);
-                    }}
-                    onClear={() => setSearchQuery("")}
-                    aria-label="Highlight referrals"
-                  />
-                ) : null}
+                <TextInput
+                  type="search"
+                  icon={Search}
+                  boxClassName={a.search}
+                  placeholder="Name, UMRN, hospital or suburb"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (e.target.value) setHighlight(null);
+                  }}
+                  onClear={() => setSearchQuery("")}
+                  aria-label="Highlight referrals"
+                />
                 <span className={a.toolbarNote}>
-                  {anyHighlight && view === "queue" ? (
+                  {anyHighlight ? (
                     <>
                       <span data-testid="ward-referral-highlight-note">
                         <b>
-                          {highlightedCount} of {queued.length}
+                          {view === "queue" ? highlightedCount : decided.filter(isHighlighted).length} of {view === "queue" ? queued.length : decided.length}
                         </b>{" "}
                         highlighted · all still shown
                       </span>
@@ -817,6 +814,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                 <DecidedSection
                   decided={decided}
                   decidedTotal={decidedTotal}
+                  isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
                   units={units}
                   movements={movements}
                   patients={patients}
@@ -1384,6 +1382,7 @@ function DecidedSection({
   decided,
   displayDecided = decided,
   decidedTotal,
+  isHighlighted = () => false,
   units,
   movements = [],
   patients = [],
@@ -1395,6 +1394,7 @@ function DecidedSection({
   decided: Referral[];
   displayDecided?: Referral[];
   decidedTotal: number;
+  isHighlighted?: (referral: Referral) => boolean;
   units: Unit[];
   movements?: Movement[];
   patients?: Patient[];
@@ -1548,6 +1548,14 @@ function DecidedSection({
                   </button>
                 </li>
               );
+            })}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
+         );
             })}
           </ul>
         </>
