@@ -1,3 +1,10 @@
+import { reduceProtectedRecordEvent } from "./ward-flow-protected-record-reducer";
+import {
+  prepareCareTransfer,
+  transferredCareAdmission,
+  type AdmissionCareContext,
+  type RecordDenial,
+} from "./ward-flow-admission-care-reducer";
 import { reduceTransportCancellationEvent } from "./ward-flow-transport-cancellation-reducer";
 import { reduceTransportStopEvent } from "./ward-flow-transport-stop-reducer";
 import { reduceTransportBookingEvent } from "./ward-flow-transport-booking-reducer";
@@ -16,31 +23,10 @@ import { reduceBedReleaseEvent } from "./ward-flow-bed-release-reducer";
 import { reduceCapacityEvent } from "./ward-flow-capacity-reducer";
 import { reduceSettingsEvent } from "./ward-flow-settings-reducer";
 
-import {
-  validCareChange,
-  careChangeRefusal,
-  applyCareChange,
-  emptyCareJourney,
-  recordedCommunityTransition,
-} from "./ward-care-journey";
-import {
-  appendAudit,
-  classifyAuditEvent,
-  finiteInstant,
-  reviewDecision,
-  type AuditDecision,
-  type WardAuditState,
-} from "./ward-audit";
-import {
-  dischargeIdentity,
-  readOpenedDischargeRecord,
-  safeCounter,
-  selectDischargeRecord,
-  uniqueRecord,
-  validRecordActor,
-  type WardRecordActor,
-} from "./ward-discharge-records";
-import { isLeavingDestination, isFollowUpState, daysInBed, type LeavingDestination } from "./ward-admissions";
+import { emptyCareJourney, type CareJourney, recordedCommunityTransition } from "./ward-care-journey";
+import { appendAudit, classifyAuditEvent, finiteInstant, type AuditDecision, type WardAuditState } from "./ward-audit";
+import { safeCounter, uniqueRecord } from "./ward-discharge-records";
+import { isLeavingDestination, daysInBed, type LeavingDestination } from "./ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
@@ -1484,43 +1470,6 @@ function departAdmission(
   });
 }
 
-type ProtectedRecordEvent = Extract<
-  WardFlowEvent,
-  {
-    type:
-      | "OPEN_DISCHARGE_RECORD"
-      | "REVIEW_AUDIT_EVENT"
-      | "RECORD_PATIENT_DISCHARGE"
-      | "RECORD_ADMISSION_FOLLOW_UP"
-      | "RECORD_ADMISSION_CARE";
-  }
->;
-
-function protectedRefusal(
-  state: WardFlowState,
-  event: ProtectedRecordEvent,
-  decision: AuditDecision,
-  rejectionReason = "Request could not be completed",
-): WardFlowState {
-  const rejected =
-    finiteInstant(event.now) === null
-      ? state
-      : {
-          ...state,
-          rejections: [
-            ...state.rejections,
-            {
-              id: `record-rejection-${state.auditSequence + 1}`,
-              at: event.now,
-              movementId: "none",
-              attempted: event.type,
-              reason: rejectionReason,
-            },
-          ],
-        };
-  return appendAudit(state, rejected, event, decision);
-}
-
 /**
  * Whether a PATIENT RECORD's free-text legal status is involuntary, for the two discharge guards
  * below. `Patient.legalStatus` is free text: the seed writes "Involuntary patient (recorded)" (and
@@ -1549,327 +1498,58 @@ function dischargeMovement(state: WardFlowState, admission: Admission): Movement
   );
 }
 
-function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): WardFlowState {
-  const deny = (
-    reasonCode: AuditDecision["reasonCode"],
-    outcome: AuditDecision["outcome"] = "denied",
-    rejectionReason?: string,
-  ) => protectedRefusal(state, event, { outcome, reasonCode }, rejectionReason);
-  // Role is inspected before any protected payload or legacy rejection helper.
-  if (!EVENT_ROLE[event.type].includes(event.role)) return deny("role");
-  if (finiteInstant(event.now) === null || !safeCounter(event.expectedGeneration)) return deny("invalid-payload");
-  if (event.expectedGeneration !== state.worldGeneration) return deny("generation", "stale");
-
-  if (event.type === "REVIEW_AUDIT_EVENT") {
-    if (!safeCounter(event.expectedReviewCount) || !reviewDecision(event.decision)) return deny("invalid-payload");
-    const entry = uniqueRecord(state.auditEvents, event.eventId);
-    if (!entry || entry.generation !== state.worldGeneration || entry.category === "review")
-      return deny("missing-or-inaccessible");
-    const count = state.auditReviews.filter(
-      (review) => review.eventId === entry.id && review.generation === state.worldGeneration,
-    ).length;
-    if (count !== event.expectedReviewCount) return deny("revision", "stale");
-    if (!safeCounter(state.auditReviewSequence) || state.auditReviewSequence >= Number.MAX_SAFE_INTEGER)
-      return deny("invalid-payload");
-    const sequence = state.auditReviewSequence + 1;
-    return appendAudit(
-      state,
-      {
-        ...state,
-        auditReviewSequence: sequence,
-        auditReviews: [
-          ...state.auditReviews,
-          {
-            id: `audit-review-${sequence}`,
-            eventId: entry.id,
-            generation: state.worldGeneration,
-            at: event.now,
-            byRole: "coordinator",
-            decision: event.decision,
-          },
-        ],
-      },
-      event,
-      { outcome: "accepted", reasonCode: "none" },
-    );
-  }
-
-  const actor = (
-    "actingUnitId" in event
-      ? { role: event.role, actingUnitId: event.actingUnitId }
-      : "actingTeamId" in event
-        ? { role: event.role, actingTeamId: event.actingTeamId }
-        : { role: event.role }
-  ) as WardRecordActor;
-  if (!validRecordActor(actor)) return deny("scope");
-  if (event.type === "OPEN_DISCHARGE_RECORD") {
-    if (!safeCounter(event.requestId)) return deny("invalid-payload");
-    const previous = state.auditEvents.find(
-      (entry) =>
-        entry.category === "record-access" &&
-        entry.generation === state.worldGeneration &&
-        entry.details.requestId === event.requestId,
-    );
-    if (previous) {
-      const read = readOpenedDischargeRecord(state, actor, event.admissionId, {
-        generation: event.expectedGeneration,
-        requestId: event.requestId,
-      });
-      return read.status === "allowed" ? state : deny("missing-or-inaccessible");
-    }
-    if (selectDischargeRecord(state, actor, event.admissionId).status === "denied")
-      return deny("missing-or-inaccessible");
-    return appendAudit(state, state, event, { outcome: "accepted", reasonCode: "none" });
-  }
-
-  if (!safeCounter(event.expectedRevision)) return deny("invalid-payload");
-  const admission = uniqueRecord(state.admissions, event.admissionId);
-  const unit = uniqueRecord(
-    state.units,
-    (event.type === "RECORD_ADMISSION_FOLLOW_UP" || event.type === "RECORD_ADMISSION_CARE") &&
-      (event.role === "coordinator" || event.role === "community")
-      ? admission?.unitId
-      : event.actingUnitId,
-  );
-  if (!unit || !admission || !uniqueRecord(state.units, admission.unitId)) return deny("missing-or-inaccessible");
-  if (admission.unitId !== unit.id) return deny("scope");
-  const identity = dischargeIdentity(state, admission);
-  if (identity.kind !== "linked" || identity.patient.id !== event.patientId) return deny("identity-link");
-  const revision = state.dischargeRevisions[admission.id] ?? 0;
-  if (!safeCounter(revision) || revision >= Number.MAX_SAFE_INTEGER) return deny("invalid-payload");
-  if (revision !== event.expectedRevision) return deny("revision", "stale");
-  if (event.type === "RECORD_ADMISSION_CARE") {
-    if (selectDischargeRecord(state, actor, admission.id).status === "denied") return deny("scope");
-    if (!validCareChange(event.change)) return deny("invalid-payload");
-    if (event.role === "community" && !["follow_up", "contact", "plan", "document"].includes(event.change.kind))
-      return deny("role");
-    if (
-      (admission.state !== "occupied" && admission.state !== "departed") ||
-      (admission.arrivedAt !== null && event.now < admission.arrivedAt)
-    )
-      return deny("transition");
-    if (
-      event.role === "community" &&
-      ((event.change.kind === "follow_up" && event.change.serviceId !== event.actingTeamId) ||
-        (event.change.kind === "contact" &&
-          admission.careJourney?.followUp &&
-          admission.careJourney.followUp.serviceId !== event.actingTeamId))
-    )
-      return deny("scope");
-    // D-30: only the central bed coordinator accepts an inter-ward transfer.
-    if (event.change.kind === "transfer" && event.change.step === "accepted" && event.role !== "coordinator")
-      return deny("role");
-    const refusal = careChangeRefusal(admission, event.change, event.now);
-    if (refusal) return deny("transition", "denied", refusal);
-    if (event.change.kind === "transfer" && !uniqueRecord(state.units, event.change.receivingUnitId))
-      return deny("missing-or-inaccessible");
-    if (
-      event.change.kind === "transport" &&
-      event.change.authority === "none" &&
-      ["ambulance", "service_vehicle", "police", "rfds"].includes(event.change.mode)
-    ) {
-      const movement = dischargeMovement(state, admission);
-      const patient = uniqueRecord(state.patients, admission.patientId);
-      if (patientRecordIsInvoluntary(patient?.legalStatus) || (movement && movement.legalStatus !== "Voluntary"))
-        return deny("transition", "denied", "Record the checked transport authority for this involuntary arrangement.");
-    }
-    if (event.change.kind === "legal" && event.change.authority === "5B") {
-      const previous = admission.careJourney?.legal?.authority ?? dischargeMovement(state, admission)?.legalForm?.code;
-      if (previous !== "5A" && previous !== "5B")
-        return deny(
-          "transition",
-          "denied",
-          "A Form 5B continuation needs a recorded Form 5A or earlier Form 5B for this stay.",
-        );
-    }
-    const careJourney = applyCareChange(
-      admission.careJourney ?? emptyCareJourney(),
-      event.change,
+function arriveCareTransfer(
+  context: AdmissionCareContext,
+  next: WardFlowState,
+  careJourney: CareJourney,
+  deny: RecordDenial,
+): WardFlowState {
+  const { event, admission, unit } = context;
+  if (event.type === "RECORD_ADMISSION_CARE" && event.change.kind === "transfer" && event.change.step === "arrived") {
+    const transfer = prepareCareTransfer(context, { dischargeMovement }, deny);
+    if ("denied" in transfer) return transfer.denied;
+    const { receiving, movement, bedKind, id, movementId } = transfer;
+    next = departAdmission(
+      next,
+      { ...admission, careJourney },
+      unit,
       event.now,
-      WARD_FLOW_ROLE_LABELS[event.role],
+      "transferred-to-another-psychiatric-ward",
     );
-    let next = replaceAdmission(state, admission.id, {
-      ...admission,
-      careJourney,
-      ...(event.change.kind === "follow_up"
-        ? {
-            followUp: {
-              state: "arranged" as const,
-              recordedAt: event.now,
-              recordedBy: WARD_FLOW_ROLE_LABELS[event.role],
-            },
-          }
-        : {}),
+    next = replaceUnit(next, receiving.id, {
+      ...receiving,
+      empty: { ...receiving.empty, value: receiving.empty.value - 1, confirmedAt: event.now },
+      allocatable: { ...receiving.allocatable, value: receiving.allocatable.value - 1, confirmedAt: event.now },
+      allocatableLocked: receiving.allocatableLocked - (bedKind === "locked" ? 1 : 0),
+      sexMix: adjustSexMix(receiving.sexMix, mixSexOf(admission.gender, admission.sex), 1),
     });
-    if (event.change.kind === "transfer" && event.change.step === "arrived") {
-      if (event.role !== "coordinator" || admission.state !== "occupied") return deny("role");
-      const receiving = uniqueRecord(state.units, event.change.receivingUnitId);
-      const movement = dischargeMovement(state, admission);
-      if (
-        !receiving ||
-        !safeCounter(receiving.empty.value) ||
-        receiving.empty.value <= 0 ||
-        !movement ||
-        !eligibility(movement, receiving, event.now).eligible
-      )
-        return deny(
-          "transition",
-          "denied",
-          "The receiving ward must have a suitable available bed and a linked placement record.",
-        );
-      if (
-        state.admissions.some(
-          (a) =>
-            a.id !== admission.id &&
-            a.patientId === admission.patientId &&
-            (a.state === "occupied" || a.state === "pulled"),
-        )
-      )
-        return deny("transition", "denied", "The patient already has another occupied or held bed.");
-      if (
-        (admission.specialling && remainingSpeciallingCapacity(receiving, state.admissions) <= 0) ||
-        (admission.highAcuity && remainingHighAcuityCapacity(receiving, state.admissions) <= 0)
-      )
-        return deny("transition", "denied", "The receiving ward must have the required staffing capacity.");
-      const bedKind =
-        movement.legalStatus === "Voluntary" && openBedsFree(receiving) > 0 ? ("open" as const) : ("locked" as const);
-      if (bedKind === "locked" && lockedBedsFree(receiving) <= 0) return deny("transition");
-      const id = `transfer-${admission.id}-${revision + 1}`;
-      const movementId: MovementId = `WF-${id}`;
-      if (state.admissions.some((a) => a.id === id) || state.movements.some((m) => m.id === movementId))
-        return deny("invalid-payload");
-      next = departAdmission(
-        next,
-        { ...admission, careJourney },
-        unit,
-        event.now,
-        "transferred-to-another-psychiatric-ward",
-      );
-      next = replaceUnit(next, receiving.id, {
-        ...receiving,
-        empty: { ...receiving.empty, value: receiving.empty.value - 1, confirmedAt: event.now },
-        allocatable: { ...receiving.allocatable, value: receiving.allocatable.value - 1, confirmedAt: event.now },
-        allocatableLocked: receiving.allocatableLocked - (bedKind === "locked" ? 1 : 0),
-        sexMix: adjustSexMix(receiving.sexMix, mixSexOf(admission.gender, admission.sex), 1),
-      });
-      next = {
-        ...next,
-        admissions: [
-          ...next.admissions,
-          {
-            ...admission,
-            id,
-            unitId: receiving.id,
-            movementId,
-            state: "occupied",
-            bedKind,
-            pulledAt: event.now,
-            arrivedAt: event.now,
-            leftAt: null,
-            leavingDestination: null,
-            expectedDischargeAt: null,
-            dischargeConfirmedAt: null,
-            dischargeDateSetAt: null,
-            dischargeDateSetBy: null,
-            dischargeConfirmedBy: null,
-            dischargeDateMoves: 0,
-            blockReason: null,
-            awayAtEmergencyDepartmentSince: null,
-            careJourney: { ...emptyCareJourney(), followUp: careJourney.followUp },
-          },
-        ],
-        movements: [
-          ...next.movements,
-          {
-            ...movement,
-            id: movementId,
-            admissionId: id,
-            acceptedUnitId: receiving.id,
-            stage: "arrived",
-            openedAt: event.now,
-            referredAt: undefined,
-            acceptedAt: undefined,
-            referredUnitIds: [receiving.id],
-            arrivalDetails: undefined,
-            arrivalLateNotifiedAt: undefined,
-            expectFlag: undefined,
-            stageChanges: [{ at: event.now, to: "arrived", by: event.role, reason: "Recorded ward transfer arrival" }],
-            transport: undefined,
-            closure: { at: event.now, outcome: "arrived", reason: "Recorded ward transfer arrival" },
-          },
-        ],
-        dischargeRevisions: { ...next.dischargeRevisions, [id]: 0 },
-      };
-    }
-    return appendAudit(
-      state,
-      { ...next, dischargeRevisions: { ...next.dischargeRevisions, [admission.id]: revision + 1 } },
-      event,
-      { outcome: "accepted", reasonCode: "none" },
-    );
+    next = {
+      ...next,
+      admissions: [...next.admissions, transferredCareAdmission(context, transfer, careJourney)],
+      movements: [
+        ...next.movements,
+        {
+          ...movement,
+          id: movementId,
+          admissionId: id,
+          acceptedUnitId: receiving.id,
+          stage: "arrived",
+          openedAt: event.now,
+          referredAt: undefined,
+          acceptedAt: undefined,
+          referredUnitIds: [receiving.id],
+          arrivalDetails: undefined,
+          arrivalLateNotifiedAt: undefined,
+          expectFlag: undefined,
+          stageChanges: [{ at: event.now, to: "arrived", by: event.role, reason: "Recorded ward transfer arrival" }],
+          transport: undefined,
+          closure: { at: event.now, outcome: "arrived", reason: "Recorded ward transfer arrival" },
+        },
+      ],
+      dischargeRevisions: { ...next.dischargeRevisions, [id]: 0 },
+    };
   }
-  if (event.type === "RECORD_ADMISSION_FOLLOW_UP") {
-    if (typeof event.followUpState !== "string" || !isFollowUpState(event.followUpState))
-      return deny("invalid-payload");
-    if (
-      (admission.state !== "occupied" && admission.state !== "departed") ||
-      admission.leavingDestination === "died-on-the-ward"
-    )
-      return deny("transition");
-    if (admission.arrivedAt !== null && event.now < admission.arrivedAt) return deny("invalid-payload");
-    const next = replaceAdmission(state, admission.id, {
-      ...admission,
-      followUp: { state: event.followUpState, recordedAt: event.now, recordedBy: WARD_FLOW_ROLE_LABELS[event.role] },
-    });
-    return appendAudit(
-      state,
-      {
-        ...next,
-        dischargeRevisions: { ...next.dischargeRevisions, [admission.id]: revision + 1 },
-      },
-      event,
-      { outcome: "accepted", reasonCode: "none" },
-    );
-  }
-  if (!isLeavingDestination(event.leavingDestination)) return deny("invalid-payload");
-  if (admission.state !== "occupied") return deny("transition");
-  if (admission.arrivedAt !== null && event.now < admission.arrivedAt) return deny("invalid-payload");
-
-  // Involuntary patient discharge boundary (WA Mental Health Act 2014)
-  const fullPatient = uniqueRecord(state.patients, identity.patient.id);
-  const linkedMovement = dischargeMovement(state, admission);
-  if (
-    patientRecordIsInvoluntary(fullPatient?.legalStatus) ||
-    (linkedMovement?.legalStatus !== undefined && linkedMovement.legalStatus !== "Voluntary")
-  ) {
-    if (
-      event.leavingDestination === "discharged-to-the-community" ||
-      event.leavingDestination === "left-against-advice"
-    ) {
-      if (!recordedCommunityTransition(admission, linkedMovement?.statusChanges.at(-1)?.at, event.leavingDestination)) {
-        return deny(
-          "transition",
-          "denied",
-          "Cannot discharge an involuntary patient without an explicit revocation order or recorded community treatment order transition.",
-        );
-      }
-    }
-  }
-
-  // Discharge blocked while in transit
-  if (
-    linkedMovement &&
-    (linkedMovement.stage === "moving" ||
-      (linkedMovement.transport?.collectedAt !== undefined &&
-        linkedMovement.transport.arrivedAt === undefined &&
-        linkedMovement.transport.cancelledAt === undefined))
-  ) {
-    return deny("transition", "denied", "Patient is currently in transit to another facility.");
-  }
-  return appendAudit(state, departAdmission(state, admission, unit, event.now, event.leavingDestination), event, {
-    outcome: "accepted",
-    reasonCode: "none",
-  });
+  return next;
 }
 
 /** Any ward-resource update invalidates a capacity draft, including protected departures. */
@@ -1899,7 +1579,17 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
     (!safeCounter(state.auditSequence) || state.auditSequence >= Number.MAX_SAFE_INTEGER)
   )
     return state;
-  if (protectedEvent) return advanceResourceRevisions(state, reduceRecordEvent(state, event));
+  if (protectedEvent)
+    return advanceResourceRevisions(
+      state,
+      reduceProtectedRecordEvent(state, event, {
+        replaceAdmission,
+        departAdmission,
+        dischargeMovement,
+        patientRecordIsInvoluntary,
+        arriveCareTransfer,
+      }),
+    );
   if (
     (event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO") &&
     (!safeCounter(state.worldGeneration) || state.worldGeneration >= Number.MAX_SAFE_INTEGER)

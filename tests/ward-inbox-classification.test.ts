@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import ts from "typescript";
 
 import { describe, expect, it } from "vitest";
 
@@ -18,6 +19,114 @@ const NOW = NOW_ANCHOR;
 const DERIVATIONS = "src/components/ward-management/ward-derivations.ts";
 
 const KINDS: readonly InboxItemKind[] = ["fact", "commitment"];
+
+/** Follow the builder's actual composition, including categories dormant in today's fixtures. */
+function emittingInboxCategories(source: string): string[] {
+  const file = ts.createSourceFile(DERIVATIONS, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const functions = new Map(
+    file.statements.filter(ts.isFunctionDeclaration).map((declaration) => [declaration.name?.text, declaration]),
+  );
+  const factory = functions.get("actionInboxItem");
+  const factoryReturn = factory?.body?.statements[0];
+  if (
+    !factoryReturn ||
+    !ts.isReturnStatement(factoryReturn) ||
+    !factoryReturn.expression ||
+    !ts.isObjectLiteralExpression(factoryReturn.expression)
+  )
+    throw new Error("Missing classified row factory");
+  const properties = factoryReturn.expression.properties.filter(ts.isPropertyAssignment);
+  const kind = properties.find((property) => property.name.getText(file) === "kind")?.initializer;
+  const id = properties.find((property) => property.name.getText(file) === "id")?.initializer;
+  function categoryProperty(node: ts.Node | undefined, property: string): boolean {
+    return (
+      !!node &&
+      ts.isPropertyAccessExpression(node) &&
+      node.name.text === property &&
+      ts.isElementAccessExpression(node.expression) &&
+      node.expression.expression.getText(file) === "INBOX_CATEGORIES" &&
+      node.expression.argumentExpression.getText(file) === "category"
+    );
+  }
+  if (
+    !categoryProperty(kind, "kind") ||
+    !id ||
+    !ts.isTemplateExpression(id) ||
+    !categoryProperty(id.templateSpans[0]?.expression, "idPrefix")
+  )
+    throw new Error("Row identity and kind must use the declared category table entry");
+  const builder = functions.get("buildActionInbox");
+  if (!builder?.body || builder.body.statements.length !== 1) throw new Error("Unexpected inbox composition");
+  const statement = builder.body.statements[0];
+  if (!ts.isReturnStatement(statement) || !statement.expression || !ts.isArrayLiteralExpression(statement.expression))
+    throw new Error("Inbox composition must return its category array");
+  const categories: string[] = [];
+  for (const element of statement.expression.elements) {
+    if (
+      !ts.isSpreadElement(element) ||
+      !ts.isCallExpression(element.expression) ||
+      !ts.isIdentifier(element.expression.expression)
+    )
+      throw new Error("Unclassified row in inbox composition");
+    const helper = functions.get(element.expression.expression.text);
+    if (!helper?.body) throw new Error("Missing inbox category helper");
+    const finalStatement = helper.body.statements.at(-1);
+    if (
+      !finalStatement ||
+      !ts.isReturnStatement(finalStatement) ||
+      !finalStatement.expression ||
+      !ts.isIdentifier(finalStatement.expression)
+    )
+      throw new Error("A category helper must return its local row array");
+    const arrayName = finalStatement.expression.text;
+    const localArray = helper.body.statements
+      .filter(ts.isVariableStatement)
+      .flatMap((statement) => [...statement.declarationList.declarations])
+      .find((declaration) => ts.isIdentifier(declaration.name) && declaration.name.text === arrayName);
+    if (
+      !localArray?.initializer ||
+      !ts.isArrayLiteralExpression(localArray.initializer) ||
+      localArray.initializer.elements.length !== 0
+    )
+      throw new Error("The returned row array must be locally initialised empty");
+    const pushes: ts.CallExpression[] = [];
+    const returns: ts.ReturnStatement[] = [];
+    function visit(node: ts.Node): void {
+      if (ts.isReturnStatement(node)) returns.push(node);
+      if (
+        ts.isCallExpression(node) &&
+        ts.isPropertyAccessExpression(node.expression) &&
+        node.expression.name.text === "push"
+      )
+        pushes.push(node);
+      ts.forEachChild(node, visit);
+    }
+    visit(helper.body);
+    if (returns.length !== 1) throw new Error("A category helper must not emit additional return rows");
+    if (pushes.length !== 1) throw new Error("Each category helper must have exactly one row-emitting block");
+    const push = pushes[0].expression;
+    if (!ts.isPropertyAccessExpression(push) || !ts.isIdentifier(push.expression) || push.expression.text !== arrayName)
+      throw new Error("The classified push must fill the returned row array");
+    const row = pushes[0].arguments[0];
+    if (
+      pushes[0].arguments.length !== 1 ||
+      !row ||
+      !ts.isCallExpression(row) ||
+      !ts.isIdentifier(row.expression) ||
+      row.expression.text !== "actionInboxItem"
+    )
+      throw new Error("Unclassified row-emitting block");
+    const category = row.arguments[1];
+    if (!category || !ts.isStringLiteral(category)) throw new Error("A row-emitting block must declare its category");
+    categories.push(category.text);
+  }
+  if (categories.length === 0) throw new Error("The scan found no row-emitting blocks");
+  if (new Set(categories).size !== categories.length) throw new Error("Duplicate row-emitting category");
+  if (categories.some((category) => !Object.hasOwn(INBOX_CATEGORIES, category)))
+    throw new Error("Unclassified category");
+  if (categories.length !== Object.keys(INBOX_CATEGORIES).length) throw new Error("Missing row-emitting category");
+  return categories;
+}
 
 /**
  * A real, valid, open fixture movement to spread from — same template and the same `Object.assign`
@@ -102,25 +211,72 @@ describe("every action-inbox category is classified as a fact or a commitment", 
    * ⚠️ **THE ROT GUARD, AND IT READS THE SOURCE BECAUSE NOTHING ELSE CAN SEE A CATEGORY THAT WAS
    * NEVER GIVEN A TABLE ENTRY.** The runtime test above catches a new category only when the
    * fixture happens to populate it; two of the five are empty on the real seed, so "a category
-   * exists but nothing triggers it" is a real state this inbox has been in for months. Counting the
-   * `items.push({` blocks inside `buildActionInbox` catches it the moment it is written.
+   * exists but nothing triggers it" is a real state this inbox has been in for months. Follow the
+   * builder's category helpers and each helper's row-emitting block, rather than fixture coverage.
    */
   it("has exactly one INBOX_CATEGORIES entry per row-emitting block in buildActionInbox", () => {
     const source = readFileSync(DERIVATIONS, "utf8");
-    const start = source.indexOf("export function buildActionInbox");
-    expect(start, "buildActionInbox is no longer declared where this guard looks for it").toBeGreaterThan(-1);
-    const end = source.indexOf("\n}", source.indexOf("return items;", start));
-    expect(end).toBeGreaterThan(start);
-    const body = source.slice(start, end);
-
-    const pushes = body.match(/items\.push\(\{/g) ?? [];
+    const categories = emittingInboxCategories(source);
     // Anti-vacuity on the scan itself: a body that matched nothing would agree with an empty table.
-    expect(pushes.length, "the scan found no row-emitting blocks — it is measuring the wrong text").toBeGreaterThan(0);
-    expect(
-      pushes.length,
-      "buildActionInbox emits a number of categories that INBOX_CATEGORIES does not account for",
-    ).toBe(Object.keys(INBOX_CATEGORIES).length);
+    expect(categories.length, "the scan found no row-emitting blocks — it is measuring the wrong text").toBeGreaterThan(
+      0,
+    );
+    expect(categories.sort()).toEqual(Object.keys(INBOX_CATEGORIES).sort());
   });
+
+  it.each([
+    {
+      label: "empty composition",
+      before: "...unlawfulDestinationInbox(movements, units),",
+      after: "",
+      removeAll: true,
+    },
+    { label: "missing category", before: "...unlawfulDestinationInbox(movements, units),", after: "" },
+    { label: "duplicate category", before: '"destination_unlawful", {', after: '"legal_timing_breached", {' },
+    { label: "unclassified category", before: '"destination_unlawful", {', after: '"future_unclassified", {' },
+    {
+      label: "unclassified row",
+      before: 'actionInboxItem(movement, "destination_unlawful", {',
+      after: 'unknownRowFactory(movement, "destination_unlawful", {',
+    },
+    { label: "factory kind bypass", before: "kind: INBOX_CATEGORIES[category].kind", after: 'kind: "commitment"' },
+    { label: "factory prefix bypass", before: "INBOX_CATEGORIES[category].idPrefix", after: '"unclassified-"' },
+    {
+      label: "extra emitting block",
+      before: 'actionInboxItem(movement, "destination_unlawful", {',
+      after: 'actionInboxItem(movement, "destination_unlawful", {',
+      extraPush: true,
+    },
+    {
+      label: "additional conditional return row",
+      before: "return items;",
+      after: 'if (rareCondition) return [...items, { id: "unclassified-row" }]; return items;',
+    },
+    {
+      label: "push receiver differs from returned array",
+      before: 'actionInboxItem(movement, "destination_unlawful", {',
+      after: 'actionInboxItem(movement, "destination_unlawful", {',
+      wrongReceiver: true,
+    },
+  ])(
+    "the source guard rejects $label even without a triggering movement",
+    ({ before, after, removeAll, extraPush, wrongReceiver }) => {
+      const source = readFileSync(DERIVATIONS, "utf8");
+      expect(source).toContain(before);
+      const changed = removeAll
+        ? source.replace(/\.\.\.[A-Za-z]+Inbox\(movements[^\n]*\),/g, "")
+        : wrongReceiver
+          ? source.replace("items.push(", "otherArray.push(")
+          : extraPush
+            ? source.replace(
+                "const noLongerLawful = movements",
+                "items.push(unclassifiedRow);\n  const noLongerLawful = movements",
+              )
+            : source.replace(before, after);
+      expect(changed).not.toBe(source);
+      expect(() => emittingInboxCategories(changed)).toThrow();
+    },
+  );
 
   /**
    * 🔴 **THE ANTI-VACUITY ASSERTION THE BRIEF ASKED FOR, IN THE ONLY HONEST FORM AVAILABLE.**

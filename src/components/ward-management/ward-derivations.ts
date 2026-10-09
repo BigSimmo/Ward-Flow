@@ -1171,6 +1171,31 @@ export type InboxItem = {
  * every qualifying movement gets its own row.
  */
 export function buildActionInbox(movements: Movement[], now: Instant, units: Unit[]): InboxItem[] {
+  // Category order is the coordinator's presentation order; preserve input order within each group.
+  return [
+    ...unlawfulDestinationInbox(movements, units),
+    ...breachedLegalInbox(movements, now),
+    ...expiredBedPullInbox(movements, now),
+    ...declinedDestinationsInbox(movements),
+    ...stalledTransportInbox(movements),
+  ];
+}
+
+function actionInboxItem(
+  movement: Movement,
+  category: keyof typeof INBOX_CATEGORIES,
+  presentation: Pick<InboxItem, "tone" | "icon" | "title" | "detail">,
+): InboxItem {
+  return {
+    id: `${INBOX_CATEGORIES[category].idPrefix}${movement.id}`,
+    kind: INBOX_CATEGORIES[category].kind,
+    ...presentation,
+    owner: movement.owner,
+    movementId: movement.id,
+  };
+}
+
+function unlawfulDestinationInbox(movements: Movement[], units: Unit[]): InboxItem[] {
   const items: InboxItem[] = [];
 
   // A legal status change can make an already-accepted destination unlawful — see
@@ -1180,17 +1205,21 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
     .map((movement) => ({ movement, unit: destinationNoLongerLawful(movement, units) }))
     .filter((entry): entry is { movement: Movement; unit: Unit } => entry.unit !== undefined);
   for (const { movement, unit } of noLongerLawful) {
-    items.push({
-      id: `${INBOX_CATEGORIES.destination_unlawful.idPrefix}${movement.id}`,
-      kind: INBOX_CATEGORIES.destination_unlawful.kind,
-      tone: "danger",
-      icon: CircleAlert,
-      title: "Accepted destination no longer suitable",
-      detail: `${movement.id} · ${unit.name} is not set up for involuntary admissions (demo) for ${movement.legalStatus}`,
-      owner: movement.owner,
-      movementId: movement.id,
-    });
+    items.push(
+      actionInboxItem(movement, "destination_unlawful", {
+        tone: "danger",
+        icon: CircleAlert,
+        title: "Accepted destination no longer suitable",
+        detail: `${movement.id} · ${unit.name} is not set up for involuntary admissions (demo) for ${movement.legalStatus}`,
+      }),
+    );
   }
+
+  return items;
+}
+
+function breachedLegalInbox(movements: Movement[], now: Instant): InboxItem[] {
+  const items: InboxItem[] = [];
 
   // A form with no `dueAt` is never breached and contributes nothing here; `undefined` must never
   // reach `clockState`'s arithmetic. As of the 2026-08-23 product-owner correction that is every
@@ -1206,17 +1235,21 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
   for (const movement of breachedLegal) {
     const dueAt = movement.legalForm?.dueAt;
     if (dueAt === undefined) continue;
-    items.push({
-      id: `${INBOX_CATEGORIES.legal_timing_breached.idPrefix}${movement.id}`,
-      kind: INBOX_CATEGORIES.legal_timing_breached.kind,
-      tone: "danger",
-      icon: CircleAlert,
-      title: "Legal due time passed",
-      detail: `${movement.id} · ${formatRemaining(minutesUntil(dueAt, now))}`,
-      owner: movement.owner,
-      movementId: movement.id,
-    });
+    items.push(
+      actionInboxItem(movement, "legal_timing_breached", {
+        tone: "danger",
+        icon: CircleAlert,
+        title: "Legal due time passed",
+        detail: `${movement.id} · ${formatRemaining(minutesUntil(dueAt, now))}`,
+      }),
+    );
   }
+
+  return items;
+}
+
+function expiredBedPullInbox(movements: Movement[], now: Instant): InboxItem[] {
+  const items: InboxItem[] = [];
 
   const expiredBedPulls = movements.filter(
     (movement) => movement.stage === "pulled" && movement.pullExpiresAt !== undefined && movement.pullExpiresAt < now,
@@ -1224,17 +1257,21 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
   for (const movement of expiredBedPulls) {
     const pullExpiresAt = movement.pullExpiresAt;
     if (pullExpiresAt === undefined) continue;
-    items.push({
-      id: `${INBOX_CATEGORIES.bed_pull_expired.idPrefix}${movement.id}`,
-      kind: INBOX_CATEGORIES.bed_pull_expired.kind,
-      tone: "danger",
-      icon: CircleAlert,
-      title: "Bed pull expired",
-      detail: `${movement.id} · ${formatRemaining(minutesUntil(pullExpiresAt, now))}`,
-      owner: movement.owner,
-      movementId: movement.id,
-    });
+    items.push(
+      actionInboxItem(movement, "bed_pull_expired", {
+        tone: "danger",
+        icon: CircleAlert,
+        title: "Bed pull expired",
+        detail: `${movement.id} · ${formatRemaining(minutesUntil(pullExpiresAt, now))}`,
+      }),
+    );
   }
+
+  return items;
+}
+
+function declinedDestinationsInbox(movements: Movement[]): InboxItem[] {
+  const items: InboxItem[] = [];
 
   // Whole-branch review Important 4: this counts DECLINES, and the title used to claim the
   // PARALLEL REFERRAL CAP had been reached — two different denominators (`ward-priority.ts`
@@ -1253,17 +1290,21 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
     (movement) => movement.declines.length >= PARALLEL_REFERRAL_CAP && movement.acceptedUnitId === undefined,
   );
   for (const movement of heavilyDeclined) {
-    items.push({
-      id: `${INBOX_CATEGORIES.destinations_declined.idPrefix}${movement.id}`,
-      kind: INBOX_CATEGORIES.destinations_declined.kind,
-      tone: "danger",
-      icon: CircleAlert,
-      title: "Multiple destinations declined",
-      detail: `${movement.id} · ${movement.declines.length} destinations have declined`,
-      owner: movement.owner,
-      movementId: movement.id,
-    });
+    items.push(
+      actionInboxItem(movement, "destinations_declined", {
+        tone: "danger",
+        icon: CircleAlert,
+        title: "Multiple destinations declined",
+        detail: `${movement.id} · ${movement.declines.length} destinations have declined`,
+      }),
+    );
   }
+
+  return items;
+}
+
+function stalledTransportInbox(movements: Movement[]): InboxItem[] {
+  const items: InboxItem[] = [];
 
   const stalledTransport = movements.filter(
     (movement) =>
@@ -1273,16 +1314,14 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
   );
   for (const movement of stalledTransport) {
     if (!movement.transport) continue;
-    items.push({
-      id: `${INBOX_CATEGORIES.transport_awaiting_departure.idPrefix}${movement.id}`,
-      kind: INBOX_CATEGORIES.transport_awaiting_departure.kind,
-      tone: "warning",
-      icon: Truck,
-      title: "Transport awaiting departure",
-      detail: `${movement.id} · accepted ${formatInstant(movement.transport.acceptedAt as Instant)}`,
-      owner: movement.owner,
-      movementId: movement.id,
-    });
+    items.push(
+      actionInboxItem(movement, "transport_awaiting_departure", {
+        tone: "warning",
+        icon: Truck,
+        title: "Transport awaiting departure",
+        detail: `${movement.id} · accepted ${formatInstant(movement.transport.acceptedAt as Instant)}`,
+      }),
+    );
   }
 
   return items;
