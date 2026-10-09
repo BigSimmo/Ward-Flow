@@ -158,6 +158,10 @@
   gap: var(--wf-s-3);
 }
 
+.phoneHandover {
+  display: none;
+}
+
 .nextCard {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1375,6 +1379,9 @@ button.taskLabel[aria-pressed="true"] {
  * action; the rail becomes a single "passed" line. Each row is a card line: name and form, then
  * the time left. The panel sits below the list and the page scrolls to it on select. */
 @media (max-width: 48rem) {
+  .phoneHandover {
+    display: inline-flex;
+  }
   .main {
     padding: var(--wf-s-3);
   }

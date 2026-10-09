@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { BookOpen, ClipboardCopy, Plus, UserRound } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import {
   Button,
   Card,
@@ -120,6 +121,7 @@ function sameHighlight(a: Highlight, b: Highlight): boolean {
 
 export function LegalFormsScreen() {
   usePrintableDisclosures();
+  const movementParam = useSearchParams().get("movement");
 
   const { movements, referrals, patients, admissions, units, supportNotifications, dispatch, dayZero, rejections } =
     useWardFlow();
@@ -127,7 +129,7 @@ export function LegalFormsScreen() {
 
   const [view, setView] = useState<View>("clocks");
   const [highlight, setHighlight] = useState<Highlight>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(movementParam);
   const [tab, setTab] = useState<FocusTab>("now");
   const [focusGap, setFocusGap] = useState<{ gap: RecordGap; nonce: number } | null>(null);
   const [requirementsCode, setRequirementsCode] = useState<string | null>(null);
@@ -145,6 +147,9 @@ export function LegalFormsScreen() {
   const noDeadline = legalFormGroupRows(movements, now, "no-deadline");
   const rows = [...withDeadline, ...noDeadline];
   const voluntary = openMovements.length - rows.length;
+  useEffect(() => {
+    if (movementParam && rows.some((movement) => movement.id === movementParam)) setSelectedId(movementParam);
+  }, [movementParam, rows]);
   const breakdown = legalFormBreakdown(rows, now);
   const reminders = legalExpiryReminderSummary(movements, now);
   const passed = withDeadline.filter((movement) => isLegalDeadlineBreached(movement, now)).length;
@@ -355,6 +360,18 @@ export function LegalFormsScreen() {
                     <span className={styles.nextTime}>{leftText(next, now)}</span>
                   </button>
                 ) : null}
+                <Button
+                  className={styles.phoneHandover}
+                  variant="light"
+                  icon={ClipboardCopy}
+                  disabled={handover.length === 0}
+                  title={handover.length === 0 ? "No typed expiry is coming up" : "Copy upcoming expiries for handover"}
+                  onClick={() => {
+                    if (handover.length > 0) copyText("handover", handover.join("\n"));
+                  }}
+                >
+                  {copied === "handover" ? "Copied" : "Handover"} ({handover.length})
+                </Button>
                 <Button variant="light" icon={Plus} onClick={() => openRecord()}>
                   Record a form
                 </Button>

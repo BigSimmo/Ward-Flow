@@ -611,7 +611,7 @@ function siteGaps(flow: WardFlowContextValue | null, now: Instant): SiteGap[] {
         umrn: person.umrn,
         detail: `Form ${movement.legalForm.code}`,
         missing,
-        href: FORMS_HREF,
+        href: `${FORMS_HREF}?movement=${encodeURIComponent(movement.id)}`,
       });
     }
   }
@@ -749,7 +749,7 @@ function GovernanceSession({
   const reviewPending = pending !== null && reviewAttempt === undefined;
   const canReview = allowed && selected !== null && selected.category !== "review" && !reviewPending;
 
-  const sites = siteGaps(flow, now);
+  const sites = siteGaps(flow ? { ...flow, movements, units } : null, now);
   const totalGaps = sites.reduce((sum, entry) => sum + entry.gaps, 0);
   const site = sites.find((entry) => entry.id === siteId) ?? null;
   const overrideCount = toReview.filter((event) => event.category === "override").length;
