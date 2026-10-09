@@ -59,6 +59,17 @@ describe("the Delays board model", () => {
     for (const row of ROWS) expect(row.silent).toBe(row.quiet >= SILENT_MINUTES);
   });
 
+  it("counts a ward's acceptance as a recorded update, so quiet time restarts from it", () => {
+    const accepted = ROWS.find((row) => row.movement.acceptedUnitId !== undefined)!;
+    expect(accepted, "nobody has an accepted bed in this fixture").toBeDefined();
+    const movement = { ...accepted.movement, acceptedAt: NOW_ANCHOR - 5 };
+    const groups = delayGroups([movement], UNITS, NOW_ANCHOR);
+    const [row] = boardRows(groups, NOW_ANCHOR);
+    expect(row.activity?.what).toBe("a ward accepted");
+    expect(row.quiet).toBe(5);
+    expect(row.silent).toBe(false);
+  });
+
   it("draws a tile only for owners a cause can map to, and the tiles partition everyone", () => {
     expect(BOARD_OWNERS.map((owner) => owner.id)).not.toContain("ed");
     const tiles = ownerTiles(ROWS);

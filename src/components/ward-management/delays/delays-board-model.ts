@@ -86,7 +86,14 @@ export function boardRows(groups: readonly DelayGroup[], now: Instant): BoardRow
   return groups.flatMap((group) =>
     group.movements.map((movement) => {
       const waited = Math.max(0, now - movement.openedAt);
-      const latest = lastRecordedActivity(movement, now);
+      const recorded = lastRecordedActivity(movement, now);
+      // A ward acceptance is a recorded event too; the shared helper predates it, so it is folded in here.
+      const accepted =
+        movement.acceptedAt !== undefined && movement.acceptedAt <= now
+          ? { at: movement.acceptedAt, what: "a ward accepted" }
+          : undefined;
+      const latest =
+        accepted !== undefined && (recorded === undefined || accepted.at > recorded.at) ? accepted : recorded;
       const activity = latest === undefined || latest.what === "the journey opened" ? undefined : latest;
       const quiet = activity === undefined ? waited : Math.min(waited, Math.max(0, now - activity.at));
       return {

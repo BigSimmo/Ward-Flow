@@ -5,7 +5,7 @@
  * a page of its own: a lane label, a matrix cell or a half-hour column narrows the table, and a
  * dot opens that person's row. Everything is drawn from the same rows the table shows.
  */
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -69,7 +69,8 @@ type Tip = { x: number; y: number; body: ReactNode } | null;
 const hoursOrDuration = (minutes: number) => (minutes % 60 === 0 ? `${minutes / 60}h` : splitDuration(minutes));
 
 /** Assumed plot width for keeping dots apart; the plot itself is fluid. */
-const PLOT_WIDTH = 900;
+/** Width assumed before the plot is measured (and in jsdom); the real width replaces it. */
+const ASSUMED_PLOT_WIDTH = 900;
 const DOT = 15;
 
 function Spread({
@@ -87,6 +88,19 @@ function Spread({
   onTip: (event: React.MouseEvent | null, body?: ReactNode) => void;
 }) {
   const patientOf = usePatientOf();
+  // Dots are kept apart in real pixels, so measure the plot rather than assume its width.
+  const measureRef = useRef<HTMLDivElement>(null);
+  const [plotWidth, setPlotWidth] = useState(ASSUMED_PLOT_WIDTH);
+  useEffect(() => {
+    const plot = measureRef.current;
+    if (plot === null || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      if (plot.clientWidth > 0) setPlotWidth(plot.clientWidth);
+    });
+    observer.observe(plot);
+    return () => observer.disconnect();
+  }, []);
+  const PLOT_WIDTH = plotWidth;
   const visible = new Set(shown.map((row) => row.movement.id));
   const anyFilter = visible.size !== rows.length;
   const laneList =
@@ -116,7 +130,7 @@ function Spread({
   );
   return (
     <div className={styles.gDots}>
-      {laneList.map((lane) => {
+      {laneList.map((lane, laneIndex) => {
         const sorted = [...lane.rows].sort((a, b) => b.waited - a.waited);
         const placed: { x: number; y: number; row: BoardRow }[] = [];
         for (const row of sorted) {
@@ -157,7 +171,7 @@ function Spread({
                 ) : null}
               </small>
             </button>
-            <div className={styles.gPlot} style={{ height }}>
+            <div className={styles.gPlot} style={{ height }} ref={laneIndex === 0 ? measureRef : undefined}>
               {grid}
               {placed.map(({ x, y, row }) => {
                 const name = patientOf(row.movement).formalName;

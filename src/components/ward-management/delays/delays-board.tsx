@@ -99,6 +99,11 @@ function originLabel(movement: Movement): string {
   return edById(movement.originEdId)?.name ?? `This movement names ${departmentLabel(movement.originEdId, undefined)}`;
 }
 
+/** Below 64rem the person's panel is a sheet over the table (see delays-board.module.css). */
+function isSheetLayout(): boolean {
+  return typeof window.matchMedia === "function" && window.matchMedia("(max-width: 64rem)").matches;
+}
+
 function ago(minutes: number): string {
   return minutes < 1 ? "just now" : `${splitDuration(minutes)} ago`;
 }
@@ -807,6 +812,10 @@ export function DelaysBoard({
     chosenFilters.cause !== null && !rows.some((row) => row.cause === chosenFilters.cause)
       ? { ...chosenFilters, cause: null }
       : chosenFilters;
+  // Clear a stored blocker filter once it stops applying, so a later change cannot bring it back.
+  // Adjusting state during render is React's pattern for state derived from changed props.
+  if (chosenFilters.cause !== null && !rows.some((row) => row.cause === chosenFilters.cause))
+    setFilters((current) => ({ ...current, cause: null }));
   const [flat, setFlat] = useState(false);
   const [openGroups, setOpenGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
   const [moreGroups, setMoreGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
@@ -833,7 +842,7 @@ export function DelaysBoard({
   useEffect(() => {
     if (!explicitSelect.current || selectedId === null) return;
     explicitSelect.current = false;
-    if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 64rem)").matches) return;
+    if (!isSheetLayout()) return;
     window.requestAnimationFrame(() => {
       const panel = document.getElementById("delays-person-panel");
       panel?.scrollIntoView?.({ block: "start" });
@@ -854,9 +863,12 @@ export function DelaysBoard({
     if (row === undefined) return;
     // Opening someone the filters hide shows everyone first, so their row is there to open.
     if (!shown.some((candidate) => candidate.movement.id === id)) setFilters(NO_FILTERS);
+    // On a phone or tablet the panel is a sheet over the table, so focus goes to the sheet instead.
+    explicitSelect.current = true;
     setSelectedId(id);
     setOpenGroups((current) => ({ ...current, [row.cause]: true }));
     setMoreGroups((current) => ({ ...current, [row.cause]: true }));
+    if (isSheetLayout()) return;
     window.requestAnimationFrame(() => {
       const button = document.querySelector<HTMLButtonElement>(`[data-testid="delays-select-${id}"]`);
       button?.scrollIntoView?.({ block: "center", behavior: "smooth" });

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { delayGroups, legalDeadlineMinutes, ownerOf } from "@/components/ward-management/delays/delays-derivations";
@@ -9,6 +9,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { showEveryDelayRow } from "./helpers/delays-interactions";
+import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 /**
  * The Delays board's data views (approved Delays page mockup, October 2026): the waiting table with
@@ -225,6 +226,61 @@ describe("the Delays board's data views", () => {
     expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${OPEN.length} of ${OPEN.length}`);
     expect(screen.getByTestId(`delays-select-${target!.movement.id}`)).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId(`delays-detail-${target!.movement.id}`)).toBeInTheDocument();
+  });
+
+  it("on a phone or tablet, opening a person from the rail moves focus to their sheet", () => {
+    installMatchMediaStub(true);
+    const frame = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      callback(0);
+      return 1;
+    });
+    try {
+      renderDelays();
+      const rail = screen.getByRole("region", { name: "Escalations and resolved" });
+      const quietButton = within(rail)
+        .getAllByRole("button")
+        .find(
+          (button) => button.closest("section") === rail && /Waiting on you|Awaiting/u.test(button.textContent ?? ""),
+        );
+      expect(quietButton, "Longest quiet lists nobody").toBeDefined();
+      fireEvent.click(quietButton!);
+      expect(screen.getByRole("region", { name: "Why this person is waiting" })).toHaveFocus();
+    } finally {
+      frame.mockRestore();
+      installMatchMediaStub(false);
+    }
+  });
+
+  it("a blocker filter that stopped applying stays gone when its people come back", () => {
+    const wf018 = OPEN.find((movement) => movement.id === "WF-018")!;
+    const view = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DelaysScreen movements={OPEN} />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(within(graphs()).getByRole("tab", { name: "Where and whose move" }));
+    fireEvent.click(within(graphs()).getByRole("button", { name: "Blocker" }));
+    fireEvent.click(within(graphs()).getByRole("button", { name: /, Family: 1 waiting/u }));
+    expect(screen.getByTestId("delays-shown-count").textContent).toBe(`1 of ${OPEN.length}`);
+
+    const without = OPEN.filter((movement) => movement.id !== wf018.id);
+    view.rerender(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DelaysScreen movements={without} />
+      </WardFlowProvider>,
+    );
+    view.rerender(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DelaysScreen movements={OPEN} />
+      </WardFlowProvider>,
+    );
+    // The catchment half of the cell's filter still applies; the blocker half must not return.
+    expect(
+      screen.queryByRole("button", { name: /^Remove filter Patient or family$/u }),
+      "the emptied blocker filter came back",
+    ).toBeNull();
+    const sameOrigin = ROWS.filter((row) => row.origin === ROWS.find((r) => r.movement.id === wf018.id)!.origin);
+    expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${sameOrigin.length} of ${OPEN.length}`);
   });
 
   it("a filter that hides the open person closes their panel rather than leave it beside no row", () => {

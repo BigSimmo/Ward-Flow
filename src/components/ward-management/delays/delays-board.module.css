@@ -1603,6 +1603,21 @@ button.stat:hover .statV {
   .x {
     min-width: var(--spacing-tap, 3rem);
   }
+
+  .whoBtn {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  /* The dots stay small to read as a spread; their touch area is the full tap size. */
+  .gDot::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* ---------- narrower desktops and tablets: rail stacks, the person's panel is a sheet ---------- */
@@ -1778,6 +1793,32 @@ button.stat:hover .statV {
 
   .stat:nth-child(odd) {
     border-left: 0;
+  }
+}
+
+/* Print: the global print sheet hides every <button>, but these buttons carry the board's facts
+ * (names, group headings, counts, dots), so they are kept. Action-only controls stay hidden. */
+@media print {
+  .stat,
+  .own,
+  .brow,
+  .gLaneL,
+  .gin,
+  .gDot,
+  .mxC {
+    display: flex !important;
+  }
+
+  .whoBtn {
+    display: block !important;
+  }
+
+  .side {
+    position: static;
+  }
+
+  .card {
+    box-shadow: none;
   }
 }
 
