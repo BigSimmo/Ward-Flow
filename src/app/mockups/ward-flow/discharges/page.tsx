@@ -1,12 +1,1 @@
-import type { Metadata } from "next";
-
-import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
-
-export const metadata: Metadata = {
-  title: "Discharges — Ward Flow",
-  description: "Synthetic, live discharge and departure board for the Ward Flow prototype — blocked releases first.",
-};
-
-export default function WardDischargesPage() {
-  return <DischargeBoard />;
-}
+export { default } from "@/components/ward-management/discharges/discharge-board";
