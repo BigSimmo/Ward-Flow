@@ -3706,7 +3706,7 @@
     max-height: 34rem;
     overflow-y: auto;
     scrollbar-gutter: stable;
-    scrollbar-color: var(--line-strong) var(--surface-2);
+    scrollbar-color: var(--wf-line-2) transparent;
   }
 
   .screen[data-referral-view="register"] .registerQueue::-webkit-scrollbar {
@@ -3899,7 +3899,7 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
     scrollbar-width: thin;
-    scrollbar-color: var(--line) transparent;
+    scrollbar-color: var(--wf-line-2) transparent;
   }
 
   .registerDetailBody::-webkit-scrollbar {
