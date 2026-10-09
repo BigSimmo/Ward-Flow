@@ -299,6 +299,11 @@ describe("the Delays board's data views", () => {
     expect(screen.getByTestId(`delays-detail-${open.movement.id}`)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
     expect(screen.queryByTestId(`delays-detail-${open.movement.id}`)).toBeNull();
+    // Clearing the filter must not quietly reopen a panel nobody chose again.
+    fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
+    showEveryDelayRow();
+    expect(screen.getByTestId(`delays-select-${open.movement.id}`)).toBeInTheDocument();
+    expect(screen.queryByTestId(`delays-detail-${open.movement.id}`), "the hidden panel came back").toBeNull();
   });
 
   it("a headline count with nobody behind it is plain text, never a button that empties the table", () => {

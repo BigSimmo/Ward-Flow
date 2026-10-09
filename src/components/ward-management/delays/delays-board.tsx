@@ -862,6 +862,8 @@ export function DelaysBoard({
   const shown = filterRows(rows, filters, bins, nameOf);
   // A person the filters hide is never shown as open: their panel closes rather than sit beside no row.
   const selected = selectedId === null ? null : (shown.find((row) => row.movement.id === selectedId) ?? null);
+  // Drop the hidden choice too, so Escape, the pressed graph dot and a later clear all agree it closed.
+  if (selectedId !== null && selected === null) setSelectedId(null);
   const filtered = hasFilters(filters);
 
   const set = (patch: Partial<BoardFilters>) => setFilters((current) => ({ ...current, ...patch }));
