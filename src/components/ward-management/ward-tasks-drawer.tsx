@@ -521,7 +521,9 @@ export function WardTasksDrawer({
               type="button"
               data-testid={`ward-task-own-${item.id}`}
               className={styles.btn}
-              onClick={() => takeOwnership(item.id)}
+              onClick={() => {
+                takeOwnership(item.id);
+              }}
             >
               <UserRound aria-hidden="true" />
               Take
@@ -532,9 +534,9 @@ export function WardTasksDrawer({
               subject={`${item.title}, ${patient?.displayName ?? "patient not linked"}`}
               actNow={inboxItemIsActNow(item.id)}
               now={now}
-              onSnooze={(until, reason) =>
-                dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason })
-              }
+              onSnooze={(until, reason) => {
+                dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason });
+              }}
             />
           ) : null}
           {renderMovementActions(item, movement)}
@@ -659,7 +661,9 @@ export function WardTasksDrawer({
                 aria-label="Sort tasks"
                 data-testid="ward-tasks-sort"
                 value={sortMode}
-                onChange={(event) => setSortMode(event.target.value as DueSortMode)}
+                onChange={(event) => {
+                  setSortMode(event.target.value as DueSortMode);
+                }}
               >
                 {DUE_SORT_OPTIONS.map((option) => (
                   <option key={option.id} value={option.id}>
@@ -678,7 +682,13 @@ export function WardTasksDrawer({
               <span className={styles.emptyIcon} aria-hidden="true">
                 <ListChecks aria-hidden="true" />
               </span>
-              <h3>{role === "coordinator" ? "No outstanding work" : "Bed coordinator's list"}</h3>
+              <h3>
+                {role !== "coordinator"
+                  ? "Bed coordinator's list"
+                  : snoozedItems.length > 0
+                    ? "Nothing active"
+                    : "No outstanding work"}
+              </h3>
               <p>{role === "coordinator" ? "New tasks appear here" : "Tasks is the bed coordinator's list."}</p>
             </div>
           ) : filteredItems.length === 0 ? (
@@ -751,6 +761,8 @@ export function WardTasksDrawer({
               <ul className={styles.list}>
                 {snoozedItems.map((item) => {
                   const entry = activeSnooze(snoozes?.[item.id], now);
+                  const movement = records?.movements.find((row) => row.id === item.movementId);
+                  const patient = records ? resolveSubjectPatient(movement, records) : undefined;
                   return (
                     <li key={item.id} className={styles.row} data-tone={item.tone}>
                       <div className={styles.rowHead}>
@@ -759,14 +771,31 @@ export function WardTasksDrawer({
                         </span>
                         <div className={styles.rowText}>
                           <span className={styles.rowTitle}>{item.title}</span>
+                          <p className={styles.rowMeta}>
+                            <strong>{patient?.displayName ?? "Patient not linked"}</strong>
+                          </p>
                           {entry ? <p className={styles.rowMeta}>{snoozedLine(entry, now)}</p> : null}
                         </div>
+                        <button
+                          type="button"
+                          className={styles.btn}
+                          aria-label="Open patient"
+                          onClick={() => {
+                            onSelectMovement(item.movementId);
+                          }}
+                        >
+                          <ArrowUpRight aria-hidden="true" />
+                          Open
+                        </button>
                         {role === "coordinator" ? (
                           <button
                             type="button"
                             className={styles.btn}
                             data-testid={`ward-task-unsnooze-${item.id}`}
-                            onClick={() => returnSnoozed(item.id)}
+                            aria-label={`Return ${item.title} now, ${patient?.displayName ?? "patient not linked"}`}
+                            onClick={() => {
+                              returnSnoozed(item.id);
+                            }}
                           >
                             Return now
                           </button>

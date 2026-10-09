@@ -94,12 +94,17 @@ export function inboxItemIsActNow(inboxItemId: string): boolean {
  * it. Used by the ownership and snooze events; the same test `ACKNOWLEDGE_INBOX_ITEM` applies.
  */
 export function inboxRowExists(state: WardFlowState, inboxItemId: string): boolean {
+  return inboxRowMovementId(state.movements, inboxItemId) !== undefined;
+}
+
+/** The movement an inbox row id names (longest matching category prefix), when that movement exists. */
+export function inboxRowMovementId(movements: readonly Movement[], inboxItemId: string): string | undefined {
   const category = Object.values(INBOX_CATEGORIES)
     .filter((entry) => inboxItemId.startsWith(entry.idPrefix))
     .sort((a, b) => b.idPrefix.length - a.idPrefix.length)[0];
-  if (!category) return false;
+  if (!category) return undefined;
   const movementId = inboxItemId.slice(category.idPrefix.length);
-  return state.movements.some((movement: Movement) => movement.id === movementId);
+  return movements.some((movement) => movement.id === movementId) ? movementId : undefined;
 }
 
 /**
@@ -265,14 +270,14 @@ export function reduceInboxEvent(
 
     case "UNSNOOZE_INBOX_ITEM": {
       const inboxItemId = event.inboxItemId.trim();
-      const history = state.inboxSnoozes[inboxItemId];
+      const history = state.inboxSnoozes[inboxItemId] ?? [];
       if (!activeSnooze(history, event.now)) {
         return reject(state, event, `inbox row ${inboxItemId} is not snoozed, so there is nothing to return`);
       }
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       const entry: InboxSnoozeEntry = { at: event.now, by: WARD_FLOW_ROLE_LABELS[event.role], kind: "returned" };
-      return { ...state, inboxSnoozes: { ...state.inboxSnoozes, [inboxItemId]: [...(history ?? []), entry] } };
+      return { ...state, inboxSnoozes: { ...state.inboxSnoozes, [inboxItemId]: [...history, entry] } };
     }
 
     default:

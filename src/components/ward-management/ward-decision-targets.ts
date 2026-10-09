@@ -77,11 +77,25 @@ export type DecisionTargetReading = {
 const DECIDING_STAGES: readonly Movement["stage"][] = ["placement_requested", "destination_review"];
 
 function lastPulledAt(movement: Movement): Instant | undefined {
-  for (let index = movement.stageChanges.length - 1; index >= 0; index -= 1) {
-    const change = movement.stageChanges[index]!;
-    if (change.to === "pulled") return change.at;
+  let pulledAt: Instant | undefined;
+  for (const change of movement.stageChanges) {
+    if (change.to === "pulled") pulledAt = change.at;
   }
-  return undefined;
+  return pulledAt;
+}
+
+/**
+ * When the wards now being asked started waiting. `referredAt` is the FIRST referral and is never
+ * rewritten (RA1), so a re-referral after every ward declined or was withdrawn would otherwise
+ * read as overdue at once. The latest ward answer (a decline or a withdrawal) restarts the clock
+ * for whichever wards are still or newly asked. It never starts before the first referral.
+ */
+function referralClockStart(movement: Movement, referredAt: Instant): Instant {
+  let start = referredAt;
+  for (const answer of [...movement.declines, ...movement.withdrawnReferrals]) {
+    if (answer.at > start) start = answer.at;
+  }
+  return start;
 }
 
 /** When the step this movement is waiting on started, or undefined when no target is running. */
@@ -93,7 +107,7 @@ function pendingStep(movement: Movement): { step: DecisionTargetStep; startedAt:
     movement.referredUnitIds.length > 0 &&
     DECIDING_STAGES.includes(movement.stage)
   ) {
-    return { step: "referral_decision", startedAt: movement.referredAt };
+    return { step: "referral_decision", startedAt: referralClockStart(movement, movement.referredAt) };
   }
   if (
     movement.stage === "accepted_awaiting_bed" &&
@@ -102,7 +116,8 @@ function pendingStep(movement: Movement): { step: DecisionTargetStep; startedAt:
   ) {
     return { step: "transfer_acceptance", startedAt: movement.acceptedAt };
   }
-  if (movement.stage === "pulled") {
+  // A recorded "no transport needed" is a real answer (R-2026-09-04-C): nothing to book, no clock.
+  if (movement.stage === "pulled" && movement.transportNeed?.needed !== false) {
     const booked = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
     const pulledAt = lastPulledAt(movement);
     if (!booked && pulledAt !== undefined) return { step: "transport_booked", startedAt: pulledAt };

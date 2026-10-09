@@ -51,6 +51,8 @@ const LIST_FOR_TYPE: Readonly<Record<string, string>> = {
   LegalFormReceiptCorrectionReason: "LEGAL_FORM_RECEIPT_CORRECTION_REASONS",
   // Wave 4 diversions (T4a): RECORD_DIVERSION's own fixed list.
   DiversionReason: "DIVERSION_REASONS",
+  // Stream A (9 Oct 2026): SNOOZE_INBOX_ITEM's own closed list of snooze reasons.
+  InboxSnoozeReason: "SNOOZE_REASON_IDS",
 };
 
 /** Strips comments so prose naming a constant cannot be read as code naming it. */

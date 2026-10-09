@@ -1,7 +1,7 @@
 // Stream A, 9 Oct 2026: decision targets per step, labelled defaults set in Settings.
 import { describe, expect, it } from "vitest";
 
-import { GENDER_PLACEMENT_REASONS } from "../src/components/ward-management/ward-change-reasons";
+import { GENDER_PLACEMENT_REASONS, OVERRIDE_REASONS } from "../src/components/ward-management/ward-change-reasons";
 import { defaultWardConfiguration } from "../src/components/ward-management/ward-configuration";
 import {
   decisionTargetInboxItems,
@@ -155,5 +155,44 @@ describe("decision targets through the real event walk", () => {
       transport: { id: "TR-1", provider: "Patient transport service" as const, escortRequired: false },
     };
     expect(decisionTargetReading(booked, NOW + 5, defaults)).toBeUndefined();
+  });
+
+  it("restarts the referral clock on a re-referral after every ward declined, so it is not overdue at once", () => {
+    let state = referred();
+    state = step(state, { type: "DECLINE", role: "ward", unitId: UNIT, reason: "acuity_mix" }, NOW + 180);
+    expect(movement(state).referredUnitIds).toEqual([]);
+    expect(decisionTargetReading(movement(state), NOW + 181, defaults)).toBeUndefined();
+
+    state = step(
+      state,
+      {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        unitIds: [UNIT],
+        genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
+        genderPlacementChecked: true,
+        overrideReason: OVERRIDE_REASONS[0],
+      },
+      NOW + 200,
+    );
+    // referredAt is the first referral and is never rewritten.
+    expect(movement(state).referredAt).toBe(NOW);
+    const reading = decisionTargetReading(movement(state), NOW + 210, defaults);
+    expect(reading).toMatchObject({ step: "referral_decision", startedAt: NOW + 180, overdue: false });
+    expect(decisionTargetInboxItems(state.movements.filter(isOpen), NOW + 210, defaults)).toEqual([]);
+  });
+
+  it("runs no transport clock when the movement records that no transport is needed", () => {
+    const state = referred();
+    const pulled: Movement = {
+      ...movement(state),
+      stage: "pulled",
+      stageChanges: [{ at: NOW, from: "accepted_awaiting_bed", to: "pulled", by: "ward" }],
+      transport: undefined,
+    } as Movement;
+    expect(decisionTargetReading(pulled, NOW + 300, defaults)?.step).toBe("transport_booked");
+    const walking: Movement = { ...pulled, transportNeed: { needed: false, at: NOW } } as Movement;
+    expect(decisionTargetReading(walking, NOW + 300, defaults)).toBeUndefined();
+    expect(decisionTargetInboxItems([walking], NOW + 300, defaults)).toEqual([]);
   });
 });

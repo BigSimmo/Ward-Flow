@@ -14,7 +14,7 @@ import {
   DUE_SOON_RANGE_MINUTES,
   DUE_SOON_URGENT_MINUTES,
   DUE_SOON_URGENT_RANGE_MINUTES,
-  REFERRAL_DECISION_TARGET_MINUTES,
+  PLACEMENT_DECISION_TARGET_MINUTES,
   TRANSFER_ACCEPTANCE_TARGET_MINUTES,
   TRANSPORT_BOOKED_TARGET_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
@@ -88,7 +88,7 @@ const OPTIONAL_DEFAULTS: Pick<
   morningRollupDeadlineMinutes: MORNING_ROLLUP_TIME_MINUTES,
   dueSoonUrgentMinutes: DUE_SOON_URGENT_MINUTES,
   dueSoonMinutes: DUE_SOON_MINUTES,
-  referralDecisionTargetMinutes: REFERRAL_DECISION_TARGET_MINUTES,
+  referralDecisionTargetMinutes: PLACEMENT_DECISION_TARGET_MINUTES,
   transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
   transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
 };
@@ -102,7 +102,7 @@ export function defaultWardConfiguration(): WardConfiguration {
     morningRollupDeadlineMinutes: MORNING_ROLLUP_TIME_MINUTES,
     dueSoonUrgentMinutes: DUE_SOON_URGENT_MINUTES,
     dueSoonMinutes: DUE_SOON_MINUTES,
-    referralDecisionTargetMinutes: REFERRAL_DECISION_TARGET_MINUTES,
+    referralDecisionTargetMinutes: PLACEMENT_DECISION_TARGET_MINUTES,
     transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
     transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
   };

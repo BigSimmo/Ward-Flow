@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+
+import { wardChromeRole, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
 
 import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
@@ -19,23 +21,35 @@ import { newActNowItems, showActNowNotification, useActNowNotificationPreference
  */
 export function WardActNowNotifier() {
   const router = useRouter();
-  const { movements, units, configuration, inboxSnoozes } = useWardFlow();
+  // Same gate as the Tasks drawer (shell/ward-bar.tsx): only the coordinator's routes carry this
+  // list, so a ward, ED, officer or community view is never notified of rows it cannot see.
+  const actionable = wardTasksAreActionableForRole(wardChromeRole(usePathname()));
+  const { movements, units, configuration, inboxSnoozes, sessionAdopted, worldGeneration } = useWardFlow();
   const now = useWardFlowClock();
   const [enabled] = useActNowNotificationPreference();
-  const previous = useRef<Set<string> | null>(null);
+  // The baseline belongs to one adopted world: the seed shown before a saved session is restored,
+  // or a world that was reset, must not make every restored alert look new.
+  const previous = useRef<{ generation: number; ids: Set<string> } | null>(null);
 
   const actNow = useMemo(() => {
+    if (!actionable) return [];
     const open = movements.filter(isOpen);
     const rows = [...buildActionInbox(open, now, units), ...decisionTargetInboxItems(open, now, configuration)];
     return partitionSnoozed(rows, inboxSnoozes, now).active.filter((item) => item.tone === "danger");
-  }, [movements, units, configuration, inboxSnoozes, now]);
+  }, [actionable, movements, units, configuration, inboxSnoozes, now]);
 
   useEffect(() => {
+    if (!sessionAdopted) {
+      previous.current = null;
+      return;
+    }
     const prior = previous.current;
-    previous.current = new Set(actNow.map((item) => item.id));
-    if (prior === null || !enabled) return;
-    showActNowNotification(newActNowItems(prior, actNow), () => router.push(WARD_ALERTS_HREF));
-  }, [actNow, enabled, router]);
+    previous.current = { generation: worldGeneration, ids: new Set(actNow.map((item) => item.id)) };
+    if (prior === null || prior.generation !== worldGeneration || !enabled) return;
+    showActNowNotification(newActNowItems(prior.ids, actNow), () => {
+      router.push(WARD_ALERTS_HREF);
+    });
+  }, [actNow, enabled, router, sessionAdopted, worldGeneration]);
 
   return null;
 }

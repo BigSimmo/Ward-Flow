@@ -13,6 +13,10 @@ const validPayload = {
   // The two due-time warnings (Josh, 26 Sept 2026, question 3), at their defaults.
   dueSoonUrgentMinutes: 60,
   dueSoonMinutes: 180,
+  // Stream A decision targets (9 Oct 2026), at their defaults.
+  referralDecisionTargetMinutes: 120,
+  transferAcceptanceTargetMinutes: 240,
+  transportBookedTargetMinutes: 60,
 };
 
 function setConfiguration(
@@ -69,6 +73,9 @@ describe("SET_CONFIGURATION", () => {
       morningRollupDeadlineMinutes: 570,
       dueSoonUrgentMinutes: 60,
       dueSoonMinutes: 180,
+      referralDecisionTargetMinutes: 120,
+      transferAcceptanceTargetMinutes: 240,
+      transportBookedTargetMinutes: 60,
     });
   });
 

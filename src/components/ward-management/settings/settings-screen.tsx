@@ -51,7 +51,7 @@ import {
   DUE_SOON_URGENT_RANGE_MINUTES,
   OCCUPANCY_ALERT_PERCENT,
   OVERDUE_AFTER_MINUTES_BY_TIER,
-  REFERRAL_DECISION_TARGET_MINUTES,
+  PLACEMENT_DECISION_TARGET_MINUTES,
   SILENT_WARD_FIRST_REMINDER_MINUTES,
   TRANSFER_ACCEPTANCE_TARGET_MINUTES,
   TRANSPORT_BOOKED_TARGET_MINUTES,
@@ -156,7 +156,7 @@ function fullRules(value: WardConfiguration) {
     morning: value.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES,
     urgent: value.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
     soon: value.dueSoonMinutes ?? DUE_SOON_MINUTES,
-    referralTarget: value.referralDecisionTargetMinutes ?? REFERRAL_DECISION_TARGET_MINUTES,
+    referralTarget: value.referralDecisionTargetMinutes ?? PLACEMENT_DECISION_TARGET_MINUTES,
     transferTarget: value.transferAcceptanceTargetMinutes ?? TRANSFER_ACCEPTANCE_TARGET_MINUTES,
     transportTarget: value.transportBookedTargetMinutes ?? TRANSPORT_BOOKED_TARGET_MINUTES,
   };
@@ -254,9 +254,17 @@ export function SettingsScreen() {
   const [actNowNotifications] = useActNowNotificationPreference();
   const [notificationPermission, setNotificationPermission] = useState<NotificationSupport>("default");
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the browser permission is only readable after mount
-    setNotificationPermission(notificationSupport());
-  }, []);
+    const refresh = () => {
+      setNotificationPermission(notificationSupport());
+    };
+    // The browser permission is external state: read after mount, and again when this tab regains
+    // focus or another tab changes the switch, so the row never disagrees with the browser.
+    refresh();
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+    };
+  }, [actNowNotifications]);
 
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = useCallback((message: string) => {
@@ -886,8 +894,12 @@ export function SettingsScreen() {
                         minLabel: shortDuration(DECISION_TARGET_RANGE_MINUTES.min),
                         maxLabel: shortDuration(DECISION_TARGET_RANGE_MINUTES.max),
                       }}
-                      onChange={(minutes) => setRule({ [step.configKey]: minutes })}
-                      onReset={() => setRule({ [step.configKey]: saved[ruleKey] })}
+                      onChange={(minutes) => {
+                        setRule({ [step.configKey]: minutes });
+                      }}
+                      onReset={() => {
+                        setRule({ [step.configKey]: saved[ruleKey] });
+                      }}
                       usedBy="Alerts, Tasks"
                     />
                   );

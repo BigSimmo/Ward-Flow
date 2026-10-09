@@ -1003,3 +1003,12 @@
     border-color: CanvasText;
   }
 }
+
+/* Running decision targets under their condition (stream A, 9 Oct 2026). */
+.runningList {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: var(--wf-s-1) 0 0;
+  padding: 0;
+  list-style: none;
+}

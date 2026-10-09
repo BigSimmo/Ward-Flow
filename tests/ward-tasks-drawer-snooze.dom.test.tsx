@@ -153,4 +153,29 @@ describe("tasks drawer: ownership and snooze", () => {
     const titles = screen.getAllByText(/^Row (none|late|soon)$/).map((node) => node.textContent);
     expect(titles).toEqual(["Row soon", "Row late", "Row none"]);
   });
+
+  it("says Nothing active, not No outstanding work, when every row is snoozed, and keeps Open on it", () => {
+    const onSelectMovement = vi.fn();
+    renderDrawer({
+      items: [red],
+      onSelectMovement,
+      snoozes: {
+        [red.id]: [
+          {
+            at: NOW_ANCHOR,
+            by: "Flow coordinator",
+            kind: "snoozed",
+            until: NOW_ANCHOR + 30,
+            reason: "awaiting_call_back",
+          },
+        ],
+      },
+    });
+    expect(screen.getByRole("heading", { name: "Nothing active" })).toBeInTheDocument();
+    expect(screen.queryByText("No outstanding work")).toBeNull();
+    const snoozed = screen.getByTestId("ward-tasks-snoozed");
+    expect(within(snoozed).getByRole("button", { name: /^Return .* now, / })).toBeInTheDocument();
+    fireEvent.click(within(snoozed).getByRole("button", { name: "Open patient" }));
+    expect(onSelectMovement).toHaveBeenCalledWith(red.movementId);
+  });
 });

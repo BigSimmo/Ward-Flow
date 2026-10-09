@@ -37,7 +37,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
 import { reduceInboxEvent } from "./ward-inbox-reducer";
-import type { InboxOwnershipEntry, InboxSnoozeEntry } from "./ward-inbox-snooze";
+import { SNOOZE_REASON_IDS, type InboxOwnershipEntry, type InboxSnoozeEntry } from "./ward-inbox-snooze";
 import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
@@ -8608,11 +8608,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "COMPLETE_INBOX_ITEM":
     case "REOPEN_INBOX_ITEM":
     case "TAKE_INBOX_ITEM_OWNERSHIP":
-    case "SNOOZE_INBOX_ITEM":
     case "UNSNOOZE_INBOX_ITEM": {
       const next = reduceInboxEvent(state, event, decision, reject);
       if (next) return next;
       return state;
+    }
+
+    case "SNOOZE_INBOX_ITEM": {
+      // Runtime membership, not merely the type: the reason is a closed list (stream A, 9 Oct 2026).
+      if (!SNOOZE_REASON_IDS.includes(event.reason)) {
+        return reject(state, event, "SNOOZE_INBOX_ITEM reason must be chosen from SNOOZE_REASON_IDS");
+      }
+      return reduceInboxEvent(state, event, decision, reject) ?? state;
     }
 
     case "SET_ARRIVAL_DETAILS": {

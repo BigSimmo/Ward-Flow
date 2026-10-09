@@ -17,7 +17,7 @@ import {
   getActNowNotificationPreference,
 } from "@/components/ward-management/shell/ward-act-now-notifications";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { REFERRAL_DECISION_TARGET_MINUTES } from "@/components/ward-management/ward-operational-defaults";
+import { PLACEMENT_DECISION_TARGET_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 /** Stream A, 9 Oct 2026: decision targets are labelled defaults set in Settings; notifications are opt-in. */
 function Probe() {
@@ -53,10 +53,10 @@ describe("settings: decision targets", () => {
   it("saves a changed target into the configuration through the existing Save", () => {
     renderSettings();
     fireEvent.click(screen.getByRole("button", { name: "Increase referral decision target" }));
-    expect(screen.getByTestId("probe-referral-target")).toHaveTextContent(String(REFERRAL_DECISION_TARGET_MINUTES));
+    expect(screen.getByTestId("probe-referral-target")).toHaveTextContent(String(PLACEMENT_DECISION_TARGET_MINUTES));
     fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
     expect(screen.getByTestId("probe-referral-target")).toHaveTextContent(
-      String(REFERRAL_DECISION_TARGET_MINUTES + 15),
+      String(PLACEMENT_DECISION_TARGET_MINUTES + 15),
     );
   });
 });

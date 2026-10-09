@@ -90,7 +90,7 @@ export const DUE_SOON_RANGE_MINUTES = { min: 30, max: 8 * MINUTES_PER_HOUR, step
  * change in Settings, never a clinical, legal or service standard. An overdue target raises an
  * act-now row in the action inbox (`decisionTargetInboxItems`, `ward-decision-targets.ts`).
  */
-export const REFERRAL_DECISION_TARGET_MINUTES = 2 * MINUTES_PER_HOUR;
+export const PLACEMENT_DECISION_TARGET_MINUTES = 2 * MINUTES_PER_HOUR;
 export const TRANSFER_ACCEPTANCE_TARGET_MINUTES = 4 * MINUTES_PER_HOUR;
 export const TRANSPORT_BOOKED_TARGET_MINUTES = 1 * MINUTES_PER_HOUR;
 export const DECISION_TARGET_RANGE_MINUTES = { min: 15, max: 12 * MINUTES_PER_HOUR, step: 15 } as const;
@@ -99,7 +99,7 @@ export const DECISION_TARGET_RANGE_MINUTES = { min: 15, max: 12 * MINUTES_PER_HO
  * The longest an act-now (red) alert or task may be snoozed. Acknowledging is always allowed;
  * hiding a red row for longer than this is refused by the reducer. A prototype default.
  */
-export const ACT_NOW_SNOOZE_CAP_MINUTES = 1 * MINUTES_PER_HOUR;
+export const URGENT_SNOOZE_CAP_MINUTES = 1 * MINUTES_PER_HOUR;
 /** Sanity bound on any snooze: a row never disappears for more than a day. */
 export const SNOOZE_MAX_MINUTES = 24 * MINUTES_PER_HOUR;
 

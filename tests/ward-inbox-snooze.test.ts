@@ -20,8 +20,11 @@ import {
   snoozeAllowed,
   snoozeUntilFor,
 } from "../src/components/ward-management/ward-inbox-snooze";
-import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
-import { ACT_NOW_SNOOZE_CAP_MINUTES } from "../src/components/ward-management/ward-operational-defaults";
+import {
+  isValidStoredWardFlowState,
+  withInboxStreamADefaults,
+} from "../src/components/ward-management/ward-flow-storage-validation";
+import { URGENT_SNOOZE_CAP_MINUTES } from "../src/components/ward-management/ward-operational-defaults";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
@@ -69,6 +72,41 @@ describe("TAKE_INBOX_ITEM_OWNERSHIP", () => {
     });
     expect(twice.inboxOwnership[row.id]).toHaveLength(1);
     expect(twice.rejections.at(-1)?.reason).toMatch(/already owned/);
+  });
+
+  it("writes ownership, snooze and return into the audit trail against the row's movement", () => {
+    let state = seedWardFlowState();
+    const row = rowOfTone(state, "warning");
+    state = wardFlowReducer(state, {
+      type: "TAKE_INBOX_ITEM_OWNERSHIP",
+      role: "coordinator",
+      now: NOW,
+      inboxItemId: row.id,
+    });
+    state = wardFlowReducer(state, {
+      type: "SNOOZE_INBOX_ITEM",
+      role: "coordinator",
+      now: NOW,
+      inboxItemId: row.id,
+      until: NOW + 30,
+      reason: "waiting_on_ward",
+    });
+    state = wardFlowReducer(state, {
+      type: "UNSNOOZE_INBOX_ITEM",
+      role: "coordinator",
+      now: NOW + 5,
+      inboxItemId: row.id,
+    });
+    const inboxAudit = state.auditEvents.filter((event) => event.category === "inbox");
+    expect(inboxAudit.map((event) => [event.action, event.outcome])).toEqual([
+      ["TAKE_INBOX_ITEM_OWNERSHIP", "accepted"],
+      ["SNOOZE_INBOX_ITEM", "accepted"],
+      ["UNSNOOZE_INBOX_ITEM", "accepted"],
+    ]);
+    expect(inboxAudit[1]?.details).toEqual({ inboxItemId: row.id, reason: "waiting_on_ward", until: NOW + 30 });
+    expect(
+      inboxAudit.every((event) => event.subject.kind === "movement" && event.subject.movementId === row.movementId),
+    ).toBe(true);
   });
 
   it("refuses an id that names no inbox row, and a role outside the coordinator floor", () => {
@@ -132,7 +170,7 @@ describe("SNOOZE_INBOX_ITEM", () => {
       role: "coordinator",
       now: NOW,
       inboxItemId: row.id,
-      until: NOW + ACT_NOW_SNOOZE_CAP_MINUTES,
+      until: NOW + URGENT_SNOOZE_CAP_MINUTES,
       reason: "awaiting_call_back",
     });
     expect(hour.rejections).toEqual([]);
@@ -174,6 +212,21 @@ describe("SNOOZE_INBOX_ITEM", () => {
     }
   });
 
+  it("checks the reason against its own closed list at runtime", () => {
+    const state = seedWardFlowState();
+    const row = rowOfTone(state, "warning");
+    const next = wardFlowReducer(state, {
+      type: "SNOOZE_INBOX_ITEM",
+      role: "coordinator",
+      now: NOW,
+      inboxItemId: row.id,
+      until: NOW + 30,
+      reason: "lunch" as never,
+    });
+    expect(next.inboxSnoozes).toEqual({});
+    expect(next.rejections.at(-1)?.reason).toContain("SNOOZE_REASON_IDS");
+  });
+
   it("stays a valid stored state, so a saved session keeps its snoozes and owners", () => {
     let state = seedWardFlowState();
     const row = rowOfTone(state, "warning");
@@ -197,6 +250,18 @@ describe("SNOOZE_INBOX_ITEM", () => {
       inboxSnoozes: { [row.id]: [{ at: NOW, by: "x", kind: "snoozed", until: NOW + 5, reason: "typed" }] },
     };
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(corrupted)))).toBe(false);
+  });
+
+  it("restores a version 6 save made before the ownership and snooze records existed", () => {
+    const state = seedWardFlowState();
+    const { inboxOwnership: _ownership, inboxSnoozes: _snoozes, ...older } = JSON.parse(JSON.stringify(state));
+    void _ownership;
+    void _snoozes;
+    expect(isValidStoredWardFlowState(older)).toBe(true);
+    const restored = withInboxStreamADefaults(older as typeof state);
+    expect(restored.inboxOwnership).toEqual({});
+    expect(restored.inboxSnoozes).toEqual({});
+    expect(isValidStoredWardFlowState({ ...older, inboxSnoozes: [] })).toBe(false);
   });
 });
 

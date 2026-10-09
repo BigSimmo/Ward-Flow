@@ -11,6 +11,7 @@ import {
   BROADCAST_TARGET_SCOPES,
 } from "../../src/components/ward-management/alerts/ward-broadcast-model";
 import { buildActionInbox } from "@/components/ward-management/ward-derivations";
+import { SNOOZE_REASONS } from "@/components/ward-management/ward-inbox-snooze";
 import { referralState } from "../../src/components/ward-management/ward-referrals";
 import { expect } from "vitest";
 import {
@@ -1071,6 +1072,26 @@ export function candidateEvents(
         role,
         now,
         inboxItemId: item.id,
+      }));
+    // Stream A (9 Oct 2026): ownership, snooze and return act on the same derived rows. A snooze
+    // is offered for 30 minutes, inside the act-now cap, with the first reason on the closed list;
+    // a return is refused unless the row is snoozed, and the reducer's own guard decides that.
+    case "TAKE_INBOX_ITEM_OWNERSHIP":
+    case "UNSNOOZE_INBOX_ITEM":
+      return buildActionInbox(state.movements, now, state.units).map((item) => ({
+        type,
+        role,
+        now,
+        inboxItemId: item.id,
+      }));
+    case "SNOOZE_INBOX_ITEM":
+      return buildActionInbox(state.movements, now, state.units).map((item) => ({
+        type,
+        role,
+        now,
+        inboxItemId: item.id,
+        until: now + 30,
+        reason: SNOOZE_REASONS[0].id,
       }));
     /*
      * Added 25 September 2026 (the four events had no candidate, so the Form sweep could never

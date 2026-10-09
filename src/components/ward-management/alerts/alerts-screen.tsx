@@ -25,7 +25,9 @@ import type { WardConfiguration } from "@/components/ward-management/ward-config
 import {
   activeSnooze,
   currentInboxOwner,
+  isSnoozeReason,
   partitionSnoozed,
+  snoozeAllowed,
   type InboxOwnershipEntry,
   type InboxSnoozeReason,
 } from "@/components/ward-management/ward-inbox-snooze";
@@ -34,7 +36,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
@@ -238,11 +240,14 @@ function ConditionContext({
   watches,
   none,
   items,
+  running,
 }: {
   title: string;
   watches: string;
   none: string;
   items: InboxItem[];
+  /** Still-running clocks to show before they pass (decision targets), each one line. */
+  running?: readonly { id: string; text: string }[];
 }) {
   return (
     <section className={styles.condition} aria-label={title}>
@@ -252,6 +257,15 @@ function ConditionContext({
       </h3>
       <p className={styles.watches}>{watches}</p>
       {items.length === 0 ? <p className={styles.none}>{none}</p> : null}
+      {running && running.length > 0 ? (
+        <ul className={styles.runningList} data-testid="ward-alerts-running-targets">
+          {running.map((entry) => (
+            <li key={entry.id} className={styles.watches}>
+              {entry.text}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </section>
   );
 }
@@ -351,7 +365,8 @@ function AlertRows({
     <ul className={prominent ? styles.cardRows : styles.rows}>
       {items.map((item) => {
         const isAcknowledged = (acknowledgements[item.id]?.length ?? 0) > 0;
-        const isOwned = currentInboxOwner(ownership?.[item.id]) !== undefined;
+        // The Alerts screen acts as the coordinator; the reducer refuses a role re-taking its own row.
+        const ownedByMe = currentInboxOwner(ownership?.[item.id])?.by === WARD_FLOW_ROLE_LABELS.coordinator;
         const categoryBadge = getCategoryBadge(item);
         const overdueText = extractOverdue(item.detail);
         const movement = movements?.find((m) => m.id === item.movementId);
@@ -418,18 +433,20 @@ function AlertRows({
                   options[next]?.focus();
                 }}
               >
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={styles.quickActionMenuItem}
-                  onClick={() => {
-                    setOpenQuickMenuId(null);
-                    onQuickAction?.(item, "own", patientInfo.displayName);
-                  }}
-                >
-                  <UserRound size={14} aria-hidden="true" />
-                  <span>{isOwned ? "Take ownership again" : "Take ownership"}</span>
-                </button>
+                {ownedByMe ? null : (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={styles.quickActionMenuItem}
+                    onClick={() => {
+                      setOpenQuickMenuId(null);
+                      onQuickAction?.(item, "own", patientInfo.displayName);
+                    }}
+                  >
+                    <UserRound size={14} aria-hidden="true" />
+                    <span>Take ownership</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   role="menuitem"
@@ -522,7 +539,9 @@ function AlertRows({
             subject={`${item.title}, ${patientInfo.displayName}`}
             actNow={inboxItemIsActNow(item.id)}
             now={now}
-            onSnooze={(until, reason) => onSnooze(item, until, reason)}
+            onSnooze={(until, reason) => {
+              onSnooze(item, until, reason);
+            }}
           />
         ) : null;
 
@@ -562,13 +581,15 @@ function AlertRows({
                     Acknowledge
                   </Button>
                 ) : null}
-                {!isOwned ? (
+                {!ownedByMe ? (
                   <Button
                     size="sm"
                     variant="ghost"
                     icon={UserRound}
                     className={styles.btn}
-                    onClick={() => onQuickAction?.(item, "own", patientInfo.displayName)}
+                    onClick={() => {
+                      onQuickAction?.(item, "own", patientInfo.displayName);
+                    }}
                   >
                     Take
                   </Button>
@@ -817,6 +838,26 @@ function AlertsWorkspace() {
     [inbox],
   );
   const decisionTargets = useMemo(() => [...referralTargets, ...otherTargets], [referralTargets, otherTargets]);
+  // A running target shows its countdown here before it passes, so a newly referred patient with
+  // no other alert still has a visible clock. Soonest first.
+  const runningTargets = useMemo(
+    () =>
+      openMovements
+        .flatMap((movement) => {
+          const reading = decisionTargetReading(movement, now, configuration);
+          if (!reading || reading.overdue) return [];
+          const who = resolveAlertPatient(movement, movement.id, patients, referrals, movements, state.units);
+          return [
+            {
+              id: movement.id,
+              left: reading.minutesLeft,
+              text: `${reading.label} due in ${splitDuration(reading.minutesLeft)} · ${who.displayName}`,
+            },
+          ];
+        })
+        .sort((a, b) => a.left - b.left),
+    [openMovements, now, configuration, patients, referrals, movements, state.units],
+  );
 
   const withDeadline = openMovements.filter((movement: Movement) => movement.legalForm?.dueAt !== undefined);
   const declineCandidates = openMovements.filter((movement: Movement) => movement.declines.length > 0).length;
@@ -846,6 +887,8 @@ function AlertsWorkspace() {
     (item: InboxItem, until: Instant, reason: InboxSnoozeReason) => {
       setBroadcastRequest(null);
       setBroadcastModalOpen(false);
+      // Say "snoozed" only for a snooze the reducer accepts: the same cap it enforces.
+      if (!isSnoozeReason(reason) || !snoozeAllowed(until, now, inboxItemIsActNow(item.id))) return;
       dispatch({ type: "SNOOZE_INBOX_ITEM", role: "coordinator", now, inboxItemId: item.id, until, reason });
       setBroadcastSuccessNotice(`"${item.title}" snoozed until ${formatInstantWithDay(until, now)}.`);
     },
@@ -853,7 +896,9 @@ function AlertsWorkspace() {
   );
 
   const handleReturn = useCallback(
-    (item: InboxItem) => dispatch({ type: "UNSNOOZE_INBOX_ITEM", role: "coordinator", now, inboxItemId: item.id }),
+    (item: InboxItem) => {
+      dispatch({ type: "UNSNOOZE_INBOX_ITEM", role: "coordinator", now, inboxItemId: item.id });
+    },
     [dispatch, now],
   );
 
@@ -862,6 +907,8 @@ function AlertsWorkspace() {
       setBroadcastRequest(null);
       setBroadcastModalOpen(false);
       if (action === "own") {
+        // The reducer refuses a role re-taking a row it already owns; no notice for a refused act.
+        if (currentInboxOwner(inboxOwnership[item.id])?.by === WARD_FLOW_ROLE_LABELS.coordinator) return;
         dispatch({ type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now, inboxItemId: item.id });
         setBroadcastSuccessNotice(`You own "${item.title}" for ${patientName}.`);
       } else if (action === "escalate") {
@@ -871,7 +918,7 @@ function AlertsWorkspace() {
         setBroadcastSuccessNotice(`Alert "${item.title}" acknowledged and retained on active watch.`);
       }
     },
-    [dispatch, now],
+    [dispatch, now, inboxOwnership],
   );
 
   // Filtered collections
@@ -1439,6 +1486,7 @@ function AlertsWorkspace() {
                     watches="Watches referral decisions, transfer acceptances and transport bookings against their targets, defaults set in Settings."
                     none="No running decision target has passed."
                     items={decisionTargets}
+                    running={runningTargets}
                   />
                   <ConditionContext
                     title="Transport waiting to leave"
@@ -1539,16 +1587,44 @@ function AlertsWorkspace() {
             <ul className={styles.rows}>
               {snoozedInbox.map((item) => {
                 const entry = activeSnooze(inboxSnoozes[item.id], now);
+                const movement = openMovements.find((candidate) => candidate.id === item.movementId);
+                const who = resolveAlertPatient(movement, item.movementId, patients, referrals, movements, state.units);
                 return (
-                  <li key={item.id} className={styles.alertRow} data-tone={item.tone}>
-                    <StatusGlyph tone="neutral" />
+                  <li
+                    key={item.id}
+                    className={styles.alertRow}
+                    data-tone={item.tone}
+                    data-movement-id={item.movementId}
+                  >
+                    <StatusGlyph tone={severityGlyph(item)} />
                     <div className={styles.alertContent}>
                       <span className={styles.alertTitleText}>{item.title}</span>
+                      <span className={styles.alertMetaText}>
+                        <strong className={styles.patientName}>{who.displayName}</strong>
+                      </span>
                       {entry ? <span className={styles.alertTiming}>{snoozedLine(entry, now)}</span> : null}
                     </div>
                     <span className={styles.ownerCell}>{item.owner}</span>
                     <div className={styles.rowActions}>
-                      <Button size="sm" className={styles.btn} onClick={() => handleReturn(item)}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className={styles.btn}
+                        aria-label={`Open ${item.title}, ${who.displayName}`}
+                        onClick={(event) => {
+                          handleOpenAction(item, event.currentTarget);
+                        }}
+                      >
+                        Open
+                      </Button>
+                      <Button
+                        size="sm"
+                        className={styles.btn}
+                        aria-label={`Return ${item.title} now, ${who.displayName}`}
+                        onClick={() => {
+                          handleReturn(item);
+                        }}
+                      >
                         Return now
                       </Button>
                     </div>
