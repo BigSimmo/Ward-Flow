@@ -20,7 +20,7 @@ describe("WardGround fills the column below short pages", () => {
     const shell = /(?:^|\})\s*\.shell\s*\{([^}]*)\}/u.exec(css)?.[1] ?? "";
     expect(shell).toMatch(/display:\s*flex/u);
     expect(shell).toMatch(/flex-direction:\s*column/u);
-    expect(shell).toMatch(/flex:\s*1\b/u);
+    expect(shell).toMatch(/flex:\s*1\s+0\b/u);
   });
 
   it("lets the route's screen grow into the rest of .shell", () => {
