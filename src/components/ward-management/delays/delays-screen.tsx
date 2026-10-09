@@ -88,9 +88,16 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
   const showNotice = (text: string) => {
     setNotice(text);
     window.clearTimeout(noticeTimer.current);
-    noticeTimer.current = window.setTimeout(() => setNotice(null), 4000);
+    noticeTimer.current = window.setTimeout(() => {
+      setNotice(null);
+    }, 4000);
   };
-  useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(noticeTimer.current);
+    },
+    [],
+  );
 
   const open = movements.filter(isOpen);
   const openNetworkWide = allMovements.filter(isOpen);
