@@ -278,7 +278,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
 
   const booked = agenda.length;
   const cancelling = form?.mode === "cancel" ? plannedAdmissions.find((planned) => planned.id === form.id) : undefined;
-  const update = (patch: Partial<Draft>) => setDraft((current) => (current ? { ...current, ...patch } : current));
+  const update = (patch: Partial<Draft>) => {
+    setDraft((current) => (current ? { ...current, ...patch } : current));
+  };
 
   return (
     <WardPanel
@@ -368,13 +370,31 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                     ) : null}
                   </span>
                   <span className={styles.actions}>
-                    <Button size="sm" variant="sec" onClick={() => recordArrival(planned)}>
+                    <Button
+                      size="sm"
+                      variant="sec"
+                      onClick={() => {
+                        recordArrival(planned);
+                      }}
+                    >
                       Arrived
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => openChange(planned)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        openChange(planned);
+                      }}
+                    >
                       Change
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => openCancel(planned)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        openCancel(planned);
+                      }}
+                    >
                       Cancel
                     </Button>
                   </span>
@@ -413,7 +433,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                 <Field label="Patient">
                   <Select
                     value={draft.who}
-                    onChange={(event) => update({ who: event.target.value as Draft["who"] })}
+                    onChange={(event) => {
+                      update({ who: event.target.value as Draft["who"] });
+                    }}
                     data-testid="ward-planned-who"
                   >
                     <option value="patient" disabled={bookablePatients.length === 0}>
@@ -426,7 +448,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                   <Field label="Existing patient">
                     <Select
                       value={draft.patientId}
-                      onChange={(event) => update({ patientId: event.target.value })}
+                      onChange={(event) => {
+                        update({ patientId: event.target.value });
+                      }}
                       data-testid="ward-planned-patient"
                     >
                       {bookablePatients.map((patient) => (
@@ -443,14 +467,18 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                         value={draft.initials}
                         maxLength={5}
                         autoComplete="off"
-                        onChange={(event) => update({ initials: event.target.value })}
+                        onChange={(event) => {
+                          update({ initials: event.target.value });
+                        }}
                         data-testid="ward-planned-initials"
                       />
                     </Field>
                     <Field label="Recorded sex">
                       <Select
                         value={draft.sex}
-                        onChange={(event) => update({ sex: event.target.value as RecordedSex })}
+                        onChange={(event) => {
+                          update({ sex: event.target.value as RecordedSex });
+                        }}
                         data-testid="ward-planned-sex"
                       >
                         {RECORDED_SEXES.map((sex) => (
@@ -471,7 +499,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
             <Field label="Reason">
               <Select
                 value={draft.reason}
-                onChange={(event) => update({ reason: event.target.value as PlannedAdmissionReason })}
+                onChange={(event) => {
+                  update({ reason: event.target.value as PlannedAdmissionReason });
+                }}
                 data-testid="ward-planned-reason"
               >
                 {PLANNED_ADMISSION_REASONS.map((reason) => (
@@ -484,7 +514,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
             <Field label="Ward">
               <Select
                 value={draft.unitId}
-                onChange={(event) => update({ unitId: event.target.value })}
+                onChange={(event) => {
+                  update({ unitId: event.target.value });
+                }}
                 data-testid="ward-planned-unit"
               >
                 {HEALTH_SERVICES.map((service) => {
@@ -505,7 +537,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
               <Field label="Day">
                 <Select
                   value={String(draft.dayOffset)}
-                  onChange={(event) => update({ dayOffset: Number(event.target.value) })}
+                  onChange={(event) => {
+                    update({ dayOffset: Number(event.target.value) });
+                  }}
                   data-testid="ward-planned-day"
                 >
                   {Array.from({ length: PLANNED_ADMISSION_WINDOW_DAYS }, (_, index) => index)
@@ -522,7 +556,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                 <TextInput
                   type="time"
                   value={draft.time}
-                  onChange={(event) => update({ time: event.target.value })}
+                  onChange={(event) => {
+                    update({ time: event.target.value });
+                  }}
                   data-testid="ward-planned-time"
                 />
               </Field>
@@ -535,14 +571,18 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                   min={1}
                   max={PLANNED_ADMISSION_MAX_STAY_DAYS}
                   value={draft.stayDays}
-                  onChange={(event) => update({ stayDays: event.target.value })}
+                  onChange={(event) => {
+                    update({ stayDays: event.target.value });
+                  }}
                   data-testid="ward-planned-stay"
                 />
               </Field>
               <Field label="Legal status">
                 <Select
                   value={draft.legalStatus}
-                  onChange={(event) => update({ legalStatus: event.target.value as LegalStatus })}
+                  onChange={(event) => {
+                    update({ legalStatus: event.target.value as LegalStatus });
+                  }}
                   data-testid="ward-planned-legal"
                 >
                   {PLANNED_ADMISSION_LEGAL_STATUSES.map((status) => (
@@ -586,7 +626,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
             <Field label="Reason">
               <Select
                 value={cancelReason}
-                onChange={(event) => setCancelReason(event.target.value as PlannedAdmissionCancelReason)}
+                onChange={(event) => {
+                  setCancelReason(event.target.value as PlannedAdmissionCancelReason);
+                }}
                 data-testid="ward-planned-cancel-reason"
               >
                 {PLANNED_ADMISSION_CANCEL_REASONS.map((reason) => (
