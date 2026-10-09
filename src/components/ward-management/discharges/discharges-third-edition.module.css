@@ -1339,6 +1339,7 @@
   .rightRail,
   .scrim,
   .statusFilters,
+  .planActionWrapper,
   .shownCountBadge {
     display: none !important;
   }
@@ -1596,6 +1597,42 @@
 
   .footNote {
     margin-left: 0;
+  }
+}
+
+/* Keep the print table layout after the phone card rules, including narrow print viewports. */
+@media print and (max-width: 48rem) {
+  .listBody {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .workTable {
+    display: table;
+  }
+
+  .workTable thead {
+    display: table-header-group;
+  }
+
+  .workTable tbody {
+    display: table-row-group;
+  }
+
+  .workTable tr,
+  .workTable tr:not(.groupRow),
+  .workTable .groupRow {
+    display: table-row;
+  }
+
+  .workTable td,
+  .workTable th,
+  .workTable .groupRow th {
+    display: table-cell;
+  }
+
+  .workTable td::before {
+    display: none !important;
   }
 }
 
