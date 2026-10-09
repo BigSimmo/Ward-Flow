@@ -257,8 +257,8 @@ test.describe("@mockup Transport officer screen", () => {
    * locator, and ruling R24 already found `.first()` breaks the moment fixture order shifts.
    * WF-005 is pinned deliberately instead — verified against the real fixture (see the task
    * report's re-measurement) to carry `escortRequired: true` and to be the screen's own default
-   * selection (first in `movements` array order among the eight jobs not yet arrived), so no
-   * click is needed before this locator resolves.
+   * selection (first in `movements` array order among the eight jobs not yet arrived). Since
+   * Transport page A no job opens by default, so the test chooses it.
    */
   test("gives the officer four actions and nothing else", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -269,8 +269,9 @@ test.describe("@mockup Transport officer screen", () => {
     const job = page.getByTestId("ward-officer-job-WF-005");
     await expect(job).toContainText(/escort/i);
 
-    // Exactly four actions, pinned and reachable without scrolling. v6 (7 Oct 2026): they sit in
-    // the selected job's panel, which leads the page at phone width.
+    // Exactly four actions, pinned and reachable without scrolling. Transport page A (9 Oct 2026):
+    // the job opens as a bottom sheet once chosen, with the four actions pinned to its foot.
+    await page.getByTestId("ward-officer-select-WF-005").click();
     const actions = page.getByTestId("ward-officer-detail").locator('[class*="actionButton"]');
     await expect(actions).toHaveCount(4);
     for (const action of await actions.all()) {
