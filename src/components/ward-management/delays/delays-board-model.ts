@@ -86,14 +86,7 @@ export function boardRows(groups: readonly DelayGroup[], now: Instant): BoardRow
   return groups.flatMap((group) =>
     group.movements.map((movement) => {
       const waited = Math.max(0, now - movement.openedAt);
-      const recorded = lastRecordedActivity(movement, now);
-      // A ward acceptance is a recorded event too; the shared helper predates it, so it is folded in here.
-      const accepted =
-        movement.acceptedAt !== undefined && movement.acceptedAt <= now
-          ? { at: movement.acceptedAt, what: "a ward accepted" }
-          : undefined;
-      const latest =
-        accepted !== undefined && (recorded === undefined || accepted.at > recorded.at) ? accepted : recorded;
+      const latest = lastRecordedActivity(movement, now);
       const activity = latest === undefined || latest.what === "the journey opened" ? undefined : latest;
       const quiet = activity === undefined ? waited : Math.min(waited, Math.max(0, now - activity.at));
       return {
@@ -181,10 +174,14 @@ export function ownerTiles(rows: readonly BoardRow[]): OwnerTile[] {
   return BOARD_OWNERS.map(({ id, name }) => {
     const mine = rows.filter((row) => row.owner === id);
     const severe = mine.filter((row) => row.severe).length;
+    const overdue = mine.filter((row) => row.cause === "legal_breached").length;
+    const expiring = mine.filter((row) => row.cause === "legal_expiring").length;
     const over8 = mine.filter((row) => row.waited >= OVER_8H).length;
     const sub =
       id === "yours"
-        ? { tone: "danger" as const, count: severe, text: "form due soon" }
+        ? overdue > 0
+          ? { tone: "danger" as const, count: overdue, text: "form overdue" }
+          : { tone: "warning" as const, count: expiring, text: "form due soon" }
         : id === "wards"
           ? { tone: "danger" as const, count: severe, text: "no suitable bed" }
           : id === "transport"
