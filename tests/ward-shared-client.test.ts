@@ -6,6 +6,7 @@ import {
 } from "../src/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
+import { eventLogEntryFor } from "../src/components/ward-management/ward-event-log";
 
 const state = JSON.parse(JSON.stringify(seedWardFlowStateAt(0))) as SharedSnapshot["payload"]["state"];
 const snapshot = (revision: number): SharedSnapshot => ({
@@ -17,6 +18,43 @@ const snapshot = (revision: number): SharedSnapshot => ({
 const event = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now: 642, unitId: "ward-test" } as WardFlowEvent;
 
 describe("shared workspace connection", () => {
+  it.each([200, 409, 422, 400])("records a sanitized definitive command outcome for HTTP %i", async (status) => {
+    const typedEvent = {
+      type: "DISPATCH_BROADCAST_ALERT",
+      role: "coordinator",
+      now: 642,
+      title: "Invented directive title",
+      message: "Invented free text",
+      severity: "critical",
+      category: "capacity_gridlock",
+      targetScope: "all",
+      targetScopeLabel: "Invented scope",
+      durationMinutes: 240,
+      dispatchedByName: "Invented coordinator",
+      reason: "Invented reason",
+      patientId: "synthetic-patient-link",
+    } as WardFlowEvent;
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (_url, options) =>
+        options?.body
+          ? Response.json(status === 400 ? { error: "invalid" } : { snapshot: snapshot(2) }, { status })
+          : Response.json({ snapshot: snapshot(1) }),
+    });
+    await client.refresh();
+    client.dispatch(typedEvent);
+    await vi.waitFor(() => expect(view?.eventLog).toHaveLength(1));
+    expect(view?.eventLog).toEqual([
+      { type: "DISPATCH_BROADCAST_ALERT", role: "coordinator", now: 642, accepted: status === 200 },
+    ]);
+    expect(view?.snapshot?.revision).toBe(status === 400 ? 1 : 2);
+    client.dispose();
+  });
   it("rejects missing or live provenance before showing a shared snapshot", async () => {
     for (const dataMode of [undefined, "live"]) {
       let view: SharedView | undefined;
@@ -58,6 +96,7 @@ describe("shared workspace connection", () => {
     await vi.waitFor(() => expect(view?.status).toBe("unavailable"));
     expect(view?.status).toBe("unavailable");
     expect(view?.snapshot?.revision).toBe(1);
+    expect(view?.eventLog).toEqual([]);
     await client.retry();
     expect(requests).toHaveLength(2);
     expect(requests[0]).toBe(requests[1]);
@@ -70,6 +109,9 @@ describe("shared workspace connection", () => {
     expect(commandId).toHaveBeenCalledOnce();
     expect(view?.snapshot?.revision).toBe(2);
     expect(view?.status).toBe("ready");
+    expect(view?.eventLog).toEqual([eventLogEntryFor(event, true)]);
+    await client.refresh();
+    expect(view?.eventLog).toEqual([eventLogEntryFor(event, true)]);
     client.dispose();
   });
   it("shows committed winner state after a conflict and does not silently retry", async () => {
@@ -107,15 +149,17 @@ describe("shared workspace connection", () => {
       changed: (next) => {
         view = next;
       },
-      fetch: async () =>
-        ++calls === 1 ? Response.json({ snapshot: snapshot(1) }) : Response.json({}, { status: 403 }),
+      fetch: async () => (++calls <= 2 ? Response.json({ snapshot: snapshot(1) }) : Response.json({}, { status: 403 })),
     });
     await client.refresh();
+    client.dispatch(event);
+    await vi.waitFor(() => expect(view?.eventLog).toHaveLength(1));
     await client.refresh();
     expect(view?.snapshot).toBeNull();
     expect(view?.status).toBe("not-authorised");
+    expect(view?.eventLog).toEqual([]);
     client.dispatch(event);
-    expect(calls).toBe(2);
+    expect(calls).toBe(3);
     client.dispose();
   });
   it("keeps queued actions moving when a refresh was already in flight", async () => {

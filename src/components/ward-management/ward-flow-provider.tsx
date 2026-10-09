@@ -1028,7 +1028,7 @@ function WardFlowWorld({
       scenario: state.scenario,
       configuration: state.configuration,
       broadcastAlerts: state.broadcastAlerts ?? [],
-      eventLog: container.eventLog ?? [],
+      eventLog: shared.enabled ? (shared.eventLog ?? []) : (container.eventLog ?? []),
       dispatch,
       focusMovementId,
       setFocusMovementId,
@@ -1049,6 +1049,8 @@ function WardFlowWorld({
       state,
       // The log grows even when an event leaves `state` untouched (a no-op), so it is its own dep.
       container.eventLog,
+      shared.enabled,
+      shared.eventLog,
       now,
       dayZero,
       dispatch,

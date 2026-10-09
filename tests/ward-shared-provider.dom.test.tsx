@@ -3,6 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WardSharedConnection } from "../src/components/ward-management/ward-shared-access";
 import { WardFlowProvider, useWardFlow } from "../src/components/ward-management/ward-flow-provider";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
+import { AlertsScreen } from "../src/components/ward-management/alerts/alerts-screen";
+import { eventLogEntryFor } from "../src/components/ward-management/ward-event-log";
+import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 
 const fake = vi.hoisted(() => ({ connection: null as WardSharedConnection | null }));
 vi.mock("../src/components/ward-management/ward-shared-access", async (original) => {
@@ -29,6 +32,7 @@ function connection(): WardSharedConnection {
     signedIn: true,
     status: "ready",
     error: null,
+    eventLog: [],
     receivedAt: Date.now(),
     snapshot: {
       dataMode: "prototype",
@@ -52,6 +56,47 @@ afterEach(() => {
 });
 
 describe("shared provider boundary", () => {
+  it.each([true, false])("shows the confirmed shared broadcast outcome (accepted: %s)", (accepted) => {
+    const tree = () => (
+      <WardFlowProvider>
+        <AlertsScreen />
+      </WardFlowProvider>
+    );
+    const { rerender } = render(tree());
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+    fireEvent.change(screen.getByLabelText(/^Target scope$/i), { target: { value: "forensic" } });
+    const title = screen.getByLabelText(/^Title$/i) as HTMLInputElement;
+    const message = screen.getByLabelText(/^Directive$/i) as HTMLTextAreaElement;
+    const draft = { title: title.value, message: message.value };
+    fireEvent.click(screen.getByLabelText(/I confirm this directive is clinically authorised/i));
+    fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
+    expect(fake.connection!.dispatch).toHaveBeenCalledOnce();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toBeDisabled();
+    expect(screen.queryByRole("status", { name: "Broadcast feedback" })).toBeNull();
+    expect(screen.queryByRole("alert", { name: "Broadcast feedback" })).toBeNull();
+    const dispatched = vi.mocked(fake.connection!.dispatch).mock.calls[0][0] as WardFlowEvent;
+    expect(dispatched.type).toBe("DISPATCH_BROADCAST_ALERT");
+    const revision = fake.connection!.snapshot!.revision;
+    fake.connection = { ...fake.connection!, eventLog: [eventLogEntryFor(dispatched, accepted)] };
+    rerender(tree());
+    expect(fake.connection.snapshot!.revision).toBe(revision);
+    if (accepted) {
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(screen.getByRole("status", { name: "Broadcast feedback" })).toHaveTextContent(
+        "dispatched to Frankland Centre Forensic Mental Health.",
+      );
+    } else {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(screen.getByRole("alert", { name: "Broadcast feedback" })).toHaveTextContent(
+        "Broadcast was not accepted. Your draft has been kept.",
+      );
+      expect(title.value).toBe(draft.title);
+      expect(message.value).toBe(draft.message);
+      expect(screen.getByLabelText(/^Target scope$/i)).toHaveValue("forensic");
+      expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toBeEnabled();
+    }
+  });
   it("keeps the demonstration local when shared mode is disabled", () => {
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
     render(

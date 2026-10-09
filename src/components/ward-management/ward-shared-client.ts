@@ -1,5 +1,6 @@
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
+import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
 import { isValidSharedWardFlowState } from "./ward-shared-state-validation";
 
 export type SharedSnapshot = {
@@ -14,6 +15,7 @@ export type SharedView = {
   receivedAt: number;
   status: SharedStatus;
   error: string | null;
+  eventLog?: readonly EventLogEntry[];
 };
 type PendingCommand = {
   dataMode: "prototype";
@@ -24,7 +26,7 @@ type PendingCommand = {
 };
 
 export class SharedWorkspaceClient {
-  private view: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null };
+  private view: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
   private pending: PendingCommand | null = null;
   private queue: WardFlowEvent[] = [];
   private disposed = false;
@@ -76,6 +78,7 @@ export class SharedWorkspaceClient {
       this.queue = [];
       this.publish({
         snapshot: null,
+        eventLog: [],
         status: "not-authorised",
         error: "Sign in with an account assigned coordinator access.",
       });
@@ -132,9 +135,11 @@ export class SharedWorkspaceClient {
           };
         }
         this.publish({ status: "saving", error: null });
-        const { response, value } = await this.request("/v1/workspace/commands", this.pending);
+        const command = this.pending;
+        const { response, value } = await this.request("/v1/workspace/commands", command);
         if (response.status >= 500) throw new Error("Save not confirmed");
         if (value.snapshot) this.adopt(value.snapshot);
+        this.publish({ eventLog: [...(this.view.eventLog ?? []), eventLogEntryFor(command.event, response.ok)] });
         this.pending = null;
         if (!response.ok) {
           this.queue = [];
@@ -168,6 +173,6 @@ export class SharedWorkspaceClient {
     this.disposed = true;
     this.queue = [];
     this.pending = null;
-    this.view = { snapshot: null, receivedAt: 0, status: "loading", error: null };
+    this.view = { snapshot: null, receivedAt: 0, status: "loading", error: null, eventLog: [] };
   }
 }
