@@ -1058,7 +1058,11 @@ export function SettingsScreen() {
           onConfirm={handleConfirmReset}
         />
         {isOperatorModalOpen ? (
-          <OperatorSwitcherModal isOpen={isOperatorModalOpen} onClose={() => setIsOperatorModalOpen(false)} />
+          <OperatorSwitcherModal
+            isOpen={isOperatorModalOpen}
+            onClose={() => setIsOperatorModalOpen(false)}
+            onPreview={onPreview}
+          />
         ) : null}
         <WardPrototypeFooter
           testId="ward-settings-governance"

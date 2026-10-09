@@ -560,9 +560,16 @@ plus this folder's own `settings-search-index.ts`/`settings-thresholds.ts`. **Te
 `ward-settings-rail.dom.test.tsx`, `ward-settings-screen.dom.test.tsx`,
 `ward-settings-thresholds.test.ts`, plus repo-wide guards.
 
-- **`src/components/ward-management/settings/operator-switcher-modal.tsx`** (145 lines) — a modal
-  for switching which station (ward/ED/community team) the demo is "logged in" as. Exports
-  `OperatorStation`, `OPERATOR_STATIONS`, `OperatorSwitcherModal`.
+- **`src/components/ward-management/settings/operator-switcher-modal.tsx`** (640 lines) — Switch
+  workstation, direction D (9 Oct 2026): the shared `Drawer` with search, recents, the patient in
+  focus (coordinator route only, owner answer 38), the desk you are on, the statewide desks, then
+  every hospital with its ED and wards and the community teams. A click expands a desk in place
+  with its figures and what its role can do; Open desk navigates to that role's home. Styles in
+  `workstation-switcher.module.css`. Exports `OperatorSwitcherModal`.
+- **`src/components/ward-management/settings/workstation-desks.ts`** (225 lines) — the desks the
+  drawer lists, built from `hubEntries` and `edHomeSummaries` (never a fixed list), the current
+  desk from the route, and each role's actions from `EVENT_ROLE`. Test:
+  `ward-workstation-desks.test.ts`.
 - **`src/components/ward-management/settings/settings-screen.tsx`** (1898 lines) — the settings
   console. Single exported component `SettingsScreen` (178); local constants
   `THRESHOLD_STATE_WORDS`, `APPEARANCE_CHOICES`, `ROLE_PERMISSIONS` sit above it, but no

@@ -1,0 +1,657 @@
+/* Switch workstation, direction D (9 Oct 2026): site drawer with an inline preview.
+ * v8 rules: tokens only, colour as a dot or glyph, counts neutral, text truncates, one primary per
+ * area (Open desk, inside the open preview). Phone is its own pass below 640px, where the shared
+ * Drawer becomes a bottom sheet. */
+
+.drawer {
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+/* The body scrolls as one column; its sections keep their height rather than shrinking to fit. */
+.body > * {
+  flex-shrink: 0;
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+}
+
+/* Search, recents and the patient in focus. Pinned to the top of the scrolling body, edge to edge
+   over the body's own padding (16px on a phone, 20px from 640px), so the list scrolls under it.
+   Sticky offsets are measured inside that padding, hence the negative top. */
+.top {
+  position: sticky;
+  top: calc(-1 * var(--wf-s-4));
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: calc(-1 * var(--wf-s-4)) calc(-1 * var(--wf-s-4)) 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  /* Solid, not glass: a backdrop filter cannot see through the sheet's own glass, so a translucent
+     band let the list show through it. */
+  background: var(--wf-surface);
+}
+
+.search {
+  width: 100%;
+}
+
+.chipRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chipRow::-webkit-scrollbar {
+  display: none;
+}
+
+.chipLead {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  flex: 0 0 auto;
+  margin-right: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-weight: 600;
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.chipLead .mono {
+  color: var(--wf-ink-1);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  flex: 0 0 auto;
+  max-width: 220px;
+  height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip:hover {
+  background: var(--wf-hover);
+}
+
+.chip:focus-visible,
+.hereHead:focus-visible,
+.stateTile:focus-visible,
+.siteHead:focus-visible,
+.deskHead:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Shared row text */
+.who {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+.who > b,
+.who > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.who > b {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.who > span {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.roleIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+}
+
+.chev {
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-m-base);
+}
+
+[aria-expanded="true"] > .chev {
+  transform: rotate(180deg);
+}
+
+/* You are here */
+.here {
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  overflow: hidden;
+}
+
+.hereHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.hereHead:hover {
+  background: var(--wf-hover);
+}
+
+.hereBody {
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.eyebrow {
+  margin: var(--wf-s-3) 0 var(--wf-s-1);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+/* Statewide desks */
+.stateGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.stateTile {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  min-height: 52px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.stateTile:hover {
+  background: var(--wf-hover);
+}
+
+.stateTile[aria-current="page"] {
+  border-color: var(--wf-ink-2);
+  box-shadow: inset 0 0 0 1px var(--wf-ink-2);
+  cursor: default;
+}
+
+.preview {
+  border-style: dashed;
+  border-color: var(--wf-line-3);
+  background: transparent;
+  cursor: not-allowed;
+}
+
+.preview .who > b {
+  color: var(--wf-ink-2);
+  font-weight: 500;
+}
+
+/* Hospitals and desks */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-4);
+  text-align: center;
+  color: var(--wf-ink-3);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.svcDot {
+  --svc: var(--wf-svc-statewide);
+  width: 8px;
+  height: 8px;
+  border-radius: var(--wf-r-pill);
+  background: var(--svc);
+}
+
+.svcDot[data-service="north"] {
+  --svc: var(--wf-svc-north);
+}
+
+.svcDot[data-service="south"] {
+  --svc: var(--wf-svc-south);
+}
+
+.svcDot[data-service="east"] {
+  --svc: var(--wf-svc-east);
+}
+
+.svcDot[data-service="wachs"] {
+  --svc: var(--wf-svc-wachs);
+}
+
+.svcDot[data-service="cahs"] {
+  --svc: var(--wf-svc-cahs);
+}
+
+.svcDot[data-service="private"] {
+  --svc: var(--wf-svc-private);
+}
+
+.site {
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.siteHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: var(--wf-h-lg);
+  padding: 0 var(--wf-s-3);
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: inherit;
+  cursor: pointer;
+}
+
+.siteHead:hover:not(:disabled) {
+  background: var(--wf-hover);
+}
+
+.siteHead:disabled {
+  cursor: default;
+}
+
+.siteHead:disabled > .chev {
+  visibility: hidden;
+}
+
+.siteName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.mini {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  flex: 0 0 auto;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.mini > .mono {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.siteBody {
+  border-top: 1px solid var(--wf-line);
+}
+
+.desk + .desk {
+  border-top: 1px solid var(--wf-line);
+}
+
+.desk[data-open="true"] {
+  background: var(--wf-surface-2);
+}
+
+.deskHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: var(--wf-h-lg);
+  padding: 0 var(--wf-s-3);
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  cursor: pointer;
+  user-select: none;
+}
+
+.deskHead:hover {
+  background: var(--wf-hover);
+}
+
+.desk[data-here="true"] .deskName {
+  font-weight: 600;
+}
+
+.rowIcon {
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+}
+
+.deskName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font-weight: 500;
+}
+
+.fig {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--wf-s-1);
+  flex: 0 0 auto;
+  white-space: nowrap;
+  color: var(--wf-ink-1);
+}
+
+.fig > svg {
+  align-self: center;
+}
+
+.fig > b {
+  font-weight: 600;
+}
+
+.unit {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.age {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  margin-left: var(--wf-s-1);
+  font: 400 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-3);
+}
+
+.stale {
+  color: var(--wf-warning-ink);
+}
+
+.danger {
+  color: var(--wf-danger-ink);
+}
+
+/* Inline preview of a desk */
+.preview2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-1) var(--wf-s-3) var(--wf-s-3) calc(var(--wf-s-3) + 22px);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.facts > div:nth-child(odd) {
+  border-right: 1px solid var(--wf-line);
+}
+
+.facts > div:nth-child(n + 3) {
+  border-top: 1px solid var(--wf-line);
+}
+
+.facts dt {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.facts dd {
+  margin: 0;
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.sub {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.can {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.can > li {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 28px;
+  min-width: 0;
+  color: var(--wf-ink-1);
+}
+
+.can > li > span:not(.dash) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cannot {
+  color: var(--wf-ink-3);
+}
+
+.cannot > span:nth-child(2) {
+  color: var(--wf-ink-2);
+}
+
+.dash {
+  flex: 0 0 10px;
+  height: 2px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-ink-3);
+}
+
+.by {
+  margin-left: auto;
+  flex: 0 1 auto;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.previewFoot {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.roleName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Footer: keyboard hints, desktop only */
+.foot {
+  padding-block: var(--wf-s-2);
+}
+
+.keys {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Phone: its own pass. A tall bottom sheet, thumb-sized rows, the Open button full width under the
+   preview, chips scrolling sideways rather than wrapping, no keyboard hints. */
+@media (max-width: 639px) {
+  .drawer {
+    min-height: calc(100dvh - 2rem);
+  }
+
+  .chip {
+    height: 36px;
+  }
+
+  .stateTile {
+    min-height: 56px;
+  }
+
+  /* The desk name matters more than the second figure here; the tiles below carry it too. */
+  .hereHead .age {
+    display: none;
+  }
+
+  .siteHead,
+  .deskHead {
+    min-height: 48px;
+  }
+
+  .preview2 {
+    padding-left: var(--wf-s-3);
+  }
+
+  .previewFoot {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .previewFoot > a,
+  .previewFoot > span[aria-disabled] {
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .roleName {
+    text-align: center;
+  }
+
+  .foot {
+    display: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .top {
+    top: -20px;
+    margin: -20px -20px 0;
+    padding: var(--wf-s-3) 20px;
+  }
+}
+
+@media (forced-colors: active) {
+  .preview {
+    border: 1px dashed GrayText;
+  }
+
+  .svcDot,
+  .dash {
+    forced-color-adjust: none;
+  }
+}
