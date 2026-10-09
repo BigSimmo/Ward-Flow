@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
+import { inspectDelayPerson } from "./helpers/delays-interactions";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { movementById } from "@/components/ward-management/ward-movements";
@@ -60,44 +61,15 @@ function PullReleaser({ movementId }: { movementId: string }) {
 
 const SUBJECT = movementById("WF-004");
 
-/**
- * ⚠️ **RE-POINTED 2026-09-07 — THE DELAYS SCREEN NO LONGER RENDERS ONE FAT ROW PER PERSON.** It was
- * rebuilt into a compact index (one `<button data-ward-primitive="record-row">` per patient, with
- * only an id, a wait and a cause title) beside a detail panel that renders the SAME `DelayRow` this
- * file always asserted against — but only for whichever one patient is selected.
- * `rowFor`'s old `getByText(id, {selector: "[data-ward-primitive='record-id']"})`
- * would now find TWO matches once WF-004 is selected — the index button and the detail row — and
- * throw. Selection is required first, and the detail panel is where the live row now lives.
- */
+/** Opens the patient's row so their panel shows in the rail. */
 function selectPatient(id: string) {
-  // The compact worklist paginates, and the live clinical row sits behind a native disclosure.
-  // Reach both through the screen's controls before asserting the original liveness contract.
-  const waiting = screen.getByRole("region", { name: "Waiting" });
-  fireEvent.change(within(waiting).getByRole("combobox", { name: "Rows per page" }), {
-    target: { value: "100" },
-  });
-  fireEvent.click(screen.getByTestId(`delays-select-${id}`));
-  const summary = screen.getByText("Patient actions and full details");
-  fireEvent.click(summary);
-  expect(summary.closest("details")).toHaveAttribute("open");
+  inspectDelayPerson(id);
 }
 
-/**
- * The one live `DelayRow` currently shown, inside the detail panel. Scoped to that panel rather
- * than searched globally, because the compact index button for the same id also carries
- * `data-ward-primitive="record-row"` — an unscoped search would match both.
- *
- * ⚠️ **RENAMED, task D1.** The panel is titled "The person you have chosen" no longer — the drawing
- * draws "Nobody selected" or "Why this person is waiting" depending on state. `selectPatient` is
- * always called before this, so the panel is always in the second state here.
- */
+/** The stage line in the selected patient's panel. */
 function detailRow(): HTMLElement {
   const panel = screen.getByRole("region", { name: "Why this person is waiting" });
-  const row = panel.querySelector("[data-ward-primitive='record-row']");
-  if (row === null) {
-    throw new Error("no record row rendered in the detail panel — is anybody selected?");
-  }
-  return row as HTMLElement;
+  return within(panel).getByTestId("delays-panel-stage");
 }
 
 describe("the Delays screen reflects a dispatch made after mount, not the records it first rendered", () => {

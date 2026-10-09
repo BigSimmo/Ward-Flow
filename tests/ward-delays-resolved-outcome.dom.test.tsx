@@ -33,7 +33,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * unchanged in what it checks; this only opens the tab that now gates it.
  */
 function openResolvedTab() {
-  fireEvent.click(screen.getByRole("tab", { name: /Resolved today/ }));
+  fireEvent.click(screen.getByRole("tab", { name: /^Resolved/u }));
 }
 
 /** The fixture's own answer, so the expectation cannot drift from the world the screen renders. */
