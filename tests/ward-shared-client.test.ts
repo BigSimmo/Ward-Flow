@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   SharedWorkspaceClient,
   type SharedSnapshot,
@@ -15,9 +15,6 @@ const snapshot = (revision: number): SharedSnapshot => ({
   payload: { version: 1, state, dayZero: "2026-10-07T00:00:00Z", startedAt: "2026-10-07T10:00:00Z" },
 });
 const event = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now: 642, unitId: "ward-test" } as WardFlowEvent;
-const settle = async () => {
-  for (let i = 0; i < 10; i++) await new Promise((resolve) => setTimeout(resolve, 0));
-};
 
 describe("shared workspace connection", () => {
   it("rejects missing or live provenance before showing a shared snapshot", async () => {
@@ -56,7 +53,7 @@ describe("shared workspace connection", () => {
     });
     await client.refresh();
     client.dispatch(event);
-    await settle();
+    await vi.waitFor(() => expect(view?.status).toBe("unavailable"));
     expect(view?.status).toBe("unavailable");
     expect(view?.snapshot?.revision).toBe(1);
     await client.retry();
@@ -83,7 +80,10 @@ describe("shared workspace connection", () => {
     });
     await client.refresh();
     client.dispatch(event);
-    await settle();
+    await vi.waitFor(() => {
+      expect(view?.snapshot?.revision).toBe(2);
+      expect(view?.error).toContain("not applied");
+    });
     expect(commands).toBe(1);
     expect(view?.snapshot?.revision).toBe(2);
     expect(view?.error).toContain("not applied");
@@ -106,7 +106,6 @@ describe("shared workspace connection", () => {
     expect(view?.snapshot).toBeNull();
     expect(view?.status).toBe("not-authorised");
     client.dispatch(event);
-    await settle();
     expect(calls).toBe(2);
     client.dispose();
   });
@@ -114,10 +113,13 @@ describe("shared workspace connection", () => {
     let resolve: (() => void) | undefined;
     let reads = 0;
     let commands = 0;
+    let view: SharedView | undefined;
     const client = new SharedWorkspaceClient({
       baseUrl: "https://example.test",
       token: async () => "test",
-      changed: () => {},
+      changed: (next) => {
+        view = next;
+      },
       fetch: async (_url, options) => {
         if (options?.body) {
           commands++;
@@ -132,11 +134,15 @@ describe("shared workspace connection", () => {
     });
     await client.refresh();
     const refresh = client.refresh();
-    await settle();
+    await vi.waitFor(() => expect(resolve).toBeTypeOf("function"));
     client.dispatch(event);
     resolve!();
     await refresh;
-    await settle();
+    await vi.waitFor(() => expect(commands).toBe(1));
+    await vi.waitFor(() => {
+      expect(view?.status).toBe("ready");
+      expect(view?.snapshot?.revision).toBe(2);
+    });
     expect(commands).toBe(1);
     client.dispose();
   });
