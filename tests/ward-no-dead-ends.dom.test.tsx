@@ -85,7 +85,6 @@ import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
-import { ReferralIntakeForm } from "@/components/ward-management/referrals/referral-intake";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
@@ -99,6 +98,7 @@ import { StatisticsWardScreen } from "@/components/ward-management/statistics/st
 import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { WardIndex } from "@/components/ward-management/wards/ward-index";
+import { EdIndex } from "@/components/ward-management/ed/ed-index";
 
 const unit = allUnits()[0];
 const ed = allEmergencyDepartments()[0];
@@ -129,6 +129,7 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   ["/mockups/ward-flow/delays", { concrete: "/mockups/ward-flow/delays", render: () => <DelaysScreen /> }],
   ["/mockups/ward-flow/discharges", { concrete: "/mockups/ward-flow/discharges", render: () => <DischargeBoard /> }],
   ["/mockups/ward-flow/on-call", { concrete: "/mockups/ward-flow/on-call", render: () => <OnCallScreen /> }],
+  ["/mockups/ward-flow/ed", { concrete: "/mockups/ward-flow/ed", render: () => <EdIndex /> }],
   [
     "/mockups/ward-flow/ed/[edId]",
     { concrete: `/mockups/ward-flow/ed/${ed.id}`, render: () => <EdScreen edId={ed.id} /> },
@@ -164,7 +165,7 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   ["/mockups/ward-flow/referrals", { concrete: "/mockups/ward-flow/referrals", render: () => <ReferralBoard /> }],
   [
     "/mockups/ward-flow/referrals/new",
-    { concrete: "/mockups/ward-flow/referrals/new", render: () => <ReferralIntakeForm /> },
+    { concrete: "/mockups/ward-flow/referrals/new", render: () => <ReferralBoard defaultSelectFirst /> },
   ],
   ["/mockups/ward-flow/search", { concrete: "/mockups/ward-flow/search", render: () => <PatientSearchPage /> }],
   ["/mockups/ward-flow/settings", { concrete: "/mockups/ward-flow/settings", render: () => <SettingsScreen /> }],

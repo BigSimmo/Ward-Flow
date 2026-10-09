@@ -92,7 +92,7 @@ describe("the coordinator screen never keeps a closed movement selected (WF-22)"
 
     // Select an open movement's queue row, and the shortlist names it.
     fireEvent.click(queueRow(TARGET!.id));
-    const shortlist = screen.getByLabelText("Explainable shortlist");
+    const shortlist = screen.getByLabelText("Placement");
     expect(
       within(shortlist).getByTestId(`ward-shortlist-${TARGET!.id}`),
       "selecting the queue row must open the shortlist for that exact movement",
@@ -110,7 +110,7 @@ describe("the coordinator screen never keeps a closed movement selected (WF-22)"
     // The shortlist region is gone, or no longer names the movement — either reading closes the
     // gap, so both are checked: no region by that name survives, and nothing anywhere still
     // carries TARGET's own shortlist body.
-    expect(screen.queryByLabelText("Explainable shortlist")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Placement")).not.toBeInTheDocument();
     expect(screen.queryByTestId(`ward-shortlist-${TARGET!.id}`)).not.toBeInTheDocument();
 
     // No other movement is silently selected — the queue must show no row claiming selection.

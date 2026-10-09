@@ -133,9 +133,9 @@ describe("WardBar Single-Row Stress Test & CSS Contracts", () => {
       const panel = screen.getByTestId("ward-bar-primary-panel");
       expect(panel).toBeInTheDocument();
 
-      expect(screen.getByTestId("ward-bar-primary-menu-community")).toHaveTextContent("From community");
-      expect(screen.getByTestId("ward-bar-primary-menu-ed_medical")).toHaveTextContent("From ED");
-      expect(screen.getByTestId("ward-bar-primary-menu-inter_hospital")).toHaveTextContent("From a ward");
+      expect(screen.getByTestId("ward-bar-primary-menu-ward")).toHaveTextContent("To a ward");
+      expect(screen.getByTestId("ward-bar-primary-menu-community")).toHaveTextContent("To community");
+      expect(screen.getByTestId("ward-bar-primary-menu-ed")).toHaveTextContent("To an ED");
 
       await user.keyboard("{Escape}");
       expect(screen.queryByTestId("ward-bar-primary-panel")).toBeNull();

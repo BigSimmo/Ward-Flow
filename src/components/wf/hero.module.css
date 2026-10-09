@@ -315,3 +315,73 @@
     outline: 2px solid CanvasText;
   }
 }
+
+/* A stat that opens a panel: a soft pill that reads as a control, chevron turns when open. */
+.statToggle {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  margin: calc(-1 * var(--wf-s-1)) calc(-1 * var(--wf-s-2));
+  padding: var(--wf-s-1) var(--wf-s-2);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
+  border-radius: var(--wf-r-md);
+  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.statToggle:hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+}
+
+.statToggle[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
+  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+}
+
+.statToggle:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+}
+
+.statChevron {
+  transition: transform 160ms ease;
+}
+
+.statToggle[aria-expanded="true"] .statChevron {
+  transform: rotate(180deg);
+}
+
+/* Inline stat: value and label on one line, for a second hero row of toggles. */
+.inline,
+.inline .statToggle {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.inline {
+  padding: 0;
+  border-left: 0;
+}
+
+.inline .statToggle {
+  margin: 0;
+  height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-pill);
+}
+
+.inline .value {
+  font-size: var(--wf-fs-14);
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statChevron {
+    transition: none;
+  }
+}

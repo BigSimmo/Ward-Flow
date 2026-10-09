@@ -16,10 +16,7 @@ vi.mock("next/link", () => ({
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { applyDueSoonThresholds } from "@/components/ward-management/ward-clock";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import {
-  DUE_SOON_MINUTES,
-  DUE_SOON_URGENT_MINUTES,
-} from "@/components/ward-management/ward-operational-defaults";
+import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * The two due-time warning rows (Josh, 26 Sept 2026: "your default, not a legal limit",
@@ -60,20 +57,18 @@ describe("settings screen due-time warning rows", () => {
   it("shows both rows at their defaults, each labelled as a default rather than a legal limit", () => {
     renderSettings();
 
-    expect(screen.getByText("First warning before a legal due time")).toBeVisible();
-    expect(screen.getByText("Second warning before a legal due time")).toBeVisible();
+    expect(screen.getByText("First warning")).toBeVisible();
+    expect(screen.getByText("Second warning")).toBeVisible();
+    // The card that holds both rows says once that these are defaults, not legal limits.
+    expect(screen.getByText("Your defaults, not legal limits")).toBeVisible();
 
-    expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("1 h");
-    expect(screen.getByTestId("due-soon-display")).toHaveTextContent("3 h");
+    expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("1h");
+    expect(screen.getByTestId("due-soon-display")).toHaveTextContent("3h");
     expect(Number(urgentSlider().value)).toBe(DUE_SOON_URGENT_MINUTES);
     expect(Number(soonSlider().value)).toBe(DUE_SOON_MINUTES);
 
-    expect(screen.getByTestId("setting-due-soon-urgent-desc")).toHaveTextContent(
-      "Shows a recorded legal due time as due within this time. Your default, not a legal limit.",
-    );
-    expect(screen.getByTestId("setting-due-soon-desc")).toHaveTextContent(
-      "Shows a recorded legal due time as due soon from this time. Your default, not a legal limit.",
-    );
+    expect(screen.getByTestId("setting-due-soon-urgent-desc")).toHaveTextContent("Before a legal due time");
+    expect(screen.getByTestId("setting-due-soon-desc")).toHaveTextContent("Shown as due soon");
   });
 
   it("stepping the first warning up once and saving carries the new value into the provider's configuration", () => {
@@ -81,12 +76,12 @@ describe("settings screen due-time warning rows", () => {
     expect(screen.getByTestId("probe-due-soon-urgent")).toHaveTextContent(String(DUE_SOON_URGENT_MINUTES));
 
     fireEvent.click(screen.getByRole("button", { name: "Increase first warning before a legal due time" }));
-    expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("1 h 15 min");
+    expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("1h 15m");
     expect(urgentSlider().value).toBe(String(DUE_SOON_URGENT_MINUTES + 15));
     // Not dispatched yet.
     expect(screen.getByTestId("probe-due-soon-urgent")).toHaveTextContent(String(DUE_SOON_URGENT_MINUTES));
 
-    fireEvent.click(screen.getByRole("button", { name: "Save coordination rules" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
     expect(screen.getByTestId("probe-due-soon-urgent")).toHaveTextContent(String(DUE_SOON_URGENT_MINUTES + 15));
     // The second warning was untouched and saves unchanged.
     expect(screen.getByTestId("probe-due-soon")).toHaveTextContent(String(DUE_SOON_MINUTES));
@@ -103,7 +98,7 @@ describe("settings screen due-time warning rows", () => {
     }
 
     expect(Number(urgentSlider().value)).toBe(165);
-    expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("2 h 45 min");
+    expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("2h 45m");
     expect(Number(urgentSlider().value)).toBeLessThan(Number(soonSlider().value));
   });
 

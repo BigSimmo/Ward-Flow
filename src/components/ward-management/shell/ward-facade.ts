@@ -358,7 +358,10 @@ export type { ReferralSource };
 
 export type RaiseReferralTarget = {
   readonly patientId?: string;
-  readonly source: ReferralSource;
+  /** Where the referral comes from. Optional: the bar's "New referral" menu names only where it goes. */
+  readonly source?: ReferralSource;
+  /** Where the referral goes — the slide-out's first choice, "Refer to" (Josh, 8 Oct 2026). */
+  readonly refer?: "ward" | "community" | "ed";
   /** The emergency department the person is being referred FROM, when the source is `"ed"`. */
   readonly originEdId?: string;
   /** The community team the person is being referred FROM, when the source is `"community"`. */
@@ -366,7 +369,7 @@ export type RaiseReferralTarget = {
 };
 
 /**
- * WHERE A REFERRAL IS RAISED FROM — the one thing in the app that builds the intake link.
+ * WHERE A REFERRAL IS RAISED FROM — the one thing in the app that builds the referral link.
  *
  * ⚠️ **THE QUERY IS BUILT HERE AND NOWHERE ELSE.** Three different surfaces raise a referral from
  * three different starting points (an emergency department, a community team, a GP), and each one
@@ -378,19 +381,18 @@ export type RaiseReferralTarget = {
  * parameter that was supplied and is blank; leaving it out says it was not supplied. The receiving
  * form has to be able to tell those apart, and this is the only place that distinction can be made.
  *
- * 🔴 **CORRECTED 2026-09-16 (ward audit) — THIS USED TO SAY NOTHING READS THESE PARAMETERS, AND
- * THAT WENT FALSE.** `referral-intake.tsx` now reads three of these four: `patientId`
- * (`readPatientId`), `source` (`prefilledSource`) and `originEdId` (`prefilledOriginSite`) are all
- * consumed there, so a well-formed link built here really does arrive pre-filled — and for
- * `patientId`, validated against a real person before the form even renders. Only `teamId` is
- * still never read, and that omission is deliberate and documented independently on
- * `prefilledOriginSite`'s own comment in that file: the model holds a community team's NAME, not
- * an id, so reading an id here would either invent a registry or silently store one as a name.
+ * **WHO READS THEM (8 Oct 2026).** The full-page intake form is retired; the referral slide-out is
+ * the one place a referral is written. `referrals/referral-sheet-link.ts` reads `patientId`,
+ * `source`, `refer` and `originEdId` from this link, and the bar (`shell/ward-bar.tsx`) opens the
+ * slide-out with them, in place, wherever the link is clicked. `teamId` is still never read: the
+ * model holds a community team's NAME, not an id, so reading an id would either invent a registry or
+ * silently store one as a name.
  */
 export function raiseReferralHref(target: RaiseReferralTarget): string {
   const query = new URLSearchParams();
   if (target.patientId !== undefined) query.set("patientId", target.patientId);
-  query.set("source", target.source);
+  if (target.source !== undefined) query.set("source", target.source);
+  if (target.refer !== undefined) query.set("refer", target.refer);
   if (target.originEdId !== undefined) query.set("originEdId", target.originEdId);
   if (target.teamId !== undefined) query.set("teamId", target.teamId);
   return `/mockups/ward-flow/referrals/new?${query.toString()}`;

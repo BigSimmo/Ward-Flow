@@ -22,10 +22,13 @@ import { wardCategory } from "@/components/ward-management/ward-bed-designation"
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
+  INFORMATIONAL_GATES,
   candidateReason,
   eligibleCandidatesAmong,
   restrictionNotice,
+  shortlistCandidates,
   wardServiceOrder,
+  type ShortlistCandidate,
 } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, HealthService, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -67,6 +70,19 @@ type HomeBedflowProps = {
 
 type Candidate = ReturnType<typeof eligibleCandidatesAmong>[number];
 
+/** Where this patient could go, across the whole network: a ward that fits with a bed now, or one
+ *  that fits in every way except that it has no allocatable bed. */
+type FitKind = "bed" | "no-bed";
+
+function fitKind(candidate: ShortlistCandidate): FitKind | undefined {
+  // Only a ward the eligibility rules pass counts as a fit, so the count, the chips and the status
+  // line below agree. A ward that declined this patient before fails `prior_decline` and stays out.
+  if (candidate.availability === "eligible") return "bed";
+  if (candidate.availability !== "unavailable") return undefined;
+  const failing = candidate.verdict.gates.filter((gate) => !gate.pass && !INFORMATIONAL_GATES.includes(gate.gate));
+  return failing.length > 0 && failing.every((gate) => gate.gate === "allocatable_bed") ? "no-bed" : undefined;
+}
+
 function unitKind(unit: Unit) {
   const category = wardCategory(unit);
   return category === "Locked" ? "secure" : category.toLowerCase();
@@ -106,6 +122,19 @@ export function HomeBedflow({
   const fits = shortlist.filter((candidate) => candidate.verdict.eligible);
   const bestFit: Candidate | undefined = fits[0];
 
+  // Every ward in the network that fits this patient, not only the three the routed shortlist
+  // keeps: green where a bed is ready, amber where the ward fits but has no bed now.
+  const options = useMemo(() => {
+    if (!movement) return [];
+    return shortlistCandidates(movement, units, now)
+      .map((candidate) => ({ unit: candidate.unit, fit: fitKind(candidate) }))
+      .filter((option): option is { unit: Unit; fit: FitKind } => option.fit !== undefined)
+      .sort((a, b) => Number(a.fit === "no-bed") - Number(b.fit === "no-bed"));
+  }, [movement, units, now]);
+  const fitByUnitId = useMemo(() => new Map(options.map((option) => [option.unit.id, option.fit])), [options]);
+  const bedFitCount = options.filter((option) => option.fit === "bed").length;
+  const noBedCount = options.length - bedFitCount;
+
   const occupancy = useMemo(
     () => deriveServiceBedAlerts(units, bedReleases, undefined, movements, now),
     [units, bedReleases, movements, now],
@@ -127,15 +156,29 @@ export function HomeBedflow({
     return units.filter((unit) => !grouped.has(unit.id));
   }, [groups, units]);
 
-  // A group the reader has opened or shut stays that way; otherwise it opens when it holds a ward
-  // that fits the selected movement, and the first two open when nothing is selected.
-  const [toggled, setToggled] = useState<Partial<Record<string, boolean>>>({});
+  // Opened automatically for each patient: only the health services holding a ward that fits, or
+  // the recorded destination or a referral, open. A group the reader opens or shuts stays that
+  // way until another patient is chosen.
+  const toggleKey = movement?.id ?? "";
+  const [toggledFor, setToggledFor] = useState<{ key: string; groups: Partial<Record<string, boolean>> }>({
+    key: toggleKey,
+    groups: {},
+  });
+  const toggled = toggledFor.key === toggleKey ? toggledFor.groups : {};
   const isOpenGroup = (groupService: string, index: number, groupUnits: Unit[]) => {
     const chosen = toggled[groupService];
     if (chosen !== undefined) return chosen;
-    if (movement) return groupUnits.some((unit) => byUnitId.has(unit.id));
+    if (movement) {
+      return groupUnits.some(
+        (unit) =>
+          fitByUnitId.has(unit.id) || movement.acceptedUnitId === unit.id || movement.referredUnitIds.includes(unit.id),
+      );
+    }
     return index < 2;
   };
+  function toggleGroup(groupService: string, open: boolean) {
+    setToggledFor({ key: toggleKey, groups: { ...toggled, [groupService]: !open } });
+  }
 
   const today = units.reduce((sum, unit) => {
     const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, now);
@@ -167,8 +210,21 @@ export function HomeBedflow({
     const notice =
       movement !== undefined && (candidate || isAccepted || isReferred) ? restrictionNotice(movement, unit) : undefined;
     const fit = candidate?.verdict.eligible === true;
-    const dim = movement !== undefined && !candidate && !isAccepted && !isReferred;
+    const optionFit = fitByUnitId.get(unit.id);
+    const dim = movement !== undefined && !candidate && !optionFit && !isAccepted && !isReferred;
     const selected = selectedUnitId === unit.id;
+    const isBest = fit && bestFit?.unit.id === unit.id;
+    // A gentle tint marks where this patient can go: fitting wards, the recorded destination and
+    // outstanding referrals. Everything else stays plain or dimmed.
+    const highlight = isAccepted
+      ? "accepted"
+      : isReferred
+        ? "referred"
+        : fit || optionFit === "bed"
+          ? "fit"
+          : optionFit === "no-bed"
+            ? "fit-no-bed"
+            : undefined;
     const segments: StackSegment[] = [
       { id: "ready", value: states.ready, fill: "ready", label: "Ready" },
       { id: "pulled", value: states.pulled, hatch: true, label: "Pulled" },
@@ -183,10 +239,16 @@ export function HomeBedflow({
         ? "Outstanding referral"
         : candidate && !candidate.verdict.eligible
           ? candidateReason(candidate.verdict)
-          : undefined;
+          : optionFit === "no-bed"
+            ? "Fits, no bed now"
+            : undefined;
 
     return (
-      <li key={unit.id} className={cx(styles.unitRow, selected && styles.unitRowSelected, dim && styles.unitRowDim)}>
+      <li
+        key={unit.id}
+        className={cx(styles.unitRow, selected && styles.unitRowSelected, dim && styles.unitRowDim)}
+        data-highlight={highlight}
+      >
         <button
           type="button"
           className={styles.unitMain}
@@ -200,8 +262,11 @@ export function HomeBedflow({
           onClick={() => onSelectUnit(unit.id)}
         >
           <span className={styles.unitName}>
-            <span className={styles.unitNameText} title={unit.name}>
-              {unit.name}
+            <span className={styles.unitNameLine}>
+              <span className={styles.unitNameText} title={unit.name}>
+                {unit.name}
+              </span>
+              {isBest ? <span className={styles.unitBestTag}>Best fit</span> : null}
             </span>
             <span className={styles.unitSub}>
               {unit.cohort} {unitKind(unit)} · {unit.beds} beds
@@ -236,7 +301,7 @@ export function HomeBedflow({
           ) : null}
         </button>
         <span className={styles.unitAction}>
-          {fit ? (
+          {fit || optionFit === "bed" ? (
             <Button size="sm" variant="tint" onClick={() => onOffer(unit.id)} aria-label={`Offer ${unit.name}`}>
               Offer
             </Button>
@@ -268,10 +333,29 @@ export function HomeBedflow({
               {originEd ? ` · ${originEd.siteCode}` : ""}
             </span>
             <span className={styles.forFits}>
-              <StatusGlyph tone={fits.length > 0 ? "success" : "danger"} size={9} />
-              {fits.length === 1 ? "1 ward fits" : `${fits.length} wards fit`}
+              <StatusGlyph tone={bedFitCount > 0 ? "success" : noBedCount > 0 ? "warning" : "danger"} size={9} />
+              {bedFitCount === 1 ? "1 ward fits" : `${bedFitCount} wards fit`}
+              {noBedCount > 0 ? <span className={styles.forNoBed}>{` · ${noBedCount} no bed`}</span> : null}
             </span>
           </div>
+          {options.length > 0 ? (
+            <ul className={styles.forOptions} aria-label="Wards that fit" data-testid="ward-bedflow-options">
+              {options.map((option) => (
+                <li key={option.unit.id}>
+                  <button
+                    type="button"
+                    className={styles.forOption}
+                    data-fit={option.fit}
+                    aria-pressed={selectedUnitId === option.unit.id}
+                    onClick={() => onSelectUnit(option.unit.id)}
+                  >
+                    {option.unit.name}
+                    {option.fit === "no-bed" ? <span className="sr-only">, fits but no bed now</span> : null}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           {recorded || !bestFit ? (
             <p className={styles.forStatus}>{hubStatusText(movement, shortlist, units, now, who.displayName)}</p>
           ) : (
@@ -291,6 +375,8 @@ export function HomeBedflow({
             0,
           );
           const occupied = occupancyByService.get(group.service);
+          const groupFits = group.units.filter((unit) => fitByUnitId.get(unit.id) === "bed").length;
+          const groupNoBed = group.units.filter((unit) => fitByUnitId.get(unit.id) === "no-bed").length;
           const bodyId = `ward-bedflow-group-${group.service.replace(/\s+/g, "-").toLowerCase()}`;
           return (
             <section key={group.service} className={styles.group} aria-label={group.service}>
@@ -299,11 +385,19 @@ export function HomeBedflow({
                 className={styles.groupHead}
                 aria-expanded={open}
                 aria-controls={bodyId}
-                onClick={() => setToggled((current) => ({ ...current, [group.service]: !open }))}
+                onClick={() => toggleGroup(group.service, open)}
               >
                 <Icon icon={open ? ChevronDown : ChevronRight} size={14} />
                 <span className={styles.groupName}>{group.service}</span>
                 <span className={styles.groupCount}>{group.units.length} wards</span>
+                {movement ? (
+                  <span className={styles.groupFit} data-none={groupFits + groupNoBed === 0 ? "true" : undefined}>
+                    {groupFits + groupNoBed === 0 ? "None fit" : groupFits > 0 ? `${groupFits} fit` : null}
+                    {groupNoBed > 0 ? (
+                      <span className={styles.groupNoBed}>{`${groupFits > 0 ? " · " : ""}${groupNoBed} no bed`}</span>
+                    ) : null}
+                  </span>
+                ) : null}
                 <span className={styles.groupFigures}>
                   <span className={styles.mono}>{ready}</span> ready
                   {occupied !== undefined ? (

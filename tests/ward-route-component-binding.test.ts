@@ -89,7 +89,7 @@ const PINNED: Record<string, string | null> = {
   delays: "DelaysScreen",
   discharges: "DischargeBoard",
   "on-call": "OnCallScreen",
-  ed: "redirect:/mockups/ward-flow/ed/peel-ed",
+  ed: "EdIndex",
   "ed/[edId]": "EdScreen",
   escalation: "redirect:/mockups/ward-flow/delays?from=escalation",
   exceptions: "redirect:/mockups/ward-flow/delays?from=exceptions",
@@ -111,7 +111,8 @@ const PINNED: Record<string, string | null> = {
   "people/new": "AddPatientForm",
   queue: "redirect:/mockups/ward-flow/delays?from=queue",
   referrals: "ReferralBoard",
-  "referrals/new": "ReferralIntakeForm",
+  // 8 Oct 2026: the full-page form is retired; this route is the Referrals board with the slide-out open.
+  "referrals/new": "ReferralBoard",
   search: "PatientSearchPage",
   // Added 2026-09-12 with the Settings screen. ⚠️ **THIS IS THE SIXTH PINNED TALLY OVER ONE
   // ROUTE, and the comment four rows below already called itself the fourth.** The other five:

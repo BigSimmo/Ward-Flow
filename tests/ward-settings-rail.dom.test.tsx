@@ -39,6 +39,7 @@ function renderSettings() {
       <SettingsScreen />
     </WardFlowProvider>,
   );
+  fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
 }
 
 afterEach(() => {
@@ -48,33 +49,33 @@ afterEach(() => {
 });
 
 describe("the settings screen's rail control", () => {
-  it("offers one button, whose words say what pressing it will do", () => {
+  it("offers Open and Icons, with the current state checked", () => {
     setRailOpenPreference(true);
     renderSettings();
     const panel = screen.getByTestId("ward-settings-rail");
 
-    const button = within(panel).getByRole("button");
-    expect(button.textContent, "an open rail should offer to close it").toMatch(/close the rail/i);
+    expect(within(panel).getByRole("radio", { name: "Open" }).getAttribute("aria-checked")).toBe("true");
+    expect(within(panel).getByRole("radio", { name: "Icons" }).getAttribute("aria-checked")).toBe("false");
   });
 
   it("writes the real rail state, not a second one of its own", () => {
     setRailOpenPreference(true);
     renderSettings();
 
-    fireEvent.click(within(screen.getByTestId("ward-settings-rail")).getByRole("button"));
+    fireEvent.click(within(screen.getByTestId("ward-settings-rail")).getByRole("radio", { name: "Icons" }));
 
     expect(window.localStorage.getItem("ward-flow-rail"), "the real key was not written").toBe("closed");
     expect(window.localStorage.getItem("ward-flow-settings-rail"), "a second key was written").toBeNull();
   });
 
-  it("reverses its own offer once the rail is closed", () => {
+  it("says the rail is closed once Icons is chosen", () => {
     setRailOpenPreference(true);
     renderSettings();
     const panel = screen.getByTestId("ward-settings-rail");
 
-    fireEvent.click(within(panel).getByRole("button"));
+    fireEvent.click(within(panel).getByRole("radio", { name: "Icons" }));
 
-    expect(within(screen.getByTestId("ward-settings-rail")).getByRole("button").textContent).toMatch(/open the rail/i);
+    expect(screen.getByTestId("ward-settings-rail-now").textContent).toMatch(/closed/i);
   });
 
   /**
@@ -85,7 +86,7 @@ describe("the settings screen's rail control", () => {
   it("follows a change made from anywhere else", () => {
     setRailOpenPreference(true);
     renderSettings();
-    expect(screen.getByTestId("ward-settings-rail").textContent).toMatch(/open/i);
+    expect(screen.getByTestId("ward-settings-rail-now").textContent).toMatch(/open/i);
 
     // ⚠️ `act` because this write originates OUTSIDE React, exactly as the rail's own control's
     // would from another component tree. It flushes the pending update; it does not weaken the
@@ -93,7 +94,7 @@ describe("the settings screen's rail control", () => {
     act(() => setRailOpenPreference(false));
 
     expect(
-      screen.getByTestId("ward-settings-rail").textContent,
+      screen.getByTestId("ward-settings-rail-now").textContent,
       "the readout did not follow a change made outside this screen",
     ).toMatch(/closed/i);
   });

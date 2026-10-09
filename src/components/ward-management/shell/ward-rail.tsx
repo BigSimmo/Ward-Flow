@@ -250,7 +250,15 @@ function railEntries(): RailEntry[] {
     icon: WARD_NAV_ICONS[item.id],
   }));
   const registry = new Map([...views, ...nav].map((entry) => [entry.id, entry]));
-  return RAIL_GROUPS.flatMap((group) => group.entries.map(([id, label]) => ({ ...registry.get(id)!, label })));
+  // The rail's Emergency entry opens the statewide ED index rather than the `ed` nav entry's one
+  // example department, the same way Wards opens All wards rather than one ward.
+  const hrefOverride: Record<string, string> = { ed: WARD_ED_HREF };
+  return RAIL_GROUPS.flatMap((group) =>
+    group.entries.map(([id, label]) => {
+      const entry = registry.get(id)!;
+      return { ...entry, label, href: hrefOverride[id] ?? entry.href };
+    }),
+  );
 }
 
 function normalizePath(p: string): string {
@@ -330,6 +338,25 @@ function BedAlertMeter({ percent }: { percent: number }) {
   );
 }
 
+/** The Ward Flow mark: a care cross whose right arm runs on as an arrow, for flow (8 October 2026). */
+function WardFlowMark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={className}
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.25}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M8 3.5v13M3 10h13.5" />
+      <path d="M13 6.5 16.5 10 13 13.5" />
+    </svg>
+  );
+}
+
 export function WardRail() {
   const pathname = usePathname() ?? "";
   const { units, bedReleases, movements, configuration } = useWardFlow();
@@ -346,8 +373,6 @@ export function WardRail() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [activePersona, setActivePersona] = useState<string>("chen");
   const [roleSwitcherOpen, setRoleSwitcherOpen] = useState<boolean>(false);
-  const [capacityToast, setCapacityToast] = useState<string | null>(null);
-  const capacityToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userCardRef = useRef<HTMLDivElement>(null);
   const isClosedRailCardViewport = useSyncExternalStore(
     subscribeToClosedRailCards,
@@ -566,7 +591,7 @@ export function WardRail() {
     );
   }
 
-  function renderBedAlertRows(variant: "card" | "sheet") {
+  function renderBedAlertRows() {
     return (
       <>
         <span className={styles.alertRow}>
@@ -577,9 +602,7 @@ export function WardRail() {
             <BedAlertMeter percent={metroPercent} />
           )}
           <span className={styles.alertRowPercent}>
-            {variant === "sheet" && metroPercent !== null ? (
-              <Dot tone={isBedAlert(metroPercent) ? "warning" : "neutral"} />
-            ) : null}
+            {metroPercent !== null ? <Dot tone={isBedAlert(metroPercent) ? "warning" : "neutral"} /> : null}
             {metroPercent === null ? "—" : formatOccupancyPercent(metroPercent)}
           </span>
         </span>
@@ -588,7 +611,7 @@ export function WardRail() {
             <span className={styles.alertRowName}>{hottest.shortName}</span>{" "}
             <BedAlertMeter percent={hottest.occupancyPercent} />
             <span className={styles.alertRowPercent}>
-              {variant === "sheet" ? <Dot tone={isBedAlert(hottest.occupancyPercent) ? "warning" : "neutral"} /> : null}
+              <Dot tone={isBedAlert(hottest.occupancyPercent) ? "warning" : "neutral"} />
               {formatOccupancyPercent(hottest.occupancyPercent)}
             </span>
           </span>
@@ -605,18 +628,35 @@ export function WardRail() {
       data-testid="ward-rail"
     >
       <div className={styles.brand}>
-        <Link
-          href={WARD_HOME_HREF}
-          className={styles.brandLink}
-          aria-label="Ward Flow home"
-          title="Ward Flow Western Australia"
-        >
-          <span className={styles.brandEmblem} aria-hidden="true">
-            <Plus className={styles.emblemGlyph} strokeWidth={2} aria-hidden="true" />
-          </span>
-          <span className={styles.brandTitle}>Ward Flow</span>
-          <span className={styles.brandStateText}>WA</span>
-        </Link>
+        {/* Closed desktop strip (Josh, 8 October 2026): the mark opens the full rail. Everywhere
+            else it stays the home link. */}
+        {!open && isClosedRailCardViewport ? (
+          <button
+            type="button"
+            className={styles.brandLink}
+            aria-label="Ward Flow, open the menu"
+            title="Open the menu"
+            data-testid="ward-rail-brand-open"
+            onClick={() => setOpen(true)}
+          >
+            <span className={styles.brandEmblem} aria-hidden="true">
+              <WardFlowMark className={styles.emblemGlyph} />
+            </span>
+          </button>
+        ) : (
+          <Link
+            href={WARD_HOME_HREF}
+            className={styles.brandLink}
+            aria-label="Ward Flow home"
+            title="Ward Flow Western Australia"
+          >
+            <span className={styles.brandEmblem} aria-hidden="true">
+              <WardFlowMark className={styles.emblemGlyph} />
+            </span>
+            <span className={styles.brandTitle}>Ward Flow</span>
+            <span className={styles.brandStateText}>WA</span>
+          </Link>
+        )}
         <button
           type="button"
           className={`${styles.moreTrigger} ${styles.mobileMenu}`}
@@ -731,13 +771,7 @@ export function WardRail() {
             onClick={() => {
               const nextOpen = !alertsOpen;
               setAlertsOpen(nextOpen);
-              if (nextOpen) {
-                const message = `Bed alerts: ${alertCountLabel}. ${metroLabel}. ${hottestLabel}.`;
-                setCapacityToast(message);
-                announceToWardShell(message);
-                if (capacityToastTimerRef.current) clearTimeout(capacityToastTimerRef.current);
-                capacityToastTimerRef.current = setTimeout(() => setCapacityToast(null), 2600);
-              }
+              if (nextOpen) announceToWardShell(`Bed alerts: ${alertCountLabel}. ${metroLabel}. ${hottestLabel}.`);
             }}
           >
             {alertCount > 0 ? <Dot tone="warning" /> : null}
@@ -746,27 +780,35 @@ export function WardRail() {
             </span>
           </button>
 
+          {/* One line (Josh, 8 October 2026): the Metro figure and the fullest service by its short
+              name ("East"), with the dot only when a service is at or over the threshold. The full
+              names are in the label and the list that opens below. */}
           <button
             type="button"
             className={styles.capacityPulseStrip}
             data-open={alertsOpen ? "true" : undefined}
+            data-alert={alertCount > 0 ? "true" : undefined}
             data-testid="ward-rail-capacity-alerts-trigger"
-            title={`Bed alerts. Metro and ${hottest.shortName} occupancy against ${BED_ALERT_THRESHOLD_PERCENT}%.`}
+            aria-label={`Bed alerts: ${alertCountLabel}. ${metroLabel}. ${hottestLabel}.`}
+            title={`Bed alerts: ${alertCountLabel}. Occupancy against ${BED_ALERT_THRESHOLD_PERCENT}%.`}
             aria-expanded={alertsOpen}
             aria-haspopup="dialog"
             onClick={() => setAlertsOpen((prev) => !prev)}
           >
-            <span className={styles.alertsHead}>
-              <span className={styles.alertsEyebrow}>Bed alerts</span>{" "}
-              <span className={styles.alertsChip} data-alert={alertCount > 0 ? "true" : undefined}>
-                {alertCount > 0 ? <Dot tone="warning" /> : null}
-                {alertCountLabel}
-              </span>{" "}
-              <span className={styles.capacityChevron} data-open={alertsOpen ? "true" : undefined}>
-                <ChevronDown aria-hidden="true" strokeWidth={1.75} />
+            {alertCount > 0 ? <Dot tone="warning" className={styles.alertLineDot} /> : null}
+            <span className={styles.alertFigure}>
+              <span className={styles.alertFigureName}>Metro</span>{" "}
+              <span className={styles.alertFigureValue}>
+                {metroPercent === null ? "—" : formatOccupancyPercent(metroPercent)}
               </span>
             </span>
-            {renderBedAlertRows("card")}
+            <span className={styles.alertFigure} data-flex="true">
+              <span className={styles.alertFigureName}>{SERVICE_SHORT_LABEL[hottest.shortName]}</span>{" "}
+              <span className={styles.alertFigureValue}>{formatOccupancyPercent(hottest.occupancyPercent)}</span>
+            </span>
+            <span className={styles.capacityChevron} data-open={alertsOpen ? "true" : undefined}>
+              <ChevronDown aria-hidden="true" strokeWidth={1.75} />
+            </span>
           </button>
 
           {alertsOpen ? (
@@ -883,12 +925,6 @@ export function WardRail() {
           ))}
         </nav>
       </div>
-
-      {capacityToast ? (
-        <div className={styles.capacityToast} role="status" data-testid="ward-rail-capacity-toast">
-          {capacityToast}
-        </div>
-      ) : null}
 
       <div className={styles.railFoot}>
         <div className={styles.utilityLinks}>
@@ -1085,7 +1121,7 @@ export function WardRail() {
                 {alertCountLabel}
               </span>
             </span>
-            {renderBedAlertRows("sheet")}
+            {renderBedAlertRows()}
           </Link>
         ) : null}
         {groups.map((group) => {

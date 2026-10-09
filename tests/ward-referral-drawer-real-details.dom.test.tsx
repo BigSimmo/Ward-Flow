@@ -48,7 +48,7 @@ describe("the referral drawer shows only what the record holds", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Switch" }));
-    const search = screen.getByRole("searchbox", { name: "Search sample patients" });
+    const search = screen.getByRole("searchbox", { name: "Find a patient" });
     fireEvent.keyDown(search, { key: "Escape" });
     expect(close).not.toHaveBeenCalled();
     fireEvent.keyDown(search, { key: "Escape" });
@@ -87,9 +87,9 @@ describe("the referral drawer shows only what the record holds", () => {
     expect(document.body.textContent).not.toMatch(/Dr\. L\. Patel|persecutory delusions|2940 19283 1/);
   });
 
-  it("starts the free-text fields empty and says the search covers sample patients only", () => {
+  it("starts the free-text fields empty and offers one patient search", () => {
     renderDrawer();
-    expect(screen.getByRole("searchbox", { name: "Search sample patients" })).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Find a patient" })).toBeInTheDocument();
     expect(screen.queryByText("Live Database Search")).not.toBeInTheDocument();
     // v6: the clinical acuity cell reads "Diagnosis not recorded".
     expect(document.body.textContent).toMatch(/Diagnosis not recorded/);
@@ -103,13 +103,15 @@ describe("the referral drawer shows only what the record holds", () => {
     const clinician = screen.getByLabelText(/Reason for referral/);
     fireEvent.change(clinician, { target: { value: "Synthetic reason for referral" } });
     fireEvent.click(sections.getByRole("button", { name: "Referral" }));
-    // v6 (ReferralDrawer--referral.webp): the placement choice is the "Refer to" radio group.
-    fireEvent.click(within(screen.getByRole("group", { name: "Refer to" })).getByLabelText("Community team"));
+    // Option B (8 Oct 2026): Refer to is the first choice, in the header above the steps.
+    fireEvent.click(within(screen.getByRole("group", { name: "Refer to" })).getByRole("button", { name: "Community" }));
     fireEvent.click(sections.getByRole("button", { name: "Documents" }));
     fireEvent.click(sections.getByRole("button", { name: "Referral" }));
     expect(clinician).toHaveValue("Synthetic reason for referral");
     fireEvent.click(sections.getByRole("button", { name: "Referral" }));
-    expect(within(screen.getByRole("group", { name: "Refer to" })).getByLabelText("Community team")).toBeChecked();
+    expect(
+      within(screen.getByRole("group", { name: "Refer to" })).getByRole("button", { name: "Community" }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 
   it("shows no diagnosis selected when the sample record has none", () => {

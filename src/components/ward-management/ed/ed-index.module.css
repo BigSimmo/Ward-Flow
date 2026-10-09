@@ -1,0 +1,537 @@
+/* All emergency departments, v6. Tokens only; card, filter and table shapes follow All wards. */
+
+.screen {
+  min-width: 0;
+  background: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-4);
+}
+
+/* Filter card */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  min-width: 0;
+}
+
+.filterLabel {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.search {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+
+.viewLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shownCount {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-left: auto;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+/* Shared text */
+.eyebrow {
+  margin: 0;
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.meta {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.num {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+
+.zero {
+  color: var(--wf-ink-off);
+}
+
+.end {
+  justify-self: end;
+  text-align: right;
+}
+
+.longest {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+/* Person pips: the ED's own bed strip. Each pip is one person, longest first. */
+.pips {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  height: 16px;
+  overflow: hidden;
+}
+
+.pip {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+}
+
+.more {
+  margin-left: 2px;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-11);
+  color: var(--wf-ink-3);
+}
+
+.noneWaiting {
+  display: flex;
+  align-items: center;
+  height: 16px;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Cards */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--wf-s-3);
+}
+
+.edCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.cardHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.edTitle {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.service {
+  flex: none;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.figures {
+  margin: 2px 0 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+}
+
+.footLabel {
+  color: var(--wf-ink-3);
+}
+
+.cardFoot > a {
+  margin-left: auto;
+}
+
+.serviceCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+}
+
+.emptyCard {
+  padding: var(--wf-s-3);
+}
+
+/* Table */
+.tableCard {
+  padding: 0;
+  overflow: hidden;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tr {
+  display: grid;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: var(--wf-row);
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+
+.tr:last-child {
+  border-bottom: 0;
+}
+
+.tr:not(.th):hover {
+  background: var(--wf-hover);
+}
+
+.th {
+  min-height: 36px;
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.tr > [role="cell"],
+.tr > [role="columnheader"] {
+  min-width: 0;
+}
+
+.edCell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* Wait lanes */
+.lanesCard {
+  display: flex;
+  flex-direction: column;
+  padding: var(--wf-s-2) var(--wf-s-4) 0;
+}
+
+.axis,
+.lane {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr) 84px;
+  align-items: center;
+  gap: var(--wf-s-3);
+}
+
+.axis {
+  height: 28px;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-11);
+  color: var(--wf-ink-3);
+}
+
+.track {
+  position: relative;
+  height: 100%;
+}
+
+.tick {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+.laneGroup {
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line-2);
+}
+
+.laneGroup > .eyebrow {
+  padding-bottom: var(--wf-s-1);
+}
+
+.lane {
+  min-height: 44px;
+  border-top: 1px solid var(--wf-line);
+}
+
+.laneLabel {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.laneLabel:hover b {
+  text-decoration: underline;
+}
+
+.laneCount {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.laneTrack {
+  height: 28px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+}
+
+.gridline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--wf-line);
+}
+
+.target {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  border-left: 1.5px dashed var(--wf-line-3);
+}
+
+.mark {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.mark:hover,
+.mark[aria-pressed="true"] {
+  z-index: 1;
+  border-color: var(--wf-accent);
+  box-shadow: 0 0 0 2px var(--wf-accent-tint);
+}
+
+.picked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  margin: var(--wf-s-2) 0 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.tier {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-pill);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+}
+
+.pickedName {
+  font-size: var(--wf-fs-13);
+}
+
+.pickedActions {
+  display: flex;
+  gap: var(--wf-s-2);
+  margin-left: auto;
+}
+
+.lanesFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-2);
+  padding: var(--wf-s-2) 0 var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+@media (max-width: 80rem) {
+  .cardGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 60rem) {
+  .cardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tableCard {
+    overflow-x: auto;
+  }
+
+  .table {
+    min-width: 820px;
+  }
+}
+
+/* Phone (simplified): one list of EDs. The service chips, search and view switch stay; the
+ * status and order row stays on the larger screen so the list starts within the first screen.
+ * Lanes narrow their label column. Every control keeps its 48px target. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .main {
+    padding: var(--wf-s-3);
+  }
+
+  .filters {
+    gap: var(--wf-s-2);
+  }
+
+  .filterRow + .filterRow {
+    display: none;
+  }
+
+  .search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .cardGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--wf-s-2);
+  }
+
+  .main a,
+  .main button:not(.mark) {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .lanesCard {
+    padding: var(--wf-s-2) var(--wf-s-3) 0;
+  }
+
+  .axis,
+  .lane {
+    grid-template-columns: 76px minmax(0, 1fr) 56px;
+    gap: var(--wf-s-2);
+  }
+
+  .axis > :first-child {
+    visibility: hidden;
+  }
+
+  .laneLabel {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .mark {
+    width: 22px;
+    height: 22px;
+  }
+
+  .pickedActions {
+    width: 100%;
+    margin-left: 0;
+  }
+}

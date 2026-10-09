@@ -32,11 +32,11 @@ import { COMMUNITY_TEAM_PAGES } from "../src/components/ward-management/communit
  * `document.addEventListener`, all effect/handler-only). `next/navigation`'s `useRouter` is
  * different: `ContextualBackLink` (used by `WardPatientWorkspace`) calls it synchronously during
  * render, so it needs the same module mock tests/ward-patient-page.dom.test.tsx already uses.
- * `useSearchParams` is the same story for `AddPatientForm` and `ReferralIntakeForm`: this is the
+ * `useSearchParams` is the same story for `AddPatientForm`: this is the
  * `node` project, with no `window` at all, so the mock returns an always-empty `URLSearchParams`
  * rather than the `new URLSearchParams(window.location.search)` the jsdom suites use — there is
- * no real querystring for `renderToStaticMarkup` to read here, and both forms already treat an
- * absent value as a real case (see each file's own comment).
+ * no real querystring for `renderToStaticMarkup` to read here, and the form already treats an
+ * absent value as a real case (see its own comment).
  */
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string; [key: string]: unknown }) =>
@@ -76,7 +76,6 @@ import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-
 import { WardIndex } from "@/components/ward-management/wards/ward-index";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
-import { ReferralIntakeForm } from "@/components/ward-management/referrals/referral-intake";
 import { WardBoard } from "@/components/ward-management/board/ward-board";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { WardPatientWorkspace } from "@/components/ward-management/ward-management-console";
@@ -175,8 +174,8 @@ type RouteRender = { route: string; render: () => ReactNode };
  * `docs/codebase-index.md`, `route-reachability.test.ts`'s allowlist, and this file's own
  * `RENDERABLE_ROUTES`/`REDIRECT_ONLY_ROUTES` pair). Found by the coverage test below going red
  * with "route(s) on disk with no test coverage" naming that route, not by inspection.
- * `/mockups/ward-flow/referrals/new` (Phase 7 Task 4, `ReferralIntakeForm`) added this entry in
- * the same commit that added the route, precisely to avoid repeating that omission.
+ * `/mockups/ward-flow/referrals/new` (Phase 7 Task 4) added this entry in the same commit that
+ * added the route, precisely to avoid repeating that omission; since 8 Oct 2026 it renders the board.
  * `/mockups/ward-flow/referrals` (Phase 7 Task 5, `ReferralBoard`) does the same.
  * `/mockups/ward-flow/out-of-area` (Phase 8 Task 5, `OutOfAreaBoard`) does the same again.
  */
@@ -245,7 +244,8 @@ const RENDERABLE_ROUTES: RouteRender[] = [
     route: `${ROUTE_PREFIX}/people/[patientId]`,
     render: () => createElement(PersonScreen, { patientId: seedWardFlowState().patients[0].id }),
   },
-  { route: `${ROUTE_PREFIX}/referrals/new`, render: () => createElement(ReferralIntakeForm) },
+  // Since 8 Oct 2026 this route is the Referrals board with the referral slide-out opened over it.
+  { route: `${ROUTE_PREFIX}/referrals/new`, render: () => createElement(ReferralBoard) },
   { route: `${ROUTE_PREFIX}/people/new`, render: () => createElement(AddPatientForm) },
   { route: `${ROUTE_PREFIX}/referrals`, render: () => createElement(ReferralBoard) },
   { route: `${ROUTE_PREFIX}/out-of-area`, render: () => createElement(OutOfAreaBoard) },

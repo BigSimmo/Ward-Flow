@@ -13,6 +13,79 @@ export type ReferralChart = {
   base64: string;
 };
 
+/** Medical clearance, item by item (ward referrals). Each item is answered or left unrecorded. */
+export const CLEARANCE_CHECKS = [
+  "examination",
+  "bloods",
+  "ecg",
+  "drugScreen",
+  "breathAlcohol",
+  "observations",
+] as const;
+export type ClearanceCheck = (typeof CLEARANCE_CHECKS)[number];
+export const CLEARANCE_CHECK_LABELS: Record<ClearanceCheck, string> = {
+  examination: "Physical examination",
+  bloods: "Bloods",
+  ecg: "ECG",
+  drugScreen: "Urine drug screen",
+  breathAlcohol: "Breath alcohol",
+  observations: "Observations stable",
+};
+export const CLEARANCE_STATUSES = ["done", "to_follow", "not_done"] as const;
+export type ClearanceStatus = (typeof CLEARANCE_STATUSES)[number];
+export const CLEARANCE_STATUS_LABELS: Record<ClearanceStatus, string> = {
+  done: "Done",
+  to_follow: "To follow",
+  not_done: "Not done",
+};
+export type ClearanceChecklist = Partial<Record<ClearanceCheck, ClearanceStatus>>;
+
+/** What a community team or an ED needs to know before the person reaches them. All optional. */
+export const FIRST_CONTACT_TARGETS = ["24 hours", "72 hours", "7 days"] as const;
+export const ED_ARRIVAL_MODES = ["Ambulance", "Mental Health Transport", "Family or carer"] as const;
+export type ReferralNeeds =
+  | {
+      kind: "community";
+      firstContact?: (typeof FIRST_CONTACT_TARGETS)[number];
+      homeVisit?: boolean;
+      interpreter?: boolean;
+      carerContact?: boolean;
+    }
+  | {
+      kind: "ed";
+      comingBy?: (typeof ED_ARRIVAL_MODES)[number];
+      medicalReviewFirst?: boolean;
+      /** Clock time as typed, "HH:MM" AWST. */
+      expectedArrival?: string;
+    };
+
+/** "First contact within 72 hours, Home visit". Unanswered items are left out. */
+export function referralNeedsWords(needs: ReferralNeeds): string[] {
+  if (needs.kind === "community")
+    return [
+      needs.firstContact ? `First contact within ${needs.firstContact}` : "",
+      needs.homeVisit === undefined ? "" : needs.homeVisit ? "Home visit" : "No home visit",
+      needs.interpreter ? "Interpreter needed" : "",
+      needs.carerContact ? "Contact the carer" : "",
+    ].filter(Boolean);
+  return [
+    needs.comingBy ? `Coming by ${needs.comingBy.toLowerCase()}` : "",
+    needs.medicalReviewFirst === undefined
+      ? ""
+      : needs.medicalReviewFirst
+        ? "Medical review before psychiatry"
+        : "No medical review needed first",
+    needs.expectedArrival ? `Expected ${needs.expectedArrival} AWST` : "",
+  ].filter(Boolean);
+}
+
+/** "Physical examination done, Bloods to follow". Unanswered items are left out. */
+export function clearanceChecklistWords(checklist: ClearanceChecklist): string {
+  return CLEARANCE_CHECKS.filter((check) => checklist[check])
+    .map((check) => `${CLEARANCE_CHECK_LABELS[check]} ${CLEARANCE_STATUS_LABELS[checklist[check]!].toLowerCase()}`)
+    .join(", ");
+}
+
 export type ReferralContact = { name: string; email: string; phone: string; role: string; location: string };
 
 export type ReferralIntakeDetails = {
@@ -26,7 +99,32 @@ export type ReferralIntakeDetails = {
   additionalDocuments: boolean;
   referrer: ReferralContact;
   arrival?: { transport: string; reference: string; estimatedAt?: string };
+  clearanceChecklist?: ClearanceChecklist;
+  needs?: ReferralNeeds;
 };
+
+const optionalBoolean = (value: unknown) => value === undefined || typeof value === "boolean";
+
+function needsError(needs: ReferralNeeds): string | null {
+  if (needs.kind === "community") {
+    if (
+      !onlyFields(needs, ["kind", "firstContact", "homeVisit", "interpreter", "carerContact"]) ||
+      (needs.firstContact !== undefined && !FIRST_CONTACT_TARGETS.includes(needs.firstContact)) ||
+      ![needs.homeVisit, needs.interpreter, needs.carerContact].every(optionalBoolean)
+    )
+      return "Check the follow-up needs.";
+    return null;
+  }
+  if (
+    needs.kind !== "ed" ||
+    !onlyFields(needs, ["kind", "comingBy", "medicalReviewFirst", "expectedArrival"]) ||
+    (needs.comingBy !== undefined && !ED_ARRIVAL_MODES.includes(needs.comingBy)) ||
+    !optionalBoolean(needs.medicalReviewFirst) ||
+    (needs.expectedArrival !== undefined && !/^([01]\d|2[0-3]):[0-5]\d$/.test(needs.expectedArrival))
+  )
+    return "Check the ED needs.";
+  return null;
+}
 
 function onlyFields(value: unknown, keys: readonly string[]): boolean {
   return (
@@ -73,6 +171,8 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
       "additionalDocuments",
       "referrer",
       "arrival",
+      "clearanceChecklist",
+      "needs",
     ]) ||
     !onlyFields(intake.catchment, ["teamName", "service", "confirmed"]) ||
     intake.catchment.confirmed !== true ||
@@ -151,5 +251,17 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
       (intake.arrival.estimatedAt !== undefined && !Number.isFinite(Date.parse(intake.arrival.estimatedAt))))
   )
     return "Check the proposed arrival plan.";
+  const checklist = intake.clearanceChecklist;
+  if (
+    checklist !== undefined &&
+    (!onlyFields(checklist, CLEARANCE_CHECKS) ||
+      Object.values(checklist).some((status) => !CLEARANCE_STATUSES.includes(status)))
+  )
+    return "Check the medical clearance checklist.";
+  if (intake.needs !== undefined) {
+    const error =
+      typeof intake.needs === "object" && intake.needs !== null ? needsError(intake.needs) : "Check the needs.";
+    if (error) return error;
+  }
   return referralContactError(intake.referrer);
 }

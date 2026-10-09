@@ -60,7 +60,7 @@ describe("placement reasons", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("tab", { name: "Placement workspace" }));
-    const shortlist = screen.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = screen.getByRole("complementary", { name: "Placement" });
     for (const group of PLACEMENT_REASON_GROUPS) {
       const row = within(shortlist).getByTestId(`ward-network-reason-${group.key}`);
       expect(within(row).getByRole("rowheader")).toHaveTextContent(group.heading);

@@ -28,6 +28,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
 
+import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
 import { WardBar, WardBarMount } from "@/components/ward-management/shell/ward-bar";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
 import type { WardPrimaryAction } from "@/components/ward-management/shell/ward-shell-types";
@@ -46,6 +47,8 @@ function renderBar(primaryAction?: WardPrimaryAction) {
 
 afterEach(() => {
   resetWardLiveRegionForTests();
+  // The slide-out keeps an unsent draft in memory between opens; each test starts with none.
+  discardReferralDraft();
 });
 
 describe("WardBar primary action — the five kinds, D-16", () => {
@@ -59,7 +62,7 @@ describe("WardBar primary action — the five kinds, D-16", () => {
     expect(screen.queryByTestId("ward-bar-primary-action")).toBeNull();
   });
 
-  it('renders the "new-referral" trigger, and opens a menu of exactly its two real hrefs', async () => {
+  it('renders the "new-referral" trigger, and opens a menu of exactly its three real hrefs', async () => {
     const user = userEvent.setup();
     renderBar({ kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU });
 
@@ -71,16 +74,9 @@ describe("WardBar primary action — the five kinds, D-16", () => {
     const panel = await screen.findByTestId("ward-bar-primary-panel");
     const links = within(panel).getAllByRole("menuitem");
     /*
-     * 🔴 THIS WAS 3 AND THE CHANGE IS A RULING, not a renumber. The owner, 2026-09-11, verbatim:
-     * **"NO. They come through ED or community."** The third entry was "From a GP or private
-     * practice" — and it was REACHABLE: it rendered in this menu on six routes and a coordinator
-     * could click it, while `gp` had never been a member of `REFERRAL_SOURCES`, so nothing
-     * downstream could have recorded it.
-     *
-     * ⚠️ Asserted against the LIST's own length rather than a fresh literal, so this test cannot
-     * drift from `WARD_NEW_REFERRAL_MENU` again — the previous `3` agreed with the list by
-     * coincidence of both being edited together, and would have gone red for the right reason
-     * only by luck.
+     * Asserted against the LIST's own length rather than a fresh literal, so this test cannot drift
+     * from `WARD_NEW_REFERRAL_MENU`. Since 8 Oct 2026 the menu names where the referral goes —
+     * "To a ward", "To community", "To an ED" — not where it came from.
      */
     expect(links).toHaveLength(WARD_NEW_REFERRAL_MENU.length);
     expect(WARD_NEW_REFERRAL_MENU).toHaveLength(3);
@@ -88,7 +84,7 @@ describe("WardBar primary action — the five kinds, D-16", () => {
     // Every link's href is the SAME object WARD_NEW_REFERRAL_MENU already carries — never a
     // hand-typed variant — proving the menu is rendered from the real list, not reconstructed.
     for (const entry of WARD_NEW_REFERRAL_MENU) {
-      const link = screen.getByTestId(`ward-bar-primary-menu-${entry.source}`);
+      const link = screen.getByTestId(`ward-bar-primary-menu-${entry.destination}`);
       expect(link).toHaveAttribute("href", entry.href);
       expect(link).toHaveTextContent(entry.label);
     }
@@ -110,37 +106,29 @@ describe("WardBar primary action — the five kinds, D-16", () => {
   });
 
   it.each([
-    ["community", "From community", "community"],
-    ["ed_medical", "From ED", "ed"],
-    ["inter_hospital", "From a ward", "ward"],
+    ["ward", "To a ward"],
+    ["community", "To community"],
+    ["ed", "To an ED"],
   ] as const)(
-    'opens the referral drawer with "%s" auto-selected when clicking "%s"',
-    async (source, label, expectedDestType) => {
+    'opens the referral slide-out with "Refer to" set to %s when clicking "%s"',
+    async (destination, label) => {
       const user = userEvent.setup();
       renderBar({ kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU });
 
       const trigger = screen.getByTestId("ward-bar-primary-action");
       await user.click(trigger);
-      const menuItem = await screen.findByTestId(`ward-bar-primary-menu-${source}`);
+      const menuItem = await screen.findByTestId(`ward-bar-primary-menu-${destination}`);
       expect(menuItem).toHaveTextContent(label);
 
       await user.click(menuItem);
 
-      // Referral side drawer opens
+      // The referral slide-out opens in place, and its first choice is the one the menu named.
       const drawer = await screen.findByTestId("ward-bar-referral-sheet");
       expect(drawer).toBeInTheDocument();
-
-      // Category badge in drawer header reflects the selection
-      const badge = screen.getByTestId("ward-referral-drawer-category-badge");
-      expect(badge).toHaveTextContent(label);
-
-      // The "Refer to" choice has the corresponding destination auto-selected. v6
-      // (ReferralDrawer--referral.webp) shows it as a radio group, which replaced the
-      // "Placement Destination Tier" select.
-      const destLabel = { ward: "Ward bed", community: "Community team", ed: "ED psychiatry" }[expectedDestType];
-      const destRadio = screen.getByLabelText(destLabel) as HTMLInputElement;
-      expect(destRadio).toBeChecked();
-      expect(destRadio.value).toBe(expectedDestType);
+      expect(within(drawer).getByTestId(`ward-referral-refer-to-${destination}`)).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
     },
   );
 
