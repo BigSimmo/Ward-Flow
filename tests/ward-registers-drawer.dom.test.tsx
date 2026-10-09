@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CircleAlert } from "lucide-react";
 import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ExceptionDrawer } from "@/components/ward-management/coordinator/exception-drawer";
 import { OVERRIDE_REASONS } from "@/components/ward-management/ward-change-reasons";
@@ -295,5 +295,38 @@ describe("the coordinator's registers drawer", () => {
 
     // And still shut: all four are readable without opening anything, which is the whole request.
     expect(screen.getByRole("button", { name: /Today’s answers/ })).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("opens discharge notification rows by admissionId, even when movementId is empty", () => {
+    const onSelectMovement = vi.fn();
+    const onSelectDischarge = vi.fn();
+    const dischargeItem: InboxItem = {
+      id: "notify-discharge-AD-LEFT-01",
+      tone: "warning",
+      icon: CircleAlert,
+      title: "Discharge notifications to record",
+      detail: "Carer, PSP, MHAS not recorded",
+      owner: "Ward",
+      movementId: "",
+      admissionId: "AD-LEFT-01",
+      kind: "fact",
+    };
+    render(
+      <ExceptionDrawer
+        items={[dischargeItem]}
+        rejections={[]}
+        overrides={[]}
+        declines={[]}
+        units={allUnits()}
+        now={NOW}
+        open
+        onToggle={() => {}}
+        onSelectMovement={onSelectMovement}
+        onSelectDischarge={onSelectDischarge}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("ward-exception-notify-discharge-AD-LEFT-01"));
+    expect(onSelectDischarge).toHaveBeenCalledWith("AD-LEFT-01");
+    expect(onSelectMovement).not.toHaveBeenCalled();
   });
 });

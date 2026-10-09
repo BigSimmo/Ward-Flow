@@ -44,6 +44,8 @@ type ExceptionDrawerProps = {
   open: boolean;
   onToggle: () => void;
   onSelectMovement: (movementId: string) => void;
+  /** Discharge notification rows carry `admissionId` and open the discharges board, not a movement. */
+  onSelectDischarge?: (admissionId: string) => void;
   /** `band`: the desktop strip under the Home hero. `column`: the phone card under the queue. */
   placement?: "band" | "column";
   /** Optional controlled tab, so the hero's Exceptions and Declines counts open their own tab. */
@@ -83,6 +85,7 @@ export function ExceptionDrawer({
   open,
   onToggle,
   onSelectMovement,
+  onSelectDischarge,
   placement = "column",
   tab,
   onTabChange,
@@ -92,6 +95,12 @@ export function ExceptionDrawer({
   const setActiveTab = onTabChange ?? setOwnTab;
   // Owner, 26 Sept 2026: resolves a silence reminder's bare movement id to the patient's name.
   const resolvePatientIdentity = usePatientOf();
+
+  /** Same routing as the Tasks drawer: discharge notification rows open by admission, not movement. */
+  function openException(item: InboxItem) {
+    if (item.admissionId !== undefined && onSelectDischarge) onSelectDischarge(item.admissionId);
+    else onSelectMovement(item.movementId);
+  }
 
   // Newest first: a coordinator wants to see what just got refused.
   const refusalsNewestFirst = [...rejections].reverse();
@@ -202,7 +211,9 @@ export function ExceptionDrawer({
                       data-testid={`ward-exception-${item.id}`}
                       data-tone={item.tone}
                       className={styles.registerRow}
-                      onClick={() => onSelectMovement(item.movementId)}
+                      onClick={() => {
+                        openException(item);
+                      }}
                     >
                       <span className={styles.registerMain}>
                         <span className={styles.registerTitle}>{commandInboxTitle(item)}</span>

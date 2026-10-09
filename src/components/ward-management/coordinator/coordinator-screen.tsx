@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Hero, HeroStat, LiveChip, buttonClass } from "@/components/wf";
@@ -10,6 +11,7 @@ import { allDeclines, allOverrides, buildActionInbox, isOpen } from "@/component
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
+import { dischargeHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { queueOrder } from "@/components/ward-management/ward-priority";
@@ -61,6 +63,7 @@ const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-c
  */
 export function CoordinatorScreen() {
   usePrintableDisclosures();
+  const router = useRouter();
   const {
     movements,
     units,
@@ -291,6 +294,10 @@ export function CoordinatorScreen() {
         // row closes them in the same tap.
         onSelectMovement={(movementId) => {
           selectMovement(movementId);
+          setExceptionsOpen(false);
+        }}
+        onSelectDischarge={(admissionId) => {
+          router.push(dischargeHref(admissionId));
           setExceptionsOpen(false);
         }}
       />
