@@ -159,17 +159,21 @@ describe("WardBar's Service selector, wired to the store", () => {
     expect((panel.textContent ?? "").toLowerCase()).not.toContain("not wired");
   });
 
-  it("shows the exact build-plan §3 hint and note text", async () => {
+  // Owner request (9 Oct 2026): the painted footer note and the "scopes the lists" hint are gone.
+  // The sentence stays for screen readers only, so what the choice narrows is still announced.
+  it("shows the Service heading, with the scope note for screen readers only", async () => {
     const user = userEvent.setup();
     renderBar();
     await user.click(screen.getByTestId("ward-bar-service-trigger"));
     const panel = screen.getByTestId("ward-bar-service-panel");
     expect(within(panel).getByText("Service")).toBeInTheDocument();
-    expect(within(panel).getByText("scopes the lists")).toBeInTheDocument();
-    expect(panel.textContent ?? "").toContain(
-      "One service, or all of them. Capacity, Delays and Movements narrow their lists to it. " +
-        "The bed shortlist, whole-network figures, the rail counts and the drawers do not.",
-    );
+    expect(within(panel).queryByText("scopes the lists")).not.toBeInTheDocument();
+    expect(
+      within(panel).getByText(
+        "One service, or all of them. Capacity, Delays and Movements narrow their lists to it. " +
+          "The bed shortlist, whole-network figures, the rail counts and the drawers do not.",
+      ),
+    ).toHaveClass("sr-only");
   });
 
   it("shows each service option's open-movement count exactly as ward-service-scope.ts (S1) computes it over the real seed", async () => {
