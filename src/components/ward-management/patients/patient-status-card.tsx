@@ -107,7 +107,12 @@ function clearanceCell(movement: Movement, onClearance: PatientStatusContext["on
   };
 }
 
-function transportCell(movement: Movement, ready: boolean, onBook: () => void): StatusCell {
+function transportCell(
+  movement: Movement,
+  ready: boolean,
+  onBook: () => void,
+  waitingFor = "an accepted bed",
+): StatusCell {
   const job = movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
   if (job)
     return {
@@ -139,10 +144,10 @@ function transportCell(movement: Movement, ready: boolean, onBook: () => void): 
     owner: "ED nurse in charge",
     tone: "neutral",
     value: "Not booked",
-    sub: ready ? "Book by phone, then log it" : "Needs an accepted bed",
+    sub: ready ? "Book by phone, then log it" : `Needs ${waitingFor}`,
     action: ready
       ? { kind: "button", label: "Log booking", icon: Truck, onClick: () => onBook() }
-      : { kind: "unavailable", label: "Log booking", reason: "Needs a bed" },
+      : { kind: "unavailable", label: "Log booking", reason: `Needs ${waitingFor}` },
   };
 }
 
@@ -217,7 +222,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
       cells: [
         bed,
         clearanceCell(movement, ctx.onClearance),
-        transportCell(movement, movement.stage === "pulled", ctx.onBookTransport),
+        transportCell(movement, movement.stage === "pulled", ctx.onBookTransport, "the bed held"),
       ],
     });
     if (ctx.handoverRefusal) {

@@ -83,6 +83,11 @@ describe("gate board status card review fixes", () => {
     expect(booking("pulled", "held")).toBe("button");
     expect(booking("handover_ready", "transit")).toBe("button");
     expect(booking("moving", "transit")).toBe("unavailable");
+    const waiting = buildPatientStatus(
+      "held",
+      ctx({ ...base, stage: "accepted_awaiting_bed", transport: undefined, transportNeed: undefined }),
+    ).cells.find((cell) => cell.key === "transport");
+    expect(waiting?.sub).toBe("Needs the bed held");
   });
 
   it("names each missing person step's Record button by its step", () => {
@@ -99,20 +104,24 @@ describe("gate board status card review fixes", () => {
     expect(new Set(names).size).toBe(names?.length);
   });
 
-  it("reads the patient's legal status, not a closed movement's form, while on leave", () => {
-    const closed: Movement = {
-      ...base,
-      legalStatus: "Involuntary inpatient",
-      legalForm: { code: "1A" } as Movement["legalForm"],
-      closure: { at: NOW_ANCHOR - 60 } as Movement["closure"],
-    };
-    const status = buildPatientStatus(
-      "leave",
-      ctx(closed, {
-        patient: { legalStatus: "Voluntary patient" } as PatientStatusContext["patient"],
-        leaveBed: { expectedReturn: NOW_ANCHOR + 60 } as PatientStatusContext["leaveBed"],
-      }),
-    );
-    expect(status.cells.find((cell) => cell.key === "legal")?.value).toBe("Voluntary patient");
+  it("keeps an arrived stay's form in force on leave, and drops a movement that did not proceed", () => {
+    const legalOnLeave = (outcome: "arrived" | "did_not_proceed") =>
+      buildPatientStatus(
+        "leave",
+        ctx(
+          {
+            ...base,
+            legalStatus: "Involuntary inpatient",
+            legalForm: { code: "1A" } as Movement["legalForm"],
+            closure: { at: NOW_ANCHOR - 60, outcome } as Movement["closure"],
+          },
+          {
+            patient: { legalStatus: "Voluntary patient" } as PatientStatusContext["patient"],
+            leaveBed: { expectedReturn: NOW_ANCHOR + 60 } as PatientStatusContext["leaveBed"],
+          },
+        ),
+      ).cells.find((cell) => cell.key === "legal")?.value;
+    expect(legalOnLeave("arrived")).toBe("Involuntary inpatient, Form 1A");
+    expect(legalOnLeave("did_not_proceed")).toBe("Voluntary patient");
   });
 });
