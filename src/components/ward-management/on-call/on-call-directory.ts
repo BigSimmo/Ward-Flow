@@ -34,7 +34,7 @@ export type DirectoryService = "Statewide" | HealthService;
 export type DirectorySection = "hospitals" | "community" | "statewide";
 
 /** A window in minutes from midnight, start inclusive, end exclusive, wrapping past midnight. */
-export type ContactWindow = readonly [start: number, end: number];
+export type ContactWindow = readonly [start: number, end: number, weekdays?: boolean];
 
 export type ContactLine = {
   /** What the line is, e.g. "On-call phone". Never a person. */
@@ -173,9 +173,9 @@ const NOTE: Record<ContactKind, string> = {
 };
 
 /** Office hours used by synthetic office lines, 08:00 to 17:00. */
-const OFFICE: ContactWindow = [480, 1020];
+const OFFICE: ContactWindow = [480, 1020, true];
 /** Referral inboxes are read 08:00 to 16:30. */
-const INBOX: ContactWindow = [480, 990];
+const INBOX: ContactWindow = [480, 990, true];
 
 /**
  * Builds the whole directory from the site list, the roster and the reference team names. Pure:
@@ -652,16 +652,17 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
 
 /* ---------------- availability ---------------- */
 
-export function inWindow(window: ContactWindow | null, minute: number): boolean {
+export function inWindow(window: ContactWindow | null, minute: number, day = 1): boolean {
   if (window === null) return true;
+  if (window[2] && (day === 0 || day === 6)) return false;
   const [start, end] = window;
   const m = mod(minute);
   return start < end ? m >= start && m < end : m >= start || m < end;
 }
 
 /** The line answering at a minute: the first whose window holds it. */
-export function lineAt(entry: DirectoryEntry, minute: number): ContactLine | null {
-  return entry.lines.find((item) => inWindow(item.window, minute)) ?? null;
+export function lineAt(entry: DirectoryEntry, minute: number, day = 1): ContactLine | null {
+  return entry.lines.find((item) => inWindow(item.window, minute, day)) ?? null;
 }
 
 export type Availability =
@@ -680,12 +681,12 @@ export type Availability =
   | { kind: "off"; email: boolean; opens: number; wait: number; next: ContactLine | null };
 
 /** Who answers at `minute`, until when, and what follows. Minutes step through one day at most. */
-export function availability(entry: DirectoryEntry, minute: number): Availability {
+export function availability(entry: DirectoryEntry, minute: number, day = 1): Availability {
   if (entry.lines.length === 0) {
     if (!entry.email) return { kind: "none" };
     const window = entry.emailWindow;
     if (!window) return { kind: "on", allDay: true, line: null, email: true };
-    if (inWindow(window, minute)) {
+    if (inWindow(window, minute, day)) {
       const left = mod(window[1] - minute) || CLOCK_DAY;
       return {
         kind: "on",
@@ -706,7 +707,7 @@ export function availability(entry: DirectoryEntry, minute: number): Availabilit
       next: null,
     };
   }
-  const current = lineAt(entry, minute);
+  const current = lineAt(entry, minute, day);
   if (current) {
     let step = 1;
     for (; step <= CLOCK_DAY; step += 1) if (lineAt(entry, minute + step) !== current) break;
@@ -728,14 +729,14 @@ export function availability(entry: DirectoryEntry, minute: number): Availabilit
 }
 
 /** The number to show now: the answering line, else the next to open, else the first. */
-export function numberAt(entry: DirectoryEntry, minute: number): string | null {
-  const now = availability(entry, minute);
+export function numberAt(entry: DirectoryEntry, minute: number, day = 1): string | null {
+  const now = availability(entry, minute, day);
   if (now.kind === "on" && now.line) return now.line.number;
   if (now.kind === "off" && now.next) return now.next.number;
   return entry.lines[0]?.number ?? null;
 }
 
-export const isAnswering = (entry: DirectoryEntry, minute: number) => availability(entry, minute).kind === "on";
+export const isAnswering = (entry: DirectoryEntry, minute: number, day = 1) => availability(entry, minute, day).kind === "on";
 
 export const windowText = (window: ContactWindow | null) =>
   window === null ? "24 hours" : `${hhmm(window[0])} to ${hhmm(window[1])}`;
@@ -781,7 +782,10 @@ export function escalationChain(entry: DirectoryEntry, all: readonly DirectoryEn
       chain = [find("bedFlow"), find("executive")];
       break;
     case "community":
-      chain = [byId("sw-mherl"), find("bedFlow")];
+      chain = [
+        byId(entry.service === "CAHS" ? "cahs-ccc" : entry.service === "WACHS" ? "sw-rural" : "sw-mherl"),
+        find("bedFlow"),
+      ];
       break;
     case "serviceConsultant":
     case "regional":
@@ -975,4 +979,6 @@ export function groupRows(
       };
     })
     .filter((block) => block.groups.length);
+}
+ups.length);
 }

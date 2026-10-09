@@ -59,8 +59,8 @@ function Until({ entry, minute }: { entry: DirectoryEntry; minute: number }) {
 }
 
 function CallButton({ entry, actions, onHero }: { entry: DirectoryEntry; actions: ContactActions; onHero?: boolean }) {
-  const number = numberAt(entry, actions.minute);
-  const off = availability(entry, actions.minute).kind === "off";
+  const number = numberAt(entry, actions.minute, actions.day);
+  const off = availability(entry, actions.minute, actions.day).kind === "off";
   if (number)
     return (
       <button
@@ -105,8 +105,8 @@ export function PhoneFocal({
   const [focalId, setFocalId] = useState<string>("sw-bfc");
   const entry = entries.find((item) => item.id === focalId) ?? entries[0]!;
   const crisis = entries.find((item) => item.id === "sw-mherl");
-  const now = availability(entry, actions.minute);
-  const number = numberAt(entry, actions.minute);
+  const now = availability(entry, actions.minute, actions.day);
+  const number = numberAt(entry, actions.minute, actions.day);
   const then =
     now.kind === "on" && !now.allDay
       ? now.then
@@ -116,7 +116,7 @@ export function PhoneFocal({
         ? "closed now"
         : "";
   return (
-    <div className={styles.focalWrap}>
+    <div id="ward-reach-bed" className={styles.focalWrap}>
       <div className={styles.focalSeg} role="radiogroup" aria-label="Bed flow for">
         {FOCAL.map(([id, label]) => (
           <button key={id} type="button" role="radio" aria-checked={focalId === id} onClick={() => setFocalId(id)}>
@@ -160,7 +160,7 @@ export function PhoneFocal({
             <ServiceTag service={crisis.service} label="" />
             <b>MHERL crisis line</b>
             <span className={styles.spacer} />
-            <span className={styles.mono}>{numberAt(crisis, actions.minute) ?? ""}</span>
+            <span className={styles.mono}>{numberAt(crisis, actions.minute, actions.day) ?? ""}</span>
           </button>
           <CallButton entry={crisis} actions={actions} onHero />
         </div>
@@ -182,8 +182,8 @@ function PhoneRow({
   highlighted: boolean;
   onOpen: (id: string) => void;
 }) {
-  const now = availability(entry, actions.minute);
-  const number = numberAt(entry, actions.minute);
+  const now = availability(entry, actions.minute, actions.day);
+  const number = numberAt(entry, actions.minute, actions.day);
   const line = now.kind === "on" ? now.line : now.kind === "off" ? now.next : entry.lines[0];
   const name = byRole && entry.siteCode && !isWardRow(entry) ? entry.groupTitle : entry.name;
   const sub = isWardRow(entry)
@@ -263,7 +263,7 @@ export function PhoneDirectory({
               <span className={styles.spacer} />
               <span className={cx(styles.cellSub, styles.mono)}>
                 {block.groups.reduce(
-                  (total, group) => total + group.rows.filter((entry) => isAnswering(entry, actions.minute)).length,
+                  (total, group) => total + group.rows.filter((entry) => isAnswering(entry, actions.minute, actions.day)).length,
                   0,
                 )}
                 /{block.groups.reduce((total, group) => total + group.rows.length, 0)}
@@ -273,9 +273,9 @@ export function PhoneDirectory({
           {block.groups.map((group) => {
             const open =
               tab === "mine" ||
-              (openKey === null ? group.key === firstKey : openKey === group.key) ||
+              (openKey === null || !groupKeys.has(openKey) ? group.key === firstKey : openKey === group.key) ||
               (queryActive && group.rows.some(isHighlighted));
-            const on = group.rows.filter((entry) => isAnswering(entry, actions.minute)).length;
+            const on = group.rows.filter((entry) => isAnswering(entry, actions.minute, actions.day)).length;
             return (
               <section key={group.key} className={styles.phoneGroup}>
                 {tab !== "mine" ? (
@@ -296,9 +296,7 @@ export function PhoneDirectory({
                 ) : null}
                 {open ? (
                   <ul className={styles.phoneRows}>
-                    {group.rows
-                      .filter((entry) => entry.kind !== "referralInbox" || byRole || isHighlighted(entry))
-                      .map((entry) => (
+                    {group.rows.map((entry) => (
                         <PhoneRow
                           key={entry.id}
                           entry={entry}
@@ -329,7 +327,7 @@ export function PhoneSheet({
   actions: ContactActions;
   onClose: () => void;
 }) {
-  const number = numberAt(entry, actions.minute);
+  const number = numberAt(entry, actions.minute, actions.day);
   const starred = actions.favourites.includes(entry.id);
   return (
     <Sheet

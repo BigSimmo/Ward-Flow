@@ -2,7 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ChevronDown, Clock, Copy, Mail, MapPin, Printer, Search, Star, Users } from "lucide-react";
-import { minuteOfDay } from "@/components/ward-management/ward-clock";
+import { dayOf, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
@@ -113,6 +113,7 @@ export function matchesQuery(entry: DirectoryEntry, query: string): boolean {
     entry.name,
     entry.place,
     entry.groupTitle,
+    entry.siteCode ?? "",
     entry.purpose,
     SERVICE_META[entry.service].short,
     SERVICE_META[entry.service].name,
@@ -215,7 +216,8 @@ export function OnCallScreen() {
     const entry = entries.find((item) => item.id === id);
     if (!entry) return;
     setSelectedId(id);
-    if (tab !== "mine" && entry.section !== tab) setTab(entry.section);
+    setQuery("");
+    if (tab === "mine" ? !favourites.includes(id) : entry.section !== tab) setTab(entry.section);
     setCollapsed((current) => {
       if (!current.has(entry.group) && !current.has(`role-${entry.kind}`)) return current;
       const next = new Set(current);
@@ -228,6 +230,7 @@ export function OnCallScreen() {
 
   const actions: ContactActions = {
     minute,
+    day: dayOf(boardNow),
     entries,
     favourites,
     onPick: pick,
@@ -240,9 +243,9 @@ export function OnCallScreen() {
     },
   };
 
-  const answering = entries.filter((entry) => isAnswering(entry, minute));
+  const answering = entries.filter((entry) => isAnswering(entry, minute, dayOf(boardNow)));
   const endingSoon = entries.filter((entry) => HIGHLIGHTS[1]!.test(entry, minute));
-  const closed = entries.filter((entry) => availability(entry, minute).kind === "off");
+  const closed = entries.filter((entry) => availability(entry, minute, dayOf(boardNow)).kind === "off");
   const checkDue = entries.filter((entry) => entry.checkedDaysAgo > CHECK_DUE_DAYS);
   const changes = upcomingChanges(entries, minute, 360);
   const keyLines = KEY_LINE_IDS.map((id) => entries.find((entry) => entry.id === id)).filter(
@@ -250,9 +253,9 @@ export function OnCallScreen() {
   );
 
   function copyWhoIsOn() {
-    const on = entries.filter((entry) => entry.rostered && isAnswering(entry, minute));
+    const on = entries.filter((entry) => entry.rostered && isAnswering(entry, minute, dayOf(boardNow)));
     const lines = on.map((entry) => {
-      const now = availability(entry, minute);
+      const now = availability(entry, minute, dayOf(boardNow));
       const until = now.kind === "on" && !now.allDay ? `, until ${hhmm(now.until)}` : "";
       return `${entry.name}, ${entry.place}: ${numberAt(entry, minute) ?? "email only"}${until}`;
     });
@@ -377,7 +380,7 @@ export function OnCallScreen() {
           ) : (
             <div className={styles.keys} role="group" aria-label="Key lines">
               {keyLines.map((entry) => {
-                const now = availability(entry, minute);
+                const now = availability(entry, minute, dayOf(boardNow));
                 return (
                   <button
                     key={entry.id}
@@ -488,7 +491,7 @@ export function OnCallScreen() {
       <div className={styles.screen} data-testid="ward-on-call-screen" data-ward-design="v8">
         <main id="main-content" className={styles.main}>
           {hero}
-          <div className={styles.phoneTools}>
+          <div id="ward-reach-switchboard" className={styles.phoneTools}>
             {search}
             <Tabs label="Directory" items={tabItems} value={tab} onChange={setTab} className={styles.phoneTabs} />
             <div className={styles.phoneChips}>
@@ -504,7 +507,7 @@ export function OnCallScreen() {
             actions={actions}
             isHighlighted={isHighlighted}
             queryActive={Boolean(query.trim())}
-            hitCount={queryHits.length}
+            hitCount={tabRows.filter((entry) => matchesQuery(entry, query)).length}
             onClearQuery={() => setQuery("")}
             onOpen={(id) => setSheetId(id)}
           />
@@ -646,7 +649,7 @@ function MatchesPanel({
                   <span>{placeOf(entry)}</span>
                 </span>
                 <span className={styles.matchEnd}>
-                  <span className={styles.number}>{numberAt(entry, actions.minute) ?? entry.email ?? ""}</span>
+                  <span className={styles.number}>{numberAt(entry, actions.minute, dayOf(boardNow)) ?? entry.email ?? ""}</span>
                   <UntilCell entry={entry} actions={actions} compact />
                 </span>
               </button>
@@ -726,7 +729,7 @@ function DirectoryTable({
                         <span className={styles.mono}>
                           {block.groups.reduce(
                             (total, group) =>
-                              total + group.rows.filter((entry) => isAnswering(entry, actions.minute)).length,
+                              total + group.rows.filter((entry) => isAnswering(entry, actions.minute, dayOf(boardNow))).length,
                             0,
                           )}
                         </span>{" "}
@@ -759,7 +762,7 @@ function DirectoryTable({
               ) : null}
               {block.groups.map((group) => {
                 const isCollapsed = collapsed.has(group.key);
-                const on = group.rows.filter((entry) => isAnswering(entry, actions.minute)).length;
+                const on = group.rows.filter((entry) => isAnswering(entry, actions.minute, dayOf(boardNow))).length;
                 return (
                   <Fragment key={group.key}>
                     {tab !== "mine" ? (
@@ -843,7 +846,7 @@ function DirectoryRow({
       : entry.section === "statewide"
         ? entry.place
         : entry.purpose;
-  const number = numberAt(entry, actions.minute);
+  const number = numberAt(entry, actions.minute, dayOf(boardNow));
   return (
     <tr
       data-testid={`ward-on-call-row-${entry.id}`}

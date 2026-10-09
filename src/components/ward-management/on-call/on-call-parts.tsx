@@ -1,6 +1,9 @@
 "use client";
 
 import { Copy, Flag, Mail, PhoneCall, Star, X } from "lucide-react";
+import Link from "next/link";
+import { edHref } from "@/components/ward-management/shell/ward-facade";
+import { wardSites } from "@/components/ward-management/ward-sites";
 import { Badge, Button, Icon, StatusGlyph, cx, durMinutes } from "@/components/wf";
 import {
   CHECK_DUE_DAYS,
@@ -22,6 +25,7 @@ import styles from "./on-call.module.css";
 /** What a row or card can ask the screen to do. One set of handlers serves desktop and phone. */
 export type ContactActions = {
   minute: number;
+  day: number;
   entries: readonly DirectoryEntry[];
   favourites: readonly string[];
   onPick: (id: string) => void;
@@ -90,7 +94,7 @@ export function UntilCell({
   actions: ContactActions;
   compact?: boolean;
 }) {
-  const now = availability(entry, actions.minute);
+  const now = availability(entry, actions.minute, actions.day);
   if (now.kind === "none") return null;
   if (now.kind === "on" && now.allDay) {
     return (
@@ -119,7 +123,7 @@ export function UntilCell({
     ? actions.entries.find(
         (item) => item.kind === "nurseInCharge" && item.group === entry.group && item.name === entry.name,
       )
-    : escalationChain(entry, actions.entries).find((item) => isAnswering(item, actions.minute));
+    : escalationChain(entry, actions.entries).find((item) => isAnswering(item, actions.minute, actions.day));
   return (
     <span className={cx(styles.until, styles.untilOff)}>
       <span className={styles.untilMain}>
@@ -140,7 +144,7 @@ export function UntilCell({
 /** The number to ring now, its line, and how many other lines it has. */
 export function NumberCell({ entry, actions }: { entry: DirectoryEntry; actions: ContactActions }) {
   if (entry.lines.length === 0) return entry.email ? <span className={styles.cellSub}>Email only</span> : null;
-  const now = availability(entry, actions.minute);
+  const now = availability(entry, actions.minute, actions.day);
   const shown = (now.kind === "on" ? now.line : now.kind === "off" ? now.next : null) ?? entry.lines[0]!;
   return (
     <span className={cx(styles.numberCell, now.kind === "off" && styles.numberOff)}>
@@ -164,13 +168,13 @@ function segments(window: ContactWindow | null): [number, number][] {
 }
 
 /** One day of a contact's lines, the line answering now drawn solid, with a marker at the shown time. */
-export function DayBar({ entry, minute, ticks = true }: { entry: DirectoryEntry; minute: number; ticks?: boolean }) {
+export function DayBar({ entry, minute, day = 1, ticks = true }: { entry: DirectoryEntry; minute: number; day?: number; ticks?: boolean }) {
   const lines = entry.lines.length
     ? entry.lines.map((item) => ({ label: item.label, window: item.window }))
     : entry.email
       ? [{ label: "Inbox", window: entry.emailWindow }]
       : [];
-  const current = entry.lines.length ? lineAt(entry, minute)?.label : isAnswering(entry, minute) ? "Inbox" : undefined;
+  const current = entry.lines.length ? lineAt(entry, minute, day)?.label : isAnswering(entry, minute, day) ? "Inbox" : undefined;
   return (
     <div className={styles.dayBar} aria-hidden="true">
       <div className={styles.dayTrack}>
@@ -199,7 +203,7 @@ export function DayBar({ entry, minute, ticks = true }: { entry: DirectoryEntry;
 }
 
 function StatusBlock({ entry, actions }: { entry: DirectoryEntry; actions: ContactActions }) {
-  const now = availability(entry, actions.minute);
+  const now = availability(entry, actions.minute, actions.day);
   if (now.kind === "none") return null;
   if (now.kind === "on" && now.allDay) {
     return (
@@ -240,7 +244,7 @@ function StatusBlock({ entry, actions }: { entry: DirectoryEntry; actions: Conta
     ? actions.entries.find(
         (item) => item.kind === "nurseInCharge" && item.group === entry.group && item.name === entry.name,
       )
-    : escalationChain(entry, actions.entries).find((item) => isAnswering(item, actions.minute));
+    : escalationChain(entry, actions.entries).find((item) => isAnswering(item, actions.minute, actions.day));
   return (
     <div className={cx(styles.status, styles.statusOff)}>
       <span className={styles.statusCap}>
@@ -257,7 +261,7 @@ function StatusBlock({ entry, actions }: { entry: DirectoryEntry; actions: Conta
             <button type="button" className={styles.textLink} onClick={() => actions.onPick(alternative.id)}>
               {alternative.kind === "nurseInCharge" ? `${alternative.name} nurse in charge` : alternative.name}
             </button>{" "}
-            <span className={styles.mono}>{numberAt(alternative, actions.minute) ?? ""}</span>
+            <span className={styles.mono}>{numberAt(alternative, actions.minute, actions.day) ?? ""}</span>
           </>
         ) : (
           "No one covers now"
@@ -269,7 +273,7 @@ function StatusBlock({ entry, actions }: { entry: DirectoryEntry; actions: Conta
 
 function LinesBlock({ entry, actions }: { entry: DirectoryEntry; actions: ContactActions }) {
   if (!entry.lines.length) return null;
-  const now = availability(entry, actions.minute);
+  const now = availability(entry, actions.minute, actions.day);
   return (
     <section className={styles.section} aria-label="Numbers">
       <div className={styles.sectionHead}>
@@ -309,7 +313,7 @@ function LinesBlock({ entry, actions }: { entry: DirectoryEntry; actions: Contac
           );
         })}
       </ul>
-      <DayBar entry={entry} minute={actions.minute} />
+      <DayBar entry={entry} minute={actions.minute} day={actions.day} />
     </section>
   );
 }
@@ -378,7 +382,7 @@ function LadderBlock({ entry, actions }: { entry: DirectoryEntry; actions: Conta
       </div>
       <ol className={styles.ladder}>
         {chain.map((item, index) => {
-          const now = availability(item, actions.minute);
+          const now = availability(item, actions.minute, actions.day);
           return (
             <li key={item.id}>
               <button type="button" className={styles.ladderRow} onClick={() => actions.onPick(item.id)}>
@@ -390,7 +394,7 @@ function LadderBlock({ entry, actions }: { entry: DirectoryEntry; actions: Conta
                   </span>
                 </span>
                 <span className={styles.ladderEnd}>
-                  <span className={styles.number}>{numberAt(item, actions.minute) ?? "Email"}</span>
+                  <span className={styles.number}>{numberAt(item, actions.minute, actions.day) ?? "Email"}</span>
                   <span className={styles.cellSub}>
                     {now.kind === "on"
                       ? now.allDay
@@ -428,8 +432,8 @@ function SiteBlock({ entry, actions }: { entry: DirectoryEntry; actions: Contact
         {siblings.map((item) => (
           <button key={item.id} type="button" className={styles.sibling} onClick={() => actions.onPick(item.id)}>
             <b>{item.name}</b>
-            <span className={styles.number}>{numberAt(item, actions.minute) ?? "Email"}</span>
-            <StatusGlyph tone={isAnswering(item, actions.minute) ? "success" : "neutral"} size={9} />
+            <span className={styles.number}>{numberAt(item, actions.minute, actions.day) ?? "Email"}</span>
+            <StatusGlyph tone={isAnswering(item, actions.minute, actions.day) ? "success" : "neutral"} size={9} />
           </button>
         ))}
       </div>
@@ -457,7 +461,7 @@ function RecordFoot({ entry }: { entry: DirectoryEntry }) {
 
 /** Call, copy and email for one contact. Calling never dials: it copies and says so. */
 export function CallRow({ entry, actions }: { entry: DirectoryEntry; actions: ContactActions }) {
-  const number = numberAt(entry, actions.minute);
+  const number = numberAt(entry, actions.minute, actions.day);
   return (
     <div className={styles.callRow}>
       {number ? (
@@ -529,6 +533,15 @@ export function ContactCard({
               {entry.name}
             </h2>
             <span className={styles.cardPlace}>{placeOf(entry)}</span>
+            {entry.siteCode && wardSites.find((site) => site.code === entry.siteCode)?.emergencyDepartment ? (
+              <Link
+                href={edHref(wardSites.find((site) => site.code === entry.siteCode)!.emergencyDepartment!.id)}
+                prefetch={false}
+                className={styles.cardPlace}
+              >
+                Open ED workspace
+              </Link>
+            ) : null}
           </div>
           <FavouriteButton entry={entry} actions={actions} />
           {onClose ? <Button variant="ghost" size="sm" icon={X} iconOnly aria-label="Close" onClick={onClose} /> : null}
