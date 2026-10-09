@@ -1,5 +1,6 @@
 "use client";
 
+import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
@@ -242,10 +243,11 @@ export function bedsReadySummary(
   const totals = { Adult: 0, "Older adult": 0, Youth: 0, Locked: 0 };
   let oldest: number | undefined;
   for (const unit of units) {
-    if (!unit.authorised) continue;
+    // Every unit counts: a unit without authorisation still takes voluntary admissions.
     const ready = bedStates(unit, admissions, bedReleases, leaveBeds).ready;
     totals[unit.cohort] += ready;
-    if (unit.lockedBeds > 0 && unit.lockedBeds === unit.beds) totals.Locked += ready;
+    // Locked is the ready locked portion of any ward, mixed wards included.
+    totals.Locked += Math.min(ready, lockedBedsFree(unit));
     const age = Math.max(0, now - unit.allocatable.confirmedAt);
     oldest = oldest === undefined ? age : Math.max(oldest, age);
   }
