@@ -4454,14 +4454,14 @@ td,
   }
 
   .polished-scroll {
-    scrollbar-color: color-mix(in srgb, var(--border-strong) 65%, transparent) transparent;
+    scrollbar-color: var(--wf-line-2) transparent;
     scrollbar-width: thin;
     transition: scrollbar-color var(--duration-moderate) ease;
   }
 
   .polished-scroll:hover,
   .polished-scroll:focus-within {
-    scrollbar-color: color-mix(in srgb, var(--border-strong) 95%, var(--decoration-soft) 15%) transparent;
+    scrollbar-color: var(--wf-line-3) transparent;
   }
 
   .polished-scroll::-webkit-scrollbar {
