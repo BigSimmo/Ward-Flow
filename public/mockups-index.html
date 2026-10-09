@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en-AU" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ward Flow — Standalone Mockups Directory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ground: #f8fafc;
+        --surface: #ffffff;
+        --surface-2: #f1f5f9;
+        --ink: #0f172a;
+        --ink-soft: #334155;
+        --muted: #64748b;
+        --line: rgba(22, 30, 40, 0.12);
+        --primary: #1e3a5f;
+        --primary-soft: rgba(30, 58, 95, 0.08);
+        --accent: #2563eb;
+        --accent-soft: rgba(37, 99, 235, 0.08);
+        --good: #059669;
+        --good-soft: #ecfdf5;
+        --good-border: #a7f3d0;
+        --warn: #d97706;
+        --warn-soft: #fef3c7;
+        --lift: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --lift-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --r1: 10px;
+        --r2: 6px;
+        --body: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --mono: "Geist Mono", monospace;
+      }
+
+      [data-theme="dark"] {
+        --ground: #0b0f17;
+        --surface: #141b24;
+        --surface-2: #1c2533;
+        --ink: #f1f5f9;
+        --ink-soft: #cbd5e1;
+        --muted: #94a3b8;
+        --line: rgba(255, 255, 255, 0.1);
+        --primary: #60a5fa;
+        --primary-soft: rgba(96, 165, 250, 0.14);
+        --accent: #38bdf8;
+        --accent-soft: rgba(56, 189, 248, 0.14);
+        --good: #10b981;
+        --good-soft: rgba(16, 185, 129, 0.18);
+        --good-border: rgba(16, 185, 129, 0.35);
+        --warn: #f59e0b;
+        --warn-soft: rgba(245, 158, 11, 0.18);
+        --lift: 0 2px 5px rgba(0, 0, 0, 0.4);
+        --lift-hover: 0 12px 24px rgba(0, 0, 0, 0.6);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--ground);
+        color: var(--ink);
+        font-family: var(--body);
+        line-height: 1.5;
+        padding: 2rem 1.5rem 4rem;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      header {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 1.5rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        box-shadow: var(--lift);
+      }
+
+      .header-left h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .badge-proto {
+        background: var(--primary);
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.2rem 0.6rem;
+        border-radius: 9999px;
+        font-family: var(--mono);
+        letter-spacing: 0.04em;
+      }
+
+      .header-left p {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin-top: 0.35rem;
+      }
+
+      .btn-toggle-theme {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--ink);
+        padding: 0.45rem 0.9rem;
+        border-radius: 9999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .section-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--ink);
+        margin-bottom: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 1.25rem;
+      }
+
+      .mockup-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r1);
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: var(--lift);
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .mockup-card:hover {
+        border-color: var(--accent);
+        box-shadow: var(--lift-hover);
+        transform: translateY(-2px);
+      }
+
+      .card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .card-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .mockup-card:hover .card-title {
+        color: var(--accent);
+      }
+
+      .badge-tag {
+        font-size: 0.7rem;
+        font-family: var(--mono);
+        font-weight: 600;
+        padding: 0.15rem 0.45rem;
+        border-radius: 4px;
+        white-space: nowrap;
+      }
+
+      .badge-master {
+        background: var(--primary-soft);
+        color: var(--primary);
+        border: 1px solid var(--line);
+      }
+
+      .badge-data {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px solid var(--line);
+      }
+
+      .card-desc {
+        font-size: 0.825rem;
+        color: var(--muted);
+        margin-bottom: 1rem;
+        flex: 1;
+      }
+
+      .card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+        padding-top: 0.75rem;
+        font-family: var(--mono);
+      }
+
+      .launch-link {
+        color: var(--accent);
+        font-weight: 600;
+        font-family: var(--body);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-left">
+          <h1>Ward Flow — Standalone Mockups Directory <span class="badge-proto">WA HEALTH</span></h1>
+          <p>Organized catalogue of verified standalone HTML design studies and visual prototypes.</p>
+        </div>
+        <button class="btn-toggle-theme" id="themeToggle" type="button">🌓 Switch Theme</button>
+      </header>
+
+      <!-- SECTION 1: MASTER INTEGRATED SHOWCASE -->
+      <section>
+        <h2 class="section-title">🌟 Master Consolidated Showcase</h2>
+        <div class="card-grid">
+          <a href="ward-flow-complete-showcase.html" class="mockup-card" style="border-left: 4px solid var(--primary)">
+            <div class="card-header">
+              <div class="card-title">Ward Flow — Complete High-Fidelity Design Showcase</div>
+              <span class="badge-tag badge-master">ALL 6 PARTS</span>
+            </div>
+            <div class="card-desc">
+              The master unified showcase integrating all 6 design parts: Overall Shell, Beds Matrix, Header & Capacity,
+              Ward Daily Sheet, Patient Drawer, and Decisions Cockpit.
+            </div>
+            <div class="card-footer">
+              <span>ward-flow-complete-showcase.html</span>
+              <span class="launch-link">Launch Showcase →</span>
+            </div>
+          </a>
+
+          <a href="/mockups/ward-flow" class="mockup-card" style="border-left: 4px solid var(--good)">
+            <div class="card-header">
+              <div class="card-title">Live React Prototype Application</div>
+              <span class="badge-tag" style="background: var(--good-soft); color: var(--good)">NEXT.JS APP</span>
+            </div>
+            <div class="card-desc">
+              Full interactive Next.js application prototype running across 30+ operational routes with synthetic
+              statewide patient records, filters, and real-time state reducers.
+            </div>
+            <div class="card-footer">
+              <span>/mockups/ward-flow</span>
+              <span class="launch-link">Launch Live App →</span>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- SECTION 2: DELAYS & BOTTLENECK VISUAL ANALYTICS -->
+      <section>
+        <h2 class="section-title">📊 Delays & Bottleneck Control Visualizations</h2>
+        <div class="card-grid">
+          <a href="delays-mockup-catchment.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Delays — Catchment Bottlenecks</div>
+              <span class="badge-tag badge-data">GEOGRAPHIC</span>
+            </div>
+            <div class="card-desc">
+              Statewide psychiatric bed flow delays categorized by Health Service Provider catchment area and hospital
+              transfer hubs.
+            </div>
+            <div class="card-footer">
+              <span>delays-mockup-catchment.html</span><span class="launch-link">View →</span>
+            </div>
+          </a>
+
+          <a href="delays-mockup-histogram.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Delays — Wait Distribution Histogram</div>
+              <span class="badge-tag badge-data">HISTOGRAM</span>
+            </div>
+            <div class="card-desc">
+              Binned duration breakdown showing ED dwell hours and psychiatric admission wait-time clusters.
+            </div>
+            <div class="card-footer">
+              <span>delays-mockup-histogram.html</span><span class="launch-link">View →</span>
+            </div>
+          </a>
+
+          <a href="delays-mockup-matrix.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Delays — Service Heatmap Matrix</div>
+              <span class="badge-tag badge-data">MATRIX</span>
+            </div>
+            <div class="card-desc">
+              High-density matrix comparing bottleneck severity across wards, security levels, and clinical
+              sub-specialties.
+            </div>
+            <div class="card-footer"><span>delays-mockup-matrix.html</span><span class="launch-link">View →</span></div>
+          </a>
+
+          <a href="delays-mockup-runway.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Delays — Patient Discharge Runway</div>
+              <span class="badge-tag badge-data">RUNWAY</span>
+            </div>
+            <div class="card-desc">
+              Visual timeline showing planned discharges, delayed transit clearances, and bed turnaround projections.
+            </div>
+            <div class="card-footer"><span>delays-mockup-runway.html</span><span class="launch-link">View →</span></div>
+          </a>
+        </div>
+      </section>
+
+      <!-- SECTION 3: NAVIGATION, SEARCH & MODALS -->
+      <section>
+        <h2 class="section-title">🧭 Navigation, Search & Component Systems</h2>
+        <div class="card-grid">
+          <a href="perfected-headers.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Perfected Headers & Navigation Architecture</div>
+              <span class="badge-tag badge-master">DESIGN SYSTEM</span>
+            </div>
+            <div class="card-desc">
+              Comprehensive specification of top bar status pills, capacity dials, shift roles, and responsive
+              breakpoint rules.
+            </div>
+            <div class="card-footer"><span>perfected-headers.html</span><span class="launch-link">View →</span></div>
+          </a>
+
+          <a href="patient-search-directions-studio.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Patient Search Console Studio (3 Directions)</div>
+              <span class="badge-tag badge-master">SEARCH STUDIO</span>
+            </div>
+            <div class="card-desc">
+              3 unified creative directions for the Patient Search Console with integrated KPI telemetry and instant
+              keyboard filtering.
+            </div>
+            <div class="card-footer">
+              <span>patient-search-directions-studio.html</span><span class="launch-link">View →</span>
+            </div>
+          </a>
+
+          <a href="movement-patient-popup-mockup-v2.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Patient Movement Modal System (v2 Refined)</div>
+              <span class="badge-tag badge-master">MODAL SYSTEM</span>
+            </div>
+            <div class="card-desc">
+              High-density modal dialog alternatives for initiating and approving inter-ward patient movements and
+              transit logistics.
+            </div>
+            <div class="card-footer">
+              <span>movement-patient-popup-mockup-v2.html</span><span class="launch-link">View →</span>
+            </div>
+          </a>
+
+          <a href="referral-inspector-mockup.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Referral Detail Inspector Drawer</div>
+              <span class="badge-tag badge-master">DRAWER</span>
+            </div>
+            <div class="card-desc">
+              Executive referral assessment drawer with psychiatric triage notes, legal status flags, and placement fit
+              criteria.
+            </div>
+            <div class="card-footer">
+              <span>referral-inspector-mockup.html</span><span class="launch-link">View →</span>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- SECTION 4: WARD CAPACITY, BEDS & SETTINGS -->
+      <section>
+        <h2 class="section-title">🛏️ Ward Capacity, Beds & Clinical Settings</h2>
+        <div class="card-grid">
+          <a href="ward-home-beds-mockup.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Ward Home — Beds Tab & Matrix</div>
+              <span class="badge-tag badge-data">BED MATRIX</span>
+            </div>
+            <div class="card-desc">
+              Unit bedboard matrix featuring length-of-stay color bands, gender allocations, and single-click patient
+              dossier access.
+            </div>
+            <div class="card-footer">
+              <span>ward-home-beds-mockup.html</span><span class="launch-link">View →</span>
+            </div>
+          </a>
+
+          <a href="ward-redesign-mockups.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Ward Redesign — Drawer & Daily Sheet Suite</div>
+              <span class="badge-tag badge-data">OVERHAUL</span>
+            </div>
+            <div class="card-desc">
+              Daily ward operational sheet overhaul and bed dossier drawers evaluated across responsive widths.
+            </div>
+            <div class="card-footer">
+              <span>ward-redesign-mockups.html</span><span class="launch-link">View →</span>
+            </div>
+          </a>
+
+          <a href="perfected-handover-mockup.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Shift Handover Telemetry & Controls</div>
+              <span class="badge-tag badge-data">HANDOVER</span>
+            </div>
+            <div class="card-desc">Shift handover controls, departure countdowns, and clinical summary telemetry.</div>
+            <div class="card-footer">
+              <span>perfected-handover-mockup.html</span><span class="launch-link">View →</span>
+            </div>
+          </a>
+
+          <a href="unified-patient-flightdeck-options.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Unified Patient Flight Deck (5 Options)</div>
+              <span class="badge-tag badge-data">FLIGHT DECK</span>
+            </div>
+            <div class="card-desc">
+              5 distinct ergonomic layout treatments for patient dossier headers and quick-action toolbars.
+            </div>
+            <div class="card-footer">
+              <span>unified-patient-flightdeck-options.html</span><span class="launch-link">View →</span>
+            </div>
+          </a>
+
+          <a href="settings-perfected-mockup.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Settings — Apple-Style Perfected Design</div>
+              <span class="badge-tag badge-data">SETTINGS</span>
+            </div>
+            <div class="card-desc">
+              High-elegance segmented controls and clean group insets for hospital, unit, and user preferences.
+            </div>
+            <div class="card-footer">
+              <span>settings-perfected-mockup.html</span><span class="launch-link">View →</span>
+            </div>
+          </a>
+
+          <a href="capacity-table-mockup.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Elevated Capacity Table (Tracked Baseline)</div>
+              <span class="badge-tag badge-data">BASELINE</span>
+            </div>
+            <div class="card-desc">
+              The baseline statewide hospital and unit psychiatric capacity table with occupancy meters.
+            </div>
+            <div class="card-footer">
+              <span>capacity-table-mockup.html</span><span class="launch-link">View →</span>
+            </div>
+          </a>
+
+          <a href="referral-board-mockup.html" class="mockup-card">
+            <div class="card-header">
+              <div class="card-title">Statewide Referral Board (Tracked Baseline)</div>
+              <span class="badge-tag badge-data">BASELINE</span>
+            </div>
+            <div class="card-desc">Executive-tier referral intake and priority bed allocation command board.</div>
+            <div class="card-footer">
+              <span>referral-board-mockup.html</span><span class="launch-link">View →</span>
+            </div>
+          </a>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const themeBtn = document.getElementById("themeToggle");
+      themeBtn.addEventListener("click", () => {
+        const current = document.documentElement.getAttribute("data-theme");
+        const next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+      });
+    </script>
+  </body>
+</html>
