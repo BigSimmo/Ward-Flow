@@ -80,7 +80,7 @@ Everything else in v7.1 carries over unchanged: the rules, the status glyphs, ra
 3. **Glass for chrome, plus one panel.** Bars, menus, toasts, sheets and the palette. _(v8.1)_ One floating panel in the page body may also be glass, such as the side panel that swaps to the clicked item. Never a table, row or data cell. Phone bars are solid.
 4. **One hero band per page.** Slate while anything is live, quiet when nothing is.
 5. **One primary per area.**
-6. **Colour has a budget.** _(v8.1)_ A dot or glyph by default. Each screen may also tint up to three items with `.tint`, and only for act now, a fit or free place, or a hold. Tint the item that carries the state, such as a bed, card or row, never a whole panel. _(Amended)_ Words take the `-ink` partner, never the tone itself.
+6. **Colour has a budget.** _(v8.1)_ A dot or glyph by default. Each screen may also tint up to three items with `.tint` and `.tint-act`, `.tint-fit` or `.tint-hold`, and only for act now, a fit or free place, or a hold. Tint the item that carries the state, such as a bed, card or row, never a whole panel. _(Amended)_ Words take the `-ink` partner, never the tone itself.
 7. **Shape carries status.** One shape per tone everywhere.
 8. **Signal, not explanation.** Titles 5 words at most, actions 6.
 9. **Live and honest.** Values show their age. Stale or offline is marked on the value.
@@ -91,7 +91,7 @@ Everything else in v7.1 carries over unchanged: the rules, the status glyphs, ra
 14. **Mono is for figures.** Numbers, ids, clock times.
 15. **Dashed means unavailable.** On controls and surfaces. Chart guides are exempt.
 16. **Twelve is the floor, not the scale.** _(New)_ No word, count or label under 12px. Uppercase is a treatment at 12, never a licence to go smaller. _(v8.1)_ The floor never sets the scale: page titles are 28, section titles 16 to 20, and the key figure is 40.
-17. **Every page has a focal element.** _(v8.1)_ It answers the page's question. It gets the most space, the key figure and the page's strongest colour. Everything else supports it.
+17. **Every page has a focal element.** _(v8.1)_ It answers the page's question. It gets the most space and the page's strongest colour, and the key figure sits on it or in the hero directly above it (rule 18). Everything else supports it.
 18. **One key figure per screen.** _(v8.1)_ `.keyfig` at 40px, on the focal element or in the hero. It is the number that says what to do now.
 19. **Every page has a part of its own.** _(v8.1)_ One component built for that page from these tokens, such as the shift runway on the Ward page. The hero carries page-specific actions and facts, never a generic header. Page anatomy (hero, core with side panel) is a default, not a template.
 20. **Phone is its own design.** _(v8.1)_ Draw it at 390 by 844 for the job on the move: a priority list, cards with their one action, bottom sheets, a sticky bottom bar and a segmented control. The first screen shows the work. Phone never reflows the desktop and never changes it.
@@ -144,7 +144,7 @@ Voice is unchanged: Australian English, sentence case, verbs first, 24 hour time
 | Row             | `--wf-row-group` 40px                                                                                            | Grouped table headers                                                                                                                                                                                                      |
 | Control shadows | `--wf-e-pri`, `-pri-press`, `-hero`, `-on-hero`, `-on-hero-press`, `-light`, `-well`, `-knob`, `-tip`, `-bar`    | v7 left 13 raw shadows in rules                                                                                                                                                                                            |
 | Key figure      | `--wf-fs-40`, `--wf-lh-40` (v8.1)                                                                                | One per screen, `.keyfig` only (rule 18)                                                                                                                                                                                   |
-| Act now tint    | `--wf-act-tint`, `--wf-act-edge` (v8.1)                                                                          | With the existing fit and hold tints, the colour budget (rule 6). Used through `.tint.act`, `.tint.fit` and `.tint.hold`                                                                                                   |
+| Act now tint    | `--wf-act-tint`, `--wf-act-edge` (v8.1)                                                                          | With the existing fit and hold tints, the colour budget (rule 6). Used through `.tint` with `.tint-act`, `.tint-fit` or `.tint-hold`. On the live hero, the act tint darkens over slate instead                            |
 | Theme parts     | `--wf-rim-1` to `-3`, `--wf-sheen-top`, `--wf-glow-1`, `-2`, `--wf-sh-*`, `--wf-ring-*`, `--wf-press`            | Internal. Components read `--wf-e1`, `--wf-glass-rim` and so on, never these                                                                                                                                               |
 
 ## 6. Contrast (v8 values)

@@ -2252,27 +2252,42 @@ svg.gl {
 /* ================= v8.1 expression (spec section 14) ================= */
 /* The colour budget: at most three tinted items per screen, and only for act now, a fit or free
    place, and a hold. The tint fades into the surface so the words stay on near-white. Every other
-   state stays a glyph. Tints are never a whole card or panel, only the item that carries the state. */
+   state stays a glyph. Tints are never a whole card or panel, only the item that carries the state.
+   Modifiers are .tint-act, .tint-fit and .tint-hold, so they never pick up the .fit placement row. */
 .tint {
   border: 1.5px solid var(--wf-line-2);
   background: linear-gradient(180deg, var(--tint), var(--wf-surface) 75%);
 }
-.tint.act {
+.tint.tint-act {
   --tint: var(--wf-act-tint);
   border-color: var(--wf-act-edge);
 }
-.tint.fit {
+.tint.tint-fit {
   --tint: var(--wf-fit-tint);
   border-color: var(--wf-fit-edge);
 }
-.tint.hold {
+.tint.tint-hold {
   --tint: var(--wf-hold-tint);
   border-color: var(--wf-hold-edge);
 }
-.tint.act .st,
-.tint.act .why {
+.tint.tint-act .st,
+.tint.tint-act .why {
   color: var(--wf-danger-ink);
   font-weight: 600;
+}
+/* On the live hero the tint sits on slate, so it darkens instead of whitening and the hero ink stays.
+   White is 9.1:1 on it, and --wf-on-hero-ink 6.8:1. */
+.hero:not(.quiet) .tint {
+  background: var(--wf-on-hero-fill);
+  border-color: var(--wf-on-hero-line);
+}
+.hero:not(.quiet) .tint.tint-act {
+  background: rgba(239, 138, 118, 0.18);
+  border-color: rgba(239, 138, 118, 0.6);
+}
+.hero:not(.quiet) .tint .st,
+.hero:not(.quiet) .tint .why {
+  color: inherit;
 }
 
 /* The key figure: the one number that answers the page's question (rule 18). */
@@ -2282,7 +2297,7 @@ svg.gl {
   gap: 2px;
 }
 .keyfig .v {
-  font: 600 var(--wf-fs-40) / var(--wf-lh-40) var(--wf-mono);
+  font: 600 var(--wf-fs-40)/var(--wf-lh-40) var(--wf-mono);
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
@@ -2290,7 +2305,7 @@ svg.gl {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  font: 600 var(--wf-fs-13)/var(--wf-lh-13) var(--wf-font);
 }
 @media (forced-colors: active) {
   .tint {
