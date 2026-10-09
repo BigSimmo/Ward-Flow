@@ -842,8 +842,8 @@ export function WardHomeTab({
                           aria-haspopup="dialog"
                           aria-label={row.accessibleName}
                           onClick={() => {
-                      onSelectBed?.(Number(row.bed.bedNumber));
-                    }}
+                            onSelectBed?.(Number(row.bed.bedNumber));
+                          }}
                         >
                           {row.glyph ? <StatusGlyph tone={row.glyph} size={9} /> : <span className={styles.glyphGap} />}
                           {row.number}
