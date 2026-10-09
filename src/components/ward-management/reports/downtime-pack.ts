@@ -157,13 +157,24 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
  * and is gone on reload. Nothing is written to browser storage.
  */
 let lastPack: DowntimePack | null = null;
+const listeners = new Set<() => void>();
 
 export function rememberDowntimePack(pack: DowntimePack): void {
+  if (typeof window === "undefined") return; // never hold a pack in the server process
   lastPack = pack;
+  for (const listener of listeners) listener();
 }
 
 export function lastDowntimePack(): DowntimePack | null {
   return lastPack;
+}
+
+/** For `useSyncExternalStore`: the screen re-renders when a new pack is remembered. */
+export function subscribeDowntimePack(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 /** Test seam: forget the remembered pack. */

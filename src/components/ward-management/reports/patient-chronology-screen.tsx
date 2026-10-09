@@ -101,7 +101,9 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                 <Button
                   variant="light"
                   icon={Printer}
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    window.print();
+                  }}
                   data-testid="ward-chronology-print"
                 >
                   Print
@@ -115,7 +117,9 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
           <Field label="Patient" id={pickerId} className={styles.picker}>
             <Select
               value={patientId}
-              onChange={(event) => setPatientId(event.target.value)}
+              onChange={(event) => {
+                setPatientId(event.target.value);
+              }}
               data-testid="ward-chronology-patient"
             >
               <option value="">Choose a patient</option>

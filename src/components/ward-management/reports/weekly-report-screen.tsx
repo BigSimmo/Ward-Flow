@@ -85,7 +85,9 @@ export function WeeklyReportScreen() {
                 variant="light"
                 size="sm"
                 icon={Printer}
-                onClick={() => window.print()}
+                onClick={() => {
+                  window.print();
+                }}
                 data-testid="ward-weekly-print"
               >
                 Print
@@ -108,7 +110,9 @@ export function WeeklyReportScreen() {
           <Field label="Week" id={pickerId} className={styles.picker}>
             <Select
               value={String(offset)}
-              onChange={(event) => setOffset(Number(event.target.value))}
+              onChange={(event) => {
+                setOffset(Number(event.target.value));
+              }}
               data-testid="ward-weekly-week"
               data-print-hide
             >

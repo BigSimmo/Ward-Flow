@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   downtimePack,
@@ -26,7 +26,10 @@ function packFor(now = NOW_ANCHOR) {
   return { state, pack };
 }
 
-afterEach(() => forgetDowntimePack());
+afterEach(() => {
+  forgetDowntimePack();
+  vi.unstubAllGlobals();
+});
 
 describe("downtimePack", () => {
   it("stamps the moment it was generated", () => {
@@ -73,7 +76,14 @@ describe("downtimePack", () => {
     }
   });
 
-  it("remembers the last pack in memory only, until forgotten", () => {
+  it("never holds a pack in the server process", () => {
+    const { pack } = packFor();
+    rememberDowntimePack(pack);
+    expect(lastDowntimePack()).toBeNull();
+  });
+
+  it("remembers the last pack in browser memory only, until forgotten", () => {
+    vi.stubGlobal("window", {});
     expect(lastDowntimePack()).toBeNull();
     const { pack } = packFor();
     rememberDowntimePack(pack);

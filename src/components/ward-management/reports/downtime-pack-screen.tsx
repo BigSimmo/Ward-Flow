@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { Ambulance, BedDouble, Camera, FileText, Printer, Users } from "lucide-react";
 
 import { Button, Card, CardHead, Hero, HeroStat, tableClasses } from "@/components/wf";
@@ -9,7 +9,7 @@ import { formatSheetMoment, splitDuration, type Instant } from "@/components/war
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 
-import { downtimePack, lastDowntimePack, rememberDowntimePack, type DowntimePack } from "./downtime-pack";
+import { downtimePack, lastDowntimePack, rememberDowntimePack, subscribeDowntimePack } from "./downtime-pack";
 import styles from "./reports.module.css";
 
 const NOT_RECORDED = "Not recorded";
@@ -25,7 +25,7 @@ export function DowntimePackScreen() {
   const { dayZero } = world;
   const patientOf = usePatientOf();
 
-  const take = (): DowntimePack => {
+  const take = (): void => {
     const pack = downtimePack({
       units: world.units,
       admissions: world.admissions,
@@ -39,11 +39,24 @@ export function DowntimePackScreen() {
       },
     });
     rememberDowntimePack(pack);
-    return pack;
   };
 
-  const [pack, setPack] = useState<DowntimePack>(() => lastDowntimePack() ?? take());
+  // Taken or restored only after mount: the server snapshot is always null, so a server render never
+  // holds a pack (it would be shared across visitors and its stamp would not match the browser's).
+  const pack = useSyncExternalStore(subscribeDowntimePack, lastDowntimePack, () => null);
+  useEffect(() => {
+    if (lastDowntimePack() === null) take();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- take once on mount; "New snapshot" retakes
+  }, []);
   const at = (instant: Instant | null) => (instant === null ? NOT_RECORDED : formatSheetMoment(instant, dayZero));
+
+  if (pack === null) {
+    return (
+      <div className={styles.page} data-testid="ward-downtime-pack" data-ward-design="v6">
+        <main id="main-content" className={styles.main} aria-busy="true" />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page} data-testid="ward-downtime-pack" data-ward-design="v6">
@@ -63,7 +76,14 @@ export function DowntimePackScreen() {
           }
           aside={
             <span data-print-hide>
-              <Button variant="light" icon={Printer} onClick={() => window.print()} data-testid="ward-downtime-print">
+              <Button
+                variant="light"
+                icon={Printer}
+                onClick={() => {
+                  window.print();
+                }}
+                data-testid="ward-downtime-print"
+              >
                 Print
               </Button>
             </span>
@@ -71,7 +91,14 @@ export function DowntimePackScreen() {
         />
 
         <div className={styles.controls} data-print-hide>
-          <Button variant="sec" icon={Camera} onClick={() => setPack(take())} data-testid="ward-downtime-refresh">
+          <Button
+            variant="sec"
+            icon={Camera}
+            onClick={() => {
+              take();
+            }}
+            data-testid="ward-downtime-refresh"
+          >
             New snapshot
           </Button>
           <p className={styles.stamp}>Snapshot does not update while open</p>
