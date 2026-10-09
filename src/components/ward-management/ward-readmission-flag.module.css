@@ -1,0 +1,52 @@
+.wrap {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.flag,
+.flagButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-11);
+  line-height: var(--wf-lh-11);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.flagButton {
+  padding: 0 var(--wf-s-1);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface);
+  cursor: pointer;
+}
+
+.flagButton:hover {
+  background: var(--wf-hover);
+}
+
+.flagButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.detail {
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-11);
+  line-height: var(--wf-lh-11);
+  color: var(--wf-ink-3);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

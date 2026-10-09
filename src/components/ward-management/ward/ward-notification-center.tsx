@@ -1,13 +1,17 @@
 "use client";
 
-import { useContext, useEffect, useId, useState } from "react";
+import { useContext, useEffect, useId, useMemo, useState } from "react";
 
 import { type Movement, type Notice } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
-import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import {
+  resolveSubjectPatient,
+  withUmrnInPlaceOfMovementIds,
+  type ResolvedPatientInfo,
+} from "@/components/ward-management/ward-patient-resolver";
 import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 
 import styles from "./ward-notification-center.module.css";
@@ -99,6 +103,15 @@ export function WardNotificationCenter({
   const context = useContext(WardFlowContext);
   const resolveIdentity = context?.resolvePatientIdentity;
   const effectivePatients = patients ?? context?.patients;
+  // D-39: notices name the patient by UMRN. Inside the provider that comes from its identity
+  // projection (referral-linked journeys included, without this screen reading referrals).
+  const noticeUmrnLookup = useMemo(
+    () =>
+      resolveIdentity
+        ? (movementId: string) => resolveIdentity({ movementId }).umrn
+        : { patients: effectivePatients, movements },
+    [resolveIdentity, effectivePatients, movements],
+  );
   const rollupHour = Math.floor(morningRollupDeadlineMinutes / 60);
   const rollupMin = morningRollupDeadlineMinutes % 60;
   const rollupTimeLabel = `${String(rollupHour).padStart(2, "0")}:${String(rollupMin).padStart(2, "0")}`;
@@ -394,7 +407,9 @@ export function WardNotificationCenter({
                           <time className={styles.cardTime}>{formatInstantWithDay(notice.raisedAt, now)}</time>
                           {isRead && <span className={styles.readBadge}>Read</span>}
                         </div>
-                        <p className={styles.cardMessage}>{notice.sentence}</p>
+                        <p className={styles.cardMessage}>
+                          {withUmrnInPlaceOfMovementIds(notice.sentence, noticeUmrnLookup)}
+                        </p>
                       </div>
 
                       {!isRead && (

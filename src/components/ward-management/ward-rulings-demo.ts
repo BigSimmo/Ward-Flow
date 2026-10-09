@@ -130,7 +130,7 @@ function emptyAdmission(
 function patient(id: Patient["id"], givenName: string, familyName: string, sex: "Female" | "Male"): Patient {
   return {
     id,
-    umrn: `UM-RD-${id.slice(3)}`,
+    umrn: `UM60${id.replace(/\D/g, "").padStart(4, "0")}`,
     givenName,
     familyName,
     dateOfBirth: "1980-01-15",

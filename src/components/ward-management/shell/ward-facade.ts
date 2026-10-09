@@ -261,6 +261,11 @@ export function movementHref(movementId: string): string {
   return `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}`;
 }
 
+/** One discharged stay, opened in the discharges board detail. The id is a synthetic admission id. */
+export function dischargeHref(admissionId: string): string {
+  return `/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(admissionId)}`;
+}
+
 /** Fixed shell destinations live beside the parameterised builders so chrome never retypes them. */
 export function handoverHref(): string {
   return "/mockups/ward-flow/handover";

@@ -36,6 +36,7 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
@@ -88,7 +89,16 @@ const WardMhaCalculator = dynamic(
 
 import { announceToWardShell } from "./ward-live-region";
 import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
-import { digestHref, edHref, handoverHref, movementHref, officerHref, onCallHref, settingsHref } from "./ward-facade";
+import {
+  digestHref,
+  dischargeHref,
+  edHref,
+  handoverHref,
+  movementHref,
+  officerHref,
+  onCallHref,
+  settingsHref,
+} from "./ward-facade";
 import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
@@ -515,6 +525,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     dispatch,
     inboxAcknowledgements,
     inboxCompletions,
+    supportNotifications,
   } = useWardFlow();
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
@@ -614,8 +625,17 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // for exactly this call. A ward/ED/officer route gets an empty inbox: zero badge, and the drawer's
   // own "No outstanding work right now." empty state, never a network list with every action refused.
   const tasksItems = useMemo(
-    () => (wardTasksAreActionableForRole(role) ? buildActionInbox(movements.filter(isOpen), now, units) : []),
-    [movements, now, units, role],
+    () =>
+      wardTasksAreActionableForRole(role)
+        ? buildActionInbox(movements.filter(isOpen), now, units, {
+            movements,
+            admissions,
+            patients,
+            referrals,
+            supportNotifications,
+          })
+        : [],
+    [movements, now, units, role, admissions, patients, referrals, supportNotifications],
   );
   /**
    * The Service selector's own "{n} open" / "none open" option counts (build plan §3 "Service
@@ -648,6 +668,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     () =>
       deriveCommandActivity({
         movements,
+        patients,
         units,
         referrals,
         rejections,
@@ -656,7 +677,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         refreshRequests,
         now,
       }),
-    [movements, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now],
+    [movements, patients, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now],
   );
   const usesDerivedActivity = activity === undefined;
   const currentScreenTitle = useMemo(() => resolveWardScreenTitle(pathname, units), [pathname, units]);
@@ -700,10 +721,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         .sort((left, right) => right.raisedAt - left.raisedAt),
     [notices, now, placeId, role],
   );
+  // D-39: a notice names the patient by UMRN, never by the WF journey number it was raised on.
+  const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
+  const noticeText = (sentence: string) => withUmrnInPlaceOfMovementIds(sentence, umrnLookup);
   const visibleNotices = scopedNotices.filter(
     (notice) =>
       (!unreadOnly || notice.readAt === undefined) &&
-      notice.sentence.toLowerCase().includes(activityQuery.trim().toLowerCase()),
+      noticeText(notice.sentence).toLowerCase().includes(activityQuery.trim().toLowerCase()),
   );
   // Item 48, Q2 (owner answer 48, 2026-09-17): "counts show unread only" — `scopedNotices` itself
   // still carries every notice this chrome may see, read or not (read notices stay in the list),
@@ -935,6 +959,20 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       router.push(
         `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
       );
+    },
+    [router],
+  );
+
+  // A discharge notification task opens the stay's checklist on the discharges board.
+  const openDischarge = useCallback(
+    (admissionId: string) => {
+      setOpenPanel(null);
+      if (typeof window !== "undefined" && window.history && window.history.state?.wardDrawer) {
+        const nextState = { ...window.history.state };
+        delete nextState.wardDrawer;
+        window.history.replaceState(nextState, "");
+      }
+      router.push(dischargeHref(admissionId));
     },
     [router],
   );
@@ -1175,6 +1213,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           <WardGlobalSearch
             movements={movements}
             patients={patients}
+            referrals={referrals}
             units={units}
             tasks={tasksItems}
             now={now}
@@ -1511,7 +1550,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                       <time className={styles.feedTime}>{formatInstantWithDay(notice.raisedAt, now)}</time>
                       <StatusGlyph tone={isRead ? "neutral" : "info"} size={8} className={styles.feedGlyph} />
                       <div className={styles.noticeContent}>
-                        <span>{notice.sentence}</span>
+                        <span>{noticeText(notice.sentence)}</span>
                         {/* No automatic read on opening the drawer — this is the only place
                             `MARK_NOTICE_READ` is dispatched from, and only a person's own click
                             reaches it (item 48, Q2, owner answer 48). */}
@@ -1715,7 +1754,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             dispatch={dispatch}
             onClose={() => closePopover("tasks")}
             onSelectMovement={openMovement}
-            records={{ movements, patients, referrals, units }}
+            onSelectDischarge={openDischarge}
+            records={{ movements, admissions, patients, referrals, units }}
           />
         </div>
       </Sheet>

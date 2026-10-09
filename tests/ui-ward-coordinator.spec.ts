@@ -9,7 +9,8 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { PARALLEL_REFERRAL_CAP } from "@/components/ward-management/ward-model";
-import { movementById, wardMovements } from "@/components/ward-management/ward-movements";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { movementById } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 async function gotoCoordinator(page: Page) {
@@ -222,7 +223,16 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Whole-branch review Minor 6: the register is scoped to OPEN movements, so the independent
     // count here must be too — computing it over all 48 records would agree with a screen that
     // wrongly listed a closed patient's breached deadline.
-    const expectedCount = buildActionInbox(wardMovements.filter(isOpen), NOW_ANCHOR, allUnits()).length;
+    // The same call the screen makes (coordinator-screen.tsx): open movements, plus the whole record
+    // so the advisory carer/PSP/MHAS notification rows are counted too.
+    const seed = seedWardFlowState();
+    const expectedCount = buildActionInbox(seed.movements.filter(isOpen), NOW_ANCHOR, seed.units, {
+      movements: seed.movements,
+      admissions: seed.admissions,
+      patients: seed.patients,
+      referrals: seed.referrals,
+      supportNotifications: seed.supportNotifications,
+    }).length;
     expect(expectedCount).toBeGreaterThan(1);
     await expect(items).toHaveCount(expectedCount);
     await expect(page.getByRole("tab", { name: "Exceptions" })).toContainText(String(expectedCount));
@@ -250,7 +260,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await wf005Item.click();
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await expect(shortlist).toBeVisible();
-    await expect(shortlist).toContainText("WF-005");
+    // D-39: the Placement panel names the patient (and UMRN), never the WF journey number.
+    // Selection is still keyed by the journey id on the panel and the queue row.
+    await expect(shortlist).toHaveAttribute("data-subject-movement", "WF-005");
+    await expect(shortlist).toContainText("Noor Tremalow");
     await expect(page.getByTestId("ward-queue-row-WF-005")).toHaveAttribute("aria-pressed", "true");
 
     // Phone: queue and the registers toggle survive, the diagram and the pressure strip do not
@@ -381,7 +394,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await firstRow.click();
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     const selectedId = await queue.locator('[aria-pressed="true"]').getAttribute("data-testid");
-    await expect(shortlist).toContainText(String(selectedId).replace("ward-queue-row-", ""));
+    const selectedMovementId = String(selectedId).replace("ward-queue-row-", "");
+    // D-39: the journey id stays on the panel attribute; visible text is the patient, not WF-…
+    await expect(shortlist).toHaveAttribute("data-subject-movement", selectedMovementId);
   });
 
   test("ranks emergency departments worst first and filters the queue when one is chosen", async ({ page }) => {
