@@ -436,7 +436,13 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
           time: "No lapse time shown",
           // Nothing blocks here, so this action never takes the page's primary.
           clear: true,
-          action: { kind: "button", label: "Record ended", onClick: () => { ctx.onEndCto(); } },
+          action: {
+            kind: "button",
+            label: "Record ended",
+            onClick: () => {
+              ctx.onEndCto();
+            },
+          },
         },
         {
           key: "catchment",

@@ -549,7 +549,8 @@ export function PatientNowScreen({
       });
     if (originName) contacts.push({ name: originName, role: "Sending ED" });
   } else if ((mode === "ward" || mode === "leave" || mode === "awol") && (stayUnit ?? acceptingUnit)) {
-    contacts.push({ name: (stayUnit ?? acceptingUnit)?.name, role: "Ward, nurse in charge" });
+    const wardUnit = stayUnit ?? acceptingUnit;
+    if (wardUnit) contacts.push({ name: wardUnit.name, role: "Ward, nurse in charge" });
     const police = stayLeaveBed?.absentWithoutLeave?.steps.find((done) => done.step === "police_notified")?.at;
     if (mode === "awol" && police !== undefined) contacts.push({ name: "Police", role: `Notified ${clock(police)}` });
   }
