@@ -20,8 +20,9 @@ governs appearance; current engine/source/tests govern behaviour. Start with the
 | --------------- | ------------------------------------------------------------------- |
 | `.design/`      | Design briefs, reviews and screenshot evidence; not runtime modules |
 | `.githooks/`    | Local commit/push hooks                                             |
-| `.github/`      | Ward Flow CI workflow and repository metadata                       |
+| `.github/`      | Ward Flow CI and CodSpeed workflows and repository metadata         |
 | `backend/`      | Separate synthetic Azure development backend                        |
+| `bench/`        | CodSpeed/Vitest performance benchmarks (`npm run bench`)            |
 | `data/`         | Reference datasets and generated source snapshots                   |
 | `design/`       | Figma mapping, sync metadata and tokens; not an appearance mandate  |
 | `docs/`         | Maintained guidance and explicitly preserved historical records     |
