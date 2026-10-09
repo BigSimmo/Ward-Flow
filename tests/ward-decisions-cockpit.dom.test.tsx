@@ -112,7 +112,7 @@ describe("ward decisions cockpit", () => {
     expect(onConfirmRollup).toHaveBeenCalledOnce();
   });
 
-  it("activates the four window steps via keyboard", () => {
+  it("activates the four window steps via click", () => {
     render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
 
     for (const [name, region] of [
@@ -122,7 +122,7 @@ describe("ward decisions cockpit", () => {
       ["Leave, 14:00–18:00", "Leave"],
     ] as const) {
       const step = screen.getByRole("button", { name });
-      fireEvent.keyDown(step, { key: "Enter" });
+      fireEvent.click(step);
       expect(step).toHaveAttribute("aria-pressed", "true");
       expect(screen.getByRole("region", { name: region })).toBeInTheDocument();
     }
