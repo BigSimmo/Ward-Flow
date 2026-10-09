@@ -87,7 +87,7 @@ function explicitIdentity(id: string) {
   const movement = movementById(id)!;
   const patientId = movement.patientId ?? referrals.find((referral) => referral.id === movement.referralId)?.patientId;
   const patient = wardPatients.find((item) => item.id === patientId);
-  return patient ? `${patient.familyName}, ${patient.givenName}` : `Movement ${id}`;
+  return patient ? `${patient.familyName}, ${patient.givenName}` : "Patient not recorded";
 }
 
 describe("the patient-now screen", () => {

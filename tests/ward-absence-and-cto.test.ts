@@ -247,7 +247,7 @@ describe("re-anchoring the demo clock (D-38)", () => {
 });
 
 describe("community treatment order (D-38)", () => {
-  it("keeps an ended order when a second is recorded, so the first is never erased (D-39)", () => {
+  it("keeps an ended order when a second is recorded, so the first is never erased (D-40)", () => {
     const state = seedWardFlowStateAt(0);
     const patient = state.patients.find((p) => !p.communityTreatmentOrder)!;
     const step = (
@@ -314,7 +314,7 @@ describe("community treatment order (D-38)", () => {
     expect(ended.patients.find((p) => p.id === patient.id)!.communityTreatmentOrder?.endedAt).toBe(NOW + 2);
     expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(ended)))).toBe(true);
 
-    // D-39: a second order after an ended one is accepted, and the ended Form 5A is kept in
+    // D-40: a second order after an ended one is accepted, and the ended Form 5A is kept in
     // `earlier` rather than overwritten, so Documents still lists it as Closed.
     const afterEnded = wardFlowReducer(ended, {
       type: "RECORD_COMMUNITY_TREATMENT_ORDER",

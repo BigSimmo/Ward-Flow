@@ -125,7 +125,7 @@ describe("gate board status card review fixes", () => {
     expect(legalOnLeave("did_not_proceed")).toBe("Voluntary patient");
   });
 
-  it("still offers Record CTO after an ended Form 5A, which a new order keeps as Closed (D-39)", () => {
+  it("still offers Record CTO after an ended Form 5A, which a new order keeps as Closed (D-40)", () => {
     const legalAction = (patient: PatientStatusContext["patient"]) =>
       buildPatientStatus("idle", ctx(base, { patient })).cells.find((cell) => cell.key === "legal")?.action;
     expect(legalAction({} as PatientStatusContext["patient"])?.kind).toBe("button");

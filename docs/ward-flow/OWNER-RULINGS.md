@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**520 rulings/items extracted, across 30 of 35 files.**
+**521 rulings/items extracted, across 30 of 35 files.**
 **5 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -24,7 +24,7 @@ specifically so that distinction survives. A file's own title (also quoted) is u
 tell: `owner-question-*` and `owner-*-to-settle-*` files are frequently still open.
 
 ⚠️ **IDs are NOT globally unique across this corpus.** The same token has been issued
-independently in more than one file 44 time(s) below (e.g. `D-1`).
+independently in more than one file 45 time(s) below (e.g. `D-1`).
 Where that happens every occurrence is listed, in the order discovered — confirm which file's
 instance is the one you mean before citing it.
 
@@ -193,8 +193,10 @@ safe global key across 30 files.
 | ↳ | `decisions.md`:484 | D-38. Leave, absent without leave and CTO on the Patient page (9 October 2026) |
 | `D-39` ⚠️ **2 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1437 | D-39 · _Contacts_ and _Time to first contact_ — HELD, build neither |
-| ↳ | `decisions.md`:502 | D-39. A second community treatment order keeps the first (9 October 2026) |
-| `D-40` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1445 | D-40 · An empty check array never claims reconciliation — on either shell surface |
+| ↳ | `decisions.md`:502 | D-39. Patients are identified by UMRN, never by a WF number (9 October 2026) |
+| `D-40` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1445 | D-40 · An empty check array never claims reconciliation — on either shell surface |
+| ↳ | `decisions.md`:532 | D-40. A second community treatment order keeps the first (9 October 2026) |
 | `D-41` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1478 | D-41 · `corridorCounts` is extended, and its POPULATION changes |
 | `D-42` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1490 | D-42 · _Referrals into this ward_ renders bare counts. No share. |
 | `D-43` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1724 | D-43 · Ward Lead ruling — the bed board's ordinal contradiction is a LANE TASK |
@@ -475,7 +477,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-39 item(s):
+40 item(s):
 
 - `D-1` — line 14, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 24, heading: "D-2. Railway is disconnected"
@@ -515,7 +517,8 @@ safe global key across 30 files.
 - `D-36` — line 442, heading: "D-36. Affirmation of External Governance & Clinical Safety Hard Gates (6 October 2026)"
 - `D-37` — line 457, heading: "D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026)"
 - `D-38` — line 484, heading: "D-38. Leave, absent without leave and CTO on the Patient page (9 October 2026)"
-- `D-39` — line 502, heading: "D-39. A second community treatment order keeps the first (9 October 2026)"
+- `D-39` — line 502, heading: "D-39. Patients are identified by UMRN, never by a WF number (9 October 2026)"
+- `D-40` — line 532, heading: "D-40. A second community treatment order keeps the first (9 October 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 

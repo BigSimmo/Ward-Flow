@@ -131,7 +131,7 @@ describe.each(VARIANTS)("the EMHS %s network", (variant) => {
 
   it("uses obviously synthetic identities", () => {
     expect(network.patients.every((patient) => /^PT-DN-\d{4}$/.test(patient.id))).toBe(true);
-    expect(network.patients.every((patient) => /^WF-P-\d{4}$/.test(patient.umrn))).toBe(true);
+    expect(network.patients.every((patient) => /^UM7\d{5}$/.test(patient.umrn))).toBe(true);
   });
 
   it("links every discharge due today to a bed release on the same ward", () => {

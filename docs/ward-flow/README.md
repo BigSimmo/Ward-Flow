@@ -174,3 +174,6 @@ Current plans are listed in [`plans/README.md`](plans/README.md).
 5. **Verify the repository before any Git write, and get the owner's yes for protected deletions.**
    Ward Flow belongs in `BigSimmo/Ward-Flow`; `BigSimmo/Database` is a separate project. A push,
    pull request, merge, migration or deployment requires its own applicable authority and checks.
+6. **A patient is shown by UMRN, never by a `WF-...` number** (D-39). `WF-...` is the internal id of
+   one journey and stays in routes, keys and test ids only. Read the UMRN through
+   `ward-patient-resolver.ts`; synthetic UMRNs are `UM` plus six digits, for example `UM100047`.

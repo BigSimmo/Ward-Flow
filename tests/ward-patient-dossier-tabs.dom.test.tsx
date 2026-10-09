@@ -161,7 +161,7 @@ describe("polished patient dossier tabs", () => {
       .map((h) => h.textContent);
     expect(headers).toEqual(["Form", "Status", "Recorded", "By"]);
   });
-  it("lists an ended CTO as Closed beside a second one, never erasing it (D-39)", () => {
+  it("lists an ended CTO as Closed beside a second one, never erasing it (D-40)", () => {
     setup("PT-005");
     const community = tab("Community");
     fireEvent.click(community.getByRole("button", { name: "Record CTO" }));

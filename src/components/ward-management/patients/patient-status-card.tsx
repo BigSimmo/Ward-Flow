@@ -490,7 +490,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
         sub: "As recorded",
         clear: true,
         // An order here can only be an ended one (an active order shows the CTO mode). A new order
-        // keeps the ended one as Closed in `earlier` (D-39), so Record CTO stays available.
+        // keeps the ended one as Closed in `earlier` (D-40), so Record CTO stays available.
         action: patient ? { kind: "button", label: "Record CTO", onClick: () => ctx.onRecordCto() } : undefined,
       },
     ],

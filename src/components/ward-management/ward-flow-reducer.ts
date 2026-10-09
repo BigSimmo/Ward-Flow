@@ -1,6 +1,6 @@
 import { referralIntakeError } from "./referrals/referral-submission";
 import { recordedMovementMedicalClearance } from "./ward-medical-clearance";
-import { movementPatientIdentityMatchesRecord } from "./ward-patient-resolver";
+import { movementPatientIdentityMatchesRecord, withUmrnInPlaceOfMovementIds } from "./ward-patient-resolver";
 import {
   validCareChange,
   careChangeRefusal,
@@ -777,7 +777,8 @@ function makeRejection(state: WardFlowState, event: WardFlowEvent, reason: strin
     at: event.now,
     movementId: subject,
     attempted: event.type,
-    reason,
+    // D-39: a refusal names the patient by UMRN, never by the WF journey number it was keyed on.
+    reason: withUmrnInPlaceOfMovementIds(reason, state),
   };
 }
 
@@ -6214,12 +6215,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_COMMUNITY_TREATMENT_ORDER": {
       const patient = state.patients.find((candidate) => candidate.id === event.patientId);
       if (!patient) return reject(state, event, `no patient found for id ${event.patientId}`);
-      // Only an order still in force refuses a new one. An ended order is kept below (D-39), so a
+      // Only an order still in force refuses a new one. An ended order is kept below (D-40), so a
       // patient can be placed on a second CTO without the first leaving Documents.
       if (patient.communityTreatmentOrder && patient.communityTreatmentOrder.endedAt === undefined) {
         return reject(state, event, `patient ${patient.id} already has a community treatment order recorded`);
       }
-      // D-39: an ended order is kept in `earlier` rather than overwritten, so Documents still lists it.
+      // D-40: an ended order is kept in `earlier` rather than overwritten, so Documents still lists it.
       const previous = patient.communityTreatmentOrder;
       const earlier =
         previous?.endedAt !== undefined

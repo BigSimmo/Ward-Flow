@@ -167,7 +167,7 @@ export type Patient = {
  *  When the order ends, `endedAt` is set on the same record (Documents keeps the Closed form;
  *  mode "cto" only applies while `endedAt` is absent). Recording a new order after an ended one
  *  moves the ended one into `earlier`, inside this same D-38 field, so a second CTO never erases
- *  the first (D-39). Form, times and role only; no lapse time and no typed text. */
+ *  the first (D-40). Form, times and role only; no lapse time and no typed text. */
 export type CommunityTreatmentOrder = {
   form: "5A";
   recordedAt: Instant;

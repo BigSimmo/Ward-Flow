@@ -242,7 +242,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       if (order.endedAt !== undefined && !finite(order.endedAt)) return false;
       if (Object.keys(order).some((key) => !["form", "recordedAt", "recordedBy", "endedAt", "earlier"].includes(key)))
         return false;
-      // D-39: earlier orders have each ended, and hold the same four facts and nothing else.
+      // D-40: earlier orders have each ended, and hold the same four facts and nothing else.
       if (order.earlier !== undefined) {
         if (!Array.isArray(order.earlier)) return false;
         for (const ended of order.earlier as unknown[]) {

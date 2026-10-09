@@ -123,6 +123,8 @@ export function MovementWorkspaceCockpit({
   const patient: Movement | undefined = movements.find((candidate) => candidate.id === movementId);
   const mastheadInfo = patient ? resolveSubjectPatient(patient, { patients, referrals, movements }) : undefined;
   const mastheadName = mastheadInfo?.patient ? mastheadInfo.displayName : undefined;
+  // D-39: the masthead names the patient by UMRN, never by the WF journey number.
+  const mastheadUmrn = mastheadInfo?.umrn ?? "UMRN not recorded";
 
   const [blockerDraft, setBlockerDraft] = useState("");
   const [showClosedEligibility, setShowClosedEligibility] = useState(false);
@@ -542,7 +544,7 @@ export function MovementWorkspaceCockpit({
         </ContextualBackLink>
         <div>
           <span>Ward Flow</span>
-          <span className={styles.headerCrumb}>Movement {patient.id}</span>
+          <span className={styles.headerCrumb}>{mastheadUmrn}</span>
         </div>
       </header>
 
@@ -561,11 +563,11 @@ export function MovementWorkspaceCockpit({
                 <div className={styles.eyebrowRow}>
                   <span>Movement Workspace</span>
                   <span>·</span>
-                  <span>{patient.id}</span>
+                  <span>{mastheadUmrn}</span>
                 </div>
                 {/* Single <h1> Landmark for this route */}
                 <h1 id="movement-masthead-title" className={styles.mastheadTitle}>
-                  {mastheadName ? `${mastheadName} (${patient.id})` : patient.id} —{" "}
+                  {mastheadName ? `${mastheadName} (${mastheadUmrn})` : mastheadUmrn} —{" "}
                   {originEd ? `in ${originEd.name}` : unresolvedOriginDepartment(patient)}
                 </h1>
                 <div className={styles.clinicalDemographicsPill}>

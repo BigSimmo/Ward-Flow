@@ -733,7 +733,7 @@ export function PatientDocumentsTab({
       recorded: clock(order.recordedAt),
       by: order.recordedBy,
     });
-    // D-39: orders that ended before this one stay listed as Closed, newest first.
+    // D-40: orders that ended before this one stay listed as Closed, newest first.
     for (const ended of [...(order.earlier ?? [])].reverse())
       forms.push({ code: ended.form, status: "Closed", recorded: clock(ended.recordedAt), by: ended.recordedBy });
   }
