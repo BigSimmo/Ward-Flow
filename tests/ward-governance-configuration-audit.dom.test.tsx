@@ -52,6 +52,7 @@ function renderGovernanceAfterSave() {
 describe("a saved configuration change appears in the governance register", () => {
   it('files it under "Configuration" and its detail panel names the before/after pull hold figures', () => {
     renderGovernanceAfterSave();
+    fireEvent.click(screen.getByRole("radio", { name: /^Audit trail/ }));
 
     // Filter to the new category — proves categoryLabels/the select option exist for it.
     fireEvent.change(screen.getByLabelText("Filter event category"), { target: { value: "configuration" } });

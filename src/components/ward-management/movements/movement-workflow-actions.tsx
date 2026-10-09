@@ -238,7 +238,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
           {!countryExtensionEligible(movement) && (
             <p>
               A country extension requires a current Form 1A. Record its country paper setting in{" "}
-              <Link href="/mockups/ward-flow/legal-forms">Legal forms</Link> first.
+              <Link href="/mockups/ward-flow/legal-forms">Forms</Link> first.
             </p>
           )}
           <p>A missing expiry stays unknown. No statutory interval is calculated.</p>

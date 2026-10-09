@@ -237,6 +237,29 @@
 }
 
 /* The disclaimer stays in the accessible tree and the tooltip, not painted (owner direction). */
+/* A page's own header tools (`ward-bar-page-tools.tsx`); collapses to nothing when empty. */
+.pageTools {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.pageTools:empty {
+  display: none;
+}
+
+/* With page tools present, the page name keeps its full width and the search gives way. Phone
+   hides the tools but the portal still fills the slot, so the title may shrink there. */
+.bar:has(.pageTools:not(:empty)) .title {
+  flex-shrink: 0;
+}
+
+@media (max-width: 48rem) {
+  .bar:has(.pageTools:not(:empty)) .title {
+    flex-shrink: 1;
+  }
+}
+
 .mark {
   position: absolute;
   width: 1px;

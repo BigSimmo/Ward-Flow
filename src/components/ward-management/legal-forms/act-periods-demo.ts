@@ -160,6 +160,16 @@ export function actPeriodReading(movement: Movement, dayZero: Date): ActPeriodRe
   if (code === undefined) return undefined;
   const period = actPeriodFor(code);
   if (!period) return undefined;
+  const text = actPeriodSentence(period);
+  const endsAt = movement.formedAt === undefined ? undefined : addPeriod(movement.formedAt, period.adult, dayZero);
+  return { period, endsAt, text };
+}
+
+/**
+ * The one plain sentence for a form's period, always opening with the demo label. The Forms
+ * requirements sheet shows it for a form code with no movement attached.
+ */
+export function actPeriodSentence(period: ActPeriod): string {
   const lengthText =
     period.under18 === undefined
       ? periodLengthText(period.adult)
@@ -167,9 +177,7 @@ export function actPeriodReading(movement: Movement, dayZero: Date): ActPeriodRe
   const cite = period.section ?? "section not confirmed";
   const basis = period.source === "act" ? "Act text" : "WA guidance";
   const note = period.note ? `; ${period.note}` : "";
-  const text = `${ACT_PERIOD_DEMO_LABEL}: ${lengthText} from when ${period.from} (${cite}, ${basis})${note}.`;
-  const endsAt = movement.formedAt === undefined ? undefined : addPeriod(movement.formedAt, period.adult, dayZero);
-  return { period, endsAt, text };
+  return `${ACT_PERIOD_DEMO_LABEL}: ${lengthText} from when ${period.from} (${cite}, ${basis})${note}.`;
 }
 
 /** The countdown half of the sentence: when the period would end, or why there is no countdown. */
