@@ -29,3 +29,15 @@
 7f93e4fbbc05fa63441e7545b8a5dd021b5a6392:docs/ward-flow/plans/visual-rebuild-full-estate/tasks/acceptance-fingerprints-r37.json:generic-api-key:101
 7f93e4fbbc05fa63441e7545b8a5dd021b5a6392:tests/pre-commit-checks.test.ts:generic-api-key:221
 22fdb9fb1f0d64bb15f6b78d64dd1097b1691ed3:design/figma/figma-sync.json:generic-api-key:4
+#
+# Additional reviewed false positives on the coordinator PostgreSQL prototype branch
+# (gitleaks 8.28.0, 9 October 2026):
+#   - backend/ward-flow/azure-setup.mjs and shared-http.test.mjs carry the synthetic Azure
+#     application (client) ID / API audience — public identifiers, not credentials — in the
+#     same class as the existing .env.example and backend.test.mjs fingerprints above.
+267d26a416f81ec3b5378521e8a1ebc5b94b74c3:backend/ward-flow/shared-http.test.mjs:generic-api-key:88
+267d26a416f81ec3b5378521e8a1ebc5b94b74c3:backend/ward-flow/azure-setup.mjs:generic-api-key:28
+#   Same two lines in the squashed PR commit after the owner-approved history rewrite (10 Oct 2026);
+#   the lines now carry inline gitleaks:allow so later commits need no new pins.
+b7e1674808dbe0b48459aa0fe65778e933674122:backend/ward-flow/shared-http.test.mjs:generic-api-key:125
+b7e1674808dbe0b48459aa0fe65778e933674122:backend/ward-flow/azure-setup.mjs:generic-api-key:30
