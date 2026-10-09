@@ -8,6 +8,7 @@ import { bedsForecast } from "@/components/ward-management/capacity/beds-forecas
 import { plannedAdmissionsStillNeedingABed } from "@/components/ward-management/capacity/planned-admissions-reducer";
 import { plannedAdmissionAgenda, plannedAdmissionDays } from "@/components/ward-management/capacity/planned-admissions";
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
+import { derivedSexMix } from "@/components/ward-management/ward-board-derivations";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { buildActionInbox } from "@/components/ward-management/ward-derivations";
 import { eventLogEntryFor } from "@/components/ward-management/ward-event-log";
@@ -947,6 +948,37 @@ describe("bookings record gender, and a single-sex ward takes a matching one (Jo
     const refused = convert(female);
     expect(lastRejection(refused)).toMatch(/failed gate gender_designation/);
     expect(newest(refused).state).toBe("booked");
+  });
+
+  it("counts the arrival by gender, not recorded sex, and the departure takes it from the same bucket", () => {
+    // Recorded sex Female, gender Male: the Male-only ward takes the booking, so it must count a
+    // Male occupant, carry gender Male on the stay, and give the Male count back on departure.
+    const booked = book(seedWardFlowState(), { unitId: MALE_ONLY, sex: "Female", initials: "gh", gender: "Male" });
+    const before = booked.units.find((unit) => unit.id === MALE_ONLY)!.sexMix;
+    const arrived = convert(booked);
+    expect(arrived.rejections).toEqual([]);
+    const admissionId = newest(arrived).admissionId!;
+    const admission = arrived.admissions.find((entry) => entry.id === admissionId)!;
+    expect(admission).toMatchObject({ sex: "Female", gender: "Male" });
+    const during = arrived.units.find((unit) => unit.id === MALE_ONLY)!.sexMix;
+    expect(during.Male).toBe(before.Male + 1);
+    expect(during.Female).toBe(before.Female);
+    const derivedBefore = derivedSexMix(booked.admissions, MALE_ONLY);
+    expect(derivedSexMix(arrived.admissions, MALE_ONLY)).toEqual({ ...derivedBefore, Male: derivedBefore.Male + 1 });
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(arrived)))).toBe(true);
+
+    const left = apply(arrived, {
+      type: "RECORD_LEAVING",
+      role: "ward",
+      now: NOW + 60,
+      admissionId,
+      actingUnitId: MALE_ONLY,
+      leavingDestination: "discharged-to-the-community",
+    });
+    expect(left.rejections).toEqual([]);
+    const after = left.units.find((unit) => unit.id === MALE_ONLY)!.sexMix;
+    expect(after.Male).toBe(before.Male);
+    expect(after.Female).toBe(before.Female);
   });
 
   it("takes a linked patient's gender from the record, never from the event", () => {

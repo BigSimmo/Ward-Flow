@@ -426,6 +426,8 @@ export function reducePlannedAdmissionEvent(
         movementId: null,
         patientId: planned.patientId,
         sex: planned.sex,
+        // The gender the ward gates just read, so the ward's counts and the departure follow it too.
+        ...(view.gender === undefined ? {} : { gender: view.gender }),
         homeRegion: null,
         tentativeDiagnosis: null,
         bedKind,
@@ -452,7 +454,7 @@ export function reducePlannedAdmissionEvent(
         empty: { ...unit.empty, value: unit.empty.value - 1, confirmedAt: event.now },
         allocatable: { ...unit.allocatable, value: unit.allocatable.value - 1, confirmedAt: event.now },
         allocatableLocked: bedKind === "locked" ? Math.max(0, unit.allocatableLocked - 1) : unit.allocatableLocked,
-        sexMix: adjustSexMix(unit.sexMix, mixSexOf(undefined, planned.sex), 1),
+        sexMix: adjustSexMix(unit.sexMix, mixSexOf(view.gender, planned.sex), 1),
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
