@@ -522,7 +522,7 @@ export function MovementHorizonGantt({
                                   onMouseMove={(e) => handleMouseMove(e, ev)}
                                   onMouseLeave={handleMouseLeave}
                                 >
-                                  {barText}
+                                  <span className={styles.ganttBarText}>{barText}</span>
                                 </div>
                               );
                             })}
