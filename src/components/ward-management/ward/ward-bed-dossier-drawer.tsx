@@ -11,7 +11,6 @@ import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { Button, Icon, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
 
@@ -109,7 +108,7 @@ export function WardBedDossierDrawer({
   bedDrawerRef,
   onKeyDown,
 }: WardBedDossierDrawerProps) {
-  const { admissions, patients, referrals, movements } = useWardFlow();
+  const { admissions, patients } = useWardFlow();
   const now = useWardFlowClock();
   const [tab, setTab] = useState<DrawerTab>("over");
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
@@ -237,8 +236,9 @@ export function WardBedDossierDrawer({
     </div>
   );
 
-  // The person behind this stay, read through the admission's own link. No record, no link.
-  const person = admission ? resolveSubjectPatient(admission, { patients, referrals, movements }).patient : undefined;
+  // The person behind this stay, read through the admission's own patient link only (a ward screen
+  // never reads the shared referrals list). No record, no link.
+  const person = admission?.patientId ? patients.find((row) => row.id === admission.patientId) : undefined;
   const personHref = person ? patientHref(person.id) : null;
 
   return (
