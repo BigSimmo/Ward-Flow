@@ -1,0 +1,154 @@
+/*
+ * Flush rows for every statistics page (Josh, 9 Oct 2026): cards in a row are the same height, and
+ * where one column runs longer than its neighbour the longer one scrolls inside its card, so no
+ * blank space is left under the shorter one.
+ *
+ * `.row` stretches its children. A child marked `.follow` does not set the row's height: it takes
+ * the height its neighbours set (never less than `--follow-min`) and scrolls inside. A card inside
+ * a follower keeps its header still and scrolls its body; a stack of cards scrolls as one.
+ */
+.row {
+  display: grid;
+  gap: var(--wf-s-3);
+  align-items: stretch;
+  min-width: 0;
+}
+
+.lead2 {
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+}
+
+.lead3 {
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+}
+
+.halves {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.thirds {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Every card in a row fills it, so neighbours end on the same line. */
+.row > *,
+.stack > * {
+  min-width: 0;
+}
+
+.row > [data-ward-primitive="panel"],
+.row > .stack > [data-ward-primitive="panel"]:last-child {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.row > [data-ward-primitive="panel"] {
+  display: flex;
+  flex-direction: column;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+/* The last card of a stack takes the stack's spare height, so the stack ends flush too. */
+.stack > [data-ward-primitive="panel"]:last-child {
+  flex: 1 1 auto;
+}
+
+.follow {
+  --follow-min: 360px;
+  height: 0;
+  min-height: max(100%, var(--follow-min));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.follow > [data-ward-primitive="panel"] {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.follow > [data-ward-primitive="panel"] > :not([data-ward-primitive="panel-header"]) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* A stack that follows scrolls as one column. */
+.follow.stack {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+
+.follow.stack > [data-ward-primitive="panel"] {
+  flex: none;
+  display: block;
+}
+
+.follow,
+.follow * {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--wf-ink-3) 45%, transparent) transparent;
+}
+
+/* Table heads stay in view while a following card scrolls. */
+.follow thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--wf-surface);
+}
+
+/* Anchored cards land below the sticky app header, not under it. */
+.row [id],
+.stack [id] {
+  scroll-margin-top: var(--wf-s-4);
+}
+
+@media (max-width: 64rem) {
+  .lead2,
+  .lead3,
+  .thirds {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* One column: nothing to match, so a follower shows its whole content again. */
+  .follow {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .follow > [data-ward-primitive="panel"] > :not([data-ward-primitive="panel-header"]),
+  .follow.stack {
+    overflow: visible;
+  }
+}
+
+@media (max-width: 48rem) {
+  .halves {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media print {
+  .follow {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .follow > [data-ward-primitive="panel"] > :not([data-ward-primitive="panel-header"]),
+  .follow.stack {
+    overflow: visible;
+  }
+}
