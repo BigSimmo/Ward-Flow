@@ -196,3 +196,49 @@ function formatResolvedPatient(
   }
   return formatted;
 }
+
+/**
+ * A MOVEMENT ID IS NEVER SHOWN AS THE PATIENT'S NUMBER (D-39, Josh, 9 October 2026: "remove the
+ * old patient numbers ... i.e. WF-005 ... and replace them with UMRN").
+ *
+ * `WF-…` stays the internal id of one journey (routes, keys, test ids, engine events), but a person
+ * on shift identifies a patient by UMRN. Screens print `movementUmrn(...)` where they once printed
+ * the movement id, and engine prose that quotes a movement id passes through
+ * `withUmrnInPlaceOfMovementIds` before it is shown. Both read identity only through this resolver,
+ * and an unlinked or ambiguous movement shows "UMRN not recorded" rather than a guess (D-14).
+ */
+export function movementUmrn(
+  movement: Movement | MovementIdOnly | string | null | undefined,
+  state: {
+    patients?: readonly Patient[];
+    referrals?: readonly Referral[];
+    movements?: readonly Movement[];
+  },
+): string {
+  if (!movement) return UNKNOWN_PATIENT.umrn;
+  const subject = typeof movement === "string" ? { movementId: movement } : movement;
+  return resolveSubjectPatient(subject, state).umrn;
+}
+
+type MovementIdOnly = { movementId: string };
+
+const MOVEMENT_ID_TOKEN = /(?<![A-Z0-9-])WF-[A-Z0-9]+(?:-[A-Z0-9]+)*\b/g;
+
+/** Replaces every known movement id quoted in `text` with that patient's UMRN. Unknown tokens are
+ *  left alone, so a refusal about a movement that does not exist still says what was asked for. */
+export function withUmrnInPlaceOfMovementIds(
+  text: string,
+  state: {
+    patients?: readonly Patient[];
+    referrals?: readonly Referral[];
+    movements?: readonly Movement[];
+  },
+): string {
+  if (!text.includes("WF-") || typeof state !== "object" || state === null) return text;
+  const index = getOrBuildIndex(state);
+  return text.replace(MOVEMENT_ID_TOKEN, (token) => {
+    const match = index.movementMap.get(token);
+    if (!match || match === DUPLICATE) return token;
+    return resolveSubjectWithIndex(match, index).umrn;
+  });
+}

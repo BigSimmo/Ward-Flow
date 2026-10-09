@@ -399,7 +399,7 @@ export function WardGlobalSearch({
             kindLabel: "Movement",
             id: m.id,
             title: resolveSubjectPatient(m, { patients, movements }).displayName,
-            meta: `${m.id} · ${stageCopy[m.stage].label}${dest ? ` · ${dest.name}` : ""}`,
+            meta: `${resolveSubjectPatient(m, { patients, movements }).umrn} · ${stageCopy[m.stage].label}${dest ? ` · ${dest.name}` : ""}`,
             href: movementHref(m.id),
           };
         }),

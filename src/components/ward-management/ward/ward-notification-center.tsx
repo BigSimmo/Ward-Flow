@@ -7,7 +7,11 @@ import { type Patient } from "@/components/ward-management/ward-patients";
 import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
-import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import {
+  resolveSubjectPatient,
+  withUmrnInPlaceOfMovementIds,
+  type ResolvedPatientInfo,
+} from "@/components/ward-management/ward-patient-resolver";
 import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 
 import styles from "./ward-notification-center.module.css";
@@ -394,7 +398,9 @@ export function WardNotificationCenter({
                           <time className={styles.cardTime}>{formatInstantWithDay(notice.raisedAt, now)}</time>
                           {isRead && <span className={styles.readBadge}>Read</span>}
                         </div>
-                        <p className={styles.cardMessage}>{notice.sentence}</p>
+                        <p className={styles.cardMessage}>
+                          {withUmrnInPlaceOfMovementIds(notice.sentence, { patients, movements })}
+                        </p>
                       </div>
 
                       {!isRead && (

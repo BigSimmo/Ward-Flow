@@ -10,6 +10,8 @@ import type {
 } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { edPressure, type EdPressure } from "@/components/ward-management/ward-pressure";
+import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
+import type { Patient } from "@/components/ward-management/ward-patients";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 
 import type { WardActivityCategory, WardActivityContent } from "./ward-shell-types";
@@ -33,6 +35,8 @@ export type CommandActivity = {
 
 export type CommandActivityInput = {
   movements: Movement[];
+  /** D-39: read only to name each journey by its patient's UMRN. */
+  patients: Patient[];
   units: Unit[];
   referrals: Referral[];
   rejections: Rejection[];
@@ -48,7 +52,7 @@ export type CommandActivityInput = {
  * synthetic state, not a claim that a provider is connected or that every transition is retained.
  */
 export function deriveCommandActivity(input: CommandActivityInput): CommandActivity {
-  const { movements, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now } = input;
+  const { movements, patients, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now } = input;
   const unitNames = new Map(units.map((unit) => [unit.id, unit.name]));
   const departmentNames = new Map(allEmergencyDepartments().map((department) => [department.id, department.name]));
   const events: ActivityEvent[] = [];
@@ -176,7 +180,10 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
   const queuedReferrals = counts.referrals?.value ?? 0;
   const bedsReady = counts.capacity?.value ?? 0;
   const urgentDelays = counts.delays?.value ?? 0;
-  const shown = ordered.slice(0, 20);
+  // D-39: each line names the patient by UMRN, never by the WF journey number.
+  const shown = ordered
+    .slice(0, 20)
+    .map((event) => ({ ...event, text: withUmrnInPlaceOfMovementIds(event.text, { patients, referrals, movements }) }));
 
   return {
     departments: edPressure(now, movements),

@@ -37,7 +37,7 @@ import {
   transportLeg,
 } from "@/components/ward-management/ward-derivations";
 import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -355,6 +355,8 @@ export function OfficerScreen() {
     const info = resolveSubjectPatient(movement, { patients, referrals, movements });
     return info.patient ? info.displayName : undefined;
   };
+  // D-39: the patient's UMRN is shown wherever the WF journey number used to be.
+  const umrnFor = (movement: Movement) => movementUmrn(movement, { patients, referrals, movements });
   const patientNameForMovementId = (movementId: string) => {
     const movement = movements.find((candidate) => candidate.id === movementId);
     return movement ? officerPatientName(movement) : "Not recorded";
@@ -431,7 +433,7 @@ export function OfficerScreen() {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const pName = officerPatientName(movement).toLowerCase();
-        const mId = movement.id.toLowerCase();
+        const umrn = umrnFor(movement).toLowerCase();
         const originEd = edById(movement.originEdId);
         const originName = originEd ? `${originEd.name} ${originEd.siteCode}`.toLowerCase() : "";
         const destinationUnit = movement.acceptedUnitId
@@ -441,7 +443,7 @@ export function OfficerScreen() {
 
         const matches =
           pName.includes(q) ||
-          mId.includes(q) ||
+          umrn.includes(q) ||
           originName.includes(q) ||
           destName.includes(q) ||
           transport.provider.toLowerCase().includes(q) ||
@@ -1170,7 +1172,7 @@ export function OfficerScreen() {
                     boxClassName={styles.searchBox}
                     id="officer-transfer-search"
                     name="transferSearch"
-                    placeholder="Patient, ED, ward or CAD number"
+                    placeholder="Patient, UMRN, ED, ward or CAD number"
                     aria-label="Search transport jobs"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -1212,7 +1214,7 @@ export function OfficerScreen() {
                     >
                       <thead>
                         <tr>
-                          <th scope="col">Job</th>
+                          <th scope="col">UMRN</th>
                           <th scope="col">Patient and route</th>
                           <th scope="col">Provider</th>
                           <th scope="col">Stage</th>
@@ -1253,7 +1255,7 @@ export function OfficerScreen() {
                               className={active ? `${tableClasses.selected} ${styles.jobRow}` : styles.jobRow}
                               aria-selected={active}
                             >
-                              <td className={styles.jobId}>{movement.id}</td>
+                              <td className={styles.jobId}>{umrnFor(movement)}</td>
                               <td>
                                 <button
                                   type="button"
@@ -1407,7 +1409,7 @@ export function OfficerScreen() {
                             <span className={styles.arrivalWho}>
                               <strong>{destinationLabelFor(movement)}</strong>
                               <span>
-                                {movement.id} · {originLabelFor(movement)}
+                                {umrnFor(movement)} · {originLabelFor(movement)}
                               </span>
                             </span>
                             <span className={styles.arrivalTrack}>
@@ -1443,7 +1445,7 @@ export function OfficerScreen() {
                 <CardHead
                   id="ward-officer-detail-heading"
                   title={officerPatientName(selectedJob)}
-                  meta={<span className={styles.mono}>{selectedJob.id}</span>}
+                  meta={<span className={styles.mono}>{umrnFor(selectedJob)}</span>}
                   aside={
                     <Badge
                       tone={
@@ -1597,7 +1599,7 @@ export function OfficerScreen() {
                   Record arrival at receiving ward
                 </h3>
                 <span className={styles.modalSub}>
-                  {handoverJob.id} · {originLabelFor(handoverJob)} to {destinationLabelFor(handoverJob)}
+                  {umrnFor(handoverJob)} · {originLabelFor(handoverJob)} to {destinationLabelFor(handoverJob)}
                 </span>
               </span>
               <Button

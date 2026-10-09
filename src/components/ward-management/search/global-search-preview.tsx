@@ -8,7 +8,7 @@ import { StatusGlyph, TierTile, durMinutes, type WfTone } from "@/components/wf"
 import { destinationUnit, isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
 import type { Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
 import { patientAgeYears, patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { edHref, movementHref, patientHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { unitReadyBedCount } from "./ward-smart-search";
@@ -184,7 +184,7 @@ function MovementPreview({
         </span>
         <div className={styles.headText}>
           <p className={styles.title}>{subject.displayName}</p>
-          <p className={styles.sub}>{[movement.id, patient ? personSub(patient) : null].filter(Boolean).join(" · ")}</p>
+          <p className={styles.sub}>{patient ? personSub(patient) : subject.umrn}</p>
         </div>
         <TierTile tier={movement.urgency} />
       </div>
@@ -303,9 +303,7 @@ function PersonPreview({
         {openMovement ? (
           <>
             <dt>Movement</dt>
-            <dd>
-              {openMovement.id} · {stageCopy[openMovement.stage].label}
-            </dd>
+            <dd>{stageCopy[openMovement.stage].label}</dd>
             {wait ? (
               <>
                 <dt>Waiting</dt>
@@ -350,11 +348,13 @@ function PersonPreview({
 
 function WardPreview({
   unit,
+  patients,
   movements,
   href,
   onOpen,
 }: {
   unit: Unit;
+  patients: readonly Patient[];
   movements: readonly Movement[];
   href: string;
   onOpen: PreviewProps["onOpen"];
@@ -399,13 +399,13 @@ function WardPreview({
         {incoming.length > 0 ? (
           <>
             <dt>Accepted</dt>
-            <dd>{incoming.map((movement) => movement.id).join(", ")}</dd>
+            <dd>{incoming.map((movement) => movementUmrn(movement, { patients, movements })).join(", ")}</dd>
           </>
         ) : null}
         {referred.length > 0 ? (
           <>
             <dt>Referred</dt>
-            <dd>{referred.map((movement) => movement.id).join(", ")}</dd>
+            <dd>{referred.map((movement) => movementUmrn(movement, { patients, movements })).join(", ")}</dd>
           </>
         ) : null}
       </dl>
@@ -424,12 +424,14 @@ function WardPreview({
 function EdPreview({
   edId,
   href,
+  patients,
   movements,
   now,
   onOpen,
 }: {
   edId: string;
   href: string;
+  patients: readonly Patient[];
   movements: readonly Movement[];
   now?: number;
   onOpen: PreviewProps["onOpen"];
@@ -462,7 +464,7 @@ function EdPreview({
           <>
             <dt>Longest</dt>
             <dd className={styles.mono}>
-              {longest.id} · {wait}
+              {movementUmrn(longest, { patients, movements })} · {wait}
             </dd>
           </>
         ) : null}
@@ -542,9 +544,13 @@ export function GlobalSearchPreview({ item, patients, movements, units, now, onO
     ) : null;
   } else if (item.kind === "ward") {
     const unit = units.find((candidate) => candidate.id === item.id);
-    body = unit ? <WardPreview unit={unit} movements={movements} href={item.href} onOpen={onOpen} /> : null;
+    body = unit ? (
+      <WardPreview unit={unit} patients={patients} movements={movements} href={item.href} onOpen={onOpen} />
+    ) : null;
   } else if (item.kind === "ed") {
-    body = <EdPreview edId={item.id} href={item.href} movements={movements} now={now} onOpen={onOpen} />;
+    body = (
+      <EdPreview edId={item.id} href={item.href} patients={patients} movements={movements} now={now} onOpen={onOpen} />
+    );
   }
 
   return (

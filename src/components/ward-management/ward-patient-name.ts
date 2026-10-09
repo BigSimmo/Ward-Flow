@@ -11,7 +11,11 @@
 import { useContext } from "react";
 
 import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
-import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import {
+  resolveSubjectPatient,
+  withUmrnInPlaceOfMovementIds,
+  type ResolvedPatientInfo,
+} from "@/components/ward-management/ward-patient-resolver";
 
 type Subject = Parameters<typeof resolveSubjectPatient>[0];
 
@@ -25,4 +29,16 @@ export function usePatientOf(): (subject: Subject | { movementId: string }) => R
     movements: context?.movements ?? [],
   };
   return (subject) => resolveSubjectPatient(subject as Subject, state);
+}
+
+/** D-39: engine prose (a refusal, a notice, an exception line) with each quoted WF journey number
+ *  swapped for that patient's UMRN. Same context reading and ward boundary as `usePatientOf`. */
+export function useUmrnText(): (text: string) => string {
+  const context = useContext(WardFlowContext);
+  const state = {
+    patients: context?.patients ?? [],
+    referrals: context?.referrals ?? [],
+    movements: context?.movements ?? [],
+  };
+  return (text) => withUmrnInPlaceOfMovementIds(text, state);
 }

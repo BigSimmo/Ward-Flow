@@ -480,3 +480,30 @@ is inferred.
   8. **WF-55 (External Privacy Impact Assessment):** Ratified Privacy Architecture Standard. 100% synthetic patient isolation guaranteed; data minimisation on public flight decks and ward boards (Bed ID, initials, age, gender code, legal status only); detailed clinical notes restricted to authenticated role-scoped views. External legal PIA scheduled during hospital IT onboarding.
   9. **WF-57 (Post-Incident Review Architectural Scope):** Ratified PIR Immutable Telemetry Specification. The system captures append-only timeline events under Invariants I-01 through I-14 (recording occurrence, dispatch, and commit timestamps, user ID, prior state, new state, and clinician override reasons). A single-click "PIR Chronology Export" standard is adopted to supply tamper-evident chronologies for hospital clinical incident reviews (SAC 1) and Coronial inquiries.
 - **Why:** Replaces passive parking with definitive, clinically and legally defensible governance standards across all 10 items, establishing complete pre-pilot governance readiness.
+
+## D-39. Patients are identified by UMRN, never by a WF number (9 October 2026)
+
+- **Date:** 9 October 2026. **Decided by:** Josh ("remove the old patient numbers you have
+  everywhere, i.e. WF-005 ... replace them with UMRN ... and update docs to know this").
+- **Decision:**
+  - Every screen, drawer, feed, refusal and notice names a patient by **UMRN**. A `WF-...` number is
+    never shown as the patient's number.
+  - `WF-...` stays the internal id of one **journey** (a `Movement`): routes such as
+    `/mockups/ward-flow/movements/WF-005`, React keys, `data-testid`s, engine events and fixtures.
+    Renaming it would touch about 5,000 lines and every open pull request for no visible gain. It
+    must not appear in visible text.
+  - Read the UMRN through the D-14 resolver only: `movementUmrn` and `resolveSubjectPatient` in
+    `ward-patient-resolver.ts`, or the `usePatientOf` and `useUmrnText` hooks in
+    `ward-patient-name.ts` (ward screens use the provider's `resolvePatientIdentity`). Engine prose
+    that quotes a journey id passes through `withUmrnInPlaceOfMovementIds` before it is shown;
+    refusals are converted when they are raised. An unlinked journey shows "UMRN not recorded".
+  - **Synthetic UMRN format:** two letters `UM` then six digits, for example `UM100047`. A real WA
+    UMRN is one letter then seven digits, so these can never be mistaken for a real patient, and
+    the synthetic-data guard (`src/lib/synthetic-data-guard.ts`) does not flag them. Ranges: hand
+    authored patients `UM1nnnnn`, generated patients `UM5nnnnn`, the rulings demo `UM60nnnn`, the
+    demo network `UM7nnnnn`, the community demo cohort its own six digits.
+  - Referral (`RF-...`) and admission (`AD-...`) ids are record numbers, not patient numbers, and
+    are out of scope. Statistics screens keep admission ids because they deliberately show no
+    patient identity.
+- **Why:** Staff on shift search and hand over by UMRN. A journey number nobody else uses reads as
+  a second patient number and invites mistakes.

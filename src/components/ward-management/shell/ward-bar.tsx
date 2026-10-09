@@ -36,6 +36,7 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
@@ -607,6 +608,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     () =>
       deriveCommandActivity({
         movements,
+        patients,
         units,
         referrals,
         rejections,
@@ -615,7 +617,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         refreshRequests,
         now,
       }),
-    [movements, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now],
+    [movements, patients, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now],
   );
   const usesDerivedActivity = activity === undefined;
   const currentScreenTitle = useMemo(() => resolveWardScreenTitle(pathname, units), [pathname, units]);
@@ -659,10 +661,12 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         .sort((left, right) => right.raisedAt - left.raisedAt),
     [notices, now, placeId, role],
   );
+  // D-39: a notice names the patient by UMRN, never by the WF journey number it was raised on.
+  const noticeText = (sentence: string) => withUmrnInPlaceOfMovementIds(sentence, { patients, referrals, movements });
   const visibleNotices = scopedNotices.filter(
     (notice) =>
       (!unreadOnly || notice.readAt === undefined) &&
-      notice.sentence.toLowerCase().includes(activityQuery.trim().toLowerCase()),
+      noticeText(notice.sentence).toLowerCase().includes(activityQuery.trim().toLowerCase()),
   );
   // Item 48, Q2 (owner answer 48, 2026-09-17): "counts show unread only" — `scopedNotices` itself
   // still carries every notice this chrome may see, read or not (read notices stay in the list),
@@ -1472,7 +1476,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                       <time className={styles.feedTime}>{formatInstantWithDay(notice.raisedAt, now)}</time>
                       <StatusGlyph tone={isRead ? "neutral" : "info"} size={8} className={styles.feedGlyph} />
                       <div className={styles.noticeContent}>
-                        <span>{notice.sentence}</span>
+                        <span>{noticeText(notice.sentence)}</span>
                         {/* No automatic read on opening the drawer — this is the only place
                             `MARK_NOTICE_READ` is dispatched from, and only a person's own click
                             reaches it (item 48, Q2, owner answer 48). */}

@@ -62,6 +62,7 @@ import { type WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import {
   COHORTS,
   COMMUNITY_DECLINE_REASONS,
@@ -1410,7 +1411,7 @@ export function CommunityScreen({
                     <li key={notice.id} data-notice-read={isRead}>
                       <time>{formatInstantWithDay(notice.raisedAt, now)}</time>
                       <div className={styles.teamNoticeContent}>
-                        <span>{notice.sentence}</span>
+                        <span>{withUmrnInPlaceOfMovementIds(notice.sentence, { patients, referrals, movements })}</span>
                         {isRead ? (
                           <span className={styles.teamNoticeReadLabel}>
                             <span className={styles.readDot} aria-hidden="true" />
