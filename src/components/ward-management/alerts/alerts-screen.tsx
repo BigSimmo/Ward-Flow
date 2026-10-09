@@ -1584,7 +1584,9 @@ function AlertsWorkspace() {
                         aria-label={`Open for ${patientInfo.displayName}`}
                         title={`Open: ${item.title}`}
                         data-testid={`ward-alerts-snoozed-open-${item.id}`}
-                        onClick={(event) => handleOpenAction(item, event.currentTarget)}
+                        onClick={(event) => {
+                          handleOpenAction(item, event.currentTarget);
+                        }}
                       >
                         Open
                       </Button>
