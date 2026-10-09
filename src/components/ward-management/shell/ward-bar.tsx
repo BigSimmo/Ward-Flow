@@ -40,6 +40,7 @@ import { WardGlobalSearch } from "@/components/ward-management/ward-global-searc
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
   WARD_ADD_PERSON_HREF,
+  WARD_ED_HREF,
   WARD_HOME_HREF,
   WARD_NAV,
   WARD_NEW_REFERRAL_MENU,
@@ -516,6 +517,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     (/^\/mockups\/ward-flow\/statistics\/service\//u.test(pathname) ? "Service statistics" : undefined) ??
     (/^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
     (/^\/mockups\/ward-flow\/sovereign\/?$/u.test(pathname) ? "Sovereign Health" : undefined) ??
+    (pathname === WARD_ED_HREF ? "All EDs" : undefined) ??
     (pathname === settingsHref() ? "Settings" : undefined) ??
     (pathname === officerHref() ? "Transport" : undefined) ??
     (pathname === onCallHref() ? "On-call" : undefined) ??

@@ -250,7 +250,15 @@ function railEntries(): RailEntry[] {
     icon: WARD_NAV_ICONS[item.id],
   }));
   const registry = new Map([...views, ...nav].map((entry) => [entry.id, entry]));
-  return RAIL_GROUPS.flatMap((group) => group.entries.map(([id, label]) => ({ ...registry.get(id)!, label })));
+  // The rail's Emergency entry opens the statewide ED index rather than the `ed` nav entry's one
+  // example department, the same way Wards opens All wards rather than one ward.
+  const hrefOverride: Record<string, string> = { ed: WARD_ED_HREF };
+  return RAIL_GROUPS.flatMap((group) =>
+    group.entries.map(([id, label]) => {
+      const entry = registry.get(id)!;
+      return { ...entry, label, href: hrefOverride[id] ?? entry.href };
+    }),
+  );
 }
 
 function normalizePath(p: string): string {

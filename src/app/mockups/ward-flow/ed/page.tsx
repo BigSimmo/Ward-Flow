@@ -1,13 +1,18 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+
+import { EdIndex } from "@/components/ward-management/ed/ed-index";
+
+export const metadata: Metadata = {
+  title: "Emergency departments — Ward Flow",
+  description:
+    "Synthetic statewide emergency department index for the Ward Flow prototype — every ED with the people waiting there for a bed, each linking to its own ED screen.",
+};
 
 /**
- * Route backstop for `/mockups/ward-flow/ed`.
- *
- * Emergency departments in Ward Flow are dynamic routes (`/ed/[edId]`).
- * Visiting `/mockups/ward-flow/ed` directly redirects to Peel ED (`/mockups/ward-flow/ed/peel-ed`), the
- * same ED the rail's Emergency department entry opens, preventing 404 dead ends. (It used to name
- * `fremantle-ed`, which is not a seeded ED: Fremantle has none, so the redirect landed on "not found".)
+ * `/mockups/ward-flow/ed`: every emergency department, the way All wards lists every ward. It was
+ * a redirect to Peel ED until 9 Oct 2026, which left the rail's Emergency entry opening one
+ * arbitrary department with no way to see the others side by side.
  */
-export default function WardEdDefaultRedirect() {
-  redirect("/mockups/ward-flow/ed/peel-ed");
+export default function EdIndexPage() {
+  return <EdIndex />;
 }

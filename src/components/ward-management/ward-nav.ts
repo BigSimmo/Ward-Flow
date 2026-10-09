@@ -482,7 +482,7 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
   ],
   [
     "/mockups/ward-flow/ed",
-    "A deliberate redirect to /mockups/ward-flow/ed/peel-ed, documented in its own route file (ed/page.tsx) — not a destination in its own right.",
+    "The statewide ED index (ed/page.tsx). The rail's Emergency entry opens it through WARD_ED_HREF; this WARD_NAV keeps `ed` as the example department the role switcher uses.",
   ],
 ]);
 
