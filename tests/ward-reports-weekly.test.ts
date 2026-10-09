@@ -77,6 +77,7 @@ function inputOf(f: ReturnType<typeof fixture>, patch: Partial<WeeklyReportInput
     movements: [],
     referrals: [],
     admissions: [],
+    patients: f.state.patients,
     units: [f.unit],
     bedReleases: [],
     leaveBeds: [],
@@ -145,7 +146,7 @@ describe("weeklyOperationsReport", () => {
   it("counts a transferred person once in out-of-area and delayed-discharge people totals", () => {
     const f = fixture();
     expect(f.farRegion).toBeDefined();
-    const person = "PT-TRANSFER";
+    const person = f.state.patients[0]!.id;
     const first = f.admission("AD-T1", {
       patientId: person,
       homeRegion: f.farRegion!,
@@ -196,6 +197,7 @@ describe("weeklyOperationsReport", () => {
         movements: state.movements,
         referrals: state.referrals,
         admissions: state.admissions,
+        patients: state.patients,
         units: state.units,
         bedReleases: state.bedReleases,
         leaveBeds: state.leaveBeds,

@@ -49,7 +49,7 @@ function ReasonList({ reasons, testId }: { reasons: ReasonCount[]; testId: strin
  */
 export function WeeklyReportScreen() {
   const { state, now, paused, togglePause } = useStatisticsLive();
-  const { movements, referrals, admissions, units, bedReleases, leaveBeds, configuration, dayZero } = state;
+  const { movements, referrals, admissions, patients, units, bedReleases, leaveBeds, configuration, dayZero } = state;
   const pickerId = useId();
   const patientOf = usePatientOf();
   const [offset, setOffset] = useState<number>(0);
@@ -62,6 +62,7 @@ export function WeeklyReportScreen() {
           movements,
           referrals,
           admissions,
+          patients,
           units,
           bedReleases,
           leaveBeds,
@@ -70,7 +71,18 @@ export function WeeklyReportScreen() {
         },
         week,
       ),
-    [movements, referrals, admissions, units, bedReleases, leaveBeds, configuration.edAccessTargetMinutes, now, week],
+    [
+      movements,
+      referrals,
+      admissions,
+      patients,
+      units,
+      bedReleases,
+      leaveBeds,
+      configuration.edAccessTargetMinutes,
+      now,
+      week,
+    ],
   );
 
   const targetText = `over ${hoursText(Math.round(report.edWaits.targetMinutes / 60))}`;

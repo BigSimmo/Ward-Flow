@@ -2,6 +2,8 @@ import { bedIsOccupied, type Admission } from "@/components/ward-management/ward
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { OUT_OF_AREA_BANDS, travelBand } from "@/components/ward-management/ward-distance";
 import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type { Patient } from "@/components/ward-management/ward-patients";
+import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { declinesByReason } from "@/components/ward-management/statistics/statistics-derivations";
 import { occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
 import { reasonLabel } from "./patient-chronology";
@@ -92,6 +94,7 @@ export type WeeklyReportInput = {
   movements: readonly Movement[];
   referrals: readonly Referral[];
   admissions: readonly Admission[];
+  patients: readonly Patient[];
   units: readonly Unit[];
   bedReleases: BedRelease[];
   leaveBeds: readonly LeaveBed[];
@@ -109,8 +112,10 @@ function tally(reasons: string[]): ReasonCount[] {
 }
 
 export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWeek): WeeklyReport {
-  const { movements, referrals, admissions, units, now } = input;
+  const { movements, referrals, admissions, patients, units, now } = input;
   const target = input.edAccessTargetMinutes;
+  // People totals go through the D-14 resolver — this module never reads the patient link itself.
+  const resolvePerson = createPatientResolver({ patients, referrals, movements });
 
   // ED waits past the target: the over-target part of a stay overlaps the week.
   const edRows = movements
@@ -141,7 +146,7 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
   for (const stay of stays) {
     const minutes = overlapMinutes(stay.from, stay.to, week);
     occupiedMinutes += minutes;
-    const personKey = stay.admission.patientId ?? stay.admission.id;
+    const personKey = resolvePerson(stay.admission).patient?.id ?? stay.admission.id;
     const unit = units.find((candidate) => candidate.id === stay.admission.unitId);
     const band =
       unit && stay.admission.homeRegion !== null ? travelBand(stay.admission.homeRegion, unit.siteCode) : undefined;
