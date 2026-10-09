@@ -254,9 +254,12 @@ export function SettingsScreen() {
   const [actNowNotifications] = useActNowNotificationPreference();
   const [notificationPermission, setNotificationPermission] = useState<NotificationSupport>("default");
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the browser permission is only readable after mount
-    setNotificationPermission(notificationSupport());
-  }, []);
+    const refresh = () => setNotificationPermission(notificationSupport());
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- browser permission is external state
+    refresh();
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, [actNowNotifications]);
 
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = useCallback((message: string) => {
