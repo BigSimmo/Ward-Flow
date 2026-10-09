@@ -987,8 +987,12 @@ export type PhoneCensusProps = {
  */
 export function PhoneCensus(props: PhoneCensusProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  // A search lists every match, so a near-spelling pair in two groups shows together; tapping a group
+  // narrows that search until the words change.
+  const [narrowedFor, setNarrowedFor] = useState<string | null>(null);
   const { rows, searching, group, highlight } = props;
-  const shown = rows.filter((row) => row.group === group);
+  const narrowed = !searching || narrowedFor === props.needle;
+  const shown = narrowed ? rows.filter((row) => row.group === group) : rows;
   const active = CENSUS_HIGHLIGHTS.find((chip) => chip.id === highlight);
   return (
     <section className={styles.phone} data-testid="ward-patient-search-results-console" aria-label="Patients">
@@ -1000,11 +1004,12 @@ export function PhoneCensus(props: PhoneCensusProps) {
               key={entry.id}
               type="button"
               role="radio"
-              aria-checked={group === entry.id && props.tab === "now"}
+              aria-checked={narrowed && group === entry.id && props.tab === "now"}
               className={cx(styles.phoneGroup, searching && n === 0 && styles.mapPillZero)}
               onClick={() => {
                 props.onTab("now");
                 props.onGroup(entry.id);
+                setNarrowedFor(searching ? props.needle : null);
               }}
             >
               <b>{n}</b>
@@ -1067,7 +1072,7 @@ export function PhoneCensus(props: PhoneCensusProps) {
                       <span className={styles.mono}>
                         <Marked text={row.umrn} needle={props.needle} />
                       </span>{" "}
-                      · {row.tier !== null ? `T${row.tier}` : ageSex(row)}
+                      {searching ? `· ${dobText(row.dob)} ` : ""}· {row.tier !== null ? `T${row.tier}` : ageSex(row)}
                     </span>
                   </span>
                   <span className={styles.phoneTime}>

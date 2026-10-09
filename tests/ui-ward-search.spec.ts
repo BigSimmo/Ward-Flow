@@ -19,23 +19,12 @@ import { expect, test, type Locator, type Page } from "playwright/test";
  * whole component was built to prevent (see `patient-typeahead.tsx`'s own doc comment), and that
  * harm lives entirely in geometry a unit test cannot see.
  *
- * FIXTURE ARITHMETIC USED THROUGHOUT, verified against `ward-patients-seed.ts` directly (not
- * assumed) and cross-checked live in a browser before this file was written:
- *   - "marrowb" matches EXACTLY Ines Marrowby (PT-003) and Devan Marrowbee (PT-004) — both
- *     `familyName.startsWith("marrowb")` — and nobody else. (It was "marrow" until 25 Sept 2026,
- *     when the seed grew past eight patients and PT-013 Gianna Marrowvale also matched.)
- *   - "a" matches all eight seeded patients (every one of their `Given Family` display names
- *     contains the letter "a"), in fixture order: PT-001..PT-008. So this text query is what
- *     tests 3 and 4 use whenever the property under test needs a keyboard cursor to move through
- *     more than two options.
- *   - "wf" matches every open movement's `id` field (every seeded movement id is shaped
- *     `WF-###`), which is what test 1 uses to guarantee the results table actually renders rows
- *     to measure rather than the empty-state panel.
+ * FIXTURE ARITHMETIC: "marrowb" matches EXACTLY Ines Marrowby (UM100003, on a ward) and Devan
+ * Marrowbee (UM100004, waiting in ED) in the census and nobody else; "a" fills the census with rows.
  *
- * `data-ward-primitive="table"` (not a page-specific testid) is what selects the results table's
- * scroll wrapper below: `ResultsSection` mounts the shared `WardTable` primitive with no `testId`
- * prop of its own, so the primitive's own attribute — already the documented, production-safe
- * selector `tests/ui-ward-forced-colors.spec.ts`'s own header explains — is the only stable hook.
+ * 9 Oct 2026 (PR #194): the Patients census replaced the caseload and the typeahead's popup on
+ * this page. Rows are read from the painted `ward-patient-search-results-console` only, because a
+ * visually hidden legacy block still carries the old testids for jsdom tests.
  */
 
 async function gotoSearch(page: Page): Promise<void> {
@@ -56,8 +45,15 @@ function typeaheadInput(page: Page): Locator {
   return page.getByTestId("ward-patient-typeahead-input");
 }
 
-function typeaheadOptions(page: Page): Locator {
-  return page.locator('[data-testid^="ward-patient-typeahead-option-"]');
+/** The painted census rows (table rows on desktop, card rows on the phone), never the hidden legacy block. */
+function censusRows(page: Page): Locator {
+  return page
+    .getByTestId("ward-patient-search-results-console")
+    .locator('[data-testid^="ward-patient-search-case-"], [data-testid^="ward-patient-search-row-"]');
+}
+
+function tableRows(page: Page): Locator {
+  return page.getByTestId("ward-patient-search-results-console").locator("tbody tr[data-id]");
 }
 
 test.describe("@mockup Ward patient search", () => {
@@ -77,99 +73,81 @@ test.describe("@mockup Ward patient search", () => {
   });
 
   /**
-   * 1. WIDTH SWEEP. Two widths at the extremes are not a sweep (Ward Builder Three's contract,
-   * adopted today) — the band in between is where a layout hands over from one arrangement to
-   * another, and that is where damage happens. Five widths: 375 (phone), 641/700/760 (the band
-   * between the phone bar and the icon rail — `search.module.css`'s own `@media (max-width: 40rem)`
-   * breakpoint sits at 640px), and 820 (just past the band).
+   * 1. WIDTH SWEEP. Five widths: 375 (phone), 641/700/760 (the band just past the phone breakpoint
+   * at 40rem, where the layout hands over from the phone census to the table) and 820.
    *
    * Two properties, both geometric and both impossible in jsdom:
-   *   - every cell of the results table lies within its scroll wrapper's own SCROLLABLE extent, so
+   *   - every column of the census table lies within its scroll wrapper's own SCROLLABLE extent, so
    *     a reader can reach it. Sideways scrolling to see a column is expected on a table pinned
-   *     wider than a phone and is not a defect; a column no scroll can reach is;
+   *     wider than its box and is not a defect; a column no scroll can reach is. At 375px the phone
+   *     census has no table, so there every row card must sit inside the viewport instead;
    *   - the page's own `<html>` never gains horizontal scroll at any of the five widths.
    *
-   * ⚠️ THE FIRST PROPERTY WAS ORIGINALLY WRITTEN AS "no cell outside the wrapper's VISIBLE right
-   * edge", copied from `ui-ward-discharges.spec.ts`. That is unsatisfiable for a table that
-   * scrolls — see the long note at the assertion — and it was the test that was wrong, not the
-   * page. Corrected under the owner's 2026-09-05 standing rule that testing must work with a
-   * redesign rather than fight it: **guard the property, never the layout that happens to satisfy
-   * it today.**
-   *
-   * PREDICTED FAILURE for the corrected form: a cell placed outside the scroll extent — e.g. an
-   * absolutely positioned descendant escaping the scroll box, which is precisely the defect the
-   * second property caught (a `.sr-only` header label with no positioned ancestor put 324px of
-   * horizontal scroll on `<html>` itself). Both halves therefore have a demonstrated failure,
-   * and the second one's was a live defect rather than a synthetic break.
+   * Guard the property, never the layout that happens to satisfy it today (the owner's 2026-09-05
+   * standing rule). This test was retargeted twice: from the 22 Sept caseload cards, and on 9 Oct
+   * to the Patients census (PR #194). The second property once caught a live defect: a `.sr-only`
+   * header label with no positioned ancestor put 324px of horizontal scroll on `<html>`.
    */
-  test("no column of the results table escapes its scroll container, and the page never scrolls sideways, at 375/641/700/760/820px", async ({
+  test("no column of the census table escapes its scroll container, and the page never scrolls sideways, at 375/641/700/760/820px", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 375, height: 900 });
     await gotoSearch(page);
 
-    await typeaheadInput(page).fill("wf");
-    // Close the popup before measuring the results table below it — the popup overlaying the
-    // table would not affect the geometry being measured, but leaving it open serves no purpose
-    // here and Escape is the documented close-without-picking key.
-    await page.keyboard.press("Escape");
+    // A search that matches a handful of people in more than one group, so the census renders rows
+    // to measure rather than its empty state. A broad one like "a" paints hundreds of rows, and the
+    // trace snapshot of each step then outlasts the test's own time limit.
+    await typeaheadInput(page).fill("pallow");
 
-    // f93703edee (22 Sept) moved the movement table into a visually hidden block; what is painted
-    // is the caseload list. Guard the property on that, not on the retired table.
-    const scroller = page.getByTestId("ward-patient-search-results-console").locator('[aria-label="Caseload cards"]');
-    await expect(scroller).toBeVisible();
-
+    const console_ = page.getByTestId("ward-patient-search-results-console");
     for (const width of [375, 641, 700, 760, 820]) {
       await page.setViewportSize({ width, height: 900 });
-      /*
-       * 🔴 THIS ASSERTION USED TO DEMAND SOMETHING A SCROLLING TABLE CANNOT SATISFY, AND IT WAS
-       * THE TEST THAT WAS WRONG RATHER THAN THE PAGE.
-       *
-       * It required no cell's right edge to exceed the scroller's VISIBLE right edge. For a table
-       * pinned wider than its container — which this one is, deliberately, at 44rem — **content
-       * outside the visible box is what "scrolls horizontally" MEANS.** Measured: 8 cells outside
-       * at 375px, 6 at 641px, 4 at 700px and 760px, 0 only at 820px, which is exactly where the
-       * available width (706px) first reaches the table's floor (704px). The assertion was not
-       * detecting a defect; it was restating the pin.
-       *
-       * ⚠️ **AND THE SIBLING SPEC IT WAS COPIED FROM PASSES ONLY BECAUSE ITS TABLES NEVER SCROLL.**
-       * `ui-ward-discharges.spec.ts` uses this identical pattern on tables pinned at 30rem, where
-       * the wrapper is already as wide as the table at every width it tests — so it has never once
-       * exercised a genuinely scrolling table. **A pattern that has only ever run against the case
-       * it cannot fail on looks exactly like a proven one.**
-       *
-       * The contract this file is actually here to defend is the one the stylesheets state:
-       * **wide content scrolls INSIDE its own container; the page never scrolls sideways.** The
-       * second half is asserted below and is real — it caught a genuine 324px page leak, from a
-       * visually-hidden label escaping the scroll box entirely. The first half is asserted here as
-       * REACHABILITY: every cell must lie within the scroller's own scrollable extent, so a reader
-       * can always get to it. A cell outside THAT is unreachable by any scroll, which is the actual
-       * harm — and it stays true however the table is redesigned.
-       */
-      const measured = await scroller.evaluate((scroll) => {
-        const box = scroll.getBoundingClientRect();
-        const reachableRight = box.left + scroll.scrollWidth + 1;
-        const cells = [...scroll.children];
-        return {
-          cells: cells.length,
-          scrollWidth: Math.round(scroll.scrollWidth),
-          clientWidth: Math.round(scroll.clientWidth),
-          unreachable: cells
-            .filter((cell) => cell.getBoundingClientRect().right > reachableRight)
-            .map(
-              (cell) =>
-                `${(cell.textContent ?? "").trim()} (right edge ${Math.round(cell.getBoundingClientRect().right)} vs reachable ${Math.round(reachableRight)})`,
-            ),
-        };
-      });
-      expect(measured.cells, `${width}px: the results table rendered no cells to measure`).toBeGreaterThan(0);
-      expect(
-        measured.unreachable,
-        `column(s) of the results table at ${width}px sit outside the scroll container's own scrollable ` +
-          `extent (scrollWidth ${measured.scrollWidth}, clientWidth ${measured.clientWidth}), so no amount ` +
-          `of scrolling reaches them. Scrolling sideways to see a column is expected here and is not a ` +
-          `defect; a column no scroll can reach is.`,
-      ).toEqual([]);
+      const phone = width <= 640;
+      if (phone) {
+        await expect(console_.locator("table"), `${width}px should show the phone census`).toHaveCount(0);
+        const rows = censusRows(page);
+        await expect(rows.first()).toBeVisible();
+        const outside = await rows.evaluateAll((els, vw) => {
+          return els
+            .filter((el) => {
+              const r = el.getBoundingClientRect();
+              return r.width > 0 && (r.left < -0.5 || r.right > vw + 0.5);
+            })
+            .map((el) => `${el.dataset.testid} (${Math.round(el.getBoundingClientRect().right)}px)`);
+        }, width);
+        expect(outside, `phone census row(s) past the ${width}px viewport`).toEqual([]);
+      } else {
+        const table = console_.locator("table");
+        await expect(table, `${width}px should show the census table`).toBeVisible();
+        const measured = await table.evaluate((tableEl) => {
+          const scroll = tableEl.parentElement!;
+          const box = scroll.getBoundingClientRect();
+          const reachableLeft = box.left - 1;
+          const reachableRight = box.left + scroll.scrollWidth + 1;
+          const cells = [...tableEl.querySelectorAll<HTMLElement>("thead th")];
+          return {
+            cells: cells.length,
+            scrollWidth: Math.round(scroll.scrollWidth),
+            clientWidth: Math.round(scroll.clientWidth),
+            unreachable: cells
+              .filter((cell) => {
+                const r = cell.getBoundingClientRect();
+                return r.left < reachableLeft || r.right > reachableRight;
+              })
+              .map(
+                (cell) =>
+                  `${(cell.textContent ?? "").trim()} (right edge ${Math.round(cell.getBoundingClientRect().right)} vs reachable ${Math.round(reachableRight)})`,
+              ),
+          };
+        });
+        expect(measured.cells, `${width}px: the census table rendered no columns to measure`).toBeGreaterThan(0);
+        expect(
+          measured.unreachable,
+          `column(s) of the census table at ${width}px sit outside the scroll container's own scrollable ` +
+            `extent (scrollWidth ${measured.scrollWidth}, clientWidth ${measured.clientWidth}), so no amount ` +
+            `of scrolling reaches them`,
+        ).toEqual([]);
+      }
 
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -182,21 +160,10 @@ test.describe("@mockup Ward patient search", () => {
   });
 
   /**
-   * 2. THE TYPEAHEAD POPUP AT 375PX, on the exact near-spelling pair the search exists to make
-   * safe. Both rows must stay fully inside the 375px viewport horizontally, and each row's record
-   * number and date of birth — the only two facts that actually distinguish Marrowby from
-   * Marrowbee — must be genuinely visible, not merely present in the DOM.
-   *
-   * `getByText(..., { exact: true })` is what closes the hiding case
-   * `ui-ward-discharges.spec.ts`'s own W1 note documents: a plain `toContainText` on the row would
-   * still pass if the umrn or DOB span were given `display: none`, because Playwright compares
-   * `textContent` there regardless of visibility. An exact match on the leaf `<span>`/`<b>` whose
-   * own trimmed text equals the number resolves to that specific element, so `toBeVisible()` on it
-   * actually exercises the visibility this test is named for.
-   *
-   * PREDICTED FAILURE, verified live: adding `style="width: 500px"` to the popup via
-   * `page.addStyleTag` pushed PT-004's row past x=375 and the second row's `x + width <=
-   * viewportWidth` assertion went red, naming the exact overshoot.
+   * 2. THE NEAR-SPELLING PAIR AT THE NARROWEST WIDTH. Ines Marrowby is on a ward and Devan
+   * Marrowbee waits in ED, so the phone census, which shows one group at a time, once showed only
+   * one of them for "marrowb". A search now lists every match across groups, and each matching row
+   * carries the two facts that tell the pair apart: UMRN and date of birth.
    */
   test("both Marrowby/Marrowbee rows and their identifying details stay on screen at 375px", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 });
@@ -204,9 +171,10 @@ test.describe("@mockup Ward patient search", () => {
 
     await typeaheadInput(page).fill("marrowb");
 
-    const row1 = page.getByTestId("ward-patient-typeahead-option-PT-003");
-    const row2 = page.getByTestId("ward-patient-typeahead-option-PT-004");
-    await expect(typeaheadOptions(page), "exactly the two Marrow* patients, nobody else").toHaveCount(2);
+    const rows = censusRows(page);
+    await expect(rows, "exactly the two Marrow* patients, nobody else").toHaveCount(2);
+    const row1 = rows.filter({ hasText: "Ines Marrowby" });
+    const row2 = rows.filter({ hasText: "Devan Marrowbee" });
     await expect(row1).toBeVisible();
     await expect(row2).toBeVisible();
 
@@ -224,63 +192,45 @@ test.describe("@mockup Ward patient search", () => {
       ).toBeLessThanOrEqual(viewportWidth + 1);
     }
 
-    // The record number and date of birth — genuinely visible, not merely textContent.
     await expect(row1.getByText("UM100003", { exact: true })).toBeVisible();
-    await expect(row1.getByText("1995-07-21", { exact: true })).toBeVisible();
+    await expect(row1.getByText(/21\/07\/1995/)).toBeVisible();
     await expect(row2.getByText("UM100004", { exact: true })).toBeVisible();
-    await expect(row2.getByText("1974-01-09", { exact: true })).toBeVisible();
+    await expect(row2.getByText(/09\/01\/1974/)).toBeVisible();
   });
 
   /**
-   * 3. HOVER VERSUS KEYBOARD-ACTIVE. `patient-typeahead.module.css`'s own comment records that
-   * these two states used to share one CSS declaration on the premise that "a pointer user and a
-   * keyboard user must be looking at the same row" — false, because nothing in this component
-   * keeps a hovered row in sync with `activeIndex`. If that regressed, a row the mouse merely
-   * rests on would render pixel-identical to the row Enter will actually pick, and a clinician
-   * could commit a different person than the one they were looking at.
-   *
-   * ⚠️ THREE ARROWDOWN PRESSES, NOT TWO. `activeIndex` starts at −1 (nothing preselected — the
-   * component's own documented rule), and each ArrowDown computes `(i + 1) % length`. So the FIRST
-   * press lands on index 0 (PT-001, the row the mouse is resting on), the second on index 1
-   * (PT-002), and a THIRD is required to reach index 2 (PT-003, the third rendered option).
-   * Verified live before writing this (dispatching the three keydowns and reading
-   * `aria-selected`) rather than assumed from the arithmetic alone.
-   *
-   * "a" is the query rather than "marrow" because a pair of two rows has no third option for the
-   * cursor to land on — this needs at least three, and "a" gives all eight in fixture order
-   * (verified against `ward-patients-seed.ts`).
-   *
-   * PREDICTED FAILURE, verified live: temporarily merging `.option:hover` and
-   * `.option.optionActive` into one shared rule (the exact regression the CSS file's own comment
-   * describes) via `page.addStyleTag` made every measured property equal between the two rows, and
-   * the `propertiesDiffer` assertion went red with both style objects printed and visibly
-   * identical.
+   * 3. KEYBOARD AND POINTER STATES READ APART. The census replaced the typeahead popup on this page
+   * (its suggestions are off; the popup's own keyboard model stays covered in
+   * `ward-patient-typeahead.dom.test.tsx`). The same harm applies to census rows: if the row the
+   * keyboard chose looks like the row the pointer merely rests on, a coordinator opens the wrong
+   * person. Hover must never select, and the keyboard-chosen row must render differently.
    */
-  test("the keyboard-active option reads as visually distinct from a merely-hovered one", async ({ page }) => {
-    await page.setViewportSize({ width: 1024, height: 900 });
+  test("the keyboard-chosen census row reads as visually distinct from a merely-hovered one", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await gotoSearch(page);
 
-    await typeaheadInput(page).fill("a");
-    // The seed is changeable data (104 patients on 25 Sept, not 8): pin positions, not ids or a count.
-    await expect(typeaheadOptions(page).nth(2), "needs at least three options").toBeAttached();
-
-    const hoveredRow = typeaheadOptions(page).nth(0);
-    const activeRow = typeaheadOptions(page).nth(2);
+    const rows = tableRows(page);
+    await expect(rows.nth(2), "needs at least three census rows").toBeAttached();
+    const hoveredRow = rows.nth(0);
+    const activeRow = rows.nth(2);
 
     await hoveredRow.hover();
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("ArrowDown");
+    await rows.nth(1).focus();
+    await page.keyboard.press("Tab");
+    await expect(activeRow, "Tab from the second row must land on the third").toBeFocused();
+    await page.keyboard.press("Enter");
 
-    await expect(activeRow, "the third ArrowDown press must land on the third option").toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    await expect(activeRow, "Enter must choose the focused row").toHaveAttribute("aria-selected", "true");
     await expect(hoveredRow, "hovering a row must never itself select it").toHaveAttribute("aria-selected", "false");
 
     const readStyle = (el: HTMLElement) => {
-      const style = getComputedStyle(el);
-      return { background: style.backgroundColor, borderLeft: style.borderLeftColor, boxShadow: style.boxShadow };
+      const row = getComputedStyle(el);
+      const cell = getComputedStyle(el.querySelector("td")!);
+      return {
+        outline: `${row.outlineStyle} ${row.outlineColor}`,
+        background: cell.backgroundColor,
+        edge: cell.boxShadow,
+      };
     };
     const [hoveredStyle, activeStyle] = await Promise.all([
       hoveredRow.evaluate(readStyle),
@@ -288,107 +238,61 @@ test.describe("@mockup Ward patient search", () => {
     ]);
 
     const propertiesDiffer =
+      hoveredStyle.outline !== activeStyle.outline ||
       hoveredStyle.background !== activeStyle.background ||
-      hoveredStyle.borderLeft !== activeStyle.borderLeft ||
-      hoveredStyle.boxShadow !== activeStyle.boxShadow;
+      hoveredStyle.edge !== activeStyle.edge;
     expect(
       propertiesDiffer,
-      `the hovered row and the keyboard-active row render identically: ${JSON.stringify({ hoveredStyle, activeStyle })}`,
+      `the hovered row and the keyboard-chosen row render identically: ${JSON.stringify({ hoveredStyle, activeStyle })}`,
     ).toBe(true);
   });
 
   /**
-   * 4. THE ACTIVE ROW SCROLLED INTO VIEW — the most severe defect this screen has had, per the
-   * task brief, and invisible without a browser: `getBoundingClientRect()` reports an element's
-   * real rendered position regardless of an `overflow: auto` ancestor clipping it out of sight, so
-   * an active row that is technically in the DOM but scrolled below the popup's own visible box is
-   * exactly what this assertion is built to catch.
-   *
-   * "a" matches all eight seeded patients in fixture order (verified above and against
-   * `ward-patients-seed.ts`), so the eighth and last is PT-008 (Kwame Vandersloot) — far enough
-   * down the list that the popup's `max-height: 24rem` clip (`patient-typeahead.module.css`)
-   * cannot show it without scrolling.
-   *
-   * PREDICTED FAILURE, verified live: dispatching the same End keydown against a build with the
-   * scroll-into-view effect body emptied out (`document.getElementById(...)` called and its result
-   * discarded, never `.scrollIntoView()`) left PT-008's row with a top of 718px against the
-   * popup's own bottom of 401px — comfortably below the popup's visible box — and the
-   * `toBeLessThanOrEqual` assertion on the row's bottom went red naming both numbers.
+   * 4. THE END OF THE LIST STAYS IN REACH. The popup test this replaces proved the active option at
+   * the list's end was scrolled into the popup's own visible box. On the census the equivalent harm
+   * is choosing the last row by keyboard and having either the row or its details land off screen:
+   * the details panel must stay in view beside a row chosen far down the page.
    */
-  test("pressing End moves the active option to the list's end, and the popup scrolls it into its own visible area", async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 1024, height: 900 });
+  test("choosing the last census row by keyboard keeps the row and its details panel on screen", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await gotoSearch(page);
 
-    await typeaheadInput(page).fill("a");
-    // The premise is "more rows than the popup's 24rem can show"; the exact count is changeable data.
-    await expect(typeaheadOptions(page).nth(8), "too few options for End to need a scroll").toBeAttached();
-
-    await page.keyboard.press("End");
-
-    const lastRow = typeaheadOptions(page).last();
+    const rows = tableRows(page);
+    await expect(rows.nth(8), "too few rows for the last one to sit far down the page").toBeAttached();
+    const lastRow = rows.last();
+    await rows.nth((await rows.count()) - 2).focus();
+    await page.keyboard.press("Tab");
+    await expect(lastRow).toBeFocused();
+    await page.keyboard.press("Enter");
     await expect(lastRow).toHaveAttribute("aria-selected", "true");
 
-    const popup = page.getByTestId("ward-patient-typeahead-popup");
-    const [popupBox, rowBox] = await Promise.all([popup.boundingBox(), lastRow.boundingBox()]);
-    expect(popupBox, "the popup must have a measurable box").not.toBeNull();
-    expect(rowBox, "the active row must have a measurable box").not.toBeNull();
+    const name = (await lastRow.locator("td").nth(1).locator("b").first().innerText()).split("\n")[0]!.trim();
+    const panel = page.getByRole("region", { name: "Patient details" });
+    await expect(panel).toContainText(name);
 
-    expect(
-      rowBox!.y,
-      `the active row's top (${Math.round(rowBox!.y)}) sits above the popup's own top (${Math.round(popupBox!.y)})`,
-    ).toBeGreaterThanOrEqual(popupBox!.y - 1);
-    expect(
-      rowBox!.y + rowBox!.height,
-      `the active row's bottom (${Math.round(rowBox!.y + rowBox!.height)}) sits below the popup's own bottom (${Math.round(popupBox!.y + popupBox!.height)}) — scrolled out of view`,
-    ).toBeLessThanOrEqual(popupBox!.y + popupBox!.height + 1);
+    const viewportHeight = 900;
+    for (const [locator, label] of [
+      [lastRow, "the chosen row"],
+      [panel, "the details panel"],
+    ] as const) {
+      const box = await locator.boundingBox();
+      expect(box, `${label} has no measurable box`).not.toBeNull();
+      expect(box!.y, `${label}'s top (${Math.round(box!.y)}) is above the viewport`).toBeGreaterThanOrEqual(-1);
+      expect(
+        box!.y + box!.height,
+        `${label}'s bottom (${Math.round(box!.y + box!.height)}) is below the ${viewportHeight}px viewport`,
+      ).toBeLessThanOrEqual(viewportHeight + 1);
+    }
   });
 
   /**
-   * 5. TAP TARGETS AT 375PX. Every interactive control inside the search composer (the typeahead
-   * input, its Clear button once a query is typed, the Stage select, the Department select) must
-   * have a hit box of at least 48px in its smaller dimension — this repository's production floor,
-   * never the generic 44px WCAG minimum (see `AGENTS.md`'s own note on the `ui-smoke` flake that
-   * reintroducing 44px caused).
-   *
-   * ⚠️ MEASURED LIVE BEFORE WRITING THIS, AND THE INPUT ITSELF FAILS TODAY. Its parent
-   * `.controlBox` correctly honours `min-height: var(--ward-tap)` (48px, confirmed:
-   * `{width:286,height:48}`), but `.controlBox` is `align-items: center` with no `stretch`, and
-   * the `<input>` itself has no `min-height` of its own — measured directly: `{width:238,
-   * height:36}`. That is the exact pattern this file's own CSS already has a fix for on the
-   * sibling `.clear` button (`align-self: stretch` plus its own `min-height` — see that rule's own
-   * comment: "A tap target inside a correctly sized container is not a correctly sized tap
-   * target"), applied to every control in the row except the one a clinician actually types into.
-   * A 6px dead strip sits above and below the input, inside the visually-bordered field, where a
-   * tap lands on `.controlBox` and focuses nothing.
-   *
-   * This assertion is left as the brief specifies rather than narrowed to dodge the finding —
-   * doing so would be exactly the "quietly narrow a check to make it pass" failure this repository
-   * has named elsewhere. `patient-typeahead.tsx` and its stylesheet are owned by another agent
-   * actively editing them right now, so the fix belongs there, not here.
-   *
-   * ⚠️ **THE FIX HAS LANDED, AND THIS COMMENT SAID OTHERWISE FOR HOURS. Corrected 2026-09-05.**
-   * It read *"this test states the measured defect and is expected to be RED until it lands"*, which
-   * was true when written and became false without anything changing here.
-   * `search/patient-typeahead.module.css` now carries exactly the prescribed pair —
-   * `align-self: stretch` with `min-height: var(--ward-tap)` — on both the input and its sibling,
-   * and the stylesheet's own comment names the absent-declaration defect it closes.
-   *
-   * ⚠️ **TREAT THIS SPEC'S STATUS AS UNKNOWN RATHER THAN RED OR GREEN, and that is the point worth
-   * keeping.** It sits in the `chromium-mockups` lane, which the owner ruled is kept but not run, so
-   * **nothing executes to contradict a claim made here.** A stale "expected to be RED" in an unrun
-   * lane is worse than in a running one: a reader takes it as a live defect, and there is no red or
-   * green anywhere to correct them. **Re-read this comment the first time the lane is switched on**
-   * — the flag is `vars.WARD_JOURNEYS_BLOCKING`, unset by default.
-   *
-   * ⚠️ **AND THE DEFECT ITSELF IS THE STRONGEST ARGUMENT IN THIS REPOSITORY FOR KEEPING THESE
-   * SEVEN SPECS.** jsdom computes no layout, so no offline test could have measured a 36px control;
-   * and the fault was an **absent** declaration, so there was no wrong value for a stylesheet-reading
-   * guard to find either. **Invisible to both halves of this project's testing, and found by a
-   * browser.** That belongs beside the keep-but-do-not-run ruling, not buried in a changelog.
+   * 5. THE 48PX TAP FLOOR AT 375PX. Every control a coordinator taps in the phone composer and the
+   * census header: the search input, DOB, Clear, the five group pills, Highlight and History. The
+   * old filter selects are gone from the screen (they sit in a visually hidden block), so the
+   * census's own controls are what this now measures. Written against the 9 Oct census, it failed
+   * first on a real defect: the phone input was 18px tall and Clear 36px.
    */
-  test("every interactive control in the search composer meets the 48px tap-target floor at 375px", async ({
+  test("every interactive control in the search composer and census header meets the 48px tap-target floor at 375px", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 375, height: 900 });
@@ -397,18 +301,18 @@ test.describe("@mockup Ward patient search", () => {
     const input = typeaheadInput(page);
     await input.fill("a"); // brings the Clear button into the DOM
 
+    const form = page.locator('form[role="search"]');
+    const console_ = page.getByTestId("ward-patient-search-results-console");
     const controls: Array<readonly [Locator, string]> = [
-      [input, "the typeahead's own text input"],
-      [page.getByRole("button", { name: "Clear" }).first(), "the typeahead's Clear button"],
+      [input, "the search input"],
+      [form.getByRole("button", { name: "DOB" }), "the DOB switch"],
+      [form.getByRole("button", { name: "Clear" }), "the Clear button"],
+      [console_.getByRole("button", { name: /Highlight/ }), "the Highlight button"],
+      [console_.getByRole("button", { name: /History/ }), "the History button"],
     ];
-    // f93703edee (22 Sept) moved Stage and Department into a visually hidden block; the filters on
-    // screen are the facet selects. Measure every filter select that is not inside .sr-only
-    // (Playwright calls a clipped .sr-only child "visible", so :visible cannot exclude them).
-    const onScreenSelectIds = await page
-      .locator('select[id^="ward-patient-search-"]')
-      .evaluateAll((selects) => selects.filter((el) => el.closest(".sr-only") === null).map((el) => el.id));
-    expect(onScreenSelectIds.length, "no on-screen filter select was found").toBeGreaterThan(0);
-    for (const id of onScreenSelectIds) controls.push([page.locator(`#${id}`), `the ${id} select`]);
+    const groups = console_.getByRole("radiogroup", { name: "Where patients are now" }).getByRole("radio");
+    await expect(groups, "the phone census shows five group pills").toHaveCount(5);
+    for (let i = 0; i < 5; i += 1) controls.push([groups.nth(i), `group pill ${i + 1}`]);
 
     const failures: string[] = [];
     for (const [control, label] of controls) {
