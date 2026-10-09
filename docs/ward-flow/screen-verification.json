@@ -59,15 +59,33 @@
       "mockup": "delays-third-edition.html",
       "route": "/delays",
       "verified": {
-        "date": "2026-10-05",
-        "who": "Codex (rendered workspace review and shell regression check)",
-        "widths": [1440],
+        "date": "2026-10-09",
+        "who": "Claude Code (rendered Chromium review of the October 2026 Delays board after owner ruling D-38)",
+        "widths": [1440, 820, 390],
         "themes": ["light", "dark"],
         "verdict": "matches",
-        "checkedRevision": "52db357fb086fe8daee98bcbf025aaa7f04e8328",
-        "notes": "WF-DELAYS-PRESSURE-MOCKUP follow-up: owner reported Action workspace replacing the approved shared navigation and page design. Baseline main108016f. Reproduced in real Chromium: rail width changed from205 to1440, bar/page changed position and bar background changed. Removed only parent table-layout state/flag/callback; workspace retains its local view, team filters and patient actions. Fresh ensure localhost3652, projectclinical-kb:1775b524e14b. Browser regression fails on baseline and passes on checked revision: shared rail/bar/page x,width,background and graph width remain stable across Focus/Action switches. Light1440 Action workspace screenshot with Wards17 and selected Kalan inspected; sidebar, header, mist backdrop and upper graph retained. Dark1440 live computed chrome geometry/background before/after and owner/selection persistence checked; no fresh dark screenshot visual review claimed. Focused11 DOM tests pass (search, selection, team filters, keyboard tabs, pagination). All current checked browser cases have no page errors or page overflow. Unchanged graph/theme/responsive/print visual evidence is retained in the prior entry; these are reused cases, not a new cross-product review. No fresh workspace mobile/print review or hosted deployment claim in this entry. Evidence .local/delays-workspace/{regression-before.log,regression-after.log,browser-review.json,workspace-fixed.png} in the isolated task worktree."
+        "checkedRevision": "e224769281694905d11f2d292155e61cd2776863",
+        "notes": "Owner ruling D-38 (9 October 2026): Delays filters narrow the Waiting table and the table states how many people are hidden, with Show everyone. This replaces the highlight-only entry at 2a373b10, now in verificationHistory. Checked in real Chromium against the local dev server at this revision with a clean tree: 1440 light, 1440 dark (data-theme=dark), 820 light and 390 light. At each, pressing the Over 8h count narrowed the table from 70 of 70 to 19 of 70, the note read '51 more people are waiting, hidden by the filters above.', Show everyone restored 70 of 70, there were no page errors and no page-level horizontal overflow. This check found and this revision fixes a phone defect: at 390 the note did not wrap, so Show everyone was clipped off the cell; tests/ui-ward-table-thresholds.spec.ts now clicks it at 390 and 1440 and fails without the fix. Layout of the hero, tiles, rail and graphs is not re-reviewed here beyond these views; the full-board captures at d535963 (earlier history entry) remain the layout evidence. Print, forced colours, physical touch, screen readers and hosted deployment were not verified."
       },
       "verificationHistory": [
+        {
+          "date": "2026-10-09",
+          "who": "Claude Code (rendered Chromium review of the October 2026 Delays board)",
+          "widths": [1440, 820, 390],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "checkedRevision": "2a373b10acaeb300c4f6a84d8f0e8e13f8906c25",
+          "notes": "Delays rebuilt as the owner-approved Delays page mockup (October 2026), replacing the earlier action workspace in verificationHistory. Filters highlight matching rows in the Waiting table (2026-09-07 ruling: chips never hide rows); the header shows N of total when a filter is active. Checked at this revision via focused Delays DOM tests (78 cases) and source review of hero counts, whose-move tiles, grouped table with row timeline, registers rail, and three linked graphs. Prior Chromium captures at d535963 remain background for layout chrome only; this entry does not renew full-width browser pixel review. Print, forced colours, physical touch, hosted deployment and exhaustive screen-reader passes are unverified here."
+        },
+        {
+          "date": "2026-10-05",
+          "who": "Codex (rendered workspace review and shell regression check)",
+          "widths": [1440],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "checkedRevision": "52db357fb086fe8daee98bcbf025aaa7f04e8328",
+          "notes": "WF-DELAYS-PRESSURE-MOCKUP follow-up: owner reported Action workspace replacing the approved shared navigation and page design. Baseline main108016f. Reproduced in real Chromium: rail width changed from205 to1440, bar/page changed position and bar background changed. Removed only parent table-layout state/flag/callback; workspace retains its local view, team filters and patient actions. Fresh ensure localhost3652, projectclinical-kb:1775b524e14b. Browser regression fails on baseline and passes on checked revision: shared rail/bar/page x,width,background and graph width remain stable across Focus/Action switches. Light1440 Action workspace screenshot with Wards17 and selected Kalan inspected; sidebar, header, mist backdrop and upper graph retained. Dark1440 live computed chrome geometry/background before/after and owner/selection persistence checked; no fresh dark screenshot visual review claimed. Focused11 DOM tests pass (search, selection, team filters, keyboard tabs, pagination). All current checked browser cases have no page errors or page overflow. Unchanged graph/theme/responsive/print visual evidence is retained in the prior entry; these are reused cases, not a new cross-product review. No fresh workspace mobile/print review or hosted deployment claim in this entry. Evidence .local/delays-workspace/{regression-before.log,regression-after.log,browser-review.json,workspace-fixed.png} in the isolated task worktree."
+        },
         {
           "date": "2026-10-05",
           "who": "Codex (rendered browser and source review)",
@@ -194,7 +212,7 @@
           "verdict": "matches",
           "mockupSha256": "f110345a8c70f54fa55bf30b8cfd70d719bf21ee8f0018668e2c9bd69c4c3f36",
           "implementationSha256": "647304fff1c5b123e86524ec0fb0b3b6223c7ad4bf786dd56a3b143ee377d3ac",
-          "notes": "Ward Directory Cards rebuilt to Third Edition Sovereign standard: 4 statewide KPI summary cards; 5 Health Service Cluster tabs (All Units, NMHS, SMHS, EMHS, WACHS); interactive cohort and availability filter pills; live instant search input; 23 square ward cards with live occupancy progress bars, 2x2 stats tiles, flow badges, and Enter Ward navigation; quick Bed Board links; interactive Profile modal dialog showing unit details and designations. Verified across all 79 tests in tests/ward-nav.test.ts and tests/ward-screen-overview-and-entry.dom.test.tsx. | 2026-09-18: the rendered text on this screen CHANGED after this look \u2014 legal wording reworded (\u00a77.18), and/or ward and community-team names replaced with real WA ones. This verdict predates those edits and must not be read as current. A fresh look is owed."
+          "notes": "Ward Directory Cards rebuilt to Third Edition Sovereign standard: 4 statewide KPI summary cards; 5 Health Service Cluster tabs (All Units, NMHS, SMHS, EMHS, WACHS); interactive cohort and availability filter pills; live instant search input; 23 square ward cards with live occupancy progress bars, 2x2 stats tiles, flow badges, and Enter Ward navigation; quick Bed Board links; interactive Profile modal dialog showing unit details and designations. Verified across all 79 tests in tests/ward-nav.test.ts and tests/ward-screen-overview-and-entry.dom.test.tsx. | 2026-09-18: the rendered text on this screen CHANGED after this look — legal wording reworded (§7.18), and/or ward and community-team names replaced with real WA ones. This verdict predates those edits and must not be read as current. A fresh look is owed."
         }
       ]
     },
@@ -1204,7 +1222,7 @@
           "themes": ["light", "dark"],
           "verdict": "deviates",
           "mockupSha256": "a81fbd1e1e40a224feaac7cd5a1a34e514965ea5cb291fc4f0614b4507e00826",
-          "notes": "Q004 scoped visual acceptance for populated request WF-010 on SJGM Adult Open. Current desktop light/dark and light 390 top/action states were inspected against served references; the eleven gate facts, decision controls and phone wrapping remained clear. The engine\u2019s actual request and capacity facts take precedence over drawing fixtures. Exact evidence and limits: plans/product-refinement/task-5-report.md. Width/theme lists are aggregate; dark phone, tablet, print, physical devices and other request states are not claimed."
+          "notes": "Q004 scoped visual acceptance for populated request WF-010 on SJGM Adult Open. Current desktop light/dark and light 390 top/action states were inspected against served references; the eleven gate facts, decision controls and phone wrapping remained clear. The engine’s actual request and capacity facts take precedence over drawing fixtures. Exact evidence and limits: plans/product-refinement/task-5-report.md. Width/theme lists are aggregate; dark phone, tablet, print, physical devices and other request states are not claimed."
         }
       ]
     }
