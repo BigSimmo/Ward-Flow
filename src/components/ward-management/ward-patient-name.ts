@@ -23,6 +23,7 @@ export function usePatientOf(): (subject: Subject | { movementId: string }) => R
     patients: context?.patients ?? [],
     referrals: context?.referrals ?? [],
     movements: context?.movements ?? [],
+    // A stay converted from an initials-only booking is named through that booking.
     plannedAdmissions: context?.plannedAdmissions ?? [],
   };
   return (subject) => resolveSubjectPatient(subject as Subject, state);
