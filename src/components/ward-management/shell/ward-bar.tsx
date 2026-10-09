@@ -247,7 +247,7 @@ const SERVICE_SWATCH_KEY: Record<HealthService, "north" | "south" | "east" | "wa
 };
 
 /** What the service choice narrows, named from `SERVICE_SCOPED_SCREENS` so it cannot drift (D-e).
- *  Kept as the hint's tooltip; the painted footer note was removed at the owner's request. */
+ *  Kept as the hint's accessible description and tooltip; the painted footer note was removed at the owner's request. */
 const SERVICE_SCOPE_NOTE = `One service, or all of them. ${
   SERVICE_SCOPED_SCREENS.length > 1
     ? `${SERVICE_SCOPED_SCREENS.slice(0, -1).join(", ")} and ${SERVICE_SCOPED_SCREENS[SERVICE_SCOPED_SCREENS.length - 1]}`
@@ -1118,8 +1118,17 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             >
               <p className={styles.popoverHead}>
                 Service
-                <span className={styles.popoverHint} title={SERVICE_SCOPE_NOTE}>
+                <button
+                  type="button"
+                  className={styles.popoverHint}
+                  aria-label="Service scope explanation"
+                  aria-describedby="ward-bar-service-scope-note"
+                  title={SERVICE_SCOPE_NOTE}
+                >
                   scopes the lists
+                </button>
+                <span id="ward-bar-service-scope-note" className="sr-only">
+                  {SERVICE_SCOPE_NOTE}
                 </span>
               </p>
               <button

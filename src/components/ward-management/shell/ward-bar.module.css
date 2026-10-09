@@ -300,8 +300,13 @@
 }
 
 .popoverHint {
-  font-weight: 400;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--wf-ink-3);
+  font: inherit;
+  font-weight: 400;
+  cursor: help;
 }
 
 .popoverRule {
@@ -1295,8 +1300,11 @@
 
   .scopeDot,
   .serviceDot,
-  .unread {
+  .unread,
+  .scopeBadgeBtn[data-service="statewide"] .scopeDot,
+  .serviceDot[data-service="statewide"] {
     background: CanvasText;
+    box-shadow: none;
     forced-color-adjust: none;
   }
 }
