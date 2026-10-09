@@ -326,7 +326,13 @@ export function MovementsScreen() {
       rejectionCount: rejections.length,
       who: resolveSubjectPatient(movement, { patients, referrals }).formalName,
     };
-    dispatch({ type: "PULL_PATIENT", role: "coordinator", now, movementId: movement.id, unitId: movement.acceptedUnitId });
+    dispatch({
+      type: "PULL_PATIENT",
+      role: "coordinator",
+      now,
+      movementId: movement.id,
+      unitId: movement.acceptedUnitId,
+    });
   }
   const [reveal, setReveal] = useState<{ id: string; request: number } | null>(null);
   const consumedReveal = useRef(0);
@@ -616,7 +622,9 @@ export function MovementsScreen() {
   const pinnedRowIds = new Set<string>([reveal?.id, detailId].filter((id): id is string => typeof id === "string"));
   const capping = !showAll;
   const capRows = (rows: Movement[], cap: number) =>
-    capping ? rows.filter((movement, index) => index < cap || pinnedRowIds.has(movement.id) || isMarked(movement)) : rows;
+    capping
+      ? rows.filter((movement, index) => index < cap || pinnedRowIds.has(movement.id) || isMarked(movement))
+      : rows;
   const hiddenIn = (groups: Movement[][], cap: number) =>
     groups.reduce((sum, rows) => sum + rows.length - capRows(rows, cap).length, 0);
   const hiddenRowCount =
@@ -1284,7 +1292,10 @@ export function MovementsScreen() {
                               {durMinutes(leg.minutesSinceBooked)}
                               <span className="sr-only"> ago</span>
                             </span>
-                            <span className={flow.trRoute} title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}>
+                            <span
+                              className={flow.trRoute}
+                              title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}
+                            >
                               {shortOrigin} to {destinationLabel} · {leg.provider}
                             </span>
                           </button>
@@ -1557,6 +1568,7 @@ export function MovementsScreen() {
           edAccessTargetMinutes={configuration.edAccessTargetMinutes}
           dispatch={dispatch}
           onClose={closeDetail}
+          onPull={pullBed}
         />
       </main>
     </div>
@@ -1587,7 +1599,12 @@ function heroHighlights(now: Instant, accessTarget: number): HeroHighlight[] {
   const hours = (minutes: number) => `${Math.round(minutes / 60)}h`;
   return [
     { id: "tier1", label: "Tier 1", test: (m) => isOpen(m) && m.urgency === 1 },
-    { id: "past", label: `Past ${hours(accessTarget)}`, tone: "danger", test: (m) => isOpen(m) && waited(m) >= accessTarget },
+    {
+      id: "past",
+      label: `Past ${hours(accessTarget)}`,
+      tone: "danger",
+      test: (m) => isOpen(m) && waited(m) >= accessTarget,
+    },
     {
       id: "over",
       label: `Over ${hours(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`,
@@ -1853,7 +1870,18 @@ function StageRow({
           <span title={originLabel} aria-label={originLabel}>
             {originEd ? `${originEd.siteCode} ED` : originLabel}
           </span>{" "}
-          to {movement.acceptedUnitId ? destinationLabel : "Destination pending"}
+          to{" "}
+          {movement.acceptedUnitId ? (
+            <Link
+              href={`/mockups/ward-flow/board/${movement.acceptedUnitId}`}
+              className={flow.wardLink}
+              title={`Open ${destinationLabel} Bed Board`}
+            >
+              {destinationLabel}
+            </Link>
+          ) : (
+            "Destination pending"
+          )}
         </span>
         <span className={flow.sub} title={routeSub}>
           {routeSub}
