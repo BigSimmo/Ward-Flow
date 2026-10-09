@@ -11,6 +11,10 @@ if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
 test("real PostgreSQL: shared commands, last-bed contention, retry, audit and recovery", { skip: !url }, async (t) => {
   const engine = await import("./dist/engine.mjs");
   const pool = new Pool({ connectionString: url, max: 8 });
+  let idleConnectionFailed = false;
+  pool.on("error", () => {
+    idleConnectionFailed = true;
+  });
   const actorA = "11111111-1111-4111-8111-111111111111";
   const actorB = "22222222-2222-4222-8222-222222222222";
   const at = new Date("2026-10-07T10:00:00Z");
@@ -179,5 +183,6 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
     });
   } finally {
     await pool.end();
+    assert.equal(idleConnectionFailed, false, "PostgreSQL test pool reported an idle connection failure");
   }
 });
