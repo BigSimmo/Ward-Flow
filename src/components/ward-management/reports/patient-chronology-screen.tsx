@@ -9,7 +9,7 @@ import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { patientDisplayName } from "@/components/ward-management/ward-patients";
 
-import { chronologyCsv, chronologyTime, patientChronology, patientRecordIds } from "./patient-chronology";
+import { chronologyCsv, chronologyTime, patientChronology, patientIdsWithRecords } from "./patient-chronology";
 import styles from "./reports.module.css";
 
 /**
@@ -24,16 +24,12 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   const pickerId = useId();
 
   // Only people with at least one record of their own can have a chronology.
-  const people = useMemo(
-    () =>
-      patients
-        .filter((patient) => {
-          const ids = patientRecordIds(patient.id, patients, movements, referrals, admissions);
-          return ids.movements.length + ids.referrals.length + ids.admissions.length > 0;
-        })
-        .sort((a, b) => a.familyName.localeCompare(b.familyName) || a.givenName.localeCompare(b.givenName)),
-    [patients, movements, referrals, admissions],
-  );
+  const people = useMemo(() => {
+    const withRecords = patientIdsWithRecords(patients, movements, referrals, admissions);
+    return patients
+      .filter((patient) => withRecords.has(patient.id))
+      .sort((a, b) => a.familyName.localeCompare(b.familyName) || a.givenName.localeCompare(b.givenName));
+  }, [patients, movements, referrals, admissions]);
 
   const [patientId, setPatientId] = useState<string>(() =>
     initialPatientId && patients.some((patient) => patient.id === initialPatientId) ? initialPatientId : "",

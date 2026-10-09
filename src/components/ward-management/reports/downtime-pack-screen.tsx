@@ -53,7 +53,14 @@ export function DowntimePackScreen() {
   if (pack === null) {
     return (
       <div className={styles.page} data-testid="ward-downtime-pack" data-ward-design="v6">
-        <main id="main-content" className={styles.main} aria-busy="true" />
+        <main id="main-content" className={styles.main} aria-busy="true">
+          <Hero
+            level={1}
+            eyebrow="Synthetic demo data · downtime pack"
+            title="Downtime pack"
+            titleMeta="Taking snapshot"
+          />
+        </main>
       </div>
     );
   }

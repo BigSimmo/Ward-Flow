@@ -92,8 +92,7 @@ const REASON_MAPS: Record<string, string>[] = [
 export function reasonLabel(reason: string | null | undefined): string {
   if (!reason) return "";
   for (const map of REASON_MAPS) {
-    const label = map[reason];
-    if (label !== undefined) return label;
+    if (Object.hasOwn(map, reason)) return map[reason];
   }
   return reason;
 }
@@ -139,6 +138,22 @@ export function patientRecordIds(
     referrals: referrals.filter(belongs).map((referral) => referral.id),
     admissions: admissions.filter(belongs).map((admission) => admission.id),
   };
+}
+
+/** The ids of everyone with at least one record of their own, resolving each record once. */
+export function patientIdsWithRecords(
+  patients: readonly Patient[],
+  movements: readonly Movement[],
+  referrals: readonly Referral[],
+  admissions: readonly Admission[],
+): ReadonlySet<string> {
+  const resolve = createPatientResolver({ patients, referrals, movements });
+  const ids = new Set<string>();
+  for (const record of [...movements, ...referrals, ...admissions]) {
+    const id = resolve(record).patient?.id;
+    if (id !== undefined) ids.add(id);
+  }
+  return ids;
 }
 
 /** Internally a draft's `record` is "<kind> <id>", so rows can be matched to their record. */
@@ -254,7 +269,7 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
     add({
       recordedAt: finite(unwind.at),
       who: whoLabel(unwind.by),
-      action: UNWIND_LABELS[unwind.kind] ?? unwind.kind,
+      action: UNWIND_LABELS[unwind.kind],
       after: unitName(unwind.unitId),
       reason: reasonLabel(unwind.reason),
     });

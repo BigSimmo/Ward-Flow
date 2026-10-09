@@ -7,6 +7,7 @@ import { Button, Field, HeroStat, Select, tableClasses } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { formatSheetMoment, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { edById } from "@/components/ward-management/ward-sites";
 import { dateOf } from "@/components/ward-management/statistics/statistics-dates";
 import { StatCard, StatisticsHero, useStatisticsLive } from "@/components/ward-management/statistics/statistics-hero";
@@ -14,6 +15,9 @@ import { hoursText } from "@/components/ward-management/statistics/statistics-oc
 
 import { reportWeek, weeklyOperationsReport, type ReasonCount, type ReportWeek } from "./weekly-report";
 import styles from "./reports.module.css";
+
+/** The out of area bands, in the words the rest of the app uses for them. */
+const OUT_OF_AREA_META = OUT_OF_AREA_BANDS.map((band) => TRAVEL_BAND_LABELS[band]).join(" or ");
 
 /** Offsets offered in the week picker: this week so far, the last full week, then six before it. */
 const WEEK_OFFSETS = [-1, 0, 1, 2, 3, 4, 5, 6, 7] as const;
@@ -141,7 +145,7 @@ export function WeeklyReportScreen() {
               </div>
             </dl>
           </StatCard>
-          <StatCard title="Out of area" icon={Hospital} meta="3 hours or more from home">
+          <StatCard title="Out of area" icon={Hospital} meta={OUT_OF_AREA_META}>
             <dl className={styles.figures}>
               <div className={styles.figure}>
                 <dt>Bed days</dt>
