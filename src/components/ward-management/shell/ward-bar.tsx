@@ -247,6 +247,15 @@ const SERVICE_SWATCH_KEY: Record<HealthService, "north" | "south" | "east" | "wa
   Private: "private",
 };
 
+/** What the service choice narrows, named from `SERVICE_SCOPED_SCREENS` so it cannot drift (D-e).
+ *  Screen readers only: the painted note and its "scopes the lists" hint were removed at the
+ *  owner's request (9 Oct 2026). */
+const SERVICE_SCOPE_NOTE = `One service, or all of them. ${
+  SERVICE_SCOPED_SCREENS.length > 1
+    ? `${SERVICE_SCOPED_SCREENS.slice(0, -1).join(", ")} and ${SERVICE_SCOPED_SCREENS[SERVICE_SCOPED_SCREENS.length - 1]}`
+    : SERVICE_SCOPED_SCREENS.join(", ")
+} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not.`;
+
 /** The exact sentence standard §8.6 already uses for a drawn-and-not-wired control (D-16) — named
  *  in one place so the three "not wired" primary-action kinds and any future caller share the
  *  identical wording rather than each typing a close paraphrase. */
@@ -1113,15 +1122,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               aria-label="Choose a health service"
               data-testid="ward-bar-service-panel"
             >
-              <p className={styles.popoverHead}>
-                Service<span className={styles.popoverHint}>scopes the lists</span>
-              </p>
+              <p className={styles.popoverHead}>Service</p>
+              <p className="sr-only">{SERVICE_SCOPE_NOTE}</p>
               <button
                 type="button"
                 className={styles.serviceOption}
                 aria-pressed={service === null}
                 onClick={() => selectService(null)}
               >
+                <span className={styles.serviceDot} data-service="statewide" aria-hidden="true" />
                 <span className={styles.serviceName}>All services</span>
                 <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === null} />
               </button>
@@ -1136,6 +1145,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                     aria-pressed={service === candidate}
                     onClick={() => selectService(candidate)}
                   >
+                    <span
+                      className={styles.serviceDot}
+                      data-service={SERVICE_SWATCH_KEY[candidate]}
+                      aria-hidden="true"
+                    />
                     <span className={styles.serviceName}>{candidate}</span>
                     <span className={styles.serviceOptionCount} aria-hidden="true">
                       {openCount > 0 ? `${openCount} open` : "none open"}
@@ -1144,13 +1158,6 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                   </button>
                 );
               })}
-              <p className={styles.popoverNote}>
-                {`One service, or all of them. ${
-                  SERVICE_SCOPED_SCREENS.length > 1
-                    ? `${SERVICE_SCOPED_SCREENS.slice(0, -1).join(", ")} and ${SERVICE_SCOPED_SCREENS[SERVICE_SCOPED_SCREENS.length - 1]}`
-                    : SERVICE_SCOPED_SCREENS.join(", ")
-                } narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not.`}
-              </p>
             </div>
           ) : null}
         </div>
