@@ -28,9 +28,13 @@ export function movementNextStep(movement: Movement): MovementNextStep | null {
       if (movement.escalation !== undefined) {
         return { label: "Escalated", owner: movement.escalation.contact, kind: "wait" };
       }
+      // Only live referrals can still owe an answer. Historical declines must not be
+      // compared with a later referral cycle (or with an empty live list).
       const asked = movement.referredUnitIds.length;
-      if (asked > 0 && movement.declines.length >= asked) {
-        return { label: "Escalate", owner: COORDINATOR_OWNER, kind: "escalate" };
+      if (asked === 0) {
+        return movement.declines.length > 0
+          ? { label: "Escalate", owner: COORDINATOR_OWNER, kind: "escalate" }
+          : { label: "Refer to wards", owner: COORDINATOR_OWNER, kind: "refer" };
       }
       return { label: "Ward answer", owner: "Receiving ward", kind: "wait" };
     }
