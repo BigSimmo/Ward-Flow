@@ -441,7 +441,7 @@ function usePhoneViewport(): boolean {
  * is no exception: it is the Referrals board with the slide-out open. Desktop keeps each page's own
  * action.
  */
-const PHONE_NEW_REFERRAL: WardPrimaryAction = {
+const NEW_REFERRAL_ACTION: WardPrimaryAction = {
   kind: "new-referral",
   label: "New referral",
   menu: WARD_NEW_REFERRAL_MENU,
@@ -449,7 +449,18 @@ const PHONE_NEW_REFERRAL: WardPrimaryAction = {
 
 export function phoneBarAction(action: WardPrimaryAction | undefined, phone: boolean): WardPrimaryAction | undefined {
   if (!phone || action?.kind === "new-referral") return action;
-  return PHONE_NEW_REFERRAL;
+  return NEW_REFERRAL_ACTION;
+}
+
+/**
+ * The universal header (Josh, 9 Oct 2026): "ensure that referral is on every single page". A route
+ * with no action of its own, or a deliberate "none", now shows New referral on desktop too, as it
+ * already did on the phone. A route with its own primary (Record a decision, Contact a team,
+ * Export the figures) keeps it, so the bar still holds one primary button.
+ */
+export function routeBarAction(pathname: string): WardPrimaryAction {
+  const action = resolveWardPrimaryAction(pathname);
+  return action === undefined || action.kind === "none" ? NEW_REFERRAL_ACTION : action;
 }
 
 /** What the referral slide-out opens with. `id` changes on every open, so each open starts fresh. */
@@ -1986,5 +1997,5 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
  */
 export function WardBarMount(props: Omit<WardBarProps, "primaryAction">) {
   const pathname = usePathname() ?? "";
-  return <WardBar {...props} primaryAction={resolveWardPrimaryAction(pathname)} />;
+  return <WardBar {...props} primaryAction={routeBarAction(pathname)} />;
 }
