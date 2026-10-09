@@ -129,14 +129,18 @@ function Spread({
           label: owner.name,
           pressed: filters.owner === owner.id,
           rows: rows.filter((row) => row.owner === owner.id),
-          press: () => onFilters({ owner: filters.owner === owner.id ? null : owner.id, cause: null }),
+          press: () => {
+            onFilters({ owner: filters.owner === owner.id ? null : owner.id, cause: null });
+          },
         }))
       : catchments.map((origin) => ({
           id: origin as string,
           label: catchmentName(origin),
           pressed: filters.origin === origin,
           rows: rows.filter((row) => row.origin === origin),
-          press: () => onFilters({ origin: filters.origin === origin ? null : origin }),
+          press: () => {
+            onFilters({ origin: filters.origin === origin ? null : origin });
+          },
         }));
   const grid = (
     <>
@@ -223,7 +227,9 @@ function Spread({
                         </>,
                       )
                     }
-                    onMouseLeave={() => onTip(null)}
+                    onMouseLeave={() => {
+                      onTip(null);
+                    }}
                   >
                     <StatusGlyph tone={rowTone(row)} size={10} />
                   </button>
@@ -321,7 +327,9 @@ function Runway({
             const on = filters.bin === bin.index;
             const label = `${at(bin.from)} to ${at(bin.to)}: ${bin.cross8.length} cross ${H8}, ${bin.cross24.length} cross ${H24}, ${bin.formDue.length} recorded legal times due`;
             let acc = 0;
-            const press = () => onFilters({ bin: on ? null : bin.index }, !on);
+            const press = () => {
+              onFilters({ bin: on ? null : bin.index }, !on);
+            };
             // A half hour with nothing in it is drawn but not pressable, unless it is the active filter.
             const pressable = total > 0 || on;
             return (
@@ -353,7 +361,9 @@ function Runway({
                     </>,
                   )
                 }
-                onMouseLeave={() => onTip(null)}
+                onMouseLeave={() => {
+                      onTip(null);
+                    }}
               >
                 <rect
                   x={xc(bin.index) - pw / 16 + 4}
@@ -487,7 +497,9 @@ function Matrix({
                       ? { background: `color-mix(in srgb, var(--wf-accent) ${strength}%, var(--wf-surface))` }
                       : undefined
                   }
-                  onClick={() => press(origin, column.id)}
+                  onClick={() => {
+                    press(origin, column.id);
+                  }}
                   onMouseMove={(event) =>
                     onTip(
                       event,
@@ -504,7 +516,9 @@ function Matrix({
                       </>,
                     )
                   }
-                  onMouseLeave={() => onTip(null)}
+                  onMouseLeave={() => {
+                      onTip(null);
+                    }}
                 >
                   <span className={styles.mxTop}>
                     <span className={`${styles.mxN} ${styles.num}`}>{n}</span>
@@ -642,10 +656,22 @@ export function DelaysBoardGraphs(props: Props) {
       <>
         <span className={styles.eyebrow}>Rows</span>
         <div className={styles.seg} role="group" aria-label="Spread rows">
-          <button type="button" aria-pressed={lanes === "owner"} onClick={() => setLanes("owner")}>
+          <button
+            type="button"
+            aria-pressed={lanes === "owner"}
+            onClick={() => {
+              setLanes("owner");
+            }}
+          >
             Whose move
           </button>
-          <button type="button" aria-pressed={lanes === "origin"} onClick={() => setLanes("origin")}>
+          <button
+            type="button"
+            aria-pressed={lanes === "origin"}
+            onClick={() => {
+              setLanes("origin");
+            }}
+          >
             Catchment
           </button>
         </div>
@@ -691,7 +717,9 @@ export function DelaysBoardGraphs(props: Props) {
               aria-controls="delays-graph-panel"
               aria-selected={graph === entry.id}
               tabIndex={graph === entry.id ? 0 : -1}
-              onClick={() => setGraph(entry.id)}
+              onClick={() => {
+                setGraph(entry.id);
+              }}
             >
               {entry.label}
             </button>
