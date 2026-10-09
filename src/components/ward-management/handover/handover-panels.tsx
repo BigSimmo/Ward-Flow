@@ -56,6 +56,7 @@ function WardCapacity({ ward, now }: { ward: HandoverWard | undefined; now: Inst
   return (
     <span className={styles.cap}>
       <span className={`${styles.ready} ${ward.ready > 0 ? styles.readyOn : ""}`}>{ward.ready} ready</span>
+      {ward.pendingPreparation > 0 ? <span>{ward.pendingPreparation} being made ready</span> : null}
       <span>
         {ward.occupied} of {ward.beds} in beds
       </span>
