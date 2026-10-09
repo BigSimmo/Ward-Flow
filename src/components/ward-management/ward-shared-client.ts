@@ -160,7 +160,6 @@ export class SharedWorkspaceClient {
           status: "unavailable",
           error: "Save is not confirmed. Retry reconnects using the same command ID, so the action cannot run twice.",
         });
-      this.queue = [];
     } finally {
       this.busy = false;
     }

@@ -8,7 +8,8 @@ import {
 import { isValidSharedWardFlowState } from "../../src/components/ward-management/ward-shared-state-validation";
 
 export type SharedWorld = { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
-const serialise = <T>(value: T): T => structuredClone(value);
+/** JSON round-trip drops explicit `undefined` fields the shared-state validator rejects. */
+const serialise = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 export function validCommand(value: unknown): value is Record<string, unknown> & { type: WardFlowEvent["type"] } {
   return (
     !!value &&
@@ -62,6 +63,8 @@ export function validWorld(value: unknown): value is SharedWorld {
   const world = value as SharedWorld;
   return (
     world.version === 1 &&
+    typeof world.dayZero === "string" &&
+    typeof world.startedAt === "string" &&
     Number.isFinite(Date.parse(world.dayZero)) &&
     Number.isFinite(Date.parse(world.startedAt)) &&
     isValidSharedWardFlowState(world.state)

@@ -9,11 +9,17 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
   if (!value || typeof value !== "object") return false;
   const state = value as WardFlowState;
   if (!Array.isArray(state.repatriations) || !Array.isArray(state.admissions)) return false;
+  const admissionIds = new Set<string>();
+  for (const admission of state.admissions) {
+    if (!admission || typeof admission !== "object" || typeof admission.id !== "string") return false;
+    admissionIds.add(admission.id);
+  }
   for (const row of state.repatriations) {
     if (
       !row ||
       typeof row !== "object" ||
-      !state.admissions.some((admission) => admission.id === row.admissionId) ||
+      typeof row.admissionId !== "string" ||
+      !admissionIds.has(row.admissionId) ||
       !Number.isFinite(row.at) ||
       !Number.isFinite(row.estimatedAt) ||
       !Object.hasOwn(WARD_FLOW_ROLE_LABELS, row.by) ||

@@ -172,7 +172,12 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
             Hospital approval, a separate live database and the clinical data connection must be configured before live
             mode can open. Selecting this option does not connect or relabel any data.
           </p>
-          <button type="button" onClick={() => setShowLiveInfo(false)}>
+          <button
+            type="button"
+            onClick={() => {
+              setShowLiveInfo(false);
+            }}
+          >
             Return to prototype
           </button>
         </section>
@@ -194,7 +199,7 @@ function WardSharedWorkspaceContent({
   if (!connection.enabled) return children;
   if (!connection.signedIn || !connection.snapshot)
     return (
-      <main aria-label="Coordinator sign-in">
+      <main id="main-content" aria-label="Coordinator sign-in">
         <h1>Ward Flow coordinator</h1>
         <p>Shared synthetic workspace. Your coordinator account has access to all Ward Flow workflows.</p>
         {connection.error && <p role="alert">{connection.error}</p>}
@@ -203,7 +208,11 @@ function WardSharedWorkspaceContent({
             Reconnect
           </button>
         ) : (
-          <button type="button" disabled={connection.status === "loading"} onClick={connection.signIn}>
+          <button
+            type="button"
+            disabled={connection.status === "loading" || connection.status === "unavailable"}
+            onClick={connection.signIn}
+          >
             Sign in with Microsoft
           </button>
         )}
