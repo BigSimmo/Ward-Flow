@@ -1,0 +1,2233 @@
+/* Ward Flow design system v8. Soft glass, calm, live. Synthetic prototype, not a medical device.
+   Built on v7.1. design-system-v8.md is the spec; this sheet is the single source of values.
+
+   v8 in short:
+   1. One theme switch. Every colour token holds its day and night value in one light-dark() pair,
+      resolved by color-scheme. data-theme on <html>, the OS setting, .day/.night subtrees and print
+      all work from that one mechanism, so no theme block can miss a token.
+   2. The 12px floor holds with no uppercase exception (owner ruling O-15.1). The 11px size is retired.
+   3. Contrast fixes measured on the v7.1 values: night ink on accent, the data ramp, faded beds,
+      tone colours as text, and selection that survives Windows high contrast.
+   4. New token groups the app already needs: service colours, z-index ladder, breakpoints,
+      named control shadows, print.
+   5. next/font variables lead the font stacks again, so the app keeps its self-hosted Geist.
+
+   Never paste a hex from this file into app code. Read the role through var(--wf-*). */
+
+/* ================= 1. Tokens that never change with the theme ================= */
+:root {
+  color-scheme: light dark;
+
+  /* type: six sizes, 12px floor. Uppercase is a treatment at 12, never a licence to go smaller. */
+  --wf-fs-12: 12px;
+  --wf-fs-13: 13px;
+  --wf-fs-14: 14px;
+  --wf-fs-16: 16px;
+  --wf-fs-20: 20px;
+  --wf-fs-28: 28px;
+  --wf-lh-12: 16px;
+  --wf-lh-13: 18px;
+  --wf-lh-14: 20px;
+  --wf-lh-16: 22px;
+  --wf-lh-20: 26px;
+  --wf-lh-28: 32px;
+  --wf-font: var(--font-geist-sans, Geist), Geist, "Segoe UI", system-ui, sans-serif;
+  --wf-mono: var(--font-geist-mono, "Geist Mono"), "Geist Mono", ui-monospace, Consolas, monospace;
+
+  /* radius: softer in v7, unchanged in v8. Controls are pills. */
+  --wf-r-xs: 6px;
+  --wf-r-sm: 10px;
+  --wf-r-md: 12px;
+  --wf-r-lg: 16px;
+  --wf-r-xl: 22px;
+  --wf-r-pill: 999px;
+
+  /* space: 4, 8, 12, 16 between parts. Insets inside a control may step by 2. */
+  --wf-s-1: 4px;
+  --wf-s-2: 8px;
+  --wf-s-3: 12px;
+  --wf-s-4: 16px;
+
+  /* sizes */
+  --wf-h-chip: 22px;
+  --wf-h-sm: 30px;
+  --wf-h-md: 36px;
+  --wf-h-lg: 44px;
+  --wf-touch: 44px;
+  --wf-row: 52px;
+  --wf-row-compact: 44px;
+  --wf-row-group: 40px;
+  --wf-count: 20px;
+
+  /* layout */
+  --wf-panel: clamp(300px, 27%, 400px);
+  --wf-panel-wide: clamp(340px, 33.333%, 480px);
+  --wf-drawer: 480px;
+  --wf-drawer-wide: 760px;
+  --wf-bar-phone-top: 56px;
+  --wf-bar-phone: 52px;
+
+  /* breakpoints. Media queries cannot read custom properties, so these record the only three
+     values a stylesheet may use, written with range syntax: (width <= 40rem), (width <= 48rem),
+     (width >= 64rem). Scripts read them for matchMedia. 48rem is the phone rule for components. */
+  --wf-bp-phone: 40rem;
+  --wf-bp-narrow: 48rem;
+  --wf-bp-wide: 64rem;
+
+  /* z-index ladder. Pick a rung, never a number. 110 is the top. */
+  --wf-z-raised: 1;
+  --wf-z-sticky: 20;
+  --wf-z-bar: 60;
+  --wf-z-overlay: 80;
+  --wf-z-popover: 95;
+  --wf-z-modal: 100;
+  --wf-z-toast: 105;
+  --wf-z-tip: 110;
+
+  /* motion */
+  --wf-m-fast: 120ms;
+  --wf-m-base: 200ms;
+  --wf-m-slow: 320ms;
+  --wf-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --wf-ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* the hero band is deep slate in both themes */
+  --wf-hero-ink: #fff;
+  --wf-hero-ink-2: #c3d1de;
+  --wf-hero-ink-3: #a3b8cc;
+  --wf-hero-danger: #e27a68;
+  --wf-hero-warning: #d9a441;
+  --wf-hero-success: #4cb383;
+  --wf-hero-info: #7fa3c8;
+  --wf-hero-neutral: #8fa0b1;
+  --wf-on-hero-fill: rgba(255, 255, 255, 0.08);
+  --wf-on-hero-line: rgba(255, 255, 255, 0.2);
+  --wf-on-hero-hl: rgba(255, 255, 255, 0.1);
+  --wf-on-hero-ink: #d5e0ea;
+  --wf-on-hero-track: rgba(0, 0, 0, 0.2);
+  --wf-on-hero-div: rgba(255, 255, 255, 0.14);
+  /* white parts on the hero (pressed pills, light button) */
+  --wf-light-1: #fff;
+  --wf-light-2: #eef2f6;
+  --wf-light-edge: rgba(255, 255, 255, 0.6);
+  --wf-light-ink: #1f3346;
+  --wf-light-danger: #c4513f;
+  --wf-light-warning: #ac720a;
+  --wf-light-success: #2f8a5f;
+  --wf-light-info: #4f7398;
+  --wf-light-neutral: #6b7f93;
+
+  /* named control shadows (v7 left 13 raw shadows in rules; v8 names every one) */
+  --wf-e-pri:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(16, 30, 44, 0.22), 0 4px 10px -6px rgba(16, 30, 44, 0.45);
+  --wf-e-pri-press: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  --wf-e-hero: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 18px 36px -26px rgba(16, 30, 44, 0.7);
+  --wf-e-on-hero: inset 0 1px 0 var(--wf-on-hero-hl), 0 2px 6px -3px rgba(0, 0, 0, 0.4);
+  --wf-e-on-hero-press: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --wf-e-light: inset 0 1px 0 var(--wf-light-1), 0 2px 6px -2px rgba(0, 0, 0, 0.35);
+  --wf-e-well: inset 0 1px 2px rgba(16, 24, 40, 0.06);
+  --wf-e-knob: 0 1px 2px rgba(16, 24, 40, 0.3);
+  --wf-e-tip: 0 6px 16px -6px rgba(16, 24, 40, 0.45);
+  --wf-e-bar: 0 6px 16px -12px rgba(16, 24, 40, 0.35);
+}
+
+/* ================= 2. Colour tokens: light-dark(day, night) ================= */
+:root {
+  --wf-canvas: light-dark(#e8ecf0, #0d141b);
+  --wf-surface: light-dark(#fdfdfe, #141d26);
+  --wf-surface-2: light-dark(#f6f8fa, #18232e);
+  --wf-track: light-dark(#eceff3, #223040);
+  --wf-hover: light-dark(#f2f5f8, #1b2733);
+  --wf-selected: light-dark(#eef3f8, #1f2e3c);
+
+  --wf-line: light-dark(rgba(22, 30, 40, 0.08), rgba(255, 255, 255, 0.07));
+  --wf-line-2: light-dark(rgba(22, 30, 40, 0.15), rgba(255, 255, 255, 0.13));
+  --wf-line-3: light-dark(rgba(22, 30, 40, 0.26), rgba(255, 255, 255, 0.24));
+  --wf-hl: light-dark(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.06));
+
+  --wf-ink-1: light-dark(#161a20, #e9eef3);
+  --wf-ink-2: light-dark(#414953, #bcc8d4);
+  --wf-ink-3: light-dark(#5b646f, #93a4b5);
+  --wf-ink-off: light-dark(#828a94, #6e7d8d);
+  --wf-line-ctl: light-dark(#828a94, #6e7d8d);
+
+  --wf-accent: light-dark(#2f4c66, #8fb0d4);
+  --wf-accent-strong: light-dark(#2b4762, #8fb0d4);
+  --wf-accent-tint: light-dark(#e6edf4, #1f3042);
+  --wf-accent-ink: light-dark(#27405a, #b9cfe6);
+  /* v8: ink on an accent fill. Night was white on #8fb0d4 at 2.25:1; it is now 8.2:1. */
+  --wf-on-accent: light-dark(#fff, #0d141b);
+  /* v8: ink on the primary gradient, white in both themes (7.1 and 5.3:1 at worst) */
+  --wf-on-pri: #fff;
+  --wf-pri-1: light-dark(#3a5b7b, #4b6f93);
+  --wf-pri-2: light-dark(#2b4762, #3a5b7b);
+  --wf-pri-edge: light-dark(#223a51, #56799d);
+
+  --wf-hero-1: light-dark(#22384d, #22374d);
+  --wf-hero-2: light-dark(#1c2f41, #1c2e41);
+  --wf-hero-edge: light-dark(#172736, rgba(143, 176, 212, 0.18));
+
+  /* tones colour glyphs, edges and marks (3:1 or better). Text always uses the -ink partner. */
+  --wf-danger: light-dark(#c4513f, #e27a68);
+  --wf-danger-ink: light-dark(#9a3424, #f2a495);
+  --wf-warning: light-dark(#ac720a, #d9a441);
+  --wf-warning-ink: light-dark(#7a5208, #f0cc85);
+  --wf-success: light-dark(#2f8a5f, #4cb383);
+  --wf-success-ink: light-dark(#1c6343, #8fd6b3);
+  --wf-info: light-dark(#4f7398, #7fa3c8);
+  --wf-info-ink: light-dark(#27405a, #b9cfe6);
+  --wf-neutral: light-dark(#6b7f93, #8fa0b1);
+  --wf-neutral-ink: light-dark(#414953, #bcc8d4);
+
+  /* soft highlight tints inside data only, never a card fill */
+  --wf-fit-tint: light-dark(rgba(47, 138, 95, 0.07), rgba(76, 179, 131, 0.09));
+  --wf-fit-edge: light-dark(rgba(47, 138, 95, 0.32), rgba(76, 179, 131, 0.36));
+  --wf-hold-tint: light-dark(rgba(172, 114, 10, 0.07), rgba(217, 164, 65, 0.09));
+  --wf-hold-edge: light-dark(rgba(172, 114, 10, 0.34), rgba(217, 164, 65, 0.36));
+
+  /* data ramp. v8: every series step clears 3:1 on surface and surface-2 in both themes.
+     --wf-data-rest is the old light step, for a remainder that is never the only mark of a value. */
+  --wf-data-1: light-dark(#2f4c66, #8fb0d4);
+  --wf-data-2: light-dark(#557089, #6a8bad);
+  --wf-data-3: light-dark(#788ea4, #55728f);
+  --wf-data-rest: light-dark(#c9d3dd, #2a3a4b);
+  --wf-data-ready: light-dark(#2f8a5f, #4cb383);
+  --wf-data-closed: light-dark(#a99058, #a88f55);
+
+  /* service colours: a dot or stripe beside the service name, never on its own (ruling B-7).
+     Day values are the health services' own colours. Night values are lifted to read on slate. */
+  --wf-svc-east: light-dark(#00825e, #34d399);
+  --wf-svc-north: light-dark(#990057, #f472b6);
+  --wf-svc-south: light-dark(#5a2476, #c084fc);
+  --wf-svc-wachs: light-dark(#005b94, #38bdf8);
+  --wf-svc-cahs: light-dark(#0076be, #8ab4ff);
+  --wf-svc-statewide: light-dark(#0071a5, #5fc9d6);
+  --wf-svc-private: light-dark(#475569, #94a3b8);
+
+  /* glass, scrim, sheen and backdrop, built from colour parts so they follow the theme too */
+  --wf-glass-thin: light-dark(rgba(253, 253, 254, 0.86), rgba(20, 29, 38, 0.86));
+  --wf-glass: light-dark(rgba(253, 253, 254, 0.88), rgba(22, 32, 42, 0.88));
+  --wf-glass-thick: light-dark(rgba(250, 251, 253, 0.92), rgba(24, 34, 45, 0.92));
+  --wf-rim-1: light-dark(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.24));
+  --wf-rim-2: light-dark(rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06));
+  --wf-rim-3: light-dark(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  --wf-sheen-top: light-dark(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.07));
+  --wf-scrim: light-dark(rgba(22, 30, 40, 0.12), rgba(0, 0, 0, 0.35));
+  --wf-glow-1: light-dark(rgba(143, 176, 212, 0.32), rgba(79, 115, 152, 0.28));
+  --wf-glow-2: light-dark(rgba(150, 196, 180, 0.2), rgba(76, 179, 131, 0.08));
+  --wf-glass-rim: linear-gradient(180deg, var(--wf-rim-1), var(--wf-rim-2) 45%, var(--wf-rim-3));
+  --wf-sheen: linear-gradient(180deg, var(--wf-sheen-top), transparent 46%);
+  --wf-backdrop:
+    radial-gradient(1200px 520px at 8% -10%, var(--wf-glow-1), transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, var(--wf-glow-2), transparent 55%), var(--wf-canvas);
+
+  --wf-tip-bg: light-dark(rgba(22, 30, 40, 0.92), rgba(36, 48, 62, 0.97));
+  --wf-tip-ink: light-dark(#fff, #e9eef3);
+  --wf-tip-ring: light-dark(transparent, rgba(255, 255, 255, 0.13));
+  --wf-focus-ring: var(--wf-accent);
+
+  /* elevation. Day lifts with soft tint, night with a dark ring. Each layer the other theme does not
+     use is transparent, so every value is exactly the v7 value and no night block is needed. */
+  --wf-sh-a: light-dark(rgba(16, 24, 40, 0.03), transparent);
+  --wf-sh-b: light-dark(rgba(16, 24, 40, 0.05), transparent);
+  --wf-sh-c: light-dark(rgba(16, 24, 40, 0.06), transparent);
+  --wf-sh-d: light-dark(rgba(16, 24, 40, 0.22), transparent);
+  --wf-sh-e: light-dark(rgba(16, 24, 40, 0.24), rgba(0, 0, 0, 0.6));
+  --wf-sh-f: light-dark(rgba(16, 24, 40, 0.14), transparent);
+  --wf-sh-g: light-dark(rgba(16, 24, 40, 0.3), transparent);
+  --wf-sh-n1: light-dark(transparent, rgba(0, 0, 0, 0.6));
+  --wf-sh-n2: light-dark(transparent, rgba(0, 0, 0, 0.7));
+  --wf-ring-1: light-dark(transparent, rgba(0, 0, 0, 0.2));
+  --wf-ring-2: light-dark(transparent, rgba(0, 0, 0, 0.35));
+  --wf-ring-3: light-dark(transparent, rgba(0, 0, 0, 0.18));
+  --wf-press: light-dark(rgba(16, 24, 40, 0.08), rgba(0, 0, 0, 0.35));
+  --wf-e1:
+    inset 0 1px 0 var(--wf-hl), 0 0 0 1px var(--wf-ring-1), 0 1px 1px var(--wf-sh-a), 0 2px 6px -2px var(--wf-sh-b),
+    0 12px 28px -20px var(--wf-sh-d), 0 12px 28px -18px var(--wf-sh-n1);
+  --wf-e2:
+    inset 0 1px 0 var(--wf-hl), 0 0 0 1px var(--wf-ring-2), 0 1px 2px var(--wf-sh-c), 0 10px 24px -10px var(--wf-sh-e);
+  --wf-e3:
+    inset 0 1px 0 var(--wf-hl), 0 0 0 0.5px var(--wf-sh-f), 0 0 0 1px var(--wf-ring-2), 0 2px 4px var(--wf-sh-c),
+    0 24px 48px -12px var(--wf-sh-g), 0 28px 60px -18px var(--wf-sh-n2);
+  --wf-e-raise: inset 0 1px 0 var(--wf-hl), 0 0 0 1px var(--wf-ring-3), 0 1px 2px var(--wf-sh-c);
+  --wf-e-press: inset 0 1px 2px var(--wf-press);
+}
+
+/* ================= 3. The one theme switch ================= */
+/* <html data-theme="light|dark"> pins the theme; no attribute follows the OS. .day and .night force
+   a subtree. The app sets data-theme before first paint and mirrors it to the legacy .dark class
+   until the legacy layers are retired (spec section 4). */
+:root[data-theme="light"],
+.day {
+  color-scheme: light;
+}
+:root[data-theme="dark"],
+.night {
+  color-scheme: dark;
+}
+
+/* Deprecated aliases. Remove when nothing reads them (spec section 9). */
+:root {
+  --wf-fs-11: var(--wf-fs-12);
+  --wf-lh-11: var(--wf-lh-12);
+}
+
+/* ================= 4. Base ================= */
+.wf {
+  font-family: var(--wf-font);
+  color: var(--wf-ink-1);
+  background: var(--wf-backdrop);
+  -webkit-font-smoothing: antialiased;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+.wf *,
+.wf *::before,
+.wf *::after {
+  box-sizing: border-box;
+}
+.wf :focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- type ---------- */
+.t-eyebrow {
+  font: 600 var(--wf-fs-12)/var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.t-12 {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+.t-13 {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+.t-14 {
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+}
+.t-16 {
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.t-20 {
+  font-size: var(--wf-fs-20);
+  line-height: var(--wf-lh-20);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.t-28 {
+  font-size: var(--wf-fs-28);
+  line-height: var(--wf-lh-28);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.mute {
+  color: var(--wf-ink-3);
+}
+.ink2 {
+  color: var(--wf-ink-2);
+}
+/* rule 14: mono is for figures, ids and clock times only */
+.num,
+.clk {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  letter-spacing: -0.01em;
+}
+.clk {
+  font-weight: 500;
+}
+.nw {
+  white-space: nowrap;
+}
+.ell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* ---------- surfaces ---------- */
+.card {
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  box-shadow: var(--wf-e1);
+  min-width: 0;
+}
+.card-h {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 48px;
+  padding: 0 var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+.card-h .ttl {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font: 600 var(--wf-fs-14)/var(--wf-lh-14) var(--wf-font);
+  white-space: nowrap;
+}
+.card-h .sp {
+  flex: 1;
+}
+.card-b {
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+.card-f {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 40px;
+  padding: 0 var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.inset {
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+.hero:not(.quiet) {
+  --wf-danger: var(--wf-hero-danger);
+  --wf-warning: var(--wf-hero-warning);
+  --wf-success: var(--wf-hero-success);
+  --wf-info: var(--wf-hero-info);
+  --wf-neutral: var(--wf-hero-neutral);
+  --wf-focus-ring: var(--wf-light-1);
+}
+.hero {
+  background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  border: 1px solid var(--wf-hero-edge);
+  border-radius: var(--wf-r-xl);
+  color: var(--wf-hero-ink);
+  box-shadow: var(--wf-e-hero);
+}
+/* the quiet hero: nothing on the page is live (an inactive patient, a closed bed, history) */
+.hero.quiet {
+  background: var(--wf-surface);
+  border-color: var(--wf-line-2);
+  color: var(--wf-ink-1);
+  box-shadow: var(--wf-e1);
+}
+.glass {
+  position: relative;
+  background: var(--wf-glass);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  backdrop-filter: blur(28px) saturate(1.8);
+  border: 1px solid var(--wf-line-2);
+  box-shadow: var(--wf-e2);
+}
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--wf-glass-rim);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--wf-sheen);
+  pointer-events: none;
+}
+.glass > * {
+  position: relative;
+  z-index: var(--wf-z-raised);
+}
+.glass.thin {
+  background: var(--wf-glass-thin);
+  -webkit-backdrop-filter: blur(24px) saturate(1.9);
+  backdrop-filter: blur(24px) saturate(1.9);
+}
+.glass.thick {
+  background: var(--wf-glass-thick);
+  -webkit-backdrop-filter: blur(36px) saturate(1.5);
+  backdrop-filter: blur(36px) saturate(1.5);
+  box-shadow: var(--wf-e3);
+}
+/* v8: was .glass.dark, which collided in name with the legacy .dark theme class */
+.glass.onhero {
+  background: var(--wf-on-hero-fill);
+  border-color: var(--wf-on-hero-line);
+  box-shadow: inset 0 1px 0 var(--wf-on-hero-hl);
+}
+.glass.onhero::before {
+  background: linear-gradient(180deg, var(--wf-on-hero-fill), transparent 50%);
+}
+.glass.onhero::after {
+  display: none;
+}
+.scrim {
+  background: var(--wf-scrim);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass.thin,
+  .glass.thick {
+    background: var(--wf-surface);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass.thin,
+  .glass.thick {
+    background: var(--wf-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+.divider {
+  height: 1px;
+  background: var(--wf-line);
+}
+
+/* ---------- icons ---------- */
+.ic {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ic.s14 {
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
+}
+.ic.s20 {
+  width: 20px;
+  height: 20px;
+  flex-basis: 20px;
+}
+/* icon tiles are neutral circles only */
+.tile {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wf-ink-2);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line-2);
+}
+
+/* ---------- buttons: pills ---------- */
+.b {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--wf-h-md);
+  padding: 0 14px;
+  border-radius: var(--wf-r-pill);
+  font: 600 var(--wf-fs-13)/1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    transform var(--wf-m-fast) var(--wf-ease),
+    box-shadow var(--wf-m-base) var(--wf-ease),
+    background var(--wf-m-base) var(--wf-ease),
+    filter var(--wf-m-base);
+}
+.b:active {
+  transform: scale(0.98);
+}
+.b.sm {
+  height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  font-size: var(--wf-fs-12);
+}
+.b.lg {
+  height: var(--wf-h-lg);
+  padding: 0 18px;
+  font-size: var(--wf-fs-14);
+}
+.b.icon {
+  width: var(--wf-h-md);
+  padding: 0;
+}
+.b.sm.icon {
+  width: var(--wf-h-sm);
+}
+.b.pri {
+  color: var(--wf-on-pri);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  border-color: var(--wf-pri-edge);
+  box-shadow: var(--wf-e-pri);
+}
+.b.pri:hover {
+  filter: brightness(1.08);
+}
+.b.pri:active {
+  filter: brightness(0.9);
+  box-shadow: var(--wf-e-pri-press);
+}
+.b.sec {
+  color: var(--wf-ink-1);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  border-color: var(--wf-line-2);
+  box-shadow: var(--wf-e-raise);
+}
+.b.sec:hover {
+  border-color: var(--wf-line-3);
+}
+.b.sec:active,
+.b.danger:active {
+  background: var(--wf-track);
+  box-shadow: var(--wf-e-press);
+}
+.b.tint {
+  color: var(--wf-accent-ink);
+  background: var(--wf-accent-tint);
+  border-color: color-mix(in srgb, var(--wf-accent) 20%, transparent);
+}
+.b.ghost {
+  color: var(--wf-accent-ink);
+  background: transparent;
+}
+.b.ghost:hover {
+  background: var(--wf-hover);
+}
+.b.danger {
+  color: var(--wf-danger-ink);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  border-color: var(--wf-line-2);
+  box-shadow: inset 0 1px 0 var(--wf-hl);
+}
+.b.onhero {
+  color: var(--wf-hero-ink);
+  background: var(--wf-on-hero-fill);
+  border-color: var(--wf-on-hero-line);
+  box-shadow: inset 0 1px 0 var(--wf-on-hero-hl);
+}
+.b.light {
+  color: var(--wf-light-ink);
+  background: linear-gradient(180deg, var(--wf-light-1), var(--wf-light-2));
+  border-color: var(--wf-light-edge);
+  box-shadow: var(--wf-e-light);
+}
+/* rule 15: dashed means unavailable. Disabled, locked and Preview share it. */
+.b[disabled],
+.b[aria-disabled="true"] {
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+  color: var(--wf-ink-off);
+  background: var(--wf-surface-2);
+  border: 1px dashed var(--wf-line-3);
+  box-shadow: none;
+}
+.b.split {
+  padding-right: 0;
+  gap: 0;
+}
+.b.split .main {
+  padding-right: var(--wf-s-3);
+}
+.b.split .more {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 10px 0 8px;
+  border-left: 1px solid color-mix(in srgb, var(--wf-on-pri) 22%, transparent);
+}
+.spin {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: wfSpin 0.8s linear infinite;
+}
+.kbd {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  padding: 2px 6px;
+  border-radius: var(--wf-r-xs);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+}
+
+/* ---------- counts: circles. Always neutral, never a status by colour. 0 shows as 0. ---------- */
+.k {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  min-width: var(--wf-count);
+  height: var(--wf-count);
+  padding: 0 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-2);
+  color: var(--wf-ink-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* tier is a T-digit pill so it never reads as a count, and it is never red */
+.tier {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--wf-count);
+  min-width: 28px;
+  padding: 0 6px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-3);
+  background: var(--wf-surface);
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-2);
+  letter-spacing: 0.02em;
+}
+.tier.t1 {
+  color: var(--wf-ink-1);
+  border: 1.5px solid var(--wf-ink-2);
+}
+
+/* ---------- inputs ---------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.field label {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+.in {
+  height: var(--wf-h-md);
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-ctl);
+  box-shadow: var(--wf-e-well);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+  min-width: 0;
+}
+.in.search {
+  border-radius: var(--wf-r-pill);
+  padding: 0 14px;
+}
+.in .ph {
+  color: var(--wf-ink-3);
+}
+.in:focus-within,
+.in.is-focus {
+  border-color: var(--wf-accent);
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.in.is-error {
+  border-color: var(--wf-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-danger) 12%, transparent);
+}
+.in.is-off {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  border-style: dashed;
+}
+.in.area {
+  height: auto;
+  min-height: 64px;
+  align-items: flex-start;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-radius: var(--wf-r-lg);
+}
+.help {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.help.err {
+  color: var(--wf-danger-ink);
+}
+.chk {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: var(--wf-r-xs);
+  border: 1.5px solid var(--wf-line-ctl);
+  background: var(--wf-surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wf-on-pri);
+}
+.chk.on {
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  border-color: var(--wf-pri-edge);
+}
+.rad {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--wf-line-ctl);
+  background: var(--wf-surface);
+  display: inline-flex;
+}
+.rad.on {
+  border: 5px solid var(--wf-accent-strong);
+}
+.sw {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  flex: 0 0 32px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-line-ctl);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: background var(--wf-m-base) var(--wf-ease);
+}
+.sw::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--wf-light-1);
+  box-shadow: var(--wf-e-knob);
+  transition: left var(--wf-m-base) var(--wf-ease);
+}
+.sw.on,
+.sw[aria-checked="true"] {
+  background: var(--wf-pri-2);
+}
+.sw.on::after,
+.sw[aria-checked="true"]::after {
+  left: 14px;
+}
+.sw[disabled],
+.sw[aria-disabled="true"] {
+  cursor: not-allowed;
+  background: transparent;
+  outline: 1px dashed var(--wf-line-3);
+  outline-offset: -1px;
+}
+.sw[disabled]::after,
+.sw[aria-disabled="true"]::after {
+  background: var(--wf-ink-off);
+  box-shadow: none;
+}
+/* v8: a stepper's value is the spinbutton. The buttons are tabindex -1 helpers. */
+.stp {
+  display: inline-flex;
+  align-items: stretch;
+  height: var(--wf-h-md);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+.stp button {
+  all: unset;
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+.stp button:hover {
+  background: var(--wf-hover);
+}
+.stp button:focus-visible,
+.stp .v:focus-visible {
+  outline: 0;
+  box-shadow: inset 0 0 0 2px var(--wf-focus-ring);
+}
+.stp .v {
+  min-width: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 500 var(--wf-fs-13) var(--wf-mono);
+  border-left: 1px solid var(--wf-line);
+  border-right: 1px solid var(--wf-line);
+}
+/* one row of equal soft buttons for short exclusive choices (never wrapping pills) */
+.choice-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 6px;
+}
+.choice-row button {
+  height: var(--wf-h-md);
+  border-radius: var(--wf-r-md);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  font: 500 var(--wf-fs-13) var(--wf-font);
+  color: var(--wf-ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.choice-row button.on,
+.choice-row button[aria-checked="true"] {
+  border-color: var(--wf-accent);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+
+/* ---------- pill tabs and segmented: one control, three jobs ----------
+   Page tabs, panel tabs and view toggles are all .pt. role=tablist for tabs, radiogroup for toggles.
+   One item always holds the tab stop, even when no item matches the current value. */
+.pt {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  gap: 2px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  border: 1px solid var(--wf-line);
+  box-shadow: var(--wf-e-well);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pt::-webkit-scrollbar {
+  display: none;
+}
+.pt button {
+  height: 28px;
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) var(--wf-font);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.pt button:hover {
+  color: var(--wf-ink-1);
+}
+.pt button:focus-visible,
+.trk button:focus-visible {
+  outline-offset: -2px;
+}
+.pt button.on,
+.pt button[aria-selected="true"],
+.pt button[aria-checked="true"] {
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 var(--wf-hl),
+    0 1px 2px rgba(16, 24, 40, 0.12),
+    0 0 0 1px var(--wf-line-ctl);
+}
+.pt button .k {
+  height: 18px;
+  min-width: 18px;
+  background: transparent;
+}
+.pt.sm button {
+  height: 24px;
+  padding: 0 10px;
+  font-size: var(--wf-fs-12);
+}
+.pt.fill {
+  display: flex;
+}
+.pt.fill button {
+  flex: 1;
+  justify-content: center;
+}
+.pt.icons button {
+  width: 30px;
+  padding: 0;
+  justify-content: center;
+}
+/* on the hero */
+.trk {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-on-hero-track);
+  border: 1px solid var(--wf-on-hero-fill);
+}
+.trk button {
+  height: 28px;
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-pill);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--wf-on-hero-ink);
+  font: 500 var(--wf-fs-13) var(--wf-font);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.trk button.on,
+.trk button[aria-current="page"] {
+  background: var(--wf-light-1);
+  color: var(--wf-hero-2);
+  font-weight: 600;
+}
+/* filter chips: raised pills, count inside. On is an accent edge and a heavier label. */
+.fc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px 0 12px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  box-shadow: var(--wf-e-raise);
+  font: 500 var(--wf-fs-12) var(--wf-font);
+  color: var(--wf-ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fc.on,
+.fc[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+.fc .k {
+  height: 18px;
+  min-width: 18px;
+}
+.fc[disabled],
+.fc[aria-disabled="true"],
+.pt button[disabled],
+.pt button[aria-disabled="true"] {
+  cursor: not-allowed;
+  color: var(--wf-ink-off);
+  background: transparent;
+  border: 1px dashed var(--wf-line-3);
+  box-shadow: none;
+}
+
+/* ---------- badges: flat pills label ---------- */
+.bd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--wf-h-chip);
+  padding: 0 10px 0 8px;
+  border-radius: var(--wf-r-pill);
+  font: 600 var(--wf-fs-12)/1 var(--wf-font);
+  white-space: nowrap;
+  color: var(--wf-ink-1);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-2);
+}
+.bd.plain,
+.row .bd {
+  background: none;
+  border-color: transparent;
+  padding: 0;
+}
+.bd.sm {
+  height: 20px;
+  padding: 0 var(--wf-s-2);
+}
+.bd.id {
+  font-family: var(--wf-mono);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+.bd.solid {
+  color: var(--wf-on-pri);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  border-color: var(--wf-pri-edge);
+}
+.bd.onhero {
+  color: var(--wf-hero-ink);
+  background: var(--wf-on-hero-fill);
+  border-color: var(--wf-on-hero-line);
+}
+.bd.preview {
+  height: 20px;
+  padding: 0 var(--wf-s-2);
+  font: 600 var(--wf-fs-12)/1 var(--wf-font);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+  background: transparent;
+  border: 1px dashed var(--wf-line-3);
+}
+/* service: a coloured dot and the service name. Colour never stands alone. */
+.svc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+}
+.svc::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--svc, var(--wf-svc-private));
+  flex: 0 0 8px;
+}
+.svc.east {
+  --svc: var(--wf-svc-east);
+}
+.svc.north {
+  --svc: var(--wf-svc-north);
+}
+.svc.south {
+  --svc: var(--wf-svc-south);
+}
+.svc.wachs {
+  --svc: var(--wf-svc-wachs);
+}
+.svc.cahs {
+  --svc: var(--wf-svc-cahs);
+}
+.svc.statewide {
+  --svc: var(--wf-svc-statewide);
+}
+
+/* ---------- status glyphs: one shape per tone (rule 7) ----------
+   danger triangle, warning filled circle, success tick, info capsule, neutral ring, closed cross.
+   Use the inline SVGs in the spec. .g is the CSS fallback. */
+.g {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+}
+.g.danger {
+  background: var(--wf-danger);
+  clip-path: polygon(50% 4%, 100% 96%, 0 96%);
+}
+.g.warning {
+  background: var(--wf-warning);
+  border-radius: 50%;
+}
+.g.info {
+  width: 11px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--wf-info);
+}
+.g.neutral {
+  border: 1.5px solid var(--wf-neutral);
+  border-radius: 50%;
+}
+.g.success {
+  width: 10px;
+  height: 10px;
+  background: var(--wf-success);
+  clip-path: polygon(12% 52%, 26% 38%, 42% 54%, 76% 18%, 90% 32%, 42% 82%);
+}
+.g.closed {
+  width: 9px;
+  height: 9px;
+  background: var(--wf-neutral);
+  clip-path: polygon(
+    18% 4%,
+    50% 36%,
+    82% 4%,
+    96% 18%,
+    64% 50%,
+    96% 82%,
+    82% 96%,
+    50% 64%,
+    18% 96%,
+    4% 82%,
+    36% 50%,
+    4% 18%
+  );
+}
+/* record state, not a tone: not active */
+.g.inactive {
+  width: 10px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--wf-ink-3);
+}
+svg.gl {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+}
+/* .tone-* colours a glyph or mark. .ink-* colours words. Never set text in a .tone colour:
+   day danger, warning and success are 4.0 to 4.5:1 on surface, enough for a glyph, not for words. */
+.tone-danger {
+  color: var(--wf-danger);
+}
+.tone-warning {
+  color: var(--wf-warning);
+}
+.tone-success {
+  color: var(--wf-success);
+}
+.tone-info {
+  color: var(--wf-info);
+}
+.tone-neutral {
+  color: var(--wf-neutral);
+}
+.ink-danger {
+  color: var(--wf-danger-ink);
+}
+.ink-warning {
+  color: var(--wf-warning-ink);
+}
+.ink-success {
+  color: var(--wf-success-ink);
+}
+.ink-info {
+  color: var(--wf-info-ink);
+}
+
+/* ---------- live ---------- */
+.lv {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--wf-h-chip);
+  padding: 0 10px;
+  border-radius: var(--wf-r-pill);
+  font: 600 var(--wf-fs-12)/1 var(--wf-font);
+  white-space: nowrap;
+  color: var(--wf-ink-1);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+}
+.lv .u {
+  font: 500 var(--wf-fs-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+.lv .clk {
+  font-weight: 600;
+}
+.lv.onhero {
+  color: var(--wf-hero-ink);
+  background: var(--wf-on-hero-fill);
+  border-color: var(--wf-on-hero-line);
+}
+.lv.onhero .u {
+  color: var(--wf-hero-ink-2);
+}
+.lv.stale {
+  border-color: var(--wf-warning);
+}
+.lv.off {
+  border-color: var(--wf-danger);
+}
+.pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wf-success);
+  flex: 0 0 7px;
+  animation: wfPulse 2s ease-out infinite;
+}
+.est {
+  font: 500 var(--wf-fs-12) var(--wf-font);
+  color: var(--wf-ink-3);
+  margin-left: 4px;
+}
+.asat {
+  font: 500 var(--wf-fs-12) var(--wf-font);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.nr {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+/* ---------- hero stats ----------
+   rule 13: raised pills press. A stat that filters or opens a band is .hs.pill with aria-pressed.
+   A stat that only reports is plain with a hairline divider. Never both in one row. */
+.hs-row {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.hs {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  padding: 0 14px;
+  white-space: nowrap;
+  border-left: 1px solid var(--wf-on-hero-div);
+}
+.hs:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+.hs .v {
+  font: 600 var(--wf-fs-20)/var(--wf-lh-20) var(--wf-mono);
+  letter-spacing: -0.02em;
+}
+.hs .l {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-hero-ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hs.pill {
+  border: 1px solid var(--wf-on-hero-line);
+  background: var(--wf-on-hero-fill);
+  box-shadow: var(--wf-e-on-hero);
+  border-radius: var(--wf-r-pill);
+  min-height: var(--wf-h-md);
+  align-items: center;
+  padding: 0 14px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.hs.pill .v {
+  font-size: var(--wf-fs-16);
+  line-height: 1;
+}
+/* pressed: white pill, so tones return to their day values to keep glyphs at 3:1 or better */
+.hs.pill[aria-pressed="true"] {
+  --wf-danger: var(--wf-light-danger);
+  --wf-warning: var(--wf-light-warning);
+  --wf-success: var(--wf-light-success);
+  --wf-info: var(--wf-light-info);
+  --wf-neutral: var(--wf-light-neutral);
+  background: var(--wf-light-1);
+  color: var(--wf-hero-2);
+  border-color: var(--wf-light-1);
+  box-shadow: var(--wf-e-on-hero-press);
+}
+.hs.pill[aria-pressed="true"] .l {
+  color: var(--wf-hero-2);
+}
+.hero.quiet .hs {
+  border-left-color: var(--wf-line);
+}
+.hero.quiet .hs .l {
+  color: var(--wf-ink-3);
+}
+.state-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  font: 600 var(--wf-fs-12)/1 var(--wf-font);
+  white-space: nowrap;
+  color: var(--wf-ink-1);
+}
+.hero:not(.quiet) .state-pill {
+  color: var(--wf-hero-ink);
+  background: var(--wf-on-hero-fill);
+  border-color: var(--wf-on-hero-line);
+}
+.banner-closed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  border: 1px dashed var(--wf-line-3);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+/* ---------- stat, meter, bar ---------- */
+.st {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.st + .st {
+  border-left: 1px solid var(--wf-line);
+  padding-left: var(--wf-s-3);
+  margin-left: var(--wf-s-3);
+}
+.st .v {
+  font: 600 var(--wf-fs-20)/var(--wf-lh-20) var(--wf-mono);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.st .l {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.meter {
+  position: relative;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+.meter b {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-neutral);
+}
+.meter i {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+  background: var(--wf-ink-1);
+  box-shadow: 0 0 0 2px var(--wf-surface);
+}
+.hatch {
+  background: repeating-linear-gradient(135deg, var(--wf-data-2) 0 2px, var(--wf-track) 2px 4px);
+}
+/* stacked bar: segments sit 2px apart so neighbours never need contrast with each other */
+.mb {
+  display: flex;
+  gap: 2px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  overflow: hidden;
+  background: transparent;
+}
+.mb i {
+  display: block;
+  height: 100%;
+}
+
+/* ---------- tables ---------- */
+.th {
+  font: 600 var(--wf-fs-12)/var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.row {
+  display: grid;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: var(--wf-row);
+  padding: 0 var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+.row.compact {
+  min-height: var(--wf-row-compact);
+}
+.row:hover {
+  background: var(--wf-hover);
+}
+.row.sel,
+.row[aria-selected="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+}
+/* grouped table: group header, then members */
+.grp {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto 120px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--wf-row-group);
+  padding: 0 var(--wf-s-4);
+  background: var(--wf-surface-2);
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.grp .nm {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font-weight: 600;
+  min-width: 0;
+  white-space: nowrap;
+}
+.grp .own {
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+/* row timeline: opens under a selected row. At most five labelled points. */
+.row-tl {
+  padding: 12px 16px 14px 19px;
+  background: var(--wf-selected);
+  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+  border-bottom: 1px solid var(--wf-line);
+}
+.row-tl .track {
+  position: relative;
+  height: 14px;
+  margin: 0 6px;
+}
+.row-tl .track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--wf-line-2);
+}
+.row-tl .seg {
+  position: absolute;
+  top: 5px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--wf-data-2);
+}
+.row-tl .seg.quiet {
+  background: repeating-linear-gradient(135deg, var(--wf-data-2) 0 2px, transparent 2px 4px);
+}
+.row-tl .pt-node {
+  position: absolute;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: var(--wf-surface);
+  border: 2px solid var(--wf-data-1);
+}
+.row-tl .pt-node.now {
+  border-radius: 1px;
+  width: 2px;
+  margin-left: -1px;
+  height: 16px;
+  top: -1px;
+  border: 0;
+  background: var(--wf-ink-1);
+}
+.row-tl .lbls {
+  display: grid;
+  margin-top: 6px;
+  font-size: var(--wf-fs-12);
+}
+.row-tl .lbls b {
+  display: block;
+  font: 600 var(--wf-fs-12) var(--wf-mono);
+}
+.row-tl .lbls span {
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+/* ---------- side panel: rests on a summary, swaps to the clicked item ---------- */
+.layout-core {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--wf-panel);
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+.layout-core.wide {
+  grid-template-columns: minmax(0, 1fr) var(--wf-panel-wide);
+}
+.sp-panel {
+  position: sticky;
+  top: var(--wf-s-3);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.sp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  height: 28px;
+  padding: 0 10px 0 6px;
+  margin-left: -6px;
+  border-radius: var(--wf-r-pill);
+  border: 0;
+  background: none;
+  font: 600 var(--wf-fs-12) var(--wf-font);
+  color: var(--wf-accent-ink);
+  cursor: pointer;
+}
+.sp-back:hover {
+  background: var(--wf-hover);
+}
+.sp-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-3);
+}
+.sp-who .nm {
+  font: 600 var(--wf-fs-16)/var(--wf-lh-16) var(--wf-font);
+}
+/* quick facts strip: three or four equal cells */
+.facts {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+.facts > div {
+  padding: 8px 10px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.facts > div + div {
+  border-left: 1px solid var(--wf-line);
+}
+.facts .l {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.facts .v {
+  font-weight: 600;
+  font-size: var(--wf-fs-13);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kv {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--wf-s-4);
+  row-gap: 6px;
+  font-size: var(--wf-fs-13);
+}
+.kv dt {
+  color: var(--wf-ink-3);
+}
+.kv dd {
+  margin: 0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--wf-line);
+}
+.li:last-child {
+  border-bottom: 0;
+}
+.li .a {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.li .s {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.li-h {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: 10px 16px 4px;
+}
+
+/* ---------- bed board and bed tile ---------- */
+.beds {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+.bed {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 76px;
+  padding: 8px 10px;
+  border-radius: var(--wf-r-md);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  min-width: 0;
+  transition:
+    border-color var(--wf-m-base),
+    background var(--wf-m-base);
+}
+.bed:hover {
+  border-color: var(--wf-line-3);
+}
+.bed .no {
+  font: 600 var(--wf-fs-13) var(--wf-mono);
+}
+.bed .nm {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bed .st2 {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.bed .st2 span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bed .gpos {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.bed.free {
+  border-color: var(--wf-fit-edge);
+  background: linear-gradient(var(--wf-fit-tint), var(--wf-fit-tint)), var(--wf-surface);
+}
+.bed.closed {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+}
+.bed.sel,
+.bed[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+/* v8: Find dims, it does not fade. Opacity 0.5 put the bed name at 3.3:1 and the state line at
+   2.1:1. A dim bed keeps every word at 4.5:1 or better on surface-2. */
+.bed.dim,
+.bed.fade {
+  background: var(--wf-surface-2);
+  border-color: var(--wf-line);
+  color: var(--wf-ink-3);
+}
+.bed.dim .nm,
+.bed.fade .nm {
+  font-weight: 500;
+}
+.keyrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  overflow-x: auto;
+}
+.keyrow span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------- fit list (placement) ---------- */
+.fit {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-sm);
+  border: 1px solid transparent;
+}
+.fit.yes {
+  background: var(--wf-fit-tint);
+  border-color: var(--wf-fit-edge);
+}
+.fit.nobed {
+  background: var(--wf-hold-tint);
+  border-color: var(--wf-hold-edge);
+}
+.fit + .fit {
+  margin-top: 4px;
+}
+
+/* ---------- charts ---------- */
+.chart-axis {
+  font: 500 var(--wf-fs-12) var(--wf-mono);
+  fill: var(--wf-ink-3);
+}
+.chart-grid {
+  stroke: var(--wf-line);
+  stroke-width: 1;
+}
+.chart-ref {
+  stroke: var(--wf-ink-3);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+/* donut and ring arcs: butt caps, so 0 draws nothing and 96% never looks full */
+.chart-arc {
+  fill: none;
+  stroke-linecap: butt;
+}
+
+/* ---------- overlays ---------- */
+.drawer {
+  width: var(--wf-drawer);
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--wf-r-xl) 0 0 var(--wf-r-xl);
+}
+.drawer.wide {
+  width: var(--wf-drawer-wide);
+}
+.sheet-phone {
+  border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+}
+.grab {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--wf-line-3);
+  margin: 8px auto 4px;
+}
+.menu,
+.pop {
+  z-index: var(--wf-z-popover);
+  padding: 6px;
+  border-radius: var(--wf-r-lg);
+  min-width: 200px;
+}
+.menu [role="menuitem"] {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  font: 500 var(--wf-fs-13) var(--wf-font);
+  color: var(--wf-ink-1);
+  text-align: left;
+  cursor: pointer;
+}
+.menu [role="menuitem"]:hover,
+.menu [role="menuitem"]:focus-visible {
+  background: var(--wf-hover);
+  outline-offset: -2px;
+}
+.toast {
+  z-index: var(--wf-z-toast);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 8px 0 14px;
+  border-radius: var(--wf-r-pill);
+  font-size: var(--wf-fs-13);
+}
+.tip {
+  z-index: var(--wf-z-tip);
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: var(--wf-r-sm);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-tip-ink);
+  background: var(--wf-tip-bg);
+  box-shadow:
+    0 0 0 1px var(--wf-tip-ring),
+    var(--wf-e-tip);
+  max-width: 220px;
+}
+
+/* ---------- phone bar: 56px with no fill at the top, 52px solid on scroll, never hides ---------- */
+.pbar {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  height: var(--wf-bar-phone-top);
+  padding: 0 var(--wf-s-3);
+}
+.pbar.scrolled {
+  height: var(--wf-bar-phone);
+  background: var(--wf-surface-2);
+  border-bottom: 1px solid var(--wf-line);
+  box-shadow: var(--wf-e-bar);
+}
+
+/* ---------- empty, loading, avatar ---------- */
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wf-s-2);
+  min-height: 48px;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.empty b,
+.empty .ttl {
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+.sk {
+  border-radius: var(--wf-r-xs);
+  background: linear-gradient(90deg, var(--wf-track) 0%, var(--wf-surface-2) 50%, var(--wf-track) 100%);
+  background-size: 200% 100%;
+  animation: wfShimmer 1.4s var(--wf-ease-io) infinite;
+}
+.av {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 var(--wf-fs-12) var(--wf-font);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+@keyframes wfPulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--wf-success) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@keyframes wfSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes wfShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+/* ================= 5. Preferences ================= */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --wf-m-fast: 0ms;
+    --wf-m-base: 0ms;
+    --wf-m-slow: 0ms;
+  }
+  .pulse,
+  .sk {
+    animation: none;
+  }
+  .spin {
+    animation-duration: 1.6s;
+  }
+  .b,
+  .b:active,
+  .sw,
+  .sw::after,
+  .bed {
+    transition: none;
+    transform: none;
+  }
+}
+@media (prefers-contrast: more) {
+  :root {
+    --wf-line: var(--wf-line-ctl);
+    --wf-line-2: var(--wf-line-ctl);
+    --wf-line-3: var(--wf-ink-2);
+  }
+  .glass,
+  .glass.thin,
+  .glass.thick {
+    background: var(--wf-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+/* Windows high contrast (ward PCs). Shapes, data marks and selection must survive. Box shadows are
+   removed in this mode, so every state v7 drew with an inset shadow gets a real border here. */
+@media (forced-colors: active) {
+  .g,
+  .pulse,
+  .meter i,
+  .mb i,
+  .sw::after,
+  .chk,
+  .rad {
+    forced-color-adjust: none;
+  }
+  .g.danger,
+  .g.closed,
+  .g.success,
+  .g.warning,
+  .g.info,
+  .g.inactive {
+    background: CanvasText;
+  }
+  .g.neutral {
+    border-color: CanvasText;
+  }
+  .svc::before {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+  :focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px;
+  }
+  .b[disabled],
+  .b[aria-disabled="true"],
+  .fc[disabled],
+  .fc[aria-disabled="true"],
+  .pt button[disabled] {
+    border-style: dashed;
+    color: GrayText;
+  }
+  .pt button.on,
+  .pt button[aria-selected="true"],
+  .pt button[aria-checked="true"],
+  .trk button.on {
+    border: 2px solid Highlight;
+  }
+  .fc.on,
+  .fc[aria-pressed="true"],
+  .choice-row button.on,
+  .choice-row button[aria-checked="true"],
+  .bed.sel,
+  .hs.pill[aria-pressed="true"] {
+    border: 2px solid Highlight;
+  }
+  .row.sel,
+  .row[aria-selected="true"],
+  .row-tl {
+    border-left: 3px solid Highlight;
+  }
+  .sw {
+    border: 1px solid CanvasText;
+  }
+  .sw.on,
+  .sw[aria-checked="true"] {
+    background: Highlight;
+  }
+  .chk.on,
+  .rad.on {
+    background: Highlight;
+    border-color: Highlight;
+  }
+}
+
+/* ================= 6. Print ================= */
+/* Print is day, ink only, no glass, no shadow. The live hero prints as the quiet hero. Glyphs are
+   drawn as backgrounds, so they are kept with print-color-adjust. ShiftBrief prints bed numbers only. */
+@media print {
+  :root,
+  :root[data-theme],
+  .day,
+  .night {
+    color-scheme: light !important;
+  }
+  .wf {
+    background: var(--wf-light-1);
+  }
+  .card,
+  .glass,
+  .glass.thin,
+  .glass.thick,
+  .hero,
+  .b,
+  .fc,
+  .pt,
+  .bd {
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass::before,
+  .glass::after {
+    display: none;
+  }
+  .glass,
+  .glass.thin,
+  .glass.thick {
+    background: var(--wf-surface);
+  }
+  .hero,
+  .hero:not(.quiet) {
+    --wf-danger: var(--wf-light-danger);
+    --wf-warning: var(--wf-light-warning);
+    --wf-success: var(--wf-light-success);
+    --wf-info: var(--wf-light-info);
+    --wf-neutral: var(--wf-light-neutral);
+    --wf-focus-ring: var(--wf-accent);
+    background: none;
+    color: var(--wf-ink-1);
+    border-color: var(--wf-line-3);
+  }
+  .hero .hs .l,
+  .hero .lv {
+    color: var(--wf-ink-2);
+  }
+  .hs {
+    border-left-color: var(--wf-line-2);
+  }
+  .pulse,
+  .spin,
+  .sk {
+    animation: none;
+  }
+  .g,
+  .k,
+  .tier,
+  .bed.free,
+  .fit,
+  .mb i,
+  .svc::before,
+  .meter b {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .sp-panel {
+    position: static;
+  }
+  .no-print,
+  .scrim,
+  .grab {
+    display: none !important;
+  }
+}
+
+/* RESPONSIVE: phone and touch. Phone rules never change desktop. The board embeds the sheet above
+   this line and draws phone mode with classes instead. */
+@media (pointer: coarse) {
+  :root {
+    --wf-h-sm: var(--wf-touch);
+    --wf-h-md: var(--wf-touch);
+    --wf-h-chip: 32px;
+  }
+  .pt button {
+    height: 36px;
+  }
+  .fc {
+    height: 36px;
+  }
+}
+@media (width <= 48rem) {
+  .layout-core,
+  .layout-core.wide {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sp-panel {
+    position: static;
+  }
+  .beds {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .drawer,
+  .drawer.wide {
+    width: 100%;
+    border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+  }
+  .hs-row {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}
