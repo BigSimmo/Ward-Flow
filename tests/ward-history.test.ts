@@ -15,12 +15,13 @@ const NOW = 700;
 
 describe("Ward Flow Read-Only Plain History", () => {
   describe("EVENT_HISTORY_TABLE completeness and classification", () => {
-    it("classifies all 102 event types into bed, patient, both or neither with plain wording", () => {
+    it("classifies all 103 event types into bed, patient, both or neither with plain wording", () => {
       const allEventTypes = Object.keys(EVENT_ROLE) as Array<WardFlowEvent["type"]>;
       // 97 -> 96 on 2026-09-25: OVERRIDE_LEGAL_MISMATCH removed (owner ruling).
       // D-34 adds the explicit ED medical deterioration transition.
       // Stream A (9 Oct 2026) adds inbox ownership, snooze and return.
-      expect(allEventTypes.length).toBe(102);
+      // #159 adds RECORD_SUPPORT_NOTIFICATION (advisory carer/PSP/MHAS checklist).
+      expect(allEventTypes.length).toBe(103);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];
@@ -88,7 +89,7 @@ describe("Ward Flow Read-Only Plain History", () => {
 
     it("always begins with 'Earlier history not recorded' boundary line", () => {
       const history = selectPatientHistory(mockEvents, "MOV-1", NOW);
-      expect(history.length).toBe(3); // boundary + 2 events on this patient's movement
+      expect(history.length).toBe(3);
       expect(history[0]).toEqual(EARLIER_HISTORY_NOT_RECORDED_ENTRY);
       expect(history[0].summary).toBe("Earlier history not recorded");
     });
@@ -96,18 +97,12 @@ describe("Ward Flow Read-Only Plain History", () => {
     it("filters events strictly for the requested patient", () => {
       const history = selectPatientHistory(mockEvents, "MOV-1", NOW);
       const summaries = history.slice(1).map((entry) => entry.summary);
-
-      // D-14: the patient link is never read, so ADD_PATIENT (which carries only the link, no record
-      // id) and MOV-2's event do not join this record's history.
       expect(summaries).toEqual(["Psychiatric examination outcome recorded", "Ward declined inpatient request"]);
     });
 
     it("extracts reason if recorded, or shows 'Not recorded'", () => {
       const history = selectPatientHistory(mockEvents, "MOV-1", NOW);
-
-      // RECORD_EXAMINATION carries outcome
       expect(history[1].reason).toBe("Outcome: inpatient_order");
-      // DECLINE carries declineReason
       expect(history[2].reason).toBe("No clinical staffing for specialling");
     });
 
@@ -178,10 +173,10 @@ describe("Ward Flow Read-Only Plain History", () => {
 
     it("filters events for the given unit and bed", () => {
       const unitHistory = selectBedHistory(mockBedEvents, "UNIT-7", NOW);
-      expect(unitHistory.length).toBe(4); // boundary + 3 events for UNIT-7
+      expect(unitHistory.length).toBe(4);
 
       const bedHistory = selectBedHistory(mockBedEvents, "UNIT-7", NOW, "BED-04");
-      expect(bedHistory.length).toBe(3); // boundary + 2 events specifically on BED-04
+      expect(bedHistory.length).toBe(3);
       expect(bedHistory[1].summary).toBe("Upcoming bed release flagged");
       expect(bedHistory[1].reason).toBe("pending_physio");
       expect(bedHistory[2].summary).toBe("Bed freed and returned to unit capacity");
