@@ -58,6 +58,7 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "acceptedAt",
   "waitlistedAt",
   "referredAt",
+  "referralDecisionOpenedAt",
   "arrivedAt",
   "at",
   "pullExpiresAt",
