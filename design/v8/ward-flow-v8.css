@@ -12,6 +12,9 @@
       named control shadows, print.
    5. next/font variables lead the font stacks again, so the app keeps its self-hosted Geist.
 
+   v8.1 (9 Oct 2026, expression rules, spec section 14): a key figure size, an act now tint, and
+   .keyfig and .tint classes so each page can have a focal element and spend a small colour budget.
+
    Never paste a hex from this file into app code. Read the role through var(--wf-*). */
 
 /* ================= 1. Tokens that never change with the theme ================= */
@@ -31,6 +34,9 @@
   --wf-lh-16: 22px;
   --wf-lh-20: 26px;
   --wf-lh-28: 32px;
+  /* v8.1: the key figure. One per screen, on the focal element only (rule 18). */
+  --wf-fs-40: 40px;
+  --wf-lh-40: 44px;
   --wf-font: var(--font-geist-sans, Geist), Geist, "Segoe UI", system-ui, sans-serif;
   --wf-mono: var(--font-geist-mono, "Geist Mono"), "Geist Mono", ui-monospace, Consolas, monospace;
 
@@ -184,6 +190,10 @@
   --wf-fit-edge: light-dark(rgba(47, 138, 95, 0.32), rgba(76, 179, 131, 0.36));
   --wf-hold-tint: light-dark(rgba(172, 114, 10, 0.07), rgba(217, 164, 65, 0.09));
   --wf-hold-edge: light-dark(rgba(172, 114, 10, 0.34), rgba(217, 164, 65, 0.36));
+  /* v8.1: the act now tint, for the colour budget (rule 6). Danger words stay 6.3:1 day, 7.0:1 night
+     on it. The edge is decoration: the triangle and the words carry the state. */
+  --wf-act-tint: light-dark(rgba(196, 81, 63, 0.1), rgba(226, 122, 104, 0.14));
+  --wf-act-edge: light-dark(rgba(196, 81, 63, 0.55), rgba(226, 122, 104, 0.6));
 
   /* data ramp. v8: every series step clears 3:1 on surface and surface-2 in both themes.
      --wf-data-rest is the old light step, for a remainder that is never the only mark of a value. */
@@ -2236,5 +2246,60 @@ svg.gl {
   .hs-row {
     overflow-x: auto;
     scrollbar-width: none;
+  }
+}
+
+/* ================= v8.1 expression (spec section 14) ================= */
+/* The colour budget: at most three tinted items per screen, and only for act now, a fit or free
+   place, and a hold. The tint fades into the surface so the words stay on near-white. Every other
+   state stays a glyph. Tints are never a whole card or panel, only the item that carries the state. */
+.tint {
+  border: 1.5px solid var(--wf-line-2);
+  background: linear-gradient(180deg, var(--tint), var(--wf-surface) 75%);
+}
+.tint.act {
+  --tint: var(--wf-act-tint);
+  border-color: var(--wf-act-edge);
+}
+.tint.fit {
+  --tint: var(--wf-fit-tint);
+  border-color: var(--wf-fit-edge);
+}
+.tint.hold {
+  --tint: var(--wf-hold-tint);
+  border-color: var(--wf-hold-edge);
+}
+.tint.act .st,
+.tint.act .why {
+  color: var(--wf-danger-ink);
+  font-weight: 600;
+}
+
+/* The key figure: the one number that answers the page's question (rule 18). */
+.keyfig {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.keyfig .v {
+  font: 600 var(--wf-fs-40) / var(--wf-lh-40) var(--wf-mono);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.keyfig .l {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+@media (forced-colors: active) {
+  .tint {
+    background: Canvas;
+    border-color: CanvasText;
+  }
+}
+@media print {
+  .tint {
+    print-color-adjust: exact;
   }
 }
