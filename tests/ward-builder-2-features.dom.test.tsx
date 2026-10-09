@@ -153,7 +153,8 @@ describe("Builder 2 - Officer Form Inspection & Stateful Checkboxes", () => {
       </WardFlowProvider>,
     );
 
-    // Find inspect form button on WF-005
+    // Transport page A: the job panel opens once a job is chosen, so choose WF-005 first.
+    fireEvent.click(screen.getByTestId("ward-officer-select-WF-005"));
     const inspectBtn = screen.getByTestId("ward-officer-inspect-form-WF-005");
     expect(inspectBtn).toBeInTheDocument();
 
