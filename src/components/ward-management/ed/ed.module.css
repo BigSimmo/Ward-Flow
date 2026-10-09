@@ -7125,6 +7125,8 @@ tr.qRow:focus-visible {
     /* Clipped sideways only, so the name's taller press area below still catches a tap. */
     overflow-x: clip;
     overflow-y: visible;
+    /* Reserve the lower part of the enlarged name target before the footer starts. */
+    margin-bottom: 1rem;
     white-space: nowrap;
   }
 
