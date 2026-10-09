@@ -1,3 +1,4 @@
+import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 "use client";
 
 import { useState, type ReactNode } from "react";
@@ -376,7 +377,7 @@ export function PatientCommunityTab({
   onEndCto: () => void;
 }) {
   const summary = `GP: ${patient?.generalPractitioner ?? "Not recorded"}\nCatchment: ${patient?.catchmentCommunityTeam ?? "Not recorded"}\nFollow-up: ${record.community.followUp}`;
-  const order = patient?.communityTreatmentOrder;
+  const order = activeCommunityTreatmentOrder(patient);
   const notRecorded = <span className={styles.nr}>Not recorded</span>;
   return (
     <section className={styles.pane} aria-label="Community and care continuity" data-layout="community">
@@ -724,13 +725,15 @@ export function PatientDocumentsTab({
       due: movement.legalForm.dueAt,
     });
   }
-  if (patient?.communityTreatmentOrder)
+  if (patient?.communityTreatmentOrder) {
+    const order = patient.communityTreatmentOrder;
     forms.push({
-      code: patient.communityTreatmentOrder.form,
-      status: "Current",
-      recorded: clock(patient.communityTreatmentOrder.recordedAt),
-      by: patient.communityTreatmentOrder.recordedBy,
+      code: order.form,
+      status: order.endedAt === undefined ? "Current" : "Closed",
+      recorded: clock(order.recordedAt),
+      by: order.recordedBy,
     });
+  }
   const current = forms.filter((f) => f.status === "Current").length;
 
   return (

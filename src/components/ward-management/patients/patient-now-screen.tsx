@@ -292,7 +292,13 @@ export function PatientNowScreen({
   const modeMeta = PATIENT_MODES[mode];
   const isLiveBedflow = modeMeta.placing;
   // A movement's forms are the authority in force only while it is open or its stay is current.
-  const movementInForce = Boolean(liveMovement && !liveMovement.closure && mode !== "idle" && mode !== "cto");
+  const stayCurrent = mode === "ward" || mode === "leave" || mode === "awol";
+  const movementInForce = Boolean(
+    liveMovement &&
+      mode !== "idle" &&
+      mode !== "cto" &&
+      (!liveMovement.closure || (liveMovement.closure.outcome === "arrived" && stayCurrent)),
+  );
   const isPulled = isLiveBedflow && liveMovement?.pullExpiresAt !== undefined;
 
   const acceptingUnit = liveMovement?.acceptedUnitId

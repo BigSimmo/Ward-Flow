@@ -239,7 +239,9 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     const { communityTreatmentOrder: order, ...identity } = patient;
     if (order !== undefined) {
       if (!object(order) || order.form !== "5A" || !finite(order.recordedAt) || !text(order.recordedBy)) return false;
-      if (Object.keys(order).some((key) => !["form", "recordedAt", "recordedBy"].includes(key))) return false;
+      if (order.endedAt !== undefined && !finite(order.endedAt)) return false;
+      if (Object.keys(order).some((key) => !["form", "recordedAt", "recordedBy", "endedAt"].includes(key)))
+        return false;
     }
     if (!Object.values(identity).every(text)) return false;
     if (!fields(patient, ["id", "umrn", "givenName", "familyName", "dateOfBirth"], text)) return false;

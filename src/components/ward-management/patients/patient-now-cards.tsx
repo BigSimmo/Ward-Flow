@@ -1,3 +1,4 @@
+import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import type { ReactNode } from "react";
 import { Clock, MapPin, MessageSquare, Phone, Scale } from "lucide-react";
 import { Button, Card, CardBody, CardHead, StatusGlyph, type WfTone } from "@/components/wf";
@@ -100,7 +101,7 @@ export function PatientLegalNowCard({
       time: clock(movement.examination.at),
     });
   // D-38: a community treatment order in force is shown with when it was recorded, never a lapse time.
-  const order = patient?.communityTreatmentOrder;
+  const order = activeCommunityTreatmentOrder(patient);
   if (order)
     rows.push({
       tone: "success",

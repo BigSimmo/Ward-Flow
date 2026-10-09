@@ -162,8 +162,23 @@ export type Patient = {
   communityTreatmentOrder?: CommunityTreatmentOrder;
 };
 
-/** Form 5A is the community treatment order form under the Mental Health Act 2014 (WA). */
-export type CommunityTreatmentOrder = { form: "5A"; recordedAt: number; recordedBy: string };
+/** Form 5A is the community treatment order form under the Mental Health Act 2014 (WA).
+ *  When the order ends, `endedAt` is set on the same record (Documents keeps the Closed form;
+ *  mode "cto" only applies while `endedAt` is absent). No separate history field. */
+export type CommunityTreatmentOrder = {
+  form: "5A";
+  recordedAt: number;
+  recordedBy: string;
+  endedAt?: number;
+};
+
+/** True while a Form 5A is in force (not yet ended). */
+export function activeCommunityTreatmentOrder(
+  patient: Patient | undefined,
+): CommunityTreatmentOrder | undefined {
+  const order = patient?.communityTreatmentOrder;
+  return order && order.endedAt === undefined ? order : undefined;
+}
 
 /** Alias for patient safety governance and cross-service typing */
 export type WardPatient = Patient;

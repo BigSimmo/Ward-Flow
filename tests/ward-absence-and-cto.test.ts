@@ -276,7 +276,8 @@ describe("community treatment order (D-38)", () => {
       now: NOW + 2,
       patientId: patient.id,
     });
-    expect(ended.patients.find((p) => p.id === patient.id)!.communityTreatmentOrder).toBeUndefined();
+    expect(ended.patients.find((p) => p.id === patient.id)!.communityTreatmentOrder?.endedAt).toBe(NOW + 2);
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(ended)))).toBe(true);
   });
 
   it("refuses a saved order with a lapse time or any field beyond form, time and role", () => {
