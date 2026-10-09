@@ -76,7 +76,18 @@ export function useReferralDraftAutosave<T>({
   });
 
   useEffect(() => {
-    if (!active || stopped.current || draftJson === lastKeptJson.current) return;
+    if (stopped.current) return;
+    // Unsent draft returned to its opening state: clear the autosaved copy so reopen does not
+    // restore answers the user already removed. Separate from stop() after Send or Discard.
+    if (!active) {
+      if (lastKeptJson.current !== null && lastKeptJson.current !== initialKeptJson) {
+        discardReferralDraft();
+        lastKeptJson.current = initialKeptJson;
+        setKeptAt(initialKeptAt);
+      }
+      return;
+    }
+    if (draftJson === lastKeptJson.current) return;
     const timer = window.setTimeout(() => {
       if (stopped.current) return;
       keepReferralDraft(latest.current.draft);
@@ -86,7 +97,7 @@ export function useReferralDraftAutosave<T>({
       setNowMs(at ?? Date.now());
     }, REFERRAL_DRAFT_AUTOSAVE_MS);
     return () => window.clearTimeout(timer);
-  }, [active, draftJson]);
+  }, [active, draftJson, initialKeptAt, initialKeptJson]);
 
   // Unmounting with a change still waiting keeps it at once, so no close path loses it.
   const activeRef = useRef(active);
@@ -104,7 +115,9 @@ export function useReferralDraftAutosave<T>({
   // The age reads in whole minutes, so a half-minute tick is enough.
   useEffect(() => {
     if (keptAt === null) return;
-    const interval = window.setInterval(() => setNowMs(Date.now()), 30_000);
+    const interval = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 30_000);
     return () => window.clearInterval(interval);
   }, [keptAt]);
 

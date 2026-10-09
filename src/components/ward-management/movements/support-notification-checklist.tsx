@@ -74,7 +74,7 @@ export function SupportNotificationChecklist({
   const subject = useMemo(() => {
     if (movementId) {
       const movement = movements.find((candidate) => candidate.id === movementId);
-      return movement ? movementSupportNotificationSubject(movement) : undefined;
+      return movement ? movementSupportNotificationSubject(movement, { referrals }) : undefined;
     }
     if (admissionId) {
       const admission = admissions.find((candidate) => candidate.id === admissionId);
@@ -165,7 +165,9 @@ export function SupportNotificationChecklist({
                     variant="ghost"
                     size="sm"
                     aria-label={`${record ? "Change" : "Record"} ${SUPPORT_NOTIFICATION_PARTY_LABELS[party]}`}
-                    onClick={() => startEditing(party)}
+                    onClick={() => {
+                      startEditing(party);
+                    }}
                   >
                     {record ? "Change" : "Record"}
                   </Button>
@@ -193,7 +195,9 @@ export function SupportNotificationChecklist({
                           value={who}
                           maxLength={SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS}
                           autoComplete="off"
-                          onChange={(event) => setWho(event.target.value)}
+                          onChange={(event) => {
+                            setWho(event.target.value);
+                          }}
                         />
                       </Field>
                       <Field label="Time told" hint="24h" error={timeError ?? undefined}>
@@ -202,7 +206,9 @@ export function SupportNotificationChecklist({
                           inputMode="numeric"
                           placeholder="HH:MM"
                           maxLength={5}
-                          onChange={(event) => setTime(event.target.value)}
+                          onChange={(event) => {
+                            setTime(event.target.value);
+                          }}
                         />
                       </Field>
                     </div>
@@ -212,12 +218,20 @@ export function SupportNotificationChecklist({
                         value={reason}
                         maxLength={SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS}
                         autoComplete="off"
-                        onChange={(event) => setReason(event.target.value)}
+                        onChange={(event) => {
+                          setReason(event.target.value);
+                        }}
                       />
                     </Field>
                   )}
                   <div className={styles.actions}>
-                    <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEditing(null);
+                      }}
+                    >
                       Cancel
                     </Button>
                     <Button

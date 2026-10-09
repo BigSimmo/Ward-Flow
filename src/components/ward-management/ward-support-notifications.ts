@@ -107,19 +107,39 @@ export function legalStatusTextIsInvoluntary(legalStatus: string | undefined): b
   return /^involuntary\b/i.test(legalStatus.trim()) || legalStatus === "Detained awaiting examination";
 }
 
+/**
+ * Whether a movement's closed legal-status vocabulary is involuntary for this checklist.
+ * "Referred for psychiatric examination" is not — only detained / involuntary inpatient.
+ */
+export function movementLegalStatusIsInvoluntary(legalStatus: Movement["legalStatus"]): boolean {
+  return legalStatus === "Detained awaiting examination" || legalStatus === "Involuntary inpatient";
+}
+
 function movementArrivedAt(movement: Movement): Instant | undefined {
   if (movement.closure?.outcome === "arrived") return movement.closure.at;
   if (movement.stage === "arrived") return movement.transport?.arrivedAt ?? movement.closure?.at;
   return undefined;
 }
 
+function movementOccasion(movement: Movement, referrals: readonly Referral[]): SupportNotificationOccasion {
+  if (movement.sourceAdmissionId !== undefined) return "transfer";
+  const referral = movement.referralId
+    ? referrals.find((candidate) => candidate.id === movement.referralId)
+    : undefined;
+  if (referral?.source === "psychiatric_ward") return "transfer";
+  return "admission";
+}
+
 /** The arrival this checklist covers, for one movement, or undefined when it does not apply. */
-export function movementSupportNotificationSubject(movement: Movement): SupportNotificationSubject | undefined {
-  if (movement.legalStatus === "Voluntary") return undefined;
+export function movementSupportNotificationSubject(
+  movement: Movement,
+  records: Pick<NotificationRecords, "referrals"> = { referrals: [] },
+): SupportNotificationSubject | undefined {
+  if (!movementLegalStatusIsInvoluntary(movement.legalStatus)) return undefined;
   const completedAt = movementArrivedAt(movement);
   if (completedAt === undefined) return undefined;
   return {
-    occasion: movement.sourceAdmissionId !== undefined ? "transfer" : "admission",
+    occasion: movementOccasion(movement, records.referrals),
     subjectId: movement.id,
     completedAt,
     movementId: movement.id,
@@ -141,7 +161,8 @@ export function admissionSupportNotificationSubject(
     records.movements.find((movement) => movement.admissionId === admission.id);
   const patient = createPatientResolver(records)(admission).patient;
   const involuntary =
-    legalStatusTextIsInvoluntary(patient?.legalStatus) || (linked !== undefined && linked.legalStatus !== "Voluntary");
+    legalStatusTextIsInvoluntary(patient?.legalStatus) ||
+    (linked !== undefined && movementLegalStatusIsInvoluntary(linked.legalStatus));
   if (!involuntary) return undefined;
   return {
     occasion: "discharge",
@@ -157,7 +178,7 @@ export function admissionSupportNotificationSubject(
 export function supportNotificationSubjects(records: NotificationRecords): SupportNotificationSubject[] {
   const subjects: SupportNotificationSubject[] = [];
   for (const movement of records.movements) {
-    const subject = movementSupportNotificationSubject(movement);
+    const subject = movementSupportNotificationSubject(movement, records);
     if (subject) subjects.push(subject);
   }
   for (const admission of records.admissions) {

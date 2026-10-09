@@ -10,6 +10,7 @@ import {
 import type { Movement } from "@/components/ward-management/ward-model";
 import { PARALLEL_REFERRAL_CAP } from "@/components/ward-management/ward-model";
 import { movementById, wardMovements } from "@/components/ward-management/ward-movements";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 async function gotoCoordinator(page: Page) {
@@ -222,7 +223,16 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Whole-branch review Minor 6: the register is scoped to OPEN movements, so the independent
     // count here must be too — computing it over all 48 records would agree with a screen that
     // wrongly listed a closed patient's breached deadline.
-    const expectedCount = buildActionInbox(wardMovements.filter(isOpen), NOW_ANCHOR, allUnits()).length;
+    // Support-notification rows need the full seed records (completed involuntary moves), matching
+    // coordinator-screen.tsx's buildActionInbox call.
+    const seed = seedWardFlowState();
+    const expectedCount = buildActionInbox(seed.movements.filter(isOpen), NOW_ANCHOR, seed.units, {
+      movements: seed.movements,
+      admissions: seed.admissions,
+      patients: seed.patients,
+      referrals: seed.referrals,
+      supportNotifications: seed.supportNotifications,
+    }).length;
     expect(expectedCount).toBeGreaterThan(1);
     await expect(items).toHaveCount(expectedCount);
     await expect(page.getByRole("tab", { name: "Exceptions" })).toContainText(String(expectedCount));

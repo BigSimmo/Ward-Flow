@@ -756,6 +756,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                   movements={movements}
                   patients={patients}
                   admissions={admissions}
+                  allReferrals={referrals}
                   onResetFilters={resetFilters}
                 />
               )}
@@ -1099,6 +1100,7 @@ function QueuedSection({
   movements = [],
   patients = [],
   admissions = [],
+  allReferrals = queued,
   onResetFilters,
 }: {
   queued: Referral[];
@@ -1110,13 +1112,16 @@ function QueuedSection({
   movements?: Movement[];
   patients?: Patient[];
   admissions?: Admission[];
+  /** Full referral list for readmission resolution — decided referrals must still resolve. */
+  allReferrals?: Referral[];
   onResetFilters?: () => void;
 }) {
   const sectionRef = useRef<HTMLElement | null>(null);
   // One records object per render of the list, so the patient resolver's index is built once.
+  // Use every referral, not only `queued`: a prior stay's `referralId` is usually decided.
   const readmissionRecords = useMemo(
-    () => ({ admissions, patients, referrals: queued, movements, units }),
-    [admissions, patients, queued, movements, units],
+    () => ({ admissions, patients, referrals: allReferrals, movements, units }),
+    [admissions, patients, allReferrals, movements, units],
   );
   const [overflowing, setOverflowing] = useState(false);
 

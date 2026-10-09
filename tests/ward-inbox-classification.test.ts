@@ -10,9 +10,11 @@ import {
   wardFlowReducer,
   type InboxItemKind,
 } from "../src/components/ward-management/ward-flow-reducer";
-import { type Decline, type Movement } from "../src/components/ward-management/ward-model";
+import { type Decline, type Movement, type Referral } from "../src/components/ward-management/ward-model";
 import { wardMovements } from "../src/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import type { Admission } from "../src/components/ward-management/ward-admissions";
+import type { Patient } from "../src/components/ward-management/ward-patients";
 
 const NOW = NOW_ANCHOR;
 const DERIVATIONS = "src/components/ward-management/ward-derivations.ts";
@@ -33,12 +35,12 @@ function movementFrom(id: string, overrides: Partial<Movement>): Movement {
 }
 
 /**
- * ⚠️ **EVERY CATEGORY, INCLUDING THE TWO THE REAL FIXTURE LEAVES EMPTY.** Measured on 2026-09-06,
- * the seeded state emits only three of the five categories — no breached statutory form and no
+ * ⚠️ **EVERY CATEGORY, INCLUDING THOSE THE REAL FIXTURE LEAVES EMPTY.** Measured on 2026-09-06,
+ * the seeded state emits only three of the then-five categories — no breached statutory form and no
  * unlawful destination exist in it. A classification test that ran only over the seed would
- * therefore never look at the two rows the whole safety property was written for. These injected
- * movements exist so all five are exercised; the seeded state is asserted separately below,
- * because it is the population the running app actually shows.
+ * therefore never look at the rows the whole safety property was written for. These injected
+ * movements (and notification records) exist so every INBOX_CATEGORIES entry is exercised; the
+ * seeded state is asserted separately below, because it is the population the running app shows.
  */
 function movementsCoveringEveryCategory(): Movement[] {
   return [
@@ -52,7 +54,45 @@ function movementsCoveringEveryCategory(): Movement[] {
     wardMovements.find((movement) => movement.id === "WF-009")!,
     // transport_awaiting_departure — the real fixture movement whose transport has not set off.
     wardMovements.find((movement) => movement.id === "WF-005")!,
+    // support_notification_arrival — involuntary arrival within the lookback, nothing recorded yet.
+    movementFrom("WF-T04", {
+      legalStatus: "Involuntary inpatient",
+      stage: "arrived",
+      acceptedUnitId: "scgh-adult-open",
+      closure: { at: NOW - 30, outcome: "arrived", reason: "Handover complete" },
+      transport: {
+        id: "TR-T04",
+        provider: "Patient transport service",
+        escortRequired: false,
+        acceptedAt: NOW - 90,
+        enRouteAt: NOW - 70,
+        collectedAt: NOW - 50,
+        arrivedAt: NOW - 30,
+      },
+    }),
   ];
+}
+
+/** Records that produce the discharge notification category alongside the arrival injection above. */
+function recordsCoveringNotificationCategories(movements: Movement[]): {
+  movements: Movement[];
+  admissions: Admission[];
+  patients: Patient[];
+  referrals: Referral[];
+} {
+  const seed = seedWardFlowState();
+  const dischargeAdmission: Admission = {
+    ...seed.admissions.find((admission) => admission.id === "AD-LEFT-01")!,
+    leftAt: NOW - 60,
+    state: "departed",
+    movementId: "WF-T04",
+  };
+  return {
+    movements,
+    admissions: [dischargeAdmission],
+    patients: seed.patients,
+    referrals: seed.referrals,
+  };
 }
 
 function categoryKeyOf(item: InboxItem): string | undefined {
@@ -68,10 +108,11 @@ describe("every action-inbox category is classified as a fact or a commitment", 
    * decided what kind of thing the new row is — which is the point.
    */
   it("gives every row a kind, and every row's kind is the one its category declares", () => {
-    const items = buildActionInbox(movementsCoveringEveryCategory(), NOW, allUnits());
+    const movements = movementsCoveringEveryCategory();
+    const items = buildActionInbox(movements, NOW, allUnits(), recordsCoveringNotificationCategories(movements));
 
     // ANTI-VACUITY. Without this the whole test passes over an empty array — the enumeration
-    // "silently returning nothing" failure. Five categories, at least one row each.
+    // "silently returning nothing" failure. Every category, at least one row each.
     expect(items.length, "the injected movements no longer populate the inbox at all").toBeGreaterThanOrEqual(
       Object.keys(INBOX_CATEGORIES).length,
     );

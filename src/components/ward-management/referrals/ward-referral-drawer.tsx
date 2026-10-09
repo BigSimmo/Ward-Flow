@@ -736,11 +736,18 @@ function WardReferralDrawerContent({
   } = useWardFlow();
   const now = useWardFlowClock();
 
-  // A Refer link names its person, so it never reopens someone else's kept draft.
-  const [kept] = useState(() => (initialPatientId ? null : readKeptReferralDraft<KeptDraft>()));
+  // A Refer link names its person: restore a kept draft only when it is for that same person.
   const [prefillKey] = useState(() =>
     initialPatientId ? patientKeyFor(initialPatientId, { movements, patients, referrals }) : null,
   );
+  const [kept] = useState(() => {
+    const draft = readKeptReferralDraft<KeptDraft>();
+    if (!draft) return null;
+    if (!initialPatientId) return draft;
+    if (prefillKey !== null && draft.activePatientKey === prefillKey) return draft;
+    if (draft.activePatientKey === `${PATIENT_KEY_PREFIX}${initialPatientId}`) return draft;
+    return null;
+  });
   const initialPatientKey =
     kept?.activePatientKey ??
     prefillKey ??

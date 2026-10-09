@@ -55,7 +55,8 @@ describe("which moves the checklist covers", () => {
       "discharge:AD-LEFT-01",
     ]);
     for (const subject of subjects.filter((entry) => entry.occasion !== "discharge")) {
-      expect(state.movements.find((movement) => movement.id === subject.subjectId)?.legalStatus).not.toBe("Voluntary");
+      const status = state.movements.find((movement) => movement.id === subject.subjectId)?.legalStatus;
+      expect(status === "Involuntary inpatient" || status === "Detained awaiting examination").toBe(true);
     }
   });
 

@@ -1293,7 +1293,36 @@ export function buildActionInbox(
 
   // Advisory carer/PSP/MHAS notifications still to record for recent involuntary moves. These are
   // about COMPLETED moves, so they read every movement in `records`, not the caller's open list.
-  if (records) items.push(...supportNotificationInboxItems({ ...records, units }, now));
+  // Two push sites — one per INBOX_CATEGORIES entry — so the classification rot guard stays honest.
+  if (records) {
+    const notifyItems = supportNotificationInboxItems({ ...records, units }, now);
+    for (const item of notifyItems) {
+      if (!item.id.startsWith(INBOX_CATEGORIES.support_notification_arrival.idPrefix)) continue;
+      items.push({
+        id: item.id,
+        kind: item.kind,
+        tone: item.tone,
+        icon: item.icon,
+        title: item.title,
+        detail: item.detail,
+        owner: item.owner,
+        movementId: item.movementId,
+      });
+    }
+    for (const item of notifyItems) {
+      if (!item.id.startsWith(INBOX_CATEGORIES.support_notification_discharge.idPrefix)) continue;
+      items.push({
+        id: item.id,
+        kind: item.kind,
+        tone: item.tone,
+        icon: item.icon,
+        title: item.title,
+        detail: item.detail,
+        owner: item.owner,
+        movementId: item.movementId,
+      });
+    }
+  }
 
   return items;
 }
