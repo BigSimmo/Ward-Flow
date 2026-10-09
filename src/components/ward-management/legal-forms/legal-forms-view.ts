@@ -126,7 +126,8 @@ export type RecordGap = "written" | "received" | "examination";
 
 /** Whether a recorded fact is still missing on this movement's form. */
 export function hasGap(movement: Movement, gap: RecordGap): boolean {
-  if (gap === "written") return movement.formedAt === undefined;
+  if (gap === "written")
+    return (isOwnedLegalFormCode(movement.legalForm?.code) || movement.formedAt !== undefined) && movement.formedAt === undefined;
   if (gap === "received")
     return receiptEventAccepts(movement.legalForm?.code) && movement.legalFormReceivedAt === undefined;
   return needsExamination(movement) && movement.examination === undefined;
