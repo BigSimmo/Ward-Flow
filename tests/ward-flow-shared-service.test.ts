@@ -4,7 +4,10 @@ import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 import { WARD_FLOW_STORED_STATE_VERSION } from "../src/components/ward-management/ward-flow-storage-validation";
 import { applySharedEvent } from "../src/components/ward-management/shared/ward-flow-shared-core";
-import { createSharedWorldService, SHARED_NEW_DAY_THRESHOLD_MS } from "../src/lib/ward-flow-shared/service";
+import {
+  createSharedWorldService,
+  SHARED_NEW_DAY_THRESHOLD_MS,
+} from "../src/components/ward-management/shared/server/service";
 import { createMemorySharedStateStore } from "./helpers/ward-flow-shared-memory-store";
 
 // Synthetic fixture ids only.

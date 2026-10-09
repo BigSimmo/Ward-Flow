@@ -34,7 +34,15 @@ import { describe, expect, it } from "vitest";
  * "somebody updated the expected number" is how the next one would arrive.
  */
 
-const WARD_DIRS = ["src/components/ward-management", "src/app/mockups/ward-flow"];
+/*
+ * Ward Flow's own folders. `src/app/api/ward-flow` joined on 9 October 2026 with feature 3 (shared
+ * live state): its route files are Ward Flow's own API, sited under `/api/` so the proxy's CSRF guard
+ * covers them, and they only wire handlers kept in `src/components/ward-management/shared/server/`.
+ * Like the two sibling routes named in APPROVED_ROUTE_REFERENCES, it moves WITH Ward Flow on the day
+ * it leaves, so it counts as inside rather than as host code importing the prototype. This adds a
+ * folder; it widens no allowlist, and the three invariants below still bind every file in it.
+ */
+const WARD_DIRS = ["src/components/ward-management", "src/app/mockups/ward-flow", "src/app/api/ward-flow"];
 
 /**
  * The shared modules Ward Flow may reach outward for, each with the reason it is not worth

@@ -3,7 +3,7 @@ import type {
   SharedEventRow,
   SharedStateStore,
   SharedWorldRow,
-} from "../../src/lib/ward-flow-shared/store";
+} from "../../src/components/ward-management/shared/server/store";
 import type { SharedEventRecord } from "../../src/components/ward-management/shared/ward-flow-shared-core";
 
 /**

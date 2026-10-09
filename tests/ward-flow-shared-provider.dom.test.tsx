@@ -3,15 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import type { SharedConfig } from "@/lib/ward-flow-shared/config";
+import type { SharedConfig } from "@/components/ward-management/shared/server/config";
 import {
   handleSharedAccess,
   handleSharedEventsGet,
   handleSharedEventsPost,
   handleSharedJoin,
   type SharedHttpDeps,
-} from "@/lib/ward-flow-shared/http";
-import { createSharedWorldService } from "@/lib/ward-flow-shared/service";
+} from "@/components/ward-management/shared/server/http";
+import { createSharedWorldService } from "@/components/ward-management/shared/server/service";
 import { createMemorySharedStateStore } from "./helpers/ward-flow-shared-memory-store";
 
 /**

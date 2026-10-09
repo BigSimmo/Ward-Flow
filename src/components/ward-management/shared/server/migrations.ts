@@ -13,6 +13,9 @@ const MIGRATION_FILES = ["001_shared_state.sql"] as const;
 export function loadSharedMigrations(root: string = process.cwd()): SharedMigration[] {
   return MIGRATION_FILES.map((name) => ({
     name,
-    sql: readFileSync(path.join(root, "src", "lib", "ward-flow-shared", "migrations", name), "utf8"),
+    sql: readFileSync(
+      path.join(root, "src", "components", "ward-management", "shared", "server", "migrations", name),
+      "utf8",
+    ),
   }));
 }

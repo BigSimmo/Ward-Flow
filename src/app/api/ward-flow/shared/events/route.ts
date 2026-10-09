@@ -1,5 +1,5 @@
-import { handleSharedEventsGet, handleSharedEventsPost } from "@/lib/ward-flow-shared/http";
-import { sharedHttpDeps } from "@/lib/ward-flow-shared/runtime";
+import { handleSharedEventsGet, handleSharedEventsPost } from "@/components/ward-management/shared/server/http";
+import { sharedHttpDeps } from "@/components/ward-management/shared/server/runtime";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

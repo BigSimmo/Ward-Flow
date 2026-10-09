@@ -1,5 +1,5 @@
 -- Ward Flow feature 3, shared live state (9 Oct 2026). Synthetic data only.
--- Applied by migrate.ts on first use, inside one transaction under an advisory lock.
+-- Applied by store.ts (migrate) on first use, inside one transaction under an advisory lock.
 -- Every statement is idempotent, so applying it twice changes nothing.
 
 -- One world per stored-state version and calendar day. A browser on a later day starts a new one,

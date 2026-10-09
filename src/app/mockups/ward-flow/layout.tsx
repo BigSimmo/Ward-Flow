@@ -9,7 +9,7 @@ import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-reg
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardGround } from "@/components/ward-management/ward-shell";
-import { sharedModeForBrowser } from "@/lib/ward-flow-shared/config";
+import { sharedModeForBrowser } from "@/components/ward-management/shared/server/config";
 
 import styles from "./ward-flow-layout.module.css";
 

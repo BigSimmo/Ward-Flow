@@ -135,6 +135,15 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^referrals\/referral-draft-store\.ts$/,
     name: /^REFERRAL_DRAFT_AUTOSAVE_MS$/,
   },
+  {
+    id: "shared-sync-timing",
+    why:
+      "Feature 3 shared live state (9 Oct 2026): how often a browser polls the shared board, and the " +
+      "server's sanity windows for a browser's day 0 (time zones either side of today). Network and " +
+      "clock plumbing; never shown, not a clinical or legal limit.",
+    file: /^shared\/(?:use-ward-flow-shared-sync|server\/service)\.ts$/,
+    name: /^(?:VISIBLE_POLL_MS|HIDDEN_POLL_MS|DAY_ZERO_PAST_LIMIT_MS|DAY_ZERO_FUTURE_LIMIT_MS|NEW_DAY_THRESHOLD_MS)$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;

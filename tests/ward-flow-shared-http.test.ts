@@ -8,16 +8,20 @@ import {
   issueAccessToken,
   SHARED_ACCESS_COOKIE,
   SHARED_ACCESS_TTL_SECONDS,
-} from "../src/lib/ward-flow-shared/access";
-import { readSharedConfig, sharedModeForBrowser, type SharedConfig } from "../src/lib/ward-flow-shared/config";
+} from "../src/components/ward-management/shared/server/access";
+import {
+  readSharedConfig,
+  sharedModeForBrowser,
+  type SharedConfig,
+} from "../src/components/ward-management/shared/server/config";
 import {
   handleSharedAccess,
   handleSharedEventsGet,
   handleSharedEventsPost,
   handleSharedJoin,
   type SharedHttpDeps,
-} from "../src/lib/ward-flow-shared/http";
-import { createSharedWorldService } from "../src/lib/ward-flow-shared/service";
+} from "../src/components/ward-management/shared/server/http";
+import { createSharedWorldService } from "../src/components/ward-management/shared/server/service";
 import { createMemorySharedStateStore } from "./helpers/ward-flow-shared-memory-store";
 
 // A made-up code for tests only.

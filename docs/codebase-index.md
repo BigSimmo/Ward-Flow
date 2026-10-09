@@ -43,13 +43,12 @@ governs appearance; current engine/source/tests govern behaviour. Start with the
 - `/api/health`: liveness only, returning `{status:"ok"}`; no backend readiness assertion.
 - `/api/local-project-id`: local checkout/runtime identity before attaching to a preview server.
 - `/api/ward-flow` (`shared/access`, `shared/join`, `shared/events`): feature 3 shared live state. Answers
-  404 unless `DATABASE_URL` is set; logic lives in `src/lib/ward-flow-shared/`.
+  404 unless `DATABASE_URL` is set. Ward-owned: the route files only wire handlers from
+  `src/components/ward-management/shared/server/` (Postgres event log, access cookie, SQL `migrations/`).
 
 ## Ward library modules
 
 - `src/lib/developer-area/`: synthetic developer-area access and request/header support.
-- `src/lib/ward-flow-shared/`: feature 3 shared world on Postgres (`pg`): append-only event log,
-  compare-and-set on sequence numbers, access-code cookie and plain SQL `migrations/`.
   Inspect the shared top-level helpers and the affected imports for finer detail.
 
 ## Historical provenance

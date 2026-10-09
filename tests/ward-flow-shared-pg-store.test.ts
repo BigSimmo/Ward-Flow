@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 import { WARD_FLOW_STORED_STATE_VERSION } from "../src/components/ward-management/ward-flow-storage-validation";
-import { loadSharedMigrations } from "../src/lib/ward-flow-shared/migrations";
-import { createSharedWorldService } from "../src/lib/ward-flow-shared/service";
-import { createPgSharedStateStore, type PoolLike } from "../src/lib/ward-flow-shared/store";
+import { loadSharedMigrations } from "../src/components/ward-management/shared/server/migrations";
+import { createSharedWorldService } from "../src/components/ward-management/shared/server/service";
+import { createPgSharedStateStore, type PoolLike } from "../src/components/ward-management/shared/server/store";
 
 /**
  * The Postgres store on `pg-mem`, an in-memory Postgres substitute: the real SQL migration and the
