@@ -39,6 +39,15 @@
   background: var(--ward-ground);
 }
 
+/* The route's own screen fills the rest of the column (9 Oct 2026). `.shell` stretches to the
+   bottom of the window but paints the legacy ground, while most screens paint their own canvas.
+   Without this, a page shorter than the window showed a pale band of `.shell` below its footer.
+   Only adds height to short pages; taller pages and phone (where the column has no fixed height)
+   are unchanged. */
+.shell > :last-child {
+  flex-grow: 1;
+}
+
 .shell [data-ward-primitive="panel"] {
   min-width: 0;
   min-height: 0;
