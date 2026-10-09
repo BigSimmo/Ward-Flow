@@ -1,9 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile, chmod, rm } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, chmod, rm, mkdir, copyFile, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { spawnSync } from "node:child_process";
+import { dirname, join } from "node:path";
+import { execFileSync, spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const subscriptionId = "11111111-1111-4111-8111-111111111111";
 const tenantId = "22222222-2222-4222-8222-222222222222";
@@ -32,11 +33,25 @@ const server = {
 
 async function run(
   mode,
-  { config = {}, servers = [server], databases = [{ name: "wardflow" }], account = {}, app = {} } = {},
+  {
+    config = {},
+    servers = [server],
+    databases = [{ name: "wardflow" }],
+    account = {},
+    app = {},
+    extraResponses = {},
+  } = {},
 ) {
   const folder = await mkdtemp(join(tmpdir(), "ward-flow-azure-setup-test-"));
   try {
-    await writeFile(join(folder, "azure-setup.mjs"), await readFile(new URL("./azure-setup.mjs", import.meta.url)));
+    const backendRoot = fileURLToPath(new URL("./", import.meta.url));
+    const trackedFiles = execFileSync("git", ["ls-files", "-z"], { cwd: backendRoot, encoding: "utf8" });
+    for (const path of trackedFiles.split("\0").filter(Boolean)) {
+      const destination = join(folder, path);
+      await mkdir(dirname(destination), { recursive: true });
+      await copyFile(join(backendRoot, path), destination);
+    }
+    await symlink(join(backendRoot, "node_modules"), join(folder, "node_modules"), "junction");
     await writeFile(join(folder, "settings.json"), JSON.stringify({ ...settings, ...config }));
     const responses = {
       "account show": { id: subscriptionId, tenantId, ...account },
@@ -58,12 +73,13 @@ async function run(
         },
         identifierUris: [`api://${settings.frontendClientId}`],
       },
+      ...extraResponses,
     };
     await writeFile(join(folder, "responses.json"), JSON.stringify(responses));
     const executable = join(folder, "az");
     await writeFile(
       executable,
-      `#!${process.execPath}\nconst fs=require('node:fs');\nconst args=process.argv.slice(2);\nfs.appendFileSync(${JSON.stringify(join(folder, "calls.jsonl"))},JSON.stringify(args)+'\\n');\nconst responses=JSON.parse(fs.readFileSync(${JSON.stringify(join(folder, "responses.json"))},'utf8'));\nconst key=Object.keys(responses).find(key=>args.slice(0,key.split(' ').length).join(' ')===key);\nif(!key) process.exit(2);\nprocess.stdout.write(JSON.stringify(responses[key]));\n`,
+      `#!${process.execPath}\nimport fs from 'node:fs';\nconst args=process.argv.slice(2);\nfs.appendFileSync(${JSON.stringify(join(folder, "calls.jsonl"))},JSON.stringify(args)+'\\n');\nconst responses=JSON.parse(fs.readFileSync(${JSON.stringify(join(folder, "responses.json"))},'utf8'));\nconst key=Object.keys(responses).find(key=>args.slice(0,key.split(' ').length).join(' ')===key);\nif(!key) process.exit(2);\nif(key==='deployment group create'){\nconst index=args.indexOf('--template-file');\nif(index<0 || !args[index+1] || !fs.statSync(args[index+1]).isFile()) process.exit(2);\n}\nprocess.stdout.write(JSON.stringify(responses[key]));\n`,
     );
     await chmod(executable, 0o700);
     const result = spawnSync(process.execPath, [join(folder, "azure-setup.mjs"), mode, join(folder, "settings.json")], {
@@ -113,6 +129,46 @@ test("Azure provisioning reuses an existing database server without creating res
     `NEXT_PUBLIC_WARD_API_BASE_URL=${expectedBase}`,
   );
   assert.ok(result.calls.every((args) => args.includes("show") || args.includes("list")));
+});
+test("Azure provisioning deploys a new private Entra-only Australian database server", async () => {
+  const serverName = "wardflow-dev-pg-aue";
+  const provisioned = {
+    ...server,
+    name: serverName,
+    fullyQualifiedDomainName: `${serverName}.postgres.database.azure.com`,
+    id: server.id.replace(server.name, serverName),
+  };
+  const result = await run("provision", {
+    config: { requireExistingDatabase: false, serverName, databaseName: "wardflow" },
+    servers: [],
+    extraResponses: {
+      "deployment group create": {
+        properties: { outputs: { functionSubnetId: { value: "/synthetic/network/subnets/functions" } } },
+      },
+      "postgres flexible-server show": provisioned,
+    },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  const deployments = result.calls.filter((args) => args.slice(0, 3).join(" ") === "deployment group create");
+  assert.equal(deployments.length, 1);
+  const deployment = deployments[0];
+  assert.equal(deployment[deployment.indexOf("--resource-group") + 1], settings.resourceGroup);
+  assert.equal(deployment[deployment.indexOf("--name") + 1], "wardflow-shared-database");
+  assert.deepEqual(deployment.slice(deployment.indexOf("--parameters") + 1, deployment.indexOf("--subscription")), [
+    `serverName=${serverName}`,
+    `tenantId=${tenantId}`,
+    `administratorObjectId=${objectId}`,
+    `administratorName=${settings.administratorName}`,
+    "administratorType=User",
+    "location=australiaeast",
+  ]);
+  const shows = result.calls.filter((args) => args.slice(0, 3).join(" ") === "postgres flexible-server show");
+  assert.equal(shows.length, 1);
+  assert.equal(shows[0][shows[0].indexOf("--name") + 1], serverName);
+  assert.equal(shows[0][shows[0].indexOf("--resource-group") + 1], settings.resourceGroup);
+  assert.ok(result.backend.includes(`WARD_PG_RESOURCE_ID=${provisioned.id}\n`));
+  assert.ok(result.backend.includes(`WARD_PG_HOST=${provisioned.fullyQualifiedDomainName}\n`));
+  assert.match(result.backend, /WARD_PG_DATABASE=wardflow\n/);
 });
 test("ambiguous Azure inventory requires an explicit existing server", async () => {
   const result = await run("provision", { servers: [server, { ...server, name: "another-db" }] });
