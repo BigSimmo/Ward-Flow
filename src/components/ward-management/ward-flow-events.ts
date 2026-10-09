@@ -52,6 +52,7 @@ import type {
   StepBackReason,
   TransportLegalStatus,
   TransportProvider,
+  AbsenceStep,
 } from "@/components/ward-management/ward-model";
 import type { WardScenario } from "@/components/ward-management/ward-scenarios";
 
@@ -1121,6 +1122,42 @@ export type WardFlowEvent =
       /** Same claim-not-proof discipline as `CONFIRM_BED_RELEASE`'s own field, compared against
        *  the found leave bed's own `unitId`. */
       actingUnitId: string;
+    }
+  | {
+      /**
+       * Absent without leave (owner approval 9 Oct 2026). The stay's bed stays held: an existing
+       * leave becomes an absence, or a held bed is created for a stay that was on the ward. Ended by
+       * `END_LEAVE_BED` when they return. Ids and the caller's role only, no typed text.
+       */
+      type: "RECORD_ABSENT_WITHOUT_LEAVE";
+      role: WardFlowRole;
+      now: Instant;
+      admissionId: string;
+      /** Same claim-not-proof discipline as `RECORD_LEAVE_BED`'s own field. */
+      actingUnitId: string;
+    }
+  | {
+      /** One missing person step, chosen from `ABSENCE_STEPS`, recorded as done at `now`. */
+      type: "RECORD_ABSENCE_STEP";
+      role: WardFlowRole;
+      now: Instant;
+      admissionId: string;
+      actingUnitId: string;
+      step: AbsenceStep;
+    }
+  | {
+      /** A community treatment order (Form 5A) recorded in force on the patient record. No lapse time (D5). */
+      type: "RECORD_COMMUNITY_TREATMENT_ORDER";
+      role: WardFlowRole;
+      now: Instant;
+      patientId: PatientId;
+    }
+  | {
+      /** A person records that the community treatment order has ended. */
+      type: "END_COMMUNITY_TREATMENT_ORDER";
+      role: WardFlowRole;
+      now: Instant;
+      patientId: PatientId;
     }
   | {
       type: "REQUEST_CAPACITY_REFRESH";
@@ -2266,6 +2303,12 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RELEASE_BED: ["ward"],
   RECORD_LEAVE_BED: ["ward"],
   END_LEAVE_BED: ["ward"],
+  // Owner approval 9 Oct 2026 (Patient page gate board). An absence is the ward's to record, like
+  // leave. A community treatment order is the community team's.
+  RECORD_ABSENT_WITHOUT_LEAVE: ["ward"],
+  RECORD_ABSENCE_STEP: ["ward"],
+  RECORD_COMMUNITY_TREATMENT_ORDER: ["community"],
+  END_COMMUNITY_TREATMENT_ORDER: ["community"],
   // The ward the patient is leaving records it. Not the coordinator: a statewide view does not
   // know that somebody walked out of a building, and a coordinator recording a discharge it
   // cannot observe is the shape this project refuses everywhere else.

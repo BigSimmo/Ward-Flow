@@ -91,19 +91,17 @@ function explicitIdentity(id: string) {
 }
 
 describe("the patient-now screen", () => {
-  it("keeps the summary guidance and movement destination together when switching records", () => {
+  it("keeps the status verdict and the gate that blocks together when switching records", () => {
     const { unmount } = renderScreen({ movementId: "WF-009" });
-    let summary = within(screen.getByRole("region", { name: "Patient summary" }));
-    expect(summary.getByRole("region", { name: /Next steps/ })).toHaveTextContent(
-      "Review next cohort-matching bed releases across network.",
-    );
-    expect(summary.getByRole("button", { name: "Place them" })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-person-screen")).toHaveAttribute("data-patient-mode", "find");
+    expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Cannot move");
+    expect(within(screen.getByTestId("ward-patient-gate-bed")).getByRole("button")).toBeInTheDocument();
     unmount();
 
     renderScreen({ movementId: "WF-004" });
-    summary = within(screen.getByRole("region", { name: "Patient summary" }));
-    expect(summary.getByRole("region", { name: /Next steps/ })).toHaveTextContent("Bed Pull Confirmation");
-    expect(summary.getByRole("button", { name: "Place them" })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-person-screen")).toHaveAttribute("data-patient-mode", "held");
+    expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent(/ready to move/i);
+    expect(screen.getByTestId("ward-patient-gate-transport")).toBeInTheDocument();
   });
 
   // Owner ruling & user request: remove obsolete movement record / perspective switchers and purge WF ids
@@ -121,21 +119,23 @@ describe("the patient-now screen", () => {
     // PT-005 has no record of any kind since the seed-link work (T1-T3, 25 Sept 2026) gave PT-001 one.
     renderScreen({ patientId: "PT-005" });
     const summary = within(screen.getByRole("region", { name: "Patient summary" }));
-    expect(summary.getByText("No next steps recorded.")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Not active");
     expect(summary.queryByRole("link", { name: "Open the movement" })).not.toBeInTheDocument();
   });
 
   it("distinguishes a patient record without asserting active community care", () => {
     renderScreen({ patientId: "PT-005" });
     const root = screen.getByTestId("ward-person-screen");
-    expect(within(root).getByRole("link", { name: "+ Raise Inpatient Referral" })).toHaveAttribute(
+    expect(within(root).getByRole("link", { name: "New referral" })).toHaveAttribute(
       "href",
       "/mockups/ward-flow/referrals/new?patientId=PT-005",
     );
-    expect(screen.getByTestId("ward-community-masthead")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-community-overview-card")).toBeInTheDocument();
+    // Quiet hero: nothing is open, so no stepper, no Live chip and an Overview tab in place of Now.
+    expect(screen.getByTestId("ward-person-identity")).toHaveAttribute("data-quiet", "true");
+    expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("Not active");
     expect(root).toHaveAttribute("data-bedflow", "inactive");
-    expect(within(root).getByText("NOT IN LIVE BEDFLOW")).toBeInTheDocument();
+    expect(within(root).queryByRole("list", { name: /The seven stages/ })).not.toBeInTheDocument();
+    expect(within(root).getByRole("tab", { name: "Overview" })).toBeInTheDocument();
     expect(within(root).queryByText("Sarah Jenkins, RN (CNS)")).not.toBeInTheDocument();
     expect(within(root).getByRole("heading", { name: "Record at a glance" })).toBeInTheDocument();
     fireEvent.click(within(root).getByRole("button", { name: "View patient details" }));
@@ -155,7 +155,9 @@ describe("the patient-now screen", () => {
     expect(within(root).queryByText("Cannot be moved. Two things are missing.")).not.toBeInTheDocument();
     expect(within(root).queryByText("All gates cleared")).not.toBeInTheDocument();
     expect(within(root).queryByText("Ready for transfer")).not.toBeInTheDocument();
-    expect(within(root).getByText("Transfer readiness not assessed here")).toBeInTheDocument();
+    // The verdict counts only gates the record proves clear.
+    expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Cannot move");
+    expect(within(root).getByRole("img", { name: /of 3 clear/ })).toBeInTheDocument();
   });
 
   it("states ward and emergency department names read from the data layer, not typed a second time", () => {
@@ -181,7 +183,7 @@ describe("the patient-now screen", () => {
     renderScreen({ movementId: "WF-004" });
     const root = screen.getByTestId("ward-person-screen");
     expect(within(root).queryByText("Nothing is holding this movement up.")).not.toBeInTheDocument();
-    expect(within(root).getByText("Transfer readiness not assessed here")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-status-verdict")).not.toHaveTextContent("Cannot move");
     expect(within(root).queryByText("Cannot be moved. Two things are missing.")).not.toBeInTheDocument();
     // P1-1: WF-004 is its own person, not WF-009's story replayed under a different button.
     expect(
