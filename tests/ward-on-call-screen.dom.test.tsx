@@ -1,31 +1,32 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
-import { roleRecordCounts, servicesWithNoRoleRecorded } from "@/components/ward-management/on-call/on-call-roster";
+import {
+  buildOnCallDirectory,
+  escalationChain,
+  shiftWindow,
+  SERVICE_ORDER,
+} from "@/components/ward-management/on-call/on-call-directory";
+import { NETWORK_ON_CALL_ROLES, SERVICE_ON_CALL_ROLES } from "@/components/ward-management/on-call/on-call-roster";
+import { REFERENCE_TEAM_NAMES, referenceTeamDetail } from "@/components/ward-management/reference/ward-reference-teams";
 import { WardFlowClockContext } from "@/components/ward-management/ward-flow-provider";
-import { allEmergencyDepartments, NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * 🔴 **WHAT A READER ACTUALLY SEES ON THE SCREEN THEY WOULD RING.**
  *
- * `ward-on-call-holds-no-people.test.ts` guards the SOURCE — the type, the values, and anything
- * phone-shaped in the folder. ⚠️ **This file guards the RENDER, and the two catch different things:**
- * source can be clean while the screen renders none of its disclosures, and a disclosure can exist in
- * the file while sitting behind a condition nobody meets.
+ * `ward-on-call-holds-no-people.test.ts` guards the source and the records. This file guards the
+ * RENDER: the disclosure is visible text, every number on screen is a mock, nothing links to a
+ * dialler or a mail client, highlights never hide a row, and the times shown come from the roster.
  *
- * 🔴 **EVERY DISCLOSURE IS ASSERTED AS VISIBLE TEXT, NEVER AS AN ACCESSIBLE NAME.** An `sr-only`
- * region is invisible to eyes, to screenshots, and to a reader glancing at the screen at three in the
- * morning — **and it satisfies a `getByText` just as happily as a paragraph does.** The owner ruled
- * that a screen-reader-only disclosure does not count on this screen; `toBeVisible` is how that
- * ruling reaches the test rather than staying a sentence in a brief.
- *
- * ⚠️ **POPULATION.** jsdom at one viewport, over the real site fixture. Silent about layout and about
- * what a browser paints.
+ * ⚠️ **POPULATION.** jsdom at one viewport (the desktop tree; the phone tree renders under 48rem),
+ * over the real site fixture with the board clock pinned at 10:42. Silent about paint and layout.
  */
 
+const MOCK_NUMBER = /^08 0000 \d{4}$/u;
+
 function renderOnCall() {
-  // The screen reads board time from the provider clock, as every screen does; the test pins it.
   return render(
     <WardFlowClockContext.Provider value={NOW_ANCHOR}>
       <OnCallScreen />
@@ -33,332 +34,232 @@ function renderOnCall() {
   );
 }
 
-/** The service filter is the hero track: radios whose names end in their role count. */
-function serviceFilter(name: string) {
-  return screen.getByRole("radio", { name: new RegExp(`^${name}\\s*\\d+$`, "u") });
-}
-
-/** The favourites chip carries its count after the word. */
-function favouritesChip(count: number) {
-  return screen.getByRole("button", { name: new RegExp(`^Favourites\\s*${count}$`, "u") });
-}
+const row = (id: string) => screen.getByTestId(`ward-on-call-row-${id}`);
+const panel = () => within(screen.getByTestId("ward-on-call-role-panel"));
+const writeText = vi.fn<(text: string) => Promise<void>>();
 
 beforeEach(() => {
-  window.localStorage.removeItem("ward-flow:on-call:service");
   window.localStorage.removeItem("ward-flow:on-call:favourites");
+  writeText.mockReset();
+  writeText.mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe("the on-call screen", () => {
-  it("🔴 ANTI-VACUITY — the fixture has departments and at least one service with nobody recorded", () => {
-    expect(allEmergencyDepartments().length, "no departments, so the ED table walks nothing").toBeGreaterThan(1);
-    expect(
-      servicesWithNoRoleRecorded().length,
-      "every service has a role recorded, so the 'nobody recorded' wording never renders and its " +
-        "assertion below would pass by describing nothing",
-    ).toBeGreaterThan(0);
-  });
-
-  it("carries the synthetic-data disclosure, as visible text", () => {
-    renderOnCall();
-    const banner = screen.getByText(/Roles and shifts are invented/iu);
-    expect(
-      banner,
-      "the disclosure is not visible — an invisible one is worse than none, because it satisfies a " +
-        "test while telling the reader nothing",
-    ).toBeVisible();
-    expect(banner.textContent ?? "", "the disclosure does not say contact details are absent").toMatch(
-      /contact details are not held/iu,
-    );
-  });
-
-  it("renders the three useful directory sections without the removed controls", () => {
-    renderOnCall();
-    for (const heading of ["On-call roles", "ED liaison, by department", "Reaching a role"]) {
+  it("🔴 ANTI-VACUITY — the directory has every section and every service", () => {
+    const entries = buildOnCallDirectory();
+    for (const section of ["hospitals", "community", "statewide"] as const) {
+      expect(entries.filter((entry) => entry.section === section).length, `${section} is empty`).toBeGreaterThan(5);
+    }
+    for (const service of SERVICE_ORDER) {
       expect(
-        screen.getByRole("heading", { name: heading }),
-        `"${heading}" is not a heading on this screen — it may have been renamed, or demoted to a ` +
-          "div, which a test-id assertion would survive",
-      ).toBeVisible();
+        entries.some((entry) => entry.service === service),
+        `${service} has no contacts`,
+      ).toBe(true);
     }
   });
 
-  it("explains unrecorded services when selected without showing default warning banners", () => {
+  it("carries the synthetic-data and mock-number disclosure as visible text", () => {
     renderOnCall();
-    expect(screen.queryByText(/Coverage boundary note/iu)).not.toBeInTheDocument();
-    for (const service of servicesWithNoRoleRecorded()) {
-      fireEvent.click(serviceFilter(service));
-      expect(
-        screen.getByText(
-          `No on-call roles recorded for ${service} in this prototype. Use the current site directory to confirm cover.`,
-        ),
-      ).toBeVisible();
-      expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("0 roles");
-    }
+    const disclosure = screen.getByText(/Synthetic records\. Every number is a mock from an unassigned range/iu);
+    expect(disclosure).toBeVisible();
+    expect(disclosure.textContent).toMatch(/reserved\s+domain/iu);
   });
 
-  it("counts roles from the roster rather than from a typed-in number", () => {
+  it("names the page and opens on a contact card", () => {
     renderOnCall();
-    const counts = roleRecordCounts();
-    expect(
-      screen.getByTestId("ward-on-call-count").textContent ?? "",
-      "the count on screen is not the count the roster derives — a hand-typed figure goes stale the " +
-        "moment a role is added, and this screen's figures are the thing a reader trusts",
-    ).toContain(`${counts.recorded} roles recorded`);
+    const hud = screen.getByTestId("ward-on-call-hud-island");
+    expect(within(hud).getByRole("heading", { level: 1, name: "On-call directory" })).toBeVisible();
+    expect(panel().getByRole("heading", { level: 2, name: "Bed flow coordinator" })).toBeVisible();
+    expect(panel().getByText("Not verified")).toBeVisible();
   });
 
-  it("lists every emergency department against its REAL site and service", () => {
-    renderOnCall();
-    const departments = allEmergencyDepartments();
-    for (const department of departments) {
-      const row = within(screen.getByTestId(`ward-on-call-ed-row-${department.id}`));
-      const site = siteByCode(department.siteCode);
-      expect(row.getByRole("link", { name: `How to reach ${department.name}` })).toHaveAttribute(
-        "href",
-        "#ward-reach-ed",
-      );
-      if (site !== undefined) {
-        // ✅ Real data, from the same source every other ward screen reads — asserted so that a
-        // later "tidy" replacing it with invented site names goes red.
-        expect(row.getByText(site.name), `${department.id} is not shown against its real site`).toBeVisible();
-      }
-    }
-  });
-
-  it("removes misleading Connect, escalation, handover and provenance controls", () => {
-    renderOnCall();
-    expect(screen.queryByRole("button", { name: /Connect|Trigger Tier 3/iu })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Data provenance and coverage" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("columnheader", { name: "Handover" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Active Duty Roster")).not.toBeInTheDocument();
-  });
-
-  it("filters both tables by service and clears the selection", () => {
-    renderOnCall();
-    fireEvent.click(serviceFilter("East Metro"));
-    expect(serviceFilter("East Metro")).toHaveAttribute("aria-checked", "true");
-    expect(within(screen.getByTestId("ward-on-call-service-table")).getAllByRole("row")).toHaveLength(3);
-    for (const row of within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row").slice(1)) {
-      expect(row).toHaveTextContent("East Metro");
-    }
-    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent(`${roleRecordCounts().recorded} roles recorded`);
-    expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(
-      allEmergencyDepartments().length + 1,
-    );
-  });
-
-  it("searches sites and roles, shows no matches, and resets the search", () => {
-    renderOnCall();
-    const search = screen.getByRole("searchbox", { name: "Search roster and emergency departments" });
-    fireEvent.change(search, { target: { value: "  Royal Perth  " } });
-    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
-    expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(2);
-    fireEvent.change(search, { target: { value: "no-such-site" } });
-    expect(screen.getByText("No on-call roles match your search.")).toBeVisible();
-    expect(screen.getByText("No emergency departments match the current filter or search.")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(search).toHaveValue("");
-  });
-
-  it("every reach-via link has a focusable guidance destination", () => {
+  it("🔴 renders no number that is not a mock, and nothing that dials or sends", () => {
     const { container } = renderOnCall();
-    const links = screen.getAllByRole("link", { name: /^How to reach/iu });
-    expect(links.length).toBe(roleRecordCounts().recorded + allEmergencyDepartments().length);
-    for (const link of links) {
-      const destination = container.querySelector(link.getAttribute("href")!);
-      expect(destination).toHaveAttribute("tabindex", "-1");
-      expect(destination).toBeVisible();
-    }
-  });
-
-  it("filters role types without changing the ED directory and resets both filters", () => {
-    renderOnCall();
-    fireEvent.change(screen.getByRole("combobox", { name: "Filter on-call roles" }), {
-      target: { value: "consultant" },
-    });
-    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("3 roles of 9");
-    const roster = within(screen.getByTestId("ward-on-call-service-table"));
-    expect(roster.getAllByText("Duty consultant")).toHaveLength(3);
-    expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(
-      allEmergencyDepartments().length + 1,
-    );
-    fireEvent.click(serviceFilter("East Metro"));
-    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
-    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(screen.getByRole("combobox", { name: "Filter on-call roles" })).toHaveValue("all");
-    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("9 roles recorded");
-  });
-
-  it("finds statewide roles and searches by the reason for contact", () => {
-    renderOnCall();
-    fireEvent.click(serviceFilter("Statewide"));
-    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
-    expect(screen.getByText("Statewide bed placement")).toBeVisible();
-    expect(screen.getByText("Senior operational escalation")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "specialist psychiatry advice" } });
-    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("3 roles of 9");
-    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "enquiries" } });
-    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
-    expect(screen.getByText("Private placement enquiries")).toBeVisible();
-  });
-
-  it("links every department to its own ED workspace and keeps contact preparation visible", () => {
-    renderOnCall();
-    for (const department of allEmergencyDepartments()) {
-      expect(screen.getByRole("link", { name: `Open ${department.name} workspace` })).toHaveAttribute(
-        "href",
-        `/mockups/ward-flow/ed/${encodeURIComponent(department.id)}`,
-      );
-    }
-    expect(screen.getByRole("heading", { name: "Before you contact a team" })).toBeVisible();
+    const text = container.textContent ?? "";
+    // Leaf by leaf, so two neighbouring values never read as one long number.
+    const leaves = [...container.querySelectorAll("*")].filter((node) => node.children.length === 0);
+    const runs = leaves.flatMap((node) => node.textContent?.match(/\d[\d ]{7,}\d/gu) ?? []);
+    expect(runs.length, "no numbers rendered at all, so this case checks nothing").toBeGreaterThan(20);
+    for (const run of runs) expect(run.trim(), `"${run}" is not an unassigned mock number`).toMatch(MOCK_NUMBER);
+    const emails = text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/gu) ?? [];
+    expect(emails.length).toBeGreaterThan(0);
+    for (const email of emails) expect(email).toMatch(/@example\.invalid/u);
     expect(
-      screen.getByText(/Have the movement reference, referring site, reason for contact and urgency ready/),
-    ).toBeVisible();
+      container.querySelector('a[href^="tel:"], a[href^="mailto:"], a[href^="sms:"], a[href^="callto:"]'),
+    ).toBeNull();
   });
 
-  it("remembers the service on remount and persists a clear-filters reset", async () => {
+  it("never shows a published community team number", () => {
+    const { container } = renderOnCall();
+    fireEvent.click(screen.getByRole("tab", { name: /Community/u }));
+    const text = container.textContent ?? "";
+    const published = REFERENCE_TEAM_NAMES.map((name) => referenceTeamDetail(name)?.publishedPhone).filter(Boolean);
+    expect(published.length).toBeGreaterThan(0);
+    for (const phone of published) expect(text).not.toContain(phone);
+  });
+
+  it("takes every rostered window from the roster's own words", () => {
+    const entries = buildOnCallDirectory();
+    const byId = (id: string) => entries.find((entry) => entry.id === id)!;
+    const bedDesk = NETWORK_ON_CALL_ROLES.find((role) => role.id === "bed-coordinator")!;
+    expect(byId("sw-bfc").lines[1]!.window).toEqual(shiftWindow(bedDesk.shift));
+    const north = SERVICE_ON_CALL_ROLES["North Metro"].find((role) => role.role === "Coordinator on call")!;
+    expect(byId("nmhs-bfc").lines.at(-1)!.window).toEqual(shiftWindow(north.shift));
+    // WACHS records no coordinator, so its bed flow line is office hours only and says where to go.
+    expect(SERVICE_ON_CALL_ROLES.WACHS).toHaveLength(0);
+    expect(byId("wachs-bfc").lines).toHaveLength(1);
+    expect(byId("wachs-bfc").note).toMatch(/State bed desk/u);
+  });
+
+  it("states the time each number is available until, and what follows", () => {
+    renderOnCall();
+    const bedFlow = within(row("nmhs-bfc"));
+    expect(bedFlow.getByText("20:00")).toBeVisible();
+    expect(bedFlow.getByText("then on-call mobile")).toBeVisible();
+    expect(panel().getByText(/Answering until/u)).toBeVisible();
+  });
+
+  it("shows cover at a later time, labelled as tomorrow when it has passed", () => {
+    renderOnCall();
+    fireEvent.click(screen.getByRole("radio", { name: "03:00" }));
+    expect(screen.getByText("Who answers at 03:00 tomorrow")).toBeVisible();
+    expect(within(row("nmhs-bfc")).getByText("08:00")).toBeVisible();
+    expect(within(row("nmhs-bfc")).getByText("On-call mobile")).toBeVisible();
+  });
+
+  it("keeps the key lines in the hero with the anchor other pages link to", () => {
+    const { container } = renderOnCall();
+    const keys = within(screen.getByRole("group", { name: "Key lines" })).getAllByRole("button");
+    expect(keys).toHaveLength(7);
+    expect(container.querySelector("#ward-reach-bed")).toBe(screen.getByTestId("ward-on-call-key-sw-bfc"));
+    expect(container.querySelector("#ward-reach-switchboard")).toBe(screen.getByTestId("ward-on-call-directory"));
+    fireEvent.click(screen.getByTestId("ward-on-call-key-sw-mherl"));
+    expect(panel().getByRole("heading", { name: "Mental Health Emergency Response Line" })).toBeVisible();
+    expect(screen.getByRole("tab", { name: /Statewide/u })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("Call copies the number and says calling is not wired", async () => {
+    renderOnCall();
+    fireEvent.click(panel().getByRole("button", { name: /^Call 08 0000/u }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+    expect(writeText.mock.calls[0]![0]).toMatch(MOCK_NUMBER);
+    expect(await screen.findByTestId("ward-on-call-notice")).toHaveTextContent(/not wired in this prototype/iu);
+  });
+
+  it("highlights rows and never hides one", () => {
+    renderOnCall();
+    const table = screen.getByTestId("ward-on-call-dir-table");
+    const before = table.querySelectorAll("tbody tr[data-testid]").length;
+    fireEvent.click(screen.getByRole("button", { name: /^Has email/u }));
+    expect(table.querySelectorAll("tbody tr[data-testid]").length).toBe(before);
+    expect(row("nmhs-bfc").className).toMatch(/rowHighlight/u);
+    expect(row("nmhs-scon").className).not.toMatch(/rowHighlight/u);
+  });
+
+  it("search highlights matches in place and lists them in the panel", () => {
+    renderOnCall();
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "EPIC" } });
+    expect(panel().getByRole("heading", { name: "Matches" })).toBeVisible();
+    expect(row("scgh-epic").className).toMatch(/rowHighlight/u);
+    fireEvent.click(panel().getByRole("button", { name: "Clear" }));
+    expect(panel().getByRole("heading", { name: "Bed flow coordinator" })).toBeVisible();
+  });
+
+  it("switches between hospitals, community teams and statewide lines", () => {
+    renderOnCall();
+    fireEvent.click(screen.getByRole("tab", { name: /Community/u }));
+    expect(screen.getByText(REFERENCE_TEAM_NAMES[0]!)).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: /Statewide/u }));
+    expect(row("sw-mherl")).toBeVisible();
+    expect(screen.queryByTestId("ward-on-call-row-nmhs-bfc")).toBeNull();
+  });
+
+  it("groups by role so every EPIC sits together", () => {
+    renderOnCall();
+    fireEvent.click(screen.getByRole("button", { name: /^By role/u }));
+    const heading = screen.getByRole("button", { name: /EPIC, emergency physician in charge/u });
+    expect(heading).toHaveAttribute("aria-expanded", "true");
+    expect(within(row("scgh-epic")).getByText("Sir Charles Gairdner Hospital")).toBeVisible();
+  });
+
+  it("collapses a group but keeps a highlighted row in view", () => {
+    renderOnCall();
+    const group = screen
+      .getAllByRole("button", { name: /Sir Charles Gairdner Hospital/u })
+      .find((button) => button.hasAttribute("aria-expanded"))!;
+    fireEvent.click(group);
+    expect(screen.queryByTestId("ward-on-call-row-scgh-sw")).toBeNull();
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Switchboard" } });
+    expect(row("scgh-sw")).toBeVisible();
+  });
+
+  it("orders the escalation ladder and labels it a preview", () => {
+    const entries = buildOnCallDirectory();
+    const ward = entries.find((entry) => entry.kind === "nurseInCharge" && entry.siteCode === "SCGH")!;
+    expect(escalationChain(ward, entries).map((entry) => entry.kind)).toEqual(["bedFlow", "afterHours", "executive"]);
+    renderOnCall();
+    expect(panel().getByText("Preview order")).toBeVisible();
+    expect(panel().getByText("State bed flow coordinator")).toBeVisible();
+  });
+
+  it("points a closed line at whoever answers now", () => {
+    renderOnCall();
+    fireEvent.click(screen.getByRole("radio", { name: "03:00" }));
+    fireEvent.click(within(row("nmhs-aml")).getByRole("button", { name: /^Aboriginal mental health liaison/u }));
+    expect(panel().getByText(/Closed, opens/u)).toBeVisible();
+    expect(panel().getByText(/Call now:/u)).toBeVisible();
+  });
+
+  it("marks Report change as not wired", () => {
+    renderOnCall();
+    const report = panel().getByRole("button", { name: /Report change/u });
+    expect(report).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getAllByText("Not wired in this prototype.").length).toBeGreaterThan(0);
+  });
+
+  it("keeps My list as contact ids only, and restores it", async () => {
     const first = renderOnCall();
-    fireEvent.click(serviceFilter("East Metro"));
-    expect(window.localStorage.getItem("ward-flow:on-call:service")).toBe("East Metro");
+    fireEvent.click(within(row("nmhs-bfc")).getByRole("button", { name: /to My list/u }));
+    expect(JSON.parse(localStorage.getItem("ward-flow:on-call:favourites")!)).toEqual(["nmhs-bfc"]);
     first.unmount();
     renderOnCall();
-    await waitFor(() => expect(serviceFilter("East Metro")).toHaveAttribute("aria-checked", "true"));
-    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
-    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(window.localStorage.getItem("ward-flow:on-call:service")).toBe("all");
+    await waitFor(() => expect(screen.getByRole("tab", { name: /My list/u })).toHaveTextContent("1"));
+    fireEvent.click(screen.getByRole("tab", { name: /My list/u }));
+    expect(row("nmhs-bfc")).toBeVisible();
   });
 
-  it("keeps filters usable when preference storage is unavailable", () => {
-    renderOnCall();
-    const writer = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-      throw new Error("Unavailable");
-    });
-    try {
-      fireEvent.click(serviceFilter("South Metro"));
-      expect(serviceFilter("South Metro")).toHaveAttribute("aria-checked", "true");
-      expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("2 roles of 9");
-      fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-      expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("9 roles recorded");
-    } finally {
-      writer.mockRestore();
-    }
-  });
-
-  /**
-   * 🔴 **THE ONE THAT MATTERS AT THREE IN THE MORNING.** The static guard reads the FILES; this reads
-   * what was actually painted, which is what a person acts on.
-   */
-  it("🔴 renders nothing anywhere on the screen that could be rung or written to", () => {
-    const { container } = renderOnCall();
-    const painted = container.textContent ?? "";
-
-    expect(painted, "a run of digits long enough to be a phone number is on this screen").not.toMatch(
-      /(?<!\d)\d[\d\s-]{7,}\d(?!\d)/u,
-    );
-    expect(painted, "an email address is on this screen").not.toMatch(/[\w.+-]+@[\w-]+\.[\w.-]+/u);
-    expect(painted, "an extension is on this screen").not.toMatch(/\bext\.?\s?\d/iu);
-
-    // And nothing that would hand a number to a phone app or an address to a mail client.
-    for (const anchor of Array.from(container.querySelectorAll("a"))) {
-      const href = anchor.getAttribute("href") ?? "";
-      expect(
-        /^(?:tel|callto|mailto|sms):/iu.test(href),
-        `a link on this screen has the scheme ${JSON.stringify(href.split(":")[0])} — it would start ` +
-          "a call or a message, and this screen holds nobody to start one with",
-      ).toBe(false);
-    }
-  });
-});
-
-describe("on-call favourites and coverage details", () => {
-  it("persists favourites, filters only the roster and retains them when clearing filters", async () => {
+  it("rejects unknown saved ids and malformed preferences", async () => {
+    localStorage.setItem("ward-flow:on-call:favourites", JSON.stringify(["nmhs-bfc", "not-a-contact", 7]));
     const first = renderOnCall();
-    fireEvent.click(screen.getByRole("button", { name: "Favourite Duty consultant for East Metro" }));
-    expect(JSON.parse(localStorage.getItem("ward-flow:on-call:favourites")!)).toEqual(["em-consultant"]);
-    first.unmount();
-    renderOnCall();
-    await waitFor(() => expect(favouritesChip(1)).toBeVisible());
-    fireEvent.click(favouritesChip(1));
-    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
-    expect(screen.getByTestId("ward-on-call-role-em-consultant")).toBeVisible();
-    expect(within(screen.getByTestId("ward-on-call-ed-table")).getAllByRole("row")).toHaveLength(11);
-    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("9 roles recorded");
-    expect(screen.getByRole("button", { name: "Favourite Duty consultant for East Metro" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Favourite Duty consultant for East Metro" }));
-    fireEvent.click(favouritesChip(0));
-    expect(screen.getByText(/No favourite roles match/)).toBeVisible();
-  });
-
-  it("rejects unknown saved role ids and malformed preferences", async () => {
-    localStorage.setItem(
-      "ward-flow:on-call:favourites",
-      JSON.stringify(["em-consultant", "obsolete", 42, "em-consultant"]),
-    );
-    const first = renderOnCall();
-    await waitFor(() => expect(favouritesChip(1)).toBeVisible());
+    await waitFor(() => expect(screen.getByRole("tab", { name: /My list/u })).toHaveTextContent("1"));
     first.unmount();
     localStorage.setItem("ward-flow:on-call:favourites", "broken");
     renderOnCall();
-    await waitFor(() => expect(favouritesChip(0)).toBeVisible());
+    expect(screen.getByRole("tab", { name: /My list/u })).toHaveTextContent("0");
   });
 
-  it("keeps favourites usable and reports visit-only persistence when storage fails", () => {
-    renderOnCall();
-    const storage = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-      throw new Error("Unavailable");
+  it("keeps My list for the visit when storage fails, and says so", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
     });
-    try {
-      fireEvent.click(screen.getByRole("button", { name: "Favourite Bed coordinator for Statewide Network" }));
-      expect(screen.getByText(/Favourites are available for this visit only/)).toHaveAttribute("role", "status");
-      fireEvent.click(favouritesChip(1));
-      expect(screen.getByTestId("ward-on-call-count")).toHaveTextContent("1 role of 9");
-    } finally {
-      storage.mockRestore();
-    }
+    renderOnCall();
+    fireEvent.click(within(row("nmhs-bfc")).getByRole("button", { name: /to My list/u }));
+    expect(screen.getByTestId("ward-on-call-notice")).toHaveTextContent(/this visit only/u);
+    expect(screen.getByRole("tab", { name: /My list/u })).toHaveTextContent("1");
   });
 
-  it("reveals truthful coverage gaps and illustrative handover, and closes the previous role", () => {
+  it("opens the downtime card with every key line and copies it as text", async () => {
     renderOnCall();
-    /*
-     * v6 (approved mockup, October 2026): the expanding coverage row became the role panel beside
-     * the table. Selecting a role shows its cover in the one panel; the previous role's details
-     * leave it. Cover stays "Not verified" and "Not recorded" because no roster source exists.
-     */
-    const bed = screen.getByRole("button", { name: "Coverage and handover for Bed coordinator for Statewide Network" });
-    fireEvent.click(bed);
-    expect(bed).toHaveAttribute("aria-pressed", "true");
-    const details = document.getElementById(bed.getAttribute("aria-controls")!)!;
-    expect(details).toBeVisible();
-    expect(within(details).getByRole("heading", { name: "Bed coordinator" })).toBeVisible();
-    expect(within(details).getByText("Not verified")).toBeVisible();
-    expect(within(details).getByText("20:00 to 08:00")).toBeVisible();
-    expect(within(details).getByText("Last confirmed")).toBeVisible();
-    expect(within(details).getAllByText("Not recorded")).toHaveLength(1);
-    const privateRole = screen.getByRole("button", {
-      name: "Coverage and handover for Coordinator on call for Private",
-    });
-    fireEvent.click(privateRole);
-    expect(bed).toHaveAttribute("aria-pressed", "false");
-    expect(privateRole).toHaveAttribute("aria-pressed", "true");
-    expect(within(details).queryByRole("heading", { name: "Bed coordinator" })).not.toBeInTheDocument();
-    expect(within(details).getByText("08:00 to 17:00")).toBeVisible();
-    // The fallback list is derived from the roster, never a recorded procedure.
-    const chain = within(details).getByRole("heading", { name: "If not reached" }).parentElement!;
-    expect(within(chain).getByText("Governance lead")).toBeVisible();
-  });
-  it("reveals every collapsed coverage row for printing and restores them afterwards", () => {
-    renderOnCall();
-    const rows = () => [...document.querySelectorAll<HTMLElement>("tr[data-print-expand]")];
-    expect(rows().length, "no coverage rows, so the print reveal is vacuous").toBeGreaterThan(0);
-    expect(rows().every((row) => row.hidden)).toBe(true);
-    window.dispatchEvent(new Event("beforeprint"));
-    expect(rows().every((row) => !row.hidden)).toBe(true);
-    window.dispatchEvent(new Event("afterprint"));
-    expect(rows().every((row) => row.hidden)).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Downtime card" }));
+    const card = within(await screen.findByTestId("ward-on-call-downtime"));
+    expect(card.getByText("State bed flow coordinator")).toBeVisible();
+    fireEvent.click(card.getByRole("button", { name: "Copy as text" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+    expect(writeText.mock.calls[0]![0]).toMatch(/State bed desk 08 0000 \d{4}, 08:00 to 20:00/u);
   });
 });

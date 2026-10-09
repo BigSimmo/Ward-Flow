@@ -1,980 +1,981 @@
 "use client";
 
-import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { ArrowRight, Building2, Clock, Copy, Layers, Phone, Radio, Search, Star } from "lucide-react";
-import { NETWORK_ON_CALL_ROLES, roleRecordCounts, SERVICE_ON_CALL_ROLES } from "./on-call-roster";
-import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
-import { formatInstantWithDay, minuteOfDay } from "@/components/ward-management/ward-clock";
+import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { ChevronDown, Clock, Copy, Mail, MapPin, Printer, Search, Star, Users } from "lucide-react";
+import { minuteOfDay } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { edHref } from "@/components/ward-management/shell/ward-facade";
 import {
-  Badge,
   Button,
   Card,
-  CardBody,
   CardFoot,
-  CardHead,
-  Count,
   FilterChip,
   Hero,
   HeroStat,
   HeroTrack,
   Icon,
-  Inset,
   Kbd,
-  Segmented,
-  Select,
+  Sheet,
   SrOnly,
   StatusGlyph,
+  Tabs,
   TextInput,
-  Timer,
   cx,
-  dur,
   tableClasses,
 } from "@/components/wf";
+import {
+  CHECK_DUE_DAYS,
+  KEY_LINE_IDS,
+  SERVICE_META,
+  availability,
+  buildOnCallDirectory,
+  hhmm,
+  isAnswering,
+  keyLineLabel,
+  numberAt,
+  upcomingChanges,
+  windowText,
+  groupRows,
+  type DirectoryEntry,
+  type DirectoryTab,
+} from "./on-call-directory";
+import {
+  ContactCard,
+  FavouriteButton,
+  NumberCell,
+  ServiceTag,
+  UntilCell,
+  isWardRow,
+  placeOf,
+  type ContactActions,
+} from "./on-call-parts";
+import { PhoneDirectory, PhoneFocal, PhoneSheet } from "./on-call-phone";
 
 import styles from "./on-call.module.css";
 
-interface RosterItem {
-  id: string;
-  service: string;
-  role: string;
-  facility: string;
-  shift: string;
-  route: "bed" | "switchboard";
-}
-
-/** Site names are owned by ward-sites.ts; read at call time because the network can be swapped. */
-const siteName = (code: string): string => siteByCode(code)?.name ?? code;
-
-function serviceFacilities(service: string): [string, string] | undefined {
-  switch (service) {
-    case "North Metro":
-      return ["Sir Charles Gairdner / Graylands", siteName("SCGH")];
-    case "South Metro":
-      return [siteName("FSH"), "Fiona Stanley / Fremantle"];
-    case "East Metro":
-      return [siteName("RPH"), "Royal Perth / Bentley"];
-    case "Private":
-      return ["Private facilities liaison", "Private facilities liaison"];
-    default:
-      return undefined;
-  }
-}
-
 const FAVOURITES_KEY = "ward-flow:on-call:favourites";
-const ROLE_IDS = new Set(
-  [...NETWORK_ON_CALL_ROLES, ...Object.values(SERVICE_ON_CALL_ROLES).flat()].map((role) => role.id),
-);
 
-const SERVICE_PREFERENCE_KEY = "ward-flow:on-call:service";
-const NETWORK_SERVICE = "Statewide Network";
+export type Highlight = "now" | "soon" | "email" | "due";
 
-type RoleFilter = "all" | "coordinator" | "consultant" | "governance";
+/** Highlights mark rows and never hide one: a contact you cannot see is a contact you cannot ring. */
+export const HIGHLIGHTS: { id: Highlight; label: string; test: (entry: DirectoryEntry, minute: number) => boolean }[] =
+  [
+    { id: "now", label: "Answering", test: (entry, minute) => isAnswering(entry, minute) },
+    {
+      id: "soon",
+      label: "Ends within 1h",
+      test: (entry, minute) => {
+        const now = availability(entry, minute);
+        return now.kind === "on" && !now.allDay && now.soon;
+      },
+    },
+    { id: "email", label: "Has email", test: (entry) => Boolean(entry.email) },
+    { id: "due", label: "Check due", test: (entry) => entry.checkedDaysAgo > CHECK_DUE_DAYS },
+  ];
 
-const ROLE_PURPOSES: Record<string, string> = {
-  "Bed coordinator": "Statewide bed placement",
-  "Governance lead": "Senior operational escalation",
-  "Coordinator on call": "Service placement & transfers",
-  "Duty consultant": "Specialist psychiatry advice",
-};
-
-const purposeOf = (item: RosterItem) =>
-  item.service === "Private" ? "Private placement enquiries" : (ROLE_PURPOSES[item.role] ?? "Confirm role scope");
-
-/** "Cover at" choices: board time now, or a fixed hour later today (03:00 is tomorrow). */
-type CoverAt = "now" | "18" | "21" | "03";
-const COVER_AT_ITEMS: { id: CoverAt; label: string }[] = [
+const COVER_AT: { id: string; label: string }[] = [
   { id: "now", label: "Now" },
-  { id: "18", label: "18:00" },
-  { id: "21", label: "21:00" },
-  { id: "03", label: "03:00" },
+  { id: "1320", label: "22:00" },
+  { id: "180", label: "03:00" },
+  { id: "480", label: "08:00" },
+  { id: "720", label: "12:00" },
 ];
 
-const DAY = 24 * 60;
-const MINUTE = 60_000;
-const mod = (value: number) => ((value % DAY) + DAY) % DAY;
-const hhmm = (minute: number) =>
-  `${String(Math.floor(mod(minute) / 60)).padStart(2, "0")}:${String(mod(minute) % 60).padStart(2, "0")}`;
+const PHONE_QUERY = "(max-width: 48rem)";
 
-type ShiftWindow = { start: number; end: number; kind: string; businessHours: boolean };
+const JUMP_LABEL: Record<string, string> = {
+  "North Metro": "NM",
+  "East Metro": "EM",
+  "South Metro": "SM",
+  CAHS: "CA",
+  WACHS: "WA",
+  Private: "Pvt",
+};
 
-/** Parses the roster's own words ("Overnight, 20:00 to 08:00"); never a second source of times. */
-function shiftWindow(shift: string): ShiftWindow | undefined {
-  const match = shift.match(/^(.*?),?\s*(\d{2}):(\d{2}) to (\d{2}):(\d{2})$/u);
-  if (!match) return undefined;
-  const [, words, sh, sm, eh, em] = match;
-  const kind = (words ?? "")
-    .replace("On call from home", "From home")
-    .replace("Business hours only", "Business hours")
-    .trim();
-  return {
-    start: Number(sh) * 60 + Number(sm),
-    end: Number(eh) * 60 + Number(em),
-    kind: kind || "Shift",
-    businessHours: /business hours/iu.test(words ?? ""),
-  };
+/** Phone is its own layout, not a reflow: the screen renders a different tree under 48rem. */
+function useIsPhone(): boolean {
+  return useSyncExternalStore(
+    (notify) => {
+      if (typeof window.matchMedia !== "function") return () => undefined;
+      const query = window.matchMedia(PHONE_QUERY);
+      query.addEventListener?.("change", notify);
+      return () => query.removeEventListener?.("change", notify);
+    },
+    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
+    () => false,
+  );
 }
 
-function isOn(window: ShiftWindow, minute: number) {
-  const m = mod(minute);
-  return window.start < window.end ? m >= window.start && m < window.end : m >= window.start || m < window.end;
+export function matchesQuery(entry: DirectoryEntry, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return false;
+  return [
+    entry.name,
+    entry.place,
+    entry.groupTitle,
+    entry.purpose,
+    SERVICE_META[entry.service].short,
+    SERVICE_META[entry.service].name,
+    entry.email ?? "",
+    ...entry.lines.map((item) => `${item.number ?? ""} ${item.label}`),
+  ].some((value) => value.toLowerCase().includes(needle));
 }
 
-/** Minutes from `minute` until the window starts (off) or ends (on). */
-function minutesToChange(window: ShiftWindow, minute: number) {
-  const target = isOn(window, minute) ? window.end : window.start;
-  const delta = mod(target - minute);
-  return delta === 0 ? DAY : delta;
-}
-
-/** On-screen segments of a window across one day, as [from, to) minute pairs. */
-function daySegments(window: ShiftWindow): [number, number][] {
-  return window.start < window.end
-    ? [[window.start, window.end]]
-    : [
-        [0, window.end],
-        [window.start, DAY],
-      ];
+export function rowsForTab(entries: readonly DirectoryEntry[], tab: DirectoryTab, favourites: readonly string[]) {
+  return tab === "mine"
+    ? entries.filter((entry) => favourites.includes(entry.id))
+    : entries.filter((entry) => entry.section === tab);
 }
 
 /**
- * Role directory only: roles and shifts are synthetic, while EDs come from the shared site directory.
- * No staff identity or contact method is held or rendered. Routing links open guidance on this page;
- * they do not initiate calls. Empty service filters describe missing records, never real coverage.
+ * On-call directory, design A1 (owner pick, 9 October 2026): key lines in the hero, a directory with
+ * the number, the time it is available until and the referral email on every row, and a contact
+ * card on the right. Every record is synthetic and every number is a mock that cannot be rung; see
+ * `on-call-directory.ts`. Nothing here dials or sends. Every escalation ladder on the contact card
+ * ends at the governance lead, the statewide Tier 3 desk.
  */
 export function OnCallScreen() {
   const boardNow = useWardFlowClock();
-  const [selectedService, setSelectedService] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRole, setSelectedRole] = useState<RoleFilter>("all");
-  const [favourites, setFavourites] = useState<string[]>([]);
-  const [favouritesOnly, setFavouritesOnly] = useState(false);
-  const [focusedRole, setFocusedRole] = useState<string | null>(null);
-  const [coverAt, setCoverAt] = useState<CoverAt>("now");
-  const [copyNotice, setCopyNotice] = useState("");
+  const boardMinute = minuteOfDay(boardNow);
+  const isPhone = useIsPhone();
+  const entries = useMemo(() => buildOnCallDirectory(), []);
+  const ids = useMemo(() => new Set(entries.map((entry) => entry.id)), [entries]);
 
-  // Reveal the print-only cover rows for native printing and restore each row afterwards.
-  useEffect(() => {
-    let revealed: HTMLElement[] = [];
-    const expand = () => {
-      if (revealed.length) return;
-      revealed = [...window.document.querySelectorAll<HTMLElement>("tr[data-print-expand][hidden]")];
-      revealed.forEach((row) => row.removeAttribute("hidden"));
-    };
-    const restore = () => {
-      revealed.forEach((row) => {
-        if (row.isConnected) row.setAttribute("hidden", "");
-      });
-      revealed = [];
-    };
-    window.addEventListener("beforeprint", expand);
-    window.addEventListener("afterprint", restore);
-    return () => {
-      restore();
-      window.removeEventListener("beforeprint", expand);
-      window.removeEventListener("afterprint", restore);
-    };
-  }, []);
-  const [preferenceNotice, setPreferenceNotice] = useState("");
-  const favouritesChangedRef = useRef(false);
+  const [tab, setTab] = useState<DirectoryTab>("hospitals");
+  const [groupBy, setGroupBy] = useState<"place" | "role">("place");
+  const [highlight, setHighlight] = useState<Highlight | null>(null);
+  const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState("nmhs-bfc");
+  const [coverAt, setCoverAt] = useState("now");
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+  const [favourites, setFavourites] = useState<string[]>([]);
+  const [notice, setNotice] = useState("");
+  const [downtimeOpen, setDowntimeOpen] = useState(false);
+  const [sheetId, setSheetId] = useState<string | null>(null);
+  const searchId = useId();
+  const panelHeadingId = useId();
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const minute = coverAt === "now" ? boardMinute : Number(coverAt);
+  const atLater = coverAt !== "now";
+
+  const favouritesChanged = useRef(false);
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      if (favouritesChangedRef.current) return;
+      if (favouritesChanged.current) return;
       try {
         const saved: unknown = JSON.parse(window.localStorage.getItem(FAVOURITES_KEY) ?? "[]");
         if (Array.isArray(saved))
-          setFavourites([...new Set(saved.filter((id): id is string => typeof id === "string" && ROLE_IDS.has(id)))]);
+          setFavourites([...new Set(saved.filter((id): id is string => typeof id === "string" && ids.has(id)))]);
       } catch {
-        // Invalid or unavailable preferences never prevent use of the directory.
+        // Saved preferences are optional; the directory works without them.
       }
     });
     return () => window.cancelAnimationFrame(frame);
+  }, [ids]);
+  useEffect(
+    () => () => {
+      if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    },
+    [],
+  );
+
+  const say = useCallback((text: string) => {
+    setNotice(text);
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    noticeTimer.current = setTimeout(() => setNotice(""), 4000);
   }, []);
+
+  const copy = useCallback(
+    async (text: string, label: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        say(label);
+      } catch {
+        say("Copy is unavailable in this browser. Select the text instead.");
+      }
+    },
+    [say],
+  );
+
   function toggleFavourite(id: string) {
-    favouritesChangedRef.current = true;
+    favouritesChanged.current = true;
     const next = favourites.includes(id) ? favourites.filter((value) => value !== id) : [...favourites, id];
     setFavourites(next);
     try {
       window.localStorage.setItem(FAVOURITES_KEY, JSON.stringify(next));
-      setPreferenceNotice("");
+      say(next.includes(id) ? "Added to My list" : "Removed from My list");
     } catch {
-      setPreferenceNotice("Favourites are available for this visit only; browser storage is unavailable.");
+      say("My list is kept for this visit only. Browser storage is unavailable.");
     }
   }
-  const serviceChangedRef = useRef(false);
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      if (serviceChangedRef.current) return;
-      try {
-        const saved = window.localStorage.getItem(SERVICE_PREFERENCE_KEY);
-        if (saved && ["all", NETWORK_SERVICE, ...HEALTH_SERVICES].includes(saved)) setSelectedService(saved);
-      } catch {
-        // Preferences are optional; the directory remains usable without browser storage.
-      }
+
+  /** Selecting a contact opens its group and its tab, so the card and the row always agree. */
+  function pick(id: string) {
+    const entry = entries.find((item) => item.id === id);
+    if (!entry) return;
+    setSelectedId(id);
+    if (tab !== "mine" && entry.section !== tab) setTab(entry.section);
+    setCollapsed((current) => {
+      if (!current.has(entry.group) && !current.has(`role-${entry.kind}`)) return current;
+      const next = new Set(current);
+      next.delete(entry.group);
+      next.delete(`role-${entry.kind}`);
+      return next;
     });
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
-
-  function selectService(service: string) {
-    serviceChangedRef.current = true;
-    setSelectedService(service);
-    try {
-      window.localStorage.setItem(SERVICE_PREFERENCE_KEY, service);
-    } catch {
-      // Keep the current selection in memory if storage is unavailable.
-    }
+    if (isPhone) setSheetId(id);
   }
-  const searchInputId = useId();
-  const panelId = useId();
-  const departments = allEmergencyDepartments();
-  const counts = roleRecordCounts();
-  const normalizedQuery = searchQuery.trim().toLowerCase();
 
-  const roster = useMemo<RosterItem[]>(
-    () => [
-      ...NETWORK_ON_CALL_ROLES.map((role) => ({
-        ...role,
-        service: NETWORK_SERVICE,
-        facility: role.id === "bed-coordinator" ? "Central bed desk" : "Statewide Tier 3 desk",
-        route: role.id === "bed-coordinator" ? ("bed" as const) : ("switchboard" as const),
-      })),
-      ...HEALTH_SERVICES.flatMap((service) =>
-        SERVICE_ON_CALL_ROLES[service].map((role) => ({
-          ...role,
-          service,
-          facility: serviceFacilities(service)?.[role.role === "Duty consultant" ? 1 : 0] ?? service,
-          route: "switchboard" as const,
-        })),
-      ),
-    ],
-    [],
+  const actions: ContactActions = {
+    minute,
+    entries,
+    favourites,
+    onPick: pick,
+    onToggleFavourite: toggleFavourite,
+    onCopy: (text, label) => void copy(text, label),
+    onCall: (entry) => {
+      const number = numberAt(entry, minute);
+      if (!number) return;
+      void copy(number, `Number copied. Calling is not wired in this prototype.`);
+    },
+  };
+
+  const answering = entries.filter((entry) => isAnswering(entry, minute));
+  const endingSoon = entries.filter((entry) => HIGHLIGHTS[1]!.test(entry, minute));
+  const closed = entries.filter((entry) => availability(entry, minute).kind === "off");
+  const checkDue = entries.filter((entry) => entry.checkedDaysAgo > CHECK_DUE_DAYS);
+  const changes = upcomingChanges(entries, minute, 360);
+  const keyLines = KEY_LINE_IDS.map((id) => entries.find((entry) => entry.id === id)).filter(
+    (entry): entry is DirectoryEntry => entry !== undefined,
   );
 
-  const boardMinute = minuteOfDay(boardNow);
-  const referenceMinute = coverAt === "now" ? boardMinute : Number(coverAt) * 60;
-  const referenceIsTomorrow = coverAt !== "now" && referenceMinute < boardMinute;
-  const windows = useMemo(() => new Map(roster.map((item) => [item.id, shiftWindow(item.shift)])), [roster]);
-  const onNow = roster.filter((item) => {
-    const window = windows.get(item.id);
-    return window ? isOn(window, boardMinute) : false;
-  }).length;
-  const nextChange = Math.min(
-    ...roster.map((item) => {
-      const window = windows.get(item.id);
-      return window ? minutesToChange(window, boardMinute) : DAY;
-    }),
-  );
-
-  const filteredRoster = roster.filter(
-    (item) =>
-      (selectedService === "all" || item.service === selectedService) &&
-      (!favouritesOnly || favourites.includes(item.id)) &&
-      (selectedRole === "all" ||
-        (selectedRole === "coordinator" && item.role.toLowerCase().includes("coordinator")) ||
-        (selectedRole === "consultant" && item.role === "Duty consultant") ||
-        (selectedRole === "governance" && item.role === "Governance lead")) &&
-      (!normalizedQuery ||
-        [item.service, item.role, item.facility, item.shift, purposeOf(item)].some((value) =>
-          value.toLowerCase().includes(normalizedQuery),
-        )),
-  );
-  const filteredDepartments = departments.filter((department) => {
-    const site = siteByCode(department.siteCode);
-    return (
-      (selectedService === "all" || site?.service === selectedService) &&
-      (!normalizedQuery ||
-        [department.name, department.siteCode, site?.name ?? "", site?.service ?? ""].some((value) =>
-          value.toLowerCase().includes(normalizedQuery),
-        ))
+  function copyWhoIsOn() {
+    const on = entries.filter((entry) => entry.rostered && isAnswering(entry, minute));
+    const lines = on.map((entry) => {
+      const now = availability(entry, minute);
+      const until = now.kind === "on" && !now.allDay ? `, until ${hhmm(now.until)}` : "";
+      return `${entry.name}, ${entry.place}: ${numberAt(entry, minute) ?? "email only"}${until}`;
+    });
+    void copy(
+      [`On call at ${hhmm(minute)} (synthetic records)`, ...lines].join("\n"),
+      `Copied ${on.length} roles on call`,
     );
-  });
-  const hasDirectoryFilters = selectedService !== "all" || Boolean(normalizedQuery);
-  const hasFilters = hasDirectoryFilters || selectedRole !== "all" || favouritesOnly;
-  const serviceHasNoRoles =
-    selectedService !== "all" &&
-    HEALTH_SERVICES.includes(selectedService as keyof typeof SERVICE_ON_CALL_ROLES) &&
-    SERVICE_ON_CALL_ROLES[selectedService as keyof typeof SERVICE_ON_CALL_ROLES]?.length === 0;
-
-  /* The panel follows the role the reader picked; otherwise the first favourite, then the first row. */
-  const panelRole =
-    filteredRoster.find((item) => item.id === focusedRole) ??
-    filteredRoster.find((item) => favourites.includes(item.id)) ??
-    filteredRoster[0];
-
-  function clearFilters() {
-    selectService("all");
-    setSearchQuery("");
-    setSelectedRole("all");
-    setFavouritesOnly(false);
   }
 
-  const serviceItems = [
-    { id: "all", label: "All services", count: roster.length },
-    { id: NETWORK_SERVICE, label: "Statewide", count: NETWORK_ON_CALL_ROLES.length },
-    ...HEALTH_SERVICES.map((service) => ({
-      id: service as string,
-      label: service as string,
-      count: SERVICE_ON_CALL_ROLES[service].length,
-    })),
+  const toggleHighlight = (id: Highlight) => setHighlight((current) => (current === id ? null : id));
+  const isHighlighted = (entry: DirectoryEntry) =>
+    matchesQuery(entry, query) ||
+    (highlight !== null && HIGHLIGHTS.find((item) => item.id === highlight)!.test(entry, minute));
+
+  const selected = entries.find((entry) => entry.id === selectedId) ?? entries[0]!;
+  const sheetEntry = sheetId ? entries.find((entry) => entry.id === sheetId) : undefined;
+  const tabRows = rowsForTab(entries, tab, favourites);
+  const tabCounts: Record<DirectoryTab, number> = {
+    hospitals: entries.filter((entry) => entry.section === "hospitals").length,
+    community: entries.filter((entry) => entry.section === "community").length,
+    statewide: entries.filter((entry) => entry.section === "statewide").length,
+    mine: favourites.length,
+  };
+  const queryHits = query.trim() ? entries.filter((entry) => matchesQuery(entry, query)) : [];
+
+  const heroStats = (
+    <>
+      <HeroStat
+        value={answering.length}
+        label="answering"
+        tone="success"
+        pressed={highlight === "now"}
+        onToggle={() => toggleHighlight("now")}
+      />
+      <HeroStat
+        value={endingSoon.length}
+        label="end within 1h"
+        tone="warning"
+        pressed={highlight === "soon"}
+        onToggle={() => toggleHighlight("soon")}
+      />
+      <HeroStat value={closed.length} label="closed" tone="neutral" />
+      <HeroStat
+        value={checkDue.length}
+        label="check due"
+        tone="warning"
+        pressed={highlight === "due"}
+        onToggle={() => toggleHighlight("due")}
+      />
+    </>
+  );
+
+  const clock = (
+    <span className={styles.heroClock}>
+      <Icon icon={Clock} size={14} />
+      <span className={styles.heroClockTime}>{hhmm(boardMinute)}</span>
+      <span className={styles.heroClockZone}>AWST</span>
+    </span>
+  );
+
+  const coverTrack = (
+    <HeroTrack
+      label="Show cover at"
+      items={isPhone ? COVER_AT.slice(0, 4) : COVER_AT}
+      value={coverAt}
+      onChange={setCoverAt}
+      size="sm"
+    />
+  );
+
+  const hero = (
+    <div data-testid="ward-on-call-hud-island">
+      <Hero
+        level={1}
+        eyebrow={
+          atLater ? `Who answers at ${hhmm(minute)}${minute < boardMinute ? " tomorrow" : ""}` : "Who to call now"
+        }
+        title="On-call directory"
+        stats={heroStats}
+        aside={clock}
+        bar={
+          <>
+            <span className={styles.heroLabel}>Cover at</span>
+            <span className={styles.trackWrap}>{coverTrack}</span>
+            {!isPhone && changes.length ? (
+              <span className={styles.changes}>
+                <span className={styles.heroLabel}>Next</span>
+                {changes.slice(0, 1).map((change) => (
+                  <button
+                    key={`${change.minute}-${change.text}`}
+                    type="button"
+                    className={styles.change}
+                    title={`Show cover at ${hhmm(change.minute)}`}
+                    onClick={() => setCoverAt(String(change.minute))}
+                  >
+                    <b className={styles.mono}>{hhmm(change.minute)}</b>
+                    <span className={styles.changeText}>{change.text}</span>
+                  </button>
+                ))}
+              </span>
+            ) : null}
+          </>
+        }
+        barAside={
+          isPhone ? undefined : (
+            <>
+              <Button variant="light" size="sm" icon={Copy} onClick={copyWhoIsOn}>
+                Copy who is on
+              </Button>
+              <Button variant="onHero" size="sm" icon={Star} count={favourites.length} onClick={() => setTab("mine")}>
+                My list
+              </Button>
+              <Button variant="onHero" size="sm" icon={Printer} onClick={() => setDowntimeOpen(true)}>
+                Downtime card
+              </Button>
+            </>
+          )
+        }
+        foot={
+          isPhone ? (
+            <PhoneFocal entries={entries} actions={actions} onOpen={(id) => setSheetId(id)} />
+          ) : (
+            <div className={styles.keys} role="group" aria-label="Key lines">
+              {keyLines.map((entry) => {
+                const now = availability(entry, minute);
+                return (
+                  <button
+                    key={entry.id}
+                    id={entry.id === "sw-bfc" ? "ward-reach-bed" : undefined}
+                    type="button"
+                    className={styles.key}
+                    aria-pressed={selected.id === entry.id}
+                    data-testid={`ward-on-call-key-${entry.id}`}
+                    onClick={() => pick(entry.id)}
+                  >
+                    <span className={styles.keyLabel}>
+                      <ServiceTag service={entry.service} label="" />
+                      <span className={styles.truncate}>{keyLineLabel(entry)}</span>
+                    </span>
+                    <span className={styles.keyNumber}>{numberAt(entry, minute) ?? "Not held"}</span>
+                    <span className={styles.keyUntil}>
+                      {now.kind === "on" ? (
+                        now.allDay ? (
+                          <>
+                            <StatusGlyph tone="success" size={9} />
+                            24 hours
+                          </>
+                        ) : (
+                          <>
+                            <StatusGlyph tone={now.soon ? "warning" : "success"} size={9} />
+                            Until <span className={styles.mono}>{hhmm(now.until)}</span>
+                          </>
+                        )
+                      ) : now.kind === "off" ? (
+                        <>
+                          <StatusGlyph tone="neutral" size={9} />
+                          Opens <span className={styles.mono}>{hhmm(now.opens)}</span>
+                        </>
+                      ) : null}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )
+        }
+      />
+    </div>
+  );
+
+  const tabItems = [
+    { id: "hospitals" as const, label: isPhone ? "Hospitals" : "Hospitals", count: tabCounts.hospitals },
+    { id: "community" as const, label: isPhone ? "Teams" : "Community", count: tabCounts.community },
+    { id: "statewide" as const, label: isPhone ? "State" : "Statewide", count: tabCounts.statewide },
+    { id: "mine" as const, label: isPhone ? "Mine" : "My list", count: tabCounts.mine },
   ];
 
-  const statusFor =
-    coverAt === "now"
-      ? `Status shown for now, ${formatInstantWithDay(boardNow, boardNow)}`
-      : `Status shown for ${hhmm(referenceMinute)} ${referenceIsTomorrow ? "tomorrow" : "today"}`;
+  const search = (
+    <>
+      <label className={styles.srOnlyLabel} htmlFor={searchId}>
+        Search contacts
+      </label>
+      <TextInput
+        id={searchId}
+        type="search"
+        icon={Search}
+        trailing={isPhone ? undefined : <Kbd>/</Kbd>}
+        placeholder="Role, hospital, ward, team or number"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        boxClassName={styles.search}
+      />
+    </>
+  );
 
-  async function copyRoute(item: RosterItem) {
-    const text = `${item.role}, ${item.service}: reach via ${item.route === "bed" ? "bed desk" : "switchboard"}. ${item.shift} AWST.`;
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopyNotice("Route copied");
-    } catch {
-      setCopyNotice("Copy unavailable in this browser");
-    }
+  const highlightChips = HIGHLIGHTS.map((item) => (
+    <FilterChip
+      key={item.id}
+      pressed={highlight === item.id}
+      onPressedChange={() => toggleHighlight(item.id)}
+      count={tabRows.filter((entry) => item.test(entry, minute)).length}
+      className={styles.chip}
+    >
+      {item.id === "email" ? (
+        <Icon icon={Mail} size={14} />
+      ) : (
+        <StatusGlyph tone={item.id === "now" ? "success" : "warning"} size={9} />
+      )}
+      {item.label}
+    </FilterChip>
+  ));
+
+  const groupByChip =
+    tab === "hospitals" ? (
+      <FilterChip
+        pressed={groupBy === "role"}
+        onPressedChange={(on) => setGroupBy(on ? "role" : "place")}
+        className={styles.chip}
+      >
+        <Icon icon={groupBy === "role" ? Users : MapPin} size={14} />
+        By role
+      </FilterChip>
+    ) : null;
+
+  const noticeLine = (
+    <p className={cx(styles.notice, notice && styles.noticeOn)} role="status" data-testid="ward-on-call-notice">
+      {notice}
+    </p>
+  );
+
+  if (isPhone) {
+    return (
+      <div className={styles.screen} data-testid="ward-on-call-screen" data-ward-design="v8">
+        <main id="main-content" className={styles.main}>
+          {hero}
+          <div className={styles.phoneTools}>
+            {search}
+            <Tabs label="Directory" items={tabItems} value={tab} onChange={setTab} className={styles.phoneTabs} />
+            <div className={styles.phoneChips}>
+              {groupByChip}
+              {highlightChips}
+            </div>
+          </div>
+          <PhoneDirectory
+            entries={entries}
+            rows={tabRows}
+            tab={tab}
+            groupBy={tab === "hospitals" ? groupBy : "place"}
+            actions={actions}
+            isHighlighted={isHighlighted}
+            queryActive={Boolean(query.trim())}
+            hitCount={queryHits.length}
+            onClearQuery={() => setQuery("")}
+            onOpen={(id) => setSheetId(id)}
+          />
+          <p className={styles.phoneFoot}>
+            <StatusGlyph tone="warning" size={9} />
+            Synthetic records. Every number is a mock from an unassigned range.
+          </p>
+          {noticeLine}
+        </main>
+        {sheetEntry ? <PhoneSheet entry={sheetEntry} actions={actions} onClose={() => setSheetId(null)} /> : null}
+      </div>
+    );
   }
 
   return (
-    <div className={styles.screen} data-testid="ward-on-call-screen" data-ward-design="v6">
+    <div className={styles.screen} data-testid="ward-on-call-screen" data-ward-design="v8">
       <main id="main-content" className={styles.main}>
-        <div data-testid="ward-on-call-hud-island">
-          <Hero
-            level={1}
-            eyebrow="Statewide specialist coordination"
-            title="On-call directory"
-            stats={
-              <>
-                <HeroStat value={counts.recorded} label="Roles" />
-                <HeroStat value={roster.filter((role) => role.role === "Duty consultant").length} label="Consultants" />
-                <HeroStat value={departments.length} label="EDs" />
-                <HeroStat
-                  value={`${onNow}/${counts.recorded}`}
-                  label="On now"
-                  tone={onNow > 0 ? "success" : undefined}
-                />
-                <HeroStat value={dur(nextChange * MINUTE)} label={`to ${hhmm(boardMinute + nextChange)} change`} />
-              </>
-            }
-            bar={
-              <HeroTrack
-                label="Filter by health service"
-                items={serviceItems}
-                value={selectedService}
-                onChange={selectService}
-              />
-            }
-            barAside={
-              <span className={styles.heroClock}>
-                <Icon icon={Clock} size={14} />
-                <span className={styles.heroClockTime}>{formatInstantWithDay(boardNow, boardNow)}</span>
-                <span className={styles.heroClockZone}>AWST</span>
-              </span>
-            }
-          />
-        </div>
-
-        <div className={styles.topGrid}>
-          <Card aria-labelledby="ward-on-call-now" data-testid="ward-on-call-now" className={styles.rosterCard}>
-            <CardHead
-              id="ward-on-call-now"
-              icon={Phone}
-              title="On-call roles"
-              meta={<Count n={filteredRoster.length} />}
-              action={
-                <div className={styles.headActions}>
-                  {hasFilters ? (
-                    <Button variant="ghost" size="sm" onClick={clearFilters}>
-                      Clear filters
-                    </Button>
-                  ) : null}
-                  <label className={styles.srOnlyLabel} htmlFor={searchInputId}>
-                    Search roster and emergency departments
-                  </label>
-                  <TextInput
-                    id={searchInputId}
-                    type="search"
-                    icon={Search}
-                    trailing={<Kbd>/</Kbd>}
-                    placeholder="Roles, hospitals, services"
-                    value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    boxClassName={styles.search}
-                  />
-                  <FilterChip
-                    pressed={favouritesOnly}
-                    onPressedChange={setFavouritesOnly}
-                    count={favourites.length}
-                    className={styles.favouritesChip}
-                  >
-                    <Icon icon={Star} size={14} />
-                    Favourites
-                  </FilterChip>
-                  <Select
-                    aria-label="Filter on-call roles"
-                    value={selectedRole}
-                    onChange={(event) => setSelectedRole(event.target.value as RoleFilter)}
-                    boxClassName={styles.roleSelect}
-                  >
-                    <option value="all">All roles</option>
-                    <option value="coordinator">Coordinators</option>
-                    <option value="consultant">Duty consultants</option>
-                    <option value="governance">Governance lead</option>
-                  </Select>
-                </div>
+        {hero}
+        <div className={styles.grid}>
+          <Card
+            id="ward-reach-switchboard"
+            tabIndex={-1}
+            aria-label="Contacts directory"
+            data-testid="ward-on-call-directory"
+            className={styles.directory}
+          >
+            <div className={styles.dirHead}>
+              <Tabs label="Directory" items={tabItems} value={tab} onChange={setTab} />
+              <span className={styles.spacer} />
+              {search}
+            </div>
+            <div className={styles.dirHead2} role="group" aria-label="Group and highlight rows. Nothing is hidden">
+              {groupByChip}
+              {groupByChip ? <span className={styles.divider} aria-hidden="true" /> : null}
+              {highlightChips}
+              {highlight || query ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setHighlight(null);
+                    setQuery("");
+                  }}
+                >
+                  Clear
+                </Button>
+              ) : null}
+            </div>
+            <DirectoryTable
+              entries={entries}
+              rows={tabRows}
+              tab={tab}
+              groupBy={tab === "hospitals" ? groupBy : "place"}
+              actions={actions}
+              selectedId={selected.id}
+              collapsed={collapsed}
+              onToggleGroup={(key) =>
+                setCollapsed((current) => {
+                  const next = new Set(current);
+                  if (next.has(key)) next.delete(key);
+                  else next.add(key);
+                  return next;
+                })
               }
+              isHighlighted={isHighlighted}
             />
-            <CardBody flush className={styles.tableScroll}>
-              <table className={cx(tableClasses.table, styles.rosterTable)} data-testid="ward-on-call-service-table">
-                <thead>
-                  <tr>
-                    <th scope="col" className={styles.starCol}>
-                      <SrOnly>Favourite</SrOnly>
-                    </th>
-                    <th scope="col">Service</th>
-                    <th scope="col">Role</th>
-                    <th scope="col">Contact for</th>
-                    <th scope="col">Shift, AWST</th>
-                    <th scope="col">Reach via</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRoster.map((item) => {
-                    const window = windows.get(item.id);
-                    const on = window ? isOn(window, referenceMinute) : false;
-                    const selected = panelRole?.id === item.id;
-                    const favourite = favourites.includes(item.id);
-                    return (
-                      <Fragment key={item.id}>
-                        <tr
-                          data-testid={`ward-on-call-role-${item.id}`}
-                          className={cx(styles.rosterRow, selected && tableClasses.selected)}
-                          onClick={(event) => {
-                            if ((event.target as HTMLElement).closest("a, button")) return;
-                            setFocusedRole(item.id);
-                          }}
-                        >
-                          <td className={styles.starCol}>
-                            <button
-                              type="button"
-                              className={cx(styles.favouriteButton, favourite && styles.favouriteOn)}
-                              aria-label={`Favourite ${item.role} for ${item.service}`}
-                              aria-pressed={favourite}
-                              onClick={() => toggleFavourite(item.id)}
-                            >
-                              <Icon icon={Star} size={16} />
-                            </button>
-                          </td>
-                          <td className={styles.serviceCell}>
-                            {item.service === NETWORK_SERVICE ? "Statewide network" : item.service}
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              className={styles.roleButton}
-                              aria-label={`Coverage and handover for ${item.role} for ${item.service}`}
-                              aria-pressed={selected}
-                              aria-controls={panelId}
-                              onClick={() => setFocusedRole(item.id)}
-                            >
-                              <span className={styles.roleName}>{item.role}</span>
-                              <span className={styles.cellDetail}>{item.facility}</span>
-                            </button>
-                          </td>
-                          <td className={styles.purposeCell}>{purposeOf(item)}</td>
-                          <td className={styles.shiftCell}>
-                            <span className={styles.shiftTimes}>
-                              {window ? `${hhmm(window.start)} to ${hhmm(window.end)}` : item.shift}
-                            </span>
-                            {window ? (
-                              <span className={cx(styles.shiftState, on && styles.shiftOn)}>
-                                <StatusGlyph tone={on ? "success" : "neutral"} size={9} />
-                                {on ? "On, ends" : `${window.kind},`}
-                                <Timer
-                                  at={(referenceMinute + minutesToChange(window, referenceMinute)) * MINUTE}
-                                  now={referenceMinute * MINUTE}
-                                  direction="in"
-                                />
-                              </span>
-                            ) : null}
-                          </td>
-                          <td>
-                            <a
-                              className={styles.routingLink}
-                              href={`#ward-reach-${item.route}`}
-                              aria-label={`How to reach ${item.role} for ${item.service}`}
-                            >
-                              {item.route === "bed" ? "Bed desk" : "Switchboard"}
-                            </a>
-                          </td>
-                        </tr>
-                        <tr className={styles.printRow} hidden data-print-expand="" id={`ward-coverage-${item.id}`}>
-                          <td colSpan={6}>
-                            <span className={styles.printFact}>
-                              <span>Current cover</span> <strong>Not verified</strong>
-                            </span>
-                            <span className={styles.printFact}>
-                              <span>Last confirmed</span> <strong>Not recorded</strong>
-                            </span>
-                          </td>
-                        </tr>
-                      </Fragment>
-                    );
-                  })}
-                  {filteredRoster.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className={styles.emptyTableState}>
-                        {serviceHasNoRoles
-                          ? `No on-call roles recorded for ${selectedService} in this prototype. Use the current site directory to confirm cover.`
-                          : favouritesOnly
-                            ? "No favourite roles match. Star a role in All roles, or clear filters to see the directory."
-                            : "No on-call roles match your search."}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </CardBody>
             <CardFoot
               meta={
-                <span className={styles.footMeta}>
-                  <span data-testid="ward-on-call-count" aria-live="polite">
-                    <span className="sr-only">Synthetic records: </span>
-                    {filteredRoster.length} {filteredRoster.length === 1 ? "role" : "roles"}
-                    {hasFilters ? ` of ${counts.recorded}` : " recorded"}
-                  </span>
-                  <span aria-hidden="true">·</span>
-                  <span>{statusFor}</span>
+                <span className={styles.footMeta} data-testid="ward-on-call-count">
+                  {tabRows.length} {tabRows.length === 1 ? "contact" : "contacts"} in this tab, {entries.length} in all.{" "}
+                  {atLater ? `Shown as at ${hhmm(minute)}.` : `Shown as at ${hhmm(boardMinute)}, live.`}
                 </span>
               }
             >
-              <span className={styles.disclosure}>Roles and shifts are invented. Contact details are not held.</span>
+              <span className={styles.disclosure}>
+                <StatusGlyph tone="warning" size={9} />
+                Synthetic records. Every number is a mock from an unassigned range and every email uses a reserved
+                domain. {checkDue.length} records are over {CHECK_DUE_DAYS} days since their last check.
+              </span>
             </CardFoot>
-            {preferenceNotice && (
-              <p className={styles.notice} role="status">
-                {preferenceNotice}
-              </p>
+          </Card>
+
+          <Card className={styles.panel} aria-labelledby={panelHeadingId} data-testid="ward-on-call-role-panel">
+            {queryHits.length || query.trim() ? (
+              <MatchesPanel query={query} hits={queryHits} actions={actions} onClear={() => setQuery("")} />
+            ) : (
+              <ContactCard entry={selected} actions={actions} headingId={panelHeadingId} />
             )}
           </Card>
-
-          <RolePanel
-            id={panelId}
-            item={panelRole}
-            roster={roster}
-            windows={windows}
-            referenceMinute={referenceMinute}
-            atLabel={coverAt === "now" ? "now" : `at ${hhmm(referenceMinute)}`}
-            onCopy={copyRoute}
-            copyNotice={copyNotice}
-          />
         </div>
-
-        <CoverChart
-          roster={roster}
-          windows={windows}
-          coverAt={coverAt}
-          onCoverAt={setCoverAt}
-          referenceMinute={referenceMinute}
-        />
-
-        <div className={styles.lowerGrid}>
-          <Card aria-labelledby="ward-on-call-ed" data-testid="ward-on-call-ed">
-            <CardHead
-              id="ward-on-call-ed"
-              icon={Radio}
-              title="ED liaison, by department"
-              meta={
-                <span aria-live="polite">
-                  <span className="sr-only">Synthetic records: </span>
-                  {filteredDepartments.length} {filteredDepartments.length === 1 ? "department" : "departments"}
-                  {hasDirectoryFilters ? ` of ${departments.length}` : ""}
-                </span>
-              }
-            />
-            <CardBody flush className={styles.tableScroll}>
-              <table className={cx(tableClasses.table, styles.edTable)} data-testid="ward-on-call-ed-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Hospital</th>
-                    <th scope="col">Health service</th>
-                    <th scope="col">Reach via</th>
-                    <th scope="col">
-                      <SrOnly>Workspace</SrOnly>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDepartments.map((department) => {
-                    const site = siteByCode(department.siteCode);
-                    return (
-                      <tr key={department.id} data-testid={`ward-on-call-ed-row-${department.id}`}>
-                        <td className={styles.siteCell} title={department.name}>
-                          <span className={styles.roleName}>{site?.name ?? department.name}</span>
-                          <span className={styles.cellDetail}>{department.siteCode} ED</span>
-                        </td>
-                        <td>{site?.service ?? "Regional"}</td>
-                        <td>
-                          <a
-                            className={styles.routingLink}
-                            href="#ward-reach-ed"
-                            aria-label={`How to reach ${department.name}`}
-                          >
-                            Local ED liaison
-                          </a>
-                        </td>
-                        <td className={styles.workspaceCell}>
-                          <Link
-                            className={styles.workspaceLink}
-                            href={edHref(department.id)}
-                            prefetch={false}
-                            aria-label={`Open ${department.name} workspace`}
-                          >
-                            Open ED
-                            <Icon icon={ArrowRight} size={14} />
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {filteredDepartments.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className={styles.emptyTableState}>
-                        No emergency departments match the current filter or search.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </CardBody>
-          </Card>
-
-          <Card aria-labelledby="ward-on-call-reaching" data-testid="ward-on-call-reaching">
-            <CardHead
-              id="ward-on-call-reaching"
-              icon={Building2}
-              title="Reaching a role"
-              meta="current site directory"
-            />
-            <CardBody className={styles.reachList}>
-              <div id="ward-reach-switchboard" tabIndex={-1} className={styles.reachItem}>
-                <Icon icon={Building2} size={16} />
-                <div>
-                  <h3 className={styles.reachTitle}>Hospital switchboard</h3>
-                  <p className={styles.reachText}>Ask for the on-call role and confirm who covers the shift.</p>
-                </div>
-              </div>
-              <div id="ward-reach-bed" tabIndex={-1} className={styles.reachItem}>
-                <Icon icon={Layers} size={16} />
-                <div>
-                  <h3 className={styles.reachTitle}>Bed coordination desk</h3>
-                  <p className={styles.reachText}>Statewide placement queries, with the movement reference ready.</p>
-                </div>
-              </div>
-              <div id="ward-reach-ed" tabIndex={-1} className={styles.reachItem}>
-                <Icon icon={Radio} size={16} />
-                <div>
-                  <h3 className={styles.reachTitle}>Emergency department liaison</h3>
-                  <p className={styles.reachText}>
-                    The hospital directory reaches its local mental health liaison team.
-                  </p>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-
+        {noticeLine}
         <WardPrototypeFooter
           testId="ward-on-call-governance"
-          note="Not a medical device. Lists update once a minute."
+          note="Not a medical device. Synthetic records, mock numbers. Calling and email are not wired."
         />
       </main>
+      <DowntimeCard
+        open={downtimeOpen}
+        onClose={() => setDowntimeOpen(false)}
+        entries={[
+          ...keyLines,
+          ...entries.filter((entry) => favourites.includes(entry.id) && !KEY_LINE_IDS.includes(entry.id as never)),
+        ]}
+        onCopy={actions.onCopy}
+      />
     </div>
   );
 }
 
-function RolePanel({
-  id,
-  item,
-  roster,
-  windows,
-  referenceMinute,
-  atLabel,
-  onCopy,
-  copyNotice,
+function MatchesPanel({
+  query,
+  hits,
+  actions,
+  onClear,
 }: {
-  id: string;
-  item: RosterItem | undefined;
-  roster: RosterItem[];
-  windows: Map<string, ShiftWindow | undefined>;
-  referenceMinute: number;
-  /** "now", or "at 18:00" when Cover at picks another time. */
-  atLabel: string;
-  onCopy: (item: RosterItem) => void;
-  copyNotice: string;
+  query: string;
+  hits: DirectoryEntry[];
+  actions: ContactActions;
+  onClear: () => void;
 }) {
-  if (!item) {
-    return (
-      <Card id={id} className={styles.panel} aria-label="Role detail">
-        <CardBody>
-          <p className={styles.panelEmpty}>No role selected</p>
-        </CardBody>
-      </Card>
-    );
-  }
-  const window = windows.get(item.id);
-  const on = window ? isOn(window, referenceMinute) : false;
-  /*
-   * "If not reached" lists the other recorded roles for the same service, then the statewide
-   * roles, in roster order. It is derived from the roster; no fallback procedure is recorded.
-   */
-  const sameService = roster.filter((role) => role.service === item.service && role.id !== item.id);
-  const network = roster.filter((role) => role.service === NETWORK_SERVICE);
-  const chain = [...sameService, ...network.filter((role) => role.id === "bed-coordinator" && role.id !== item.id)]
-    .filter((role, index, all) => all.findIndex((other) => other.id === role.id) === index)
-    .slice(0, 2);
-  const governance = network.find((role) => role.id === "governance-lead");
-  if (governance && governance.id !== item.id && !chain.some((role) => role.id === governance.id)) {
-    chain.push(governance);
-  }
-
   return (
-    <Card id={id} className={styles.panel} aria-labelledby={`${id}-title`} data-testid="ward-on-call-role-panel">
-      <div className={styles.panelHead}>
-        <div className={styles.panelTitleBlock}>
-          <span className={styles.eyebrow}>
-            {item.service === NETWORK_SERVICE ? "Statewide network" : item.service}
-          </span>
-          <h2 id={`${id}-title`} className={styles.panelTitle}>
-            {item.role}
-          </h2>
-          <span className={styles.panelMeta}>
-            {item.facility}
-            {window ? ` · ${window.kind.toLowerCase()}` : ""}
-          </span>
+    <>
+      <div className={styles.cardHead}>
+        <div className={styles.cardWho}>
+          <h2 className={styles.cardTitle}>Matches</h2>
+          <span className={styles.cardPlace}>For &ldquo;{query.trim()}&rdquo;. Rows stay in place, highlighted.</span>
         </div>
-        <Badge tone={on ? "success" : "neutral"}>{`${on ? "On" : "Off"} ${atLabel}`}</Badge>
-      </div>
-      <div className={styles.panelBody}>
-        <Inset className={styles.facts}>
-          <dl className={styles.factGrid}>
-            <div>
-              <dt>Shift, AWST</dt>
-              <dd>{window ? `${hhmm(window.start)} to ${hhmm(window.end)}` : item.shift}</dd>
-            </div>
-            <div>
-              <dt>Reach via</dt>
-              <dd>{item.route === "bed" ? "Bed desk" : "Switchboard"}</dd>
-            </div>
-            <div>
-              <dt>Current cover</dt>
-              <dd className={styles.notVerified}>
-                <StatusGlyph tone="warning" size={9} />
-                Not verified
-              </dd>
-            </div>
-            <div>
-              <dt>Last confirmed</dt>
-              <dd>Not recorded</dd>
-            </div>
-          </dl>
-        </Inset>
-
-        <section aria-labelledby={`${id}-chain`}>
-          <h3 id={`${id}-chain`} className={styles.eyebrow}>
-            If not reached
-          </h3>
-          <ol className={styles.chain}>
-            {chain.map((role, index) => {
-              const roleWindow = windows.get(role.id);
-              const roleOn = roleWindow ? isOn(roleWindow, referenceMinute) : false;
-              return (
-                <li key={role.id} className={styles.chainItem}>
-                  <span className={styles.chainStep} aria-hidden="true">
-                    {index + 1}
-                  </span>
-                  <span className={styles.chainRole}>{role.role}</span>
-                  <span className={cx(styles.chainState, roleOn && styles.shiftOn)}>
-                    <StatusGlyph tone={roleOn ? "success" : "neutral"} size={9} />
-                    {roleOn ? "On" : roleWindow ? `From ${hhmm(roleWindow.start)}` : "Not recorded"}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-
-        <section aria-labelledby={`${id}-before`}>
-          <h3 id={`${id}-before`} className={styles.eyebrow}>
-            Before you contact a team
-          </h3>
-          <Inset className={styles.checklist}>
-            <ul>
-              <li>
-                <StatusGlyph tone="neutral" size={9} />
-                Confirm cover in the current site directory
-              </li>
-              <li>
-                <StatusGlyph tone="neutral" size={9} />
-                Confirm role scope with the service
-              </li>
-              <li>
-                <StatusGlyph tone="neutral" size={9} />
-                Have the movement reference, referring site, reason for contact and urgency ready
-              </li>
-            </ul>
-          </Inset>
-        </section>
-      </div>
-      <CardFoot meta={copyNotice ? <span role="status">{copyNotice}</span> : undefined}>
-        <Button size="sm" icon={Copy} onClick={() => onCopy(item)}>
-          Copy route
+        <Button variant="ghost" size="sm" onClick={onClear}>
+          Clear
         </Button>
-      </CardFoot>
-    </Card>
+      </div>
+      {hits.length ? (
+        <ul className={styles.matches}>
+          {hits.slice(0, 30).map((entry) => (
+            <li key={entry.id}>
+              <button type="button" className={styles.match} onClick={() => actions.onPick(entry.id)}>
+                <span className={styles.roleCell}>
+                  <b>{entry.name}</b>
+                  <span>{placeOf(entry)}</span>
+                </span>
+                <span className={styles.matchEnd}>
+                  <span className={styles.number}>{numberAt(entry, actions.minute) ?? entry.email ?? ""}</span>
+                  <UntilCell entry={entry} actions={actions} compact />
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className={styles.note}>No role, place, number or team matches.</p>
+      )}
+    </>
   );
 }
 
-const AXIS_HOURS = [0, 6, 12, 18, 24];
-
-function CoverChart({
-  roster,
-  windows,
-  coverAt,
-  onCoverAt,
-  referenceMinute,
+function DirectoryTable({
+  entries,
+  rows,
+  tab,
+  groupBy,
+  actions,
+  selectedId,
+  collapsed,
+  onToggleGroup,
+  isHighlighted,
 }: {
-  roster: RosterItem[];
-  windows: Map<string, ShiftWindow | undefined>;
-  coverAt: CoverAt;
-  onCoverAt: (value: CoverAt) => void;
-  referenceMinute: number;
+  entries: readonly DirectoryEntry[];
+  rows: readonly DirectoryEntry[];
+  tab: DirectoryTab;
+  groupBy: "place" | "role";
+  actions: ContactActions;
+  selectedId: string;
+  collapsed: ReadonlySet<string>;
+  onToggleGroup: (key: string) => void;
+  isHighlighted: (entry: DirectoryEntry) => boolean;
 }) {
-  /*
-   * Gaps are derived from the roster: within a service, the time a coordinator is on and the duty
-   * consultant is not; and the off hours of any business-hours role.
-   */
-  const gaps: { id: string; text: string; tone: "warning" | "neutral" }[] = [];
-  const seen = new Set<string>();
-  for (const service of HEALTH_SERVICES) {
-    const roles = roster.filter((item) => item.service === service);
-    const coordinator = roles.find((item) => item.role === "Coordinator on call");
-    const consultant = roles.find((item) => item.role === "Duty consultant");
-    const cw = coordinator && windows.get(coordinator.id);
-    const dw = consultant && windows.get(consultant.id);
-    if (cw && dw && !cw.businessHours && cw.start !== dw.start && isOn(cw, dw.start - 1)) {
-      const key = `consultant-${cw.start}-${dw.start}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        gaps.push({ id: key, text: `No duty consultant ${hhmm(cw.start)} to ${hhmm(dw.start)}`, tone: "warning" });
-      }
-    }
+  const blocks = groupRows(entries, rows, tab, groupBy);
+  const byRole = tab === "hospitals" && groupBy === "role";
+  const scroller = useRef<HTMLDivElement>(null);
+  const services = blocks.flatMap((block) => (block.service ? [block.service] : []));
+  /* Jump inside the table's own scroller, so the page itself never moves. */
+  function jumpTo(tone: string) {
+    const box = scroller.current;
+    const row = box?.querySelector<HTMLElement>(`#ward-on-call-svc-${tone}`);
+    if (!box || !row) return;
+    const head = box.querySelector("thead")?.getBoundingClientRect().height ?? 0;
+    box.scrollTo({ top: row.offsetTop - head, behavior: "smooth" });
   }
-  for (const item of roster) {
-    const window = windows.get(item.id);
-    if (window?.businessHours)
-      gaps.push({
-        id: `off-${item.id}`,
-        text: `${item.service} cover off ${hhmm(window.end)} to ${hhmm(window.start)}`,
-        tone: "neutral",
-      });
-  }
-  const pct = (minute: number) => `${(minute / DAY) * 100}%`;
-
   return (
-    <Card aria-labelledby="ward-on-call-cover" data-testid="ward-on-call-cover">
-      <CardHead
-        id="ward-on-call-cover"
-        icon={Clock}
-        title="Cover through the day"
-        meta="synthetic shifts"
-        action={
-          <div className={styles.coverAt}>
-            <span className={styles.coverAtLabel} aria-hidden="true">
-              Cover at
-            </span>
-            <Segmented label="Cover at" items={COVER_AT_ITEMS} value={coverAt} onChange={onCoverAt} />
-          </div>
-        }
-      />
-      <CardBody>
-        <div className={styles.chart}>
-          <div className={styles.chartRow} aria-hidden="true">
-            <span />
-            <div className={styles.axis}>
-              {AXIS_HOURS.map((hour) => (
-                <span
-                  key={hour}
-                  className={cx(styles.axisTick, hour === 24 && styles.axisEnd)}
-                  style={{ left: pct(hour * 60) }}
-                >
-                  {String(hour).padStart(2, "0")}:00
-                </span>
-              ))}
-            </div>
-          </div>
-          <ul className={styles.chartRows}>
-            {roster.map((item) => {
-              const window = windows.get(item.id);
-              return (
-                <li key={item.id} className={styles.chartRow}>
-                  <span className={styles.chartLabel}>
-                    <strong>{item.role}</strong> {item.service === NETWORK_SERVICE ? "Statewide" : item.service}
-                  </span>
-                  <span className={styles.track}>
-                    {AXIS_HOURS.slice(1, -1).map((hour) => (
-                      <span key={hour} className={styles.grid} style={{ left: pct(hour * 60) }} aria-hidden="true" />
-                    ))}
-                    {window
-                      ? daySegments(window).map(([from, to]) => (
-                          <span
-                            key={from}
-                            className={cx(styles.bar, window.businessHours && styles.barBusiness)}
-                            style={{ left: pct(from), width: pct(to - from) }}
-                            aria-hidden="true"
-                          />
-                        ))
-                      : null}
-                    <span className={styles.coverLine} style={{ left: pct(mod(referenceMinute)) }} aria-hidden="true" />
-                    <SrOnly>
-                      {window ? `on call ${hhmm(window.start)} to ${hhmm(window.end)}` : "no shift recorded"}
-                    </SrOnly>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </CardBody>
-      <CardFoot
-        meta={
-          <span className={styles.gaps}>
-            <strong className={styles.gapsLabel}>Cover gaps</strong>
-            {gaps.map((gap) => (
-              <span key={gap.id} className={styles.gap}>
-                <StatusGlyph tone={gap.tone} size={9} />
-                {gap.text}
-              </span>
-            ))}
+    <div className={styles.tableScroll} ref={scroller}>
+      <table className={cx(tableClasses.table, styles.dirTable)} data-testid="ward-on-call-dir-table">
+        <colgroup>
+          <col className={styles.colStar} />
+          <col className={styles.colRole} />
+          <col className={styles.colNumber} />
+          <col className={styles.colUntil} />
+          <col />
+        </colgroup>
+        <thead>
+          <tr>
+            <th scope="col">
+              <SrOnly>My list</SrOnly>
+            </th>
+            <th scope="col">Role and place</th>
+            <th scope="col">Number</th>
+            <th scope="col">Available</th>
+            <th scope="col">Referral email</th>
+          </tr>
+        </thead>
+        <tbody>
+          {blocks.map((block) => (
+            <Fragment key={block.service ?? "all"}>
+              {block.service ? (
+                <tr className={styles.serviceRow} id={`ward-on-call-svc-${SERVICE_META[block.service].tone}`}>
+                  <th scope="rowgroup" colSpan={5}>
+                    <span className={styles.serviceHead}>
+                      <ServiceTag service={block.service} label={SERVICE_META[block.service].name} strong />
+                      <span className={styles.cellSub}>
+                        <span className={styles.mono}>
+                          {block.groups.reduce(
+                            (total, group) =>
+                              total + group.rows.filter((entry) => isAnswering(entry, actions.minute)).length,
+                            0,
+                          )}
+                        </span>{" "}
+                        of{" "}
+                        <span className={styles.mono}>
+                          {block.groups.reduce((total, group) => total + group.rows.length, 0)}
+                        </span>{" "}
+                        answering
+                      </span>
+                      <span className={styles.spacer} />
+                      {services.length > 1 ? (
+                        <span className={styles.jump} role="group" aria-label="Jump to service">
+                          {services.map((service) => (
+                            <button
+                              key={service}
+                              type="button"
+                              className={styles.jumpButton}
+                              aria-label={`Jump to ${SERVICE_META[service].name}`}
+                              aria-current={service === block.service ? "true" : undefined}
+                              onClick={() => jumpTo(SERVICE_META[service].tone)}
+                            >
+                              <ServiceTag service={service} label={JUMP_LABEL[service]} />
+                            </button>
+                          ))}
+                        </span>
+                      ) : null}
+                    </span>
+                  </th>
+                </tr>
+              ) : null}
+              {block.groups.map((group) => {
+                const isCollapsed = collapsed.has(group.key);
+                const on = group.rows.filter((entry) => isAnswering(entry, actions.minute)).length;
+                return (
+                  <Fragment key={group.key}>
+                    {tab !== "mine" ? (
+                      <tr className={styles.groupRow}>
+                        <th scope="rowgroup" colSpan={5}>
+                          <button
+                            type="button"
+                            className={styles.groupButton}
+                            aria-expanded={!isCollapsed}
+                            onClick={() => onToggleGroup(group.key)}
+                          >
+                            <Icon
+                              icon={ChevronDown}
+                              size={14}
+                              className={cx(styles.chevron, isCollapsed && styles.chevronShut)}
+                            />
+                            {group.code ? <span className={styles.code}>{group.code}</span> : null}
+                            <span className={styles.groupTitle}>{group.title}</span>
+                            {group.meta ? <span className={styles.cellSub}>{group.meta}</span> : null}
+                            <span className={styles.spacer} />
+                            <span className={styles.cellSub}>
+                              <span className={styles.mono}>{on}</span> of{" "}
+                              <span className={styles.mono}>{group.rows.length}</span> answering
+                            </span>
+                          </button>
+                        </th>
+                      </tr>
+                    ) : null}
+                    {group.rows.map((entry) =>
+                      isCollapsed && !isHighlighted(entry) ? null : (
+                        <DirectoryRow
+                          key={entry.id}
+                          entry={entry}
+                          actions={actions}
+                          byRole={byRole || tab === "mine"}
+                          selected={entry.id === selectedId}
+                          highlighted={isHighlighted(entry)}
+                        />
+                      ),
+                    )}
+                  </Fragment>
+                );
+              })}
+            </Fragment>
+          ))}
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={5} className={styles.empty}>
+                Star any line to keep it here. My list stays in this browser and holds contact ids only.
+              </td>
+            </tr>
+          ) : null}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function DirectoryRow({
+  entry,
+  actions,
+  byRole,
+  selected,
+  highlighted,
+}: {
+  entry: DirectoryEntry;
+  actions: ContactActions;
+  byRole: boolean;
+  selected: boolean;
+  highlighted: boolean;
+}) {
+  const name = byRole && !isWardRow(entry) && entry.siteCode ? entry.groupTitle : entry.name;
+  const sub = byRole
+    ? isWardRow(entry)
+      ? entry.groupTitle
+      : entry.siteCode
+        ? SERVICE_META[entry.service].short
+        : entry.place
+    : isWardRow(entry)
+      ? entry.place
+      : entry.section === "statewide"
+        ? entry.place
+        : entry.purpose;
+  const number = numberAt(entry, actions.minute);
+  return (
+    <tr
+      data-testid={`ward-on-call-row-${entry.id}`}
+      className={cx(styles.row, selected && tableClasses.selected, highlighted && styles.rowHighlight)}
+      aria-selected={selected}
+      onClick={(event) => {
+        if ((event.target as HTMLElement).closest("button")) return;
+        actions.onPick(entry.id);
+      }}
+    >
+      <td className={styles.starCell}>
+        <FavouriteButton entry={entry} actions={actions} />
+      </td>
+      <td>
+        <button type="button" className={styles.roleButton} onClick={() => actions.onPick(entry.id)}>
+          <span className={styles.roleCell}>
+            <b>
+              {byRole ? <ServiceTag service={entry.service} label="" /> : null}
+              {name}
+            </b>
+            <span>{sub}</span>
           </span>
-        }
-      >
-        <span className={styles.legend} aria-hidden="true">
-          <span className={styles.legendItem}>
-            <span className={styles.swatchOn} />
-            On call
-          </span>
-          <span className={styles.legendItem}>
-            <span className={styles.swatchBusiness} />
-            Business hours
-          </span>
-          <span className={styles.legendItem}>
-            <span className={styles.swatchLine} />
-            Cover at
+        </button>
+      </td>
+      <td>
+        <NumberCell entry={entry} actions={actions} />
+      </td>
+      <td>
+        <UntilCell entry={entry} actions={actions} />
+      </td>
+      <td>
+        <span className={styles.emailCell}>
+          <span className={styles.emailText}>{entry.email ?? ""}</span>
+          <span className={styles.rowActions}>
+            {number ? (
+              <button
+                type="button"
+                className={styles.iconButton}
+                aria-label={`Copy number for ${entry.name}${entry.siteCode ? `, ${entry.siteCode}` : ""}`}
+                onClick={() => actions.onCopy(number, "Number copied")}
+              >
+                <Icon icon={Copy} size={14} />
+              </button>
+            ) : null}
+            {entry.email ? (
+              <button
+                type="button"
+                className={styles.iconButton}
+                aria-label={`Copy email for ${entry.name}${entry.siteCode ? `, ${entry.siteCode}` : ""}`}
+                onClick={() => actions.onCopy(entry.email!, "Email copied")}
+              >
+                <Icon icon={Mail} size={14} />
+              </button>
+            ) : null}
           </span>
         </span>
-      </CardFoot>
-    </Card>
+      </td>
+    </tr>
+  );
+}
+
+/** Key lines and My list with every number and its hours, to copy out before a planned outage. */
+function DowntimeCard({
+  open,
+  onClose,
+  entries,
+  onCopy,
+}: {
+  open: boolean;
+  onClose: () => void;
+  entries: DirectoryEntry[];
+  onCopy: (text: string, label: string) => void;
+}) {
+  const rows = entries.flatMap((entry) =>
+    (entry.lines.length
+      ? entry.lines
+      : [{ label: "Referral email", number: entry.email, window: entry.emailWindow }]
+    ).map((item, index) => ({ entry, item, first: index === 0 })),
+  );
+  const text = entries
+    .map(
+      (entry) =>
+        `${entry.name} (${entry.siteCode ?? SERVICE_META[entry.service].short}): ` +
+        (entry.lines.length
+          ? entry.lines
+              .map((item) => `${item.label} ${item.number ?? "not held"}, ${windowText(item.window)}`)
+              .join("; ")
+          : `email ${entry.email ?? "not held"}`),
+    )
+    .join("\n");
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title="Downtime card"
+      description="Key lines and My list, every number and its hours. Copy it out before a planned outage."
+      testId="ward-on-call-downtime"
+      footer={
+        <div className={styles.downtimeFoot}>
+          <span className={styles.cellSub}>Synthetic records, mock numbers.</span>
+          <Button variant="pri" size="sm" icon={Copy} onClick={() => onCopy(text, "Downtime card copied")}>
+            Copy as text
+          </Button>
+        </div>
+      }
+    >
+      <table className={cx(tableClasses.table, styles.downtimeTable)}>
+        <thead>
+          <tr>
+            <th scope="col">Line</th>
+            <th scope="col">Number</th>
+            <th scope="col">Hours</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ entry, item, first }) => (
+            <tr key={`${entry.id}-${item.label}`}>
+              <td>
+                <span className={styles.roleCell}>
+                  <b>{first ? entry.name : ""}</b>
+                  <span>
+                    {item.label}
+                    {first ? `, ${entry.siteCode ?? SERVICE_META[entry.service].short}` : ""}
+                  </span>
+                </span>
+              </td>
+              <td className={styles.number}>{item.number ?? "Not held"}</td>
+              <td className={styles.mono}>{windowText(item.window)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Sheet>
   );
 }
