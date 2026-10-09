@@ -526,19 +526,22 @@ test("tenant users are accepted when WARD_ALLOW_TENANT_USERS is enabled", async 
   assert.equal(await authenticate("Bearer accepted"), otherUserOid);
 });
 
-test("configured coordinators and the legacy account are accepted without enabling tenant users", async () => {
-  const coordinatorOid = "33333333-3333-4333-8333-333333333333";
-  const unlistedOid = "44444444-4444-4444-8444-444444444444";
+test("comma-separated coordinators and the legacy account are accepted without enabling tenant users", async () => {
+  const coordinatorOids = ["33333333-3333-4333-8333-333333333333", "44444444-4444-4444-8444-444444444444"];
+  const unlistedOid = "55555555-5555-4555-8555-555555555555";
   const coordinatorConfig = readConfig({
     ...environment,
     WARD_ALLOW_TENANT_USERS: "false",
-    WARD_COORDINATOR_OBJECT_IDS: coordinatorOid,
+    WARD_COORDINATOR_OBJECT_IDS: coordinatorOids.join(","),
   });
   assert.equal(coordinatorConfig.allowTenantUsers, false);
-  assert.notEqual(coordinatorOid, coordinatorConfig.allowedObjectId);
+  assert.deepEqual(coordinatorConfig.coordinatorIds, coordinatorOids);
+  for (const oid of coordinatorOids) {
+    assert.notEqual(oid, coordinatorConfig.allowedObjectId);
+  }
   const claims = {
     tid: environment.AZURE_TENANT_ID,
-    oid: coordinatorOid,
+    oid: coordinatorOids[0],
     scp: "WardFlow.Access",
   };
   let payload = claims;
@@ -547,7 +550,7 @@ test("configured coordinators and the legacy account are accepted without enabli
     jose: { jwtVerify: async () => ({ payload }) },
   });
   const authorization = request().headers.get("authorization");
-  for (const oid of [coordinatorOid, environment.WARD_ALLOWED_OBJECT_ID]) {
+  for (const oid of [...coordinatorOids, environment.WARD_ALLOWED_OBJECT_ID]) {
     payload = { ...claims, oid };
     assert.equal(await authenticate(authorization), oid);
   }
