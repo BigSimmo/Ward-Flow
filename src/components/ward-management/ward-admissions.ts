@@ -3,7 +3,9 @@ import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type {
+  Cohort,
   HomeRegion,
+  LegalStatus,
   MovementId,
   RecordedSex,
   ReferralGender,
@@ -900,4 +902,139 @@ export function isPastExpectedDischarge(admission: Admission, now: Instant): boo
  */
 export function admissionsForUnit(admissions: readonly Admission[], unitId: string): Admission[] {
   return admissions.filter((admission) => admission.unitId === unitId && admission.state !== "departed");
+}
+
+/**
+ * PLANNED ADMISSIONS — a known future arrival booked before the person comes (stream D, Josh,
+ * 9 October 2026): a court-ordered admission, a planned ECT course, respite, a planned transfer.
+ *
+ * A booking is not an `Admission`. It holds no bed and moves no capacity figure until
+ * `CONVERT_PLANNED_ADMISSION` records that the person has arrived, which creates an ordinary
+ * occupied `Admission` of the shape above. Until then the forecast counts it as demand ahead
+ * (`capacity/beds-forecast.ts`) and the action inbox raises it once its expected arrival passes
+ * without a conversion (`buildActionInbox`).
+ *
+ * The person is either an existing synthetic patient (`patientId`) or initials only. Initials are
+ * one to three letters and nothing else; no name, record number or date of birth is kept here.
+ * Every other field is chosen from a fixed list or is a number or an instant.
+ */
+export const PLANNED_ADMISSION_REASONS = [
+  "court_ordered",
+  "planned_ect",
+  "respite",
+  "planned_transfer",
+  "other",
+] as const;
+export type PlannedAdmissionReason = (typeof PLANNED_ADMISSION_REASONS)[number];
+
+export const PLANNED_ADMISSION_REASON_LABELS: Record<PlannedAdmissionReason, string> = {
+  court_ordered: "Court ordered",
+  planned_ect: "Planned ECT",
+  respite: "Respite",
+  planned_transfer: "Planned transfer",
+  other: "Other",
+};
+
+export function isPlannedAdmissionReason(value: unknown): value is PlannedAdmissionReason {
+  return typeof value === "string" && (PLANNED_ADMISSION_REASONS as readonly string[]).includes(value);
+}
+
+/** Why a booking was cancelled. Chosen, never typed. */
+export const PLANNED_ADMISSION_CANCEL_REASONS = [
+  "no_longer_needed",
+  "admitted_elsewhere",
+  "rebooked",
+  "booked_in_error",
+] as const;
+export type PlannedAdmissionCancelReason = (typeof PLANNED_ADMISSION_CANCEL_REASONS)[number];
+
+export const PLANNED_ADMISSION_CANCEL_REASON_LABELS: Record<PlannedAdmissionCancelReason, string> = {
+  no_longer_needed: "No longer needed",
+  admitted_elsewhere: "Admitted elsewhere",
+  rebooked: "Rebooked",
+  booked_in_error: "Booked in error",
+};
+
+export function isPlannedAdmissionCancelReason(value: unknown): value is PlannedAdmissionCancelReason {
+  return typeof value === "string" && (PLANNED_ADMISSION_CANCEL_REASONS as readonly string[]).includes(value);
+}
+
+/** The legal statuses a booking may record, from the model's own `LegalStatus` union. */
+export const PLANNED_ADMISSION_LEGAL_STATUSES: readonly LegalStatus[] = [
+  "Voluntary",
+  "Involuntary inpatient",
+  "Referred for psychiatric examination",
+  "Detained awaiting examination",
+];
+
+export function isPlannedAdmissionLegalStatus(value: unknown): value is LegalStatus {
+  return typeof value === "string" && (PLANNED_ADMISSION_LEGAL_STATUSES as readonly string[]).includes(value);
+}
+
+/** One to three letters, upper case. Initials only: never a name. */
+export const PLANNED_ADMISSION_INITIALS_PATTERN = /^[A-Z]{1,3}$/;
+
+/** Normalises typed initials, or returns null when they are not one to three letters. */
+export function normalisePlannedAdmissionInitials(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const compact = value.replace(/[\s.]/g, "").toUpperCase();
+  return PLANNED_ADMISSION_INITIALS_PATTERN.test(compact) ? compact : null;
+}
+
+/**
+ * The longest expected stay a booking accepts, in days. A form bound (default), not a clinical or
+ * legal limit.
+ */
+export const PLANNED_ADMISSION_MAX_STAY_DAYS = 365;
+
+export function isPlannedAdmissionStayDays(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= PLANNED_ADMISSION_MAX_STAY_DAYS;
+}
+
+/** How far ahead the calendar shows and a booking may be made, in days (default). */
+export const PLANNED_ADMISSION_WINDOW_DAYS = 14;
+
+export const PLANNED_ADMISSION_STATES = ["booked", "cancelled", "arrived"] as const;
+export type PlannedAdmissionState = (typeof PLANNED_ADMISSION_STATES)[number];
+
+export type PlannedAdmission = {
+  id: string;
+  /** An existing synthetic patient, or null when the booking names initials only. */
+  patientId: PatientId | null;
+  /** One to three letters when no patient is linked; null when one is. */
+  initials: string | null;
+  /** Recorded sex, needed to place the person in a bed on arrival. */
+  sex: RecordedSex;
+  reason: PlannedAdmissionReason;
+  /** Target ward. Its health service is the ward's site's service. */
+  unitId: string;
+  /** Expected arrival: the day and the clock time together. */
+  expectedArrivalAt: Instant;
+  /** Expected length of stay in whole days, as the booking ward gave it. */
+  expectedStayDays: number;
+  legalStatus: LegalStatus;
+  /**
+   * The age group the booking was made for, read by the cohort gate at arrival. For a linked
+   * patient the booking form derives it from the record's date of birth; for initials only it
+   * is recorded on the booking, as a referral records its own age band.
+   */
+  ageBand: Cohort;
+  state: PlannedAdmissionState;
+  bookedAt: Instant;
+  /** Role label of whoever booked it, never a person's name. */
+  bookedBy: string;
+  /** Last change, if any. */
+  changedAt: Instant | null;
+  changeCount: number;
+  cancelledAt: Instant | null;
+  cancelReason: PlannedAdmissionCancelReason | null;
+  /** When the person arrived and the booking became an admission. */
+  convertedAt: Instant | null;
+  /** The occupied admission created on arrival. */
+  admissionId: string | null;
+};
+
+/** Booked, and its expected arrival has passed without the arrival being recorded. */
+export function plannedAdmissionIsOverdue(planned: PlannedAdmission, now: Instant): boolean {
+  return planned.state === "booked" && Number.isFinite(now) && planned.expectedArrivalAt < now;
 }
