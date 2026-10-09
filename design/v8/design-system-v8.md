@@ -175,7 +175,7 @@ Voice is unchanged: Australian English, sentence case, verbs first, 24 hour time
 | Meta text on any v8.1 tint                      | 5.2           | 5.3           | 4.5   |
 | Service dots (lowest: CAHS day, east day)       | 4.8           | 6.4           | 3     |
 
-Disabled ink (`--wf-ink-off`, 3.3 day, 3.8 night) is exempt under WCAG 1.4.3 and is kept above 3:1 anyway. Fit, hold and act edges (1.5 to 2.4:1) are decoration: the tick, circle and words carry the state.
+Disabled ink (`--wf-ink-off`, 3.3 day, 3.8 night) is exempt under WCAG 1.4.3 and is kept above 3:1 anyway. Fit, hold and act edges (1.5 to 2.9:1) are decoration: the tick, circle and words carry the state.
 
 ## 7. Status glyphs and tone
 
