@@ -221,7 +221,7 @@ export function WardBedDossierDrawer({
     if (next === null) return;
     event.preventDefault();
     tabRefs.current[next]?.focus();
-    setTab(DRAWER_TABS[next]!.id);
+    setTab(DRAWER_TABS[next].id);
   };
 
   const panel = (id: DrawerTab, children: ReactNode) => (
@@ -301,7 +301,7 @@ export function WardBedDossierDrawer({
             <div className={styles.facts}>
               <FactTile label="State" value="Ready" tone="success" />
               <FactTile label="Held for" value="No one" />
-              {bedItem?.designation ? <FactTile label="Bed" value={bedItem.designation} /> : null}
+              {bedItem.designation ? <FactTile label="Bed" value={bedItem.designation} /> : null}
             </div>
             <div className={styles.drawerBody}>
               <Section title="Placement review">
@@ -341,7 +341,9 @@ export function WardBedDossierDrawer({
                       aria-selected={selected}
                       tabIndex={selected ? 0 : -1}
                       className={cx(styles.tab, selected && styles.tabOn)}
-                      onClick={() => setTab(item.id)}
+                      onClick={() => {
+                        setTab(item.id);
+                      }}
                     >
                       {item.label}
                     </button>
@@ -365,8 +367,8 @@ export function WardBedDossierDrawer({
                       ) : null}
                       {bedItem?.gender ? <Row label="Bed placement">{bedItem.gender}</Row> : null}
                       {bedItem?.suburb || bedItem?.homeRegion ? (
-                        <Row label={bedItem?.suburb ? "Suburb" : "Region"}>
-                          {[bedItem?.suburb, bedItem?.homeRegion].filter(Boolean).join(", ")}
+                        <Row label={bedItem.suburb ? "Suburb" : "Region"}>
+                          {[bedItem.suburb, bedItem.homeRegion].filter(Boolean).join(", ")}
                         </Row>
                       ) : null}
                       {bedItem?.generalPractitioner ? <Row label="GP">{bedItem.generalPractitioner}</Row> : null}
@@ -394,7 +396,7 @@ export function WardBedDossierDrawer({
                   <Section title="This shift">
                     <dl className={styles.kv}>
                       <Row label="Where">
-                        {isAwayAtEd ? `Away at an ED ${bedItem?.awayAtEdHours}h, bed held` : "On the ward"}
+                        {isAwayAtEd ? `Away at an ED ${bedItem.awayAtEdHours}h, bed held` : "On the ward"}
                       </Row>
                       <Row label="1:1 nursing">
                         {bedItem?.isSpecialling ? "Specialling recorded (1:1 rostered)" : "No specialling recorded"}
@@ -423,7 +425,9 @@ export function WardBedDossierDrawer({
                           className={styles.select}
                           value={selectedBlocker}
                           aria-label="Discharge blocker"
-                          onChange={(e) => setSelectedBlocker(e.target.value as BedReleaseBlocker)}
+                          onChange={(e) => {
+                            setSelectedBlocker(e.target.value as BedReleaseBlocker);
+                          }}
                         >
                           {BED_RELEASE_BLOCKERS.map((blocker) => (
                             <option key={blocker} value={blocker}>
@@ -454,7 +458,9 @@ export function WardBedDossierDrawer({
                           aria-label="Where are they going?"
                           className={styles.select}
                           value={drawerLeavingDestination}
-                          onChange={(e) => setDrawerLeavingDestination(e.target.value as LeavingDestination)}
+                          onChange={(e) => {
+                            setDrawerLeavingDestination(e.target.value as LeavingDestination);
+                          }}
                         >
                           {LEAVING_DESTINATIONS.map((destination) => (
                             <option key={destination.id} value={destination.id}>
@@ -518,7 +524,13 @@ export function WardBedDossierDrawer({
                       {LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label}
                     </strong>
                     {tab !== "plan" ? (
-                      <button type="button" className={styles.footChange} onClick={() => setTab("plan")}>
+                      <button
+                        type="button"
+                        className={styles.footChange}
+                        onClick={() => {
+                          setTab("plan");
+                        }}
+                      >
                         Change
                       </button>
                     ) : null}
@@ -528,7 +540,10 @@ export function WardBedDossierDrawer({
                     size="lg"
                     className={styles.pill}
                     aria-describedby="drawer-leaving-summary"
-                    onClick={() => onRecordLeft(bedItem.admissionId!, occupantAlias, drawerLeavingDestination)}
+                    onClick={() => {
+                      if (bedItem.admissionId)
+                        onRecordLeft(bedItem.admissionId, occupantAlias, drawerLeavingDestination);
+                    }}
                   >
                     Record that they have left
                   </Button>

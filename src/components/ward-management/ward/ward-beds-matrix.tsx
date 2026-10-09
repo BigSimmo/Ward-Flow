@@ -381,7 +381,9 @@ export function WardBedsMatrix({
                 type="button"
                 className={styles.segmentBtn}
                 aria-pressed={shiftGroup === id}
-                onClick={() => setShiftGroup(id)}
+                onClick={() => {
+                  setShiftGroup(id);
+                }}
               >
                 <span>{label}</span>
                 <span className={styles.segmentCount}>{count}</span>
@@ -425,7 +427,9 @@ export function WardBedsMatrix({
                         key={act.label}
                         type="button"
                         className={styles.btnShiftAction}
-                        onClick={() => setSelectedBed(item.bedNumber)}
+                        onClick={() => {
+                          setSelectedBed(item.bedNumber);
+                        }}
                       >
                         {act.label}
                       </button>
@@ -465,7 +469,9 @@ export function WardBedsMatrix({
                 type="button"
                 className={styles.segmentBtn}
                 aria-pressed={sortBy === id}
-                onClick={() => setSortBy(id)}
+                onClick={() => {
+                  setSortBy(id);
+                }}
               >
                 {label}
               </button>
@@ -491,7 +497,9 @@ export function WardBedsMatrix({
               type="button"
               className={styles.segmentBtn}
               aria-pressed={activeFilter === "needs-look"}
-              onClick={() => setActiveFilter("needs-look")}
+              onClick={() => {
+                setActiveFilter("needs-look");
+              }}
             >
               <span>Needs a look</span>
               <span className={styles.segmentCount}>{needsLookBeds.length}</span>
@@ -501,7 +509,9 @@ export function WardBedsMatrix({
               type="button"
               className={styles.segmentBtn}
               aria-pressed={activeFilter === "ready"}
-              onClick={() => setActiveFilter("ready")}
+              onClick={() => {
+                setActiveFilter("ready");
+              }}
             >
               <span>Ready</span>
               <span className={styles.segmentCount}>{readyCount}</span>
@@ -511,7 +521,9 @@ export function WardBedsMatrix({
               type="button"
               className={styles.segmentBtn}
               aria-pressed={activeFilter === "nobody-due"}
-              onClick={() => setActiveFilter("nobody-due")}
+              onClick={() => {
+                setActiveFilter("nobody-due");
+              }}
             >
               <span>Nobody due out</span>
               <span className={styles.segmentCount}>{nobodyDueOutBeds.length}</span>
@@ -523,7 +535,9 @@ export function WardBedsMatrix({
                   type="button"
                   className={styles.segmentBtn}
                   aria-pressed={selectedPod === "locked"}
-                  onClick={() => setSelectedPod("locked")}
+                  onClick={() => {
+                    setSelectedPod("locked");
+                  }}
                 >
                   <span>Locked</span>
                   <span className={styles.segmentCount}>{lockedCount}</span>
@@ -532,7 +546,9 @@ export function WardBedsMatrix({
                   type="button"
                   className={styles.segmentBtn}
                   aria-pressed={selectedPod === "open"}
-                  onClick={() => setSelectedPod("open")}
+                  onClick={() => {
+                    setSelectedPod("open");
+                  }}
                 >
                   <span>Open</span>
                   <span className={styles.segmentCount}>{openCount}</span>
@@ -599,7 +615,9 @@ export function WardBedsMatrix({
                     data-testid={`ward-bed-card-${bed.bedNumber}`}
                     data-admission-id={bed.admissionId}
                     data-state={bed.status}
-                    onClick={() => handleBedClick(bed)}
+                    onClick={() => {
+                      handleBedClick(bed);
+                    }}
                     aria-label={formatBedAriaLabel(bed)}
                   >
                     <div className={styles.bedTopRow}>

@@ -54,7 +54,9 @@ export function WardTelemetryRibbon({
   const confirmedByWard = unit.allocatable.source === "ward";
 
   if (onFilter) {
-    const pick = (next: WardBedFilter) => onFilter(filter === next && next !== "all" ? "all" : next);
+    const pick = (next: WardBedFilter) => {
+      onFilter(filter === next && next !== "all" ? "all" : next);
+    };
     return (
       <div className={styles.pills} role="region" aria-label="Live Capacity Telemetry">
         <span className={styles.srOnly}>{pendingPreparation} being made ready</span>
@@ -65,7 +67,9 @@ export function WardTelemetryRibbon({
             label={<span id="ward-hero-title">Ready now</span>}
             tone="success"
             pressed={filter === "free"}
-            onToggle={() => pick("free")}
+            onToggle={() => {
+              pick("free");
+            }}
           />
         </div>
         <HeroStat
@@ -73,14 +77,18 @@ export function WardTelemetryRibbon({
           value={capacity.occupied}
           label="Occupied"
           pressed={filter === "occupied"}
-          onToggle={() => pick("occupied")}
+          onToggle={() => {
+            pick("occupied");
+          }}
         />
         <HeroStat
           inline
           value={capacity.available + freeingByShiftEnd}
           label={`Ready by ${formatInstantWithDay(shiftEnd, now)}`}
           pressed={filter === "shift-end"}
-          onToggle={() => pick("shift-end")}
+          onToggle={() => {
+            pick("shift-end");
+          }}
         />
         {onActNow ? (
           <HeroStat

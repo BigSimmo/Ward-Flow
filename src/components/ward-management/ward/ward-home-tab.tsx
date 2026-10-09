@@ -511,7 +511,14 @@ export function WardHomeTab({
       detail: alert.text,
       meta: alert.countdown,
       tone: alert.tone === "critical" ? "danger" : alert.tone === "warning" ? "warning" : "info",
-      action: alert.actionLabel ? { label: alert.actionLabel, run: () => runAlert(alert) } : undefined,
+      action: alert.actionLabel
+        ? {
+            label: alert.actionLabel,
+            run: () => {
+              runAlert(alert);
+            },
+          }
+        : undefined,
     })),
   ];
   if (incoming.length > 0) {
@@ -673,7 +680,9 @@ export function WardHomeTab({
                       type="checkbox"
                       className={styles.todoTick}
                       checked={localChecks[row.tick] !== null}
-                      onChange={() => toggleLocalCheck(row.tick!)}
+                      onChange={() => {
+                        if (row.tick) toggleLocalCheck(row.tick);
+                      }}
                       aria-label={row.title}
                     />
                     <span className={styles.todoTitle}>{row.title}</span>
@@ -752,7 +761,9 @@ export function WardHomeTab({
                     aria-pressed={boardView === "board"}
                     aria-label="Board"
                     title="Board"
-                    onClick={() => setBoardView("board")}
+                    onClick={() => {
+                      setBoardView("board");
+                    }}
                   >
                     <LayoutGrid size={16} aria-hidden="true" />
                   </button>
@@ -761,7 +772,9 @@ export function WardHomeTab({
                     aria-pressed={boardView === "list"}
                     aria-label="List"
                     title="List"
-                    onClick={() => setBoardView("list")}
+                    onClick={() => {
+                      setBoardView("list");
+                    }}
                   >
                     <List size={16} aria-hidden="true" />
                   </button>
@@ -986,7 +999,13 @@ export function WardHomeTab({
                                 title={blocked ?? undefined}
                                 aria-expanded={declineOpen}
                                 className={buttonClass({ variant: "sec", size: "sm" })}
-                                onClick={blocked ? ignoreUnavailableActivation : () => toggleDecline(movement.id)}
+                                onClick={
+                                  blocked
+                                    ? ignoreUnavailableActivation
+                                    : () => {
+                                        toggleDecline(movement.id);
+                                      }
+                                }
                               >
                                 Decline
                               </button>
@@ -1041,7 +1060,9 @@ export function WardHomeTab({
 
                             {declineOpen && !blocked ? (
                               <form
-                                onSubmit={(event) => submitDecline(event, movement.id)}
+                                onSubmit={(event) => {
+                                  submitDecline(event, movement.id);
+                                }}
                                 data-testid={`ward-decline-form-${movement.id}`}
                                 className={styles.declineForm}
                               >
@@ -1054,7 +1075,9 @@ export function WardHomeTab({
                                         name={`decline-reason-${movement.id}`}
                                         value={reason}
                                         checked={declineReason === reason}
-                                        onChange={() => setDeclineReason(reason)}
+                                        onChange={() => {
+                                          setDeclineReason(reason);
+                                        }}
                                       />{" "}
                                       {reason.replace(/_/g, " ")}
                                     </label>

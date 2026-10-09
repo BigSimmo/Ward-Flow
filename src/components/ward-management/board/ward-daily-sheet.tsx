@@ -777,7 +777,7 @@ export type WardDailySheetDialogProps = WardDailySheetProps & {
 
 const subscribeNever = () => () => {};
 const clipboardAvailable = () =>
-  typeof navigator !== "undefined" && typeof navigator.clipboard?.writeText === "function";
+  typeof navigator !== "undefined" && "clipboard" in navigator && typeof navigator.clipboard.writeText === "function";
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -820,7 +820,9 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
   const sheetId = useId();
   useEffect(() => {
     pushSheet(sheetId, panelRef.current);
-    return () => popSheet(sheetId);
+    return () => {
+      popSheet(sheetId);
+    };
   }, [sheetId]);
 
   // Focus moves into the dialog on open and returns to whatever opened it on close.
@@ -864,25 +866,35 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
       }
     }
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, [onClose, sheetId]);
 
   useEffect(() => {
     if (copyState === "idle") return;
-    const timer = window.setTimeout(() => setCopyState("idle"), 2000);
-    return () => window.clearTimeout(timer);
+    const timer = window.setTimeout(() => {
+      setCopyState("idle");
+    }, 2000);
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [copyState]);
 
   function copyBrief() {
     const sheet = panelRef.current?.querySelector<HTMLElement>('[data-testid="ward-daily-sheet"]');
-    if (!sheet || typeof navigator.clipboard?.writeText !== "function") {
+    if (!sheet || !clipboardAvailable()) {
       setCopyState("failed");
       return;
     }
     const text = [title, stampLine, sheet.innerText.trim()].filter(Boolean).join("\n\n");
     navigator.clipboard.writeText(text).then(
-      () => setCopyState("copied"),
-      () => setCopyState("failed"),
+      () => {
+        setCopyState("copied");
+      },
+      () => {
+        setCopyState("failed");
+      },
     );
   }
 
@@ -939,7 +951,10 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
             <button
               type="button"
               className={buttonClass({ variant: "sec", size: "sm" })}
-              onClick={() => (sheetProps.onPrint ? sheetProps.onPrint() : window.print())}
+              onClick={() => {
+                if (sheetProps.onPrint) sheetProps.onPrint();
+                else window.print();
+              }}
               aria-label="Print shift brief"
               data-testid="ward-daily-sheet-print"
             >

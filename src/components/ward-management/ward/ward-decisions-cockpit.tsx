@@ -122,8 +122,8 @@ interface SentAction {
 function splitTitle(title: string): { name: string; detail?: string } {
   const bracket = /^(.*\S)\s*\(([^()]+)\)$/.exec(title);
   if (bracket) {
-    const detail = bracket[2]!;
-    return { name: bracket[1]!, detail: detail.charAt(0).toUpperCase() + detail.slice(1) };
+    const detail = bracket[2];
+    return { name: bracket[1], detail: detail.charAt(0).toUpperCase() + detail.slice(1) };
   }
   const dot = title.indexOf(" · ");
   if (dot > 0) {
@@ -256,8 +256,12 @@ function Queue({
 
   useEffect(() => {
     if (!sent) return;
-    const timer = window.setTimeout(() => setDismissedSeq(sent.seq), 6000);
-    return () => window.clearTimeout(timer);
+    const timer = window.setTimeout(() => {
+      setDismissedSeq(sent.seq);
+    }, 6000);
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [sent]);
 
   const readyRows = departures.filter((row) => row.badge === "Ready");
@@ -320,17 +324,20 @@ function Queue({
 
   for (const row of intakes) {
     const { name, detail } = splitTitle(row.title);
+    const { onAccept } = row;
     items.intake.push({
       id: row.id,
       group: "wait",
       tone: "warning",
       title: name,
       sub: joinSub(detail, "Referral to answer"),
-      actions: row.onAccept ? (
+      actions: onAccept ? (
         <button
           type="button"
           className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
-          onClick={() => send("accept", [{ id: row.id, title: row.title, run: row.onAccept! }])}
+          onClick={() => {
+            send("accept", [{ id: row.id, title: row.title, run: onAccept }]);
+          }}
         >
           Accept
         </button>
@@ -345,6 +352,7 @@ function Queue({
 
   for (const row of heldRows) {
     const { name, detail } = splitTitle(row.title);
+    const { onConfirm, onClear } = row;
     items.departures.push({
       id: row.id,
       group: "act",
@@ -353,20 +361,24 @@ function Queue({
       sub: joinSub(detail, "Held up"),
       actions: (
         <>
-          {row.onConfirm ? (
+          {onConfirm ? (
             <button
               type="button"
               className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.pill)}
-              onClick={() => send("sign", [{ id: row.id, title: row.title, run: row.onConfirm! }])}
+              onClick={() => {
+                send("sign", [{ id: row.id, title: row.title, run: onConfirm }]);
+              }}
             >
               Sign off
             </button>
           ) : null}
-          {row.onClear ? (
+          {onClear ? (
             <button
               type="button"
               className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
-              onClick={() => send("clear", [{ id: row.id, title: row.title, run: row.onClear! }])}
+              onClick={() => {
+                send("clear", [{ id: row.id, title: row.title, run: onClear }]);
+              }}
             >
               Clear
             </button>
@@ -377,17 +389,20 @@ function Queue({
   }
   for (const row of readyRows) {
     const { name, detail } = splitTitle(row.title);
+    const { onConfirm } = row;
     items.departures.push({
       id: row.id,
       group: "ready",
       tone: "warning",
       title: name,
       sub: detail ?? "Ready to sign off",
-      actions: row.onConfirm ? (
+      actions: onConfirm ? (
         <button
           type="button"
           className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.pill)}
-          onClick={() => send("sign", [{ id: row.id, title: row.title, run: row.onConfirm! }])}
+          onClick={() => {
+            send("sign", [{ id: row.id, title: row.title, run: onConfirm }]);
+          }}
         >
           Sign off
         </button>
@@ -524,7 +539,9 @@ function Queue({
               aria-pressed={chosen === entry.id}
               aria-label={`${entry.title}, ${entry.hours}`}
               aria-describedby={describedBy}
-              onClick={() => choose(entry.id)}
+              onClick={() => {
+                choose(entry.id);
+              }}
             >
               <StatusGlyph tone={tone} />
               <span className={styles.stepText}>
@@ -591,7 +608,9 @@ function Queue({
                       className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.pill, styles.secToggle)}
                       aria-expanded={showDone}
                       aria-controls={listId}
-                      onClick={() => setShowDone((value) => !value)}
+                      onClick={() => {
+                        setShowDone((value) => !value);
+                      }}
                     >
                       {showDone ? "Hide" : "Show"}
                     </button>
@@ -636,12 +655,12 @@ function Queue({
               <button
                 type="button"
                 className={cx(buttonClass({ variant: "pri", size: "lg" }), styles.pill)}
-                onClick={() =>
+                onClick={() => {
                   send(
                     "sign",
                     signable.map((row) => ({ id: row.id, title: row.title, run: row.onConfirm })),
-                  )
-                }
+                  );
+                }}
               >
                 Sign off {signable.length}
               </button>
@@ -702,7 +721,9 @@ function Queue({
                         type="button"
                         className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
                         aria-label={`Open ${entry.title} window`}
-                        onClick={() => choose(entry.id)}
+                        onClick={() => {
+                          choose(entry.id);
+                        }}
                       >
                         Open
                       </button>
