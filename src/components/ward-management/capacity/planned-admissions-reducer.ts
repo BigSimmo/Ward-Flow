@@ -21,7 +21,6 @@ import {
 import { finiteInstant, type AuditDecision } from "../ward-audit";
 import { emptyCareJourney } from "../ward-care-journey";
 import { MINUTES_PER_DAY, type Instant } from "../ward-clock";
-import { isOpen } from "../ward-derivations";
 import { adjustSexMix, mixSexOf } from "../ward-eligibility";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
@@ -93,7 +92,11 @@ function holdsABed(state: WardFlowState, patientId: string): boolean {
 
 /** Whether a linked patient is on an open movement, still on their way to a bed through it. */
 function onAnOpenJourney(state: WardFlowState, patientId: string): boolean {
-  return state.movements.some((movement) => movement.patientId === patientId && isOpen(movement));
+  // `isOpen` from ward-derivations, spelled out: importing it here closes a runtime import cycle
+  // (ward-derivations -> ward-flow-reducer -> this module).
+  return state.movements.some(
+    (movement) => movement.patientId === patientId && !movement.closure && movement.stage !== "arrived",
+  );
 }
 
 /**

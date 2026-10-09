@@ -965,6 +965,8 @@ function WardFlowWorld({
           patients: state.patients,
           referrals: state.referrals,
           movements: state.movements,
+          // A stay converted from an initials-only booking is named through that booking.
+          plannedAdmissions: state.plannedAdmissions,
         }),
       patients: state.patients,
       admissions: state.admissions,
