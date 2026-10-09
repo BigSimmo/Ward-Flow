@@ -1203,7 +1203,9 @@ Clinical Note: ${p.clinicalNote}`;
 
         <Drawer
           open={detailsOpen && selectedPatient !== null}
-          onClose={() => setDetailsOpen(false)}
+          onClose={() => {
+            setDetailsOpen(false);
+          }}
           title="Patient details"
           returnFocusRef={detailsTriggerRef}
           testId="ward-patient-search-details"
@@ -1355,14 +1357,18 @@ Clinical Note: ${p.clinicalNote}`;
     const isSelected = p.id === selectedId;
     const tier = tierNumber(p.urgency);
     const cell = dense ? ({ role: "cell" } as const) : {};
-    const select = (row: HTMLElement) => handleSelectPatient(p, row);
+    const select = (row: HTMLElement) => {
+      handleSelectPatient(p, row);
+    };
     return (
       <div
         key={p.id}
         className={cx(styles.v6Row, dense && styles.v6RowDense, isSelected && styles.selected)}
         data-id={p.id}
         data-testid={`ward-patient-search-case-${p.id}`}
-        onClick={(e) => select(e.currentTarget)}
+        onClick={(e) => {
+          select(e.currentTarget);
+        }}
         onKeyDown={(e: ReactKeyboardEvent<HTMLDivElement>) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
