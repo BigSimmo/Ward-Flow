@@ -16,7 +16,7 @@ The original three implementation commits were recovered without publication or 
 - Audit identifies the authenticated Entra object ID and effective role `coordinator`, with action, revision, outcome, server commit time and structured domain audit changes. Existing domain roles are workflow perspectives, not access grants. Workflow guards remain effective.
 - Microsoft browser sign-in and three-second refresh connect the existing provider to server state. Saves are confirmed only after commit. Uncertain saves retain their command ID for explicit retry. Revoked access clears protected state and removes the board.
 - Shared mode does not read/write the browser's demo-state storage. Local demo mode and its typed-text privacy boundary remain unchanged. Shared scenario-file replacement is disabled because it would bypass audited commands.
-- Schema version 1 contains an explicit shared repatriation validator. This does not loosen the browser's prohibition on persisting those records. All entered content must remain invented.
+- Application-level shared state validation checks repatriation in the browser client and backend engine, not through a PostgreSQL schema constraint; direct database writes can bypass it. This does not loosen the browser's prohibition on persisting those records. All entered content must remain invented.
 - Database connections use verified TLS and short-lived Entra tokens. The app identity can update workspace state and append/read receipts/audit, but cannot migrate the schema or change/delete audit entries.
 
 ## Prototype versus live data
