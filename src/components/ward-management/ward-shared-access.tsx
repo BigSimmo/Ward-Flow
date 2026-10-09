@@ -141,10 +141,10 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
           </span>
         </div>
         <div className={styles.controls} role="group" aria-label="Data mode controls">
-          <button type="button" aria-pressed={!showLiveInfo} onClick={() => setShowLiveInfo(false)}>
+          <button type="button" aria-pressed={!showLiveInfo} onClick={() => { setShowLiveInfo(false); }}>
             Prototype
           </button>
-          <button type="button" aria-expanded={showLiveInfo} onClick={() => setShowLiveInfo(true)}>
+          <button type="button" aria-expanded={showLiveInfo} onClick={() => { setShowLiveInfo(true); }}>
             Live data (unavailable)
           </button>
         </div>

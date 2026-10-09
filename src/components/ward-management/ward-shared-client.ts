@@ -119,14 +119,18 @@ export class SharedWorkspaceClient {
     this.busy = true;
     try {
       while (!this.disposed && (this.pending || this.queue.length)) {
-        if (!this.pending)
+        if (!this.pending) {
+          const snapshot = this.view.snapshot;
+          const event = this.queue.shift();
+          if (!snapshot || !event) break;
           this.pending = {
             classification: "synthetic",
             dataMode: "prototype",
             commandId: (this.options.commandId ?? (() => crypto.randomUUID()))(),
-            expectedRevision: this.view.snapshot!.revision,
-            event: this.queue.shift()!,
+            expectedRevision: snapshot.revision,
+            event,
           };
+        }
         this.publish({ status: "saving", error: null });
         const { response, value } = await this.request("/v1/workspace/commands", this.pending);
         if (response.status >= 500) throw new Error("Save not confirmed");
