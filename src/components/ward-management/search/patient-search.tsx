@@ -572,6 +572,7 @@ export function PatientSearchPage() {
     if (legalFilter !== "all") count++;
     if (waitFilter !== "all") count++;
     if (tierFilter !== "all") count++;
+    if (dobOn && parseDob(dob) !== null) count++;
     return count;
   }, [
     text,
@@ -584,10 +585,14 @@ export function PatientSearchPage() {
     legalFilter,
     waitFilter,
     tierFilter,
+    dobOn,
+    dob,
   ]);
 
   const resetAllFilters = () => {
     setText("");
+    setDob("");
+    setDobOn(false);
     setStage("");
     setEdId("");
     setServiceFilter("all");
@@ -635,15 +640,16 @@ export function PatientSearchPage() {
   const needle = isChip ? "" : foldPatientSearchText(text);
   const dobIso = dobOn ? parseDob(dob) : null;
   const searching = needle !== "" || dobIso !== null;
-  const legacyNarrowing = isChip || activeFilterCount - (text ? 1 : 0) > 0;
+  const legacyNarrowing =
+    isChip || activeFilterCount - (text ? 1 : 0) - (dobOn && dobIso !== null ? 1 : 0) > 0;
   const caseIds = useMemo(() => new Set(unifiedCaseload.map((row) => row.id)), [unifiedCaseload]);
   const peopleIds = useMemo(() => new Set<string>(people.map((person) => person.id)), [people]);
   const visibleRows = useMemo(() => {
     const lifted = highlightTest(highlight);
     return sortCensusRows(
-      census.rows.filter((row) => {
+      (refusal ? [] : census.rows).filter((row) => {
         if (row.kind === "movement" || row.kind === "referral") {
-          if (!caseIds.has(row.key)) return false;
+          if (!caseIds.has(row.key) && !(needle.length >= 2 && row.placeText.includes(needle))) return false;
         } else {
           if (legacyNarrowing) return false;
           if (
@@ -660,11 +666,12 @@ export function PatientSearchPage() {
       censusSort,
       lifted,
     );
-  }, [census, caseIds, peopleIds, legacyNarrowing, needle, dobIso, censusSort, highlight]);
+  }, [census, caseIds, peopleIds, legacyNarrowing, needle, dobIso, censusSort, highlight, refusal]);
 
-  const groupTotals = countGroups(census.rows);
+  const censusRows = refusal ? [] : census.rows;
+  const groupTotals = countGroups(censusRows);
   const groupMatches = countGroups(visibleRows);
-  const liveCount = census.rows.length - groupTotals.off;
+  const liveCount = censusRows.length - groupTotals.off;
   const highlightCounts = Object.fromEntries(
     CENSUS_HIGHLIGHTS.map((chip) => [chip.id, census.rows.filter(chip.test).length]),
   ) as Record<CensusHighlight, number>;
@@ -789,7 +796,7 @@ export function PatientSearchPage() {
         event.preventDefault();
         const words = `${text} ${dobOn ? dob : ""}`.trim();
         if (words.length === 0) return;
-        setAccessRecord((l) => recordSearch(l, { words, at: now }));
+        setAccessRecord((l) => recordSearch(l, { words, text, dob: dobOn ? dob : undefined, at: now }));
       }}
     >
       <PatientTypeahead
@@ -826,8 +833,10 @@ export function PatientSearchPage() {
       searches={accessRecord}
       closed={census.closedToday}
       now={now}
-      onRerun={(words) => {
-        setText(words);
+      onRerun={(entry) => {
+        setText(entry.text);
+        setDob(entry.dob ?? "");
+        setDobOn(entry.dob !== undefined);
         setTab("now");
       }}
     />
@@ -1164,7 +1173,7 @@ export function PatientSearchPage() {
           <div className={cs.layout}>
             <CensusTable
               rows={refusal ? [] : visibleRows}
-              totalPeople={census.rows.length}
+              totalPeople={censusRows.length}
               searching={searching}
               needle={needle}
               sort={censusSort}

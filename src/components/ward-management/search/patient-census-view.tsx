@@ -509,6 +509,17 @@ function CensusTableRow({
     >
       <td>
         <TierPill tier={row.tier} />
+        <button
+          type="button"
+          className="sr-only"
+          aria-label={`Open details for ${row.name}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect(row, event.currentTarget);
+          }}
+        >
+          Open patient details
+        </button>
       </td>
       <td>
         <span className={styles.two}>
@@ -878,7 +889,7 @@ export function CensusHistory({
 }: {
   searches: readonly AccessEntry[];
   closed: readonly ClosedTodayRow[];
-  onRerun: (words: string) => void;
+  onRerun: (entry: AccessEntry) => void;
   now: Instant;
 }) {
   return (
@@ -895,7 +906,7 @@ export function CensusHistory({
             <span className={styles.mono}>{formatInstantWithDay(entry.at, now)}</span>
             <Icon icon={Search} size={14} />
             <span className={styles.truncate}>{entry.words}</span>
-            <Button variant="ghost" size="sm" onClick={() => onRerun(entry.words)}>
+            <Button variant="ghost" size="sm" onClick={() => onRerun(entry)}>
               Search again
             </Button>
           </li>
