@@ -117,6 +117,7 @@ describe("a movement's patient comes from the record, never from a typed-in tabl
         <AlertsScreen />
       </WardFlowProvider>,
     );
+    fireEvent.click(screen.getByRole("tab", { name: /Notices/ }));
     const feed = screen.getByRole("region", { name: /Operational Notices and Shift Communication Feed/ });
     expect(feed.textContent).not.toMatch(/Luke Davies/);
     expect(feed.textContent).not.toMatch(/WF-0\d\d/);
