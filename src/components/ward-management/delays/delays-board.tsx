@@ -888,6 +888,11 @@ export function DelaysBoard({
   const highlightActive = hasFilters(filters);
   const selected = selectedId === null ? null : (rows.find((row) => row.movement.id === selectedId) ?? null);
   const filtered = highlightActive;
+  const hadHighlightFilters = useRef(false);
+  useEffect(() => {
+    if (hadHighlightFilters.current && !highlightActive && selectedId !== null) setSelectedId(null);
+    hadHighlightFilters.current = highlightActive;
+  }, [highlightActive, selectedId]);
 
   const set = (patch: Partial<BoardFilters>) => setFilters((current) => ({ ...current, ...patch }));
   const toggle = <K extends keyof BoardFilters>(key: K, value: BoardFilters[K]) =>
