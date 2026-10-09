@@ -46,7 +46,8 @@ type WardTasksDrawerProps = {
   now: Instant;
   dispatch: Dispatch<WardFlowEvent>;
   onClose: () => void;
-  onSelectMovement: (movementId: string, action?: "refer" | "contact") => void;
+  /** `href` is a row's own destination when it is not about a movement (a planned admission). */
+  onSelectMovement: (movementId: string, action?: "refer" | "contact", href?: string) => void;
   records?: {
     movements: readonly Movement[];
     patients: readonly Patient[];
@@ -366,7 +367,7 @@ export function WardTasksDrawer({
               type="button"
               data-testid={`ward-task-${item.id}`}
               className={styles.rowTitle}
-              onClick={() => onSelectMovement(item.movementId)}
+              onClick={() => onSelectMovement(item.movementId, undefined, item.href)}
             >
               {item.title}
             </button>
@@ -468,7 +469,7 @@ export function WardTasksDrawer({
             type="button"
             className={`${styles.btn} ${isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
             aria-label="Open patient"
-            onClick={() => onSelectMovement(item.movementId)}
+            onClick={() => onSelectMovement(item.movementId, undefined, item.href)}
           >
             <ArrowUpRight aria-hidden="true" />
             Open

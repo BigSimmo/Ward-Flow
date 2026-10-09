@@ -124,6 +124,7 @@ export type ShellFigureInput = {
   readonly bedReleases: readonly BedRelease[];
   readonly leaveBeds: readonly LeaveBed[];
   readonly now: Instant;
+  readonly plannedAdmissions?: Parameters<typeof buildActionInbox>[3];
 };
 
 /**
@@ -180,7 +181,7 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
     delaysNeedingAttention: required("delays"),
     referralsWaiting: required("referrals"),
     tasks: {
-      value: buildActionInbox(input.movements.filter(isOpen), input.now, input.units).length,
+      value: buildActionInbox(input.movements.filter(isOpen), input.now, input.units, input.plannedAdmissions).length,
       noun: TASKS_NOUN,
     },
   };

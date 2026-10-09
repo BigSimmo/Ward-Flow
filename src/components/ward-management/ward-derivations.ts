@@ -1140,6 +1140,8 @@ export type InboxItem = {
   plannedAdmission?: PlannedAdmission;
   /** The person's label when the booking holds initials only, such as "Initials RK". */
   personLabel?: string;
+  /** Where the row opens when it is not about a movement: a planned admission opens Capacity. */
+  href?: string;
   /**
    * 🔴 **WHETHER THIS ROW CAN BE TICKED OFF AT ALL** — ward-lead task, 2026-09-06. A `"fact"` is a
    * live clinical or legal truth that leaves this list when it stops being true; a `"commitment"`
@@ -1312,6 +1314,7 @@ export function buildActionInbox(
       owner: unit?.name ?? "Ward",
       movementId: "",
       plannedAdmission: planned,
+      href: "/mockups/ward-flow/capacity",
       ...(planned.initials !== null ? { personLabel: `Initials ${planned.initials}` } : {}),
     });
   }

@@ -6,6 +6,7 @@
 //
 // A booking holds no bed. Only `CONVERT_PLANNED_ADMISSION` moves a capacity figure, and it refuses
 // when the ward has no empty, allocatable bed: no booking creates a bed.
+import { bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
 import { lockedBedsFree, openBedsFree } from "../ward-bed-designation";
 import {
   isPlannedAdmissionCancelReason,
@@ -20,11 +21,19 @@ import {
 import { finiteInstant, type AuditDecision } from "../ward-audit";
 import { emptyCareJourney } from "../ward-care-journey";
 import { MINUTES_PER_DAY, type Instant } from "../ward-clock";
+import { isOpen } from "../ward-derivations";
 import { adjustSexMix, mixSexOf } from "../ward-eligibility";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
-import { RECORDED_SEXES, type LegalStatus, type Movement, type MovementId, type Unit } from "../ward-model";
+import {
+  COHORTS,
+  RECORDED_SEXES,
+  type LegalStatus,
+  type Movement,
+  type MovementId,
+  type Unit,
+} from "../ward-model";
 
 export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
 
@@ -51,7 +60,7 @@ const LOCKED_FIRST: readonly LegalStatus[] = ["Involuntary inpatient", "Detained
  * gates as a pulled bed: gender designation first (no override path), then every suitability gate.
  * The booking records sex only, never gender, so `gender` stays unset: an undesignated ward takes
  * the person, a single-sex ward refuses until gender is recorded through a referral. `cohort` is
- * the booked ward's own, because a booking names its ward and records no age band.
+ * the age group the booking was made for, so an adult booked onto an older adult ward is refused.
  */
 function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit): Movement {
   return {
@@ -60,7 +69,7 @@ function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit): Mo
     openedAt: planned.bookedAt,
     flaggedUrgent: false,
     urgency: 3,
-    cohort: unit.cohort,
+    cohort: planned.ageBand,
     security: LOCKED_FIRST.includes(planned.legalStatus) ? "Secure" : "Open",
     sex: planned.sex,
     specialling: false,
@@ -79,6 +88,42 @@ function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit): Mo
     unwinds: [],
     stageChanges: [],
   };
+}
+
+/** Whether a linked patient already holds a pulled or occupied stay. */
+function holdsABed(state: WardFlowState, patientId: string): boolean {
+  return state.admissions.some(
+    (admission) =>
+      admission.patientId === patientId && (admission.state === "pulled" || admission.state === "occupied"),
+  );
+}
+
+/** Whether a linked patient is on an open movement, still on their way to a bed through it. */
+function onAnOpenJourney(state: WardFlowState, patientId: string): boolean {
+  return state.movements.some((movement) => movement.patientId === patientId && isOpen(movement));
+}
+
+/**
+ * The bookings still to count as beds needed: booked, on a known ward, due by `until`, and not a
+ * linked patient already counted through an open movement waiting for a bed (`waitingMovements`).
+ * Initials-only bookings are always counted: nothing links them to a movement.
+ */
+export function plannedAdmissionsStillNeedingABed(
+  planned: readonly PlannedAdmission[],
+  unitIds: ReadonlySet<string>,
+  until: Instant,
+  waitingMovements: readonly Movement[],
+): PlannedAdmission[] {
+  const waitingPatientIds = new Set(
+    waitingMovements.map((movement) => movement.patientId).filter((id): id is NonNullable<typeof id> => Boolean(id)),
+  );
+  return planned.filter(
+    (booking) =>
+      booking.state === "booked" &&
+      unitIds.has(booking.unitId) &&
+      booking.expectedArrivalAt <= until &&
+      (booking.patientId === null || !waitingPatientIds.has(booking.patientId)),
+  );
 }
 
 export function nextPlannedAdmissionId(sequence: number): string {
@@ -137,6 +182,8 @@ export function reducePlannedAdmissionEvent(
       if (scope) return reject(state, event, scope);
       if (!(RECORDED_SEXES as readonly string[]).includes(event.sex))
         return reject(state, event, "BOOK_PLANNED_ADMISSION sex must be chosen from the recorded sexes");
+      if (!(COHORTS as readonly string[]).includes(event.ageBand))
+        return reject(state, event, "BOOK_PLANNED_ADMISSION ageBand must be chosen from the listed age groups");
       const hasPatient = typeof event.patientId === "string" && event.patientId.length > 0;
       const hasInitials = typeof event.initials === "string" && event.initials.trim().length > 0;
       if (hasPatient === hasInitials)
@@ -145,6 +192,9 @@ export function reducePlannedAdmissionEvent(
       if (hasPatient) {
         if (!state.patients.some((patient) => patient.id === event.patientId))
           return reject(state, event, `no patient found for id ${event.patientId}`);
+        // The same rule the booking picker applies: a person in a bed is not booked a second one.
+        if (holdsABed(state, event.patientId as string))
+          return reject(state, event, "This patient already holds a bed or occupies a ward.");
         if (
           plannedAdmissions(state).some(
             (planned) => planned.state === "booked" && planned.patientId === event.patientId,
@@ -156,7 +206,7 @@ export function reducePlannedAdmissionEvent(
         if (initials === null)
           return reject(state, event, "BOOK_PLANNED_ADMISSION initials must be one to three letters");
       }
-      const sequence = (state.plannedAdmissionSequence ?? 0) + 1;
+      const sequence = state.plannedAdmissionSequence + 1;
       const booked: PlannedAdmission = {
         id: nextPlannedAdmissionId(sequence),
         patientId: hasPatient ? (event.patientId ?? null) : null,
@@ -167,6 +217,7 @@ export function reducePlannedAdmissionEvent(
         expectedArrivalAt: event.expectedArrivalAt,
         expectedStayDays: event.expectedStayDays,
         legalStatus: event.legalStatus,
+        ageBand: event.ageBand,
         state: "booked",
         bookedAt: event.now,
         bookedBy: WARD_FLOW_ROLE_LABELS[event.role],
@@ -197,6 +248,10 @@ export function reducePlannedAdmissionEvent(
       if (fields) return reject(state, event, fields);
       const scope = wardScopeRefusal(event, [planned.unitId, event.unitId]);
       if (scope) return reject(state, event, scope);
+      // A new arrival time may not be in the past; an overdue booking keeps its own time while its
+      // other fields are edited.
+      if (event.expectedArrivalAt !== planned.expectedArrivalAt && event.expectedArrivalAt < event.now)
+        return reject(state, event, "CHANGE_PLANNED_ADMISSION expected arrival must not be in the past");
       const changed: PlannedAdmission = {
         ...planned,
         reason: event.reason,
@@ -225,6 +280,8 @@ export function reducePlannedAdmissionEvent(
       if (planned.state !== "booked") return reject(state, event, `This planned admission is already ${planned.state}`);
       if (!isPlannedAdmissionCancelReason(event.reason))
         return reject(state, event, "CANCEL_PLANNED_ADMISSION reason must be chosen from the listed reasons");
+      if (event.unitId !== planned.unitId)
+        return reject(state, event, "CANCEL_PLANNED_ADMISSION unitId must be the booking's own ward");
       const scope = wardScopeRefusal(event, [planned.unitId]);
       if (scope) return reject(state, event, scope);
       decision.outcome = "accepted";
@@ -245,13 +302,32 @@ export function reducePlannedAdmissionEvent(
       const planned = plannedAdmissions(state).find((candidate) => candidate.id === event.plannedAdmissionId);
       if (!planned) return reject(state, event, "This planned admission was not found");
       if (planned.state !== "booked") return reject(state, event, `This planned admission is already ${planned.state}`);
+      if (event.unitId !== planned.unitId)
+        return reject(state, event, "CONVERT_PLANNED_ADMISSION unitId must be the booking's own ward");
       const scope = wardScopeRefusal(event, [planned.unitId]);
       if (scope) return reject(state, event, scope);
       const unit = state.units.find((candidate) => candidate.id === planned.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${planned.unitId}`);
+      // A linked patient already in a bed, or still on an open movement, arrives through that
+      // record, never through a second, parallel one.
+      if (planned.patientId !== null && holdsABed(state, planned.patientId))
+        return reject(state, event, "This patient already holds another bed or occupies another ward.");
+      if (planned.patientId !== null && onAnOpenJourney(state, planned.patientId))
+        return reject(
+          state,
+          event,
+          "This patient is on an open movement. Record the arrival on that movement, or close it first.",
+        );
       // Same order as `PULL_PATIENT`: the physical bed facts first, then the eligibility gates.
       if (unit.empty.value <= 0 || unit.allocatable.value <= 0)
         return reject(state, event, `${unit.name} has no empty bed to admit this planned arrival`);
+      const pending = bedsPendingPreparation(unit.id, state.bedReleases);
+      if (pending > 0 && openBedsNow(unit, state.bedReleases) <= 0)
+        return reject(
+          state,
+          event,
+          `every free bed at ${unit.name} is still being made ready (${pending} pending); a patient cannot be admitted to a bed that is not open`,
+        );
       const view = plannedAdmissionMovementView(planned, unit);
       // `PULL_PATIENT` lets a recorded override reason take an open bed when no locked bed is free.
       // A booking has no override path, so the same fact is a plain refusal here.
@@ -260,15 +336,6 @@ export function reducePlannedAdmissionEvent(
       const ineligible = placementRefusal(view, unit, event.now);
       if (ineligible)
         return reject(state, event, ineligible.replace(`for movement ${view.id}`, "for this planned admission"));
-      if (
-        planned.patientId !== null &&
-        state.admissions.some(
-          (admission) =>
-            admission.patientId === planned.patientId &&
-            (admission.state === "pulled" || admission.state === "occupied"),
-        )
-      )
-        return reject(state, event, "This patient already holds another bed or occupies another ward.");
       const bedKind: "locked" | "open" =
         view.security === "Secure" ? "locked" : openBedsFree(unit) > 0 ? "open" : "locked";
       const sequence = state.admissionSequence + 1;

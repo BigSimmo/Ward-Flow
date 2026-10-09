@@ -3,6 +3,7 @@ import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type {
+  Cohort,
   HomeRegion,
   LegalStatus,
   MovementId,
@@ -1012,6 +1013,12 @@ export type PlannedAdmission = {
   /** Expected length of stay in whole days, as the booking ward gave it. */
   expectedStayDays: number;
   legalStatus: LegalStatus;
+  /**
+   * The age group the booking was made for, read by the cohort gate at arrival. For a linked
+   * patient the booking form derives it from the record's date of birth; for initials only it
+   * is recorded on the booking, as a referral records its own age band.
+   */
+  ageBand: Cohort;
   state: PlannedAdmissionState;
   bookedAt: Instant;
   /** Role label of whoever booked it, never a person's name. */

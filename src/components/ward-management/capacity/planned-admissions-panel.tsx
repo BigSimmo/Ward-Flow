@@ -30,55 +30,54 @@ import {
   dayOf,
   formatInstantWithDay,
   formatRemaining,
-  minuteOfDay,
   minutesUntil,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import {
+  COHORTS,
   HEALTH_SERVICES,
   RECORDED_SEXES,
+  type Cohort,
   type LegalStatus,
   type RecordedSex,
 } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { patientDisplayName, type PatientId } from "@/components/ward-management/ward-patients";
+import { patientCohort, patientDisplayName, type PatientId } from "@/components/ward-management/ward-patients";
 import { healthServiceAcronym, unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { plannedAdmissionAgenda, plannedAdmissionDays } from "./planned-admissions";
+import {
+  applyDraftPatch,
+  clockInputValue,
+  draftTiming,
+  plannedDayOffsets,
+  type PlannedAdmissionDraft,
+} from "./planned-admissions-draft";
 import styles from "./planned-admissions.module.css";
 
-type Draft = {
-  who: "patient" | "initials";
-  patientId: string;
-  initials: string;
-  sex: RecordedSex;
-  reason: PlannedAdmissionReason;
-  unitId: string;
-  dayOffset: number;
-  time: string;
-  stayDays: string;
-  legalStatus: LegalStatus;
-};
+type Draft = PlannedAdmissionDraft;
 
 type FormState = { mode: "book" } | { mode: "change"; id: string } | { mode: "cancel"; id: string } | null;
 
-/** The "hh:mm" value a time input needs. Never displayed as text: rows use formatInstantWithDay. */
-function clockInputValue(instant: Instant): string {
-  const minute = minuteOfDay(instant);
-  return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
-}
-
-function parseTime(value: string): number | null {
-  const match = /^(\d{2}):(\d{2})$/.exec(value);
-  if (!match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  return hours < 24 && minutes < 60 ? hours * 60 + minutes : null;
+/** A linked patient's recorded sex, kept as recorded; anything unlisted reads as not recorded. */
+function recordedSexOf(sex: string | undefined): RecordedSex {
+  return RECORDED_SEXES.find((listed) => listed === sex) ?? "Not recorded";
 }
 
 export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
-  const { units, patients, admissions, dayZero, dispatch, rejections, plannedAdmissions = [] } = useWardFlow();
+  const {
+    units,
+    patients,
+    admissions,
+    movements,
+    dayZero,
+    dispatch,
+    rejections,
+    plannedAdmissions: plannedFromContext,
+  } = useWardFlow();
+  const plannedAdmissions = useMemo(() => plannedFromContext ?? [], [plannedFromContext]);
   const patientOf = usePatientOf();
   const [form, setForm] = useState<FormState>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -94,18 +93,20 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   );
   const unitName = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? "Ward not recorded";
 
-  // Patients free to book: no live stay and no booking already waiting.
+  // Patients free to book: no live stay, no open movement and no booking already waiting. The
+  // reducer refuses the same people, so this list only spares a coordinator a refusal.
   const bookablePatients = useMemo(() => {
     const busy = new Set<string>();
     for (const admission of admissions)
       if (admission.patientId && (admission.state === "pulled" || admission.state === "occupied"))
         busy.add(admission.patientId);
+    for (const movement of movements ?? []) if (movement.patientId && isOpen(movement)) busy.add(movement.patientId);
     for (const planned of plannedAdmissions)
       if (planned.patientId && planned.state === "booked") busy.add(planned.patientId);
     return patients
       .filter((patient) => !busy.has(patient.id))
       .sort((a, b) => patientDisplayName(a).localeCompare(patientDisplayName(b)));
-  }, [admissions, patients, plannedAdmissions]);
+  }, [admissions, movements, patients, plannedAdmissions]);
 
   // A dispatch either adds a rejection (refused: say why) or not (accepted: close the form).
   useEffect(() => {
@@ -121,27 +122,30 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     }
   }, [rejections, plannedAdmissions, admissions]);
 
+  // A calendar date needs the provider's day zero; a screen given none still labels each day by
+  // its distance from today rather than failing to render.
+  function calendarDay(dayOffset: number, options: Intl.DateTimeFormatOptions): string {
+    if (!(dayZero instanceof Date)) return dayOffset < 0 ? `${-dayOffset}d ago` : `+${dayOffset}d`;
+    return calendarDateOf((dayOf(now) + dayOffset) * MINUTES_PER_DAY, dayZero).toLocaleDateString("en-AU", options);
+  }
+
   function dayLabel(dayOffset: number): string {
     if (dayOffset === 0) return "Today";
     if (dayOffset === 1) return "Tomorrow";
-    return calendarDateOf((dayOf(now) + dayOffset) * MINUTES_PER_DAY, dayZero).toLocaleDateString("en-AU", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
+    return calendarDay(dayOffset, { weekday: "short", day: "numeric", month: "short" });
   }
 
   function shortDayLabel(dayOffset: number): string {
-    return calendarDateOf((dayOf(now) + dayOffset) * MINUTES_PER_DAY, dayZero).toLocaleDateString("en-AU", {
-      weekday: "short",
-      day: "numeric",
-    });
+    return calendarDay(dayOffset, { weekday: "short", day: "numeric" });
   }
 
   function whoText(planned: PlannedAdmission): string {
     if (planned.patientId) return patientOf({ patientId: planned.patientId }).displayName;
     return `Initials ${planned.initials ?? "not recorded"}`;
   }
+
+  const cancelling = form?.mode === "cancel" ? plannedAdmissions.find((planned) => planned.id === form.id) : undefined;
+  const changing = form?.mode === "change" ? plannedAdmissions.find((planned) => planned.id === form.id) : undefined;
 
   function openBook() {
     setRefusal(null);
@@ -156,6 +160,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       time: "10:00",
       stayDays: "7",
       legalStatus: PLANNED_ADMISSION_LEGAL_STATUSES[0]!,
+      ageBand: "Adult",
     });
     setForm({ mode: "book" });
   }
@@ -169,10 +174,12 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       sex: planned.sex,
       reason: planned.reason,
       unitId: planned.unitId,
-      dayOffset: Math.max(0, dayOf(planned.expectedArrivalAt) - dayOf(now)),
+      // An overdue booking keeps its own past day, so saving another edit never moves it to today.
+      dayOffset: dayOf(planned.expectedArrivalAt) - dayOf(now),
       time: clockInputValue(planned.expectedArrivalAt),
       stayDays: String(planned.expectedStayDays),
       legalStatus: planned.legalStatus,
+      ageBand: planned.ageBand,
     });
     setForm({ mode: "change", id: planned.id });
   }
@@ -191,23 +198,29 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
 
   function submitDraft() {
     if (!draft || !form || form.mode === "cancel") return;
-    const minute = parseTime(draft.time);
-    if (minute === null) return setRefusal("Enter the arrival time as hh:mm.");
-    const stay = Number(draft.stayDays);
-    const expectedArrivalAt = (dayOf(now) + draft.dayOffset) * MINUTES_PER_DAY + minute;
+    const timing = draftTiming(draft, now);
+    if (!timing.ok) {
+      setRefusal(timing.refusal);
+      return;
+    }
+    const { expectedArrivalAt, expectedStayDays } = timing;
     pending.current = { rejections: rejections.length };
     if (form.mode === "book") {
       let sex = draft.sex;
+      let ageBand: Cohort = draft.ageBand;
       let initials: string | null = null;
       if (draft.who === "initials") {
         initials = normalisePlannedAdmissionInitials(draft.initials);
         if (initials === null) {
           pending.current = null;
-          return setRefusal("Initials are one to three letters.");
+          setRefusal("Initials are one to three letters.");
+          return;
         }
       } else {
         const patient = patients.find((candidate) => candidate.id === draft.patientId);
-        sex = patient?.sex === "Female" || patient?.sex === "Male" ? patient.sex : "Not recorded";
+        sex = recordedSexOf(patient?.sex);
+        // The age group comes from the record's date of birth on today's calendar date.
+        if (patient && dayZero instanceof Date) ageBand = patientCohort(patient.dateOfBirth, calendarDateOf(now, dayZero));
       }
       dispatch({
         type: "BOOK_PLANNED_ADMISSION",
@@ -218,8 +231,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         reason: draft.reason,
         unitId: draft.unitId,
         expectedArrivalAt,
-        expectedStayDays: stay,
+        expectedStayDays,
         legalStatus: draft.legalStatus,
+        ageBand,
       });
     } else {
       dispatch({
@@ -230,32 +244,40 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         reason: draft.reason,
         unitId: draft.unitId,
         expectedArrivalAt,
-        expectedStayDays: stay,
+        expectedStayDays,
         legalStatus: draft.legalStatus,
       });
     }
   }
 
   function submitCancel() {
-    if (!form || form.mode !== "cancel") return;
+    if (!form || form.mode !== "cancel" || !cancelling) return;
     pending.current = { rejections: rejections.length };
     dispatch({
       type: "CANCEL_PLANNED_ADMISSION",
       role: "coordinator",
       now,
-      plannedAdmissionId: form.id,
+      plannedAdmissionId: cancelling.id,
+      unitId: cancelling.unitId,
       reason: cancelReason,
     });
   }
 
   function recordArrival(planned: PlannedAdmission) {
     pending.current = { rejections: rejections.length };
-    dispatch({ type: "CONVERT_PLANNED_ADMISSION", role: "coordinator", now, plannedAdmissionId: planned.id });
+    dispatch({
+      type: "CONVERT_PLANNED_ADMISSION",
+      role: "coordinator",
+      now,
+      plannedAdmissionId: planned.id,
+      unitId: planned.unitId,
+    });
   }
 
   const booked = agenda.length;
-  const cancelling = form?.mode === "cancel" ? plannedAdmissions.find((planned) => planned.id === form.id) : undefined;
-  const update = (patch: Partial<Draft>) => setDraft((current) => (current ? { ...current, ...patch } : current));
+  const update = (patch: Partial<Draft>) => {
+    setDraft((current) => applyDraftPatch(current, patch));
+  };
 
   return (
     <WardPanel
@@ -345,13 +367,31 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                     ) : null}
                   </span>
                   <span className={styles.actions}>
-                    <Button size="sm" variant="sec" onClick={() => recordArrival(planned)}>
+                    <Button
+                      size="sm"
+                      variant="sec"
+                      onClick={() => {
+                        recordArrival(planned);
+                      }}
+                    >
                       Arrived
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => openChange(planned)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        openChange(planned);
+                      }}
+                    >
                       Change
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => openCancel(planned)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        openCancel(planned);
+                      }}
+                    >
                       Cancel
                     </Button>
                   </span>
@@ -390,7 +430,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                 <Field label="Patient">
                   <Select
                     value={draft.who}
-                    onChange={(event) => update({ who: event.target.value as Draft["who"] })}
+                    onChange={(event) => {
+                      update({ who: event.target.value as Draft["who"] });
+                    }}
                     data-testid="ward-planned-who"
                   >
                     <option value="patient" disabled={bookablePatients.length === 0}>
@@ -403,7 +445,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                   <Field label="Existing patient">
                     <Select
                       value={draft.patientId}
-                      onChange={(event) => update({ patientId: event.target.value })}
+                      onChange={(event) => {
+                        update({ patientId: event.target.value });
+                      }}
                       data-testid="ward-planned-patient"
                     >
                       {bookablePatients.map((patient) => (
@@ -420,14 +464,33 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                         value={draft.initials}
                         maxLength={5}
                         autoComplete="off"
-                        onChange={(event) => update({ initials: event.target.value })}
+                        onChange={(event) => {
+                          update({ initials: event.target.value });
+                        }}
                         data-testid="ward-planned-initials"
                       />
+                    </Field>
+                    <Field label="Age group">
+                      <Select
+                        value={draft.ageBand}
+                        onChange={(event) => {
+                          update({ ageBand: event.target.value as Cohort });
+                        }}
+                        data-testid="ward-planned-age"
+                      >
+                        {COHORTS.map((cohort) => (
+                          <option key={cohort} value={cohort}>
+                            {cohort}
+                          </option>
+                        ))}
+                      </Select>
                     </Field>
                     <Field label="Recorded sex">
                       <Select
                         value={draft.sex}
-                        onChange={(event) => update({ sex: event.target.value as RecordedSex })}
+                        onChange={(event) => {
+                          update({ sex: event.target.value as RecordedSex });
+                        }}
                         data-testid="ward-planned-sex"
                       >
                         {RECORDED_SEXES.map((sex) => (
@@ -442,13 +505,15 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
               </>
             ) : (
               <p className={styles.formWho}>
-                {whoText(plannedAdmissions.find((planned) => form?.mode === "change" && planned.id === form.id)!)}
+                {changing ? whoText(changing) : "This booking is no longer listed."}
               </p>
             )}
             <Field label="Reason">
               <Select
                 value={draft.reason}
-                onChange={(event) => update({ reason: event.target.value as PlannedAdmissionReason })}
+                onChange={(event) => {
+                  update({ reason: event.target.value as PlannedAdmissionReason });
+                }}
                 data-testid="ward-planned-reason"
               >
                 {PLANNED_ADMISSION_REASONS.map((reason) => (
@@ -461,7 +526,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
             <Field label="Ward">
               <Select
                 value={draft.unitId}
-                onChange={(event) => update({ unitId: event.target.value })}
+                onChange={(event) => {
+                  update({ unitId: event.target.value });
+                }}
                 data-testid="ward-planned-unit"
               >
                 {HEALTH_SERVICES.map((service) => {
@@ -482,10 +549,12 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
               <Field label="Day">
                 <Select
                   value={String(draft.dayOffset)}
-                  onChange={(event) => update({ dayOffset: Number(event.target.value) })}
+                  onChange={(event) => {
+                    update({ dayOffset: Number(event.target.value) });
+                  }}
                   data-testid="ward-planned-day"
                 >
-                  {Array.from({ length: PLANNED_ADMISSION_WINDOW_DAYS }, (_, offset) => (
+                  {plannedDayOffsets(draft.dayOffset).map((offset) => (
                     <option key={offset} value={offset}>
                       {dayLabel(offset)}
                     </option>
@@ -496,7 +565,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                 <TextInput
                   type="time"
                   value={draft.time}
-                  onChange={(event) => update({ time: event.target.value })}
+                  onChange={(event) => {
+                    update({ time: event.target.value });
+                  }}
                   data-testid="ward-planned-time"
                 />
               </Field>
@@ -509,14 +580,18 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                   min={1}
                   max={PLANNED_ADMISSION_MAX_STAY_DAYS}
                   value={draft.stayDays}
-                  onChange={(event) => update({ stayDays: event.target.value })}
+                  onChange={(event) => {
+                    update({ stayDays: event.target.value });
+                  }}
                   data-testid="ward-planned-stay"
                 />
               </Field>
               <Field label="Legal status">
                 <Select
                   value={draft.legalStatus}
-                  onChange={(event) => update({ legalStatus: event.target.value as LegalStatus })}
+                  onChange={(event) => {
+                    update({ legalStatus: event.target.value as LegalStatus });
+                  }}
                   data-testid="ward-planned-legal"
                 >
                   {PLANNED_ADMISSION_LEGAL_STATUSES.map((status) => (
@@ -560,7 +635,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
             <Field label="Reason">
               <Select
                 value={cancelReason}
-                onChange={(event) => setCancelReason(event.target.value as PlannedAdmissionCancelReason)}
+                onChange={(event) => {
+                  setCancelReason(event.target.value as PlannedAdmissionCancelReason);
+                }}
                 data-testid="ward-planned-cancel-reason"
               >
                 {PLANNED_ADMISSION_CANCEL_REASONS.map((reason) => (

@@ -30,6 +30,8 @@ import {
   isLeavingDestination,
   isFollowUpState,
   daysInBed,
+  PLANNED_ADMISSION_CANCEL_REASONS,
+  PLANNED_ADMISSION_REASONS,
   type LeavingDestination,
 } from "./ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
@@ -964,6 +966,15 @@ function pullOverrides(
       ...(gate === "high_acuity_staffing" && event.numConsulted === true ? { numConsulted: true as const } : {}),
     })),
   ];
+}
+
+/** The planned admissions module, handed this reducer's own rejection and placement refusal. */
+function reducePlannedAdmission(state: WardFlowState, event: WardFlowEvent, decision: AuditDecision): WardFlowState {
+  return (
+    reducePlannedAdmissionEvent(state, event, decision, reject, (movement, unit, now) =>
+      eligibilityRefusal({ type: "CONVERT_PLANNED_ADMISSION" }, movement, unit, now),
+    ) ?? state
+  );
 }
 
 function eligibilityRefusal(
@@ -9470,15 +9481,23 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       return state;
     }
 
-    case "BOOK_PLANNED_ADMISSION":
-    case "CHANGE_PLANNED_ADMISSION":
-    case "CANCEL_PLANNED_ADMISSION":
+    case "BOOK_PLANNED_ADMISSION": {
+      if (!PLANNED_ADMISSION_REASONS.includes(event.reason))
+        return reject(state, event, `${event.type} reason must be chosen from the listed reasons`);
+      return reducePlannedAdmission(state, event, decision);
+    }
+    case "CHANGE_PLANNED_ADMISSION": {
+      if (!PLANNED_ADMISSION_REASONS.includes(event.reason))
+        return reject(state, event, `${event.type} reason must be chosen from the listed reasons`);
+      return reducePlannedAdmission(state, event, decision);
+    }
+    case "CANCEL_PLANNED_ADMISSION": {
+      if (!PLANNED_ADMISSION_CANCEL_REASONS.includes(event.reason))
+        return reject(state, event, `${event.type} reason must be chosen from the listed reasons`);
+      return reducePlannedAdmission(state, event, decision);
+    }
     case "CONVERT_PLANNED_ADMISSION": {
-      return (
-        reducePlannedAdmissionEvent(state, event, decision, reject, (movement, unit, now) =>
-          eligibilityRefusal({ type: "CONVERT_PLANNED_ADMISSION" }, movement, unit, now),
-        ) ?? state
-      );
+      return reducePlannedAdmission(state, event, decision);
     }
   }
   return state;

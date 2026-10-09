@@ -682,15 +682,21 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   }
   // Stream D: a planned admission names a real ward, chooses every category from its fixed list,
   // and names either an existing patient or one to three initials. An arrived booking names the
-  // admission it became.
+  // admission it became: that admission is on the booking's ward and carries the booking's own
+  // patient link (none for initials only). A later departure leaves both facts true.
   for (const row of value.plannedAdmissions as RecordValue[]) {
     const hasPatient = text(row.patientId);
     const hasInitials = text(row.initials);
+    const becameAdmission =
+      row.state === "arrived" && text(row.admissionId)
+        ? (value.admissions as RecordValue[]).find((admission) => admission.id === row.admissionId)
+        : undefined;
     if (
       !unitIds.has(row.unitId) ||
       !PLANNED_ADMISSION_STATES.includes(row.state as never) ||
       !isPlannedAdmissionReason(row.reason) ||
       !isPlannedAdmissionLegalStatus(row.legalStatus) ||
+      !COHORTS.includes(row.ageBand as never) ||
       !RECORDED_SEXES.includes(row.sex as never) ||
       !isPlannedAdmissionStayDays(row.expectedStayDays) ||
       !finite(row.expectedArrivalAt) ||
@@ -707,6 +713,10 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       (hasInitials && !PLANNED_ADMISSION_INITIALS_PATTERN.test(row.initials as string)) ||
       (!hasInitials && row.initials !== null) ||
       (row.state === "arrived") !== (text(row.admissionId) && admissionIds.has(row.admissionId)) ||
+      (row.state === "arrived" &&
+        (becameAdmission === undefined ||
+          becameAdmission.unitId !== row.unitId ||
+          becameAdmission.patientId !== (hasPatient ? row.patientId : null))) ||
       (row.state !== "arrived" && row.admissionId !== null) ||
       (row.state === "cancelled") !== (row.cancelReason !== null)
     )

@@ -2045,6 +2045,8 @@ export type WardFlowEvent =
       expectedArrivalAt: Instant;
       expectedStayDays: number;
       legalStatus: LegalStatus;
+      /** The age group booked for: from the record for a linked patient, recorded for initials. */
+      ageBand: Cohort;
       /** Required when the caller is a ward: the ward it is booking for. */
       actingUnitId?: string;
     }
@@ -2067,6 +2069,8 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       plannedAdmissionId: string;
+      /** The booking's own ward, so bed history finds the event; refused if it is not the booking's. */
+      unitId: string;
       reason: PlannedAdmissionCancelReason;
       actingUnitId?: string;
     }
@@ -2079,6 +2083,8 @@ export type WardFlowEvent =
       role: WardFlowRole;
       now: Instant;
       plannedAdmissionId: string;
+      /** The booking's own ward, so bed history finds the event; refused if it is not the booking's. */
+      unitId: string;
       actingUnitId?: string;
     };
 

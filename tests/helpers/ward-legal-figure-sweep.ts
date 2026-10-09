@@ -1121,6 +1121,7 @@ export function candidateEvents(
         expectedArrivalAt: now + 60,
         expectedStayDays: 3,
         legalStatus: "Voluntary" as const,
+        ageBand: state.units.find((unit) => unit.id === unitId)?.cohort ?? ("Adult" as const),
       }));
     case "CHANGE_PLANNED_ADMISSION":
       return state.plannedAdmissions
@@ -1139,11 +1140,25 @@ export function candidateEvents(
     case "CANCEL_PLANNED_ADMISSION":
       return state.plannedAdmissions
         .filter((planned) => planned.state === "booked")
-        .map((planned) => ({ type, role, now, plannedAdmissionId: planned.id, reason: "rebooked" as const }));
+        .map((planned) => ({
+          type,
+          role,
+          now,
+          plannedAdmissionId: planned.id,
+          unitId: planned.unitId,
+          reason: "rebooked" as const,
+        }));
     case "CONVERT_PLANNED_ADMISSION":
       return state.plannedAdmissions
         .filter((planned) => planned.state === "booked")
-        .map((planned) => ({ type, role, now, plannedAdmissionId: planned.id, actingUnitId: planned.unitId }));
+        .map((planned) => ({
+          type,
+          role,
+          now,
+          plannedAdmissionId: planned.id,
+          unitId: planned.unitId,
+          actingUnitId: planned.unitId,
+        }));
     default:
       return [];
   }

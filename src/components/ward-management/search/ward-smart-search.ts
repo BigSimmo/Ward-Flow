@@ -352,7 +352,7 @@ export function searchTasks(query: string, tasks: InboxItem[]): TaskSearchResult
     })
     .map((task) => ({
       task,
-      href: `/mockups/ward-flow/movements/${task.movementId}`,
+      href: task.href ?? `/mockups/ward-flow/movements/${task.movementId}`,
     }));
 }
 
@@ -515,6 +515,7 @@ export type SmartSearchInput = {
   units: Unit[];
   now?: number;
   limitPerGroup?: number;
+  plannedAdmissions?: Parameters<typeof buildActionInbox>[3];
 };
 
 export type SmartSearchResults = {
@@ -614,7 +615,7 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     limit,
   );
 
-  const tasksInbox = buildActionInbox(input.movements.filter(isOpen), input.now ?? 0, input.units);
+  const tasksInbox = buildActionInbox(input.movements.filter(isOpen), input.now ?? 0, input.units, input.plannedAdmissions);
   const tasks = rankAndLimit(
     searchTasks(trimmed, tasksInbox),
     trimmed,

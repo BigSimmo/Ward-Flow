@@ -108,8 +108,9 @@ export function WardChromeSearch({
             movements,
             units,
             limitPerGroup: MAX_RESULTS_PER_GROUP,
+            plannedAdmissions: context?.plannedAdmissions,
           }),
-    [trimmed, patients, movements, units],
+    [trimmed, patients, movements, units, context?.plannedAdmissions],
   );
 
   const groups = useMemo(() => {

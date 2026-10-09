@@ -16,6 +16,7 @@ import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/componen
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
+import { plannedAdmissionsStillNeedingABed } from "./planned-admissions-reducer";
 
 /**
  * Tomorrow and the day after, as rolling windows from now (24 and 48 hours). Written in days so the
@@ -62,7 +63,8 @@ export type BedsForecastHorizon = {
   waitingForBed: number;
   /**
    * Planned admissions (stream D) still booked whose expected arrival falls at or before the end of
-   * the window, overdue ones included: each will occupy a bed when it arrives.
+   * the window, overdue ones included: each will occupy a bed when it arrives. A linked patient
+   * already counted in `waitingForBed` through an open movement is not counted again.
    */
   plannedAdmissions: number;
   /** `waitingForBed + plannedAdmissions`: beds the window must find for people known now. */
@@ -101,9 +103,10 @@ export function bedsForecast(
   const unitIds = new Set(units.map((unit) => unit.id));
   const pending = releases.filter((release) => release.state !== "discharged" && unitIds.has(release.unitId));
   const flaggedAdmissionIds = new Set(pending.map((release) => release.admissionId));
-  const waitingForBed = movements.filter(
+  const waitingMovements = movements.filter(
     (movement) => isOpen(movement) && STAGES_STILL_NEEDING_A_BED.includes(movement.stage),
-  ).length;
+  );
+  const waitingForBed = waitingMovements.length;
 
   const horizons = BEDS_FORECAST_HORIZON_DAYS.map((days): BedsForecastHorizon => {
     const until = now + days * MINUTES_PER_DAY;
@@ -123,9 +126,7 @@ export function bedsForecast(
         admission.expectedDischargeAt <= until &&
         !flaggedAdmissionIds.has(admission.id),
     ).length;
-    const planned = plannedAdmissions.filter(
-      (booking) => booking.state === "booked" && unitIds.has(booking.unitId) && booking.expectedArrivalAt <= until,
-    ).length;
+    const planned = plannedAdmissionsStillNeedingABed(plannedAdmissions, unitIds, until, waitingMovements).length;
     const bedsNeeded = waitingForBed + planned;
     const low = readyNow + confirmed - bedsNeeded;
     const likely = low + expected;

@@ -474,6 +474,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     dispatch,
     inboxAcknowledgements,
     inboxCompletions,
+    plannedAdmissions,
   } = useWardFlow();
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
@@ -573,8 +574,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // for exactly this call. A ward/ED/officer route gets an empty inbox: zero badge, and the drawer's
   // own "No outstanding work right now." empty state, never a network list with every action refused.
   const tasksItems = useMemo(
-    () => (wardTasksAreActionableForRole(role) ? buildActionInbox(movements.filter(isOpen), now, units) : []),
-    [movements, now, units, role],
+    () =>
+      wardTasksAreActionableForRole(role) ? buildActionInbox(movements.filter(isOpen), now, units, plannedAdmissions) : [],
+    [movements, now, units, role, plannedAdmissions],
   );
   /**
    * The Service selector's own "{n} open" / "none open" option counts (build plan §3 "Service
@@ -882,7 +884,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   );
 
   const openMovement = useCallback(
-    (movementId: string, action?: "refer" | "contact") => {
+    (movementId: string, action?: "refer" | "contact", href?: string) => {
       // A task row is an in-drawer navigation affordance. Close the Sheet in the same event before
       // routing so its portal cannot remain over the destination while the new page mounts.
       setOpenPanel(null);
@@ -892,7 +894,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         window.history.replaceState(nextState, "");
       }
       router.push(
-        `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
+        href ??
+          `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
       );
     },
     [router],
@@ -1138,6 +1141,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             patients={patients}
             units={units}
             tasks={tasksItems}
+            plannedAdmissions={plannedAdmissions}
             now={now}
             placeholder="Search"
           />

@@ -93,6 +93,7 @@ export function WardChromeHeader() {
     dispatch,
     inboxAcknowledgements,
     inboxCompletions,
+    plannedAdmissions,
   } = useWardFlow();
   const now = useWardFlowClock();
 
@@ -111,12 +112,16 @@ export function WardChromeHeader() {
     placeId: /\/(?:ward|board|ed)\/([^/]+)/u.exec(pathname)?.[1],
   });
 
-  const tasks = useMemo(() => buildActionInbox(movements.filter(isOpen), now, units), [movements, now, units]);
+  const tasks = useMemo(
+    () => buildActionInbox(movements.filter(isOpen), now, units, plannedAdmissions),
+    [movements, now, units, plannedAdmissions],
+  );
   const openMovement = useCallback(
-    (movementId: string, action?: "refer" | "contact") => {
+    (movementId: string, action?: "refer" | "contact", href?: string) => {
       setTasksOpen(false);
       router.push(
-        `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
+        href ??
+          `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
       );
     },
     [router],

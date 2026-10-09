@@ -30,10 +30,11 @@ import type { Movement, Referral } from "@/components/ward-management/ward-model
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import {
-  resolveSubjectPatient,
-  type PatientResolutionSubject,
-} from "@/components/ward-management/ward-patient-resolver";
+  PLANNED_ADMISSION_REASON_LABELS,
+  type PlannedAdmission,
+} from "@/components/ward-management/ward-admissions";
 import { edById } from "@/components/ward-management/ward-sites";
 import {
   WA_BROADCAST_TEMPLATES,
@@ -146,24 +147,28 @@ function roleMatches(item: InboxItem, role: string): boolean {
  * and the rest invented a person the model does not hold (25 September 2026 audit, A1 and A7). A
  * movement linked to nobody now says so, in the resolver's own words.
  */
+/** The records the resolver reads, built once per render so its per-state index is reused. */
+type AlertResolverState = {
+  patients?: Patient[];
+  referrals?: Referral[];
+  movements?: Movement[];
+};
+
 function resolveAlertPatient(
   movement: Movement | undefined,
   movementId: string | undefined,
-  patientsList?: Patient[],
-  referralsList?: Referral[],
-  movementsList?: Movement[],
+  resolverState: AlertResolverState,
   unitsList?: readonly { id: string; name: string }[],
-  subject?: PatientResolutionSubject,
+  plannedAdmission?: PlannedAdmission,
 ): { displayName: string; umrn: string; location: string; routeTarget: string } {
   const mid = movement?.id ?? movementId ?? "";
-  const info = resolveSubjectPatient(subject ?? movement ?? { id: mid }, {
-    patients: patientsList,
-    referrals: referralsList,
-    movements: movementsList,
-  });
+  const info = resolveSubjectPatient(plannedAdmission ?? movement ?? { id: mid }, resolverState);
 
   let location = "";
-  if (movement) {
+  if (plannedAdmission) {
+    // A booking is about its own ward, never a movement's ED or accepted unit.
+    location = unitsList?.find((u) => u.id === plannedAdmission.unitId)?.name ?? "";
+  } else if (movement) {
     if (movement.originEdId) {
       location = edById(movement.originEdId)?.name ?? movement.originEdId;
     } else if (movement.acceptedUnitId) {
@@ -198,15 +203,15 @@ function getCategoryBadge(item: InboxItem): { tone: "danger" | "warn" | "accent"
 
 function getPatientDisplayName(
   movement: Movement | undefined,
-  referralsList: Referral[],
-  patientsList: Patient[],
+  resolverState: AlertResolverState,
   unitsList?: readonly { id: string; name: string }[],
-  state: { units?: readonly { id: string; name: string }[] } = { units: unitsList },
+  plannedAdmission?: PlannedAdmission,
+  personLabel?: string,
 ): string {
-  if (!movement) return "Patient not recorded";
-  const p = resolveAlertPatient(movement, movement.id, patientsList, referralsList, undefined, state.units);
+  if (!movement && !plannedAdmission) return "Patient not recorded";
+  const p = resolveAlertPatient(movement, movement?.id, resolverState, unitsList, plannedAdmission);
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-  return `${p.displayName} (UMRN: ${p.umrn}) · ${p.location}`;
+  return `${personLabel ?? p.displayName} (UMRN: ${p.umrn}) · ${p.location}`;
 }
 
 /**
@@ -284,6 +289,7 @@ function AlertRows({
   prominent?: boolean;
 }) {
   const [openQuickMenuId, setOpenQuickMenuId] = useState<string | null>(null);
+  const resolverState = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const quickMenuRef = useRef<HTMLDivElement>(null);
   const quickMenuTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -331,9 +337,7 @@ function AlertRows({
         const resolvedPatient = resolveAlertPatient(
           movement,
           item.movementId,
-          patients,
-          referrals,
-          movements,
+          resolverState,
           state.units,
           item.plannedAdmission,
         );
@@ -489,7 +493,7 @@ function AlertRows({
 
         if (prominent) {
           return (
-            <li key={item.id} className={styles.alertCard} data-tone={item.tone} data-movement-id={item.movementId}>
+            <li key={item.id} className={styles.alertCard} data-tone={item.tone} data-movement-id={item.movementId || undefined}>
               <div className={styles.cardTop}>
                 <StatusGlyph tone={severityGlyph(item)} />
                 <div className={styles.alertContent}>
@@ -537,7 +541,7 @@ function AlertRows({
         }
 
         return (
-          <li key={item.id} className={styles.alertRow} data-tone={item.tone} data-movement-id={item.movementId}>
+          <li key={item.id} className={styles.alertRow} data-tone={item.tone} data-movement-id={item.movementId || undefined}>
             <StatusGlyph tone={severityGlyph(item)} />
             <div className={styles.alertContent}>
               <span className={styles.alertHead}>
@@ -815,9 +819,17 @@ function AlertsWorkspace() {
     return openMovements.find((m) => m.id === selectedAlert.movementId);
   }, [selectedAlert, openMovements]);
 
+  const selectedResolverState = useMemo(() => ({ patients, referrals }), [patients, referrals]);
   const selectedPatientName = useMemo(() => {
-    return getPatientDisplayName(selectedMovement, referrals, patients, state.units);
-  }, [selectedMovement, referrals, patients, state.units]);
+    return getPatientDisplayName(
+      selectedMovement,
+      selectedResolverState,
+      state.units,
+      selectedAlert?.plannedAdmission,
+      selectedAlert?.personLabel,
+    );
+  }, [selectedMovement, selectedResolverState, state.units, selectedAlert]);
+  const selectedBooking = selectedAlert?.plannedAdmission;
 
   const selectedSeverity = useMemo(() => {
     return selectedAlert ? getAlertSeverity(selectedAlert) : { tone: "accent" as const, label: "Routine" };
@@ -1491,6 +1503,34 @@ function AlertsWorkspace() {
                 <div className={styles.drawerSection}>
                   <h3 className={styles.drawerSectionTitle}>Case Parameters &amp; Tracking</h3>
                   <Inset>
+                    {selectedBooking ? (
+                      <dl className={styles.drawerGrid} data-testid="alerts-drawer-booking">
+                        <div>
+                          <dt>Planned ward</dt>
+                          <dd>{state.units.find((unit) => unit.id === selectedBooking.unitId)?.name ?? "Not recorded"}</dd>
+                        </div>
+                        <div>
+                          <dt>Expected arrival</dt>
+                          <dd>{formatInstantWithDay(selectedBooking.expectedArrivalAt, now)}</dd>
+                        </div>
+                        <div>
+                          <dt>Reason</dt>
+                          <dd>{PLANNED_ADMISSION_REASON_LABELS[selectedBooking.reason]}</dd>
+                        </div>
+                        <div>
+                          <dt>Legal status</dt>
+                          <dd>{selectedBooking.legalStatus}</dd>
+                        </div>
+                        <div>
+                          <dt>Expected stay</dt>
+                          <dd>{selectedBooking.expectedStayDays} days</dd>
+                        </div>
+                        <div>
+                          <dt>Assigned role</dt>
+                          <dd>{selectedAlert.owner}</dd>
+                        </div>
+                      </dl>
+                    ) : (
                     <dl className={styles.drawerGrid}>
                       <div>
                         <dt>Origin ED or setting</dt>
@@ -1517,6 +1557,7 @@ function AlertsWorkspace() {
                         <dd>{selectedMovement?.escalation ? "Tier 2 escalated" : "Tier 1 standard"}</dd>
                       </div>
                     </dl>
+                    )}
                   </Inset>
                 </div>
 

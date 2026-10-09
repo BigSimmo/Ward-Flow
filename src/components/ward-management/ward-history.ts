@@ -159,9 +159,11 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   DISPATCH_BROADCAST_ALERT: { category: "neither", plainWording: "Statewide broadcast directive dispatched" },
   ACKNOWLEDGE_BROADCAST_ALERT: { category: "neither", plainWording: "Broadcast directive acknowledged" },
   STAND_DOWN_BROADCAST_ALERT: { category: "neither", plainWording: "Broadcast directive stood down" },
-  BOOK_PLANNED_ADMISSION: { category: "neither", plainWording: "Planned admission booked" },
-  CHANGE_PLANNED_ADMISSION: { category: "neither", plainWording: "Planned admission changed" },
-  CANCEL_PLANNED_ADMISSION: { category: "neither", plainWording: "Planned admission cancelled" },
+  // Bed history finds a booking's events by its ward; patient history finds the change, cancel and
+  // arrival by the booking's own id (a booking event carries no id yet, so it is bed history only).
+  BOOK_PLANNED_ADMISSION: { category: "bed", plainWording: "Planned admission booked" },
+  CHANGE_PLANNED_ADMISSION: { category: "both", plainWording: "Planned admission changed" },
+  CANCEL_PLANNED_ADMISSION: { category: "both", plainWording: "Planned admission cancelled" },
   CONVERT_PLANNED_ADMISSION: { category: "both", plainWording: "Planned admission arrived on ward" },
 
   // 2.9 World and admin
@@ -267,7 +269,11 @@ export function selectPatientHistory(
 
     const ev = event as unknown as Record<string, unknown>;
     // D-14 (patient link is default-deny): match on the record ids only, never the patient link.
-    const matchesPatient = ev.movementId === recordId || ev.admissionId === recordId || ev.referralId === recordId;
+    const matchesPatient =
+      ev.movementId === recordId ||
+      ev.admissionId === recordId ||
+      ev.referralId === recordId ||
+      ev.plannedAdmissionId === recordId;
 
     if (matchesPatient) {
       matchingEntries.push(buildHistoryEntry(event, now));
