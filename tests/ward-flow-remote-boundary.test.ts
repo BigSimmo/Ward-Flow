@@ -122,7 +122,7 @@ describe("Ward-Flow push destination", () => {
     "https://github.com/BigSimmo/Ward-Flow",
     "git@github.com:BigSimmo/Ward-Flow.git",
     "ssh://git@github.com/BigSimmo/Ward-Flow.git",
-    "https://x-access-token:ghs_example@github.com/BigSimmo/Ward-Flow.git",
+    "https://x-access-token:cursor-cloud-example@github.com/BigSimmo/Ward-Flow.git",
   ])("accepts canonical destination %s", (remoteUrl) => {
     expect(wardFlowRemoteVerdict(remoteUrl).ok).toBe(true);
   });
