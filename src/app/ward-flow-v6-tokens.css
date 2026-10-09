@@ -253,27 +253,20 @@
 }
 
 /*
- * Health service colours (design system v8, token group G4). A dot or glyph beside the service
- * name, never a fill and never alone. light-dark() follows the theme of the element that uses it.
- * No red: red means act now. CAHS is indigo and Statewide's night hue is its own so no two
- * services share a colour in either theme. All at least 4.7:1 on the surface.
+ * Health service colours (design system v8, token group G4). A dot beside the service name, never
+ * a fill and never alone. Day values are each service's own brand colour, read from its website
+ * stylesheet; Statewide is the WA Health corporate green. Night values are lighter partners so no
+ * two services share a hue. light-dark() follows the theme of the element that uses it. No red:
+ * red means act now. All at least 4.7:1 on the surface.
  */
 :root {
   --wf-svc-north: light-dark(#990057, #f472b6);
   --wf-svc-south: light-dark(#5a2476, #c084fc);
   --wf-svc-east: light-dark(#00825e, #34d399);
   --wf-svc-wachs: light-dark(#005b94, #38bdf8);
-  --wf-svc-cahs: light-dark(#4f46e5, #a5b4fc);
+  --wf-svc-cahs: light-dark(#0076be, #a5d8ff);
   --wf-svc-private: light-dark(#475569, #94a3b8);
-  /* All services: one segment per service, in the menu's order. */
-  --wf-svc-all: conic-gradient(
-    var(--wf-svc-north) 0 60deg,
-    var(--wf-svc-south) 0 120deg,
-    var(--wf-svc-east) 0 180deg,
-    var(--wf-svc-wachs) 0 240deg,
-    var(--wf-svc-cahs) 0 300deg,
-    var(--wf-svc-private) 0
-  );
+  --wf-svc-statewide: light-dark(#005b38, #a3d9b8);
 }
 
 /*
