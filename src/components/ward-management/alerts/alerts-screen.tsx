@@ -365,7 +365,7 @@ function AlertRows({
       {items.map((item) => {
         const isAcknowledged = (acknowledgements[item.id]?.length ?? 0) > 0;
         // The Alerts screen acts as the coordinator; the reducer refuses a role re-taking its own row.
-        const ownedByMe = currentInboxOwner(ownership?.[item.id])?.by === WARD_FLOW_ROLE_LABELS.coordinator;
+        const ownedByMe = currentInboxOwner(ownership?.[item.id], item.since)?.by === WARD_FLOW_ROLE_LABELS.coordinator;
         const categoryBadge = getCategoryBadge(item);
         const overdueText = extractOverdue(item.detail);
         const movement = movements?.find((m) => m.id === item.movementId);
@@ -527,6 +527,7 @@ function AlertRows({
           <InboxRowStatus
             acknowledgements={acknowledgements[item.id]}
             ownership={ownership?.[item.id]}
+            since={item.since}
             target={movement && configuration ? decisionTargetReading(movement, now, configuration) : undefined}
             now={now}
             className={styles.rowStatus}
@@ -897,7 +898,7 @@ function AlertsWorkspace() {
       setBroadcastModalOpen(false);
       if (action === "own") {
         // The reducer refuses a role re-taking a row it already owns; no notice for a refused act.
-        if (currentInboxOwner(inboxOwnership[item.id])?.by === WARD_FLOW_ROLE_LABELS.coordinator) return;
+        if (currentInboxOwner(inboxOwnership[item.id], item.since)?.by === WARD_FLOW_ROLE_LABELS.coordinator) return;
         dispatch({ type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now, inboxItemId: item.id });
         setBroadcastSuccessNotice(`You own "${item.title}" for ${patientName}.`);
       } else if (action === "escalate") {
@@ -1577,7 +1578,7 @@ function AlertsWorkspace() {
             />
             <ul className={styles.rows}>
               {snoozedInbox.map((item) => {
-                const entry = activeSnooze(inboxSnoozes[item.id], now);
+                const entry = activeSnooze(inboxSnoozes[item.id], now, item.since);
                 const movement = movements.find((candidate) => candidate.id === item.movementId);
                 const patientInfo = resolveAlertPatient(
                   movement,

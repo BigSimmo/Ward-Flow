@@ -1151,6 +1151,12 @@ export type InboxItem = {
    * the Tasks "Due first" sort (stream A, 9 Oct 2026); never used to decide whether a row exists.
    */
   dueAt?: Instant;
+  /**
+   * When this occurrence of the row began, where the record holds it (stream A, 9 Oct 2026): a
+   * snooze or ownership written before it belongs to an earlier occurrence on the same movement
+   * and is ignored. Set from `inboxOccurrenceSince`, which the reducer reads too.
+   */
+  since?: Instant;
 };
 
 /**
@@ -1221,6 +1227,7 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
       owner: movement.owner,
       movementId: movement.id,
       dueAt,
+      since: dueAt,
     });
   }
 
@@ -1240,6 +1247,7 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
       owner: movement.owner,
       movementId: movement.id,
       dueAt: pullExpiresAt,
+      since: pullExpiresAt,
     });
   }
 
@@ -1289,6 +1297,7 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
       detail: `${movement.id} · accepted ${formatInstant(movement.transport.acceptedAt as Instant)}`,
       owner: movement.owner,
       movementId: movement.id,
+      since: movement.transport.acceptedAt,
     });
   }
 

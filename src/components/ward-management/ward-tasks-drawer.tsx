@@ -464,6 +464,7 @@ export function WardTasksDrawer({
         <InboxRowStatus
           className={styles.ackStatus}
           ownership={ownership?.[item.id]}
+          since={item.since}
           target={movement && configuration ? decisionTargetReading(movement, now, configuration) : undefined}
           now={now}
         />
@@ -516,7 +517,8 @@ export function WardTasksDrawer({
             <ArrowUpRight aria-hidden="true" />
             Open
           </button>
-          {role === "coordinator" && currentInboxOwner(ownership?.[item.id])?.by !== WARD_FLOW_ROLE_LABELS[role] ? (
+          {role === "coordinator" &&
+          currentInboxOwner(ownership?.[item.id], item.since)?.by !== WARD_FLOW_ROLE_LABELS[role] ? (
             <button
               type="button"
               data-testid={`ward-task-own-${item.id}`}
@@ -760,7 +762,7 @@ export function WardTasksDrawer({
               </div>
               <ul className={styles.list}>
                 {snoozedItems.map((item) => {
-                  const entry = activeSnooze(snoozes?.[item.id], now);
+                  const entry = activeSnooze(snoozes?.[item.id], now, item.since);
                   const movement = records?.movements.find((row) => row.id === item.movementId);
                   const patient = records ? resolveSubjectPatient(movement, records) : undefined;
                   return (

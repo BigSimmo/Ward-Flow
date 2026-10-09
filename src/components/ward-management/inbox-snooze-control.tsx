@@ -8,6 +8,7 @@ import { Button, Field, Popover, Select, StatusGlyph, type ButtonSize } from "@/
 import { formatInstantWithDay, splitDuration, type Instant } from "./ward-clock";
 import type { DecisionTargetReading } from "./ward-decision-targets";
 import {
+  currentInboxOwner,
   SNOOZE_PRESETS,
   SNOOZE_REASONS,
   snoozeAllowed,
@@ -113,18 +114,21 @@ export function InboxSnoozeControl({
 export function InboxRowStatus({
   acknowledgements,
   ownership,
+  since,
   target,
   now,
   className,
 }: {
   acknowledgements?: readonly { at: Instant; by: string }[];
   ownership?: readonly InboxOwnershipEntry[];
+  /** When the row's current occurrence began; an owner from an earlier one is not shown. */
+  since?: Instant;
   target?: DecisionTargetReading;
   now: Instant;
   className?: string;
 }) {
   const seen = acknowledgements?.at(-1);
-  const owner = ownership?.at(-1);
+  const owner = currentInboxOwner(ownership, since);
   if (!seen && !owner && !target) return null;
   return (
     <p className={className ?? styles.status}>

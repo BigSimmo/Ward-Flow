@@ -119,6 +119,45 @@ export function inboxRowMovementId(movements: readonly Movement[], inboxItemId: 
   return movements.some((movement) => movement.id === movementId) ? movementId : undefined;
 }
 
+function lastPulledAt(movement: Movement): Instant | undefined {
+  let pulledAt: Instant | undefined;
+  for (const change of movement.stageChanges) {
+    if (change.to === "pulled") pulledAt = change.at;
+  }
+  return pulledAt;
+}
+
+/**
+ * When the current occurrence of a row began, read from the movement alone (stream A, 9 Oct 2026).
+ * Row ids are category plus movement, so a condition that ends and starts again on one movement
+ * reuses the id; snoozes and ownership written before this instant belong to the earlier
+ * occurrence. Undefined for a category with no recorded start (its entries then always apply).
+ * `buildActionInbox` and `decisionTargetInboxItems` set `InboxItem.since` to the same instant
+ * (pinned in `tests/ward-inbox-snooze.test.ts`).
+ */
+export function inboxOccurrenceSince(movement: Movement, inboxItemId: string): Instant | undefined {
+  const startsWith = (key: keyof typeof INBOX_CATEGORIES) => inboxItemId.startsWith(INBOX_CATEGORIES[key].idPrefix);
+  if (startsWith("legal_timing_breached")) return movement.legalForm?.dueAt;
+  if (startsWith("bed_pull_expired")) return movement.pullExpiresAt;
+  if (startsWith("transport_awaiting_departure")) return movement.transport?.acceptedAt;
+  if (startsWith("target_referral_decision") || startsWith("target_pending_referral_decision")) {
+    return movement.referralDecisionOpenedAt ?? movement.referredAt;
+  }
+  if (startsWith("target_transfer_acceptance") || startsWith("target_pending_transfer_acceptance")) {
+    return movement.acceptedAt;
+  }
+  if (startsWith("target_transport_booked") || startsWith("target_pending_transport_booked")) {
+    return lastPulledAt(movement);
+  }
+  return undefined;
+}
+
+function inboxRowSince(state: WardFlowState, inboxItemId: string): Instant | undefined {
+  const movementId = inboxRowMovementId(state.movements, inboxItemId);
+  const movement = state.movements.find((candidate) => candidate.id === movementId);
+  return movement ? inboxOccurrenceSince(movement, inboxItemId) : undefined;
+}
+
 /**
  * Handles inbox and notices events:
  * - MARK_NOTICE_READ
@@ -237,7 +276,7 @@ export function reduceInboxEvent(
       }
       const by = WARD_FLOW_ROLE_LABELS[event.role];
       const history = state.inboxOwnership[inboxItemId] ?? [];
-      if (currentInboxOwner(history)?.by === by) {
+      if (currentInboxOwner(history, inboxRowSince(state, inboxItemId))?.by === by) {
         return reject(state, event, `inbox row ${inboxItemId} is already owned by ${by}`);
       }
       decision.outcome = "accepted";
@@ -283,7 +322,7 @@ export function reduceInboxEvent(
     case "UNSNOOZE_INBOX_ITEM": {
       const inboxItemId = event.inboxItemId.trim();
       const history = state.inboxSnoozes[inboxItemId];
-      if (!history || !activeSnooze(history, event.now)) {
+      if (!history || !activeSnooze(history, event.now, inboxRowSince(state, inboxItemId))) {
         return reject(state, event, `inbox row ${inboxItemId} is not snoozed, so there is nothing to return`);
       }
       decision.outcome = "accepted";

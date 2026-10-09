@@ -72,28 +72,49 @@ export function snoozeAllowed(until: Instant, now: Instant, actNow: boolean): bo
   return !actNow || until - now <= RED_ROW_SNOOZE_CAP_MINUTES;
 }
 
-/** The snooze in force at `now`, or undefined when the row is on the active list. */
+/**
+ * Whether an entry was written before the row's current occurrence began. Row ids are category plus
+ * movement, so a condition that ends and starts again on one movement (transport cancelled, rebooked
+ * and accepted) reuses the id; `since` is when the current occurrence began, and anything recorded
+ * before it belongs to the earlier one. Rows with no recorded start keep every entry.
+ */
+function beforeOccurrence(entry: { at: Instant }, since: Instant | undefined): boolean {
+  return since !== undefined && entry.at < since;
+}
+
+/**
+ * The snooze in force at `now`, or undefined when the row is on the active list. A snooze from an
+ * earlier occurrence of the row (written before `since`) never hides the current one.
+ */
 export function activeSnooze(
   entries: readonly InboxSnoozeEntry[] | undefined,
   now: Instant,
+  since?: Instant,
 ): Extract<InboxSnoozeEntry, { kind: "snoozed" }> | undefined {
   const latest = entries?.at(-1);
-  if (!latest || latest.kind !== "snoozed") return undefined;
+  if (!latest || latest.kind !== "snoozed" || beforeOccurrence(latest, since)) return undefined;
   return latest.until > now ? latest : undefined;
 }
 
-export function isInboxItemSnoozed(entries: readonly InboxSnoozeEntry[] | undefined, now: Instant): boolean {
-  return activeSnooze(entries, now) !== undefined;
+export function isInboxItemSnoozed(
+  entries: readonly InboxSnoozeEntry[] | undefined,
+  now: Instant,
+  since?: Instant,
+): boolean {
+  return activeSnooze(entries, now, since) !== undefined;
 }
 
+/** The current owner, or undefined when nobody has taken this occurrence of the row. */
 export function currentInboxOwner(
   entries: readonly InboxOwnershipEntry[] | undefined,
+  since?: Instant,
 ): InboxOwnershipEntry | undefined {
-  return entries?.at(-1);
+  const latest = entries?.at(-1);
+  return latest && !beforeOccurrence(latest, since) ? latest : undefined;
 }
 
 /** Splits rows into the active list and the snoozed list, keeping each list's own order. */
-export function partitionSnoozed<T extends { id: string }>(
+export function partitionSnoozed<T extends { id: string; since?: Instant }>(
   items: readonly T[],
   snoozes: Readonly<Record<string, readonly InboxSnoozeEntry[]>> | undefined,
   now: Instant,
@@ -101,7 +122,7 @@ export function partitionSnoozed<T extends { id: string }>(
   const active: T[] = [];
   const snoozed: T[] = [];
   for (const item of items) {
-    (isInboxItemSnoozed(snoozes?.[item.id], now) ? snoozed : active).push(item);
+    (isInboxItemSnoozed(snoozes?.[item.id], now, item.since) ? snoozed : active).push(item);
   }
   return { active, snoozed };
 }

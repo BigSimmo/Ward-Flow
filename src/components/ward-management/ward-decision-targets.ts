@@ -183,6 +183,7 @@ export function decisionTargetInboxItems(
       owner: definition.owner,
       movementId: movement.id,
       dueAt: reading.dueAt,
+      since: reading.startedAt,
     });
   }
   return items;

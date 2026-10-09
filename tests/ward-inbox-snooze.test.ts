@@ -10,7 +10,9 @@ import {
   wardFlowReducer,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
-import { inboxRowExists } from "../src/components/ward-management/ward-inbox-reducer";
+import { inboxOccurrenceSince, inboxRowExists } from "../src/components/ward-management/ward-inbox-reducer";
+import { CANCEL_TRANSPORT_REASONS } from "../src/components/ward-management/ward-change-reasons";
+import { TRANSPORT_PROVIDERS, type Movement } from "../src/components/ward-management/ward-model";
 import {
   activeSnooze,
   currentInboxOwner,
@@ -357,5 +359,107 @@ describe("snooze helpers", () => {
     expect(inboxRowExists(state, "target-transport-booked-WF-NOPE")).toBe(false);
     expect(inboxRowExists(state, "nonsense-WF-004")).toBe(false);
     expect(inboxRowExists(state, "target-pending-transport-booked-WF-004")).toBe(true);
+  });
+});
+
+/**
+ * Qodo on #158, 9 Oct 2026: row ids are category plus movement, so a condition that ends and
+ * starts again on one movement reuses the id. A snooze or an owner from the earlier occurrence
+ * must not carry over to the new one.
+ */
+describe("a new occurrence of a row on the same movement", () => {
+  const MOVEMENT = "WF-005";
+  const ROW = `${INBOX_CATEGORIES.transport_awaiting_departure.idPrefix}${MOVEMENT}`;
+
+  function step(state: WardFlowState, event: Parameters<typeof wardFlowReducer>[1]): WardFlowState {
+    const next = wardFlowReducer(state, event);
+    expect(next.rejections, `${event.type} was refused`).toEqual(state.rejections);
+    return next;
+  }
+
+  function movementOf(state: WardFlowState): Movement {
+    const found = state.movements.find((candidate) => candidate.id === MOVEMENT);
+    if (!found) throw new Error(`fixture is missing ${MOVEMENT}`);
+    return found;
+  }
+
+  it("does not stay snoozed or owned after transport is cancelled, rebooked and accepted", () => {
+    let state = seedWardFlowState();
+    const first = inbox(state).find((item) => item.id === ROW);
+    expect(first, "the fixture's accepted, undeparted transport row").toBeDefined();
+
+    // Snooze (a review row may go to 4h) and own the first occurrence.
+    state = step(state, {
+      type: "SNOOZE_INBOX_ITEM",
+      role: "coordinator",
+      now: NOW,
+      inboxItemId: ROW,
+      until: NOW + 240,
+      reason: "awaiting_call_back",
+    });
+    state = step(state, { type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now: NOW, inboxItemId: ROW });
+    expect(partitionSnoozed(inbox(state), state.inboxSnoozes, NOW + 1).snoozed.map((item) => item.id)).toEqual([ROW]);
+
+    // Cancel, rebook and accept on the same movement, well inside the old snooze.
+    state = step(state, {
+      type: "CANCEL_TRANSPORT",
+      role: "coordinator",
+      now: NOW + 5,
+      movementId: MOVEMENT,
+      reason: CANCEL_TRANSPORT_REASONS[0],
+    });
+    expect(inbox(state, NOW + 5).some((item) => item.id === ROW)).toBe(false);
+    state = step(state, {
+      type: "BOOK_TRANSPORT",
+      role: "ed",
+      now: NOW + 6,
+      movementId: MOVEMENT,
+      provider: TRANSPORT_PROVIDERS[0],
+      escortRequired: false,
+      cadNumber: "CAD-STUB-0002",
+      transportLegalStatus: "voluntary",
+      estimatedAt: 0,
+    });
+    state = step(state, { type: "TRANSPORT_ACCEPTED", role: "officer", now: NOW + 8, movementId: MOVEMENT });
+
+    const later = NOW + 10;
+    const again = inbox(state, later).find((item) => item.id === ROW);
+    expect(again, "the new acceptance raises the row again, under the same id").toBeDefined();
+    if (!again) return;
+    expect(again.since).toBe(NOW + 8);
+    expect(inboxOccurrenceSince(movementOf(state), ROW)).toBe(again.since);
+
+    // The old snooze is still in force by its own clock, but it belongs to the earlier occurrence.
+    expect(activeSnooze(state.inboxSnoozes[ROW], later)).toBeDefined();
+    expect(activeSnooze(state.inboxSnoozes[ROW], later, again.since)).toBeUndefined();
+    const { active, snoozed } = partitionSnoozed(inbox(state, later), state.inboxSnoozes, later);
+    expect(active.map((item) => item.id)).toContain(ROW);
+    expect(snoozed.map((item) => item.id)).not.toContain(ROW);
+
+    // Nobody owns the new occurrence, so the same role may take it, and there is nothing to return.
+    expect(currentInboxOwner(state.inboxOwnership[ROW], again.since)).toBeUndefined();
+    state = step(state, { type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now: later, inboxItemId: ROW });
+    expect(currentInboxOwner(state.inboxOwnership[ROW], again.since)).toEqual({ at: later, by: "Flow coordinator" });
+    const unsnooze = wardFlowReducer(state, {
+      type: "UNSNOOZE_INBOX_ITEM",
+      role: "coordinator",
+      now: later,
+      inboxItemId: ROW,
+    });
+    expect(unsnooze.rejections.length).toBe(state.rejections.length + 1);
+  });
+
+  it("sets every row's start from the same reading the reducer uses", () => {
+    const state = seedWardFlowState();
+    const rows = [
+      ...inbox(state),
+      ...decisionTargetInboxItems(state.movements.filter(isOpen), NOW, state.configuration),
+    ];
+    expect(rows.some((row) => row.since !== undefined)).toBe(true);
+    for (const row of rows) {
+      const movement = state.movements.find((candidate) => candidate.id === row.movementId);
+      if (!movement) throw new Error(`row ${row.id} names no movement`);
+      expect(inboxOccurrenceSince(movement, row.id), row.id).toBe(row.since);
+    }
   });
 });
