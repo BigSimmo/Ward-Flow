@@ -506,7 +506,9 @@ export function PatientNowScreen({
       setShowClearanceModal(true);
     },
     onBookTransport: openTransportForm,
-    onArrivalTime: () => { setShowArrivalTimeModal(true); },
+    onArrivalTime: () => {
+      setShowArrivalTimeModal(true);
+    },
     leaveBed: stayLeaveBed,
     stayUnitName: stayUnit?.name,
     onRecordReturn: recordReturn,
@@ -1112,8 +1114,8 @@ export function PatientNowScreen({
                                 <div>
                                   <strong>Arrival Overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES}{" "}
                                   minutes past estimated arrival time (
-                                  {clock(liveMovement!.arrivalDetails?.estimatedArrivalAt)} AWST). Notification is not
-                                  recorded here.
+                                  {clock(liveMovement?.arrivalDetails?.estimatedArrivalAt ?? now)} AWST). Notification
+                                  is not recorded here.
                                 </div>
                               </div>
                             )}
