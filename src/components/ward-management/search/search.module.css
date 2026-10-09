@@ -4691,6 +4691,7 @@
 }
 
 .screen[data-ward-design="v6"] .main {
+  container: patient-search / inline-size;
   grid-column: auto;
   width: 100%;
   box-sizing: border-box;
@@ -5233,14 +5234,19 @@
   }
 }
 
-/* One column: a tap opens the record in a drawer, so the card is not left under every row. */
-@media (max-width: 63.99rem) {
+/*
+ * Two columns only when the page itself has room for the table beside the record card. Read from
+ * the page's width rather than the screen's, because the sidebar takes 17rem of a 1024px screen and
+ * left the table about 340px wide (9 Oct 2026). One column: a tap opens the record in a drawer, so
+ * the card is not left under every row.
+ */
+@container patient-search (max-width: 55.99rem) {
   .v6Preview {
     display: none;
   }
 }
 
-@media (min-width: 64rem) {
+@container patient-search (min-width: 56rem) {
   .v6Layout {
     grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
   }

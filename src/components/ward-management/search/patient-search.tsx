@@ -653,7 +653,7 @@ export function PatientSearchPage() {
 
   const handleSelectPatient = (p: UnifiedCaseloadPatient, trigger?: HTMLElement) => {
     setSelectedId(p.id);
-    if (trigger && typeof window !== "undefined" && window.matchMedia?.(SINGLE_COLUMN_QUERY).matches) {
+    if (trigger && previewCardHidden()) {
       detailsTriggerRef.current = trigger;
       setDetailsOpen(true);
     }
@@ -1196,7 +1196,7 @@ Clinical Note: ${p.clinicalNote}`;
             </CardFoot>
           </Card>
 
-          <Card className={styles.v6Preview} role="region" aria-label="Patient details">
+          <Card className={styles.v6Preview} role="region" aria-label="Patient details" data-preview-card>
             {renderDetails()}
           </Card>
         </div>
@@ -1435,8 +1435,15 @@ function withDay(text: string, openedAt: string, clock: string): string {
   return day ? `${text}, ${day}` : text;
 }
 
-/** Matches the stylesheet: below 64rem the record card leaves the side column for a drawer. */
-const SINGLE_COLUMN_QUERY = "(max-width: 63.99rem)";
+/**
+ * The stylesheet decides when the page is one column, from the page's own width, and hides the side
+ * card then. A tap opens the drawer exactly when that card cannot be seen.
+ */
+function previewCardHidden(): boolean {
+  if (typeof document === "undefined") return false;
+  const card = document.querySelector<HTMLElement>("[data-preview-card]");
+  return card !== null && getComputedStyle(card).display === "none";
+}
 
 function resultId(result: PatientSearchResult): string {
   return result.kind === "movement" ? result.movement.id : result.referral.id;
