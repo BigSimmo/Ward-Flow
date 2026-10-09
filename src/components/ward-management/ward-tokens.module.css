@@ -99,7 +99,8 @@
   --ward-canvas: var(--surface);
   --ward-chrome: var(--surface-chrome);
   --ward-subtle: var(--surface-subtle);
-  --ward-shadow: var(--lift);
+  /* A whole shadow, never a colour. Falls back to the v8 card lift where the shell layer is absent. */
+  --ward-shadow: var(--lift, var(--wf-e1));
   --ward-feature-start: var(--surface-feature-start);
   --ward-feature-end: var(--surface-feature-end);
   --ward-feature-ink: var(--surface-feature-ink);

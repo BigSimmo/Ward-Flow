@@ -1,0 +1,626 @@
+{
+  "src/app/global-error.tsx": {
+    "inlineStyle": 9
+  },
+  "src/app/globals.css": {
+    "rawFontSize": 40,
+    "rawZIndex": 3,
+    "offScaleMedia": 35,
+    "bareOutlineNone": 3
+  },
+  "src/app/mockups/ward-flow/ward-flow-layout.module.css": {
+    "offScaleMedia": 3
+  },
+  "src/app/mockups/work-mode/areas.tsx": {
+    "inlineStyle": 31
+  },
+  "src/app/mockups/work-mode/day.tsx": {
+    "inlineStyle": 43
+  },
+  "src/app/mockups/work-mode/roster.tsx": {
+    "inlineStyle": 10
+  },
+  "src/app/mockups/work-mode/search.tsx": {
+    "inlineStyle": 3
+  },
+  "src/app/mockups/work-mode/sprite.tsx": {
+    "inlineStyle": 1
+  },
+  "src/app/mockups/work-mode/work-mode-app.tsx": {
+    "inlineStyle": 1
+  },
+  "src/app/mockups/work-mode/work-mode.css": {
+    "rawFontSize": 385,
+    "rawZIndex": 19,
+    "offScaleMedia": 3
+  },
+  "src/components/ui/overlay-root.tsx": {
+    "inlineStyle": 2
+  },
+  "src/components/ui/toast.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/ui/tooltip.tsx": {
+    "inlineStyle": 2
+  },
+  "src/components/ward-flow-sign-in/ward-flow-sign-in-screen.module.css": {
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/alerts/alerts.module.css": {
+    "rawZIndex": 2,
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/board/board.module.css": {
+    "rawFontSize": 18,
+    "rawZIndex": 3,
+    "offScaleMedia": 14
+  },
+  "src/components/ward-management/board/ward-board.tsx": {
+    "inlineStyle": 38
+  },
+  "src/components/ward-management/board/ward-daily-sheet.tsx": {
+    "inlineStyle": 20
+  },
+  "src/components/ward-management/capacity/bed-map.module.css": {
+    "rawZIndex": 2,
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/capacity/bed-map.tsx": {
+    "inlineStyle": 8
+  },
+  "src/components/ward-management/capacity/bed-meeting-sheet.module.css": {
+    "rawFontSize": 3
+  },
+  "src/components/ward-management/capacity/capacity-screen.tsx": {
+    "inlineStyle": 2
+  },
+  "src/components/ward-management/capacity/capacity.module.css": {
+    "rawZIndex": 1,
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/community/community-index.module.css": {
+    "rawZIndex": 1,
+    "offScaleMedia": 1,
+    "bareOutlineNone": 1
+  },
+  "src/components/ward-management/community/community-screen.tsx": {
+    "inlineStyle": 110
+  },
+  "src/components/ward-management/community/community-team-v6.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/community/community.module.css": {
+    "rawFontSize": 20,
+    "rawZIndex": 10,
+    "offScaleMedia": 4,
+    "bareOutlineNone": 1
+  },
+  "src/components/ward-management/coordinator/coordinator.module.css": {
+    "rawFontSize": 8,
+    "rawZIndex": 3,
+    "offScaleMedia": 5,
+    "bareOutlineNone": 4
+  },
+  "src/components/ward-management/coordinator/flow-diagram.module.css": {
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/coordinator/home-ed-pressure.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/ward-management/coordinator/pressure-strip.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/ward-management/coordinator/shortlist-panel.module.css": {
+    "rawZIndex": 2,
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/coordinator/shortlist-panel.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/ward-management/delays/delays-coordination.module.css": {
+    "rawFontSize": 41,
+    "rawZIndex": 2,
+    "offScaleMedia": 6
+  },
+  "src/components/ward-management/delays/delays-coordination.tsx": {
+    "inlineStyle": 10
+  },
+  "src/components/ward-management/delays/delays-data-views.module.css": {
+    "rawFontSize": 53,
+    "rawZIndex": 1,
+    "offScaleMedia": 7
+  },
+  "src/components/ward-management/delays/delays-data-views.tsx": {
+    "inlineStyle": 9
+  },
+  "src/components/ward-management/delays/delays-screen.tsx": {
+    "inlineStyle": 8
+  },
+  "src/components/ward-management/delays/delays.module.css": {
+    "rawFontSize": 5,
+    "rawZIndex": 3,
+    "offScaleMedia": 11
+  },
+  "src/components/ward-management/discharges/discharges-third-edition.module.css": {
+    "rawZIndex": 3,
+    "offScaleMedia": 3
+  },
+  "src/components/ward-management/discharges/discharges.module.css": {
+    "rawFontSize": 2,
+    "rawZIndex": 2,
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/ed/ed-board-controls.module.css": {
+    "rawFontSize": 17,
+    "rawZIndex": 1,
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/ed/ed-index.module.css": {
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/ed/ed-index.tsx": {
+    "inlineStyle": 6
+  },
+  "src/components/ward-management/ed/ed-screen.tsx": {
+    "inlineStyle": 8
+  },
+  "src/components/ward-management/ed/ed-service-bands.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/ed/ed.module.css": {
+    "rawFontSize": 121,
+    "rawZIndex": 12,
+    "offScaleMedia": 14
+  },
+  "src/components/ward-management/governance-registers.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/ward-management/governance-third-edition.module.css": {
+    "rawZIndex": 2,
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/governance/governance.module.css": {
+    "rawZIndex": 2,
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/handover/handover-page.tsx": {
+    "inlineStyle": 81
+  },
+  "src/components/ward-management/handover/handover-third-edition.module.css": {
+    "rawFontSize": 3,
+    "rawZIndex": 4,
+    "offScaleMedia": 5
+  },
+  "src/components/ward-management/hub/hub-screen.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/ward-management/hub/hub.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/legal-forms/legal-forms-screen.tsx": {
+    "inlineStyle": 9
+  },
+  "src/components/ward-management/legal-forms/legal-forms.module.css": {
+    "offScaleMedia": 3
+  },
+  "src/components/ward-management/movements/movement-drawer.tsx": {
+    "inlineStyle": 2
+  },
+  "src/components/ward-management/movements/movement-horizon-gantt.tsx": {
+    "inlineStyle": 3
+  },
+  "src/components/ward-management/movements/movement-horizon.module.css": {
+    "rawZIndex": 11,
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/movements/movement-workspace-cockpit.module.css": {
+    "rawFontSize": 46,
+    "offScaleMedia": 4
+  },
+  "src/components/ward-management/movements/movement-workspace-cockpit.tsx": {
+    "inlineStyle": 2
+  },
+  "src/components/ward-management/movements/movements-screen.tsx": {
+    "inlineStyle": 4
+  },
+  "src/components/ward-management/movements/movements.module.css": {
+    "rawFontSize": 47,
+    "offScaleMedia": 9
+  },
+  "src/components/ward-management/movements/traffic-diagram.module.css": {
+    "rawZIndex": 2
+  },
+  "src/components/ward-management/movements/traffic-diagram.tsx": {
+    "inlineStyle": 3
+  },
+  "src/components/ward-management/network/network-overview.tsx": {
+    "inlineStyle": 2
+  },
+  "src/components/ward-management/officer/officer-screen.tsx": {
+    "inlineStyle": 3
+  },
+  "src/components/ward-management/officer/officer.module.css": {
+    "offScaleMedia": 1,
+    "bareOutlineNone": 1
+  },
+  "src/components/ward-management/on-call/on-call-screen.tsx": {
+    "inlineStyle": 4
+  },
+  "src/components/ward-management/on-call/on-call.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/out-of-area/out-of-area-board.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/ward-management/out-of-area/out-of-area-third-edition.module.css": {
+    "rawFontSize": 11,
+    "rawZIndex": 3,
+    "offScaleMedia": 4
+  },
+  "src/components/ward-management/out-of-area/out-of-area-v6.module.css": {
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/override-register.tsx": {
+    "inlineStyle": 14
+  },
+  "src/components/ward-management/patients/add-patient.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/patients/patient-dossier-tabs.module.css": {
+    "rawFontSize": 43,
+    "offScaleMedia": 3
+  },
+  "src/components/ward-management/patients/patient-now-screen.tsx": {
+    "inlineStyle": 6
+  },
+  "src/components/ward-management/patients/patient-now.module.css": {
+    "rawFontSize": 86,
+    "rawZIndex": 1,
+    "offScaleMedia": 18
+  },
+  "src/components/ward-management/patients/patient-record-overview.module.css": {
+    "rawFontSize": 19,
+    "offScaleMedia": 3
+  },
+  "src/components/ward-management/patients/patient-tracker-facts.module.css": {
+    "rawFontSize": 16
+  },
+  "src/components/ward-management/patients/patient-transit-operations.module.css": {
+    "rawFontSize": 68,
+    "offScaleMedia": 5
+  },
+  "src/components/ward-management/referrals/arrival-time-modal.module.css": {
+    "rawZIndex": 1
+  },
+  "src/components/ward-management/referrals/referral-board.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/ward-management/referrals/referrals.module.css": {
+    "rawFontSize": 45,
+    "rawZIndex": 6,
+    "offScaleMedia": 13,
+    "bareOutlineNone": 13
+  },
+  "src/components/ward-management/referrals/upload-forms-modal.tsx": {
+    "inlineStyle": 23,
+    "inlineHex": 20
+  },
+  "src/components/ward-management/referrals/ward-referral-drawer.module.css": {
+    "rawZIndex": 4,
+    "bareOutlineNone": 2
+  },
+  "src/components/ward-management/referrals/ward-referral-drawer.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/ward-management/search/global-search-preview.module.css": {
+    "rawFontSize": 1
+  },
+  "src/components/ward-management/search/patient-typeahead.module.css": {
+    "rawFontSize": 7,
+    "bareOutlineNone": 1
+  },
+  "src/components/ward-management/search/record-preview.tsx": {
+    "inlineStyle": 2
+  },
+  "src/components/ward-management/search/search.module.css": {
+    "rawFontSize": 20,
+    "rawZIndex": 12,
+    "offScaleMedia": 11,
+    "bareOutlineNone": 2
+  },
+  "src/components/ward-management/settings/settings-modals.module.css": {
+    "rawZIndex": 1
+  },
+  "src/components/ward-management/settings/settings-rows.tsx": {
+    "inlineStyle": 2
+  },
+  "src/components/ward-management/settings/settings-screen.tsx": {
+    "inlineStyle": 6
+  },
+  "src/components/ward-management/settings/settings.module.css": {
+    "rawFontSize": 2,
+    "rawZIndex": 3,
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/shell/ward-bar.module.css": {
+    "rawZIndex": 3,
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/shell/ward-broadcast-banner.module.css": {
+    "rawZIndex": 1
+  },
+  "src/components/ward-management/shell/ward-dynamic-island.module.css": {
+    "rawZIndex": 1,
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/shell/ward-rail.module.css": {
+    "rawZIndex": 4,
+    "offScaleMedia": 5,
+    "bareOutlineNone": 2
+  },
+  "src/components/ward-management/shell/ward-rail.tsx": {
+    "inlineStyle": 2
+  },
+  "src/components/ward-management/shell/ward-service-scope-bar.module.css": {
+    "bareOutlineNone": 1
+  },
+  "src/components/ward-management/sovereign/sovereign-showcase-screen.tsx": {
+    "inlineStyle": 4
+  },
+  "src/components/ward-management/sovereign/sovereign-showcase.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/statistics/hospital-capacity-matrix.tsx": {
+    "inlineStyle": 2
+  },
+  "src/components/ward-management/statistics/statistics-capacity-chart.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/statistics/statistics-capacity-chart.tsx": {
+    "inlineStyle": 8
+  },
+  "src/components/ward-management/statistics/statistics-community-third-edition.module.css": {
+    "rawFontSize": 2,
+    "rawZIndex": 2,
+    "offScaleMedia": 5
+  },
+  "src/components/ward-management/statistics/statistics-compare.module.css": {
+    "offScaleMedia": 2,
+    "bareOutlineNone": 1
+  },
+  "src/components/ward-management/statistics/statistics-detail.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/statistics/statistics-ed-third-edition.module.css": {
+    "rawFontSize": 13,
+    "rawZIndex": 3,
+    "offScaleMedia": 5,
+    "bareOutlineNone": 1
+  },
+  "src/components/ward-management/statistics/statistics-family.module.css": {
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/statistics/statistics-insight-chart.module.css": {
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/statistics/statistics-insight-chart.tsx": {
+    "inlineStyle": 5
+  },
+  "src/components/ward-management/statistics/statistics-landing-third-edition.module.css": {
+    "rawFontSize": 1,
+    "rawZIndex": 1,
+    "offScaleMedia": 9
+  },
+  "src/components/ward-management/statistics/statistics-nav.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/statistics/statistics-samples.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/statistics/statistics-screen.tsx": {
+    "inlineStyle": 2
+  },
+  "src/components/ward-management/statistics/statistics-section-frame-third-edition.module.css": {
+    "rawFontSize": 4,
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/statistics/statistics-sections.module.css": {
+    "offScaleMedia": 2,
+    "bareOutlineNone": 2
+  },
+  "src/components/ward-management/statistics/statistics-service-third-edition.module.css": {
+    "rawZIndex": 3,
+    "offScaleMedia": 2,
+    "bareOutlineNone": 2
+  },
+  "src/components/ward-management/statistics/statistics-third-edition.module.css": {
+    "rawZIndex": 1,
+    "offScaleMedia": 3
+  },
+  "src/components/ward-management/statistics/statistics-unit-finder.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/ward-management/statistics/statistics-v4.module.css": {
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/statistics/statistics-v6.module.css": {
+    "offScaleMedia": 3
+  },
+  "src/components/ward-management/statistics/statistics-ward-screen.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/ward-management/statistics/statistics-ward-third-edition.module.css": {
+    "rawFontSize": 1,
+    "offScaleMedia": 4
+  },
+  "src/components/ward-management/statistics/statistics-ward.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/statistics/statistics.module.css": {
+    "rawFontSize": 3,
+    "rawZIndex": 1,
+    "offScaleMedia": 1,
+    "bareOutlineNone": 1
+  },
+  "src/components/ward-management/tools/ward-catchment-resolver.module.css": {
+    "rawFontSize": 21,
+    "offScaleMedia": 1,
+    "bareOutlineNone": 1
+  },
+  "src/components/ward-management/tools/ward-mha-calculator.module.css": {
+    "rawFontSize": 15
+  },
+  "src/components/ward-management/tools/ward-mha-calculator.tsx": {
+    "inlineStyle": 9
+  },
+  "src/components/ward-management/tools/ward-tools-workspace.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/ward-bar.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/ward-management/ward-chrome-header.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/ward-chrome-search.tsx": {
+    "inlineStyle": 20
+  },
+  "src/components/ward-management/ward-controls.module.css": {
+    "rawFontSize": 2
+  },
+  "src/components/ward-management/ward-figure.module.css": {
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/ward-global-search.module.css": {
+    "rawZIndex": 2,
+    "offScaleMedia": 1,
+    "bareOutlineNone": 1
+  },
+  "src/components/ward-management/ward-global-search.tsx": {
+    "inlineStyle": 2
+  },
+  "src/components/ward-management/ward-management-modes.module.css": {
+    "offScaleMedia": 3,
+    "bareOutlineNone": 2
+  },
+  "src/components/ward-management/ward-management-modes.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/ward-management/ward-management-network-third-edition.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/ward-management-network.module.css": {
+    "offScaleMedia": 5,
+    "bareOutlineNone": 2
+  },
+  "src/components/ward-management/ward-modes-second-edition.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/ward-record-row.module.css": {
+    "rawFontSize": 2
+  },
+  "src/components/ward-management/ward-role-switcher.module.css": {
+    "bareOutlineNone": 1
+  },
+  "src/components/ward-management/ward-shared.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/ward-sidebar.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/ward-standing-strip.module.css": {
+    "rawZIndex": 1
+  },
+  "src/components/ward-management/ward-tasks-drawer.module.css": {
+    "rawZIndex": 1,
+    "offScaleMedia": 1,
+    "bareOutlineNone": 2
+  },
+  "src/components/ward-management/ward-tasks-panel.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/ward/suburb-team-panel.tsx": {
+    "inlineStyle": 5
+  },
+  "src/components/ward-management/ward/ward-answer-view.module.css": {
+    "rawZIndex": 2,
+    "offScaleMedia": 3
+  },
+  "src/components/ward-management/ward/ward-arrivals-corridor.module.css": {
+    "rawFontSize": 12,
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/ward/ward-arrivals-corridor.tsx": {
+    "inlineStyle": 11
+  },
+  "src/components/ward-management/ward/ward-bed-dossier-drawer.module.css": {
+    "rawFontSize": 26,
+    "rawZIndex": 3,
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/ward/ward-beds-matrix.module.css": {
+    "rawFontSize": 37,
+    "rawZIndex": 1,
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/ward/ward-decisions-cockpit.module.css": {
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/ward/ward-discharges-matrix.module.css": {
+    "rawFontSize": 11,
+    "offScaleMedia": 3
+  },
+  "src/components/ward-management/ward/ward-discharges-matrix.tsx": {
+    "inlineStyle": 12
+  },
+  "src/components/ward-management/ward/ward-home-tab.module.css": {
+    "offScaleMedia": 1
+  },
+  "src/components/ward-management/ward/ward-notification-center.module.css": {
+    "offScaleMedia": 1,
+    "bareOutlineNone": 1
+  },
+  "src/components/ward-management/ward/ward-screen.tsx": {
+    "inlineStyle": 15
+  },
+  "src/components/ward-management/ward/ward.module.css": {
+    "rawFontSize": 43,
+    "rawZIndex": 6,
+    "offScaleMedia": 14
+  },
+  "src/components/ward-management/wards/ward-index.module.css": {
+    "offScaleMedia": 2
+  },
+  "src/components/ward-management/wards/ward-index.tsx": {
+    "inlineStyle": 2
+  },
+  "src/components/ward-management/wards/ward-overview.module.css": {
+    "rawFontSize": 1,
+    "bareOutlineNone": 1
+  },
+  "src/components/wf/chart.module.css": {
+    "rawZIndex": 2
+  },
+  "src/components/wf/chart.tsx": {
+    "inlineStyle": 19
+  },
+  "src/components/wf/feed.tsx": {
+    "inlineStyle": 1
+  },
+  "src/components/wf/form.module.css": {
+    "bareOutlineNone": 1
+  },
+  "src/components/wf/hero.module.css": {
+    "offScaleMedia": 2
+  },
+  "src/components/wf/stat.tsx": {
+    "inlineStyle": 3
+  },
+  "src/components/wf/table.tsx": {
+    "inlineStyle": 1
+  },
+  "src/lib/brand-image.tsx": {
+    "inlineStyle": 1,
+    "inlineHex": 1
+  }
+}

@@ -2219,8 +2219,10 @@
 .screen[data-referral-view] {
   /* The original referral module predates the third-edition palette and many nested controls
    * still consume its semantic role names. Keep the bridge on this page root so those existing
-   * controls resolve against the canonical scheme without changing either global token layer. */
-  --ink: var(--ink);
+   * controls resolve against the canonical scheme without changing either global token layer.
+   * `--ink` is inherited from the shell layer as it stands. Re-declaring it as `var(--ink)` was a
+   * cycle, which made `--ink` and everything built from it invalid on this root (design system v8,
+   * G8): the register then painted the body colour of whichever theme `.dark` held. */
   --ward-accent-ink: var(--accent-ink);
   --surface-raised: var(--surface);
   --surface-subtle: var(--surface-2);
