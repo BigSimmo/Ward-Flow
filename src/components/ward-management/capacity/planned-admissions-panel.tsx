@@ -209,9 +209,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     const selectedArrivalAt = (dayOf(now) + draft.dayOffset) * MINUTES_PER_DAY + minute;
     // Unrelated edits on an overdue booking must keep the recorded instant when day/time are unchanged.
     const expectedArrivalAt =
-      form.mode === "change" &&
-      draft.originalArrivalAt !== null &&
-      selectedArrivalAt === draft.originalArrivalAt
+      form.mode === "change" && draft.originalArrivalAt !== null && selectedArrivalAt === draft.originalArrivalAt
         ? draft.originalArrivalAt
         : selectedArrivalAt;
     pending.current = { rejections: rejections.length };

@@ -56,15 +56,9 @@ const LOCKED_FIRST: readonly LegalStatus[] = ["Involuntary inpatient", "Detained
  * patient's cohort comes from their date of birth; initials-only bookings keep the ward's cohort
  * because no age band was recorded on the booking.
  */
-function plannedAdmissionMovementView(
-  planned: PlannedAdmission,
-  unit: Unit,
-  patient: Patient | null,
-): Movement {
+function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit, patient: Patient | null): Movement {
   const cohort =
-    patient?.dateOfBirth !== undefined && patient.dateOfBirth !== ""
-      ? patientCohort(patient.dateOfBirth)
-      : unit.cohort;
+    patient?.dateOfBirth !== undefined && patient.dateOfBirth !== "" ? patientCohort(patient.dateOfBirth) : unit.cohort;
   return {
     id: `WF-${planned.id}` as MovementId,
     originEdId: "",
@@ -310,8 +304,7 @@ export function reducePlannedAdmissionEvent(
       if (
         planned.patientId !== null &&
         state.movements.some(
-          (movement) =>
-            movement.patientId === planned.patientId && !movement.closure && movement.stage !== "arrived",
+          (movement) => movement.patientId === planned.patientId && !movement.closure && movement.stage !== "arrived",
         )
       )
         return reject(

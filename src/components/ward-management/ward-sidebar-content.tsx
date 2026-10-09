@@ -80,9 +80,7 @@ export function WardSidebarNav({
           );
   // Planned arrivals are ward bookings; an ED place has no destination unit to match.
   const placePlanned =
-    placeId === undefined || role === "ed"
-      ? []
-      : plannedAdmissions.filter((booking) => booking.unitId === placeId);
+    placeId === undefined || role === "ed" ? [] : plannedAdmissions.filter((booking) => booking.unitId === placeId);
   const attention = buildActionInbox(placeMovements, now, units, placePlanned);
 
   return (

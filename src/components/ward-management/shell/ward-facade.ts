@@ -182,12 +182,8 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
     delaysNeedingAttention: required("delays"),
     referralsWaiting: required("referrals"),
     tasks: {
-      value: buildActionInbox(
-        input.movements.filter(isOpen),
-        input.now,
-        input.units,
-        input.plannedAdmissions ?? [],
-      ).length,
+      value: buildActionInbox(input.movements.filter(isOpen), input.now, input.units, input.plannedAdmissions ?? [])
+        .length,
       noun: TASKS_NOUN,
     },
   };
