@@ -2248,11 +2248,19 @@ svg.gl {
 
 /* ================= v8.2 balanced (spec section 15) ================= */
 /* Act now items take a thin red edge and no fill (rule 6). Selection and focus rings still win. */
-.edge-act {
+/* Hover keeps the edge. A row has only a divider, so it takes a 1px inset ring instead. */
+.edge-act,
+.bed.edge-act:not(.sel, [aria-pressed="true"]):hover {
   border-color: var(--wf-act-edge);
+}
+.row.edge-act:not(.sel, [aria-selected="true"]) {
+  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
 }
 @media (forced-colors: active) {
   .edge-act {
     border-color: CanvasText;
+  }
+  .row.edge-act {
+    box-shadow: inset 0 0 0 1px CanvasText;
   }
 }
