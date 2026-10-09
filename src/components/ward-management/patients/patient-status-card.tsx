@@ -271,7 +271,9 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
           action: {
             kind: "button",
             label: etaAt === undefined ? "Set arrival time" : "Update arrival",
-            onClick: () => ctx.onArrivalTime(),
+            onClick: () => {
+              ctx.onArrivalTime();
+            },
           },
         },
         {
@@ -339,7 +341,13 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
             admission?.state === "occupied" ? "Leave is recorded on the ward board" : "No stay linked to this record",
           action:
             admission?.state === "occupied"
-              ? { kind: "button", label: "Mark absent", onClick: () => ctx.onMarkAbsent() }
+              ? {
+                  kind: "button",
+                  label: "Mark absent",
+                  onClick: () => {
+                    ctx.onMarkAbsent();
+                  },
+                }
               : undefined,
         },
       ],
@@ -402,7 +410,9 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
                 kind: "button",
                 label: "Record",
                 ariaLabel: `Record ${ABSENCE_STEP_LABELS[step]}`,
-                onClick: () => ctx.onAbsenceStep(step),
+                onClick: () => {
+                  ctx.onAbsenceStep(step);
+                },
               }
             : undefined,
       };

@@ -163,7 +163,7 @@ export function PatientHistoryTab({
   // Each event carries its day heading only when the day changes, worked out before render.
   const events = (movement ? movementEvents(movement, unitName) : []).map((event, i, list) => {
     const day = dayLabel(event.at, dayZero);
-    const previous = i > 0 ? dayLabel(list[i - 1]!.at, dayZero) : undefined;
+    const previous = i > 0 ? dayLabel(list[i - 1]?.at, dayZero) : undefined;
     return { ...event, heading: day !== previous ? day : null };
   });
   return (
@@ -222,7 +222,12 @@ export function PatientHistoryTab({
                   placeholder="Search place, outcome or episode"
                 />
               </label>
-              <Button size="sm" onClick={() => setRecent(!recent)}>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setRecent(!recent);
+                }}
+              >
                 {recent ? "Newest first" : "Oldest first"}
               </Button>
             </div>
@@ -491,7 +496,7 @@ export function PatientCommunityTab({
                 <Row k="Receiving ward">
                   {movement.acceptedUnitId ? (receivingWardName ?? "Not recorded") : "Destination under review"}
                 </Row>
-                <Row k="Movement owner">{movement.owner?.trim() ? movement.owner : notRecorded}</Row>
+                <Row k="Movement owner">{movement.owner.trim() ? movement.owner : notRecorded}</Row>
               </div>
             </Card>
           )}

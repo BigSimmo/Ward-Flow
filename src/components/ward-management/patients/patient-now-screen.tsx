@@ -175,13 +175,13 @@ export function PatientNowScreen({
     setActiveTab("now");
     requestAnimationFrame(() => {
       operationsRef.current?.focus();
-      operationsRef.current?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+      operationsRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
     });
   }
   // A task's Refer action lands on the placement work, as it did when Now had a separate view.
   useEffect(() => {
     if (initialTaskAction !== "refer") return;
-    requestAnimationFrame(() => operationsRef.current?.scrollIntoView?.({ block: "start" }));
+    requestAnimationFrame(() => operationsRef.current?.scrollIntoView({ block: "start" }));
   }, [initialTaskAction]);
   const [copied, setCopied] = useState(false);
 
@@ -463,7 +463,7 @@ export function PatientNowScreen({
     setTransportEtaDraft(displayEta ?? "");
     setShowTransportForm(true);
     requestAnimationFrame(() =>
-      document.getElementById("pnTransportHeading")?.scrollIntoView?.({ block: "center", behavior: "smooth" }),
+      document.getElementById("pnTransportHeading")?.scrollIntoView({ block: "center", behavior: "smooth" }),
     );
   }
 
@@ -506,7 +506,9 @@ export function PatientNowScreen({
       setShowClearanceModal(true);
     },
     onBookTransport: openTransportForm,
-    onArrivalTime: () => setShowArrivalTimeModal(true),
+    onArrivalTime: () => {
+      setShowArrivalTimeModal(true);
+    },
     leaveBed: stayLeaveBed,
     stayUnitName: stayUnit?.name,
     onRecordReturn: recordReturn,
