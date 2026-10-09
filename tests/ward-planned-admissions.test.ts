@@ -22,13 +22,15 @@ import { EVENT_HISTORY_TABLE, selectBedHistory, selectPatientHistory } from "@/c
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
 import { shellFigures } from "@/components/ward-management/shell/ward-facade";
-import { patientDisplayName } from "@/components/ward-management/ward-patients";
+import { patientCohort, patientDisplayName } from "@/components/ward-management/ward-patients";
 import { shiftInstants } from "@/components/ward-management/ward-reanchor";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
 const UNIT = "fre-adult-open";
 const OTHER_UNIT = "scgh-adult-open";
+/** The demo calendar's date the panel would send with a linked booking. */
+const CALENDAR_DATE = "2026-10-09";
 
 function apply(state: WardFlowState, event: WardFlowEvent): WardFlowState {
   return wardFlowReducer(state, event);
@@ -50,6 +52,7 @@ function book(
     expectedStayDays: 7,
     legalStatus: "Voluntary",
     ageBand: "Adult",
+    calendarDate: CALENDAR_DATE,
     ...overrides,
   });
 }
@@ -489,6 +492,33 @@ describe("calendar derivation", () => {
     expect(days[3]!.byService).toEqual([{ service: "North Metro", count: 1 }]);
     const agenda = plannedAdmissionAgenda(state.plannedAdmissions);
     expect(agenda.map((planned) => planned.id)).toEqual(["PA-SEED-03", "PA-SEED-01", "PA-SEED-02"]);
+  });
+});
+
+describe("review follow-up: a linked patient's age group comes from the record", () => {
+  it("refuses a Youth record booked as Adult, and a linked booking with no calendar date", () => {
+    const seed = seedWardFlowState();
+    const busy = new Set(
+      [
+        ...seed.admissions.filter((admission) => admission.state === "occupied" || admission.state === "pulled"),
+        ...seed.plannedAdmissions,
+      ].map((record) => record.patientId),
+    );
+    const youth = seed.patients.find(
+      (patient) => !busy.has(patient.id) && patientCohort(patient.dateOfBirth, new Date(2026, 9, 9)) === "Youth",
+    )!;
+    expect(youth).toBeDefined();
+
+    const asAdult = book(seed, { initials: null, patientId: youth.id, ageBand: "Adult" });
+    expect(lastRejection(asAdult)).toBe("This patient's recorded date of birth gives the Youth age group, not Adult.");
+    expect(asAdult.plannedAdmissions).toBe(seed.plannedAdmissions);
+
+    const undated = book(seed, { initials: null, patientId: youth.id, ageBand: "Youth", calendarDate: undefined });
+    expect(lastRejection(undated)).toMatch(/needs today's calendar date/);
+
+    const recorded = book(seed, { initials: null, patientId: youth.id, ageBand: "Youth" });
+    expect(recorded.rejections).toEqual([]);
+    expect(newest(recorded)).toMatchObject({ patientId: youth.id, ageBand: "Youth" });
   });
 });
 

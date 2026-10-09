@@ -26,6 +26,7 @@ import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
 import { COHORTS, RECORDED_SEXES, type LegalStatus, type Movement, type MovementId, type Unit } from "../ward-model";
+import { patientCohort } from "../ward-patients";
 
 export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
 
@@ -122,6 +123,15 @@ export function plannedAdmissionsStillNeedingABed(
   );
 }
 
+/** A "yyyy-mm-dd" calendar date as local midnight, or null when it is not one. */
+function localCalendarDate(value: unknown): Date | null {
+  if (typeof value !== "string") return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(value);
+  if (!match) return null;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return date.getMonth() === Number(match[2]) - 1 && date.getDate() === Number(match[3]) ? date : null;
+}
+
 export function nextPlannedAdmissionId(sequence: number): string {
   return `PA-${String(sequence).padStart(2, "0")}`;
 }
@@ -186,8 +196,8 @@ export function reducePlannedAdmissionEvent(
         return reject(state, event, "BOOK_PLANNED_ADMISSION needs either an existing patient or initials, not both");
       let initials: string | null = null;
       if (hasPatient) {
-        if (!state.patients.some((patient) => patient.id === event.patientId))
-          return reject(state, event, `no patient found for id ${event.patientId}`);
+        const patient = state.patients.find((candidate) => candidate.id === event.patientId);
+        if (!patient) return reject(state, event, `no patient found for id ${event.patientId}`);
         // The same rule the booking picker applies: a person in a bed is not booked a second one.
         if (holdsABed(state, event.patientId as string))
           return reject(state, event, "This patient already holds a bed or occupies a ward.");
@@ -197,6 +207,22 @@ export function reducePlannedAdmissionEvent(
           )
         )
           return reject(state, event, "This patient already has a planned admission booked.");
+        // A linked patient's age group is the record's, never the caller's: a Youth record booked
+        // as Adult would otherwise pass the cohort gate onto an Adult ward when it converts.
+        const today = localCalendarDate(event.calendarDate);
+        if (today === null)
+          return reject(
+            state,
+            event,
+            "BOOK_PLANNED_ADMISSION needs today's calendar date (yyyy-mm-dd) to check a linked patient's age group",
+          );
+        const recordedBand = patientCohort(patient.dateOfBirth, today);
+        if (recordedBand !== event.ageBand)
+          return reject(
+            state,
+            event,
+            `This patient's recorded date of birth gives the ${recordedBand} age group, not ${event.ageBand}.`,
+          );
       } else {
         initials = normalisePlannedAdmissionInitials(event.initials);
         if (initials === null)

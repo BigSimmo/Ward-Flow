@@ -208,6 +208,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     if (form.mode === "book") {
       let sex = draft.sex;
       let ageBand: Cohort = draft.ageBand;
+      let calendarDate: string | undefined;
       let initials: string | null = null;
       if (draft.who === "initials") {
         initials = normalisePlannedAdmissionInitials(draft.initials);
@@ -219,9 +220,17 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       } else {
         const patient = patients.find((candidate) => candidate.id === draft.patientId);
         sex = recordedSexOf(patient?.sex);
-        // The age group comes from the record's date of birth on today's calendar date.
-        if (patient && dayZero instanceof Date)
-          ageBand = patientCohort(patient.dateOfBirth, calendarDateOf(now, dayZero));
+        // The age group comes from the record's date of birth on today's calendar date; the
+        // reducer checks it against the same date.
+        if (patient && dayZero instanceof Date) {
+          const today = calendarDateOf(now, dayZero);
+          ageBand = patientCohort(patient.dateOfBirth, today);
+          calendarDate = [
+            String(today.getFullYear()),
+            String(today.getMonth() + 1).padStart(2, "0"),
+            String(today.getDate()).padStart(2, "0"),
+          ].join("-");
+        }
       }
       dispatch({
         type: "BOOK_PLANNED_ADMISSION",
@@ -235,6 +244,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         expectedStayDays,
         legalStatus: draft.legalStatus,
         ageBand,
+        ...(calendarDate !== undefined ? { calendarDate } : {}),
       });
     } else {
       dispatch({

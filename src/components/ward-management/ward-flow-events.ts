@@ -2089,6 +2089,12 @@ export type WardFlowEvent =
       legalStatus: LegalStatus;
       /** The age group booked for: from the record for a linked patient, recorded for initials. */
       ageBand: Cohort;
+      /**
+       * The demo calendar's date at `now` ("yyyy-mm-dd", from `calendarDateOf(now, dayZero)`).
+       * Required with `patientId`: the reducer holds no calendar, and refuses an `ageBand` that the
+       * record's date of birth does not give on this date. Not about the person; never displayed.
+       */
+      calendarDate?: string;
       /** Required when the caller is a ward: the ward it is booking for. */
       actingUnitId?: string;
     }
