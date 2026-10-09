@@ -690,7 +690,9 @@ patientId?, unitId?}`, `kind: NoticeKind`, `sentence: string`, `readAt?`/`readBy
   and started validating `state.configuration` on restore.
 - **Discard rules** (`tryReadDemoState`, `:306`) — a saved payload is discarded (never repaired,
   never partially trusted) on: failed JSON parse; failed `isValidStoredWardFlowState` (structural
-  validator, `ward-flow-storage-validation.ts`); version mismatch; `dayZero` mismatch (a
+  validator, `ward-flow-storage-validation.ts`); version mismatch (except a v6 save, which
+  `migrateStoredWardFlowState` brings to v7 with empty planned admissions before validation, Josh,
+  9 Oct 2026; scenario files use the same migration); `dayZero` mismatch (a
   different calendar day); `worldGeneration` mismatch between the payload's own field and
   `state.worldGeneration`; `savedAtAbsolute` after the current mount (a save from the future);
   `now` before `NOW_ANCHOR + clockOffsetMinutes`; or any audit event timestamped after the saved

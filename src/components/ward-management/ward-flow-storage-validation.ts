@@ -835,3 +835,27 @@ export function withInboxStreamADefaults<T extends WardFlowState>(state: T): T {
   const stored = state as T & Partial<Pick<WardFlowState, "inboxOwnership" | "inboxSnoozes">>;
   return { ...state, inboxOwnership: stored.inboxOwnership ?? {}, inboxSnoozes: stored.inboxSnoozes ?? {} };
 }
+
+/**
+ * The stored state version this build writes. A save at an older version restores only through
+ * `migrateStoredWardFlowState`; every other mismatch is refused.
+ */
+export const WARD_FLOW_STORED_STATE_VERSION = 7;
+
+/**
+ * Brings a stored state saved at `fromVersion` up to the current shape, or returns null when no
+ * migration exists. The result still goes through `isValidStoredWardFlowState`: a migration adds
+ * the newer version's fields, it never repairs or vouches for anything the save already held.
+ *
+ * v6 -> v7 (Josh, 9 October 2026: "No, fix this."): v7 added planned admissions and their id
+ * sequence and nothing else. A v6 save keeps every record it holds and gains an empty booking list
+ * and a sequence of nought, the state of a world with no bookings. Fixture bookings are not added:
+ * a restored day holds only what was saved. A "v6" save that already carries either field is not
+ * a v6 shape and is refused rather than overwritten.
+ */
+export function migrateStoredWardFlowState(state: unknown, fromVersion: unknown): unknown {
+  if (fromVersion === WARD_FLOW_STORED_STATE_VERSION) return state;
+  if (fromVersion !== 6 || !object(state)) return null;
+  if ("plannedAdmissions" in state || "plannedAdmissionSequence" in state) return null;
+  return { ...state, plannedAdmissions: [], plannedAdmissionSequence: 0 };
+}
