@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { Check, ClipboardCopy, Clock, FileText, Route, Truck, UserRound, X } from "lucide-react";
 import { Badge, Button, Card, Count, Icon, StatusGlyph, buttonClass, durMinutes } from "@/components/wf";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { MovementStage } from "@/components/ward-management/ward-model";
 import { rowTone, type ColumnContext } from "./handover-columns";
 import {
@@ -92,7 +92,7 @@ export function HandoverFlowPanel({
       "Form time",
       row.formCode
         ? row.formDueAt !== undefined
-          ? `${formatInstant(row.formDueAt)}, as typed`
+          ? `${formatInstantWithDay(row.formDueAt, now)}, as typed`
           : "None typed"
         : "No form",
     ],
@@ -104,8 +104,8 @@ export function HandoverFlowPanel({
           ? "No pull time recorded"
           : "None"
         : hold !== null && hold <= 0
-          ? `Expired ${formatInstant(row.pullExpiresAt)}`
-          : `Until ${formatInstant(row.pullExpiresAt)}`,
+          ? `Expired ${formatInstantWithDay(row.pullExpiresAt, now)}`
+          : `Until ${formatInstantWithDay(row.pullExpiresAt, now)}`,
     ],
     [
       "Transport",
@@ -115,7 +115,7 @@ export function HandoverFlowPanel({
     ],
     ["Owner", row.owner],
     ["Escalated", row.escalated ? "Yes, state desk" : "No"],
-    ["Referred", formatInstant(row.openedAt)],
+    ["Referred", formatInstantWithDay(row.openedAt, now)],
   ];
   const stepIcon =
     step.tone === "act" ? (
@@ -144,7 +144,7 @@ export function HandoverFlowPanel({
         <span className={styles.tier} aria-label={`Tier ${row.tier}`}>
           T{row.tier}
         </span>
-        <Badge title={`Waiting since ${formatInstant(row.openedAt)}`}>
+        <Badge title={`Waiting since ${formatInstantWithDay(row.openedAt, now)}`}>
           <Icon icon={Clock} size={14} />
           <span className={styles.mono}>{durMinutes(now - row.openedAt)}</span>
         </Badge>
@@ -167,7 +167,7 @@ export function HandoverFlowPanel({
           <span className={`${styles.pin} ${styles.pinFrom}`} />
           <span className={styles.routeBody}>
             <b>{row.edFull}</b>
-            <span className={styles.cap}>Waiting since {formatInstant(row.openedAt)}</span>
+            <span className={styles.cap}>Waiting since {formatInstantWithDay(row.openedAt, now)}</span>
           </span>
           <span className={styles.routeTime}>From</span>
         </div>
@@ -180,7 +180,7 @@ export function HandoverFlowPanel({
             </span>
             <span className={styles.routeTime}>
               {row.stage === "moving" && row.eta !== undefined
-                ? `ETA ${formatInstant(row.eta)}`
+                ? `ETA ${formatInstantWithDay(row.eta, now)}`
                 : row.stage === "pulled"
                   ? "Bed pulled"
                   : "Accepted"}
@@ -216,7 +216,7 @@ export function HandoverFlowPanel({
           <ul className={styles.timeline}>
             {[...row.declines].reverse().map((decline) => (
               <li key={`${decline.unitId}-${decline.at}`}>
-                <span className={styles.mono}>{formatInstant(decline.at)}</span>
+                <span className={styles.mono}>{formatInstantWithDay(decline.at, now)}</span>
                 <StatusGlyph tone="neutral" size={8} />
                 <span>
                   {decline.name}, {decline.reason.toLowerCase()}
@@ -263,9 +263,9 @@ export function HandoverFlowPanel({
       </div>
 
       <div className={styles.panelFoot}>
-        <Link href="/mockups/ward-flow/transport" className={buttonClass({ variant: "sec", size: "sm" })}>
+        <Link href="/mockups/ward-flow/movements" className={buttonClass({ variant: "sec", size: "sm" })}>
           <Icon icon={Truck} size={14} />
-          Transport
+          Movements
         </Link>
         {openPatientHref ? (
           <Link href={openPatientHref} className={buttonClass({ variant: "pri", size: "sm" })}>
@@ -359,7 +359,7 @@ export function HandoverSignOffPanel({
         <div className={styles.section}>
           <div className={styles.signed} data-testid="ward-handover-sign-off-visible-status" role="status">
             <StatusGlyph tone="success" size={9} />
-            Signed off at {formatInstant(signedAt)} as flow coordinator. Recorded in History.
+            Signed off at {formatInstantWithDay(signedAt, now)} as flow coordinator. Recorded in History.
           </div>
         </div>
       ) : null}

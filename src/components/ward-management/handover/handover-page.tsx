@@ -32,7 +32,7 @@ import { announceToWardShell } from "@/components/ward-management/shell/ward-liv
 import { openWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
-import { formatInstant, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -515,7 +515,9 @@ export function HandoverPage() {
       announceToWardShell("Sign-off is not recorded.");
       return;
     }
-    announceToWardShell(`Signed off as flow coordinator at ${formatInstant(recorded.at)}. Recorded in History.`);
+    announceToWardShell(
+      `Signed off as flow coordinator at ${formatInstantWithDay(recorded.at, now)}. Recorded in History.`,
+    );
   }, [dispatch, now]);
   const showSignOff = () => {
     setSheetOpen(false);
@@ -539,7 +541,7 @@ export function HandoverPage() {
   }, [meetingStartedAt, now]);
 
   /* copy */
-  const shiftLine = `${shiftInfo.label.toLowerCase()}, ${formatInstant(shiftAt)}`;
+  const shiftLine = `${shiftInfo.label.toLowerCase()}, ${formatInstantWithDay(shiftAt, now)}`;
   const copySummary = useCallback(() => {
     const text = summaryText(groups, scopeLabel, shiftLine, now, now);
     void navigator.clipboard?.writeText(text).then(
@@ -607,7 +609,7 @@ export function HandoverPage() {
       done: actRows.every((row) => row.owner !== "No owner recorded"),
       text: `${actRows.length} act now, ${actRows.every((row) => row.owner !== "No owner recorded") ? "each has an owner" : "some have no owner"}`,
     },
-    { id: "due", done: true, text: `${counts.due} due by ${formatInstant(cutoff)} listed` },
+    { id: "due", done: true, text: `${counts.due} due by ${formatInstantWithDay(cutoff, now)} listed` },
     staleWards.length
       ? {
           id: "feeds",
@@ -617,7 +619,7 @@ export function HandoverPage() {
         }
       : { id: "feeds", done: true, text: "Every ward feed is current" },
     takenAt !== null
-      ? { id: "print", done: true, text: `Printed copy taken ${formatInstant(takenAt)}` }
+      ? { id: "print", done: true, text: `Printed copy taken ${formatInstantWithDay(takenAt, now)}` }
       : {
           id: "print",
           done: false,
@@ -638,7 +640,7 @@ export function HandoverPage() {
   const signOffPanel = (
     <div ref={signOffRef}>
       <HandoverSignOffPanel
-        title={`Sign off ${formatInstant(shiftAt)} handover`}
+        title={`Sign off ${formatInstantWithDay(shiftAt, now)} handover`}
         subtitle={`${shiftInfo.label} · ${scopeLabel}`}
         checks={signChecks}
         signedAt={signedAt}
@@ -819,7 +821,7 @@ export function HandoverPage() {
     <Hero
       level={1}
       testId="ward-handover-hero"
-      title={`${formatInstant(shiftAt)} handover`}
+      title={`${formatInstantWithDay(shiftAt, now)} handover`}
       titleMeta={scopeLabel}
       foot={
         <span className={styles.gap} aria-label={`${readyTotal} beds ready for ${counts.bed} waiting`}>
@@ -845,7 +847,7 @@ export function HandoverPage() {
                 id === "act"
                   ? "Act now"
                   : id === "due"
-                    ? `Due by ${formatInstant(cutoff)}`
+                    ? `Due by ${formatInstantWithDay(cutoff, now)}`
                     : id === "bed"
                       ? "Waiting for a bed"
                       : "Moving"
@@ -865,7 +867,7 @@ export function HandoverPage() {
             onClick={showSignOff}
             data-testid="ward-handover-hero-sign-off"
           >
-            {signedAt !== null ? `Signed ${formatInstant(signedAt)}` : "Sign off"}
+            {signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : "Sign off"}
           </Button>
           <Button
             variant="light"
@@ -890,7 +892,7 @@ export function HandoverPage() {
               id: option.id,
               label: (
                 <>
-                  <b className={styles.shiftTime}>{formatInstant(handoverAt(option.id, now))}</b>
+                  <b className={styles.shiftTime}>{formatInstantWithDay(handoverAt(option.id, now), now)}</b>
                   {option.label}
                 </>
               ),
@@ -915,7 +917,7 @@ export function HandoverPage() {
             onClick={() => togglePill("new")}
           >
             <Icon icon={Sparkles} size={14} />
-            New since {formatInstant(newSince)}
+            New since {formatInstantWithDay(newSince, now)}
             <span className={styles.heroCount}>{counts.new}</span>
           </button>
         </div>
@@ -1003,15 +1005,15 @@ export function HandoverPage() {
     <div className={styles.banner} role="status">
       <StatusGlyph tone="neutral" size={9} />
       <span>
-        The {formatInstant(shiftAt)} handover has passed
+        The {formatInstantWithDay(shiftAt, now)} handover has passed
         {signedAt === null ? " and no sign-off was recorded" : ""}. The sheet shows the board now, with due times read
-        to {formatInstant(cutoff)}.
+        to {formatInstantWithDay(cutoff, now)}.
       </span>
       <Button variant="ghost" size="sm" onClick={() => setTab("hist")}>
         History
       </Button>
       <Button variant="sec" size="sm" onClick={() => setShift(defaultHandoverShift(now))}>
-        Go to {formatInstant(handoverAt(defaultHandoverShift(now), now))} handover
+        Go to {formatInstantWithDay(handoverAt(defaultHandoverShift(now), now), now)} handover
       </Button>
     </div>
   ) : null;
@@ -1170,7 +1172,7 @@ export function HandoverPage() {
         isHighlighted={isHighlighted}
         anyHighlight={anyHighlight}
         scopeLabel={scopeLabel}
-        shiftLabel={`${shiftInfo.label}, ${formatInstant(shiftAt)}`}
+        shiftLabel={`${shiftInfo.label}, ${formatInstantWithDay(shiftAt, now)}`}
         densityLabel={customColumns === null ? DENSITY_LABEL[density] : "Chosen"}
         sheetDate={formatSheetMoment(now, dayZero).split(",")[0] ?? ""}
         options={printOptions}
@@ -1275,28 +1277,28 @@ function HandoverHistory({
       <ul className={styles.history}>
         {[...signOffs].reverse().map((record) => (
           <li key={`sign-${record.at}-${record.by}`}>
-            <span className={styles.mono}>{formatInstant(record.at)}</span>
+            <span className={styles.mono}>{formatInstantWithDay(record.at, now)}</span>
             <StatusGlyph tone="success" size={9} />
             <span>Handover signed off as {record.by === "coordinator" ? "flow coordinator" : record.by}</span>
           </li>
         ))}
         {takenAt !== null ? (
           <li>
-            <span className={styles.mono}>{formatInstant(takenAt)}</span>
+            <span className={styles.mono}>{formatInstantWithDay(takenAt, now)}</span>
             <StatusGlyph tone="success" size={9} />
             <span>Printed copy taken, this session only</span>
           </li>
         ) : null}
         {meetings.map((meeting) => (
           <li key={`meet-${meeting.at}-${meeting.minutes}`}>
-            <span className={styles.mono}>{formatInstant(meeting.at)}</span>
+            <span className={styles.mono}>{formatInstantWithDay(meeting.at, now)}</span>
             <StatusGlyph tone="success" size={9} />
             <span>Bed flow meeting, {meeting.minutes} min, this session only</span>
           </li>
         ))}
         {unsigned.map((shift) => (
           <li key={`unsigned-${shift.id}`}>
-            <span className={styles.mono}>{formatInstant(handoverAt(shift.id, now))}</span>
+            <span className={styles.mono}>{formatInstantWithDay(handoverAt(shift.id, now), now)}</span>
             <StatusGlyph tone="neutral" size={9} />
             <span>No sign-off recorded for the {shift.label.toLowerCase()} handover</span>
           </li>

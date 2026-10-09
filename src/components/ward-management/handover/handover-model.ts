@@ -7,7 +7,7 @@
  * file never computes a legal time limit.
  */
 import { durMinutes } from "@/components/wf";
-import { formatInstant, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type {
@@ -218,10 +218,14 @@ export function groupOf(row: HandoverRow, now: Instant, cutoff: Instant): Handov
   return "mov";
 }
 
-export function handoverGroups(cutoff: Instant) {
+export function handoverGroups(cutoff: Instant, now: Instant) {
   return [
     { id: "act", title: "Act now", why: "Flagged urgent, typed form time passed or bed pull expired" },
-    { id: "due", title: `Due by ${formatInstant(cutoff)}`, why: "Bed pulls and typed form times before then" },
+    {
+      id: "due",
+      title: `Due by ${formatInstantWithDay(cutoff, now)}`,
+      why: "Bed pulls and typed form times before then",
+    },
     { id: "bed", title: "Waiting for a bed", why: "Placement requested or a ward is reviewing" },
     { id: "acc", title: "Accepted, bed not ready", why: "Ward accepted, bed not yet free" },
     { id: "mov", title: "Moving", why: "Transport accepted or collected" },
@@ -256,9 +260,11 @@ export function destinationText(row: HandoverRow): string {
 export function dueShort(row: HandoverRow, now: Instant): string | null {
   if (row.pullExpiresAt !== undefined) {
     const left = row.pullExpiresAt - now;
-    return left <= 0 ? `Pull over by ${durMinutes(-left)}` : `Pull ends ${formatInstant(row.pullExpiresAt)}`;
+    return left <= 0
+      ? `Pull over by ${durMinutes(-left)}`
+      : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}`;
   }
-  if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${formatInstant(row.formDueAt)}`;
+  if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${formatInstantWithDay(row.formDueAt, now)}`;
   return null;
 }
 
@@ -267,12 +273,12 @@ export function dueLong(row: HandoverRow, now: Instant): string | null {
     const left = row.pullExpiresAt - now;
     return left <= 0
       ? `Pull expired ${durMinutes(-left)} ago`
-      : `Pull ends ${formatInstant(row.pullExpiresAt)}, ${durMinutes(left)} left`;
+      : `Pull ends ${formatInstantWithDay(row.pullExpiresAt, now)}, ${durMinutes(left)} left`;
   }
   if (row.formDueAt !== undefined) {
     return row.formDueAt <= now
       ? `Form ${row.formCode} time passed`
-      : `Form ${row.formCode} due ${formatInstant(row.formDueAt)} as typed`;
+      : `Form ${row.formCode} due ${formatInstantWithDay(row.formDueAt, now)} as typed`;
   }
   return null;
 }
@@ -292,7 +298,7 @@ export function nextStep(
       hold !== null && hold <= 0
         ? `Pull expired ${durMinutes(-hold)} ago. Move or release`
         : row.pullExpiresAt !== undefined
-          ? `Move by ${formatInstant(row.pullExpiresAt)}`
+          ? `Move by ${formatInstantWithDay(row.pullExpiresAt, now)}`
           : "Move to the pulled bed";
   } else if (row.stage === "moving") {
     text =
@@ -321,10 +327,10 @@ export function nextStep(
   return { text, tone };
 }
 
-function backgroundLine(row: HandoverRow): string {
+function backgroundLine(row: HandoverRow, now: Instant): string {
   if (row.declines.length) {
     const last = row.declines[row.declines.length - 1]!;
-    return `${row.declines.length} declined, last ${last.name} ${formatInstant(last.at)}${row.escalated ? ", escalated" : ""}`;
+    return `${row.declines.length} declined, last ${last.name} ${formatInstantWithDay(last.at, now)}${row.escalated ? ", escalated" : ""}`;
   }
   if (row.to) return `Accepted by ${row.to.name}`;
   if (row.asked.length)
@@ -349,7 +355,7 @@ export type IsbarLine = { key: "I" | "S" | "B" | "A" | "R"; label: string; text:
 export function isbarLines(row: HandoverRow, now: Instant): IsbarLine[] {
   const form =
     row.formCode && row.formDueAt !== undefined
-      ? `, Form ${row.formCode} due ${formatInstant(row.formDueAt)} as typed`
+      ? `, Form ${row.formCode} due ${formatInstantWithDay(row.formDueAt, now)} as typed`
       : row.formCode
         ? `, Form ${row.formCode}, no due time typed`
         : "";
@@ -358,9 +364,9 @@ export function isbarLines(row: HandoverRow, now: Instant): IsbarLine[] {
     {
       key: "S",
       label: "Situation",
-      text: `${row.edShort} since ${formatInstant(row.openedAt)}, ${STAGE_LABEL[row.stage]}`,
+      text: `${row.edShort} since ${formatInstantWithDay(row.openedAt, now)}, ${STAGE_LABEL[row.stage]}`,
     },
-    { key: "B", label: "Background", text: backgroundLine(row) },
+    { key: "B", label: "Background", text: backgroundLine(row, now) },
     { key: "A", label: "Assessment", text: `${obsLong(row)}${form}` },
     { key: "R", label: "Recommendation", text: recommendationLine(row, now) },
   ];
@@ -424,7 +430,7 @@ export function groupRows(
 ): RowGroup[] {
   if (grouping === "none") return [{ id: "all", title: "All open", why: "", rows: sortRows(rows, sort) }];
   if (grouping === "meet") {
-    return handoverGroups(cutoff).map((group) => ({
+    return handoverGroups(cutoff, now).map((group) => ({
       id: group.id,
       title: group.title,
       why: group.why,
@@ -543,7 +549,7 @@ export function summaryText(
 ): string {
   const lines = [
     `Handover sheet, ${scopeLabel}, ${shiftLabel}`,
-    `Taken ${formatInstant(takenAt)} AWST. Synthetic data.`,
+    `Taken ${formatInstantWithDay(takenAt, now)} AWST. Synthetic data.`,
   ];
   for (const group of groups) {
     if (group.rows.length === 0) continue;

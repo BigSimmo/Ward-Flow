@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { ArrowLeft, Printer } from "lucide-react";
 import { Button, Card, Segmented, StatusGlyph, Switch, cx, type WfTone } from "@/components/wf";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { rowTone, type ColumnContext, type HandoverColumn } from "./handover-columns";
 import {
   groupOf,
@@ -231,7 +231,7 @@ export function HandoverPrintSheet({
     for (const group of groups) for (const row of group.rows) seen.set(row.id, row);
     return [...seen.values()];
   }, [groups]);
-  const dueTitle = handoverGroups(ctx.cutoff)[1].title;
+  const dueTitle = handoverGroups(ctx.cutoff, ctx.now)[1].title;
   const summary: [string, number][] = [
     ["Open", rows.length],
     ["Act now", rows.filter((row) => isActNow(row, ctx.now)).length],
@@ -241,7 +241,7 @@ export function HandoverPrintSheet({
     ["Beds ready", wards.reduce((sum, ward) => sum + ward.ready, 0)],
   ];
 
-  const taken = formatInstant(takenAt ?? now);
+  const taken = formatInstantWithDay(takenAt ?? now, now);
   const meta = `${scopeLabel} · ${shiftLabel} · ${densityLabel} columns${anyHighlight ? " · highlighted rows marked" : ""}`;
 
   const header = (pageNumber: number) => (
@@ -429,7 +429,7 @@ export function HandoverPrintSheet({
                         {ward.occupied}/{ward.beds}
                       </td>
                       <td className={styles.mn}>{ward.ready}</td>
-                      <td className={styles.mn}>{formatInstant(ward.confirmedAt)}</td>
+                      <td className={styles.mn}>{formatInstantWithDay(ward.confirmedAt, now)}</td>
                       <td className={styles.mn}>{ward.held}</td>
                       <td className={styles.mn}>{ward.pastEdd}</td>
                     </tr>
@@ -553,7 +553,9 @@ export function HandoverPrintSheet({
           <Button variant="pri" icon={Printer} onClick={print} className={styles.printButton}>
             Print or save PDF
           </Button>
-          {takenAt !== null ? <span className={styles.sub}>Last copy taken {formatInstant(takenAt)}</span> : null}
+          {takenAt !== null ? (
+            <span className={styles.sub}>Last copy taken {formatInstantWithDay(takenAt, now)}</span>
+          ) : null}
         </div>
       </Card>
       <div className={styles.deskPaper}>

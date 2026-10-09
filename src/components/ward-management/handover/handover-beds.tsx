@@ -25,7 +25,7 @@ import {
   durMinutes,
   type WfTone,
 } from "@/components/wf";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
   isActNow,
   isMoving,
@@ -198,7 +198,7 @@ function WardPanel({
   const facts: { label: string; value: string; warn?: boolean }[] = [
     {
       label: "Updated",
-      value: `${durMinutes(age)} ago, at ${formatInstant(ward.confirmedAt)}${stale ? ", over 15 min" : ""}`,
+      value: `${durMinutes(age)} ago, at ${formatInstantWithDay(ward.confirmedAt, now)}${stale ? ", over 15 min" : ""}`,
       warn: stale,
     },
     { label: "Held for incoming", value: String(ward.held) },
@@ -569,7 +569,7 @@ export function HandoverBeds({ rows, wards, held, now, onOpenPatient }: Handover
                             off
                           )}
                         </td>
-                        <td title={`Confirmed ${formatInstant(ward.confirmedAt)}`}>
+                        <td title={`Confirmed ${formatInstantWithDay(ward.confirmedAt, now)}`}>
                           {stale ? (
                             <span className={styles.stale}>
                               <StatusGlyph tone="warning" size={8} />

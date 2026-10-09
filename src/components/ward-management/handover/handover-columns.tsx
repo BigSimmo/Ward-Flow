@@ -4,7 +4,7 @@
  */
 import type { ReactNode } from "react";
 import { durMinutes, StatusGlyph, type WfTone } from "@/components/wf";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
   destinationText,
   dueShort,
@@ -91,7 +91,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     cell: (row, ctx) => (
       <span className={styles.two}>
         <b className={styles.mono}>{durMinutes(ctx.now - row.openedAt)}</b>
-        <span className={`${styles.sub} ${styles.mono}`}>{formatInstant(row.openedAt)}</span>
+        <span className={`${styles.sub} ${styles.mono}`}>{formatInstantWithDay(row.openedAt, ctx.now)}</span>
       </span>
     ),
     paper: (row, ctx) => durMinutes(ctx.now - row.openedAt),

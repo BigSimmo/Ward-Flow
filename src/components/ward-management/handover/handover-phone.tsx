@@ -19,7 +19,7 @@ import {
   durMinutes,
   type WfTone,
 } from "@/components/wf";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { rowTone, type ColumnContext } from "./handover-columns";
 import {
   HANDOVER_SHIFTS,
@@ -120,7 +120,7 @@ function ShiftSheet({
                 onClose();
               }}
             >
-              <b className={styles.shiftOptionTime}>{formatInstant(at)}</b>
+              <b className={styles.shiftOptionTime}>{formatInstantWithDay(at, now)}</b>
               <span className={styles.shiftOptionText}>
                 <b>{item.label}</b>
                 <span>{relative(at, now)}</span>
@@ -480,7 +480,7 @@ export function HandoverPhone({
 
   const figures: { id: HandoverPill; n: number; label: string; tone: WfTone }[] = [
     { id: "act", n: actCount, label: "Act now", tone: "danger" },
-    { id: "due", n: dueCount, label: `Due ${formatInstant(ctx.cutoff)}`, tone: "warning" },
+    { id: "due", n: dueCount, label: `Due ${formatInstantWithDay(ctx.cutoff, now)}`, tone: "warning" },
     { id: "bed", n: waitCount, label: "Waiting", tone: "neutral" },
   ];
 
@@ -495,12 +495,12 @@ export function HandoverPhone({
           className={styles.shiftChip}
           aria-haspopup="dialog"
           aria-expanded={shiftSheetOpen}
-          aria-label={`Which handover, ${formatInstant(at)}`}
+          aria-label={`Which handover, ${formatInstantWithDay(at, now)}`}
           onClick={() => setShiftSheetOpen(true)}
           data-testid="ward-handover-phone-shift"
         >
           <span className={styles.shiftChipPill}>
-            <b>{formatInstant(at)}</b>
+            <b>{formatInstantWithDay(at, now)}</b>
             <Icon icon={ChevronDown} size={14} />
           </span>
         </button>
@@ -514,7 +514,7 @@ export function HandoverPhone({
                 {current.label} · {scopeLabel}
               </span>
               <h2 className={styles.heroTitle} id="ward-handover-phone-title">
-                {formatInstant(at)} handover
+                {formatInstantWithDay(at, now)} handover
               </h2>
             </div>
             <span className={styles.spacer} />
@@ -545,7 +545,7 @@ export function HandoverPhone({
           {signedAt !== null ? (
             <div className={styles.signed} data-testid="ward-handover-phone-signed">
               <StatusGlyph tone="success" size={9} />
-              Signed {formatInstant(signedAt)}
+              Signed {formatInstantWithDay(signedAt, now)}
             </div>
           ) : null}
         </section>
@@ -572,7 +572,7 @@ export function HandoverPhone({
             {passed ? (
               <div className={styles.banner} role="note">
                 <StatusGlyph tone="closed" size={9} />
-                <span>{formatInstant(at)} has passed. Showing the board now.</span>
+                <span>{formatInstantWithDay(at, now)} has passed. Showing the board now.</span>
               </div>
             ) : null}
             {pill !== null || highlightedCount > 0 ? (
@@ -639,7 +639,7 @@ export function HandoverPhone({
           onClick={onShowSignOff}
           data-testid="ward-handover-phone-sign-off"
         >
-          {signedAt !== null ? `Signed ${formatInstant(signedAt)}` : "Sign off"}
+          {signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : "Sign off"}
         </Button>
         <SrOnly role="status">{copied ? "Summary copied" : ""}</SrOnly>
       </div>
