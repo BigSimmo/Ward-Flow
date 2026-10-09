@@ -2261,7 +2261,7 @@ svg.gl {
   --tint: var(--wf-act-tint);
   border-color: var(--wf-act-edge);
 }
-.tint.fit {
+.tint.fit-tint {
   --tint: var(--wf-fit-tint);
   border-color: var(--wf-fit-edge);
 }
@@ -2274,6 +2274,10 @@ svg.gl {
   color: var(--wf-danger-ink);
   font-weight: 600;
 }
+.hero:not(.quiet) .tint.act .keyfig .v,
+.hero:not(.quiet) .tint.act .keyfig .l {
+  color: var(--wf-danger-ink);
+}
 
 /* The key figure: the one number that answers the page's question (rule 18). */
 .keyfig {
@@ -2282,7 +2286,7 @@ svg.gl {
   gap: 2px;
 }
 .keyfig .v {
-  font: 600 var(--wf-fs-40) / var(--wf-lh-40) var(--wf-mono);
+  font: 600 var(--wf-fs-40)/var(--wf-lh-40) var(--wf-mono);
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
@@ -2290,7 +2294,7 @@ svg.gl {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  font: 600 var(--wf-fs-13)/var(--wf-lh-13) var(--wf-font);
 }
 @media (forced-colors: active) {
   .tint {

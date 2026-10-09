@@ -91,7 +91,7 @@ Everything else in v7.1 carries over unchanged: the rules, the status glyphs, ra
 14. **Mono is for figures.** Numbers, ids, clock times.
 15. **Dashed means unavailable.** On controls and surfaces. Chart guides are exempt.
 16. **Twelve is the floor, not the scale.** _(New)_ No word, count or label under 12px. Uppercase is a treatment at 12, never a licence to go smaller. _(v8.1)_ The floor never sets the scale: page titles are 28, section titles 16 to 20, and the key figure is 40.
-17. **Every page has a focal element.** _(v8.1)_ It answers the page's question. It gets the most space, the key figure and the page's strongest colour. Everything else supports it.
+17. **Every page has a focal element.** _(v8.1)_ It answers the page's question. It gets the most space and the page's strongest colour. The key figure sits on it or in the hero. Everything else supports it.
 18. **One key figure per screen.** _(v8.1)_ `.keyfig` at 40px, on the focal element or in the hero. It is the number that says what to do now.
 19. **Every page has a part of its own.** _(v8.1)_ One component built for that page from these tokens, such as the shift runway on the Ward page. The hero carries page-specific actions and facts, never a generic header. Page anatomy (hero, core with side panel) is a default, not a template.
 20. **Phone is its own design.** _(v8.1)_ Draw it at 390 by 844 for the job on the move: a priority list, cards with their one action, bottom sheets, a sticky bottom bar and a segmented control. The first screen shows the work. Phone never reflows the desktop and never changes it.
@@ -175,7 +175,7 @@ Voice is unchanged: Australian English, sentence case, verbs first, 24 hour time
 | Meta text on any v8.1 tint                      | 5.2           | 5.3           | 4.5   |
 | Service dots (lowest: CAHS day, east day)       | 4.8           | 6.4           | 3     |
 
-Disabled ink (`--wf-ink-off`, 3.3 day, 3.8 night) is exempt under WCAG 1.4.3 and is kept above 3:1 anyway. Fit, hold and act edges (1.5 to 2.9:1) are decoration: the tick, circle and words carry the state.
+Disabled ink (`--wf-ink-off`, 3.3 day, 3.8 night) is exempt under WCAG 1.4.3 and is kept above 3:1 anyway. Fit, hold and act edges (1.5 to 2.4:1) are decoration: the tick, circle and words carry the state.
 
 ## 7. Status glyphs and tone
 
@@ -303,7 +303,7 @@ Shared components (SidePanel, TabbedCard, ChartCard, BedBoard, ShapeKey, RecordD
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | 17 Focal element   | The bed board, two thirds of the width                                                                                                   |
 | 18 Key figure      | "3 Act now" at 40px in the hero, on a soft danger panel                                                                                  |
-| 6 Colour budget    | Act now beds tinted, the free bed with a fit tint and an Offer button, the held bed with a hold tint. At risk beds keep the amber circle |
+| 6 Colour budget    | Act now beds tinted, the free bed with `.tint.fit-tint` and an Offer button, the held bed with a hold tint. At risk beds keep the amber circle |
 | 3 Glass panel      | The "Needs you now" side panel, over a soft canvas gradient                                                                              |
 | 19 Part of its own | The shift runway: 07:00 to 15:30, with a now line, due items as glyphs and the discharge window                                          |
 | 20 Phone           | Act now list with one action per card, a bed bottom sheet, a toast with Undo, and a sticky Raise referral bar                            |
