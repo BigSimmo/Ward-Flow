@@ -1,0 +1,36 @@
+ores them, and they will be removed from the ward
+  line (roadmap milestone 1).
+- **Why:** Ward Flow does not use them, and they slow every check and confuse every new chat.
+
+## D-4. Synthetic patients only
+
+- **Date:** 25 September 2026 (restating a standing rule). **Decided by:** Josh.
+- **Decision:** Every patient, ward and figure in Ward Flow is made up. No real patient data is
+  entered or loaded, and no invented clinical fact or figure is shown as if it were real data.
+- **Why:** There is no privacy approval, clinical safety sign-off or legal advice yet (roadmap
+  milestone 6). Invented figures presented as records would mislead anyone testing it.
+
+## D-5. Parallel threads in separate worktrees, folded one at a time
+
+- **Date:** 25 September 2026. **Decided by:** Josh.
+- **Decision:** Many threads may work at once. Each thread that edits code works in its own git
+  worktree and local branch, made from the latest ward line, and says which files it expects to
+  change. The coordinator keeps two threads off the same files. Before folding, a thread merges the
+  latest ward line into its branch, rebuilds and retests, then folds; only one thread folds at a
+  time.
+- **Why:** Two chats writing in one folder have deadlocked commits and lost work before. Folding one
+  at a time keeps each merge small and checkable.
+
+## D-6. Aboriginal cultural safety review deferred
+
+- **Date:** 17 September 2026, restated 25 September 2026. **Decided by:** Josh.
+- **Decision:** The Aboriginal cultural safety review is deferred. Threads do not raise it again
+  unless Josh brings it back.
+- **Why:** Josh's call. It needs outside reviewers this team cannot provide, and it is not needed
+  while the app holds only invented data.
+
+## D-7. The first four milestones, in this order
+
+- **Date:** 25 September 2026. **Decided by:** Josh.
+- **Decision:** The [roadmap](roadmap.md) runs in this order: (1) clean up the leftover PsychSift
+  code, (2) get the ward tests passing, (3) remove invented dat

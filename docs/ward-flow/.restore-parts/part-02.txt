@@ -1,0 +1,28 @@
+a from the screens, (4) make the
+  Coordinator bed board's full journey reliable, from referral in through bed held, transport,
+  arrival and discharge. Milestones 5 and 6 are not yet approved.
+- **Why:** Cleanup makes every later change smaller and safer. Until the tests pass, nobody can tell
+  whether a new change broke something. Invented data shown as real (such as the wrong name on
+  Handover) is the main clinical safety risk. The Coordinator view is the one Josh asked to be built
+  first.
+
+## D-8. Josh's standing rulings, numbered R1 to R16, for every session and tool
+
+- **Date:** 25 September 2026. **Decided by:** Josh (collected by the coordinator).
+- **Decision:** Every session and tool reads this list before starting. New rulings are added here as
+  R17 onward by the thread the coordinator routes them to, with the date and time.
+  - **R1** No GitHub, remotes, cloud threads, Railway or Supabase. Nothing is pushed.
+  - **R2** Fold everything to the local line before a thread is resolved; never resolve a thread
+    without Josh's yes for that thread.
+  - **R3** Back up before replacing anything; no early removal; archive, don't delete.
+  - **R4** Keep the design exactly as on the line.
+  - **R5** Legal (D5): no Act section numbers, no computed legal limits, typed times only, marked
+    "Not legally checked".
+  - **R6** Made-up patients only.
+  - **R7** Gender and sex (10:56): gender is Female, Male, Non-binary, Different term or Not recorded;
+    sex is Female, Male, Another term or Not recorded. If either is not female or male, the
+    coordinator reviews and notes a reason before allocation, on every ward. Female and male allocate
+    by gender identity. A binary mismatch on a single-sex ward refuses.
+  - **R8** Demo data (10:08): an "EMHS demo" scenario and an "EMHS surge" state, plain ward labels,
+    other health services too; only patients and linked records, never standalone figures.
+  - **R9** Retire Care Plan, Caring Contacts and Developer Hub with P

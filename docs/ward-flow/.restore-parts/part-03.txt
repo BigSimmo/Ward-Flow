@@ -1,0 +1,33 @@
+sychSift batch 3.
+  - **R10** Shared board: PC only; keep "stop saving"; keep "reset all".
+  - **R11** History: the Person screen and the Activity drawer; one event log shared with the shared
+    board.
+  - **R12** Bed board on the capacity screen, held until roadmap steps 1 to 3 fold.
+  - **R13** Pilot: EMHS with site switching; the Coordinator view is primary.
+  - **R14** Transport release: keep; "no bed" goes to the waitlist.
+  - **R15** Run slots and batch folds: heavy checks only where needed, one wide run at a time, one
+    fold steward; desktop-only screenshots (full rules in the AGENTS.md Ward Flow rulebook).
+  - **R16** The Aboriginal cultural safety review is deferred; don't re-ask (see D-6).
+- **Why:** One numbered list every tool reads means fewer relays and fewer mix-ups.
+
+## D-9. Josh's rulings of 25 September, 11:43 to 12:00 (R17 to R21)
+
+- **Date:** 25 September 2026. **Decided by:** Josh (relayed by the coordinator).
+- **Decision:**
+  - **R17** Gate priority: while a batch fold gate is queued or running, other threads run nothing
+    heavy. The coordinator sends "go" after the fold.
+  - **R18** Leave beds are linked to the patient's stay. An empty but blocked bed counts as held. A
+    bed release is a named discharge.
+  - **R19** Made-up trend charts show "Not recorded"; target lines stay, labelled; a ward's confirmed
+    ready count is a record.
+  - **R20** Legal: the dead clock arithmetic is removed, and 5B continues 5A.
+  - **R21** Gender is shown to ward staff.
+- **Why:** Recorded so every session and tool reads the same rulings without a relay.
+
+## D-10. Gate build type check (R22)
+
+- **Date:** 25 September 2026, 12:21 UTC. **Decided by:** Josh (decision card).
+- **Decision:** **R22** In the fold gate, the app build skips its own type check (`WARD_GATE_BUILD=1`)
+  only when the batch changes no page, layout or route file. Otherwise the build keeps it.
+  `scripts/ward-flow/gate-build-flag.mjs` decides.
+- **Why:** The gate's full type check alrea
