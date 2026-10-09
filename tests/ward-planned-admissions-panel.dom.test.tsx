@@ -6,6 +6,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
+import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { PlannedAdmissionsPanel } from "@/components/ward-management/capacity/planned-admissions-panel";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -31,6 +32,33 @@ describe("planned admissions panel", () => {
     expect(screen.getByTestId("ward-planned-PA-SEED-01")).toHaveTextContent("Initials JM");
     // A linked patient is shown by name through the resolver, never by record id.
     expect(screen.getByTestId("ward-planned-PA-SEED-02")).not.toHaveTextContent("PT-007");
+    // No booking id is ever shown.
+    expect(document.body.textContent).not.toMatch(/PA-/);
+  });
+
+  it("shows a refusal from the eligibility gates without the booking id", () => {
+    renderPanel();
+    fireEvent.click(screen.getByTestId("ward-planned-book"));
+    fireEvent.change(screen.getByTestId("ward-planned-who"), { target: { value: "initials" } });
+    fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "cd" } });
+    fireEvent.change(screen.getByTestId("ward-planned-unit"), { target: { value: "fsh-adult-secure" } });
+    fireEvent.click(screen.getByTestId("ward-planned-submit"));
+    fireEvent.click(within(screen.getByTestId("ward-planned-PA-01")).getByRole("button", { name: "Arrived" }));
+    expect(screen.getByTestId("ward-planned-refusal")).toHaveTextContent(/gender_designation/);
+    expect(screen.getByTestId("ward-planned-PA-01")).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/PA-/);
+  });
+
+  it("names the person on the overdue row in Alerts, never the booking id", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <AlertsScreen />
+      </WardFlowProvider>,
+    );
+    expect(screen.getAllByText("Initials RK").length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toMatch(/PA-SEED/);
+    for (const link of Array.from(document.querySelectorAll("a[href]")))
+      expect(link.getAttribute("href")).not.toMatch(/PA-/);
   });
 
   it("books initials only, and refuses initials that are not one to three letters", () => {

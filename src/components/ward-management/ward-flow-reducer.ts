@@ -967,7 +967,10 @@ function pullOverrides(
 }
 
 function eligibilityRefusal(
-  event: OverridableWardFlowEvent,
+  // A planned-admission conversion reuses this refusal with no override path at all.
+  event:
+    | Pick<OverridableWardFlowEvent, "type" | "overrideReason">
+    | { type: "CONVERT_PLANNED_ADMISSION"; overrideReason?: undefined },
   movement: Movement,
   unit: Unit,
   now: Instant,
@@ -9471,7 +9474,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "CHANGE_PLANNED_ADMISSION":
     case "CANCEL_PLANNED_ADMISSION":
     case "CONVERT_PLANNED_ADMISSION": {
-      return reducePlannedAdmissionEvent(state, event, decision, reject) ?? state;
+      return (
+        reducePlannedAdmissionEvent(state, event, decision, reject, (movement, unit, now) =>
+          eligibilityRefusal({ type: "CONVERT_PLANNED_ADMISSION" }, movement, unit, now),
+        ) ?? state
+      );
     }
   }
   return state;

@@ -24,9 +24,16 @@ import { adjustSexMix, mixSexOf } from "../ward-eligibility";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
-import { RECORDED_SEXES, type LegalStatus, type Unit } from "../ward-model";
+import { RECORDED_SEXES, type LegalStatus, type Movement, type MovementId, type Unit } from "../ward-model";
 
 export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
+
+/**
+ * The reducer's own placement refusal (`eligibilityRefusal` in `ward-flow-reducer.ts`, the one
+ * `PULL_PATIENT` calls), passed in rather than imported so this module never imports the reducer
+ * at runtime. A conversion has no override path, so no override reason is ever supplied.
+ */
+export type PlacementRefusalFn = (movement: Movement, unit: Unit, now: Instant) => string | null;
 
 type PlannedAdmissionEvent = Extract<
   WardFlowEvent,
@@ -38,6 +45,41 @@ type PlannedAdmissionEvent = Extract<
 
 /** The statuses that take a locked bed first when one is free. */
 const LOCKED_FIRST: readonly LegalStatus[] = ["Involuntary inpatient", "Detained awaiting examination"];
+
+/**
+ * The booking seen as the movement `eligibility()` reads, so a conversion is checked by the same
+ * gates as a pulled bed: gender designation first (no override path), then every suitability gate.
+ * The booking records sex only, never gender, so `gender` stays unset: an undesignated ward takes
+ * the person, a single-sex ward refuses until gender is recorded through a referral. `cohort` is
+ * the booked ward's own, because a booking names its ward and records no age band.
+ */
+function plannedAdmissionMovementView(planned: PlannedAdmission, unit: Unit): Movement {
+  return {
+    id: `WF-${planned.id}` as MovementId,
+    originEdId: "",
+    openedAt: planned.bookedAt,
+    flaggedUrgent: false,
+    urgency: 3,
+    cohort: unit.cohort,
+    security: LOCKED_FIRST.includes(planned.legalStatus) ? "Secure" : "Open",
+    sex: planned.sex,
+    specialling: false,
+    highAcuity: false,
+    legalStatus: planned.legalStatus,
+    statusChanges: [],
+    urgencyChanges: [],
+    overrides: [],
+    stage: "accepted_awaiting_bed",
+    owner: "",
+    referredUnitIds: [unit.id],
+    acceptedUnitId: unit.id,
+    declines: [],
+    blocker: "",
+    withdrawnReferrals: [],
+    unwinds: [],
+    stageChanges: [],
+  };
+}
 
 export function nextPlannedAdmissionId(sequence: number): string {
   return `PA-${String(sequence).padStart(2, "0")}`;
@@ -82,6 +124,7 @@ export function reducePlannedAdmissionEvent(
   event: WardFlowEvent,
   decision: AuditDecision,
   reject: RejectFn,
+  placementRefusal: PlacementRefusalFn,
 ): WardFlowState | null {
   switch (event.type) {
     case "BOOK_PLANNED_ADMISSION": {
@@ -147,9 +190,9 @@ export function reducePlannedAdmissionEvent(
       if (finiteInstant(event.now) === null)
         return reject(state, event, "CHANGE_PLANNED_ADMISSION needs a finite time");
       const planned = plannedAdmissions(state).find((candidate) => candidate.id === event.plannedAdmissionId);
-      if (!planned) return reject(state, event, `no planned admission found for id ${event.plannedAdmissionId}`);
+      if (!planned) return reject(state, event, "This planned admission was not found");
       if (planned.state !== "booked")
-        return reject(state, event, `planned admission ${planned.id} is ${planned.state} and can no longer change`);
+        return reject(state, event, `This planned admission is ${planned.state} and can no longer change`);
       const fields = bookingFieldsRefusal(state, event);
       if (fields) return reject(state, event, fields);
       const scope = wardScopeRefusal(event, [planned.unitId, event.unitId]);
@@ -178,9 +221,8 @@ export function reducePlannedAdmissionEvent(
       if (finiteInstant(event.now) === null)
         return reject(state, event, "CANCEL_PLANNED_ADMISSION needs a finite time");
       const planned = plannedAdmissions(state).find((candidate) => candidate.id === event.plannedAdmissionId);
-      if (!planned) return reject(state, event, `no planned admission found for id ${event.plannedAdmissionId}`);
-      if (planned.state !== "booked")
-        return reject(state, event, `planned admission ${planned.id} is already ${planned.state}`);
+      if (!planned) return reject(state, event, "This planned admission was not found");
+      if (planned.state !== "booked") return reject(state, event, `This planned admission is already ${planned.state}`);
       if (!isPlannedAdmissionCancelReason(event.reason))
         return reject(state, event, "CANCEL_PLANNED_ADMISSION reason must be chosen from the listed reasons");
       const scope = wardScopeRefusal(event, [planned.unitId]);
@@ -201,15 +243,23 @@ export function reducePlannedAdmissionEvent(
       if (finiteInstant(event.now) === null)
         return reject(state, event, "CONVERT_PLANNED_ADMISSION needs a finite time");
       const planned = plannedAdmissions(state).find((candidate) => candidate.id === event.plannedAdmissionId);
-      if (!planned) return reject(state, event, `no planned admission found for id ${event.plannedAdmissionId}`);
-      if (planned.state !== "booked")
-        return reject(state, event, `planned admission ${planned.id} is already ${planned.state}`);
+      if (!planned) return reject(state, event, "This planned admission was not found");
+      if (planned.state !== "booked") return reject(state, event, `This planned admission is already ${planned.state}`);
       const scope = wardScopeRefusal(event, [planned.unitId]);
       if (scope) return reject(state, event, scope);
       const unit = state.units.find((candidate) => candidate.id === planned.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${planned.unitId}`);
+      // Same order as `PULL_PATIENT`: the physical bed facts first, then the eligibility gates.
       if (unit.empty.value <= 0 || unit.allocatable.value <= 0)
         return reject(state, event, `${unit.name} has no empty bed to admit this planned arrival`);
+      const view = plannedAdmissionMovementView(planned, unit);
+      // `PULL_PATIENT` lets a recorded override reason take an open bed when no locked bed is free.
+      // A booking has no override path, so the same fact is a plain refusal here.
+      if (view.security === "Secure" && lockedBedsFree(unit) <= 0)
+        return reject(state, event, `No locked bed is free at ${unit.name} for this planned arrival.`);
+      const ineligible = placementRefusal(view, unit, event.now);
+      if (ineligible)
+        return reject(state, event, ineligible.replace(`for movement ${view.id}`, "for this planned admission"));
       if (
         planned.patientId !== null &&
         state.admissions.some(
@@ -219,15 +269,8 @@ export function reducePlannedAdmissionEvent(
         )
       )
         return reject(state, event, "This patient already holds another bed or occupies another ward.");
-      const lockedFree = lockedBedsFree(unit) > 0;
-      const openFree = openBedsFree(unit) > 0;
-      const bedKind: "locked" | "open" = LOCKED_FIRST.includes(planned.legalStatus)
-        ? lockedFree
-          ? "locked"
-          : "open"
-        : openFree
-          ? "open"
-          : "locked";
+      const bedKind: "locked" | "open" =
+        view.security === "Secure" ? "locked" : openBedsFree(unit) > 0 ? "open" : "locked";
       const sequence = state.admissionSequence + 1;
       const admission: Admission = {
         id: `AD-ARR-${String(sequence).padStart(2, "0")}`,

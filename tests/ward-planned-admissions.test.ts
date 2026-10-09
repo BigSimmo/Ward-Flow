@@ -18,6 +18,8 @@ import {
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { EVENT_HISTORY_TABLE } from "@/components/ward-management/ward-history";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { patientDisplayName } from "@/components/ward-management/ward-patients";
 import { shiftInstants } from "@/components/ward-management/ward-reanchor";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -222,7 +224,7 @@ describe("CHANGE_PLANNED_ADMISSION and CANCEL_PLANNED_ADMISSION", () => {
           reason: "no_longer_needed",
         }),
       ),
-    ).toMatch(/no planned admission found/);
+    ).toMatch(/planned admission was not found/);
   });
 });
 
@@ -282,6 +284,45 @@ describe("CONVERT_PLANNED_ADMISSION", () => {
     });
     expect(lastRejection(refused)).toMatch(/no empty bed/);
     expect(refused.admissions).toBe(full.admissions);
+  });
+
+  it("applies the placement eligibility gates: a single-sex ward refuses, with no override path", () => {
+    // fsh-adult-secure is Male only. A booking records sex, never gender, so the gender_designation
+    // gate cannot pass there, exactly as it refuses a movement with no gender recorded.
+    const booked = book(seedWardFlowState(), { unitId: "fsh-adult-secure", sex: "Male", initials: "cd" });
+    const refused = apply(booked, {
+      type: "CONVERT_PLANNED_ADMISSION",
+      role: "coordinator",
+      now: NOW,
+      plannedAdmissionId: "PA-01",
+    });
+    const reason = lastRejection(refused)!;
+    expect(reason).toMatch(/failed gate gender_designation/);
+    expect(reason).toMatch(/not something a recorded reason can override/);
+    expect(reason).toMatch(/for this planned admission/);
+    expect(reason).not.toMatch(/PA-01|WF-/);
+    expect(refused.admissions).toBe(booked.admissions);
+    expect(newest(refused).state).toBe("booked");
+  });
+
+  it("applies the suitability gates: an involuntary arrival needs an authorised ward", () => {
+    const booked = book(seedWardFlowState(), { legalStatus: "Involuntary inpatient" });
+    const unauthorised: WardFlowState = {
+      ...booked,
+      units: booked.units.map((unit) =>
+        unit.id === UNIT
+          ? { ...unit, authorised: false, allocatableLocked: 1, lockedBeds: Math.max(1, unit.lockedBeds) }
+          : unit,
+      ),
+    };
+    const refused = apply(unauthorised, {
+      type: "CONVERT_PLANNED_ADMISSION",
+      role: "coordinator",
+      now: NOW,
+      plannedAdmissionId: "PA-01",
+    });
+    expect(lastRejection(refused)).toMatch(/failed gate authorisation/);
+    expect(refused.admissions).toBe(unauthorised.admissions);
   });
 
   it("refuses a ward recording another ward's arrival", () => {
@@ -383,8 +424,10 @@ describe("overdue planned arrivals surface in the action inbox", () => {
     const state = seedWardFlowState();
     const rows = buildActionInbox([], NOW, state.units, state.plannedAdmissions);
     expect(rows.map((row) => row.id)).toEqual(["planned-arrival-PA-SEED-03"]);
-    expect(rows[0]).toMatchObject({ kind: "fact", tone: "warning", movementId: "PA-SEED-03" });
+    expect(rows[0]).toMatchObject({ kind: "fact", tone: "warning", movementId: "", personLabel: "Initials RK" });
     expect(rows[0]!.title).toBe("Planned arrival not recorded");
+    // The person is named; the booking id is never shown.
+    expect(`${rows[0]!.title} ${rows[0]!.detail} ${rows[0]!.owner}`).not.toMatch(/PA-/);
 
     const acknowledged = apply(state, {
       type: "ACKNOWLEDGE_INBOX_ITEM",
@@ -402,6 +445,18 @@ describe("overdue planned arrivals surface in the action inbox", () => {
     });
     expect(arrived.rejections).toEqual([]);
     expect(buildActionInbox([], NOW, arrived.units, arrived.plannedAdmissions)).toEqual([]);
+  });
+});
+
+describe("an overdue linked booking", () => {
+  it("names the linked person through the patient resolver, never the booking id", () => {
+    const booked = book(seedWardFlowState(), { initials: null, patientId: "PT-002", expectedArrivalAt: NOW + 5 });
+    const rows = buildActionInbox([], NOW + 60, booked.units, booked.plannedAdmissions);
+    const row = rows.find((candidate) => candidate.id === "planned-arrival-PA-01")!;
+    expect(row.personLabel).toBeUndefined();
+    expect(row.detail).not.toMatch(/PA-|PT-/);
+    const person = booked.patients.find((patient) => patient.id === "PT-002")!;
+    expect(resolveSubjectPatient(row.plannedAdmission, booked).displayName).toBe(patientDisplayName(person));
   });
 });
 

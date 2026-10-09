@@ -1134,6 +1134,13 @@ export type InboxItem = {
   owner: string;
   movementId: string;
   /**
+   * A planned admission row's own booking, for the patient resolver to name a linked person. The
+   * row has no movement, so `movementId` is empty and the booking id is never shown.
+   */
+  plannedAdmission?: PlannedAdmission;
+  /** The person's label when the booking holds initials only, such as "Initials RK". */
+  personLabel?: string;
+  /**
    * 🔴 **WHETHER THIS ROW CAN BE TICKED OFF AT ALL** — ward-lead task, 2026-09-06. A `"fact"` is a
    * live clinical or legal truth that leaves this list when it stops being true; a `"commitment"`
    * is a human undertaking that leaves when the person says they finished. See `InboxItemKind` and
@@ -1301,9 +1308,11 @@ export function buildActionInbox(
       tone: "warning",
       icon: CalendarClock,
       title: "Planned arrival not recorded",
-      detail: `${planned.id} · ${unit?.name ?? planned.unitId} · expected ${formatInstantWithDay(planned.expectedArrivalAt, now)}, ${formatRemaining(minutesUntil(planned.expectedArrivalAt, now))}`,
+      detail: `${unit?.name ?? "Ward not recorded"} · expected ${formatInstantWithDay(planned.expectedArrivalAt, now)}, ${formatRemaining(minutesUntil(planned.expectedArrivalAt, now))}`,
       owner: unit?.name ?? "Ward",
-      movementId: planned.id,
+      movementId: "",
+      plannedAdmission: planned,
+      ...(planned.initials !== null ? { personLabel: `Initials ${planned.initials}` } : {}),
     });
   }
 

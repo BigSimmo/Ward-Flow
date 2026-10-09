@@ -30,7 +30,10 @@ import type { Movement, Referral } from "@/components/ward-management/ward-model
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import {
+  resolveSubjectPatient,
+  type PatientResolutionSubject,
+} from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
 import {
   WA_BROADCAST_TEMPLATES,
@@ -150,9 +153,10 @@ function resolveAlertPatient(
   referralsList?: Referral[],
   movementsList?: Movement[],
   unitsList?: readonly { id: string; name: string }[],
+  subject?: PatientResolutionSubject,
 ): { displayName: string; umrn: string; location: string; routeTarget: string } {
   const mid = movement?.id ?? movementId ?? "";
-  const info = resolveSubjectPatient(movement ?? { id: mid }, {
+  const info = resolveSubjectPatient(subject ?? movement ?? { id: mid }, {
     patients: patientsList,
     referrals: referralsList,
     movements: movementsList,
@@ -324,7 +328,16 @@ function AlertRows({
         const categoryBadge = getCategoryBadge(item);
         const overdueText = extractOverdue(item.detail);
         const movement = movements?.find((m) => m.id === item.movementId);
-        const patientInfo = resolveAlertPatient(movement, item.movementId, patients, referrals, movements, state.units);
+        const resolvedPatient = resolveAlertPatient(
+          movement,
+          item.movementId,
+          patients,
+          referrals,
+          movements,
+          state.units,
+          item.plannedAdmission,
+        );
+        const patientInfo = item.personLabel ? { ...resolvedPatient, displayName: item.personLabel } : resolvedPatient;
 
         const actionVerb =
           categoryBadge.label === "Form Due Time Passed"
@@ -730,13 +743,14 @@ function AlertsWorkspace() {
   const unlawful = useMemo(() => itemsInCategory(inbox, "destination_unlawful"), [inbox]);
   const pullExpired = useMemo(() => itemsInCategory(inbox, "bed_pull_expired"), [inbox]);
   const transport = useMemo(() => itemsInCategory(inbox, "transport_awaiting_departure"), [inbox]);
+  const plannedOverdue = useMemo(() => itemsInCategory(inbox, "planned_arrival_overdue"), [inbox]);
 
   const withDeadline = openMovements.filter((movement: Movement) => movement.legalForm?.dueAt !== undefined);
   const declineCandidates = openMovements.filter((movement: Movement) => movement.declines.length > 0).length;
   const overrides = movements.flatMap((movement: Movement) => movement.overrides);
   const untriaged = (state.referrals ?? []).filter((referral) => referral.triagedAt === undefined);
   const needsYouCount = legal.length + declined.length + unlawful.length;
-  const otherRolesCount = pullExpired.length + transport.length;
+  const otherRolesCount = pullExpired.length + transport.length + plannedOverdue.length;
   const totalActive = needsYouCount + otherRolesCount;
 
   // Prolonged ED stays (>24h)
@@ -747,7 +761,7 @@ function AlertsWorkspace() {
   // Tier counts
   const tier1Count = legal.length + unlawful.length;
   const tier2Count = declined.length + pullExpired.length;
-  const tier3Count = transport.length;
+  const tier3Count = transport.length + plannedOverdue.length;
 
   // Role counts
   const coordinatorCount = inbox.filter((item) => roleMatches(item, "coordinator")).length;
@@ -786,14 +800,14 @@ function AlertsWorkspace() {
   }, [legal, declined, unlawful, tierFilter, roleFilter, snoozedAlertIds]);
 
   const filteredOtherRoles = useMemo(() => {
-    const allOther = [...pullExpired, ...transport];
+    const allOther = [...pullExpired, ...transport, ...plannedOverdue];
     return allOther.filter((item) => {
       if (snoozedAlertIds.includes(item.id)) return false;
       if (tierFilter !== "all" && tierOfItem(item) !== tierFilter) return false;
       if (roleFilter !== "all" && !roleMatches(item, roleFilter)) return false;
       return true;
     });
-  }, [pullExpired, transport, tierFilter, roleFilter, snoozedAlertIds]);
+  }, [pullExpired, transport, plannedOverdue, tierFilter, roleFilter, snoozedAlertIds]);
 
   // Selected alert details
   const selectedMovement = useMemo(() => {
@@ -1300,8 +1314,8 @@ function AlertsWorkspace() {
                 <summary className={styles.scopeSummary}>
                   <IconTile icon={Eye} />
                   <span className={styles.scopeTitle}>Monitoring scope</span>
-                  <Count n={7} />
-                  <span className={styles.scopeMeta}>7 watched, 1 not</span>
+                  <Count n={8} />
+                  <span className={styles.scopeMeta}>8 watched, 1 not</span>
                   <ChevronDown className={styles.disclosureChevron} aria-hidden="true" size={16} />
                 </summary>
                 <div className={styles.contextGrid}>
@@ -1336,6 +1350,12 @@ function AlertsWorkspace() {
                     watches="Watches accepted transport legs that have not departed."
                     none="No accepted transport leg is still waiting to leave."
                     items={transport}
+                  />
+                  <ConditionContext
+                    title="Planned arrival not recorded"
+                    watches="Watches booked planned admissions whose expected arrival time has passed with no arrival recorded."
+                    none="No booked planned admission is past its expected arrival."
+                    items={plannedOverdue}
                   />
                   <section className={styles.condition} aria-label="Referral awaiting triage">
                     <h3 className={styles.conditionTitle}>
@@ -1398,7 +1418,7 @@ function AlertsWorkspace() {
             <div className={styles.panelBody} role="region" aria-label="Alerts for other roles" tabIndex={0}>
               <AlertRows
                 items={filteredOtherRoles}
-                empty="No bed-hold or accepted-transport alert is firing for another role."
+                empty="No bed-hold, accepted-transport or planned-arrival alert is firing for another role."
                 onAction={handleOpenAction}
                 onQuickAction={handleQuickAction}
                 acknowledgements={inboxAcknowledgements}
