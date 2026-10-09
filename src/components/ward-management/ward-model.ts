@@ -1934,6 +1934,34 @@ export type LeaveBed = {
   kind?: "off_ward" | "medical_trip";
   /** When the 24-hour "consider opening" warning was raised. Absent until then. */
   openWarningAt?: Instant;
+  /**
+   * Absent without leave (Patient page gate board, owner approval 9 Oct 2026). Present only while
+   * the person is missing: the bed stays held exactly as it does for leave, so no bed figure moves.
+   * `since` is when the ward recorded the absence. `steps` holds the time each missing person step
+   * was recorded, keyed by a fixed choice, never typed text. Ended by `END_LEAVE_BED` on return.
+   */
+  absentWithoutLeave?: { since: Instant; steps: Partial<Record<AbsenceStep, Instant>> };
+};
+
+/**
+ * The missing person steps a ward records while somebody is absent without leave, in the order the
+ * Patient page shows them. Chosen, never typed. A step records only that it was done and when.
+ */
+export const ABSENCE_STEPS = [
+  "searched",
+  "psychiatrist_told",
+  "description_recorded",
+  "police_notified",
+  "next_of_kin_told",
+] as const;
+export type AbsenceStep = (typeof ABSENCE_STEPS)[number];
+
+export const ABSENCE_STEP_LABELS: Record<AbsenceStep, string> = {
+  searched: "Ward and grounds searched",
+  psychiatrist_told: "Treating psychiatrist told",
+  description_recorded: "Description recorded",
+  police_notified: "Police notified",
+  next_of_kin_told: "Next of kin told",
 };
 
 /**

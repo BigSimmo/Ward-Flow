@@ -205,6 +205,11 @@ describe("who may raise which event", () => {
     RECORD_WARD_INTAKE_CONSTRAINTS: ["ward"],
     RECORD_NO_REFERRAL: ["ed"],
     RECORD_LEAVE_BED: ["ward"],
+    // D-38 (9 Oct 2026): the ward records an absence and its steps; the community team a CTO.
+    RECORD_ABSENT_WITHOUT_LEAVE: ["ward"],
+    RECORD_ABSENCE_STEP: ["ward"],
+    RECORD_COMMUNITY_TREATMENT_ORDER: ["community"],
+    END_COMMUNITY_TREATMENT_ORDER: ["community"],
     RECORD_LOCAL_BED_SOUGHT: ["coordinator"],
     /* Ruling 16: Direct ED-to-CMHT referral pathway. */
     REFER_TO_COMMUNITY_TEAM: ["ed"],

@@ -154,7 +154,16 @@ export type Patient = {
   aboriginalOrTorresStraitIslanderStatus?: string;
   /** ⚠️ NOT SETTLED FOR DISPLAY, same review, same caveat as the field above. */
   interpreterLanguage?: string;
+  /**
+   * A community treatment order in force (owner approval 9 Oct 2026). Form code and when it was
+   * recorded, by role. D5: no lapse time is held or computed; a person ends it by recording that it
+   * ended (`END_COMMUNITY_TREATMENT_ORDER`).
+   */
+  communityTreatmentOrder?: CommunityTreatmentOrder;
 };
+
+/** Form 5A is the community treatment order form under the Mental Health Act 2014 (WA). */
+export type CommunityTreatmentOrder = { form: "5A"; recordedAt: number; recordedBy: string };
 
 /** Alias for patient safety governance and cross-service typing */
 export type WardPatient = Patient;
@@ -180,6 +189,7 @@ export const PATIENT_FIELDS = [
   "legalStatus",
   "aboriginalOrTorresStraitIslanderStatus",
   "interpreterLanguage",
+  "communityTreatmentOrder",
 ] as const;
 
 /** Whole years, from the stored date of birth and a supplied "today". Never stored: see the field's

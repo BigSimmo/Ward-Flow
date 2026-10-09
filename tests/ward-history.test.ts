@@ -15,11 +15,12 @@ const NOW = 700;
 
 describe("Ward Flow Read-Only Plain History", () => {
   describe("EVENT_HISTORY_TABLE completeness and classification", () => {
-    it("classifies all 99 event types into bed, patient, both or neither with plain wording", () => {
+    it("classifies all 103 event types into bed, patient, both or neither with plain wording", () => {
       const allEventTypes = Object.keys(EVENT_ROLE) as Array<WardFlowEvent["type"]>;
       // 97 -> 96 on 2026-09-25: OVERRIDE_LEGAL_MISMATCH removed (owner ruling).
-      // D-34 adds the explicit ED medical deterioration transition.
-      expect(allEventTypes.length).toBe(99);
+      // D-34 adds the explicit ED medical deterioration transition. D-38 adds four: absent without
+      // leave, its steps, and recording or ending a community treatment order.
+      expect(allEventTypes.length).toBe(103);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

@@ -480,3 +480,21 @@ is inferred.
   8. **WF-55 (External Privacy Impact Assessment):** Ratified Privacy Architecture Standard. 100% synthetic patient isolation guaranteed; data minimisation on public flight decks and ward boards (Bed ID, initials, age, gender code, legal status only); detailed clinical notes restricted to authenticated role-scoped views. External legal PIA scheduled during hospital IT onboarding.
   9. **WF-57 (Post-Incident Review Architectural Scope):** Ratified PIR Immutable Telemetry Specification. The system captures append-only timeline events under Invariants I-01 through I-14 (recording occurrence, dispatch, and commit timestamps, user ID, prior state, new state, and clinician override reasons). A single-click "PIR Chronology Export" standard is adopted to supply tamper-evident chronologies for hospital clinical incident reviews (SAC 1) and Coronial inquiries.
 - **Why:** Replaces passive parking with definitive, clinically and legally defensible governance standards across all 10 items, establishing complete pre-pilot governance readiness.
+
+## D-38. Leave, absent without leave and CTO on the Patient page (9 October 2026)
+
+- **Date:** 9 October 2026. **Decided by:** Josh, in the Patient page gate board session ("go
+  ahead and do now", approving the engine change the build handed back).
+- **Decision:** The Patient page shows On leave, Absent without leave and On a CTO as their own
+  modes. On leave reads the existing leave bed on the stay (no new field). Absent without leave is
+  recorded on that same held bed (`absentWithoutLeave`: when it was recorded and the time each of
+  five fixed missing person steps was done), so no bed figure moves. A community treatment order is
+  a new optional patient field, `communityTreatmentOrder` (Form 5A, when recorded and by which
+  role). Four events carry them: `RECORD_ABSENT_WITHOUT_LEAVE` and `RECORD_ABSENCE_STEP` (ward),
+  `RECORD_COMMUNITY_TREATMENT_ORDER` and `END_COMMUNITY_TREATMENT_ORDER` (community). Return from
+  an absence uses the existing `END_LEAVE_BED`.
+- **Limits:** Ids, fixed choices and times only, never typed text. No lapse or review time is held
+  or computed for a CTO (D5). Next of kin, carer and guardian are still not on the record and stay
+  labelled Preview.
+- **Why:** The ward already has leave beds, but a missing person and a CTO could not be shown
+  honestly without a field to read.
