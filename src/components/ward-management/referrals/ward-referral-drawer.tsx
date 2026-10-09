@@ -738,6 +738,7 @@ function WardReferralDrawerContent({
 
   // A Refer link names its person, so it never reopens someone else's kept draft.
   const [kept] = useState(() => (initialPatientId ? null : readKeptReferralDraft<KeptDraft>()));
+  const [otherKept] = useState(() => (initialPatientId ? readKeptReferralDraft<KeptDraft>() : null));
   const [prefillKey] = useState(() =>
     initialPatientId ? patientKeyFor(initialPatientId, { movements, patients, referrals }) : null,
   );
@@ -934,7 +935,7 @@ function WardReferralDrawerContent({
   } = useReferralDraftAutosave({
     draft: draftNow,
     draftJson,
-    active: dirty,
+    active: dirty && !(initialPatientId && otherKept && otherKept.activePatientKey !== prefillKey),
     initialKeptAt: initialKept?.at ?? null,
     initialKeptJson: initialKept?.json ?? null,
   });
