@@ -18,10 +18,11 @@ describe("Ward Flow Read-Only Plain History", () => {
     it("classifies all 104 event types into bed, patient, both or neither with plain wording", () => {
       const allEventTypes = Object.keys(EVENT_ROLE) as Array<WardFlowEvent["type"]>;
       // 97 -> 96 on 2026-09-25: OVERRIDE_LEGAL_MISMATCH removed (owner ruling).
-      // D-34 adds the explicit ED medical deterioration transition.
+      // D-34 adds the explicit ED medical deterioration transition. D-38 adds four: absent without
+      // leave, its steps, and recording or ending a community treatment order.
       // 9 Oct 2026: RECORD_SUPPORT_NOTIFICATION (advisory carer/PSP/MHAS checklist).
-      // 100 -> 104 on 2026-10-09: stream D planned admissions (book, change, cancel, convert).
-      expect(allEventTypes.length).toBe(104);
+      // Stream D planned admissions (book, change, cancel, convert).
+      expect(allEventTypes.length).toBe(108);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

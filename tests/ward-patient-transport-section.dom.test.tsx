@@ -69,7 +69,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
   it("hides an open booking form when navigating to a patient-only record", () => {
     const { rerender } = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <PatientNowScreen movementId="WF-009" />
+        <PatientNowScreen movementId="WF-004" />
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-patient-book-transport-btn"));
@@ -151,40 +151,22 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(provider).toHaveTextContent(movement.transport!.provider);
   });
 
-  it("does not display a successful booking when the reducer refuses the movement stage", () => {
+  it("does not offer a booking before a bed is accepted, so no booking can appear to succeed", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <PatientNowScreen initialExampleId="WF-009" />
       </WardFlowProvider>,
     );
 
-    const section = screen.getByTestId("ward-patient-transport-section");
-    expect(section).toBeInTheDocument();
-
-    const badge = within(section).getByTestId("ward-patient-transport-badge");
-    expect(badge).toHaveAttribute("data-booked", "false");
-    expect(badge).toHaveTextContent(/awaiting transport booking/i);
-
-    // Open booking form
-    const bookBtn = within(section).getByTestId("ward-patient-book-transport-btn");
-    fireEvent.click(bookBtn);
-
-    const form = within(section).getByTestId("ward-patient-transport-form");
-    expect(form).toBeInTheDocument();
-
-    // Fill in CAD number and ETA
-    const cadInput = within(form).getByTestId("ward-patient-input-cad");
-    const etaInput = within(form).getByTestId("ward-patient-input-eta");
-
-    fireEvent.change(cadInput, { target: { value: "CAD-99210" } });
-    fireEvent.change(etaInput, { target: { value: "14:20 AWST" } });
-
-    // Submit booking form
-    const saveBtn = within(form).getByTestId("ward-patient-confirm-transport-btn");
-    fireEvent.click(saveBtn);
-
-    expect(badge).toHaveAttribute("data-booked", "false");
-    expect(within(section).getByRole("alert", { hidden: true })).toHaveTextContent("Booking was not recorded");
-    expect(within(section).queryByTestId("ward-patient-cad-number")).not.toBeInTheDocument();
+    // Gate board: while a bed is still being found, transport is a dashed, unavailable gate that
+    // says why, and the booking record is not on Now at all.
+    const gate = screen.getByTestId("ward-patient-gate-transport");
+    expect(gate).toHaveTextContent("Not booked");
+    const logBooking = within(gate).getByRole("button", { name: "Log booking" });
+    expect(logBooking).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(logBooking);
+    expect(screen.queryByTestId("ward-patient-transport-section")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-patient-cad-number")).not.toBeInTheDocument();
   });
 });

@@ -5011,3 +5011,77 @@
     text-overflow: ellipsis;
   }
 }
+
+/* ---------- Gate board (9 Oct 2026) ---------- */
+
+/* Quiet hero: a not active record reads as a light card, with no stepper, timers or red. The hero's
+   own tokens are pointed at the day surface and ink, so every hero child follows without new rules. */
+.v6HeroQuiet {
+  --wf-hero-1: var(--wf-surface);
+  --wf-hero-2: var(--wf-surface);
+  --wf-hero-edge: var(--wf-line-2);
+  --wf-hero-ink: var(--wf-ink-1);
+  --wf-hero-ink-2: var(--wf-ink-2);
+  --wf-hero-ink-3: var(--wf-ink-3);
+  --wf-hero-neutral: var(--wf-ink-3);
+  --wf-hero-info: var(--wf-accent);
+  box-shadow: var(--wf-e1);
+}
+
+/* The mode beside the name: glyph plus words. */
+.gbPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  margin-left: var(--wf-s-2);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 28%, transparent);
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-ink) 7%, transparent);
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.gbNow {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+
+.gbCols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.gbCol {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  align-content: start;
+}
+
+@media (max-width: 1080px) {
+  .gbCols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Phone: the name keeps its full width and the mode pill wraps under it rather than cutting it. */
+@media (max-width: 760px) {
+  .v6Hero :has(> h1) {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-1);
+  }
+
+  .v6Hero h1 {
+    white-space: normal;
+  }
+
+  .gbPill {
+    margin-left: 0;
+  }
+}

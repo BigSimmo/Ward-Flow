@@ -42,21 +42,22 @@ function tab(name: string) {
   return within(document.getElementById(`pnpane-${name.toLowerCase()}`)!);
 }
 describe("polished patient dossier tabs", () => {
-  it("opens clinical checks and documents locally from the patient brief with focus handoff", async () => {
+  it("opens documents from Legal now and returns to the status card on Now with focus handoff", async () => {
     setup();
-    fireEvent.click(screen.getByRole("button", { name: /^Documents/ }));
+    fireEvent.click(within(screen.getByTestId("ward-patient-legal-now")).getByRole("button", { name: "All forms" }));
     await waitFor(() => expect(screen.getByRole("tab", { name: /^Documents/ })).toHaveFocus());
     expect(screen.getByRole("region", { name: "Documents and legal authority" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: /^Clinical checks/ }));
-    await waitFor(() => expect(screen.getByRole("tab", { name: /^Now/ })).toHaveFocus());
-    expect(screen.getByRole("region", { name: "Clinical handover overview" })).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: /^Now/ }));
+    expect(screen.getByRole("region", { name: "Status" })).toBeVisible();
+    expect(screen.getByTestId("ward-patient-gate-clearance")).toBeVisible();
   });
   it("makes the record-only brief shortcut open patient details", async () => {
     setup("PT-005");
-    fireEvent.click(screen.getByRole("button", { name: /^Patient details/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^View patient details/ }));
     await waitFor(() => expect(screen.getByRole("tab", { name: /^Details/ })).toHaveFocus());
     expect(screen.getByRole("region", { name: "Patient details" })).toBeVisible();
-    expect(screen.queryByRole("button", { name: /^Clinical checks/ })).not.toBeInTheDocument();
+    // Nothing is open, so there is no fit to travel gate to offer.
+    expect(screen.queryByTestId("ward-patient-gate-clearance")).not.toBeInTheDocument();
   });
   it("searches history and makes unmatched filters explicit without losing the episode", () => {
     setup();
@@ -113,9 +114,8 @@ describe("polished patient dossier tabs", () => {
   });
   it("records medical clearance only after an explicit outcome and attestation", () => {
     setup();
-    fireEvent.click(screen.getByRole("button", { name: "Clinical overview" }));
-    const clinical = within(screen.getByRole("region", { name: "Clinical handover overview" }));
-    const trigger = clinical.getByRole("button", { name: "Record treating-team clearance" });
+    const clinical = within(screen.getByTestId("ward-patient-gate-clearance"));
+    const trigger = clinical.getByRole("button", { name: "Record clearance" });
     fireEvent.click(trigger);
     const dialog = within(screen.getByRole("dialog", { name: "Record treating-team medical clearance" }));
     const save = dialog.getByRole("button", { name: "Save clearance outcome" });
@@ -125,19 +125,55 @@ describe("polished patient dossier tabs", () => {
     fireEvent.click(dialog.getByRole("checkbox"));
     fireEvent.click(save);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(clinical.getByText("Clearance recorded")).toBeVisible();
+    expect(clinical.getByText(/^Cleared \d{2}:\d{2}$/)).toBeVisible();
     expect(trigger).toHaveFocus();
-    expect(
-      screen.getByText("Clearance recorded", { selector: "[data-patient-tracker-facts] strong" }),
-    ).toBeInTheDocument();
+    expect(trigger).toHaveTextContent("Update clearance");
   });
   it("closes the clearance dialog on Escape and returns focus to its trigger", () => {
     setup();
-    fireEvent.click(screen.getByRole("button", { name: "Clinical overview" }));
-    const trigger = screen.getByRole("button", { name: "Record treating-team clearance" });
+    const trigger = within(screen.getByTestId("ward-patient-gate-clearance")).getByRole("button", {
+      name: "Record clearance",
+    });
     fireEvent.click(trigger);
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
+  });
+  it("shows fields the record cannot hold as a dashed Preview, never as data", () => {
+    setup("PT-005");
+    const details = tab("Details");
+    expect(details.getByRole("heading", { name: "Not in the record yet" })).toBeVisible();
+    expect(details.getAllByText("Needs a record field")).toHaveLength(6);
+    const community = tab("Community");
+    expect(community.getByRole("heading", { name: "Family and carers" })).toBeVisible();
+    expect(community.getByText("Preview, not in the record yet")).toBeVisible();
+  });
+  it("lists a CTO recorded on the Community tab in the forms register, with no lapse column (D5, D-38)", () => {
+    setup("PT-005");
+    const community = tab("Community");
+    fireEvent.click(community.getByRole("button", { name: "Record CTO" }));
+    expect(community.getByText(/Form 5A in force/)).toBeVisible();
+    const documents = tab("Documents");
+    const register = documents.getByRole("table");
+    expect(within(register).getByText("Form 5A")).toBeVisible();
+    const headers = within(register)
+      .getAllByRole("columnheader")
+      .map((h) => h.textContent);
+    expect(headers).toEqual(["Form", "Status", "Recorded", "By"]);
+  });
+  it("lists an ended CTO as Closed beside a second one, never erasing it (D-40)", () => {
+    setup("PT-005");
+    const community = tab("Community");
+    fireEvent.click(community.getByRole("button", { name: "Record CTO" }));
+    fireEvent.click(community.getByRole("button", { name: "Record ended" }));
+    fireEvent.click(community.getByRole("button", { name: "Record CTO" }));
+    const register = tab("Documents").getByRole("table");
+    const rows = within(register)
+      .getAllByRole("row")
+      .slice(1)
+      .map((row) => row.textContent ?? "");
+    expect(rows.filter((row) => row.includes("Form 5A"))).toHaveLength(2);
+    expect(rows.filter((row) => row.includes("Form 5A") && row.includes("Current"))).toHaveLength(1);
+    expect(rows.filter((row) => row.includes("Form 5A") && row.includes("Closed"))).toHaveLength(1);
   });
 });
