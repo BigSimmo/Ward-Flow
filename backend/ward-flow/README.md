@@ -36,10 +36,10 @@ unapplied `schema.sql` is historical scaffolding; the new shared adapter uses `m
 - The Function's existing managed identity accesses a private blob container in
   its existing storage account. Sessions are stored under owner-specific paths.
   No storage key or password is stored in the backend.
-- The PostgreSQL `schema.sql` is retained for a later private-network rollout.
-  It has not been applied and is not used by this API. There is no migration
-  runner yet; add one together with a PostgreSQL store adapter. The unused `pg`
-  dependency was removed on 3 October 2026; add it back with that adapter.
+- The PostgreSQL `schema.sql` remains unapplied historical Blob-era scaffolding
+  and is not used by the Blob API. The opt-in shared backend already includes
+  the `pg` dependency, the `postgres.mjs` adapter, versioned `migrations/` and
+  the `migrate.mjs` runner.
 - Each session has an owner UUID and a revision. `PUT` uses an expected revision;
   a stale save returns `409` and does not replace the current blob.
 - The API accepts only the `synthetic` classification. This label and basic
