@@ -247,7 +247,9 @@ test.describe("@mockup Ward shell bar", () => {
     await expect(page.getByTestId("ward-rail")).toBeVisible();
   });
 
-  test("Action workspace keeps the shared navigation and page design", async ({ page }) => {
+  // The October 2026 board retired the Focus table / Action workspace toggle. Its side column now
+  // swaps the registers rail for the person panel, so that swap is what must leave the shell alone.
+  test("opening a person keeps the shared navigation and page design", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto("/mockups/ward-flow/delays", { waitUntil: "networkidle" });
     const readChrome = async () => {
@@ -264,12 +266,20 @@ test.describe("@mockup Ward shell bar", () => {
     const before = await readChrome();
     const graph = page.getByRole("region", { name: "Delay graphs", exact: true });
     const graphWidth = (await graph.boundingBox())!.width;
-    await page.getByRole("tab", { name: /Action workspace/u }).click();
-    await expect(page.getByRole("complementary", { name: "Responsible team queues" })).toBeVisible();
+    const rail = page.getByRole("region", { name: "Escalations and resolved", exact: true });
+    const person = page.getByRole("region", { name: "Why this person is waiting", exact: true });
+    await expect(rail).toBeVisible();
+    await page
+      .getByTestId(/^delays-select-/u)
+      .first()
+      .click();
+    await expect(person).toBeVisible();
+    await expect(rail).toHaveCount(0);
     await expect.poll(readChrome).toEqual(before);
     expect((await graph.boundingBox())!.width).toBe(graphWidth);
-    await page.getByRole("tab", { name: /Focus table/u }).click();
-    await expect(page.getByRole("complementary", { name: "Responsible team queues" })).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(person).toHaveCount(0);
+    await expect(rail).toBeVisible();
     await expect.poll(readChrome).toEqual(before);
   });
 

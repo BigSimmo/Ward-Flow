@@ -1,19 +1,38 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
-/** Population guards exercise every live row by using the worklist's actual page-size control. */
+/**
+ * Population guards exercise every live row. The Delays board folds the lower blocker groups and
+ * shows five rows per group, so this opens every group and every "Show N more" before returning.
+ */
 export function renderAllDelays(...args: Parameters<typeof render>): ReturnType<typeof render> {
   const result = render(...args);
-  const waiting = screen.getByRole("region", { name: "Waiting" });
-  fireEvent.change(within(waiting).getByRole("combobox", { name: "Rows per page" }), { target: { value: "100" } });
+  // Fail here, by name, if the board did not render, rather than in a caller's later assertion.
+  screen.getByRole("region", { name: "Waiting" });
+  showEveryDelayRow();
   return result;
 }
 
-/** The compact October designs keep the existing clinical tools behind an explicit disclosure. */
+/** Opens every folded blocker group and every "Show N more" row in the Waiting table. */
+export function showEveryDelayRow(): void {
+  const waiting = screen.queryByRole("region", { name: "Waiting" });
+  if (waiting === null) return;
+  for (const header of within(waiting).queryAllByTestId(/^delays-cause-/u)) {
+    if (header.getAttribute("aria-expanded") === "false") fireEvent.click(header);
+  }
+  for (const more of within(waiting).queryAllByRole("button", { name: /^Show \d+ more$/u })) {
+    fireEvent.click(more);
+  }
+}
+
+/** Opens a person's row and returns their panel in the rail. Clears filters that hide them first. */
 export function inspectDelayPerson(id: string): HTMLElement {
-  fireEvent.click(screen.getByTestId(`delays-select-${id}`));
-  const summary = screen.getByText("Patient actions and full details");
-  const disclosure = summary.closest("details");
-  if (!disclosure) throw new Error("Selected delay has no patient-tools disclosure");
-  disclosure.open = true;
+  if (screen.queryByTestId(`delays-select-${id}`) === null) showEveryDelayRow();
+  const hidden = screen.queryByTestId("delays-hidden-note");
+  if (screen.queryByTestId(`delays-select-${id}`) === null && hidden !== null) {
+    fireEvent.click(within(hidden).getByRole("button", { name: "Show everyone" }));
+    showEveryDelayRow();
+  }
+  const trigger = screen.getByTestId(`delays-select-${id}`);
+  if (trigger.getAttribute("aria-expanded") !== "true") fireEvent.click(trigger);
   return screen.getByRole("region", { name: "Why this person is waiting" });
 }
