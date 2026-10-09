@@ -6,6 +6,18 @@ import { readConfig } from "./config.mjs";
 const coordinator = "22222222-2222-4222-8222-222222222222";
 const other = "33333333-3333-4333-8333-333333333333";
 const commandId = "44444444-4444-4444-8444-444444444444";
+const auditEvent = {
+  sequence: 1,
+  actor_id: coordinator,
+  actor_role: "coordinator",
+  data_mode: "prototype",
+  action: "PULL_PATIENT",
+  outcome: "accepted",
+  prior_revision: 1,
+  revision: 2,
+  changes: {},
+  committed_at: "2026-01-01T00:00:00.000Z",
+};
 const body = {
   classification: "synthetic",
   commandId,
@@ -23,7 +35,10 @@ function setup(actor = coordinator, dataMode = "prototype") {
       calls.push(args);
       return { status: 409, body: { outcome: "stale" } };
     },
-    audit: async () => [],
+    audit: async (...args) => {
+      calls.push(["audit", ...args]);
+      return [auditEvent];
+    },
   };
   const handler = createHandler({
     config: { coordinatorIds: [coordinator], origin: "https://ward-flow-production.up.railway.app" },
@@ -56,6 +71,19 @@ test("another tenant account cannot self-assign coordinator in a command", async
   const { calls, handler } = setup(other);
   assert.equal((await handler(request("/commands", body))).status, 403);
   assert.equal(calls.length, 0);
+});
+test("a named coordinator can read audit events without reading or commanding the workspace", async () => {
+  const { calls, handler } = setup();
+  const response = await handler(request("/audit"));
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { events: [auditEvent] });
+  assert.deepEqual(calls, [["audit"]]);
+});
+test("another tenant account cannot read audit events or reach the store", async () => {
+  const { calls, handler } = setup(other);
+  const response = await handler(request("/audit"));
+  assert.equal(response.status, 403);
+  assert.deepEqual(calls, []);
 });
 test("the API does not expose a snapshot with mismatched database provenance", async () => {
   const { handler } = setup(coordinator, "live");
