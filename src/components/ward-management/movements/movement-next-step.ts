@@ -6,8 +6,8 @@ import type { Movement } from "@/components/ward-management/ward-model";
  * it, read only from the record's own stage, referrals, declines, escalation and transport leg.
  *
  * `kind` says what the Movements page may do about it. Only the coordinator's own steps carry an
- * action: `pull` dispatches `PULL_PATIENT` (a coordinator event), and `refer` and `escalate` open the
- * Patient page, where the referral and escalation forms already live. Every other step belongs to
+ * action, and each opens the Patient page, where the pull (with its gate checks and override
+ * reason), referral and escalation forms already live. Every other step belongs to
  * another team (ED, the receiving ward or transport), so the page names the owner and offers
  * nothing it is not allowed to record. "Chase the ward" stays out (owner ruling, 12 Sep 2026).
  */

@@ -51,9 +51,8 @@ const NOT_WIRED = "Not wired in this prototype.";
  * its RECORDED expiry only (D5), and the one next step with who owns it.
  *
  * **It records one thing itself, the urgent flag** (M7, owner ruling 2026-09-12: Chase the ward,
- * Add to a shortlist and Record an override were declined). Pull bed is the coordinator's own
- * event and goes through the screen's `onPull`, so its refusal or success is announced once.
- * Refer and Escalate open the Patient page, where those forms live. Every other step belongs to
+ * Add to a shortlist and Record an override were declined). Pull bed, Refer and Escalate open
+ * the Patient page, where those forms and the pull's gate checks and override reason already live. Every other step belongs to
  * ED, the receiving ward or transport, so the pop-up names the owner and offers nothing it is not
  * allowed to record. Call ward desk is Preview: there is no ward desk number in the model.
  *
@@ -150,7 +149,6 @@ export function MovementDrawer({
   edAccessTargetMinutes,
   dispatch,
   onClose,
-  onPull,
 }: {
   movement: Movement | undefined;
   now: Instant;
@@ -170,8 +168,6 @@ export function MovementDrawer({
   /** The same store the board behind this pop-up reads from. */
   dispatch: (event: WardFlowEvent) => void;
   onClose: () => void;
-  /** The screen's Pull bed handler, which announces the outcome. Without it, Pull opens the Patient page. */
-  onPull?: (movement: Movement) => void;
 }) {
   // Item 37 (2026-09-17): the flag needs a reason chosen from URGENT_MARK_REASONS. Declared before
   // the early return so hook order never depends on whether `movement` resolves.
@@ -264,18 +260,7 @@ export function MovementDrawer({
 
   let nextAction: React.ReactNode = null;
   if (step && open) {
-    if (step.kind === "pull" && onPull) {
-      nextAction = (
-        <button
-          type="button"
-          className={buttonClass({ variant: "pri", className: d.wide })}
-          onClick={() => onPull(movement)}
-        >
-          Pull bed at {accepted?.name ?? "the accepted ward"}
-          <ChevronRight size={14} aria-hidden="true" />
-        </button>
-      );
-    } else if (step.kind !== "wait") {
+    if (step.kind !== "wait") {
       nextAction = (
         <Link className={buttonClass({ variant: "pri", className: d.wide })} href={recordHref}>
           {step.label} on the Patient page
@@ -374,11 +359,11 @@ export function MovementDrawer({
         </div>
       )}
 
-      <ol className={d.steps} aria-label="Journey stage">
+      <ol className={d.journeySteps} aria-label="Journey stage">
         {STEPS.map((s, index) => (
           <li
             key={s.stage}
-            className={d.step}
+            className={d.journeyStep}
             data-state={index < currentStep ? "done" : index === currentStep ? "current" : undefined}
             aria-current={index === currentStep ? "step" : undefined}
           >

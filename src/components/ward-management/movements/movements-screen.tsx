@@ -247,7 +247,7 @@ function bedReadyNote(items: Movement[]): string {
  * Delays merge's own 30-of-42 audit as exactly the failure mode this guards against.
  */
 export function MovementsScreen() {
-  const { movements, units, referrals, patients, dispatch, configuration, rejections } = useWardFlow();
+  const { movements, units, referrals, patients, dispatch, configuration } = useWardFlow();
   const now = useWardFlowClock();
   // Task 6 of the audit-wiring plan, 2026-09-16: StageRow's wait-meter bar and its "of N hours"
   // caption are read against the coordinator-configured ED access target, not a bare 24h literal.
@@ -310,30 +310,6 @@ export function MovementsScreen() {
     setBoardTab("every");
   }
 
-  // Pull bed is the one next step this page records itself (PULL_PATIENT is a coordinator event).
-  // The engine may refuse it, so the outcome is announced once the reducer has answered.
-  const pendingPull = useRef<{ rejectionCount: number; who: string } | null>(null);
-  useEffect(() => {
-    const pending = pendingPull.current;
-    if (pending === null) return;
-    pendingPull.current = null;
-    const refused = rejections.length > pending.rejectionCount ? rejections.at(-1) : undefined;
-    announceToWardShell(refused ? `Bed not pulled. ${refused.reason}` : `Bed pulled for ${pending.who}.`);
-  }, [rejections, movements]);
-  function pullBed(movement: Movement) {
-    if (movement.acceptedUnitId === undefined) return;
-    pendingPull.current = {
-      rejectionCount: rejections.length,
-      who: resolveSubjectPatient(movement, { patients, referrals }).formalName,
-    };
-    dispatch({
-      type: "PULL_PATIENT",
-      role: "coordinator",
-      now,
-      movementId: movement.id,
-      unitId: movement.acceptedUnitId,
-    });
-  }
   const [reveal, setReveal] = useState<{ id: string; request: number } | null>(null);
   const consumedReveal = useRef(0);
   const consumeReveal = useCallback((request: number) => {
@@ -672,7 +648,6 @@ export function MovementsScreen() {
       onOpenDetail={openDetail}
       marked={isMarked(movement)}
       selected={detailId === movement.id}
-      onPull={pullBed}
     />
   );
 
@@ -840,7 +815,10 @@ export function MovementsScreen() {
                   <Printer size={14} aria-hidden="true" />
                   Run sheet
                 </button>
-                <Link href="/mockups/ward-flow/transport" className={buttonClass({ variant: "onHero", size: "sm" })}>
+                <Link
+                  href="/mockups/ward-flow/transport/officer"
+                  className={buttonClass({ variant: "onHero", size: "sm" })}
+                >
                   <Truck size={14} aria-hidden="true" />
                   Transport
                 </Link>
@@ -1575,7 +1553,6 @@ export function MovementsScreen() {
           edAccessTargetMinutes={configuration.edAccessTargetMinutes}
           dispatch={dispatch}
           onClose={closeDetail}
-          onPull={pullBed}
         />
       </main>
     </div>
@@ -1686,7 +1663,6 @@ function StageRow({
   onOpenDetail,
   marked,
   selected,
-  onPull,
 }: {
   movement: Movement;
   now: Instant;
@@ -1702,7 +1678,6 @@ function StageRow({
   /** Matched by the search or the hero highlight. Marked rows are tinted, never filtered. */
   marked: boolean;
   selected: boolean;
-  onPull: (movement: Movement) => void;
 }) {
   const rowRef = useRef<HTMLLIElement>(null);
   const revealRequest = reveal?.id === movement.id ? reveal.request : null;
@@ -1889,7 +1864,7 @@ function StageRow({
               </Link>
             </>
           ) : (
-            <span className={flow.pending}>· no destination yet</span>
+            <span className={flow.noDestination}>· no destination yet</span>
           )}
         </span>
         <span className={flow.sub} title={routeSub}>
@@ -1943,16 +1918,7 @@ function StageRow({
       <span className={flow.next}>
         {step === null ? (
           <span className={flow.nextOwner}>{closure ? `Closed ${formatInstantWithDay(closure.at, now)}` : ""}</span>
-        ) : step.kind === "pull" ? (
-          <button
-            type="button"
-            className={buttonClass({ variant: "sec", size: "sm" })}
-            onClick={() => onPull(movement)}
-            title={`Pull the bed at ${destinationLabel}`}
-          >
-            {step.label}
-          </button>
-        ) : step.kind === "refer" || step.kind === "escalate" ? (
+        ) : step.kind !== "wait" ? (
           <Link
             className={buttonClass({ variant: "sec", size: "sm" })}
             href={`/mockups/ward-flow/movements/${movement.id}`}

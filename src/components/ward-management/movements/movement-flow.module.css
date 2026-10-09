@@ -808,7 +808,7 @@
   white-space: nowrap;
 }
 
-.pending {
+.noDestination {
   color: var(--wf-ink-3);
   font-weight: 400;
 }

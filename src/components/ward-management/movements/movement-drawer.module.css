@@ -32,9 +32,6 @@
 
 /* Head: name, UMRN line, tier, Patient link, close. */
 .head {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   display: flex;
   align-items: flex-start;
   gap: var(--wf-s-2);
@@ -193,7 +190,7 @@
 }
 
 /* Six-step journey track. */
-.steps {
+.journeySteps {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   margin: 0;
@@ -202,7 +199,7 @@
   border-top: 1px solid var(--wf-line);
 }
 
-.step {
+.journeyStep {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -211,7 +208,7 @@
   min-width: 0;
 }
 
-.step::before {
+.journeyStep::before {
   content: "";
   position: absolute;
   top: 6px;
@@ -221,12 +218,12 @@
   background: var(--wf-line-2);
 }
 
-.step:first-child::before {
+.journeyStep:first-child::before {
   display: none;
 }
 
-.step[data-state="done"]::before,
-.step[data-state="current"]::before {
+.journeyStep[data-state="done"]::before,
+.journeyStep[data-state="current"]::before {
   background: var(--wf-accent);
 }
 
@@ -240,12 +237,12 @@
   background: var(--wf-surface);
 }
 
-.step[data-state="done"] .dot {
+.journeyStep[data-state="done"] .dot {
   border-color: var(--wf-accent);
   background: var(--wf-accent);
 }
 
-.step[data-state="current"] .dot {
+.journeyStep[data-state="current"] .dot {
   border-color: var(--wf-accent);
   background: var(--wf-accent);
   box-shadow: inset 0 0 0 3px var(--wf-surface);
@@ -260,7 +257,7 @@
   color: var(--wf-ink-3);
 }
 
-.step[data-state="current"] .stepLabel {
+.journeyStep[data-state="current"] .stepLabel {
   color: var(--wf-ink-1);
   font-weight: 600;
 }
@@ -564,7 +561,7 @@
 @media (forced-colors: active) {
   .meter i,
   .dot,
-  .step::before {
+  .journeyStep::before {
     forced-color-adjust: none;
     background: CanvasText;
   }
