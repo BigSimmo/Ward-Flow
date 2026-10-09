@@ -11,6 +11,7 @@ import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward
 import { edById } from "@/components/ward-management/ward-sites";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { formatInstant } from "@/components/ward-management/ward-clock";
+import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, TransportProvider, TransportLegalStatus } from "@/components/ward-management/ward-model";
 import { TRANSPORT_PROVIDERS, ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
@@ -396,6 +397,7 @@ export function PatientNowScreen({
     movement: liveMovement,
     isLiveBedflow,
     liveAdmission: resolved.liveAdmission,
+    stays: resolved.stays ?? [],
     admissions,
     leaveBeds,
     units,
@@ -629,7 +631,7 @@ export function PatientNowScreen({
                   </Button>
                 ) : gate.admission ? (
                   <Link
-                    href={`/mockups/ward-flow/ward/${encodeURIComponent(gate.admission.unitId)}`}
+                    href={unitHref(gate.admission.unitId)}
                     className={buttonClass({ variant: "light", size: "sm" })}
                     data-testid="ward-person-open-ward"
                   >

@@ -83,6 +83,7 @@ export function buildGateContext({
   movement,
   isLiveBedflow,
   liveAdmission,
+  stays: recordedStays,
   admissions,
   leaveBeds,
   units,
@@ -94,6 +95,8 @@ export function buildGateContext({
   movement?: Movement;
   isLiveBedflow: boolean;
   liveAdmission?: Admission;
+  /** This person's stays, matched by the adapter, which is allowed to read the patient link (D-14). */
+  stays: readonly Admission[];
   admissions: readonly Admission[];
   leaveBeds: readonly LeaveBed[];
   units: readonly Unit[];
@@ -101,13 +104,7 @@ export function buildGateContext({
   originName?: string;
   record: PatientNowRecord;
 }): GateContext {
-  const mine = (admission: Admission) =>
-    (patient !== undefined && admission.patientId === patient.id) ||
-    (movement !== undefined && (admission.movementId === movement.id || admission.id === movement.admissionId));
-  const stays = admissions
-    .filter(mine)
-    .slice()
-    .sort((a, b) => (b.leftAt ?? b.arrivedAt ?? 0) - (a.leftAt ?? a.arrivedAt ?? 0));
+  const stays = recordedStays.slice().sort((a, b) => (b.leftAt ?? b.arrivedAt ?? 0) - (a.leftAt ?? a.arrivedAt ?? 0));
   const base = { now, patient, units, originName, record, stays };
   const lastStay = stays
     .filter((admission) => admission.state === "departed" && admission.leftAt !== null)
@@ -126,7 +123,13 @@ export function buildGateContext({
   const admission =
     liveAdmission?.state === "occupied"
       ? liveAdmission
-      : admissions.find((candidate) => candidate.state === "occupied" && mine(candidate));
+      : (stays.find((candidate) => candidate.state === "occupied") ??
+        admissions.find(
+          (candidate) =>
+            candidate.state === "occupied" &&
+            movement !== undefined &&
+            (candidate.movementId === movement.id || candidate.id === movement.admissionId),
+        ));
   if (admission) {
     const leaveBed = leaveBeds.find((bed) => bed.admissionId === admission.id);
     const mode: PatientMode =
@@ -325,23 +328,11 @@ function useGateStatus(ctx: GateContext, actions: GateActions, begin: () => void
           value: `Accepted by ${ward}`,
           sub: "Bed not pulled yet",
           time: when(ctx, movement.acceptedAt),
-          action: movement.acceptedUnitId ? (
-            <Button
-              size="sm"
-              onClick={() => {
-                begin();
-                dispatch({
-                  type: "PULL_PATIENT",
-                  role: "coordinator",
-                  now,
-                  movementId: movement.id,
-                  unitId: movement.acceptedUnitId!,
-                });
-              }}
-            >
+          action: (
+            <Button size="sm" onClick={actions.openPlacement}>
               Pull bed
             </Button>
-          ) : undefined,
+          ),
         };
     const clearance = clearanceCell(ctx, movement, actions);
     const job = transportJob(movement);
@@ -435,7 +426,13 @@ function useGateStatus(ctx: GateContext, actions: GateActions, begin: () => void
           size="sm"
           onClick={() => {
             begin();
-            dispatch({ type: next.type, role: "officer", now, movementId: movement.id });
+            if (next.type === "TRANSPORT_ACCEPTED") {
+              dispatch({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id });
+            } else if (next.type === "TRANSPORT_EN_ROUTE") {
+              dispatch({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id });
+            } else {
+              dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id });
+            }
           }}
         >
           {next.label}
@@ -604,7 +601,7 @@ function useGateStatus(ctx: GateContext, actions: GateActions, begin: () => void
             owner: ward,
             tone: "neutral",
             value: leave.kind === "medical_trip" ? "Medical trip" : "Off-ward leave",
-            sub: leave.openWarningAt !== undefined ? "Away over 24 hours" : undefined,
+            sub: leave.openWarningAt !== undefined ? "Open-bed warning raised" : undefined,
             time: `Left ${when(ctx, leave.confirmedAt)}`,
           },
           {
@@ -808,7 +805,7 @@ export function PatientStatusCard({ ctx, actions }: { ctx: GateContext; actions:
       {status.steps ? (
         <ol className={styles.steps}>
           {status.steps.map((step, index) => (
-            <li key={step.key} className={styles.step} data-done={step.done ?? false}>
+            <li key={step.key} className={styles.stepRow} data-done={step.done ?? false}>
               <span className={styles.stepMark} aria-hidden="true">
                 {step.done ? <StatusGlyph tone="success" size={10} /> : index + 1}
               </span>
@@ -1107,7 +1104,7 @@ function AwayFromWardCard({ ctx, admission }: { ctx: GateContext; admission: Adm
               ))}
             </div>
           ) : null}
-          <label className={styles.field}>
+          <label className={styles.formField}>
             <span>{open === "leave" ? "Expected back" : "Expected discharge"}</span>
             <input
               type="time"
@@ -1116,7 +1113,7 @@ function AwayFromWardCard({ ctx, admission }: { ctx: GateContext; admission: Adm
               aria-label={open === "leave" ? "Expected back time" : "Expected discharge time"}
             />
           </label>
-          <label className={styles.field}>
+          <label className={styles.formField}>
             <span>Day</span>
             <select value={day} onChange={(event) => setDay(Number(event.target.value))} aria-label="Day">
               {DAY_OPTIONS.map((option) => (

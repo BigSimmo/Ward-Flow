@@ -21,6 +21,8 @@ export interface ResolvedPatientNow {
   livePatient?: Patient;
   liveReferral?: Referral;
   liveAdmission?: Admission;
+  /** Every stay recorded for this person, for the Gate board's History and Not active views. */
+  stays?: Admission[];
   displayName: string;
   preferredName?: string;
   currentStageIndex: number;
@@ -304,11 +306,16 @@ export function resolvePatientNowRecord(
       resolvedPatient.formalName !== "Unknown Patient" ? resolvedPatient.formalName : `Movement ${movement.id}`;
     const preferredName = livePatient?.preferredName;
 
+    const stays = admissions.filter(
+      (a) => (livePatient !== undefined && a.patientId === livePatient.id) || a.movementId === movement.id,
+    );
+
     return {
       record: dynamicRecord,
       liveMovement: movement,
       livePatient,
       liveReferral: referral,
+      stays,
       displayName,
       preferredName,
       currentStageIndex: stageIdx,
@@ -512,6 +519,7 @@ export function resolvePatientNowRecord(
         record: dynamicRecord,
         liveMovement: activeMovement,
         livePatient: patient,
+        stays: patientAdmissions,
         liveReferral: linkedReferral,
         liveAdmission: activeAdmission,
         displayName: patientDisplayName(patient),
@@ -616,6 +624,7 @@ export function resolvePatientNowRecord(
       return {
         record: dynamicRecord,
         livePatient: patient,
+        stays: patientAdmissions,
         liveReferral: linkedReferral,
         liveAdmission: activeAdmission,
         displayName: patientDisplayName(patient),
@@ -668,6 +677,7 @@ export function resolvePatientNowRecord(
     return {
       record: communityRecord,
       livePatient: patient,
+      stays: patientAdmissions,
       displayName: patientDisplayName(patient),
       preferredName: patient.preferredName,
       currentStageIndex: 0,

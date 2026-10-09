@@ -181,7 +181,7 @@
   list-style: none;
 }
 
-.step {
+.stepRow {
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr) auto;
   gap: var(--wf-s-3);
@@ -191,7 +191,7 @@
   border-bottom: 1px solid var(--wf-line);
 }
 
-.step:last-child {
+.stepRow:last-child {
   border-bottom: 0;
 }
 
@@ -412,7 +412,7 @@
   outline-offset: 2px;
 }
 
-.field {
+.formField {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -421,8 +421,8 @@
   font-weight: 600;
 }
 
-.field input,
-.field select {
+.formField input,
+.formField select {
   min-height: var(--wf-h-md);
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line-ctl);
@@ -575,7 +575,7 @@
   }
 
   .row,
-  .step {
+  .stepRow {
     padding: 0 var(--wf-s-3);
   }
 
