@@ -110,7 +110,7 @@ export function SupportNotificationChecklist({
     if (!subject) return;
     const contactedAt = clockTextToInstantNotAfter(time, now);
     if (outcome === "told" && contactedAt === null) {
-      setTimeError("Enter a 24-hour time, for example 14:05");
+      setTimeError("Enter the time as HH:MM, for example 14:05");
       return;
     }
     setTimeError(null);

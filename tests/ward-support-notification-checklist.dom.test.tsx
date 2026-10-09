@@ -57,7 +57,7 @@ describe("carer, PSP and MHAS checklist", () => {
     fireEvent.change(within(form).getByLabelText(/Time told/), { target: { value: "25:00" } });
     fireEvent.click(within(form).getByRole("button", { name: "Save" }));
     expect(screen.getByRole("form", { name: "Record Personal support person" })).toBeInTheDocument();
-    expect(screen.getByText(/Enter a 24-hour time/)).toBeInTheDocument();
+    expect(screen.getByText(/Enter the time as HH:MM/)).toBeInTheDocument();
   });
 });
 

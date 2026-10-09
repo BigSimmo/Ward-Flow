@@ -1,10 +1,11 @@
 import { BellRing } from "lucide-react";
 
 import type { Admission } from "./ward-admissions";
-import type { Instant } from "./ward-clock";
+import { MINUTES_PER_DAY, type Instant } from "./ward-clock";
 import type { InboxItem } from "./ward-derivations";
 import type { WardFlowRole } from "./ward-flow-roles";
 import { INBOX_CATEGORIES } from "./ward-inbox-reducer";
+import { SUPPORT_NOTIFICATION_TASK_LOOKBACK_MINUTES } from "./ward-operational-defaults";
 import type { Movement, Referral, Unit } from "./ward-model";
 import { createPatientResolver } from "./ward-patient-resolver";
 import type { Patient } from "./ward-patients";
@@ -54,11 +55,8 @@ export type SupportNotificationOutcome = (typeof SUPPORT_NOTIFICATION_OUTCOMES)[
 export const SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS = 80;
 export const SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS = 160;
 
-/**
- * How far back the Tasks list looks for moves with outstanding notifications. A display window,
- * not a deadline: older moves keep their checklist on their own record. Default, not a standard.
- */
-export const SUPPORT_NOTIFICATION_TASK_LOOKBACK_MINUTES = 72 * 60;
+/** Re-exported so callers keep one import; the value lives with the other labelled defaults. */
+export { SUPPORT_NOTIFICATION_TASK_LOOKBACK_MINUTES };
 
 export type SupportNotificationRecord = {
   id: string;
@@ -169,8 +167,6 @@ export function supportNotificationSubjects(records: NotificationRecords): Suppo
   return subjects.sort((a, b) => b.completedAt - a.completedAt);
 }
 
-const DAY_MINUTES = 24 * 60;
-
 /**
  * The most recent instant, at or before `now`, whose clock time is the typed `HH:MM`: today's if
  * that has passed, otherwise yesterday's. Null for anything that is not a 24-hour clock time.
@@ -179,9 +175,9 @@ export function clockTextToInstantNotAfter(text: string, now: Instant): Instant 
   const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(text.trim());
   if (!match) return null;
   const typed = Number(match[1]) * 60 + Number(match[2]);
-  const nowOfDay = ((Math.floor(now) % DAY_MINUTES) + DAY_MINUTES) % DAY_MINUTES;
+  const nowOfDay = ((Math.floor(now) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
   const candidate = Math.floor(now) - nowOfDay + typed;
-  return (candidate > now ? candidate - DAY_MINUTES : candidate) as Instant;
+  return (candidate > now ? candidate - MINUTES_PER_DAY : candidate) as Instant;
 }
 
 /** The latest record for each party on one move. */
