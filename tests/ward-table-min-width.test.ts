@@ -134,6 +134,9 @@ const PINNED: Record<string, string | readonly string[] | null> = {
      380px — and it no longer matches `discharges` / `out-of-area`'s 30rem, which were not
      re-measured here and have no reason to move just because this one did. See the stylesheet. */
   "referrals/referrals.module.css": "33rem",
+  /* Option A queue (2026-10-09): seven fixed-layout columns beside the decision panel. Pins the
+   * authored floor only; below 48rem the queue is a card list, not a scrolled table. */
+  "referrals/referral-board.module.css": "44rem",
   // Q004: reviewed wrapping plus the sticky identifier column need 50rem. Preserve this
   // specific table's new floor; this does not approve changes to other table thresholds.
   "search/search.module.css": "50rem",

@@ -248,6 +248,11 @@ function renderBoard() {
   );
 }
 
+/** Option A (9 Oct 2026): decided referrals live behind the board's History tab. */
+function openHistory() {
+  fireEvent.click(screen.getByRole("tab", { name: /^History/ }));
+}
+
 describe("ReferralBoard", () => {
   it("renders the real fixture's queued referrals longest wait first (Decision D-32)", () => {
     renderBoard();
@@ -258,7 +263,7 @@ describe("ReferralBoard", () => {
     const ids = within(table)
       .getAllByRole("row")
       .slice(1) // drop the header row
-      .map((row) => row.querySelector("td button")?.textContent);
+      .map((row) => row.getAttribute("data-referral-id"));
     expect(ids).toEqual(["RF-015", "RF-014", "RF-RD06", "RF-011", "RF-001", "RF-009", "RF-005"]);
   });
 
@@ -277,7 +282,7 @@ describe("ReferralBoard", () => {
     const rendered = within(table)
       .getAllByRole("row")
       .slice(1)
-      .map((row) => row.querySelector("td button")?.textContent ?? "");
+      .map((row) => row.getAttribute("data-referral-id") ?? "");
 
     const allReferrals = [...referrals, ...rulingsDemoOverlay(NOW_ANCHOR).referrals];
     const referralOf = (id: string) => allReferrals.find((referral) => referral.id === id);
@@ -405,6 +410,7 @@ describe("ReferralBoard", () => {
     // RF-021 -35. RF-019(-20), RF-004/RF-020(tied -25, RF-004 wins the tie by original array
     // order), RF-018(-30) and RF-021(-35) all sit more recently than RF-008(-45), so they now
     // displace RF-012/RF-013/RF-010/RF-RGHS-01 off the visible cap entirely.
+    openHistory();
     const table = screen.getByTestId("ward-referral-board-decided-table");
     const ids = within(table)
       .getAllByRole("row")
@@ -1056,6 +1062,7 @@ describe("ReferralBoard — recently decided caps at ten (owner ruling, 2026-09-
         "assertion below would prove nothing about the cap",
     ).toBeGreaterThan(10);
 
+    openHistory();
     const table = screen.getByTestId("ward-referral-board-decided-table");
     const rows = within(table).getAllByRole("row").slice(1); // drop the header row
     expect(rows).toHaveLength(10);
