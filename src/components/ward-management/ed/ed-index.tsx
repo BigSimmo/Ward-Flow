@@ -91,7 +91,6 @@ const CLOCK_TONE = { past: "danger", severe: "warning", in: "neutral" } as const
 const PIPS_SHOWN = 12;
 
 /** Lane scale: logarithmic from zero to seven days, so an hour and a week both stay readable. */
-const LANE_MAX_MINUTES = 7 * 24 * 60;
 const LANE_TICKS: readonly [number, string][] = [
   [60, "1h"],
   [240, "4h"],
@@ -100,6 +99,7 @@ const LANE_TICKS: readonly [number, string][] = [
   [4320, "3d"],
   [10080, "7d"],
 ];
+const LANE_MAX_MINUTES = LANE_TICKS[LANE_TICKS.length - 1][0];
 function lanePosition(minutes: number): number {
   return Math.min(1, Math.log1p(minutes / 30) / Math.log1p(LANE_MAX_MINUTES / 30)) * 100;
 }
