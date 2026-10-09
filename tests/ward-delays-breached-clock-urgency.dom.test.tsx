@@ -87,33 +87,11 @@ function breachedMovementIds(minutes: number): string[] {
     .flatMap((group) => group.movements.map((movement) => movement.id));
 }
 
-/**
- * The rendered ED clock of every row that carries one.
- *
- * ⚠️ **THE FIRST VERSION OF THIS HELPER FOUND THE WRONG ELEMENT AND THE TEST FAILED SAYING "every
- * legal cause is rendering as calm".** It searched for the first `<span>` whose `textContent`
- * mentioned "in ED" — but `textContent` is recursive, so the outer `.line` wrapper matched first and
- * carries no `data-urgent`. **A selector bug reported itself as a defect in the screen**, in the
- * screen's own words, and would have been quoted as one. The clock is found here by its `<small>`
- * subtitle's PARENT, which is the element that actually carries the flag.
- *
- * ⚠️ **RE-POINTED 2026-09-07.** The screen no longer renders every row's full clock at once — only
- * the SELECTED patient's, inside the detail panel. This now returns the one clock rendered there
- * (or `undefined` if nobody is selected), so the caller selects a patient first and reads one clock
- * at a time rather than scanning the whole document for all of them.
- *
- * ⚠️ **RENAMED, task D1.** That panel is titled "The person you have chosen" no longer — the
- * drawing (`delays-third-edition.html`) draws "Nobody selected" or "Why this person is waiting"
- * depending on state, so the lookup below matches either rather than one fixed string, which is
- * what actually lets the doc comment's "or `undefined` if nobody is selected" claim stay true.
- */
+/** The selected person's ED clock in the rail panel, and whether it is marked urgent. */
 function selectedClock(): { text: string; urgent: boolean } | undefined {
-  const panel = screen.getByRole("region", { name: /Nobody selected|Why this person is waiting/u });
-  const row = panel.querySelector('[data-ward-primitive="record-row"]');
-  if (row === null) return undefined;
-  const sub = [...row.querySelectorAll("small")].find((small) => small.textContent?.trim() === "in ED");
-  const clock = sub?.parentElement;
-  return clock == null
+  const panel = screen.getByRole("region", { name: "Why this person is waiting" });
+  const clock = panel.querySelector('[data-testid="delays-panel-clock"]');
+  return clock === null
     ? undefined
     : { text: clock.textContent ?? "", urgent: clock.getAttribute("data-urgent") === "true" };
 }
@@ -150,7 +128,7 @@ describe("a lapsed legal authority is never quieter than one still running", () 
       const clock = selectedClock();
       expect(
         clock,
-        `${id}: no ED clock rendered once selected — the selector, not the screen, is what failed`,
+        `${id}: no ED clock rendered once selected — the panel is not emitting delays-panel-clock`,
       ).toBeDefined();
       expect(
         clock?.urgent,
