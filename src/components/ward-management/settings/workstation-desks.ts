@@ -13,6 +13,8 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { EdSummary } from "@/components/ward-management/ed/ed-home-derivations";
 import type { HubEntry } from "@/components/ward-management/hub/hub-derivations";
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { isActiveTransportJob } from "@/components/ward-management/ward-derivations";
+export { isActiveTransportJob } from "@/components/ward-management/ward-derivations";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { HEALTH_SERVICES, type HealthService, type Movement } from "@/components/ward-management/ward-model";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -53,17 +55,6 @@ export type DeskSite = {
   service?: HealthService;
   desks: Desk[];
 };
-
-/**
- * Jobs still on an officer's list: booked, not arrived, movement not closed. Same predicate as
- * `isOfficerJob` in `officer/officer-screen.tsx`, restated here so Settings does not import the
- * officer screen; `tests/ward-workstation-desks.test.ts` pins the two together.
- */
-export function isActiveTransportJob(movement: Movement): boolean {
-  return (
-    movement.transport !== undefined && movement.transport.arrivedAt === undefined && movement.closure === undefined
-  );
-}
 
 export function workstationDesks(input: {
   hub: readonly HubEntry[];
@@ -182,26 +173,44 @@ export function currentDeskId(pathname: string): string | null {
 }
 
 /**
- * The plain-language actions a desk is told about. Whether a role may do each one is read from
- * `EVENT_ROLE` at render time; this list only names them, in the order a person would look for them.
+ * The plain-language actions a desk is told about. Keep the labels readable, but derive the
+ * catalogue from `EVENT_ROLE` so a newly permitted event cannot silently disappear from the
+ * workstation preview.
  */
-const DESK_ACTIONS: readonly { event: WardFlowEvent["type"]; label: string }[] = [
-  { event: "REFER_TO_UNITS", label: "Refer to wards" },
-  { event: "ACCEPT_IN_PRINCIPLE", label: "Accept for the ward" },
-  { event: "CONFIRM_CAPACITY", label: "Confirm bed capacity" },
-  { event: "RECORD_PATIENT_DISCHARGE", label: "Record a discharge" },
-  { event: "RECORD_ESCALATION", label: "Record an escalation" },
-  { event: "CHANGE_URGENCY", label: "Change urgency" },
-  { event: "PULL_PATIENT", label: "Pull a patient into a ready bed" },
-  { event: "RAISE_REFERRAL", label: "Raise a referral" },
-  { event: "RECORD_EXAMINATION", label: "Record an examination" },
-  { event: "RECORD_LEGAL_FORM_RECEIVED", label: "Record a legal form received" },
-  { event: "HANDOVER_READY", label: "Mark handover ready" },
-  { event: "BOOK_TRANSPORT", label: "Book transport" },
-  { event: "TRANSPORT_ACCEPTED", label: "Accept a transport job" },
-  { event: "PATIENT_COLLECTED", label: "Mark a patient collected" },
-  { event: "PATIENT_ARRIVED", label: "Mark a patient arrived" },
-];
+const ACTION_LABELS: Partial<Record<WardFlowEvent["type"], string>> = {
+  REFER_TO_UNITS: "Refer to wards",
+  ACCEPT_IN_PRINCIPLE: "Accept for the ward",
+  CONFIRM_CAPACITY: "Confirm bed capacity",
+  RECORD_PATIENT_DISCHARGE: "Record a discharge",
+  RECORD_ESCALATION: "Record an escalation",
+  CHANGE_URGENCY: "Change urgency",
+  PULL_PATIENT: "Pull a patient into a ready bed",
+  RAISE_REFERRAL: "Raise a referral",
+  RECORD_EXAMINATION: "Record an examination",
+  RECORD_MEDICAL_CLEARANCE: "Record medical clearance",
+  RECORD_LEGAL_FORM_RECEIVED: "Record a legal form received",
+  HANDOVER_READY: "Mark handover ready",
+  BOOK_TRANSPORT: "Book transport",
+  TRANSPORT_ACCEPTED: "Accept a transport job",
+  PATIENT_COLLECTED: "Mark a patient collected",
+  PATIENT_ARRIVED: "Mark a patient arrived",
+};
+
+function actionLabel(event: WardFlowEvent["type"]): string {
+  return (
+    ACTION_LABELS[event] ??
+    event
+      .toLowerCase()
+      .replaceAll("_", " ")
+      .replace(/^./, (character) => character.toUpperCase())
+  );
+}
+
+const DESK_ACTIONS: readonly { event: WardFlowEvent["type"]; label: string }[] = (
+  Object.keys(EVENT_ROLE) as WardFlowEvent["type"][]
+)
+  .filter((event) => EVENT_ROLE[event].some((role) => role !== "demo"))
+  .map((event) => ({ event, label: actionLabel(event) }));
 
 export type DeskActions = {
   can: string[];

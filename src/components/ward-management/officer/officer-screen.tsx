@@ -33,6 +33,7 @@ import {
 import {
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
   examinationRevokedWhileBedHeld,
+  isActiveTransportJob,
   stageCopy,
   transportLeg,
 } from "@/components/ward-management/ward-derivations";
@@ -285,11 +286,7 @@ function nextActionVerb(leg: OfficerLeg): string {
 /**
  * THE JOBS THIS PHONE SCREEN SHOWS, and the predicate its governance sentence describes.
  */
-export function isOfficerJob(movement: Movement): boolean {
-  return (
-    movement.transport !== undefined && movement.transport.arrivedAt === undefined && movement.closure === undefined
-  );
-}
+export const isOfficerJob = isActiveTransportJob;
 
 type StatusFilter = "all" | "requested" | "accepted" | "en_route" | "collected";
 type JobsTab = "active" | "refused" | "cancelled";
