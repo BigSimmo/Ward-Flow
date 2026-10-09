@@ -419,7 +419,8 @@ export function MovementsScreen() {
     now,
   );
   const legs = transportLegs(openMovements, now);
-  const counts = transportCounts(legs);
+  const displayedLegs = transportFilter === "all" ? legs : legs.filter((leg) => leg.state === transportFilter);
+  const counts = transportCounts(displayedLegs);
   const activeCorridorCount = new Set(
     corridors.map((corridor) => JSON.stringify([corridor.originEdId, corridor.acceptedUnitId])),
   ).size;
@@ -684,7 +685,9 @@ export function MovementsScreen() {
   // the open records: the longest wait, the next recorded legal expiry (a typed `dueAt`, never a
   // computed limit, D5), and the coordinator's own queue of next steps.
   const movingCount = openMovements.filter((movement) => movement.stage === "moving").length;
-  const longestWaiting = byLongestWait(openMovements, now)[0];
+  const longestWaiting = [...openMovements].sort(
+    (a, b) => a.openedAt - b.openedAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+  )[0];
   const nextExpiry = openMovements
     .filter((movement) => movement.legalForm?.dueAt !== undefined && movement.legalForm.dueAt >= now)
     .sort((a, b) => a.legalForm!.dueAt! - b.legalForm!.dueAt!)[0];
@@ -1147,7 +1150,7 @@ export function MovementsScreen() {
                     {worklistClosedToday.length === 0 ? (
                       <p className={styles.absent}>No movement has resolved today{inServiceSuffix(service)}.</p>
                     ) : shownClosedToday.length === 0 ? (
-                      <p className={styles.absent}>No resolved movement matches “{search.trim()}”.</p>
+                      <p className={styles.absent}>No resolved rows are highlighted for “{search.trim()}”; other rows remain visible.</p>
                     ) : (
                       <WardRecordList>{capRows(shownClosedToday, LIST_CAP).map(renderRow)}</WardRecordList>
                     )}
@@ -1216,27 +1219,27 @@ export function MovementsScreen() {
                 }
               />
               {sideView === "transport" ? (
-                <div className={flow.sideFigures}>
-                  {/* Legs and the open movements without one, side by side, so the excluded
-                      count is stated rather than implied. Each figure reads label then value. */}
-                  <div className={flow.sideFigure} data-testid="movements-day-metric">
-                    <span>Transport legs</span>
-                    <strong>{legs.length}</strong>
+                <>
+                  <div role="group" aria-label="Filter transport legs by status" className={styles.transportFilterBar}>
+                    {(["all", ...TRANSPORT_STATES.map((state) => state.id)] as const).map((state) => (
+                      <button
+                        key={state}
+                        type="button"
+                        className={buttonClass({ variant: transportFilter === state ? "pri" : "ghost", size: "sm" })}
+                        aria-pressed={transportFilter === state}
+                        onClick={() => setTransportFilter(state)}
+                      >
+                        {state === "all" ? "All" : LEG_STATE_LABEL[state]}
+                      </button>
+                    ))}
                   </div>
-                  <div className={flow.sideFigure} data-testid="movements-day-metric">
-                    <span>No transport leg</span>
-                    <strong>{openMovements.length - legs.length}</strong>
-                  </div>
-                </div>
-              ) : null}
-              {sideView === "transport" ? (
-                legs.length === 0 ? (
-                  <p className={styles.absent}>No transport leg is booked or moving right now.</p>
-                ) : (
+                  {displayedLegs.length === 0 ? (
+                    <p className={styles.absent}>No transport leg matches this status.</p>
+                  ) : (
                   <div className={styles.transportWidget}>
                     <div className={styles.transportBarWrap}>
                       <StackBar
-                        label={`${legs.length} transport ${legs.length === 1 ? "leg" : "legs"} booked or moving`}
+                        label={`${displayedLegs.length} transport ${displayedLegs.length === 1 ? "leg" : "legs"} booked or moving`}
                         segments={TRANSPORT_STATES.map((st) => ({
                           id: st.id,
                           label: LEG_STATE_LABEL[st.id],
@@ -1258,7 +1261,7 @@ export function MovementsScreen() {
                     </div>
 
                     <div className={styles.transportRunsFeed} role="feed" aria-label="Active transport legs">
-                      {legs.map((leg) => {
+                      {displayedLegs.map((leg) => {
                         const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
                         const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
                         const originEd = edById(leg.movement.originEdId);
@@ -1302,7 +1305,8 @@ export function MovementsScreen() {
                       })}
                     </div>
                   </div>
-                )
+                  )}
+                </>
               ) : (
                 <>
                   <div className={styles.shapeTabs} role="group" aria-label="Movement summary">
@@ -2159,5 +2163,8 @@ function ShapeMovementList({
         );
       })}
     </ul>
+  );
+}
+</ul>
   );
 }
