@@ -2,6 +2,11 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
+import { defaultWardConfiguration } from "../src/components/ward-management/ward-configuration";
+import {
+  DECISION_TARGET_STEPS,
+  decisionTargetInboxItems,
+} from "../src/components/ward-management/ward-decision-targets";
 import { buildActionInbox, type InboxItem } from "../src/components/ward-management/ward-derivations";
 import {
   INBOX_CATEGORIES,
@@ -52,6 +57,32 @@ function movementsCoveringEveryCategory(): Movement[] {
     wardMovements.find((movement) => movement.id === "WF-009")!,
     // transport_awaiting_departure — the real fixture movement whose transport has not set off.
     wardMovements.find((movement) => movement.id === "WF-005")!,
+    // Stream A, 9 Oct 2026: the three decision-target categories, each long past its default.
+    movementFrom("WF-T04", {
+      stage: "destination_review",
+      referredAt: NOW - 600,
+      referredUnitIds: ["rph-adult-secure"],
+    }),
+    movementFrom("WF-T05", {
+      stage: "accepted_awaiting_bed",
+      acceptedUnitId: "rph-adult-secure",
+      acceptedAt: NOW - 600,
+      referredUnitIds: [],
+    }),
+    movementFrom("WF-T06", {
+      stage: "pulled",
+      acceptedUnitId: "rph-adult-secure",
+      referredUnitIds: [],
+      stageChanges: [{ at: NOW - 600, to: "pulled", by: "ward" }],
+    }),
+  ];
+}
+
+/** Every row any inbox builder emits: `buildActionInbox` plus the decision-target rows screens append. */
+function allInboxRows(movements: Movement[]): InboxItem[] {
+  return [
+    ...buildActionInbox(movements, NOW, allUnits()),
+    ...decisionTargetInboxItems(movements, NOW, defaultWardConfiguration()),
   ];
 }
 
@@ -68,7 +99,7 @@ describe("every action-inbox category is classified as a fact or a commitment", 
    * decided what kind of thing the new row is — which is the point.
    */
   it("gives every row a kind, and every row's kind is the one its category declares", () => {
-    const items = buildActionInbox(movementsCoveringEveryCategory(), NOW, allUnits());
+    const items = allInboxRows(movementsCoveringEveryCategory());
 
     // ANTI-VACUITY. Without this the whole test passes over an empty array — the enumeration
     // "silently returning nothing" failure. Five categories, at least one row each.
@@ -116,10 +147,13 @@ describe("every action-inbox category is classified as a fact or a commitment", 
     const pushes = body.match(/items\.push\(\{/g) ?? [];
     // Anti-vacuity on the scan itself: a body that matched nothing would agree with an empty table.
     expect(pushes.length, "the scan found no row-emitting blocks — it is measuring the wrong text").toBeGreaterThan(0);
+    // The decision-target categories are emitted by `decisionTargetInboxItems`, one per step.
+    const targetCategories = DECISION_TARGET_STEPS.map((entry) => entry.category);
+    expect(targetCategories.every((key) => key in INBOX_CATEGORIES)).toBe(true);
     expect(
       pushes.length,
       "buildActionInbox emits a number of categories that INBOX_CATEGORIES does not account for",
-    ).toBe(Object.keys(INBOX_CATEGORIES).length);
+    ).toBe(Object.keys(INBOX_CATEGORIES).length - targetCategories.length);
   });
 
   /**

@@ -158,7 +158,7 @@ export function decisionTargetInboxItems(
       tone: "danger",
       icon: Timer,
       title: definition.overdueTitle,
-      detail: `${movement.id} · ${reading.text} · target ${splitDuration(reading.targetMinutes)}, default set in Settings`,
+      detail: `${reading.text} · target ${splitDuration(reading.targetMinutes)}, default set in Settings`,
       owner: definition.owner,
       movementId: movement.id,
       dueAt: reading.dueAt,
