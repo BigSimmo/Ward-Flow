@@ -472,3 +472,13 @@
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
+
+/* Touch screens: tabs, selects and Change keep the 48px tap target; desktop stays compact. */
+@media (pointer: coarse) {
+  .tab,
+  .select,
+  .footChange {
+    height: auto;
+    min-height: var(--spacing-tap, 3rem);
+  }
+}

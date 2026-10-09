@@ -66,8 +66,8 @@
   margin: var(--wf-s-3) 0 0;
 }
 
-.standalone .tiles:first-child,
-.embedded .tiles:first-child {
+/* In the dialog the heading is visually hidden, so the tiles open the brief with no gap above. */
+.embedded .tiles {
   margin-top: 0;
 }
 

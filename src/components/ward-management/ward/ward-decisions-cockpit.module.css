@@ -451,3 +451,11 @@
     outline: 2px solid CanvasText;
   }
 }
+
+/* Touch screens: every window step keeps the 48px tap target. */
+@media (pointer: coarse) {
+  .windowStep {
+    height: auto;
+    min-height: var(--spacing-tap, 3rem);
+  }
+}

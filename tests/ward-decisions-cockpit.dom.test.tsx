@@ -112,6 +112,38 @@ describe("ward decisions cockpit", () => {
     expect(onConfirmRollup).toHaveBeenCalledOnce();
   });
 
+  it("says the overdue rollup is not wired when no confirm action is supplied", () => {
+    render(<WardDecisionsCockpit unit={mockUnit} demonstration rollupOverdue />);
+    expect(screen.getByTestId("ward-morning-rollup-overdue-banner")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-confirm-morning-rollup-btn")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Not wired in this prototype.").length).toBeGreaterThan(0);
+  });
+
+  it("does not count people on leave as decisions still to make", () => {
+    render(
+      <WardDecisionsCockpit
+        unit={mockUnit}
+        demonstration
+        leaves={[{ id: "l1", title: "Bed on leave · back 15:42" }]}
+      />,
+    );
+    expect(screen.getByRole("heading", { level: 2, name: "Decisions, Done" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Leave, 14:00–18:00" }));
+    expect(screen.getByRole("region", { name: "Leave" })).toHaveTextContent("Bed on leave");
+    expect(screen.getAllByText("Nothing due").length).toBeGreaterThan(0);
+  });
+
+  it("counts a held-up discharge in the heading as well as its window", () => {
+    render(
+      <WardDecisionsCockpit
+        unit={mockUnit}
+        demonstration
+        departures={[{ id: "h1", title: "Keira P.", badge: "Blocked", onClear: vi.fn() }]}
+      />,
+    );
+    expect(screen.getByRole("heading", { level: 2, name: "Decisions, 1 due" })).toBeInTheDocument();
+  });
+
   it("activates the four window steps via click", () => {
     render(<WardDecisionsCockpit unit={mockUnit} demonstration />);
 

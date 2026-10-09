@@ -87,3 +87,10 @@
     width: 100%;
   }
 }
+
+/* Touch screens: every hero pill keeps the 48px tap target. */
+@media (pointer: coarse) {
+  .pills button {
+    min-height: var(--spacing-tap, 3rem);
+  }
+}

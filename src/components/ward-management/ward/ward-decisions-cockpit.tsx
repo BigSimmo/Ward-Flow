@@ -64,6 +64,8 @@ interface DecisionItem {
   sub?: string;
   testId?: string;
   actions?: ReactNode;
+  /** Shown for awareness only. Nothing here can be decided, so it never counts as open. */
+  info?: boolean;
 }
 
 interface WindowSpec {
@@ -228,7 +230,6 @@ function Queue({
   const heldRows = departures.filter((row) => row.badge === "Blocked");
   const doneRows = departures.filter((row) => row.badge === "Done");
   const signable = readyRows.filter((row): row is DepartureDecision & { onConfirm: () => void } => !!row.onConfirm);
-  const dueCount = intakes.length + readyRows.length + (rollupOverdue ? 1 : 0);
 
   const doneHere = (kind: ActionKind) =>
     history.filter(
@@ -250,7 +251,7 @@ function Queue({
       title: `${rollupTimeLabel} Morning Bed Rollup Overdue`,
       sub: staffingFact,
       testId: "ward-morning-rollup-overdue-banner",
-      actions: (
+      actions: onConfirmRollup ? (
         <button
           type="button"
           className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
@@ -259,6 +260,8 @@ function Queue({
         >
           Confirm rollup
         </button>
+      ) : (
+        <span className={styles.unwired}>Not wired in this prototype.</span>
       ),
     });
   } else if (!rollupConfirmed && onConfirmRollup) {
@@ -379,12 +382,23 @@ function Queue({
 
   for (const row of leaves) {
     const { name, detail } = splitTitle(row.title);
-    items.leave.push({ id: row.id, group: "wait", tone: "neutral", title: name, sub: detail ?? "On leave" });
+    items.leave.push({
+      id: row.id,
+      group: "wait",
+      tone: "neutral",
+      title: name,
+      sub: detail ?? "On leave",
+      info: true,
+    });
   }
 
-  const openCount = (id: WindowId) => items[id].filter((item) => item.group !== "done").length;
+  const isOpen = (item: DecisionItem) => item.group !== "done" && !item.info;
+  const openCount = (id: WindowId) => items[id].filter(isOpen).length;
+  // The heading's total is the windows' own counts added up, so it never says Done beside a window
+  // that still has something to decide.
+  const dueCount = WINDOWS.reduce((total, entry) => total + openCount(entry.id), 0);
   const windowTone = (id: WindowId): WfTone => {
-    const open = items[id].filter((item) => item.group !== "done");
+    const open = items[id].filter(isOpen);
     if (open.length === 0) return "success";
     if (open.some((item) => item.group === "act")) return "danger";
     if (open.some((item) => item.tone === "warning")) return "warning";
@@ -402,7 +416,8 @@ function Queue({
   const spec = WINDOWS.find((entry) => entry.id === chosen) ?? WINDOWS[0];
   const here = items[chosen];
   const open = openCount(chosen);
-  const decided = here.length - open;
+  const decidable = here.filter((item) => !item.info).length;
+  const decided = decidable - open;
   const showBulk = chosen === "departures" && signable.length > 0;
 
   function choose(id: WindowId) {
@@ -411,7 +426,9 @@ function Queue({
   }
 
   let notice: { tone: WfTone; text: string } | null = null;
-  if (sent && sent.seq !== dismissedSeq) {
+  // The notice belongs to the window the action was taken in, so another window never shows it.
+  const sentWindow: WindowId | null = sent ? (sent.kind === "accept" ? "intake" : "departures") : null;
+  if (sent && sent.seq !== dismissedSeq && chosen === sentWindow) {
     const done = sent.ids.filter((id) => recorded(sent.kind, id));
     const n = sent.ids.length;
     const firstId = sent.ids[0];
@@ -600,18 +617,18 @@ function Queue({
           </div>
           <div className={styles.progress}>
             <div className={styles.prow}>
-              <span>{here.length > 0 ? `${decided} of ${here.length} decided` : "Nothing due"}</span>
+              <span>{decidable > 0 ? `${decided} of ${decidable} decided` : "Nothing due"}</span>
             </div>
-            {here.length > 0 ? (
+            {decidable > 0 ? (
               <div
                 className={styles.bar}
                 role="progressbar"
                 aria-label={`${spec.title} decided`}
                 aria-valuemin={0}
-                aria-valuemax={here.length}
+                aria-valuemax={decidable}
                 aria-valuenow={decided}
               >
-                <i style={{ width: `${(decided / here.length) * 100}%` }} />
+                <i style={{ width: `${(decided / decidable) * 100}%` }} />
               </div>
             ) : null}
             {chosen === "departures" && projection ? (

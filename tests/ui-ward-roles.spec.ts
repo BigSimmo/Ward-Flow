@@ -75,17 +75,6 @@ async function ensureToolsOpen(page: Page): Promise<void> {
  * "Tools" title) is never covered by anything, because it is part of the drawer that would be
  * doing the covering.
  */
-/**
- * Ward Hub (9 Oct 2026): the Arrivals tab was folded into the Home tab's Ward flow card. The full
- * arrivals view still exists and opens from that card's Admissions pane via "All arrivals".
- */
-async function openAllArrivals(page: Page) {
-  await page.locator("#tabBtn-attn").click();
-  await page.getByRole("radio", { name: /^Admissions/u }).click();
-  await page.getByRole("button", { name: "All arrivals", exact: true }).click();
-  await expect(page.locator("#tab-coming")).toHaveAttribute("data-active", "true");
-}
-
 async function ensureToolsClosed(page: Page): Promise<void> {
   const trigger = page.getByTestId("ward-bar-tools-trigger");
   if ((await trigger.getAttribute("aria-expanded")) === "true") {
@@ -96,6 +85,17 @@ async function ensureToolsClosed(page: Page): Promise<void> {
     // carries `title="Tools"` as its accessible name, which the rail's toggle does not share.
     await page.getByRole("dialog", { name: "Tools" }).getByRole("button", { name: "Close", exact: true }).click();
   }
+}
+
+/**
+ * Ward Hub (9 Oct 2026): the Arrivals tab was folded into the Home tab's Ward flow card. The full
+ * arrivals view still exists and opens from that card's Admissions pane via "All arrivals".
+ */
+async function openAllArrivals(page: Page) {
+  await page.locator("#tabBtn-attn").click();
+  await page.getByRole("radio", { name: /^Admissions/u }).click();
+  await page.getByRole("button", { name: "All arrivals", exact: true }).click();
+  await expect(page.locator("#tab-coming")).toHaveAttribute("data-active", "true");
 }
 
 test.describe("@mockup Ward screen", () => {

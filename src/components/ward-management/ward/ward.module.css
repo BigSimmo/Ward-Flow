@@ -6400,8 +6400,8 @@
   }
 }
 
-/* Phone: the tabs and Find share the first row, the actions scroll on a second. Desktop is
- * unchanged. */
+/* Phone: Find takes the first row, the tabs and actions wrap onto the rows below so none is
+ * hidden off screen. Desktop is unchanged. */
 @media (max-width: 48rem) {
   .tabBarWrap {
     flex-direction: row;
@@ -6440,6 +6440,14 @@
   .tabBtn,
   .tabBtn:hover,
   .tabBtn[aria-selected="true"] {
-    min-height: 2.5rem;
+    min-height: var(--spacing-tap, 3rem);
+  }
+}
+
+/* Touch screens: the ward switch keeps the 48px tap target. */
+@media (pointer: coarse) {
+  .wardSwitch {
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
   }
 }

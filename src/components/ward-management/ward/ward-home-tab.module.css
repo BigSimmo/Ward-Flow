@@ -209,9 +209,8 @@
 
 .bedTable {
   composes: table from "../ward-table/ward-table.module.css";
-  width: 100%;
   table-layout: fixed;
-  border-collapse: collapse;
+  /* Deliberately one step larger than the canonical table: tile names read at 13px on the board. */
   font-size: var(--wf-fs-13);
 }
 
@@ -874,7 +873,7 @@ label.todoMain:has(.todoTick:focus-visible) {
   }
 }
 
-/* Phone: the board keeps its filter on its own line, tiles drop to three a row with the number,
+/* Phone: the board keeps its filter on its own line, tiles drop to four a row with the number,
    glyph and stay, the to do columns stack, and every control keeps a 48px target. Desktop is
    unchanged. */
 @media (max-width: 48rem) {
@@ -951,5 +950,18 @@ label.todoMain:has(.todoTick:focus-visible) {
   .shiftCard > div:first-child > div:last-child {
     flex: 1 1 100%;
     margin-left: 0;
+  }
+}
+
+/* Touch screens: the view switch and the key links keep the 48px tap target. */
+@media (pointer: coarse) {
+  .viewSwitch button {
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+  }
+
+  .keyLink {
+    height: auto;
+    min-height: var(--spacing-tap, 3rem);
   }
 }

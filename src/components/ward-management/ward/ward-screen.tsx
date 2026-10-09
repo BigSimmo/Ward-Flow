@@ -37,7 +37,7 @@ import {
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { Hero, LiveChip, Menu, TextInput, buttonClass, durMinutes } from "@/components/wf";
-import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { dayShiftEndInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
@@ -1345,7 +1345,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     heldUp: blockedReleases.length,
     rollupOverdue: !isRollupConfirmedToday && morningRollupDeadlinePassed,
   });
-  const readyByShiftEnd = pendingBedReleases.filter((release) => release.expectedAt <= dayShiftEndInstant(now)).length;
+  const readyByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;
   // The ward switch lists the other wards on this site, or failing that in this health service.
   const siteUnits = units.filter((candidate) => candidate.id !== unit.id && candidate.siteCode === unit.siteCode);
   const switchUnits =

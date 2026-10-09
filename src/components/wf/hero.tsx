@@ -99,6 +99,11 @@ export type HeroStatProps = {
    * replaces `aria-expanded` and the chevron is dropped.
    */
   pressed?: boolean;
+  /**
+   * With `onToggle`, makes the stat a one-way command (it opens something elsewhere) instead of a
+   * toggle: no `aria-pressed`, no `aria-expanded` and no chevron.
+   */
+  command?: boolean;
   expanded?: boolean;
   controls?: string;
   /** One line (value beside label), for a second hero row of toggles. */
@@ -116,10 +121,12 @@ export function HeroStat({
   expanded,
   controls,
   pressed,
+  command = false,
   inline = false,
   className,
 }: HeroStatProps) {
   const isFilter = pressed !== undefined;
+  const isToggle = !isFilter && !command;
   const body = (
     <>
       <span className={styles.valueLine}>
@@ -129,7 +136,7 @@ export function HeroStat({
       <span className={styles.label}>
         {tone ? <StatusGlyph tone={tone} size={9} /> : null}
         {label}
-        {onToggle && !isFilter ? <ChevronDown className={styles.statChevron} size={14} aria-hidden="true" /> : null}
+        {onToggle && isToggle ? <ChevronDown className={styles.statChevron} size={14} aria-hidden="true" /> : null}
       </span>
     </>
   );
@@ -139,7 +146,7 @@ export function HeroStat({
       <button
         type="button"
         className={styles.statToggle}
-        aria-expanded={isFilter ? undefined : expanded}
+        aria-expanded={isToggle ? expanded : undefined}
         aria-pressed={isFilter ? pressed : undefined}
         aria-controls={controls}
         onClick={onToggle}

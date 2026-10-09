@@ -1,5 +1,6 @@
-import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useContext, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { popSheet, pushSheet } from "@/components/ui/sheet-focus";
 import { Copy, FileText, Printer, X } from "lucide-react";
 import { buttonClass, Card, CardHead, CountBubble, Icon, StatusGlyph, type WfTone } from "@/components/wf";
 import { dayOf, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
@@ -811,6 +812,14 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
     stamp === null || stamp.time === null
       ? null
       : [`As at ${stamp.time}`, stamp.dayNote, sheetProps.shiftTimestamp ?? null].filter(Boolean).join(" · ");
+
+  // Shares the app's overlay stack: the page behind stops scrolling and is inert while the brief
+  // is open, and both come back when it closes.
+  const sheetId = useId();
+  useEffect(() => {
+    pushSheet(sheetId, panelRef.current);
+    return () => popSheet(sheetId);
+  }, [sheetId]);
 
   // Focus moves into the dialog on open and returns to whatever opened it on close.
   useEffect(() => {

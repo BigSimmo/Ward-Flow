@@ -11,7 +11,7 @@ import { DECLINE_REASONS } from "@/components/ward-management/ward-model";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
-import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
+import { releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import {
   restrictionNotice,
   eligibilityWarning,
@@ -339,14 +339,9 @@ export function WardHomeTab({
   logRows.sort((left, right) => right.at - left.at);
 
   // Every bed: one tile per bed from the same list the bed board draws, so both always agree.
-  const shiftEnd = dayShiftEndInstant(now);
   // The same releases the hero's "Ready by" figure counts, so its pill shows the beds it counted.
   const freeingByShiftEnd = new Set(
-    bedReleases
-      .filter(
-        (release) => release.unitId === unit.id && release.state !== "discharged" && release.expectedAt <= shiftEnd,
-      )
-      .map((release) => release.admissionId),
+    releasesDueByShiftEnd(bedReleases, unit.id, now).map((release) => release.admissionId),
   );
   const bedRows = (bedsList ?? []).map((bed) => {
     const free = bed.status === "ready";
@@ -401,7 +396,8 @@ export function WardHomeTab({
       case "free":
         return row.free;
       case "occupied":
-        return row.bed.status === "occupied" || row.bed.status === "leave";
+        // Every bed that is not ready, as the Occupied figure counts every bed that is not empty.
+        return !row.free;
       case "shift-end":
         return row.readyByShiftEnd;
       default:
