@@ -116,10 +116,14 @@ export function useReferralDraftAutosave<T>({
       const current = latest.current;
       if (stopped.current || !current.enabled) return;
       if (!current.dirty) {
-        if (!reopened && lastKeptJson.current !== null) discardReferralDraft();
+        if (!reopened && lastKeptJson.current !== null) {
+          discardReferralDraft();
+        }
         return;
       }
-      if (current.draftJson !== lastKeptJson.current) keepReferralDraft(current.draft);
+      if (current.draftJson !== lastKeptJson.current) {
+        keepReferralDraft(current.draft);
+      }
     },
     // `reopened` is fixed for the sheet's life.
     // eslint-disable-next-line react-hooks/exhaustive-deps
