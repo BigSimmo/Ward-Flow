@@ -6214,16 +6214,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_COMMUNITY_TREATMENT_ORDER": {
       const patient = state.patients.find((candidate) => candidate.id === event.patientId);
       if (!patient) return reject(state, event, `no patient found for id ${event.patientId}`);
-      // One Form 5A slot only (no history field). An ended order stays on the record so Documents
-      // still lists the Closed form — refuse a second record rather than overwriting it.
-      if (patient.communityTreatmentOrder) {
-        return reject(
-          state,
-          event,
-          patient.communityTreatmentOrder.endedAt === undefined
-            ? `patient ${patient.id} already has a community treatment order recorded`
-            : `patient ${patient.id} already has an ended Form 5A on the record; a second order needs a history design`,
-        );
+      // Only an order still in force refuses a new one. An ended order is kept below (D-39), so a
+      // patient can be placed on a second CTO without the first leaving Documents.
+      if (patient.communityTreatmentOrder && patient.communityTreatmentOrder.endedAt === undefined) {
+        return reject(state, event, `patient ${patient.id} already has a community treatment order recorded`);
       }
       // D-39: an ended order is kept in `earlier` rather than overwritten, so Documents still lists it.
       const previous = patient.communityTreatmentOrder;
