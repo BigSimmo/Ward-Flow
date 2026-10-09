@@ -12,6 +12,7 @@ import {
   ABSENCE_STEPS,
 } from "./ward-model";
 import { validateConfiguration } from "./ward-configuration";
+import { isSnoozeReason } from "./ward-inbox-snooze";
 import { WARD_SCENARIOS } from "./ward-scenarios";
 import { allEmergencyDepartments, siteByCode } from "./ward-sites";
 import { communityTeamById } from "./community/community-derivations";
@@ -194,6 +195,9 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     )
   )
     return false;
+  // Stream A, 9 Oct 2026: added without a storage version bump, so a save made before them has
+  // neither. Absent is valid and restores as empty (`withInboxStreamADefaults`); present must be valid.
+  for (const name of OPTIONAL_INBOX_RECORDS) if (value[name] !== undefined && !object(value[name])) return false;
   const state = value as unknown as WardFlowState;
   for (const name of [
     "auditEvents",
@@ -714,8 +718,19 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       return false;
   for (const [id, revision] of Object.entries(state.dischargeRevisions))
     if (!admissionIds.has(id) || !counter(revision)) return false;
-  for (const name of ["inboxAcknowledgements", "inboxCompletions"]) {
-    for (const rows of Object.values(value[name] as RecordValue))
+  for (const rows of Object.values((value.inboxSnoozes ?? {}) as RecordValue))
+    if (
+      !records(rows) ||
+      !rows.every(
+        (row) =>
+          finite(row.at) &&
+          text(row.by) &&
+          (row.kind === "returned" || (row.kind === "snoozed" && finite(row.until) && isSnoozeReason(row.reason))),
+      )
+    )
+      return false;
+  for (const name of ["inboxAcknowledgements", "inboxCompletions", "inboxOwnership"]) {
+    for (const rows of Object.values((value[name] ?? {}) as RecordValue))
       if (
         !records(rows) ||
         !rows.every(
@@ -751,4 +766,15 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     if (!object(row) || !finite(row.at) || !text(row.by) || !text(row.teamId) || !communityTeamById(row.teamId))
       return false;
   return true;
+}
+
+const OPTIONAL_INBOX_RECORDS = ["inboxOwnership", "inboxSnoozes"] as const;
+
+/**
+ * A validated stored state with the stream A inbox records filled in when the save predates them.
+ * Call after `isValidStoredWardFlowState` on every restore path.
+ */
+export function withInboxStreamADefaults<T extends WardFlowState>(state: T): T {
+  const stored = state as T & Partial<Pick<WardFlowState, "inboxOwnership" | "inboxSnoozes">>;
+  return { ...state, inboxOwnership: stored.inboxOwnership ?? {}, inboxSnoozes: stored.inboxSnoozes ?? {} };
 }
