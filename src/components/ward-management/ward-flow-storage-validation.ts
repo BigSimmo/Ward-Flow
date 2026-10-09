@@ -624,6 +624,8 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     const absence = row.absentWithoutLeave;
     if (absence !== undefined) {
       if (!object(absence) || !finite(absence.since) || !Array.isArray(absence.steps)) return false;
+      // Only the two fixed fields: a restored absence must carry no free text.
+      if (Object.keys(absence).some((key) => key !== "since" && key !== "steps")) return false;
       const seen = new Set<unknown>();
       for (const done of absence.steps as unknown[]) {
         if (

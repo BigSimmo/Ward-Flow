@@ -128,7 +128,15 @@ describe("absent without leave (D-38)", () => {
           : bed,
       ),
     };
-    expect(isValidStoredWardFlowState(saved)).toBe(false);
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(saved)))).toBe(false);
+    const withText = {
+      ...absent,
+      leaveBeds: absent.leaveBeds.map((bed) =>
+        bed.absentWithoutLeave ? { ...bed, absentWithoutLeave: { ...bed.absentWithoutLeave, note: "typed" } } : bed,
+      ),
+    };
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(withText)))).toBe(false);
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(absent)))).toBe(true);
   });
 
   it("refuses another ward, a stay that is not in a bed, and a second absence", () => {
