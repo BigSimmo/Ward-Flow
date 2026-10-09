@@ -9,7 +9,7 @@ import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { patientDisplayName } from "@/components/ward-management/ward-patients";
 
-import { chronologyCsv, chronologyTime, patientChronology, patientIdsWithRecords } from "./patient-chronology";
+import { chronologyCsv, chronologyTime, patientChronology, patientRecordIds } from "./patient-chronology";
 import styles from "./reports.module.css";
 
 /**
@@ -24,12 +24,16 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   const pickerId = useId();
 
   // Only people with at least one record of their own can have a chronology.
-  const people = useMemo(() => {
-    const withRecords = patientIdsWithRecords(patients, movements, referrals, admissions);
-    return patients
-      .filter((patient) => withRecords.has(patient.id))
-      .sort((a, b) => a.familyName.localeCompare(b.familyName) || a.givenName.localeCompare(b.givenName));
-  }, [patients, movements, referrals, admissions]);
+  const people = useMemo(
+    () =>
+      patients
+        .filter((patient) => {
+          const ids = patientRecordIds(patient.id, patients, movements, referrals, admissions);
+          return ids.movements.length + ids.referrals.length + ids.admissions.length > 0;
+        })
+        .sort((a, b) => a.familyName.localeCompare(b.familyName) || a.givenName.localeCompare(b.givenName)),
+    [patients, movements, referrals, admissions],
+  );
 
   const [patientId, setPatientId] = useState<string>(() =>
     initialPatientId && patients.some((patient) => patient.id === initialPatientId) ? initialPatientId : "",
@@ -66,7 +70,10 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   function downloadCsv() {
     if (!chronology) return;
     const url = URL.createObjectURL(
-      new Blob([chronologyCsv(chronology.rows, dayZero, now)], { type: "text/csv;charset=utf-8" }),
+      new Blob([chronologyCsv(chronology.rows, dayZero, now, {
+        displayName: name ?? "Not recorded",
+        umrn: chronology.patient?.umrn ?? "Not recorded",
+      })], { type: "text/csv;charset=utf-8" }),
     );
     const link = document.createElement("a");
     link.href = url;
@@ -97,9 +104,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                 <Button
                   variant="light"
                   icon={Printer}
-                  onClick={() => {
-                    window.print();
-                  }}
+                  onClick={() => window.print()}
                   data-testid="ward-chronology-print"
                 >
                   Print
@@ -113,9 +118,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
           <Field label="Patient" id={pickerId} className={styles.picker}>
             <Select
               value={patientId}
-              onChange={(event) => {
-                setPatientId(event.target.value);
-              }}
+              onChange={(event) => setPatientId(event.target.value)}
               data-testid="ward-chronology-patient"
             >
               <option value="">Choose a patient</option>

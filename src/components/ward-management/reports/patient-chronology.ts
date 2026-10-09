@@ -92,7 +92,8 @@ const REASON_MAPS: Record<string, string>[] = [
 export function reasonLabel(reason: string | null | undefined): string {
   if (!reason) return "";
   for (const map of REASON_MAPS) {
-    if (Object.hasOwn(map, reason)) return map[reason];
+    const label = map[reason];
+    if (label !== undefined) return label;
   }
   return reason;
 }
@@ -138,22 +139,6 @@ export function patientRecordIds(
     referrals: referrals.filter(belongs).map((referral) => referral.id),
     admissions: admissions.filter(belongs).map((admission) => admission.id),
   };
-}
-
-/** The ids of everyone with at least one record of their own, resolving each record once. */
-export function patientIdsWithRecords(
-  patients: readonly Patient[],
-  movements: readonly Movement[],
-  referrals: readonly Referral[],
-  admissions: readonly Admission[],
-): ReadonlySet<string> {
-  const resolve = createPatientResolver({ patients, referrals, movements });
-  const ids = new Set<string>();
-  for (const record of [...movements, ...referrals, ...admissions]) {
-    const id = resolve(record).patient?.id;
-    if (id !== undefined) ids.add(id);
-  }
-  return ids;
 }
 
 /** Internally a draft's `record` is "<kind> <id>", so rows can be matched to their record. */
@@ -269,7 +254,7 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
     add({
       recordedAt: finite(unwind.at),
       who: whoLabel(unwind.by),
-      action: UNWIND_LABELS[unwind.kind],
+      action: UNWIND_LABELS[unwind.kind] ?? unwind.kind,
       after: unitName(unwind.unitId),
       reason: reasonLabel(unwind.reason),
     });
@@ -356,6 +341,21 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
       after: movement.closure.outcome === "arrived" ? "Arrived" : "Did not proceed",
     });
   }
+  if (movement.transportNeed) {
+    add({ recordedAt: finite(movement.transportNeed.at), who: NOT_RECORDED, action: "Transport need recorded", after: movement.transportNeed.needed ? "Needed" : "Not needed" });
+  }
+  for (const [label, at] of [
+    ["Transport en route", movement.transport?.enRouteAt],
+    ["Patient collected by transport", movement.transport?.collectedAt],
+    ["Transport arrived", movement.transport?.arrivedAt],
+    ["Transport cancelled", movement.transport?.cancelledAt],
+    ["Transport stopped", movement.transport?.stoppedAt],
+  ] as const) {
+    if (finite(at) !== null) add({ recordedAt: finite(at), who: whoLabel(movement.transport?.bookedBy?.role), action: label });
+  }
+  for (const form of movement.uploadedForms ?? []) {
+    add({ recordedAt: finite(form.uploadedAt), who: whoLabel(form.uploadedBy), action: "Form uploaded", after: form.formName || form.fileName });
+  }
   return rows;
 }
 
@@ -375,12 +375,19 @@ function referralRows(referral: Referral, units: readonly Unit[]): RowDraft[] {
         record,
         recordedAt: finite(addressing.decidedAt),
         who: whoLabel(addressing.decidedBy),
-        action: addressing.state === "accepted" ? "Referral accepted" : "Referral declined",
+        action:
+          addressing.state === "accepted"
+            ? "Referral accepted"
+            : addressing.state === "declined"
+              ? "Referral declined"
+              : "Referral destination cancelled",
         after: place,
         reason:
           addressing.state === "accepted"
             ? (addressing.acceptOverrideReason ?? "")
-            : reasonLabel(addressing.declineReason),
+            : addressing.state === "declined"
+              ? reasonLabel(addressing.declineReason)
+              : "",
       });
     }
     if (finite(addressing.withdrawnAt) !== null) {
@@ -599,12 +606,19 @@ export const CHRONOLOGY_CSV_HEADER = [
  * The chronology as CSV. The first line says it is synthetic demo data, so a downloaded copy can
  * never be mistaken for a real record.
  */
-export function chronologyCsv(rows: readonly ChronologyRow[], dayZero: Date, generatedAt: Instant): string {
+export function chronologyCsv(
+  rows: readonly ChronologyRow[],
+  dayZero: Date,
+  generatedAt: Instant,
+  patient: { displayName: string; umrn: string },
+): string {
   const lines = [
     [
       csvCell("Synthetic demo data. Not a clinical record."),
       csvCell(`Generated ${formatSheetMoment(generatedAt, dayZero)}`),
     ].join(","),
+    [csvCell("Patient"), csvCell(patient.displayName)].join(","),
+    [csvCell("UMRN"), csvCell(patient.umrn)].join(","),
     CHRONOLOGY_CSV_HEADER.map(csvCell).join(","),
     ...rows.map((row) =>
       [
