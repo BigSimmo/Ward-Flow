@@ -59,7 +59,7 @@ export function RequirementsSheet({
   const current = CATALOGUE.find((entry) => entry.code === code) ?? CATALOGUE[0]!;
   const period = actPeriodFor(current.code);
   const records = [
-    "Time written on the form",
+    ...(isOwnedLegalFormCode(current.code) ? ["Time written on the form"] : []),
     ...(receiptEventAccepts(current.code) ? ["Form received"] : []),
     ...(current.code === "1A" ? ["Examination, recorded on the emergency department screen"] : []),
   ];
@@ -94,14 +94,18 @@ export function RequirementsSheet({
           <h3 className={styles.reqHead}>{current.title}</h3>
           <p className={styles.note}>{current.tip}</p>
           <h4 className={styles.sectionHead}>Recorded in Ward Flow</h4>
-          <ul className={styles.checkList}>
-            {records.map((label) => (
-              <li key={label}>
-                <StatusGlyph tone="neutral" size={9} />
-                <span>{label}</span>
-              </li>
-            ))}
-          </ul>
+          {records.length > 0 ? (
+            <ul className={styles.checkList}>
+              {records.map((label) => (
+                <li key={label}>
+                  <StatusGlyph tone="neutral" size={9} />
+                  <span>{label}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.note}>Nothing is recorded for this form in Ward Flow yet.</p>
+          )}
           <h4 className={styles.sectionHead}>Period</h4>
           {period ? (
             <p className={styles.demoNote} data-testid="ward-legal-requirements-period">

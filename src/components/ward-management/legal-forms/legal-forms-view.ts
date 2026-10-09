@@ -132,11 +132,16 @@ export function hasGap(movement: Movement, gap: RecordGap): boolean {
   return needsExamination(movement) && movement.examination === undefined;
 }
 
-/** The recorded facts that apply to this movement, each done or not. */
+/**
+ * The recorded facts that apply to this movement, each done or not. The written time counts only
+ * where Ward Flow can record it (the owned codes) or it is already recorded, so no screen shows a
+ * gap nobody can close here.
+ */
 export function recordedFacts(movement: Movement): { gap: RecordGap; label: string; at?: Instant }[] {
-  const facts: { gap: RecordGap; label: string; at?: Instant }[] = [
-    { gap: "written", label: "Time written", at: movement.formedAt },
-  ];
+  const facts: { gap: RecordGap; label: string; at?: Instant }[] = [];
+  if (isOwnedLegalFormCode(movement.legalForm?.code) || movement.formedAt !== undefined) {
+    facts.push({ gap: "written", label: "Time written", at: movement.formedAt });
+  }
   if (receiptEventAccepts(movement.legalForm?.code)) {
     facts.push({ gap: "received", label: "Form received", at: movement.legalFormReceivedAt });
   }

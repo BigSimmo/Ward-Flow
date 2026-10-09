@@ -833,7 +833,13 @@ function ClockRail({
           );
         })}
         {ticks.map((tick, index) => (
-          <span key={tick} className={styles.railTick} style={{ left: x(tick) }} aria-hidden="true">
+          <span
+            key={tick}
+            className={styles.railTick}
+            data-first={index === 0 ? "true" : undefined}
+            style={{ left: x(tick) }}
+            aria-hidden="true"
+          >
             {index === 0 ? "Now" : formatInstant(tick)}
           </span>
         ))}
@@ -960,8 +966,14 @@ function FormRow({
           ))}
         </span>
         <span className={styles.sub}>
-          {done} of {facts.length}
-          <span className={styles.srOnly}> recorded</span>
+          {facts.length === 0 ? (
+            "Not recorded here"
+          ) : (
+            <>
+              {done} of {facts.length}
+              <span className={styles.srOnly}> recorded</span>
+            </>
+          )}
         </span>
       </span>
     </DataRow>
@@ -1030,7 +1042,7 @@ function ChecklistView({
                 if (!fact) {
                   return (
                     <span key={gap} className={styles.sub}>
-                      Not needed
+                      {gap === "written" ? "Not recorded here" : "Not needed"}
                     </span>
                   );
                 }

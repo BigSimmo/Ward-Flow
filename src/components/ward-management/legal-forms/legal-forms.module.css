@@ -378,7 +378,7 @@
   white-space: nowrap;
 }
 
-.railTick:first-of-type {
+.railTick[data-first="true"] {
   transform: none;
   font-weight: 700;
   color: var(--wf-hero-ink);
