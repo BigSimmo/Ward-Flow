@@ -10,9 +10,17 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/mockups/ward-flow",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { applyAppearance } from "@/components/ward-management/shell/ward-bar";
+import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { APP_THEME_COLORS } from "@/lib/theme";
 
 /**
  * 🔴 **THE APPEARANCE CONTROL, AND THE WHOLE REASON IT WAITED: IT MUST WRITE THE STATE THAT ALREADY
@@ -77,6 +85,39 @@ describe("the settings screen's appearance control", () => {
     expect(window.localStorage.getItem("ward-flow-appearance"), "the real key was not written").toBe("dark");
     expect(window.localStorage.getItem("ward-flow-settings-appearance"), "a second key was written").toBeNull();
     expect(themeAttribute(), "the theme the whole app branches on did not change").toBe("dark");
+  });
+
+  it("moves the .dark class with the choice, so both theme layers agree", () => {
+    renderSettings();
+    const panel = screen.getByTestId("ward-settings-appearance");
+    const root = document.documentElement;
+
+    fireEvent.click(within(panel).getByRole("radio", { name: "Dark" }));
+    expect(themeAttribute()).toBe("dark");
+    expect(root.classList.contains("dark"), ".dark missing with Dark chosen").toBe(true);
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    document.head.append(meta);
+    act(() => applyAppearance("dark"));
+    expect(meta.content, "browser chrome colour drifted from the app theme").toBe(APP_THEME_COLORS.dark);
+    meta.remove();
+
+    fireEvent.click(within(panel).getByRole("radio", { name: "Light" }));
+    expect(themeAttribute()).toBe("light");
+    expect(root.classList.contains("dark"), ".dark left on with Light chosen").toBe(false);
+  });
+
+  it("hands the root back when the ward shell unmounts", () => {
+    const { unmount } = render(
+      <WardFlowProvider>
+        <WardRail />
+      </WardFlowProvider>,
+    );
+    act(() => applyAppearance("dark"));
+    expect(themeAttribute()).toBe("dark");
+
+    unmount();
+    expect(themeAttribute(), "the ward theme stayed on a page outside Ward Flow").toBeNull();
   });
 
   /**

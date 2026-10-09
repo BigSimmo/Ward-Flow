@@ -1,0 +1,472 @@
+/*
+ * THE SHIFT BRIEF (WardDailySheet) and its dialog. v6 tokens only, no hex.
+ *
+ * Two renderings of one component:
+ *   - standalone: the ward board's fold, page one of the printed board (solid panel);
+ *   - embedded: inside a modal body (the ward page), where the dialog header already carries the
+ *     title and the "as at" stamp, so the sheet drops its own.
+ *
+ * Glass is for the dialog only; every figure sits on a solid card. Status is shape plus colour
+ * (StatusGlyph), never a coloured edge or stripe.
+ */
+
+/* ── The sheet ─────────────────────────────────────────────── */
+
+.sheet {
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.standalone {
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xl);
+  background: var(--wf-surface-2);
+  padding: var(--wf-s-3);
+}
+
+.heading {
+  margin: 0;
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.intro {
+  margin: var(--wf-s-1) 0 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.stamp {
+  margin: var(--wf-s-1) 0 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+/* Figure tiles. auto-fit rather than a media query: six across in the dialog, two on a phone. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: var(--wf-s-2);
+  margin: var(--wf-s-3) 0 0;
+}
+
+/* In the dialog the heading is visually hidden, so the tiles open the brief with no gap above. */
+.embedded .tiles {
+  margin-top: 0;
+}
+
+/* The since-yesterday tiles keep their test id on a wrapper that takes no box of its own. */
+.tileGroup {
+  display: contents;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.tileValue {
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
+  color: var(--wf-ink-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.tileLabel {
+  display: block;
+  min-width: 0;
+  font-size: var(--wf-fs-11);
+  line-height: var(--wf-lh-11);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tileLabel::first-letter {
+  text-transform: uppercase;
+}
+
+/* Content cards in two CSS columns; a card never splits across a column or a page. */
+.groups {
+  columns: 2 22rem;
+  column-gap: var(--wf-s-2);
+  margin: var(--wf-s-3) 0 0;
+}
+
+.group {
+  display: block;
+  break-inside: avoid;
+  margin: 0 0 var(--wf-s-2);
+  overflow: hidden;
+}
+
+.group .groupHead {
+  min-height: var(--wf-h-lg);
+  padding: var(--wf-s-2) var(--wf-s-4);
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  column-gap: var(--wf-s-3);
+  align-items: start;
+  min-height: var(--wf-row-compact);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  box-sizing: border-box;
+}
+
+.row + .row {
+  border-top: 1px solid var(--wf-line);
+}
+
+.rowGlyph {
+  display: inline-flex;
+  align-items: center;
+  height: var(--wf-lh-14);
+}
+
+.rowText {
+  min-width: 0;
+}
+
+.rowLead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  margin: 0;
+  min-width: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.rowLeadText {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowValue {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.rowLine {
+  margin: 0;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Changes what every line under it means, so it reads in ink, not muted. */
+.rowAway {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+/* The standing note under a card's rows. Small and muted; it wraps because it is a sentence. */
+.note {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  line-height: var(--wf-lh-11);
+}
+
+.awayCard {
+  break-inside: avoid;
+  margin: 0 0 var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.footnote {
+  margin: var(--wf-s-1) 0 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.printRow {
+  display: flex;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-3);
+}
+
+/* ── The dialog ────────────────────────────────────────────── */
+
+/* The scrim is also the centring frame, so the dialog itself takes no position of its own. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wf-s-4);
+  background: var(--wf-scrim);
+}
+
+.dialog {
+  width: min(940px, calc(100vw - 32px));
+  max-height: min(90vh, 980px);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xl);
+  background-color: var(--wf-glass-thick);
+  background-image: var(--wf-sheen);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  backdrop-filter: blur(28px) saturate(1.8);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.dialog:focus {
+  outline: none;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .dialog {
+    background-color: var(--wf-surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .dialog {
+    background-color: var(--wf-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+.dialogHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  flex: 0 0 auto;
+}
+
+.dialogIcon {
+  flex: 0 0 auto;
+  color: var(--wf-ink-2);
+}
+
+.dialogTitleWrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.dialogTitle {
+  margin: 0;
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dialogStamp {
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dialogActions {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  flex: 0 0 auto;
+}
+
+.dialogBody {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--wf-s-3);
+}
+
+/* Phone: a full-screen solid sheet, one column, no Copy. Desktop structure is untouched. */
+@media (max-width: 40rem) {
+  .scrim {
+    padding: 0;
+  }
+
+  .dialog {
+    width: 100%;
+    max-height: none;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    background-color: var(--wf-surface);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .copyButton {
+    display: none;
+  }
+
+  .groups {
+    columns: 1;
+  }
+}
+
+@media print {
+  /* While the brief is open it is a direct child of the body, so only it prints. */
+  :global(body):has(> .scrim) > :not(.scrim) {
+    display: none !important;
+  }
+
+  .scrim {
+    position: static;
+    display: block;
+    padding: 0;
+    background: none;
+  }
+
+  .dialog {
+    width: auto;
+    max-height: none;
+    border: 0;
+    box-shadow: none;
+    background: Canvas;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    color: CanvasText;
+  }
+
+  .dialogBody {
+    overflow: visible;
+  }
+
+  .dialogTitle,
+  .dialogStamp {
+    color: CanvasText;
+  }
+
+  .sheet {
+    color: CanvasText;
+  }
+
+  .standalone {
+    break-after: page;
+    background: Canvas;
+    border-color: CanvasText;
+  }
+
+  /* Paper cannot hover for the rest of a cut line, so nothing truncates on paper. */
+  .rowLeadText,
+  .rowLine,
+  .rowAway,
+  .tileLabel,
+  .dialogTitle,
+  .dialogStamp {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .heading,
+  .intro,
+  .stamp,
+  .tileValue,
+  .tileLabel,
+  .rowLead,
+  .rowValue,
+  .rowLine,
+  .rowAway,
+  .empty,
+  .note,
+  .awayCard,
+  .footnote {
+    color: CanvasText;
+  }
+
+  .tile,
+  .group,
+  .awayCard {
+    background: Canvas;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+
+  .row + .row,
+  .note {
+    border-top-color: CanvasText;
+  }
+
+  .group,
+  .row,
+  .awayCard {
+    break-inside: avoid;
+  }
+}

@@ -325,10 +325,13 @@ describe("Ward Flow has exactly one top-anchored phone-chrome owner", () => {
     // Officer retains its edge action row. Command's reviewed phone form now stays in flow;
     // remaking it a fixed action row must fail both this enumeration and the explicit rule pin.
     // Modal sheets (.colDetail, .detail, .detailPanel, .shortlistColumn, and the header search's
-    // full-screen phone sheet .popup, 9 Oct 2026) and .toast notifications are not action rows.
+    // full-screen phone sheet .popup, 9 Oct 2026, and the Ward page's bed slide-out .drawer, a modal
+    // bottom sheet on phone, 9 Oct 2026) and .toast notifications are not action rows.
     const actionRows = allBottomAnchored.filter(
       (selector) =>
-        ![".colDetail", ".detail", ".detailPanel", ".toast", ".shortlistColumn", ".popup"].includes(selector),
+        ![".colDetail", ".detail", ".detailPanel", ".toast", ".shortlistColumn", ".popup", ".drawer"].includes(
+          selector,
+        ),
     );
     expect(actionRows).toEqual([".actionRow"]);
     const command = stripComments(readModule(path.join(WARD_ROOT, "coordinator/coordinator.module.css")));
