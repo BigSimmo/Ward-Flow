@@ -18,6 +18,7 @@ describe("one shared statistics navigation", () => {
     ["/ward/scgh-adult-open", "Wards"],
     ["/ed/scgh", "EDs"],
     ["/community/bentley", "Teams"],
+    ["/weekly", "Weekly"],
   ])("keeps the same destinations and exactly one current page on %s", (suffix, label) => {
     routing.pathname = `/mockups/ward-flow/statistics${suffix}`;
     render(<StatisticsNav />);
@@ -32,6 +33,7 @@ describe("one shared statistics navigation", () => {
       "Wards",
       "EDs",
       "Teams",
+      "Weekly",
     ]);
     expect(links.filter((link) => link.getAttribute("aria-current") === "page")).toHaveLength(1);
     const current = nav.getByRole("link", { name: new RegExp(`^${label}(\\s*\\d+)?$`) });
