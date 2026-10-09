@@ -410,9 +410,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const focusable = Array.from(
       drawer.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
     ).filter((el) => !el.hasAttribute("disabled"));
-    if (focusable.length === 0) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
+    const first = focusable.at(0);
+    const last = focusable.at(-1);
     if (!first || !last) return;
     if (event.shiftKey && (document.activeElement === first || !drawer.contains(document.activeElement))) {
       event.preventDefault();
@@ -435,9 +434,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const focusable = Array.from(
       modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
     ).filter((el) => !el.hasAttribute("disabled"));
-    if (focusable.length === 0) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
+    const first = focusable.at(0);
+    const last = focusable.at(-1);
     if (!first || !last) return;
     if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) {
       event.preventDefault();
