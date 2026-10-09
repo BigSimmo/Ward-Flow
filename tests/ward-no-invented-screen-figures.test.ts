@@ -129,6 +129,11 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     why: "Chart spacing, and the midday and 16:00 day-part bins the screen names in its own labels.",
     name: /^(?:CHART_\w+|MIDDAY_MINUTES|LATE_AFTERNOON_MINUTES)$/,
   },
+  {
+    id: "typing-pause",
+    why: "The referral draft's autosave pause (9 Oct 2026): how long typing rests before tab memory is updated; never shown, not a limit.",
+    name: /^REFERRAL_DRAFT_AUTOSAVE_MS$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;
