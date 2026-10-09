@@ -211,10 +211,9 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
         </WardFlowProvider>,
       );
 
-      // Trigger form modal
-      const formButtons = screen.getAllByRole("button", { name: /Form/i });
-      expect(formButtons.length).toBeGreaterThan(0);
-      const trigger = formButtons[0]!;
+      // Trigger form modal. Transport page A: the job panel opens once a job is chosen.
+      fireEvent.click(screen.getByTestId("ward-officer-select-WF-005"));
+      const trigger = screen.getByTestId("ward-officer-inspect-form-WF-005");
       trigger.focus();
 
       fireEvent.click(trigger);
@@ -258,8 +257,8 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
         </WardFlowProvider>,
       );
 
-      const formButtons = screen.getAllByRole("button", { name: /Form/i });
-      const trigger = formButtons[0]!;
+      fireEvent.click(screen.getByTestId("ward-officer-select-WF-005"));
+      const trigger = screen.getByTestId("ward-officer-inspect-form-WF-005");
       trigger.focus();
       fireEvent.click(trigger);
 
