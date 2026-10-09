@@ -380,7 +380,7 @@ export const HANDOVER_CHIPS: { id: HandoverChip; label: string; test: (row: Hand
     { id: "spec", label: "1:1", test: (row) => row.obs === "1:1 specialling" },
     { id: "form", label: "Form recorded", test: (row) => row.formCode !== undefined },
     { id: "dec", label: "Declined", test: (row) => row.declines.length > 0 },
-    { id: "day", label: "Over 24h", test: (row, now) => now - row.openedAt >= 24 * 60 },
+    { id: "day", label: "Over a day", test: (row, now) => now - row.openedAt >= 24 * 60 },
     { id: "mine", label: "Mine", test: (row) => row.owner === HANDOVER_ME },
     { id: "esc", label: "Escalated", test: (row) => row.escalated },
   ];
