@@ -411,8 +411,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       drawer.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
     ).filter((el) => !el.hasAttribute("disabled"));
     if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
     if (event.shiftKey && (document.activeElement === first || !drawer.contains(document.activeElement))) {
       event.preventDefault();
       last.focus();
@@ -435,8 +436,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
     ).filter((el) => !el.hasAttribute("disabled"));
     if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
     if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) {
       event.preventDefault();
       last.focus();

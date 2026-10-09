@@ -566,7 +566,10 @@ export function WardBedDossierDrawer({
                     variant="sec"
                     size="lg"
                     className={styles.pill}
-                    onClick={() => (isAwayAtEd ? onMarkBack?.(selectedBed) : onMarkAtEd?.(selectedBed))}
+                    onClick={() => {
+                      if (isAwayAtEd) onMarkBack?.(selectedBed);
+                      else onMarkAtEd?.(selectedBed);
+                    }}
                   >
                     {isAwayAtEd ? "Mark them back" : "Mark at an ED"}
                   </Button>
