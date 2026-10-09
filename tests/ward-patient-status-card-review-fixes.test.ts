@@ -74,6 +74,31 @@ describe("gate board status card review fixes", () => {
     expect(ready.verdict).not.toBe("Cannot move");
   });
 
+  it("offers Log booking only at the stages the engine accepts a booking", () => {
+    const booking = (stage: Movement["stage"], mode: "held" | "transit") =>
+      buildPatientStatus(mode, ctx({ ...base, stage, transport: undefined, transportNeed: undefined })).cells.find(
+        (cell) => cell.key === (mode === "held" ? "transport" : "collected"),
+      )?.action?.kind;
+    expect(booking("accepted_awaiting_bed", "held")).toBe("unavailable");
+    expect(booking("pulled", "held")).toBe("button");
+    expect(booking("handover_ready", "transit")).toBe("button");
+    expect(booking("moving", "transit")).toBe("unavailable");
+  });
+
+  it("names each missing person step's Record button by its step", () => {
+    const absent = buildPatientStatus(
+      "awol",
+      ctx(base, {
+        leaveBed: {
+          absentWithoutLeave: { since: NOW_ANCHOR - 30, steps: [] },
+        } as unknown as PatientStatusContext["leaveBed"],
+      }),
+    );
+    const names = absent.rows?.map((row) => (row.action?.kind === "button" ? row.action.ariaLabel : undefined));
+    expect(names).toContain("Record Ward and grounds searched");
+    expect(new Set(names).size).toBe(names?.length);
+  });
+
   it("reads the patient's legal status, not a closed movement's form, while on leave", () => {
     const closed: Movement = {
       ...base,

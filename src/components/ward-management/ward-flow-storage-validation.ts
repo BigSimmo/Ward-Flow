@@ -626,7 +626,12 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       if (!object(absence) || !finite(absence.since) || !Array.isArray(absence.steps)) return false;
       const seen = new Set<unknown>();
       for (const done of absence.steps as unknown[]) {
-        if (!object(done) || !(ABSENCE_STEPS as readonly string[]).includes(done.step as string) || !finite(done.at))
+        if (
+          !object(done) ||
+          !(ABSENCE_STEPS as readonly string[]).includes(done.step as string) ||
+          !finite(done.at) ||
+          done.at < absence.since
+        )
           return false;
         if (Object.keys(done).some((key) => key !== "step" && key !== "at") || seen.has(done.step)) return false;
         seen.add(done.step);

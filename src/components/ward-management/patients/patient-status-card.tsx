@@ -34,7 +34,14 @@ export interface StatusCell {
 }
 
 export type StatusAction =
-  | { kind: "button"; label: string; icon?: LucideIcon; onClick: (event: MouseEvent<HTMLButtonElement>) => void }
+  | {
+      kind: "button";
+      label: string;
+      /** Names the button for assistive technology when several share a short label, such as "Record". */
+      ariaLabel?: string;
+      icon?: LucideIcon;
+      onClick: (event: MouseEvent<HTMLButtonElement>) => void;
+    }
   | { kind: "unavailable"; label: string; reason: string };
 
 export interface PatientStatus {
@@ -207,7 +214,11 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
       tone: "info",
       verdict: "Getting ready to move",
       meta: ctx.acceptedUnitName ? `Accepted for ${ctx.acceptedUnitName}` : "Acceptance recorded",
-      cells: [bed, clearanceCell(movement, ctx.onClearance), transportCell(movement, true, ctx.onBookTransport)],
+      cells: [
+        bed,
+        clearanceCell(movement, ctx.onClearance),
+        transportCell(movement, movement.stage === "pulled", ctx.onBookTransport),
+      ],
     });
     if (ctx.handoverRefusal) {
       // The engine refuses the next forward step, so the three gates are not the whole answer.
@@ -237,7 +248,9 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
           sub: job ? job.provider : "No transport logged",
           action: job
             ? undefined
-            : { kind: "button", label: "Log booking", icon: Truck, onClick: () => ctx.onBookTransport() },
+            : movement.stage === "handover_ready"
+              ? { kind: "button", label: "Log booking", icon: Truck, onClick: () => ctx.onBookTransport() }
+              : { kind: "unavailable", label: "Log booking", reason: "Not available at this stage" },
         },
         {
           key: "arrival",
@@ -379,7 +392,14 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
         label: ABSENCE_STEP_LABELS[step],
         time: at !== undefined ? clock(at) : undefined,
         action:
-          at === undefined ? { kind: "button", label: "Record", onClick: () => ctx.onAbsenceStep(step) } : undefined,
+          at === undefined
+            ? {
+                kind: "button",
+                label: "Record",
+                ariaLabel: `Record ${ABSENCE_STEP_LABELS[step]}`,
+                onClick: () => ctx.onAbsenceStep(step),
+              }
+            : undefined,
       };
     });
     return {
@@ -483,7 +503,13 @@ function CellAction({ action, primary }: { action: StatusAction; primary: boolea
       </Button>
     );
   return (
-    <Button size="sm" variant={primary ? "pri" : "sec"} icon={action.icon} onClick={action.onClick}>
+    <Button
+      size="sm"
+      variant={primary ? "pri" : "sec"}
+      icon={action.icon}
+      aria-label={action.ariaLabel}
+      onClick={action.onClick}
+    >
       {action.label}
     </Button>
   );

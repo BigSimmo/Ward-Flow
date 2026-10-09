@@ -6196,6 +6196,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (bed.absentWithoutLeave.steps.some((done) => done.step === event.step)) {
         return reject(state, event, `${event.step} is already recorded for admission ${event.admissionId}`);
       }
+      if (event.now < bed.absentWithoutLeave.since) {
+        return reject(state, event, `${event.step} cannot be recorded before the absence began`);
+      }
       const absentWithoutLeave = {
         ...bed.absentWithoutLeave,
         steps: [...bed.absentWithoutLeave.steps, { step: event.step, at: event.now }],

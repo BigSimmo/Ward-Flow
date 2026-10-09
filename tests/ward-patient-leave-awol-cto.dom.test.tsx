@@ -70,9 +70,15 @@ describe("leave, absent without leave and CTO modes (D-38)", () => {
     expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Absent without leave");
     expect(screen.getByRole("img", { name: "0 of 5 steps done" })).toBeInTheDocument();
 
-    fireEvent.click(within(screen.getByTestId("ward-patient-step-searched")).getByRole("button", { name: "Record" }));
     fireEvent.click(
-      within(screen.getByTestId("ward-patient-step-police_notified")).getByRole("button", { name: "Record" }),
+      within(screen.getByTestId("ward-patient-step-searched")).getByRole("button", {
+        name: "Record Ward and grounds searched",
+      }),
+    );
+    fireEvent.click(
+      within(screen.getByTestId("ward-patient-step-police_notified")).getByRole("button", {
+        name: "Record Police notified",
+      }),
     );
     expect(screen.getByRole("img", { name: "2 of 5 steps done" })).toBeInTheDocument();
     expect(within(screen.getByTestId("ward-patient-step-searched")).queryByRole("button")).not.toBeInTheDocument();

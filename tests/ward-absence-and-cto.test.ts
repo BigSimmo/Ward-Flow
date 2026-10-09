@@ -101,6 +101,36 @@ describe("absent without leave (D-38)", () => {
     expect(again.rejections[0]?.reason).toMatch(/already recorded/);
   });
 
+  it("refuses a step timed before the absence began, and a saved one that is", () => {
+    const { state, stay } = occupiedStay();
+    const absent = wardFlowReducer(state, {
+      type: "RECORD_ABSENT_WITHOUT_LEAVE",
+      role: "ward",
+      now: NOW,
+      admissionId: stay.id,
+      actingUnitId: stay.unitId,
+    });
+    const early = wardFlowReducer(absent, {
+      type: "RECORD_ABSENCE_STEP",
+      role: "ward",
+      now: NOW - 5,
+      admissionId: stay.id,
+      actingUnitId: stay.unitId,
+      step: "searched",
+    });
+    expect(early.rejections.at(-1)?.reason).toMatch(/before the absence began/);
+    expect(early.leaveBeds).toEqual(absent.leaveBeds);
+    const saved = {
+      ...absent,
+      leaveBeds: absent.leaveBeds.map((bed) =>
+        bed.absentWithoutLeave
+          ? { ...bed, absentWithoutLeave: { since: NOW, steps: [{ step: "searched", at: NOW - 5 }] } }
+          : bed,
+      ),
+    };
+    expect(isValidStoredWardFlowState(saved)).toBe(false);
+  });
+
   it("refuses another ward, a stay that is not in a bed, and a second absence", () => {
     const { state, stay } = occupiedStay();
     const otherUnit = state.units.find((u) => u.id !== stay.unitId)!.id;

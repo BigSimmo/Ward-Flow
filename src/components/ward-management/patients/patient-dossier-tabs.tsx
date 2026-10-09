@@ -438,6 +438,11 @@ export function PatientCommunityTab({
                       <Button size="sm" onClick={onEndCto}>
                         Record ended
                       </Button>
+                    ) : stayOpen ? (
+                      // The page shows a placement or stay ahead of a CTO, so one recorded now would be hidden.
+                      <Button size="sm" disabledReason="Not while a placement or stay is open" reasonDisplay="tooltip">
+                        Record CTO
+                      </Button>
                     ) : (
                       <Button size="sm" onClick={onRecordCto}>
                         Record CTO
