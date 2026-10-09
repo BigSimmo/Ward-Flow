@@ -108,7 +108,7 @@ export function WardBedDossierDrawer({
   bedDrawerRef,
   onKeyDown,
 }: WardBedDossierDrawerProps) {
-  const { admissions, patients } = useWardFlow();
+  const { admissions, resolvePatientIdentity } = useWardFlow();
   const now = useWardFlowClock();
   const [tab, setTab] = useState<DrawerTab>("over");
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
@@ -236,9 +236,10 @@ export function WardBedDossierDrawer({
     </div>
   );
 
-  // The person behind this stay, read through the admission's own patient link only (a ward screen
-  // never reads the shared referrals list). No record, no link.
-  const person = admission?.patientId ? patients.find((row) => row.id === admission.patientId) : undefined;
+  // The person behind this stay, through the provider's ward-facing identity resolver (FD-23): it
+  // reads no referral record, destination or history here. Missing or conflicting links stay
+  // unknown, and an unknown person gets no link.
+  const person = admission ? resolvePatientIdentity(admission).patient : undefined;
   const personHref = person ? patientHref(person.id) : null;
 
   return (
