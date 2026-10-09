@@ -173,9 +173,7 @@ export type CommunityTreatmentOrder = {
 };
 
 /** True while a Form 5A is in force (not yet ended). */
-export function activeCommunityTreatmentOrder(
-  patient: Patient | undefined,
-): CommunityTreatmentOrder | undefined {
+export function activeCommunityTreatmentOrder(patient: Patient | undefined): CommunityTreatmentOrder | undefined {
   const order = patient?.communityTreatmentOrder;
   return order && order.endedAt === undefined ? order : undefined;
 }
