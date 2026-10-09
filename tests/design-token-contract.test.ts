@@ -782,3 +782,12 @@ describe("every fallback-less var() resolves to a declaration", () => {
     ).toEqual([]);
   });
 });
+
+describe("the sheet scrim fade lets the glass panel blur", () => {
+  it("does not hold the scrim's opacity animation after it ends", () => {
+    // A filling opacity animation makes the scrim a backdrop root, so the panel's blur sees nothing.
+    const token = /--animate-overlay-in:\s*([^;]+);/.exec(globals)?.[1];
+    expect(token, "--animate-overlay-in is missing from globals.css").toBeDefined();
+    expect(token).not.toMatch(/\b(both|forwards)\b/);
+  });
+});
