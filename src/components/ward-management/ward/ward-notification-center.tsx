@@ -399,7 +399,11 @@ export function WardNotificationCenter({
                           {isRead && <span className={styles.readBadge}>Read</span>}
                         </div>
                         <p className={styles.cardMessage}>
-                          {withUmrnInPlaceOfMovementIds(notice.sentence, { patients, movements })}
+                          {withUmrnInPlaceOfMovementIds(notice.sentence, {
+                            patients: effectivePatients,
+                            referrals: context?.referrals,
+                            movements,
+                          })}
                         </p>
                       </div>
 

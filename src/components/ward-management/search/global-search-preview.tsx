@@ -6,7 +6,7 @@ import { BedSingle, Building2, ClipboardList, FileText, Hospital, LayoutDashboar
 
 import { StatusGlyph, TierTile, durMinutes, type WfTone } from "@/components/wf";
 import { destinationUnit, isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
-import type { Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
+import type { Movement, MovementStage, Referral, Unit } from "@/components/ward-management/ward-model";
 import { patientAgeYears, patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
@@ -38,6 +38,7 @@ type PreviewProps = {
   item: GlobalSearchPreviewItem;
   patients: readonly Patient[];
   movements: readonly Movement[];
+  referrals: readonly Referral[];
   units: Unit[];
   now?: number;
   /** Called on a plain click of any action, so the palette can close and remember the record. */
@@ -152,6 +153,7 @@ function MovementPreview({
   task,
   patients,
   movements,
+  referrals,
   units,
   now,
   onOpen,
@@ -160,11 +162,12 @@ function MovementPreview({
   task?: GlobalSearchPreviewItem;
   patients: readonly Patient[];
   movements: readonly Movement[];
+  referrals: readonly Referral[];
   units: Unit[];
   now?: number;
   onOpen: PreviewProps["onOpen"];
 }) {
-  const subject = resolveSubjectPatient(movement, { patients, movements });
+  const subject = resolveSubjectPatient(movement, { patients, referrals, movements });
   const patient = subject.patient;
   const origin = edById(movement.originEdId);
   const destination = destinationUnit(movement, units);
@@ -256,6 +259,7 @@ function PersonPreview({
   patient,
   patients,
   movements,
+  referrals,
   units,
   now,
   onOpen,
@@ -263,6 +267,7 @@ function PersonPreview({
   patient: Patient;
   patients: readonly Patient[];
   movements: readonly Movement[];
+  referrals: readonly Referral[];
   units: Unit[];
   now?: number;
   onOpen: PreviewProps["onOpen"];
@@ -271,7 +276,7 @@ function PersonPreview({
   // Through the shared resolver, never the raw patient link (D-14 default-deny).
   const openMovement = movements.find(
     (movement) =>
-      isOpen(movement) && resolveSubjectPatient(movement, { patients, movements }).patient?.id === patient.id,
+      isOpen(movement) && resolveSubjectPatient(movement, { patients, referrals, movements }).patient?.id === patient.id,
   );
   const origin = openMovement ? edById(openMovement.originEdId) : undefined;
   const destination = openMovement ? destinationUnit(openMovement, units) : undefined;
@@ -350,15 +355,18 @@ function WardPreview({
   unit,
   patients,
   movements,
+  referrals,
   href,
   onOpen,
 }: {
   unit: Unit;
   patients: readonly Patient[];
   movements: readonly Movement[];
+  referrals: readonly Referral[];
   href: string;
   onOpen: PreviewProps["onOpen"];
 }) {
+  const lookup = { patients, referrals, movements };
   const ready = unitReadyBedCount(unit);
   const incoming = movements.filter((movement) => isOpen(movement) && movement.acceptedUnitId === unit.id);
   const referred = movements.filter(
@@ -399,13 +407,13 @@ function WardPreview({
         {incoming.length > 0 ? (
           <>
             <dt>Accepted</dt>
-            <dd>{incoming.map((movement) => movementUmrn(movement, { patients, movements })).join(", ")}</dd>
+            <dd>{incoming.map((movement) => movementUmrn(movement, lookup)).join(", ")}</dd>
           </>
         ) : null}
         {referred.length > 0 ? (
           <>
             <dt>Referred</dt>
-            <dd>{referred.map((movement) => movementUmrn(movement, { patients, movements })).join(", ")}</dd>
+            <dd>{referred.map((movement) => movementUmrn(movement, lookup)).join(", ")}</dd>
           </>
         ) : null}
       </dl>
@@ -426,6 +434,7 @@ function EdPreview({
   href,
   patients,
   movements,
+  referrals,
   now,
   onOpen,
 }: {
@@ -433,6 +442,7 @@ function EdPreview({
   href: string;
   patients: readonly Patient[];
   movements: readonly Movement[];
+  referrals: readonly Referral[];
   now?: number;
   onOpen: PreviewProps["onOpen"];
 }) {
@@ -464,7 +474,7 @@ function EdPreview({
           <>
             <dt>Longest</dt>
             <dd className={styles.mono}>
-              {movementUmrn(longest, { patients, movements })} · {wait}
+              {movementUmrn(longest, { patients, referrals, movements })} · {wait}
             </dd>
           </>
         ) : null}
@@ -514,7 +524,7 @@ function SimplePreview({ item, onOpen }: { item: GlobalSearchPreviewItem; onOpen
   );
 }
 
-export function GlobalSearchPreview({ item, patients, movements, units, now, onOpen }: PreviewProps) {
+export function GlobalSearchPreview({ item, patients, movements, referrals, units, now, onOpen }: PreviewProps) {
   let body;
   if (item.kind === "person") {
     const patient = patients.find((candidate) => candidate.id === item.id);
@@ -523,6 +533,7 @@ export function GlobalSearchPreview({ item, patients, movements, units, now, onO
         patient={patient}
         patients={patients}
         movements={movements}
+        referrals={referrals}
         units={units}
         now={now}
         onOpen={onOpen}
@@ -537,6 +548,7 @@ export function GlobalSearchPreview({ item, patients, movements, units, now, onO
         task={item.kind === "task" ? item : undefined}
         patients={patients}
         movements={movements}
+        referrals={referrals}
         units={units}
         now={now}
         onOpen={onOpen}
@@ -545,7 +557,7 @@ export function GlobalSearchPreview({ item, patients, movements, units, now, onO
   } else if (item.kind === "ward") {
     const unit = units.find((candidate) => candidate.id === item.id);
     body = unit ? (
-      <WardPreview unit={unit} patients={patients} movements={movements} href={item.href} onOpen={onOpen} />
+      <WardPreview unit={unit} patients={patients} movements={movements} referrals={referrals} href={item.href} onOpen={onOpen} />
     ) : null;
   } else if (item.kind === "ed") {
     body = (

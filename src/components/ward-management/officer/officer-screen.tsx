@@ -342,9 +342,10 @@ const LEG_TONE: Record<OfficerLeg, WfTone> = {
  */
 export function OfficerScreen() {
   const { movements, units, dispatch, rejections, patients, referrals } = useWardFlow();
+  const lookup = useMemo(() => (lookup), [patients, referrals, movements]);
   const officerPatientName = useCallback(
     (movement: Movement) => {
-      const info = resolveSubjectPatient(movement, { patients, referrals, movements });
+      const info = resolveSubjectPatient(movement, lookup);
       return info.patient ? info.displayName : "Not recorded";
     },
     [patients, referrals, movements],
@@ -352,14 +353,11 @@ export function OfficerScreen() {
   // Owner, 26 Sept 2026: undefined (not "Not recorded") lets the blocked-reason helpers below
   // fall back to their own "This patient" wording instead of printing a placeholder mid-sentence.
   const resolvedPatientName = (movement: Movement): string | undefined => {
-    const info = resolveSubjectPatient(movement, { patients, referrals, movements });
+    const info = resolveSubjectPatient(movement, lookup);
     return info.patient ? info.displayName : undefined;
   };
   // D-39: the patient's UMRN is shown wherever the WF journey number used to be.
-  const umrnFor = useCallback(
-    (movement: Movement) => movementUmrn(movement, { patients, referrals, movements }),
-    [patients, referrals, movements],
-  );
+  const umrnFor = (movement: Movement) => movementUmrn(movement, lookup);
   const patientNameForMovementId = (movementId: string) => {
     const movement = movements.find((candidate) => candidate.id === movementId);
     return movement ? officerPatientName(movement) : "Not recorded";
@@ -457,7 +455,7 @@ export function OfficerScreen() {
 
       return true;
     });
-  }, [jobs, statusFilter, providerFilter, escortFilter, searchQuery, units, officerPatientName, umrnFor]);
+  }, [jobs, statusFilter, providerFilter, escortFilter, searchQuery, units, officerPatientName]);
 
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const selectedJob = jobs.find((job) => job.id === selectedId) ?? filteredJobs[0] ?? jobs[0];
