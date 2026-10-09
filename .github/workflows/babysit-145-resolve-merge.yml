@@ -1,1 +1,99 @@
-PLACEHOLDER_WILL_LOAD
+name: babysit-145-resolve-merge
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/babysit-145-resolve-merge.yml"
+    branches:
+      - claude/brave-wright-aiqisd
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/brave-wright-aiqisd
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Merge main and resolve decisions/OWNER-RULINGS
+        run: |
+          set -euo pipefail
+          git config user.name "Ward Flow Babysit"
+          git config user.email "ward-flow-babysit@users.noreply.github.com"
+          git fetch origin main
+
+          python3 <<'PY'
+          from pathlib import Path
+          import subprocess, base64
+
+          def show(ref, path):
+              return subprocess.check_output(["git", "show", f"{ref}:{path}"], text=True)
+
+          d38 = base64.b64decode("IyMgRC0zOC4gRGVsYXlzIGJvYXJkIGZpbHRlcnMgbmFycm93IHRoZSB0YWJsZSBhbmQgc3RhdGUgdGhlIGhpZGRlbiBjb3VudCAoOSBPY3RvYmVyIDIwMjYpCgotICoqRGF0ZToqKiA5IE9jdG9iZXIgMjAyNi4gKipEZWNpZGVkIGJ5OioqIEpvc2guCi0gKipEZWNpc2lvbjoqKiBPbiB0aGUgT2N0b2JlciAyMDI2IERlbGF5cyBib2FyZCwgaGVybyBjb3VudHMsIHdob3NlLW1vdmUgdGlsZXMsIGNoaXBzIGFuZCBncmFwaAogIGNob2ljZXMga2VlcCBmaWx0ZXJpbmcgdGhlIFdhaXRpbmcgdGFibGUsIGFzIHRoZSBhcHByb3ZlZCBEZWxheXMgcGFnZSBtb2NrdXAgZHJhd3MgaXQuIFdoZW5ldmVyIGEKICBmaWx0ZXIgaGlkZXMgYW55b25lLCB0aGUgdGFibGUgbXVzdCBzYXkgaG93IG1hbnkgcGVvcGxlIGFyZSBoaWRkZW4gYW5kIG9mZmVyICJTaG93IGV2ZXJ5b25lIi4KICBGb3IgdGhpcyBib2FyZCwgdGhpcyBzdXBlcnNlZGVzIHRoZSAyMDI2LTA5LTA3ICJhIGNoaXAgaGlnaGxpZ2h0cywgaXQgbmV2ZXIgaGlkZXMiIHJ1bGluZy4gVGhlCiAgb2xkIERlbGF5cyB0YWJsZSBhbmQgZ3JhcGggY29tcG9uZW50cyAoYGRlbGF5cy1kYXRhLXZpZXdzLnRzeGAsIGBkZWxheXMtY29vcmRpbmF0aW9uLnRzeGAgYW5kCiAgdGhlaXIgc3R5bGVzaGVldHMpIGFyZSBkZWxldGVkLgotICoqV2h5OioqIFRoZSBtb2NrdXAncyBuYXJyb3dpbmcgaXMgdGhlIGFwcHJvdmVkIGJlaGF2aW91ci4gVGhlIGhhemFyZCBiZWhpbmQgdGhlIFNlcHRlbWJlciBydWxpbmcKICAoYSBmaWx0ZXJlZC1vdXQgcGF0aWVudCBsb29raW5nIGxpa2UgYSBwbGFjZWQgb25lKSBpcyBjbG9zZWQgYnkgdGhlIHN0YXRlZCBoaWRkZW4gY291bnQsIHdoaWNoCiAgYHRlc3RzL3dhcmQtZGVsYXlzLXNjcmVlbi5kb20udGVzdC50c3hgIGd1YXJkcy4KCg==").decode()
+          main_dec = show("origin/main", "docs/ward-flow/decisions.md")
+          marker = "## D-39. Patients are identified by UMRN, never by a WF number (9 October 2026)"
+          if marker not in main_dec:
+              raise SystemExit("main decisions.md missing D-39")
+          if "## D-38. Delays board filters" in main_dec:
+              resolved_dec = main_dec
+          else:
+              resolved_dec = main_dec.replace(marker, d38 + marker, 1)
+          d38_line = resolved_dec.splitlines().index(
+              "## D-38. Delays board filters narrow the table and state the hidden count (9 October 2026)"
+          ) + 1
+          d39_line = resolved_dec.splitlines().index(marker) + 1
+
+          main_own = show("origin/main", "docs/ward-flow/OWNER-RULINGS.md")
+          old_idx = (
+              "| `D-38` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1417 | D-38 · _People currently in a hospital bed_ on community team statistics — an aggregate that identifies at small N |\n"
+              "| `D-39` ⚠️ **2 occurrences — not unique** | | |\n"
+              "| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1437 | D-39 · _Contacts_ and _Time to first contact_ — HELD, build neither |\n"
+              "| ↳ | `decisions.md`:484 | D-39. Patients are identified by UMRN, never by a WF number (9 October 2026) |"
+          )
+          new_idx = (
+              "| `D-38` ⚠️ **2 occurrences — not unique** | | |\n"
+              "| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1417 | D-38 · _People currently in a hospital bed_ on community team statistics — an aggregate that identifies at small N |\n"
+              f"| ↳ | `decisions.md`:{d38_line} | D-38. Delays board filters narrow the table and state the hidden count (9 October 2026) |\n"
+              "| `D-39` ⚠️ **2 occurrences — not unique** | | |\n"
+              "| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1437 | D-39 · _Contacts_ and _Time to first contact_ — HELD, build neither |\n"
+              f"| ↳ | `decisions.md`:{d39_line} | D-39. Patients are identified by UMRN, never by a WF number (9 October 2026) |"
+          )
+          if old_idx not in main_own:
+              raise SystemExit("OWNER-RULINGS index block not found on main")
+          resolved_own = main_own.replace(old_idx, new_idx, 1)
+          old_list = '- `D-39` — line 484, heading: "D-39. Patients are identified by UMRN, never by a WF number (9 October 2026)"'
+          new_list = (
+              f'- `D-38` — line {d38_line}, heading: "D-38. Delays board filters narrow the table and state the hidden count (9 October 2026)"\n'
+              f'- `D-39` — line {d39_line}, heading: "D-39. Patients are identified by UMRN, never by a WF number (9 October 2026)"'
+          )
+          if old_list not in resolved_own:
+              raise SystemExit("OWNER-RULINGS list entry not found")
+          resolved_own = resolved_own.replace(old_list, new_list, 1)
+          Path("/tmp/decisions.resolved.md").write_text(resolved_dec)
+          Path("/tmp/owner.resolved.md").write_text(resolved_own)
+          print("resolved", d38_line, d39_line, len(resolved_dec), len(resolved_own))
+          PY
+
+          set +e
+          git merge origin/main -m "Merge origin/main into delays-page branch"
+          merge_rc=$?
+          set -e
+          cp /tmp/decisions.resolved.md docs/ward-flow/decisions.md
+          cp /tmp/owner.resolved.md docs/ward-flow/OWNER-RULINGS.md
+          rm -rf docs/ward-flow/.resolve-145 docs/ward-flow/.restore-parts
+          rm -f docs/ward-flow/.babysit-canary
+          rm -f .github/workflows/babysit-145-resolve-merge.yml
+          rm -f .github/workflows/babysit-145-restore-decisions.yml
+          git add -A
+          if [ "$merge_rc" -ne 0 ]; then
+            git commit -m "Merge origin/main into delays-page branch
+
+          Keep Delays D-38 and main UMRN D-39 in decisions.md; update OWNER-RULINGS index."
+          else
+            if ! git diff --cached --quiet; then
+              git commit -m "Babysit #145: apply D-38 Delays + D-39 UMRN after merging main"
+            fi
+          fi
+          git push origin HEAD:claude/brave-wright-aiqisd
