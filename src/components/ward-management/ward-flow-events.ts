@@ -1821,7 +1821,7 @@ export type WardFlowEvent =
       /**
        * Stream A, 9 Oct 2026: hides an inbox row from the active list until `until`, with a
        * reason from the closed `SNOOZE_REASONS` list. The row returns by itself when `until`
-       * passes. An act-now (red) row may not be snoozed past `URGENT_SNOOZE_CAP_MINUTES`; the
+       * passes. An act-now (red) row may not be snoozed past `RED_ROW_SNOOZE_CAP_MINUTES`; the
        * reducer refuses it. Snoozing never resolves the fact behind the row.
        */
       type: "SNOOZE_INBOX_ITEM";

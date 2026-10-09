@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  currentShiftStartInstant,
   DAY_SHIFT_END_MINUTE,
   dayShiftEndInstant,
   openWorkBeforeShiftEnd,
@@ -14,6 +15,15 @@ import type { Movement } from "../src/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 describe("ward board-time features", () => {
+  it("currentShiftStartInstant finds the start of the day, evening and overnight shifts", () => {
+    const day = dayOf(NOW_ANCHOR) * MINUTES_PER_DAY;
+    expect(currentShiftStartInstant(day + 10 * 60)).toBe(day + 7 * 60);
+    expect(currentShiftStartInstant(day + 15 * 60)).toBe(day + 15 * 60);
+    expect(currentShiftStartInstant(day + 23 * 60 + 30)).toBe(day + 23 * 60);
+    // 02:00 belongs to the night shift that began at 23:00 the day before.
+    expect(currentShiftStartInstant(day + 2 * 60)).toBe(day - 60);
+  });
+
   it("dayShiftEndInstant is 15:00 on the same demonstration day as now", () => {
     const end = dayShiftEndInstant(NOW_ANCHOR);
     expect(dayOf(end)).toBe(dayOf(NOW_ANCHOR));

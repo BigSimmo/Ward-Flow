@@ -1,5 +1,5 @@
 import { minuteOfDay, type Instant } from "./ward-clock";
-import { URGENT_SNOOZE_CAP_MINUTES, SHIFT_PATTERN } from "./ward-operational-defaults";
+import { RED_ROW_SNOOZE_CAP_MINUTES, SHIFT_PATTERN } from "./ward-operational-defaults";
 
 /**
  * Acknowledge, own and snooze for action-inbox rows (stream A, 9 Oct 2026).
@@ -20,15 +20,15 @@ export const SNOOZE_REASONS = [
 
 export type InboxSnoozeReason = (typeof SNOOZE_REASONS)[number]["id"];
 
-/** The reason ids alone, for the reducer's runtime membership check. */
-export const SNOOZE_REASON_IDS: readonly string[] = SNOOZE_REASONS.map((entry) => entry.id);
+/** Runtime id list for membership checks — same shape every other reason-carrying event uses. */
+export const SNOOZE_REASON_IDS: readonly InboxSnoozeReason[] = SNOOZE_REASONS.map((entry) => entry.id);
 
 export function snoozeReasonLabel(reason: InboxSnoozeReason): string {
   return SNOOZE_REASONS.find((entry) => entry.id === reason)?.label ?? "Reason not recorded";
 }
 
 export function isSnoozeReason(value: unknown): value is InboxSnoozeReason {
-  return typeof value === "string" && SNOOZE_REASONS.some((entry) => entry.id === value);
+  return typeof value === "string" && (SNOOZE_REASON_IDS as readonly string[]).includes(value);
 }
 
 /**
@@ -69,7 +69,7 @@ export function snoozeUntilFor(preset: SnoozePresetId, now: Instant): Instant {
 /** Whether a snooze to `until` is allowed: act-now rows may not be hidden past the cap. */
 export function snoozeAllowed(until: Instant, now: Instant, actNow: boolean): boolean {
   if (until <= now) return false;
-  return !actNow || until - now <= URGENT_SNOOZE_CAP_MINUTES;
+  return !actNow || until - now <= RED_ROW_SNOOZE_CAP_MINUTES;
 }
 
 /** The snooze in force at `now`, or undefined when the row is on the active list. */

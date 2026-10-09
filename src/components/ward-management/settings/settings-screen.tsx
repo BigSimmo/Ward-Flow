@@ -51,7 +51,7 @@ import {
   DUE_SOON_URGENT_RANGE_MINUTES,
   OCCUPANCY_ALERT_PERCENT,
   OVERDUE_AFTER_MINUTES_BY_TIER,
-  PLACEMENT_DECISION_TARGET_MINUTES,
+  WARD_ANSWER_TARGET_MINUTES,
   SILENT_WARD_FIRST_REMINDER_MINUTES,
   TRANSFER_ACCEPTANCE_TARGET_MINUTES,
   TRANSPORT_BOOKED_TARGET_MINUTES,
@@ -156,7 +156,7 @@ function fullRules(value: WardConfiguration) {
     morning: value.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES,
     urgent: value.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES,
     soon: value.dueSoonMinutes ?? DUE_SOON_MINUTES,
-    referralTarget: value.referralDecisionTargetMinutes ?? PLACEMENT_DECISION_TARGET_MINUTES,
+    referralTarget: value.referralDecisionTargetMinutes ?? WARD_ANSWER_TARGET_MINUTES,
     transferTarget: value.transferAcceptanceTargetMinutes ?? TRANSFER_ACCEPTANCE_TARGET_MINUTES,
     transportTarget: value.transportBookedTargetMinutes ?? TRANSPORT_BOOKED_TARGET_MINUTES,
   };

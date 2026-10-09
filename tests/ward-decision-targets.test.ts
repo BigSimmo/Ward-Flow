@@ -157,42 +157,106 @@ describe("decision targets through the real event walk", () => {
     expect(decisionTargetReading(booked, NOW + 5, defaults)).toBeUndefined();
   });
 
-  it("restarts the referral clock on a re-referral after every ward declined, so it is not overdue at once", () => {
-    let state = referred();
-    state = step(state, { type: "DECLINE", role: "ward", unitId: UNIT, reason: "acuity_mix" }, NOW + 180);
-    expect(movement(state).referredUnitIds).toEqual([]);
-    expect(decisionTargetReading(movement(state), NOW + 181, defaults)).toBeUndefined();
+  it("restarts the referral decision clock on re-refer, not on a parallel decline alone", () => {
+    const first = referred();
+    expect(movement(first).referralDecisionOpenedAt).toBe(NOW);
 
-    state = step(
-      state,
+    // A second ward referred in parallel keeps the original decision open time.
+    const secondUnit = "fsh-adult-secure";
+    const withSecondRoom = {
+      ...first,
+      units: first.units.map((candidate) =>
+        candidate.id === secondUnit
+          ? {
+              ...candidate,
+              empty: { ...candidate.empty, value: 6, confirmedAt: NOW },
+              allocatable: { ...candidate.allocatable, value: 6, confirmedAt: NOW },
+            }
+          : candidate,
+      ),
+    };
+    const parallel = step(
+      withSecondRoom,
+      {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        unitIds: [secondUnit],
+        genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
+        genderPlacementChecked: true,
+      },
+      NOW + 10,
+    );
+    // Parallel add while UNIT is still live keeps the original open time.
+    expect(movement(parallel).referralDecisionOpenedAt).toBe(NOW);
+    expect(decisionTargetReading(movement(parallel), NOW + 15, defaults)?.startedAt).toBe(NOW);
+
+    // One of two wards declining must not rewind or advance the clock by itself.
+    // Use a hard decline reason (not waitlist-instead-of-decline) so the live set actually shrinks.
+    const afterDecline = step(
+      parallel,
+      { type: "DECLINE", role: "ward", unitId: UNIT, reason: "capability_mismatch" },
+      NOW + defaults.referralDecisionTargetMinutes + 30,
+    );
+    expect(movement(afterDecline).referralDecisionOpenedAt).toBe(NOW);
+    expect(movement(afterDecline).referredUnitIds).toEqual([secondUnit]);
+    expect(
+      decisionTargetReading(movement(afterDecline), NOW + defaults.referralDecisionTargetMinutes + 35, defaults)
+        ?.startedAt,
+    ).toBe(NOW);
+
+    // Re-refer after the last live ward declined opens a fresh wait at the REFER act.
+    const cleared = step(
+      afterDecline,
+      { type: "DECLINE", role: "ward", unitId: secondUnit, reason: "capability_mismatch" },
+      NOW + defaults.referralDecisionTargetMinutes + 40,
+    );
+    expect(movement(cleared).referredUnitIds).toEqual([]);
+    const reReferAt = NOW + defaults.referralDecisionTargetMinutes + 45;
+    const reReferred = step(
+      cleared,
       {
         type: "REFER_TO_UNITS",
         role: "coordinator",
         unitIds: [UNIT],
         genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
         genderPlacementChecked: true,
+        // Dabakarn already declined this movement; a recorded override is required to refer again.
         overrideReason: OVERRIDE_REASONS[0],
       },
-      NOW + 200,
+      reReferAt,
     );
-    // referredAt is the first referral and is never rewritten.
-    expect(movement(state).referredAt).toBe(NOW);
-    const reading = decisionTargetReading(movement(state), NOW + 210, defaults);
-    expect(reading).toMatchObject({ step: "referral_decision", startedAt: NOW + 180, overdue: false });
-    expect(decisionTargetInboxItems(state.movements.filter(isOpen), NOW + 210, defaults)).toEqual([]);
+    expect(movement(reReferred).referredAt).toBe(NOW);
+    expect(movement(reReferred).referralDecisionOpenedAt).toBe(reReferAt);
+    expect(decisionTargetReading(movement(reReferred), reReferAt + 5, defaults)).toMatchObject({
+      step: "referral_decision",
+      startedAt: reReferAt,
+      overdue: false,
+    });
   });
 
-  it("runs no transport clock when the movement records that no transport is needed", () => {
+  it("keeps the original start when a ward waitlists instead of declining", () => {
     const state = referred();
-    const pulled: Movement = {
+    const waitlisted = step(state, { type: "DECLINE", role: "ward", unitId: UNIT, reason: "no_bed" }, NOW + 90);
+    // No bed waitlists the ward: it stays live and the clock does not move.
+    expect(movement(waitlisted).waitlistedUnitIds).toEqual([UNIT]);
+    expect(movement(waitlisted).referredUnitIds).toEqual([UNIT]);
+    expect(movement(waitlisted).referralDecisionOpenedAt).toBe(NOW);
+    const reading = decisionTargetReading(
+      movement(waitlisted),
+      NOW + defaults.referralDecisionTargetMinutes + 1,
+      defaults,
+    );
+    expect(reading).toMatchObject({ startedAt: NOW, overdue: true });
+  });
+
+  it("does not start a transport booking target when no transport is needed", () => {
+    const state = referred();
+    const pulled = {
       ...movement(state),
-      stage: "pulled",
-      stageChanges: [{ at: NOW, from: "accepted_awaiting_bed", to: "pulled", by: "ward" }],
-      transport: undefined,
-    } as Movement;
-    expect(decisionTargetReading(pulled, NOW + 300, defaults)?.step).toBe("transport_booked");
-    const walking: Movement = { ...pulled, transportNeed: { needed: false, at: NOW } } as Movement;
-    expect(decisionTargetReading(walking, NOW + 300, defaults)).toBeUndefined();
-    expect(decisionTargetInboxItems([walking], NOW + 300, defaults)).toEqual([]);
+      stage: "pulled" as const,
+      stageChanges: [{ at: NOW, to: "pulled" as const, by: "ward" }],
+      transportNeed: { needed: false, at: NOW },
+    };
+    expect(decisionTargetReading(pulled, NOW + 5, defaults)).toBeUndefined();
   });
 });

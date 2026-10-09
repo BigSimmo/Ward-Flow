@@ -1,6 +1,6 @@
-/* Ward home (design/pages-v6/Ward.png): Every bed with the answer queue and shift checks beside it,
-   then Coming in, On the way out and the shift log, then decisions and length of stay. Plain v6
-   cards, no coloured edges or stripes; colour appears only as a glyph. */
+/* Ward Hub home (approved Bed board mockup, 9 Oct 2026): Every bed and the Ward flow panel share
+   one row at equal height, then This shift runs the full width. Plain v6 cards with a fine edge,
+   colour only as a glyph, pills for every switch, text that truncates rather than wraps. */
 
 .homeWrap {
   display: flex;
@@ -9,142 +9,18 @@
   min-width: 0;
 }
 
-.alertLegalNote {
-  margin: 0;
-  font-size: var(--wf-fs-12);
-}
-
-/* Live form alerts: a plain row with the countdown, the sentence and one action. */
-.alertStrip {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2) var(--wf-s-3);
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
-}
-
-.alertClock {
-  flex: none;
-  padding: 1px 6px;
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-xs);
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--wf-ink-1);
-  white-space: nowrap;
-}
-
-.alertStrip[data-tone="critical"] .alertClock {
-  color: var(--wf-danger-ink);
-}
-
-.alertStrip[data-tone="warning"] .alertClock {
-  color: var(--wf-warning-ink);
-}
-
-.alertMain {
-  display: flex;
-  flex: 1 1 16rem;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.alertMain strong {
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-}
-
-.alertText {
-  margin: 0;
-  font-size: var(--wf-fs-12);
-  line-height: 1.4;
-  color: var(--wf-ink-2);
-}
-
-.btnAlertAct {
-  flex: none;
-  min-height: var(--wf-h-sm);
-  padding: 0 var(--wf-s-3);
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-sm);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: inherit;
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background var(--wf-m-fast) var(--wf-ease);
-}
-
-.btnAlertAct:hover {
-  background: var(--wf-hover);
-}
-
-.btnAlertAct:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-/* The board: twelve columns on a wide screen, one column at 70rem and below. */
-.homeBoard {
+.homeTop {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 5fr) minmax(0, 2fr);
   gap: var(--wf-s-3);
-  align-items: start;
+  align-items: stretch;
   min-width: 0;
 }
 
 .areaBeds,
-.areaSide,
-.areaComing,
-.areaOut,
-.areaLog,
-.areaDecisions,
-.areaStay {
+.flowWrap,
+.shiftCard {
   min-width: 0;
-}
-
-.areaSide {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
-}
-
-.areaBeds,
-.areaDecisions {
-  grid-column: span 8;
-}
-
-.areaSide,
-.areaComing,
-.areaOut,
-.areaLog,
-.areaStay {
-  grid-column: span 4;
-}
-
-@media (max-width: 70rem) {
-  .homeBoard {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .areaBeds,
-  .areaSide,
-  .areaComing,
-  .areaOut,
-  .areaLog,
-  .areaDecisions,
-  .areaStay {
-    grid-column: auto;
-  }
 }
 
 .v6Card {
@@ -153,27 +29,16 @@
 }
 
 .v6Card:focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
-}
-
-.v6Head {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
 }
 
 .v6Meta {
   font-size: var(--wf-fs-12);
+  font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-3);
   white-space: nowrap;
-}
-
-.v6Head .v6Meta {
-  margin-left: auto;
 }
 
 .v6Empty {
@@ -183,10 +48,57 @@
   color: var(--wf-ink-3);
 }
 
-/* Every bed: a tile per bed, number first, then the state word and day count, then one note. */
+.headTools {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+/* Board or List: two round icon buttons in one soft pill. */
+.viewSwitch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+}
+
+.viewSwitch button {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--wf-ink-3);
+  cursor: pointer;
+}
+
+.viewSwitch button:hover {
+  color: var(--wf-ink-1);
+}
+
+.viewSwitch button[aria-pressed="true"] {
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  box-shadow: var(--wf-e1);
+}
+
+.viewSwitch button:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+/* Every bed: five tiles a row, number and glyph, the person, then one note and the stay. */
 .bedTiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
   gap: var(--wf-s-2);
   margin: 0;
   padding: var(--wf-s-3) var(--wf-s-4);
@@ -202,30 +114,39 @@
   flex-direction: column;
   gap: 2px;
   width: 100%;
-  min-height: 4.5rem;
+  height: 100%;
+  min-height: 4.75rem;
   padding: var(--wf-s-2) var(--wf-s-3);
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
+  border-radius: var(--wf-r-lg);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background var(--wf-m-fast) var(--wf-ease);
+  transition:
+    background var(--wf-m-fast) var(--wf-ease),
+    border-color var(--wf-m-fast) var(--wf-ease),
+    opacity var(--wf-m-fast) var(--wf-ease);
 }
 
 .bedTile:hover {
+  border-color: var(--wf-line-ctl);
   background: var(--wf-hover);
 }
 
 .bedTile:focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
 
 .bedTile[data-status="ready"] {
   border-style: dashed;
   border-color: var(--wf-line-ctl);
+}
+
+.bedTile[data-miss="true"] {
+  opacity: 0.32;
 }
 
 .bedTileTop {
@@ -237,9 +158,17 @@
 
 .bedTileTop b {
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-16);
+  font-size: var(--wf-fs-14);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.bedTileName {
+  overflow: hidden;
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bedTileState {
@@ -247,57 +176,345 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--wf-s-2);
+  min-width: 0;
+  margin-top: auto;
   font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
+  color: var(--wf-ink-3);
   white-space: nowrap;
 }
 
-.bedTileDays {
-  font-family: var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--wf-ink-1);
-}
-
 .bedTileNote {
+  min-width: 0;
   overflow: hidden;
-  font-size: var(--wf-fs-11);
-  color: var(--wf-ink-3);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .bedTile[data-look="true"] .bedTileNote {
+  color: var(--wf-ink-2);
+}
+
+.bedTileDays {
+  flex: none;
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+}
+
+/* List view: one row a bed. */
+.bedTableWrap {
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  overflow-x: auto;
+}
+
+.bedTable {
+  composes: table from "../ward-table/ward-table.module.css";
+  /* Measured 9 Oct 2026: the narrowest desktop card (1200px viewport) draws this table at 586px.
+     36rem (576px) sits just under it, so desktop never scrolls, and below it a phone scrolls the
+     six columns sideways instead of squashing Legal, Going out and Now to 18px each. */
+  --ward-table-min-width: 36rem;
+  table-layout: fixed;
+  /* Deliberately one step larger than the canonical table: tile names read at 13px on the board. */
+  font-size: var(--wf-fs-13);
+}
+
+/* Cell padding and dividers come from the canonical ward table (ward-table.module.css). */
+.bedTable th {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.bedTable th:first-child {
+  width: 6.5rem;
+}
+
+.bedTable th:nth-child(2) {
+  width: 27%;
+}
+
+.bedTable th:nth-child(3) {
+  width: 4.5rem;
+}
+
+.bedTable th,
+.bedTable td {
+  vertical-align: middle;
+}
+
+.bedTable td {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bedTableBed {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  height: 28px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
   color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  cursor: pointer;
+}
+
+.bedTableBed:hover {
+  background: var(--wf-hover);
+}
+
+.bedTableBed:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.glyphGap {
+  display: inline-block;
+  width: 9px;
+}
+
+.bedTable td.bedTableName {
+  color: var(--wf-ink-1);
+  font-weight: 500;
+}
+
+.bedTableSub {
+  margin-left: var(--wf-s-2);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
+.bedTableMono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.bedTable tr[data-look="true"] .bedTableNow {
+  color: var(--wf-ink-1);
+}
+
+/* The symbol key and bed tally under the board. */
+.bedKey {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.keyItems {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  min-width: 0;
+}
+
+.keyItems > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.keyTally {
+  margin-left: auto;
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.keyLink {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  text-decoration: none;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.keyLink:hover {
+  background: var(--wf-hover);
+}
+
+.keyLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 .bedFigures {
   border-top: 1px solid var(--wf-line);
 }
 
-/* Awaiting your answer */
-.awaitingCard {
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e1);
+/* Ward flow: the panel sits beside the board at the board's height and its list scrolls. */
+.flowWrap {
+  position: relative;
+  min-height: 26rem;
 }
 
-.awaitingHeading {
+.flowCard {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.flowSwitch {
+  padding: var(--wf-s-2) var(--wf-s-4) 0;
+}
+
+.flowSwitch > div {
+  display: flex;
+  width: 100%;
+}
+
+.flowSwitch > div > button {
+  flex: 1 1 auto;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  padding-inline: var(--wf-s-2);
+}
+
+.flowBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+}
+
+.flowPane[data-active="false"] {
+  display: none;
+}
+
+.flowPane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.flowGroup,
+.awaitingCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}
+
+.awaitingCard:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-md);
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
   margin: 0;
-  font-size: var(--wf-fs-14);
+  padding: var(--wf-s-1) 0;
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+
+.groupTitle {
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+.groupEmpty {
+  margin: 0;
+  padding: var(--wf-s-1) 0 var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.flowList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flowRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: var(--wf-s-2) 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.flowRow:last-child {
+  border-bottom: 0;
+}
+
+.flowMain {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.flowTitle {
+  overflow: hidden;
+  font-size: var(--wf-fs-13);
   font-weight: 600;
   color: var(--wf-ink-1);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.cardBody {
-  padding: var(--wf-s-3) var(--wf-s-4);
+.flowDetail {
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.placeholder {
-  margin: 0;
-  font-size: var(--wf-fs-13);
+.flowWhen {
+  flex: none;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.flowFoot,
+.shiftFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: 2.5rem;
+  padding: var(--wf-s-1) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
+}
+
+.shiftFoot b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
 }
 
 .awaitingList {
@@ -315,7 +532,7 @@
   gap: var(--wf-s-2);
   padding: var(--wf-s-3);
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
+  border-radius: var(--wf-r-lg);
 }
 
 .awaitingIdentity {
@@ -332,7 +549,7 @@
   width: 1.5rem;
   height: 1.5rem;
   border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-xs);
+  border-radius: 50%;
   font-family: var(--wf-mono);
   font-size: var(--wf-fs-12);
   font-weight: 600;
@@ -397,128 +614,100 @@
   align-self: flex-start;
 }
 
-/* Shift checks */
-.checksCard {
+/* This shift: To do in three columns, the log, or length of stay. */
+.shiftPane[data-active="false"] {
+  display: none;
+}
+
+.todoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.todoCol {
   min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  border-left: 1px solid var(--wf-line);
 }
 
-.checkBadge {
-  padding: 1px 6px;
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-xs);
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-12);
-  font-variant-numeric: tabular-nums;
-  color: var(--wf-ink-2);
-  white-space: nowrap;
+.todoCol:first-child {
+  border-left: 0;
 }
 
-.checkBadge b {
-  font-weight: 600;
-  color: var(--wf-ink-1);
+.legalTag {
+  margin-left: auto;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
-.checkItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-2) 0;
-  border-bottom: 1px solid var(--wf-line);
-  font-size: var(--wf-fs-12);
-}
-
-.checkItem:last-child {
-  border-bottom: 0;
-}
-
-.checkLeft {
-  display: flex;
-  flex: 1;
-  align-items: flex-start;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-.checkLeft span {
-  overflow-wrap: anywhere;
-}
-
-.checkNote {
-  color: var(--wf-ink-3);
-}
-
-.checkMark {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  margin-top: 4px;
-  border: 2px solid var(--wf-line-ctl);
-  border-radius: 50%;
-}
-
-.checkMark[data-done="true"] {
-  border-color: var(--wf-success);
-  background: var(--wf-success);
-}
-
-.statusWord {
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  color: var(--wf-ink-2);
-  white-space: nowrap;
-}
-
-.statusWord[data-tone="good"] {
-  color: var(--wf-success-ink);
-}
-
-.statusWord[data-tone="warn"] {
-  color: var(--wf-warning-ink);
-}
-
-/* Coming in and On the way out: one line per person or bed, with one action. */
-.flowList {
+.todoList {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.flowRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "title action"
-    "detail action";
-  column-gap: var(--wf-s-3);
-  row-gap: 2px;
+.todoRow {
+  display: flex;
   align-items: center;
-  padding: var(--wf-s-2) var(--wf-s-4);
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: var(--wf-s-2) 0;
   border-bottom: 1px solid var(--wf-line);
 }
 
-.flowRow:last-child {
+.todoRow:last-child {
   border-bottom: 0;
 }
 
-.flowRow:has(.flowWhen) {
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  grid-template-areas:
-    "title when action"
-    "detail detail action";
+.todoMain {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  cursor: default;
 }
 
-.flowTitle {
-  grid-area: title;
+label.todoMain {
+  position: relative;
+  cursor: pointer;
+}
+
+.todoTick {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+label.todoMain:has(.todoTick:focus-visible) {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-sm);
+}
+
+.todoTitle {
   overflow: hidden;
   font-size: var(--wf-fs-13);
   font-weight: 600;
+  color: var(--wf-ink-1);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.flowWhen {
-  grid-area: when;
+.todoDetail {
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.todoMeta {
+  flex: none;
   font-family: var(--wf-mono);
   font-size: var(--wf-fs-12);
   font-variant-numeric: tabular-nums;
@@ -526,66 +715,16 @@
   white-space: nowrap;
 }
 
-.flowDetail {
-  grid-area: detail;
+.paneHead {
   display: flex;
   align-items: center;
-  gap: var(--wf-s-1);
-  overflow: hidden;
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.flowAction {
-  grid-area: action;
-  min-height: var(--wf-h-sm);
-  padding: 0 var(--wf-s-3);
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-sm);
-  background: var(--wf-surface);
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
   color: var(--wf-ink-1);
-  font: inherit;
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.flowAction:hover {
-  background: var(--wf-hover);
-}
-
-.flowAction:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-.flowMore {
-  padding: var(--wf-s-2) var(--wf-s-4);
-}
-
-.flowMoreButton {
-  min-height: var(--wf-h-sm);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--wf-accent-ink);
-  font: inherit;
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.flowMoreButton:hover {
-  text-decoration: underline;
-}
-
-.flowMoreButton:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
 }
 
 /* Shift log */
@@ -687,44 +826,24 @@
   color: var(--wf-ink-3);
 }
 
-/* Decisions today */
-.decisionList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.decisionRow {
-  display: grid;
-  grid-template-columns: auto 7rem minmax(0, 1fr) auto;
-  gap: var(--wf-s-3);
-  align-items: center;
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
-  font-size: var(--wf-fs-13);
-}
-
-.decisionRow:last-child {
-  border-bottom: 0;
-}
-
-.decisionName {
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.decisionText {
-  min-width: 0;
-  color: var(--wf-ink-2);
-}
-
-.decisionRow[data-due="true"] .decisionText {
-  color: var(--wf-ink-1);
-}
-
 /* Length of stay */
 .stayChart {
   padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.statusWord {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.statusWord[data-tone="good"] {
+  color: var(--wf-success-ink);
+}
+
+.statusWord[data-tone="warn"] {
+  color: var(--wf-warning-ink);
 }
 
 .visuallyHidden {
@@ -739,43 +858,29 @@
   border: 0;
 }
 
-@media (max-width: 48rem) {
-  .alertStrip {
-    align-items: flex-start;
+/* Below desktop: the panel stacks under the board at its natural height. */
+@media (max-width: 70rem) {
+  .homeTop {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .btnAlertAct,
-  .flowAction,
-  .bedTile {
-    min-height: var(--spacing-tap, 3rem);
+  .flowWrap {
+    min-height: 0;
   }
 
-  .decisionRow {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+  .flowCard {
+    position: static;
   }
 
-  .decisionText {
-    grid-column: 2 / -1;
-    grid-row: 2;
+  .flowBody {
+    max-height: 28rem;
   }
 }
 
-/* Phone: who is coming in and going out sits straight under the hero's bed numbers, then every
- * bed. The bed card's filter row takes its own line under the title so the title is never
- * squeezed to nothing. Desktop is unchanged. */
+/* Phone: the board keeps its filter on its own line, tiles drop to four a row with the number,
+   glyph and stay, the to do columns stack, and every control keeps a 48px target. Desktop is
+   unchanged. */
 @media (max-width: 48rem) {
-  .areaComing {
-    order: -3;
-  }
-
-  .areaOut {
-    order: -2;
-  }
-
-  .areaBeds {
-    order: -1;
-  }
-
   .areaBeds > div:first-child {
     flex-wrap: wrap;
     row-gap: var(--wf-s-2);
@@ -787,16 +892,95 @@
     margin-left: 0;
   }
 
-  /* Tiles in a row share one height, so a tile with a note does not leave its neighbour short. */
+  .headTools {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .headTools > div {
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .bedTiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
   .bedTile {
-    height: 100%;
+    min-height: var(--spacing-tap, 3rem);
+    padding: var(--wf-s-2);
+  }
+
+  .bedTileName {
+    display: none;
+  }
+
+  .bedTileNote {
+    display: none;
+  }
+
+  .bedKey {
+    flex-wrap: wrap;
+  }
+
+  .keyItems {
+    display: none;
+  }
+
+  .keyTally {
+    margin-left: 0;
+  }
+
+  .todoGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .todoCol {
+    border-left: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .todoCol:first-child {
+    border-top: 0;
+  }
+
+  .shiftCard > div:first-child {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+  }
+
+  .shiftCard > div:first-child > div:last-child {
+    flex: 1 1 100%;
+    margin-left: 0;
   }
 }
 
-/* Phone polish (8 Oct 2026): the length-of-stay chart is a desk read; on phone the page ends with
- * today's decisions. Desktop is unchanged. */
+/* Phone: the flow tabs share the width but never shrink below their labels; a narrow screen
+ * scrolls the row instead of overlapping them. */
 @media (max-width: 48rem) {
-  .areaStay {
-    display: none;
+  .flowSwitch > div {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .flowSwitch > div > button {
+    flex: 1 0 auto;
+  }
+}
+
+/* Touch screens: the view switch, the list view's bed buttons and the key links keep the 48px
+ * tap target. */
+@media (pointer: coarse) {
+  .viewSwitch button {
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+  }
+
+  .bedTableBed,
+  .keyLink {
+    height: auto;
+    min-height: var(--spacing-tap, 3rem);
   }
 }

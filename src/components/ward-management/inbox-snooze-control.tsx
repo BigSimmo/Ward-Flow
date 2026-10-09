@@ -17,7 +17,7 @@ import {
   type InboxSnoozeEntry,
   type InboxSnoozeReason,
 } from "./ward-inbox-snooze";
-import { URGENT_SNOOZE_CAP_MINUTES } from "./ward-operational-defaults";
+import { RED_ROW_SNOOZE_CAP_MINUTES } from "./ward-operational-defaults";
 
 import styles from "./inbox-snooze-control.module.css";
 
@@ -76,7 +76,7 @@ export function InboxSnoozeControl({
               const until = snoozeUntilFor(preset.id, now);
               const allowed = snoozeAllowed(until, now, actNow);
               const disabledReason = !allowed
-                ? `Act now: ${splitDuration(URGENT_SNOOZE_CAP_MINUTES)} at most`
+                ? `Act now: ${splitDuration(RED_ROW_SNOOZE_CAP_MINUTES)} at most`
                 : reason === ""
                   ? "Choose a reason first"
                   : undefined;

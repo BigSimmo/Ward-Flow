@@ -303,9 +303,30 @@ export const useAppearanceStore = createBrowserStore(
   "auto" as WardAppearance,
 );
 
+/** Browser chrome colours; the same values as `APP_THEME_COLORS` in `src/lib/theme.ts`, kept here so the ward seam stays closed. */
+const CHROME_COLOURS = { light: "#ffffff", dark: "#0b0e11" } as const;
+
+/**
+ * Puts the root in one theme. The v6 and shell tokens follow `data-theme`, while the compatibility
+ * layers and the page background follow `.dark`; setting only one left pages half light and half
+ * dark. The browser chrome colour follows the same answer.
+ */
+export function syncRootAppearance(appearance: WardAppearance) {
+  const root = document.documentElement;
+  if (appearance === "auto") root.removeAttribute("data-theme");
+  else root.setAttribute("data-theme", appearance);
+  const dark =
+    appearance === "dark" ||
+    (appearance === "auto" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
+  root.classList.toggle("dark", dark);
+  const colour = dark ? CHROME_COLOURS.dark : CHROME_COLOURS.light;
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.setAttribute("content", colour));
+}
+
 export function applyAppearance(next: WardAppearance) {
-  if (next === "auto") document.documentElement.removeAttribute("data-theme");
-  else document.documentElement.setAttribute("data-theme", next);
+  syncRootAppearance(next);
   try {
     if (next === "auto") {
       window.localStorage.removeItem(APPEARANCE_STORAGE_KEY);
@@ -420,7 +441,7 @@ function usePhoneViewport(): boolean {
  * is no exception: it is the Referrals board with the slide-out open. Desktop keeps each page's own
  * action.
  */
-const PHONE_NEW_REFERRAL: WardPrimaryAction = {
+const NEW_REFERRAL_ACTION: WardPrimaryAction = {
   kind: "new-referral",
   label: "New referral",
   menu: WARD_NEW_REFERRAL_MENU,
@@ -428,7 +449,18 @@ const PHONE_NEW_REFERRAL: WardPrimaryAction = {
 
 export function phoneBarAction(action: WardPrimaryAction | undefined, phone: boolean): WardPrimaryAction | undefined {
   if (!phone || action?.kind === "new-referral") return action;
-  return PHONE_NEW_REFERRAL;
+  return NEW_REFERRAL_ACTION;
+}
+
+/**
+ * The universal header (Josh, 9 Oct 2026): "ensure that referral is on every single page". A route
+ * with no action of its own, or a deliberate "none", now shows New referral on desktop too, as it
+ * already did on the phone. A route with its own primary (Record a decision, Contact a team,
+ * Export the figures) keeps it, so the bar still holds one primary button.
+ */
+export function routeBarAction(pathname: string): WardPrimaryAction {
+  const action = resolveWardPrimaryAction(pathname);
+  return action === undefined || action.kind === "none" ? NEW_REFERRAL_ACTION : action;
 }
 
 /** What the referral slide-out opens with. `id` changes on every open, so each open starts fresh. */
@@ -1965,5 +1997,5 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
  */
 export function WardBarMount(props: Omit<WardBarProps, "primaryAction">) {
   const pathname = usePathname() ?? "";
-  return <WardBar {...props} primaryAction={resolveWardPrimaryAction(pathname)} />;
+  return <WardBar {...props} primaryAction={routeBarAction(pathname)} />;
 }

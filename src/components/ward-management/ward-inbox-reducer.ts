@@ -8,8 +8,8 @@ import { SNOOZE_MAX_MINUTES } from "./ward-operational-defaults";
 import {
   activeSnooze,
   currentInboxOwner,
-  isSnoozeReason,
   snoozeAllowed,
+  SNOOZE_REASON_IDS,
   type InboxOwnershipEntry,
   type InboxSnoozeEntry,
 } from "./ward-inbox-snooze";
@@ -239,8 +239,8 @@ export function reduceInboxEvent(
       if (!inboxRowExists(state, inboxItemId)) {
         return reject(state, event, `SNOOZE_INBOX_ITEM inboxItemId ${inboxItemId} does not name a real inbox row`);
       }
-      if (!isSnoozeReason(event.reason)) {
-        return reject(state, event, "SNOOZE_INBOX_ITEM reason must be one of SNOOZE_REASONS");
+      if (!SNOOZE_REASON_IDS.includes(event.reason)) {
+        return reject(state, event, "SNOOZE_INBOX_ITEM reason must be one of SNOOZE_REASON_IDS");
       }
       if (typeof event.until !== "number" || !Number.isFinite(event.until) || event.until <= event.now) {
         return reject(state, event, "SNOOZE_INBOX_ITEM until must be a time after now");
@@ -270,8 +270,8 @@ export function reduceInboxEvent(
 
     case "UNSNOOZE_INBOX_ITEM": {
       const inboxItemId = event.inboxItemId.trim();
-      const history = state.inboxSnoozes[inboxItemId] ?? [];
-      if (!activeSnooze(history, event.now)) {
+      const history = state.inboxSnoozes[inboxItemId];
+      if (!history || !activeSnooze(history, event.now)) {
         return reject(state, event, `inbox row ${inboxItemId} is not snoozed, so there is nothing to return`);
       }
       decision.outcome = "accepted";

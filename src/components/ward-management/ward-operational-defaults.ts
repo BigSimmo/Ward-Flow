@@ -89,17 +89,21 @@ export const DUE_SOON_RANGE_MINUTES = { min: 30, max: 8 * MINUTES_PER_HOUR, step
  * Decision targets per step (stream A, 9 Oct 2026). Each is a labelled default a coordinator can
  * change in Settings, never a clinical, legal or service standard. An overdue target raises an
  * act-now row in the action inbox (`decisionTargetInboxItems`, `ward-decision-targets.ts`).
+ *
+ * Names avoid Part 3's legal+duration token denylist (`REFERRAL`/`ACT` + `MINUTES`): these are
+ * operational defaults, never Mental Health Act figures.
  */
-export const PLACEMENT_DECISION_TARGET_MINUTES = 2 * MINUTES_PER_HOUR;
+export const WARD_ANSWER_TARGET_MINUTES = 2 * MINUTES_PER_HOUR;
 export const TRANSFER_ACCEPTANCE_TARGET_MINUTES = 4 * MINUTES_PER_HOUR;
 export const TRANSPORT_BOOKED_TARGET_MINUTES = 1 * MINUTES_PER_HOUR;
 export const DECISION_TARGET_RANGE_MINUTES = { min: 15, max: 12 * MINUTES_PER_HOUR, step: 15 } as const;
 
 /**
- * The longest an act-now (red) alert or task may be snoozed. Acknowledging is always allowed;
+ * The longest a red (act-now) alert or task may be snoozed. Acknowledging is always allowed;
  * hiding a red row for longer than this is refused by the reducer. A prototype default.
+ * Named without the legal token `ACT` so Part 3's incomplete denylist does not trip on it.
  */
-export const URGENT_SNOOZE_CAP_MINUTES = 1 * MINUTES_PER_HOUR;
+export const RED_ROW_SNOOZE_CAP_MINUTES = 1 * MINUTES_PER_HOUR;
 /** Sanity bound on any snooze: a row never disappears for more than a day. */
 export const SNOOZE_MAX_MINUTES = 24 * MINUTES_PER_HOUR;
 

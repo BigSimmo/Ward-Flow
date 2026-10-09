@@ -3,6 +3,7 @@ import { Timer } from "lucide-react";
 import { splitDuration, type Instant } from "./ward-clock";
 import type { WardConfiguration } from "./ward-configuration";
 import type { InboxItem } from "./ward-derivations";
+import { transportNeedState } from "./ward-derivations";
 import { INBOX_CATEGORIES } from "./ward-inbox-reducer";
 import type { Movement } from "./ward-model";
 
@@ -13,9 +14,13 @@ import type { Movement } from "./ward-model";
  * a prototype default, never a clinical, legal or service standard. A step's clock starts at a
  * time the record itself holds and stops when the record shows the step done:
  *
- *   - Referral decision: from `referredAt` until a ward accepts or every referred ward has answered.
+ *   - Referral decision: from `referralDecisionOpenedAt`, set when a refer opens a fresh wait
+ *     (first referral, or re-refer after every ward declined or withdrew), until a ward accepts
+ *     or every referred ward has answered. Falls back to `referredAt` on older records. A parallel
+ *     decline or a waitlist entry alone does not restart it.
  *   - Transfer acceptance: from `acceptedAt` (acceptance in principle) until the bed is pulled.
  *   - Transport booked: from the recorded move to `pulled` until a transport job is booked.
+ *     A pulled movement recorded as needing no transport has no booking target.
  *
  * A step whose start time the record does not hold has no target running. Nothing is backfilled
  * from `openedAt`, the same discipline `Movement.referredAt` documents.
@@ -84,20 +89,6 @@ function lastPulledAt(movement: Movement): Instant | undefined {
   return pulledAt;
 }
 
-/**
- * When the wards now being asked started waiting. `referredAt` is the FIRST referral and is never
- * rewritten (RA1), so a re-referral after every ward declined or was withdrawn would otherwise
- * read as overdue at once. The latest ward answer (a decline or a withdrawal) restarts the clock
- * for whichever wards are still or newly asked. It never starts before the first referral.
- */
-function referralClockStart(movement: Movement, referredAt: Instant): Instant {
-  let start = referredAt;
-  for (const answer of [...movement.declines, ...movement.withdrawnReferrals]) {
-    if (answer.at > start) start = answer.at;
-  }
-  return start;
-}
-
 /** When the step this movement is waiting on started, or undefined when no target is running. */
 function pendingStep(movement: Movement): { step: DecisionTargetStep; startedAt: Instant } | undefined {
   if (movement.closure || movement.stage === "arrived") return undefined;
@@ -107,7 +98,9 @@ function pendingStep(movement: Movement): { step: DecisionTargetStep; startedAt:
     movement.referredUnitIds.length > 0 &&
     DECIDING_STAGES.includes(movement.stage)
   ) {
-    return { step: "referral_decision", startedAt: referralClockStart(movement, movement.referredAt) };
+    // Prefer the act that opened this wait (`REFER_TO_UNITS`); fall back for older records.
+    const startedAt = movement.referralDecisionOpenedAt ?? movement.referredAt;
+    return { step: "referral_decision", startedAt };
   }
   if (
     movement.stage === "accepted_awaiting_bed" &&
@@ -116,8 +109,9 @@ function pendingStep(movement: Movement): { step: DecisionTargetStep; startedAt:
   ) {
     return { step: "transfer_acceptance", startedAt: movement.acceptedAt };
   }
-  // A recorded "no transport needed" is a real answer (R-2026-09-04-C): nothing to book, no clock.
-  if (movement.stage === "pulled" && movement.transportNeed?.needed !== false) {
+  if (movement.stage === "pulled") {
+    // No booking is owed when the ward has recorded that no transport is needed.
+    if (transportNeedState(movement) === "not_needed") return undefined;
     const booked = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
     const pulledAt = lastPulledAt(movement);
     if (!booked && pulledAt !== undefined) return { step: "transport_booked", startedAt: pulledAt };
@@ -133,7 +127,8 @@ export function decisionTargetReading(
 ): DecisionTargetReading | undefined {
   const pending = pendingStep(movement);
   if (!pending) return undefined;
-  const definition = DECISION_TARGET_STEPS.find((entry) => entry.step === pending.step)!;
+  const definition = DECISION_TARGET_STEPS.find((entry) => entry.step === pending.step);
+  if (!definition) return undefined;
   const targetMinutes = configuration[definition.configKey];
   const dueAt = pending.startedAt + targetMinutes;
   const minutesLeft = dueAt - now;
@@ -165,7 +160,8 @@ export function decisionTargetInboxItems(
   for (const movement of movements) {
     const reading = decisionTargetReading(movement, now, configuration);
     if (!reading?.overdue) continue;
-    const definition = DECISION_TARGET_STEPS.find((entry) => entry.step === reading.step)!;
+    const definition = DECISION_TARGET_STEPS.find((entry) => entry.step === reading.step);
+    if (!definition) continue;
     const category = INBOX_CATEGORIES[definition.category];
     items.push({
       id: `${category.idPrefix}${movement.id}`,

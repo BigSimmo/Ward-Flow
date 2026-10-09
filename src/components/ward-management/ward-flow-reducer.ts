@@ -37,7 +37,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
 import { reduceInboxEvent } from "./ward-inbox-reducer";
-import { SNOOZE_REASON_IDS, type InboxOwnershipEntry, type InboxSnoozeEntry } from "./ward-inbox-snooze";
+import type { InboxOwnershipEntry, InboxSnoozeEntry } from "./ward-inbox-snooze";
 import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
@@ -3664,6 +3664,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // rewritten by a later re-referral — every seeded movement still carries none, and a row
         // without it goes on saying so rather than borrowing `openedAt`.
         referredAt: movement.referredAt ?? event.now,
+        // Stream A decision targets: open a fresh wait when this act refers into an empty live set
+        // (first referral, or re-refer after every ward declined/withdrew). Adding wards while
+        // others are still live keeps the standing clock. A decline alone never writes this field.
+        referralDecisionOpenedAt:
+          permitted.length === 0
+            ? movement.referralDecisionOpenedAt
+            : liveUnitIds.length === 0
+              ? event.now
+              : (movement.referralDecisionOpenedAt ?? movement.referredAt ?? event.now),
         // OD-3: the reason is KEPT. It used to live in the shortlist panel's own `useState` and be
         // discarded on the next selection, while the governance page said override reasons were
         // recorded. Appended rather than replaced, because a movement can be overridden more than
@@ -8608,18 +8617,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "COMPLETE_INBOX_ITEM":
     case "REOPEN_INBOX_ITEM":
     case "TAKE_INBOX_ITEM_OWNERSHIP":
+    case "SNOOZE_INBOX_ITEM":
     case "UNSNOOZE_INBOX_ITEM": {
       const next = reduceInboxEvent(state, event, decision, reject);
       if (next) return next;
       return state;
-    }
-
-    case "SNOOZE_INBOX_ITEM": {
-      // Runtime membership, not merely the type: the reason is a closed list (stream A, 9 Oct 2026).
-      if (!SNOOZE_REASON_IDS.includes(event.reason)) {
-        return reject(state, event, "SNOOZE_INBOX_ITEM reason must be chosen from SNOOZE_REASON_IDS");
-      }
-      return reduceInboxEvent(state, event, decision, reject) ?? state;
     }
 
     case "SET_ARRIVAL_DETAILS": {

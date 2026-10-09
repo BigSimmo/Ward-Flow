@@ -24,7 +24,7 @@ import {
   isValidStoredWardFlowState,
   withInboxStreamADefaults,
 } from "../src/components/ward-management/ward-flow-storage-validation";
-import { URGENT_SNOOZE_CAP_MINUTES } from "../src/components/ward-management/ward-operational-defaults";
+import { RED_ROW_SNOOZE_CAP_MINUTES } from "../src/components/ward-management/ward-operational-defaults";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
@@ -170,7 +170,7 @@ describe("SNOOZE_INBOX_ITEM", () => {
       role: "coordinator",
       now: NOW,
       inboxItemId: row.id,
-      until: NOW + URGENT_SNOOZE_CAP_MINUTES,
+      until: NOW + RED_ROW_SNOOZE_CAP_MINUTES,
       reason: "awaiting_call_back",
     });
     expect(hour.rejections).toEqual([]);
