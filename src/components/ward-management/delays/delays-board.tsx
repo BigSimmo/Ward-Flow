@@ -501,7 +501,9 @@ function PersonPanel({
             className={styles.inlineAction}
             href="/mockups/ward-flow"
             data-testid={`delays-override-${movement.id}`}
-            onClick={() => { setFocusMovementId(movement.id); }}
+            onClick={() => {
+              setFocusMovementId(movement.id);
+            }}
           >
             Override a refusal on the coordinator screen
           </Link>
@@ -636,7 +638,9 @@ function Registers({
               aria-controls={`delays-pane-${entry.id}`}
               aria-selected={tab === entry.id}
               tabIndex={tab === entry.id ? 0 : -1}
-              onClick={() => { setTab(entry.id); }}
+              onClick={() => {
+                setTab(entry.id);
+              }}
             >
               {entry.label} <span className={styles.k}>{entry.count}</span>
             </button>
@@ -995,21 +999,53 @@ export function DelaysBoard({
 
   const chips: { key: string; label: string; clear: () => void }[] = [];
   if (filters.owner !== null)
-    chips.push({ key: "owner", label: ownerName(filters.owner), clear: () => { set({ owner: null }); } });
+    chips.push({
+      key: "owner",
+      label: ownerName(filters.owner),
+      clear: () => {
+        set({ owner: null });
+      },
+    });
   if (filters.origin !== null)
-    chips.push({ key: "origin", label: catchmentName(filters.origin), clear: () => { set({ origin: null }); } });
+    chips.push({
+      key: "origin",
+      label: catchmentName(filters.origin),
+      clear: () => {
+        set({ origin: null });
+      },
+    });
   if (filters.cause !== null)
-    chips.push({ key: "cause", label: causeTitle(filters.cause), clear: () => { set({ cause: null }); } });
+    chips.push({
+      key: "cause",
+      label: causeTitle(filters.cause),
+      clear: () => {
+        set({ cause: null });
+      },
+    });
   if (filters.dueSoon)
-    chips.push({ key: "due", label: `Due within ${urgentMinutes}m`, clear: () => { set({ dueSoon: false }); } });
+    chips.push({
+      key: "due",
+      label: `Due within ${urgentMinutes}m`,
+      clear: () => {
+        set({ dueSoon: false });
+      },
+    });
   if (filters.breached)
-    chips.push({ key: "breached", label: "Past recorded time", clear: () => { set({ breached: false }); } });
+    chips.push({
+      key: "breached",
+      label: "Past recorded time",
+      clear: () => {
+        set({ breached: false });
+      },
+    });
   if (filters.bin !== null) {
     const bin = bins[filters.bin];
     chips.push({
       key: "bin",
       label: `Crossing ${formatInstantWithDay(now + bin.from, now)} to ${formatInstantWithDay(now + bin.to, now)}`,
-      clear: () => { set({ bin: null }); },
+      clear: () => {
+        set({ bin: null });
+      },
     });
   }
 
@@ -1124,7 +1160,9 @@ export function DelaysBoard({
               type="button"
               className={styles.gin}
               aria-expanded={open}
-              onClick={() => { setOpenGroups((current) => ({ ...current, [group.cause]: !open })); }}
+              onClick={() => {
+                setOpenGroups((current) => ({ ...current, [group.cause]: !open }));
+              }}
               data-testid={`delays-cause-${group.cause}`}
               data-severe={list[0].severe}
             >
@@ -1153,7 +1191,9 @@ export function DelaysBoard({
                 <button
                   type="button"
                   className={styles.moreBtn}
-                  onClick={() => { setMoreGroups((current) => ({ ...current, [group.cause]: true })); }}
+                  onClick={() => {
+                    setMoreGroups((current) => ({ ...current, [group.cause]: true }));
+                  }}
                 >
                   {`Show ${list.length - limit} more`}
                 </button>
@@ -1205,7 +1245,9 @@ export function DelaysBoard({
       service={service}
       isOutsideService={isOutsideService}
       silentPressed={filters.silent}
-      onSilent={() => { set({ silent: !filters.silent }); }}
+      onSilent={() => {
+        set({ silent: !filters.silent });
+      }}
       onPick={reveal}
       onNotWired={onNotWired}
     />
@@ -1341,17 +1383,31 @@ export function DelaysBoard({
                   <input
                     type="search"
                     value={filters.search}
-                    onChange={(event) => { set({ search: event.target.value }); }}
+                    onChange={(event) => {
+                      set({ search: event.target.value });
+                    }}
                     placeholder="Find a person or ED"
                     aria-label="Find a person or ED"
                     autoComplete="off"
                   />
                 </label>
                 <div className={styles.seg} role="group" aria-label="Order the table">
-                  <button type="button" aria-pressed={!flat} onClick={() => { setFlat(false); }}>
+                  <button
+                    type="button"
+                    aria-pressed={!flat}
+                    onClick={() => {
+                      setFlat(false);
+                    }}
+                  >
                     By blocker
                   </button>
-                  <button type="button" aria-pressed={flat} onClick={() => { setFlat(true); }}>
+                  <button
+                    type="button"
+                    aria-pressed={flat}
+                    onClick={() => {
+                      setFlat(true);
+                    }}
+                  >
                     Longest wait
                   </button>
                 </div>
@@ -1379,7 +1435,9 @@ export function DelaysBoard({
                   type="button"
                   className={styles.chip}
                   aria-pressed={filters.locked}
-                  onClick={() => { set({ locked: !filters.locked }); }}
+                  onClick={() => {
+                    set({ locked: !filters.locked });
+                  }}
                 >
                   Locked bed <span className={styles.k}>{rows.filter((row) => row.locked).length}</span>
                 </button>
@@ -1387,7 +1445,9 @@ export function DelaysBoard({
                   type="button"
                   className={styles.chip}
                   aria-pressed={filters.silent}
-                  onClick={() => { set({ silent: !filters.silent }); }}
+                  onClick={() => {
+                    set({ silent: !filters.silent });
+                  }}
                 >
                   <Glyph tone="warning" />
                   {`Silent ${SILENT_MINUTES / 60}h+`}{" "}
@@ -1408,7 +1468,13 @@ export function DelaysBoard({
                 ))}
                 <span className={styles.sp} />
                 {filtered ? (
-                  <button type="button" className={styles.lnk} onClick={() => { setFilters(NO_FILTERS); }}>
+                  <button
+                    type="button"
+                    className={styles.lnk}
+                    onClick={() => {
+                      setFilters(NO_FILTERS);
+                    }}
+                  >
                     Clear
                   </button>
                 ) : null}
@@ -1486,7 +1552,9 @@ export function DelaysBoard({
               set(patch);
               if (toFlat) setFlat(true);
             }}
-            onClear={() => { setFilters(NO_FILTERS); }}
+            onClear={() => {
+              setFilters(NO_FILTERS);
+            }}
             onPick={reveal}
             onToTable={() => {
               tableRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
