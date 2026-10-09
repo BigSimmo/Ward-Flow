@@ -73,6 +73,25 @@ import {
 const SHORT_WAIT_HOURS = WAIT_FILTER_SHORT_MINUTES / 60;
 const LONG_WAIT_HOURS = LONG_WAIT_MINUTES / 60;
 
+function foldSearchText(value: string): string {
+  return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[’'-]/g, "").trim();
+}
+
+function nameAwareSearch(
+  movements: Movement[],
+  referrals: Referral[],
+  units: Unit[],
+  subjectWords: Map<string, string>,
+  searchQuery: MovementSearchQuery,
+): PatientSearchResult[] {
+  const needle = foldSearchText(searchQuery.text);
+  if (needle === "") return searchPatients(movements, referrals, units, { ...searchQuery, text: "" });
+  const byRecord = new Set(searchPatients(movements, referrals, units, searchQuery).map(resultId));
+  return searchPatients(movements, referrals, units, { ...searchQuery, text: "" }).filter(
+    (result) => byRecord.has(resultId(result)) || (subjectWords.get(resultId(result)) ?? "").includes(needle),
+  );
+}
+
 import { recordSearch, type AccessEntry } from "./access-record";
 import { PatientTypeahead } from "./patient-typeahead";
 import { handOffTypedPatientQuery, isNewTabClick } from "./patient-query-handoff";
@@ -277,7 +296,11 @@ export function PatientSearchPage() {
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === "/" || (e.key === "k" && (e.metaKey || e.ctrlKey))) && !e.altKey) {
+      if (
+        !detailsOpen &&
+        (e.key === "/" || (e.key === "k" && (e.metaKey || e.ctrlKey))) &&
+        !e.altKey
+      ) {
         const target = e.target as HTMLElement | null;
         const tagName = target?.tagName?.toLowerCase();
         if (tagName !== "input" && tagName !== "textarea" && tagName !== "select" && !target?.isContentEditable) {
@@ -290,7 +313,7 @@ export function PatientSearchPage() {
     };
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, []);
+  }, [detailsOpen]);
 
   const query: MovementSearchQuery = useMemo(
     () => ({
@@ -313,23 +336,22 @@ export function PatientSearchPage() {
     const context = { patients, referrals, movements };
     for (const movement of movements) {
       const info = resolveSubjectPatient(movement, context);
-      words.set(movement.id, `${info.displayName} ${info.umrn}`.toLowerCase());
+      words.set(movement.id, foldSearchText(`${info.displayName} ${info.umrn}`));
     }
     for (const referral of referrals) {
       const info = resolveSubjectPatient(referral, context);
-      words.set(referral.id, `${info.displayName} ${info.umrn}`.toLowerCase());
+      words.set(referral.id, foldSearchText(`${info.displayName} ${info.umrn}`));
     }
     return words;
   }, [patients, referrals, movements]);
 
-  const baseResults = useMemo(() => {
-    const needle = text.trim().toLowerCase();
-    if (isChip || needle === "") return searchPatients(movements, referrals, units, { ...query, text: "" });
-    const byRecord = new Set(searchPatients(movements, referrals, units, query).map(resultId));
-    return searchPatients(movements, referrals, units, { ...query, text: "" }).filter(
-      (result) => byRecord.has(resultId(result)) || (subjectWords.get(resultId(result)) ?? "").includes(needle),
-    );
-  }, [movements, referrals, units, query, isChip, text, subjectWords]);
+  const baseResults = useMemo(
+    () =>
+      isChip
+        ? searchPatients(movements, referrals, units, { ...query, text: "" })
+        : nameAwareSearch(movements, referrals, units, subjectWords, query),
+    [movements, referrals, units, query, isChip, subjectWords],
+  );
 
   const passes = (result: PatientSearchResult, skip: { facet?: boolean; presence?: boolean } = {}) =>
     (!isChip || matchesQuickChip(result, text, now)) &&
@@ -648,8 +670,8 @@ export function PatientSearchPage() {
   };
 
   const selectedPatient = useMemo(() => {
-    return unifiedCaseload.find((p) => p.id === selectedId) ?? unifiedCaseload[0] ?? null;
-  }, [unifiedCaseload, selectedId]);
+    return unifiedCaseload.find((p) => p.id === selectedId) ?? (detailsOpen ? null : unifiedCaseload[0] ?? null);
+  }, [unifiedCaseload, selectedId, detailsOpen]);
 
   const handleSelectPatient = (p: UnifiedCaseloadPatient, trigger?: HTMLElement) => {
     setSelectedId(p.id);
@@ -735,27 +757,33 @@ Clinical Note: ${p.clinicalNote}`;
   const stageCounts = useMemo(() => {
     const map = new Map<MovementStage, number>();
     for (const candidate of SELECTABLE_STAGES) {
-      map.set(candidate, searchMovements(movements, units, { text, stage: candidate, edId: query.edId }).length);
+      map.set(
+        candidate,
+        nameAwareSearch(movements, referrals, units, subjectWords, { ...query, stage: candidate }).length,
+      );
     }
     return map;
-  }, [movements, units, text, query.edId]);
+  }, [movements, referrals, units, query, subjectWords]);
 
   const allStagesCount = useMemo(
-    () => searchMovements(movements, units, { text, edId: query.edId }).length,
-    [movements, units, text, query.edId],
+    () => nameAwareSearch(movements, referrals, units, subjectWords, { ...query, stage: undefined }).length,
+    [movements, referrals, units, query, subjectWords],
   );
 
   const departmentCounts = useMemo(() => {
     const map = new Map<string, number>();
     for (const ed of allEmergencyDepartments()) {
-      map.set(ed.id, searchMovements(movements, units, { text, stage: query.stage, edId: ed.id }).length);
+      map.set(
+        ed.id,
+        nameAwareSearch(movements, referrals, units, subjectWords, { ...query, edId: ed.id }).length,
+      );
     }
     return map;
-  }, [movements, units, text, query.stage]);
+  }, [movements, referrals, units, query, subjectWords]);
 
   const allDepartmentsCount = useMemo(
-    () => searchMovements(movements, units, { text, stage: query.stage }).length,
-    [movements, units, text, query.stage],
+    () => nameAwareSearch(movements, referrals, units, subjectWords, { ...query, edId: undefined }).length,
+    [movements, referrals, units, query, subjectWords],
   );
 
   const nowMs = now * MS_PER_MINUTE;
