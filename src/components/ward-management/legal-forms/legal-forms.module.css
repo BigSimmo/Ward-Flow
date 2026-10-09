@@ -1374,9 +1374,17 @@ button.taskLabel[aria-pressed="true"] {
  * The expiring list comes first. The hero keeps its title, the three filter pills and the one
  * action; the rail becomes a single "passed" line. Each row is a card line: name and form, then
  * the time left. The panel sits below the list and the page scrolls to it on select. */
+.heroAside .phoneHandover {
+  display: none;
+}
+
 @media (max-width: 48rem) {
   .main {
     padding: var(--wf-s-3);
+  }
+
+  .heroAside .phoneHandover {
+    display: inline-flex;
   }
 
   .rail {

@@ -118,7 +118,7 @@ function sameHighlight(a: Highlight, b: Highlight): boolean {
   return true;
 }
 
-export function LegalFormsScreen() {
+export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: string } = {}) {
   usePrintableDisclosures();
 
   const { movements, referrals, patients, admissions, units, supportNotifications, dispatch, dayZero, rejections } =
@@ -127,7 +127,8 @@ export function LegalFormsScreen() {
 
   const [view, setView] = useState<View>("clocks");
   const [highlight, setHighlight] = useState<Highlight>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Governance links a gap here with ?movement=, so that patient opens selected.
+  const [selectedId, setSelectedId] = useState<string | null>(initialMovementId ?? null);
   const [tab, setTab] = useState<FocusTab>("now");
   const [focusGap, setFocusGap] = useState<{ gap: RecordGap; nonce: number } | null>(null);
   const [requirementsCode, setRequirementsCode] = useState<string | null>(null);
@@ -161,6 +162,9 @@ export function LegalFormsScreen() {
   const wardNameOf = (movement: Movement) =>
     movement.acceptedUnitId ? (units.find((unit) => unit.id === movement.acceptedUnitId)?.name ?? null) : null;
 
+  // A gap this page can close: a written time is only recordable for the forms it owns.
+  const offersGap = (movement: Movement, gap: RecordGap) =>
+    hasGap(movement, gap) && (gap !== "written" || isOwnedLegalFormCode(movement.legalForm?.code));
   const matches = (movement: Movement): boolean => {
     if (highlight === null) return false;
     const standing = clockStanding(movement, now);
@@ -168,7 +172,7 @@ export function LegalFormsScreen() {
     if (highlight.kind === "soon") return standing === "soon";
     if (highlight.kind === "none") return movement.legalForm?.dueAt === undefined;
     if (highlight.kind === "code") return movement.legalForm?.code === highlight.code;
-    return hasGap(movement, highlight.gap);
+    return offersGap(movement, highlight.gap);
   };
   const toggleHighlight = (next: Highlight) => setHighlight((current) => (sameHighlight(current, next) ? null : next));
 
@@ -191,13 +195,12 @@ export function LegalFormsScreen() {
     }
   };
 
-  const offersGap = (movement: Movement, gap: RecordGap) =>
-    hasGap(movement, gap) && (gap !== "written" || isOwnedLegalFormCode(movement.legalForm?.code));
   const gapCount = (gap: RecordGap) => rows.filter((movement) => offersGap(movement, gap)).length;
   const startGap = (gap: RecordGap) => {
     const first = rows.find((movement) => offersGap(movement, gap));
     if (!first) return;
     select(first);
+    setTab("now");
     setFocusGap((previous) => ({ gap, nonce: (previous?.nonce ?? 0) + 1 }));
   };
 
@@ -268,6 +271,7 @@ export function LegalFormsScreen() {
     onSelect: select,
     onAddTime: (target: Movement) => {
       select(target);
+      setTab("now");
       setFocusGap((previous) => ({ gap: "written", nonce: (previous?.nonce ?? 0) + 1 }));
     },
   });
@@ -358,6 +362,17 @@ export function LegalFormsScreen() {
                 <Button variant="light" icon={Plus} onClick={() => openRecord()}>
                   Record a form
                 </Button>
+                {/* Phone keeps the header's handover copy here, since the header tools hide. */}
+                {handover.length > 0 ? (
+                  <Button
+                    variant="light"
+                    icon={ClipboardCopy}
+                    className={styles.phoneHandover}
+                    onClick={() => copyText("handover", handover.join("\n"))}
+                  >
+                    {copied === "handover" ? "Copied" : `Handover (${handover.length})`}
+                  </Button>
+                ) : null}
               </div>
             }
             bar={

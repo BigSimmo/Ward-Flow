@@ -32,7 +32,6 @@ import {
   NOT_WIRED,
   STANDING_TONE,
   clockStanding,
-  needsExamination,
   receiptEventAccepts,
   isOwnedLegalFormCode,
   standingWord,
@@ -391,13 +390,4 @@ export function TellSheet({
 /** The label a movement carries in pickers: name, UMRN and its form. */
 export function movementPickerLabel(name: string, umrn: string, movement: Movement): string {
   return `${name} (${umrn}), ${movement.legalForm ? `Form ${movement.legalForm.code}` : "Voluntary"}`;
-}
-
-/** True when this movement offers any recorded fact on this page. */
-export function offersRecording(movement: Movement): boolean {
-  return (
-    isOwnedLegalFormCode(movement.legalForm?.code) ||
-    receiptEventAccepts(movement.legalForm?.code) ||
-    needsExamination(movement)
-  );
 }
