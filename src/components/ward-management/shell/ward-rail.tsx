@@ -430,9 +430,13 @@ export function WardRail() {
     if (appearance !== "auto" || typeof window.matchMedia !== "function") return;
     // Auto follows the OS live, so both theme layers move together when it changes.
     const query = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => syncRootAppearance("auto");
+    const onChange = () => {
+      syncRootAppearance("auto");
+    };
     query.addEventListener?.("change", onChange);
-    return () => query.removeEventListener?.("change", onChange);
+    return () => {
+      query.removeEventListener?.("change", onChange);
+    };
   }, [appearance]);
 
   useEffect(() => {

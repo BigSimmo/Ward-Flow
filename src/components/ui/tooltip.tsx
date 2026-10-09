@@ -139,7 +139,9 @@ export function Tooltip({
       setOpen(false);
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+    };
   }, [visibleOpen]);
 
   if (!isValidElement(children)) return <>{children}</>;

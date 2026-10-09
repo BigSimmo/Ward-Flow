@@ -33,7 +33,6 @@ import { standingFigures } from "@/components/ward-management/ward-standing-stri
 import { Sheet } from "@/components/ui/sheet";
 import { StatusGlyph, type WfTone } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
-import { APP_THEME_COLORS } from "@/lib/theme";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -302,6 +301,9 @@ export const useAppearanceStore = createBrowserStore(
   "auto" as WardAppearance,
 );
 
+/** Browser chrome colours; the same values as `APP_THEME_COLORS` in `src/lib/theme.ts`, kept here so the ward seam stays closed. */
+const CHROME_COLOURS = { light: "#ffffff", dark: "#0b0e11" } as const;
+
 /**
  * Puts the root in one theme. The v6 and shell tokens follow `data-theme`, while the compatibility
  * layers and the page background follow `.dark`; setting only one left pages half light and half
@@ -317,7 +319,7 @@ export function syncRootAppearance(appearance: WardAppearance) {
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches);
   root.classList.toggle("dark", dark);
-  const colour = dark ? APP_THEME_COLORS.dark : APP_THEME_COLORS.light;
+  const colour = dark ? CHROME_COLOURS.dark : CHROME_COLOURS.light;
   document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.setAttribute("content", colour));
 }
 

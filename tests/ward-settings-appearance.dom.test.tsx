@@ -13,6 +13,7 @@ vi.mock("next/link", () => ({
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { applyAppearance } from "@/components/ward-management/shell/ward-bar";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { APP_THEME_COLORS } from "@/lib/theme";
 
 /**
  * 🔴 **THE APPEARANCE CONTROL, AND THE WHOLE REASON IT WAITED: IT MUST WRITE THE STATE THAT ALREADY
@@ -79,13 +80,6 @@ describe("the settings screen's appearance control", () => {
     expect(themeAttribute(), "the theme the whole app branches on did not change").toBe("dark");
   });
 
-  /**
-   * ⚠️ **AUTO IS AN ABSENCE, NOT A VALUE, AND THE REAL APPLIER KNOWS THAT.** It REMOVES the stored
-   * key and the `data-theme` attribute rather than storing the word "auto" — because "follow the
-   * system" is the state of having chosen nothing. 🔴 **A re-implementation would almost certainly
-   * store `"auto"`, and every screen reading `data-theme` would then see a theme named auto rather
-   * than no theme at all.** This is the assertion that catches a copy.
-   */
   it("moves the .dark class with the choice, so both theme layers agree", () => {
     renderSettings();
     const panel = screen.getByTestId("ward-settings-appearance");
@@ -94,12 +88,25 @@ describe("the settings screen's appearance control", () => {
     fireEvent.click(within(panel).getByRole("radio", { name: "Dark" }));
     expect(themeAttribute()).toBe("dark");
     expect(root.classList.contains("dark"), ".dark missing with Dark chosen").toBe(true);
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    document.head.append(meta);
+    act(() => applyAppearance("dark"));
+    expect(meta.content, "browser chrome colour drifted from the app theme").toBe(APP_THEME_COLORS.dark);
+    meta.remove();
 
     fireEvent.click(within(panel).getByRole("radio", { name: "Light" }));
     expect(themeAttribute()).toBe("light");
     expect(root.classList.contains("dark"), ".dark left on with Light chosen").toBe(false);
   });
 
+  /**
+   * ⚠️ **AUTO IS AN ABSENCE, NOT A VALUE, AND THE REAL APPLIER KNOWS THAT.** It REMOVES the stored
+   * key and the `data-theme` attribute rather than storing the word "auto" — because "follow the
+   * system" is the state of having chosen nothing. 🔴 **A re-implementation would almost certainly
+   * store `"auto"`, and every screen reading `data-theme` would then see a theme named auto rather
+   * than no theme at all.** This is the assertion that catches a copy.
+   */
   it("treats Auto as removing the choice, which is what the real applier does", () => {
     renderSettings();
     const panel = screen.getByTestId("ward-settings-appearance");
