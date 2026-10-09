@@ -1495,7 +1495,7 @@
     bottom: 0;
     left: 0;
     z-index: var(--z-overlay);
-    height: calc(100dvh - 3.5rem);
+    height: 92dvh;
     padding-bottom: calc(var(--spacing-tap, 3rem) + 2 * var(--wf-s-2) + var(--safe-area-bottom, 0px));
     border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
     box-shadow: var(--wf-e3);
