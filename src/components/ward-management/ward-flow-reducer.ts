@@ -1,5 +1,6 @@
 import { referralIntakeError } from "./referrals/referral-submission";
 import { recordedMovementMedicalClearance } from "./ward-medical-clearance";
+import { movementPatientIdentityMatchesRecord } from "./ward-patient-resolver";
 import {
   validCareChange,
   careChangeRefusal,
@@ -8801,7 +8802,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         next = {
           ...next,
           referrals: next.referrals.map((referral) =>
-            referral.id === movement.referralId
+            referral.id === movement.referralId && movementPatientIdentityMatchesRecord(movement, referral)
               ? { ...referral, medicalClearance: updated.medicalClearance }
               : referral,
           ),
