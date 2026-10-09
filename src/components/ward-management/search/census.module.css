@@ -1122,7 +1122,7 @@ table.censusTable {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
+  min-height: 48px;
   padding: 0 16px;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-pill);

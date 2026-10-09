@@ -573,6 +573,7 @@ export function PatientSearchPage() {
     if (legalFilter !== "all") count++;
     if (waitFilter !== "all") count++;
     if (tierFilter !== "all") count++;
+    if (dobOn && parseDob(dob) !== null) count++;
     return count;
   }, [
     text,
@@ -585,6 +586,8 @@ export function PatientSearchPage() {
     legalFilter,
     waitFilter,
     tierFilter,
+    dobOn,
+    dob,
   ]);
 
   const resetAllFilters = () => {

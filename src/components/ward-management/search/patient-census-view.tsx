@@ -511,6 +511,18 @@ function CensusTableRow({
         <TierPill tier={row.tier} />
       </td>
       <td>
+        {/* The row itself takes the keyboard; this names its action for a screen reader's browse mode. */}
+        <button
+          type="button"
+          className="sr-only"
+          tabIndex={-1}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect(row, event.currentTarget.closest("tr") ?? event.currentTarget);
+          }}
+        >
+          Open details for {row.name}
+        </button>
         <span className={styles.two}>
           <b className={styles.name}>
             <span className={styles.truncate}>
