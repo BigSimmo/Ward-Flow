@@ -24,6 +24,13 @@ export const APP_THEME_COLORS = {
 export const THEME_STORAGE_KEY = "clinical-kb-theme";
 
 /**
+ * The Ward Flow appearance pin, written only by `applyAppearance` in `shell/ward-bar.tsx`. The
+ * bootstrap reads it so ward pages paint their chosen theme first time, with `data-theme` and the
+ * `.dark` class agreeing. It wins over the clinical pin because it is the control ward users see.
+ */
+const WARD_APPEARANCE_STORAGE_KEY = "ward-flow-appearance";
+
+/**
  * Cookie mirror of an explicit light/dark pin so the server layout can paint
  * the correct `<html>` class before hydration. Cleared for "system".
  */
@@ -43,7 +50,7 @@ export const THEME_COOKIE_NAME = "clinical-theme";
  * Keep the inline notes to one short clause — this string ships in every
  * page's `<head>`.
  */
-export const THEME_BOOTSTRAP_SCRIPT = `(function(){var t=null;try{t=localStorage.getItem("${THEME_STORAGE_KEY}");}catch(e){/* storage blocked (private/partitioned) - fall through to the cookie, then the OS preference */}if(t!=="light"&&t!=="dark"){try{var m=document.cookie.match(/(?:^|; )${THEME_COOKIE_NAME}=(light|dark)(?:;|$)/);if(m)t=m[1];}catch(e){/* cookie access blocked (sandboxed frame) - the OS preference below applies */}}var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);var c=d?"${APP_THEME_COLORS.dark}":"${APP_THEME_COLORS.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",c);});})();`;
+export const THEME_BOOTSTRAP_SCRIPT = `(function(){var w=null;try{w=localStorage.getItem("${WARD_APPEARANCE_STORAGE_KEY}");}catch(e){/* storage blocked - no ward pin */}if(w==="light"||w==="dark"){document.documentElement.setAttribute("data-theme",w);}var t=null;try{t=localStorage.getItem("${THEME_STORAGE_KEY}");}catch(e){/* storage blocked (private/partitioned) - fall through to the cookie, then the OS preference */}if(t!=="light"&&t!=="dark"){try{var m=document.cookie.match(/(?:^|; )${THEME_COOKIE_NAME}=(light|dark)(?:;|$)/);if(m)t=m[1];}catch(e){/* cookie access blocked (sandboxed frame) - the OS preference below applies */}}if(w==="light"||w==="dark")t=w;var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);var c=d?"${APP_THEME_COLORS.dark}":"${APP_THEME_COLORS.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",c);});})();`;
 
 export function resolveThemePreference(storedTheme: string | null | undefined, prefersDark: boolean): ResolvedTheme {
   if (storedTheme === "light" || storedTheme === "dark") return storedTheme;

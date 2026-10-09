@@ -33,6 +33,7 @@ import { standingFigures } from "@/components/ward-management/ward-standing-stri
 import { Sheet } from "@/components/ui/sheet";
 import { StatusGlyph, type WfTone } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
+import { APP_THEME_COLORS } from "@/lib/theme";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -301,9 +302,27 @@ export const useAppearanceStore = createBrowserStore(
   "auto" as WardAppearance,
 );
 
+/**
+ * Puts the root in one theme. The v6 and shell tokens follow `data-theme`, while the compatibility
+ * layers and the page background follow `.dark`; setting only one left pages half light and half
+ * dark. The browser chrome colour follows the same answer.
+ */
+export function syncRootAppearance(appearance: WardAppearance) {
+  const root = document.documentElement;
+  if (appearance === "auto") root.removeAttribute("data-theme");
+  else root.setAttribute("data-theme", appearance);
+  const dark =
+    appearance === "dark" ||
+    (appearance === "auto" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
+  root.classList.toggle("dark", dark);
+  const colour = dark ? APP_THEME_COLORS.dark : APP_THEME_COLORS.light;
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.setAttribute("content", colour));
+}
+
 export function applyAppearance(next: WardAppearance) {
-  if (next === "auto") document.documentElement.removeAttribute("data-theme");
-  else document.documentElement.setAttribute("data-theme", next);
+  syncRootAppearance(next);
   try {
     if (next === "auto") {
       window.localStorage.removeItem(APPEARANCE_STORAGE_KEY);

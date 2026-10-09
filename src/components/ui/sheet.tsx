@@ -334,7 +334,21 @@ export function Sheet({
         window.clearTimeout(restoreTimers.timeout);
         restoreTimers.timeout = null;
       }
-      if (unmountingRef.current) return;
+      if (unmountingRef.current) {
+        // Removed while open (a drawer that renders only while it has a record): restore focus
+        // now rather than through timers, which must not outlive the component. The panel is
+        // already gone here, so focus has fallen to the body unless something else took it.
+        const restoreTarget = resolveConnectedRestoreTarget();
+        if (
+          typeof document !== "undefined" &&
+          restoreTarget &&
+          canRestoreFocusTo(restoreTarget) &&
+          (document.activeElement === document.body || document.activeElement == null)
+        ) {
+          restoreTarget.focus({ preventScroll: true });
+        }
+        return;
+      }
       // Focus restore is best-effort. Under Vitest coverage workers the jsdom
       // `document` can be torn down before this rAF/setTimeout pair fires; bare
       // `document` access then becomes an unhandled ReferenceError that fails

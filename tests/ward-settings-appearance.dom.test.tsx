@@ -86,6 +86,20 @@ describe("the settings screen's appearance control", () => {
    * store `"auto"`, and every screen reading `data-theme` would then see a theme named auto rather
    * than no theme at all.** This is the assertion that catches a copy.
    */
+  it("moves the .dark class with the choice, so both theme layers agree", () => {
+    renderSettings();
+    const panel = screen.getByTestId("ward-settings-appearance");
+    const root = document.documentElement;
+
+    fireEvent.click(within(panel).getByRole("radio", { name: "Dark" }));
+    expect(themeAttribute()).toBe("dark");
+    expect(root.classList.contains("dark"), ".dark missing with Dark chosen").toBe(true);
+
+    fireEvent.click(within(panel).getByRole("radio", { name: "Light" }));
+    expect(themeAttribute()).toBe("light");
+    expect(root.classList.contains("dark"), ".dark left on with Light chosen").toBe(false);
+  });
+
   it("treats Auto as removing the choice, which is what the real applier does", () => {
     renderSettings();
     const panel = screen.getByTestId("ward-settings-appearance");

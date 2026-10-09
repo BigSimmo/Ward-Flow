@@ -2220,7 +2220,6 @@
   /* The original referral module predates the third-edition palette and many nested controls
    * still consume its semantic role names. Keep the bridge on this page root so those existing
    * controls resolve against the canonical scheme without changing either global token layer. */
-  --ink: var(--ink);
   --ward-accent-ink: var(--accent-ink);
   --surface-raised: var(--surface);
   --surface-subtle: var(--surface-2);

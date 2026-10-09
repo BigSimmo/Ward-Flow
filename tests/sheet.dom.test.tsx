@@ -222,6 +222,22 @@ describe("Sheet stacked-overlay coordination", () => {
     vi.useRealTimers();
   });
 
+  it("returns focus to the opener when it is removed while open", async () => {
+    const opener = document.createElement("button");
+    opener.textContent = "Open movement";
+    document.body.appendChild(opener);
+    opener.focus();
+    const { unmount } = render(
+      <Sheet open onClose={vi.fn()} title="Movement" portal>
+        <p>Body</p>
+      </Sheet>,
+    );
+    await waitFor(() => expect(document.activeElement).not.toBe(opener));
+    unmount();
+    expect(document.activeElement).toBe(opener);
+    opener.remove();
+  });
+
   it("keeps caller-provided mobile and small-screen height caps authoritative", () => {
     const { getByRole } = render(
       <Sheet open onClose={vi.fn()} title="Capped sheet" contentClassName="max-h-[88dvh] sm:max-h-[min(80dvh,36rem)]">

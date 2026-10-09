@@ -44,7 +44,7 @@ import { WARD_NAV_ICONS, WARD_VIEW_ICONS } from "@/components/ward-management/wa
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 
 import { announceToWardShell } from "./ward-live-region";
-import { applyAppearance, useAppearanceStore } from "./ward-bar";
+import { applyAppearance, syncRootAppearance, useAppearanceStore } from "./ward-bar";
 import { edHref, handoverHref, patientHref, settingsHref } from "./ward-facade";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
@@ -426,8 +426,13 @@ export function WardRail() {
   }, [open]);
 
   useLayoutEffect(() => {
-    if (appearance === "auto") document.documentElement.removeAttribute("data-theme");
-    else document.documentElement.setAttribute("data-theme", appearance);
+    syncRootAppearance(appearance);
+    if (appearance !== "auto" || typeof window.matchMedia !== "function") return;
+    // Auto follows the OS live, so both theme layers move together when it changes.
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => syncRootAppearance("auto");
+    query.addEventListener?.("change", onChange);
+    return () => query.removeEventListener?.("change", onChange);
   }, [appearance]);
 
   useEffect(() => {
