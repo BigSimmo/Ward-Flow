@@ -63,7 +63,7 @@ export const HIGHLIGHTS: { id: Highlight; label: string; test: (entry: Directory
     { id: "now", label: "Answering", test: (entry, minute) => isAnswering(entry, minute) },
     {
       id: "soon",
-      label: "Ends within 1h",
+      label: "Ends within the hour",
       test: (entry, minute) => {
         const now = availability(entry, minute);
         return now.kind === "on" && !now.allDay && now.soon;
@@ -289,7 +289,7 @@ export function OnCallScreen() {
       />
       <HeroStat
         value={endingSoon.length}
-        label="end within 1h"
+        label="end within the hour"
         tone="warning"
         pressed={highlight === "soon"}
         onToggle={() => toggleHighlight("soon")}
@@ -478,7 +478,7 @@ export function OnCallScreen() {
     ) : null;
 
   const noticeLine = (
-    <p className={cx(styles.notice, notice && styles.noticeOn)} role="status" data-testid="ward-on-call-notice">
+    <p className={cx(styles.toast, notice && styles.toastOn)} role="status" data-testid="ward-on-call-notice">
       {notice}
     </p>
   );

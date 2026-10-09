@@ -1209,7 +1209,7 @@
 }
 
 /* Status line for copy and call: visible, quiet and short-lived. */
-.notice {
+.toast {
   position: fixed;
   left: 50%;
   bottom: var(--wf-s-4);
@@ -1231,7 +1231,7 @@
   transition: opacity var(--wf-m-fast);
 }
 
-.noticeOn {
+.toastOn {
   opacity: 1;
 }
 
@@ -1682,7 +1682,7 @@
   .main {
     padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
   }
-  .notice {
+  .toast {
     bottom: calc(var(--wf-s-4) + env(safe-area-inset-bottom, 0px));
   }
   .lineRow {
@@ -1702,7 +1702,7 @@
 }
 
 @media print {
-  .notice,
+  .toast,
   .rowActions,
   .favouriteButton {
     display: none;

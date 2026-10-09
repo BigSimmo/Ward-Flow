@@ -206,7 +206,7 @@ function StatusBlock({ entry, actions }: { entry: DirectoryEntry; actions: Conta
       <div className={styles.status}>
         <span className={styles.statusCap}>
           <StatusGlyph tone="success" size={12} />
-          <b>{now.email ? "Inbox open" : "Answered 24 hours"}</b>
+          <b>{now.email ? "Inbox open" : "Answered day and night"}</b>
         </span>
         <span className={styles.statusNext}>No change today</span>
       </div>

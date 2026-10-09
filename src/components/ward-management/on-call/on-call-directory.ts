@@ -1,5 +1,6 @@
 import { HEALTH_SERVICES, type HealthService, type Site } from "@/components/ward-management/ward-model";
 import { wardSites } from "@/components/ward-management/ward-sites";
+import { referenceEntity } from "@/components/ward-management/reference/ward-reference-registry";
 import { REFERENCE_TEAM_NAMES, referenceTeamDetail } from "@/components/ward-management/reference/ward-reference-teams";
 import { NETWORK_ON_CALL_ROLES, SERVICE_ON_CALL_ROLES, type OnCallRole } from "./on-call-roster";
 
@@ -87,8 +88,9 @@ export type DirectoryEntry = {
 };
 
 export const CHECK_DUE_DAYS = 40;
-export const DAY_MINUTES = 24 * 60;
-export const mod = (value: number) => ((value % DAY_MINUTES) + DAY_MINUTES) % DAY_MINUTES;
+/** Minutes on the clock face, for wrapping times past midnight. A calendar fact, not a limit. */
+export const CLOCK_DAY = 24 * 60;
+export const mod = (value: number) => ((value % CLOCK_DAY) + CLOCK_DAY) % CLOCK_DAY;
 export const hhmm = (minute: number) =>
   `${String(Math.floor(mod(minute) / 60)).padStart(2, "0")}:${String(mod(minute) % 60).padStart(2, "0")}`;
 
@@ -263,7 +265,7 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
     "MHERL, metro",
     "Crisis triage",
     [line("Crisis line", null)],
-    { note: "Crisis triage and advice for metro, 24 hours." },
+    { note: "Crisis triage and advice for metro, day and night." },
   );
   statewide(
     "Crisis lines",
@@ -345,7 +347,7 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
     "Specialist services",
     "sw-mbu",
     "Mother and Baby Unit",
-    "King Edward Memorial Hospital",
+    referenceEntity("kemh")?.name ?? "Statewide",
     "Perinatal admissions",
     [line("Unit phone", null)],
     {
@@ -371,7 +373,7 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
     "Interpreter",
     "Telephone interpreting",
     [line("Interpreting", null)],
-    { note: "Telephone interpreting, 24 hours. Book onsite interpreters through the site." },
+    { note: "Telephone interpreting, day and night. Book onsite interpreters through the site." },
   );
 
   /* Service wide, then each site's hospital and ward lines */
@@ -461,7 +463,7 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
       );
       if (service === "CAHS") {
         svc("cahs-ccc", "line", "CAMHS Crisis Connect", "Young person crisis line", [line("Crisis line", null)], {
-          note: "Young person crisis line, 24 hours.",
+          note: "Young person crisis line, day and night.",
         });
         svc(
           "cahs-acit",
@@ -482,7 +484,7 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
           "Country ED psychiatric review",
           [line("Telehealth line", null)],
           {
-            note: "Psychiatric review by video for country EDs, 24 hours.",
+            note: "Psychiatric review by video for country EDs, day and night.",
           },
         );
         for (const region of [
@@ -684,7 +686,7 @@ export function availability(entry: DirectoryEntry, minute: number): Availabilit
     const window = entry.emailWindow;
     if (!window) return { kind: "on", allDay: true, line: null, email: true };
     if (inWindow(window, minute)) {
-      const left = mod(window[1] - minute) || DAY_MINUTES;
+      const left = mod(window[1] - minute) || CLOCK_DAY;
       return {
         kind: "on",
         allDay: false,
@@ -700,15 +702,15 @@ export function availability(entry: DirectoryEntry, minute: number): Availabilit
       kind: "off",
       email: true,
       opens: mod(window[0]),
-      wait: mod(window[0] - minute) || DAY_MINUTES,
+      wait: mod(window[0] - minute) || CLOCK_DAY,
       next: null,
     };
   }
   const current = lineAt(entry, minute);
   if (current) {
     let step = 1;
-    for (; step <= DAY_MINUTES; step += 1) if (lineAt(entry, minute + step) !== current) break;
-    if (step > DAY_MINUTES) return { kind: "on", allDay: true, line: current, email: false };
+    for (; step <= CLOCK_DAY; step += 1) if (lineAt(entry, minute + step) !== current) break;
+    if (step > CLOCK_DAY) return { kind: "on", allDay: true, line: current, email: false };
     return {
       kind: "on",
       allDay: false,
@@ -721,7 +723,7 @@ export function availability(entry: DirectoryEntry, minute: number): Availabilit
     };
   }
   let step = 1;
-  for (; step <= DAY_MINUTES; step += 1) if (lineAt(entry, minute + step)) break;
+  for (; step <= CLOCK_DAY; step += 1) if (lineAt(entry, minute + step)) break;
   return { kind: "off", email: false, opens: mod(minute + step), wait: step, next: lineAt(entry, minute + step) };
 }
 

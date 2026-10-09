@@ -244,7 +244,7 @@ export function PhoneDirectory({
   return (
     <div className={styles.phoneList}>
       {queryActive ? (
-        <div className={styles.phoneHits} role="status">
+        <div className={styles.phoneHits}>
           <Icon icon={Search} size={14} />
           <span>
             <span className={styles.mono}>{hitCount}</span> matches highlighted below
