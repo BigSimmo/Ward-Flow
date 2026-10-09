@@ -36,6 +36,7 @@ interface WardBedDossierDrawerProps {
 const VITAL_SIGNS_NOTE = "Not recorded in Ward Flow. Check the ward's own observation chart.";
 
 type DrawerTab = "over" | "plan" | "time";
+type TabButtons = Map<number, HTMLButtonElement | null>;
 const DRAWER_TABS: { id: DrawerTab; label: string }[] = [
   { id: "over", label: "Overview" },
   { id: "plan", label: "Plan to leave" },
@@ -114,7 +115,7 @@ export function WardBedDossierDrawer({
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(recordedBlocker(bedItem?.blockReason));
   const [shownBed, setShownBed] = useState(selectedBed);
-  const tabRefs = useRef(new Map<number, HTMLButtonElement | null>());
+  const tabRefs = useRef<TabButtons>(new Map());
   const blockerSelectRef = useRef<HTMLSelectElement | null>(null);
 
   // Stepping to another bed keeps the open tab but drops anything half-done on the last bed.
