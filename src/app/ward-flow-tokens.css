@@ -187,7 +187,7 @@
   --wf-data-3: light-dark(#788ea4, #55728f);
   --wf-data-rest: light-dark(#c9d3dd, #2a3a4b);
   --wf-data-ready: light-dark(#2f8a5f, #4cb383);
-  --wf-data-closed: light-dark(#a99058, #a88f55);
+  --wf-data-closed: light-dark(#9c8450, #a88f55);
 
   /* service colours: a dot or stripe beside the service name, never on its own (ruling B-7).
      Day values are the health services' own colours. Night values are lifted to read on slate. */
