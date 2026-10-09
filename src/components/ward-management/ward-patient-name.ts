@@ -42,5 +42,9 @@ function useProviderLookup(): PatientLookup {
   const patients = context?.patients ?? NONE;
   const referrals = context?.referrals ?? NONE;
   const movements = context?.movements ?? NONE;
-  return useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
+  const plannedAdmissions = context?.plannedAdmissions ?? NONE;
+  return useMemo(
+    () => ({ patients, referrals, movements, plannedAdmissions }),
+    [patients, referrals, movements, plannedAdmissions],
+  );
 }

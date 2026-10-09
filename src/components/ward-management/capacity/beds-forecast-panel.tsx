@@ -159,7 +159,11 @@ function ForecastHorizon({ horizon, now }: { horizon: BedsForecastHorizon; now: 
       <span data-testid={`ward-capacity-beds-forecast-${horizon.hours}h-likely`}>
         {forecastHeadline(horizon.likely)}
       </span>
-      . Range {forecastRangeEnd(horizon.low)} to {forecastRangeEnd(horizon.high)}.
+      . Range {forecastRangeEnd(horizon.low)} to {forecastRangeEnd(horizon.high)}.{" "}
+      <span data-testid={`ward-capacity-beds-forecast-${horizon.hours}h-needed`}>
+        {horizon.bedsNeeded} {horizon.bedsNeeded === 1 ? "bed" : "beds"} needed, {horizon.plannedAdmissions} planned
+        {horizon.plannedAdmissions === 1 ? " admission" : " admissions"}.
+      </span>
     </li>
   );
 }
