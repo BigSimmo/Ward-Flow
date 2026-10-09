@@ -149,14 +149,14 @@ describe("planned admissions panel", () => {
     expect(screen.queryByTestId("ward-planned-PA-01")).toBeNull();
   });
 
-  it("opens the overdue booking in the Alerts drawer with its own facts, not a movement's", () => {
+  it("opens the overdue booking in the Alerts panel with its own facts, not a movement's", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <AlertsScreen />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getAllByRole("button", { name: /for Initials RK$/ })[0]!);
-    const drawer = screen.getByRole("dialog");
+    fireEvent.click(screen.getAllByRole("button", { name: /, Initials RK$/ })[0]!);
+    const drawer = screen.getByRole("complementary", { name: "Selected alert" });
     expect(drawer).toHaveTextContent("Initials RK");
     const booking = within(drawer).getByTestId("alerts-drawer-booking");
     expect(booking).toHaveTextContent("Legal status");

@@ -60,6 +60,12 @@ function renderScreen() {
   );
 }
 
+/** The hero's Act now figure, read from its own button. */
+function actNowFigure(): number {
+  const summary = screen.getByRole("group", { name: "Alert summary" });
+  return Number.parseInt(within(summary).getByRole("button", { name: /Act now/ }).textContent ?? "", 10);
+}
+
 describe("the alerts screen scopes buildActionInbox to open movements only", () => {
   it("fixture sanity: WF-014's due time is genuinely in the past once the clock is advanced", () => {
     const advancedNow = NOW_ANCHOR + ADVANCE_MINUTES;
@@ -71,22 +77,20 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
 
   /*
    * ⚠️ THE EXACT COUNTS, MEASURED AGAINST THE LIVE FIXTURE, NOT GUESSED. At this offset the
-   * fixture also carries one unrelated `destinations_declined` item, so "Needs you" is 2 while
-   * WF-014 is still open (its breach plus that one) and drops to 1 once WF-014 closes — never to
-   * 0, which is exactly the number a vaguer "does not contain 1" assertion would have missed.
+   * fixture also carries the expired bed hold, the declined set and seven overdue decision
+   * targets, so "Act now" is 10 while WF-014 is still open and drops to 9, not 0, once it closes.
    */
   it("counts and shows the alert while the movement is still open", () => {
     renderScreen();
     fireEvent.click(screen.getByTestId("test-advance-clock"));
 
-    const needsYou = screen.getByRole("region", { name: "Needs you alerts" });
-    expect(within(needsYou).getByText("Legal due time passed")).toBeInTheDocument();
+    const actNow = screen.getByRole("region", { name: "Act now" });
+    expect(within(actNow).getByText("Legal due time passed")).toBeInTheDocument();
 
-    const summaryList = screen.getByLabelText("Alert summary");
     expect(
-      within(summaryList).getByText("Needs you").parentElement?.textContent,
-      "WF-014's breach plus the fixture's one other needs-you item must read 2 while it is still open",
-    ).toContain("2");
+      actNowFigure(),
+      "WF-014's breach plus the fixture's other act-now items must read 10 while it is still open",
+    ).toBe(10);
   });
 
   it("drops the alert, and excludes the movement from the count, once it closes", () => {
@@ -94,18 +98,15 @@ describe("the alerts screen scopes buildActionInbox to open movements only", () 
     fireEvent.click(screen.getByTestId("test-advance-clock"));
     fireEvent.click(screen.getByTestId("test-patient-arrived"));
 
-    const needsYou = screen.getByRole("region", { name: "Needs you alerts" });
+    const actNow = screen.getByRole("region", { name: "Act now" });
     expect(
-      within(needsYou).queryByText("Legal due time passed"),
+      within(actNow).queryByText("Legal due time passed"),
       "WF-014 still renders an alert after closing — buildActionInbox is still being called on every movement",
     ).not.toBeInTheDocument();
 
-    const summaryList = screen.getByLabelText("Alert summary");
-    const needsYouText = within(summaryList).getByText("Needs you").parentElement?.textContent ?? "";
-    expect(needsYouText, "the summary count did not drop from 2 to 1 once the breached movement closed").toContain("1");
     expect(
-      needsYouText,
-      "the summary count still counts WF-014's now-closed breach alongside the other needs-you item",
-    ).not.toContain("2");
+      actNowFigure(),
+      "the Act now figure did not drop by one once the breached movement closed, so it still counts WF-014",
+    ).toBe(9);
   });
 });
