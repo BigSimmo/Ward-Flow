@@ -82,7 +82,7 @@ Everything else in v7.1 carries over unchanged: the rules, the status glyphs, ra
 3. **Glass for chrome, plus one panel.** Bars, menus, toasts, sheets and the palette. _(v8.1)_ One floating panel in the page body may also be glass, such as the side panel that swaps to the clicked item. Never a table, row or data cell. Phone bars are solid.
 4. **One hero band per page.** Slate while anything is live, quiet when nothing is.
 5. **One primary per area.**
-6. **Colour lives in glyphs and the hero.** _(v8.2)_ A glyph carries the tone on every card, row and tile, and the words beside it stay neutral ink, never red or amber. Cards, rows and tiles take no tinted fill, except a free or fit place, which keeps its soft fit tint so an offerable bed reads at a glance. On the slate hero, glyphs take the on-hero tones. Words that stand alone without a glyph, such as an error message, take the `-ink` partner, never the tone itself.
+6. **Colour lives in glyphs and the hero.** _(v8.2)_ A glyph carries the tone on every card, row and tile, and the words beside it stay neutral ink, never red or amber. Cards, rows and tiles take no tinted fill, except a free or fit place, which keeps its soft fit tint so an offerable bed reads at a glance. An act now item, or a list of them, takes a thin 1px edge in `--wf-act-edge` through `.edge-act`, never a fill. On the slate hero, glyphs take the on-hero tones. Words that stand alone without a glyph, such as an error message, take the `-ink` partner, never the tone itself.
 7. **Shape carries status.** One shape per tone everywhere.
 8. **Signal, not explanation.** Titles 5 words at most, actions 6.
 9. **Live and honest.** Values show their age. Stale or offline is marked on the value.
@@ -145,7 +145,7 @@ Voice is unchanged: Australian English, sentence case, verbs first, 24 hour time
 | Breakpoints     | `--wf-bp-phone` 40rem, `--wf-bp-narrow` 48rem, `--wf-bp-wide` 64rem                                              | Media queries cannot read custom properties. These record the only widths allowed, written `(width <= 48rem)`. 48rem is the component phone rule. 40 and 64 are for layout only                                            |
 | Row             | `--wf-row-group` 40px                                                                                            | Grouped table headers                                                                                                                                                                                                      |
 | Control shadows | `--wf-e-pri`, `-pri-press`, `-hero`, `-on-hero`, `-on-hero-press`, `-light`, `-well`, `-knob`, `-tip`, `-bar`    | v7 left 13 raw shadows in rules                                                                                                                                                                                            |
-| Retired (v8.2)  | `--wf-fs-40`, `--wf-lh-40`, `--wf-act-tint`, `--wf-act-edge`, `.keyfig`, `.tinted`                               | The v8.1 key figure and act now fills (rules 6 and 18)                                                                                                                                                                     |
+| Retired (v8.2)  | `--wf-fs-40`, `--wf-lh-40`, `--wf-act-tint`, `.keyfig`, `.tinted`                                                | The v8.1 key figure and act now fills (rules 6 and 18). `--wf-act-edge` stays, as the thin act now edge                                                                                                                    |
 | Theme parts     | `--wf-rim-1` to `-3`, `--wf-sheen-top`, `--wf-glow-1`, `-2`, `--wf-sh-*`, `--wf-ring-*`, `--wf-press`            | Internal. Components read `--wf-e1`, `--wf-glass-rim` and so on, never these                                                                                                                                               |
 
 ## 6. Contrast (v8 values)
@@ -323,7 +323,7 @@ _v8.2 supersedes rules 6 and 18 here and the key figure and colour budget rows o
 
 **What changes.**
 
-- **Rule 6.** The colour budget is gone. Glyphs carry the tone and words stay neutral. Only a free or fit place keeps its soft fit tint. `--wf-act-tint`, `--wf-act-edge` and `.tinted` are removed.
+- **Rule 6.** The colour budget is gone. Glyphs carry the tone and words stay neutral. Only a free or fit place keeps its soft fit tint. Act now items get a thin red edge (`.edge-act`), which Josh asked for so they still stand out without a fill. `--wf-act-tint` and `.tinted` are removed.
 - **Rule 16.** The scale is compact again, 12 to 20, with hero chip figures at 15.
 - **Rules 17 and 18.** The focal element keeps the most space, but not extra colour. The 40px key figure is replaced by compact hero chips. `--wf-fs-40`, `--wf-lh-40` and `.keyfig` are removed.
 - **Rule 19.** The shift timeline is the Ward page's own part, and each mark points to its item.
@@ -337,7 +337,7 @@ Rules 3, 17, 19, 20 and 21 otherwise stand. Red still means act now, and shape s
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | 17 Focal element   | The bed board, white tiles at 74px, two thirds of the width                                                              |
 | 18 Hero chips      | Free now, Occupied, Free by 15:00 and Act now, figures in 15px mono. Act now presses to outline those beds               |
-| 6 Colour           | Glyphs on beds and rows, neutral words. The free bed keeps its fit tint                                                  |
+| 6 Colour           | Glyphs on beds and rows, neutral words. Act now beds have a thin red edge, and the free bed keeps its fit tint           |
 | 19 Part of its own | The shift timeline in the hero: 07:00 to 15:30, a now line, due items as glyphs and the discharge window, linked to beds |
 | 20 Phone           | Now, Beds and Shift tabs, a needs you list with one action per row, a bed sheet, a toast with Undo and a bottom bar      |
 

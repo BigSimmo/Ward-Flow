@@ -14,7 +14,8 @@
 
    v8.1 (9 Oct 2026, expression rules, spec section 14): a focal element and a part of its own per page.
    v8.2 (9 Oct 2026, balanced rules, spec section 15): the v8.1 key figure, act now tint, .keyfig and
-   .tinted are retired. Colour lives in glyphs and the hero, and counts sit in compact hero chips.
+   .tinted are retired. Colour lives in glyphs, the hero and a thin act now edge (.edge-act), and
+   counts sit in compact hero chips.
 
    Never paste a hex from this file into app code. Read the role through var(--wf-*). */
 
@@ -188,6 +189,8 @@
   --wf-fit-edge: light-dark(rgba(47, 138, 95, 0.32), rgba(76, 179, 131, 0.36));
   --wf-hold-tint: light-dark(rgba(172, 114, 10, 0.07), rgba(217, 164, 65, 0.09));
   --wf-hold-edge: light-dark(rgba(172, 114, 10, 0.34), rgba(217, 164, 65, 0.36));
+  /* v8.2: the act now edge. A thin border, never a fill (rule 6). The triangle carries the state. */
+  --wf-act-edge: light-dark(rgba(196, 81, 63, 0.6), rgba(226, 122, 104, 0.62));
 
   /* data ramp. v8: every series step clears 3:1 on surface and surface-2 in both themes.
      --wf-data-rest is the old light step, for a remainder that is never the only mark of a value. */
@@ -2240,5 +2243,16 @@ svg.gl {
   .hs-row {
     overflow-x: auto;
     scrollbar-width: none;
+  }
+}
+
+/* ================= v8.2 balanced (spec section 15) ================= */
+/* Act now items take a thin red edge and no fill (rule 6). Selection and focus rings still win. */
+.edge-act {
+  border-color: var(--wf-act-edge);
+}
+@media (forced-colors: active) {
+  .edge-act {
+    border-color: CanvasText;
   }
 }
