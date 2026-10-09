@@ -738,16 +738,22 @@ button.stat:hover .statV {
   cursor: pointer;
 }
 
+/* Both rows wrap: on a phone their Show everyone control would otherwise be clipped off the cell. */
 .more .hiddenNote {
-  padding: 0 10px;
+  height: auto;
+  min-height: 36px;
+  padding: var(--wf-s-2) 10px;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
+  white-space: normal;
 }
 
 .none {
   height: 60px;
+  padding: var(--wf-s-2) 10px;
   color: var(--wf-ink-3);
   text-align: center;
+  white-space: normal;
 }
 
 /* the open row's timeline */

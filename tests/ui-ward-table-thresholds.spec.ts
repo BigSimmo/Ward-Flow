@@ -687,6 +687,27 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
   });
 });
 
+/**
+ * Owner ruling D-38 (9 October 2026): Delays filters narrow the table, so whenever they hide anyone
+ * the table must say how many and offer Show everyone. On a phone the note did not wrap and its
+ * button was clipped off the cell, leaving the hidden people with no way back. jsdom cannot see
+ * that, so this clicks it in a real browser at phone and desktop widths.
+ */
+test("@mockup the Delays hidden-count note keeps Show everyone reachable at every width", async ({ page }) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/mockups/ward-flow/delays", { waitUntil: "networkidle" });
+    const count = page.getByTestId("delays-shown-count");
+    const everyone = await count.textContent();
+    await page.getByTestId("delays-stat-over8").click();
+    await expect(count, `${width}px: the Over 8h count did not narrow the table`).not.toHaveText(everyone ?? "");
+    const note = page.getByTestId("delays-hidden-note");
+    await expect(note).toContainText(/hidden by the filters above/u);
+    await note.getByRole("button", { name: "Show everyone" }).click({ timeout: 5_000 });
+    await expect(count, `${width}px: Show everyone did not restore the table`).toHaveText(everyone ?? "");
+  }
+});
+
 test("@mockup print-only referral tables have measurable thresholds", async ({ page }) => {
   await page.goto("/mockups/ward-flow/referrals");
   await page.waitForLoadState("networkidle");
