@@ -12,6 +12,13 @@
   display: flex;
 }
 
+.heroSpecialling {
+  align-self: center;
+  white-space: nowrap;
+  font-size: var(--wf-text-xs);
+  color: var(--wf-muted);
+}
+
 .srOnly {
   position: absolute;
   width: 1px;

@@ -11,6 +11,7 @@ import { DECLINE_REASONS } from "@/components/ward-management/ward-model";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import {
   restrictionNotice,
   eligibilityWarning,
@@ -38,7 +39,7 @@ import {
   type WfTone,
 } from "@/components/wf";
 import { dayOf } from "@/components/ward-management/ward-clock";
-import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
+import type { BedItem } from "./ward-beds-matrix";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 
 function referralAnswerBlocked(movement: Movement, unit: Unit, who?: string): string | undefined {
@@ -340,6 +341,14 @@ export function WardHomeTab({
   // Every bed: one tile per bed from the same list the bed board draws, so both always agree.
   const bedRows = (bedsList ?? []).map((bed) => {
     const free = bed.status === "ready";
+    const shiftEnd = dayShiftEndInstant(now);
+    const releaseByShiftEnd = bedReleases.some(
+      (release) =>
+        release.unitId === unit.id &&
+        release.admissionId === bed.admissionId &&
+        release.state !== "discharged" &&
+        release.expectedAt <= shiftEnd,
+    );
     const leaving = !free && (bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0));
     const awayAtEd = bed.awayAtEdHours != null;
     const look =
@@ -370,19 +379,41 @@ export function WardHomeTab({
                 : free
                   ? "Free to offer"
                   : stateWord;
-    const glyph = bedGlyphTone(bed);
+    // One shape per tone: act now only for a held-up discharge, at risk for a bed past its date or
+    // away at an ED, moving for a bed on its way in or out, waiting for leave, done for a free bed.
+    const glyph: WfTone | null = free
+      ? "success"
+      : bed.blockReason
+        ? "danger"
+        : awayAtEd || bed.pastDate || bed.dischargeBarrier
+          ? "warning"
+          : leaving || bed.status === "incoming"
+            ? "info"
+            : bed.status === "leave"
+              ? "neutral"
+              : null;
     const number = String(bed.bedNumber).padStart(2, "0");
     const name = free ? "Free to offer" : (bed.patientAlias ?? stateWord);
     const accessibleName = [bed.bedLabel, stateWord, days ? `day ${bed.stayDays}` : "", note]
       .filter(Boolean)
       .join(", ");
-    return { bed, free, leaving, look, stateWord, days, note, glyph, number, name, accessibleName };
+    return { bed, free, leaving, look, releaseByShiftEnd, stateWord, days, note, glyph, number, name, accessibleName };
   });
   const [innerBedFilter, setInnerBedFilter] = useState<WardBedFilter>("all");
   const bedFilter = bedFilterProp ?? innerBedFilter;
   const setBedFilter = onBedFilterChange ?? setInnerBedFilter;
   const shownBeds = bedRows.filter((row) =>
-    bedFilter === "all" ? true : bedFilter === "look" ? row.look : bedFilter === "leaving" ? row.leaving : row.free,
+    bedFilter === "all"
+      ? true
+      : bedFilter === "look"
+        ? row.look
+        : bedFilter === "leaving"
+          ? row.leaving
+          : bedFilter === "free"
+            ? row.free
+            : bedFilter === "occupied"
+              ? row.bed.status === "occupied" || row.bed.status === "leave"
+              : row.free || row.releaseByShiftEnd,
   );
   const query = bedQuery.trim().toLowerCase();
   const matchesQuery = (row: (typeof bedRows)[number]) =>
