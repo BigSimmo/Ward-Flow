@@ -181,9 +181,10 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
   const bedsReady = counts.capacity?.value ?? 0;
   const urgentDelays = counts.delays?.value ?? 0;
   // D-39: each line names the patient by UMRN, never by the WF journey number.
+  const lookup = { patients, referrals, movements };
   const shown = ordered
     .slice(0, 20)
-    .map((event) => ({ ...event, text: withUmrnInPlaceOfMovementIds(event.text, { patients, referrals, movements }) }));
+    .map((event) => ({ ...event, text: withUmrnInPlaceOfMovementIds(event.text, lookup) }));
 
   return {
     departments: edPressure(now, movements),

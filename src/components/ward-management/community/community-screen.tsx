@@ -499,6 +499,11 @@ export function CommunityScreen({
     dispatch,
   } = useWardFlow();
   const now = useWardFlowClock();
+  // D-39: one lookup per render, so the resolver's index cache holds across every notice line.
+  const umrnLookup = useMemo(
+    () => ({ patients, referrals: referrals ?? liveReferrals, movements }),
+    [patients, referrals, liveReferrals, movements],
+  );
   const team =
     communityTeamById(teamId) ??
     (teamId === "fremantle" || teamId === "alma-street" ? communityTeamById("alma-street-fremantle") : null);
@@ -1411,7 +1416,7 @@ export function CommunityScreen({
                     <li key={notice.id} data-notice-read={isRead}>
                       <time>{formatInstantWithDay(notice.raisedAt, now)}</time>
                       <div className={styles.teamNoticeContent}>
-                        <span>{withUmrnInPlaceOfMovementIds(notice.sentence, { patients, referrals, movements })}</span>
+                        <span>{withUmrnInPlaceOfMovementIds(notice.sentence, umrnLookup)}</span>
                         {isRead ? (
                           <span className={styles.teamNoticeReadLabel}>
                             <span className={styles.readDot} aria-hidden="true" />

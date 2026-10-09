@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useId, useState } from "react";
+import { useContext, useEffect, useId, useMemo, useState } from "react";
 
 import { type Movement, type Notice } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
@@ -103,6 +103,15 @@ export function WardNotificationCenter({
   const context = useContext(WardFlowContext);
   const resolveIdentity = context?.resolvePatientIdentity;
   const effectivePatients = patients ?? context?.patients;
+  // D-39: notices name the patient by UMRN. Inside the provider that comes from its identity
+  // projection (referral-linked journeys included, without this screen reading referrals).
+  const noticeUmrnLookup = useMemo(
+    () =>
+      resolveIdentity
+        ? (movementId: string) => resolveIdentity({ movementId }).umrn
+        : { patients: effectivePatients, movements },
+    [resolveIdentity, effectivePatients, movements],
+  );
   const rollupHour = Math.floor(morningRollupDeadlineMinutes / 60);
   const rollupMin = morningRollupDeadlineMinutes % 60;
   const rollupTimeLabel = `${String(rollupHour).padStart(2, "0")}:${String(rollupMin).padStart(2, "0")}`;
@@ -399,7 +408,7 @@ export function WardNotificationCenter({
                           {isRead && <span className={styles.readBadge}>Read</span>}
                         </div>
                         <p className={styles.cardMessage}>
-                          {withUmrnInPlaceOfMovementIds(notice.sentence, { patients, movements })}
+                          {withUmrnInPlaceOfMovementIds(notice.sentence, noticeUmrnLookup)}
                         </p>
                       </div>
 

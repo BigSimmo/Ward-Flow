@@ -566,6 +566,7 @@ function AlertsWorkspace() {
   const { movements, units, referrals, patients, dispatch, inboxAcknowledgements, broadcastAlerts, notices } = state;
   const now = useWardFlowClock();
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
+  const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const inbox = useMemo(() => buildActionInbox(openMovements, now, units), [openMovements, now, units]);
   const feedNotices = useMemo(() => [...notices].sort((a, b) => b.raisedAt - a.raisedAt), [notices]);
 
@@ -1281,7 +1282,7 @@ function AlertsWorkspace() {
                         <StatusGlyph tone={isRead ? "neutral" : "info"} size={9} />
                         <div className={styles.feedContent}>
                           <span className={styles.feedTitle}>
-                            {withUmrnInPlaceOfMovementIds(notice.sentence, { patients, referrals, movements })}
+                            {withUmrnInPlaceOfMovementIds(notice.sentence, umrnLookup)}
                           </span>
                           <span className={styles.feedMeta}>
                             To {WARD_FLOW_ROLE_LABELS[notice.to.role]} · raised{" "}

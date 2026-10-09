@@ -662,7 +662,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     [notices, now, placeId, role],
   );
   // D-39: a notice names the patient by UMRN, never by the WF journey number it was raised on.
-  const noticeText = (sentence: string) => withUmrnInPlaceOfMovementIds(sentence, { patients, referrals, movements });
+  const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
+  const noticeText = (sentence: string) => withUmrnInPlaceOfMovementIds(sentence, umrnLookup);
   const visibleNotices = scopedNotices.filter(
     (notice) =>
       (!unreadOnly || notice.readAt === undefined) &&
@@ -1140,6 +1141,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           <WardGlobalSearch
             movements={movements}
             patients={patients}
+            referrals={referrals}
             units={units}
             tasks={tasksItems}
             now={now}

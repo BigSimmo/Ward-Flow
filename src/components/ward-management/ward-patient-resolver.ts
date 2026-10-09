@@ -209,11 +209,7 @@ function formatResolvedPatient(
  */
 export function movementUmrn(
   movement: Movement | MovementIdOnly | string | null | undefined,
-  state: {
-    patients?: readonly Patient[];
-    referrals?: readonly Referral[];
-    movements?: readonly Movement[];
-  },
+  state: PatientLookup,
 ): string {
   if (!movement) return UNKNOWN_PATIENT.umrn;
   const subject = typeof movement === "string" ? { movementId: movement } : movement;
@@ -222,25 +218,37 @@ export function movementUmrn(
 
 type MovementIdOnly = { movementId: string };
 
+/** The records a UMRN lookup reads. Build it once per render (or memoise it): the resolver caches
+ *  its index on this object's identity, so a fresh literal per call rebuilds the index each time. */
+export type PatientLookup = {
+  patients?: readonly Patient[];
+  referrals?: readonly Referral[];
+  movements?: readonly Movement[];
+};
+
 const MOVEMENT_ID_TOKEN = /(?<![A-Z0-9-])WF-[A-Z0-9-]+/g;
 
-/** Replaces every known movement id quoted in `text` with that patient's UMRN. Unknown tokens are
- *  left alone, so a refusal about a movement that does not exist still says what was asked for. */
+/** Replaces every movement id quoted in `text` with that patient's UMRN. A journey that cannot be
+ *  resolved (unknown, unlinked or ambiguous) reads "UMRN not recorded", never its WF number; the
+ *  original id stays on the record itself (the rejection's event) for diagnosis. `lookup` is either
+ *  the records or, for a ward screen that may not read referrals, the provider's own identity
+ *  projection as a movement id to UMRN function. */
 export function withUmrnInPlaceOfMovementIds(
   text: string,
-  state: {
-    patients?: readonly Patient[];
-    referrals?: readonly Referral[];
-    movements?: readonly Movement[];
-  },
+  lookup: PatientLookup | ((movementId: string) => string),
 ): string {
   if (!text.includes("WF-")) return text;
-  const index = getOrBuildIndex(state);
+  const umrnOf = typeof lookup === "function" ? lookup : umrnFromIndex(getOrBuildIndex(lookup));
   return text.replace(MOVEMENT_ID_TOKEN, (token) => {
     // A single character class keeps the pattern linear; a trailing hyphen is prose, not id.
     const id = token.replace(/-+$/, "");
-    const match = index.movementMap.get(id);
-    if (!match || match === DUPLICATE) return token;
-    return resolveSubjectWithIndex(match, index).umrn + token.slice(id.length);
+    return umrnOf(id) + token.slice(id.length);
   });
+}
+
+function umrnFromIndex(index: ReturnType<typeof getOrBuildIndex>): (movementId: string) => string {
+  return (movementId) => {
+    const match = index.movementMap.get(movementId);
+    return !match || match === DUPLICATE ? UNKNOWN_PATIENT.umrn : resolveSubjectWithIndex(match, index).umrn;
+  };
 }

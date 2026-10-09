@@ -496,7 +496,10 @@ is inferred.
     `ward-patient-resolver.ts`, or the `usePatientOf` and `useUmrnText` hooks in
     `ward-patient-name.ts` (ward screens use the provider's `resolvePatientIdentity`). Engine prose
     that quotes a journey id passes through `withUmrnInPlaceOfMovementIds` before it is shown;
-    refusals are converted when they are raised. An unlinked journey shows "UMRN not recorded".
+    refusals are converted when they are raised. An unlinked, ambiguous or unknown journey shows
+    "UMRN not recorded"; a refusal keeps the id in its `movementId` field for diagnosis. Pass the
+    full records (referrals included, or a journey linked through a referral reads as unknown) and
+    build that lookup once per render, because the resolver caches its index on the object.
   - **Synthetic UMRN format:** two letters `UM` then six digits, for example `UM100047`. A real WA
     UMRN is one letter then seven digits, so these can never be mistaken for a real patient, and
     the synthetic-data guard (`src/lib/synthetic-data-guard.ts`) does not flag them. Ranges: hand

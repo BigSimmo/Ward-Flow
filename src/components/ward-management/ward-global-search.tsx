@@ -35,7 +35,7 @@ import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/wa
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { resolveSubjectPatient, type PatientLookup } from "@/components/ward-management/ward-patient-resolver";
 import {
   AlertTriangle,
   ArrowRightLeft,
@@ -133,6 +133,8 @@ import styles from "./ward-global-search.module.css";
 export type WardGlobalSearchProps = {
   movements: Movement[];
   patients: readonly Patient[];
+  /** D-39: a journey linked through a referral needs the referral to find its UMRN. */
+  referrals?: PatientLookup["referrals"];
   units: Unit[];
   /**
    * The one thing that may differ by role — rendered exactly as given, with no interpretation.
@@ -320,6 +322,7 @@ function headerBottom(root: HTMLElement | null): number {
 export function WardGlobalSearch({
   movements,
   patients,
+  referrals,
   units,
   tasks,
   now,
@@ -346,6 +349,7 @@ export function WardGlobalSearch({
   const [recentsVersion, setRecentsVersion] = useState(0);
 
   const trimmed = deferredQuery.trim();
+  const lookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const isStart = trimmed.length === 0;
 
   const smartResults = useMemo(
@@ -393,13 +397,14 @@ export function WardGlobalSearch({
         heading: "Movements",
         items: smartResults.movements.map((m) => {
           const dest = destinationUnit(m, units);
+          const subject = resolveSubjectPatient(m, lookup);
           // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
           return {
             kind: "movement",
             kindLabel: "Movement",
             id: m.id,
-            title: resolveSubjectPatient(m, { patients, movements }).displayName,
-            meta: `${resolveSubjectPatient(m, { patients, movements }).umrn} · ${stageCopy[m.stage].label}${dest ? ` · ${dest.name}` : ""}`,
+            title: subject.displayName,
+            meta: `${subject.umrn} · ${stageCopy[m.stage].label}${dest ? ` · ${dest.name}` : ""}`,
             href: movementHref(m.id),
           };
         }),
@@ -504,7 +509,7 @@ export function WardGlobalSearch({
     const position = new Map<string, number>(order.map((key, index) => [key, index]));
     g.sort((left, right) => (position.get(left.key) ?? order.length) - (position.get(right.key) ?? order.length));
     return g;
-  }, [smartResults, refusal, trimmed, units, patients, movements]);
+  }, [smartResults, refusal, trimmed, units, lookup]);
 
   const kindCounts = useMemo(() => {
     const counts = new Map<KindFilter, number>();
@@ -919,6 +924,7 @@ export function WardGlobalSearch({
               <GlobalSearchPreview
                 item={previewItem}
                 patients={patients}
+                referrals={referrals}
                 movements={movements}
                 units={units}
                 now={now}

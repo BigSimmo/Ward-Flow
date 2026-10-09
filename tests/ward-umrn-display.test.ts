@@ -25,9 +25,12 @@ describe("UMRN in place of a WF journey number", () => {
     expect(withUmrnInPlaceOfMovementIds(`Transport for ${linked.id} was cancelled.`, state)).toBe(
       `Transport for ${umrn} was cancelled.`,
     );
+    // An unknown journey never shows its WF number either.
     expect(withUmrnInPlaceOfMovementIds("no movement found for id WF-NOPE", state)).toBe(
-      "no movement found for id WF-NOPE",
+      "no movement found for id UMRN not recorded",
     );
+    // A ward screen passes the provider's identity projection instead of the records.
+    expect(withUmrnInPlaceOfMovementIds(`Bed for ${linked.id}.`, () => "UM123456")).toBe("Bed for UM123456.");
     // A patient id that happens to contain a journey number is not a journey id.
     expect(withUmrnInPlaceOfMovementIds(`PT-G-${linked.id}`, state)).toBe(`PT-G-${linked.id}`);
   });

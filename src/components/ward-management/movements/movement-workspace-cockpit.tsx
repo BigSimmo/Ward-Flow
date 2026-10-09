@@ -544,7 +544,7 @@ export function MovementWorkspaceCockpit({
         </ContextualBackLink>
         <div>
           <span>Ward Flow</span>
-          <span className={styles.headerCrumb}>Movement {patient.id}</span>
+          <span className={styles.headerCrumb}>Movement {mastheadUmrn}</span>
         </div>
       </header>
 
