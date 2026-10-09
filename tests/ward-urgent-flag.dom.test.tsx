@@ -137,6 +137,7 @@ describe("the urgent-flag reason picker in the movement drawer", () => {
         referrals={[]}
         patients={[]}
         edAccessTargetMinutes={ED_ACCESS_TARGET_MINUTES}
+        legalUrgentMinutes={60}
         dispatch={dispatch as never}
         onClose={() => {}}
       />,
