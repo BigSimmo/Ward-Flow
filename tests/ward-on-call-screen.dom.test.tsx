@@ -234,7 +234,12 @@ describe("the on-call screen", () => {
   it("orders the escalation ladder and labels it a preview", () => {
     const entries = buildOnCallDirectory();
     const ward = entries.find((entry) => entry.kind === "nurseInCharge" && entry.siteCode === "SCGH")!;
-    expect(escalationChain(ward, entries).map((entry) => entry.kind)).toEqual(["bedFlow", "afterHours", "executive"]);
+    expect(escalationChain(ward, entries).map((entry) => entry.id)).toEqual([
+      "nmhs-bfc",
+      "scgh-ahm",
+      "nmhs-exec",
+      "sw-gov",
+    ]);
     renderOnCall();
     expect(panel().getByText("Preview order")).toBeVisible();
     expect(panel().getByText("State bed flow coordinator")).toBeVisible();
@@ -324,5 +329,15 @@ describe("the on-call screen", () => {
     fireEvent.click(card.getByRole("button", { name: "Copy as text" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
     expect(writeText.mock.calls[0]![0]).toMatch(/State bed desk 08 0000 \d{4}, 08:00 to 20:00/u);
+    expect(await card.findByTestId("ward-on-call-notice")).toHaveTextContent("Downtime card copied");
+  });
+
+  it("carries My list saved by the earlier roster page over to the same lines", async () => {
+    localStorage.setItem("ward-flow:on-call:favourites", JSON.stringify(["nm-coordinator", "governance-lead"]));
+    renderOnCall();
+    await waitFor(() => expect(screen.getByRole("tab", { name: /My list/u })).toHaveTextContent("2"));
+    fireEvent.click(screen.getByRole("tab", { name: /My list/u }));
+    expect(row("nmhs-bfc")).toBeVisible();
+    expect(row("sw-gov")).toBeVisible();
   });
 });

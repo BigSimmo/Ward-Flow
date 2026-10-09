@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronDown, Copy, Mail, PhoneCall, Search, Star } from "lucide-react";
 import { Button, Icon, Sheet, StatusGlyph, cx } from "@/components/wf";
 import {
@@ -328,10 +328,12 @@ export function PhoneDirectory({
 export function PhoneSheet({
   entry,
   actions,
+  notice,
   onClose,
 }: {
   entry: DirectoryEntry;
   actions: ContactActions;
+  notice: ReactNode;
   onClose: () => void;
 }) {
   const number = numberAt(entry, actions.minute);
@@ -394,6 +396,7 @@ export function PhoneSheet({
             {starred ? "Starred" : "Star"}
           </button>
         </div>
+        {notice}
         <ContactCard entry={entry} actions={actions} showHead={false} showCall={false} />
       </div>
     </Sheet>

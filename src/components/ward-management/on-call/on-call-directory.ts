@@ -808,6 +808,9 @@ export function escalationChain(entry: DirectoryEntry, all: readonly DirectoryEn
     default:
       chain = [];
   }
+  // Every ladder ends at the statewide Tier 3 desk, whatever stops lower down.
+  const gov = byId("sw-gov");
+  if (chain.length && !chain.includes(gov)) chain.push(gov);
   return chain.filter((item): item is DirectoryEntry => item !== undefined && item.id !== entry.id);
 }
 

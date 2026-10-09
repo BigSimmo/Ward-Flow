@@ -1,9 +1,20 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  Fragment,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { ChevronDown, Clock, Copy, Mail, MapPin, Printer, Search, Star, Users } from "lucide-react";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
-import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
   Button,
@@ -107,6 +118,19 @@ function useIsPhone(): boolean {
   );
 }
 
+/** My list saved by the earlier roster page held its role ids; each maps to the same directory line. */
+const LEGACY_FAVOURITE_IDS: Record<string, string> = {
+  "bed-coordinator": "sw-bfc",
+  "governance-lead": "sw-gov",
+  "nm-coordinator": "nmhs-bfc",
+  "nm-consultant": "nmhs-scon",
+  "sm-coordinator": "smhs-bfc",
+  "sm-consultant": "smhs-scon",
+  "em-coordinator": "emhs-bfc",
+  "em-consultant": "emhs-scon",
+  "pr-coordinator": "pr-liaison",
+};
+
 const SECTION_LABEL: Record<DirectorySection, string> = {
   hospitals: "Hospitals",
   community: "Community",
@@ -146,7 +170,10 @@ export function OnCallScreen() {
   const boardNow = useWardFlowClock();
   const boardMinute = minuteOfDay(boardNow);
   const isPhone = useIsPhone();
-  const entries = useMemo(() => buildOnCallDirectory(), []);
+  // The EMHS demo and surge scenarios swap in their own wards, so the directory follows the scenario.
+  const scenario = useContext(WardFlowContext)?.scenario;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `scenario` re-points `wardSites`, which the build reads
+  const entries = useMemo(() => buildOnCallDirectory(), [scenario]);
   const ids = useMemo(() => new Set(entries.map((entry) => entry.id)), [entries]);
 
   const [tab, setTab] = useState<DirectoryTab>("hospitals");
@@ -174,7 +201,14 @@ export function OnCallScreen() {
       try {
         const saved: unknown = JSON.parse(window.localStorage.getItem(FAVOURITES_KEY) ?? "[]");
         if (Array.isArray(saved))
-          setFavourites([...new Set(saved.filter((id): id is string => typeof id === "string" && ids.has(id)))]);
+          setFavourites([
+            ...new Set(
+              saved
+                .filter((id): id is string => typeof id === "string")
+                .map((id) => LEGACY_FAVOURITE_IDS[id] ?? id)
+                .filter((id) => ids.has(id)),
+            ),
+          ]);
       } catch {
         // Saved preferences are optional; the directory works without them.
       }
@@ -274,14 +308,16 @@ export function OnCallScreen() {
 
   function copyWhoIsOn() {
     const on = entries.filter((entry) => entry.rostered && isAnswering(entry, minute));
+    // Each row names the line answering, so an office line in hours is never passed off as on call.
     const lines = on.map((entry) => {
       const now = availability(entry, minute);
       const until = now.kind === "on" && !now.allDay ? `, until ${hhmm(now.until)}` : "";
-      return `${entry.name}, ${entry.place}: ${numberAt(entry, minute) ?? "email only"}${until}`;
+      const line = now.kind === "on" && now.line ? `${now.line.label} ` : "";
+      return `${entry.name}, ${entry.place}: ${line}${numberAt(entry, minute) ?? "email only"}${until}`;
     });
     void copy(
-      [`On call at ${hhmm(minute)} (synthetic records)`, ...lines].join("\n"),
-      `Copied ${on.length} roles on call`,
+      [`Who answers at ${hhmm(minute)} (synthetic records)`, ...lines].join("\n"),
+      `Copied ${on.length} rostered roles answering`,
     );
   }
 
@@ -509,11 +545,18 @@ export function OnCallScreen() {
       </FilterChip>
     ) : null;
 
-  const noticeLine = (
+  // A sheet makes the page behind it inert, so while one is open its feedback shows inside it.
+  const sheetOpen = downtimeOpen || Boolean(isPhone && sheetEntry);
+  const noticeLine = sheetOpen ? null : (
     <p className={cx(styles.toast, notice && styles.toastOn)} role="status" data-testid="ward-on-call-notice">
       {notice}
     </p>
   );
+  const sheetNotice = sheetOpen ? (
+    <p className={styles.sheetNotice} role="status" data-testid="ward-on-call-notice">
+      {notice}
+    </p>
+  ) : null;
 
   if (isPhone) {
     return (
@@ -547,7 +590,9 @@ export function OnCallScreen() {
           </p>
           {noticeLine}
         </main>
-        {sheetEntry ? <PhoneSheet entry={sheetEntry} actions={actions} onClose={() => setSheetId(null)} /> : null}
+        {sheetEntry ? (
+          <PhoneSheet entry={sheetEntry} actions={actions} notice={sheetNotice} onClose={() => setSheetId(null)} />
+        ) : null}
       </div>
     );
   }
@@ -642,6 +687,7 @@ export function OnCallScreen() {
           ...entries.filter((entry) => favourites.includes(entry.id) && !KEY_LINE_IDS.includes(entry.id as never)),
         ]}
         onCopy={actions.onCopy}
+        notice={sheetNotice}
       />
     </div>
   );
@@ -951,11 +997,13 @@ function DowntimeCard({
   onClose,
   entries,
   onCopy,
+  notice,
 }: {
   open: boolean;
   onClose: () => void;
   entries: DirectoryEntry[];
   onCopy: (text: string, label: string) => void;
+  notice: ReactNode;
 }) {
   const rows = entries.flatMap((entry) =>
     (entry.lines.length
@@ -983,6 +1031,7 @@ function DowntimeCard({
       testId="ward-on-call-downtime"
       footer={
         <div className={styles.downtimeFoot}>
+          {notice}
           <span className={styles.cellSub}>Synthetic records, mock numbers.</span>
           <Button variant="pri" size="sm" icon={Copy} onClick={() => onCopy(text, "Downtime card copied")}>
             Copy as text

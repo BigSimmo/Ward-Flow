@@ -1259,6 +1259,17 @@
   height: 44px;
 }
 
+.sheetNotice {
+  margin: 0;
+  min-height: 1lh;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.sheetNotice:empty {
+  display: none;
+}
+
 .downtimeFoot {
   display: flex;
   align-items: center;
@@ -1711,9 +1722,12 @@
   .lineState {
     display: none;
   }
-  .lineRow .iconButton {
-    width: 40px;
-    height: 40px;
+  .iconButton {
+    width: var(--ward-tap, 3rem);
+    height: var(--ward-tap, 3rem);
+  }
+  .focalSeg button {
+    height: var(--ward-tap, 3rem);
   }
   .lineLabel span {
     white-space: nowrap;
