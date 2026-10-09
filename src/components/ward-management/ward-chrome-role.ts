@@ -22,6 +22,7 @@ export type WardChromeRole = "coordinator" | "ward" | "ed" | "officer" | "commun
 /** Where the ward-scoped routes live, so the mapping is not a guess about URL shapes. */
 const WARD_SEGMENTS = ["/ward/", "/board/"];
 const ED_SEGMENTS = ["/ed/"];
+const ED_INDEX_SUFFIX = "/ed";
 const OFFICER_SEGMENT = "/transport/officer";
 /** The community index (`/community`) and its team detail (`/community/[teamId]`) and statistics
  *  section (`/statistics/community/[teamId]`) all share this substring. */
@@ -41,7 +42,7 @@ export function wardChromeRole(pathname: string): WardChromeRole {
    * of the union and the label/icon/order maps, but carry no pathname arm today because no route
    * renders either role yet — nothing may silently resolve them to "coordinator" when one lands.
    */
-  if (ED_SEGMENTS.some((segment) => pathname.includes(segment))) return "ed";
+  if (pathname.endsWith(ED_INDEX_SUFFIX) || ED_SEGMENTS.some((segment) => pathname.includes(segment))) return "ed";
   if (WARD_SEGMENTS.some((segment) => pathname.includes(segment))) return "ward";
   if (pathname.includes(COMMUNITY_SEGMENT)) return "community";
   if (pathname.endsWith(OFFICER_SEGMENT) || pathname.endsWith(`${OFFICER_SEGMENT}/`)) return "officer";
