@@ -788,6 +788,6 @@ describe("the sheet scrim fade lets the glass panel blur", () => {
     // A filling opacity animation makes the scrim a backdrop root, so the panel's blur sees nothing.
     const token = /--animate-overlay-in:\s*([^;]+);/.exec(globals)?.[1];
     expect(token, "--animate-overlay-in is missing from globals.css").toBeDefined();
-    expect(token).not.toMatch(/\b(both|forwards)\b/);
+    expect(token).not.toMatch(/\b(both|forwards)\b/i);
   });
 });
