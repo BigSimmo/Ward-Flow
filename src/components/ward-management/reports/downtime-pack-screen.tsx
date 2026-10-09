@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Ambulance, BedDouble, Camera, FileText, Printer, Users } from "lucide-react";
 
 import { Button, Card, CardHead, Hero, HeroStat, tableClasses } from "@/components/wf";
@@ -9,7 +9,7 @@ import { formatSheetMoment, splitDuration, type Instant } from "@/components/war
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 
-import { downtimePack, lastDowntimePack, rememberDowntimePack, subscribeDowntimePack } from "./downtime-pack";
+import { downtimePack, lastDowntimePack, rememberDowntimePack, type DowntimePack } from "./downtime-pack";
 import styles from "./reports.module.css";
 
 const NOT_RECORDED = "Not recorded";
@@ -25,7 +25,7 @@ export function DowntimePackScreen() {
   const { dayZero } = world;
   const patientOf = usePatientOf();
 
-  const take = (): void => {
+  const take = (): DowntimePack => {
     const pack = downtimePack({
       units: world.units,
       admissions: world.admissions,
@@ -38,32 +38,20 @@ export function DowntimePackScreen() {
         return `${person.displayName} · ${person.umrn}`;
       },
     });
-    rememberDowntimePack(pack);
+    rememberDowntimePack(pack, world.worldGeneration);
+    return pack;
   };
 
-  // Taken or restored only after mount: the server snapshot is always null, so a server render never
-  // holds a pack (it would be shared across visitors and its stamp would not match the browser's).
-  const pack = useSyncExternalStore(subscribeDowntimePack, lastDowntimePack, () => null);
+  const initialGeneration = useRef(world.worldGeneration);
+  const [pack, setPack] = useState<DowntimePack>(() => lastDowntimePack(world.worldGeneration) ?? take());
   useEffect(() => {
-    if (lastDowntimePack() === null) take();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- take once on mount; "New snapshot" retakes
-  }, []);
+    if (world.worldGeneration === initialGeneration.current) return;
+    initialGeneration.current = world.worldGeneration;
+    setPack(take());
+    // A world reset invalidates the frozen snapshot, including while this screen remains mounted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [world.worldGeneration]);
   const at = (instant: Instant | null) => (instant === null ? NOT_RECORDED : formatSheetMoment(instant, dayZero));
-
-  if (pack === null) {
-    return (
-      <div className={styles.page} data-testid="ward-downtime-pack" data-ward-design="v6">
-        <main id="main-content" className={styles.main} aria-busy="true">
-          <Hero
-            level={1}
-            eyebrow="Synthetic demo data · downtime pack"
-            title="Downtime pack"
-            titleMeta="Taking snapshot"
-          />
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.page} data-testid="ward-downtime-pack" data-ward-design="v6">
@@ -83,14 +71,7 @@ export function DowntimePackScreen() {
           }
           aside={
             <span data-print-hide>
-              <Button
-                variant="light"
-                icon={Printer}
-                onClick={() => {
-                  window.print();
-                }}
-                data-testid="ward-downtime-print"
-              >
+              <Button variant="light" icon={Printer} onClick={() => window.print()} data-testid="ward-downtime-print">
                 Print
               </Button>
             </span>
@@ -98,14 +79,7 @@ export function DowntimePackScreen() {
         />
 
         <div className={styles.controls} data-print-hide>
-          <Button
-            variant="sec"
-            icon={Camera}
-            onClick={() => {
-              take();
-            }}
-            data-testid="ward-downtime-refresh"
-          >
+          <Button variant="sec" icon={Camera} onClick={() => setPack(take())} data-testid="ward-downtime-refresh">
             New snapshot
           </Button>
           <p className={styles.stamp}>Snapshot does not update while open</p>
@@ -135,10 +109,10 @@ export function DowntimePackScreen() {
                     Occupied
                   </th>
                   <th scope="col" className={styles.num}>
-                    On leave
+                    On leave (held)
                   </th>
                   <th scope="col" className={styles.num}>
-                    Held
+                    Pulled
                   </th>
                   <th scope="col" className={styles.num}>
                     Closed
@@ -226,13 +200,7 @@ export function DowntimePackScreen() {
                     <th scope="col">To</th>
                     <th scope="col">Stage</th>
                     <th scope="col">Planned move</th>
-                    <th scope="col">Transport ETA</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pack.pendingMoves.map((line) => (
-                    <tr key={line.movementId}>
-                      <th scope="row">{line.person}</th>
+            <th scope="row">{line.person}</th>
                       <td>{line.from}</td>
                       <td>{line.to}</td>
                       <td>{line.stage}</td>
