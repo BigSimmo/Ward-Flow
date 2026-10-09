@@ -2378,6 +2378,39 @@ details.refCard > summary {
     flex: none;
   }
 
+  /* Phone (9 Oct 2026): every step reaches the 48px tap size; a folded step centres its number. */
+  .stepItem {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .stepItem:not([data-active="true"]) {
+    min-width: var(--spacing-tap, 3rem);
+    justify-content: center;
+  }
+
+  /* The New referral and Inbox switch takes its own full row under the title, so neither label is
+   * cut short and each half reaches the 48px tap height. */
+  .drawerHeadTop {
+    flex-wrap: wrap;
+  }
+
+  .drawerHeadTop > .drawerCloseBtn {
+    margin-left: auto;
+  }
+
+  .drawerHeadTop > .headTabs {
+    order: 1;
+    display: grid;
+    flex: 1 1 100%;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+  }
+
+  .drawerHeadTop > .headTabs > button {
+    min-height: var(--spacing-tap, 3rem);
+    justify-content: center;
+  }
+
   .destRow .categoryTrack {
     flex: 1 1 auto;
   }

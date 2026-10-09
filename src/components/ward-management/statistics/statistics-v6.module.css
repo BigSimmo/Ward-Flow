@@ -745,3 +745,21 @@
     display: none;
   }
 }
+
+/* Phone (9 Oct 2026): one service tile per row, so the four bed figures keep their own column and
+ * their labels never run together ("ClosedHeadroom"). Two columns stay from 36rem up. */
+@media (max-width: 36rem) {
+  .serviceGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .serviceTile {
+    min-height: var(--spacing-tap, 3rem);
+    border-left: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .serviceTile:first-child {
+    border-top: 0;
+  }
+}
