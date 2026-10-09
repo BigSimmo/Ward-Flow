@@ -259,9 +259,11 @@ export function WardHomeTab({
       key: `leave-${leaveBed.id}`,
       at: leaveBed.confirmedAt,
       timeLabel: formatInstantWithDay(leaveBed.confirmedAt, now),
-      title: "Approved leave",
-      detail: `Expected back ${formatInstant(leaveBed.expectedReturn)}`,
-      status: "Leave",
+      title: leaveBed.absentWithoutLeave ? "Absent without leave" : "Approved leave",
+      detail: leaveBed.absentWithoutLeave
+        ? `Absent without leave since ${formatInstant(leaveBed.absentWithoutLeave.since)}`
+        : `Expected back ${formatInstant(leaveBed.expectedReturn)}`,
+      status: leaveBed.absentWithoutLeave ? "AWOL" : "Leave",
     });
   }
   if (accepted.length > 0) {
