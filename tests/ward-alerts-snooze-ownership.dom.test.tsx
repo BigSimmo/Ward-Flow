@@ -53,16 +53,22 @@ function renderScreen() {
 }
 
 describe("alerts: ownership and snooze", () => {
-  it("stops offering Take ownership once the coordinator owns the row", () => {
-    renderScreen();
-    const trigger = screen.getAllByRole("button", { name: /More actions for/ })[0]!;
-    fireEvent.click(trigger);
-    fireEvent.click(screen.getByRole("menuitem", { name: "Take ownership" }));
+  it("stops offering Take once the coordinator owns the row", () => {
+    const { container } = renderScreen();
+    // A row the engine addressed to someone else, so taking it changes who holds it.
+    const row = [...container.querySelectorAll<HTMLElement>("li[data-alert-id]")].find((li) =>
+      li.textContent?.includes("ED mental health team"),
+    )!;
+    expect(row).toBeDefined();
+    fireEvent.click(within(row).getByTestId("ward-alerts-open"));
+
+    const panel = screen.getByRole("complementary", { name: "Selected alert" });
+    fireEvent.click(within(panel).getByRole("button", { name: /^Take / }));
     expect(screen.getByText(/^You own "/)).toBeInTheDocument();
 
-    fireEvent.click(trigger);
-    expect(screen.queryByRole("menuitem", { name: /Take ownership/ })).toBeNull();
-    expect(screen.getAllByText(/Owned by Flow coordinator since/).length).toBeGreaterThan(0);
+    expect(within(panel).queryByRole("button", { name: /^Take / })).toBeNull();
+    expect(within(panel).getByRole("button", { name: /^You own / })).toHaveAttribute("aria-disabled", "true");
+    expect(within(panel).getByText(/Owned by Flow coordinator since/)).toBeInTheDocument();
   });
 
   it("keeps the patient, the severity and an Open action on a snoozed row", () => {
@@ -87,7 +93,8 @@ describe("alerts: ownership and snooze", () => {
     expect(row.querySelector('svg path[d="M5 0.8 9.6 9.2H0.4Z"]')).not.toBeNull();
     expect(within(row).getByRole("button", { name: /^Return .* now, / })).toBeInTheDocument();
 
-    fireEvent.click(within(row).getByRole("button", { name: `Open for ${expected.displayName}` }));
-    expect(screen.getByRole("dialog", { name: /Alert Escalation & Triage/i })).toBeInTheDocument();
+    fireEvent.click(within(row).getByTestId("ward-alerts-open"));
+    const panel = screen.getByRole("complementary", { name: "Selected alert" });
+    expect(within(panel).getByRole("heading", { level: 2 })).toHaveTextContent(expected.displayName);
   });
 });

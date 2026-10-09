@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
@@ -11,7 +11,7 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 /**
  * F3 (P1), 2026-09-17 fix round.
  *
- *  1. "Record Intervention" and "Dispatch Broadcast" changed nothing but showed a success toast —
+ *  1. "Record Intervention" (now Escalate) and "Dispatch Broadcast" changed nothing but showed a success toast —
  *     D4 requires an exact "Not wired in this prototype." on the unconnected confirm control and
  *     no toast claiming an effect.
  *  2. The all-clear KPI captions ("All Clocks in Date", "Zero Gridlock") were unqualified; they
@@ -42,20 +42,15 @@ describe("Alerts — confirm controls (F3.1)", () => {
     expect(screen.getByText(/dispatched statewide\./i)).toBeInTheDocument();
   });
 
-  it("Record Intervention is aria-disabled, carries the exact D4 wording, and shows no toast", () => {
+  it("Escalate is aria-disabled, carries the exact D4 wording, and records nothing", () => {
     renderScreen();
-    const actionButtons = screen.queryAllByTestId("ward-alerts-action-btn");
-    if (actionButtons.length === 0) {
-      // No inbox item on this fixture to open the intervention modal from — nothing to prove.
-      return;
-    }
-    fireEvent.click(actionButtons[0]);
-    const confirm = screen.getByTestId("ward-alerts-action-confirm");
-    expect(confirm).toHaveAttribute("aria-disabled", "true");
-    expect(confirm).not.toBeDisabled();
-    expect(confirm).toHaveAttribute("title", "Not wired in this prototype.");
-    fireEvent.click(confirm);
-    expect(screen.queryByText(/Intervention recorded for:/)).not.toBeInTheDocument();
+    const panel = screen.getByRole("complementary", { name: "Selected alert" });
+    const escalate = within(panel).getByRole("button", { name: /Escalate/ });
+    expect(escalate).toHaveAttribute("aria-disabled", "true");
+    expect(escalate).not.toBeDisabled();
+    expect(within(panel).getByText("Not wired in this prototype.")).toBeInTheDocument();
+    fireEvent.click(escalate);
+    expect(screen.getByRole("tab", { name: /History/ })).toHaveTextContent("0");
   });
 });
 
@@ -78,10 +73,14 @@ describe("Alerts — all-clear KPI captions state a count (F3.2)", () => {
     const declineCandidates = openMovements.filter((m) => m.declines.length > 0).length;
 
     if (legal.length === 0) {
-      expect(screen.getByText(`0 of ${withDeadline.length} with a written deadline passed`)).toBeInTheDocument();
+      expect(
+        screen.getByText(new RegExp(`0 of ${withDeadline.length} with a written deadline passed`)),
+      ).toBeInTheDocument();
     }
     if (declined.length === 0) {
-      expect(screen.getByText(`0 of ${declineCandidates} declined by every ward asked`)).toBeInTheDocument();
+      expect(
+        screen.getByText(new RegExp(`0 of ${declineCandidates} declined by every ward asked`)),
+      ).toBeInTheDocument();
     }
   });
 });

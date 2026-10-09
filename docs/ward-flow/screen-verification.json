@@ -920,15 +920,24 @@
       "mockup": "alerts-third-edition.html",
       "route": "/alerts",
       "verified": {
-        "date": "2026-10-02",
-        "who": "Codex coordinator and independent screen/source reviewers",
-        "widths": [1920],
+        "date": "2026-10-09",
+        "who": "Claude Code, alerts page thread",
+        "widths": [390, 1440],
         "themes": ["light", "dark"],
         "verdict": "deviates",
-        "implementationSha256": "b19084dc6866cca93a926f115b3939e81d617d60eb0d6b2491e69a2c875ef8e5",
-        "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+        "implementationSha256": "4a09859cd356691024296210f726c938e5c319ebd08c6d27e58a3ec564faa29f",
+        "notes": "Command queue rebuild (round 2 option A, chosen by Josh 9 Oct 2026) on the shared wf components, merged with main at edc22104 (planned arrivals included). Local dev server at 1440 x 900 and 390 x 844, light and dark: document scroll width equals the viewport at both widths, no console errors. Desktop: hero with Act now, Waiting and Yours figures and the Checking list, queue arranged by urgency, lanes or owner, side panel for the selected alert, Today chart. Phone: urgency cards only, selected alert in a sheet. Deviates from the old third-edition drawing by design; the round 2 mockup is the reference. Screenshots in the project files under design/alerts/build-a. Physical devices, hosted behaviour and deployment are unverified."
       },
       "verificationHistory": [
+        {
+          "date": "2026-10-02",
+          "who": "Codex coordinator and independent screen/source reviewers",
+          "widths": [1920],
+          "themes": ["light", "dark"],
+          "verdict": "deviates",
+          "implementationSha256": "b19084dc6866cca93a926f115b3939e81d617d60eb0d6b2491e69a2c875ef8e5",
+          "notes": "Task polish-34-screens-20261002: desktop review uses 1920 x 1080 viewport captures only. Ordinary polish follows the approved running app and supplied brief; no replacement concept adopted. All 34 included designs were inspected, with targeted rechecks for corrected scrolling, chart hydration and readability. This is scoped app review, not a new assertion of literal served-drawing equality; prior drawing comparisons are preserved in verificationHistory. No fresh drawing hash is recorded. Width/theme lists are aggregate checked cells, not a full cross-product. Phone geometry was checked for all 34 at 390 x 844; individual pixel reviews and affected family representatives are named in the checkpoint. Source-bound receipts and original captures: D:/Temp/ward-polish-34-20261002/. Current app commits through 530dc67; relevant earlier evidence is reused for unchanged screen inputs. Print has a focused source guard pass; printed browser appearance, physical devices, exhaustive states, hosted behaviour, main integration and deployment are unverified."
+        },
         {
           "date": "2026-09-23",
           "who": "Antigravity Builder Agent, independent adversarial reviewer",
