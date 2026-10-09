@@ -210,8 +210,11 @@ describe("scanAddedLines", () => {
     expect(scanAddedLines(added("docs/note.md", `IHI ${ihiWithValidCheckDigit()}`))).toHaveLength(1);
   });
 
-  it("accepts synthetic UM1nnnnn URNs and blocks other labelled URNs", () => {
+  it("accepts synthetic UMnnnnnn URNs and blocks other labelled URNs", () => {
     expect(scanAddedLines(added("src/a.tsx", `umrn: "UM100002"`))).toHaveLength(0);
+    // D-39: every synthetic range is UM plus six digits, e.g. the community demo cohort.
+    expect(scanAddedLines(added("src/a.tsx", `umrn: "UM220194"`))).toHaveLength(0);
+    expect(scanAddedLines(added("src/a.tsx", `umrn: "UM1234567"`))).toHaveLength(1);
     expect(scanAddedLines(added("src/a.tsx", `URN: A1234567`))).toHaveLength(1);
     expect(scanAddedLines(added("src/a.tsx", `return 1234567;`))).toHaveLength(0);
   });
