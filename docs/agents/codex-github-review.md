@@ -1,5 +1,7 @@
 # Ward Flow review handling
 
+<a id="current-review-contract"></a>
+
 ## Current contract — 2 October 2026
 
 Review requires an explicit task naming Ward and its exact branch/head. Keep findings

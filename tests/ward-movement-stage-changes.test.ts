@@ -252,6 +252,16 @@ function buildDrivenFixture() {
   });
   assertStepAccepted(s5, sReopened, "RELEASE_AND_REOPEN_SEARCH");
 
+  // D-34 is its own atomic pause/release, independently driven off the held-bed state.
+  const sDeteriorated = wardFlowReducer(s5, {
+    type: "RECORD_ED_MEDICAL_DETERIORATION",
+    role: "ed",
+    now: t(60),
+    movementId: MOVEMENT_ID,
+    actingPlaceId: movementIn(s5, MOVEMENT_ID).originEdId,
+  });
+  assertStepAccepted(s5, sDeteriorated, "RECORD_ED_MEDICAL_DETERIORATION");
+
   // Main walk continues from s5 (RELEASE_PULL and FORK D above forked off it without mutating it).
   const s6 = wardFlowReducer(s5, {
     type: "BOOK_TRANSPORT",
@@ -326,6 +336,7 @@ function buildDrivenFixture() {
     PULL_PATIENT: { before: s4, after: s5 },
     RELEASE_PULL: { before: s5, after: sReleased },
     RELEASE_AND_REOPEN_SEARCH: { before: s5, after: sReopened },
+    RECORD_ED_MEDICAL_DETERIORATION: { before: s5, after: sDeteriorated },
     HANDOVER_READY: { before: s6, after: s7 },
     CANCEL_TRANSPORT: { before: s7, after: sCancelled },
     PATIENT_COLLECTED: { before: s9, after: s10 },

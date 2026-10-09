@@ -187,45 +187,6 @@
    keeps it to its own width inside `.pageHeader`'s column flex, which would otherwise stretch it
    edge to edge and make a single action read as a page-wide banner. Same `--ward-tap`
    (`--spacing-tap`, 3rem) tap target every other control in this file uses; never `min-h-11`. */
-.headerAction {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  min-height: 2.125rem;
-  border: 1px solid var(--accent);
-  border-radius: var(--r2, 6px);
-  background: var(--accent);
-  padding: 0 1rem;
-  color: var(--on-accent);
-  font-size: var(--t-1);
-  font-weight: 600;
-  text-decoration: none;
-  box-shadow: var(--lift);
-  transition: all 0.15s ease;
-}
-
-@media (max-width: 51.25rem), (pointer: coarse) {
-  .headerAction {
-    min-height: var(--ward-tap, 3rem);
-  }
-}
-
-.headerAction:hover {
-  background: var(--accent-press);
-  border-color: var(--accent-press);
-  box-shadow: var(--lift);
-  color: var(--on-accent);
-}
-
-.headerAction:active {
-  transform: scale(0.98);
-}
-
-.headerAction:focus-visible {
-  outline: 0.125rem solid var(--accent);
-  outline-offset: 0.125rem;
-}
 
 .form {
   display: grid;
@@ -235,15 +196,6 @@
 /* One decision per card. Phone-first: a single full-width column, always — this never becomes
    a dense grid, even above the two-column breakpoint below (that widens to two CARDS side by
    side, not two fields sharing one card). */
-.fieldCard {
-  display: grid;
-  gap: var(--ward-space-8);
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-lg);
-  background: var(--surface-subtle);
-  margin: 0;
-  padding: var(--ward-space-14) var(--ward-space-16);
-}
 
 .fieldLegend {
   display: flex;
@@ -254,32 +206,6 @@
   color: var(--ink);
   font-size: var(--t-1);
   font-weight: 700;
-}
-
-/* The third edition's per-question state word — `Outstanding` until the question is answered.
- *
- * ⚠️ 12px, and never smaller. This is the smallest text the third edition adds to this screen, so
- * it is exactly the kind of label that invites a size below the standard's §4 floor to make a row
- * sit tighter. The floor is a legibility ruling (D-3), not a taste, and the ratchet at
- * `scripts/ward-flow/check-text-size-floor.mjs` reddens on any new sub-12px use in this directory.
- *
- * ⚠️ The two sub-12px tokens are referred to by SIZE throughout this file's prose and never spelled
- * — see the note in `hub/hub.module.css`. That ratchet counts token names inside comments too, so a
- * comment recording that the floor was honoured is otherwise counted as breaking it. */
-.questionState {
-  flex: none;
-  font-size: var(--t-0);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-/* Colour is never the only carrier: the state is a WORD first, and these two only tint it. An
-   answered question is not "good" and an outstanding one is not "bad" — an empty form is a normal
-   state, not a warning — so neither takes a red, and outstanding stays the muted ink rather than
-   an amber that would read as a problem with the referral. */
-.questionState[data-state="not-answered"] {
-  color: var(--muted);
 }
 
 /* 🔴 `--ink`, and the two tokens it is NOT are both instructive.
@@ -326,9 +252,6 @@
  * of the surviving old one. 🔴 **A correction that lands on one instance of a repeated claim is
  * not a correction; it is a disagreement.** Found by an adversarial read, not by any gate. **That is a fact about how the scope is applied, not about what landed this week,
  * and it is why this version of the note should still be true next month.** */
-.questionState[data-state="answered"] {
-  color: var(--ink);
-}
 
 .select {
   min-height: var(--ward-tap);
@@ -367,23 +290,6 @@
 .correctionNote:focus-visible {
   outline: 0.125rem solid var(--focus);
   outline-offset: 0.125rem;
-}
-
-/* `.toggleCard` stood here until 2026-08-30, styling the three checkboxes this form used to
-   carry. All three became yes/no radio groups (`.choiceCard`/`.choiceOption` below) when an
-   untouched checkbox turned out to be sending a definite clinical "no" nobody had chosen, and
-   nothing has rendered the class since. Its rules — including its `@media print` reset — have moved
-   onto the classes that ARE rendered, rather than being left behind pointing at nothing: a print
-   guard naming an orphaned selector is decorative, and reads as coverage the screen does not have.
-
-   A note about what it says beneath a question, not a control of its own. Used by the suburb
-   picker to say plainly that its answer is not recorded on the referral. */
-.fieldNote {
-  margin: var(--ward-space-8) 0 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 400;
-  line-height: var(--ward-leading-body);
 }
 
 /* Phase R2.1: a yes/no question that starts with NEITHER answer chosen. Same card weight and the
@@ -471,70 +377,6 @@
   padding: 0;
   gap: var(--ward-space-8);
   list-style: none;
-}
-
-.destinationOption {
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  padding: var(--ward-space-14) var(--ward-space-16);
-}
-
-/* GREYED, NEVER REMOVED AND NEVER DISABLED (owner's rule). Keyed off the data attribute rather
-   than a second class for the same reason `.submit[aria-disabled="true"]` above is: the STATE is
-   what the screen renders from, so a card cannot look chosen-able while the option says it is
-   outside the catchment table. The control inside keeps its full 48px target and stays operable —
-   choosing one is allowed, and the card says in words why it is drawn this way, so the meaning is
-   never carried by colour alone. */
-.destinationOption[data-outside-catchment="true"] {
-  border-style: dashed;
-  background: var(--surface-chrome);
-}
-
-/* The label IS the control's accessible name, and carries the 48px tap target. */
-.destinationName {
-  display: flex;
-  min-height: var(--ward-tap);
-  align-items: center;
-  gap: var(--ward-space-10);
-  color: var(--ink);
-  font-size: var(--t-0);
-  font-weight: 600;
-  line-height: var(--ward-leading-body);
-}
-
-.destinationName input {
-  width: 1.25rem;
-  height: 1.25rem;
-  flex-shrink: 0;
-  accent-color: var(--clinical-accent);
-}
-
-.destinationName:focus-within {
-  outline: 0.125rem solid var(--focus);
-  outline-offset: 0.125rem;
-}
-
-.destinationNote {
-  margin: var(--ward-space-8) 0 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 400;
-  line-height: var(--ward-leading-body);
-}
-
-.destinationFacts {
-  display: grid;
-  margin: var(--ward-space-8) 0 0;
-  padding: 0 0 0 var(--ward-space-14);
-  gap: var(--ward-space-4);
-}
-
-.destinationFact {
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 400;
-  line-height: var(--ward-leading-body);
 }
 
 /* Why Send is unavailable, named field by field. Never colour alone and never a tooltip: it is
@@ -1909,60 +1751,14 @@
  * fixing text colour alone (`rgb(242, 196, 90)`, contrast 1.64:1) would not make it legible.
  * Already reported, not new here.
  */
-/* ══ THE TWO-PANE INTAKE WORKSPACE ═══════════════════════════════════════════════════════════
-   The form on the left is WHAT THE REFERRER IS ASSERTING. The rail on the right is WHAT THE
-   SYSTEM WILL RECORD AND WHAT IS STILL MISSING. Keeping those on opposite sides is the point:
-   nothing on the right can ever look like it is filling the form in, and the referral stays a
-   thing a person states rather than a thing a screen proposes.
-
-   ⚠️ EVERY CLASS BELOW IS INTAKE-ONLY AND NEW. `.screen`, `.main`, `.governanceBanner`,
-   `.prototypeBadge`, `.pageHeader`, `.pageTitle`, `.pageSubtitle` and `.headerAction` are SHARED
-   with `referral-board.tsx`; `.fieldLegend`, `.select` and `.rejection` are shared with
-   `referral-match.tsx`. Both of those files are frozen under an open owner decision, so their
-   rules are REUSED VERBATIM here and never edited — a change to a shared rule would restyle a
-   frozen screen without anybody editing it.
-
-   No raw hex, per DESIGN-LANGUAGE.md rule 1. Every value is a token that already existed. */
-
-.intakeLayout {
-  display: grid;
-  gap: var(--ward-space-20);
-  align-items: start;
-}
 
 /* One column on a phone, always. The rail is context, so it follows the thing it describes
    rather than competing with it for the first screenful. 64rem — wider than the form's own
    40rem two-column point — because the rail only earns its width once the form already has
    two columns of its own. */
-@media (min-width: 64rem) {
-  .intakeLayout {
-    grid-template-columns: minmax(0, 1fr) 21rem;
-  }
-}
-
-/* `min-width: 0` on both tracks: a grid item's default `min-width: auto` refuses to shrink below
-   its content, which is how a long unbroken value pushes a column past the viewport. This screen
-   has already been bitten once by content escaping the right-hand edge with no way to scroll
-   to it. */
-.intakeMain {
-  min-width: 0;
-}
-
-.intakeAside {
-  display: grid;
-  gap: var(--ward-space-12);
-  min-width: 0;
-  align-content: start;
-}
 
 /* Sticky only where there is a second column to be sticky beside. On a phone it is an ordinary
    block below the form; a sticky panel in a single column would cover the fields. */
-@media (min-width: 64rem) {
-  .intakeAside {
-    position: sticky;
-    top: var(--ward-space-16);
-  }
-}
 
 /* Panel anatomy copied from `WardPanel` — border, small radius, subtle header on canvas fill —
    so the rail reads as the same furniture as every other ward surface rather than as a second
@@ -2223,18 +2019,12 @@
    * is the right defensive fix whether or not the withdrawn probe measured its severity correctly.
    * What was withdrawn was the method, not the defect.
    */
-  .fieldCard,
   .section,
-  /* `.sectionLive` rides on the same element as `.section` and overrides its fill and border in
-     the base layer. Both are single-class selectors, so which one wins here is decided by source
-     order alone — and relying on this block sitting lower in the file is not a property, it is a
-     coincidence that survives until somebody moves a rule. Named explicitly instead. */
   .sectionLive,
   .card,
   .matchPanel,
   .bandGroup,
   .choiceCard,
-  .destinationOption,
   .matchRowAccepts,
   .matchRowDeclines {
     border-color: CanvasText;
@@ -2256,18 +2046,11 @@
    * `tests/ward-referrals-print.test.ts` moved with it: a guard naming an orphan is decorative, and
    * reads as coverage the screen does not have.
    */
-  .choiceOption,
-  .destinationName {
+  .choiceOption {
     border-color: CanvasText;
     background: none;
     break-inside: avoid;
     color: CanvasText;
-  }
-
-  /* Greyed on screen by its own background; on paper the dashed border is what carries the
-     distinction, so the background goes and the border stays. */
-  .destinationOption[data-outside-catchment="true"] {
-    background: none;
   }
 
   /*
@@ -2351,47 +2134,17 @@
   .matchHeading,
   .matchGovernance,
   .matchTier,
-  /* `.tierCell` is the board table's copy of the fact `.matchTier` carries on the match view, and
-     it takes `--ink` for the same reason — so it prints pale from the dark theme for the
-     same reason too. Added in the same commit that created the class, rather than left for the
-     next sweep to find. */
   .tierCell,
   .matchSummary,
   .matchReasonText,
   .matchUnitName,
   .acceptsLabel,
-  /*
-   * Phase 8's own text, added to this group in Task 10 for the same reason every name above it is
-   * here: each uses `--ink` or `--muted`, which stay pale grey/blue custom-property
-   * values in the dark theme whatever `color-scheme` says, so each would print as pale ink on the
-   * white sheet the print reset forces once `.bandGroup`'s dark background is reset above. The two
-   * defects had to be fixed together — resetting the background alone would have turned 47
-   * black-on-dark leaves into legible ones while leaving the band headings, counts, per-row band
-   * and both governance sentences pale on white.
-   */
   .bandLabel,
   .bandCounts,
   .bandEmpty,
   .matchBand,
   .syntheticNotice,
   .allNotRecorded,
-  /*
-   * The destination picker's own text, and the suburb note beneath its picker. Each uses
-   * `--muted`, which stays a pale grey-blue custom-property value in the dark theme whatever
-   * `color-scheme` says — so each would print as pale ink on the white sheet the print reset
-   * forces, exactly like every name above it. These are the sentences a clinician would print the
-   * form FOR: which team the catchment table names, how many units accept, why an option is
-   * offered.
-   */
-  .fieldNote,
-  .destinationNote,
-  .destinationFact,
-  /*
-   * The refusals recorded against an accepted referral (owner ruling, 2026-09-01). It sets its own
-   * `--muted`, so the `.table td` reset above cannot reach it — the same trap every name in
-   * this list is here for. A printed board that dropped the refusals to invisible ink would
-   * recreate on paper exactly the defect this rule set exists to have fixed on screen.
-   */
   .outcomeDetailRefusals,
   .matchPanel > p {
     color: CanvasText;
@@ -2411,138 +2164,6 @@
   .screen {
     --ward-border: var(--border);
   }
-}
-
-/* ══ THE WRITTEN HISTORY ═══════════════════════════════════════════════════════════════════════
-   Owner instruction, 2026-09-05. The only free-text control on this form.
-
-   ⚠️ EVERY CLASS BELOW IS NEW AND INTAKE-ONLY. Not one existing rule in this file was edited to
-   make room for them, because `referral-board.tsx` and `referral-match.tsx` are frozen and share
-   this stylesheet — changing a rule they use restyles a screen nobody opened. Adding is safe;
-   editing is not. (The implementation plan's Task B1 gives the intake its own stylesheet and
-   removes this hazard permanently; until it lands, this rule is live.)
-
-   ⚠️ AND THE HISTORY IS NEVER STYLED AS "ANSWERED". Everywhere else on this screen a completed
-   question can look complete. Nothing checks free text, so nothing here may look checked — the
-   written state is neutral, and the only colour it ever carries is the amber of leaving the
-   screen or the red of being too long to send. */
-.historyWarning {
-  margin: 0 0 var(--ward-space-12);
-  border: 0.0625rem solid var(--ward-warning);
-  border-left-width: 0.1875rem;
-  border-radius: var(--radius-md);
-  background: var(--ward-warning-soft);
-  padding: var(--ward-space-10) var(--ward-space-12);
-  color: var(--ward-text);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
-}
-
-.historyField {
-  display: grid;
-  gap: var(--ward-space-4);
-}
-
-input.historyField {
-  display: block;
-  width: 100%;
-  min-height: var(--ward-tap);
-  box-sizing: border-box;
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  padding: 0 var(--ward-space-10);
-  color: var(--ink);
-  font-size: var(--t-0);
-  font-weight: 400;
-}
-
-input.historyField:focus-visible {
-  outline: 0.125rem solid var(--focus);
-  outline-offset: 0.125rem;
-}
-
-.historyField + .historyField {
-  margin-top: var(--ward-space-14);
-}
-
-.historyLabel {
-  color: var(--ward-heading);
-  font-size: var(--t-1);
-  font-weight: 600;
-  line-height: var(--ward-leading-tight);
-}
-
-/* "Required" / "Optional" reads as a property of the question, not as a state of the answer —
-   it never changes once the form is open, so it must not look like the changing states do. */
-.historyRequirement {
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 500;
-}
-
-.historyHint {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 400;
-  line-height: var(--ward-leading-body);
-}
-
-/* ⚠️ NO `max-height` AND `resize: vertical`. A referrer writing a long account must be able to see
-   what they have written; a fixed box that scrolls internally hides the middle of a risk note
-   behind a scrollbar nobody notices on a phone. */
-.historyBox {
-  width: 100%;
-  min-height: 8.5rem;
-  box-sizing: border-box;
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-md);
-  background: var(--ward-canvas);
-  padding: var(--ward-space-10);
-  color: var(--ward-text);
-  /* NO FONT DECLARATION HERE, DELIBERATELY. A <textarea> does not inherit the page font by
-     default, so the instinct is to declare one inheriting it — and the first version of this rule
-     did, which `tests/ward-design-language-contract.test.ts` correctly refused as font debt
-     outside the token layer. It is unnecessary anyway: `globals.css` already applies `font:
-     inherit` to `button, input, textarea, select`, which is why `.select` above carries none
-     either. That same global rule gives this box a 16px floor under 640px, so iOS does not zoom
-     the viewport when a referrer taps into it mid-sentence.
-
-     ⚠️ AND THAT GUARD READS RAW FILE TEXT, COMMENTS INCLUDED. The first wording of this note
-     spelled the declaration out to explain itself and tripped the guard from inside a comment
-     explaining why the declaration is absent. Describe it; do not spell it. */
-  font-size: var(--t-1);
-  line-height: var(--ward-leading-copy);
-  resize: vertical;
-}
-
-.historyBox:focus-visible {
-  outline: 0.125rem solid var(--ward-blue);
-  outline-offset: 0.125rem;
-}
-
-/* The one state the box itself carries. Red, because it BLOCKS the send — and paired with the
-   counter's own words, so the meaning survives a monochrome print and a forced-colours theme.
-   `border-width` is the second, colour-independent cue on the control itself: the box's own edge
-   thickens rather than relying on the meter's text alone to say the send is blocked. */
-.historyBox[data-over-limit="true"] {
-  border-width: 0.125rem;
-  border-color: var(--ward-danger);
-  background: var(--ward-danger-soft);
-}
-
-.historyMeter {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 400;
-  line-height: var(--ward-leading-body);
-}
-
-.historyMeter[data-tone="over"] {
-  color: var(--ward-danger);
-  font-weight: 600;
 }
 
 /* The rail's report of the history — a count and a length, never the text. See
@@ -2593,78 +2214,6 @@ input.historyField:focus-visible {
    over-limit counter says "too long to send" in words. Nothing here means anything by colour
    alone, so losing the colour loses nothing. */
 
-/* ── THE THIRD EDITION'S NUMBERED STEPS ──────────────────────────────────────────────────────
- *
- * Task 13. The thirteen question cards were a flat list; the drawing groups them under three
- * numbered headings — Who the referral is about, What they need, The history.
- *
- * 🔴 THIS IS NOT THE DESIGN SYSTEM'S §6.11 STEPPER, AND THE TWO MUST NOT CONVERGE. §6.11's
- * stepper is a PLACEMENT LIFECYCLE — placement requested, destination review, accepted awaiting
- * bed, bed pulled, handover ready, moving, arrived — and it belongs to the shortlist column. On an
- * unsent draft it would paint a half-filled form as sitting at "placement requested": a claim that
- * a request exists which has not been made. A form's progress and a referral's progress are
- * different quantities that happen to share a drawn shape. Deliberately no `.step` / `.stepper` /
- * `.stageLine` class name here, so a later reader cannot import that pattern by autocomplete.
- *
- * The fieldset carries no border and no padding: the grouping is the HEADING's job, and a box
- * around a box around a card is three frames for one question. */
-.stepSection {
-  display: grid;
-  gap: var(--ward-space-16);
-  margin: 0;
-  border: 0;
-  padding: 0;
-}
-
-.stepLegend {
-  display: flex;
-  align-items: baseline;
-  gap: var(--ward-space-8);
-  padding: 0;
-}
-
-/* The number is quiet and the name is the heading — a reader navigating by headings wants "What
-   they need", not "Step 2". Both are words either way; the number is never the only label. */
-.stepNo {
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.stepName {
-  color: var(--ink);
-  font-size: var(--t-2);
-  font-weight: 700;
-}
-
-/* The label and its state word on one row.
- *
- * 🔴 THE CHIP IS A SIBLING OF THE LABEL, NEVER A CHILD, AND A TEST CAUGHT THE DIFFERENCE. A
- * `<label>`'s text content is its control's accessible NAME. With the chip inside, every select was
- * renamed — "Age band Outstanding" while empty, "Age band Answered" once picked — so a control's
- * identity changed every time its value did. This wrapper is what keeps the name a constant. */
-.questionHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--ward-space-8);
-}
-
-/* What is already open for this person — stated above the questions.
- *
- * ⚠️ Deliberately NOT a warning colour. A second referral is sometimes exactly right, and an amber
- * or red band would read as "you are doing something wrong" when the screen's whole posture is that
- * it reports and a human decides. The muted rule and quiet ink make it information. */
-.alreadyOpen {
-  margin: 0 0 var(--ward-space-16);
-  border-left: 0.1875rem solid var(--ward-border);
-  padding-left: var(--ward-space-12);
-  color: var(--ink);
-  font-size: var(--t-1);
-}
-
 /* Full-estate F04/F07. Every selector is gated by an owned page root so the shared module does
  * not restyle ReferralMatchView outside the Referrals register composition. */
 .screen[data-referral-view] {
@@ -2705,7 +2254,6 @@ input.historyField:focus-visible {
   padding: 0.875rem 1.5rem 1.5rem;
 }
 
-.screen[data-referral-view="intake"] .pageHeader,
 .screen[data-referral-view="register"] .pageHeader {
   position: absolute;
   width: 1px;
@@ -2724,9 +2272,7 @@ input.historyField:focus-visible {
   background: var(--surface-2);
 }
 
-.screen[data-referral-view] .fieldCard,
 .screen[data-referral-view] .choiceCard,
-.screen[data-referral-view] .destinationOption,
 .screen[data-referral-view] .section,
 .screen[data-referral-view] .matchPanel,
 .screen[data-referral-view] .asideCard,
@@ -2737,32 +2283,8 @@ input.historyField:focus-visible {
   background: var(--surface);
 }
 
-.screen[data-referral-view] .fieldCard,
 .screen[data-referral-view] .choiceCard {
   padding: 0.875rem 1rem;
-}
-
-.screen[data-referral-view] .stepSection {
-  gap: 0.75rem;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-bottom-color: var(--line-strong);
-  border-radius: var(--r1);
-  background: var(--surface);
-  box-shadow: var(--lift);
-  padding: 0 0 1rem;
-}
-
-.screen[data-referral-view] .stepLegend {
-  width: 100%;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
-  padding: 0.75rem 1rem;
-}
-
-.screen[data-referral-view] .stepSection > :not(.stepLegend) {
-  margin-right: 1rem;
-  margin-left: 1rem;
 }
 
 .screen[data-referral-view] .asideCard {
@@ -2783,96 +2305,6 @@ input.historyField:focus-visible {
   font-size: var(--t-2);
   text-transform: none;
   letter-spacing: -0.01em;
-}
-
-.screen[data-referral-view="intake"] .intakeLayout {
-  order: 2;
-  gap: 1rem;
-}
-
-.screen[data-referral-view="intake"] footer,
-.screen[data-referral-view="intake"] [data-testid="ward-referral-intake-governance"] {
-  order: 99 !important;
-  margin-top: 2rem !important;
-}
-
-.personPanel {
-  order: 1;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-bottom-color: var(--line-strong);
-  border-radius: var(--r1);
-  background: var(--surface);
-  box-shadow: var(--lift);
-}
-
-.personPanelHeader {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
-  padding: 0.75rem 1rem;
-}
-
-.personPanelHeader h2 {
-  margin: 0;
-  color: var(--accent-ink);
-  font-family: var(--display);
-  font-size: var(--t-3);
-  font-weight: 600;
-}
-
-.personPanelHeader span {
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: var(--t-1);
-}
-
-.personPanelBody {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.5rem 1rem;
-  padding: 1rem;
-}
-
-.personPanelBody strong {
-  color: var(--ink);
-  font-size: var(--t-4);
-}
-
-.personPanelBody span {
-  color: var(--ink-soft);
-  font-family: var(--mono);
-  font-size: var(--t-1);
-}
-
-.personPanelBody p {
-  flex: 1 1 100%;
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-1);
-  line-height: 1.5;
-}
-
-.screen[data-referral-view="intake"] .form {
-  gap: 1rem;
-}
-
-.screen[data-referral-view="intake"] .alreadyOpen {
-  border: 1px solid var(--line);
-  border-radius: var(--r1);
-  background: var(--surface-2);
-  padding: 0.75rem 1rem;
-}
-
-.fieldSource {
-  margin: 0;
-  color: var(--accent-ink);
-  font-size: var(--t-1);
-  font-weight: 600;
 }
 
 .registerLayout,
@@ -4269,18 +3701,6 @@ input.historyField:focus-visible {
   padding: 0.75rem 0.875rem;
 }
 
-.screen[data-referral-view="intake"] .form {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.screen[data-referral-view="intake"] .intakeQuestions,
-.screen[data-referral-view="intake"] .intakeDecision {
-  display: grid;
-  min-width: 0;
-  gap: 1rem;
-  align-content: start;
-}
-
 @media (min-width: 48.0625rem) and (max-width: 63.999rem) {
   .screen[data-referral-view="register"] .registerQueue {
     grid-auto-rows: max-content;
@@ -4306,22 +3726,8 @@ input.historyField:focus-visible {
 }
 
 @media (min-width: 64rem) {
-  .screen[data-referral-view="intake"] .intakeLayout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   /* The questions read as one vertical sequence. Destination choice and Send use the second
    * work column, so explanatory progress cards no longer displace the action below the fold. */
-  .screen[data-referral-view="intake"] .form {
-    grid-template-columns: minmax(30rem, 1fr) minmax(22rem, 26rem);
-    gap: 1rem;
-  }
-
-  .screen[data-referral-view="intake"] .intakeAside {
-    position: static;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: start;
-  }
 
   .screen[data-referral-view="register"] .registerLayout {
     grid-template-columns: minmax(26rem, 1.15fr) minmax(32rem, 1.45fr);
@@ -4413,16 +3819,6 @@ input.historyField:focus-visible {
   .screen[data-referral-view] .main {
     padding: 0.75rem;
   }
-
-  .screen[data-referral-view] .stepSection > :not(.stepLegend) {
-    margin-right: 0.75rem;
-    margin-left: 0.75rem;
-  }
-
-  .screen[data-referral-view="intake"] [data-testid="ward-referral-intake-history-section"] > .historyWarning {
-    clear: both;
-    margin-top: var(--ward-space-8);
-  }
 }
 
 @media (max-width: 32rem) {
@@ -4440,41 +3836,6 @@ input.historyField:focus-visible {
    wide widths while retaining one column on phones. The question values and controls stay mounted;
    only the surrounding card paint is removed to match the unboxed drawing. Destination options
    remain boxed below. */
-@media (min-width: 64rem) {
-  .screen[data-referral-view="intake"] .form {
-    grid-template-columns: minmax(30rem, 2.4fr) minmax(22rem, 1fr);
-  }
-
-  .screen[data-referral-view="intake"] .stepSection {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .screen[data-referral-view="intake"] .stepSection > .stepLegend {
-    grid-column: 1 / -1;
-  }
-
-  .screen[data-referral-view="intake"] .fieldCard {
-    align-self: start;
-    align-content: start;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    padding: 0.25rem 0;
-  }
-
-  .screen[data-referral-view="intake"] .fieldCard .select,
-  .screen[data-referral-view="intake"] .fieldCard .historyField {
-    min-height: var(--ward-tap);
-  }
-
-  .screen[data-referral-view="intake"] .choiceCard {
-    align-self: start;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    padding: 0.25rem 0;
-  }
-}
 
 /* Q003: the referral register becomes one matched wide workspace once both minimum columns fit.
  * Each queue section and the selected detail own their scrolling so the section heading remains visible.
@@ -4606,33 +3967,6 @@ input.historyField:focus-visible {
     border-bottom: 1px solid var(--line);
     background: var(--surface-2);
     padding: 0.75rem 1rem;
-  }
-
-  .screen[data-referral-view="intake"] .intakeLayout {
-    grid-template-columns: minmax(0, 1fr) minmax(21rem, 24rem);
-  }
-
-  .screen[data-referral-view="intake"] .form,
-  .screen[data-referral-view="intake"] .stepSection {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .screen[data-referral-view="intake"] .identityStep {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .screen[data-referral-view="intake"] .intakeAside {
-    position: sticky;
-    top: var(--ward-sticky-top, 4.5rem);
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .screen[data-referral-view="intake"] [data-testid="ward-referral-intake-history-section"] {
-    border: 1px solid var(--line);
-    border-bottom-color: var(--line-strong);
-    border-radius: var(--r1);
-    background: var(--surface-2);
-    padding: 1rem;
   }
 }
 
@@ -4861,8 +4195,7 @@ input.historyField:focus-visible {
   }
 
   .screen[data-referral-view="register"] .sectionHeading,
-  .screen[data-referral-view="register"] .matchHeading,
-  .screen[data-referral-view="intake"] .intakeAside {
+  .screen[data-referral-view="register"] .matchHeading {
     position: static;
   }
 
@@ -4875,407 +4208,7 @@ input.historyField:focus-visible {
   }
 }
 
-/* ==========================================================================
-   Third Edition Sovereign Person Card, Rapid Search & Quick-Add Modal
-   ========================================================================== */
-
-.personPanel {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r2);
-  margin-bottom: 20px;
-  overflow: visible;
-  box-shadow: var(--lift);
-  position: relative;
-}
-
-.personHeaderStrip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--line);
-  background: var(--ground-hi);
-  border-radius: var(--r2) var(--r2) 0 0;
-}
-
-.personTitleGroup {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.personTitle {
-  font-size: var(--t-2);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
-
-.personSubtitle {
-  font-size: var(--t-0);
-  color: var(--muted);
-}
-
-.personControlsRight {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.personModeSwitch {
-  display: inline-flex;
-  align-items: center;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--pill);
-  padding: 2px;
-}
-
-.modeBtn {
-  font-size: var(--t-0);
-  padding: 4px 12px;
-  border-radius: var(--pill);
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  min-height: 28px;
-  display: inline-flex;
-  align-items: center;
-}
-
-.modeBtn:hover {
-  color: var(--ink);
-}
-
-.modeBtn[data-active="true"] {
-  background: var(--surface);
-  color: var(--ink);
-  font-weight: 700;
-  box-shadow: var(--lift);
-}
-
-.addPatientHeaderBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: var(--pill);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: var(--t-0);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  min-height: 28px;
-}
-
-.addPatientHeaderBtn:hover {
-  background: var(--surface-2);
-  border-color: var(--line-strong);
-}
-
-/* Rapid Search Input & Dropdown */
-.personSearchBox {
-  position: relative;
-  padding: 12px 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-}
-
-.searchBarContainer {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.searchIconWrap {
-  position: absolute;
-  left: 12px;
-  color: var(--muted);
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.rapidSearchInput {
-  width: 100%;
-  padding: 8px 36px 8px 38px;
-  border-radius: var(--r1);
-  border: 1px solid var(--line);
-  background: var(--ground);
-  color: var(--ink);
-  font-size: var(--t-1);
-  transition: all 0.15s ease;
-  min-height: 40px;
-}
-
-.rapidSearchInput:focus {
-  outline: none;
-  border-color: var(--accent);
-  background: var(--surface);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-
-.clearSearchBtn {
-  position: absolute;
-  right: 10px;
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 4px;
-  font-size: 16px;
-  line-height: 1;
-}
-
-.clearSearchBtn:hover {
-  color: var(--ink);
-}
-
-.searchResultsDropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 16px;
-  right: 16px;
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r1);
-  box-shadow: var(--lift);
-  z-index: 100;
-  max-height: 320px;
-  overflow-y: auto;
-}
-
-.searchDropdownHeader {
-  padding: 8px 12px;
-  font-size: var(--t-0);
-  font-weight: 600;
-  color: var(--muted);
-  background: var(--ground-hi);
-  border-bottom: 1px solid var(--line);
-}
-
-.searchResultItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 10px 14px;
-  border: none;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.12s ease;
-}
-
-.searchResultItem:last-child {
-  border-bottom: none;
-}
-
-.searchResultItem:hover,
-.searchResultItem[data-active="true"] {
-  background: var(--ground-hi);
-}
-
-.searchResultLeft {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.searchResultAvatar {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--pill);
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  font-weight: 700;
-  font-size: var(--t-0);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.searchResultInfo {
-  min-width: 0;
-}
-
-.searchResultNameRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.searchResultName {
-  font-weight: 600;
-  font-size: var(--t-1);
-  color: var(--ink);
-}
-
-.searchResultSub {
-  font-size: var(--t-0);
-  color: var(--muted);
-  margin-top: 2px;
-}
-
-.searchResultEmpty {
-  padding: 16px;
-  text-align: center;
-  color: var(--muted);
-  font-size: var(--t-0);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.searchResultEmptyBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: var(--pill);
-  background: var(--accent);
-  color: var(--accent-ink);
-  border: none;
-  font-size: var(--t-0);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.searchResultEmptyBtn:hover {
-  filter: brightness(1.08);
-}
-
 /* Active Sovereign Person Card Body */
-.personCardBody {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 16px;
-  flex-wrap: wrap;
-}
-
-.personAvatar {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--pill);
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  font-size: var(--t-2);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border: 2px solid var(--accent);
-}
-
-.personAvatar[data-mode="unlinked"] {
-  background: var(--ground-hi);
-  color: var(--muted);
-  border-color: var(--line);
-}
-
-.personMetaGroup {
-  flex: 1;
-  min-width: 240px;
-}
-
-.personPrimaryRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 4px;
-}
-
-.personName {
-  font-size: var(--t-3);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
-
-.personIdPill {
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  padding: 2px 8px;
-  border-radius: var(--pill);
-  background: var(--ground-hi);
-  color: var(--muted);
-  border: 1px solid var(--line);
-  font-weight: 600;
-}
-
-.personStatusPill {
-  font-size: var(--t-0);
-  padding: 2px 8px;
-  border-radius: var(--pill);
-  font-weight: 600;
-  border: 1px solid transparent;
-}
-
-.personStatusPill[data-tone="voluntary"] {
-  background: var(--good-soft);
-  color: var(--good-ink);
-  border-color: var(--good);
-}
-
-.personStatusPill[data-tone="unlinked"] {
-  background: var(--warn-soft);
-  color: var(--warn-ink);
-  border-color: var(--warn);
-}
-
-.personDetailSentence {
-  margin: 4px 0 8px;
-  font-size: var(--t-1);
-  color: var(--muted);
-  line-height: 1.4;
-}
-
-.personDuplicateCheck {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--t-0);
-  color: var(--good-ink);
-  background: var(--good-soft);
-  padding: 3px 10px;
-  border-radius: var(--pill);
-  border: 1px solid var(--good);
-}
-
-.personDuplicateCheck[data-warning="true"] {
-  color: var(--warn-ink);
-  background: var(--warn-soft);
-  border-color: var(--warn);
-}
-
-.personActions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-  flex-wrap: wrap;
-}
 
 .actionBtn {
   background: var(--surface-2);
@@ -5297,39 +4230,6 @@ input.historyField:focus-visible {
 .actionBtn:hover {
   background: var(--surface);
   border-color: var(--line-strong);
-}
-
-/* Interpreter Alert & Chip */
-.interpreterAlert {
-  margin: 12px 16px 16px;
-  padding: 12px 16px;
-  border-radius: var(--r2);
-  background: var(--warn-soft);
-  border: 1px solid var(--warn);
-  color: var(--ink);
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.interpreterAlertTitle {
-  font-weight: 700;
-  font-size: var(--t-1);
-  color: var(--warn-ink);
-  margin-bottom: 2px;
-}
-
-.interpreterAlertDesc {
-  font-size: var(--t-0);
-  color: var(--muted);
-  line-height: 1.4;
-}
-
-.interpreterChip {
-  background: var(--warn-soft) !important;
-  color: var(--warn-ink) !important;
-  border-color: var(--warn) !important;
-  font-weight: 600;
 }
 
 /* Quick Add Patient Modal */
@@ -5375,12 +4275,6 @@ input.historyField:focus-visible {
   margin: 0;
 }
 
-.modalSubtitle {
-  font-size: var(--t-0);
-  color: var(--muted);
-  margin: 4px 0 0;
-}
-
 .modalCloseBtn {
   background: transparent;
   border: none;
@@ -5407,27 +4301,6 @@ input.historyField:focus-visible {
   gap: 16px;
 }
 
-.modalRow {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.modalField {
-  flex: 1;
-  min-width: 180px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.modalLabel {
-  font-size: var(--t-0);
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.modalInput,
 .modalSelect {
   padding: 8px 12px;
   border-radius: var(--r1);
@@ -5438,7 +4311,6 @@ input.historyField:focus-visible {
   min-height: 38px;
 }
 
-.modalInput:focus,
 .modalSelect:focus {
   outline: none;
   border-color: var(--accent);
@@ -5457,159 +4329,22 @@ input.historyField:focus-visible {
   border-radius: 0 0 var(--r2) var(--r2);
 }
 
-.modalCancelBtn {
-  padding: 8px 16px;
-  border-radius: var(--pill);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: var(--t-1);
-  font-weight: 600;
-  cursor: pointer;
-  min-height: 38px;
-}
-
-.modalCancelBtn:hover {
-  background: var(--surface-2);
-}
-
-.modalSubmitBtn {
-  padding: 8px 18px;
-  border-radius: var(--pill);
-  border: none;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-size: var(--t-1);
-  font-weight: 600;
-  cursor: pointer;
-  min-height: 38px;
-}
-
-.modalSubmitBtn:hover {
-  filter: brightness(1.08);
-}
-
 /* Responsive adjustments */
-@media (max-width: 640px) {
-  .personHeaderStrip {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-
-  .personControlsRight {
-    justify-content: space-between;
-  }
-
-  .personCardBody {
-    flex-direction: column;
-  }
-
-  .personActions {
-    margin-left: 0;
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .modalRow {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .modalField {
-    min-width: 100%;
-  }
-}
 
 @media (max-width: 900px) {
-  .modeBtn,
-  .addPatientHeaderBtn {
-    min-height: 44px;
-    height: auto;
-    padding-block: 10px;
-  }
-
   .actionBtn,
-  .modalCloseBtn,
-  .modalCancelBtn,
-  .modalSubmitBtn {
+  .modalCloseBtn {
     min-height: 44px;
     height: auto;
   }
 
-  .rapidSearchInput,
-  .modalSelect,
-  .modalInput {
+  .modalSelect {
     min-height: 44px;
   }
-
-  .suburbQuickBtn {
-    min-height: 44px;
-    padding-inline: 14px;
-  }
-}
-
-.suburbQuickRow {
-  margin-top: 6px;
-  display: flex;
-  align-items: center;
-}
-
-.suburbQuickBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: var(--pill);
-  font-size: var(--t-0);
-  font-weight: 600;
-  color: var(--muted);
-  background: var(--surface-2);
-  border: 1px dashed var(--line-strong);
-  cursor: pointer;
-  transition: all 0.12s ease;
-  min-height: 28px;
-}
-
-.suburbQuickBtn:hover {
-  background: var(--surface);
-  color: var(--ink);
-  border-color: var(--accent);
-}
-
-.suburbQuickBtn[data-active="true"] {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  border-color: var(--accent);
-  border-style: solid;
-}
-
-.suburbQuickDot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--pill);
-  background: currentColor;
 }
 
 .suburbFilterWrap {
   margin-bottom: var(--ward-space-8);
-}
-
-.suburbFilterInput {
-  width: 100%;
-  min-height: var(--ward-tap);
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  padding: 0 var(--ward-space-10);
-  color: var(--ink);
-  font-size: var(--t-0);
-  font-weight: 400;
-}
-
-.suburbFilterInput:focus-visible {
-  outline: 0.125rem solid var(--focus);
-  outline-offset: 0.125rem;
 }
 
 /* ==========================================================================
@@ -7446,144 +6181,6 @@ input.historyField:focus-visible {
 /* ═══ v6 (NewReferral.png): the person bar on the intake form ═══
  * One compact card: the linked or unlinked switch, the search, then the person in one row. */
 
-.screen[data-referral-view="intake"][data-ward-design="v6"] .main {
-  padding: var(--wf-s-4);
-  gap: var(--wf-s-3);
-  background: var(--wf-canvas);
-  color: var(--wf-ink-1);
-  font: inherit;
-}
-
-.screen[data-ward-design="v6"] .personPanel {
-  margin-bottom: 0;
-}
-
-.screen[data-ward-design="v6"] .personHeaderStrip {
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
-  border-radius: 0;
-  background: transparent;
-}
-
-.screen[data-ward-design="v6"] .personTitle {
-  font-size: var(--wf-fs-14);
-  font-weight: 600;
-  line-height: var(--wf-lh-14);
-  color: var(--wf-ink-1);
-}
-
-.screen[data-ward-design="v6"] .personSubtitle {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-.screen[data-ward-design="v6"] .personModeSwitch {
-  padding: 2px;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface-2);
-}
-
-.screen[data-ward-design="v6"] .modeBtn {
-  min-height: var(--wf-h-sm);
-  padding: 0 var(--wf-s-3);
-  border-radius: var(--wf-r-sm);
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-13);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.screen[data-ward-design="v6"] .modeBtn[data-active="true"] {
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font-weight: 600;
-  box-shadow: var(--wf-e1);
-}
-
-.screen[data-ward-design="v6"] .addPatientHeaderBtn {
-  min-height: var(--wf-h-sm);
-  padding: 0 var(--wf-s-3);
-  border: 0;
-  border-radius: var(--wf-r-md);
-  background: transparent;
-  color: var(--wf-accent-ink);
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.screen[data-ward-design="v6"] .addPatientHeaderBtn:hover {
-  background: var(--wf-hover);
-}
-
-.screen[data-ward-design="v6"] .personSearchBox {
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
-  background: transparent;
-}
-
-.screen[data-ward-design="v6"] .rapidSearchInput {
-  min-height: var(--wf-h-md);
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-13);
-}
-
-.screen[data-ward-design="v6"] .rapidSearchInput:focus {
-  border-color: var(--wf-focus-ring);
-  box-shadow: none;
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 1px;
-}
-
-.screen[data-ward-design="v6"] .personCardBody {
-  align-items: center;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-3) var(--wf-s-4);
-}
-
-.screen[data-ward-design="v6"] .personAvatar {
-  width: 2.25rem;
-  height: 2.25rem;
-  border: 0;
-  border-radius: var(--wf-r-md);
-  background: var(--wf-hero-2);
-  color: var(--wf-hero-ink);
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-}
-
-.screen[data-ward-design="v6"] .personAvatar[data-mode="unlinked"] {
-  border: 1px dashed var(--wf-line-ctl);
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-3);
-}
-
-.screen[data-ward-design="v6"] .personName {
-  font-size: var(--wf-fs-14);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-}
-
-.screen[data-ward-design="v6"] .personIdPill,
-.screen[data-ward-design="v6"] .personStatusPill {
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-sm);
-  background: var(--wf-surface);
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-11);
-  font-weight: 600;
-}
-
-.screen[data-ward-design="v6"] .personDetailSentence {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
 .screen[data-ward-design="v6"] .actionBtn {
   min-height: var(--wf-h-sm);
   border: 1px solid var(--wf-line-ctl);
@@ -7595,18 +6192,8 @@ input.historyField:focus-visible {
   white-space: nowrap;
 }
 
-.screen[data-ward-design="v6"] .alreadyOpen {
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-}
-
 @media (max-width: 48rem) {
-  .screen[data-ward-design="v6"] .modeBtn,
-  .screen[data-ward-design="v6"] .addPatientHeaderBtn,
-  .screen[data-ward-design="v6"] .actionBtn,
-  .screen[data-ward-design="v6"] .rapidSearchInput {
+  .screen[data-ward-design="v6"] .actionBtn {
     min-height: 3rem;
   }
 }
@@ -7617,128 +6204,6 @@ input.historyField:focus-visible {
 
 /* `!important` only answers the intake panel's own `!important` column layout and clip; the
    search results must open past the bar's edge. */
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personPanel {
-  display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-2) var(--wf-s-3);
-  overflow: visible !important;
-  padding: var(--wf-s-2) var(--wf-s-3);
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personHeaderStrip,
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personControlsRight {
-  display: contents;
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personTitleGroup {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personModeSwitch {
-  order: 1;
-  flex: none;
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personCardBody {
-  order: 2;
-  flex: 1 1 24rem;
-  flex-wrap: nowrap;
-  padding: 0;
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personMetaGroup {
-  flex: 1 1 auto;
-  min-width: 13rem;
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personName,
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personIdPill,
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personStatusPill {
-  white-space: nowrap;
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personActions .actionBtn {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--wf-h-sm);
-  padding: 0 var(--wf-s-2);
-  font-size: var(--wf-fs-12);
-  text-decoration: none;
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personPrimaryRow {
-  gap: var(--wf-s-2);
-  margin-bottom: 0;
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personDetailSentence {
-  margin: 0;
-  line-height: var(--wf-lh-12);
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personDuplicateCheck {
-  margin-top: 2px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personDuplicateCheck svg {
-  color: var(--wf-success);
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personActions {
-  flex: none;
-  flex-wrap: nowrap;
-  gap: var(--wf-s-2);
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .personSearchBox {
-  order: 3;
-  flex: 0 1 12rem;
-  min-width: 10rem;
-  padding: 0;
-  border: 0;
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .searchResultsDropdown {
-  left: auto;
-  right: 0;
-  width: min(32rem, calc(100vw - 2 * var(--wf-s-4)));
-  border-color: var(--wf-line-2);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e2);
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .rapidSearchInput {
-  min-height: var(--wf-h-md);
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .addPatientHeaderBtn {
-  order: 4;
-  flex: none;
-}
-
-.screen[data-referral-view="intake"][data-ward-design="v6"] .interpreterAlert {
-  order: 5;
-  flex: 1 1 100%;
-  margin: 0;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-1);
-}
 
 /* ═══ v6 (NewReferral--add-patient.webp): the Register new patient dialog ═══ */
 
@@ -7769,12 +6234,6 @@ input.historyField:focus-visible {
   font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
 }
 
-.screen[data-ward-design="v6"] .modalSubtitle {
-  margin-top: 2px;
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
 .screen[data-ward-design="v6"] .modalCloseBtn {
   width: var(--wf-h-sm);
   height: var(--wf-h-sm);
@@ -7795,24 +6254,6 @@ input.historyField:focus-visible {
   padding: var(--wf-s-4);
 }
 
-.screen[data-ward-design="v6"] .modalRow {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--wf-s-3);
-}
-
-.screen[data-ward-design="v6"] .modalField {
-  min-width: 0;
-  gap: var(--wf-s-1);
-}
-
-.screen[data-ward-design="v6"] .modalLabel {
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-}
-
-.screen[data-ward-design="v6"] .modalInput,
 .screen[data-ward-design="v6"] .modalSelect {
   min-height: var(--wf-h-md);
   padding: 0 var(--wf-s-3);
@@ -7823,7 +6264,6 @@ input.historyField:focus-visible {
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
-.screen[data-ward-design="v6"] .modalInput:focus,
 .screen[data-ward-design="v6"] .modalSelect:focus {
   border-color: var(--wf-accent);
   background: var(--wf-surface);
@@ -7832,35 +6272,7 @@ input.historyField:focus-visible {
   outline-offset: 2px;
 }
 
-.modalHint {
-  margin: 0;
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
 /* A failed save is the one red thing here; a possible duplicate is a caution, not an emergency. */
-.modalError,
-.modalNotice {
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface-2);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.modalError {
-  color: var(--wf-danger-ink);
-}
-
-.modalNotice {
-  color: var(--wf-ink-1);
-  box-shadow: inset 3px 0 0 var(--wf-warning);
-}
-
-.modalNoticeList {
-  margin: var(--wf-s-1) 0 0;
-  padding-left: var(--wf-s-4);
-}
 
 .screen[data-ward-design="v6"] .modalFooter {
   gap: var(--wf-s-2);
@@ -7870,89 +6282,16 @@ input.historyField:focus-visible {
   background: var(--wf-surface-2);
 }
 
-.screen[data-ward-design="v6"] .modalCancelBtn,
-.modalSecondaryBtn,
-.screen[data-ward-design="v6"] .modalSubmitBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--wf-h-md);
-  padding: 0 var(--wf-s-3);
-  border-radius: var(--wf-r-md);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.screen[data-ward-design="v6"] .modalCancelBtn {
-  margin-right: auto;
-  border: 0;
-  background: transparent;
-  color: var(--wf-accent-ink);
-}
-
-.screen[data-ward-design="v6"] .modalCancelBtn:hover {
-  background: var(--wf-hover);
-}
-
-.modalSecondaryBtn {
-  border: 1px solid var(--wf-line-2);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-}
-
-.modalSecondaryBtn:hover {
-  border-color: var(--wf-line-3);
-}
-
 /* The one primary: deep slate with white ink, never the pale accent ink on accent that read as
    disabled. A genuinely disabled state reads as a dashed outline with muted ink. */
-.screen[data-ward-design="v6"] .modalSubmitBtn {
-  border: 1px solid var(--wf-pri-edge);
-  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
-  color: var(--wf-on-accent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent);
-}
 
-.screen[data-ward-design="v6"] .modalSubmitBtn:hover {
-  filter: brightness(1.08);
-}
-
-.screen[data-ward-design="v6"] .modalSubmitBtn:disabled {
-  border: 1px dashed var(--wf-line-3);
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-3);
-  box-shadow: none;
-  filter: none;
-  cursor: not-allowed;
-}
-
-.screen[data-ward-design="v6"] .modalCancelBtn:focus-visible,
-.modalSecondaryBtn:focus-visible,
-.screen[data-ward-design="v6"] .modalSubmitBtn:focus-visible,
 .screen[data-ward-design="v6"] .modalCloseBtn:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
 
 @media (max-width: 48rem) {
-  .screen[data-referral-view="intake"][data-ward-design="v6"] .personSearchBox {
-    flex-basis: 100%;
-  }
-
-  .screen[data-referral-view="intake"][data-ward-design="v6"] .personCardBody {
-    flex-wrap: wrap;
-  }
-
-  .screen[data-ward-design="v6"] .modalRow {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .screen[data-ward-design="v6"] .modalInput,
   .screen[data-ward-design="v6"] .modalSelect,
-  .screen[data-ward-design="v6"] .modalCancelBtn,
-  .modalSecondaryBtn,
-  .screen[data-ward-design="v6"] .modalSubmitBtn,
   .screen[data-ward-design="v6"] .modalCloseBtn {
     min-height: 3rem;
   }
@@ -8690,5 +7029,365 @@ input.historyField:focus-visible {
   .screen[data-ward-design="v6"] .gateToggle,
   .screen[data-ward-design="v6"] .criteriaSummary {
     min-height: var(--ward-tap);
+  }
+}
+
+/* Phone (8 Oct 2026): the referral board fits 390px. The two hero tracks stack, one per row, and
+   each scrolls sideways on its own; the cohort chips are one sideways row; a decided row ends in an
+   ellipsis instead of clipping the ward name mid-word. Desktop is untouched. */
+@media (max-width: 48rem) {
+  /* Live sits beside the title rather than on a row of its own. The shared Hero's first row is
+     title, figures, aside; a grid puts the aside in the title row's right column. */
+  .screen[data-ward-design="v6"] .v6HeroWrap > section > div:first-child {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .screen[data-ward-design="v6"] .v6HeroWrap > section > div:first-child > div:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+
+  .screen[data-ward-design="v6"] .v6HeroWrap > section > div:first-child > div:last-child:not(:nth-child(2)) {
+    grid-row: 1;
+    grid-column: 2;
+    flex: none;
+  }
+
+  .screen[data-ward-design="v6"] .v6Tracks {
+    flex: 1 1 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--wf-s-2);
+  }
+
+  .screen[data-ward-design="v6"] .v6Tracks > * {
+    width: 100%;
+  }
+
+  .screen[data-ward-design="v6"] .v6FilterBar.v6FilterBar {
+    gap: var(--wf-s-2);
+  }
+
+  .screen[data-ward-design="v6"] .v6Search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .screen[data-ward-design="v6"] .v6Cohorts {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    margin-inline: calc(-1 * var(--wf-s-3));
+    padding-inline: var(--wf-s-3);
+  }
+
+  .screen[data-ward-design="v6"] .v6Cohorts::-webkit-scrollbar {
+    display: none;
+  }
+
+  .screen[data-ward-design="v6"] .v6Cohorts > * {
+    flex: none;
+  }
+
+  .screen[data-ward-design="v6"] .v6FilterActions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  .screen[data-ward-design="v6"] .v6RowLine {
+    display: block;
+  }
+
+  .screen[data-ward-design="v6"] .v6RowLine > svg {
+    display: inline-block;
+    margin-right: var(--wf-s-1);
+    vertical-align: -1px;
+  }
+
+  /* New referral: a fieldset's default min-width is its content, which pushed the page to 409px.
+     Every step fits the screen and stacks into one column. */
+
+  /* Where to refer is a fieldset card of its own; on a phone it takes the same edges as the
+     other steps instead of adding a second inset. */
+
+  /* Section titles keep their full text; the quieter meta beside them truncates first. */
+  .screen[data-ward-design="v6"] .v6Section > div:first-child h2 {
+    flex: none;
+  }
+
+  /* The outcome takes the second line and ends in an ellipsis. */
+  .screen[data-ward-design="v6"] .v6RowOutcome {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .screen[data-ward-design="v6"] .v6RowOutcome > span {
+    display: inline;
+  }
+
+  /* Phone pass 2 (8 Oct 2026). The hero drops the "Longest wait first" note (the queue head says
+     the order) and each track fades at its right edge to show it scrolls. The control card is two
+     rows: search beside New referral, then the cohort chips; the Dense switch stays on desktop.
+     Decisions by hour is a desktop chart. */
+  .screen[data-ward-design="v6"] .v6HeroWrap > section > div:last-child > div:last-child:not(:first-child) {
+    display: none;
+  }
+
+  .screen[data-ward-design="v6"] .v6Tracks > * {
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, var(--wf-ink-1) calc(100% - var(--wf-s-4) * 2), transparent 100%);
+    mask-image: linear-gradient(90deg, var(--wf-ink-1) calc(100% - var(--wf-s-4) * 2), transparent 100%);
+  }
+
+  .screen[data-ward-design="v6"] .v6Search {
+    flex: 1 1 0;
+  }
+
+  .screen[data-ward-design="v6"] .v6FilterActions {
+    flex: none;
+    order: 1;
+  }
+
+  .screen[data-ward-design="v6"] .v6FilterActions:has(> :nth-child(3)) {
+    flex: 1 1 100%;
+  }
+
+  .screen[data-ward-design="v6"] .v6FilterActions > [data-testid="ward-referral-dense-toggle"] {
+    display: none;
+  }
+
+  .screen[data-ward-design="v6"] .v6Cohorts {
+    order: 2;
+  }
+
+  .screen[data-ward-design="v6"] .v6Chart {
+    display: none;
+  }
+
+  /* The rows sit straight in the queue card: no second bordered box inside it, and no doubled
+     hairline under each section head. */
+  .screen[data-referral-view="register"][data-ward-design="v6"] .v6List {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .screen[data-referral-view="register"][data-ward-design="v6"] .v6List > .v6Item:first-child {
+    border-top: 0;
+  }
+
+  /* A direct-presentation referral's Bed placement tab: the notice and the action card take the
+     same 16px inset as the history cards below, with a plain hairline edge (no accent stripe);
+     the badge stays on one line; Accept keeps the 48px tap floor like Decline beside it. */
+  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationNoticeCard,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationActionCard {
+    margin: 0;
+    padding: var(--wf-s-3);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    box-shadow: none;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationNoticeHeader {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: var(--wf-s-1) var(--wf-s-2);
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationBadge,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .presentationMeta {
+    font-size: var(--wf-fs-12);
+    white-space: nowrap;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .acceptPresentationBtn {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  /* Selected referral head: name and close on the first line, tier and wait on the second; the
+     decorative avatar stays on desktop. */
+  .screen[data-ward-design="v6"] .v6DetailHead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .screen[data-ward-design="v6"] .v6DetailHead > :first-child {
+    display: none;
+  }
+
+  .screen[data-ward-design="v6"] .v6DetailWho {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .screen[data-ward-design="v6"] .v6DetailHead > button:last-child {
+    grid-column: 2;
+    grid-row: 1;
+    margin-right: calc(-1 * var(--wf-s-3));
+  }
+
+  .screen[data-ward-design="v6"] .v6DetailTier {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .screen[data-ward-design="v6"] .v6DetailWait {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: end;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .screen[data-ward-design="v6"] .v6DetailHead > a {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-self: start;
+  }
+
+  .screen[data-ward-design="v6"] .v6Facts dt {
+    font-size: var(--wf-fs-12);
+  }
+
+  .screen[data-ward-design="v6"] .tierTitleGroup {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 2px;
+  }
+
+  .screen[data-ward-design="v6"] .tierSubtitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Each unit reads top to bottom: name and bed state, hospital, recorded facts, then the
+     Accept button at its natural width, then the criteria line. The unit name keeps one line. */
+  .screen[data-ward-design="v6"] .unitCardTop {
+    display: contents;
+  }
+
+  .screen[data-ward-design="v6"] .unitCardTop > div:first-child {
+    min-width: 0;
+  }
+
+  .screen[data-ward-design="v6"] .unitName {
+    min-width: 0;
+  }
+
+  .screen[data-ward-design="v6"] .unitName > span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .screen[data-ward-design="v6"] .unitName > span:last-child {
+    flex: none;
+  }
+
+  .screen[data-ward-design="v6"] .unitIntelRow {
+    order: 1;
+  }
+
+  .screen[data-ward-design="v6"] .unitCardTop > :not(:first-child) {
+    order: 2;
+    align-self: flex-start;
+    align-items: flex-start;
+    max-width: 100%;
+  }
+
+  .screen[data-ward-design="v6"] .unitCardTop > button {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: calc(var(--ward-tap) - 2px);
+  }
+
+  .screen[data-ward-design="v6"] .unitCard > .gateSummary {
+    order: 3;
+  }
+
+  .screen[data-ward-design="v6"] .unitActionStatusWrap {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .screen[data-ward-design="v6"] .unitNoticeMuted {
+    font-size: var(--wf-fs-12);
+  }
+
+  /* Travel bands: an opened band stays inside the sheet. Its grid tracks may shrink below their
+     content, and a criterion's detail wraps beside its name. */
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchList,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .bandRows,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchRowAccepts,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchRowDeclines {
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchDeclineSection,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchOverrideRow {
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchOverrideControls .matchOverrideSelect {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .bandGroup {
+    min-width: 0;
+  }
+
+  /* Legal forms: each check's state reads under its name rather than squeezing it. */
+  .screen[data-ward-design="v6"] .v6Checks > li {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    row-gap: 2px;
+  }
+
+  .screen[data-ward-design="v6"] .v6Checks > li > svg {
+    margin-top: var(--wf-s-1);
+  }
+
+  .screen[data-ward-design="v6"] .v6CheckState {
+    grid-column: 2;
+  }
+
+  /* New referral, the person bar: the link switch spans the bar in two equal halves, and the
+     decorative avatar stays on desktop. */
+
+  /* Decline sits at its natural width, like Withdraw below it. */
+  .screen[data-ward-design="v6"][data-referral-view="register"] .declineControls > .declineButton {
+    justify-self: start;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .criteriaDetail {
+    min-width: 0;
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchReasonText {
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-sm);
+  }
+
+  .screen[data-ward-design="v6"][data-referral-view="register"] .localBedButton,
+  .screen[data-ward-design="v6"][data-referral-view="register"] .matchOverrideControls .matchOverrideButton {
+    justify-content: flex-start;
+    max-width: 100%;
+    padding-block: var(--wf-s-2);
+    text-align: left;
+    white-space: normal;
   }
 }

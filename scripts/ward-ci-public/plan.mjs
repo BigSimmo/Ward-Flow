@@ -58,6 +58,41 @@ export function classifyChanges(entries) {
   return all("source, browser spec, tooling, configuration or unknown change");
 }
 
+/** Independently scoped, dependency-free maintained-document checks. Missing history fails closed. */
+export function documentChecks(entries) {
+  if (!entries.length || entries.some(({ status }) => !["M", "A"].includes(status)))
+    return { owner_index: true, rules_index: true, organisation: true };
+  const files = entries.map(({ file }) => file);
+  return {
+    owner_index: files.some((file) => {
+      const source = file.replace(/^docs\/ward-flow\/(?:archive\/dated-notes\/)?/u, "");
+      return (
+        file === "scripts/ward-flow/owner-rulings-index.mjs" ||
+        (file.startsWith("docs/ward-flow/") &&
+          !source.includes("/") &&
+          (source === "decisions.md" ||
+            source === "OWNER-RULINGS.md" ||
+            /^owner-.*\.md$/u.test(source) ||
+            /owner.*ruling.*\.md$/iu.test(source)))
+      );
+    }),
+    rules_index: files.some(
+      (file) =>
+        /^docs\/ward-flow\/(?:RULES\.md|lessons\/[^/]+\.md)$/u.test(file) ||
+        file === "scripts/ward-flow/rules-index.mjs",
+    ),
+    organisation: files.some(
+      (file) =>
+        file.startsWith("docs/ward-flow/") ||
+        file.startsWith("scripts/ward-flow/organisation") ||
+        file.startsWith("src/components/ward-management/") ||
+        file.startsWith("src/app/mockups/ward-flow/") ||
+        file.startsWith("tests/ward-") ||
+        file.startsWith("tests/ui-ward-"),
+    ),
+  };
+}
+
 export function hasDependencyChanges(entries) {
   return entries.some(({ file }) => dependencyManifest(file));
 }
@@ -78,6 +113,7 @@ if (process.argv[1]?.replaceAll("\\", "/").endsWith("/scripts/ward-ci-public/pla
   const base = process.env.WARD_BASE_SHA;
   let plan;
   let dependencyReview = false;
+  let documents = documentChecks([]);
   if (!base) {
     plan = classifyChanges([]);
     plan.reason = "no PR base (merge group or manual run)";
@@ -93,6 +129,7 @@ if (process.argv[1]?.replaceAll("\\", "/").endsWith("/scripts/ward-ci-public/pla
       });
       const changes = parseNameStatus(output);
       plan = classifyChanges(changes);
+      documents = documentChecks(changes);
       dependencyReview = hasDependencyChanges(changes);
     } catch (error) {
       plan = classifyChanges([]);
@@ -106,6 +143,10 @@ if (process.argv[1]?.replaceAll("\\", "/").endsWith("/scripts/ward-ci-public/pla
   if (process.env.GITHUB_OUTPUT)
     appendFileSync(
       process.env.GITHUB_OUTPUT,
-      `full=${plan.full}\nunit=${plan.unit}\nbrowser=${plan.browser}\npolicy=${plan.policy ?? false}\ndependency_review=${dependencyReview}\n`,
+      `full=${plan.full}\nunit=${plan.unit}\nbrowser=${plan.browser}\npolicy=${plan.policy ?? false}\ndependency_review=${dependencyReview}\n${Object.entries(
+        documents,
+      )
+        .map(([key, value]) => `${key}=${value}\n`)
+        .join("")}`,
     );
 }

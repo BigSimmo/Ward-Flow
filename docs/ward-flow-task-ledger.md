@@ -2167,7 +2167,7 @@ The 52 families are governed by 14 non-negotiable architectural and clinical inv
 
 **Mapped Specific Defect Items & Test Assertions:**
 
-- **Issue 77 (Category 10)**: Unsaved Referral Draft Data Loss on Reload / Navigation (`A-1`). Clinical referrals drafted in [`referral-intake.tsx`](../src/components/ward-management/referrals/referral-intake.tsx) are lost completely on browser refresh or route change; lacks draft persistence in local storage or session store.
+- **Issue 77 (Category 10)**: Unsaved Referral Draft Data Loss on Reload / Navigation (`A-1`). Clinical referrals drafted in `referral-intake.tsx` (since retired; the referral slide-out replaced it) are lost completely on browser refresh or route change; lacks draft persistence in local storage or session store.
 
 ---
 

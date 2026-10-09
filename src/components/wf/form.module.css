@@ -346,6 +346,16 @@
   color: var(--wf-ink-off);
 }
 
+/* Shown for review, not connected: dimmed track, still focusable. */
+.switchRow.unavailable {
+  cursor: default;
+}
+
+.switchRow.unavailable .track,
+.switchRow.unavailable .switchState {
+  opacity: 0.55;
+}
+
 .onHero {
   color: var(--wf-hero-ink-2);
 }
@@ -416,6 +426,14 @@
   border-right: 1px solid var(--wf-line);
 }
 
+.unavailable .stp {
+  opacity: 0.6;
+}
+
+.unavailable .stpButton {
+  cursor: default;
+}
+
 .stepperNote {
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
@@ -425,6 +443,13 @@
 @media (pointer: coarse) {
   .stpButton {
     width: 44px;
+  }
+}
+
+/* Phone (8 Oct 2026): text fields reach a 44px tap height. */
+@media (max-width: 48rem) {
+  .in {
+    height: 2.75rem;
   }
 }
 

@@ -2,6 +2,7 @@
 
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import type { BedRelease } from "@/components/ward-management/ward-model";
 import { strandedFlags, strandedPromptText } from "@/components/ward-management/ward-stranded";
 
 import styles from "./stranded-prompts.module.css";
@@ -21,13 +22,15 @@ export function StrandedPrompts({
   now,
   nameFor,
   onOpen,
+  bedReleases,
 }: {
   admissions: readonly Admission[];
   now: Instant;
   nameFor: (admissionId: string) => string;
   onOpen: (admissionId: string) => void;
+  bedReleases?: readonly BedRelease[];
 }) {
-  const flags = strandedFlags(admissions, now);
+  const flags = strandedFlags(admissions, now, bedReleases);
   if (flags.length === 0) return null;
 
   return (

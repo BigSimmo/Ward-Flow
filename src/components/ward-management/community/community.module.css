@@ -3514,6 +3514,17 @@ button.searchBox:hover {
     position: static;
     padding: 0 var(--ward-space-12);
   }
+
+  /* Phone polish (8 Oct 2026, second pass): 12px gutters and 12px between cards; the permission
+     footnote under the waiting list is left to the larger screen. */
+  .main {
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-3);
+  }
+
+  .footnote[data-testid="ward-community-waiting-not-actionable"] {
+    display: none;
+  }
 }
 
 .backLink {

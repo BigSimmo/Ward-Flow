@@ -445,3 +445,65 @@
     forced-color-adjust: none;
   }
 }
+
+/* Phone polish (8 Oct 2026): one grouping switch in the head (the scale stays on share), search and
+ * sort on one row with the service filter under it, the alert-line stepper left to the larger
+ * screen, end ticks only on the axis, and rows that keep a 48px tap target. Under 48rem only. */
+@media (max-width: 48rem) {
+  .headControls > :last-child {
+    display: none;
+  }
+
+  .toolbar {
+    padding: var(--wf-s-3) var(--wf-s-3) 0;
+  }
+
+  .search {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .toolbar > [role="radiogroup"] {
+    order: 2;
+    flex: 1 1 100%;
+  }
+
+  .toolbar > [role="radiogroup"] > button {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding-inline: var(--wf-s-2);
+  }
+
+  .sortButton {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .summary {
+    gap: var(--wf-s-2) var(--wf-s-3);
+    padding: var(--wf-s-3);
+  }
+
+  .legendSlot {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .alertLine {
+    display: none;
+  }
+
+  .axis,
+  .row {
+    grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) 2.25rem 14px;
+    column-gap: var(--wf-s-2);
+    padding: 0 var(--wf-s-2) 0 var(--wf-s-3);
+  }
+
+  .axisTicks span:not(:first-child, :last-child) {
+    display: none;
+  }
+
+  .row {
+    min-height: var(--spacing-tap, 3rem);
+  }
+}

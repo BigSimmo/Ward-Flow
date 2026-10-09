@@ -1,281 +1,86 @@
 /**
- * Declarative search index and domain taxonomy for the Ward Flow Settings console.
- * Modeled after the former clinical app's `settings-sections.ts` to provide keyword search,
- * domain filtering, and real-time hit counts across configuration parameters.
+ * Find a setting: one entry per row on the Settings workspaces. Typing in the band's search lists
+ * the matches; choosing one opens its tab and highlights the row carrying `data-setting="<id>"`.
+ * The query lives in React state only and is never written to browser storage.
  */
 
-export type SettingsDomainId =
-  "cat-appearance" | "cat-thresholds" | "cat-allocation" | "cat-notifications" | "cat-reset";
+export type SettingsTab = "rules" | "alerts" | "display" | "profile" | "data";
 
-export interface SettingsDomain {
-  readonly id: SettingsDomainId;
-  readonly navLabel: string;
-  readonly title: string;
-  readonly eyebrow: string;
-  readonly description: string;
-}
-
-export const SETTINGS_DOMAINS: readonly SettingsDomain[] = [
-  {
-    id: "cat-appearance",
-    navLabel: "Look",
-    title: "Look",
-    eyebrow: "Domain 1 · Presentation",
-    description: "Console display presentation, daylight and dark contrast modes, and navigation rail density.",
-  },
-  {
-    id: "cat-thresholds",
-    navLabel: "Clinical Thresholds",
-    title: "Timings",
-    eyebrow: "Domain 2 · Operational Limits",
-    description:
-      "Emergency department dwell targets, warning windows, medical clearance buffers, and published operational safeguards.",
-  },
-  {
-    id: "cat-allocation",
-    navLabel: "Bed Allocation Weights",
-    title: "Beds",
-    eyebrow: "Domain 3 · Capacity & Surge",
-    description:
-      "Reservation hold duration, parallel referral enquiry limits, bay integrity, and ward acuity profile limits.",
-  },
-  {
-    id: "cat-notifications",
-    navLabel: "Notifications & Telemetry",
-    title: "Alerts & access",
-    eyebrow: "Alerts & access",
-    description:
-      "Clinical escalation notifications, AHPRA-aligned role scopes, keyboard accelerators, and search access telemetry.",
-  },
-  {
-    id: "cat-reset",
-    navLabel: "Local Storage & Reset",
-    title: "This browser",
-    eyebrow: "Domain 5 · Storage & Defaults",
-    description:
-      "Browser session memory, clinical handover sheet output configuration, and audited configuration baseline restoration.",
-  },
+export const SETTINGS_TABS: readonly { readonly id: SettingsTab; readonly label: string }[] = [
+  { id: "rules", label: "Rules" },
+  { id: "alerts", label: "Alerts" },
+  { id: "display", label: "Display" },
+  { id: "profile", label: "Profile and shift" },
+  { id: "data", label: "Data and about" },
 ];
 
 export interface SettingsSearchEntry {
   readonly id: string;
-  readonly domainId: SettingsDomainId;
   readonly label: string;
+  readonly tab: SettingsTab;
   readonly keywords: string;
 }
 
 export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
-  // Domain 1: Appearance & Theme
-  {
-    id: "setting-appearance-theme",
-    domainId: "cat-appearance",
-    label: "Console Appearance Theme",
-    keywords: "appearance theme dark light auto mode colour color contrast display night day",
-  },
-  {
-    id: "setting-rail-density",
-    domainId: "cat-appearance",
-    label: "Primary Navigation Rail Width",
-    keywords: "navigation rail toggle open close density compact expanded sidebar collapse",
-  },
-
-  // Domain 2: Clinical Thresholds
-  {
-    id: "setting-ed-threshold",
-    domainId: "cat-thresholds",
-    label: "ED wait target",
-    keywords: "ed access target emergency dwell time wait ed screen ed-home movements board access target line",
-  },
-  {
-    id: "setting-due-soon-urgent",
-    domainId: "cat-thresholds",
-    label: "First warning before a legal due time",
-    keywords:
-      "due soon warning first urgent due within the hour legal due time default not a legal limit dueSoonUrgentMinutes",
-  },
-  {
-    id: "setting-due-soon",
-    domainId: "cat-thresholds",
-    label: "Second warning before a legal due time",
-    keywords: "due soon warning second legal due time default not a legal limit dueSoonMinutes",
-  },
-  {
-    id: "setting-morning-rollup",
-    domainId: "cat-thresholds",
-    label: "Morning count time",
-    keywords: "morning rollup deadline roll-up time census discharge confirm beds inpatient wards",
-  },
-  {
-    id: "setting-form4a-warn",
-    domainId: "cat-thresholds",
-    label: "Recorded Form 4A expiry warning (demo)",
-    keywords: "form 4a transport order expiry warning legal authority buffer not wired prototype",
-  },
-  {
-    id: "setting-auto-escalate",
-    domainId: "cat-thresholds",
-    label: "Text all services",
-    keywords: "automated notification broadcast duty consultant state bed desk notification not wired prototype",
-  },
-  {
-    id: "setting-medical-release",
-    domainId: "cat-thresholds",
-    label: "Medical Clearance Bed Release Buffer",
-    keywords: "medical clearance buffer toxicology emergency turnaround relinquishment not wired prototype",
-  },
-  {
-    id: "setting-published-thresholds",
-    domainId: "cat-thresholds",
-    label: "Published Operational Thresholds Table",
-    keywords: "published thresholds emergency ed access target legal form deadline immutable read only",
-  },
-  {
-    id: "setting-operational-defaults",
-    domainId: "cat-thresholds",
-    label: "Operational defaults",
-    keywords:
-      "operational defaults late arrival grace referral overdue after hours occupancy ed pressure shift pattern read only not a legal limit",
-  },
-
-  // Domain 2 / Clinical Thresholds & Operational Levers
-  {
-    id: "setting-hold-duration",
-    domainId: "cat-thresholds",
-    label: "How long a pull is held",
-    keywords: "bed hold duration reservation timer release pull expires accepting unit",
-  },
-  {
-    id: "setting-parallel-cap",
-    domainId: "cat-thresholds",
-    label: "How many wards to ask",
-    keywords: "parallel referral cap units concurrent enquiry shortlist intake statistics",
-  },
-
-  // Domain 3: Bed Allocation Weights
-  {
-    id: "setting-gender-mix",
-    domainId: "cat-allocation",
-    label: "Bay and gender rules",
-    keywords: "gender mix bay integrity sex designation num override female male ward protection not wired prototype",
-  },
-  {
-    id: "setting-acuity-ceiling",
-    domainId: "cat-allocation",
-    label: "Specialling limit",
-    keywords: "acuity ceiling specialling nursing high dependency unit patient ratio not wired prototype",
-  },
-
-  // Domain 4: Notifications & Telemetry
-  {
-    id: "setting-buzz-alert",
-    domainId: "cat-notifications",
-    label: "Buzz sound",
-    keywords: "audio visual urgent buzz alerts chime sound flash coordinator ward",
-  },
-  {
-    id: "setting-wallboard-refresh",
-    domainId: "cat-notifications",
-    label: "Board refresh",
-    keywords: "wallboard auto refresh timer unattended countdown telemetry ed coordinator desk",
-  },
-  {
-    id: "setting-form1a-strict",
-    domainId: "cat-notifications",
-    label: "Require a Form 1A before an involuntary admission",
-    keywords: "form 1a examination involuntary due time countdown not wired prototype",
-  },
-  {
-    id: "setting-form4a-escort",
-    domainId: "cat-notifications",
-    label: "Escort required before transport advances (demo)",
-    keywords: "form 4a escort police wapol mental health transport rfds custody transfer stamp not wired prototype",
-  },
-  {
-    id: "setting-auth-hospital",
-    domainId: "cat-notifications",
-    label: "Authorised Hospital Involuntary Bed Validation",
-    keywords:
-      "authorised hospital gazetted facility involuntary admission validation mental health service not wired prototype",
-  },
-  {
-    id: "setting-cp-audit",
-    domainId: "cat-notifications",
-    label: "Audit Log for Chief Psychiatrist",
-    keywords: "chief psychiatrist audit log governance timestamp review not wired prototype",
-  },
-  {
-    id: "setting-roles-matrix",
-    domainId: "cat-notifications",
-    label: "Statewide Clinical Roles & Delegations Matrix",
-    keywords: "roles ahpra delegations matrix permissions consultant coordinator num liaison transport audit",
-  },
-  {
-    id: "setting-keyboard-shortcuts",
-    domainId: "cat-notifications",
-    label: "Tactical Keyboard Shortcuts",
-    keywords: "keyboard shortcuts keys slash escape bracket hotkey navigation cheatsheet",
-  },
-  {
-    id: "setting-search-ledger",
-    domainId: "cat-notifications",
-    label: "Ephemeral Search Access Ledger",
-    keywords: "search history ledger clear delete erase privacy log audit queries",
-  },
-
-  // Domain 5: Local Storage & Reset
-  {
-    id: "setting-default-service",
-    domainId: "cat-reset",
-    label: "Default Service Startup",
-    keywords: "default service startup starts on all services not saved bar visit scope",
-  },
-  {
-    id: "setting-handover-sheet",
-    domainId: "cat-reset",
-    label: "Printed Handover Sheet Configuration",
-    keywords: "handover sheet print longest waits beds pulled in transit placement gone wrong shift sign off",
-  },
-  {
-    id: "setting-demonstration-data",
-    domainId: "cat-reset",
-    label: "Demonstration Data Controls Location",
-    keywords: "demonstration data clock scenario reset tools drawer bar q7 q-7",
-  },
+  { id: "ed-target", label: "ED wait target", tab: "rules", keywords: "emergency access wait timing" },
+  { id: "wards-asked", label: "Wards asked at once", tab: "rules", keywords: "parallel referral cap enquiry" },
+  { id: "pull-hold", label: "Pull hold", tab: "rules", keywords: "pulled held bed reservation return" },
+  { id: "morning-count", label: "Morning count", tab: "rules", keywords: "rollup ward count deadline" },
+  { id: "surge", label: "Standard or Surge timings", tab: "rules", keywords: "busy day preset surge ends" },
+  { id: "first-warning", label: "First warning", tab: "rules", keywords: "legal due time form urgent" },
+  { id: "second-warning", label: "Second warning", tab: "rules", keywords: "legal due time form due soon" },
+  { id: "occupancy", label: "Occupancy alert", tab: "rules", keywords: "bed alerts threshold capacity" },
+  { id: "tier-one", label: "Tier 1 overdue after", tab: "rules", keywords: "referral queue overdue" },
+  { id: "ward-silent", label: "Ward not answering", tab: "rules", keywords: "reminder referral silent" },
+  { id: "bed-hold", label: "Bed hold expires", tab: "rules", keywords: "held bed flag review" },
+  { id: "recent-changes", label: "Recent changes", tab: "rules", keywords: "audit history saves" },
+  { id: "buzz", label: "Buzz sound", tab: "alerts", keywords: "chime urgent audio sound test" },
+  { id: "flash", label: "Flash on urgent", tab: "alerts", keywords: "visual pulse screen edge" },
+  { id: "buzz-again", label: "Buzz again if not seen", tab: "alerts", keywords: "repeat acknowledge" },
+  { id: "quiet-hours", label: "Quiet hours", tab: "alerts", keywords: "night mute silence" },
+  { id: "shift-summary", label: "Summary at shift start", tab: "alerts", keywords: "what changed digest" },
+  { id: "snooze", label: "Snooze alerts", tab: "alerts", keywords: "quiet pause ward round" },
+  { id: "notifications", label: "Notifications", tab: "alerts", keywords: "tell me when in app sound" },
+  { id: "live-lists", label: "Live lists", tab: "alerts", keywords: "update pause idle" },
+  { id: "timer-seconds", label: "Seconds on timers", tab: "alerts", keywords: "clock countdown" },
+  { id: "wallboard", label: "Wallboard refresh", tab: "alerts", keywords: "board shared screen" },
+  { id: "theme", label: "Theme", tab: "display", keywords: "appearance dark light night auto" },
+  { id: "sidebar", label: "Sidebar", tab: "display", keywords: "rail navigation icons" },
+  { id: "text-size", label: "Text size", tab: "display", keywords: "font larger smaller" },
+  { id: "density", label: "Row density", tab: "display", keywords: "compact comfortable" },
+  { id: "touch", label: "Touch mode", tab: "display", keywords: "tablet larger targets" },
+  { id: "reduce-motion", label: "Reduce motion", tab: "display", keywords: "animation accessibility" },
+  { id: "high-contrast", label: "High contrast", tab: "display", keywords: "accessibility edges ink" },
+  { id: "initials", label: "Initials only on shared screens", tab: "display", keywords: "privacy wallboard" },
+  { id: "lock-idle", label: "Lock after idle", tab: "display", keywords: "privacy timeout blank" },
+  { id: "clear-on-close", label: "Clear session on close", tab: "display", keywords: "privacy tab drafts" },
+  { id: "shortcuts", label: "Shortcuts", tab: "display", keywords: "keyboard keys" },
+  { id: "role", label: "Role", tab: "profile", keywords: "profile sign in account" },
+  { id: "service", label: "Service in view", tab: "profile", keywords: "default health service scope" },
+  { id: "opens-on", label: "Opens on", tab: "profile", keywords: "start first screen home" },
+  { id: "my-shift", label: "My shift", tab: "profile", keywords: "day evening night roster" },
+  { id: "covering", label: "Covering for", tab: "profile", keywords: "cover desk alerts" },
+  { id: "handover-sections", label: "Handover sheet sections", tab: "profile", keywords: "print handover" },
+  { id: "handover-reminder", label: "Remind me before shift end", tab: "profile", keywords: "handover reminder" },
+  { id: "handover-open", label: "Open handover at shift change", tab: "profile", keywords: "handover" },
+  { id: "export", label: "Export rules", tab: "data", keywords: "download backup json" },
+  { id: "import", label: "Import rules", tab: "data", keywords: "upload backup json" },
+  { id: "clear-session", label: "Clear session", tab: "data", keywords: "cache drafts browser" },
+  { id: "restore", label: "Restore all defaults", tab: "data", keywords: "reset baseline" },
+  { id: "about", label: "About", tab: "data", keywords: "version synthetic medical device" },
+  { id: "thresholds", label: "Thresholds", tab: "data", keywords: "reference triggers figures" },
+  { id: "fixed-defaults", label: "Fixed defaults", tab: "data", keywords: "operational reference code" },
 ];
 
-/**
- * Filter setting entry IDs based on search query string.
- */
-export function filterSettingEntries(query: string): Set<string> {
-  const q = query.trim().toLowerCase();
-  if (!q) {
-    return new Set(SETTINGS_SEARCH_ENTRIES.map((entry) => entry.id));
-  }
-  const matching = new Set<string>();
-  for (const entry of SETTINGS_SEARCH_ENTRIES) {
+/** Every word typed must appear in the entry's name or keywords. Name matches rank first. */
+export function findSettings(query: string, limit = 7): SettingsSearchEntry[] {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+  const matches = SETTINGS_SEARCH_ENTRIES.filter((entry) => {
     const haystack = `${entry.label} ${entry.keywords}`.toLowerCase();
-    if (haystack.includes(q)) {
-      matching.add(entry.id);
-    }
-  }
-  return matching;
-}
-
-/**
- * Count matching entries per domain given a set of matched entry IDs.
- */
-export function countMatchesByDomain(matchedIds: Set<string>): Record<SettingsDomainId, number> {
-  const counts: Record<SettingsDomainId, number> = {
-    "cat-appearance": 0,
-    "cat-thresholds": 0,
-    "cat-allocation": 0,
-    "cat-notifications": 0,
-    "cat-reset": 0,
-  };
-  for (const entry of SETTINGS_SEARCH_ENTRIES) {
-    if (matchedIds.has(entry.id)) {
-      counts[entry.domainId] = (counts[entry.domainId] ?? 0) + 1;
-    }
-  }
-  return counts;
+    return words.every((word) => haystack.includes(word));
+  });
+  const inName = (entry: SettingsSearchEntry) =>
+    words.every((word) => entry.label.toLowerCase().includes(word)) ? 0 : 1;
+  return [...matches].sort((a, b) => inName(a) - inName(b)).slice(0, limit);
 }

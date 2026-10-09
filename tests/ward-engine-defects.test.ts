@@ -78,6 +78,9 @@ function stagedForPull(source: Movement, id: Movement["id"], highAcuity: boolean
   return {
     ...source,
     id,
+    // Each capacity probe names a fresh patient, not a seeded person already holding another bed.
+    patientId: `PT-${id}`,
+    referralId: undefined,
     highAcuity,
     specialling: false,
     stage: "accepted_awaiting_bed",
@@ -110,13 +113,18 @@ function acuityBench(): WardFlowState {
       `the seed no longer holds three ${securityWord} ${unit.cohort} movements (found ${sources.length})`,
     );
   }
+  const movements: Movement[] = [
+    stagedForPull(sources[0], ACUTE_A, true),
+    stagedForPull(sources[1], ACUTE_B, true),
+    stagedForPull(sources[2], ORDINARY, false),
+  ];
   return {
     ...seeded,
     units: seeded.units.map((candidate) => (candidate.id === ACUITY_UNIT ? unit : candidate)),
-    movements: [
-      stagedForPull(sources[0], ACUTE_A, true),
-      stagedForPull(sources[1], ACUTE_B, true),
-      stagedForPull(sources[2], ORDINARY, false),
+    movements,
+    patients: [
+      ...seeded.patients,
+      ...movements.map((m) => ({ ...seeded.patients[0], id: m.patientId!, umrn: `SYN-${m.id}` })),
     ],
     admissions: seeded.admissions.filter((admission) => admission.unitId !== ACUITY_UNIT),
     bedReleases: seeded.bedReleases.filter((release) => release.unitId !== ACUITY_UNIT),

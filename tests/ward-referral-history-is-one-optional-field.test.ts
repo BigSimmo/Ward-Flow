@@ -3,8 +3,6 @@ import { existsSync, readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { HISTORY_FIELDS } from "@/components/ward-management/referrals/referral-intake";
-
 /**
  * THE REFERRAL'S HISTORY — ONE FIELD, OPTIONAL, AND NOTHING THAT DECIDES MAY READ IT.
  *
@@ -68,12 +66,12 @@ function code(source: string): string {
 const READS_HISTORY = /\.history\b|\["history"\]|\['history'\]/;
 
 describe("the referral's history — one field, optional, last", () => {
-  it("is exactly one field, and it is not required", () => {
-    expect(HISTORY_FIELDS).toHaveLength(1);
-    expect(HISTORY_FIELDS[0]?.key).toBe("history");
-    expect(HISTORY_FIELDS[0]?.required).toBe(false);
-  });
-
+  /*
+   * "Is exactly one field, and it is not required" read `HISTORY_FIELDS` from the full-page intake
+   * form, retired on 8 Oct 2026 (the referral slide-out is the one place a referral is written). The
+   * slide-out's own tests own its fields; the guard below, that nothing deciding reads the history,
+   * stands unchanged.
+   */
   /**
    * The anti-vacuity floor, and it guards two different ways of proving nothing: a module list that
    * has rotted into paths nothing reads, and a comment-stripper so aggressive it returns an empty

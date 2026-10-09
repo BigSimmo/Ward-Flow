@@ -1,6 +1,7 @@
 import { validCareJourney, validCareChange } from "./ward-care-journey";
 import type { WardFlowState } from "./ward-flow-reducer";
-import { isLeavingDestination } from "./ward-admissions";
+import { isDischargeBarrier, isLeavingDestination } from "./ward-admissions";
+import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import {
   MOVEMENT_STAGES,
   COHORTS,
@@ -76,6 +77,13 @@ function nested(value: unknown, depth = 0): boolean {
   ];
   for (const [key, item] of Object.entries(value)) {
     if (["__proto__", "constructor", "prototype"].includes(key)) return false;
+    // A drawer referral's intake has its own shape (string times, a clearance with no `at`) and its
+    // own validator, the one RECEIVE_REFERRAL applies. The generic walk below misread it and
+    // refused every world holding one, so no such scenario could be saved (review finding A2-1).
+    if (key === "intake") {
+      if (!object(item) || referralIntakeError(item as unknown as ReferralIntakeDetails) !== null) return false;
+      continue;
+    }
     if (arrayKeys.includes(key) && !records(item)) return false;
     if (objectKeys.includes(key) && !object(item)) return false;
     if (
@@ -91,18 +99,12 @@ function nested(value: unknown, depth = 0): boolean {
     (!object(value.medicalClearance) || !bool(value.medicalClearance.cleared) || !finite(value.medicalClearance.at))
   )
     return false;
+  if ("atsCategory" in value && ![1, 2, 3, 4, 5].includes(value.atsCategory as number)) return false;
   if ("legalForm" in value && (!object(value.legalForm) || !text(value.legalForm.code))) return false;
   if (
     object(value.legalForm) &&
     value.legalForm.region !== undefined &&
     !["metro", "country"].includes(String(value.legalForm.region))
-  )
-    return false;
-  if (
-    "transport" in value &&
-    (!object(value.transport) ||
-      !fields(value.transport, ["id", "provider"], text) ||
-      !bool(value.transport.escortRequired))
   )
     return false;
   const historyRequirements: Record<string, string[]> = {
@@ -165,6 +167,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     "repatriations",
     "handoverSignOffs",
     "clinicalContacts",
+    "broadcastAlerts",
   ];
   if (!fields(value, arrays, records)) return false;
   const counts = [
@@ -176,6 +179,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     "frontDoorReferralSequence",
     "patientSequence",
     "admissionSequence",
+    "broadcastSequence",
   ];
   if (!fields(value, counts, counter) || !finite(value.auditCaptureStartedAt) || !finite(value.clockOffsetMinutes))
     return false;
@@ -211,6 +215,7 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     ["movements", /^WF-9(\d+)$/, state.referralSequence],
     ["referrals", /^RF-9(\d+)$/, state.frontDoorReferralSequence],
     ["leaveBeds", /^WL-9(\d+)$/, state.leaveBedSequence],
+    ["broadcastAlerts", /^BCAST-(\d+)$/, state.broadcastSequence],
   ] as const;
   for (const [collection, pattern, sequence] of runtimeSequences) {
     for (const row of value[collection] as RecordValue[]) {
@@ -277,7 +282,66 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     // CONFIRM_CAPACITY records an aggregate ward observation, which may disagree with the
     // older feed empty count and does not rewrite the separately recorded locked count.
     // Each count is bounded above; recovery must not invent a relationship the producer rejects.
-    if (unit.sexMix.Female + unit.sexMix.Male > unit.beds) return false;
+    // Release conflicts are bounded historical observations, not evidence of an arrival or a
+    // reason to relax any count invariant. A movement can later be re-pulled (including reusing
+    // its admission id), so current placement/admission presence cannot invalidate that history.
+    const releaseConflicts = unit.reservationReleaseCapacityConflicts;
+    if (releaseConflicts !== undefined && !Array.isArray(releaseConflicts)) return false;
+    const releasedMovementIds = new Set<string>();
+    for (const conflict of releaseConflicts ?? []) {
+      if (
+        !object(conflict) ||
+        !text(conflict.movementId) ||
+        !state.movements.some((movement) => movement.id === conflict.movementId) ||
+        releasedMovementIds.has(conflict.movementId) ||
+        !finite(conflict.at) ||
+        !optional(conflict, "admissionId", (id) => text(id) && id.length > 0) ||
+        !counter(conflict.allocatableBefore) ||
+        conflict.allocatableBefore > unit.beds ||
+        !counter(conflict.allocatableLockedBefore) ||
+        conflict.allocatableLockedBefore > unit.lockedBeds ||
+        !bool(conflict.lockedBedReleased) ||
+        !(
+          conflict.allocatableBefore === unit.beds ||
+          (conflict.lockedBedReleased && conflict.allocatableLockedBefore === unit.lockedBeds)
+        )
+      )
+        return false;
+      releasedMovementIds.add(conflict.movementId);
+    }
+    const conflicts = unit.arrivalCapacityConflicts;
+    if (conflicts !== undefined && !Array.isArray(conflicts)) return false;
+    const seen = new Set<string>();
+    for (const conflict of conflicts ?? []) {
+      if (!object(conflict) || !text(conflict.movementId) || !finite(conflict.at) || seen.has(conflict.movementId))
+        return false;
+      seen.add(conflict.movementId);
+      const movement = state.movements.find((entry) => entry.id === conflict.movementId);
+      if (
+        !movement ||
+        movement.acceptedUnitId !== unit.id ||
+        movement.stage !== "arrived" ||
+        movement.closure?.outcome !== "arrived" ||
+        movement.closure.at !== conflict.at ||
+        movement.admissionId !== conflict.admissionId
+      )
+        return false;
+      if (conflict.admissionId !== undefined) {
+        const admission = state.admissions.find((entry) => entry.id === conflict.admissionId);
+        if (
+          !admission ||
+          admission.unitId !== unit.id ||
+          admission.state !== "occupied" ||
+          (admission.movementId !== movement.id &&
+            !(admission.movementId === null && !admission.id.startsWith("AD-ARR-"))) ||
+          admission.arrivedAt !== conflict.at
+        )
+          return false;
+      }
+    }
+    // Keep the actual arrival and its bounded count disagreement recoverable. This never says
+    // how many physical overflow beds exist; only a corroborated arrival can explain this excess.
+    if (unit.sexMix.Female + unit.sexMix.Male > unit.beds + (conflicts?.length ?? 0)) return false;
   }
   for (const movement of value.movements as RecordValue[]) {
     if (
@@ -310,11 +374,19 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       !strings(movement.referredUnitIds)
     )
       return false;
+    if (
+      movement.transport !== undefined &&
+      (!object(movement.transport) ||
+        !fields(movement.transport, ["id", "provider"], text) ||
+        !bool(movement.transport.escortRequired))
+    )
+      return false;
     if (!allEmergencyDepartments().some((ed) => ed.id === movement.originEdId)) return false;
     if (
       !reference(movement, "patientId", patientIds) ||
       !reference(movement, "referralId", referralIds) ||
       !reference(movement, "admissionId", admissionIds) ||
+      !reference(movement, "sourceAdmissionId", admissionIds) ||
       !reference(movement, "acceptedUnitId", unitIds)
     )
       return false;
@@ -322,6 +394,14 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   }
   for (const admission of value.admissions as RecordValue[]) {
     if (admission.leavingDestination !== null && !isLeavingDestination(admission.leavingDestination)) return false;
+    // A stored barrier is a list value or absent; free text here would be typed text restored from
+    // storage (review finding A2-2).
+    if (
+      admission.dischargeBarrier !== undefined &&
+      admission.dischargeBarrier !== null &&
+      !isDischargeBarrier(admission.dischargeBarrier)
+    )
+      return false;
     if (
       !unitIds.has(admission.unitId) ||
       !["waitlisted", "pulled", "occupied", "departed"].includes(admission.state as string)
@@ -387,6 +467,39 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   const samePatient = (left: { patientId?: string | null }, right: { patientId?: string | null } | undefined) =>
     !left.patientId || !right?.patientId || left.patientId === right.patientId;
   for (const movement of state.movements) {
+    if (movement.medicalDeterioration !== undefined) {
+      const pause = movement.medicalDeterioration;
+      if (
+        !object(pause) ||
+        !finite(pause.at) ||
+        pause.by !== "ed" ||
+        (pause.resumedAt !== undefined && (!finite(pause.resumedAt) || pause.resumedAt <= pause.at))
+      )
+        return false;
+      if (
+        pause.resumedAt === undefined &&
+        (movement.acceptedUnitId !== undefined ||
+          movement.admissionId !== undefined ||
+          movement.stage !== "placement_requested" ||
+          movement.medicalClearance?.cleared !== false ||
+          (movement.transport !== undefined && movement.transport.cancelledAt === undefined))
+      )
+        return false;
+    }
+    if (movement.admissionId !== undefined) {
+      const admission = state.admissions.find((entry) => entry.id === movement.admissionId);
+      if (
+        !admission ||
+        admission.unitId !== movement.acceptedUnitId ||
+        (admission.movementId !== movement.id &&
+          !(admission.movementId === null && !admission.id.startsWith("AD-ARR-"))) ||
+        (movement.patientId !== undefined && admission.patientId !== movement.patientId)
+      )
+        return false;
+      if (movement.closure?.outcome === "arrived") {
+        if (admission.state !== "occupied" && admission.state !== "departed") return false;
+      } else if (admission.state !== "pulled") return false;
+    }
     if (
       !samePatient(
         movement,
@@ -400,6 +513,12 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       return false;
   }
   for (const admission of state.admissions) {
+    // Seed admissions deliberately have movementId=null. Runtime destination stays must have
+    // the reciprocal link; sending/source stays keep their own original movement link.
+    if (admission.movementId !== null && (admission.state === "pulled" || admission.state === "occupied")) {
+      const movement = state.movements.find((entry) => entry.id === admission.movementId);
+      if (!movement || movement.admissionId !== admission.id) return false;
+    }
     if (
       !samePatient(
         admission,
@@ -520,6 +639,31 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       !object(row.details) ||
       !text(row.action) ||
       !text(row.category)
+    )
+      return false;
+  }
+  if (!uniqueIds(value.broadcastAlerts as RecordValue[])) return false;
+  for (const row of value.broadcastAlerts as RecordValue[]) {
+    if (
+      !fields(row, ["id", "title", "message", "targetScopeLabel", "dispatchedByRole", "dispatchedByName"], text) ||
+      !["critical", "warning", "advisory"].includes(row.severity as string) ||
+      ![
+        "capacity_gridlock",
+        "ed_surge",
+        "unit_closure",
+        "transport_delay",
+        "clinical_stream",
+        "statutory_advisory",
+      ].includes(row.category as string) ||
+      !["all", "metro_adult", "ed_liaison", "forensic", "adolescent", "older_adult", "regional_wachs"].includes(
+        row.targetScope as string,
+      ) ||
+      !["active", "stood_down", "expired"].includes(row.status as string) ||
+      !finite(row.dispatchedAt) ||
+      !finite(row.expiresAt) ||
+      !finite(row.durationMinutes) ||
+      row.durationMinutes <= 0 ||
+      !strings(row.acknowledgedUnits)
     )
       return false;
   }

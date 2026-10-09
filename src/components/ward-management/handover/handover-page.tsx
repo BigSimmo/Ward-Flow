@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type Dispatch,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
@@ -17,7 +18,7 @@ import { announceToWardShell } from "@/components/ward-management/shell/ward-liv
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
-import { patientHref } from "@/components/ward-management/shell/ward-facade";
+import { patientHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 import {
   clockState,
   formatSheetMoment,
@@ -132,6 +133,19 @@ const NETWORK_SCOPE_VALUE = "network";
 
 function isHealthService(value: string): value is HealthService {
   return (HEALTH_SERVICES as readonly string[]).includes(value);
+}
+
+const PHONE_WIDTH_QUERY = "(max-width: 48rem)";
+
+function subscribePhoneWidth(onChange: () => void) {
+  if (typeof window.matchMedia !== "function") return () => {};
+  const query = window.matchMedia(PHONE_WIDTH_QUERY);
+  query.addEventListener?.("change", onChange);
+  return () => query.removeEventListener?.("change", onChange);
+}
+
+function readPhoneWidth() {
+  return typeof window.matchMedia === "function" && window.matchMedia(PHONE_WIDTH_QUERY).matches;
 }
 
 /** The `<select>`'s own value for a scope — round-tripped by `parseHandoverScope` below. */
@@ -412,7 +426,12 @@ export function HandoverPage() {
   const [copiedPatientId, setCopiedPatientId] = useState<string | null>(null);
   const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
-  const [sheetViewMode, setSheetViewMode] = useState<"cards" | "table">("table");
+  // Phone (8 Oct 2026): until someone picks a layout, the sheet reads as ISBAR cards on a phone,
+  // because the table needs a wider screen (the layout toggle is hidden there). Desktop and tablet
+  // keep the table default; the server render always starts from the table.
+  const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
+  const [sheetViewChoice, setSheetViewMode] = useState<"cards" | "table" | null>(null);
+  const sheetViewMode = sheetViewChoice ?? (isPhoneWidth ? "cards" : "table");
   const [isTableEnlarged, setIsTableEnlarged] = useState<boolean>(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   useWardModalFocus(isTableEnlarged, tableContainerRef, () => setIsTableEnlarged(false));
@@ -1998,13 +2017,12 @@ export function HandoverPage() {
                             </span>
                           </td>
                           <td>
-                            <button
-                              type="button"
+                            <Link
                               className={pageStyles.btnActionSec}
-                              onClick={() => announceToWardShell("Not wired in this prototype.")}
+                              href={`${movementHref(movement.id)}?taskAction=refer`}
                             >
-                              Allocate Candidate Bed
-                            </button>
+                              Review placement
+                            </Link>
                           </td>
                         </tr>
                       ))}
@@ -3196,9 +3214,12 @@ export function HandoverPage() {
                     <Button variant="ghost" size="sm" onClick={closeMovementDetail}>
                       Close
                     </Button>
-                    <Button variant="pri" size="sm" onClick={() => announceToWardShell("Not wired in this prototype.")}>
-                      Allocate candidate bed
-                    </Button>
+                    <Link
+                      className={pageStyles.drawerLink}
+                      href={`${movementHref(selectedMovement.id)}?taskAction=refer`}
+                    >
+                      Review placement
+                    </Link>
                   </div>
                 </div>
               );

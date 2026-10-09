@@ -1,5 +1,6 @@
 "use client";
 
+import { clearWardFlowDraftCaches } from "./use-dirty-state-guard";
 import { wardReferralInboxEntries, type WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { LeavingDestination } from "./ward-admissions";
 
@@ -211,7 +212,10 @@ export const WARD_FLOW_DEMO_STORAGE_KEY = "ward-flow-demo-state-v1";
 // release now names the admission it belongs to (`BedRelease.admissionId`, owner decision
 // 2026-09-25) — a v4 save has no such field and no honest migration exists, so it is refused
 // exactly like every other version mismatch above, never guessed or backfilled.
-const WARD_FLOW_DEMO_STORAGE_VERSION = 5;
+// v6 (2026-10-08): explicit deterioration/pause, recorded ATS and corroborated
+// arrival/capacity conflicts; reciprocal runtime admission links are validated.
+// Old automatic saves are refused rather than silently migrating clinical facts.
+const WARD_FLOW_DEMO_STORAGE_VERSION = 6;
 
 /**
  * What actually goes to `sessionStorage`. Carries the world's calendar day ALONGSIDE the state, not
@@ -438,6 +442,7 @@ function tryWriteDemoState(state: WardFlowState, dayZero: Date, now: Instant, sa
 }
 
 export function clearWardFlowDemoState(): boolean {
+  clearWardFlowDraftCaches();
   if (typeof window === "undefined") return false;
   try {
     window.sessionStorage.removeItem(WARD_FLOW_DEMO_STORAGE_KEY);
@@ -536,6 +541,9 @@ function nextOpenRequestSequence(auditEvents: WardFlowState["auditEvents"]): num
  */
 export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps) {
   const shared = useWardShared(initialNow === undefined && process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true");
+  useEffect(() => {
+    clearWardFlowDraftCaches();
+  }, []);
   /**
    * `null` until the mount effect below runs. While null, the world is the deterministic anchor
    * night — identical on the server and in the hydration render, which is the whole point.

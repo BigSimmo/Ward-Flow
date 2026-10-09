@@ -42,7 +42,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * *"Selecting the tab decides which list is on screen. It never touches `state.movementId` or
  * `state.referralId`... A coordinator can sit on the Referrals tab while the shortlist still
  * explains the last movement they opened."* The tests below prove that independence directly,
- * plus the retitle itself ("Explainable shortlist" -> "Referral placement").
+ * plus the retitle itself ("Placement" -> "Referral placement").
  *
  * A referral carries no ward (`Movement.acceptedUnitId` is the only place a destination attaches),
  * so the referral-placement view built for this renders no "referred to" text, no ward column and
@@ -69,7 +69,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
       "Priority queue",
       "State bedflow",
     ]);
-    expect(screen.queryByLabelText("Explainable shortlist")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Placement")).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
     // The exceptions drawer's default tab ("Exceptions") carries no `<h2>`, and its other three
     // tabs are `hidden` (not merely visually hidden — the native `hidden` attribute, which
@@ -84,33 +84,51 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
       "ED pressure",
       "Priority queue",
       "State bedflow",
-      "Explainable shortlist",
+      "Placement",
     ]);
   });
 
-  it("places the exceptions drawer between State Bedflow and the shortlist panel, matching the drawing", () => {
-    // The drawer has no heading of its own (see the file comment above), so its position can only
-    // be proven by real DOM order, not by extending the heading-text list above.
+  it("reads queue, State Bedflow, then the shortlist on the far right once a patient is selected", () => {
+    // Owner, 8 Oct 2026. Proven by real DOM order, asserted both ways so a reversed pair cannot pass.
     renderCoordinator();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
     const body = screen.getByTestId("ward-coordinator-body");
+    const queue = within(body).getByTestId("ward-queue-row-WF-001");
     const statewideFlow = within(body).getByLabelText("State Bedflow");
-    const registers = within(body).getByTestId("ward-coordinator-registers");
-    const shortlist = within(body).getByLabelText("Explainable shortlist");
+    const shortlist = within(body).getByLabelText("Placement");
 
-    // Node.compareDocumentPosition: bit 4 (0x04, DOCUMENT_POSITION_FOLLOWING) means "the other
-    // node follows this one" — asserted both ways so a reversed pair cannot pass by accident.
     expect(
-      statewideFlow.compareDocumentPosition(registers) & Node.DOCUMENT_POSITION_FOLLOWING,
-      "the exceptions drawer must follow State Bedflow",
+      queue.compareDocumentPosition(statewideFlow) & Node.DOCUMENT_POSITION_FOLLOWING,
+      "State Bedflow must follow the priority queue",
     ).toBeTruthy();
     expect(
-      registers.compareDocumentPosition(shortlist) & Node.DOCUMENT_POSITION_FOLLOWING,
-      "the shortlist panel must follow the exceptions drawer",
+      statewideFlow.compareDocumentPosition(shortlist) & Node.DOCUMENT_POSITION_FOLLOWING,
+      "the shortlist panel must follow State Bedflow",
     ).toBeTruthy();
   });
 
-  it("keeps the shortlist panel's heading as 'Explainable shortlist' once a patient is selected", () => {
+  it("keeps the registers closed until the hero's Exceptions count opens them, above the columns", () => {
+    renderCoordinator();
+    const body = screen.getByTestId("ward-coordinator-body");
+    expect(within(body).queryByTestId("ward-coordinator-registers")).toBeNull();
+
+    const toggle = within(body).getByRole("button", { name: /Exceptions/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    const registers = within(body).getByTestId("ward-coordinator-registers");
+    const statewideFlow = within(body).getByLabelText("State Bedflow");
+    expect(
+      registers.compareDocumentPosition(statewideFlow) & Node.DOCUMENT_POSITION_FOLLOWING,
+      "the registers strip must sit above the columns",
+    ).toBeTruthy();
+
+    fireEvent.click(toggle);
+    expect(within(body).queryByTestId("ward-coordinator-registers")).toBeNull();
+  });
+
+  it("keeps the shortlist panel's heading as 'Placement' once a patient is selected", () => {
     // The one state this codebase actually has (see the file comment above for the state this
     // does NOT cover). Asserted explicitly, per-state, rather than assumed unchanged from the
     // no-selection case above — a fixed-heading assumption is exactly what the brief warns is
@@ -121,8 +139,8 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     expect(queueRows.length, "expected at least one open movement in the priority queue").toBeGreaterThan(0);
     fireEvent.click(queueRows[0]!);
 
-    const shortlist = screen.getByLabelText("Explainable shortlist");
-    expect(within(shortlist).getByRole("heading", { level: 2 })).toHaveTextContent("Explainable shortlist");
+    const shortlist = screen.getByLabelText("Placement");
+    expect(within(shortlist).getByRole("heading", { level: 2 })).toHaveTextContent("Placement");
   });
 
   it("keeps the diagram unit, candidate target, eligibility checks and override label aligned", () => {
@@ -141,7 +159,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     expect(scghCandidate).toHaveAttribute("data-showing", "true");
     expect(scghCandidate).toHaveAttribute("aria-pressed", "true");
 
-    const shortlist = screen.getByLabelText("Explainable shortlist");
+    const shortlist = screen.getByLabelText("Placement");
     expect(
       within(shortlist).getByText("Eligibility checks · Mental Health Unit", { selector: "summary" }),
     ).toBeInTheDocument();
@@ -260,19 +278,19 @@ describe("Command's priority queue carries a Patients/Referrals tablist (Task C2
   it("switching queue tabs never changes the shortlist's subject — tab state and subject state are independent", () => {
     renderCoordinator();
 
-    // Select a movement first: the shortlist explains it under "Explainable shortlist".
+    // Select a movement first: the shortlist explains it under "Placement".
     const movementRows = screen.getAllByTestId(/^ward-queue-row-/);
     fireEvent.click(movementRows[0]!);
     const movementId = movementRows[0]!.getAttribute("data-testid")!.replace("ward-queue-row-", "");
 
-    let shortlist = screen.getByLabelText("Explainable shortlist");
-    expect(within(shortlist).getByRole("heading", { level: 2 })).toHaveTextContent("Explainable shortlist");
+    let shortlist = screen.getByLabelText("Placement");
+    expect(within(shortlist).getByRole("heading", { level: 2 })).toHaveTextContent("Placement");
     expect(within(shortlist).getByTestId(`ward-shortlist-${movementId}`)).toBeInTheDocument();
 
     // Switching to the Referrals tab decides which LIST is on screen — it must not touch which
     // record the shortlist is explaining.
     fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
-    shortlist = screen.getByLabelText("Explainable shortlist");
+    shortlist = screen.getByLabelText("Placement");
     expect(
       within(shortlist).getByTestId(`ward-shortlist-${movementId}`),
       "the shortlist must still explain the same movement after a tab switch",
@@ -300,8 +318,8 @@ describe("Command's priority queue carries a Patients/Referrals tablist (Task C2
 
     // Selecting a movement is what hands the shortlist back — proven, not assumed.
     fireEvent.click(movementRows[0]!);
-    shortlist = screen.getByLabelText("Explainable shortlist");
-    expect(within(shortlist).getByRole("heading", { level: 2 })).toHaveTextContent("Explainable shortlist");
+    shortlist = screen.getByLabelText("Placement");
+    expect(within(shortlist).getByRole("heading", { level: 2 })).toHaveTextContent("Placement");
     expect(within(shortlist).getByTestId(`ward-shortlist-${movementId}`)).toBeInTheDocument();
   });
 });

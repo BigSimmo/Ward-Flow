@@ -15,6 +15,36 @@ Entra managed-identity grants, Azure resource discovery and private PostgreSQL t
 in [the shared setup guide](../../../backend/ward-flow/SETUP-SHARED-AZURE.md). Shared mode defaults off.
 Source and local tests do not establish hosted identity, database or deployment readiness.
 
+## Current remediation seams — 8 October 2026
+
+The original map below is historical; its line numbers and earlier counts are not current.
+This task integrates canonical main `0bbcd34` and locally tested remediation. The current
+`WardFlowEvent` union has 100 discriminants, including `UPDATE_EXPECTED_DISCHARGE` and
+`RECORD_ED_MEDICAL_DETERIORATION`. All events retain role, audit/history, stage and
+persistence classifications. D-34 is an explicit originating-ED, pre-collection action:
+release the held admission, cancel uncollected transport, clear placement acceptance and
+pause until a later clinician clearance. Re-clearance requires a new placement, never
+restores an old reservation. `ward-medical-clearance.ts` resolves recorded movement and
+identity-matched referral clearance; the same fact drives the ED board and onward guards.
+An already-collected patient's actual arrival remains recordable after a later negative
+clearance. ATS 1–5 is an optional separately recorded field, independent of urgency 1–3.
+
+Local browser storage is version 6; version 5 snapshots are refused and reset to the
+synthetic seed. D-18 still stops saving after typed free text. Privacy-safe records are
+not authentication, an authoritative shared backend or a clinical audit service.
+Arrival-capacity disagreement is recorded rather than inventing a physical vacancy;
+held arrival links are validated against actual admissions and wards. See the
+[dated remediation receipt](../reports/remediation-2026-10-08.md) for test limits.
+
+`ward-movement-bed-hold.ts` supplies the same reservation fact to search, profile,
+preview and board consumers. The identity comparison stays inside the existing
+D-14-authorised resolver as a bounded boolean; privacy reader allowlists are unchanged.
+Reservation release returns at most the capacity actually consumed and marks any
+remaining conservation conflict; it does not invent a ready bed. Re-anchoring also
+shifts the recorded D-34 `resumedAt` instant. The separate Azure snapshot API's
+conditional writes, last-save receipt and deletion do not supply shared command
+history or staff/service authorisation.
+
 Final boundary repairs: protected departures use the approved scoped projection; transfer movements record their own arrival history/closure rather than copying earlier stages. The stage guard uses syntax-tree ancestry and drives the protected transfer. Care clock fields are covered by the re-anchor contract; coding supports a not-applicable receiver and rejects incompatible leave endings. Final offline evidence is in the dated WA audit report.
 
 ## WA remediation update — 3 October 2026

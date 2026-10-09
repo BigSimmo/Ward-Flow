@@ -1066,7 +1066,18 @@ function stageFields(
       // pull cannot be recorded without a time for it to expire at.
       // admissionId points at an in-unit pulled Admission (stayDays null) — never an extra row.
       return {
-        acceptedUnitId: fallbackUnitId(cohort, security, index, legalStatus, sex),
+        // These generated holds name existing authored admissions. Their ward is fixed,
+        // unlike fallback picks which shift when the network roster changes (WF-318).
+        acceptedUnitId:
+          index === 304
+            ? "bty-older-adult"
+            : index === 311
+              ? "sjgm-adult-open"
+              : index === 318
+                ? "ger-adult-open"
+                : index === 325
+                  ? "alb-adult-open"
+                  : fallbackUnitId(cohort, security, index, legalStatus, sex),
         pullExpiresAt: NOW_ANCHOR - 20 + (index % 66),
         admissionId:
           index === 304
@@ -2833,11 +2844,9 @@ export const referrals: Referral[] = [
     source: "ambulance",
     raisedAt: NOW_ANCHOR - 50,
     triagedAt: NOW_ANCHOR - 60,
-    // Deliberately tier 3, the lowest-priority tier: `referralQueueOrder` sorts by urgency first,
-    // so a tier-2 value here would insert this referral ahead of one of the existing tier-2 queued
-    // referrals (RF-001, RF-005, RF-009) and reorder every screen that pins that queue's exact
-    // order or its first entry, none of which this fixture exists to change. Tier 3 appends it
-    // after all three instead — the smallest possible disturbance to the existing queue.
+    // Tier 3, the lowest-priority tier. Since Decision D-32 `referralQueueOrder` sorts by waiting
+    // time, longest first, so this tier no longer decides where the referral sits in the queue;
+    // urgency only breaks a tie between referrals raised at the same moment.
     urgency: 3,
     originSiteCode: "FSH",
     transportNeeded: true,
@@ -2976,10 +2985,9 @@ export const referrals: Referral[] = [
     suburb: { kind: "named", name: "Armadale" },
     source: "community",
     raisedAt: NOW_ANCHOR - 150,
-    // Urgency 3 — the LOWEST tier — following `RF-011`'s precedent in this file: a new fixture row
-    // takes the bottom tier so it sorts last in `referralQueueOrder` rather than reordering the
-    // tier-2 referrals whose relative order `tests/ward-referral-model.test.ts` pins by name.
-    // Adding a row of an existing tier makes an unchanged screen say something different.
+    // Urgency 3 — the LOWEST tier — following `RF-011`'s precedent in this file. Since Decision
+    // D-32 `referralQueueOrder` sorts by waiting time, longest first, so the tier only breaks a
+    // tie; this row's queue position comes from its `raisedAt`.
     urgency: 3,
     originSiteCode: "RPH",
     transportNeeded: true,

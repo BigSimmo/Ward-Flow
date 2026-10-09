@@ -894,6 +894,337 @@
   }
 }
 
+/* ── phone bar (Josh, 8 Oct 2026, board 00b: bar A with C's behaviour) ───────────────────────
+ * PHONE ONLY. Every rule below sits inside `@media (max-width: 48rem)` or styles an element that
+ * only renders on the phone, so the desktop bar is not changed in any way.
+ *
+ * One bar on every page: brand, title with scope under it, Search, Tasks, New referral and Menu.
+ * Activity and Tools live in the Menu sheet. At the top of the page the bar has no fill or edge and
+ * sits on the page (56px). Once the page scrolls (`data-scrolled`) it condenses to 52px, turns solid
+ * with a hairline, and the scope line becomes a live count. It never hides. Controls keep a 48px
+ * hit area; their faces are 40px at rest and 36px condensed, painted by `::before`. */
+.phoneOnly {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .bar,
+  :global(html.dark) .bar {
+    gap: 0;
+    height: 3.5rem;
+    min-height: 3.5rem;
+    padding: 0 8px 0 6px;
+    border-bottom-color: transparent;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+    transition:
+      height var(--wf-m-base) var(--wf-ease),
+      min-height var(--wf-m-base) var(--wf-ease),
+      background-color var(--wf-m-base) var(--wf-ease),
+      border-color var(--wf-m-base) var(--wf-ease),
+      box-shadow var(--wf-m-base) var(--wf-ease);
+  }
+
+  .bar::before,
+  .bar::after {
+    display: none;
+  }
+
+  .bar[data-scrolled="true"],
+  :global(html.dark) .bar[data-scrolled="true"] {
+    height: 3.25rem;
+    min-height: 3.25rem;
+    border-bottom-color: var(--wf-line-2);
+    background: var(--wf-surface-2);
+    box-shadow: 0 6px 16px -12px color-mix(in srgb, var(--wf-ink-1) 28%, transparent);
+  }
+
+  .phoneOnly {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+    border: 0;
+    border-radius: var(--wf-r-pill);
+    background: transparent;
+    color: var(--wf-ink-1);
+    cursor: pointer;
+  }
+
+  .phoneOnly svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Brand: a filled 36px mark (32px condensed). Menu: a raised 40px face (36px condensed). */
+  .phoneOnly {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .phoneOnly::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    z-index: -1;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-md);
+    background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+    box-shadow:
+      inset 0 1px 0 var(--wf-hl),
+      0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
+    pointer-events: none;
+    transition:
+      inset var(--wf-m-base) var(--wf-ease),
+      border-radius var(--wf-m-base) var(--wf-ease);
+  }
+
+  .phoneBrand {
+    color: var(--wf-on-accent);
+  }
+
+  .phoneBrand::before {
+    inset: 6px;
+    border-color: var(--wf-pri-edge);
+    background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent);
+  }
+
+  .phoneBrand svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .bar[data-scrolled="true"] .phoneOnly::before {
+    inset: 6px;
+    border-radius: var(--wf-r-sm);
+  }
+
+  .bar[data-scrolled="true"] .phoneBrand::before {
+    inset: 8px;
+  }
+
+  .bar[data-scrolled="true"] .phoneOnly:not(.phoneBrand)::before {
+    background: var(--wf-surface);
+  }
+
+  .phoneOnly:hover {
+    background: transparent;
+  }
+
+  .phoneOnly:not(.phoneBrand):hover::before {
+    background: var(--wf-hover);
+  }
+
+  /* Search and Tasks: plain icons on a ghost face. New referral: the filled 40px face. */
+  .searchWrap {
+    flex: none;
+    width: var(--spacing-tap, 3rem);
+    min-width: var(--spacing-tap, 3rem);
+  }
+
+  .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type {
+    padding: 0;
+    justify-content: center;
+  }
+
+  .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type::before {
+    inset: 4px;
+    border-color: transparent;
+    border-radius: var(--wf-r-md);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type > svg,
+  .triggerIcon {
+    width: 20px;
+    height: 20px;
+    color: var(--wf-ink-1);
+  }
+
+  .drawerTrigger::before {
+    inset: 4px;
+    border-radius: var(--wf-r-md);
+  }
+
+  .drawerTrigger .badge {
+    top: 3px;
+    right: 1px;
+    border: 0;
+    background: var(--wf-surface);
+    box-shadow: inset 0 0 0 1px var(--wf-line-3);
+    color: var(--wf-ink-1);
+  }
+
+  .primary::before {
+    inset: 4px;
+    border-radius: var(--wf-r-md);
+    transition:
+      inset var(--wf-m-base) var(--wf-ease),
+      border-radius var(--wf-m-base) var(--wf-ease);
+  }
+
+  .primaryIcon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .bar[data-scrolled="true"] .primary::before {
+    inset: 6px;
+    border-radius: var(--wf-r-sm);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent),
+      0 2px 6px -3px color-mix(in srgb, var(--wf-pri-edge) 60%, transparent),
+      0 0 0 1px var(--wf-pri-edge);
+  }
+
+  .bar[data-scrolled="true"] .drawerTrigger::before,
+  .bar[data-scrolled="true"] .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type::before {
+    inset: 6px;
+    border-radius: var(--wf-r-sm);
+  }
+
+  .phoneOnly:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: -2px;
+  }
+
+  .title {
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    max-width: none;
+    min-width: 0;
+    margin: 0 4px 0 6px;
+  }
+
+  .titleGroup {
+    max-width: 100%;
+  }
+
+  .place {
+    font-size: var(--wf-fs-16);
+    line-height: 20px;
+    letter-spacing: -0.015em;
+    max-width: 100%;
+    transition: font-size var(--wf-m-base) var(--wf-ease);
+  }
+
+  .bar[data-scrolled="true"] .place {
+    font-size: var(--t-3);
+  }
+
+  .scopeBadgeContainer {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Condensed: the scope line swaps for the live count. The scope button stays the tap target. */
+  .scopeLive {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--t-0);
+    font-weight: 500;
+    color: var(--wf-ink-2);
+    opacity: 0;
+    transform: translateY(-20%);
+    pointer-events: none;
+    transition:
+      opacity var(--wf-m-base) var(--wf-ease),
+      transform var(--wf-m-base) var(--wf-ease);
+  }
+
+  .scopeBadgeBtn > * {
+    transition: opacity var(--wf-m-base) var(--wf-ease);
+  }
+
+  .bar[data-scrolled="true"] .scopeBadgeBtn > * {
+    opacity: 0;
+  }
+
+  .bar[data-scrolled="true"] .scopeLive {
+    opacity: 1;
+    transform: translateY(-50%);
+  }
+
+  .scopeBadgeBtn {
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 1.25rem;
+    padding: 0;
+    justify-content: flex-start;
+    gap: 5px;
+    font-size: var(--t-0);
+    font-weight: 500;
+    color: var(--wf-ink-2);
+  }
+
+  /* The visible line is small; the hit area still reaches 48px tall. */
+  .scopeBadgeBtn::before {
+    inset: -14px -8px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .scopeBadgeBtn:hover::before,
+  .scopeBadgeBtn[aria-expanded="true"]::before {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .scopeBadgeBtn[aria-expanded="true"] .scopeCaret {
+    transform: rotate(180deg);
+  }
+
+  .scopeBadgeLabel {
+    display: inline;
+  }
+
+  .scopeDot {
+    width: 6px;
+    height: 6px;
+    box-shadow: none;
+  }
+
+  .scopeCaret {
+    width: 12px;
+    height: 12px;
+  }
+
+  .drawerTrigger[data-bar-mode="activity"],
+  .drawerTrigger[data-bar-mode="tools"],
+  .vsep {
+    display: none;
+  }
+}
+
+@media (max-width: 48rem) and (prefers-reduced-motion: reduce) {
+  .bar,
+  .phoneOnly::before,
+  .primary::before,
+  .place,
+  .scopeLive,
+  .scopeBadgeBtn > * {
+    transition: none;
+  }
+}
+
 @media (forced-colors: active) {
   .bar {
     border-bottom: 1px solid CanvasText;
@@ -948,7 +1279,9 @@
 }
 
 .drawerSheetReferral {
-  max-width: min(calc(100vw - 1.5rem), 38rem) !important;
+  /* Option B (8 Oct 2026): room for the form and the Ready to send rail. */
+  width: min(calc(100vw - 1.5rem), 64rem) !important;
+  max-width: min(calc(100vw - 1.5rem), 64rem) !important;
   overflow-x: hidden !important;
 }
 
@@ -2112,5 +2445,76 @@
   .tasksBody * {
     color: CanvasText !important;
     background-color: Canvas !important;
+  }
+}
+
+/*
+ * ── search open on the compact bar (Josh, 9 Oct 2026) ─────────────────────────────────────────
+ * Wherever the bar shows search as an icon (phone, and a narrow desktop bar beside the rail), the
+ * open field takes over the whole bar so what is typed is visible, with Cancel beside it. The bar
+ * is sticky at the top, so top 0 is the bar whether the containing block is the viewport or the
+ * scrolled bar's backdrop filter. The height is the bar's own, measured by the search (56px at rest,
+ * 52px once scrolled). Last in the file, and prefixed with `.bar`, so it outranks the phone and
+ * scrolled face rules above.
+ */
+@container ward-bar (max-width: 42rem) {
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 5;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: var(--wgs-bar-h, 3.5rem);
+    gap: 10px;
+    padding: 0 8px 0 24px;
+    justify-content: flex-start;
+    background: var(--wf-surface-2);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type::before {
+    inset: 8px 80px 8px 12px;
+    border: 1px solid var(--wf-focus-ring);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-focus-ring) 18%, transparent);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open]) > div:first-of-type > svg {
+    width: 16px;
+    height: 16px;
+    color: var(--wf-ink-3);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-input"]) {
+    position: static;
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    margin-right: 16px;
+    opacity: 1;
+    cursor: text;
+    font-size: var(--wf-fs-16);
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search-cancel"]) {
+    display: inline-flex;
+    flex: 0 0 64px;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--wf-r-pill);
+    background: transparent;
+    color: var(--wf-accent-ink);
+    font: 600 var(--wf-fs-14) / 1 var(--wf-font);
+    cursor: pointer;
+  }
+
+  .bar .searchWrap :global([data-testid="ward-global-search-cancel"]):focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
   }
 }

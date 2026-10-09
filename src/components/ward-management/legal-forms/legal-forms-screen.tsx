@@ -332,6 +332,13 @@ export function LegalFormsScreen() {
   const handleSelect = (movement: Movement) => {
     if (movement.id !== selectedMovement?.id) setWrittenDraft(BLANK_TYPED_WRITTEN_DRAFT);
     setSelectedMovementId(movement.id);
+    // Phone (8 Oct 2026): the selected form card sits below the list in one column, so bring it
+    // into view; wider screens show it beside the list and do not scroll.
+    if (typeof window.matchMedia === "function" && window.matchMedia("(max-width: 48rem)").matches) {
+      window.requestAnimationFrame(() =>
+        document.querySelector('[data-testid="ward-legal-selected"]')?.scrollIntoView?.({ block: "start" }),
+      );
+    }
   };
 
   const handleOpenInspector = (movement: Movement) => {
@@ -443,6 +450,7 @@ export function LegalFormsScreen() {
 
         <div data-testid="ward-legal-hud-island">
           <Hero
+            className={styles.phoneHero}
             eyebrow="Statutory forms"
             title={`${rows.length} forms on open moves`}
             stats={
@@ -1139,7 +1147,7 @@ export function LegalFormsScreen() {
           open={renewModalOpen}
           onClose={() => setRenewModalOpen(false)}
           title="Extend recorded form"
-          description="Re-authorisation is recorded, not legally checked"
+          description="Extension is recorded, not legally checked"
           portal={false}
           testId="ward-legal-extend"
           footer={
@@ -1154,7 +1162,7 @@ export function LegalFormsScreen() {
                 disabledReason={NOT_WIRED}
                 title={NOT_WIRED}
               >
-                Confirm re-authorisation
+                Confirm extension
               </Button>
             </div>
           }
@@ -1384,7 +1392,7 @@ function SelectedFormCard({
           Dossier
         </Button>
         {breached ? (
-          <Button variant="danger" size="sm" onClick={onExtend} aria-label="Re-Authorise Order">
+          <Button variant="danger" size="sm" onClick={onExtend} aria-label="Extend recorded form">
             Extend
           </Button>
         ) : (

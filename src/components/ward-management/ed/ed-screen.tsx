@@ -1,6 +1,8 @@
 "use client";
+import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
 
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
+import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
 
 import Link from "next/link";
 import { createPortal } from "react-dom";
@@ -1104,19 +1106,14 @@ function accessTargetLine(minutesInDepartment: number, accessTargetMinutes: numb
  * clearance is shown beside it as a SEPARATE recorded time, never as the clock's start, because —
  * put to the owner directly — ED doctors can and do refer before clearance is done.
  *
- * `medicalClearance` lives only on `Referral` (see that field's own doc comment in
- * `ward-model.ts`), written solely by `RECORD_MEDICAL_CLEARANCE`. `Movement.referralId` is the one
- * resolvable link to it — present only when this journey was raised from a front-door referral
- * (`RAISE_REFERRAL`'s own `referralId` argument) — so most movements resolve nothing here, and that
- * is an honest "not linked", never a fabricated time. Returns `undefined` rather than inventing a
- * moment when the link is absent, the referral cannot be found, or nobody has recorded an answer.
+ * Read the latest recorded movement or identity-matched linked referral fact. Unknown stays
+ * unknown. Screen-only clearance drafts are deliberately excluded from this projection.
  */
 function movementMedicalClearance(
   movement: Movement,
   referrals: readonly Referral[],
 ): { cleared: boolean; at: Instant } | undefined {
-  if (movement.referralId === undefined) return undefined;
-  return referrals.find((referral) => referral.id === movement.referralId)?.medicalClearance;
+  return recordedMovementMedicalClearance(movement, referrals);
 }
 
 /**
@@ -4086,6 +4083,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                           >
                             <td colSpan={9}>
                               <div className={styles.expandedGrid}>
+                                <EdMedicalPlacementControls movementId={movement.id} actingPlaceId={thisEdId} />
                                 <section
                                   className={styles.expandedCard}
                                   aria-label={`Where ${patientInfo.displayName} is up to`}

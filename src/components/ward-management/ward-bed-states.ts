@@ -10,7 +10,8 @@ import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/wa
  * Four boxes that add up to the ward's beds — **Ready · Pulled · Closed · Occupied** — and two
  * markers shown beside them that are beds ALREADY COUNTED inside the four, never a fifth box:
  *
- * - `beingMadeReady` is inside Ready. Nothing is subtracted from Ready for it (2026-09-01: the
+ * - `beingMadeReady` records discharged beds still preparing; it can remain true when a later
+ *   ward observation closes the offered Ready count. Nothing is subtracted from Ready (2026-09-01: the
  *   ward's figure must not lurch as cleaning starts and stops; only the pull is refused).
  * - `onLeave` is inside Occupied. A leave bed is a note, not a bed, and adding it would count the
  *   same bed twice. "Held" is the word for this one ("a patient is ON LEAVE, their bed is HELD").
@@ -29,7 +30,7 @@ export type BedStateCounts = {
   pulled: number;
   closed: number;
   occupied: number;
-  /** Inside `ready`: released beds still being made ready. */
+  /** Released beds still being made ready; a marker, never added to the physical bed partition. */
   beingMadeReady: number;
   /** Inside `occupied`: beds held for a patient who is on leave. */
   onLeave: number;
@@ -52,14 +53,16 @@ export function bedStates(
   // Clamped to the box each one sits in, so a malformed fixture can never push a box negative or
   // the four past the ward's beds.
   const pulledFromEmpty = Math.min(livePulled, capacity.held);
+  const remainingLivePulled = livePulled - pulledFromEmpty;
+  const overflowFromAvailable = Math.min(remainingLivePulled, capacity.available);
   const pulledFromOccupied = Math.min(seededPulled, capacity.occupied);
   const occupied = capacity.occupied - pulledFromOccupied;
   return {
-    ready: capacity.available,
-    pulled: pulledFromEmpty + pulledFromOccupied,
+    ready: capacity.available - overflowFromAvailable,
+    pulled: pulledFromEmpty + overflowFromAvailable + pulledFromOccupied,
     closed: capacity.held - pulledFromEmpty + capacity.blocked,
     occupied,
-    beingMadeReady: Math.min(bedsPendingPreparation(unit.id, bedReleases), capacity.available),
+    beingMadeReady: bedsPendingPreparation(unit.id, bedReleases),
     onLeave: Math.min(leaveBeds.filter((bed) => bed.unitId === unit.id).length, occupied),
   };
 }
@@ -80,6 +83,6 @@ export const BED_STATE_DETAILS = {
   pulled: "Allocated to a named patient who has not arrived yet",
   closed: "Physically empty, but the ward is not offering it",
   occupied: "Someone is in it",
-  beingMadeReady: "Already counted in Ready: released and still being made ready",
+  beingMadeReady: "Released and still being made ready; may not currently be offered as Ready",
   onLeave: "Already counted in Occupied: held for a patient on leave",
 } as const;

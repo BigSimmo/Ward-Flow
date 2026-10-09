@@ -1,11 +1,12 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
+import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { wardSites } from "@/components/ward-management/ward-sites";
 
 /**
- * PR 46 ("Coordinator Shortlist Panel & Action Compaction") defaults the shortlist's Candidates
- * section and its Eligibility checks disclosure to closed. Open both before reading or clicking
- * inside them; idempotent, so it is safe after every queue selection.
+ * PR 130's Placement panel starts Candidates open; earlier versions started it closed.
+ * Ensure Candidates and any Eligibility checks disclosure are open before reading or clicking
+ * inside them. The helper remains idempotent after every queue selection.
  */
 async function openShortlistSections(shortlist: Locator) {
   const toggle = shortlist.getByTestId("ward-shortlist-candidates-toggle");
@@ -56,18 +57,19 @@ async function plantSentinel(page: Page) {
 }
 
 /**
- * The intake's yes/no questions are segmented toggles since f997ac75a1 (2026-09-22): each radio is
- * visually hidden (`srOnlyRadio` — 1px, clipped, opacity 0) inside the `<label>` a person taps.
- * `.check()` aims at the 1px radio, so the wrapping label takes the hit and Playwright refuses the
- * click ("<label …toggleOption> intercepts pointer events", batch-2 run, full journey :140). So tap
- * the label — the control a person actually touches — and prove the radio took the answer. Not a
- * softening: `force: true` would skip the tappability check; this keeps it and adds a checked-state
- * assertion `.check()` only implied.
+ * The referral slide-out's radios, switches and ward checkboxes sit inside the `<label>` a person
+ * taps, several visually hidden behind a segmented or tile face. So tap that label — the control a
+ * person actually touches — and prove the control took the answer. Not a softening: `force: true`
+ * would skip the tappability check; this keeps it and adds the checked-state assertion.
  */
-async function answerToggle(page: Page, testId: string) {
-  const radio = page.getByTestId(testId);
-  await page.locator("label", { has: radio }).click();
-  await expect(radio).toBeChecked();
+async function tapChoice(control: Locator) {
+  await control.locator("xpath=ancestor::label[1]").click();
+  await expect(control).toBeChecked();
+}
+
+/** A tiny synthetic PDF: the slide-out reads the bytes and checks only the type and size. */
+function syntheticChart(name: string) {
+  return { name, mimeType: "application/pdf", buffer: Buffer.from(`%PDF-1.7\nSynthetic demo chart: ${name}\n`) };
 }
 
 /** Proves every step below is client-side navigation, never a full reload that would reseed the
@@ -153,6 +155,12 @@ async function switchView(page: Page, pick: (menu: Locator) => Locator, screenTe
 test.describe("@mockup Ward Flow full journey — referral to discharge planning, one browser window", () => {
   test.describe.configure({ timeout: 120_000 });
 
+  /*
+   * Step 1 re-driven 8 October 2026: the community team raises its referral in the referral
+   * slide-out (`ward-bar-referral-sheet`), the one place a referral is written, opened in place
+   * by the rail's own "New referral" button. The full-page intake form it used before is retired;
+   * every later step stands as written.
+   */
   test("walks community intake, the ED bed request, coordinator placement, ward acceptance, transport and discharge planning without a dead end", async ({
     page,
   }) => {
@@ -167,64 +175,99 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await waitForScreen(page, "ward-community-screen");
     await plantSentinel(page);
     await expect(page.getByText("Midland", { exact: false }).first()).toBeVisible();
+    const communityUrl = page.url();
 
-    await goViaRail(page, "/mockups/ward-flow/referrals/new", "ward-referral-intake-screen");
-    await expectNoReloadSince(page, "community team -> new referral");
+    // The rail's "New referral" opens the slide-out over the team page; nothing navigates.
+    await page.getByTestId("ward-rail").getByTestId("ward-rail-referral-trigger").click();
+    const sheet = page.getByTestId("ward-bar-referral-sheet");
+    await expect(sheet).toBeVisible({ timeout: 15_000 });
+    expect(page.url(), "opening the referral slide-out must not leave the team page").toBe(communityUrl);
+    await expectNoReloadSince(page, "community team -> referral slide-out");
+    const steps = sheet.getByRole("group", { name: "Referral sections" });
 
-    // v6 (7 Oct 2026): Age band and Sex are segmented radio groups.
-    await page
-      .getByTestId("ward-referral-intake-ageBand")
-      .locator("label")
-      .filter({ has: page.getByRole("radio", { name: "Adult", exact: true }) })
-      .click();
-    await page
-      .getByTestId("ward-referral-intake-sex")
-      .locator("label")
-      .filter({ has: page.getByRole("radio", { name: "Female", exact: true }) })
-      .click();
-    // Gender ("decides which bed", T11/T10, owner answer 17 September 2026) is a separate required
-    // question from Sex above it, added to REQUIRED_FIELDS after this spec was first written.
-    await page.getByTestId("ward-referral-intake-gender").selectOption("Female");
-    await page.getByTestId("ward-referral-intake-homeRegion").selectOption("Perth Metropolitan");
+    // Refer to a ward, for a new synthetic person: Adult, recorded sex and gender Female.
+    await sheet.getByTestId("ward-referral-refer-to-ward").click();
+    await sheet.getByTestId("ward-referral-new-patient-toggle").click();
+    const newPatient = sheet.getByTestId("ward-referral-new-patient");
+    await newPatient.getByLabel("Family name", { exact: true }).fill("Communityfield");
+    await newPatient.getByLabel("Given name", { exact: true }).fill("Synthetic");
+    await newPatient.getByLabel("Date of birth", { exact: true }).fill("1990-01-02");
+    await newPatient.getByLabel("UMRN", { exact: true }).fill("UM990703");
+    await newPatient.getByLabel("Suburb", { exact: true }).fill("Albany");
+    await newPatient.getByRole("button", { name: "Add patient" }).click();
+    await expect(sheet).toContainText("Communityfield, Synthetic");
+    await sheet.getByLabel("Age band", { exact: true }).selectOption("Adult");
+    await sheet.getByLabel("Home region", { exact: true }).selectOption("Perth Metropolitan");
+    await sheet.getByRole("button", { name: "Confirm catchment" }).click();
+
     // The source this step is actually proving: a community team raising the referral, per this
     // file's own header comment on why "raises" (not "receives") is the real, wired mechanism.
-    await page.getByTestId("ward-referral-intake-source").selectOption("community");
-    await page.getByTestId("ward-referral-intake-urgency").selectOption("3");
-    await page.getByTestId("ward-referral-intake-originSiteCode").selectOption(wardSites[0].code);
-    await answerToggle(page, "ward-referral-intake-secureBedNeeded-no");
-    await answerToggle(page, "ward-referral-intake-involuntaryBedNeeded-no");
-    await answerToggle(page, "ward-referral-intake-highAcuityNursingNeeded-no");
-    await answerToggle(page, "ward-referral-intake-transportNeeded-no");
-    await page.getByTestId("ward-referral-intake-destination-psychiatric_ward").check();
-    await page.getByTestId("ward-referral-intake-suburb").selectOption("Albany");
-    await page
-      .getByTestId("ward-referral-intake-history")
+    await steps.getByRole("button", { name: "Referral", exact: true }).click();
+    await sheet.getByRole("group", { name: "Source" }).getByRole("button", { name: "Community", exact: true }).click();
+    await sheet.getByLabel("Referring service location", { exact: true }).selectOption(wardSites[0].code);
+    await sheet.getByLabel("Referring community service", { exact: true }).fill("Midland");
+    await sheet.getByLabel("Legal status", { exact: true }).selectOption("Voluntary");
+    await tapChoice(
+      sheet.getByRole("group", { name: "Bed security" }).getByRole("radio", { name: "Open", exact: true }),
+    );
+    await tapChoice(sheet.getByRole("radio", { name: urgencyTierLabel(3), exact: true }));
+    // Gender ("decides which bed", T11/T10, owner answer 17 September 2026) is a separate question
+    // from the recorded sex, answered in its own select.
+    await sheet.getByLabel("Recorded sex", { exact: true }).selectOption("Female");
+    await sheet.getByLabel("Gender identity", { exact: true }).selectOption("Female");
+    await expect(sheet.getByRole("switch", { name: "High-acuity nursing" })).toHaveAttribute("aria-checked", "false");
+    await sheet
+      .getByLabel("Patient story", { exact: true })
       .fill("Known to the community team; family reports declining self-care over one week.");
-    await expect(page.getByTestId("ward-referral-intake-submit")).not.toHaveAttribute("aria-disabled", "true");
 
-    await page.getByTestId("ward-referral-intake-submit").click();
-    await expect(page.getByTestId("ward-referral-intake-confirmation")).toBeVisible();
-    await expect(page.getByTestId("ward-referral-intake-rejection")).toHaveCount(0);
+    await steps.getByRole("button", { name: "Clearance", exact: true }).click();
+    await tapChoice(
+      sheet.getByRole("group", { name: "Has the patient been medically cleared?" }).getByRole("radio", { name: "Yes" }),
+    );
+    await tapChoice(
+      sheet.getByRole("group", { name: "Triage and RAMP completed" }).getByRole("radio", { name: "Yes" }),
+    );
+    await sheet.getByLabel("Medication chart", { exact: true }).setInputFiles(syntheticChart("medication-chart.pdf"));
+    await sheet.getByLabel("Observation chart", { exact: true }).setInputFiles(syntheticChart("observation-chart.pdf"));
+    await expect(sheet.getByRole("button", { name: "Replace" })).toHaveCount(2);
+    await tapChoice(sheet.getByRole("group", { name: "Anything else to attach?" }).getByRole("radio", { name: "No" }));
+
+    // Any ward the slide-out offers this person serves: this step proves the community-sourced
+    // entry path reaches the coordinator's board, not which ward answers it.
+    await steps.getByRole("button", { name: "Wards", exact: true }).click();
+    await tapChoice(sheet.getByRole("list", { name: "Placement Destination Options" }).getByRole("checkbox").first());
+    // No transport needed: patient or carer accompanied.
+    await sheet.getByLabel("Transport", { exact: true }).selectOption("carer");
+
+    await sheet.getByRole("button", { name: "Send referral", exact: true }).click();
+    await expect(sheet.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
+    await sheet.getByLabel("Your name", { exact: true }).fill("Synthetic Referrer");
+    await sheet.getByLabel("Email address", { exact: true }).fill("referrer@example.org");
+    await sheet.getByLabel("Phone number", { exact: true }).fill("0412345678");
+    await sheet.getByLabel("Your role", { exact: true }).fill("Community mental health nurse");
+    await sheet.getByLabel("Location or service", { exact: true }).fill("Midland");
+    await sheet.getByRole("button", { name: "Confirm and send", exact: true }).click();
+    await expect(sheet.getByRole("heading", { name: "Referral sent" })).toBeVisible();
+    // A refusal renders as the footer's `role="alert"` instead of the sent heading.
+    await expect(sheet.getByRole("alert")).toHaveCount(0);
     await expectNoReloadSince(page, "submitting the community-sourced referral");
-    // Since 22 September sending opens a "Referral recorded locally" receipt, a modal dialog over
-    // the whole screen. A person reads it and closes it before using the rail, so the journey does
-    // the same: the receipt must appear, and must actually close.
-    const receipt = page.getByRole("dialog", { name: "Referral recorded locally" });
-    await expect(receipt).toBeVisible();
-    await receipt.getByRole("button", { name: "Close", exact: true }).click();
-    await expect(receipt).toHaveCount(0);
+    // A person reads the sent receipt and closes the slide-out with Done before using the rail.
+    await sheet.getByRole("button", { name: "Done", exact: true }).click();
+    await expect(sheet).toHaveCount(0);
 
     await goViaRail(page, "/mockups/ward-flow/referrals", "ward-referral-board-screen");
-    await expectNoReloadSince(page, "new referral -> referral board");
+    await expectNoReloadSince(page, "referral slide-out -> referral board");
     // The board is what "reaches the coordinator" means here — real cards, not a table (the
     // "served register" rework, `referrals.module.css`, keeps the table mounted only for print;
     // `ward-referral-board-queued-cards` is the live representation at every width now).
     await expect(page.getByTestId("ward-referral-board-queued-cards")).toBeVisible();
 
     // --- Step 2: the ED raises the bed request — the referral that continues through every
-    // remaining step. Peel Health Campus ED is the rail's own fixed example department, so this
-    // is a real `<Link>` jump, not a typed id. ---
-    await goViaRail(page, "/mockups/ward-flow/ed/peel-ed", "ward-ed-screen");
+    // remaining step. The rail's Emergency entry opens the All EDs page (9 Oct 2026), and Peel
+    // Health Campus ED is opened from its card there, so both are real `<Link>` jumps, not a typed id. ---
+    await goViaRail(page, "/mockups/ward-flow/ed", "ward-ed-index");
+    await page.getByTestId("ed-index-link-peel-ed").click();
+    await waitForScreen(page, "ward-ed-screen");
     await expectNoReloadSince(page, "referral board -> Peel ED");
 
     // `ward-ed-outbox-row-*` is the WRONG list to watch here: `outbox` is `patients.filter((m) =>
@@ -270,7 +313,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expectNoReloadSince(page, "ED -> coordinator");
 
     await page.locator(`[data-testid="ward-queue-row-${movementId}"]`).click();
-    const shortlist = page.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await openShortlistSections(shortlist);
     await expect(shortlist).toHaveAttribute("data-subject-movement", movementId);
 
@@ -347,9 +390,22 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expectNoReloadSince(page, "ward -> ED for transport booking");
 
     const edScreen = page.getByTestId("ward-ed-screen");
+    // The board's compact clearance picker is an unsaved layout draft. Record the
+    // clinician's synthetic clearance through the originating ED's real controls.
+    const expandEd = edScreen.getByTestId(`ward-ed-expand-${movementId}`);
+    if ((await expandEd.getAttribute("aria-expanded")) !== "true") await expandEd.click();
+    const medicalPlacement = edScreen.getByTestId(`ward-ed-medical-placement-${movementId}`);
+    await expect(medicalPlacement).toBeVisible();
+    await medicalPlacement.getByRole("button", { name: "Record medically cleared", exact: true }).click();
+    await medicalPlacement.getByRole("button", { name: "Confirm medically cleared", exact: true }).click();
+    await expect(medicalPlacement.getByRole("status")).toContainText("Recorded medically cleared.");
+    await expectNoReloadSince(page, "recording clinician clearance before transport");
     const unfoldEd = edScreen.getByTestId(`ward-ed-unfold-${movementId}`);
     if (await unfoldEd.isVisible()) await unfoldEd.click();
-    await edScreen.getByTestId(`ward-ed-book-transport-toggle-${movementId}`).click();
+    const bookTransport = edScreen.getByTestId(`ward-ed-book-transport-toggle-${movementId}`);
+    await expect(bookTransport).not.toHaveAttribute("aria-disabled", "true");
+    await bookTransport.click();
+    await expect(page.getByTestId(`ward-ed-book-transport-${movementId}`)).toBeVisible();
     await page.getByTestId(`ward-ed-transport-provider-${movementId}`).selectOption("Patient transport service");
     await page.getByTestId(`ward-ed-transport-escort-no-${movementId}`).click();
     // Owner's third ruling, 2026-09-17: the three facts logged from the phone call, required and

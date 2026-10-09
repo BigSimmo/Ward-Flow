@@ -66,7 +66,7 @@
     "clean:worktree": "npm run worktrees:report",
     "verify:preflight": "npm run verify:cheap && npm run worktrees:report -- --self-test",
     "verify:cheap": "npm run verify:cheap:internal",
-    "verify:cheap:internal": "npm run docs:check-scripts && npm run check:installed-lock-parity && npm run check:ci-scope && npm run check:verification-plan && npm run check:diff-integrity && npm run sitemap:check && npm run check:mockups && npm run docs:check-index && npm run docs:check-inventory && npm run check:knip && npm run lint && npm run typecheck && npm run test",
+    "verify:cheap:internal": "npm run docs:check-scripts && npm run docs:check-links && npm run check:installed-lock-parity && npm run check:ci-scope && npm run check:verification-plan && npm run check:diff-integrity && npm run sitemap:check && npm run check:mockups && npm run docs:check-index && npm run docs:check-inventory && npm run check:knip && npm run lint && npm run typecheck && npm run test",
     "verify:pr-local": "node scripts/verify-pr-local.mjs",
     "audit:final-merge": "node scripts/final-merge-audit.mjs",
     "audit:merge-loss": "node scripts/audit-merge-loss.mjs --self-test && node scripts/audit-merge-loss.mjs",
@@ -125,7 +125,8 @@
     "test:ci-workflows": "node scripts/run-vitest.mjs run tests/ci-cache-safety.test.ts tests/test-runner-safety.test.ts tests/installed-lock-parity.test.ts tests/ward-backend-ci.test.ts",
     "format:all": "prettier --write .",
     "check:ward-policy-contracts": "node scripts/ward-ci-public/check-policy-contracts.mjs",
-    "check:ward-backend": "npm --prefix backend/ward-flow test"
+    "check:ward-backend": "npm --prefix backend/ward-flow test",
+    "docs:check-links": "node scripts/check-maintained-doc-links.mjs"
   },
   "dependencies": {
     "@azure/msal-browser": "^5.25.0",
@@ -142,7 +143,7 @@
   "overrides": {
     "postcss": "^8.5.18",
     "esbuild": "0.28.2",
-    "sharp": "0.35.4",
+    "sharp": "0.35.5",
     "tmp": "^0.2.7",
     "uuid": "^11.1.1",
     "brace-expansion@1": "^1.1.21",
@@ -185,6 +186,6 @@
     "@eslint/eslintrc@3.3.6": true,
     "@humanwhocodes/module-importer@1.0.1": true,
     "@humanfs/node@0.16.8": true,
-    "sharp@0.35.4": true
+    "sharp@0.35.5": true
   }
 }

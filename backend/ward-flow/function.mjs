@@ -1,4 +1,5 @@
 import { app } from "@azure/functions";
+import { randomUUID } from "node:crypto";
 import { readConfig } from "./config.mjs";
 import { openStorage, createStore } from "./database.mjs";
 import { createAuthenticator } from "./auth.mjs";
@@ -32,7 +33,12 @@ function handler() {
   return handlerPromise;
 }
 
-export async function handleHttp(request, _context, getHandler = handler) {
+export async function handleHttp(
+  request,
+  _context,
+  getHandler = handler,
+  log = (event) => console.error(JSON.stringify(event)),
+) {
   try {
     const webRequest = new Request(request.url, {
       method: request.method,
@@ -46,7 +52,17 @@ export async function handleHttp(request, _context, getHandler = handler) {
       body: Buffer.from(await response.arrayBuffer()),
     };
   } catch {
-    return { status: 503, headers: { "cache-control": "no-store" }, jsonBody: { error: "Service unavailable" } };
+    const requestId = randomUUID();
+    try {
+      log({ event: "ward_backend_adapter_failure", requestId, status: 503 });
+    } catch {
+      // Diagnostics are optional and contain no original request/error data.
+    }
+    return {
+      status: 503,
+      headers: { "cache-control": "no-store", "x-request-id": requestId },
+      jsonBody: { error: "Service unavailable" },
+    };
   }
 }
 
@@ -55,7 +71,7 @@ app.http("wardFlowHealth", { route: "healthz", methods: ["GET"], authLevel: "ano
 app.http("wardFlowReady", { route: "readyz", methods: ["GET"], authLevel: "anonymous", handler: handleHttp });
 app.http("wardFlowSession", {
   route: "v1/sessions/{id}",
-  methods: ["GET", "PUT", "OPTIONS"],
+  methods: ["GET", "PUT", "DELETE", "OPTIONS"],
   authLevel: "anonymous",
   handler: handleHttp,
 });

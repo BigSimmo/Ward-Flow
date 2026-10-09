@@ -260,6 +260,9 @@ export function PriorityQueue({
                   </span>
                   {/* Marks sit on their own line; each mark stays whole and the line wraps between them. */}
                   <span className={styles.queueMarks}>
+                    <span className={styles.queueMark}>
+                      {movement.atsCategory === undefined ? "ATS not recorded" : `ATS ${movement.atsCategory}`}
+                    </span>
                     {movement.flaggedUrgent ? (
                       <span className={styles.queueFlag} data-testid={`ward-queue-flag-${movement.id}`}>
                         <StatusGlyph tone="danger" size={9} />
@@ -376,6 +379,11 @@ export function PriorityQueue({
                     </span>
                   </span>
                   <SrOnly>{urgencyTierLabel(referral.urgency)}.</SrOnly>
+                  <span className={styles.queueMarks}>
+                    <span className={styles.queueMark}>
+                      {referral.atsCategory === undefined ? "ATS not recorded" : `ATS ${referral.atsCategory}`}
+                    </span>
+                  </span>
                 </span>
                 <span className={styles.queueWait}>
                   <Timer
@@ -396,7 +404,9 @@ export function PriorityQueue({
       </div>
 
       <div className={styles.cardFoot}>
-        <span className={styles.footMeta}>Tier first, then longest wait</span>
+        <span className={styles.footMeta}>
+          {activeTab === "referrals" ? "Longest wait first" : "Tier first, then longest wait"}
+        </span>
         <Link href={delaysHref} className={styles.footLink}>
           Open in Delays
         </Link>

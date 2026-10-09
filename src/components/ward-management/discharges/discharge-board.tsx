@@ -6,7 +6,12 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronRight, ClipboardList, Plus, Truck, X } from "lucide-react";
 import { MissingValue } from "@/components/ui/missing-value";
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
-import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { parseReleaseDayInstant } from "@/components/ward-management/ward/release-day";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
@@ -329,6 +334,7 @@ function DischargeWorkspace() {
   const detailRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
+  const restoreFocusRef = useRef(false);
   const planDropdownRef = useRef<HTMLDivElement>(null);
   const guarded = readDischargeRecords(RECORD_ACTOR);
   const records = guarded.status === "allowed" ? guarded.value : [];
@@ -399,8 +405,14 @@ function DischargeWorkspace() {
     setReleaseId(null);
     setOpenError(false);
     setShowUpdateDate(false);
-    (triggerRef.current ?? listRef.current)?.focus();
+    restoreFocusRef.current = true;
   };
+  useEffect(() => {
+    if (!restoreFocusRef.current || selected !== null || releaseId !== null) return;
+    restoreFocusRef.current = false;
+    const trigger = triggerRef.current;
+    (trigger?.isConnected ? trigger : listRef.current)?.focus();
+  }, [selected, releaseId]);
   const clearSelection = () => {
     setSelected(null);
     setReleaseId(null);
@@ -604,6 +616,7 @@ function DischargeWorkspace() {
           {" · "}As of {formatSheetMoment(now, dayZero)}
         </p>
         <Hero
+          className={pageStyles.phoneHero}
           eyebrow={population === "releases" ? "Bed release" : "Admission records"}
           title={`${openCount} ${openCount === 1 ? "discharge" : "discharges"} open`}
           stats={
@@ -754,6 +767,26 @@ function DischargeWorkspace() {
                 ))}
               </Select>
             </label>
+            <label htmlFor="discharges-filter-blocker" className={pageStyles.filterField}>
+              <span className={pageStyles.filterLabelText}>Blocker</span>
+              <Select
+                id="discharges-filter-blocker"
+                name="dischargesFilterBlocker"
+                value={blockerCategory}
+                boxClassName={pageStyles.filterSelect}
+                onChange={(event) => {
+                  setBlockerCategory(event.target.value);
+                  clearSelection();
+                }}
+              >
+                <option value="all">All blockers</option>
+                {BLOCKER_CATEGORIES.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.label}
+                  </option>
+                ))}
+              </Select>
+            </label>
             {population === "records" && (
               <>
                 <label htmlFor="discharges-filter-identity" className={pageStyles.filterField}>
@@ -900,6 +933,16 @@ function DischargeWorkspace() {
                   </button>
                 ))}
               </div>
+              <span
+                className="sr-only"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                data-testid="discharge-pipeline-announcement"
+              >
+                {population === "releases" ? "Bed releases" : "Admission records"}: {counts.blocked} blocked,{" "}
+                {counts.confirmed} confirmed, {counts.expected} expected, {counts.departed} departed.
+              </span>
               <span aria-live="polite" className={pageStyles.shownCountBadge}>
                 {population === "records" && guarded.status === "denied" ? "Unavailable" : `${shown} shown`}
               </span>
@@ -1342,7 +1385,7 @@ function DischargeWorkspace() {
                                   setShowUpdateDate(true);
                                   setNewTimeDraft(
                                     activeRecord.expectedDischargeAt !== null
-                                      ? formatInstantWithDay(activeRecord.expectedDischargeAt, now)
+                                      ? formatInstant(activeRecord.expectedDischargeAt)
                                       : "14:00",
                                   );
                                 }}
@@ -1644,37 +1687,39 @@ function DischargeWorkspace() {
                       icon={ClipboardList}
                       title="Select a record to view dates, blockers and ward follow-up."
                     />
-                    {releaseGroups.blocked.length > 0 && (
-                      <div className={pageStyles.restingQueue}>
-                        <h3 className={pageStyles.sectionLabel}>
-                          Blocked <span className={pageStyles.groupCount}>{releaseGroups.blocked.length}</span>
-                        </h3>
-                        <ul>
-                          {releaseGroups.blocked.slice(0, 4).map((rel) => {
-                            const u = units.find((candidate) => candidate.id === rel.unitId);
-                            const l = records.find((candidate) => candidate.admissionId === rel.admissionId);
-                            return (
-                              <li key={rel.id}>
-                                <button
-                                  type="button"
-                                  className={pageStyles.restingItem}
-                                  onClick={(e) => selectRelease(rel.id, e.currentTarget)}
-                                >
-                                  <StatusGlyph tone="danger" size={9} />
-                                  <span className={pageStyles.restingItemText}>
-                                    <span className={pageStyles.restingItemTitle}>
-                                      {unitLabel(u, rel.unitId)} {l ? `· ${recordName(l)}` : ""}
+                    {population === "releases" &&
+                      visibleReleaseGroups.includes("blocked") &&
+                      releaseGroups.blocked.length > 0 && (
+                        <div className={pageStyles.restingQueue}>
+                          <h3 className={pageStyles.sectionLabel}>
+                            Blocked <span className={pageStyles.groupCount}>{releaseGroups.blocked.length}</span>
+                          </h3>
+                          <ul>
+                            {releaseGroups.blocked.slice(0, 4).map((rel) => {
+                              const u = units.find((candidate) => candidate.id === rel.unitId);
+                              const l = records.find((candidate) => candidate.admissionId === rel.admissionId);
+                              return (
+                                <li key={rel.id}>
+                                  <button
+                                    type="button"
+                                    className={pageStyles.restingItem}
+                                    onClick={(e) => selectRelease(rel.id, e.currentTarget)}
+                                  >
+                                    <StatusGlyph tone="danger" size={9} />
+                                    <span className={pageStyles.restingItemText}>
+                                      <span className={pageStyles.restingItemTitle}>
+                                        {unitLabel(u, rel.unitId)} {l ? `· ${recordName(l)}` : ""}
+                                      </span>
+                                      <span className={pageStyles.secondary}>{rel.blocker}</span>
                                     </span>
-                                    <span className={pageStyles.secondary}>{rel.blocker}</span>
-                                  </span>
-                                  <ChevronRight size={16} aria-hidden="true" className={pageStyles.restingArrow} />
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    )}
+                                    <ChevronRight size={16} aria-hidden="true" className={pageStyles.restingArrow} />
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
                   </div>
                 )}
               </div>

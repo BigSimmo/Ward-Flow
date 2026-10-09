@@ -43,9 +43,10 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 const NETWORK_COMPONENT = resolve(process.cwd(), "src/components/ward-management/ward-management-network.tsx");
 const D15_CONTRACT_TEST = resolve(process.cwd(), "tests/ward-referral-matching.test.ts");
 
-/** The first referral the coordinator's own queue order puts up — resolved from the seed rather
- *  than named by id, so this suite follows the fixture instead of pinning a spelling of it. */
-const SUBJECT = referralQueueOrder(referrals)[0]!;
+/** RF-001, resolved through the coordinator's own queue so the suite fails if it leaves the queue.
+ *  Named by id since Decision D-32 put the queue in waiting-time order: the longest wait is now an
+ *  emergency-department expect (RF-015), not the psychiatric-ward referral these facts pin. */
+const SUBJECT = referralQueueOrder(referrals).find((referral) => referral.id === "RF-001")!;
 
 const VERDICT_TESTID = /^ward-network-verdict-/;
 
@@ -130,14 +131,14 @@ describe("network diagram, referral placement", () => {
    * sentence `matchReason` produces for a bed that does not run this referral's age band, spelled
    * out here rather than recomputed, so a change of wording is visible rather than agreed with.
    *
-   * `SUBJECT` is Youth (the seed's first queued referral), and `scgh-adult-open` is an Adult unit,
+   * `SUBJECT` is Youth (RF-001, a queued ward referral), and `scgh-adult-open` is an Adult unit,
    * so its first failing gate is `age`. The reason text is `ward-eligibility.ts`'s own.
    */
   it("shows each unit the single reason it cannot take this referral", () => {
     renderNetwork();
     fireEvent.click(screen.getByTestId(`ward-network-referral-${SUBJECT.id}`));
 
-    expect(SUBJECT.ageBand, "the seed's first queued referral is no longer the Youth one this pins").toBe("Youth");
+    expect(SUBJECT.ageBand, "RF-001 is no longer the Youth referral this pins").toBe("Youth");
 
     const adultUnit = screen.getByTestId("ward-network-verdict-scgh-adult-open");
     expectSays(adultUnit, "the age-band mismatch reason", ["does not match", "youth"]);
@@ -160,22 +161,20 @@ describe("network diagram, referral placement", () => {
    * pass just as well with the element moved out of the panel entirely.
    */
   it("names the referral in the aside, with the tier spelled as a label and not a bare digit", () => {
-    expect(SUBJECT.urgency, "the seed's first queued referral no longer carries the tier this pins").toBe(2);
-    expect(SUBJECT.homeRegion, "the seed's first queued referral no longer carries the facts this pins").toBe(
-      "Perth Metropolitan",
-    );
+    expect(SUBJECT.urgency, "RF-001 no longer carries the tier this pins").toBe(2);
+    expect(SUBJECT.homeRegion, "RF-001 no longer carries the facts this pins").toBe("Perth Metropolitan");
 
     renderNetwork();
 
     // Before selection the placement panel is not merely empty — it is not the aside on screen.
     expect(screen.queryByRole("complementary", { name: "Referral placement" })).toBeNull();
-    expect(screen.getByRole("complementary", { name: "Explainable shortlist" })).toBeInTheDocument();
+    expect(screen.getByRole("complementary", { name: "Placement" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId(`ward-network-referral-${SUBJECT.id}`));
 
     const aside = screen.getByRole("complementary", { name: "Referral placement" });
     expect(
-      screen.queryByRole("complementary", { name: "Explainable shortlist" }),
+      screen.queryByRole("complementary", { name: "Placement" }),
       "both asides were on screen at once — the movement panel did not stand down",
     ).toBeNull();
 

@@ -57,6 +57,18 @@ function requireWorkflow(source) {
     /check:ward-expected-reds -- --print-signatures/u,
     /npm run test:e2e:ward-journeys/u,
     /screen-verification\.mjs --check/u,
+    /^ {8}run: npm run docs:check-links$/mu,
+    /^ {8}run: npm run docs:check-index$/mu,
+    /^ {8}run: npm run docs:check-inventory$/mu,
+    /run: node scripts\/ward-flow\/check-clinical-governance-gate\.mjs/u,
+    /steps\.plan\.outputs\.owner_index == 'true'/u,
+    /steps\.plan\.outputs\.rules_index == 'true'/u,
+    /steps\.plan\.outputs\.organisation == 'true'/u,
+    /owner-rulings-index\.mjs --check/u,
+    /rules-index\.mjs --check/u,
+    /organisation\.mjs --check --source working-tree/u,
+    /id: chromium\n\s*timeout-minutes: 8/u,
+    /run: node scripts\/ward-ci-public\/install-chromium\.mjs/u,
     /dependency-review-action@[0-9a-f]{40}/u,
     /steps\.plan\.outputs\.dependency_review == 'true'/u,
     /actions\/upload-artifact@[0-9a-f]{40}/u,
@@ -113,6 +125,8 @@ function requireWorkflow(source) {
   // must expect a blob from every unit shard.
   const jobText = (name) =>
     new RegExp(`^ {2}${name}:\\n([\\s\\S]*?)(?=^ {2}[a-z][a-z0-9_-]*:\\n|(?![\\s\\S]))`, "mu").exec(source)?.[1];
+  for (const gate of ["docs:check-links", "docs:check-index", "docs:check-inventory"])
+    assert.ok(jobText("static")?.includes(`run: npm run ${gate}\n`), `${gate} must run in the static job`);
   const coverageJob = jobText("coverage");
   assert.ok(coverageJob, "the coverage job is required");
   assert.doesNotMatch(coverageJob, /WARD_COVERAGE_BLOB_DIR/u);
@@ -130,6 +144,10 @@ function requireWorkflow(source) {
 requireWorkflow(workflow);
 for (const bad of [
   workflow.replace("name: Ward Flow required", "name: Optional"),
+  workflow.replace("timeout-minutes: 8", "timeout-minutes: 30"),
+  workflow.replace("run: node scripts/ward-ci-public/install-chromium.mjs", "run: npx playwright install chromium"),
+  workflow.replace("run: node scripts/ward-flow/check-clinical-governance-gate.mjs", "run: echo skipped"),
+  workflow.replace("owner-rulings-index.mjs --check", "owner-rulings-index.mjs"),
   workflow.replace("if: always()", "if: success()"),
   workflow.replace("contents: read", "contents: write"),
   workflow.replace("npm run check:ward-expected-reds", "echo no unit checks"),
@@ -177,6 +195,9 @@ for (const bad of [
   workflow.replaceAll("fail-fast: false", "fail-fast: true"),
   workflow.replace("group: [1, 2, 3]", "group: [1, 2]"),
   workflow.replace("node scripts/ward-ci-public/changed-checks.mjs", "echo skipped"),
+  ...["docs:check-links", "docs:check-index", "docs:check-inventory"].map((gate) =>
+    workflow.replace(`run: npm run ${gate}`, "run: echo skipped documentation gate"),
+  ),
   workflow.replace("node node_modules/next/dist/bin/next typegen", "echo no route types"),
   workflow.replace("tsc -p tsconfig.json --noEmit", "tsc -p tsconfig.typecheck.json --noEmit"),
   workflow.replace('node-version: "24.19.0"', 'node-version: "24.15.0"'),

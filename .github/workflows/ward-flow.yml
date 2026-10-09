@@ -95,13 +95,34 @@ jobs:
           WARD_PLAN_BROWSER: ${{ steps.plan.outputs.browser }}
           WARD_PLAN_POLICY: ${{ steps.plan.outputs.policy }}
           WARD_PLAN_DEPENDENCY_REVIEW: ${{ steps.plan.outputs.dependency_review }}
+          WARD_PLAN_OWNER_INDEX: ${{ steps.plan.outputs.owner_index }}
+          WARD_PLAN_RULES_INDEX: ${{ steps.plan.outputs.rules_index }}
+          WARD_PLAN_ORGANISATION: ${{ steps.plan.outputs.organisation }}
         run: node scripts/ward-ci-public/verify-plan.mjs
       - name: Check CI contracts
         run: node scripts/ward-ci-public/check-contracts.mjs
+      # These source checks need no npm install and do not assert clinical approval.
+      - name: Check synthetic fixture identifiers and disclaimer source
+        run: node scripts/ward-flow/check-clinical-governance-gate.mjs
+      - name: Check maintained owner-ruling index
+        if: ${{ !cancelled() && steps.plan.outputs.owner_index == 'true' }}
+        run: node scripts/ward-flow/owner-rulings-index.mjs --check
+      - name: Check maintained historical lesson index
+        if: ${{ !cancelled() && steps.plan.outputs.rules_index == 'true' }}
+        run: node scripts/ward-flow/rules-index.mjs --check
+      - name: Check current organisation coverage
+        if: ${{ !cancelled() && steps.plan.outputs.organisation == 'true' }}
+        run: node scripts/ward-flow/organisation.mjs --check --source working-tree
       - name: Check maintained document commands
         run: npm run docs:check-scripts
       - name: Check Ward document links
         run: npm run check:ward-doc-links
+      - name: Check maintained document links and anchors
+        run: npm run docs:check-links
+      - name: Check maintained architecture coverage
+        run: npm run docs:check-index
+      - name: Check script inventory
+        run: npm run docs:check-inventory
       - name: Check Ward screen verification record
         run: node scripts/ward-flow/screen-verification.mjs --check
       - name: Review dependency changes
@@ -254,19 +275,15 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ward-playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+      # The helper bounds each attempt, retries once and shares a six-minute budget.
+      # The step's outer bound also catches unexpected setup/wrapper failures.
       - name: Install Chromium
         id: chromium
+        timeout-minutes: 8
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
           PLAYWRIGHT_CACHE_HIT: ${{ steps.playwright-cache.outputs.cache-hit }}
-        run: |
-          if [ "$PLAYWRIGHT_CACHE_HIT" = "true" ]; then
-            npx playwright install-deps chromium
-            # A no-op when the cached revision is complete; repairs a partial entry otherwise.
-            npx playwright install chromium
-          else
-            npx playwright install --with-deps chromium
-          fi
+        run: node scripts/ward-ci-public/install-chromium.mjs
       - name: Save Playwright browsers
         if: ${{ !cancelled() && steps.chromium.outcome == 'success' && steps.playwright-cache.outputs.cache-hit != 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

@@ -36,6 +36,23 @@ import type {
 } from "@/components/ward-management/ward-model";
 
 /**
+ * D-30 (owner, 6 October 2026): a transfer from a psychiatric ward at another hospital needs the
+ * central bed coordinator to accept it. The receiving ward can still decline, and a move between
+ * two wards on the same site is not an inter-hospital transfer. An origin or destination that
+ * cannot be placed on a site is treated as another hospital, so the gate fails closed.
+ */
+export function wardTransferNeedsCoordinator(
+  referral: Pick<Referral, "source" | "originUnitId">,
+  destinationUnitId: string,
+  units: readonly Pick<Unit, "id" | "siteCode">[],
+): boolean {
+  if (referral.source !== "psychiatric_ward") return false;
+  const originSite = units.find((unit) => unit.id === referral.originUnitId)?.siteCode;
+  const destinationSite = units.find((unit) => unit.id === destinationUnitId)?.siteCode;
+  return originSite === undefined || destinationSite === undefined || originSite !== destinationSite;
+}
+
+/**
  * Phase 7 (spec "The front door", D10): every unit in `units`, each paired with its eligibility
  * verdict against `referral` — NEVER a truncated list. The match view lists the beds that accept
  * this referral, and for every bed that does not, the single reason; a coordinator needs to see
@@ -629,12 +646,12 @@ export function referralCandidates(
 export type ReferralCandidate = { unit: Unit; verdict: EligibilityVerdict };
 
 /**
- * Task 5: urgency tier leads, exactly like `queueOrder` (`ward-priority.ts`) does for movements
- * — the clinician's own judgement orders the queue first. Inside a tier, the referral that has
- * waited LONGEST goes first (earliest `raisedAt`), because "length of wait carries the moral
- * weight" (this task's own brief) even though urgency is what the queue ranks by. Scoped to
- * `"queued"` only — an accepted or declined referral has already left the queue a coordinator is
- * working, the same reason `queueOrder` scopes to `isOpen` movements only.
+ * Decision D-32 (6 October 2026): the referral queue is ordered by waiting time, longest first
+ * (earliest `raisedAt`), so nobody is jumped ahead of a person who has waited longer. Urgency only
+ * breaks a tie between referrals raised at the same moment; it stays visible on each row for the
+ * clinician to weigh. Scoped to `"queued"` only — an accepted or declined referral has already
+ * left the queue a coordinator is working, the same reason `queueOrder` scopes to `isOpen`
+ * movements only.
  */
 export function referralQueueOrder(referrals: Referral[]): Referral[] {
   return referrals
@@ -647,7 +664,7 @@ export function referralQueueOrder(referrals: Referral[]): Referral[] {
         // is still genuinely awaiting an answer.
         referralState(referral) === "queued" && referral.destinations.some(isAwaitingAnswer),
     )
-    .sort((a, b) => a.urgency - b.urgency || a.raisedAt - b.raisedAt);
+    .sort((a, b) => a.raisedAt - b.raisedAt || a.urgency - b.urgency);
 }
 
 /**

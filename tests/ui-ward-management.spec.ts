@@ -236,9 +236,11 @@ test.describe("@mockup Ward Flow command view", () => {
     // cc4deaecaf (23 Sept): at 40rem and below "the phone starts with the task" — the views move
     // behind the rail's Menu button, which opens the same "More pages" sheet. The tap-target floor
     // is what this test guards, so open whichever door this width offers, then measure.
+    // Phone (8 Oct 2026): at 48rem and below the rail is hidden and the header bar's Menu button
+    // opens the same sheet.
     const opener = (await nav.isVisible())
       ? page.getByRole("button", { name: /^All pages/iu })
-      : page.getByTestId("ward-rail").getByRole("button", { name: "Menu", exact: true });
+      : page.getByTestId("ward-bar-phone-menu");
     if (await opener.isVisible()) {
       await opener.click();
       await expect(page.getByTestId("ward-rail-more-pages")).toBeVisible();
@@ -292,7 +294,7 @@ test.describe("@mockup Ward Flow command view", () => {
     // and Moodjar. FSH Adult Secure is no longer in it: WF-001 is a Female Adult movement
     // and FSH Adult Secure is Male only, so the sex_designation gate added in 6cc80c774 excludes
     // it and Moodjar (next in unit order) takes the freed slot.
-    const shortlist = network.getByRole("complementary", { name: "Explainable shortlist" });
+    const shortlist = network.getByRole("complementary", { name: "Placement", exact: true });
     await expect(shortlist).toContainText("WF-001");
     await expect(shortlist.getByRole("columnheader", { name: /Dabakarn/ })).toBeVisible();
     // Eligibility is a binary verdict, not a score: gates are not commensurable, so no row
@@ -453,11 +455,16 @@ test.describe("@mockup Ward Flow command view", () => {
       "the closed rail must hide its brand title so the header brand below is the only thing naming the application",
     ).toBeHidden();
     // b93b3b07e3 (21 Sept) retired the workspace header ("eliminate duplicate headers"), and the
-    // 25 Sept ruling keeps that design. With the rail closed, its emblem link is what names the app.
+    // 25 Sept ruling keeps that design. With the rail closed, its emblem is what names the app.
+    // Since 8 October 2026 (Josh) the closed emblem opens the full rail rather than going Home.
+    const brandOpen = rail.getByRole("button", { name: "Ward Flow, open the menu" });
     await expect(
-      rail.getByRole("link", { name: "Ward Flow home" }),
+      brandOpen,
       "with the rail closed and the workspace header retired, nothing on screen names the application",
     ).toBeVisible();
+    await brandOpen.click();
+    await expect(rail, "the closed emblem must open the full rail").toHaveAttribute("data-rail", "open");
+    await expect(rail.getByRole("link", { name: "Ward Flow home" })).toBeVisible();
   });
 
   // MERGE 01 (2026-09-05): /queue now redirects to /delays. The fixed-bar link this checks lived in

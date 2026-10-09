@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { EventEmitter } from "node:events";
 import { APPROVED_STORAGE_ACCOUNTS, readConfig } from "./config.mjs";
 import { createHandler, registerShutdown } from "./server.mjs";
-import { createStore } from "./database.mjs";
+import { createStore, validStoredSession } from "./database.mjs";
 import { handleHttp } from "./function.mjs";
 import { createAuthenticator } from "./auth.mjs";
 
@@ -98,6 +98,7 @@ function setup(overrides = {}) {
         if (token !== "Bearer accepted") throw new Error("secret diagnostic");
         return environment.WARD_ALLOWED_OBJECT_ID;
       },
+      log: () => {},
     }),
   };
 }
@@ -225,7 +226,7 @@ test("malformed stored revision cannot be overwritten", async () => {
     });
     await assert.rejects(
       store.save(environment.WARD_ALLOWED_OBJECT_ID, id, 0, body.payload),
-      /Invalid stored session revision/,
+      /Invalid stored session envelope/,
     );
   }
   assert.equal(putCount, 0);
@@ -245,7 +246,7 @@ test("a competing blob write rejects the stale revision", async () => {
     request: async (method, url) => {
       if (url.endsWith("?restype=container")) return new Response(null, { status: 201 });
       if (method === "GET")
-        return new Response(JSON.stringify({ revision: 1, payload: {} }), {
+        return new Response(JSON.stringify({ revision: 1, payload: {}, updated_at: "2026-10-08T12:00:00.000Z" }), {
           status: 200,
           headers: { etag: '"original"' },
         });
@@ -355,14 +356,14 @@ test("shared readiness probes both active stores on every authenticated request"
   storageHealthy = false;
   response = await probe();
   assert.equal(response.status, 503);
-  assert.deepEqual(await response.json(), { error: "Storage unavailable; changes were not confirmed saved" });
+  assert.deepEqual(await response.json(), { error: "Storage unavailable; changes were not confirmed" });
   assert.deepEqual(probes, ["storage", "database", "storage"]);
 
   storageHealthy = true;
   databaseHealthy = false;
   response = await probe();
   assert.equal(response.status, 503);
-  assert.deepEqual(await response.json(), { error: "Storage unavailable; changes were not confirmed saved" });
+  assert.deepEqual(await response.json(), { error: "Storage unavailable; changes were not confirmed" });
   assert.deepEqual(probes, ["storage", "database", "storage", "storage", "database"]);
 
   databaseHealthy = true;
@@ -558,4 +559,220 @@ test("configured coordinators and the legacy account are accepted without enabli
     payload = invalid;
     await assert.rejects(authenticate(authorization), /Unauthorised/);
   }
+});
+
+test("stored snapshots require a complete valid envelope and preserve corrupt data", async () => {
+  const valid = { revision: 1, payload: {}, updated_at: "2026-10-08T12:00:00.000Z" };
+  assert.equal(validStoredSession(valid), true);
+  assert.equal(validStoredSession({ ...valid, updated_at: "2026-10-08T12:00:00Z" }), true);
+  const invalid = [
+    null,
+    [],
+    { revision: 1 },
+    { ...valid, payload: [] },
+    { ...valid, payload: null },
+    { ...valid, updated_at: "tomorrow" },
+    { ...valid, updated_at: "2026-02-31T12:00:00.000Z" },
+    { ...valid, revision: 1.5 },
+    { ...valid, revision: 2_147_483_647 },
+    { ...valid, lastMutation: { requestId: id, expectedRevision: 0, digest: "0".repeat(64) } },
+  ];
+  for (const record of invalid) {
+    assert.equal(validStoredSession(record), false);
+    let writes = 0;
+    const store = createStore({
+      ...config.storage,
+      request: async (method, url) => {
+        if (url.endsWith("?restype=container")) return new Response(null, { status: 201 });
+        if (method === "PUT") writes++;
+        return new Response(JSON.stringify(record), { headers: { etag: '"saved"' } });
+      },
+    });
+    await assert.rejects(store.read(environment.WARD_ALLOWED_OBJECT_ID, id), /envelope/);
+    await assert.rejects(store.save(environment.WARD_ALLOWED_OBJECT_ID, id, 0, {}), /envelope/);
+    await assert.rejects(store.delete(environment.WARD_ALLOWED_OBJECT_ID, id, 1), /envelope/);
+    assert.equal(writes, 0);
+  }
+});
+
+/** In-memory Blob CAS fixture: only the production store builds paths and conditional headers. */
+function memoryBlobStore() {
+  const blobs = new Map();
+  let sequence = 0;
+  let writes = 0;
+  const store = createStore({
+    ...config.storage,
+    request: async (method, url, value, headers = {}) => {
+      if (url.endsWith("?restype=container")) return new Response(null, { status: 201 });
+      const current = blobs.get(url);
+      if (method === "GET")
+        return current
+          ? new Response(current.value, { headers: { etag: current.etag } })
+          : new Response(null, { status: 404, headers: { "x-ms-error-code": "BlobNotFound" } });
+      if (current ? headers["if-match"] !== current.etag : headers["if-none-match"] !== "*")
+        return new Response(null, { status: 412 });
+      writes++;
+      blobs.set(url, { value, etag: `"${++sequence}"` });
+      return new Response(null, { status: 201 });
+    },
+  });
+  return { store, blobs, writes: () => writes };
+}
+
+test("same request receipt retries recover success without another write", async () => {
+  const { store, writes } = memoryBlobStore();
+  const owner = environment.WARD_ALLOWED_OBJECT_ID;
+  const requestId = "ABCDEF01-aBcD-4EF0-8abc-DEF012345678";
+  assert.equal(await store.save(owner, id, 0, body.payload, requestId), 1);
+  assert.equal(await store.save(owner, id, 0, body.payload, requestId), 1);
+  assert.equal(writes(), 1);
+  assert.equal(await store.save(owner, id, 0, { changed: true }, requestId), null);
+  assert.equal(await store.save(owner, id, 1, body.payload, requestId), null);
+  assert.equal(writes(), 1);
+  assert.equal(await store.save(owner, id, 1, { next: true }), 2);
+  assert.equal(await store.save(owner, id, 0, body.payload, requestId), null);
+});
+
+test("simultaneous identical receipt requests return one committed revision", async () => {
+  const { store, writes } = memoryBlobStore();
+  const results = await Promise.all([
+    store.save(environment.WARD_ALLOWED_OBJECT_ID, id, 0, body.payload, id),
+    store.save(environment.WARD_ALLOWED_OBJECT_ID, id, 0, body.payload, id),
+  ]);
+  assert.deepEqual(results, [1, 1]);
+  assert.equal(writes(), 1);
+});
+
+test("simultaneous different snapshots do not lose the winning update", async () => {
+  const { store, writes } = memoryBlobStore();
+  const results = await Promise.all([
+    store.save(environment.WARD_ALLOWED_OBJECT_ID, id, 0, { first: true }, id),
+    store.save(environment.WARD_ALLOWED_OBJECT_ID, id, 0, { second: true }, environment.WARD_ALLOWED_OBJECT_ID),
+  ]);
+  assert.equal(results.filter((value) => value === 1).length, 1);
+  assert.equal(results.filter((value) => value === null).length, 1);
+  assert.equal(writes(), 1);
+});
+
+test("owner deletion clears content, is repeatable and retires the session ID", async () => {
+  const { store, blobs, writes } = memoryBlobStore();
+  const owner = environment.WARD_ALLOWED_OBJECT_ID;
+  await store.save(owner, id, 0, { note: "invented-private-demo-content" }, id);
+  assert.equal(await store.delete(environment.AZURE_TENANT_ID, id, 1), "not_found");
+  assert.equal(await store.delete(owner, id, 2), "conflict");
+  assert.equal(await store.delete(owner, id, 1), "deleted");
+  assert.equal(await store.read(owner, id), null);
+  assert.equal(await store.delete(owner, id, 1), "deleted");
+  assert.equal(await store.save(owner, id, 0, body.payload), null);
+  assert.equal(await store.save(owner, id, 1, body.payload), null);
+  assert.equal(await store.save(owner, id, 0, { note: "invented-private-demo-content" }, id), null);
+  assert.equal(writes(), 2);
+  const stored = JSON.parse([...blobs.values()][0].value);
+  assert.deepEqual(Object.keys(stored).sort(), ["deleted", "revision", "updated_at"]);
+  assert.equal(validStoredSession(stored), true);
+});
+
+test("conditional deletion rejects a competing update", async () => {
+  const store = createStore({
+    ...config.storage,
+    request: async (method, url) => {
+      if (url.endsWith("?restype=container")) return new Response(null, { status: 201 });
+      if (method === "GET")
+        return new Response(JSON.stringify({ revision: 1, payload: {}, updated_at: "2026-10-08T12:00:00Z" }), {
+          headers: { etag: '"old"' },
+        });
+      return new Response(null, { status: 412 });
+    },
+  });
+  assert.equal(await store.delete(environment.WARD_ALLOWED_OBJECT_ID, id, 1), "conflict");
+});
+
+test("HTTP delete is authenticated, owner-scoped and revision-guarded", async () => {
+  const calls = [];
+  const { handler } = setup({
+    delete: async (...args) => {
+      calls.push(args);
+      return "deleted";
+    },
+  });
+  assert.equal((await handler(request("DELETE", { expectedRevision: 1 }, { authorization: "" }))).status, 401);
+  assert.equal(calls.length, 0);
+  assert.equal((await handler(request("DELETE", { expectedRevision: 0 }))).status, 400);
+  assert.equal((await handler(request("DELETE", { expectedRevision: 1 }))).status, 204);
+  assert.deepEqual(calls, [[environment.WARD_ALLOWED_OBJECT_ID, id, 1]]);
+  for (const [outcome, status] of [
+    ["conflict", 409],
+    ["not_found", 404],
+  ]) {
+    const { handler: other } = setup({ delete: async () => outcome });
+    assert.equal((await other(request("DELETE", { expectedRevision: 1 }))).status, status);
+  }
+});
+
+test("request receipts are optional UUIDs and are passed canonically", async () => {
+  const { handler, calls } = setup();
+  assert.equal((await handler(request("PUT", { ...body, requestId: "not-a-uuid" }))).status, 400);
+  assert.equal(calls.length, 0);
+  const mixedCase = "ABCDEF01-aBcD-4EF0-8abc-DEF012345678";
+  assert.equal((await handler(request("PUT", { ...body, requestId: mixedCase }))).status, 200);
+  assert.equal(calls[0][5], mixedCase.toLowerCase());
+});
+
+test("failure diagnostics correlate responses without request or exception contents", async () => {
+  const events = [];
+  const handler = createHandler({
+    config,
+    log: (event) => events.push(event),
+    authenticate: async () => environment.WARD_ALLOWED_OBJECT_ID,
+    store: {
+      read: async () => {
+        throw new Error("private-token-and-demo-content");
+      },
+    },
+  });
+  const response = await handler(
+    new Request(`http://localhost/v1/sessions/${id}?private-query`, {
+      headers: { authorization: "Bearer private-token-and-demo-content" },
+    }),
+  );
+  assert.equal(response.status, 503);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].requestId, response.headers.get("x-request-id"));
+  assert.equal(events[0].outcome, "storage_unavailable");
+  assert.deepEqual(Object.keys(events[0]).sort(), [
+    "durationMs",
+    "event",
+    "method",
+    "outcome",
+    "requestId",
+    "route",
+    "status",
+  ]);
+  assert.doesNotMatch(JSON.stringify(events), /private-token|private-query|demo-content/);
+  const throwingLogger = createHandler({
+    config,
+    store: {},
+    authenticate: async () => {
+      throw new Error("private");
+    },
+    log: () => {
+      throw new Error("logger failed");
+    },
+  });
+  assert.equal((await throwingLogger(request())).status, 401);
+});
+
+test("adapter configuration failures have a sanitized response-correlated diagnostic", async () => {
+  const events = [];
+  const response = await handleHttp(
+    request(),
+    {},
+    async () => {
+      throw new Error("private configuration detail");
+    },
+    (event) => events.push(event),
+  );
+  assert.equal(response.status, 503);
+  assert.equal(events[0].requestId, response.headers["x-request-id"]);
+  assert.doesNotMatch(JSON.stringify(events), /private configuration/);
 });

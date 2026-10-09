@@ -26,6 +26,7 @@ import type {
   WardIntakeConstraint,
 } from "@/components/ward-management/ward-change-reasons";
 import type {
+  AtsCategory,
   ArrivalMode,
   BedReleaseWaitingOn,
   Cohort,
@@ -96,6 +97,8 @@ export type ReferralDraft = {
   highAcuity: boolean;
   legalStatus: LegalStatus;
   urgency: 1 | 2 | 3;
+  /** Category supplied by the referring clinician, never inferred from urgency. */
+  atsCategory?: AtsCategory;
   /**
    * The legal form the clinician selected, as a code from `SELECTABLE_LEGAL_FORMS`, or `null`
    * for no form at all. Explicitly nullable rather than optional or an empty string so that
@@ -1202,6 +1205,7 @@ export type WardFlowEvent =
        */
       sendingTeamName?: string;
       urgency: 1 | 2 | 3;
+      atsCategory?: AtsCategory;
       /** A synthetic site code (see `wardSites`), never an address. */
       originSiteCode: string;
       transportNeeded: boolean;
@@ -1825,6 +1829,14 @@ export type WardFlowEvent =
       actingUnitId?: string;
       admissionId: string;
       barrier: DischargeBarrier | "None" | null;
+    }
+  | {
+      type: "RECORD_ED_MEDICAL_DETERIORATION";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+      /** Explicit originating ED identity; never defaulted. Pre-collection only. */
+      actingPlaceId: string;
     }
   | {
       type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE";
@@ -2475,6 +2487,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
   SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
+  RECORD_ED_MEDICAL_DETERIORATION: ["ed"],
   RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator", "ward", "community"],
   UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
   RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward", "community"],

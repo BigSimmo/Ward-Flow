@@ -613,6 +613,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     SET_ARRIVAL_DETAILS: false,
     SET_STEP_DOWN_CANDIDATE: false,
     SET_DISCHARGE_BARRIER: false,
+    // D-34 cancels an accepted psychiatric allocation; it does not decline admission to ED.
+    RECORD_ED_MEDICAL_DETERIORATION: false,
     RECORD_MOVEMENT_MEDICAL_CLEARANCE: false,
     UPLOAD_PATIENT_FORM: false,
     RECORD_LEGAL_FORM_WRITTEN: false,
@@ -960,6 +962,8 @@ describe("Referral privacy — structural", () => {
     // three things this allowlist exists to keep off a referral.
     "medicalClearance",
     "urgency",
+    // D-32: clinician-recorded ATS, independent of operational urgency; never inferred.
+    "atsCategory",
     "originSiteCode",
     "transportNeeded",
     // `state`, `acceptedUnitId`, `declineReason`, `decidedAt` and `decidedBy` left this list on
@@ -1305,6 +1309,7 @@ describe("Referral privacy — structural", () => {
       sendingTeamName: "Armadale Community Mental Health Service",
       raisedAt: NOW_ANCHOR,
       urgency: 2,
+      atsCategory: 3,
       originSiteCode: "RPH",
       transportNeeded: false,
       ...FIXTURE_HISTORY,
@@ -1463,47 +1468,53 @@ describe("Referral privacy — structural", () => {
  * logic those components render, independent of React.
  */
 describe("Task 5 — referral board ordering (referralQueueOrder, recentlyDecidedReferrals)", () => {
-  it("orders the real fixture's queued referrals by urgency, then by longest wait — RF-001 (raised 40 min ago) before RF-005 (raised 20 min ago), both tier 2", () => {
+  it("orders the real fixture's queued referrals by waiting time, longest first (Decision D-32)", () => {
     const queuedIds = referralQueueOrder(referrals).map((referral) => referral.id);
-    // RF-009 joined the fixture on 2026-08-30 as the FIRST referral addressed to an emergency
-    // department — before it, the ED hub's inbox was empty for every department and its screen was
-    // indistinguishable from a working one with nothing to show. It is queued and urgency 2, so it
-    // sorts by wait: raised 35 minutes ago, after RF-001 (40) and before RF-005 (20).
-    // RF-011 joined 2026-09-02 as the seed's one multi-destination referral (`{psychiatric_ward,
-    // emergency_department}`, FD-23's demonstration fixture — see `ward-movements.ts`). It is
-    // urgency 3, the lowest tier, specifically so it sorts LAST here rather than disturbing the
-    // three tier-2 referrals' relative order above.
-    // RF-014 and RF-015 joined 2026-09-07 as the seed's two EXPECTS — referred to an emergency
-    // department and not yet arrived, which this fixture could not previously express at all. Both
-    // took urgency 3 for the reason RF-011 did, stated above: the lowest tier sorts last and leaves
-    // the three tier-2 referrals' relative order untouched. Within that tier they sort by wait,
-    // which is why RF-015 (raised 4,500 minutes ago, deliberately past the owner's 72-hour
-    // reconsider threshold) precedes RF-014 (150), and both precede RF-011.
-    expect(queuedIds).toEqual(["RF-001", "RF-009", "RF-005", "RF-015", "RF-014", "RF-011"]);
+    // Raised before the anchor: RF-015 4,500 min (deliberately past the owner's 72-hour reconsider
+    // threshold), RF-014 150, RF-011 50, RF-001 40, RF-009 35, RF-005 20. Urgency plays no part
+    // here because no two of them were raised at the same moment.
+    expect(queuedIds).toEqual(["RF-015", "RF-014", "RF-011", "RF-001", "RF-009", "RF-005"]);
   });
 
   it("never includes an accepted or declined referral in the queued order", () => {
     const queued = referralQueueOrder(referrals);
     // M4 (fix round C): `.every()` on an EMPTY array is `true`, so `filter(() => false)` — which
     // drops every referral including the queued ones — passed this test untouched. The sibling
-    // test above catches that by pinning `["RF-001","RF-005"]`, but this guard proved nothing on
+    // test above catches that by pinning the queued ids, but this guard proved nothing on
     // its own. A non-empty result is what makes the `every` mean anything.
     expect(queued.length).toBeGreaterThan(0);
     expect(queued.every((referral) => referralState(referral) === "queued")).toBe(true);
   });
 
   /**
-   * Urgency must win over wait time even when wait time alone would suggest the opposite order —
-   * otherwise a test built only from fixture data that happens to already agree on both keys
-   * could pass with either key driving the sort alone. A synthetic pair proves urgency is the
-   * primary key: the tier-1 referral raised MOST RECENTLY still sorts before the tier-3 referral
-   * raised LONGEST ago.
+   * Decision D-32: waiting time must win over urgency even when urgency alone would suggest the
+   * opposite order — otherwise a test built only from fixture data that happens to agree on both
+   * keys could pass with either key driving the sort. The tier-3 referral raised LONGEST ago sorts
+   * before the tier-1 referral raised most recently.
    */
-  it("ranks a more urgent, more recently raised referral ahead of a less urgent, longer-waiting one", () => {
+  it("ranks an older routine referral ahead of a newer urgent one", () => {
     const urgentRecent: Referral = { ...referrals[0], id: "RF-SYNTH-URGENT", urgency: 1, raisedAt: NOW_ANCHOR - 5 };
-    const calmOld: Referral = { ...referrals[0], id: "RF-SYNTH-CALM", urgency: 3, raisedAt: NOW_ANCHOR - 500 };
-    const ordered = referralQueueOrder([calmOld, urgentRecent]).map((referral) => referral.id);
-    expect(ordered).toEqual(["RF-SYNTH-URGENT", "RF-SYNTH-CALM"]);
+    const routineOld: Referral = { ...referrals[0], id: "RF-SYNTH-ROUTINE", urgency: 3, raisedAt: NOW_ANCHOR - 500 };
+    const ordered = referralQueueOrder([urgentRecent, routineOld]).map((referral) => referral.id);
+    expect(ordered).toEqual(["RF-SYNTH-ROUTINE", "RF-SYNTH-URGENT"]);
+  });
+
+  /**
+   * Decision D-32: urgency only breaks a tie. At an equal wait the more urgent tier goes first,
+   * whichever order the two arrive in.
+   */
+  it("breaks a tie at equal wait by urgency, most urgent first", () => {
+    const raisedAt = NOW_ANCHOR - 60;
+    const routine: Referral = { ...referrals[0], id: "RF-SYNTH-ROUTINE", urgency: 3, raisedAt };
+    const urgent: Referral = { ...referrals[0], id: "RF-SYNTH-URGENT", urgency: 1, raisedAt };
+    expect(referralQueueOrder([routine, urgent]).map((referral) => referral.id)).toEqual([
+      "RF-SYNTH-URGENT",
+      "RF-SYNTH-ROUTINE",
+    ]);
+    expect(referralQueueOrder([urgent, routine]).map((referral) => referral.id)).toEqual([
+      "RF-SYNTH-URGENT",
+      "RF-SYNTH-ROUTINE",
+    ]);
   });
 
   it("orders the real fixture's decided referrals most-recently-decided first", () => {

@@ -32,6 +32,9 @@ verification of the exact Ward resource. A documentation repair grants none.
 
 See [repository boundaries](AGENTS.md), [hosting records](docs/hosting.md) and
 [Ward's workflow source](.github/workflows/ward-flow.yml). Local workflow source
-is not evidence that hosted checks or deployment ran. As reviewed on 2 October
-2026, no Ward Gitleaks/Semgrep workflow establishes the inherited scanning claims;
-current hosted security controls and deployment state remain unverified.
+is not evidence that hosted checks or deployment ran. The Ward workflow includes
+full-history Gitleaks with a pinned, checksum-verified release and required application
+checks. The read-only 8 October 2026 audit verified successful checks for main at
+`e7b7f325346ea7abb5004bd2e60e63f64f5c9f95`, including identical-tree PR result reuse.
+No Ward Semgrep workflow was found. Newer main commits include source changes;
+that dated verdict does not establish their hosted scan, application checks or deployment.

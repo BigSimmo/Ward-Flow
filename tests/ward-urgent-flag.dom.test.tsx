@@ -204,3 +204,22 @@ describe("the urgent-flag reason picker in the movement drawer", () => {
     );
   });
 });
+
+describe("the queue footer states the order of the tab on show", () => {
+  it("says tier first for patients and longest wait first for referrals (D-32)", () => {
+    render(
+      <PriorityQueue
+        movements={wardMovements}
+        now={NOW_ANCHOR}
+        selectedId={undefined}
+        onSelect={() => {}}
+        filterEdId={undefined}
+        onClearFilter={() => {}}
+      />,
+    );
+    expect(screen.getByText("Tier first, then longest wait")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: /^Referrals/ }));
+    expect(screen.getByText("Longest wait first")).toBeInTheDocument();
+    expect(screen.queryByText("Tier first, then longest wait")).toBeNull();
+  });
+});

@@ -1,5 +1,37 @@
 # Screens A: coordinator, ED, ward, referrals, community, search, statistics
 
+## Current remediation seams — 8 October 2026
+
+Current routed components, not historical drawings, govern appearance. Latest canonical
+main through `0bbcd34` already repaired the original ED, transfer, on-call, intake and statistics
+phone containment; local remediation preserves these changes. Service identity's
+screen-reader content now has its own positioned containing block. The remaining
+historical map below retains old file counts and line references.
+
+The originating ED's expanded record composes `EdMedicalPlacementControls`, with explicit
+confirmation, cancellation and actual reducer outcome/refusal feedback. Compact clearance
+pickers remain unsaved layout drafts and cannot substitute for that clinician record.
+Intake and the coordinator's two queue tabs distinguish ATS 1–5 from urgency 1–3; absent
+ATS is labelled unrecorded. Existing FIFO referral ordering is preserved. The Patients
+queue's urgency-first ordering remains distinct and is an owner clarification item
+SPEC-005, not silently changed by the new ATS field.
+
+Community dossiers derive clinical facts from the selected live referral. Acceptance
+reports the actual reducer outcome and does not imply clinician assignment. Patient-linked
+follow-up opens the existing scoped `DischargeCareJourney`; referral-only review, assigned
+clinician and contact-outcome recording remain incomplete. Fake EHR editors and digital
+signature claims are removed. Search service, collected transport and actual bed-hold
+labels use recorded source facts. Follow-up preview/profile consistency is included in
+the [remediation receipt](../reports/remediation-2026-10-08.md).
+
+PR #130's current Home uses controlled Exceptions/Declines/New events hero panels,
+the shared `useSinceLastLook` hook, and the existing eligibility projection for fitting
+wards across the network. Its placement panel is labelled `Placement`; candidate
+details start open. The older component counts and closed-by-default descriptions
+below remain historical. Local remediation preserves the newer appearance and
+actual action guards; 29 regression files and the production phone/failure/journey
+checks cover the integration.
+
 ## WA remediation update — 3 October 2026
 
 The discharge Dossier mounts `DischargeCareJourney` beside `DischargeFollowUp`. Its forms record attributed planning/document milestones, named synthetic responsibility and appointments, contact outcomes, coding handoff, episode changes, transport assessment, transfer handshake and checked legal-paper facts. Community uses `CommunityFollowUp` with its own scoped actor and explicit referral link; filters distinguish missing arrangements from missing current-appointment contact. `MovementWorkflowActions` exposes expectation, lateness/leave reviews, mismatch, ward request, release/reopen and typed legal expiry controls. The officer footer now receives its existing print-hide CSS class.
@@ -230,14 +262,17 @@ this work does not connect a hosted backend. Proof: `ward-referral-drawer-flow.d
 scoping, independent decisions, waitlisting and receipt deduplication.
 
 - **Routes:** `/referrals` (`referral-board.tsx` → `ReferralBoard`) and `/referrals/new`
-  (`referral-intake.tsx` → `ReferralIntakeForm`).
+  (also `ReferralBoard`, with the referral slide-out opened over it by `shell/ward-bar.tsx`). The
+  full-page `ReferralIntakeForm` was deleted on 8 Oct 2026: the slide-out is the one place a
+  referral is written, and the bar opens it in place for every link to `/referrals/new`
+  (`referral-sheet-link.ts`).
 - **Mockups:** `referrals-third-edition.html` (`/referrals`) and
   `raise-a-referral-third-edition.html` (`/referrals/new`).
 - **Reducer events dispatched:** `ACCEPT_REFERRAL`, `ADD_PATIENT`, `ADD_REFERRAL_CORRECTION`,
   `DECLINE_REFERRAL`, `RECEIVE_REFERRAL`, `RECORD_LOCAL_BED_SOUGHT`,
   `RECORD_MOVEMENT_MEDICAL_CLEARANCE`, `RECORD_REFERRER_WITHDRAWAL`, `SET_ARRIVAL_DETAILS`,
-  `UPLOAD_PATIENT_FORM` (10 types, 13 `dispatch(` sites, spread across `referral-intake.tsx`,
-  `referral-match.tsx`, `ward-referral-drawer.tsx` and `arrival-time-modal.tsx`).
+  `UPLOAD_PATIENT_FORM` (spread across `referral-match.tsx`, `ward-referral-drawer.tsx` and
+  `arrival-time-modal.tsx`; counts predate the 8 Oct 2026 removal of the full-page form).
 - **Main derivations/selectors read:** `ward-model.ts` (9 files import it — the heaviest engine
   dependency of any screen folder), `ward-referrals.ts`, `ward-catchment.ts` (via
   `referral-destination-options.ts`), `ward-priority.ts`, `ward-eligibility.ts`,
@@ -266,10 +301,6 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   logic used by both intake and community screens.
 - **`referral-duplicate.ts`** (140 lines) — `duplicateSentence`: states what referral is already
   open for a patient before a second one is raised (Lane C task 15).
-- **`referral-intake-third-edition.module.css`** (2,859 lines) — the third-edition page stylesheet
-  for `referral-intake.tsx`, layered on top of the shared `referrals.module.css`.
-- **`referral-intake.tsx`** (4,440 lines) — **the largest file in this folder.**
-  `ReferralIntakeForm` (from line 1,328) is the `/referrals/new` route component. See outline below.
 - **`referral-match.tsx`** (1,532 lines) — `ReferralMatchView`, the per-referral matching panel
   mounted by `referral-board.tsx`. Internal handlers: `handleAddCorrection` (220), `handleAccept`
   (636), `handleLocalBedSought` (664), `handleDecline` (678), `handleCommunityDecline` (704),
@@ -281,8 +312,11 @@ scoping, independent decisions, waitlisting and receipt deduplication.
 - **`referral-wait.ts`** (42 lines) — `referralWaitLine`. Its header warns that a related function,
   `referralWaitLabel` (in `ward-referrals.ts`), keeps counting after triage and should not be used
   for the same purpose — read this file's comment before reusing either.
-- **`referrals.module.css`** (4,802 lines) — the shared stylesheet across `referral-board.tsx`,
-  `referral-intake.tsx` and `referral-match.tsx`.
+- **`referral-sheet-link.ts`** — turns a link to `/referrals/new` (the query `raiseReferralHref`
+  writes) into what the referral slide-out opens with; `shell/ward-bar.tsx` uses it to open the
+  slide-out in place and on arrival at that route.
+- **`referrals.module.css`** (4,802 lines) — the shared stylesheet across `referral-board.tsx`
+  and `referral-match.tsx` (its `data-referral-view="intake"` rules served the deleted full-page form).
 - **`upload-forms-modal.tsx`** (281 lines) — `UploadFormsModal`; only imported by
   `patients/patient-now-screen.tsx`, not by anything in this folder.
 - **`ward-referral-drawer.module.css`** (1,572 lines) — styles only `ward-referral-drawer.tsx`.
@@ -292,17 +326,6 @@ scoping, independent decisions, waitlisting and receipt deduplication.
   shell rather than from a page. Internal handlers: `handleToggleMedicalClearance` (494),
   `handleTriageAction` (529), `handleSelectPatient` (583), `toggleRisk` (624), `handleDispatch`
   (748).
-
-**`referral-intake.tsx` outline** (4,440 lines):
-
-- Module-level constants/helpers (183–1,328): `UNANSWERED_VALUE`, `UNANSWERED_OPTION_LABEL`,
-  `UNSAVED_HISTORY_WARNING`, `REQUIRED_FIELD_NAMES`, `answeredProgress`, `referralSummaryRows`,
-  `HISTORY_FIELDS`, `overLimitFreeTextFields`, `writtenHistoryCount`, `wardAndCommunityBothChosen`.
-- `ReferralIntakeForm` (1,328–4,440): `handleSelectPatient` (1,426), `handleUnlinkPatient` (1,438),
-  `handleSwitchToLinked` (1,449), `handleSearchKeyDown` (1,457), `performAddPatient` (1,484),
-  `handleAddPatientSubmit` (1,504), `handleCopyHandover` (1,597), `toggleDestination` (1,974),
-  `handleSubmit` (1,995), `ignoreUnavailableActivation` (2,064). The remaining ~2,300 lines are the
-  multi-section form's JSX (patient search/link, destinations, history, review).
 
 ## `community/` — 16 files, 12,060 lines
 

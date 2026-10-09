@@ -50,7 +50,7 @@ describe("alerts broadcast composer keeps one draft of the whole form", () => {
     selectCustomTemplate();
     fireEvent.change(screen.getByLabelText(/^Title$/i), { target: { value: "Only a title" } });
     expect(unloadWasPrevented()).toBe(true);
-    expect(JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? "null")).toMatchObject({ title: "Only a title" });
+    expect(sessionStorage.getItem(DRAFT_KEY)).toBeNull();
   });
 
   it("guards a severity, scope or duration edit on its own", () => {
@@ -70,7 +70,7 @@ describe("alerts broadcast composer keeps one draft of the whole form", () => {
     }
   });
 
-  it("restores every field, not just the message, after a reload", () => {
+  it("keeps edits only in memory and starts a fresh composer after reload", () => {
     const first = mount();
     openComposer();
     selectCustomTemplate();
@@ -83,22 +83,15 @@ describe("alerts broadcast composer keeps one draft of the whole form", () => {
     });
     first.unmount();
 
+    expect(sessionStorage.getItem(DRAFT_KEY)).toBeNull();
     mount();
-    expect(screen.getByRole("dialog", { name: /Broadcast network alert/i })).toBeInTheDocument();
-    expect((screen.getByLabelText(/^Start from$/i) as HTMLSelectElement).value).toBe("custom");
-    expect((screen.getByLabelText(/^Title$/i) as HTMLInputElement).value).toBe("Reload headline");
-    expect((document.getElementById("alerts-broadcast-severity") as HTMLSelectElement).value).toBe("warning");
-    expect((document.getElementById("alerts-broadcast-target") as HTMLSelectElement).value).toBe("adolescent");
-    expect((document.getElementById("alerts-broadcast-duration") as HTMLSelectElement).value).toBe("480");
-    expect((screen.getByLabelText(/^Directive$/i) as HTMLTextAreaElement).value).toBe("Reload body");
-    // still protected and still stored after the restore, so a second reload also keeps it
-    expect(unloadWasPrevented()).toBe(true);
-    expect(JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? "null")).toMatchObject({
-      title: "Reload headline",
-      severity: "warning",
-      scope: "adolescent",
-      durationMinutes: 480,
-    });
+    expect(screen.queryByRole("dialog", { name: /Broadcast network alert/i })).toBeNull();
+    expect(unloadWasPrevented()).toBe(false);
+    openComposer();
+    selectCustomTemplate();
+    expect(screen.getByLabelText(/^Title$/i)).toHaveValue("");
+    expect(screen.getByLabelText(/^Directive$/i)).toHaveValue("");
+    expect(sessionStorage.getItem(DRAFT_KEY)).toBeNull();
   });
 
   it("ignores a malformed stored draft rather than restoring part of it", () => {

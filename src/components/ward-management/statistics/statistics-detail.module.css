@@ -71,6 +71,12 @@ a.secondary:hover {
   vertical-align: bottom;
 }
 
+/* Keep the complete accessible identity inside the hero eyebrow's clipped line. Its hidden
+ * sibling previously used a distant containing block and widened the phone document. */
+.siteIdentity {
+  position: relative;
+}
+
 /* The page's own row in a comparison table. */
 .currentRow > * {
   background: var(--wf-selected);

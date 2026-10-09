@@ -157,8 +157,9 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
                   {row.waiting > 0 ? (
                     <>
                       {longestTone ? <StatusGlyph tone={longestTone} size={9} /> : null}
+                      {/* The longest wait, as a figure alone: the word "longest" was cut off on narrow
+                          tiles. The button's spoken name still says "longest". */}
                       <span className={styles.edMono}>{durMinutes(row.longestWaitMinutes)}</span>
-                      <span className={styles.edWord}>longest</span>
                     </>
                   ) : (
                     <span className={styles.edWord}>No wait</span>

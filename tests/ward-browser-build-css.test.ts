@@ -28,8 +28,11 @@ describe("Ward browser-build CSS", () => {
     );
   });
 
-  it("compiles Settings and retains the base button class on its surge control", async () => {
-    const result = await compile("src/components/ward-management/settings/settings.module.css");
+  it("compiles Settings in pure mode, and its modals keep the base button class on composed buttons", async () => {
+    const screenCss = await compile("src/components/ward-management/settings/settings.module.css");
+    expect(screenCss.css.length).toBeGreaterThan(0);
+
+    const result = await compile("src/components/ward-management/settings/settings-modals.module.css");
     const exported: Record<string, string> = {};
     result.root.walkRules(":export", (rule) => {
       rule.walkDecls((decl) => {
@@ -37,7 +40,7 @@ describe("Ward browser-build CSS", () => {
       });
     });
     expect(exported.btn).toBeTruthy();
-    expect(exported.btnSurge.split(/\s+/)).toContain(exported.btn);
+    expect(exported.btnSecondary.split(/\s+/)).toContain(exported.btn);
   });
 
   it("compiles Statistics third edition modules with pure selectors", async () => {
@@ -52,4 +55,3 @@ describe("Ward browser-build CSS", () => {
     expect(res.css.length).toBeGreaterThan(0);
   });
 });
-

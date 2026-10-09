@@ -58,6 +58,15 @@ function event(): Extract<WardFlowEvent, { type: "RECEIVE_REFERRAL" }> {
 }
 
 describe("confirmed drawer submissions use the shared referral engine", () => {
+  it("records an optional ATS category without changing urgency", () => {
+    const withAts = wardFlowReducer(seedWardFlowState(), { ...event(), atsCategory: 5 });
+    expect(withAts.rejections).toHaveLength(0);
+    expect(withAts.referrals.at(-1)?.atsCategory).toBe(5);
+    expect(withAts.referrals.at(-1)?.urgency).toBe(2);
+    const withoutAts = wardFlowReducer(seedWardFlowState(), event());
+    expect(withoutAts.referrals.at(-1)?.atsCategory).toBeUndefined();
+    expect(withoutAts.referrals.at(-1)?.urgency).toBe(2);
+  });
   it("creates one referral with distinct ward recipients and a complete dossier", () => {
     const state = wardFlowReducer(seedWardFlowState(), event());
     expect(state.rejections).toHaveLength(0);

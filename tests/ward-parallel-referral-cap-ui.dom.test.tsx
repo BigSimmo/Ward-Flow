@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-// Same two mocks as every sibling dom suite that renders the ward-flow sidebar/intake form (e.g.
+// Same two mocks as every sibling dom suite that renders the ward-flow sidebar (e.g.
 // tests/ward-referral-destinations.dom.test.tsx): a pathname so ward-nav-role-order.ts can derive
 // a role, and a plain <a> so next/link never requires an App Router context jsdom cannot provide.
 vi.mock("next/navigation", () => ({
@@ -20,7 +20,6 @@ vi.mock("next/link", () => ({
 }));
 
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
-import { ReferralIntakeForm } from "@/components/ward-management/referrals/referral-intake";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -101,19 +100,8 @@ describe("coordinator/shortlist-panel.tsx reads the configured parallel referral
   });
 });
 
-describe("referral-intake.tsx reads the configured parallel referral cap", () => {
-  it('names "choose up to 2" once the cap is configured to 2', () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <ConfigureLoweredCap>
-          <ReferralIntakeForm />
-        </ConfigureLoweredCap>
-      </WardFlowProvider>,
-    );
-
-    expect(screen.getByText(/choose up to 2, in one act/)).toBeInTheDocument();
-  });
-});
+// The full-page intake form's "choose up to N" case was removed with the form (8 Oct 2026): the
+// referral slide-out is the one place a referral is written, and its own tests own its wording.
 
 describe("statistics-screen.tsx reads the configured parallel referral cap", () => {
   it('ward-statistics-refused-so-far-cap reads "2" once the cap is configured to 2', () => {

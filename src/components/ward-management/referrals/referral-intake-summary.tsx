@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReferralIntakeDetails } from "./referral-submission";
+import { clearanceChecklistWords, referralNeedsWords, type ReferralIntakeDetails } from "./referral-submission";
 import { ReferralDocumentLinks } from "./referral-flow-panels";
 import styles from "./ward-referral-drawer.module.css";
 
@@ -54,6 +54,18 @@ export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetai
           <strong>Recorded risk flags</strong>
           {intake.riskFlags.join(", ") || "None selected"}
         </span>
+        {intake.clearanceChecklist && Object.keys(intake.clearanceChecklist).length > 0 && (
+          <span>
+            <strong>Clearance checklist</strong>
+            {clearanceChecklistWords(intake.clearanceChecklist)}
+          </span>
+        )}
+        {intake.needs && (
+          <span>
+            <strong>{intake.needs.kind === "community" ? "Follow-up needs" : "ED needs"}</strong>
+            {referralNeedsWords(intake.needs).join(", ") || "None recorded"}
+          </span>
+        )}
         {intake.arrival && (
           <span>
             <strong>Proposed arrival</strong>

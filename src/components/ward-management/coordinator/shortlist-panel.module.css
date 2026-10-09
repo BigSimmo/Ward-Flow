@@ -14,29 +14,45 @@
   flex-shrink: 0;
 }
 
+/* Not a scroll container on Home (beating the shared .shortlistBody): the panel grows with the
+   page, so the action bar can hold to the bottom of the window. The phone sheet below scrolls its
+   own body instead. */
+.shortlistRegion .body {
+  overflow: visible;
+}
+
+/* Placement (owner, 8 Oct 2026, mockup A "pick then act"). The panel reads in the order a
+   coordinator works: who the patient is, which wards fit, then the one action bar. The patient
+   block is a plain heading area with one hairline under it, not a second card. */
 .subjectHeader {
-  gap: 0.625rem;
-  border: 0.0625rem solid var(--line);
-  border-radius: 0.75rem;
-  background: color-mix(in srgb, var(--surface) 96%, var(--sunk));
-  padding: 0.75rem;
+  gap: 0.5rem;
+  border: 0;
+  border-bottom: 0.0625rem solid var(--wf-line);
+  border-radius: 0;
+  background: transparent;
+  padding: 0 0 0.75rem;
 }
 
 .subjectId {
-  display: grid;
-  gap: 0.0625rem;
-  font-family: var(--mono);
-  font-size: var(--t-3);
-  font-variant-numeric: tabular-nums;
+  display: block;
+  min-width: 0;
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+  line-height: var(--wf-lh-20);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* "Patient" stays for assistive technology; the name alone carries it on screen. */
 .subjectId small {
-  color: var(--muted);
-  font-family: inherit;
-  font-size: var(--t-0);
-  font-weight: 650;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .subjectBadges {
@@ -49,389 +65,244 @@
 .movementBadge,
 .urgentBadge {
   display: inline-flex;
-  min-height: 1.5rem;
+  min-height: 1.375rem;
   align-items: center;
-  border: 0.0625rem solid var(--line);
-  border-radius: 3px;
+  border: 0.0625rem solid var(--wf-line-3);
+  border-radius: var(--wf-r-pill);
   padding: 0 0.5rem;
-  font-family: var(--mono);
-  font-size: var(--t-0);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .movementBadge {
-  color: var(--muted);
+  color: var(--wf-ink-2);
 }
 
 .urgentBadge {
-  border-color: var(--danger);
-  background: var(--danger-soft);
-  color: var(--danger);
-  font-family: inherit;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  border-color: var(--wf-danger);
+  background: color-mix(in srgb, var(--wf-danger) 7%, var(--wf-surface));
+  color: var(--wf-danger-ink);
 }
 
+/* The patient's facts as one wrapping line: a quiet label, then the value. */
 .factGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.875rem;
 }
 
 .fact {
-  display: grid;
+  display: inline-flex;
   min-width: 0;
-  gap: 0.0625rem;
+  align-items: baseline;
+  gap: 0.3125rem;
 }
 
 .fact small {
-  color: var(--muted);
-  font-size: var(--t-0);
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  font-weight: 500;
 }
 
 .fact strong {
   overflow-wrap: anywhere;
-  color: var(--ink);
-  font-size: var(--t-0);
-  font-weight: 600;
-  line-height: 1.35;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  line-height: var(--wf-lh-16);
   font-variant-numeric: tabular-nums;
 }
 
 .fact[data-urgent="true"] strong {
-  color: var(--danger);
-  font-weight: 750;
+  color: var(--wf-danger-ink);
+  font-weight: 650;
 }
 
+/* Destination lines: a dot carries the tone, the words carry the fact. No filled pill. */
+.subjectHeader .destLine {
+  display: inline-flex;
+  justify-self: start;
+  align-items: center;
+  gap: 0.4375rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  line-height: var(--wf-lh-16);
+}
+
+.subjectHeader .destLine::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-ink-off);
+}
+
+.destLine[data-tone="good"]::before {
+  background: var(--wf-success);
+}
+
+.destLine[data-tone="warn"]::before {
+  border: 0.125rem solid var(--wf-warning);
+  background: transparent;
+}
+
+.destLine[data-tone="danger"]::before {
+  background: var(--wf-danger);
+}
+
+.destLine[data-tone="neutral"]::before {
+  border: 0.09375rem solid var(--wf-ink-off);
+  background: transparent;
+}
+
+.subjectHeader .restrictLine {
+  justify-self: start;
+  border-radius: var(--wf-r-pill);
+  padding: 0.0625rem 0.5rem;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+/* One quiet style for every secondary section: a hairline box, a plain summary row and a
+   neutral count. No gradient, no coloured side edge. */
 .recordActions,
-.infoDisclosure {
-  border: 0.0625rem solid var(--line-strong);
-  border-radius: 0.5rem;
-  background: var(--surface);
-  box-shadow:
-    0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04),
-    0 1px 2px rgb(var(--ward-shadow-rgb) / 0.02);
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+.infoDisclosure,
+.detailDisclosure,
+.scoreDetails {
+  border: 0.0625rem solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: none;
   overflow: hidden;
-  margin-bottom: 0.75rem;
+  margin: 0;
+}
+
+.scoreDetails {
+  padding: 0 0.75rem;
 }
 
 .recordActions:hover,
-.infoDisclosure:hover {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--line-strong));
-  box-shadow: 0 2px 5px rgb(var(--ward-shadow-rgb) / 0.06);
+.infoDisclosure:hover,
+.detailDisclosure:hover,
+.scoreDetails:hover {
+  border-color: var(--wf-line-3);
 }
 
 .recordActions > summary,
-.infoDisclosure > summary {
-  min-height: 2.25rem;
+.infoDisclosure > summary,
+.detailDisclosure > summary {
+  min-height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.4375rem 0.75rem;
-  color: var(--ink);
-  font-size: 0.8125rem;
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  padding: 0.375rem 0.75rem;
+  border-bottom: 0.0625rem solid transparent;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
   cursor: pointer;
   list-style: none;
-  background: linear-gradient(180deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 95%, var(--surface-2)) 100%);
-  border-left: 3px solid transparent;
   user-select: none;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease;
 }
 
 .recordActions > summary:hover,
-.infoDisclosure > summary:hover {
-  background: var(--surface-2);
-  border-left-color: var(--accent);
+.infoDisclosure > summary:hover,
+.detailDisclosure > summary:hover {
+  background: var(--wf-hover);
 }
 
 .recordActions[open] > summary,
-.infoDisclosure[open] > summary {
-  border-left-color: var(--accent);
-  background: color-mix(in srgb, var(--accent-soft) 25%, var(--surface));
-  border-bottom: 0.0625rem solid var(--line);
+.infoDisclosure[open] > summary,
+.detailDisclosure[open] > summary {
+  border-bottom-color: var(--wf-line);
 }
 
 .recordActions > summary::-webkit-details-marker,
-.infoDisclosure > summary::-webkit-details-marker {
-  display: none;
-}
-
-.recordActions > summary:not([data-badge])::before,
-.infoDisclosure > summary:not([data-badge])::before {
-  display: none;
-}
-
-.recordActions > summary[data-badge]::before {
-  content: attr(data-badge);
-  order: 2;
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  border-radius: 3px;
-  padding: 0.125rem 0.375rem;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  line-height: 1.2;
-  font-variant-numeric: tabular-nums;
-  background: var(--surface-2);
-  color: var(--muted);
-  border: 1px solid var(--line);
-}
-
-.recordActions > summary::after,
-.infoDisclosure > summary::after {
-  content: "";
-  order: 3;
-  margin-left: 0.375rem;
-  width: 0.875rem;
-  height: 0.875rem;
-  flex-shrink: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  opacity: 0.6;
-  transition:
-    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.15s ease;
-}
-
-.recordActions > summary:not([data-badge])::after,
-.infoDisclosure > summary:not([data-badge])::after {
-  margin-left: auto;
-}
-
-.recordActions > summary:hover::after,
-.infoDisclosure > summary:hover::after {
-  opacity: 0.9;
-}
-
-.recordActions[open] > summary::after,
-.infoDisclosure[open] > summary::after {
-  transform: rotate(180deg);
-}
-
-.recordActions > section {
-  border-top: 0;
-  padding: 0.75rem;
-  background: var(--surface);
-}
-
-.recordActions > section + section {
-  margin-top: 0;
-}
-
-.infoDisclosure > p,
-.infoDisclosure > div {
-  margin: 0;
-  border-top: 0.0625rem solid var(--line);
-  padding: 0.625rem;
-}
-
-.candidatesSection {
-  border: 0.0625rem solid var(--line-strong);
-  border-radius: 0.5rem;
-  background: var(--surface);
-  box-shadow:
-    0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04),
-    0 1px 2px rgb(var(--ward-shadow-rgb) / 0.02);
-  padding: 0.625rem 0.75rem;
-  margin-bottom: 0.75rem;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.candidatesSection:hover {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--line-strong));
-  box-shadow: 0 2px 5px rgb(var(--ward-shadow-rgb) / 0.06);
-}
-
-.candidateHeading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.candidateCounts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-  margin-bottom: 0.625rem;
-}
-
-.candidateCounts > span {
-  border-radius: 3px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  padding: 0.125rem 0.375rem;
-  color: var(--muted);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  line-height: 1.2;
-  font-variant-numeric: tabular-nums;
-}
-
-.candidateCounts > span[data-tone="good"] {
-  color: var(--good);
-  background: var(--good-soft);
-  border-color: color-mix(in srgb, var(--good) 30%, transparent);
-}
-
-.candidateCounts > span[data-tone="warn"] {
-  color: var(--warn);
-  background: var(--warn-soft);
-  border-color: color-mix(in srgb, var(--warn) 30%, transparent);
-}
-
-.candidateHeaderToggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  background: transparent;
-  border: 0;
-  padding: 0.25rem 0;
-  cursor: pointer;
-  text-align: left;
-  border-radius: var(--r2);
-}
-
-.candidateHeaderToggle:hover .toggleChevron {
-  color: var(--ink);
-}
-
-.toggleChevron {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  transition: transform 0.15s ease;
-}
-
-.toggleChevron svg {
-  width: 1.125rem;
-  height: 1.125rem;
-}
-
-.detailDisclosure {
-  border: 0.0625rem solid var(--line-strong);
-  border-radius: 0.5rem;
-  background: var(--surface);
-  box-shadow:
-    0 1px 3px rgb(var(--ward-shadow-rgb) / 0.04),
-    0 1px 2px rgb(var(--ward-shadow-rgb) / 0.02);
-  margin-bottom: 0.75rem;
-  overflow: hidden;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.detailDisclosure:hover {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--line-strong));
-  box-shadow: 0 2px 5px rgb(var(--ward-shadow-rgb) / 0.06);
-}
-
-.detailDisclosure > summary {
-  min-height: 2.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.4375rem 0.75rem;
-  background: linear-gradient(180deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 95%, var(--surface-2)) 100%);
-  border-left: 3px solid transparent;
-  color: var(--ink);
-  font-size: 0.8125rem;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  border-bottom: 0.0625rem solid transparent;
-  list-style: none;
-  gap: 0.5rem;
-  user-select: none;
-  transition: all 0.15s ease;
-}
-
-.detailDisclosure > summary:hover {
-  background: var(--surface-2);
-  border-left-color: var(--accent);
-}
-
-.detailDisclosure[open] > summary {
-  border-left-color: var(--accent);
-  border-bottom-color: var(--line);
-  background: color-mix(in srgb, var(--accent-soft) 25%, var(--surface));
-}
-
+.infoDisclosure > summary::-webkit-details-marker,
 .detailDisclosure > summary::-webkit-details-marker {
   display: none;
 }
 
+.recordActions > summary[data-badge]::before,
 .detailDisclosure > summary[data-badge]::before {
   content: attr(data-badge);
   order: 2;
   margin-left: auto;
   display: inline-flex;
   align-items: center;
-  border-radius: 3px;
-  padding: 0.125rem 0.375rem;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  line-height: 1.2;
+  border: 0.0625rem solid var(--wf-line-3);
+  border-radius: var(--wf-r-pill);
+  padding: 0.0625rem 0.4375rem;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-11);
+  font-weight: 500;
+  line-height: var(--wf-lh-16);
   font-variant-numeric: tabular-nums;
-  background: var(--surface-2);
-  color: var(--muted);
-  border: 1px solid var(--line);
+  white-space: nowrap;
 }
 
 .detailDisclosure > summary[data-badge-tone="good"]::before {
-  background: var(--good-soft);
-  color: var(--good);
-  border-color: color-mix(in srgb, var(--good) 30%, transparent);
+  border-color: color-mix(in srgb, var(--wf-success) 55%, var(--wf-line-3));
+  color: var(--wf-success-ink);
 }
 
 .detailDisclosure > summary[data-badge-tone="warn"]::before {
-  background: var(--warn-soft);
-  color: var(--warn);
-  border-color: color-mix(in srgb, var(--warn) 30%, transparent);
+  border-color: color-mix(in srgb, var(--wf-warning) 55%, var(--wf-line-3));
+  color: var(--wf-warning-ink);
 }
 
+.recordActions > summary::after,
+.infoDisclosure > summary::after,
 .detailDisclosure > summary::after {
   content: "";
   order: 3;
   width: 0.875rem;
   height: 0.875rem;
   flex-shrink: 0;
-  margin-left: 0.375rem;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   opacity: 0.6;
-  transition:
-    transform 0.15s ease,
-    opacity 0.15s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.detailDisclosure > summary:hover::after {
-  opacity: 0.9;
+.recordActions > summary:not([data-badge])::after,
+.infoDisclosure > summary:not([data-badge])::after,
+.detailDisclosure > summary:not([data-badge])::after {
+  margin-left: auto;
 }
 
+.recordActions[open] > summary::after,
+.infoDisclosure[open] > summary::after,
 .detailDisclosure[open] > summary::after {
   transform: rotate(180deg);
+}
+
+.recordActions > section {
+  border-top: 0;
+  padding: 0.75rem;
+}
+
+.recordActions > section + section {
+  margin-top: 0;
+  border-top: 0.0625rem solid var(--wf-line);
+}
+
+.infoDisclosure > p,
+.infoDisclosure > div {
+  margin: 0;
+  border-top: 0.0625rem solid var(--wf-line);
+  padding: 0.625rem;
 }
 
 .detailDisclosure > summary + * {
@@ -445,28 +316,206 @@
 
 .escalationSection {
   display: grid;
-  gap: 0.625rem;
+  gap: 0.5rem;
+  border: 0.0625rem solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+
+.escalationSection h4 {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+/* The ward list: the panel's main job, so it is the one section without a box of its own. */
+.candidatesSection {
+  display: grid;
+  gap: 0.375rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+
+.candidateHeading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.candidateHeading h4 {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.candidateHeading .candidateState {
+  border: 0;
+  padding: 0;
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+
+.candidateHeaderToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 2rem;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  border-radius: var(--wf-r-sm);
+}
+
+.candidateHeaderToggle:hover .toggleChevron {
+  color: var(--wf-ink-1);
+}
+
+.toggleChevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wf-ink-3);
+}
+
+.toggleChevron svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Counts read as a summary line, each with its tone's glyph: dot eligible, amber ring review,
+   hollow ring unavailable. Not a filter: no eligible or review row is ever hidden. */
+.candidateCounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.875rem;
+  margin: 0 0 0.125rem;
+}
+
+.candidateCounts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.candidateCounts > span::before {
+  content: "";
+  width: 0.5625rem;
+  height: 0.5625rem;
+  flex: none;
+  box-sizing: border-box;
+  border: 0.09375rem solid var(--wf-ink-off);
+  border-radius: var(--wf-r-pill);
+}
+
+.candidateCounts > span[data-tone="good"]::before {
+  border: 0;
+  background: var(--wf-success);
+}
+
+.candidateCounts > span[data-tone="warn"]::before {
+  border: 0.125rem solid var(--wf-warning);
 }
 
 .candidateLead {
   margin: -0.125rem 0 0.5rem;
-  color: var(--muted);
+  color: var(--wf-ink-3);
   font-size: var(--t-0);
   line-height: 1.4;
 }
 
-.candidatesSection > .infoDisclosure {
-  margin-bottom: 0.625rem;
-  background: transparent;
+/* One ward per row: a round tick, the name with its state, then one meta line (drive time, then
+   beds). The ward whose checks are showing opens to its full detail; every other row keeps its
+   reason and restriction visible, because those are what a coordinator scans for. */
+.candidatesSection ul {
+  display: grid;
+  gap: 0.125rem;
 }
 
-.candidateRow {
-  min-height: 2.25rem;
-  gap: 0.25rem;
-  border-radius: 0.375rem;
-  padding: 0.4375rem 0.5625rem;
+.candidatesSection .candidateRow {
+  grid-template-columns: 1.125rem minmax(0, 1fr);
+  column-gap: 0.625rem;
+  row-gap: 0.125rem;
+  align-items: start;
+  min-height: 2.75rem;
+  border: 0.0625rem solid transparent;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  padding: 0.4375rem 0.5rem;
   box-shadow: none;
   font-variant-numeric: tabular-nums;
+}
+
+.candidatesSection .candidateRow > :not(.tick) {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.candidatesSection .candidateRow:hover {
+  background: var(--wf-hover);
+}
+
+.candidatesSection .candidateRow[aria-pressed="true"] {
+  border-color: var(--wf-line-2);
+  background: var(--wf-selected);
+}
+
+.candidatesSection .candidateRow[data-showing="true"] {
+  border-color: var(--wf-line-3);
+  box-shadow: none;
+}
+
+.candidatesSection .candidateRow[data-showing="true"]:not([aria-pressed="true"]) {
+  background: var(--wf-surface-2);
+}
+
+/* Review rows keep a dashed outline so the difference survives forced colours, in a quiet amber
+   rather than red: they need a recorded reason, not action now. */
+.candidatesSection .candidateRow[data-eligible="false"] {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--wf-warning) 45%, var(--wf-line-2));
+}
+
+.candidatesSection .candidateRow[data-showing="true"][data-eligible="false"] {
+  background: color-mix(in srgb, var(--wf-warning) 6%, var(--wf-surface));
+}
+
+.tick {
+  grid-column: 1;
+  grid-row: 1 / span 4;
+  display: grid;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.0625rem;
+  place-items: center;
+  border: 0.09375rem solid var(--wf-ink-off);
+  border-radius: var(--wf-r-pill);
+  color: transparent;
+}
+
+.tick svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  stroke-width: 2.5;
+}
+
+.candidatesSection .candidateRow[aria-pressed="true"] .tick {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent);
+  color: var(--wf-on-accent);
 }
 
 .candidateTop {
@@ -476,32 +525,143 @@
   gap: 0.5rem;
 }
 
+.candidateTop > :first-child {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .candidateState {
+  display: inline-flex;
   flex: 0 0 auto;
-  border: 0.0625rem solid var(--line);
-  border-radius: 3px;
-  padding: 0.0625rem 0.3125rem;
-  color: var(--muted);
-  font-size: 0.6875rem;
-  font-weight: 650;
+  align-items: center;
+  gap: 0.3125rem;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
-.candidateRow[aria-pressed="true"] .candidateState {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-ink);
+.candidateState[data-state]::before {
+  content: "";
+  width: 0.4375rem;
+  height: 0.4375rem;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-success);
 }
 
-.candidateRow[data-eligible="false"] .candidateState {
-  border-style: dashed;
-  border-color: var(--danger);
-  color: var(--danger);
+.candidateState[data-state="review"]::before {
+  border: 0.125rem solid var(--wf-warning);
+  background: transparent;
 }
 
-.body > section:not(.candidatesSection),
-.body > footer {
-  border-top: 0.0625rem solid var(--line);
+.candidateState[data-state="selected"],
+.candidateState[data-state="live"] {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+}
+
+.candidateState[data-state="selected"]::before,
+.candidateState[data-state="live"]::before {
+  background: var(--wf-accent);
+}
+
+.candidateMeta {
+  display: flex;
+  gap: 0.75rem;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.candidateMeta > * {
+  flex: none;
+  color: inherit;
+  font-size: var(--wf-fs-12);
+}
+
+.candidateMeta > :last-child {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.candidatesSection .candidateRow[data-showing="true"] .candidateMeta {
+  display: grid;
+  gap: 0.125rem;
+  white-space: normal;
+}
+
+.candidateReason {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+}
+
+/* "Eligible now" repeats the state beside the name, so it is kept for assistive technology and
+   shown only on the ward whose detail is open. A reason for review is always on screen. */
+.candidatesSection .candidateRow[data-eligible="true"]:not([data-showing="true"]) .candidateReason {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.candidatesSection .candidateRow[data-eligible="false"] .candidateReason {
+  color: var(--wf-warning-ink);
+}
+
+.candidatesSection .candidateNotice,
+.candidatesSection .candidateReason {
+  font-weight: 500;
+}
+
+/* The unavailable wards' disclosure reads as a quiet link-like row, not a second big button. */
+.candidatesSection [data-testid="ward-shortlist-unavailable-toggle"] {
+  justify-content: flex-start;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  padding-inline: 0.5rem;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+}
+
+.candidatesSection [data-testid="ward-shortlist-unavailable-toggle"]::before {
+  content: "";
+  width: 0.5625rem;
+  height: 0.5625rem;
+  margin-right: 0.5rem;
+  box-sizing: border-box;
+  border: 0.09375rem solid var(--wf-ink-off);
+  border-radius: var(--wf-r-pill);
+}
+
+/* Closed rows show only the drive time; the distance sentence stays for assistive technology
+   and opens with the ward's detail. */
+.candidatesSection .candidateRow:not([data-showing="true"]) .routeLong {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.candidateNotice {
+  justify-self: start;
+  font-size: var(--wf-fs-12);
+}
+
+.body > section:not(.candidatesSection):not(.escalationSection) {
+  border-top: 0.0625rem solid var(--wf-line);
   padding-top: 0.625rem;
 }
 
@@ -512,59 +672,78 @@
 
 .body button,
 .body select {
-  border-radius: 0.375rem;
+  border-radius: var(--wf-r-sm);
   min-height: 2.125rem;
 }
 
-/* Command's shortlist becomes an internally scrolling column at 1400px. Below that,
-   both the one-column and two-column layouts keep it in natural document flow. */
-@media (min-width: 87.5rem) {
-  .actionToolbar {
-    position: sticky;
-    top: -0.75rem;
-    z-index: 1;
-    flex-shrink: 0;
-    background: var(--surface);
-    padding-bottom: 0.75rem;
-    border-bottom: 0.0625rem solid var(--line);
-  }
+/* The action bar: the count, Override and the one primary Refer, held at the foot of the panel
+   while the ward list scrolls. It sits after the list because a ward is picked before Refer. An
+   open form (override reason, non-binary placement) releases it into the flow so a tall form is
+   never pinned over the list. */
+.actionToolbar {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-inline: -1rem;
+  border-top: 0.0625rem solid var(--wf-line-2);
+  background: var(--wf-surface-2);
+  padding: 0.625rem 1rem;
+  box-shadow: 0 -0.25rem 0.75rem -0.5rem rgb(var(--ward-shadow-rgb) / 0.12);
 }
 
-@media (width < 87.5rem) {
-  .body {
-    overflow: visible;
-  }
+.actionToolbar:has(form) {
+  position: static;
+  box-shadow: none;
+}
 
-  /* One owner for the primary decision only. Its bottom anchor cannot cover the global
-     header, and record-editing rows keep their normal position in the document. */
+.actionToolbar > * {
+  flex: 1 1 100%;
+}
+
+.actionToolbar > p:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+}
+
+.actionToolbar > div:not([data-testid]) {
+  flex: 0 0 auto;
+  flex-direction: row-reverse;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.actionToolbar > div:not([data-testid]) button {
+  flex: 0 0 auto;
+  border-radius: var(--wf-r-pill);
+}
+
+/* Below 1400px the bar also caps its own height and keeps clear of the phone's safe area. */
+@media (width < 87.5rem) {
   .actionToolbar {
-    position: sticky;
-    bottom: 0;
-    z-index: 1;
-    order: 1;
-    flex-shrink: 0;
     max-height: min(50dvh, 24rem);
     overflow-y: auto;
-    background: var(--surface);
-    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-    border-top: 1px solid var(--line-strong);
+    padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
   }
 }
 
 @media print {
   .actionToolbar {
     position: static;
-    order: 0;
     max-height: none;
     overflow: visible;
+    box-shadow: none;
   }
 }
 
 @media (max-width: 27rem) {
-  .factGrid {
-    grid-template-columns: 1fr;
-  }
-
   .subjectBadges {
     justify-content: flex-start;
   }
@@ -825,10 +1004,36 @@
   }
 
   .shortlistBody,
-  .body {
+  .body,
+  .shortlistRegion .body {
     overflow-y: auto;
     overscroll-behavior: contain;
     max-height: calc(85dvh - 3.5rem);
+  }
+
+  /* Phone pass 2 (8 Oct 2026): the patient's four facts sit two by two, and every control in
+     the sheet keeps the 48px tap floor. */
+  .factGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 0.75rem;
+  }
+
+  .fact {
+    display: grid;
+    gap: 0.0625rem;
+  }
+
+  .subjectBadges {
+    flex: none;
+    flex-wrap: nowrap;
+  }
+
+  .body button,
+  .body select,
+  .recordActions > summary,
+  .detailDisclosure > summary {
+    min-height: var(--spacing-tap, 3rem);
   }
 }
 

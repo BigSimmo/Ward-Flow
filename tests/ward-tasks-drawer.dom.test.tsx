@@ -52,10 +52,29 @@ function renderDrawer(overrides: Partial<Parameters<typeof WardTasksDrawer>[0]> 
       {...overrides}
     />,
   );
-  return { dispatch, onClose, onSelectMovement, drawer: screen.getByRole("complementary", { name: "Tasks" }) };
+  const drawer = screen.getByRole(overrides.withBackdrop ? "dialog" : "complementary", { name: "Tasks" });
+  return { dispatch, onClose, onSelectMovement, drawer };
 }
 
 describe("the tasks drawer", () => {
+  it("is announced as a modal dialog when it opens over a backdrop", () => {
+    render(
+      <WardTasksDrawer
+        items={items}
+        acknowledgements={{}}
+        completions={{}}
+        role="coordinator"
+        now={NOW_ANCHOR}
+        dispatch={vi.fn()}
+        onClose={vi.fn()}
+        onSelectMovement={vi.fn()}
+        withBackdrop
+      />,
+    );
+    const drawer = screen.getByRole("dialog", { name: "Tasks" });
+    expect(drawer).toHaveAttribute("aria-modal", "true");
+  });
+
   it("has rows to assert about, so nothing below passes over an empty list", () => {
     expect(items.length, "the seed produced no inbox rows — every assertion here would be vacuous").toBeGreaterThan(0);
   });

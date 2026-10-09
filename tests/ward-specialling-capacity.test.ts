@@ -106,6 +106,9 @@ function stagedForPull(source: Movement, id: Movement["id"], specialling: boolea
   return {
     ...source,
     id,
+    // Each capacity probe names a fresh patient, not a seeded person already holding another bed.
+    patientId: `PT-${id}`,
+    referralId: undefined,
     specialling,
     stage: "accepted_awaiting_bed",
     acceptedUnitId: UNIT_ID,
@@ -171,13 +174,18 @@ function bench(): WardFlowState {
     );
   }
 
+  const movements: Movement[] = [
+    stagedForPull(sources[0], SPECIALLED_A, true),
+    stagedForPull(sources[1], SPECIALLED_B, true),
+    stagedForPull(sources[2], ORDINARY, false),
+  ];
   return {
     ...seeded,
     units: seeded.units.map((candidate) => (candidate.id === UNIT_ID ? unit : candidate)),
-    movements: [
-      stagedForPull(sources[0], SPECIALLED_A, true),
-      stagedForPull(sources[1], SPECIALLED_B, true),
-      stagedForPull(sources[2], ORDINARY, false),
+    movements,
+    patients: [
+      ...seeded.patients,
+      ...movements.map((m) => ({ ...seeded.patients[0], id: m.patientId!, umrn: `SYN-${m.id}` })),
     ],
     admissions: seeded.admissions.filter((admission) => admission.unitId !== UNIT_ID),
     bedReleases: seeded.bedReleases.filter((release) => release.unitId !== UNIT_ID),
@@ -212,10 +220,15 @@ function cohortMismatchBench(): WardFlowState {
     );
   }
 
+  const movements: Movement[] = [stagedForPull(mismatched, COHORT_MISMATCH, false)];
   return {
     ...seeded,
     units: seeded.units.map((candidate) => (candidate.id === UNIT_ID ? unit : candidate)),
-    movements: [stagedForPull(mismatched, COHORT_MISMATCH, false)],
+    movements,
+    patients: [
+      ...seeded.patients,
+      ...movements.map((m) => ({ ...seeded.patients[0], id: m.patientId!, umrn: `SYN-${m.id}` })),
+    ],
     admissions: seeded.admissions.filter((admission) => admission.unitId !== UNIT_ID),
     bedReleases: seeded.bedReleases.filter((release) => release.unitId !== UNIT_ID),
     rejections: [],

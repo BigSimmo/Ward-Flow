@@ -1,4 +1,6 @@
 import { referralIntakeError } from "./referrals/referral-submission";
+import { recordedMovementMedicalClearance } from "./ward-medical-clearance";
+import { movementPatientIdentityMatchesRecord } from "./ward-patient-resolver";
 import {
   validCareChange,
   careChangeRefusal,
@@ -23,7 +25,13 @@ import {
   validRecordActor,
   type WardRecordActor,
 } from "./ward-discharge-records";
-import { isLeavingDestination, isFollowUpState, daysInBed, type LeavingDestination } from "./ward-admissions";
+import {
+  isDischargeBarrier,
+  isLeavingDestination,
+  isFollowUpState,
+  daysInBed,
+  type LeavingDestination,
+} from "./ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
@@ -64,6 +72,7 @@ import {
   referralSenderRole,
   referralState,
   referralSuburbIsAnswered,
+  wardTransferNeedsCoordinator,
 } from "@/components/ward-management/ward-referrals";
 import {
   EVENT_ROLE,
@@ -1180,6 +1189,17 @@ function replaceUnit(state: WardFlowState, unitId: string, next: Unit): WardFlow
   return { ...state, units: state.units.map((candidate) => (candidate.id === unitId ? next : candidate)) };
 }
 
+/** A recorded sending ward is the only exception to the one-current-stay placement rule. */
+function movementSourceAdmission(state: WardFlowState, movement: Movement): Admission | undefined {
+  if (movement.sourceAdmissionId) return findAdmission(state, movement.sourceAdmissionId);
+  const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+  if (referral?.source !== "psychiatric_ward" || !referral.originUnitId) return undefined;
+  const patientId = movement.patientId ?? referral.patientId;
+  return state.admissions.find(
+    (a) => a.patientId === patientId && a.unitId === referral.originUnitId && a.state === "occupied",
+  );
+}
+
 /**
  * REFUNDS A HELD BED AND DELETES THE `Admission` `PULL_PATIENT` CREATED FOR IT (if one exists) — the
  * exact inverse of `PULL_PATIENT`'s own writes (ruling P4-1), extracted so `RELEASE_PULL` and, since
@@ -1224,6 +1244,20 @@ function replaceUnit(state: WardFlowState, unitId: string, next: Unit): WardFlow
  * split `RELEASE_PULL`'s own case already kept between its unit/admission writes and its movement
  * write.
  */
+/**
+ * Whether a movement holds a reserved bed, by the same rule `releasePulledBedAndAdmission` uses.
+ * A seeded journey hand-authored as far as `pulled` or later carries no `admissionId` (fabricating
+ * one would invent an occupant), so `admissionId` alone cannot answer this (review finding S2-1).
+ */
+function movementHoldsBedByStage(movement: Movement): boolean {
+  return (
+    movement.stage === "pulled" ||
+    movement.stage === "handover_ready" ||
+    movement.stage === "moving" ||
+    movement.admissionId !== undefined
+  );
+}
+
 function releasePulledBedAndAdmission(state: WardFlowState, movement: Movement, now: Instant): WardFlowState {
   if (!movement.acceptedUnitId) return state;
   // Fix round (2026-09-16 audit): this used to decide a bed was held from `movement.stage` alone.
@@ -1266,10 +1300,43 @@ function releasePulledBedAndAdmission(state: WardFlowState, movement: Movement, 
     movement.admissionId === undefined
       ? undefined
       : state.admissions.find((candidate) => candidate.id === movement.admissionId);
+  if (
+    movement.admissionId !== undefined &&
+    (!heldAdmission ||
+      heldAdmission.state !== "pulled" ||
+      heldAdmission.unitId !== unit.id ||
+      (heldAdmission.movementId !== null && heldAdmission.movementId !== movement.id))
+  )
+    return state;
+  const lockedBedReleased = heldAdmission?.bedKind === "locked";
+  // A newer ward observation may already report the building/designation ceiling while this
+  // reservation still exists. Release the actual hold, but do not manufacture a bed above that
+  // ceiling or rewrite physical empty. Record the disagreement for explicit re-confirmation.
+  const releaseCountDisagrees =
+    unit.allocatable.value === unit.beds || (lockedBedReleased && unit.allocatableLocked === unit.lockedBeds);
   const releasedUnit: Unit = {
     ...unit,
-    allocatable: { ...unit.allocatable, value: unit.allocatable.value + 1, confirmedAt: now },
-    allocatableLocked: heldAdmission?.bedKind === "locked" ? unit.allocatableLocked + 1 : unit.allocatableLocked,
+    allocatable: {
+      ...unit.allocatable,
+      value: Math.min(unit.beds, unit.allocatable.value + 1),
+      confirmedAt: now,
+    },
+    allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + (lockedBedReleased ? 1 : 0)),
+    ...(releaseCountDisagrees
+      ? {
+          reservationReleaseCapacityConflicts: [
+            ...(unit.reservationReleaseCapacityConflicts ?? []).filter((entry) => entry.movementId !== movement.id),
+            {
+              movementId: movement.id,
+              ...(movement.admissionId === undefined ? {} : { admissionId: movement.admissionId }),
+              at: now,
+              allocatableBefore: unit.allocatable.value,
+              allocatableLockedBefore: unit.allocatableLocked,
+              lockedBedReleased,
+            },
+          ],
+        }
+      : {}),
   };
   const withUnit = replaceUnit(state, unit.id, releasedUnit);
   if (movement.admissionId === undefined) return withUnit;
@@ -1442,26 +1509,38 @@ function departAdmission(
   // Item 11 / WFA-003: `PULL_PATIENT` decrements `allocatableLocked` when the bed taken was locked;
   // departure must restore it. `RELEASE_BED` never touches that field, so the restore runs on both
   // branches — including when empty/allocatable were already raised by a prior release.
-  const restoreLocked = admission.bedKind === "locked" ? 1 : 0;
+  const arrivalAwaitingCapacity =
+    unit.arrivalCapacityConflicts?.some((entry) => entry.admissionId === admission.id) ?? false;
+  const remainingArrivalConflicts = unit.arrivalCapacityConflicts?.filter(
+    (entry) => entry.admissionId !== admission.id,
+  );
+  const restoreLocked = !arrivalAwaitingCapacity && admission.bedKind === "locked" ? 1 : 0;
   // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).
   // An admission carries only `sex`, so the gender comes from the movement that admitted it.
   const admittingMovement = state.movements.find((m) => m.admissionId === admission.id);
   const leaverSex = mixSexOf(admission.gender ?? admittingMovement?.gender, admission.sex);
-  const updatedUnit: Unit = releaseAlreadyIncremented
-    ? {
-        ...unit,
-        empty: { ...unit.empty, confirmedAt: now },
-        allocatable: { ...unit.allocatable, confirmedAt: now },
-        allocatableLocked: unit.allocatableLocked + restoreLocked,
-        sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
-      }
-    : {
-        ...unit,
-        empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1), confirmedAt: now },
-        allocatable: { ...unit.allocatable, value: Math.min(unit.beds, unit.allocatable.value + 1), confirmedAt: now },
-        allocatableLocked: unit.allocatableLocked + restoreLocked,
-        sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
-      };
+  const updatedUnit: Unit =
+    releaseAlreadyIncremented || arrivalAwaitingCapacity
+      ? {
+          ...unit,
+          empty: { ...unit.empty, confirmedAt: now },
+          allocatable: { ...unit.allocatable, confirmedAt: now },
+          allocatableLocked: unit.allocatableLocked + restoreLocked,
+          sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
+          ...(remainingArrivalConflicts === undefined ? {} : { arrivalCapacityConflicts: remainingArrivalConflicts }),
+        }
+      : {
+          ...unit,
+          empty: { ...unit.empty, value: Math.min(unit.beds, unit.empty.value + 1), confirmedAt: now },
+          allocatable: {
+            ...unit.allocatable,
+            value: Math.min(unit.beds, unit.allocatable.value + 1),
+            confirmedAt: now,
+          },
+          allocatableLocked: unit.allocatableLocked + restoreLocked,
+          sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
+          ...(remainingArrivalConflicts === undefined ? {} : { arrivalCapacityConflicts: remainingArrivalConflicts }),
+        };
   const departed: Admission = { ...admission, state: "departed", leftAt: now, leavingDestination };
   const departedState = replaceAdmission(replaceUnit(state, unit.id, updatedUnit), admission.id, departed);
   // Owner ruling 2026-09-25: a leave bed belongs to one stay. Leaving ends it in the same write, so
@@ -1545,6 +1624,34 @@ function dischargeMovement(state: WardFlowState, admission: Admission): Movement
         movement.admissionId === undefined &&
         movement.closure === undefined,
     )
+  );
+}
+
+/** A collected journey whose vehicle has not yet arrived or been stood down. */
+function movementInTransit(movement: Movement): boolean {
+  return (
+    movement.stage === "moving" ||
+    (movement.transport?.collectedAt !== undefined &&
+      movement.transport.arrivedAt === undefined &&
+      movement.transport.cancelledAt === undefined)
+  );
+}
+
+/**
+ * The journey that makes a discharge unsafe: the stay's own inbound movement, or an open journey
+ * LEAVING this stay (ward-to-ward or repatriation) that is on the road. `dischargeMovement` alone
+ * finds only the inbound one, so a patient collected for a transfer could be discharged from the
+ * sending ward, after which the receiving ward's arrival is refused for want of an occupied source
+ * stay and the journey can never close (review finding S1-1, 8 October 2026).
+ */
+function dischargeBlockingTransit(state: WardFlowState, admission: Admission): Movement | undefined {
+  const linked = dischargeMovement(state, admission);
+  if (linked && movementInTransit(linked)) return linked;
+  return state.movements.find(
+    (movement) =>
+      movement.closure === undefined &&
+      movementInTransit(movement) &&
+      movementSourceAdmission(state, movement)?.id === admission.id,
   );
 }
 
@@ -1655,6 +1762,9 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
           admission.careJourney.followUp.serviceId !== event.actingTeamId))
     )
       return deny("scope");
+    // D-30: only the central bed coordinator accepts an inter-ward transfer.
+    if (event.change.kind === "transfer" && event.change.step === "accepted" && event.role !== "coordinator")
+      return deny("role");
     const refusal = careChangeRefusal(admission, event.change, event.now);
     if (refusal) return deny("transition", "denied", refusal);
     if (event.change.kind === "transfer" && !uniqueRecord(state.units, event.change.receivingUnitId))
@@ -1771,7 +1881,7 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
             dischargeDateMoves: 0,
             blockReason: null,
             awayAtEmergencyDepartmentSince: null,
-            careJourney: { ...emptyCareJourney(), followUp: careJourney.followUp, transfer: careJourney.transfer },
+            careJourney: { ...emptyCareJourney(), followUp: careJourney.followUp },
           },
         ],
         movements: [
@@ -1852,14 +1962,8 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
     }
   }
 
-  // Discharge blocked while in transit
-  if (
-    linkedMovement &&
-    (linkedMovement.stage === "moving" ||
-      (linkedMovement.transport?.collectedAt !== undefined &&
-        linkedMovement.transport.arrivedAt === undefined &&
-        linkedMovement.transport.cancelledAt === undefined))
-  ) {
+  // Discharge blocked while in transit, inbound or outbound
+  if (dischargeBlockingTransit(state, admission)) {
     return deny("transition", "denied", "Patient is currently in transit to another facility.");
   }
   return appendAudit(state, departAdmission(state, admission, unit, event.now, event.leavingDestination), event, {
@@ -1947,6 +2051,64 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       permittedRoles.length > 0
         ? `${event.type} requires role ${permittedRoles.join(" or ")}, but was raised by role ${event.role}`
         : `Unknown or unpermitted event type: ${event.type}`,
+    );
+  }
+
+  // D-34 is an explicit recorded pause, not an inference from absent clearance.
+  const pausedPlacementEvents: readonly WardFlowEvent["type"][] = [
+    "REFER_TO_UNITS",
+    "ACCEPT_IN_PRINCIPLE",
+    "ACCEPT_REFERRAL",
+    "PULL_PATIENT",
+    "BOOK_TRANSPORT",
+    "HANDOVER_READY",
+    "TRANSPORT_ACCEPTED",
+    "TRANSPORT_EN_ROUTE",
+    "PATIENT_COLLECTED",
+    "PATIENT_ARRIVED",
+  ];
+  if ("movementId" in event && pausedPlacementEvents.includes(event.type)) {
+    const movement = findMovement(state, event.movementId);
+    if (movement?.medicalDeterioration && movement.medicalDeterioration.resumedAt === undefined) {
+      return reject(
+        state,
+        event,
+        "Medical Deterioration - ED Resuscitation Required: placement is paused until fresh medical re-clearance.",
+      );
+    }
+  }
+
+  // Explicitly not medically cleared blocks onward transfer, but is not authority to
+  // refund a reservation. Only the separately recorded D-34 event performs that unwind.
+  const medicalTransferEvents: readonly WardFlowEvent["type"][] = [
+    "BOOK_TRANSPORT",
+    "HANDOVER_READY",
+    "TRANSPORT_ACCEPTED",
+    "TRANSPORT_EN_ROUTE",
+    "PATIENT_COLLECTED",
+    "PATIENT_ARRIVED",
+  ];
+  if (
+    "movementId" in event &&
+    medicalTransferEvents.includes(event.type) &&
+    (() => {
+      const movement = findMovement(state, event.movementId);
+      if (!movement) return false;
+      // Arrival records physical presence. A later negative clearance cannot erase an
+      // already collected person's arrival; it still blocks departure before collection.
+      if (
+        event.type === "PATIENT_ARRIVED" &&
+        movement.stage === "moving" &&
+        movement.transport?.collectedAt !== undefined
+      )
+        return false;
+      return recordedMovementMedicalClearance(movement, state.referrals)?.cleared === false;
+    })()
+  ) {
+    return reject(
+      state,
+      event,
+      "Medical clearance is explicitly not granted; onward transfer is paused until clinical re-clearance.",
     );
   }
 
@@ -2091,6 +2253,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "RAISE_REFERRAL": {
+      if (event.draft.atsCategory !== undefined && ![1, 2, 3, 4, 5].includes(event.draft.atsCategory))
+        return reject(state, event, "RAISE_REFERRAL ATS category must be a recorded integer from 1 to 5.");
       const department = allEmergencyDepartments().find((ed) => ed.id === event.edId);
       if (!department) {
         return reject(state, event, `no emergency department found for id ${event.edId}`);
@@ -2290,6 +2454,20 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (event.draft.tentativeDiagnosis !== undefined && !isTentativeDiagnosisBlock(event.draft.tentativeDiagnosis)) {
         return reject(state, event, `RAISE_REFERRAL tentativeDiagnosis must be chosen from TENTATIVE_DIAGNOSIS_BLOCKS`);
       }
+      // A journey raised from a referral is for that referral's patient. Naming someone else let
+      // PULL_PATIENT check one person for an existing bed and then admit the other, who could end
+      // up holding two beds (review finding S1-2, 8 October 2026).
+      if (
+        event.patientId !== undefined &&
+        raisedFrom?.patientId !== undefined &&
+        event.patientId !== raisedFrom.patientId
+      ) {
+        return reject(
+          state,
+          event,
+          `RAISE_REFERRAL names patient ${event.patientId}, but referral ${raisedFrom.id} is for patient ${raisedFrom.patientId}`,
+        );
+      }
       const created: Movement = {
         id: nextReferralId(sequence),
         originEdId: event.edId,
@@ -2318,6 +2496,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // patient already in the queue, not a property of arriving.
         flaggedUrgent: false,
         urgency: event.draft.urgency,
+        ...(raisedFrom?.medicalClearance === undefined ? {} : { medicalClearance: { ...raisedFrom.medicalClearance } }),
+        ...(event.draft.atsCategory === undefined && raisedFrom?.atsCategory === undefined
+          ? {}
+          : { atsCategory: event.draft.atsCategory ?? raisedFrom?.atsCategory }),
         cohort: event.draft.cohort,
         security: event.draft.security,
         sex: event.draft.sex,
@@ -2388,6 +2570,19 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_MEDICAL_CLEARANCE": {
       const referral = findReferral(state, event.referralId);
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
+      if (finiteInstant(event.now) === null || typeof event.cleared !== "boolean")
+        return reject(state, event, "Medical clearance needs a valid timestamp and recorded answer.");
+      if (
+        event.cleared &&
+        state.movements.some(
+          (movement) =>
+            movement.referralId === referral.id &&
+            movement.medicalDeterioration &&
+            movement.medicalDeterioration.resumedAt === undefined &&
+            event.now <= movement.medicalDeterioration.at,
+        )
+      )
+        return reject(state, event, "Re-clearance must be recorded after the medical deterioration.");
       // ⚠️ RE-RECORDING IS ALLOWED AND OVERWRITING IS THE POINT. Unlike `RECORD_EXAMINATION`
       // above, which refuses a second examination as a data-integrity fault, a medical clearance
       // is a CURRENT STATE that legitimately changes: a patient cleared at 09:00 can deteriorate
@@ -2404,7 +2599,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         movements: next.movements.map((movement) =>
           movement.referralId === referral.id &&
           (movement.patientId === undefined || movement.patientId === referral.patientId)
-            ? { ...movement, medicalClearance: updated.medicalClearance }
+            ? {
+                ...movement,
+                medicalClearance: updated.medicalClearance,
+                ...(event.cleared &&
+                movement.medicalDeterioration &&
+                movement.medicalDeterioration.resumedAt === undefined
+                  ? {
+                      medicalDeterioration: { ...movement.medicalDeterioration, resumedAt: event.now },
+                      blocker: "Awaiting coordinator referral",
+                    }
+                  : {}),
+              }
             : movement,
         ),
       };
@@ -2818,7 +3024,11 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         gender: event.gender,
         genderChanges: [...(movement.genderChanges ?? []), changeEntry],
       };
-      const next = replaceMovement(state, movement.id, updated);
+      let next = replaceMovement(state, movement.id, updated);
+      const held = movement.admissionId ? findAdmission(state, movement.admissionId) : undefined;
+      if (held?.state === "pulled" && held.movementId === movement.id) {
+        next = replaceAdmission(next, held.id, { ...held, gender: event.gender });
+      }
       /*
        * P1-3 (Ward Lead ruling, 17 September 2026): a correction landing while an acceptance or a
        * bed is already held (`accepted_awaiting_bed` through `moving`) means a unit was chosen
@@ -2937,6 +3147,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             originSiteCode: originSite?.code ?? "ARM",
             raisedAt: event.now,
             urgency: movement.urgency,
+            ...(movement.atsCategory === undefined ? {} : { atsCategory: movement.atsCategory }),
             destinations: [
               {
                 destination: { kind: "community_team", teamName: event.team },
@@ -3870,6 +4081,27 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
        * held admission is itself one of the places those checks count, so re-asking them would refuse
        * a patient for occupying their own bed.
        */
+      const patientId =
+        movement.patientId ?? state.referrals.find((r) => r.id === movement.referralId)?.patientId ?? event.patientId;
+      const source = movementSourceAdmission(state, movement);
+      if (
+        (movement.sourceAdmissionId && !source) ||
+        (source && (source.state !== "occupied" || source.patientId !== patientId || source.unitId === event.unitId))
+      ) {
+        return reject(state, event, "Repatriation needs the patient's occupied source stay at a different ward.");
+      }
+      if (
+        patientId &&
+        state.admissions.some(
+          (a) =>
+            a.patientId === patientId &&
+            (a.state === "pulled" || a.state === "occupied") &&
+            a.id !== movement.admissionId &&
+            a.id !== source?.id,
+        )
+      ) {
+        return reject(state, event, "This patient already holds a bed or occupies a ward; use a recorded transfer.");
+      }
       if (movement.admissionId !== undefined) {
         const held = state.admissions.find((admission) => admission.id === movement.admissionId);
         if (!held || held.unitId !== event.unitId) {
@@ -4755,6 +4987,46 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const unit = findUnit(state, movement.acceptedUnitId);
       if (!unit) return reject(state, event, `no unit found for id ${movement.acceptedUnitId}`);
 
+      const patientId =
+        movement.patientId ??
+        state.referrals.find((r) => r.id === movement.referralId)?.patientId ??
+        (movement.admissionId ? findAdmission(state, movement.admissionId)?.patientId : undefined);
+      const source = movementSourceAdmission(state, movement);
+      if (
+        (movement.sourceAdmissionId && !source) ||
+        (source && (source.state !== "occupied" || source.patientId !== patientId || source.unitId === unit.id))
+      ) {
+        return reject(
+          state,
+          event,
+          "Repatriation arrival needs the patient's occupied source stay at a different ward.",
+        );
+      }
+      if (
+        patientId &&
+        state.admissions.some(
+          (a) =>
+            a.patientId === patientId &&
+            (a.state === "pulled" || a.state === "occupied") &&
+            a.id !== movement.admissionId &&
+            a.id !== source?.id,
+        )
+      ) {
+        return reject(state, event, "This patient already holds another bed or occupies another ward.");
+      }
+      const linkedAdmission =
+        movement.admissionId === undefined ? undefined : findAdmission(state, movement.admissionId);
+      if (
+        movement.admissionId !== undefined &&
+        (!linkedAdmission ||
+          linkedAdmission.state !== "pulled" ||
+          linkedAdmission.unitId !== unit.id ||
+          (linkedAdmission.movementId !== movement.id &&
+            !(linkedAdmission.movementId === null && !linkedAdmission.id.startsWith("AD-ARR-"))) ||
+          (patientId !== undefined && linkedAdmission.patientId !== patientId))
+      ) {
+        return reject(state, event, "Arrival needs this movement's matching held admission at its accepted ward.");
+      }
       const isBedTurnaround = unit.empty.value <= 0;
 
       // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).
@@ -4785,6 +5057,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         ...unit,
         empty: { ...unit.empty, value: Math.max(0, unit.empty.value - 1), confirmedAt: event.now },
         sexMix: adjustSexMix(unit.sexMix, arriverSex, 1),
+        ...(isBedTurnaround
+          ? {
+              arrivalCapacityConflicts: [
+                ...(unit.arrivalCapacityConflicts ?? []),
+                {
+                  movementId: movement.id,
+                  ...(movement.admissionId === undefined ? {} : { admissionId: movement.admissionId }),
+                  at: event.now,
+                },
+              ],
+            }
+          : {}),
       };
       const updatedMovement: Movement = {
         ...movement,
@@ -4837,11 +5121,35 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         withPerson = replaceAdmission(withUnit, pulledAdmission.id, {
           ...pulledAdmission,
           state: "occupied",
+          gender: movement.gender,
           arrivedAt: event.now,
           ...(isBedTurnaround ? { blockReason: "Awaiting clean" } : {}),
         });
       } else {
         withPerson = withUnit;
+      }
+      /*
+       * A repatriation or recorded ward transfer carries the sending stay (via
+       * `sourceAdmissionId` or a psychiatric-ward referral). Arrival at the receiving ward ends
+       * that stay as a transfer, so one person never holds a bed at both hospitals. A stay that
+       * has already left (or has gone) is left alone.
+       */
+      const sendingUnit = source ? findUnit(withPerson, source.unitId) : undefined;
+      if (source && sendingUnit && source.state === "occupied") {
+        withPerson = departAdmission(
+          withPerson,
+          source,
+          sendingUnit,
+          event.now,
+          "transferred-to-another-psychiatric-ward",
+        );
+        withPerson = {
+          ...withPerson,
+          dischargeRevisions: {
+            ...withPerson.dischargeRevisions,
+            [source.id]: (withPerson.dischargeRevisions[source.id] ?? 0) + 1,
+          },
+        };
       }
       return replaceMovement(withPerson, movement.id, updatedMovement);
     }
@@ -4912,17 +5220,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // Discharge blocked while in transit: a patient cannot be discharged while their transfer
       // ambulance is actively on the road.
       const linkedMovement = dischargeMovement(state, admission);
-      if (
-        linkedMovement &&
-        (linkedMovement.stage === "moving" ||
-          (linkedMovement.transport?.collectedAt !== undefined &&
-            linkedMovement.transport.arrivedAt === undefined &&
-            linkedMovement.transport.cancelledAt === undefined))
-      ) {
+      const transit = dischargeBlockingTransit(state, admission);
+      if (transit) {
         return reject(
           state,
           event,
-          `cannot record leaving for admission ${admission.id}: patient is actively in transit (movement ${linkedMovement.id})`,
+          `cannot record leaving for admission ${admission.id}: patient is actively in transit (movement ${transit.id})`,
         );
       }
 
@@ -5291,6 +5594,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       const updatedUnit: Unit = {
         ...unit,
+        ...(unit.reservationReleaseCapacityConflicts === undefined
+          ? {}
+          : {
+              reservationReleaseCapacityConflicts: unit.reservationReleaseCapacityConflicts.filter(
+                (entry) => entry.at > event.now,
+              ),
+            }),
         allocatable: {
           ...unit.allocatable,
           value: event.value,
@@ -5822,6 +6132,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     }
 
     case "RECEIVE_REFERRAL": {
+      if (event.atsCategory !== undefined && ![1, 2, 3, 4, 5].includes(event.atsCategory))
+        return reject(state, event, "RECEIVE_REFERRAL ATS category must be a recorded integer from 1 to 5.");
       // Fix round B (review finding I2): the role check above used to be the ONLY guard, and
       // this reducer's own comment said so — `source`, `homeRegion`, `ageBand`, `urgency` and
       // `originSiteCode` all passed through unvalidated. That contradicts the spec's Failure
@@ -6165,6 +6477,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // Absent for a community expect, which is a real state and not a missing value.
         triagedAt: event.triagedAt,
         urgency: event.urgency,
+        ...(event.atsCategory === undefined ? {} : { atsCategory: event.atsCategory }),
         originSiteCode: event.originSiteCode,
         transportNeeded: event.transportNeeded,
         // ⚠️ BYTE FOR BYTE, AND THE UNTRIMMED ORIGINAL. The blank check above trims to decide
@@ -6250,6 +6563,18 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           state,
           event,
           `${event.type} was raised by role ${event.role}, which may only answer ${ownKind.replace(/_/g, " ")} destinations, not ${event.destinationKind.replace(/_/g, " ")}`,
+        );
+      }
+      if (
+        event.role === "ward" &&
+        event.destinationKind === "psychiatric_ward" &&
+        event.unitId !== undefined &&
+        wardTransferNeedsCoordinator(referral, event.unitId, state.units)
+      ) {
+        return reject(
+          state,
+          event,
+          `D-30: a transfer from a ward at another hospital is accepted by the central bed coordinator, not the receiving ward`,
         );
       }
       const eligibleAddressings = referral.destinations.filter(
@@ -7892,7 +8217,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `movement ${movement.id} was not stopped by STOP_TRANSPORT, so there is no held bed to release this way`,
         );
       }
-      if (movement.admissionId === undefined) {
+      // A stopped journey is closed, so its blocker can no longer change: while it still reads
+      // "awaiting release" the bed has not been released, with or without an `admissionId`.
+      const heldBedOutstanding =
+        movement.admissionId !== undefined ||
+        (movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease &&
+          movementHoldsBedByStage(movement));
+      if (!heldBedOutstanding) {
         return reject(state, event, `movement ${movement.id} holds no bed — it may already have been released`);
       }
       // Same claim-not-proof discipline as RELEASE_PULL and CANCEL_TRANSPORT: this compares what
@@ -8006,7 +8337,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `movement ${movement.id} was not diverted, so there is no diverted bed to release this way`,
         );
       }
-      if (movement.admissionId === undefined) {
+      // A diverted journey stays open until this release closes it, so the closure is the
+      // released marker; a seeded journey with no `admissionId` still holds its bed by stage.
+      if (movement.closure !== undefined || !movementHoldsBedByStage(movement)) {
         return reject(state, event, `movement ${movement.id} holds no bed — it may already have been released`);
       }
       if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId) {
@@ -8358,6 +8691,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         );
       }
 
+      // Chosen from DISCHARGE_BARRIERS, never typed: this event is on the persistence safe list, so
+      // anything off the list would reach browser storage as free text (review findings S2-12/A2-2).
+      if (event.barrier !== null && event.barrier !== "None" && !isDischargeBarrier(event.barrier)) {
+        return reject(state, event, "SET_DISCHARGE_BARRIER barrier must be chosen from DISCHARGE_BARRIERS");
+      }
+
       const stay = daysInBed(admission, event.now) ?? 0;
       if (stay < 7 && event.barrier !== null && event.barrier !== "None") {
         return reject(
@@ -8378,13 +8717,128 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       };
     }
 
+    case "RECORD_ED_MEDICAL_DETERIORATION": {
+      const movement = findMovement(state, event.movementId);
+      if (!movement) return reject(state, event, "No movement found for medical deterioration.");
+      if (finiteInstant(event.now) === null || event.now < movement.openedAt)
+        return reject(state, event, "Medical deterioration needs a valid current timestamp.");
+      if (
+        !event.actingPlaceId ||
+        event.actingPlaceId !== movement.originEdId ||
+        movement.sourceAdmissionId !== undefined
+      )
+        return reject(state, event, "Only the originating ED may record this pre-transport deterioration.");
+      if (movement.closure || movement.stage === "moving" || movement.transport?.collectedAt !== undefined)
+        return reject(
+          state,
+          event,
+          "D-34 cannot cancel or refund a patient already collected or arrived; use the separately approved escalation pathway.",
+        );
+      if (movement.medicalDeterioration?.resumedAt === undefined && movement.medicalDeterioration)
+        return reject(state, event, "This referral is already paused for medical deterioration.");
+      if (!movement.acceptedUnitId) return reject(state, event, "D-34 requires an accepted psychiatric destination.");
+      const heldAdmission = movement.admissionId === undefined ? undefined : findAdmission(state, movement.admissionId);
+      if (
+        movement.admissionId !== undefined &&
+        (!heldAdmission ||
+          heldAdmission.state !== "pulled" ||
+          heldAdmission.unitId !== movement.acceptedUnitId ||
+          (heldAdmission.movementId !== movement.id &&
+            !(heldAdmission.movementId === null && !heldAdmission.id.startsWith("AD-ARR-"))))
+      )
+        return reject(state, event, "Medical deterioration needs a consistent reservation before releasing it.");
+      const reason = "Medical Deterioration - ED Resuscitation Required";
+      const hadPull =
+        movement.admissionId !== undefined || movement.stage === "pulled" || movement.stage === "handover_ready";
+      const liveJob = movement.transport && movement.transport.cancelledAt === undefined;
+      const withoutHold = releasePulledBedAndAdmission(state, movement, event.now);
+      const updated: Movement = {
+        ...movement,
+        stage: "placement_requested",
+        acceptedUnitId: undefined,
+        acceptedAt: undefined,
+        admissionId: undefined,
+        pullExpiresAt: undefined,
+        referredUnitIds: [],
+        waitlistedUnitIds: undefined,
+        medicalClearance: { cleared: false, at: event.now },
+        medicalDeterioration: { at: event.now, by: "ed" },
+        transport: liveJob ? { ...movement.transport!, cancelledAt: event.now } : movement.transport,
+        blocker: `${reason} — psychiatric referral paused`,
+        stageChanges: [
+          ...movement.stageChanges,
+          { at: event.now, from: movement.stage, to: "placement_requested", by: event.role, reason },
+        ],
+        unwinds: [
+          ...movement.unwinds,
+          ...(liveJob
+            ? [
+                {
+                  at: event.now,
+                  kind: "transport_cancelled" as const,
+                  by: event.role,
+                  reason,
+                  transportId: movement.transport!.id,
+                  ...(movement.transport!.cadNumber ? { cadNumber: movement.transport!.cadNumber } : {}),
+                },
+              ]
+            : []),
+          ...(hadPull
+            ? [
+                {
+                  at: event.now,
+                  kind: "pull_released" as const,
+                  by: event.role,
+                  reason,
+                  unitId: movement.acceptedUnitId,
+                },
+              ]
+            : []),
+          { at: event.now, kind: "acceptance_withdrawn", by: event.role, reason, unitId: movement.acceptedUnitId },
+        ],
+      };
+      let next = replaceMovement(withoutHold, movement.id, updated);
+      if (movement.referralId)
+        next = {
+          ...next,
+          referrals: next.referrals.map((referral) =>
+            referral.id === movement.referralId && movementPatientIdentityMatchesRecord(movement, referral)
+              ? { ...referral, medicalClearance: updated.medicalClearance }
+              : referral,
+          ),
+        };
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      return appendNotices(next, [
+        makeNotice(
+          event.now,
+          next.notices.length,
+          "acceptance_withdrawn_ward",
+          { role: "ward", placeId: movement.acceptedUnitId },
+          { movementId: movement.id, unitId: movement.acceptedUnitId },
+          reason + ". Allocation cancelled; psychiatric referral paused until medical re-clearance.",
+        ),
+      ]);
+    }
+
     case "RECORD_MOVEMENT_MEDICAL_CLEARANCE": {
       const movement = state.movements.find((m) => m.id === event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
 
+      if (finiteInstant(event.now) === null || typeof event.cleared !== "boolean")
+        return reject(state, event, "Medical clearance needs a valid timestamp and recorded answer.");
+      const pause = movement.medicalDeterioration;
+      if (event.cleared && pause && pause.resumedAt === undefined && event.now <= pause.at)
+        return reject(state, event, "Re-clearance must be recorded after the medical deterioration.");
       const updatedMovement: Movement = {
         ...movement,
         medicalClearance: { cleared: event.cleared, at: event.now },
+        ...(event.cleared && pause && pause.resumedAt === undefined
+          ? {
+              medicalDeterioration: { ...pause, resumedAt: event.now },
+              blocker: "Awaiting coordinator referral",
+            }
+          : {}),
       };
 
       let referrals = state.referrals;
@@ -8408,7 +8862,19 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
                 (movement.patientId === undefined || movement.patientId === r.patientId) &&
                 (m.patientId === undefined || m.patientId === r.patientId),
             ))
-            ? { ...m, medicalClearance: updatedMovement.medicalClearance }
+            ? {
+                ...m,
+                medicalClearance: updatedMovement.medicalClearance,
+                ...(event.cleared &&
+                m.medicalDeterioration &&
+                m.medicalDeterioration.resumedAt === undefined &&
+                event.now > m.medicalDeterioration.at
+                  ? {
+                      medicalDeterioration: { ...m.medicalDeterioration, resumedAt: event.now },
+                      blocker: "Awaiting coordinator referral",
+                    }
+                  : {}),
+              }
             : m,
         ),
         referrals,
@@ -8946,7 +9412,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           unwinds: [],
           stageChanges: [{ at: event.now, to: "placement_requested", by: event.role }],
           homeRegion: admission.homeRegion ?? undefined,
-          admissionId: admission.id,
+          sourceAdmissionId: admission.id,
         };
         nextMovements = [...state.movements, returnMovement];
       }

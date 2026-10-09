@@ -1198,3 +1198,41 @@
   background: transparent;
   outline: 0;
 }
+
+/* Phone polish (8 Oct 2026, second pass). The view switch above already names Transit operations
+ * and the hero shows the stage, so the heading row is kept for screen readers only. The review
+ * card loses its repeated eyebrow and its corrections become plain rows. Desktop is unchanged:
+ * everything here sits under 48rem. */
+@media (max-width: 48rem) {
+  [data-ward-design="v6"] .heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  [data-ward-design="v6"] .card[aria-labelledby="correction-title"] .cardHeader .eyebrow {
+    display: none;
+  }
+
+  [data-ward-design="v6"] .card[aria-labelledby="correction-title"] .cardBody {
+    gap: 0;
+    padding-block: 0;
+  }
+
+  [data-ward-design="v6"] .card[aria-labelledby="correction-title"] .cardBody > details + details {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  /* A list item summary keeps its disclosure marker; the padding centres one line in 48px. */
+  [data-ward-design="v6"] .card[aria-labelledby="correction-title"] .cardBody > details > summary {
+    min-height: var(--spacing-tap, 3rem);
+    padding: 15px 0;
+  }
+
+  [data-ward-design="v6"] .card[aria-labelledby="correction-title"] .cardBody > details[open] {
+    padding-bottom: var(--wf-s-3);
+  }
+}

@@ -6189,3 +6189,94 @@
     color: var(--wf-ink-3);
   }
 }
+
+/* Phone: the five ward tabs scroll sideways on one line with a soft edge, and the tab tools
+ * (answer requests, tasks, shift brief, print, raise referral) sit on one scrolling line under
+ * them instead of wrapping into a tall block. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .tabBarWrap {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0;
+    padding: 0 var(--wf-s-2);
+  }
+
+  .tabList {
+    width: 100%;
+    padding-inline-end: var(--wf-s-4);
+    mask-image: linear-gradient(to right, black calc(100% - var(--wf-s-4)), transparent);
+  }
+
+  .tabTools {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+    overflow-x: auto;
+    padding-inline-end: var(--wf-s-4);
+    scrollbar-width: none;
+    border-top: 1px solid var(--wf-line);
+    mask-image: linear-gradient(to right, black calc(100% - var(--wf-s-4)), transparent);
+  }
+
+  .tabTools::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabTools > * {
+    flex: 0 0 auto;
+  }
+}
+
+/* Phone polish (8 Oct 2026): the ward band packs into title, three figures, then one row holding
+ * the ward's one-line description and Confirm numbers. The "Open bed list" link repeats the
+ * Decisions tab and the figures above it, so it stays on the larger screen. `.wardHero` carries
+ * phone rules only. Desktop is unchanged. */
+@media (max-width: 48rem) {
+  .screen .main {
+    padding-inline: var(--wf-s-3);
+  }
+
+  .wardHero {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--wf-s-3);
+  }
+
+  .wardHero > div {
+    display: contents;
+  }
+
+  .wardHero > div:first-child > :nth-child(1) {
+    order: 1;
+    flex: 1 1 100%;
+  }
+
+  .wardHero > div:first-child > :nth-child(2) {
+    order: 2;
+    flex: 1 1 100%;
+  }
+
+  .wardHero > div:last-child > :nth-child(1) {
+    order: 3;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .wardHero > div:first-child > :nth-child(3) {
+    order: 4;
+    flex: 0 0 auto;
+    margin-left: 0;
+  }
+
+  .wardHero > div:last-child > :nth-child(2) {
+    display: none;
+  }
+
+  .heroMeta {
+    display: block;
+    min-width: 0;
+    font-size: var(--wf-fs-12);
+  }
+}

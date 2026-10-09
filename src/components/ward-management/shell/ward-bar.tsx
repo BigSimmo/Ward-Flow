@@ -3,6 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
+  Activity as ActivityIcon,
   BarChart3,
   BookOpen,
   CalendarClock,
@@ -14,6 +15,7 @@ import {
   Hospital,
   ListChecks,
   MapIcon,
+  Menu as MenuIcon,
   Plus,
   RotateCcwClock,
   Settings,
@@ -24,7 +26,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
@@ -38,7 +40,11 @@ import { WardGlobalSearch } from "@/components/ward-management/ward-global-searc
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
   WARD_ADD_PERSON_HREF,
+  WARD_ED_HREF,
+  WARD_HOME_HREF,
   WARD_NAV,
+  WARD_NEW_REFERRAL_MENU,
+  WARD_REFERRAL_INTAKE_HREF,
   WARD_VIEWS,
   resolveWardPrimaryAction,
   resolveWardScreenTitle,
@@ -58,6 +64,12 @@ import { WardDemoControls } from "@/components/ward-management/ward-demo-control
 import { WardRoleSwitcher } from "@/components/ward-management/ward-role-switcher";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
+import {
+  referralSheetRequestFromHref,
+  referralSheetRequestFromSearch,
+  type ReferralSheetCategory,
+  type ReferralSheetRequest,
+} from "@/components/ward-management/referrals/referral-sheet-link";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { noticeIsForWardChrome, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
 const NetworkFigures = dynamic(() => import("../tools/ward-tools-workspace").then((m) => m.NetworkFigures));
@@ -75,7 +87,7 @@ const WardMhaCalculator = dynamic(
 );
 
 import { announceToWardShell } from "./ward-live-region";
-import { subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
+import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import { digestHref, edHref, handoverHref, movementHref, officerHref, onCallHref, settingsHref } from "./ward-facade";
 import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
@@ -351,9 +363,103 @@ export function isPendingNavigation(href: string, current: string): boolean {
   return target.origin === here.origin && target.pathname !== here.pathname;
 }
 
-export function WardBar({ activity, primaryAction, onServiceChange }: WardBarProps) {
+/**
+ * Phone bar (Josh, 8 Oct 2026, board 00b): bar A with C's behaviour. It never hides. At the top of
+ * the page it sits on the page with no fill; once the page scrolls it condenses and turns solid.
+ * Phone only: `enabled` is false above 48rem, so the desktop bar never gets `data-scrolled`.
+ */
+const SCROLLED_AFTER_PX = 8;
+
+function useBarScrolled(enabled: boolean): boolean {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      setScrolled(window.scrollY > SCROLLED_AFTER_PX);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    frame = window.requestAnimationFrame(update);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [enabled]);
+
+  return enabled && scrolled;
+}
+
+/** The phone layout's one breakpoint (8 Oct 2026). Everything phone-only in the bar keys off it. */
+const PHONE_QUERY = "(max-width: 48rem)";
+
+function subscribePhone(onChange: () => void) {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
+  const query = window.matchMedia(PHONE_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+function usePhoneViewport(): boolean {
+  return useSyncExternalStore(
+    subscribePhone,
+    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
+    () => false,
+  );
+}
+
+/**
+ * Phone bar, option A (Josh, 8 Oct 2026): the same bar on every page, so every page offers New
+ * referral on the phone. The full-page form is retired (8 Oct 2026, option B), so the referral route
+ * is no exception: it is the Referrals board with the slide-out open. Desktop keeps each page's own
+ * action.
+ */
+const PHONE_NEW_REFERRAL: WardPrimaryAction = {
+  kind: "new-referral",
+  label: "New referral",
+  menu: WARD_NEW_REFERRAL_MENU,
+};
+
+export function phoneBarAction(action: WardPrimaryAction | undefined, phone: boolean): WardPrimaryAction | undefined {
+  if (!phone || action?.kind === "new-referral") return action;
+  return PHONE_NEW_REFERRAL;
+}
+
+/** What the referral slide-out opens with. `id` changes on every open, so each open starts fresh. */
+type ReferralOpenRequest = ReferralSheetRequest & { readonly id: number };
+
+/** Where a referral comes from when nothing else says: the current role's own side, else a ward. */
+function roleReferralCategory(role: string): ReferralSheetCategory {
+  if (role === "ed") return "ed";
+  if (role === "community") return "community";
+  return "ward";
+}
+
+/** A link that names no `source` takes the role's side rather than the module's default. */
+function withRoleCategory(
+  request: ReferralSheetRequest,
+  search: URLSearchParams,
+  category: ReferralSheetCategory,
+): ReferralSheetRequest {
+  return search.get("source")?.trim() ? request : { ...request, category };
+}
+
+/** The Referrals board the slide-out route sits over, read from the rail rather than retyped. */
+const REFERRAL_BOARD_HREF = WARD_NAV.find((item) => item.id === "referrals")?.href ?? WARD_HOME_HREF;
+
+function isReferralSheetPath(pathname: string): boolean {
+  return pathname.replace(/\/+$/, "") === WARD_REFERRAL_INTAKE_HREF;
+}
+
+export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
+  const isPhone = usePhoneViewport();
+  const primaryAction = phoneBarAction(pagePrimaryAction, isPhone);
   const {
     movements,
     patients,
@@ -374,10 +480,13 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   const now = useWardFlowClock();
 
   const { role, placeId } = useWardNavCounts();
+  const roleCategory = roleReferralCategory(role);
   const checksPublication = useWardChecks();
 
   const [openPanel, setOpenPanel] = useState<WardBarPopoverId | null>(null);
-  const [referralCategory, setReferralCategory] = useState<"community" | "ed" | "ward">("ward");
+  const [referralRequest, setReferralRequest] = useState<ReferralOpenRequest>({ id: 0, category: "ward" });
+  // The slide-out fills this with its guarded close, which asks before discarding a draft.
+  const referralCloseRef = useRef<(() => void) | null>(null);
   // `ward-service-store.ts` — a `sessionStorage`-backed module store, not component-local state, so
   // the choice survives a remount (a route change unmounts and remounts this bar) and stays in sync
   // with any other reader (`WardRail`, a future scoped screen) in the same tab. See that file's own
@@ -397,6 +506,8 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   const activityTriggerRef = useRef<HTMLButtonElement>(null);
   const tasksTriggerRef = useRef<HTMLButtonElement>(null);
   const toolsTriggerRef = useRef<HTMLButtonElement>(null);
+  // Phone: Activity and Tools open from the Menu sheet, so focus returns to the Menu button.
+  const phoneMenuRef = useRef<HTMLButtonElement>(null);
   const referralReturnFocusRef = useRef<HTMLElement>(null);
   const figuresTabRef = useRef<HTMLButtonElement>(null);
   const servicePanelRef = useRef<HTMLDivElement>(null);
@@ -438,6 +549,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
     (/^\/mockups\/ward-flow\/statistics\/service\//u.test(pathname) ? "Service statistics" : undefined) ??
     (/^\/mockups\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient Now" : undefined) ??
     (/^\/mockups\/ward-flow\/sovereign\/?$/u.test(pathname) ? "Sovereign Health" : undefined) ??
+    (pathname === WARD_ED_HREF ? "All EDs" : undefined) ??
     (pathname === settingsHref() ? "Settings" : undefined) ??
     (pathname === officerHref() ? "Transport" : undefined) ??
     (pathname === onCallHref() ? "On-call" : undefined) ??
@@ -640,6 +752,80 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
     [scopedNotices.length, shownActivity?.changes.length, tasksItems.length],
   );
 
+  /**
+   * Opens the referral slide-out with `request`. Every open gets a new id, so the slide-out mounts
+   * fresh with what this open asked for. `returnFocus` is where focus goes when it closes.
+   */
+  const openReferral = useCallback(
+    (request: ReferralSheetRequest, returnFocus: HTMLElement | null) => {
+      setReferralRequest((current) => ({ ...request, id: current.id + 1 }));
+      referralReturnFocusRef.current = returnFocus;
+      openPopover("referral");
+    },
+    [openPopover],
+  );
+
+  /** Closing on the slide-out route settles the URL on the Referrals board it sits over. */
+  const closeReferral = useCallback(() => {
+    if (!isReferralSheetPath(pathname)) {
+      closePopover("referral");
+      return;
+    }
+    // The page changes next, so closing must not step back through history first.
+    navigationPendingRef.current = true;
+    closePopover("referral");
+    router.replace(REFERRAL_BOARD_HREF);
+  }, [closePopover, pathname, router]);
+
+  // Arriving on the slide-out route (a typed URL, a new tab, a router push) opens the slide-out once,
+  // over the Referrals board, with what the query asks for. No history entry: Back leaves the page.
+  const routeReferralOpenedRef = useRef(false);
+  useEffect(() => {
+    if (!isReferralSheetPath(pathname)) {
+      routeReferralOpenedRef.current = false;
+      return undefined;
+    }
+    if (routeReferralOpenedRef.current) return undefined;
+    routeReferralOpenedRef.current = true;
+    const search = new URLSearchParams(window.location.search);
+    const request = withRoleCategory(referralSheetRequestFromSearch(search), search, roleCategory);
+    let opened = false;
+    const frame = window.requestAnimationFrame(() => {
+      opened = true;
+      setReferralRequest((current) => ({ ...request, id: current.id + 1 }));
+      referralReturnFocusRef.current = null;
+      setOpenPanel("referral");
+      announceToWardShell("Referral drawer opened. Statewide psychiatric bed placement engine.");
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      // Not yet opened (a Strict Mode re-run, say): let the next run open it. Once open, never again.
+      if (!opened) routeReferralOpenedRef.current = false;
+    };
+  }, [pathname, roleCategory]);
+
+  // Every link to the slide-out route — the patient page's Refer, the board's New referral, a search
+  // preview, the rail — opens the slide-out in place instead of leaving the page. Capture phase on
+  // window, so it runs before the link's own handler; `Link` does not navigate a prevented click.
+  // Modified clicks (new tab or window) and the bar's own menu keep their ordinary behaviour.
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+      if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+      if (primaryPanelRef.current?.contains(anchor)) return;
+      const request = referralSheetRequestFromHref(anchor.href, window.location.origin);
+      if (!request) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const search = new URL(anchor.href, window.location.origin).searchParams;
+      openReferral(withRoleCategory(request, search, roleCategory), anchor);
+    };
+    window.addEventListener("click", onClick, true);
+    return () => window.removeEventListener("click", onClick, true);
+  }, [openReferral, roleCategory]);
+
   useEffect(() => {
     function onPopState() {
       setOpenPanel((current) => {
@@ -656,9 +842,17 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
 
   useEffect(() => {
     const unsubOpen = subscribeWardDrawer((drawerId) => {
+      if (drawerId === "referral") {
+        const opener = document.activeElement;
+        openReferral({ category: roleCategory }, opener instanceof HTMLElement ? opener : null);
+        return;
+      }
       openPopover(drawerId);
     });
     const unsubClose = subscribeWardDrawerClose(() => {
+      // The rail's Escape reaches here before the Sheet's own Escape handler. An open referral
+      // slide-out leaves Escape to that handler, which asks before an unsent draft is lost.
+      if (referralCloseRef.current) return;
       setOpenPanel(null);
       announceToWardShell("Closed.");
     });
@@ -666,7 +860,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
       unsubOpen();
       unsubClose();
     };
-  }, [openPopover]);
+  }, [openPopover, openReferral, roleCategory]);
 
   const selectService = useCallback(
     (next: HealthService | null) => {
@@ -806,13 +1000,23 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
   const activeServiceBadgeLabel = activeService ?? "Statewide";
   const activityHasUnread = unreadNoticeCount > 0;
 
+  const barScrolled = useBarScrolled(isPhone);
+  // Phone only: the condensed bar's live line, the open movements in the current scope.
+  const scopeOpenCount = activeService
+    ? (serviceOptionOpenCounts.get(activeService as HealthService) ?? 0)
+    : movements.filter(isOpen).length;
+
   return (
     <header
       className={styles.bar}
       aria-label="Header"
       data-testid="ward-bar"
       data-long-title={routeTitle.length > 17 || undefined}
+      data-scrolled={barScrolled || undefined}
     >
+      <Link href={WARD_HOME_HREF} className={`${styles.phoneOnly} ${styles.phoneBrand}`} aria-label="Ward Flow home">
+        <ActivityIcon aria-hidden="true" strokeWidth={2} />
+      </Link>
       <div className={styles.title}>
         <div className={styles.titleGroup}>
           <span
@@ -857,6 +1061,11 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
             )}
             <span className="sr-only">{activeService ?? "All services"}</span>
           </button>
+          {isPhone ? (
+            <span className={styles.scopeLive} aria-hidden="true">
+              {scopeOpenCount} open · {activeServiceBadgeLabel}
+            </span>
+          ) : null}
 
           {!isFixedJurisdiction && openPanel === "service" ? (
             <div
@@ -924,7 +1133,14 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
             setOpenPanel((current) => (current === "service" || current === "primary" ? null : current))
           }
         >
-          <WardGlobalSearch movements={movements} patients={patients} units={units} placeholder="Search" />
+          <WardGlobalSearch
+            movements={movements}
+            patients={patients}
+            units={units}
+            tasks={tasksItems}
+            now={now}
+            placeholder="Search"
+          />
         </div>
       </div>
 
@@ -1027,21 +1243,20 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
             >
               {primaryAction.menu.map((entry) => {
                 const MenuIcon =
-                  entry.source === "community" ? Users : entry.source === "ed_medical" ? Siren : Hospital;
+                  entry.destination === "community" ? Users : entry.destination === "ed" ? Siren : Hospital;
                 return (
                   <Link
-                    key={entry.source}
+                    key={entry.destination}
                     href={entry.href}
                     role="menuitem"
                     className={styles.primaryMenuItem}
-                    data-testid={`ward-bar-primary-menu-${entry.source}`}
+                    data-testid={`ward-bar-primary-menu-${entry.destination}`}
                     onClick={(e) => {
                       e.preventDefault();
-                      const category: "community" | "ed" | "ward" =
-                        entry.source === "community" ? "community" : entry.source === "ed_medical" ? "ed" : "ward";
-                      setReferralCategory(category);
-                      referralReturnFocusRef.current = primaryTriggerRef.current;
-                      openPopover("referral");
+                      openReferral(
+                        { category: roleCategory, destination: entry.destination },
+                        primaryTriggerRef.current,
+                      );
                     }}
                   >
                     <MenuIcon className={styles.menuIcon} aria-hidden="true" strokeWidth={1.75} />
@@ -1092,6 +1307,19 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         </div>
       ) : null}
 
+      <button
+        type="button"
+        ref={phoneMenuRef}
+        className={styles.phoneOnly}
+        aria-label="Menu"
+        aria-haspopup="dialog"
+        aria-controls="ward-rail-more-pages"
+        data-testid="ward-bar-phone-menu"
+        onClick={(event) => openWardMenu(event.currentTarget)}
+      >
+        <MenuIcon aria-hidden="true" strokeWidth={1.75} />
+      </button>
+
       <Sheet
         id="ward-bar-activity-drawer"
         open={openPanel === "activity"}
@@ -1109,7 +1337,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         }
         placement="right"
         testId="ward-bar-activity-sheet"
-        returnFocusRef={activityTriggerRef}
+        returnFocusRef={isPhone ? phoneMenuRef : activityTriggerRef}
         descriptionContent={
           <p className={styles.activityFreshness} data-tone={activityTone}>
             <span>
@@ -1471,7 +1699,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         descriptionContent={<p className={styles.activityFreshness}>Whole network</p>}
         placement="right"
         testId="ward-bar-tools-sheet"
-        returnFocusRef={toolsTriggerRef}
+        returnFocusRef={isPhone ? phoneMenuRef : toolsTriggerRef}
         desktopBackdropClassName={styles.drawerBackdrop}
         contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide}`}
         headerClassName={styles.drawerHeader}
@@ -1593,9 +1821,10 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
               type="button"
               className={styles.toolItem}
               onClick={() => {
-                setReferralCategory("ward");
-                referralReturnFocusRef.current = toolsTriggerRef.current;
-                openPopover("referral");
+                openReferral(
+                  { category: roleCategory, destination: "ward" },
+                  isPhone ? phoneMenuRef.current : toolsTriggerRef.current,
+                );
               }}
             >
               <span className={styles.toolIcon} aria-hidden="true">
@@ -1679,7 +1908,7 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
       <Sheet
         id="ward-bar-referral-drawer"
         open={openPanel === "referral"}
-        onClose={() => closePopover("referral")}
+        onClose={() => (referralCloseRef.current ? referralCloseRef.current() : closeReferral())}
         ariaLabel="Referrals"
         headerHidden
         placement="right"
@@ -1689,7 +1918,15 @@ export function WardBar({ activity, primaryAction, onServiceChange }: WardBarPro
         contentClassName={`${styles.drawerSheet} ${styles.drawerSheetReferral}`}
         bodyClassName={styles.referralCarrierBody}
       >
-        <WardReferralDrawer initialCategory={referralCategory} onClose={() => closePopover("referral")} />
+        <WardReferralDrawer
+          key={referralRequest.id}
+          initialCategory={referralRequest.category}
+          initialDestination={referralRequest.destination}
+          initialPatientId={referralRequest.personId}
+          initialOriginSiteCode={referralRequest.originSiteCode}
+          closeRequestRef={referralCloseRef}
+          onClose={closeReferral}
+        />
       </Sheet>
     </header>
   );

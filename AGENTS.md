@@ -392,12 +392,7 @@ connector guidance, see [`docs/agents/cursor-cloud.md`](docs/agents/cursor-cloud
 
 Preserve coherent work when it becomes ready, at an actual pause/transfer/end, before changing checkout/branch or before risky restoration. When local commits are within the current task authority, commit each coherent owned unit rather than waiting for the whole task. Otherwise keep exact recoverable evidence and report the owned uncommitted paths at that boundary. Ordinary conversation within the same task does not require a half-commit or repeated disclaimer.
 
-**Historical recovery incident — 29 August 2026; evidence for the current boundary-based rule below.** The
-observed failure, 2026-08-29: seven files were formatted, the verifying test run was refused because
-another worktree held the machine-wide lock, and attention moved to answering other sessions. The
-files sat uncommitted for an hour, through a dozen unrelated commits, and were found only because an
-unrelated status check happened to list them. Nothing about that hour felt like carrying risk. **The
-work was finished and the mind had moved on — that combination is the hazard.**
+Historical recovery incidents are preserved in [recovery-history.md](docs/agents/recovery-history.md).
 
 ## The rule
 
@@ -415,10 +410,8 @@ work was finished and the mind had moved on — that combination is the hazard.*
 
 ## Why this matters more here than in an ordinary repository
 
-**A worktree under `.claude/worktrees` has twice been removed mid-session on this machine** by
-unrelated cleanup sessions. A commit is what makes that survivable: the branch ref and the objects
-live in the shared repository at the top level, not in the worktree folder, so losing the folder
-costs nothing but a fresh checkout. **An uncommitted file is the only thing that does not survive it.**
+The [recorded worktree losses](docs/agents/recovery-history.md) explain why recoverable commits
+and boundary-based handoffs matter. They do not require a commit for every ordinary reply.
 
 ## When you genuinely cannot commit
 
