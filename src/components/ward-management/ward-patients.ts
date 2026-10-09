@@ -160,10 +160,13 @@ export type Patient = {
    * ended (`END_COMMUNITY_TREATMENT_ORDER`).
    */
   communityTreatmentOrder?: CommunityTreatmentOrder;
+  communityTreatmentOrderHistory?: readonly EndedCommunityTreatmentOrder[];
 };
 
 /** Form 5A is the community treatment order form under the Mental Health Act 2014 (WA). */
 export type CommunityTreatmentOrder = { form: "5A"; recordedAt: number; recordedBy: string };
+
+export type EndedCommunityTreatmentOrder = CommunityTreatmentOrder & { endedAt: number };
 
 /** Alias for patient safety governance and cross-service typing */
 export type WardPatient = Patient;
@@ -190,6 +193,7 @@ export const PATIENT_FIELDS = [
   "aboriginalOrTorresStraitIslanderStatus",
   "interpreterLanguage",
   "communityTreatmentOrder",
+  "communityTreatmentOrderHistory",
 ] as const;
 
 /** Whole years, from the stored date of birth and a supplied "today". Never stored: see the field's

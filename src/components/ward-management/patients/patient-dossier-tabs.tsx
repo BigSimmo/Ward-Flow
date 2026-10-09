@@ -726,6 +726,13 @@ export function PatientDocumentsTab({
       recorded: clock(patient.communityTreatmentOrder.recordedAt),
       by: patient.communityTreatmentOrder.recordedBy,
     });
+  for (const ended of patient?.communityTreatmentOrderHistory ?? [])
+    forms.push({
+      code: ended.form,
+      status: "Closed",
+      recorded: clock(ended.recordedAt),
+      by: ended.recordedBy,
+    });
   const current = forms.filter((f) => f.status === "Current").length;
 
   return (

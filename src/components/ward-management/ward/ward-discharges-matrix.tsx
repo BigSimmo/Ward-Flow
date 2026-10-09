@@ -185,7 +185,7 @@ export function WardDischargesMatrix({
                     <span>{leaveBed.absentWithoutLeave ? "Absent without leave" : "Bed on leave"}</span>
                     <span style={{ fontSize: "12px", color: "var(--muted)" }}>
                       {leaveBed.absentWithoutLeave
-                        ? `Absent since ${formatInstant(leaveBed.absentWithoutLeave.since)}`
+                        ? `Absent since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}`
                         : `Expected return ${formatInstant(leaveBed.expectedReturn)}`}
                     </span>
                   </div>

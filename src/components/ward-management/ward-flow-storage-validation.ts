@@ -236,10 +236,19 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   for (const patient of value.patients as RecordValue[]) {
     // D-38: a community treatment order is the one non-text patient field: Form 5A, a finite
     // recorded time and a role label. Every other field stays plain text.
-    const { communityTreatmentOrder: order, ...identity } = patient;
+    const { communityTreatmentOrder: order, communityTreatmentOrderHistory: orderHistory, ...identity } = patient;
     if (order !== undefined) {
       if (!object(order) || order.form !== "5A" || !finite(order.recordedAt) || !text(order.recordedBy)) return false;
       if (Object.keys(order).some((key) => !["form", "recordedAt", "recordedBy"].includes(key))) return false;
+    }
+    if (orderHistory !== undefined) {
+      if (!Array.isArray(orderHistory)) return false;
+      for (const ended of orderHistory) {
+        if (!object(ended) || ended.form !== "5A" || !finite(ended.recordedAt) || !finite(ended.endedAt)) return false;
+        if (!text(ended.recordedBy)) return false;
+        if (Object.keys(ended).some((key) => !["form", "recordedAt", "recordedBy", "endedAt"].includes(key)))
+          return false;
+      }
     }
     if (!Object.values(identity).every(text)) return false;
     if (!fields(patient, ["id", "umrn", "givenName", "familyName", "dateOfBirth"], text)) return false;

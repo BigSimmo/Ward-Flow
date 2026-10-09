@@ -261,7 +261,7 @@ export function WardHomeTab({
       timeLabel: formatInstantWithDay(leaveBed.confirmedAt, now),
       title: leaveBed.absentWithoutLeave ? "Absent without leave" : "Approved leave",
       detail: leaveBed.absentWithoutLeave
-        ? `Since ${formatInstant(leaveBed.absentWithoutLeave.since)}`
+        ? `Since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}`
         : `Expected back ${formatInstant(leaveBed.expectedReturn)}`,
       status: "Leave",
     });

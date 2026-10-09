@@ -6229,13 +6229,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (!patient.communityTreatmentOrder) {
         return reject(state, event, `patient ${patient.id} has no community treatment order recorded`);
       }
+      const ended = patient.communityTreatmentOrder;
+      const history = [...(patient.communityTreatmentOrderHistory ?? []), { ...ended, endedAt: event.now }];
       return {
         ...state,
         patients: state.patients.map((candidate) => {
           if (candidate.id !== patient.id) return candidate;
-          const { communityTreatmentOrder: _ended, ...rest } = candidate;
-          void _ended;
-          return rest;
+          const { communityTreatmentOrder: _removed, ...rest } = candidate;
+          void _removed;
+          return { ...rest, communityTreatmentOrderHistory: history };
         }),
       };
     }
