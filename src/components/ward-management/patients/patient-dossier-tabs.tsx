@@ -81,12 +81,9 @@ function movementEvents(movement: Movement, unitName: (id: string) => string | u
   const formAt = movement.legalFormReceivedAt ?? movement.formedAt;
   if (movement.legalForm && formAt !== undefined)
     events.push({ at: formAt, tone: "success", text: `Form ${movement.legalForm.code} recorded` });
+  // No ward count: `referredUnitIds` shrinks as wards answer, so it cannot say how many were asked then.
   if (movement.referredAt !== undefined)
-    events.push({
-      at: movement.referredAt,
-      tone: "info",
-      text: `Referred to ${movement.referredUnitIds.length} ward${movement.referredUnitIds.length === 1 ? "" : "s"}`,
-    });
+    events.push({ at: movement.referredAt, tone: "info", text: "Referred for a bed" });
   for (const decline of movement.declines)
     events.push({ at: decline.at, tone: "closed", text: `Declined, ${unitName(decline.unitId) ?? decline.unitId}` });
   if (movement.escalation)
@@ -114,6 +111,8 @@ function movementEvents(movement: Movement, unitName: (id: string) => string | u
       text: `${STAGES.find((s) => s.id === change.to)?.label ?? change.to}, by ${change.by}`,
     });
   const job = movement.transport;
+  if (job?.acceptedAt !== undefined) events.push({ at: job.acceptedAt, tone: "info", text: "Transport accepted" });
+  if (job?.enRouteAt !== undefined) events.push({ at: job.enRouteAt, tone: "info", text: "Transport en route" });
   if (job?.collectedAt !== undefined) events.push({ at: job.collectedAt, tone: "info", text: "Collected" });
   if (job?.arrivedAt !== undefined) events.push({ at: job.arrivedAt, tone: "success", text: "Arrived" });
   if (movement.closure)
@@ -643,17 +642,26 @@ export function PatientDetailsTab({
   );
 }
 
-type FormRow = { code: string; status: "Current" | "Continued"; recorded?: string; by: string; due?: number };
+type FormRow = {
+  code: string;
+  status: "Current" | "Continued" | "Closed";
+  recorded?: string;
+  by: string;
+  due?: number;
+};
 
 export function PatientDocumentsTab({
   record,
   movement,
+  movementInForce,
   patient,
   now,
   onRecordDocument,
 }: {
   record: PatientNowRecord;
   movement?: Movement;
+  /** False when the movement is closed or its stay has ended, so its forms are history. */
+  movementInForce: boolean;
   patient?: Patient;
   now: number;
   onRecordDocument: () => void;
@@ -697,10 +705,15 @@ export function PatientDocumentsTab({
     const recordedAt = movement.legalFormReceivedAt ?? movement.formedAt;
     const continued = movement.legalForm.continuedBy;
     if (continued)
-      forms.push({ code: continued.code, status: "Current", recorded: clock(continued.recordedAt), by: continued.by });
+      forms.push({
+        code: continued.code,
+        status: movementInForce ? "Current" : "Closed",
+        recorded: clock(continued.recordedAt),
+        by: continued.by,
+      });
     forms.push({
       code: movement.legalForm.code,
-      status: continued ? "Continued" : "Current",
+      status: !movementInForce ? "Closed" : continued ? "Continued" : "Current",
       recorded: recordedAt !== undefined ? clock(recordedAt) : undefined,
       by: "Movement record",
       due: movement.legalForm.dueAt,
@@ -723,7 +736,9 @@ export function PatientDocumentsTab({
           icon={Scale}
           title="Legal forms"
           aside={<span className={styles.chip}>Current {current}</span>}
-          meta={movement?.legalStatus ?? patient?.legalStatus ?? "Legal status not recorded"}
+          meta={
+            (movementInForce ? movement?.legalStatus : undefined) ?? patient?.legalStatus ?? "Legal status not recorded"
+          }
         />
         {forms.length > 0 ? (
           <table className={tableClasses.table}>

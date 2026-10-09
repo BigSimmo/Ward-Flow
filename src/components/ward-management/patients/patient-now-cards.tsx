@@ -217,7 +217,7 @@ export function PatientLeaveCard({ dueBack, onMarkAbsent }: { dueBack: string; o
   );
 }
 
-/** Absent without leave: where and since when, with Record return at the foot. */
+/** Absent without leave: the ward's absence record. No sighting is held, so none is shown. */
 export function PatientLastSeenCard({
   wardName,
   since,
@@ -229,10 +229,11 @@ export function PatientLastSeenCard({
 }) {
   return (
     <Card data-testid="ward-patient-last-seen">
-      <CardHead level={3} icon={MapPin} title="Last seen" aside={<span className={styles.time}>{since}</span>} />
+      <CardHead level={3} icon={MapPin} title="Absence recorded" aside={<span className={styles.time}>{since}</span>} />
       <div className={styles.rows}>
-        <Row label="Where">{wardName ?? notRecorded}</Row>
+        <Row label="Bed held on">{wardName ?? notRecorded}</Row>
         <Row label="Recorded">{since}, when the ward recorded the absence</Row>
+        <Row label="Last seen">Where and when are not held in this prototype</Row>
         <Row label="Description">Recorded by the ward, not held in this prototype</Row>
       </div>
       <div className={styles.dock}>

@@ -80,6 +80,8 @@ export interface PatientStatusContext {
   onAbsenceStep: (step: AbsenceStep) => void;
   onRecordCto: () => void;
   onEndCto: () => void;
+  /** Why the next forward step would be refused (the held ward no longer suits), or undefined. */
+  handoverRefusal?: string;
 }
 
 function clearanceCell(movement: Movement, onClearance: PatientStatusContext["onClearance"]): StatusCell {
@@ -147,7 +149,9 @@ function dayLabel(instant: number, dayZero: Date): string {
   });
 }
 
-function legalValue(movement: Movement | undefined, patient: Patient | undefined): string {
+function legalValue(record: Movement | undefined, patient: Patient | undefined): string {
+  // A closed movement's form is history, not the authority in force now.
+  const movement = record?.closure ? undefined : record;
   if (movement?.legalForm)
     return `${movement.legalStatus ?? "Legal status not recorded"}, Form ${movement.legalForm.code}`;
   return movement?.legalStatus ?? patient?.legalStatus ?? "Not recorded";
@@ -158,20 +162,21 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
   const { movement, admission, patient, now } = ctx;
 
   if (mode === "find" && movement) {
-    const asked = movement.referredUnitIds.length;
+    // `referredUnitIds` holds only live requests: a decline or withdrawal removes its ward.
+    const pending = movement.referredUnitIds.length;
     const declined = movement.declines.length;
     const lastDecline = movement.declines.at(-1);
-    const allDeclined = asked > 0 && declined >= asked;
+    const noneAsked = pending === 0 && declined === 0;
     const bed: StatusCell = {
       key: "bed",
       icon: BedDouble,
       label: `${movement.security} ${movement.cohort.toLowerCase()} bed`,
       owner: "Bed coordinator",
-      tone: asked === 0 || allDeclined ? "danger" : "warning",
-      value: asked === 0 ? "No ward asked" : allDeclined ? "None found" : `${asked - declined} awaiting answer`,
-      sub: asked === 0 ? "Refer to fitting wards" : `${declined} of ${asked} declined`,
+      tone: pending === 0 ? "danger" : "warning",
+      value: noneAsked ? "No ward asked" : pending === 0 ? "None found" : `${pending} awaiting answer`,
+      sub: noneAsked ? "Refer to fitting wards" : `${declined} declined`,
       time: lastDecline ? `Last decline ${clock(lastDecline.at)}` : undefined,
-      action: { kind: "button", label: asked === 0 ? "Choose wards" : "Open shortlist", onClick: ctx.onOpenPlacement },
+      action: { kind: "button", label: noneAsked ? "Choose wards" : "Open shortlist", onClick: ctx.onOpenPlacement },
     };
     return withMeter({
       tone: "danger",
@@ -204,7 +209,12 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
       meta: ctx.acceptedUnitName ? `Accepted for ${ctx.acceptedUnitName}` : "Acceptance recorded",
       cells: [bed, clearanceCell(movement, ctx.onClearance), transportCell(movement, true, ctx.onBookTransport)],
     });
-    if (status.meter && status.meter.clear === status.meter.of) status.verdict = "Ready to move";
+    if (ctx.handoverRefusal) {
+      // The engine refuses the next forward step, so the three gates are not the whole answer.
+      status.tone = "danger";
+      status.verdict = "Cannot move";
+      status.meta = ctx.handoverRefusal;
+    } else if (status.meter && status.meter.clear === status.meter.of) status.verdict = "Ready to move";
     return status;
   }
 

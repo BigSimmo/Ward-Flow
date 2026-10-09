@@ -11,7 +11,13 @@ import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward
 import { edById } from "@/components/ward-management/ward-sites";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { Movement, TransportProvider, TransportLegalStatus } from "@/components/ward-management/ward-model";
-import { TRANSPORT_PROVIDERS, ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
+import {
+  ABSENCE_STEPS,
+  ABSENCE_STEP_LABELS,
+  TRANSPORT_PROVIDERS,
+  ARRIVAL_MODE_LABELS,
+} from "@/components/ward-management/ward-model";
+import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
 import { UploadFormsModal } from "@/components/ward-management/referrals/upload-forms-modal";
 import type { Patient, PatientId } from "@/components/ward-management/ward-patients";
@@ -285,6 +291,8 @@ export function PatientNowScreen({
   });
   const modeMeta = PATIENT_MODES[mode];
   const isLiveBedflow = modeMeta.placing;
+  // A movement's forms are the authority in force only while it is open or its stay is current.
+  const movementInForce = Boolean(liveMovement && !liveMovement.closure && mode !== "idle" && mode !== "cto");
   const isPulled = isLiveBedflow && liveMovement?.pullExpiresAt !== undefined;
 
   const acceptingUnit = liveMovement?.acceptedUnitId
@@ -310,6 +318,25 @@ export function PatientNowScreen({
 
   // Copy handover summary
   function handleCopySummary() {
+    const absence = mode === "awol" ? stayLeaveBed?.absentWithoutLeave : undefined;
+    if (absence) {
+      // The missing person summary is the absence record only: when, where the bed is held, the steps.
+      const steps = ABSENCE_STEPS.map((step) => {
+        const at = absence.steps.find((done) => done.step === step)?.at;
+        return `${ABSENCE_STEP_LABELS[step]}: ${at === undefined ? "not recorded" : `done ${clock(at)}`}`;
+      });
+      const text = [
+        `Ward Flow missing person summary — ${displayName}`,
+        `Absent without leave, recorded ${clock(absence.since)}`,
+        `Bed held on ${stayUnit?.name ?? "a ward not recorded"}`,
+        ...steps,
+      ].join("\n");
+      navigator.clipboard?.writeText(text).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+      return;
+    }
     const urgencyLabel = urgencyTier ? `Tier ${urgencyTier}` : "urgency not recorded";
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     const text = `Ward Flow Handover Summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext Action: ${record.next[0]?.w ?? "Review"}`;
@@ -498,6 +525,8 @@ export function PatientNowScreen({
       if (livePatient)
         dispatch({ type: "END_COMMUNITY_TREATMENT_ORDER", role: "community", now, patientId: livePatient.id });
     },
+    handoverRefusal:
+      mode === "held" && liveMovement ? (heldUnitGenderRefusal({ units }, liveMovement, now) ?? undefined) : undefined,
   };
 
   // Who to call now, from the record only. Phone numbers are not held in this prototype.
@@ -1207,7 +1236,7 @@ export function PatientNowScreen({
                   ) : null}
                   {mode !== "idle" ? (
                     <PatientLegalNowCard
-                      movement={liveMovement}
+                      movement={movementInForce ? liveMovement : undefined}
                       patient={livePatient}
                       onAllForms={() => {
                         setActiveTab("documents");
@@ -1295,6 +1324,7 @@ export function PatientNowScreen({
                   })),
                 }}
                 movement={liveMovement}
+                movementInForce={movementInForce}
                 patient={livePatient}
                 now={now}
                 onRecordDocument={() => setShowUploadFormsModal(true)}

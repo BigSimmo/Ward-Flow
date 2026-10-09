@@ -1040,9 +1040,13 @@ function eligibilityRefusal(
  * never `eligibilityRefusal`'s own front-door wording, which is misleading here: nothing about
  * accepting THIS unit again fixes it (see `GENDER_NO_LONGER_SUITS_REFUSAL`'s own doc comment).
  */
-function heldUnitGenderRefusal(state: WardFlowState, movement: Movement, now: Instant): string | null {
+export function heldUnitGenderRefusal(
+  state: Pick<WardFlowState, "units">,
+  movement: Movement,
+  now: Instant,
+): string | null {
   if (!movement.acceptedUnitId) return null;
-  const unit = findUnit(state, movement.acceptedUnitId);
+  const unit = state.units.find((candidate) => candidate.id === movement.acceptedUnitId);
   if (!unit) return null;
   const genderGate = eligibility(movement, unit, now).gates.find((gate) => gate.gate === "gender_designation");
   if (genderGate && !genderGate.pass) {
