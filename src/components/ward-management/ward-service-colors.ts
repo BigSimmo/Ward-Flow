@@ -219,7 +219,7 @@ export const WA_HEALTH_SERVICES_COLOR_KEY = {
       "Rurallink",
       "PathWest",
     ],
-    dotColor: "#10b981",
+    dotColor: "#5fc9d6",
     light: {
       bg: "#ecfdf5",
       border: "#a7f3d0",
@@ -230,7 +230,7 @@ export const WA_HEALTH_SERVICES_COLOR_KEY = {
       bg: "rgba(16, 185, 129, 0.15)",
       border: "rgba(52, 211, 153, 0.3)",
       ink: "#6ee7b7",
-      dot: "#34d399",
+      dot: "#5fc9d6",
     },
     cssVarPrefix: "--svc-statewide",
   },
