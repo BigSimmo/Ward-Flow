@@ -222,7 +222,7 @@ export function movementUmrn(
 
 type MovementIdOnly = { movementId: string };
 
-const MOVEMENT_ID_TOKEN = /(?<![A-Z0-9-])WF-[A-Z0-9]+(?:-[A-Z0-9]+)*\b/g;
+const MOVEMENT_ID_TOKEN = /(?<![A-Z0-9-])WF-[A-Z0-9-]+/g;
 
 /** Replaces every known movement id quoted in `text` with that patient's UMRN. Unknown tokens are
  *  left alone, so a refusal about a movement that does not exist still says what was asked for. */
@@ -234,11 +234,13 @@ export function withUmrnInPlaceOfMovementIds(
     movements?: readonly Movement[];
   },
 ): string {
-  if (!text.includes("WF-") || typeof state !== "object" || state === null) return text;
+  if (!text.includes("WF-")) return text;
   const index = getOrBuildIndex(state);
   return text.replace(MOVEMENT_ID_TOKEN, (token) => {
-    const match = index.movementMap.get(token);
+    // A single character class keeps the pattern linear; a trailing hyphen is prose, not id.
+    const id = token.replace(/-+$/, "");
+    const match = index.movementMap.get(id);
     if (!match || match === DUPLICATE) return token;
-    return resolveSubjectWithIndex(match, index).umrn;
+    return resolveSubjectWithIndex(match, index).umrn + token.slice(id.length);
   });
 }

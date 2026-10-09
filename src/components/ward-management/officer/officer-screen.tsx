@@ -356,7 +356,10 @@ export function OfficerScreen() {
     return info.patient ? info.displayName : undefined;
   };
   // D-39: the patient's UMRN is shown wherever the WF journey number used to be.
-  const umrnFor = (movement: Movement) => movementUmrn(movement, { patients, referrals, movements });
+  const umrnFor = useCallback(
+    (movement: Movement) => movementUmrn(movement, { patients, referrals, movements }),
+    [patients, referrals, movements],
+  );
   const patientNameForMovementId = (movementId: string) => {
     const movement = movements.find((candidate) => candidate.id === movementId);
     return movement ? officerPatientName(movement) : "Not recorded";
@@ -454,7 +457,7 @@ export function OfficerScreen() {
 
       return true;
     });
-  }, [jobs, statusFilter, providerFilter, escortFilter, searchQuery, units, officerPatientName]);
+  }, [jobs, statusFilter, providerFilter, escortFilter, searchQuery, units, officerPatientName, umrnFor]);
 
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const selectedJob = jobs.find((job) => job.id === selectedId) ?? filteredJobs[0] ?? jobs[0];
