@@ -25,6 +25,7 @@ import {
   isOpen,
   searchMovements,
   stageCopy,
+  unitCapacity,
   type InboxItem,
   type MovementSearchQuery,
 } from "@/components/ward-management/ward-derivations";
@@ -169,10 +170,11 @@ export type TaskSearchResult = {
  * Calculates ready bed count for a unit per Standard §8.6.
  * Ready beds = min(allocatable, empty). With either figure missing the count is not recorded
  * (null): until 25 Sept 2026 it fell back to `unit.beds`, calling every bed on the ward ready.
+ * Calls `unitCapacity` (ruling R-B-09) — never a fifth inline copy of the Ready expression.
  */
 export function unitReadyBedCount(unit: Unit): number | null {
   if (unit.allocatable && unit.empty) {
-    return Math.min(unit.allocatable.value, unit.empty.value);
+    return unitCapacity(unit, []).available;
   }
   return null;
 }

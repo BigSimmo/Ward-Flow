@@ -54,6 +54,12 @@ export const INBOX_CATEGORIES = {
   /** A planned admission whose expected arrival has passed without the arrival being recorded.
    *  Its row's remainder is a planned-admission id, not a movement id (stream D). */
   planned_arrival_overdue: { idPrefix: "planned-arrival-", kind: "fact" },
+  /** An involuntary patient's admission or transfer with a carer, PSP or MHAS notification not yet
+   *  recorded (advisory). Leaves when every party has a record. Remainder is the movement id. */
+  support_notification_arrival: { idPrefix: "notify-arrival-", kind: "fact" },
+  /** The same, for a discharge. Remainder is the discharged stay's admission id (a stay may have
+   *  no movement), checked against `state.admissions` by `ACKNOWLEDGE_INBOX_ITEM`. */
+  support_notification_discharge: { idPrefix: "notify-discharge-", kind: "fact" },
 } as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
 
 /**
@@ -107,17 +113,19 @@ export function reduceInboxEvent(
       }
       const inboxCategory = Object.values(INBOX_CATEGORIES).find((entry) => inboxItemId.startsWith(entry.idPrefix));
       const inboxMovementId = inboxCategory ? inboxItemId.slice(inboxCategory.idPrefix.length) : undefined;
-      const namesPlannedArrival =
-        inboxCategory === INBOX_CATEGORIES.planned_arrival_overdue &&
-        (state.plannedAdmissions ?? []).some((planned) => planned.id === inboxMovementId);
-      if (
-        !inboxCategory ||
-        (!namesPlannedArrival && !state.movements.some((movement: Movement) => movement.id === inboxMovementId))
-      ) {
+      // A discharge notification row names its stay, which may have no movement; a planned arrival
+      // row names its booking (stream D).
+      const namesRecord =
+        inboxCategory === INBOX_CATEGORIES.support_notification_discharge
+          ? state.admissions.some((admission) => admission.id === inboxMovementId)
+          : inboxCategory === INBOX_CATEGORIES.planned_arrival_overdue
+            ? (state.plannedAdmissions ?? []).some((planned) => planned.id === inboxMovementId)
+            : state.movements.some((movement: Movement) => movement.id === inboxMovementId);
+      if (!inboxCategory || !namesRecord) {
         return reject(
           state,
           event,
-          `ACKNOWLEDGE_INBOX_ITEM inboxItemId ${inboxItemId} does not name a real inbox row — its prefix must be one of INBOX_CATEGORIES and its remainder an existing movement id`,
+          `ACKNOWLEDGE_INBOX_ITEM inboxItemId ${inboxItemId} does not name a real inbox row — its prefix must be one of INBOX_CATEGORIES and its remainder an existing movement id (an admission id for a discharge notification row)`,
         );
       }
       decision.outcome = "accepted";

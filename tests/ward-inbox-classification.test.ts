@@ -55,6 +55,41 @@ function movementsCoveringEveryCategory(): Movement[] {
   ];
 }
 
+/**
+ * The two carer, PSP and MHAS categories (9 Oct 2026) come from the whole record, not the open
+ * movements: an involuntary arrival completed an hour ago, and the seed's involuntary discharge.
+ */
+function recordsCoveringSupportNotifications() {
+  const seed = seedWardFlowState();
+  const arrived = movementFrom("WF-T04", {
+    legalStatus: "Involuntary inpatient",
+    stage: "arrived",
+    closure: { at: NOW - 60, outcome: "arrived", reason: "Synthetic arrival" },
+  });
+  return {
+    movements: [...seed.movements, arrived],
+    admissions: seed.admissions,
+    patients: seed.patients,
+    referrals: seed.referrals,
+    supportNotifications: [],
+  };
+}
+
+/**
+ * Categories whose rows a producer module builds and \`buildActionInbox\` appends, so the source
+ * scan below finds their blocks in that module rather than in \`buildActionInbox\` itself.
+ */
+const DELEGATED_PRODUCERS: ReadonlyArray<{ call: string; file: string; fn: string; categories: number }> = [
+  {
+    call: "supportNotificationInboxItems(",
+    file: "src/components/ward-management/ward-support-notifications.ts",
+    fn: "export function supportNotificationInboxItems",
+    // Its one block emits both categories, chosen by occasion: arrival (admission or transfer) and
+    // discharge. The runtime test above proves each is reached.
+    categories: 2,
+  },
+];
+
 function categoryKeyOf(item: InboxItem): string | undefined {
   return Object.entries(INBOX_CATEGORIES).find(([, entry]) => item.id.startsWith(entry.idPrefix))?.[0];
 }
@@ -75,6 +110,7 @@ describe("every action-inbox category is classified as a fact or a commitment", 
       NOW,
       allUnits(),
       seedWardFlowState().plannedAdmissions,
+      recordsCoveringSupportNotifications(),
     );
 
     // ANTI-VACUITY. Without this the whole test passes over an empty array — the enumeration
@@ -123,8 +159,22 @@ describe("every action-inbox category is classified as a fact or a commitment", 
     const pushes = body.match(/items\.push\(\{/g) ?? [];
     // Anti-vacuity on the scan itself: a body that matched nothing would agree with an empty table.
     expect(pushes.length, "the scan found no row-emitting blocks — it is measuring the wrong text").toBeGreaterThan(0);
+    // A delegated producer counts only while buildActionInbox still calls it and it still emits.
+    let delegated = 0;
+    for (const producer of DELEGATED_PRODUCERS) {
+      expect(body, `buildActionInbox no longer calls ${producer.call}`).toContain(producer.call);
+      const producerSource = readFileSync(producer.file, "utf8");
+      const producerStart = producerSource.indexOf(producer.fn);
+      expect(producerStart, `${producer.fn} is no longer where this guard looks`).toBeGreaterThan(-1);
+      const producerBody = producerSource.slice(
+        producerStart,
+        producerSource.indexOf("\n}", producerSource.indexOf("return items;", producerStart)),
+      );
+      expect(producerBody, `${producer.fn} no longer emits rows`).toMatch(/items\.push\(\{/);
+      delegated += producer.categories;
+    }
     expect(
-      pushes.length,
+      pushes.length + delegated,
       "buildActionInbox emits a number of categories that INBOX_CATEGORIES does not account for",
     ).toBe(Object.keys(INBOX_CATEGORIES).length);
   });

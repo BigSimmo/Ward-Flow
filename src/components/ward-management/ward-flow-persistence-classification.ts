@@ -90,6 +90,8 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
   // Stream D, 9 Oct 2026: `initials` is typed by a person (one to three letters, normalised and
   // pattern-checked, but still typed about a person), so booking locks persistence like ADD_PATIENT.
   "BOOK_PLANNED_ADMISSION",
+  // 9 Oct 2026: `who` (the person told) and `reason` (why it does not apply) are typed text.
+  "RECORD_SUPPORT_NOTIFICATION",
 ]);
 
 /**

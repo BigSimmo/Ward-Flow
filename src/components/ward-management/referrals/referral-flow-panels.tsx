@@ -1,8 +1,9 @@
 "use client";
 
-import { Check, Circle, FileText, Lock, Stethoscope, Upload, User, X } from "lucide-react";
+import { Check, Circle, FileText, Lock, Stethoscope, Upload, User, UserRound, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
-import { StatusGlyph } from "@/components/wf";
+import { Button, StatusGlyph } from "@/components/wf";
+import type { ProfileLookup } from "@/components/ward-management/settings/settings-profile";
 import { CHART_MAX_BYTES, CHART_MIME_TYPES, type ReferralChart, type ReferralContact } from "./referral-submission";
 import styles from "./ward-referral-drawer.module.css";
 
@@ -436,6 +437,38 @@ export function ContactFields({
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Use my details: fills the referrer's name, role and contact from the profile the route's role
+ * holds. Without one the control stays focusable, shown unavailable, with its reason.
+ */
+export function UseMyDetailsButton({
+  lookup,
+  onFill,
+}: {
+  lookup: ProfileLookup;
+  onFill: (contact: ReferralContact) => void;
+}) {
+  return (
+    <span className={styles.useMyDetails}>
+      <Button
+        variant="ghost"
+        size="sm"
+        icon={UserRound}
+        reasonDisplay="tooltip"
+        disabledReason={lookup.status === "unavailable" ? lookup.reason : undefined}
+        data-testid="ward-referral-use-my-details"
+        onClick={() => {
+          if (lookup.status !== "available") return;
+          const { name, role, phone, email, location } = lookup.profile;
+          onFill({ name, role, phone, email, location });
+        }}
+      >
+        Use my details
+      </Button>
+    </span>
   );
 }
 

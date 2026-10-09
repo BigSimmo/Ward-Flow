@@ -165,6 +165,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   CHANGE_PLANNED_ADMISSION: { category: "both", plainWording: "Planned admission changed" },
   CANCEL_PLANNED_ADMISSION: { category: "both", plainWording: "Planned admission cancelled" },
   CONVERT_PLANNED_ADMISSION: { category: "both", plainWording: "Planned admission arrived on ward" },
+  RECORD_SUPPORT_NOTIFICATION: { category: "patient", plainWording: "Carer, PSP or MHAS notification recorded" },
 
   // 2.9 World and admin
   ADVANCE_CLOCK: { category: "neither", plainWording: "Operational demonstration clock advanced" },

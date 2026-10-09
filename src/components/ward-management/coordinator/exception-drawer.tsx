@@ -10,6 +10,7 @@ import { OverrideRegister } from "@/components/ward-management/override-register
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DeclineEntry, InboxItem, OverrideEntry } from "@/components/ward-management/ward-derivations";
 import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
+import { dischargeHref } from "@/components/ward-management/shell/ward-facade";
 import type { Rejection, Unit } from "@/components/ward-management/ward-model";
 
 import styles from "./home.module.css";
@@ -44,6 +45,12 @@ type ExceptionDrawerProps = {
   open: boolean;
   onToggle: () => void;
   onSelectMovement: (movementId: string) => void;
+  /**
+   * Discharge notification rows carry `admissionId` and link to that stay on the discharges board,
+   * not a movement. Called as the link opens, so the caller can close its panel; the link itself
+   * navigates, so the drawer needs no router.
+   */
+  onSelectDischarge?: (admissionId: string) => void;
   /** `band`: the desktop strip under the Home hero. `column`: the phone card under the queue. */
   placement?: "band" | "column";
   /** Optional controlled tab, so the hero's Exceptions and Declines counts open their own tab. */
@@ -83,6 +90,7 @@ export function ExceptionDrawer({
   open,
   onToggle,
   onSelectMovement,
+  onSelectDischarge,
   placement = "column",
   tab,
   onTabChange,
@@ -196,7 +204,7 @@ export function ExceptionDrawer({
             <ul className={styles.registerList}>
               {items.map((item) => {
                 const silenceCopy = silenceReminders?.get(item.movementId);
-                const body = (
+                const content = (
                   <>
                     <span className={styles.registerMain}>
                       <span className={styles.registerTitle}>{commandInboxTitle(item)}</span>
@@ -214,6 +222,8 @@ export function ExceptionDrawer({
                     </Badge>
                   </>
                 );
+                // Same routing as the Tasks drawer: a discharge notification row opens by admission.
+                const { admissionId } = item;
                 return (
                   <li key={item.id}>
                     {item.href ? (
@@ -224,7 +234,19 @@ export function ExceptionDrawer({
                         data-tone={item.tone}
                         className={styles.registerRow}
                       >
-                        {body}
+                        {content}
+                      </Link>
+                    ) : admissionId !== undefined ? (
+                      <Link
+                        href={dischargeHref(admissionId)}
+                        data-testid={`ward-exception-${item.id}`}
+                        data-tone={item.tone}
+                        className={styles.registerRow}
+                        onClick={() => {
+                          onSelectDischarge?.(admissionId);
+                        }}
+                      >
+                        {content}
                       </Link>
                     ) : (
                       <button
@@ -232,9 +254,11 @@ export function ExceptionDrawer({
                         data-testid={`ward-exception-${item.id}`}
                         data-tone={item.tone}
                         className={styles.registerRow}
-                        onClick={() => onSelectMovement(item.movementId)}
+                        onClick={() => {
+                          onSelectMovement(item.movementId);
+                        }}
                       >
-                        {body}
+                        {content}
                       </button>
                     )}
                   </li>

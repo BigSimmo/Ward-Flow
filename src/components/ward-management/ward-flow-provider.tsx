@@ -165,6 +165,8 @@ type WardFlowContextValue = {
   broadcastAlerts: BroadcastAlert[];
   /** Known future admissions (stream D). Optional so hand-built test contexts need not supply it. */
   plannedAdmissions?: WardFlowState["plannedAdmissions"];
+  /** Advisory carer/PSP/MHAS notification records. Optional so hand-built test contexts need not supply it. */
+  supportNotifications?: NonNullable<WardFlowState["supportNotifications"]>;
   /** Event log, step 1: every event dispatched this session (type, role, time, accepted, ids). */
   eventLog?: readonly EventLogEntry[];
   dispatch: Dispatch<WardFlowEvent>;
@@ -976,6 +978,7 @@ function WardFlowWorld({
       configuration: state.configuration,
       broadcastAlerts: state.broadcastAlerts ?? [],
       plannedAdmissions: state.plannedAdmissions ?? [],
+      supportNotifications: state.supportNotifications ?? [],
       eventLog: container.eventLog ?? [],
       dispatch,
       focusMovementId,

@@ -1159,6 +1159,45 @@ export function candidateEvents(
           unitId: planned.unitId,
           actingUnitId: planned.unitId,
         }));
+    // Advisory carer/PSP/MHAS checklist (9 Oct 2026). Targets one movement or one admission —
+    // candidates are built from live subjects so the reducer's own guards decide acceptance.
+    case "RECORD_SUPPORT_NOTIFICATION": {
+      const arrivalCandidates = state.movements.flatMap((movement) => {
+        if (
+          movement.legalStatus !== "Involuntary inpatient" &&
+          movement.legalStatus !== "Detained awaiting examination"
+        )
+          return [];
+        if (movement.closure?.outcome !== "arrived" && movement.stage !== "arrived") return [];
+        const occasion = movement.sourceAdmissionId !== undefined ? ("transfer" as const) : ("admission" as const);
+        return (["carer", "personal_support_person", "mhas"] as const).map((party) => ({
+          type,
+          role,
+          now,
+          occasion,
+          movementId: movement.id,
+          party,
+          outcome: "told" as const,
+          who: "Synthetic carer",
+          contactedAt: now,
+        }));
+      });
+      const dischargeCandidates = state.admissions.flatMap((admission) => {
+        if (admission.state !== "departed" || admission.leftAt === null) return [];
+        if (admission.leavingDestination === "transferred-to-another-psychiatric-ward") return [];
+        return (["carer", "personal_support_person", "mhas"] as const).map((party) => ({
+          type,
+          role,
+          now,
+          occasion: "discharge" as const,
+          admissionId: admission.id,
+          party,
+          outcome: "not_applicable" as const,
+          reason: "Synthetic not-applicable reason",
+        }));
+      });
+      return [...arrivalCandidates, ...dischargeCandidates];
+    }
     default:
       return [];
   }
@@ -1239,6 +1278,10 @@ export const MOVEMENT_TARGETED_EVENTS: ReadonlySet<WardFlowEvent["type"]> = new 
   "SET_ARRIVAL_DETAILS",
   "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
   "UPLOAD_PATIENT_FORM",
+  // Advisory notification checklist (9 Oct 2026). Arrival path carries `movementId`; discharge
+  // path carries `admissionId`. Scoped like other subject-targeted events so the unscoped
+  // coverage assertion does not demand it as a whole-state command.
+  "RECORD_SUPPORT_NOTIFICATION",
 ]);
 
 /**
@@ -1655,6 +1698,39 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
   // satisfies the "Non-vacuity 3" check below rather than sidestepping it.
   for (const code of codes) {
     const accepted = coverage.get(code)!;
+
+    // RECORD_SUPPORT_NOTIFICATION needs an involuntary completed arrival (or discharge). The
+    // round-robin often mutates those seed subjects before this event's turn, so exercise it
+    // against a fresh seed — same "traversal gap, not structural impossibility" shape as
+    // RELEASE_PULL. Does not invent a legal figure; only records an advisory notification.
+    const supportSeed = seedWardFlowState();
+    const supportArrival = supportSeed.movements.find(
+      (movement) =>
+        (movement.legalStatus === "Involuntary inpatient" ||
+          movement.legalStatus === "Detained awaiting examination") &&
+        (movement.closure?.outcome === "arrived" || movement.stage === "arrived"),
+    );
+    expect(
+      supportArrival,
+      `no involuntary arrived movement in the seed for RECORD_SUPPORT_NOTIFICATION (${code})`,
+    ).toBeDefined();
+    const supportRecorded = wardFlowReducer(supportSeed, {
+      type: "RECORD_SUPPORT_NOTIFICATION",
+      role: EVENT_ROLE.RECORD_SUPPORT_NOTIFICATION[0],
+      now: NOW_ANCHOR,
+      occasion: supportArrival!.sourceAdmissionId !== undefined ? "transfer" : "admission",
+      movementId: supportArrival!.id,
+      party: "carer",
+      outcome: "told",
+      who: "Synthetic carer",
+      contactedAt: NOW_ANCHOR,
+    });
+    expect(
+      supportRecorded.rejections,
+      `RECORD_SUPPORT_NOTIFICATION for Form ${code} was refused: ${supportRecorded.rejections.at(-1)?.reason}`,
+    ).toEqual([]);
+    accepted.add("RECORD_SUPPORT_NOTIFICATION");
+    offenders.push(...offendingFormsIn(supportRecorded, `RECORD_SUPPORT_NOTIFICATION(${code})`));
 
     // D-34 needs an accepted pre-collection ED referral. Build that real producer chain for
     // every legal code instead of treating a round-robin traversal gap as an exclusion.

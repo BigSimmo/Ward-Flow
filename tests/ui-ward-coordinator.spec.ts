@@ -9,8 +9,8 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { PARALLEL_REFERRAL_CAP } from "@/components/ward-management/ward-model";
-import { wardPlannedAdmissions } from "@/components/ward-management/ward-admissions-seed";
-import { movementById, wardMovements } from "@/components/ward-management/ward-movements";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { movementById } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 async function gotoCoordinator(page: Page) {
@@ -223,13 +223,22 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Whole-branch review Minor 6: the register is scoped to OPEN movements, so the independent
     // count here must be too — computing it over all 48 records would agree with a screen that
     // wrongly listed a closed patient's breached deadline.
-    // Stream D (9 Oct 2026): the screen also lists booked planned admissions past their arrival
-    // time, so the independent count reads the same seeded bookings the screen does.
+    // The same call the screen makes (coordinator-screen.tsx): open movements, the seeded planned
+    // admissions (stream D: an overdue booking is a row too), plus the whole record so the advisory
+    // carer/PSP/MHAS notification rows are counted too.
+    const seed = seedWardFlowState();
     const expectedCount = buildActionInbox(
-      wardMovements.filter(isOpen),
+      seed.movements.filter(isOpen),
       NOW_ANCHOR,
-      allUnits(),
-      wardPlannedAdmissions,
+      seed.units,
+      seed.plannedAdmissions,
+      {
+        movements: seed.movements,
+        admissions: seed.admissions,
+        patients: seed.patients,
+        referrals: seed.referrals,
+        supportNotifications: seed.supportNotifications,
+      },
     ).length;
     expect(expectedCount).toBeGreaterThan(1);
     await expect(items).toHaveCount(expectedCount);

@@ -25,6 +25,7 @@ import { StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
 import { edById } from "./ward-sites";
 import { stageCopy } from "./ward-derivations";
+import type { Admission } from "./ward-admissions";
 import type { Movement, Referral, Unit } from "./ward-model";
 import type { Patient } from "./ward-patients";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
@@ -48,8 +49,11 @@ type WardTasksDrawerProps = {
   onClose: () => void;
   /** `href` is a row's own destination when it is not about a movement (a planned admission). */
   onSelectMovement: (movementId: string, action?: "refer" | "contact", href?: string) => void;
+  /** Opens a discharged stay on the discharges board, for rows that carry `admissionId`. */
+  onSelectDischarge?: (admissionId: string) => void;
   records?: {
     movements: readonly Movement[];
+    admissions?: readonly Admission[];
     patients: readonly Patient[];
     referrals: readonly Referral[];
     units: readonly Unit[];
@@ -153,11 +157,21 @@ export function WardTasksDrawer({
   dispatch,
   onClose,
   onSelectMovement,
+  onSelectDischarge,
   records,
   withBackdrop = false,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
   useWardModalFocus(true, drawerRef, onClose);
+
+  /** A discharge notification row opens its stay on the discharges board; every other row opens
+   *  its movement. */
+  function openItem(item: InboxItem) {
+    if (item.admissionId !== undefined && onSelectDischarge) onSelectDischarge(item.admissionId);
+    // A planned admission row has its own destination (Capacity); every other row opens its movement.
+    else if (item.href !== undefined) onSelectMovement(item.movementId, undefined, item.href);
+    else onSelectMovement(item.movementId);
+  }
 
   const [escalating, setEscalating] = useState<string | null>(null);
   const [contact, setContact] = useState("");
@@ -331,8 +345,11 @@ export function WardTasksDrawer({
 
   function renderRow(item: InboxItem) {
     const movement = records?.movements.find((row) => row.id === item.movementId);
-    // A planned admission row has no movement: the booking itself names the person.
-    const patient = records ? resolveSubjectPatient(movement ?? item.plannedAdmission, records) : undefined;
+    const admission = item.admissionId ? records?.admissions?.find((row) => row.id === item.admissionId) : undefined;
+    // A planned admission row has no movement or stay: the booking itself names the person.
+    const patient = records
+      ? resolveSubjectPatient(movement ?? admission ?? item.plannedAdmission, records)
+      : undefined;
     const Icon = rowIcon(item);
     const isFact = item.kind === "fact";
     const ackHistory = acknowledgements[item.id] ?? [];
@@ -375,7 +392,7 @@ export function WardTasksDrawer({
               data-testid={`ward-task-${item.id}`}
               className={styles.rowTitle}
               onClick={() => {
-                onSelectMovement(item.movementId, undefined, item.href);
+                openItem(item);
               }}
             >
               {item.title}
@@ -485,7 +502,7 @@ export function WardTasksDrawer({
             className={`${styles.btn} ${isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
             aria-label={item.plannedAdmission ? "Open planned admission in Capacity" : "Open patient"}
             onClick={() => {
-              onSelectMovement(item.movementId, undefined, item.href);
+              openItem(item);
             }}
           >
             <ArrowUpRight aria-hidden="true" />

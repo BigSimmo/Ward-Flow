@@ -10,6 +10,11 @@ import type { Gender, PatientId } from "@/components/ward-management/ward-patien
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import type {
+  SupportNotificationOccasion,
+  SupportNotificationOutcome,
+  SupportNotificationParty,
+} from "@/components/ward-management/ward-support-notifications";
+import type {
   BroadcastCategory,
   BroadcastSeverity,
   BroadcastTargetScope,
@@ -2086,6 +2091,33 @@ export type WardFlowEvent =
       /** The booking's own ward, so bed history finds the event; refused if it is not the booking's. */
       unitId: string;
       actingUnitId?: string;
+    }
+  | {
+      /**
+       * Advisory checklist (9 Oct 2026): records that a carer, personal support person or the
+       * Mental Health Advocacy Service was told about an involuntary patient's admission, transfer
+       * or discharge, or that it does not apply. A record of what a person says happened; nothing
+       * here decides whether a notice is legally required or when. See
+       * `ward-support-notifications.ts`.
+       *
+       * 🔴 `who` and `reason` are typed text, so this event is on the typed-text persistence list.
+       */
+      type: "RECORD_SUPPORT_NOTIFICATION";
+      role: WardFlowRole;
+      now: Instant;
+      occasion: SupportNotificationOccasion;
+      /** The arriving movement, for an admission or transfer. Named so the event log and history link it. */
+      movementId?: string;
+      /** The discharged stay, for a discharge. */
+      admissionId?: string;
+      party: SupportNotificationParty;
+      outcome: SupportNotificationOutcome;
+      /** Who was told. Required, non-blank, when `outcome` is `told`. */
+      who?: string;
+      /** When they were told. Defaults to `now`; never after `now`. */
+      contactedAt?: Instant;
+      /** Why it does not apply. Required, non-blank, when `outcome` is `not_applicable`. */
+      reason?: string;
     };
 
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */
@@ -2582,4 +2614,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   CHANGE_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
   CANCEL_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
   CONVERT_PLANNED_ADMISSION: ["ward", "coordinator"],
+  // Advisory carer/PSP/MHAS checklist (9 Oct 2026): recorded where the move is completed — the
+  // ward (arrivals, discharges board) or the coordinator (movements).
+  RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
 };

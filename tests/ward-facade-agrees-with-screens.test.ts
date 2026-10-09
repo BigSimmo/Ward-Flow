@@ -111,6 +111,7 @@ import {
   onCallHref,
   patientHref,
   raiseReferralHref,
+  dischargeHref,
   serviceStatisticsHref,
   settingsHref,
   signInHref,
@@ -632,12 +633,13 @@ const BUILDER_ROUTES: readonly {
     route: "statistics/community/[teamId]",
   },
   { name: "raiseReferralHref", href: raiseReferralHref({ source: "community" }), route: "referrals/new" },
+  { name: "dischargeHref", href: dischargeHref("AD-LEFT-01"), route: "discharges" },
 ];
 
 describe("every href the facade builds lands on a route that exists", () => {
   it("covers every builder the facade exports", () => {
     // Anti-vacuity: an empty or shrunken list would make every case below pass by not running.
-    expect(BUILDER_ROUTES.length).toBe(18);
+    expect(BUILDER_ROUTES.length).toBe(19);
     expect(new Set(BUILDER_ROUTES.map((entry) => entry.name)).size).toBe(BUILDER_ROUTES.length);
   });
 
@@ -735,6 +737,10 @@ const EXPECTED_BUILDER_LINES: readonly { readonly name: string; readonly line: s
     line: "return `/mockups/ward-flow/statistics/community/${encodeURIComponent(teamId)}`;",
   },
   { name: "raiseReferralHref", line: "return `/mockups/ward-flow/referrals/new?${query.toString()}`;" },
+  {
+    name: "dischargeHref",
+    line: "return `/mockups/ward-flow/discharges?admissionId=${encodeURIComponent(admissionId)}`;",
+  },
 ] as const;
 
 const EXPECTED_BUILDER_LINE_TEXT = EXPECTED_BUILDER_LINES.map((entry) => entry.line);

@@ -441,6 +441,8 @@ describe("who may raise which event", () => {
     CHANGE_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
     CANCEL_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
     CONVERT_PLANNED_ADMISSION: ["ward", "coordinator"],
+    // Advisory carer/PSP/MHAS checklist, 9 Oct 2026 (stream B): recorded where the move completes.
+    RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
   };
 
   it("covers every event that exists, so a new event cannot arrive unpermissioned", () => {

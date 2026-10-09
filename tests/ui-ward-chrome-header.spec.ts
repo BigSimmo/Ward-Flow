@@ -662,7 +662,7 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   await expect(lastCard).toBeInViewport();
   await expect(tasks.getByRole("button", { name: "Close tasks panel" })).toBeInViewport();
   // Stream D (9 Oct 2026): a planned admission row has no movement and opens Capacity, so the
-  // patient journey is checked on the last movement-backed card, scrolled to like the rest.
+  // journey is checked on the last card still labelled "Open patient", scrolled to like the rest.
   const lastPatientCard = tasks
     .locator("li")
     .filter({ has: page.getByRole("button", { name: "Open patient", exact: true }) })
@@ -670,7 +670,9 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   await lastPatientCard.scrollIntoViewIfNeeded();
   await expect(lastPatientCard).toBeInViewport();
   await lastPatientCard.getByRole("button", { name: "Open patient", exact: true }).click();
-  await expect(page).toHaveURL(/\/movements\/WF-/u);
+  // That card may be a move or a carer, PSP and MHAS discharge row (9 Oct 2026), which opens
+  // its stay on the discharges board. Either way the task is reachable and the drawer closes.
+  await expect(page).toHaveURL(/\/movements\/WF-|\/discharges\?admissionId=/u);
   await expect(tasks).toHaveCount(0);
 });
 

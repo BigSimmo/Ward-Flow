@@ -70,6 +70,7 @@ import { REFERRABLE_MOVEMENT_STAGES } from "@/components/ward-management/ward-fl
 export type WardRole = "flow" | "ed" | "ward";
 
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
+import { supportNotificationInboxItems } from "@/components/ward-management/ward-support-notifications";
 export { stageCopy };
 
 /** Same reason `stageCopy` exists: `BedReleaseState`'s own values (`BED_RELEASE_STATES` in
@@ -1143,6 +1144,11 @@ export type InboxItem = {
   /** Where the row opens when it is not about a movement: a planned admission opens Capacity. */
   href?: string;
   /**
+   * Set on a discharge notification row: the discharged stay it is about. The Tasks drawer opens
+   * that stay's checklist on the discharges board instead of the movement page.
+   */
+  admissionId?: string;
+  /**
    * 🔴 **WHETHER THIS ROW CAN BE TICKED OFF AT ALL** — ward-lead task, 2026-09-06. A `"fact"` is a
    * live clinical or legal truth that leaves this list when it stops being true; a `"commitment"`
    * is a human undertaking that leaves when the person says they finished. See `InboxItemKind` and
@@ -1185,6 +1191,8 @@ export function buildActionInbox(
   now: Instant,
   units: Unit[],
   plannedAdmissions: readonly PlannedAdmission[] = [],
+  /** Optional: the whole record, to add outstanding carer/PSP/MHAS notification rows. */
+  records?: Omit<Parameters<typeof supportNotificationInboxItems>[0], "units">,
 ): InboxItem[] {
   const items: InboxItem[] = [];
 
@@ -1320,6 +1328,10 @@ export function buildActionInbox(
       ...(planned.initials !== null ? { personLabel: `Initials ${planned.initials}` } : {}),
     });
   }
+
+  // Advisory carer/PSP/MHAS notifications still to record for recent involuntary moves. These are
+  // about COMPLETED moves, so they read every movement in `records`, not the caller's open list.
+  if (records) items.push(...supportNotificationInboxItems({ ...records, units }, now));
 
   return items;
 }

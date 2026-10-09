@@ -643,6 +643,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     CHANGE_PLANNED_ADMISSION: false,
     CANCEL_PLANNED_ADMISSION: false,
     CONVERT_PLANNED_ADMISSION: false,
+    // Records that a carer, PSP or MHAS was told about a completed move. Not a refusal.
+    RECORD_SUPPORT_NOTIFICATION: false,
   };
 
   /**
