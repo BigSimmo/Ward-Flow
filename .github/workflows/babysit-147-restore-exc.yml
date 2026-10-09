@@ -18,12 +18,21 @@ jobs:
       - name: Assemble exception-drawer
         run: |
           set -euo pipefail
-          if [ ! -f docs/ward-flow/.babysit-147-exc/part-b.txt ]; then
+          if [ ! -f docs/ward-flow/.babysit-147-exc/part-07.txt ]; then
             echo waiting; exit 0
           fi
-          cat docs/ward-flow/.babysit-147-exc/part-a.txt docs/ward-flow/.babysit-147-exc/part-b.txt > src/components/ward-management/coordinator/exception-drawer.tsx
+          cat docs/ward-flow/.babysit-147-exc/part-00.txt \
+              docs/ward-flow/.babysit-147-exc/part-01.txt \
+              docs/ward-flow/.babysit-147-exc/part-02.txt \
+              docs/ward-flow/.babysit-147-exc/part-03.txt \
+              docs/ward-flow/.babysit-147-exc/part-04.txt \
+              docs/ward-flow/.babysit-147-exc/part-05.txt \
+              docs/ward-flow/.babysit-147-exc/part-06.txt \
+              docs/ward-flow/.babysit-147-exc/part-07.txt \
+            > src/components/ward-management/coordinator/exception-drawer.tsx
           wc -c src/components/ward-management/coordinator/exception-drawer.tsx
           test "$(wc -c < src/components/ward-management/coordinator/exception-drawer.tsx)" -gt 10000
+          grep -q ExceptionDrawer src/components/ward-management/coordinator/exception-drawer.tsx
           rm -rf docs/ward-flow/.babysit-147-exc
           rm -f .github/workflows/babysit-147-restore-exc.yml
           git config user.name "Ward Flow Babysit"
