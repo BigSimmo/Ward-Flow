@@ -272,13 +272,18 @@ export function FocusPanel({
   const [changing, setChanging] = useState(false);
   const dateRef = useRef<HTMLInputElement | null>(null);
   const receivedRef = useRef<HTMLButtonElement | null>(null);
+  const examinationRef = useRef<HTMLAnchorElement | null>(null);
   const typedWrittenAt = instantFromDateAndTimeInputs(draft.date, draft.time, dayZero);
   const showWrittenForm = isOwnedLegalFormCode(legalForm?.code) && (movement.formedAt === undefined || changing);
 
   useEffect(() => {
     if (!focusGap) return;
     const target =
-      focusGap.gap === "written" ? dateRef.current : focusGap.gap === "received" ? receivedRef.current : null;
+      focusGap.gap === "written"
+        ? dateRef.current
+        : focusGap.gap === "received"
+          ? receivedRef.current
+          : examinationRef.current;
     target?.scrollIntoView?.({ block: "nearest" });
     target?.focus();
   }, [focusGap]);
@@ -399,7 +404,11 @@ export function FocusPanel({
                   </Button>
                 ) : null}
                 {fact.gap === "examination" && fact.at === undefined ? (
-                  <Link href={edHref(movement.originEdId)} className={buttonClass({ variant: "sec", size: "sm" })}>
+                  <Link
+                    ref={examinationRef}
+                    href={edHref(movement.originEdId)}
+                    className={buttonClass({ variant: "sec", size: "sm" })}
+                  >
                     Record on ED <ExternalLink size={14} aria-hidden="true" />
                   </Link>
                 ) : null}
