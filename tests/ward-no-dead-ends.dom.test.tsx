@@ -99,6 +99,7 @@ import { StatisticsWardScreen } from "@/components/ward-management/statistics/st
 import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { WardIndex } from "@/components/ward-management/wards/ward-index";
+import { EdIndex } from "@/components/ward-management/ed/ed-index";
 
 const unit = allUnits()[0];
 const ed = allEmergencyDepartments()[0];
@@ -129,6 +130,7 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   ["/mockups/ward-flow/delays", { concrete: "/mockups/ward-flow/delays", render: () => <DelaysScreen /> }],
   ["/mockups/ward-flow/discharges", { concrete: "/mockups/ward-flow/discharges", render: () => <DischargeBoard /> }],
   ["/mockups/ward-flow/on-call", { concrete: "/mockups/ward-flow/on-call", render: () => <OnCallScreen /> }],
+  ["/mockups/ward-flow/ed", { concrete: "/mockups/ward-flow/ed", render: () => <EdIndex /> }],
   [
     "/mockups/ward-flow/ed/[edId]",
     { concrete: `/mockups/ward-flow/ed/${ed.id}`, render: () => <EdScreen edId={ed.id} /> },

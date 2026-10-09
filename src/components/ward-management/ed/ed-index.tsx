@@ -31,7 +31,7 @@ import type { HealthService, Movement, MovementStage } from "@/components/ward-m
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
-import { edShortName, unitById } from "@/components/ward-management/ward-sites";
+import { edShortName } from "@/components/ward-management/ward-sites";
 import { edHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
@@ -119,7 +119,7 @@ function rowClock(row: EdRow): WaitClock {
 }
 
 export function EdIndex() {
-  const { movements, patients, referrals, configuration } = useWardFlow();
+  const { movements, patients, referrals, units, configuration } = useWardFlow();
   const { now, paused, togglePause } = usePageLive();
   const accessTarget = configuration.edAccessTargetMinutes;
 
@@ -149,7 +149,9 @@ export function EdIndex() {
       const people = summary.open
         .map((movement): EdPerson => {
           const wait = Math.max(0, now - movement.openedAt);
-          const destination = movement.acceptedUnitId ? unitById(movement.acceptedUnitId)?.name : undefined;
+          const destination = movement.acceptedUnitId
+            ? units.find((unit) => unit.id === movement.acceptedUnitId)?.name
+            : undefined;
           const person = resolve(movement).patient;
           return {
             movement,
@@ -176,7 +178,7 @@ export function EdIndex() {
         forms: people.filter((person) => person.movement.legalForm).length,
       };
     });
-  }, [movements, patients, referrals, now, accessTarget]);
+  }, [movements, patients, referrals, units, now, accessTarget]);
 
   // Statewide hero counts.
   const total = (pick: (row: EdRow) => number) => rows.reduce((sum, row) => sum + pick(row), 0);
