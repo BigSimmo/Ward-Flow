@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
@@ -6,6 +6,7 @@ import {
   legalFormBreakdown,
   legalFormGroupRows,
 } from "@/components/ward-management/legal-forms/legal-forms-derivations";
+import { actPeriodFor } from "@/components/ward-management/legal-forms/act-periods-demo";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -21,6 +22,14 @@ const rows = [...withDeadline, ...noDeadline];
 const openMovements = seededMovements.filter(isOpen);
 const breakdown = legalFormBreakdown(rows, NOW);
 
+/** Selects the first row whose form has a labelled Act-period demo, opening its side panel. */
+function selectRowWithActPeriod() {
+  const target = rows.find((movement) => actPeriodFor(movement.legalForm?.code ?? "") !== undefined);
+  if (!target) throw new Error("the fixture no longer carries a form with an Act-period demo");
+  const row = document.querySelector(`[data-record-key="${target.id}"]`) as HTMLElement;
+  fireEvent.click(within(row).getAllByRole("button")[0]!);
+}
+
 function renderScreen() {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -29,7 +38,7 @@ function renderScreen() {
   );
 }
 
-describe("the Legal forms screen", () => {
+describe("the Forms screen", () => {
   it("has a population to render, or the assertions below are vacuous", () => {
     expect(rows.length).toBeGreaterThan(0);
   });
@@ -37,7 +46,7 @@ describe("the Legal forms screen", () => {
   it("has the page shell — a main landmark, one <h1>, and the synthetic-data disclosure every ward screen carries", () => {
     renderScreen();
     expect(screen.getByRole("main")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1, name: "Legal forms" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Forms" })).toBeInTheDocument();
     // `tests/ward-prototype-disclosure.test.ts` walks every ROUTE for the `prototypeBadge` class;
     // this is the component-level half, checked directly by its visible text rather than assumed.
     expect(screen.getAllByText("Synthetic prototype")[0]).toBeInTheDocument();
@@ -63,7 +72,7 @@ describe("the Legal forms screen", () => {
    */
   it("states the population above the groups without claiming an order for them", () => {
     renderScreen();
-    const heading = screen.getByRole("heading", { level: 1, name: "Legal forms" });
+    const heading = screen.getByRole("heading", { level: 1, name: "Forms" });
     const subtitle = screen.getByText("Recorded forms and deadlines for open movements.");
 
     expect(heading).toBeVisible();
@@ -202,12 +211,15 @@ describe("LegalFormsScreen expiry reminder (item 13 synthetic demo)", () => {
   // v6 (LegalForms.png): the reminder sentence became the Warning windows card ("Your defaults,
   // not legal limits") plus a "Within Nh" state beside each typed expiry; the selected form's
   // Act-period note carries the "not legally checked" label.
+  // Forms (9 Oct 2026): the Warning windows block sits in the summary panel shown while nobody is
+  // selected; choosing a patient swaps it for their form, which carries the labelled demo period.
   it("shows the reminder banner for seeded typed expiries inside the warning windows, labelled as a synthetic, not legally checked demo", () => {
     renderScreen();
     const banner = screen.getByTestId("ward-legal-expiry-reminder");
     expect(banner).toHaveTextContent("Warning windows");
     expect(banner).toHaveTextContent("not legal limits");
     expect(screen.getAllByText(/^Within \dh$/).length).toBeGreaterThan(0);
+    selectRowWithActPeriod();
     expect(screen.getByTestId("ward-legal-selected")).toHaveTextContent("not legally checked");
   });
 });
@@ -215,6 +227,7 @@ describe("LegalFormsScreen expiry reminder (item 13 synthetic demo)", () => {
 describe("LegalFormsScreen Act period demo (owner ruling D-29)", () => {
   it("labels every Act period line as a synthetic demo that is not legally checked", () => {
     renderScreen();
+    selectRowWithActPeriod();
     const lines = screen.getAllByTestId("ward-legal-act-period");
     expect(lines.length).toBeGreaterThan(0);
     for (const line of lines) expect(line).toHaveTextContent(/^Synthetic demo, not legally checked: /);

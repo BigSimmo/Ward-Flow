@@ -58,7 +58,8 @@ describe("measured-zero derivations and WardBar callers remain guarded", () => {
 
     const callSites = files
       .map((path) => ({ path, source: readFileSync(path, "utf8") }))
-      .filter((file) => file.source.includes("<WardBar"))
+      // `<WardBarPageTools` (the header's per-page tool slot) is a different component.
+      .filter((file) => /<WardBar[\s/>]/u.test(file.source))
       .filter((file) => !file.path.endsWith("ward-bar.tsx"));
 
     // Pin the exact population walked rather than only its size: a matcher that quietly stopped

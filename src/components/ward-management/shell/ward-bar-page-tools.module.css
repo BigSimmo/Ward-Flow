@@ -1,0 +1,86 @@
+/* Page tools in the header bar: quiet pill buttons with an icon, a label and an optional count. */
+
+.tools {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--wf-h-sm);
+  padding: 0 12px;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tool:hover {
+  background: var(--wf-hover);
+}
+
+.tool:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.tool[aria-disabled="true"] {
+  border-style: dashed;
+  color: var(--wf-ink-3);
+  cursor: default;
+}
+
+.tool > svg {
+  flex: 0 0 auto;
+  color: var(--wf-ink-2);
+}
+
+.count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+}
+
+@media (max-width: 1600px) {
+  .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .tool {
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 48rem) {
+  .tools {
+    display: none;
+  }
+}
+
+@media print {
+  .tools {
+    display: none;
+  }
+}

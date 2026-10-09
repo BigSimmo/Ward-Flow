@@ -53,6 +53,11 @@ describe("Legal forms — unwired confirm controls (F2.1)", () => {
     const rows = legalFormGroupRows(wardMovements, NOW, "with-deadline");
     const breached = rows.some((m) => m.legalForm?.dueAt !== undefined && m.legalForm.dueAt <= NOW);
     if (breached) {
+      fireEvent.click(screen.getByRole("button", { name: "Close" }));
+      // Forms (9 Oct 2026): extension is offered in the selected patient's panel.
+      const target = rows.find((m) => m.legalForm?.dueAt !== undefined && m.legalForm.dueAt <= NOW)!;
+      const row = document.querySelector(`[data-record-key="${target.id}"]`) as HTMLElement;
+      fireEvent.click(row.querySelector("button")!);
       fireEvent.click(screen.getAllByRole("button", { name: "Extend recorded form" })[0]);
       const renewConfirm = screen.getByTestId("ward-legal-forms-renew-confirm");
       expect(renewConfirm).toHaveAttribute("aria-disabled", "true");
@@ -74,6 +79,8 @@ describe("Legal forms — titles come from the Chief Psychiatrist register (F2.2
 
   it("renders the real register titles for 1A, 3B, 3D, 4A and 4C in the authority catalogue", () => {
     renderScreen();
+    // Forms (9 Oct 2026): the catalogue lives in the Requirements sheet.
+    fireEvent.click(screen.getByRole("button", { name: "Requirements" }));
     for (const code of ["1A", "3B", "3D", "4A", "4C"]) {
       const title = formTitleForCode(code);
       expect(title, `form-register.ts no longer lists ${code}`).not.toBeNull();
