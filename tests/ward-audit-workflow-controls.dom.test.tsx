@@ -65,6 +65,9 @@ describe("discharge actions stay usable and accessible across filters", () => {
       "Placement",
       "Family / carer",
       "Funding / plan",
+      // Added 9 Oct 2026 (Discharges direction A): the seed's "Awaiting receiving-service
+      // acceptance" blockers matched no category, so no filter or barrier bar could reach them.
+      "Receiving service",
     ];
     expect(
       within(screen.getByRole("combobox", { name: "Blocker" }))
@@ -74,7 +77,9 @@ describe("discharge actions stay usable and accessible across filters", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Blocker" }), { target: { value: "pharmacy" } });
     expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Bed releases: \d+ blocked/);
     fireEvent.click(screen.getByRole("button", { name: /Admission records/ }));
-    expect(within(screen.getByRole("combobox", { name: "Blocker" })).getAllByRole("option")).toHaveLength(9);
+    expect(within(screen.getByRole("combobox", { name: "Blocker" })).getAllByRole("option")).toHaveLength(
+      labels.length,
+    );
     fireEvent.change(screen.getByRole("combobox", { name: "Blocker" }), { target: { value: "pharmacy" } });
     expect(screen.getByRole("combobox", { name: "Blocker" })).toHaveValue("pharmacy");
     expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Admission records: \d+ blocked/);
