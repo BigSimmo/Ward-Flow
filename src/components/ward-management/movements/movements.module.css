@@ -3627,17 +3627,6 @@
     padding-inline: var(--wf-s-3);
   }
 
-  .dayHero {
-    position: relative;
-  }
-
-  .dayHero > :first-child > :last-child:not(:first-child) {
-    position: absolute;
-    top: var(--wf-s-3);
-    right: var(--wf-s-3);
-    width: auto;
-  }
-
   .needsYouItem {
     padding: var(--wf-s-2) var(--wf-s-3);
     font-size: var(--wf-fs-13);
