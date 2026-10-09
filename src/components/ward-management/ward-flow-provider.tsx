@@ -163,6 +163,8 @@ type WardFlowContextValue = {
    *  only writer. */
   configuration: WardFlowState["configuration"];
   broadcastAlerts: BroadcastAlert[];
+  /** Advisory carer/PSP/MHAS notification records. Optional so hand-built test contexts need not supply it. */
+  supportNotifications?: NonNullable<WardFlowState["supportNotifications"]>;
   /** Event log, step 1: every event dispatched this session (type, role, time, accepted, ids). */
   eventLog?: readonly EventLogEntry[];
   dispatch: Dispatch<WardFlowEvent>;
@@ -970,6 +972,7 @@ function WardFlowWorld({
       scenario: state.scenario,
       configuration: state.configuration,
       broadcastAlerts: state.broadcastAlerts ?? [],
+      supportNotifications: state.supportNotifications ?? [],
       eventLog: container.eventLog ?? [],
       dispatch,
       focusMovementId,

@@ -435,6 +435,8 @@ describe("who may raise which event", () => {
     ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager", "executive"],
     STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
     UPDATE_EXPECTED_DISCHARGE: ["ward", "coordinator"],
+    // Advisory carer/PSP/MHAS checklist, 9 Oct 2026 (stream B): recorded where the move completes.
+    RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
   };
 
   it("covers every event that exists, so a new event cannot arrive unpermissioned", () => {

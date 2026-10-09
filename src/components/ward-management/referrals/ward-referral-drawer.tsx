@@ -88,6 +88,7 @@ import { TENTATIVE_DIAGNOSIS_BLOCKS, isTentativeDiagnosisBlock } from "../ward-d
 import {
   DocumentationPanel,
   ContactFields,
+  UseMyDetailsButton,
   documentationError,
   EMPTY_DOCUMENTATION,
   ReferralDocumentLinks,
@@ -95,9 +96,21 @@ import {
 } from "./referral-flow-panels";
 import { WardReferralInbox } from "./ward-referral-inbox";
 import { duplicateSentence } from "./referral-duplicate";
-import { discardReferralDraft, keepReferralDraft, readKeptReferralDraft } from "./referral-draft-store";
+import {
+  discardReferralDraft,
+  keepReferralDraft,
+  readKeptReferralDraft,
+  readKeptReferralDraftAt,
+  referralDraftAgeText,
+  useReferralDraftAutosave,
+} from "./referral-draft-store";
 import { referralIsbarText, referralLetterText, type ReferralTextInput } from "./referral-letter";
 import { StatusGlyph, type WfTone } from "@/components/wf";
+import { usePathname } from "next/navigation";
+import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
+import { createReadmissionIndex, priorDischargeWithinWindow } from "@/components/ward-management/ward-readmission";
+import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import {
   CLEARANCE_CHECKS,
   CLEARANCE_CHECK_LABELS,
@@ -706,16 +719,38 @@ function WardReferralDrawerContent({
   const touchStartY = useRef<number | null>(null);
 
   const capacityRecords = useWardCapacity();
+  // No sign-in: the route gives the role, and the role gives the profile (or why there is none).
+  const myProfile = profileForChromeRole(wardChromeRole(usePathname() ?? ""));
 
-  const { movements, patients, referrals, rejections, configuration, dayZero, dispatch, wardReferralInbox } =
-    useWardFlow();
+  const {
+    movements,
+    patients,
+    referrals,
+    rejections,
+    configuration,
+    dayZero,
+    dispatch,
+    wardReferralInbox,
+    admissions,
+    units,
+  } = useWardFlow();
   const now = useWardFlowClock();
 
-  // A Refer link names its person, so it never reopens someone else's kept draft.
-  const [kept] = useState(() => (initialPatientId ? null : readKeptReferralDraft<KeptDraft>()));
   const [prefillKey] = useState(() =>
     initialPatientId ? patientKeyFor(initialPatientId, { movements, patients, referrals }) : null,
   );
+  // A Refer link names its person: it reopens a kept draft only when that draft is for the same
+  // person, and never someone else's.
+  const [storedDraft] = useState(() => readKeptReferralDraft<KeptDraft>());
+  const kept =
+    !initialPatientId ||
+    (storedDraft !== null &&
+      ((prefillKey !== null && storedDraft.activePatientKey === prefillKey) ||
+        storedDraft.activePatientKey === `${PATIENT_KEY_PREFIX}${initialPatientId}`))
+      ? storedDraft
+      : null;
+  // Another person's kept draft stays as it was: this sheet does not autosave over it.
+  const keepsAnotherPersonsDraft = storedDraft !== null && kept === null;
   const initialPatientKey =
     kept?.activePatientKey ??
     prefillKey ??
@@ -899,6 +934,21 @@ function WardReferralDrawerContent({
 
   // Asks before an unsent draft is lost: Keep editing, Keep draft or Discard.
   const dirty = !sentReferralId && draftJson !== openingDraft;
+  // Autosave to the same tab-memory store as Keep draft, so no close path loses typed work (D-18:
+  // memory only, never browser storage).
+  const [initialKept] = useState(() => (kept ? { at: readKeptReferralDraftAt(), json: JSON.stringify(kept) } : null));
+  const {
+    keptAt: draftKeptAt,
+    nowMs: draftNowMs,
+    stop: stopDraftAutosave,
+  } = useReferralDraftAutosave({
+    draft: draftNow,
+    draftJson,
+    enabled: !keepsAnotherPersonsDraft,
+    dirty,
+    initialKeptAt: initialKept?.at ?? null,
+    initialKeptJson: initialKept?.json ?? null,
+  });
   const requestClose = useCallback(() => {
     if (guardOpen) setGuardOpen(false);
     else if (dirty) setGuardOpen(true);
@@ -915,6 +965,7 @@ function WardReferralDrawerContent({
     if (guardOpen) guardKeepRef.current?.focus();
   }, [guardOpen]);
   function discardAndClose() {
+    stopDraftAutosave();
     discardReferralDraft();
     setGuardOpen(false);
     onClose();
@@ -1286,6 +1337,7 @@ function WardReferralDrawerContent({
     if (!sendPending || !submitted) return;
     const created = referrals.find((referral) => referral.intake === submitted.intake);
     if (created) {
+      stopDraftAutosave();
       discardReferralDraft();
       setSentReferralId(created.id);
       setSentAt(now);
@@ -1296,7 +1348,7 @@ function WardReferralDrawerContent({
       setFlowError(rejections[rejections.length - 1]?.reason ?? "Referral could not be sent.");
       setSendPending(false);
     }
-  }, [sendPending, referrals, rejections, patientRecord?.id, now]);
+  }, [sendPending, referrals, rejections, patientRecord?.id, now, stopDraftAutosave]);
 
   // Recipient inboxes, read from the provider the ward screen already uses.
   const inboxWards = capacityRecords
@@ -1343,6 +1395,12 @@ function WardReferralDrawerContent({
   }
   // D-19: one place-free, count-free sentence about the person already named on this form.
   const alreadyOpen = patientRecord ? duplicateSentence({ patientId: patientRecord.id, referrals }) : undefined;
+  // 28 day readmission: this person's most recent discharge in the 28 days before now, if any.
+  const readmissionIndex = useMemo(
+    () => createReadmissionIndex({ admissions, patients, referrals, movements, units }),
+    [admissions, patients, referrals, movements, units],
+  );
+  const readmissionFlag = patientRecord ? priorDischargeWithinWindow(patientRecord, now, readmissionIndex) : null;
   const placeRow =
     selectedDestinations.length === 0
       ? "Choose"
@@ -1862,7 +1920,15 @@ function WardReferralDrawerContent({
                           </ul>
                         </section>
                         <section className={styles.refCard}>
-                          <CardHead icon={Phone} title="Your contact details" />
+                          <CardHead icon={Phone} title="Your contact details">
+                            <UseMyDetailsButton
+                              lookup={myProfile}
+                              onFill={(details) => {
+                                setContact(details);
+                                announceToWardShell("Your details filled from your profile.");
+                              }}
+                            />
+                          </CardHead>
                           <div className={styles.cardBody}>
                             <ContactFields contact={contact} onChange={setContact} errors={contactErrors} />
                           </div>
@@ -2073,6 +2139,7 @@ function WardReferralDrawerContent({
                             UMRN <span className={styles.mono}>{currentPatient.umrn}</span> · DOB{" "}
                             {formatDob(currentPatient.dob)} · Medicare {currentPatient.medicare}
                           </p>
+                          <ReadmissionFlag flag={readmissionFlag} testId="ward-referral-readmission" />
                         </div>
                         <button
                           type="button"
@@ -3198,11 +3265,12 @@ function WardReferralDrawerContent({
                   <section className={styles.railCard}>
                     <div className={styles.railHead}>
                       <h3 className={styles.cardTitle}>Ready to send</h3>
-                      {kept ? (
+                      {kept || draftKeptAt !== null ? (
                         <button
                           type="button"
                           className={`${styles.btn} ${styles.btnGhost}`}
                           onClick={() => {
+                            stopDraftAutosave();
                             discardReferralDraft();
                             onRestart();
                           }}
@@ -3211,6 +3279,12 @@ function WardReferralDrawerContent({
                         </button>
                       ) : null}
                     </div>
+                    {draftKeptAt !== null ? (
+                      <p className={styles.draftStatus} data-testid="ward-referral-draft-status">
+                        <StatusGlyph tone="success" size={8} />
+                        Draft kept · {referralDraftAgeText(draftKeptAt, draftNowMs)}
+                      </p>
+                    ) : null}
                     <p className={styles.railCount}>
                       <strong className={styles.mono}>{readyDone}</strong> of {readyRows.length} ready
                     </p>

@@ -662,7 +662,9 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   await expect(lastCard).toBeInViewport();
   await expect(tasks.getByRole("button", { name: "Close tasks panel" })).toBeInViewport();
   await lastCard.getByRole("button", { name: "Open patient" }).click();
-  await expect(page).toHaveURL(/\/movements\/WF-/u);
+  // The last card may be a move or a carer, PSP and MHAS discharge row (9 Oct 2026), which opens
+  // its stay on the discharges board. Either way the task is reachable and the drawer closes.
+  await expect(page).toHaveURL(/\/movements\/WF-|\/discharges\?admissionId=/u);
   await expect(tasks).toHaveCount(0);
 });
 
