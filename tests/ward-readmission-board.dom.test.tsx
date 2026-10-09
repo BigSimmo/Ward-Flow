@@ -20,6 +20,8 @@ vi.mock("next/link", () => ({
 }));
 
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
+import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { readmissionFlagVisibleOn } from "@/components/ward-management/ward-readmission-flag";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
@@ -105,6 +107,20 @@ describe("28 day readmission flag on the referral queue", () => {
     expect(screen.getByTestId(`ward-referral-board-row-${id}`)).toBeInTheDocument();
     expect(screen.queryByTestId(`ward-referral-board-readmission-${id}`)).toBeNull();
     expect(screen.queryByText("28d readmission")).toBeNull();
+  });
+
+  it("hides it on the ED index, which keeps the coordinator's chrome", () => {
+    route.pathname = "/mockups/ward-flow/ed";
+    // The chrome role is unchanged: only the flag treats the index as an ED screen.
+    expect(wardChromeRole(route.pathname)).toBe("coordinator");
+    expect(readmissionFlagVisibleOn("/mockups/ward-flow/ed")).toBe(false);
+    expect(readmissionFlagVisibleOn("/mockups/ward-flow/ed/")).toBe(false);
+    expect(readmissionFlagVisibleOn("/mockups/ward-flow/ed/scgh")).toBe(false);
+    expect(readmissionFlagVisibleOn("/mockups/ward-flow/edit-settings")).toBe(true);
+    expect(readmissionFlagVisibleOn(COORDINATOR_ROUTE)).toBe(true);
+    const id = receiveOnBoard();
+    expect(screen.getByTestId(`ward-referral-board-row-${id}`)).toBeInTheDocument();
+    expect(screen.queryByTestId(`ward-referral-board-readmission-${id}`)).toBeNull();
   });
 
   it("flags a new referral whose prior stay's referral has left the queue", () => {
