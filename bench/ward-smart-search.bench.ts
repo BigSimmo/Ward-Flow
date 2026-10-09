@@ -18,7 +18,7 @@ function search(query: string) {
 
 describe("smart search", () => {
   bench("person name prefix", () => {
-    search("ann");
+    search("liam");
   });
 
   bench("movement identifier", () => {
@@ -26,7 +26,7 @@ describe("smart search", () => {
   });
 
   bench("place name", () => {
-    search("secure");
+    search("Royal Perth");
   });
 
   bench("no match", () => {
