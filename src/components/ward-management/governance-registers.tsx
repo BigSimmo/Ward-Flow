@@ -4,7 +4,7 @@ import { ChevronRight, ClipboardList, Download, FileText, Fingerprint, History, 
 import Link from "next/link";
 import { useContext, useState, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
-import { ignoreUnavailableActivation } from "@/components/primitive-recipes/recipes";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { allOverrides } from "@/components/ward-management/ward-derivations";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -25,12 +25,7 @@ import { legalFormReceiptCorrectionReasonLabels } from "./ward-change-reasons";
 import { snoozeReasonLabel } from "./ward-inbox-snooze";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { movementHref, unitHref } from "./shell/ward-facade";
-import {
-  WardBarPageTools,
-  wardBarToolClass,
-  wardBarToolCountClass,
-  wardBarToolLabelClass,
-} from "./shell/ward-bar-page-tools";
+import { WardBarPageTools, wardBarToolStyles } from "./shell/ward-bar-page-tools";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF, WEEKLY_REPORT_HREF } from "./reports/report-routes";
 import { isOpen } from "./ward-derivations";
 import { edById, edShortName } from "./ward-sites";
@@ -894,24 +889,24 @@ function GovernanceSession({
   return (
     <div className={thirdEdition.governanceWorkspace} data-testid="ward-governance-workbench" data-ward-design="v8">
       <WardBarPageTools label="Governance tools">
-        <button type="button" className={wardBarToolClass} onClick={startReview}>
+        <button type="button" className={wardBarToolStyles.tool} onClick={startReview}>
           <ShieldCheck size={14} aria-hidden="true" />
-          <span className={wardBarToolLabelClass}>Start review</span>
-          <span className={wardBarToolCountClass}>{toReview.length}</span>
+          <span className={wardBarToolStyles.label}>Start review</span>
+          <span className={wardBarToolStyles.count}>{toReview.length}</span>
         </button>
-        <Link href={PATIENT_CHRONOLOGY_HREF} className={wardBarToolClass}>
+        <Link href={PATIENT_CHRONOLOGY_HREF} className={wardBarToolStyles.tool}>
           <History size={14} aria-hidden="true" />
-          <span className={wardBarToolLabelClass}>PIR chronology</span>
+          <span className={wardBarToolStyles.label}>PIR chronology</span>
         </Link>
         <button
           type="button"
-          className={wardBarToolClass}
+          className={wardBarToolStyles.tool}
           aria-disabled="true"
           title={NOT_WIRED}
           onClick={ignoreUnavailableActivation}
         >
           <Download size={14} aria-hidden="true" />
-          <span className={wardBarToolLabelClass}>Export</span>
+          <span className={wardBarToolStyles.label}>Export</span>
         </button>
       </WardBarPageTools>
 

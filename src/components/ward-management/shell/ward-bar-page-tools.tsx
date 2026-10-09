@@ -29,9 +29,9 @@ export function WardBarPageTools({ label, children }: { label: string; children:
   );
 }
 
-/** Class for a page-tool button or link, so every page's header tools look the same. */
-export const wardBarToolClass = styles.tool;
-/** The count inside a page-tool button. */
-export const wardBarToolCountClass = styles.count;
-/** A label that hides when the header is short of room, leaving the icon and count. */
-export const wardBarToolLabelClass = styles.label;
+/**
+ * Classes for a page's header tools, so every page's tools look the same: `tool` for a button or
+ * link, `count` for the count inside it, and `label` for text that hides when the header is short
+ * of room. Read at render, never at module load, because Node test runners load CSS modules empty.
+ */
+export { styles as wardBarToolStyles };

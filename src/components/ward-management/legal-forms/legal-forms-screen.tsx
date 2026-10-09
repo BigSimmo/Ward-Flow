@@ -19,12 +19,7 @@ import {
   type WfFill,
 } from "@/components/wf";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
-import {
-  formatInstant,
-  formatInstantWithDay,
-  minutesUntil,
-  type Instant,
-} from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, minutesUntil, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
@@ -38,12 +33,7 @@ import {
 } from "@/components/ward-management/ward-support-notifications";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import {
-  WardBarPageTools,
-  wardBarToolClass,
-  wardBarToolCountClass,
-  wardBarToolLabelClass,
-} from "@/components/ward-management/shell/ward-bar-page-tools";
+import { WardBarPageTools, wardBarToolStyles } from "@/components/ward-management/shell/ward-bar-page-tools";
 
 import {
   legalDeadlineText,
@@ -310,22 +300,26 @@ export function LegalFormsScreen() {
         </dl>
 
         <WardBarPageTools label="Forms tools">
-          <button type="button" className={wardBarToolClass} onClick={() => setRequirementsCode(CATALOGUE[0]!.code)}>
+          <button
+            type="button"
+            className={wardBarToolStyles.tool}
+            onClick={() => setRequirementsCode(CATALOGUE[0]!.code)}
+          >
             <BookOpen size={14} aria-hidden="true" />
-            <span className={wardBarToolLabelClass}>Requirements</span>
+            <span className={wardBarToolStyles.label}>Requirements</span>
           </button>
           <button
             type="button"
-            className={wardBarToolClass}
+            className={wardBarToolStyles.tool}
             onClick={() => setTell({ party: "personal_support_person", key: null })}
           >
             <UserRound size={14} aria-hidden="true" />
-            <span className={wardBarToolLabelClass}>Tell PSP</span>
-            <span className={wardBarToolCountClass}>{partyCount("personal_support_person")}</span>
+            <span className={wardBarToolStyles.label}>Tell PSP</span>
+            <span className={wardBarToolStyles.count}>{partyCount("personal_support_person")}</span>
           </button>
           <button
             type="button"
-            className={wardBarToolClass}
+            className={wardBarToolStyles.tool}
             aria-disabled={handover.length === 0 ? "true" : undefined}
             title={handover.length === 0 ? "No typed expiry is coming up" : "Copy upcoming expiries for handover"}
             onClick={() => {
@@ -333,8 +327,8 @@ export function LegalFormsScreen() {
             }}
           >
             <ClipboardCopy size={14} aria-hidden="true" />
-            <span className={wardBarToolLabelClass}>{copied === "handover" ? "Copied" : "Handover"}</span>
-            <span className={wardBarToolCountClass}>{handover.length}</span>
+            <span className={wardBarToolStyles.label}>{copied === "handover" ? "Copied" : "Handover"}</span>
+            <span className={wardBarToolStyles.count}>{handover.length}</span>
           </button>
         </WardBarPageTools>
 
@@ -811,7 +805,7 @@ function ClockRail({
           const [movement] = cluster;
           const standing = clockStanding(movement, now);
           const code = movement.legalForm!.code;
-          const at = formatInstant(movement.legalForm!.dueAt!);
+          const at = formatInstantWithDay(movement.legalForm!.dueAt!, now);
           const more = cluster.length - 1;
           return (
             <button
@@ -840,7 +834,7 @@ function ClockRail({
             style={{ left: x(tick) }}
             aria-hidden="true"
           >
-            {index === 0 ? "Now" : formatInstant(tick)}
+            {index === 0 ? "Now" : formatInstantWithDay(tick, now)}
           </span>
         ))}
       </div>
