@@ -1,7 +1,12 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { packCount, packForm } from "@/components/ward-management/officer/officer-forms-pack";
+import {
+  packCount,
+  packForm,
+  packOutstanding,
+  packRequired,
+} from "@/components/ward-management/officer/officer-forms-pack";
 import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -31,6 +36,15 @@ describe("transport forms pack", () => {
     expect(packForm(movement, "legal")?.fileName).toBe("new-1a.pdf");
     expect(packForm(movement, "order")).toBeUndefined();
     expect(packForm(movement, "risk")?.fileName).toBe("risk.pdf");
+  });
+
+  it("needs no forms for a voluntary transfer", () => {
+    const job = (transportLegalStatus?: string) => ({ transport: { transportLegalStatus } }) as unknown as Movement;
+    expect(packRequired(job("voluntary"))).toBe(false);
+    expect(packOutstanding(job("voluntary"))).toBe(false);
+    expect(packRequired(job("involuntary"))).toBe(true);
+    expect(packOutstanding(job("involuntary"))).toBe(true);
+    expect(packOutstanding(job(undefined))).toBe(true);
   });
 
   it("records a Form 4A upload on the selected job and counts it", () => {
