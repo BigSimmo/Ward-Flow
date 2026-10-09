@@ -28,4 +28,11 @@ describe("WardGround fills the column below short pages", () => {
     expect(child, "no `.shell > :last-child` rule").not.toBe("");
     expect(child).toMatch(/flex(?:-grow)?:\s*[1-9]/u);
   });
+
+  it("keeps hidden text in inner scroll boxes from scrolling the desktop page past its footer", () => {
+    const desktop = /@media\s*\(min-width:\s*1001px\)\s*\{\s*\.shell\s*\{([^}]*)\}/u.exec(css)?.[1] ?? "";
+    expect(desktop, "no desktop `.shell` containment rule").not.toBe("");
+    expect(desktop).toMatch(/position:\s*relative/u);
+    expect(desktop).toMatch(/overflow-y:\s*clip/u);
+  });
 });
