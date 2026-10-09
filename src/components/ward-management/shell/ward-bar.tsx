@@ -477,6 +477,8 @@ export function phoneBarAction(action: WardPrimaryAction | undefined, phone: boo
  */
 export function routeBarAction(pathname: string): WardPrimaryAction {
   const action = resolveWardPrimaryAction(pathname);
+  // The intake route IS the open referral slide-out, so a second referral trigger stays off there.
+  if (action?.kind === "none" && pathname.replace(/\/$/, "") === WARD_REFERRAL_INTAKE_HREF) return action;
   return action === undefined || action.kind === "none" ? NEW_REFERRAL_ACTION : action;
 }
 
