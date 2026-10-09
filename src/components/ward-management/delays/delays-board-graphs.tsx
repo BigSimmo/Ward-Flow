@@ -117,7 +117,9 @@ function Spread({
       if (plot.clientWidth > 0) setPlotWidth(plot.clientWidth);
     });
     observer.observe(plot);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, []);
   const PLOT_WIDTH = plotWidth;
   const visible = new Set(shown.map((row) => row.movement.id));
