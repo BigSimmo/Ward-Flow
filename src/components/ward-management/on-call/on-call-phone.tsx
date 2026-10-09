@@ -233,7 +233,7 @@ export function PhoneDirectory({
   isHighlighted: (entry: DirectoryEntry) => boolean;
   queryActive: boolean;
   hitCount: number;
-  otherHits: { label: string; count: number; onShow: () => void } | null;
+  otherHits: readonly { section: string; label: string; count: number; onShow: () => void }[];
   onClearQuery: () => void;
   onOpen: (id: string) => void;
 }) {
@@ -244,8 +244,6 @@ export function PhoneDirectory({
   const firstKey = blocks[0]?.groups[0]?.key;
   const openKey = opened?.scope === scope ? opened.key : firstKey;
   const byRole = (tab === "hospitals" && groupBy === "role") || tab === "mine";
-  if (!rows.length)
-    return <p className={styles.phoneEmpty}>Star any line to keep it here. My list stays in this browser.</p>;
   return (
     <div className={styles.phoneList} id="ward-reach-switchboard" tabIndex={-1}>
       {queryActive ? (
@@ -255,16 +253,19 @@ export function PhoneDirectory({
             <span className={styles.mono}>{hitCount}</span> highlighted below
           </span>
           <span className={styles.spacer} />
-          {otherHits ? (
-            <Button variant="ghost" size="sm" onClick={otherHits.onShow}>
-              {otherHits.count} in {otherHits.label}
+          {otherHits.map((item) => (
+            <Button key={item.section} variant="ghost" size="sm" onClick={item.onShow}>
+              {item.count} in {item.label}
             </Button>
-          ) : null}
+          ))}
           <Button variant="ghost" size="sm" onClick={onClearQuery}>
             Clear
           </Button>
         </div>
       ) : null}
+      {rows.length ? null : (
+        <p className={styles.phoneEmpty}>Star any line to keep it here. My list stays in this browser.</p>
+      )}
       {blocks.map((block) => (
         <div key={block.service ?? "all"} className={styles.phoneBlock}>
           {block.service ? (

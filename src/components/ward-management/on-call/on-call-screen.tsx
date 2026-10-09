@@ -336,15 +336,17 @@ export function OnCallScreen() {
     mine: favourites.length,
   };
   const queryHits = query.trim() ? entries.filter((entry) => matchesQuery(entry, query)) : [];
-  // Phone shows one tab at a time, so matches in another tab get a button that opens it.
-  const otherSection = queryHits.find((entry) => entry.section !== tab)?.section;
-  const otherHits = otherSection
-    ? {
-        label: SECTION_LABEL[otherSection],
-        count: queryHits.filter((entry) => entry.section === otherSection).length,
-        onShow: () => setTab(otherSection),
-      }
-    : null;
+  // Phone shows one tab at a time, so matches the current tab does not show get a button per tab.
+  const shownIds = new Set(tabRows.map((entry) => entry.id));
+  const offTab = queryHits.filter((entry) => !shownIds.has(entry.id));
+  const otherHits = (Object.keys(SECTION_LABEL) as DirectorySection[])
+    .map((section) => ({
+      section,
+      label: SECTION_LABEL[section],
+      count: offTab.filter((entry) => entry.section === section).length,
+      onShow: () => setTab(section),
+    }))
+    .filter((item) => item.count > 0);
 
   const heroStats = (
     <>
