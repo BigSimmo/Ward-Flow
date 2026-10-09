@@ -223,7 +223,7 @@ export interface UnifiedCaseloadPatient {
 }
 
 export function PatientSearchPage() {
-  const { movements, referrals, units, patients, admissions, dayZero } = useWardFlow();
+  const { movements, referrals, units, patients, admissions, plannedAdmissions = [], dayZero } = useWardFlow();
   const now = useWardFlowClock();
   const [text, setText] = useState("");
   const [stage, setStage] = useState<MovementStage | "">("");
@@ -248,6 +248,7 @@ export function PatientSearchPage() {
   const detailsTriggerRef = useRef<HTMLElement | null>(null);
   const [dobOn, setDobOn] = useState(false);
   const [dob, setDob] = useState("");
+  const [soleDismissedFor, setSoleDismissedFor] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<CensusHighlight | null>(null);
   const [censusSort, setCensusSort] = useState<CensusSort>("wait");
   const [tab, setTab] = useState<"now" | "history">("now");
@@ -597,6 +598,8 @@ export function PatientSearchPage() {
     setTierFilter("all");
     setPresenceFilter("all");
     setActiveKpiFacet("all");
+    setDob("");
+    setDobOn(false);
   };
 
   // The counts beside each stage and department match the same way the table does, name included.
@@ -628,24 +631,41 @@ export function PatientSearchPage() {
   // the same records as `unifiedCaseload` above, so every search and filter that narrows that list
   // narrows these rows the same way; the bed and record rows answer the typed name or UMRN.
   const census = useMemo(
-    () => buildCensus({ movements, referrals, units, patients, admissions, now, dayZero }),
-    [movements, referrals, units, patients, admissions, now, dayZero],
+    () => buildCensus({ movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero }),
+    [movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero],
   );
   const isPhone = usePhoneLayout();
   const needle = isChip ? "" : foldPatientSearchText(text);
   const dobIso = dobOn ? parseDob(dob) : null;
   const searching = needle !== "" || dobIso !== null;
-  const legacyNarrowing = isChip || activeFilterCount - (text ? 1 : 0) > 0;
+  // Ward and person rows carry no stage, department, service, legal, wait or tier, so those filters
+  // leave them out; a setting or presence filter keeps the ward rows it names.
+  const legacyNarrowing =
+    isChip ||
+    stage !== "" ||
+    edId !== "" ||
+    activeKpiFacet !== "all" ||
+    serviceFilter !== "all" ||
+    legalFilter !== "all" ||
+    waitFilter !== "all" ||
+    tierFilter !== "all";
+
   const caseIds = useMemo(() => new Set(unifiedCaseload.map((row) => row.id)), [unifiedCaseload]);
   const peopleIds = useMemo(() => new Set<string>(people.map((person) => person.id)), [people]);
   const visibleRows = useMemo(() => {
     const lifted = highlightTest(highlight);
     return sortCensusRows(
-      census.rows.filter((row) => {
+      (refusal ? [] : census.rows).filter((row) => {
         if (row.kind === "movement" || row.kind === "referral") {
-          if (!caseIds.has(row.key)) return false;
+          // A place shown in the census also finds the case, not only the legacy record search.
+          if (!caseIds.has(row.key) && !(needle.length >= 2 && row.placeText.includes(needle))) return false;
         } else {
           if (legacyNarrowing) return false;
+          const onWard = row.kind === "admission" && row.group === "ward";
+          if (settingFilter === "inpatient" && !(onWard && !row.awayAtEd)) return false;
+          if (settingFilter === "ed" && !(onWard && row.awayAtEd)) return false;
+          if (settingFilter !== "all" && settingFilter !== "inpatient" && settingFilter !== "ed") return false;
+          if (presenceFilter !== "all" && !(presenceFilter === "live" && onWard)) return false;
           if (
             needle !== "" &&
             !row.searchText.includes(needle) &&
@@ -660,7 +680,19 @@ export function PatientSearchPage() {
       censusSort,
       lifted,
     );
-  }, [census, caseIds, peopleIds, legacyNarrowing, needle, dobIso, censusSort, highlight]);
+  }, [
+    census,
+    refusal,
+    caseIds,
+    peopleIds,
+    legacyNarrowing,
+    settingFilter,
+    presenceFilter,
+    needle,
+    dobIso,
+    censusSort,
+    highlight,
+  ]);
 
   const groupTotals = countGroups(census.rows);
   const groupMatches = countGroups(visibleRows);
@@ -671,9 +703,11 @@ export function PatientSearchPage() {
 
   // A search that finds exactly one person opens them; otherwise the panel shows this shift until a
   // row is chosen.
+  // Closing that detail keeps it closed until the search itself changes.
+  const searchKey = `${needle}|${dobIso ?? ""}`;
   const selectedCensus =
     visibleRows.find((row) => row.key === requestedSelectedId) ??
-    (searching && visibleRows.length === 1 ? visibleRows[0]! : null);
+    (searching && visibleRows.length === 1 && soleDismissedFor !== searchKey ? visibleRows[0]! : null);
   const selectedId = selectedCensus?.key ?? null;
   const selectedRow = unifiedCaseload.find((row) => row.id === selectedId) ?? null;
   // The drawer belongs to the row that opened it. If that row leaves the results the drawer closes,
@@ -789,7 +823,7 @@ export function PatientSearchPage() {
         event.preventDefault();
         const words = `${text} ${dobOn ? dob : ""}`.trim();
         if (words.length === 0) return;
-        setAccessRecord((l) => recordSearch(l, { words, at: now }));
+        setAccessRecord((l) => recordSearch(l, { words, text, dob: dobOn ? dob : undefined, at: now }));
       }}
     >
       <PatientTypeahead
@@ -818,6 +852,14 @@ export function PatientSearchPage() {
       />
       {isPhone && dobOn ? <PhoneDobField dob={dob} onDob={setDob} /> : null}
       <span className="sr-only">Find a person by name or record number</span>
+      {/* The census, not the typeahead, says how many people a search found. */}
+      <p className="sr-only" role="status" aria-live="polite">
+        {!searching || refusal
+          ? ""
+          : visibleRows.length === 0
+            ? "Nobody matches."
+            : `${visibleRows.length} invented ${visibleRows.length === 1 ? "person" : "people"} found.`}
+      </p>
     </form>
   );
 
@@ -826,8 +868,10 @@ export function PatientSearchPage() {
       searches={accessRecord}
       closed={census.closedToday}
       now={now}
-      onRerun={(words) => {
-        setText(words);
+      onRerun={(entry) => {
+        setText(entry.text ?? entry.words);
+        setDob(entry.dob ?? "");
+        setDobOn(entry.dob !== undefined);
         setTab("now");
       }}
     />
@@ -850,7 +894,14 @@ export function PatientSearchPage() {
       <CensusDetail
         row={selectedCensus}
         now={now}
-        onClose={closeable ? () => setSelectedId(null) : undefined}
+        onClose={
+          closeable
+            ? () => {
+                setSelectedId(null);
+                setSoleDismissedFor(searchKey);
+              }
+            : undefined
+        }
         onCopy={copyRow}
         copyNote={copyNote}
       />

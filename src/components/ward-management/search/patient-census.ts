@@ -25,13 +25,14 @@ import {
   isPastExpectedDischarge,
   LEAVING_DESTINATIONS,
   type Admission,
+  type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
 import { dayOf, formatInstantWithDay, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { foldPatientSearchText, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
-import { referralState } from "@/components/ward-management/ward-referrals";
+import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { durMinutes } from "@/components/wf";
@@ -135,8 +136,13 @@ function nextStepFor(cause: DelayCause | undefined, movement: Movement, moving: 
       return ["Reserved time passed", "act"];
     case "awaiting_bed_ready":
       return ["Bed not ready", "wait"];
-    case "awaiting_transport":
-      return [moving ? "In transit" : "Book transport", moving ? "move" : "wait"];
+    case "awaiting_transport": {
+      if (moving) return ["In transit", "move"];
+      // A live job is already booked: the step is the provider's, not another booking.
+      const job = movement.transport;
+      if (!job || job.cancelledAt !== undefined) return ["Book transport", "wait"];
+      return [job.acceptedAt !== undefined ? "Awaiting pickup" : "Provider to accept", "wait"];
+    }
     case "patient_or_family":
       return ["Patient or family", "wait"];
     case "awaiting_coordinator":
@@ -184,11 +190,12 @@ export function buildCensus(state: {
   units: Unit[];
   patients: Patient[];
   admissions: readonly Admission[];
+  plannedAdmissions?: readonly PlannedAdmission[];
   now: Instant;
   dayZero: Date;
 }): Census {
-  const { movements, referrals, units, patients, admissions, now, dayZero } = state;
-  const resolve = createPatientResolver({ patients, referrals, movements });
+  const { movements, referrals, units, patients, admissions, plannedAdmissions = [], now, dayZero } = state;
+  const resolve = createPatientResolver({ patients, referrals, movements, plannedAdmissions });
   const unitOf = new Map(units.map((unit) => [unit.id, unit]));
   const today = new Date(dayZero.getTime() + Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY * 60_000);
   const causeById = new Map<string, DelayCause>();
@@ -226,6 +233,8 @@ export function buildCensus(state: {
     const operational = movementSearchState(movement, admissions);
     if (operational.sourceAdmission) coveredAdmissions.add(operational.sourceAdmission.id);
     const moving = operational.holdStatus === "In-Transit";
+    // Collected and then stopped without arriving: nobody recorded where the person is now.
+    const lost = operational.setting === "unknown" && movement.transport?.collectedAt !== undefined;
     const accepted = movement.acceptedUnitId ? unitOf.get(movement.acceptedUnitId) : undefined;
     const cause = causeById.get(movement.id);
     const [next, glyph] = nextStepFor(cause, movement, moving);
@@ -254,8 +263,14 @@ export function buildCensus(state: {
       service: movementOriginService(movement),
       transport: operational.transportStatus,
       escort: Boolean(movement.transport?.escortRequired),
-      where: moving ? "In transit" : source ? source.name : edText,
-      whereSub: moving ? `From ${edText}` : source ? "Ward transfer" : movementOriginService(movement),
+      where: moving ? "In transit" : lost ? "Location not recorded" : source ? source.name : edText,
+      whereSub: moving
+        ? `From ${edText}`
+        : lost
+          ? `Journey stopped after leaving ${edText}`
+          : source
+            ? "Ward transfer"
+            : movementOriginService(movement),
       to: accepted ? accepted.name : asked > 0 ? `Asked ${plural(asked, "ward")}` : "No ward yet",
       toSub: accepted
         ? moving
@@ -286,17 +301,37 @@ export function buildCensus(state: {
     });
   }
 
+  // Everyone who has held a ward record, discharged included.
+  const admitted = new Set<string>();
+  for (const admission of admissions) {
+    const occupant = resolve(admission).patient;
+    if (occupant) admitted.add(occupant.id);
+  }
+
   for (const referral of referrals) {
-    if (referralState(referral) !== "queued") continue;
+    const outcome = referralState(referral);
+    // Withdrawn arms are settled, so only arms still awaiting an answer keep a referral open. An
+    // accepted referral with no movement yet still has a person waiting for that movement.
+    const awaiting = referral.destinations.filter(isAwaitingAnswer);
+    const accepted = outcome === "accepted" ? referral.destinations.find((arm) => arm.state === "accepted") : undefined;
+    if (accepted === undefined && (outcome !== "queued" || awaiting.length === 0)) continue;
+    const linked = resolve(referral).patient;
+    if (linked && busy.has(linked.id)) continue;
+    // An accepted referral is finished once its person has held a ward record; only a known person
+    // with none is still waiting for the move.
+    if (accepted && (!linked || admitted.has(linked.id))) continue;
     const who = person(referral);
     const community = isCommunityReferral(referral);
     const where = community ? `${referral.originSiteCode} Community` : `${referral.originSiteCode} ED`;
     const waited = Math.max(0, now - referral.raisedAt);
-    const sent = referral.destinations.length;
+    const wards = awaiting.filter((arm) => arm.destination.kind === "psychiatric_ward").length;
+    const others = awaiting.length - wards;
+    const acceptedUnit = accepted?.acceptedUnitId ? unitOf.get(accepted.acceptedUnitId) : undefined;
+    const answerer = wards > 0 ? "Ward" : awaiting[0]?.destination.kind === "emergency_department" ? "ED" : "Team";
     rows.push({
       key: referral.id,
       kind: "referral",
-      group: "wait",
+      group: accepted ? "found" : "wait",
       tier: tierOf(referral.urgency),
       ...who,
       service: referralOriginService(referral.originSiteCode),
@@ -304,10 +339,14 @@ export function buildCensus(state: {
       escort: false,
       where,
       whereSub: referralOriginService(referral.originSiteCode),
-      to: `Sent to ${plural(sent, "ward")}`,
-      toSub: "Awaiting answer",
-      next: "Ward to answer",
-      nextWho: "Ward",
+      to: accepted
+        ? (acceptedUnit?.name ?? "Accepted")
+        : wards > 0 && others === 0
+          ? `Sent to ${plural(wards, "ward")}`
+          : `Sent to ${plural(awaiting.length, "place")}`,
+      toSub: accepted ? "Accepted, no movement yet" : "Awaiting answer",
+      next: accepted ? "Arrange the move" : `${answerer} to answer`,
+      nextWho: accepted ? "Bed desk" : answerer,
       glyph: "wait",
       legal: "Not recorded",
       legalSub: "On the referral",
@@ -320,7 +359,7 @@ export function buildCensus(state: {
       pastExpected: false,
       awayAtEd: false,
       reservedTimePassed: false,
-      acceptedUnitName: null,
+      acceptedUnitName: acceptedUnit?.name ?? null,
       timeline: [{ at: referral.raisedAt, glyph: "wait", text: `Referral raised at ${where}` }],
       placeText: foldPatientSearchText(`${where} ${siteName(referral.originSiteCode)}`),
     });
@@ -373,6 +412,9 @@ export function buildCensus(state: {
       });
       continue;
     }
+    // One row per person: someone already shown by an open movement or referral adds no ward row.
+    const occupant = resolve(admission).patient;
+    if (occupant && busy.has(occupant.id)) continue;
     const who = person(admission);
     const unit = unitOf.get(admission.unitId);
     const past = isPastExpectedDischarge(admission, now);
@@ -395,8 +437,9 @@ export function buildCensus(state: {
       service: null,
       transport: null,
       escort: false,
-      where: unit?.name ?? "Ward not recorded",
-      whereSub: siteName(unit?.siteCode),
+      // At ED for review the person is in ED while the ward keeps their bed.
+      where: away ? "At ED" : (unit?.name ?? "Ward not recorded"),
+      whereSub: away ? `${unit?.name ?? "Ward"} bed kept` : siteName(unit?.siteCode),
       to:
         edd === null
           ? "No date set"

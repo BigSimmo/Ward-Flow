@@ -365,8 +365,9 @@ export function PatientTypeahead({
         foot, standard §8.3) are BOTH visual. A screen-reader user reaches neither, which is why
         the marker has to be in the sentence at all.
       */}
+      {/* Without suggestions the host page announces its own results, so this stays silent. */}
       <p className="sr-only" role="status" aria-live="polite">
-        {query.length === 0 || refused
+        {!suggestions || query.length === 0 || refused
           ? ""
           : matches.length > 0
             ? `${matches.length} invented ${matches.length === 1 ? "name" : "names"} found.`

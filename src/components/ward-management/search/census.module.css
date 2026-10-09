@@ -112,8 +112,9 @@
   outline: none;
 }
 
-/* The typeahead's own Clear: a small pill at the end of the field. */
-.searchForm > div > div:first-of-type > button:last-child {
+/* The typeahead's own Clear: a small pill at the end of the field (never the DOB switch, which is
+   the last button while the field is empty). */
+.searchForm > div > div:first-of-type > button:last-child:not(.dobToggle) {
   flex: none;
   align-self: center;
   min-height: 0;
@@ -1028,7 +1029,7 @@ table.censusTable {
   height: 26px;
 }
 
-.searchFormPhone > div > div:first-of-type > button:last-child {
+.searchFormPhone > div > div:first-of-type > button:last-child:not(.dobToggle) {
   height: 48px;
   padding: 0 14px;
 }

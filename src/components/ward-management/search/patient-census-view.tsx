@@ -830,13 +830,13 @@ export function CensusDetail({ row, now, onClose, onCopy, copyNote }: CensusDeta
           type="button"
           className={styles.previewButton}
           onClick={() => setPreviewNote(true)}
-          title="Needs a watch list the app does not hold"
+          title="Not wired in this prototype."
         >
           <Icon icon={Eye} size={14} />
           Watch this shift
         </button>
         <span className={styles.previewTag}>Preview</span>
-        {previewNote ? <span className={styles.previewNote}>Needs a watch list the app does not hold</span> : null}
+        {previewNote ? <span className={styles.previewNote}>Not wired in this prototype.</span> : null}
       </div>
       <div className={styles.actions}>
         <Button
@@ -878,7 +878,7 @@ export function CensusHistory({
 }: {
   searches: readonly AccessEntry[];
   closed: readonly ClosedTodayRow[];
-  onRerun: (words: string) => void;
+  onRerun: (entry: AccessEntry) => void;
   now: Instant;
 }) {
   return (
@@ -895,7 +895,7 @@ export function CensusHistory({
             <span className={styles.mono}>{formatInstantWithDay(entry.at, now)}</span>
             <Icon icon={Search} size={14} />
             <span className={styles.truncate}>{entry.words}</span>
-            <Button variant="ghost" size="sm" onClick={() => onRerun(entry.words)}>
+            <Button variant="ghost" size="sm" onClick={() => onRerun(entry)}>
               Search again
             </Button>
           </li>
@@ -1067,6 +1067,7 @@ export function PhoneCensus(props: PhoneCensusProps) {
                       <span className={styles.truncate}>
                         <Marked text={row.name} needle={props.needle} />
                       </span>
+                      {row.confidential ? <span className={styles.restricted}>Restricted</span> : null}
                     </b>
                     <span>
                       <span className={styles.mono}>
