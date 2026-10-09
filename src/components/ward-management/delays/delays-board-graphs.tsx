@@ -3,7 +3,8 @@
 /**
  * The three graphs under the Delays table. Each one filters the table rather than drilling into
  * a page of its own: a lane label, a matrix cell or a half-hour column narrows the table, and a
- * dot opens that person's row. Everything is drawn from the same rows the table shows.
+ * dot opens that person's row. Every graph draws everyone waiting: the spread dims the dots a
+ * filter hides, while the runway and the matrix keep counting everyone so the whole picture stays.
  */
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 

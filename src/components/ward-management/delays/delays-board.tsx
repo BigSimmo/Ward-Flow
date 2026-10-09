@@ -774,7 +774,8 @@ function Registers({
               type="button"
               className={styles.chip}
               onClick={onNotWired}
-              aria-label="Record a service-wide or facility delay"
+              aria-label="Record a service-wide or facility delay. Not wired in this prototype."
+              title="Not wired in this prototype."
             >
               Record hold
             </button>

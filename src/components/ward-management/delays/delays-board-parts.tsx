@@ -12,8 +12,10 @@ export function causeTitle(cause: DelayCause): string {
 export function BandBar({ bands, className }: { bands: BandCounts; className?: string }) {
   const total = bands.reduce((sum, n) => sum + n, 0);
   const label = WAIT_BANDS.map((band, index) => `${band}: ${bands[index]}`).join(", ");
+  // An empty bar draws nothing, so it says nothing either.
+  const named = total === 0 ? { "aria-hidden": true } : { role: "img", "aria-label": label };
   return (
-    <span className={className ? `${styles.bar} ${className}` : styles.bar} role="img" aria-label={label}>
+    <span className={className ? `${styles.bar} ${className}` : styles.bar} {...named}>
       {total === 0
         ? null
         : bands.map((n, index) =>
