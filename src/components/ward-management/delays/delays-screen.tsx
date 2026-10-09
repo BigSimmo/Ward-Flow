@@ -148,7 +148,13 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
           data-from={aliasFrom}
         >
           <p>{delaysAliasBannerCopy(aliasFrom)}</p>
-          <button type="button" className={styles.aliasBannerDismiss} onClick={() => setAliasBannerDismissed(true)}>
+          <button
+            type="button"
+            className={styles.aliasBannerDismiss}
+            onClick={() => {
+              setAliasBannerDismissed(true);
+            }}
+          >
             Dismiss
           </button>
         </aside>
@@ -186,7 +192,9 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
           service={service}
           isOutsideService={isOutsideService}
           onEscalate={escalate}
-          onNotWired={() => showNotice("Not wired in this prototype.")}
+          onNotWired={() => {
+            showNotice("Not wired in this prototype.");
+          }}
           banner={banner}
           empty={
             open.length === 0 ? (
