@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * The three graphs under the Delays table. Each one highlights the table rather than drilling into
- * a page of its own: a lane label, a matrix cell or a half-hour column marks its population, and a
- * dot opens that person's row. Every graph draws everyone waiting: the spread dims non-matching
- * dots, while the runway and the matrix keep counting everyone so the whole picture stays.
+ * The three graphs under the Delays table. Each one filters the table rather than drilling into
+ * a page of its own: a lane label, a matrix cell or a half-hour column narrows the table, and a
+ * dot opens that person's row. Every graph draws everyone waiting: the spread dims the dots a
+ * filter hides, while the runway and the matrix keep counting everyone so the whole picture stays.
  */
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
@@ -362,8 +362,8 @@ function Runway({
                   )
                 }
                 onMouseLeave={() => {
-                      onTip(null);
-                    }}
+                  onTip(null);
+                }}
               >
                 <rect
                   x={xc(bin.index) - pw / 16 + 4}
@@ -517,8 +517,8 @@ function Matrix({
                     )
                   }
                   onMouseLeave={() => {
-                      onTip(null);
-                    }}
+                    onTip(null);
+                  }}
                 >
                   <span className={styles.mxTop}>
                     <span className={`${styles.mxN} ${styles.num}`}>{n}</span>
@@ -747,7 +747,7 @@ export function DelaysBoardGraphs(props: Props) {
         <div className={styles.gFoot}>
           <span>
             <b className={styles.num}>{shown.length}</b>
-            {` of ${rows.length} match the current filters and are highlighted in the table.`}
+            {` of ${rows.length} match the current filters and are shown in the table.`}
           </span>
           <span className={styles.sp} />
           <button type="button" className={styles.lnk} onClick={onToTable}>

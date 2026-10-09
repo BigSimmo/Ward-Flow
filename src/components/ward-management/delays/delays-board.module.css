@@ -517,6 +517,12 @@ button.stat:hover .statV {
   font-size: var(--t-1);
 }
 
+/* O-16.2: every waiting column is one size, so rank is carried by colour and weight. The blocker
+   reads in full ink; the profile line under the name is muted (ward-delays-type-ranks.test.ts). */
+.cWard {
+  color: var(--wf-ink-1);
+}
+
 .colP {
   width: 11.5rem;
 }
@@ -583,18 +589,6 @@ button.stat:hover .statV {
 
 .r[aria-selected="true"] td:first-child {
   box-shadow: inset 3px 0 0 var(--wf-accent);
-}
-
-.tbl tbody tr[data-delays-row-matches="true"] td {
-  background: var(--ward-subtle);
-}
-
-.tbl tbody tr[data-delays-row-matches="false"] td {
-  color: var(--wf-muted, var(--ward-muted));
-}
-
-.tbl tbody tr[data-delays-row-matches="false"] .whoBtn b {
-  font-weight: 500;
 }
 
 .whoBtn {

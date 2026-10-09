@@ -56,7 +56,6 @@ import {
   dueTone,
   filterRows,
   hasFilters,
-  rowMatchesFilters,
   isBreached,
   isDueSoon,
   isPinned,
@@ -877,19 +876,15 @@ export function DelaysBoard({
     (movement: Movement) => `${patientOf(movement).formalName} ${patientOf(movement).umrn}`,
     [patientOf],
   );
-  const matchesRow = useCallback(
-    (row: BoardRow) => rowMatchesFilters(row, filters, bins, nameOf),
-    [filters, bins, nameOf],
-  );
-  const matching = useMemo(() => filterRows(rows, filters, bins, nameOf), [rows, filters, bins, nameOf]);
-  const highlightActive = hasFilters(filters);
-  const selected = selectedId === null ? null : (rows.find((row) => row.movement.id === selectedId) ?? null);
-  const filtered = highlightActive;
-  const hadHighlightFilters = useRef(false);
-  useEffect(() => {
-    if (hadHighlightFilters.current && !highlightActive && selectedId !== null) setSelectedId(null);
-    hadHighlightFilters.current = highlightActive;
-  }, [highlightActive, selectedId]);
+  // Owner ruling, 9 October 2026: filters narrow the table (the approved mockup), and the table
+  // always says how many people they hide, with Show everyone. It supersedes, for this board, the
+  // 7 September "a chip highlights, it never hides" ruling.
+  const shown = useMemo(() => filterRows(rows, filters, bins, nameOf), [rows, filters, bins, nameOf]);
+  // A person the filters hide is never shown as open: their panel closes rather than sit beside no row.
+  const selected = selectedId === null ? null : (shown.find((row) => row.movement.id === selectedId) ?? null);
+  // Drop the hidden choice too, so Escape, the pressed graph dot and a later clear all agree it closed.
+  if (selectedId !== null && selected === null) setSelectedId(null);
+  const filtered = hasFilters(filters);
 
   const set = (patch: Partial<BoardFilters>) => setFilters((current) => ({ ...current, ...patch }));
   const toggle = <K extends keyof BoardFilters>(key: K, value: BoardFilters[K]) =>
@@ -923,6 +918,8 @@ export function DelaysBoard({
   const reveal = (id: string) => {
     const row = rows.find((candidate) => candidate.movement.id === id);
     if (row === undefined) return;
+    // Opening someone the filters hide shows everyone first, so their row is there to open.
+    if (!shown.some((candidate) => candidate.movement.id === id)) setFilters(NO_FILTERS);
     // On a phone or tablet the panel is a sheet over the table, so focus goes to the sheet instead.
     explicitSelect.current = true;
     setSelectedId(id);
@@ -1018,14 +1015,12 @@ export function DelaysBoard({
     const patient = patientOf(movement);
     const isSelected = selectedId === movement.id;
     const ward = wardSummary(row, units);
-    const matches = !highlightActive || matchesRow(row);
     return [
       <tr
         role="row"
         key={movement.id}
         className={styles.r}
         aria-selected={isSelected}
-        data-delays-row-matches={highlightActive ? (matches ? "true" : "false") : undefined}
         data-testid={`delays-row-${movement.id}`}
         onClick={(event) => {
           if ((event.target as HTMLElement).closest("button, a") === null) select(movement.id);
@@ -1108,12 +1103,11 @@ export function DelaysBoard({
   };
 
   const byWait = (a: BoardRow, b: BoardRow) => b.waited - a.waited;
-  const body: ReactNode[] = [];
+  let body: ReactNode[] = [];
   if (!flat) {
     for (const group of groups) {
-      const list = rows.filter((row) => row.cause === group.cause).sort(byWait);
+      const list = shown.filter((row) => row.cause === group.cause).sort(byWait);
       if (list.length === 0) continue;
-      const matchingInGroup = highlightActive ? list.filter(matchesRow).length : list.length;
       const open = isOpenGroup(group.cause);
       const limit = moreGroups[group.cause] ? list.length : GROUP_LIMIT;
       const owner = list[0].owner;
@@ -1132,7 +1126,7 @@ export function DelaysBoard({
               <Glyph tone={list[0].severe ? "danger" : undefined} />
               <span className={styles.gTitle}>{group.title}</span>
               <span className={styles.k} data-delays-group-count>
-                {highlightActive ? matchingInGroup : list.length}
+                {list.length}
               </span>
               <span className={styles.mut}>{`${ownerName(owner)} to clear`}</span>
               <span className={styles.sp} />
@@ -1163,8 +1157,8 @@ export function DelaysBoard({
       }
     }
   } else {
-    const pinned = rows.filter(isPinned).sort((a, b) => (a.dueIn ?? 0) - (b.dueIn ?? 0));
-    const rest = rows.filter((row) => !isPinned(row)).sort(byWait);
+    const pinned = shown.filter(isPinned).sort((a, b) => (a.dueIn ?? 0) - (b.dueIn ?? 0));
+    const rest = shown.filter((row) => !isPinned(row)).sort(byWait);
     if (pinned.length > 0) {
       body.push(
         <tr role="row" key="pinned" className={`${styles.grpH} ${styles.grpStatic}`}>
@@ -1194,6 +1188,43 @@ export function DelaysBoard({
     }
     body.push(...rest.flatMap(renderRow));
   }
+  // A person filtered out must never look like a person placed. Whenever filters hide anyone, the
+  // table says how many, with a way to show everyone (owner ruling, 9 October 2026).
+  const hidden = rows.length - shown.length;
+  if (hidden > 0 && shown.length > 0)
+    body.push(
+      <tr role="row" key="hidden" className={styles.more}>
+        <td role="cell" colSpan={6} className={styles.hiddenNote} data-testid="delays-hidden-note">
+          {`${hidden} more ${hidden === 1 ? "person is" : "people are"} waiting, hidden by the filters above.`}{" "}
+          <button
+            type="button"
+            className={styles.lnk}
+            onClick={() => {
+              setFilters(NO_FILTERS);
+            }}
+          >
+            Show everyone
+          </button>
+        </td>
+      </tr>,
+    );
+  if (shown.length === 0)
+    body = [
+      <tr role="row" key="none">
+        <td role="cell" colSpan={6} className={styles.none}>
+          {`Nobody matches these filters. ${rows.length} ${rows.length === 1 ? "person is" : "people are"} waiting, all hidden.`}{" "}
+          <button
+            type="button"
+            className={styles.lnk}
+            onClick={() => {
+              setFilters(NO_FILTERS);
+            }}
+          >
+            Show everyone
+          </button>
+        </td>
+      </tr>,
+    ];
   const registers = (
     <Registers
       escalated={escalated}
@@ -1320,7 +1351,7 @@ export function DelaysBoard({
                 <span
                   className={styles.meta}
                   data-testid="delays-shown-count"
-                >{`${matching.length} of ${rows.length}`}</span>
+                >{`${shown.length} of ${rows.length}`}</span>
                 <span className={styles.wlegend} aria-hidden="true">
                   <span>
                     <i className={styles.lgAct} />
@@ -1476,7 +1507,7 @@ export function DelaysBoard({
 
           <DelaysBoardGraphs
             rows={rows}
-            shown={matching}
+            shown={shown}
             bins={bins}
             now={now}
             filters={filters}
