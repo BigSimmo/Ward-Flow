@@ -189,6 +189,16 @@ const wardPatients: Patient[] = [
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { withDemoPlannedMoveTimes } from "@/components/ward-management/ward-demo-planned-moves";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
+import {
+  SUPPORT_NOTIFICATION_OCCASIONS,
+  SUPPORT_NOTIFICATION_OUTCOMES,
+  SUPPORT_NOTIFICATION_PARTIES,
+  SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS,
+  SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS,
+  admissionSupportNotificationSubject,
+  movementSupportNotificationSubject,
+  type SupportNotificationRecord,
+} from "@/components/ward-management/ward-support-notifications";
 
 /**
  * Stages `REFER_TO_UNITS` accepts, exported so a UI surface can pre-check referability and gate
@@ -510,6 +520,12 @@ export type WardFlowState = WardAuditState & {
   broadcastAlerts: BroadcastAlert[];
   /** Monotonic sequence counter for broadcast IDs (e.g. BCAST-1). */
   broadcastSequence: number;
+  /**
+   * Advisory carer, personal support person and MHAS notification records (9 Oct 2026).
+   * `RECORD_SUPPORT_NOTIFICATION` appends here. Optional so stored sessions from before it still
+   * load; holds typed text, so a non-empty list is never persisted (see storage validation).
+   */
+  supportNotifications?: SupportNotificationRecord[];
 };
 
 /** Phone-log of a repatriation arranged off-system. Never a booked transport job. */
@@ -757,6 +773,8 @@ function subjectId(event: WardFlowEvent): string {
     case "SET_STEP_DOWN_CANDIDATE":
     case "SET_DISCHARGE_BARRIER":
       return event.admissionId;
+    case "RECORD_SUPPORT_NOTIFICATION":
+      return event.movementId ?? event.admissionId ?? "none";
     case "EVALUATE_LEAVE_BED_WARNINGS":
     case "EVALUATE_ARRIVAL_LATENESS":
     case "RECORD_HANDOVER_SIGN_OFF":
@@ -2083,7 +2101,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     "PATIENT_COLLECTED",
     "PATIENT_ARRIVED",
   ];
-  if ("movementId" in event && pausedPlacementEvents.includes(event.type)) {
+  if ("movementId" in event && event.movementId !== undefined && pausedPlacementEvents.includes(event.type)) {
     const movement = findMovement(state, event.movementId);
     if (movement?.medicalDeterioration && movement.medicalDeterioration.resumedAt === undefined) {
       return reject(
@@ -2106,6 +2124,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
   ];
   if (
     "movementId" in event &&
+    event.movementId !== undefined &&
     medicalTransferEvents.includes(event.type) &&
     (() => {
       const movement = findMovement(state, event.movementId);
@@ -9462,6 +9481,87 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const recorded: ClinicalContactRecord = { teamId: team.id, at: event.now, by: event.role };
       const existing = Array.isArray(state.clinicalContacts) ? state.clinicalContacts : [];
       return { ...state, clinicalContacts: [...existing, recorded] };
+    }
+
+    case "RECORD_SUPPORT_NOTIFICATION": {
+      // Advisory only: records what a person says happened. Never decides whether a notice is
+      // legally required, never computes when, never blocks a move.
+      if (finiteInstant(event.now) === null)
+        return reject(state, event, "RECORD_SUPPORT_NOTIFICATION now must be a finite instant");
+      if (!SUPPORT_NOTIFICATION_OCCASIONS.includes(event.occasion))
+        return reject(state, event, "RECORD_SUPPORT_NOTIFICATION occasion is not one this checklist covers");
+      if (!SUPPORT_NOTIFICATION_PARTIES.includes(event.party))
+        return reject(
+          state,
+          event,
+          "RECORD_SUPPORT_NOTIFICATION party must be the carer, personal support person or MHAS",
+        );
+      if (!SUPPORT_NOTIFICATION_OUTCOMES.includes(event.outcome))
+        return reject(state, event, "RECORD_SUPPORT_NOTIFICATION outcome must be told or not applicable");
+
+      let subjectId: string;
+      if (event.occasion === "discharge") {
+        if (event.admissionId === undefined || event.movementId !== undefined)
+          return reject(state, event, "a discharge notification names the admission, not a movement");
+        const admission = findAdmission(state, event.admissionId);
+        if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
+        if (!admissionSupportNotificationSubject(admission, state))
+          return reject(
+            state,
+            event,
+            `admission ${admission.id} is not a completed discharge of an involuntary patient`,
+          );
+        subjectId = admission.id;
+      } else {
+        if (event.movementId === undefined || event.admissionId !== undefined)
+          return reject(state, event, "an admission or transfer notification names the movement, not an admission");
+        const movement = findMovement(state, event.movementId);
+        if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+        const subject = movementSupportNotificationSubject(movement, state.referrals);
+        if (!subject)
+          return reject(state, event, `movement ${movement.id} is not a completed arrival of an involuntary patient`);
+        if (subject.occasion !== event.occasion)
+          return reject(state, event, `movement ${movement.id} is a ${subject.occasion}, not a ${event.occasion}`);
+        subjectId = movement.id;
+      }
+
+      const base = { occasion: event.occasion, subjectId, party: event.party, at: event.now, by: event.role };
+      let detail: Pick<SupportNotificationRecord, "outcome" | "who" | "contactedAt" | "reason">;
+      if (event.outcome === "told") {
+        if (event.reason !== undefined)
+          return reject(state, event, "a told notification carries no not-applicable reason");
+        // Refused, never shortened: a truncated name silently drops whatever was typed last.
+        const who = (event.who ?? "").trim();
+        if (who.length === 0) return reject(state, event, "say who was told");
+        if (who.length > SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS)
+          return reject(
+            state,
+            event,
+            `who is ${who.length} characters and the limit is ${SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS}`,
+          );
+        const contactedAt = event.contactedAt ?? event.now;
+        if (finiteInstant(contactedAt) === null || contactedAt > event.now)
+          return reject(state, event, "the time they were told must be a real time no later than now");
+        detail = { outcome: "told", who, contactedAt };
+      } else {
+        if (event.who !== undefined || event.contactedAt !== undefined)
+          return reject(state, event, "a not-applicable notification names nobody and no time");
+        const reason = (event.reason ?? "").trim();
+        if (reason.length === 0) return reject(state, event, "say why it does not apply");
+        if (reason.length > SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS)
+          return reject(
+            state,
+            event,
+            `reason is ${reason.length} characters and the limit is ${SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS}`,
+          );
+        detail = { outcome: "not_applicable", reason };
+      }
+
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      const existing = Array.isArray(state.supportNotifications) ? state.supportNotifications : [];
+      const recorded: SupportNotificationRecord = { id: `SN-${existing.length + 1}`, ...base, ...detail };
+      return { ...state, supportNotifications: [...existing, recorded] };
     }
 
     case "DISPATCH_BROADCAST_ALERT":

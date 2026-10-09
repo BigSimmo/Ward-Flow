@@ -73,6 +73,12 @@ export const INBOX_CATEGORIES = {
   target_pending_referral_decision: { idPrefix: "target-pending-referral-decision-", kind: "fact" },
   target_pending_transfer_acceptance: { idPrefix: "target-pending-transfer-acceptance-", kind: "fact" },
   target_pending_transport_booked: { idPrefix: "target-pending-transport-booked-", kind: "fact" },
+  /** An involuntary patient's admission or transfer with a carer, PSP or MHAS notification not yet
+   *  recorded (advisory). Leaves when every party has a record. Remainder is the movement id. */
+  support_notification_arrival: { idPrefix: "notify-arrival-", kind: "fact" },
+  /** The same, for a discharge. Remainder is the discharged stay's admission id (a stay may have
+   *  no movement), checked against `state.admissions` by `ACKNOWLEDGE_INBOX_ITEM`. */
+  support_notification_discharge: { idPrefix: "notify-discharge-", kind: "fact" },
 } as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
 
 /**
@@ -94,6 +100,9 @@ export const INBOX_REVIEW_CATEGORIES: readonly (keyof typeof INBOX_CATEGORIES)[]
   "target_pending_referral_decision",
   "target_pending_transfer_acceptance",
   "target_pending_transport_booked",
+  // Carer, PSP and MHAS notification tasks (9 Oct 2026) are advisory, amber rows.
+  "support_notification_arrival",
+  "support_notification_discharge",
 ];
 
 /** Whether a row is act-now (red), read from its id alone so the reducer can enforce the snooze cap. */
@@ -103,9 +112,15 @@ export function inboxItemIsActNow(inboxItemId: string): boolean {
 
 /**
  * Whether an id names a real inbox row: a known category prefix and an existing movement after
- * it. Used by the ownership and snooze events; the same test `ACKNOWLEDGE_INBOX_ITEM` applies.
+ * it, or for a discharge notification row an existing stay (its remainder is an admission id).
+ * Used by the ownership and snooze events; the same test `ACKNOWLEDGE_INBOX_ITEM` applies.
  */
 export function inboxRowExists(state: WardFlowState, inboxItemId: string): boolean {
+  const dischargePrefix = INBOX_CATEGORIES.support_notification_discharge.idPrefix;
+  if (inboxItemId.startsWith(dischargePrefix)) {
+    const admissionId = inboxItemId.slice(dischargePrefix.length);
+    return state.admissions.some((admission) => admission.id === admissionId);
+  }
   return inboxRowMovementId(state.movements, inboxItemId) !== undefined;
 }
 
@@ -202,11 +217,16 @@ export function reduceInboxEvent(
       }
       const inboxCategory = Object.values(INBOX_CATEGORIES).find((entry) => inboxItemId.startsWith(entry.idPrefix));
       const inboxMovementId = inboxCategory ? inboxItemId.slice(inboxCategory.idPrefix.length) : undefined;
-      if (!inboxCategory || !state.movements.some((movement: Movement) => movement.id === inboxMovementId)) {
+      // A discharge notification row names its stay, which may have no movement.
+      const namesRecord =
+        inboxCategory === INBOX_CATEGORIES.support_notification_discharge
+          ? state.admissions.some((admission) => admission.id === inboxMovementId)
+          : state.movements.some((movement: Movement) => movement.id === inboxMovementId);
+      if (!inboxCategory || !namesRecord) {
         return reject(
           state,
           event,
-          `ACKNOWLEDGE_INBOX_ITEM inboxItemId ${inboxItemId} does not name a real inbox row — its prefix must be one of INBOX_CATEGORIES and its remainder an existing movement id`,
+          `ACKNOWLEDGE_INBOX_ITEM inboxItemId ${inboxItemId} does not name a real inbox row — its prefix must be one of INBOX_CATEGORIES and its remainder an existing movement id (an admission id for a discharge notification row)`,
         );
       }
       decision.outcome = "accepted";

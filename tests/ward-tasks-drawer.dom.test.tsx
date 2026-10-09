@@ -5,6 +5,8 @@ import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer"
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import type { Movement } from "@/components/ward-management/ward-model";
+import { supportNotificationTaskId } from "@/components/ward-management/ward-support-notifications";
 
 /**
  * 🔴 **THE TASKS DRAWER HAD NO TEST OF ITS OWN UNTIL NOW, AND IT IS ON EVERY WARD ROUTE.**
@@ -256,5 +258,52 @@ describe("task workspace state filters and actions", () => {
     expect(within(drawer).queryByRole("button", { name: /Acknowledge visible/ })).toBeNull();
     fireEvent.change(filter, { target: { value: "all" } });
     expect(within(drawer).getAllByRole("button", { name: "Acknowledge" })).toHaveLength(items.length);
+  });
+});
+
+describe("carer, PSP and MHAS rows open the right checklist", () => {
+  // WF-300 marked an involuntary inpatient, so the seed has one arrival row and one discharge row.
+  const state = {
+    ...seed,
+    movements: seed.movements.map((movement): Movement =>
+      movement.id === "WF-300" ? { ...movement, legalStatus: "Involuntary inpatient" } : movement,
+    ),
+  };
+  const notificationItems = buildActionInbox(state.movements.filter(isOpen), NOW_ANCHOR, state.units, state).filter(
+    (item) => item.id.startsWith("notify-"),
+  );
+
+  function renderNotifications() {
+    const onSelectMovement = vi.fn();
+    const onSelectDischarge = vi.fn();
+    render(
+      <WardTasksDrawer
+        items={notificationItems}
+        acknowledgements={{}}
+        completions={{}}
+        role="coordinator"
+        now={NOW_ANCHOR}
+        dispatch={vi.fn()}
+        onClose={vi.fn()}
+        onSelectMovement={onSelectMovement}
+        onSelectDischarge={onSelectDischarge}
+        records={state}
+      />,
+    );
+    return { onSelectMovement, onSelectDischarge };
+  }
+
+  it("opens a discharge row on the discharges board by its admission id", () => {
+    const { onSelectMovement, onSelectDischarge } = renderNotifications();
+    fireEvent.click(screen.getByTestId(`ward-task-${supportNotificationTaskId("discharge", "AD-LEFT-01")}`));
+    expect(onSelectDischarge).toHaveBeenCalledWith("AD-LEFT-01");
+    expect(onSelectMovement).not.toHaveBeenCalled();
+  });
+
+  it("opens an admission row on its movement page", () => {
+    const { onSelectMovement, onSelectDischarge } = renderNotifications();
+    fireEvent.click(screen.getByTestId(`ward-task-${supportNotificationTaskId("admission", "WF-300")}`));
+    expect(onSelectMovement).toHaveBeenCalledWith("WF-300");
+    expect(onSelectDischarge).not.toHaveBeenCalled();
   });
 });

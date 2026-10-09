@@ -86,6 +86,7 @@ import { ResetBaselineModal } from "./reset-baseline-modal";
 import { AlertsPane, DataPane, DisplayPane, ProfilePane, type ReferenceTab } from "./settings-panes";
 import { NOT_WIRED, PreviewTag, RuleRow, ScopeLine, SettingRow } from "./settings-rows";
 import { SETTINGS_TABS, findSettings, type SettingsSearchEntry, type SettingsTab } from "./settings-search-index";
+import { SETTINGS_DEMO_PROFILE } from "./settings-profile";
 import { publishedThresholds } from "./settings-thresholds";
 
 import styles from "./settings.module.css";
@@ -521,11 +522,17 @@ export function SettingsScreen() {
         <Hero
           className={styles.band}
           testId="ward-settings-profile"
-          eyebrow="State bed coordinator · Perth Central Desk"
+          eyebrow={`${SETTINGS_DEMO_PROFILE.role} · ${SETTINGS_DEMO_PROFILE.location}`}
           title={
             <span className={styles.who}>
-              <Avatar name="Dr S. Chen" initials="SC" online decorative className={styles.avatar} />
-              Dr S. Chen
+              <Avatar
+                name={SETTINGS_DEMO_PROFILE.name}
+                initials={SETTINGS_DEMO_PROFILE.initials}
+                online
+                decorative
+                className={styles.avatar}
+              />
+              {SETTINGS_DEMO_PROFILE.name}
             </span>
           }
           titleMeta={

@@ -49,6 +49,7 @@ import {
 } from "@/components/wf";
 
 import { DischargeFollowUp } from "./discharge-follow-up";
+import { SupportNotificationChecklist } from "../movements/support-notification-checklist";
 import styles from "./discharges.module.css";
 import pageStyles from "./discharges-third-edition.module.css";
 
@@ -306,14 +307,15 @@ function RecordedDischargeMilestones({
   );
 }
 
-export function DischargeBoard() {
+/** `initialAdmissionId`: a Tasks link (`?admissionId=`) opens that stay's detail once on arrival. */
+export function DischargeBoard({ initialAdmissionId }: { initialAdmissionId?: string } = {}) {
   const { worldGeneration } = useWardFlow();
   // Remount clears every selected handle and DTO synchronously on a reset/scenario change.
   // This board has one fixed coordinator actor; it does not offer a role switch.
-  return <DischargeWorkspace key={`${worldGeneration}:${RECORD_ACTOR.role}`} />;
+  return <DischargeWorkspace key={`${worldGeneration}:${RECORD_ACTOR.role}`} initialAdmissionId={initialAdmissionId} />;
 }
 
-function DischargeWorkspace() {
+function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: string }) {
   const { bedReleases, units, dayZero, readDischargeRecords, openDischargeRecord, readDischargeRecord, dispatch } =
     useWardFlow();
   const now = useWardFlowClock();
@@ -340,6 +342,24 @@ function DischargeWorkspace() {
   const planDropdownRef = useRef<HTMLDivElement>(null);
   const guarded = readDischargeRecords(RECORD_ACTOR);
   const records = guarded.status === "allowed" ? guarded.value : [];
+  // Opens the linked stay once, on arrival; after that the coordinator's own choices stand.
+  const openedFromLinkRef = useRef(false);
+  const linkedRecordExists =
+    initialAdmissionId !== undefined && records.some((record) => record.admissionId === initialAdmissionId);
+  useEffect(() => {
+    if (openedFromLinkRef.current || initialAdmissionId === undefined || !linkedRecordExists) return;
+    openedFromLinkRef.current = true;
+    // Opening is a guarded, audited receipt (an external write), so it cannot run during render;
+    // the selection shows its outcome, once.
+    let handle: DischargeOpenHandle;
+    try {
+      handle = openDischargeRecord(RECORD_ACTOR, initialAdmissionId);
+    } catch {
+      handle = { generation: -1, requestId: -1 };
+    }
+    setPopulation("records");
+    setSelected({ admissionId: initialAdmissionId, handle });
+  }, [initialAdmissionId, linkedRecordExists, openDischargeRecord]);
   const services = [...new Set(units.map(healthServiceLabel))].sort();
   const scopedUnits = units.filter((unit) => service === "all" || healthServiceLabel(unit) === service);
   const inScope = (unitId: string) => {
@@ -1524,6 +1544,12 @@ function DischargeWorkspace() {
                         key={`care-${activeRecord.id}`}
                         record={activeRecord}
                         actor={RECORD_ACTOR}
+                      />
+                      {/* Advisory carer/PSP/MHAS checklist: renders only for an involuntary patient's discharge. */}
+                      <SupportNotificationChecklist
+                        key={`notify-${activeRecord.id}`}
+                        admissionId={activeRecord.admissionId}
+                        role={RECORD_ACTOR.role}
                       />
                     </div>
                   </>

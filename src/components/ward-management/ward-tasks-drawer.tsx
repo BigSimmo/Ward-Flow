@@ -27,6 +27,7 @@ import { StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
 import { edById } from "./ward-sites";
 import { stageCopy } from "./ward-derivations";
+import type { Admission } from "./ward-admissions";
 import type { Movement, Referral, Unit } from "./ward-model";
 import type { Patient } from "./ward-patients";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
@@ -68,8 +69,11 @@ type WardTasksDrawerProps = {
   dispatch: Dispatch<WardFlowEvent>;
   onClose: () => void;
   onSelectMovement: (movementId: string, action?: "refer" | "contact") => void;
+  /** Opens a discharged stay on the discharges board, for rows that carry `admissionId`. */
+  onSelectDischarge?: (admissionId: string) => void;
   records?: {
     movements: readonly Movement[];
+    admissions?: readonly Admission[];
     patients: readonly Patient[];
     referrals: readonly Referral[];
     units: readonly Unit[];
@@ -176,11 +180,19 @@ export function WardTasksDrawer({
   dispatch,
   onClose,
   onSelectMovement,
+  onSelectDischarge,
   records,
   withBackdrop = false,
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
   useWardModalFocus(true, drawerRef, onClose);
+
+  /** A discharge notification row opens its stay on the discharges board; every other row opens
+   *  its movement. */
+  function openItem(item: InboxItem) {
+    if (item.admissionId !== undefined && onSelectDischarge) onSelectDischarge(item.admissionId);
+    else onSelectMovement(item.movementId);
+  }
 
   const [escalating, setEscalating] = useState<string | null>(null);
   const [contact, setContact] = useState("");
@@ -361,7 +373,8 @@ export function WardTasksDrawer({
 
   function renderRow(item: InboxItem) {
     const movement = records?.movements.find((row) => row.id === item.movementId);
-    const patient = records ? resolveSubjectPatient(movement, records) : undefined;
+    const admission = item.admissionId ? records?.admissions?.find((row) => row.id === item.admissionId) : undefined;
+    const patient = records ? resolveSubjectPatient(movement ?? admission, records) : undefined;
     const Icon = rowIcon(item);
     const isFact = item.kind === "fact";
     const ackHistory = acknowledgements[item.id] ?? [];
@@ -403,7 +416,9 @@ export function WardTasksDrawer({
               type="button"
               data-testid={`ward-task-${item.id}`}
               className={styles.rowTitle}
-              onClick={() => onSelectMovement(item.movementId)}
+              onClick={() => {
+                openItem(item);
+              }}
             >
               {item.title}
             </button>
@@ -512,7 +527,9 @@ export function WardTasksDrawer({
             type="button"
             className={`${styles.btn} ${isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
             aria-label="Open patient"
-            onClick={() => onSelectMovement(item.movementId)}
+            onClick={() => {
+              openItem(item);
+            }}
           >
             <ArrowUpRight aria-hidden="true" />
             Open
