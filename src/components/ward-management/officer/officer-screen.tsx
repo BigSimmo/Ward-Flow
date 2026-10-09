@@ -1,7 +1,15 @@
 "use client";
 
 import { isOfficerJob } from "./officer-jobs";
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import { Check, Clock, Copy, Lock, MapPin, Search, ShieldCheck, Truck, X } from "lucide-react";
 
 import {
@@ -40,7 +48,9 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import { popSheet, pushSheet } from "@/components/ui/sheet-focus";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
@@ -354,7 +364,7 @@ const LEG_TONE: Record<OfficerLeg, WfTone> = {
  * forms pack yet.
  */
 export function OfficerScreen() {
-  const { movements, units, dispatch, rejections, patients, referrals } = useWardFlow();
+  const { movements, units, dispatch, rejections, patients, referrals, dayZero } = useWardFlow();
   const officerPatientName = useCallback(
     (movement: Movement) => {
       const info = resolveSubjectPatient(movement, { patients, referrals, movements });
@@ -513,16 +523,35 @@ export function OfficerScreen() {
     if (!window.matchMedia("(min-width: 48.0625rem) and (max-width: 62.5rem)").matches) return;
     sideRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
   }, [selectedId]);
+  // On a phone the panel is a modal bottom sheet, so it takes focus, traps Tab, isolates the page
+  // behind it and hands focus back on close. Wider screens keep the side panel non-modal.
+  const [isPhone, setIsPhone] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(max-width: 48rem)");
+    const sync = () => setIsPhone(query.matches);
+    sync();
+    query.addEventListener?.("change", sync);
+    return () => query.removeEventListener?.("change", sync);
+  }, []);
 
+  const formModalSheetId = useId();
   useEffect(() => {
     if (!formModalJob) return;
     const modal = formModalRef.current;
     if (!modal) return;
+    // Registered on the shared overlay stack so it sits above the phone job sheet that opened it.
+    pushSheet(formModalSheetId, modal);
     const firstFocusable = modal.querySelector<HTMLElement>(
       'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])',
     );
     firstFocusable?.focus();
-  }, [formModalJob]);
+    return () => {
+      popSheet(formModalSheetId);
+      // The trigger was inert until the pop, so focus returns here rather than only in the closer.
+      if (lastTriggerRef.current?.isConnected) lastTriggerRef.current.focus();
+    };
+  }, [formModalJob, formModalSheetId]);
 
   const handleModalTabTrap = (modalElement: HTMLElement | null, event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.key !== "Tab" || !modalElement) return;
@@ -731,12 +760,12 @@ export function OfficerScreen() {
       const transport = movement.transport!;
       const expected = expectedArrival(movement);
       const eta = expected
-        ? `${expected.booked ? "est." : "ward ETA"} ${formatInstantWithDay(expected.at, now)}${late(movement) ? ", late" : ""}`
+        ? `${expected.booked ? "est." : "ward ETA"} ${formatSheetMoment(expected.at, dayZero)}${late(movement) ? ", late" : ""}`
         : "no ETA";
       return `${officerPatientName(movement)} (${umrnFor(movement)}): ${originShortFor(movement)} to ${destinationLabelFor(movement)}, ${transportLeg(transport)}, ${transport.provider}${transport.escortRequired ? ", escort" : ""}, ${eta}, forms ${packCount(movement)} of ${PACK_SLOTS.length}`;
     });
     const text = [
-      `Transport handover ${formatInstantWithDay(now, now)}. ${jobs.length} open, ${inCustody} on board, ${crewEnRoute} en route, ${pastEta} past ward ETA.`,
+      `Transport handover ${formatSheetMoment(now, dayZero)}. ${jobs.length} open, ${inCustody} on board, ${crewEnRoute} en route, ${pastEta} past ward ETA.`,
       ...lines,
     ].join("\n");
     const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
@@ -1122,6 +1151,7 @@ export function OfficerScreen() {
   );
 
   const panelOpen = selectedJob !== undefined && selectedJob.transport !== undefined;
+  useWardModalFocus(isPhone && panelOpen, sideRef, closeJob);
 
   return (
     <div className={styles.screen} data-testid="ward-officer-screen" data-ward-design="v8">
@@ -1400,6 +1430,7 @@ export function OfficerScreen() {
                                   {transport.escortRequired ? " · escort" : ""}
                                   {transport.transportLegalStatus === "voluntary" ? " · voluntary" : ""}
                                 </span>
+                                {transport.escortRequired ? <span className={styles.jobEscort}>Escort</span> : null}
                               </td>
                               <td>
                                 {leg && stepStatusText ? (
@@ -1656,10 +1687,12 @@ export function OfficerScreen() {
 
           {panelOpen && selectedJob && selectedJob.transport ? (
             <>
-              <div className={styles.scrim} aria-hidden="true" onClick={closeJob} />
               <div ref={sideRef} className={styles.side}>
+                <div className={styles.scrim} aria-hidden="true" onClick={closeJob} />
                 <Card
                   className={styles.detail}
+                  role={isPhone ? "dialog" : undefined}
+                  aria-modal={isPhone ? true : undefined}
                   aria-labelledby="ward-officer-detail-heading"
                   data-testid="ward-officer-detail"
                 >

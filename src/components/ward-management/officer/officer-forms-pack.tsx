@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { FileUp, Send, Upload, X } from "lucide-react";
 
 import { Button, Icon, StatusGlyph } from "@/components/wf";
@@ -169,6 +169,16 @@ function PackUploadDialog({
   const dialogRef = useRef<HTMLDivElement>(null);
   useWardModalFocus(true, dialogRef, onClose);
   const needsCode = slot.codes.length > 1;
+  // Arrow keys move the choice within the radio group, which keeps a single Tab stop.
+  const moveCode = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const step = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number>)[event.key];
+    if (step === undefined) return;
+    event.preventDefault();
+    const from = code === undefined ? (step > 0 ? -1 : 0) : slot.codes.indexOf(code);
+    const index = (from + step + slot.codes.length) % slot.codes.length;
+    setCode(slot.codes[index]);
+    event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]')[index]?.focus();
+  };
   const ready = file !== null && file.size > 0 && (!needsCode || code !== undefined);
   const titleId = `ward-officer-pack-upload-title-${movement.id}`;
 
@@ -194,13 +204,14 @@ function PackUploadDialog({
         </header>
         <div className={styles.modalBody}>
           {needsCode ? (
-            <div className={styles.codeChoice} role="radiogroup" aria-label="Which form">
-              {slot.codes.map((option) => (
+            <div className={styles.codeChoice} role="radiogroup" aria-label="Which form" onKeyDown={moveCode}>
+              {slot.codes.map((option, index) => (
                 <button
                   key={option}
                   type="button"
                   role="radio"
                   aria-checked={code === option}
+                  tabIndex={code === option || (code === undefined && index === 0) ? 0 : -1}
                   title={formTitleForCode(option) ?? undefined}
                   onClick={() => setCode(option)}
                 >

@@ -183,7 +183,8 @@
 }
 
 .scrim,
-.grab {
+.grab,
+.jobEscort {
   display: none;
 }
 
@@ -1399,6 +1400,15 @@
 
   .jobMeta {
     display: none;
+  }
+
+  /* The meta line is dropped on a phone card, so escort keeps its own visible marker. */
+  .jobEscort {
+    display: inline-block;
+    margin-top: var(--wf-s-1);
+    color: var(--wf-ink-1);
+    font-size: var(--wf-fs-12);
+    font-weight: 600;
   }
 
   .stageCell {
