@@ -1,37 +1,32 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
 import Link from "next/link";
 import {
-  Activity,
   AlarmClock,
-  AlertTriangle,
   Bell,
-  Check,
-  CheckCircle2,
-  ChevronDown,
-  Eye,
-  FileText,
-  MoreHorizontal,
+  BellRing,
+  ChevronRight,
+  Clock,
+  Columns3,
+  Copy,
+  List,
   Radio,
-  UserRound,
+  Smartphone,
   Users,
   X,
 } from "lucide-react";
-import { INBOX_CATEGORIES, inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
-import { decisionTargetInboxItems, decisionTargetReading } from "@/components/ward-management/ward-decision-targets";
-import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
+import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
 import {
   activeSnooze,
   currentInboxOwner,
   isSnoozeReason,
   partitionSnoozed,
   snoozeAllowed,
-  type InboxOwnershipEntry,
-  type InboxSnoozeReason,
+  snoozeReasonLabel,
 } from "@/components/ward-management/ward-inbox-snooze";
-import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "@/components/ward-management/inbox-snooze-control";
+import { inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
@@ -39,20 +34,20 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
-import type { Movement, Referral } from "@/components/ward-management/ward-model";
-import type { Patient } from "@/components/ward-management/ward-patients";
-import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import type { Movement } from "@/components/ward-management/ward-model";
+import type { ReleasePullReason } from "@/components/ward-management/ward-change-reasons";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { PLANNED_ADMISSION_REASON_LABELS, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
+import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
+import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import {
-  resolveSubjectPatient,
-  withUmrnInPlaceOfMovementIds,
-} from "@/components/ward-management/ward-patient-resolver";
-import { edById } from "@/components/ward-management/ward-sites";
+  enableActNowNotifications,
+  setActNowNotificationPreference,
+  useActNowNotificationPreference,
+} from "@/components/ward-management/shell/ward-act-now-notifications";
+import { createBrowserStore } from "@/lib/client-store-factory";
 import {
   WA_BROADCAST_TEMPLATES,
   getActiveBroadcastAlert,
-  formatTimeRemaining,
   type BroadcastSeverity,
   type BroadcastTargetScope,
   type BroadcastCategory,
@@ -64,598 +59,98 @@ import {
   serialiseBroadcastDraft,
   type BroadcastDraft,
 } from "./broadcast-draft";
+import {
+  ALERT_KIND_LABELS,
+  alertActionFor,
+  alertGroupOf,
+  alertKindOf,
+  byOldest,
+  effectiveOwner,
+  isQueueItem,
+  minutesText,
+  movementIdOfInboxId,
+  bookingOfInboxId,
+  raisedAt,
+  resolveAlertSubject,
+  type AlertKind,
+} from "./alerts-model";
+import {
+  AlertCard,
+  AlertRow,
+  GroupHead,
+  ownedByBookingWard,
+  ownerShort,
+  type QueueEntry,
+  type QueueHandlers,
+} from "./alerts-queue";
+import { AlertDetail, type AlertDetailHandlers } from "./alert-detail";
+import { TimeRing, TodayChart } from "./alerts-visuals";
 
 import styles from "./alerts.module.css";
 import {
   Badge,
   Button,
-  Card,
-  CardHead,
-  Checkbox,
-  ChipGroup,
   Count,
+  Card,
+  Checkbox,
+  Drawer,
   EmptyState,
   Field,
   FilterChip,
   Hero,
   HeroStat,
-  HeroTrack,
   IconTile,
-  Inset,
   Kbd,
+  Segmented,
   Select,
   SrOnly,
   StatusGlyph,
+  TabPanel,
+  Tabs,
   TextInput,
   Textarea,
-  buttonClass,
-  durMinutes,
   type WfTone,
 } from "@/components/wf";
 
 /**
  * **THE ALERTS SCREEN — what is addressed to a role right now, across every movement and referral.**
  *
+ * Command queue (Josh, 9 Oct 2026, round 2 option A): one queue arranged by urgency, lanes or
+ * owner, the selected alert beside it with a picture of its recorded times, a Today chart and the
+ * broadcast desk in a tab. Filters highlight, they never hide.
+ *
  * It never says "nothing is wrong", and that is the whole design. Ward Lead ruling, 2026-09-12:
  * an empty alerts screen saying "all clear" is a clinical claim about the entire service, made by
- * a screen that checked SEVEN named conditions against one fixture. This screen reports on every
- * condition it looked at, by name, whether the section is empty or not.
+ * a screen that checked a handful of named conditions against one fixture. The hero's Checking
+ * line names every condition it looked at, with its count, whether it is zero or not, and names
+ * the one it cannot check.
  */
 
-function itemsInCategory(items: InboxItem[], category: keyof typeof INBOX_CATEGORIES): InboxItem[] {
-  const prefix = INBOX_CATEGORIES[category].idPrefix;
-  return items.filter((item) => item.id.startsWith(prefix));
-}
+export { extractOverdue } from "./alerts-model";
 
-function tierOfItem(item: InboxItem): "emergency" | "capacity" | "admin" {
-  if (
-    item.id.startsWith(INBOX_CATEGORIES.legal_timing_breached.idPrefix) ||
-    item.id.startsWith(INBOX_CATEGORIES.destination_unlawful.idPrefix)
-  ) {
-    return "emergency";
-  }
-  if (
-    item.id.startsWith(INBOX_CATEGORIES.destinations_declined.idPrefix) ||
-    item.id.startsWith(INBOX_CATEGORIES.bed_pull_expired.idPrefix) ||
-    isDecisionTargetItem(item) ||
-    isPendingDecisionTargetItem(item)
-  ) {
-    return "capacity";
-  }
-  return "admin";
-}
+const COORDINATOR = WARD_FLOW_ROLE_LABELS.coordinator;
 
-/** Stream A, 9 Oct 2026: an overdue decision target (a default set in Settings). */
-function isDecisionTargetItem(item: InboxItem): boolean {
-  return (
-    item.id.startsWith(INBOX_CATEGORIES.target_referral_decision.idPrefix) ||
-    item.id.startsWith(INBOX_CATEGORIES.target_transfer_acceptance.idPrefix) ||
-    item.id.startsWith(INBOX_CATEGORIES.target_transport_booked.idPrefix)
-  );
-}
+/** Phone layout: the selected alert opens in a sheet instead of the side panel. */
+const PHONE_MEDIA_QUERY = "(max-width: 48rem)";
+const usePhoneLayout = createBrowserStore<boolean>(
+  (onStoreChange) => {
+    if (typeof window.matchMedia !== "function") return () => {};
+    const media = window.matchMedia(PHONE_MEDIA_QUERY);
+    media.addEventListener("change", onStoreChange);
+    return () => media.removeEventListener("change", onStoreChange);
+  },
+  () => (typeof window.matchMedia === "function" ? window.matchMedia(PHONE_MEDIA_QUERY).matches : false),
+  false,
+);
 
-/** A decision target still running: an amber countdown, listed but never counted as an alert. */
-function isPendingDecisionTargetItem(item: InboxItem): boolean {
-  return (
-    item.id.startsWith(INBOX_CATEGORIES.target_pending_referral_decision.idPrefix) ||
-    item.id.startsWith(INBOX_CATEGORIES.target_pending_transfer_acceptance.idPrefix) ||
-    item.id.startsWith(INBOX_CATEGORIES.target_pending_transport_booked.idPrefix)
-  );
-}
+type AlertsTab = "now" | "broadcast" | "notices" | "history";
+type ArrangeBy = "urgency" | "lanes" | "owner";
+type HeroPill = "act" | "wait" | "mine";
 
-function getAlertSeverity(item: InboxItem): { tone: "danger" | "warn" | "accent"; label: string } {
-  const tier = tierOfItem(item);
-  if (tier === "emergency" || item.tone === "danger") {
-    return { tone: "danger", label: "Critical" };
-  }
-  if (tier === "capacity") {
-    return { tone: "warn", label: "Urgent" };
-  }
-  return { tone: "accent", label: "Routine" };
-}
+type HistoryEntry = { id: string; at: Instant; tone: WfTone; title: string; sub: string; by: string; action: boolean };
 
-function roleMatches(item: InboxItem, role: string): boolean {
-  if (role === "all") return true;
-  const owner = item.owner.toLowerCase();
-  if (role === "coordinator") {
-    return owner.includes("coordinator") || tierOfItem(item) === "emergency";
-  }
-  if (role === "registrar") {
-    return owner.includes("ed") || owner.includes("registrar") || owner.includes("team");
-  }
-  if (role === "bed_manager") {
-    return owner.includes("bed") || owner.includes("manager");
-  }
-  if (role === "num") {
-    return owner.includes("ward") || owner.includes("nurse") || owner.includes("num");
-  }
-  return true;
-}
-
-/**
- * Who an alert is about, read only from the model's own links.
- *
- * A typed-in table of 35 names, record numbers and places used to fill the gaps here, keyed by
- * movement id. None of its rows matched the record: 16 put another patient's name on the movement
- * and the rest invented a person the model does not hold (25 September 2026 audit, A1 and A7). A
- * movement linked to nobody now says so, in the resolver's own words.
- */
-/** The records the resolver reads, built once per render so its per-state index is reused. */
-type AlertResolverState = {
-  patients?: Patient[];
-  referrals?: Referral[];
-  movements?: Movement[];
-};
-
-function resolveAlertPatient(
-  movement: Movement | undefined,
-  movementId: string | undefined,
-  resolverState: AlertResolverState,
-  unitsList?: readonly { id: string; name: string }[],
-  plannedAdmission?: PlannedAdmission,
-): { displayName: string; umrn: string; location: string; routeTarget: string } {
-  const mid = movement?.id ?? movementId ?? "";
-  const info = resolveSubjectPatient(plannedAdmission ?? movement ?? { id: mid }, resolverState);
-
-  let location = "";
-  if (plannedAdmission) {
-    // A booking is about its own ward, never a movement's ED or accepted unit.
-    location = unitsList?.find((u) => u.id === plannedAdmission.unitId)?.name ?? "";
-  } else if (movement) {
-    if (movement.originEdId) {
-      location = edById(movement.originEdId)?.name ?? movement.originEdId;
-    } else if (movement.acceptedUnitId) {
-      location = unitsList?.find((u) => u.id === movement.acceptedUnitId)?.name ?? movement.acceptedUnitId;
-    }
-  }
-  if (!location) location = "Location not recorded";
-
-  const routeTarget = info.patient?.id ?? mid;
-
-  return { displayName: info.displayName, umrn: info.umrn, location, routeTarget };
-}
-
-function getCategoryBadge(item: InboxItem): { tone: "danger" | "warn" | "accent"; label: string } {
-  if (item.id.startsWith(INBOX_CATEGORIES.legal_timing_breached.idPrefix)) {
-    return { tone: "danger", label: "Form Due Time Passed" };
-  }
-  if (item.id.startsWith(INBOX_CATEGORIES.destinations_declined.idPrefix)) {
-    return { tone: "danger", label: "Multiple Declines" };
-  }
-  if (item.id.startsWith(INBOX_CATEGORIES.destination_unlawful.idPrefix)) {
-    return { tone: "danger", label: "Destination Review" };
-  }
-  if (item.id.startsWith(INBOX_CATEGORIES.bed_pull_expired.idPrefix)) {
-    return { tone: "warn", label: "Reservation Window" };
-  }
-  if (item.id.startsWith(INBOX_CATEGORIES.transport_awaiting_departure.idPrefix)) {
-    return { tone: "accent", label: "Transport Leg" };
-  }
-  if (isDecisionTargetItem(item) || isPendingDecisionTargetItem(item)) {
-    // Red only once the target has passed; a running countdown is amber.
-    return { tone: item.tone === "danger" ? "danger" : "warn", label: "Decision target" };
-  }
-  return { tone: "accent", label: "Operational Alert" };
-}
-
-function getPatientDisplayName(
-  movement: Movement | undefined,
-  resolverState: AlertResolverState,
-  unitsList?: readonly { id: string; name: string }[],
-  plannedAdmission?: PlannedAdmission,
-  personLabel?: string,
-): string {
-  if (!movement && !plannedAdmission) return "Patient not recorded";
-  const p = resolveAlertPatient(movement, movement?.id, resolverState, unitsList, plannedAdmission);
-  // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-  return `${personLabel ?? p.displayName} (UMRN: ${p.umrn}) · ${p.location}`;
-}
-
-/**
- * A labelled context section that remains reachable whether or not its condition has rows.
- * `watches` is permanent scope text; `none` appears only when the measured set is empty.
- */
-function ConditionContext({
-  title,
-  watches,
-  none,
-  items,
-}: {
-  title: string;
-  watches: string;
-  none: string;
-  items: InboxItem[];
-}) {
-  return (
-    <section className={styles.condition} aria-label={title}>
-      <h3 className={styles.conditionTitle}>
-        <Check size={14} aria-hidden="true" className={styles.watchMark} />
-        {title}
-      </h3>
-      <p className={styles.watches}>{watches}</p>
-      {items.length === 0 ? <p className={styles.none}>{none}</p> : null}
-    </section>
-  );
-}
-
-export function extractOverdue(detail: string): string | null {
-  const match = detail.match(/(\d+\s*d(?:\s*\d+\s*h)?\s*overdue|\d+\s*[hm]\s*(?:\d+\s*m)?\s*overdue)/i);
-  return match ? match[1] : null;
-}
-
-/** Remove the legacy movement reference from presentation, preserving the recorded detail. */
-function alertDetail(item: InboxItem): string {
-  const prefix = `${item.movementId} · `;
-  return item.movementId && item.detail.startsWith(prefix) ? item.detail.slice(prefix.length) : item.detail;
-}
-
-/** Severity as a glyph tone. Red only for what needs action now; routine rows stay neutral. */
-function severityGlyph(item: InboxItem): WfTone {
-  const tone = getAlertSeverity(item).tone;
-  return tone === "danger" ? "danger" : tone === "warn" ? "warning" : "neutral";
-}
-
-function AlertRows({
-  items,
-  empty,
-  onAction,
-  onQuickAction,
-  onSnooze,
-  acknowledgements,
-  ownership,
-  configuration,
-  now,
-  patients,
-  referrals,
-  movements,
-  units,
-  state = { units },
-  isFiltered,
-  onResetFilters,
-  prominent = false,
-}: {
-  items: InboxItem[];
-  empty: string;
-  onAction?: (item: InboxItem, triggerEl: HTMLElement) => void;
-  onQuickAction?: (item: InboxItem, action: "own" | "escalate" | "acknowledge", patientName: string) => void;
-  onSnooze?: (item: InboxItem, until: Instant, reason: InboxSnoozeReason) => void;
-  acknowledgements: Record<string, readonly { at: Instant; by: string }[]>;
-  ownership?: Record<string, InboxOwnershipEntry[]>;
-  configuration?: WardConfiguration;
-  now: Instant;
-  patients?: Patient[];
-  referrals?: Referral[];
-  movements?: Movement[];
-  units?: readonly { id: string; name: string }[];
-  state?: { units?: readonly { id: string; name: string }[] };
-  isFiltered?: boolean;
-  onResetFilters?: () => void;
-  /** The "Needs you" layout: a fuller card with the primary action and inline acknowledge and snooze. */
-  prominent?: boolean;
-}) {
-  const [openQuickMenuId, setOpenQuickMenuId] = useState<string | null>(null);
-  const resolverState = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
-  const quickMenuRef = useRef<HTMLDivElement>(null);
-  const quickMenuTriggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!openQuickMenuId) return;
-    quickMenuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
-    const handleClickOutside = () => setOpenQuickMenuId(null);
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setOpenQuickMenuId(null);
-        quickMenuTriggerRef.current?.focus();
-      }
-    };
-    window.addEventListener("click", handleClickOutside);
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("click", handleClickOutside);
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [openQuickMenuId]);
-
-  if (items.length === 0) {
-    return (
-      <div className={styles.emptyContainer}>
-        <EmptyState icon={CheckCircle2} title={empty} />
-        {isFiltered && onResetFilters && (
-          <Button size="sm" variant="ghost" className={styles.btnSm} onClick={onResetFilters}>
-            Clear active filters
-          </Button>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <ul className={prominent ? styles.cardRows : styles.rows}>
-      {items.map((item) => {
-        const isAcknowledged = (acknowledgements[item.id]?.length ?? 0) > 0;
-        // The Alerts screen acts as the coordinator; the reducer refuses a role re-taking its own row.
-        const ownedByMe = currentInboxOwner(ownership?.[item.id], item.since)?.by === WARD_FLOW_ROLE_LABELS.coordinator;
-        const categoryBadge = getCategoryBadge(item);
-        const overdueText = extractOverdue(item.detail);
-        const movement = movements?.find((m) => m.id === item.movementId);
-        const resolvedPatient = resolveAlertPatient(
-          movement,
-          item.movementId,
-          resolverState,
-          state.units,
-          item.plannedAdmission,
-        );
-        const patientInfo = item.personLabel ? { ...resolvedPatient, displayName: item.personLabel } : resolvedPatient;
-
-        const actionVerb =
-          categoryBadge.label === "Form Due Time Passed"
-            ? "Re-authorise"
-            : categoryBadge.label === "Multiple Declines"
-              ? "Intervene"
-              : categoryBadge.label === "Reservation Window"
-                ? "Extend hold"
-                : categoryBadge.label === "Transport Leg"
-                  ? "Review leg"
-                  : categoryBadge.label === "Decision target"
-                    ? "Review"
-                    : "Action";
-
-        const menu = (
-          <div className={styles.quickActionDropdownWrap}>
-            <Button
-              iconOnly
-              icon={prominent ? MoreHorizontal : ChevronDown}
-              size="sm"
-              variant={prominent ? "sec" : "ghost"}
-              className={styles.btnSm}
-              aria-label={`More actions for ${item.title} · ${patientInfo.displayName}`}
-              title={`More actions for ${patientInfo.displayName}`}
-              aria-haspopup="menu"
-              aria-expanded={openQuickMenuId === item.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                quickMenuTriggerRef.current = e.currentTarget;
-                setOpenQuickMenuId((prev) => (prev === item.id ? null : item.id));
-              }}
-            />
-            {openQuickMenuId === item.id && (
-              <div
-                ref={quickMenuRef}
-                className={styles.quickActionMenu}
-                role="menu"
-                aria-label={`Actions for ${patientInfo.displayName}`}
-                onClick={(e) => e.stopPropagation()}
-                onBlur={(event) => {
-                  if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpenQuickMenuId(null);
-                }}
-                onKeyDown={(event) => {
-                  const options = Array.from(
-                    event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
-                  );
-                  const current = options.indexOf(document.activeElement as HTMLButtonElement);
-                  const next =
-                    event.key === "Home"
-                      ? 0
-                      : event.key === "End"
-                        ? options.length - 1
-                        : event.key === "ArrowDown"
-                          ? (current + 1) % options.length
-                          : event.key === "ArrowUp"
-                            ? (current - 1 + options.length) % options.length
-                            : -1;
-                  if (next < 0) return;
-                  event.preventDefault();
-                  options[next]?.focus();
-                }}
-              >
-                {ownedByMe ? null : (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className={styles.quickActionMenuItem}
-                    onClick={() => {
-                      setOpenQuickMenuId(null);
-                      onQuickAction?.(item, "own", patientInfo.displayName);
-                    }}
-                  >
-                    <UserRound size={14} aria-hidden="true" />
-                    <span>Take ownership</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={styles.quickActionMenuItem}
-                  onClick={() => {
-                    setOpenQuickMenuId(null);
-                    onQuickAction?.(item, "escalate", patientInfo.displayName);
-                  }}
-                >
-                  <AlertTriangle size={14} aria-hidden="true" />
-                  <span>Escalate to consultant on call</span>
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={styles.quickActionMenuItem}
-                  onClick={() => {
-                    setOpenQuickMenuId(null);
-                    onQuickAction?.(item, "acknowledge", patientInfo.displayName);
-                  }}
-                >
-                  <Check size={14} aria-hidden="true" />
-                  <span>Acknowledge and monitor</span>
-                </button>
-              </div>
-            )}
-          </div>
-        );
-
-        const primary = (
-          <Button
-            size="sm"
-            variant={prominent ? "pri" : "sec"}
-            className={styles.btn}
-            aria-label={`${actionVerb} for ${patientInfo.displayName}`}
-            title={`${actionVerb}: ${item.title}`}
-            data-testid="ward-alerts-action-btn"
-            onClick={(e) => onAction?.(item, e.currentTarget)}
-          >
-            {actionVerb}
-          </Button>
-        );
-
-        const secondaryLink =
-          categoryBadge.label === "Form Due Time Passed" ? (
-            <Link className={buttonClass({ size: "sm", className: styles.btn })} href="/mockups/ward-flow/legal-forms">
-              View order
-            </Link>
-          ) : categoryBadge.label === "Multiple Declines" ? (
-            <Link
-              className={buttonClass({ size: "sm", className: styles.btn })}
-              href={
-                patientInfo.routeTarget
-                  ? `/mockups/ward-flow/people/${encodeURIComponent(patientInfo.routeTarget)}`
-                  : "/mockups/ward-flow"
-              }
-            >
-              Trajectory
-            </Link>
-          ) : null;
-
-        const who = (
-          <span className={styles.alertMetaText}>
-            <strong className={styles.patientName}>{patientInfo.displayName}</strong>
-            <span aria-hidden="true"> · </span>
-            <strong className={styles.mono}>{patientInfo.umrn}</strong>
-            <span aria-hidden="true"> · </span>
-            <span className={styles.locationTag}>{patientInfo.location}</span>
-          </span>
-        );
-
-        const timing = overdueText ? (
-          <span className={styles.overdueText}>{overdueText}</span>
-        ) : (
-          <span className={styles.alertTiming}>{alertDetail(item)}</span>
-        );
-
-        const status = (
-          <InboxRowStatus
-            acknowledgements={acknowledgements[item.id]}
-            ownership={ownership?.[item.id]}
-            since={item.since}
-            target={movement && configuration ? decisionTargetReading(movement, now, configuration) : undefined}
-            now={now}
-            className={styles.rowStatus}
-          />
-        );
-
-        const snooze = onSnooze ? (
-          <InboxSnoozeControl
-            subject={`${item.title}, ${patientInfo.displayName}`}
-            actNow={inboxItemIsActNow(item.id)}
-            now={now}
-            onSnooze={(until, reason) => {
-              onSnooze(item, until, reason);
-            }}
-          />
-        ) : null;
-
-        if (prominent) {
-          return (
-            <li
-              key={item.id}
-              className={styles.alertCard}
-              data-tone={item.tone}
-              data-movement-id={item.movementId || undefined}
-            >
-              <div className={styles.cardTop}>
-                <StatusGlyph tone={severityGlyph(item)} />
-                <div className={styles.alertContent}>
-                  <span className={styles.alertTitleText}>{item.title}</span>
-                  {who}
-                  <span className={styles.ownerLine}>
-                    {timing}
-                    <span aria-hidden="true"> · </span>
-                    <span>Owner {item.owner.toLowerCase()}</span>
-                  </span>
-                  {status}
-                </div>
-                {isAcknowledged ? (
-                  <Badge tone="success" size="sm">
-                    Acknowledged
-                  </Badge>
-                ) : null}
-              </div>
-              <div className={styles.alertActions}>
-                {primary}
-                {secondaryLink}
-                {menu}
-                <span className={styles.actionGap} />
-                {!isAcknowledged ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className={styles.btn}
-                    onClick={() => onQuickAction?.(item, "acknowledge", patientInfo.displayName)}
-                  >
-                    Acknowledge
-                  </Button>
-                ) : null}
-                {!ownedByMe ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    icon={UserRound}
-                    className={styles.btn}
-                    onClick={() => {
-                      onQuickAction?.(item, "own", patientInfo.displayName);
-                    }}
-                  >
-                    Take
-                  </Button>
-                ) : null}
-                {snooze}
-              </div>
-            </li>
-          );
-        }
-
-        return (
-          <li
-            key={item.id}
-            className={styles.alertRow}
-            data-tone={item.tone}
-            data-movement-id={item.movementId || undefined}
-          >
-            <StatusGlyph tone={severityGlyph(item)} />
-            <div className={styles.alertContent}>
-              <span className={styles.alertHead}>
-                <span className={styles.alertTitleText}>{item.title}</span>
-                {timing}
-                {isAcknowledged ? (
-                  <Badge tone="success" size="sm">
-                    Acknowledged
-                  </Badge>
-                ) : null}
-              </span>
-              {who}
-              {status}
-            </div>
-            <span className={styles.ownerCell}>{item.owner}</span>
-            <div className={styles.rowActions}>
-              {primary}
-              {secondaryLink}
-              {snooze}
-              {menu}
-            </div>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
+/** A request this screen sent, read back from the event log so a refused act never says it happened. */
+type ActionRequest = { type: string; logOffset: number; ok: string; refused: string };
 
 export function AlertsScreen() {
   const { worldGeneration } = useWardFlow();
@@ -679,17 +174,22 @@ function AlertsWorkspace() {
     broadcastAlerts,
     notices,
   } = state;
-  const now = useWardFlowClock();
+  // Events carry the engine clock; what the page shows follows the Live chip, which can pause.
+  const clockNow = useWardFlowClock();
+  const live = usePageLive();
+  const now = live.now;
+  const isPhone = usePhoneLayout();
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
-  const plannedAdmissions = state.plannedAdmissions;
   const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
-  // Every computed row, then the snoozed ones set aside: they leave the active list and come back
-  // by themselves when their return time passes (stream A, 9 Oct 2026).
+  const plannedAdmissions = state.plannedAdmissions;
+  // Every computed row this screen covers, then the snoozed ones set aside: they leave the active
+  // list and come back by themselves when their return time passes (stream A, 9 Oct 2026).
   const allInbox = useMemo(
-    () => [
-      ...buildActionInbox(openMovements, now, units, { plannedAdmissions }),
-      ...decisionTargetInboxItems(openMovements, now, configuration),
-    ],
+    () =>
+      [
+        ...buildActionInbox(openMovements, now, units, { plannedAdmissions }),
+        ...decisionTargetInboxItems(openMovements, now, configuration),
+      ].filter(isQueueItem),
     [openMovements, now, units, plannedAdmissions, configuration],
   );
   const { active: inbox, snoozed: snoozedInbox } = useMemo(
@@ -698,11 +198,21 @@ function AlertsWorkspace() {
   );
   const feedNotices = useMemo(() => [...notices].sort((a, b) => b.raisedAt - a.raisedAt), [notices]);
 
-  const [tierFilter, setTierFilter] = useState<"all" | "emergency" | "capacity" | "admin">("all");
-  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [tab, setTab] = useState<AlertsTab>("now");
+  const [arrangeBy, setArrangeBy] = useState<ArrangeBy>("urgency");
+  const [pill, setPill] = useState<HeroPill | null>(null);
+  const [ownerHighlight, setOwnerHighlight] = useState<string | null>(null);
+  const [watchHighlight, setWatchHighlight] = useState<AlertKind | null>(null);
+  const [chosenId, setChosenId] = useState<string | undefined>(undefined);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  // A request to focus the release reason once the panel or sheet has drawn it.
+  const [releaseRequest, setReleaseRequest] = useState(0);
+  const releasePending = useRef(false);
+  const releaseRef = useRef<HTMLSelectElement | null>(null);
+  const [notifyOn] = useActNowNotificationPreference();
+
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
   const [broadcastConfirmed, setBroadcastConfirmed] = useState(false);
-  const [selectedAlert, setSelectedAlert] = useState<InboxItem | null>(null);
 
   const defaultTmpl = WA_BROADCAST_TEMPLATES[0];
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(defaultTmpl?.id ?? "custom");
@@ -716,6 +226,7 @@ function AlertsWorkspace() {
   const [broadcastScope, setBroadcastScope] = useState<BroadcastTargetScope>(defaultTmpl?.targetScope ?? "all");
   const [broadcastDurationMinutes, setBroadcastDurationMinutes] = useState(defaultTmpl?.defaultDurationMinutes ?? 240);
   const [broadcastSuccessNotice, setBroadcastSuccessNotice] = useState<string | null>(null);
+  const [actionRequest, setActionRequest] = useState<ActionRequest | null>(null);
   const [broadcastRequest, setBroadcastRequest] = useState<{
     type: "DISPATCH_BROADCAST_ALERT" | "STAND_DOWN_BROADCAST_ALERT";
     logOffset: number;
@@ -730,6 +241,9 @@ function AlertsWorkspace() {
   const broadcastRefused = broadcastResult?.accepted === false;
   const isBroadcastModalOpen =
     broadcastModalOpen && !(broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT");
+  const actionResult = actionRequest
+    ? state.eventLog?.slice(actionRequest.logOffset).find((entry) => entry.type === actionRequest.type)
+    : undefined;
 
   // ONE draft of the WHOLE broadcast form (template, title, severity, category, target scope, duration
   // and message), cached and restored together; dirtiness is derived from the complete form, so a
@@ -793,21 +307,19 @@ function AlertsWorkspace() {
           : broadcastRequest.scope === "all"
             ? `Broadcast Directive "${broadcastRequest.title}" dispatched statewide. Target: ${broadcastRequest.scopeLabel}.`
             : `Broadcast Directive "${broadcastRequest.title}" dispatched to ${broadcastRequest.scopeLabel}.`
-      : broadcastSuccessNotice;
+      : actionRequest && actionResult
+        ? actionResult.accepted
+          ? actionRequest.ok
+          : actionRequest.refused
+        : broadcastSuccessNotice;
+  const feedbackRefused =
+    broadcastRefused || (actionResult !== undefined && !actionResult.accepted && !broadcastRequest);
 
   const activeBroadcast = getActiveBroadcastAlert(broadcastAlerts ?? [], now);
 
-  const drawerRef = useRef<HTMLElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
-  const lastFocusRef = useRef<HTMLElement | null>(null);
   const broadcastTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const drawerCloseRef = useRef<HTMLButtonElement | null>(null);
   const modalCloseRef = useRef<HTMLButtonElement | null>(null);
-
-  const handleCloseDrawer = useCallback(() => {
-    setSelectedAlert(null);
-    lastFocusRef.current?.focus();
-  }, [setSelectedAlert]);
 
   const handleCloseBroadcastModal = useCallback(() => {
     setBroadcastModalOpen(false);
@@ -835,15 +347,6 @@ function AlertsWorkspace() {
     }
   };
 
-  const handleDrawerKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      handleCloseDrawer();
-      return;
-    }
-    trapFocus(e, drawerRef.current);
-  };
-
   const handleModalKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") {
       e.preventDefault();
@@ -853,161 +356,14 @@ function AlertsWorkspace() {
     trapFocus(e, modalRef.current);
   };
 
-  const legal = useMemo(() => itemsInCategory(inbox, "legal_timing_breached"), [inbox]);
-  const declined = useMemo(() => itemsInCategory(inbox, "destinations_declined"), [inbox]);
-  const unlawful = useMemo(() => itemsInCategory(inbox, "destination_unlawful"), [inbox]);
-  const pullExpired = useMemo(() => itemsInCategory(inbox, "bed_pull_expired"), [inbox]);
-  const transport = useMemo(() => itemsInCategory(inbox, "transport_awaiting_departure"), [inbox]);
-  const plannedOverdue = useMemo(() => itemsInCategory(inbox, "planned_arrival_overdue"), [inbox]);
-  const referralTargets = useMemo(() => itemsInCategory(inbox, "target_referral_decision"), [inbox]);
-  const otherTargets = useMemo(
-    () => [
-      ...itemsInCategory(inbox, "target_transfer_acceptance"),
-      ...itemsInCategory(inbox, "target_transport_booked"),
-    ],
-    [inbox],
-  );
-  const decisionTargets = useMemo(() => [...referralTargets, ...otherTargets], [referralTargets, otherTargets]);
-  // Running countdowns: listed beside the alerts so they stay reachable, never counted as alerts.
-  const pendingReferralTargets = useMemo(() => itemsInCategory(inbox, "target_pending_referral_decision"), [inbox]);
-  const pendingOtherTargets = useMemo(
-    () => [
-      ...itemsInCategory(inbox, "target_pending_transfer_acceptance"),
-      ...itemsInCategory(inbox, "target_pending_transport_booked"),
-    ],
-    [inbox],
-  );
-
-  const withDeadline = openMovements.filter((movement: Movement) => movement.legalForm?.dueAt !== undefined);
-  const declineCandidates = openMovements.filter((movement: Movement) => movement.declines.length > 0).length;
-  const overrides = movements.flatMap((movement: Movement) => movement.overrides);
-  const untriaged = (state.referrals ?? []).filter((referral) => referral.triagedAt === undefined);
-  const needsYouCount = legal.length + declined.length + unlawful.length + referralTargets.length;
-  const otherRolesCount = pullExpired.length + transport.length + otherTargets.length + plannedOverdue.length;
-  const totalActive = needsYouCount + otherRolesCount;
-
-  // Prolonged ED stays (>24h)
-  const prolongedEdCount = openMovements.filter(
-    (m: Movement) => m.originEdId !== undefined && now - m.openedAt >= 1440,
-  ).length;
-
-  // Tier counts
-  const tier1Count = legal.length + unlawful.length;
-  const tier2Count = declined.length + pullExpired.length + decisionTargets.length;
-  const tier3Count = transport.length + plannedOverdue.length;
-
-  // Role counts: alerts only, never a running decision-target countdown.
-  const alertRows = inbox.filter((item) => !isPendingDecisionTargetItem(item));
-  const coordinatorCount = alertRows.filter((item) => roleMatches(item, "coordinator")).length;
-  const registrarCount = alertRows.filter((item) => roleMatches(item, "registrar")).length;
-  const bedManagerCount = alertRows.filter((item) => roleMatches(item, "bed_manager")).length;
-  const numCount = alertRows.filter((item) => roleMatches(item, "num")).length;
-
-  const handleSnooze = useCallback(
-    (item: InboxItem, until: Instant, reason: InboxSnoozeReason) => {
-      setBroadcastRequest(null);
-      setBroadcastModalOpen(false);
-      // Say "snoozed" only for a snooze the reducer accepts: the same cap it enforces.
-      if (!isSnoozeReason(reason) || !snoozeAllowed(until, now, inboxItemIsActNow(item.id))) return;
-      dispatch({ type: "SNOOZE_INBOX_ITEM", role: "coordinator", now, inboxItemId: item.id, until, reason });
-      setBroadcastSuccessNotice(`"${item.title}" snoozed until ${formatInstantWithDay(until, now)}.`);
-    },
-    [dispatch, now],
-  );
-
-  const handleReturn = useCallback(
-    (item: InboxItem) => {
-      dispatch({ type: "UNSNOOZE_INBOX_ITEM", role: "coordinator", now, inboxItemId: item.id });
-    },
-    [dispatch, now],
-  );
-
-  const handleQuickAction = useCallback(
-    (item: InboxItem, action: "own" | "escalate" | "acknowledge", patientName: string) => {
-      setBroadcastRequest(null);
-      setBroadcastModalOpen(false);
-      if (action === "own") {
-        // The reducer refuses a role re-taking a row it already owns; no notice for a refused act.
-        if (currentInboxOwner(inboxOwnership[item.id], item.since)?.by === WARD_FLOW_ROLE_LABELS.coordinator) return;
-        dispatch({ type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now, inboxItemId: item.id });
-        setBroadcastSuccessNotice(`You own "${item.title}" for ${patientName}.`);
-      } else if (action === "escalate") {
-        setBroadcastSuccessNotice(`Escalated "${item.title}" to Consultant Psychiatrist on-call.`);
-      } else if (action === "acknowledge") {
-        dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now, inboxItemId: item.id });
-        setBroadcastSuccessNotice(`Alert "${item.title}" acknowledged and retained on active watch.`);
-      }
-    },
-    [dispatch, now, inboxOwnership],
-  );
-
-  // Filtered collections
-  const filteredNeedsYou = useMemo(() => {
-    const allNeeds = [...legal, ...declined, ...unlawful, ...referralTargets, ...pendingReferralTargets];
-    return allNeeds.filter((item) => {
-      if (tierFilter !== "all" && tierOfItem(item) !== tierFilter) return false;
-      if (roleFilter !== "all" && !roleMatches(item, roleFilter)) return false;
-      return true;
-    });
-  }, [legal, declined, unlawful, referralTargets, pendingReferralTargets, tierFilter, roleFilter]);
-
-  const filteredOtherRoles = useMemo(() => {
-    const allOther = [...pullExpired, ...transport, ...plannedOverdue, ...otherTargets, ...pendingOtherTargets];
-    return allOther.filter((item) => {
-      if (tierFilter !== "all" && tierOfItem(item) !== tierFilter) return false;
-      if (roleFilter !== "all" && !roleMatches(item, roleFilter)) return false;
-      return true;
-    });
-  }, [pullExpired, transport, plannedOverdue, otherTargets, pendingOtherTargets, tierFilter, roleFilter]);
-
-  // Selected alert details
-  const selectedMovement = useMemo(() => {
-    if (!selectedAlert) return undefined;
-    return openMovements.find((m) => m.id === selectedAlert.movementId);
-  }, [selectedAlert, openMovements]);
-
-  const selectedResolverState = useMemo(() => ({ patients, referrals }), [patients, referrals]);
-  const selectedPatientName = useMemo(() => {
-    return getPatientDisplayName(
-      selectedMovement,
-      selectedResolverState,
-      state.units,
-      selectedAlert?.plannedAdmission,
-      selectedAlert?.personLabel,
-    );
-  }, [selectedMovement, selectedResolverState, state.units, selectedAlert]);
-  const selectedBooking = selectedAlert?.plannedAdmission;
-
-  const selectedSeverity = useMemo(() => {
-    return selectedAlert ? getAlertSeverity(selectedAlert) : { tone: "accent" as const, label: "Routine" };
-  }, [selectedAlert]);
-
-  const selectedAcknowledgement = selectedAlert ? inboxAcknowledgements[selectedAlert.id]?.at(-1) : undefined;
-  const isSelectedAcknowledged = selectedAcknowledgement !== undefined;
-
-  // Escape key handler for drawer and modal
   useEffect(() => {
-    if (!selectedAlert && !isBroadcastModalOpen) return;
+    if (!isBroadcastModalOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (selectedAlert) {
-          handleCloseDrawer();
-        }
-        if (isBroadcastModalOpen) {
-          handleCloseBroadcastModal();
-        }
-      }
+      if (e.key === "Escape") handleCloseBroadcastModal();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedAlert, isBroadcastModalOpen, handleCloseDrawer, handleCloseBroadcastModal]);
-
-  // Focus on open
-  useEffect(() => {
-    if (selectedAlert) {
-      drawerCloseRef.current?.focus();
-    }
-  }, [selectedAlert]);
+  }, [isBroadcastModalOpen, handleCloseBroadcastModal]);
 
   useEffect(() => {
     if (isBroadcastModalOpen) {
@@ -1021,21 +377,372 @@ function AlertsWorkspace() {
     }
   }, [broadcastAccepted, broadcastRequest]);
 
-  const handleOpenAction = (item: InboxItem, triggerEl: HTMLElement) => {
-    lastFocusRef.current = triggerEl;
-    setSelectedAlert(item);
+  // ---- The queue: one entry per row, everything a row, card or panel reads ----
+  const entryFor = useCallback(
+    (item: InboxItem, snoozed: boolean): Omit<QueueEntry, "highlighted"> => {
+      const movement = movements.find((candidate: Movement) => candidate.id === item.movementId);
+      const booking = item.plannedAdmission
+        ? { planned: item.plannedAdmission, personLabel: item.personLabel }
+        : undefined;
+      const subject = resolveAlertSubject(movement, item.movementId, umrnLookup, units, booking);
+      const owner = effectiveOwner(item, inboxOwnership[item.id]);
+      return {
+        item,
+        movement,
+        subject,
+        group: alertGroupOf(item),
+        owner,
+        mine: owner === COORDINATOR,
+        raised: raisedAt(item, movement),
+        seen: inboxAcknowledgements[item.id]?.at(-1),
+        ownedSince: currentInboxOwner(inboxOwnership[item.id], item.since)?.at,
+        snooze: snoozed ? activeSnooze(inboxSnoozes[item.id], now, item.since) : undefined,
+        action: alertActionFor(item, subject),
+      };
+    },
+    [movements, umrnLookup, units, inboxOwnership, inboxAcknowledgements, inboxSnoozes, now],
+  );
+  const isHighlighted = useCallback(
+    (entry: Omit<QueueEntry, "highlighted">) =>
+      (pill === "act" && entry.group === "act") ||
+      (pill === "wait" && entry.group === "wait") ||
+      (pill === "mine" && entry.mine) ||
+      (ownerHighlight !== null && entry.owner === ownerHighlight) ||
+      (watchHighlight !== null && alertKindOf(entry.item.id) === watchHighlight),
+    [pill, ownerHighlight, watchHighlight],
+  );
+  const toEntries = useCallback(
+    (items: InboxItem[], snoozed: boolean): QueueEntry[] =>
+      items
+        .map((item) => entryFor(item, snoozed))
+        .map((entry) => ({ ...entry, highlighted: isHighlighted(entry) }))
+        .sort((a, b) => byOldest({ at: a.raised }, { at: b.raised })),
+    [entryFor, isHighlighted],
+  );
+  const activeEntries = useMemo(() => toEntries(inbox, false), [toEntries, inbox]);
+  const snoozedEntries = useMemo(() => toEntries(snoozedInbox, true), [toEntries, snoozedInbox]);
+  const actEntries = activeEntries.filter((entry) => entry.group === "act");
+  const waitEntries = activeEntries.filter((entry) => entry.group === "wait");
+  const runningEntries = activeEntries.filter((entry) => entry.group === "running");
+  const allEntries = useMemo(() => [...activeEntries, ...snoozedEntries], [activeEntries, snoozedEntries]);
+  const countedActive = activeEntries.filter((entry) => entry.group !== "running");
+  const yoursCount = countedActive.filter((entry) => entry.mine).length;
+  const needYouCount = actEntries.filter((entry) => entry.mine && !entry.seen).length;
+  const highlightedCount = allEntries.filter((entry) => entry.highlighted).length;
+  const anyHighlight = pill !== null || ownerHighlight !== null || watchHighlight !== null;
+  const maxAge = Math.max(1, ...allEntries.map((entry) => (entry.raised === undefined ? 0 : now - entry.raised)));
+  const owners = useMemo(() => {
+    const names = [...new Set(allEntries.map((entry) => entry.owner))];
+    return names.sort((a, b) => (a === COORDINATOR ? -1 : b === COORDINATOR ? 1 : a.localeCompare(b)));
+  }, [allEntries]);
+
+  // "Next alert": act now before waiting, yours first, unacknowledged only, oldest first.
+  const nextQueue = useMemo(() => {
+    const open = countedActive.filter((entry) => !entry.seen);
+    const ranked = [...open].sort(
+      (a, b) =>
+        (a.group === "act" ? 0 : 1) - (b.group === "act" ? 0 : 1) ||
+        (a.mine ? 0 : 1) - (b.mine ? 0 : 1) ||
+        byOldest({ at: a.raised }, { at: b.raised }),
+    );
+    return ranked.length > 0 ? ranked : countedActive;
+  }, [countedActive]);
+
+  const chosen = allEntries.find((entry) => entry.item.id === chosenId);
+  // On the desktop the panel always shows an alert: the chosen one, else the first in line.
+  const selected = chosen ?? (isPhone ? undefined : (nextQueue[0] ?? allEntries[0]));
+
+  const select = useCallback(
+    (entry: QueueEntry, options: { release?: boolean } = {}) => {
+      setChosenId(entry.item.id);
+      if (isPhone) setSheetOpen(true);
+      if (options.release) {
+        releasePending.current = true;
+        setReleaseRequest((count) => count + 1);
+      }
+    },
+    [isPhone],
+  );
+
+  useEffect(() => {
+    if (!releasePending.current || !releaseRef.current) return;
+    releaseRef.current.focus();
+    releasePending.current = false;
+  }, [releaseRequest, selected, sheetOpen]);
+
+  const handleNext = () => {
+    if (nextQueue.length === 0) {
+      setBroadcastSuccessNotice("No open alert to move to.");
+      return;
+    }
+    const index = selected ? nextQueue.findIndex((entry) => entry.item.id === selected.item.id) : -1;
+    const next = nextQueue[(index + 1) % nextQueue.length]!;
+    setTab("now");
+    select(next);
+    const row = document.querySelector<HTMLElement>(`[data-alert-id="${CSS.escape(next.item.id)}"]`);
+    row?.scrollIntoView?.({ block: "nearest" });
   };
 
-  const handleAcknowledge = () => {
-    if (!selectedAlert) return;
-    dispatch({
-      type: "ACKNOWLEDGE_INBOX_ITEM",
-      role: "coordinator",
-      now,
-      inboxItemId: selectedAlert.id,
+  // ---- Acts on a row, each read back from the event log ----
+  // Notes where the event log stands before each dispatch, so the notice reads the reducer's verdict.
+  const track = useCallback(
+    (request: Omit<ActionRequest, "logOffset">) => {
+      setBroadcastRequest(null);
+      setBroadcastSuccessNotice(null);
+      setActionRequest({ ...request, logOffset: state.eventLog?.length ?? 0 });
+    },
+    [state.eventLog],
+  );
+  const nameOf = useCallback(
+    (item: InboxItem) => allEntries.find((entry) => entry.item.id === item.id)?.subject.displayName ?? "this patient",
+    [allEntries],
+  );
+  // Acting on the open alert keeps it open, so the panel never jumps to the next one mid-task.
+  const detailHandlers: AlertDetailHandlers = {
+    onTake: (item) => {
+      setChosenId(item.id);
+      // The reducer refuses a role re-taking a row it already owns; no notice for a refused act.
+      if (currentInboxOwner(inboxOwnership[item.id], item.since)?.by === COORDINATOR) return;
+      track({
+        type: "TAKE_INBOX_ITEM_OWNERSHIP",
+        ok: `You own "${item.title}" for ${nameOf(item)}.`,
+        refused: "Take was not accepted.",
+      });
+      dispatch({ type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now: clockNow, inboxItemId: item.id });
+    },
+    onAcknowledge: (item) => {
+      setChosenId(item.id);
+      track({
+        type: "ACKNOWLEDGE_INBOX_ITEM",
+        ok: `"${item.title}" acknowledged and kept on watch.`,
+        refused: "Acknowledge was not accepted.",
+      });
+      dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now: clockNow, inboxItemId: item.id });
+    },
+    onSnooze: (item, until, reason) => {
+      // Say "snoozed" only for a snooze the reducer accepts: the same cap it enforces.
+      if (!isSnoozeReason(reason) || !snoozeAllowed(until, clockNow, inboxItemIsActNow(item.id))) return;
+      setChosenId(item.id);
+      track({
+        type: "SNOOZE_INBOX_ITEM",
+        ok: `"${item.title}" snoozed until ${formatInstantWithDay(until, clockNow)}.`,
+        refused: "Snooze was not accepted.",
+      });
+      dispatch({ type: "SNOOZE_INBOX_ITEM", role: "coordinator", now: clockNow, inboxItemId: item.id, until, reason });
+    },
+    onReturn: (item) => {
+      track({
+        type: "UNSNOOZE_INBOX_ITEM",
+        ok: `"${item.title}" is back on the queue.`,
+        refused: "Return was not accepted.",
+      });
+      dispatch({ type: "UNSNOOZE_INBOX_ITEM", role: "coordinator", now: clockNow, inboxItemId: item.id });
+    },
+    onRelease: (item, reason: ReleasePullReason) => {
+      if (!item.movementId) return;
+      track({
+        type: "RELEASE_PULL",
+        ok: `Bed released for ${nameOf(item)}. The ward has a notice.`,
+        refused: "Release was not accepted. The bed is still held.",
+      });
+      dispatch({ type: "RELEASE_PULL", role: "coordinator", now: clockNow, movementId: item.movementId, reason });
+    },
+  };
+  const queueHandlers: QueueHandlers = {
+    selectedId: selected?.item.id,
+    onSelect: (entry) => select(entry),
+    onRelease: (entry) => select(entry, { release: true }),
+    onReturn: (entry) => detailHandlers.onReturn(entry.item),
+  };
+
+  // ---- Checking: every condition this screen looks at, by name, with its count ----
+  const countKind = (kind: AlertKind) => allInbox.filter((item) => alertKindOf(item.id) === kind).length;
+  const withDeadline = openMovements.filter((movement: Movement) => movement.legalForm?.dueAt !== undefined);
+  const declineCandidates = openMovements.filter((movement: Movement) => movement.declines.length > 0).length;
+  const untriaged = (referrals ?? []).filter((referral) => referral.triagedAt === undefined);
+  const prolongedEdCount = openMovements.filter(
+    (movement: Movement) => movement.originEdId !== undefined && now - movement.openedAt >= 1440,
+  ).length;
+  const overrideCount = movements.reduce((total, movement: Movement) => total + movement.overrides.length, 0);
+  const checks: { key: string; kind?: AlertKind; label: string; n: number; href?: string; scope: string }[] = [
+    {
+      key: "legal",
+      kind: "legal",
+      label: "Form due passed",
+      n: countKind("legal"),
+      scope: `Watches every movement carrying a recorded form expiry. ${countKind("legal")} of ${withDeadline.length} with a written deadline passed.`,
+    },
+    {
+      key: "declines",
+      kind: "declines",
+      label: "Every ward declined",
+      n: countKind("declines"),
+      scope: `Watches movements where every ward approached has refused and none has accepted. ${countKind("declines")} of ${declineCandidates} declined by every ward asked.`,
+    },
+    {
+      key: "unsuitable",
+      kind: "unsuitable",
+      label: "Unsuitable destination",
+      n: countKind("unsuitable"),
+      scope:
+        "Watches accepted destinations against an authorised-hospital check for the patient's current recorded status.",
+    },
+    {
+      key: "hold",
+      kind: "hold",
+      label: "Bed hold expired",
+      n: countKind("hold"),
+      scope: "Watches bed pulls against the time they were held until.",
+    },
+    {
+      key: "transport",
+      kind: "transport",
+      label: "Transport not left",
+      n: countKind("transport"),
+      scope: "Watches accepted transport legs that have not departed.",
+    },
+    {
+      key: "planned",
+      kind: "planned",
+      label: "Planned arrival late",
+      n: countKind("planned"),
+      scope: "Watches booked planned admissions whose expected arrival time has passed with no arrival recorded.",
+    },
+    {
+      key: "target",
+      kind: "target",
+      label: "Target overdue",
+      n: countKind("target"),
+      scope:
+        "Watches referral decisions, transfer acceptances and transport bookings against their targets, defaults set in Settings.",
+    },
+    {
+      key: "triage",
+      label: "Triage waiting",
+      n: untriaged.length,
+      href: "/mockups/ward-flow/referrals",
+      scope: `Watches referrals that have never been triaged. ${untriaged.length} of ${(referrals ?? []).length} referrals have never been triaged. Opens Referrals.`,
+    },
+    {
+      key: "ed",
+      label: "ED over a day",
+      n: prolongedEdCount,
+      href: "/mockups/ward-flow/delays",
+      scope: "Watches open ED waits of a day or more. Opens Delays.",
+    },
+    {
+      key: "override",
+      label: "Override recorded",
+      n: overrideCount,
+      scope:
+        "Watches referrals made by override. This screen cannot identify a prior gate verdict. The record keeps who, when, which fixed reason and which wards. It does not retain a prior gate verdict.",
+    },
+  ];
+
+  // ---- History: what this session recorded, newest first ----
+  const history = useMemo(() => {
+    const entries: HistoryEntry[] = [];
+    const about = (inboxItemId: string) => {
+      const movementId = movementIdOfInboxId(inboxItemId);
+      const movement = movements.find((candidate: Movement) => candidate.id === movementId);
+      const booking = bookingOfInboxId(inboxItemId, plannedAdmissions);
+      const subject = resolveAlertSubject(movement, movementId, umrnLookup, units, booking);
+      const kind = alertKindOf(inboxItemId);
+      return `${kind ? ALERT_KIND_LABELS[kind] : "Alert"}, ${subject.displayName} ${subject.umrn}`;
+    };
+    for (const [id, list] of Object.entries(inboxAcknowledgements)) {
+      list.forEach((entry, index) =>
+        entries.push({
+          id: `ack-${id}-${index}`,
+          at: entry.at,
+          tone: "success",
+          title: "Acknowledged",
+          sub: about(id),
+          by: entry.by,
+          action: true,
+        }),
+      );
+    }
+    for (const [id, list] of Object.entries(inboxOwnership)) {
+      list.forEach((entry, index) =>
+        entries.push({
+          id: `own-${id}-${index}`,
+          at: entry.at,
+          tone: "success",
+          title: "Taken",
+          sub: about(id),
+          by: entry.by,
+          action: true,
+        }),
+      );
+    }
+    for (const [id, list] of Object.entries(inboxSnoozes)) {
+      list.forEach((entry, index) =>
+        entries.push({
+          id: `snooze-${id}-${index}`,
+          at: entry.at,
+          tone: "neutral",
+          title:
+            entry.kind === "snoozed"
+              ? `Snoozed to ${formatInstantWithDay(entry.until, now)}, ${snoozeReasonLabel(entry.reason).toLowerCase()}`
+              : "Returned to the queue",
+          sub: about(id),
+          by: entry.by,
+          action: true,
+        }),
+      );
+    }
+    (state.eventLog ?? []).forEach((entry, index) => {
+      if (entry.type !== "RELEASE_PULL" || !entry.accepted || entry.now === undefined) return;
+      const movement = movements.find((candidate: Movement) => candidate.id === entry.movementId);
+      const subject = resolveAlertSubject(movement, entry.movementId, umrnLookup, units);
+      entries.push({
+        id: `release-${index}`,
+        at: entry.now,
+        tone: "success",
+        title: "Bed released",
+        sub: `${subject.displayName} ${subject.umrn}`,
+        by: entry.role ? WARD_FLOW_ROLE_LABELS[entry.role] : "Role not recorded",
+        action: true,
+      });
     });
-  };
+    for (const alert of broadcastAlerts ?? []) {
+      entries.push({
+        id: `bc-${alert.id}`,
+        at: alert.dispatchedAt,
+        tone: "info",
+        title: `Broadcast sent: ${alert.title}`,
+        sub: alert.targetScopeLabel,
+        by: alert.dispatchedByName,
+        action: false,
+      });
+      if (alert.stoodDownAt !== undefined) {
+        entries.push({
+          id: `bc-down-${alert.id}`,
+          at: alert.stoodDownAt,
+          tone: "neutral",
+          title: `Broadcast stood down: ${alert.title}`,
+          sub: alert.targetScopeLabel,
+          by: alert.stoodDownBy ?? "Role not recorded",
+          action: false,
+        });
+      }
+    }
+    return entries.sort((a, b) => b.at - a.at);
+  }, [
+    inboxAcknowledgements,
+    inboxOwnership,
+    inboxSnoozes,
+    state.eventLog,
+    broadcastAlerts,
+    movements,
+    umrnLookup,
+    units,
+    plannedAdmissions,
+    now,
+  ]);
 
+  // ---- Broadcast ----
   const handleSelectTemplate = (tmplId: string) => {
     setSelectedTemplateId(tmplId);
     if (tmplId === "custom") {
@@ -1077,6 +784,7 @@ function AlertsWorkspace() {
                   : "WACHS Regional Mental Health Network";
 
     setBroadcastSuccessNotice(null);
+    setActionRequest(null);
     setBroadcastRequest({
       type: "DISPATCH_BROADCAST_ALERT",
       logOffset: state.eventLog?.length ?? 0,
@@ -1084,10 +792,12 @@ function AlertsWorkspace() {
       scope: broadcastScope,
       scopeLabel: targetScopeLabel,
     });
+    // The new directive shows on the Broadcast tab, where it can be stood down.
+    setTab("broadcast");
     dispatch({
       type: "DISPATCH_BROADCAST_ALERT",
       role: "coordinator",
-      now,
+      now: clockNow,
       title: broadcastTitle,
       message: broadcastMessage,
       severity: broadcastSeverity,
@@ -1102,6 +812,7 @@ function AlertsWorkspace() {
   const handleStandDown = (alertId: string) => {
     const alert = broadcastAlerts?.find((entry) => entry.id === alertId);
     setBroadcastSuccessNotice(null);
+    setActionRequest(null);
     setBroadcastRequest({
       type: "STAND_DOWN_BROADCAST_ALERT",
       logOffset: state.eventLog?.length ?? 0,
@@ -1112,174 +823,376 @@ function AlertsWorkspace() {
     dispatch({
       type: "STAND_DOWN_BROADCAST_ALERT",
       role: "coordinator",
-      now,
+      now: clockNow,
       alertId,
       stoodDownByRole: "coordinator",
     });
   };
 
-  const resetFilters = () => {
-    setTierFilter("all");
-    setRoleFilter("all");
+  const openComposer = (trigger: HTMLButtonElement) => {
+    broadcastTriggerRef.current = trigger;
+    setBroadcastRequest(null);
+    setActionRequest(null);
+    setBroadcastSuccessNotice(null);
+    setBroadcastConfirmed(false);
+    setBroadcastModalOpen(true);
   };
-  const isFiltered = tierFilter !== "all" || roleFilter !== "all";
-  // Counts alerts only, the same set as totalActive: a running countdown is listed, not counted.
-  const shownCount = [...filteredNeedsYou, ...filteredOtherRoles].filter(
-    (item) => !isPendingDecisionTargetItem(item),
-  ).length;
-  const tierItems = [
-    {
-      id: "all" as const,
-      label: (
-        <>
-          <span>All alerts</span>
-          <SrOnly>, all active tiers</SrOnly>
-        </>
-      ),
-      count: totalActive,
-    },
-    {
-      id: "emergency" as const,
-      label: (
-        <>
-          <span>Clinical risk</span>
-          <SrOnly>, Tier 1: Clinical Emergency / High Risk</SrOnly>
-        </>
-      ),
-      count: tier1Count,
-    },
-    {
-      id: "capacity" as const,
-      label: (
-        <>
-          <span>Capacity and delay</span>
-          <SrOnly>, Tier 2: Capacity Pressure / Delay</SrOnly>
-        </>
-      ),
-      count: tier2Count,
-    },
-    {
-      id: "admin" as const,
-      label: (
-        <>
-          <span>Admin and transfer</span>
-          <SrOnly>, Tier 3: Administrative &amp; Transfer</SrOnly>
-        </>
-      ),
-      count: tier3Count,
-    },
-  ];
-  const roleChips = [
-    { id: "all", label: "All roles", count: totalActive },
-    { id: "coordinator", label: "Coordinator", count: coordinatorCount },
-    { id: "registrar", label: "Duty registrar", count: registrarCount },
-    { id: "bed_manager", label: "Bed manager", count: bedManagerCount },
-    { id: "num", label: "NUM", count: numCount },
-  ];
-  const conditionTiles: {
-    id: string;
-    label: string;
-    value: number;
-    tone: WfTone;
-    sub: string;
-  }[] = [
-    {
-      id: "kpi-legal-expiries",
-      label: "Form expiries passed",
-      value: legal.length,
-      tone: legal.length > 0 ? "danger" : "success",
-      sub:
-        legal.length > 0
-          ? "Form past expiry, action required"
-          : `0 of ${withDeadline.length} with a written deadline passed`,
-    },
-    {
-      id: "kpi-gridlock",
-      label: "Placement gridlock",
-      value: declined.length,
-      tone: declined.length > 0 ? "danger" : "success",
-      sub:
-        declined.length > 0
-          ? "Every destination asked declined"
-          : `0 of ${declineCandidates} declined by every ward asked`,
-    },
-    {
-      id: "kpi-ed-wait",
-      label: "Prolonged ED wait",
-      value: prolongedEdCount,
-      tone: prolongedEdCount > 0 ? "warning" : "success",
-      sub: "A day or more in ED",
-    },
-    {
-      id: "kpi-active-monitored",
-      label: "Active monitored",
-      value: totalActive,
-      tone: "neutral",
-      sub: "Current inbox alerts",
-    },
-  ];
+
+  // ---- Hero tools ----
+  const handleNotify = () => {
+    setBroadcastRequest(null);
+    setActionRequest(null);
+    if (notifyOn) {
+      setActNowNotificationPreference(false);
+      setBroadcastSuccessNotice("Browser notifications off.");
+      return;
+    }
+    void enableActNowNotifications().then((answer) => {
+      setBroadcastSuccessNotice(
+        answer === "granted"
+          ? "Browser notifications on for act-now alerts while this tab is open."
+          : answer === "unsupported"
+            ? "This browser cannot show notifications."
+            : "Notifications are blocked for this site in the browser.",
+      );
+    });
+  };
+
+  const handleCopy = () => {
+    setBroadcastRequest(null);
+    setActionRequest(null);
+    const line = (entry: QueueEntry) =>
+      `- ${entry.item.title}. ${entry.subject.displayName} ${entry.subject.umrn}. ${entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from}. Owner ${entry.owner}.${entry.raised !== undefined ? ` Open ${minutesText(Math.max(0, now - entry.raised))}.` : ""}`;
+    const sections: [string, QueueEntry[]][] = [
+      ["Act now", actEntries],
+      ["Waiting", waitEntries],
+      ["Snoozed", snoozedEntries],
+    ];
+    const text = [
+      `Alerts at ${formatInstantWithDay(now, now)} (synthetic data)`,
+      ...sections.flatMap(([label, list]) => (list.length > 0 ? [`${label} ${list.length}`, ...list.map(line)] : [])),
+      activeBroadcast
+        ? `Broadcast live: ${activeBroadcast.title}, ends ${formatInstantWithDay(activeBroadcast.expiresAt, now)}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+      setBroadcastSuccessNotice("Copy is not available in this browser.");
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      () => setBroadcastSuccessNotice(`Copied ${allEntries.length} alerts for handover.`),
+      () => setBroadcastSuccessNotice("Copy was blocked by the browser."),
+    );
+  };
+
+  const togglePill = (next: HeroPill) => setPill((current) => (current === next ? null : next));
+  const clearHighlights = () => {
+    setPill(null);
+    setOwnerHighlight(null);
+    setWatchHighlight(null);
+  };
+
   const directiveTone: WfTone =
     activeBroadcast?.severity === "critical" ? "danger" : activeBroadcast?.severity === "warning" ? "warning" : "info";
   const severityLabel = (severity: BroadcastSeverity) =>
     severity === "critical" ? "Critical" : severity === "warning" ? "Warning" : "Advisory";
+  const pastBroadcasts = (broadcastAlerts ?? []).filter((alert) => alert.id !== activeBroadcast?.id);
+
+  const heroTitle =
+    needYouCount > 0
+      ? `${needYouCount} need${needYouCount === 1 ? "s" : ""} you now`
+      : actEntries.length > 0
+        ? `${actEntries.length} to act on now`
+        : "No alert needs you";
+
+  // ---- Queue views ----
+  const RowView = isPhone ? AlertCard : AlertRow;
+  const rows = (list: QueueEntry[]) => (
+    <ul className={isPhone ? styles.cards : styles.rows}>
+      {list.map((entry) => (
+        <RowView key={entry.item.id} entry={entry} now={now} maxAge={maxAge} handlers={queueHandlers} />
+      ))}
+    </ul>
+  );
+  const groupSection = (key: string, label: string, list: QueueEntry[], head: ReactNode, empty?: string) => (
+    <section
+      key={key}
+      className={styles.group}
+      aria-label={label}
+      data-testid={key === "snoozed" ? "ward-alerts-snoozed" : undefined}
+    >
+      {head}
+      {list.length > 0 ? rows(list) : <p className={styles.groupEmpty}>{empty}</p>}
+    </section>
+  );
+  const urgencyView = (
+    <>
+      {groupSection(
+        "act",
+        "Act now",
+        actEntries,
+        <GroupHead tone="danger" label="Act now" count={actEntries.length} />,
+        "None firing now. The conditions checked are named in the header.",
+      )}
+      {groupSection(
+        "wait",
+        "Waiting",
+        waitEntries,
+        <GroupHead tone="warning" label="Waiting" count={waitEntries.length} />,
+        "Nothing is waiting on a transport leg or a planned arrival.",
+      )}
+      {runningEntries.length > 0
+        ? groupSection(
+            "running",
+            "Targets running",
+            runningEntries,
+            <GroupHead
+              tone="neutral"
+              label="Targets running"
+              count={runningEntries.length}
+              aside="listed, not counted"
+            />,
+          )
+        : null}
+      {snoozedEntries.length > 0
+        ? groupSection(
+            "snoozed",
+            "Snoozed",
+            snoozedEntries,
+            <GroupHead
+              icon={<AlarmClock size={14} aria-hidden="true" />}
+              label="Snoozed"
+              count={snoozedEntries.length}
+              aside="back when due"
+            />,
+          )
+        : null}
+    </>
+  );
+  const lanesView = (
+    <div className={styles.lanes}>
+      {(
+        [
+          ["act", "Act now", "danger", actEntries],
+          ["wait", "Waiting", "warning", [...waitEntries, ...runningEntries]],
+          ["snoozed", "Snoozed", "neutral", snoozedEntries],
+        ] as [string, string, WfTone, QueueEntry[]][]
+      ).map(([key, label, tone, list]) => (
+        <section
+          key={key}
+          className={styles.lane}
+          aria-label={label}
+          data-testid={key === "snoozed" && list.length > 0 ? "ward-alerts-snoozed" : undefined}
+        >
+          <GroupHead tone={tone} label={label} count={list.length} />
+          {list.length > 0 ? (
+            <ul className={styles.cards}>
+              {list.map((entry) => (
+                <AlertCard key={entry.item.id} entry={entry} now={now} maxAge={maxAge} handlers={queueHandlers} />
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.groupEmpty}>None now</p>
+          )}
+        </section>
+      ))}
+    </div>
+  );
+  const ownerView = owners.map((owner) => {
+    const list = allEntries.filter((entry) => entry.owner === owner);
+    const actCount = list.filter((entry) => entry.group === "act").length;
+    return groupSection(
+      `owner-${owner}`,
+      owner,
+      list,
+      <GroupHead
+        label={ownerShort(owner) === "You" ? `You, ${owner}` : owner}
+        count={list.length}
+        aside={`${actCount} act now`}
+      />,
+    );
+  });
+  const view: ArrangeBy = isPhone ? "urgency" : arrangeBy;
+
+  const tabs = [
+    { id: "now" as const, label: "Now", count: activeEntries.length },
+    { id: "broadcast" as const, label: "Broadcast", count: activeBroadcast ? 1 : 0 },
+    { id: "notices" as const, label: "Notices", count: feedNotices.length },
+    { id: "history" as const, label: "History", count: history.length },
+  ];
+
+  const selectedPanel = selected ? (
+    <AlertDetail
+      key={selected.item.id}
+      item={selected.item}
+      movement={selected.movement}
+      subject={selected.subject}
+      units={units}
+      now={now}
+      mine={selected.mine}
+      acknowledgements={inboxAcknowledgements[selected.item.id]}
+      ownership={inboxOwnership[selected.item.id]}
+      snoozeEntries={inboxSnoozes[selected.item.id]}
+      snoozedUntil={selected.snooze}
+      configuration={configuration}
+      handlers={detailHandlers}
+      releaseRef={releaseRef}
+    />
+  ) : null;
 
   return (
-    <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="v6">
+    <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="v8">
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          className={styles.heroBand}
           eyebrow="Alerts"
-          title={
-            needsYouCount === 0
-              ? "No alert needs you"
-              : needsYouCount === 1
-                ? "1 alert needs you"
-                : `${needsYouCount} alerts need you`
-          }
+          title={heroTitle}
           stats={
             <div className={styles.heroStats} role="group" aria-label="Alert summary">
-              <HeroStat value={needsYouCount} label="Needs you" tone={needsYouCount > 0 ? "danger" : undefined} />
-              <HeroStat value={otherRolesCount} label="Other roles" />
-              <HeroStat value={8} label="Conditions checked" />
-              <HeroStat value={activeBroadcast ? 1 : 0} label="Directive live" />
+              <HeroStat
+                value={actEntries.length}
+                label="Act now"
+                tone={actEntries.length > 0 ? "danger" : undefined}
+                pressed={pill === "act"}
+                onToggle={() => togglePill("act")}
+              />
+              <HeroStat
+                value={waitEntries.length}
+                label="Waiting"
+                tone={waitEntries.length > 0 ? "warning" : undefined}
+                pressed={pill === "wait"}
+                onToggle={() => togglePill("wait")}
+              />
+              <HeroStat
+                value={yoursCount}
+                label="Yours"
+                pressed={pill === "mine"}
+                onToggle={() => togglePill("mine")}
+              />
+            </div>
+          }
+          aside={
+            <div className={styles.heroTools}>
+              <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />
+              <Button variant="onHero" size="sm" icon={ChevronRight} onClick={handleNext}>
+                Next alert
+              </Button>
+              <Button
+                variant="onHero"
+                size="sm"
+                icon={notifyOn ? BellRing : Bell}
+                aria-pressed={notifyOn}
+                title="Act-now alerts notify in this open tab. No patient detail is shown."
+                onClick={handleNotify}
+              >
+                Notify me
+              </Button>
+              <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
+                Handover
+              </Button>
+              <Button
+                ref={broadcastTriggerRef}
+                variant="light"
+                size="sm"
+                icon={Radio}
+                onClick={(event) => openComposer(event.currentTarget)}
+              >
+                Broadcast alert
+              </Button>
             </div>
           }
           bar={
-            <HeroTrack
-              label="Escalation tiers"
-              items={tierItems}
-              value={tierFilter}
-              onChange={(next) => setTierFilter(next)}
-            />
+            activeBroadcast ? (
+              <button
+                type="button"
+                className={styles.heroBroadcast}
+                title="Open the broadcast desk"
+                onClick={() => setTab("broadcast")}
+              >
+                <TimeRing
+                  from={activeBroadcast.dispatchedAt}
+                  until={activeBroadcast.expiresAt}
+                  now={now}
+                  size={30}
+                  onHero
+                />
+                <StatusGlyph tone={directiveTone} />
+                <span className={styles.heroBroadcastTitle}>{activeBroadcast.title}</span>
+                <span className={styles.heroBroadcastMeta}>
+                  ends <span className={styles.mono}>{formatInstantWithDay(activeBroadcast.expiresAt, now)}</span>
+                  <span className={styles.deskOnly}>
+                    {" "}
+                    · <span className={styles.mono}>{activeBroadcast.acknowledgedUnits.length}</span> acknowledged
+                  </span>
+                </span>
+              </button>
+            ) : undefined
           }
-          barAside={
-            <Button
-              ref={broadcastTriggerRef}
-              variant="light"
-              size="sm"
-              icon={Radio}
-              onClick={(e) => {
-                broadcastTriggerRef.current = e.currentTarget;
-                setBroadcastRequest(null);
-                setBroadcastSuccessNotice(null);
-                setBroadcastConfirmed(false);
-                setBroadcastModalOpen(true);
-              }}
-            >
-              Broadcast alert
-            </Button>
+          foot={
+            <div className={styles.checking}>
+              <span className={styles.checkingLabel}>Checking</span>
+              <ul className={styles.checkList} aria-label="Conditions checked">
+                {checks.map((check) => {
+                  const scopeId = `alerts-check-${check.key}`;
+                  const body = (
+                    <>
+                      <span className={styles.mono}>{check.n}</span>
+                      {check.label}
+                    </>
+                  );
+                  return (
+                    <li key={check.key} aria-label={check.label} data-zero={check.n === 0 ? "true" : undefined}>
+                      {!check.href && !check.kind ? (
+                        <span className={styles.check} title={check.scope} aria-describedby={scopeId}>
+                          {body}
+                        </span>
+                      ) : check.href ? (
+                        <Link className={styles.check} href={check.href} title={check.scope} aria-describedby={scopeId}>
+                          {body}
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          className={styles.check}
+                          title={check.scope}
+                          aria-pressed={watchHighlight === check.kind}
+                          aria-describedby={scopeId}
+                          onClick={() => {
+                            setTab("now");
+                            setWatchHighlight((current) => (current === check.kind ? null : (check.kind ?? null)));
+                          }}
+                        >
+                          {body}
+                        </button>
+                      )}
+                      <SrOnly id={scopeId}>{check.scope}</SrOnly>
+                    </li>
+                  );
+                })}
+                <li aria-label="Not checked: handover sheets" className={styles.notChecked}>
+                  <span className={styles.check} title="Nothing in this system records when a shift hands over.">
+                    <X size={12} aria-hidden="true" />1 not checked
+                  </span>
+                  <SrOnly>
+                    Handover sheets. Nothing in this system records when a shift hands over, so there is no deadline to
+                    measure and this screen cannot tell you whether one is due.
+                  </SrOnly>
+                </li>
+              </ul>
+            </div>
           }
         />
 
-        {/* Broadcast feedback */}
+        {/* Feedback after a broadcast or an act on a row */}
         {broadcastFeedback && (!broadcastRefused || !isBroadcastModalOpen) && (
           <div
             className={styles.feedbackLine}
-            role={broadcastRefused ? "alert" : "status"}
+            role={feedbackRefused ? "alert" : "status"}
             aria-label="Broadcast feedback"
           >
-            <StatusGlyph tone={broadcastRefused ? "danger" : "success"} />
+            <StatusGlyph tone={feedbackRefused ? "danger" : "success"} />
             <span className={styles.feedbackText}>{broadcastFeedback}</span>
             <Button
               iconOnly
@@ -1290,6 +1203,7 @@ function AlertsWorkspace() {
               onClick={() => {
                 if (broadcastAccepted) setBroadcastModalOpen(false);
                 setBroadcastRequest(null);
+                setActionRequest(null);
                 setBroadcastSuccessNotice(null);
               }}
               aria-label="Dismiss notice"
@@ -1297,575 +1211,334 @@ function AlertsWorkspace() {
           </div>
         )}
 
-        {/* Active statewide directive */}
-        {activeBroadcast && (
-          <Card
-            as="div"
-            className={styles.directiveRow}
-            data-severity={activeBroadcast.severity}
-            aria-live="assertive"
-            aria-atomic="true"
-            aria-label="Active Statewide Directive"
-          >
-            {/* The acknowledged-units count below is announced; this sentence travels with it
-                (tests/ward-announced-figures-carry-their-marker, tier b). Screen readers only. */}
-            <span className="sr-only">These counts are invented figures.</span>
-            <IconTile icon={Radio} />
-            <div className={styles.directiveText}>
-              <span className={styles.directiveLine}>
-                <strong className={styles.directiveTitle}>{activeBroadcast.title}</strong>
-                <span className={styles.quiet}>{activeBroadcast.targetScopeLabel}</span>
-              </span>
-              <span className={styles.directiveMeta}>
-                {activeBroadcast.message}
-                <span aria-hidden="true"> · </span>
-                Issued {formatInstantWithDay(activeBroadcast.dispatchedAt, now)} by {activeBroadcast.dispatchedByName}
-                <span aria-hidden="true"> · </span>
-                <span>
-                  {activeBroadcast.acknowledgedUnits.length} of {units.length} units acknowledged
-                </span>
-              </span>
-            </div>
-            <Badge tone={directiveTone}>{severityLabel(activeBroadcast.severity)} directive</Badge>
-            <span className={styles.timeChip}>
-              <b>{durMinutes(Math.max(0, now - activeBroadcast.dispatchedAt))}</b> ago
-            </span>
-            <span className={styles.timeChip}>
-              {activeBroadcast.expiresAt > now ? (
-                <>
-                  <b>{durMinutes(activeBroadcast.expiresAt - now)}</b> left
-                </>
-              ) : (
-                formatTimeRemaining(activeBroadcast.expiresAt, now)
-              )}
-            </span>
-            <Button
-              size="sm"
-              className={styles.btn}
-              aria-label="Stand down this alert"
-              onClick={() => handleStandDown(activeBroadcast.id)}
-            >
-              Stand down
-            </Button>
-          </Card>
-        )}
-
-        {/* Conditions watched */}
-        <Card aria-labelledby="alerts-conditions-title" data-testid="ward-alerts-hud-island">
-          <CardHead
-            id="alerts-conditions-title"
-            icon={Activity}
-            title="Conditions watched"
-            aside={<span className={styles.quiet}>Checked at {formatInstantWithDay(now, now)}</span>}
-          />
-          <div className={styles.tileGrid}>
-            {conditionTiles.map((tile) => (
-              <div key={tile.id} className={styles.tile} data-kpi={tile.id}>
-                <span className={styles.tileHead}>
-                  <span className={styles.tileLabel}>{tile.label}</span>
-                  <StatusGlyph tone={tile.tone} size={9} />
-                </span>
-                <span className={styles.tileValue}>{tile.value}</span>
-                <span className={styles.tileSub}>{tile.sub}</span>
+        <div className={styles.grid}>
+          <div className={styles.column}>
+            <Card as="section" className={styles.queueCard} aria-label="Alerts">
+              <div className={styles.tabsBar}>
+                <Tabs items={tabs} value={tab} onChange={setTab} label="Alerts views" idPrefix="alerts" />
               </div>
-            ))}
-          </div>
-        </Card>
 
-        {/* Addressed-to filter */}
-        <div className={styles.filterBar}>
-          <div className={styles.filterGroup}>
-            <span className={styles.filterLabel} id="alerts-role-label">
-              Addressed to
-            </span>
-            <ChipGroup label="Filter by addressed role" className={styles.chipRow}>
-              {roleChips.map((chip) => (
-                <FilterChip
-                  key={chip.id}
-                  className={styles.filterBtn}
-                  pressed={roleFilter === chip.id}
-                  onPressedChange={() => setRoleFilter(chip.id)}
-                  count={chip.count}
-                >
-                  {chip.label}
-                </FilterChip>
-              ))}
-            </ChipGroup>
-          </div>
-          <div className={styles.filterSummary}>
-            <span role="status" aria-live="polite" aria-atomic="true">
-              Showing {shownCount} of {totalActive}
-              <span className="sr-only"> alerts from synthetic records</span>
-            </span>
-            {isFiltered && (
-              <Button size="sm" variant="ghost" className={styles.btnSm} onClick={resetFilters}>
-                Reset filters
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Alert groups */}
-        <div className={styles.panelGrid} id="alerts-results">
-          <div className={styles.priorityColumn}>
-            <Card aria-labelledby="alerts-needs-you-title">
-              <CardHead
-                id="alerts-needs-you-title"
-                icon={Bell}
-                title="Needs you"
-                meta={<Count n={filteredNeedsYou.length} />}
-                aside={<span className={styles.quiet}>{filteredNeedsYou.length} to act on</span>}
-              />
-              <div className={styles.panelBody} role="region" aria-label="Needs you alerts" tabIndex={0}>
-                <AlertRows
-                  prominent
-                  items={filteredNeedsYou}
-                  empty="No high-priority clinical or legal conditions are currently active."
-                  onAction={handleOpenAction}
-                  onQuickAction={handleQuickAction}
-                  onSnooze={handleSnooze}
-                  acknowledgements={inboxAcknowledgements}
-                  ownership={inboxOwnership}
-                  configuration={configuration}
-                  now={now}
-                  patients={patients}
-                  referrals={referrals}
-                  movements={movements}
-                  units={units}
-                  state={state}
-                  isFiltered={isFiltered}
-                  onResetFilters={resetFilters}
-                />
-              </div>
-            </Card>
-
-            {/* Operational notices */}
-            <Card as="section" aria-label="Operational Notices and Shift Communication Feed">
-              <CardHead icon={FileText} title="Role notices" meta={<Count n={feedNotices.length} />} />
-              {feedNotices.length === 0 ? (
-                <div className={styles.feedEmpty}>
-                  <span className={styles.emptyMark} aria-hidden="true">
-                    <CheckCircle2 size={16} aria-hidden="true" />
-                  </span>
-                  <div>
-                    <p className={styles.none}>No notices have been raised this session.</p>
-                    <p className={styles.feedEmptySub}>
-                      Recorded referral, bed-hold and transport notices appear here.
-                    </p>
+              {tab === "now" ? (
+                <TabPanel idPrefix="alerts" id="now">
+                  <div className={styles.toolbar}>
+                    <Segmented
+                      label="Arrange by"
+                      value={arrangeBy}
+                      onChange={setArrangeBy}
+                      items={[
+                        {
+                          id: "urgency",
+                          label: (
+                            <>
+                              <List size={14} aria-hidden="true" /> Urgency
+                            </>
+                          ),
+                        },
+                        {
+                          id: "lanes",
+                          label: (
+                            <>
+                              <Columns3 size={14} aria-hidden="true" /> Lanes
+                            </>
+                          ),
+                        },
+                        {
+                          id: "owner",
+                          label: (
+                            <>
+                              <Users size={14} aria-hidden="true" /> Owner
+                            </>
+                          ),
+                        },
+                      ]}
+                    />
+                    <span className={styles.toolbarRule} aria-hidden="true" />
+                    {anyHighlight ? null : <span className={styles.quiet}>Highlight</span>}
+                    <div className={styles.chipRow} role="group" aria-label="Highlight by owner">
+                      {owners.map((owner) => (
+                        <FilterChip
+                          key={owner}
+                          className={styles.filterBtn}
+                          pressed={ownerHighlight === owner}
+                          onPressedChange={() => setOwnerHighlight((current) => (current === owner ? null : owner))}
+                          count={allEntries.filter((entry) => entry.owner === owner).length}
+                        >
+                          {ownerShort(
+                            owner,
+                            allEntries.some((entry) => entry.owner === owner && ownedByBookingWard(entry)),
+                          )}
+                        </FilterChip>
+                      ))}
+                    </div>
+                    {anyHighlight ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className={styles.btnSm}
+                        aria-label={`Clear highlights, ${highlightedCount} highlighted`}
+                        onClick={clearHighlights}
+                      >
+                        Clear <Count n={highlightedCount} />
+                      </Button>
+                    ) : null}
                   </div>
-                </div>
-              ) : (
-                <ul className={styles.feedList}>
-                  {feedNotices.map((notice) => {
-                    const isRead = notice.readAt !== undefined;
-                    return (
-                      <li key={notice.id} className={styles.feedItem}>
-                        <StatusGlyph tone={isRead ? "neutral" : "info"} size={9} />
-                        <div className={styles.feedContent}>
-                          <span className={styles.feedTitle}>
-                            {withUmrnInPlaceOfMovementIds(notice.sentence, umrnLookup)}
-                          </span>
-                          <span className={styles.feedMeta}>
-                            To {WARD_FLOW_ROLE_LABELS[notice.to.role]} · raised{" "}
-                            {formatInstantWithDay(notice.raisedAt, now)}
-                          </span>
-                        </div>
-                        <span className={styles.feedState}>{isRead ? "Read" : "Unread"}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </Card>
+                  {view === "lanes" ? lanesView : view === "owner" ? ownerView : urgencyView}
+                </TabPanel>
+              ) : null}
 
-            <Card as="div" className={styles.scopeCard}>
-              <details className={`${styles.contextDetails} source-print`}>
-                <summary className={styles.scopeSummary}>
-                  <IconTile icon={Eye} />
-                  <span className={styles.scopeTitle}>Monitoring scope</span>
-                  <Count n={8} />
-                  <span className={styles.scopeMeta}>8 watched, 1 not</span>
-                  <ChevronDown className={styles.disclosureChevron} aria-hidden="true" size={16} />
-                </summary>
-                <div className={styles.contextGrid}>
-                  <ConditionContext
-                    title="Form expiry passed"
-                    watches="Watches every movement carrying a recorded form expiry, and fires when one passes."
-                    none={`No recorded form expiry has passed. ${withDeadline.length} ${
-                      withDeadline.length === 1 ? "movement carries" : "movements carry"
-                    } one and none is overdue — that is a count, not a gap.`}
-                    items={legal}
-                  />
-                  <ConditionContext
-                    title="Every ward asked has declined"
-                    watches="Watches movements where every ward approached has refused and none has accepted."
-                    none="No movement has been refused by every ward it asked."
-                    items={declined}
-                  />
-                  <ConditionContext
-                    title="Destination no longer suitable"
-                    watches="Watches accepted destinations against an authorised-hospital check for the patient's current recorded status."
-                    none="No accepted destination has failed an authorised-hospital check."
-                    items={unlawful}
-                  />
-                  <ConditionContext
-                    title="Bed hold expired"
-                    watches="Watches bed pulls against the time they were held until."
-                    none="No bed hold has lapsed."
-                    items={pullExpired}
-                  />
-                  <ConditionContext
-                    title="Decision target overdue"
-                    watches="Watches referral decisions, transfer acceptances and transport bookings against their targets, defaults set in Settings."
-                    none="No running decision target has passed."
-                    items={decisionTargets}
-                  />
-                  <ConditionContext
-                    title="Transport waiting to leave"
-                    watches="Watches accepted transport legs that have not departed."
-                    none="No accepted transport leg is still waiting to leave."
-                    items={transport}
-                  />
-                  <ConditionContext
-                    title="Planned arrival not recorded"
-                    watches="Watches booked planned admissions whose expected arrival time has passed with no arrival recorded."
-                    none="No booked planned admission is past its expected arrival."
-                    items={plannedOverdue}
-                  />
-                  <section className={styles.condition} aria-label="Referral awaiting triage">
-                    <h3 className={styles.conditionTitle}>
-                      <Check size={14} aria-hidden="true" className={styles.watchMark} />
-                      Referral awaiting triage
-                    </h3>
-                    <p className={styles.watches}>
-                      Watches referrals that have never been triaged. Read from the referrals themselves, not from the
-                      action inbox — no inbox category covers triage.
-                    </p>
-                    {untriaged.length === 0 ? (
-                      <p className={styles.none}>Every referral has been triaged.</p>
+              {tab === "broadcast" ? (
+                <TabPanel idPrefix="alerts" id="broadcast" className={styles.tabBody}>
+                  {activeBroadcast ? (
+                    <div
+                      className={styles.directive}
+                      data-severity={activeBroadcast.severity}
+                      role="group"
+                      aria-live="assertive"
+                      aria-atomic="true"
+                      aria-label="Active Statewide Directive"
+                    >
+                      {/* The acknowledged-units count below is announced; this sentence travels with it
+                          (tests/ward-announced-figures-carry-their-marker, tier b). Screen readers only. */}
+                      <span className="sr-only">These counts are invented figures.</span>
+                      <div className={styles.directiveMain}>
+                        <div className={styles.directiveHead}>
+                          <StatusGlyph tone={directiveTone} />
+                          <strong className={styles.directiveTitle}>{activeBroadcast.title}</strong>
+                          <Badge tone={directiveTone}>{severityLabel(activeBroadcast.severity)}</Badge>
+                        </div>
+                        <p className={styles.directiveMessage}>{activeBroadcast.message}</p>
+                        <dl className={styles.facts}>
+                          <div>
+                            <dt>Sent to</dt>
+                            <dd>{activeBroadcast.targetScopeLabel}</dd>
+                          </div>
+                          <div>
+                            <dt>Sent</dt>
+                            <dd>
+                              <span className={styles.mono}>
+                                {formatInstantWithDay(activeBroadcast.dispatchedAt, now)}
+                              </span>{" "}
+                              by {activeBroadcast.dispatchedByName}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Ends</dt>
+                            <dd>
+                              <span className={styles.mono}>
+                                {formatInstantWithDay(activeBroadcast.expiresAt, now)}
+                              </span>
+                              , in{" "}
+                              <span className={styles.mono}>
+                                {minutesText(Math.max(0, activeBroadcast.expiresAt - now))}
+                              </span>
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Acknowledged</dt>
+                            <dd>
+                              <span>
+                                {activeBroadcast.acknowledgedUnits.length} of {units.length} units acknowledged
+                              </span>
+                            </dd>
+                          </div>
+                        </dl>
+                        <div className={styles.directiveActions}>
+                          <Button
+                            size="sm"
+                            icon={X}
+                            className={styles.btn}
+                            aria-label="Stand down this alert"
+                            onClick={() => handleStandDown(activeBroadcast.id)}
+                          >
+                            Stand down
+                          </Button>
+                          <Button
+                            size="sm"
+                            icon={Clock}
+                            disabledReason="Not wired in this prototype."
+                            reasonDisplay="tooltip"
+                          >
+                            Extend
+                          </Button>
+                          <Button
+                            size="sm"
+                            icon={Smartphone}
+                            disabledReason="Not wired in this prototype."
+                            reasonDisplay="tooltip"
+                          >
+                            Push to phones
+                          </Button>
+                        </div>
+                      </div>
+                      <div className={styles.directiveRing}>
+                        <TimeRing
+                          from={activeBroadcast.dispatchedAt}
+                          until={activeBroadcast.expiresAt}
+                          now={now}
+                          size={96}
+                        />
+                        <span className={styles.quiet}>time left</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon={Radio}
+                      title="No broadcast live"
+                      meta={`Checked ${formatInstantWithDay(now, now)}`}
+                    />
+                  )}
+                  {pastBroadcasts.length > 0 ? (
+                    <section className={styles.group} aria-label="Earlier broadcasts">
+                      <GroupHead label="Earlier this session" count={pastBroadcasts.length} />
+                      <ul className={styles.historyList}>
+                        {pastBroadcasts.map((alert) => (
+                          <li key={alert.id}>
+                            <span className={styles.mono}>{formatInstantWithDay(alert.dispatchedAt, now)}</span>
+                            <StatusGlyph tone="neutral" size={9} />
+                            <span className={styles.historyText}>
+                              <span className={styles.historyTitle}>{alert.title}</span>
+                              <span className={styles.quiet}>
+                                {alert.status === "stood_down" ? "Stood down" : "Ended"} · {alert.targetScopeLabel}
+                              </span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
+                </TabPanel>
+              ) : null}
+
+              {tab === "notices" ? (
+                <TabPanel idPrefix="alerts" id="notices">
+                  <section className={styles.tabBody} aria-label="Operational Notices and Shift Communication Feed">
+                    <GroupHead label="Role notices" count={feedNotices.length} />
+                    {feedNotices.length === 0 ? (
+                      <div className={styles.feedEmpty}>
+                        <p className={styles.none}>No notices have been raised this session.</p>
+                        <p className={styles.quiet}>Recorded referral, bed-hold and transport notices appear here.</p>
+                      </div>
                     ) : (
-                      <p className={styles.count}>
-                        <strong>
-                          {untriaged.length} of {(state.referrals ?? []).length}
-                        </strong>{" "}
-                        referrals have never been triaged.
-                      </p>
+                      <ul className={styles.historyList}>
+                        {feedNotices.map((notice) => {
+                          const isRead = notice.readAt !== undefined;
+                          return (
+                            <li key={notice.id}>
+                              <span className={styles.mono}>{formatInstantWithDay(notice.raisedAt, now)}</span>
+                              <StatusGlyph tone={isRead ? "neutral" : "info"} size={9} />
+                              <span className={styles.historyText}>
+                                <span className={styles.historyTitle}>
+                                  {withUmrnInPlaceOfMovementIds(notice.sentence, umrnLookup)}
+                                </span>
+                                <span className={styles.quiet}>To {WARD_FLOW_ROLE_LABELS[notice.to.role]}</span>
+                              </span>
+                              <span className={styles.quiet}>{isRead ? "Read" : "Unread"}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     )}
                   </section>
-                  <section className={styles.condition} aria-label="Override recorded">
-                    <h3 className={styles.conditionTitle}>
-                      <Check size={14} aria-hidden="true" className={styles.watchMark} />
-                      Override recorded
-                    </h3>
-                    <p className={styles.watches}>
-                      Watches referrals made by override. {overrides.length === 0 ? "None has been recorded." : null}
-                    </p>
-                    <p className={styles.gap}>
-                      <strong>This screen cannot identify a prior gate verdict.</strong> The record keeps who, when,
-                      which fixed reason and which wards; it does not retain a prior gate verdict.
-                    </p>
-                  </section>
-                  <section className={styles.conditionWide} aria-label="What this screen does not watch">
-                    <h3 className={styles.conditionTitle}>
-                      <X size={14} aria-hidden="true" className={styles.watchMark} />
-                      What this screen does not watch
-                    </h3>
-                    <p className={styles.gap}>
-                      <strong>Handover sheets.</strong> The design for this screen carries a &ldquo;handover sheet
-                      due&rdquo; alert. Nothing in this system records when a shift hands over, so there is no deadline
-                      to measure and this screen cannot tell you whether one is due. It is listed here rather than left
-                      out, because a screen that silently drops a condition reads as though it checked it.
-                    </p>
-                  </section>
-                </div>
-              </details>
+                </TabPanel>
+              ) : null}
+
+              {tab === "history" ? (
+                <TabPanel idPrefix="alerts" id="history" className={styles.tabBody}>
+                  {history.length === 0 ? (
+                    <EmptyState
+                      icon={Clock}
+                      title="Nothing recorded this session"
+                      meta="Acknowledgements, takes, snoozes, bed releases and broadcasts"
+                    />
+                  ) : (
+                    <ul className={styles.historyList} aria-label="Recorded this session">
+                      {history.map((entry) => (
+                        <li key={entry.id}>
+                          <span className={styles.mono}>{formatInstantWithDay(entry.at, now)}</span>
+                          <StatusGlyph tone={entry.tone} size={9} />
+                          <span className={styles.historyText}>
+                            <span className={styles.historyTitle}>{entry.title}</span>
+                            <span className={styles.quiet}>{entry.sub}</span>
+                          </span>
+                          <span className={styles.quiet}>{entry.by}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </TabPanel>
+              ) : null}
+            </Card>
+
+            <Card as="section" className={styles.todayCard} aria-label="Today">
+              <div className={styles.todayHead}>
+                <h2 className={styles.todayTitle}>
+                  <Clock size={16} aria-hidden="true" />
+                  Today
+                </h2>
+                <span className={styles.legend}>
+                  <span>
+                    <StatusGlyph tone="danger" size={9} /> Act now
+                  </span>
+                  <span>
+                    <StatusGlyph tone="warning" size={9} /> Waiting
+                  </span>
+                  <span>
+                    <StatusGlyph tone="success" size={9} /> Acted on
+                  </span>
+                </span>
+              </div>
+              <TodayChart
+                now={now}
+                selectedId={selected?.item.id}
+                onPick={(id) => {
+                  const entry = allEntries.find((candidate) => candidate.item.id === id);
+                  if (entry) select(entry);
+                }}
+                raised={allEntries
+                  .filter((entry) => entry.raised !== undefined)
+                  .map((entry) => ({
+                    id: entry.item.id,
+                    at: entry.raised!,
+                    shape: entry.group === "act" ? ("act" as const) : ("wait" as const),
+                    title: `${entry.item.title}, ${entry.subject.displayName}, raised ${formatInstantWithDay(entry.raised!, now)}`,
+                  }))}
+                acted={history
+                  .filter((entry) => entry.action)
+                  .map((entry) => ({
+                    id: entry.id,
+                    at: entry.at,
+                    shape: "done" as const,
+                    title: `${entry.title}, ${formatInstantWithDay(entry.at, now)}`,
+                  }))}
+                broadcasts={(broadcastAlerts ?? []).map((alert) => ({
+                  id: alert.id,
+                  from: alert.dispatchedAt,
+                  until: alert.stoodDownAt ?? alert.expiresAt,
+                  title: `${alert.title}, sent ${formatInstantWithDay(alert.dispatchedAt, now)}`,
+                }))}
+              />
             </Card>
           </div>
 
-          <Card aria-labelledby="alerts-other-roles-title" className={styles.otherCard}>
-            <CardHead
-              id="alerts-other-roles-title"
-              icon={Users}
-              title="For other roles"
-              meta={<Count n={filteredOtherRoles.length} />}
-              aside={<span className={styles.quiet}>{filteredOtherRoles.length} elsewhere</span>}
-            />
-            <div className={styles.panelBody} role="region" aria-label="Alerts for other roles" tabIndex={0}>
-              <AlertRows
-                items={filteredOtherRoles}
-                empty="No bed-hold, accepted-transport or planned-arrival alert is firing for another role."
-                onAction={handleOpenAction}
-                onQuickAction={handleQuickAction}
-                onSnooze={handleSnooze}
-                acknowledgements={inboxAcknowledgements}
-                ownership={inboxOwnership}
-                configuration={configuration}
-                now={now}
-                patients={patients}
-                referrals={referrals}
-                movements={movements}
-                units={units}
-                state={state}
-                isFiltered={isFiltered}
-                onResetFilters={resetFilters}
-              />
-            </div>
-          </Card>
+          {isPhone ? null : (
+            <aside className={styles.panel} aria-label="Selected alert">
+              <Card as="div" className={styles.panelCard}>
+                {selectedPanel ?? <EmptyState icon={Bell} title="Pick an alert to see it here" />}
+              </Card>
+            </aside>
+          )}
         </div>
 
-        {snoozedInbox.length > 0 ? (
-          <Card aria-labelledby="alerts-snoozed-title" data-testid="ward-alerts-snoozed">
-            <CardHead
-              id="alerts-snoozed-title"
-              icon={AlarmClock}
-              title="Snoozed"
-              meta={<Count n={snoozedInbox.length} />}
-              aside={<span className={styles.quiet}>Back when due</span>}
-            />
-            <ul className={styles.rows}>
-              {snoozedInbox.map((item) => {
-                const entry = activeSnooze(inboxSnoozes[item.id], now, item.since);
-                const movement = movements.find((candidate) => candidate.id === item.movementId);
-                const resolvedPatient = resolveAlertPatient(
-                  movement,
-                  item.movementId,
-                  { patients, referrals, movements },
-                  units,
-                  item.plannedAdmission,
-                );
-                const patientInfo = item.personLabel
-                  ? { ...resolvedPatient, displayName: item.personLabel }
-                  : resolvedPatient;
-                return (
-                  <li
-                    key={item.id}
-                    className={styles.alertRow}
-                    data-tone={item.tone}
-                    data-movement-id={item.movementId}
-                    data-testid={`ward-alerts-snoozed-${item.id}`}
-                  >
-                    <StatusGlyph tone={severityGlyph(item)} />
-                    <div className={styles.alertContent}>
-                      <span className={styles.alertTitleText}>{item.title}</span>
-                      <span className={styles.alertMetaText}>
-                        <strong className={styles.patientName}>{patientInfo.displayName}</strong>
-                        <span aria-hidden="true"> · </span>
-                        <strong className={styles.mono}>{patientInfo.umrn}</strong>
-                        <span aria-hidden="true"> · </span>
-                        <span className={styles.locationTag}>{patientInfo.location}</span>
-                      </span>
-                      {entry ? <span className={styles.alertTiming}>{snoozedLine(entry, now)}</span> : null}
-                    </div>
-                    <span className={styles.ownerCell}>{item.owner}</span>
-                    <div className={styles.rowActions}>
-                      <Button
-                        size="sm"
-                        variant="sec"
-                        className={styles.btn}
-                        aria-label={`Open for ${patientInfo.displayName}`}
-                        title={`Open: ${item.title}`}
-                        data-testid={`ward-alerts-snoozed-open-${item.id}`}
-                        onClick={(event) => {
-                          handleOpenAction(item, event.currentTarget);
-                        }}
-                      >
-                        Open
-                      </Button>
-                      <Button
-                        size="sm"
-                        className={styles.btn}
-                        aria-label={`Return ${item.title} now, ${patientInfo.displayName}`}
-                        onClick={() => {
-                          handleReturn(item);
-                        }}
-                      >
-                        Return now
-                      </Button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </Card>
+        {isPhone && selected ? (
+          <Drawer
+            open={sheetOpen}
+            onClose={() => setSheetOpen(false)}
+            title={selected.item.title}
+            mobileSize="viewport"
+          >
+            {selectedPanel}
+          </Drawer>
         ) : null}
-
-        {/* Alert inspector sheet */}
-        {selectedAlert && (
-          <div className={styles.inspectorOverlay} role="presentation" onClick={handleCloseDrawer}>
-            <aside
-              ref={drawerRef}
-              className={styles.inspectorDrawer}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="action-modal-title"
-              aria-describedby="action-modal-desc"
-              tabIndex={-1}
-              onKeyDown={handleDrawerKeyDown}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className={styles.drawerHead}>
-                <IconTile icon={Bell} />
-                <div className={styles.drawerHeadTitles}>
-                  <h2 id="action-modal-title" className={styles.drawerTitle}>
-                    Alert Escalation &amp; Triage
-                  </h2>
-                  <p id="action-modal-desc" className={styles.drawerSubtitle}>
-                    {selectedAlert.title}
-                  </p>
-                </div>
-                <Kbd>esc</Kbd>
-                <Button
-                  ref={drawerCloseRef}
-                  iconOnly
-                  icon={X}
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCloseDrawer}
-                  aria-label="Close drawer"
-                  title="Close drawer (Esc)"
-                />
-              </div>
-
-              <div className={styles.drawerBody}>
-                <div className={styles.drawerSection}>
-                  <Badge
-                    tone={
-                      selectedSeverity.tone === "danger"
-                        ? "danger"
-                        : selectedSeverity.tone === "warn"
-                          ? "warning"
-                          : "neutral"
-                    }
-                  >
-                    {selectedSeverity.label}
-                  </Badge>
-                  <div className={styles.drawerPatient}>{selectedPatientName}</div>
-                  <div className={styles.quiet}>{alertDetail(selectedAlert)}</div>
-                </div>
-
-                <div className={styles.drawerSection}>
-                  <h3 className={styles.drawerSectionTitle}>Case Parameters &amp; Tracking</h3>
-                  <Inset>
-                    {selectedBooking ? (
-                      <dl className={styles.drawerGrid} data-testid="alerts-drawer-booking">
-                        <div>
-                          <dt>Planned ward</dt>
-                          <dd>
-                            {state.units.find((unit) => unit.id === selectedBooking.unitId)?.name ?? "Not recorded"}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>Expected arrival</dt>
-                          <dd>{formatInstantWithDay(selectedBooking.expectedArrivalAt, now)}</dd>
-                        </div>
-                        <div>
-                          <dt>Reason</dt>
-                          <dd>{PLANNED_ADMISSION_REASON_LABELS[selectedBooking.reason]}</dd>
-                        </div>
-                        <div>
-                          <dt>Legal status</dt>
-                          <dd>{selectedBooking.legalStatus}</dd>
-                        </div>
-                        <div>
-                          <dt>Expected stay</dt>
-                          <dd>{selectedBooking.expectedStayDays} days</dd>
-                        </div>
-                        <div>
-                          <dt>Assigned role</dt>
-                          <dd>{selectedAlert.owner}</dd>
-                        </div>
-                      </dl>
-                    ) : (
-                      <dl className={styles.drawerGrid}>
-                        <div>
-                          <dt>Origin ED or setting</dt>
-                          <dd>{selectedMovement?.originEdId ?? "Emergency Dept"}</dd>
-                        </div>
-                        <div>
-                          <dt>Assigned role</dt>
-                          <dd>{selectedAlert.owner}</dd>
-                        </div>
-                        <div>
-                          <dt>Legal status</dt>
-                          <dd>{selectedMovement?.legalStatus ?? "Voluntary"}</dd>
-                        </div>
-                        <div>
-                          <dt>Declines logged</dt>
-                          <dd>{selectedMovement ? `${selectedMovement.declines.length} units` : "0 units"}</dd>
-                        </div>
-                        <div>
-                          <dt>Board time</dt>
-                          <dd>{formatInstantWithDay(now, now)}</dd>
-                        </div>
-                        <div>
-                          <dt>Escalation</dt>
-                          <dd>{selectedMovement?.escalation ? "Tier 2 escalated" : "Tier 1 standard"}</dd>
-                        </div>
-                      </dl>
-                    )}
-                  </Inset>
-                </div>
-
-                <div className={styles.ackBox}>
-                  <span className={styles.ackText}>
-                    <StatusGlyph tone={isSelectedAcknowledged ? "success" : "warning"} />
-                    {selectedAcknowledgement
-                      ? `Acknowledged by ${selectedAcknowledgement.by} ${formatInstantWithDay(selectedAcknowledgement.at, now)}`
-                      : "Pending coordinator triage"}
-                  </span>
-                  {!isSelectedAcknowledged ? (
-                    <Button size="sm" className={styles.btn} onClick={handleAcknowledge}>
-                      Acknowledge Alert
-                    </Button>
-                  ) : null}
-                </div>
-
-                <Field label="Action taken" id="alerts-action-intervention">
-                  <Select defaultValue="escalate">
-                    <option value="escalate">Escalate to executive director on call (tier 3)</option>
-                    <option value="reauthorise">Extend recorded form</option>
-                    <option value="override">Declare catchment override for placement</option>
-                    <option value="extend_hold">Extend bed hold (30 minute grace window)</option>
-                    <option value="dispatch_transport">Dispatch urgent secure transport</option>
-                    <option value="acknowledge">Acknowledge and retain on active watch</option>
-                  </Select>
-                </Field>
-
-                <Field label="Sign-off note" id="alerts-action-note">
-                  <Textarea
-                    rows={3}
-                    placeholder="Record the action taken and who was contacted."
-                    data-gramm="false"
-                    data-enable-grammarly="false"
-                    spellCheck={false}
-                    autoComplete="off"
-                  />
-                </Field>
-              </div>
-
-              <div className={styles.drawerFoot}>
-                {/* D4: Unconnected action confirmation */}
-                <span id="ward-alerts-action-confirm-note" className={styles.confirmNote}>
-                  Not wired in this prototype.
-                </span>
-                <Button className={styles.btn} onClick={handleCloseDrawer}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="pri"
-                  className={styles.btn}
-                  data-testid="ward-alerts-action-confirm"
-                  aria-disabled="true"
-                  aria-describedby="ward-alerts-action-confirm-note"
-                  title="Not wired in this prototype."
-                  onClick={ignoreUnavailableActivation}
-                >
-                  Record intervention
-                </Button>
-              </div>
-            </aside>
-          </div>
-        )}
 
         {/* Broadcast composer sheet */}
         {isBroadcastModalOpen && (
@@ -2004,7 +1677,7 @@ function AlertsWorkspace() {
                     <div className={styles.directiveText}>
                       <strong className={styles.directiveTitle}>{broadcastTitle.trim() || "Untitled directive"}</strong>
                       <span className={styles.quiet}>
-                        {severityLabel(broadcastSeverity)} · expires in {durMinutes(broadcastDurationMinutes)}
+                        {severityLabel(broadcastSeverity)} · expires in {minutesText(broadcastDurationMinutes)}
                       </span>
                     </div>
                   </div>
