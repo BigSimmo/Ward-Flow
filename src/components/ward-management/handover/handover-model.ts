@@ -7,7 +7,12 @@
  * file never computes a legal time limit.
  */
 import { durMinutes } from "@/components/wf";
-import { formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  formatInstantWithDay,
+  MINUTES_PER_DAY,
+  minuteOfDay,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
@@ -49,7 +54,7 @@ const LAST_HANDOVER_MINUTE = HANDOVER_SHIFTS[HANDOVER_SHIFTS.length - 1]!.minute
  */
 export function handoverAt(id: HandoverShiftId, now: Instant): Instant {
   const today = now - minuteOfDay(now) + handoverShift(id).minute;
-  return id === "am" && minuteOfDay(now) >= LAST_HANDOVER_MINUTE ? today + 24 * 60 : today;
+  return id === "am" && minuteOfDay(now) >= LAST_HANDOVER_MINUTE ? today + MINUTES_PER_DAY : today;
 }
 
 /** The next handover still to come, which after the last one of the day is tomorrow morning's. */
@@ -388,7 +393,7 @@ export const HANDOVER_CHIPS: { id: HandoverChip; label: string; test: (row: Hand
     { id: "spec", label: "1:1", test: (row) => row.obs === "1:1 specialling" },
     { id: "form", label: "Form recorded", test: (row) => row.formCode !== undefined },
     { id: "dec", label: "Declined", test: (row) => row.declines.length > 0 },
-    { id: "day", label: "Over a day", test: (row, now) => now - row.openedAt >= 24 * 60 },
+    { id: "day", label: "Over a day", test: (row, now) => now - row.openedAt >= MINUTES_PER_DAY },
     { id: "mine", label: "Mine", test: (row) => row.owner === HANDOVER_ME },
     { id: "esc", label: "Escalated", test: (row) => row.escalated },
   ];
@@ -486,7 +491,7 @@ export function toHandoverWard(
   bedReleases: BedRelease[] = [],
 ): HandoverWard {
   const here = admissions.filter((admission) => admission.unitId === unit.id && bedIsOccupied(admission));
-  const dayEnd = now - minuteOfDay(now) + 24 * 60;
+  const dayEnd = now - minuteOfDay(now) + MINUTES_PER_DAY;
   return {
     unit,
     id: unit.id,
