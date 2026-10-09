@@ -18,18 +18,6 @@
     "owner": "Remove invented data"
   },
   {
-    "file": "handover/handover-page.tsx",
-    "rule": "hour window",
-    "text": "\u2022 Form expiries passed over 24h ago: on sheet, outside filter",
-    "owner": "Remove invented data"
-  },
-  {
-    "file": "handover/handover-page.tsx",
-    "rule": "typed percentage",
-    "text": "Severe South Metro secure bed pressure. FSH & Fremantle acute secure units at 10",
-    "owner": "Remove invented data"
-  },
-  {
     "file": "patients/patient-now-records.ts",
     "rule": "hour window",
     "text": "11 hours in ED",
@@ -56,13 +44,13 @@
   {
     "file": "patients/patient-now-screen.tsx",
     "rule": "hour window",
-    "text": "4h window passed \u2014 review the hold",
+    "text": "4h window passed — review the hold",
     "owner": "Build linked demo data"
   },
   {
     "file": "ward-flow-reducer.ts",
     "rule": "hour window",
-    "text": "Leave bed has been away for more than 24 hours \u2014 consider opening it.",
+    "text": "Leave bed has been away for more than 24 hours — consider opening it.",
     "owner": "Remove invented data"
   }
 ]

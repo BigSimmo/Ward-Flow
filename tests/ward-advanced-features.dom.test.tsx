@@ -182,30 +182,20 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
     });
   });
 
-  describe("Option 5: Handover Page 16:30 Rollup Tab", () => {
-    it("navigates to 16:30 Handover Rollup tab and renders all 3 executive sections", () => {
+  // Refined Handover A (Josh, 9 Oct 2026) folded the 16:30 rollup into the Beds tab: long stays,
+  // discharges held up and accepted beds now sit by ward beside the grouped patient table.
+  describe("Option 5: Handover Beds tab", () => {
+    it("shows long stays and held-up discharges by ward on the Beds tab", () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <HandoverPage />
         </WardFlowProvider>,
       );
 
-      const rollupTabBtn = screen.getByRole("tab", { name: /16:30 Rollup/i });
-      expect(rollupTabBtn).toBeDefined();
-
-      fireEvent.click(rollupTabBtn);
-
-      const rollupPane = screen.getByTestId("ward-handover-rollup-1630");
-      expect(rollupPane).toBeDefined();
-
-      // Section 1: Long-Stay Patients & Primary Discharge Barriers
-      expect(screen.getByText(/1\. Long-Stay Patients & Primary Discharge Barriers \(LOS ≥ 7 Days\)/i)).toBeDefined();
-
-      // Section 2: Acute Bed Cascade Solver (Step-Down Transfer Candidates)
-      expect(screen.getByText(/2\. Acute Bed Cascade Solver \(Step-Down Transfer Candidates\)/i)).toBeDefined();
-
-      // Section 3: Evening Inbound Arrivals & Transport ETAs
-      expect(screen.getByText(/3\. Evening Inbound Arrivals & Transport ETAs/i)).toBeDefined();
+      fireEvent.click(screen.getByRole("tab", { name: /Beds/ }));
+      const beds = screen.getByTestId("ward-handover-beds");
+      expect(beds.textContent).toMatch(/stays over 7 days/i);
+      expect(beds.textContent).toContain("Discharges held up");
     });
   });
 });

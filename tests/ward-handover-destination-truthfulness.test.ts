@@ -9,7 +9,10 @@
 // `InTransitSection`, seventy lines below, had already been repaired — so the page was half fixed
 // and looked wholly fixed.
 //
-// ⚠️ WHY THIS IMPORTS `destinationCell` RATHER THAN MIRRORING IT. A test that re-implements the
+// Refined Handover A (9 Oct 2026): the column is now "From and to" and its second line comes from
+// `destinationText` in handover-model.ts. The property is unchanged.
+//
+// ⚠️ WHY THIS IMPORTS `destinationText` RATHER THAN MIRRORING IT. A test that re-implements the
 // rule it is checking guards nothing: revert the component and every assertion stays green, because
 // the assertions are exercising the copy of the logic in the test file. The function is exported
 // and driven directly, following `tests/ward-stage-reached-at.test.ts`, where mutation proved a
@@ -22,13 +25,15 @@
 
 import { describe, expect, it } from "vitest";
 
-import { destinationCell } from "../src/components/ward-management/handover/handover-page";
+import { destinationText, toHandoverRow } from "../src/components/ward-management/handover/handover-model";
 import { handoverSnapshot, isOpen } from "../src/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import type { Movement, Unit } from "../src/components/ward-management/ward-model";
 
-const { movements, units } = seedWardFlowState();
+const { movements, units, patients, referrals } = seedWardFlowState();
+const destinationCell = (movement: Movement, wards: Unit[]) =>
+  destinationText(toHandoverRow(movement, wards, patients, referrals));
 const unitNames = units.map((unit) => unit.name);
 
 /**
@@ -90,12 +95,20 @@ describe("the handover page's Destination column", () => {
   it("says how many wards were asked, so the middle state is legible rather than merely honest", () => {
     for (const movement of askedButUnaccepted) {
       const cell = destinationCell(movement, units);
-      expect(
-        cell,
-        `${movement.id}: a coordinator chases an answer when wards have been asked and starts asking ` +
-          `when none has been, so the cell must carry the count that tells those apart`,
-      ).toContain(String(movement.referredUnitIds.length));
-      expect(cell).toContain("none has accepted");
+      const stillAsked = movement.referredUnitIds.filter(
+        (id) => !movement.declines.some((decline) => decline.unitId === id),
+      ).length;
+      if (stillAsked > 1) {
+        expect(
+          cell,
+          `${movement.id}: a coordinator chases an answer when wards have been asked and starts asking ` +
+            `when none has been, so the cell must carry the count that tells those apart`,
+        ).toContain(`${stillAsked} wards reviewing`);
+      } else if (stillAsked === 1) {
+        expect(cell).toMatch(/ reviewing$/);
+      } else {
+        expect(cell).toMatch(/declined, none asked$/);
+      }
     }
   });
 
@@ -115,7 +128,7 @@ describe("the handover page's Destination column", () => {
       ...askedButUnaccepted[0],
       referredUnitIds: [],
     };
-    expect(destinationCell(neverAsked, units)).toBe("No destination unit recorded");
+    expect(destinationCell({ ...neverAsked, declines: [] }, units)).toBe("No ward asked yet");
     expect(destinationCell(neverAsked, units)).not.toBe(destinationCell(askedButUnaccepted[0], units));
   });
 
@@ -131,7 +144,7 @@ describe("the handover page's Destination column", () => {
       expect(
         Object.keys(entry),
         "a resolved unit on this row is what produced the original defect — the page builds the " +
-          "cell from the movement via destinationCell() instead",
+          "cell from the movement via destinationText() instead",
       ).toEqual(["movement"]);
     }
   });

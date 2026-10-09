@@ -26,34 +26,16 @@ describe("Ward screen — perfected tab order (R2-12)", () => {
   });
 });
 
-describe("Handover screen — perfected tab order (R2-12)", () => {
-  it("keeps the detail tabs in drawing order", () => {
+// Refined Handover A (Josh, 9 Oct 2026) replaced the seven drawing tabs with Patients, Beds and
+// History over one grouped table, so the R2-12 handover tab pin no longer applies.
+describe("Handover screen — refined tabs", () => {
+  it("keeps Patients, Beds and History in that order", () => {
     const source = readFileSync(
       resolve(process.cwd(), "src/components/ward-management/handover/handover-page.tsx"),
       "utf8",
     );
-    const tabIds = [...source.matchAll(/id="tabBtn-([^"]+)"/g)].map((m) => m[1]);
-    expect(tabIds).toEqual(["snapshot", "referrals", "inbound", "discharges", "breaches", "briefing", "rollup1630"]);
-  });
-
-  it("names the breaches tab without banned Statutory Breaches wording", () => {
-    const source = readFileSync(
-      resolve(process.cwd(), "src/components/ward-management/handover/handover-page.tsx"),
-      "utf8",
-    );
-    expect(source).toContain("<span>Form expiries passed</span>");
-    expect(source).not.toMatch(/<span>Statutory Breaches<\/span>/);
-  });
-
-  it("exposes the drawing filter toolbar landmark and Reset to Statewide", () => {
-    const source = readFileSync(
-      resolve(process.cwd(), "src/components/ward-management/handover/handover-page.tsx"),
-      "utf8",
-    );
-    expect(source).toContain('aria-label="Handover Scope and Filters"');
-    expect(source).toContain("Reset to Statewide");
-    expect(source).toContain("Caseload in Scope");
-    expect(source).toContain("Unoccupied Beds");
-    expect(source).toContain("1:1 Specialling Roster");
+    const tabIds = [...source.matchAll(/\{ id: "(pts|beds|hist)", label: "([^"]+)"/g)].map((m) => m[2]);
+    expect(tabIds).toEqual(["Patients", "Beds", "History"]);
+    expect(source).not.toMatch(/Statutory Breaches/);
   });
 });

@@ -19,9 +19,9 @@ import { CommunityScreen } from "@/components/ward-management/community/communit
 import { ExceptionDrawer } from "@/components/ward-management/coordinator/exception-drawer";
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
-import { HandoverPage, PulledBedsSection } from "@/components/ward-management/handover/handover-page";
+import { HandoverPage } from "@/components/ward-management/handover/handover-page";
+import { dueShort, nextStep, toHandoverRow } from "@/components/ward-management/handover/handover-model";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { HandoverSnapshot } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardModeWorkspace } from "@/components/ward-management/ward-management-modes";
@@ -261,48 +261,22 @@ describe("the coordinator's undo section says pull", () => {
 });
 
 describe("the handover sheet says pulled", () => {
-  it("names the section 'Beds pulled' and the countdown column 'Pull'", () => {
+  it("labels a pulled movement 'Bed pulled' and never says hold on the sheet", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <HandoverPage />
       </WardFlowProvider>,
     );
-
-    const section = screen.getByTestId("ward-handover-pulled-beds");
-    expect(within(section).getByRole("heading", { name: "Beds pulled" })).toBeInTheDocument();
-    expect(within(section).getByRole("columnheader", { name: "Pull" })).toBeInTheDocument();
-    expect(section.textContent ?? "").not.toMatch(/hold/i);
+    const sheet = screen.getByTestId("ward-handover-sheet");
+    expect(sheet.textContent ?? "").toContain("Bed pulled");
+    expect(sheet.textContent ?? "").not.toMatch(/\bhold\b|\bheld\b/i);
   });
 
-  it("says no bed is currently PULLED when the section is empty", () => {
-    const emptySnapshot: HandoverSnapshot = {
-      takenAt: NOW_ANCHOR,
-      longestWaits: [],
-      pulledBeds: [],
-      inTransit: [],
-      placementGoneWrong: [],
-    };
-    render(<PulledBedsSection snapshot={emptySnapshot} />);
-    expect(screen.getByTestId("ward-handover-pulled-beds-empty")).toHaveTextContent(
-      "None — no bed is currently pulled.",
-    );
-  });
-
-  it("says 'No pull time recorded' rather than inventing an expiry for a row that has none", () => {
-    // `handoverSnapshot` can never build this row — it filters on `pullExpiresAt !== undefined` —
-    // so the branch is only reachable by handing the section a snapshot directly. It still renders
-    // to a reader if the filter and this component ever disagree, which is exactly why it must say
-    // the honest thing rather than a substituted time.
-    const movement = { ...WF_004!, pullExpiresAt: undefined };
-    const snapshot: HandoverSnapshot = {
-      takenAt: NOW_ANCHOR,
-      longestWaits: [],
-      pulledBeds: [{ movement, unit: undefined, expired: false }],
-      inTransit: [],
-      placementGoneWrong: [],
-    };
-    render(<PulledBedsSection snapshot={snapshot} />);
-    expect(screen.getByTestId("ward-handover-pulled-beds").textContent ?? "").toContain("No pull time recorded");
+  it("says 'No pull time recorded' rather than inventing an expiry for a pulled row that has none", () => {
+    const seed = seedWardFlowState();
+    const row = toHandoverRow({ ...WF_004!, pullExpiresAt: undefined }, seed.units, seed.patients, seed.referrals);
+    expect(dueShort(row, NOW_ANCHOR) ?? "").not.toMatch(/pull/i);
+    expect(nextStep(row, NOW_ANCHOR, NOW_ANCHOR + 60, () => 0).text).toBe("Move to the pulled bed");
   });
 });
 
