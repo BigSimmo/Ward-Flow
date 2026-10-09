@@ -1281,7 +1281,7 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
   for (const movement of stalledTransport) {
     if (!movement.transport) continue;
     items.push({
-      id: `${INBOX_CATEGORIES.transport_awaiting_departure.idPrefix}${movement.id}`,
+      id: `${INBOX_CATEGORIES.transport_awaiting_departure.idPrefix}${movement.id}-${movement.transport.acceptedAt}`,
       kind: INBOX_CATEGORIES.transport_awaiting_departure.kind,
       tone: "warning",
       icon: Truck,
