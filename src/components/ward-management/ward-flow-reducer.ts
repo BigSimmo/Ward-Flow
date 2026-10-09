@@ -6211,7 +6211,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_COMMUNITY_TREATMENT_ORDER": {
       const patient = state.patients.find((candidate) => candidate.id === event.patientId);
       if (!patient) return reject(state, event, `no patient found for id ${event.patientId}`);
-      if (patient.communityTreatmentOrder) {
+      if (patient.communityTreatmentOrder && patient.communityTreatmentOrder.endedAt === undefined) {
         return reject(state, event, `patient ${patient.id} already has a community treatment order recorded`);
       }
       const order = { form: "5A" as const, recordedAt: event.now, recordedBy: WARD_FLOW_ROLE_LABELS[event.role] };
@@ -6226,19 +6226,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "END_COMMUNITY_TREATMENT_ORDER": {
       const patient = state.patients.find((candidate) => candidate.id === event.patientId);
       if (!patient) return reject(state, event, `no patient found for id ${event.patientId}`);
-      if (!patient.communityTreatmentOrder) {
+      if (!patient.communityTreatmentOrder || patient.communityTreatmentOrder.endedAt !== undefined) {
         return reject(state, event, `patient ${patient.id} has no community treatment order recorded`);
       }
-      const ended = patient.communityTreatmentOrder;
-      const history = [...(patient.communityTreatmentOrderHistory ?? []), { ...ended, endedAt: event.now }];
+      const ended = { ...patient.communityTreatmentOrder, endedAt: event.now };
       return {
         ...state,
-        patients: state.patients.map((candidate) => {
-          if (candidate.id !== patient.id) return candidate;
-          const { communityTreatmentOrder: _removed, ...rest } = candidate;
-          void _removed;
-          return { ...rest, communityTreatmentOrderHistory: history };
-        }),
+        patients: state.patients.map((candidate) =>
+          candidate.id === patient.id ? { ...candidate, communityTreatmentOrder: ended } : candidate,
+        ),
       };
     }
 

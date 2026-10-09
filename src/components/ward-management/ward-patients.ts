@@ -160,13 +160,25 @@ export type Patient = {
    * ended (`END_COMMUNITY_TREATMENT_ORDER`).
    */
   communityTreatmentOrder?: CommunityTreatmentOrder;
-  communityTreatmentOrderHistory?: readonly EndedCommunityTreatmentOrder[];
 };
 
-/** Form 5A is the community treatment order form under the Mental Health Act 2014 (WA). */
-export type CommunityTreatmentOrder = { form: "5A"; recordedAt: number; recordedBy: string };
+/** Form 5A is the community treatment order form under the Mental Health Act 2014 (WA).
+ *  When the order ends, `endedAt` is set on the same record (Documents keeps the Closed form;
+ *  mode "cto" only applies while `endedAt` is absent). No separate history field. */
+export type CommunityTreatmentOrder = {
+  form: "5A";
+  recordedAt: number;
+  recordedBy: string;
+  endedAt?: number;
+};
 
-export type EndedCommunityTreatmentOrder = CommunityTreatmentOrder & { endedAt: number };
+/** True while a Form 5A is in force (not yet ended). */
+export function activeCommunityTreatmentOrder(
+  patient: Patient | undefined,
+): CommunityTreatmentOrder | undefined {
+  const order = patient?.communityTreatmentOrder;
+  return order && order.endedAt === undefined ? order : undefined;
+}
 
 /** Alias for patient safety governance and cross-service typing */
 export type WardPatient = Patient;
@@ -193,7 +205,6 @@ export const PATIENT_FIELDS = [
   "aboriginalOrTorresStraitIslanderStatus",
   "interpreterLanguage",
   "communityTreatmentOrder",
-  "communityTreatmentOrderHistory",
 ] as const;
 
 /** Whole years, from the stored date of birth and a supplied "today". Never stored: see the field's

@@ -150,8 +150,8 @@ function dayLabel(instant: number, dayZero: Date): string {
 }
 
 function legalValue(record: Movement | undefined, patient: Patient | undefined): string {
-  // A closed movement's form is history, not the authority in force now.
-  const movement = record?.closure ? undefined : record;
+  // A movement that did not proceed is history; an arrival's form stays in force for the stay.
+  const movement = record?.closure && record.closure.outcome !== "arrived" ? undefined : record;
   if (movement?.legalForm)
     return `${movement.legalStatus ?? "Legal status not recorded"}, Form ${movement.legalForm.code}`;
   return movement?.legalStatus ?? patient?.legalStatus ?? "Not recorded";

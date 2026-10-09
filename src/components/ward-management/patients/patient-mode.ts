@@ -1,3 +1,4 @@
+import { activeCommunityTreatmentOrder } from "../ward-patients";
 import type { WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { LeaveBed, Movement } from "@/components/ward-management/ward-model";
@@ -55,5 +56,5 @@ export function patientMode({
     }
     return "ward";
   }
-  return patient?.communityTreatmentOrder ? "cto" : "idle";
+  return activeCommunityTreatmentOrder(patient) ? "cto" : "idle";
 }
