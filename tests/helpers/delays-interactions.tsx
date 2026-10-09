@@ -27,11 +27,6 @@ export function showEveryDelayRow(): void {
 /** Opens a person's row and returns their panel in the rail. Clears filters that hide them first. */
 export function inspectDelayPerson(id: string): HTMLElement {
   if (screen.queryByTestId(`delays-select-${id}`) === null) showEveryDelayRow();
-  const hidden = screen.queryByTestId("delays-hidden-note");
-  if (screen.queryByTestId(`delays-select-${id}`) === null && hidden !== null) {
-    fireEvent.click(within(hidden).getByRole("button", { name: "Show everyone" }));
-    showEveryDelayRow();
-  }
   const trigger = screen.getByTestId(`delays-select-${id}`);
   if (trigger.getAttribute("aria-expanded") !== "true") fireEvent.click(trigger);
   return screen.getByRole("region", { name: "Why this person is waiting" });

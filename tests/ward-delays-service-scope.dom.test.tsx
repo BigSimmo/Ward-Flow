@@ -172,7 +172,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
     );
   });
 
-  it("filters (owner, blocker, chip) still work under a service, and count against the scoped population", () => {
+  it("marks (owner, blocker, chip) still work under a service — highlighting the scoped population, never hiding it", () => {
     setServiceScope(SERVICE);
     renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -191,7 +191,12 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
         group.movements.map((movement) => movement.id),
       ),
     );
-    expect(new Set(listedIds())).toEqual(memberIdsForOwner);
+    expect(listedIds().sort()).toEqual(MEMBER_OPEN.map((movement) => movement.id).sort());
+    for (const movement of MEMBER_OPEN) {
+      const row = screen.getByTestId(`delays-row-${movement.id}`);
+      if (memberIdsForOwner.has(movement.id)) expect(row).toHaveAttribute("data-delays-row-matches", "true");
+      else expect(row).toHaveAttribute("data-delays-row-matches", "false");
+    }
     expect(
       screen.getByTestId("delays-shown-count").textContent,
       "the count must read against the SCOPED population, not the whole network",
@@ -216,7 +221,14 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
     fireEvent.click(lockedChip);
     showEveryDelayRow();
     expect(lockedChip).toHaveAttribute("aria-pressed", "true");
-    expect(listedIds().sort()).toEqual(locked.map((movement) => movement.id).sort());
+    expect(listedIds().sort()).toEqual(MEMBER_OPEN.map((movement) => movement.id).sort());
+    for (const movement of MEMBER_OPEN) {
+      const row = screen.getByTestId(`delays-row-${movement.id}`);
+      expect(row).toHaveAttribute(
+        "data-delays-row-matches",
+        movement.security === "Secure" ? "true" : "false",
+      );
+    }
   });
 
   it("with All services chosen, the screen is unchanged — no scope bar, and every open movement is on the list", () => {

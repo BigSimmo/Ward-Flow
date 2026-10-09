@@ -8,7 +8,16 @@
  * Every figure is read from the engine (`delays-board-model.ts`). Selecting, filtering and the
  * graphs are presentation state only; the one write is Escalate, which the screen dispatches.
  */
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import Link from "next/link";
 import { ChevronDown, Search, X } from "lucide-react";
 
@@ -47,6 +56,7 @@ import {
   dueTone,
   filterRows,
   hasFilters,
+  rowMatchesFilters,
   isBreached,
   isDueSoon,
   isPinned,
@@ -192,9 +202,13 @@ function WaitBar({ row }: { row: BoardRow }) {
 function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[]; now: Instant }) {
   const all = rowEvents(row, units, now);
   const keep = all.length <= 3 ? all : [all[0], ...all.slice(-2)];
-  const due = row.dueIn !== undefined && row.dueIn >= 0 ? row.dueIn : undefined;
-  const capped = due !== undefined && due > row.waited * 0.6;
-  const total = Math.max(1, due === undefined ? row.waited : capped ? row.waited * 1.32 : row.waited + due);
+  const due = row.dueIn;
+  const dueAhead = due !== undefined && due >= 0 ? due : undefined;
+  const capped = dueAhead !== undefined && dueAhead > row.waited * 0.6;
+  const total = Math.max(
+    1,
+    due === undefined ? row.waited : due < 0 ? row.waited - due : capped ? row.waited * 1.32 : row.waited + dueAhead!,
+  );
   const at = (minutes: number) => Math.min(100, (minutes / total) * 100);
   const nowP = at(row.waited);
   const lastP = at(row.waited - row.quiet);
@@ -215,8 +229,11 @@ function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[]; now: I
     labels.push({
       p: dueP,
       time: formatInstantWithDay(now + due, now),
-      text: `Form ${row.movement.legalForm.code} due, ${splitDuration(due)} left`,
-      tone: dueTone(due) ?? "warning",
+      text:
+        due < 0
+          ? `Form ${row.movement.legalForm.code} overdue, ${splitDuration(-due)} past deadline`
+          : `Form ${row.movement.legalForm.code} due, ${splitDuration(due)} left`,
+      tone: due < 0 ? "danger" : dueTone(due) ?? "warning",
     });
   // A recorded legal time that has already passed stays on the journey, marked where it fell.
   const passed = row.dueIn !== undefined && row.dueIn < 0 && row.movement.legalForm ? -row.dueIn : undefined;
@@ -859,13 +876,18 @@ export function DelaysBoard({
   const panelRef = useRef<HTMLElement>(null);
   const sheet = useSheetLayout();
 
-  const nameOf = (movement: Movement) => `${patientOf(movement).formalName} ${patientOf(movement).umrn}`;
-  const shown = filterRows(rows, filters, bins, nameOf);
-  // A person the filters hide is never shown as open: their panel closes rather than sit beside no row.
-  const selected = selectedId === null ? null : (shown.find((row) => row.movement.id === selectedId) ?? null);
-  // Drop the hidden choice too, so Escape, the pressed graph dot and a later clear all agree it closed.
-  if (selectedId !== null && selected === null) setSelectedId(null);
-  const filtered = hasFilters(filters);
+  const nameOf = useCallback(
+    (movement: Movement) => `${patientOf(movement).formalName} ${patientOf(movement).umrn}`,
+    [patientOf],
+  );
+  const matchesRow = useCallback(
+    (row: BoardRow) => rowMatchesFilters(row, filters, bins, nameOf),
+    [filters, bins, nameOf],
+  );
+  const matching = useMemo(() => filterRows(rows, filters, bins, nameOf), [rows, filters, bins, nameOf]);
+  const highlightActive = hasFilters(filters);
+  const selected = selectedId === null ? null : (rows.find((row) => row.movement.id === selectedId) ?? null);
+  const filtered = highlightActive;
 
   const set = (patch: Partial<BoardFilters>) => setFilters((current) => ({ ...current, ...patch }));
   const toggle = <K extends keyof BoardFilters>(key: K, value: BoardFilters[K]) =>
@@ -887,20 +909,18 @@ export function DelaysBoard({
       document.getElementById("delays-person-panel")?.scrollIntoView?.({ block: "start" });
     });
   }, [selectedId, sheet]);
-  const close = () => {
+  const close = useCallback(() => {
     const previous = selectedId;
     setSelectedId(null);
     if (previous !== null)
       window.requestAnimationFrame(() =>
         document.querySelector<HTMLButtonElement>(`[data-testid="delays-select-${previous}"]`)?.focus(),
       );
-  };
+  }, [selectedId]);
   /** From a graph or the rail: open the person's group, show them, and bring the row into view. */
   const reveal = (id: string) => {
     const row = rows.find((candidate) => candidate.movement.id === id);
     if (row === undefined) return;
-    // Opening someone the filters hide shows everyone first, so their row is there to open.
-    if (!shown.some((candidate) => candidate.movement.id === id)) setFilters(NO_FILTERS);
     // On a phone or tablet the panel is a sheet over the table, so focus goes to the sheet instead.
     explicitSelect.current = true;
     setSelectedId(id);
@@ -931,7 +951,7 @@ export function DelaysBoard({
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  });
+  }, [close, filters, selectedId]);
 
   const over8 = rows.filter((row) => row.waited >= OVER_8H).length;
   const over24 = rows.filter((row) => row.waited >= OVER_24H).length;
@@ -996,12 +1016,15 @@ export function DelaysBoard({
     const patient = patientOf(movement);
     const isSelected = selectedId === movement.id;
     const ward = wardSummary(row, units);
+    const matches = !highlightActive || matchesRow(row);
     return [
       <tr
         role="row"
         key={movement.id}
         className={styles.r}
         aria-selected={isSelected}
+        data-delays-row-matches={highlightActive ? (matches ? "true" : "false") : undefined}
+        data-testid={`delays-row-${movement.id}`}
         onClick={(event) => {
           if ((event.target as HTMLElement).closest("button, a") === null) select(movement.id);
         }}
@@ -1086,8 +1109,9 @@ export function DelaysBoard({
   let body: ReactNode[] = [];
   if (!flat) {
     for (const group of groups) {
-      const list = shown.filter((row) => row.cause === group.cause).sort(byWait);
+      const list = rows.filter((row) => row.cause === group.cause).sort(byWait);
       if (list.length === 0) continue;
+      const matchingInGroup = highlightActive ? list.filter(matchesRow).length : list.length;
       const open = isOpenGroup(group.cause);
       const limit = moreGroups[group.cause] ? list.length : GROUP_LIMIT;
       const owner = list[0].owner;
@@ -1106,7 +1130,7 @@ export function DelaysBoard({
               <Glyph tone={list[0].severe ? "danger" : undefined} />
               <span className={styles.gTitle}>{group.title}</span>
               <span className={styles.k} data-delays-group-count>
-                {list.length}
+                {highlightActive ? matchingInGroup : list.length}
               </span>
               <span className={styles.mut}>{`${ownerName(owner)} to clear`}</span>
               <span className={styles.sp} />
@@ -1137,8 +1161,8 @@ export function DelaysBoard({
       }
     }
   } else {
-    const pinned = shown.filter(isPinned).sort((a, b) => (a.dueIn ?? 0) - (b.dueIn ?? 0));
-    const rest = shown.filter((row) => !isPinned(row)).sort(byWait);
+    const pinned = rows.filter(isPinned).sort((a, b) => (a.dueIn ?? 0) - (b.dueIn ?? 0));
+    const rest = rows.filter((row) => !isPinned(row)).sort(byWait);
     if (pinned.length > 0) {
       body.push(
         <tr role="row" key="pinned" className={`${styles.grpH} ${styles.grpStatic}`}>
@@ -1168,32 +1192,6 @@ export function DelaysBoard({
     }
     body.push(...rest.flatMap(renderRow));
   }
-  // The owner's 7 September 2026 concern: a person filtered out must never look like a person
-  // placed. Whenever filters hide anyone, the table says how many, with a way to show everyone.
-  const hidden = rows.length - shown.length;
-  if (hidden > 0 && shown.length > 0)
-    body.push(
-      <tr role="row" key="hidden" className={styles.more}>
-        <td role="cell" colSpan={6} className={styles.hiddenNote} data-testid="delays-hidden-note">
-          {`${hidden} more ${hidden === 1 ? "person is" : "people are"} waiting, hidden by the filters above.`}{" "}
-          <button type="button" className={styles.lnk} onClick={() => setFilters(NO_FILTERS)}>
-            Show everyone
-          </button>
-        </td>
-      </tr>,
-    );
-  if (shown.length === 0)
-    body = [
-      <tr role="row" key="none">
-        <td role="cell" colSpan={6} className={styles.none}>
-          {`Nobody matches these filters. ${rows.length} ${rows.length === 1 ? "person is" : "people are"} waiting, all hidden.`}{" "}
-          <button type="button" className={styles.lnk} onClick={() => setFilters(NO_FILTERS)}>
-            Show everyone
-          </button>
-        </td>
-      </tr>,
-    ];
-
   const registers = (
     <Registers
       escalated={escalated}
@@ -1320,7 +1318,7 @@ export function DelaysBoard({
                 <span
                   className={styles.meta}
                   data-testid="delays-shown-count"
-                >{`${shown.length} of ${rows.length}`}</span>
+                >{`${matching.length} of ${rows.length}`}</span>
                 <span className={styles.wlegend} aria-hidden="true">
                   <span>
                     <i className={styles.lgAct} />
@@ -1364,7 +1362,11 @@ export function DelaysBoard({
                       key={label}
                       type="button"
                       aria-pressed={filters.threshold === index}
-                      onClick={() => set({ threshold: index as WaitThreshold })}
+                      disabled={index > 0 && cumulative[index] === 0 && filters.threshold !== index}
+                      onClick={() => {
+                        if (index > 0 && cumulative[index] === 0 && filters.threshold !== index) return;
+                        set({ threshold: filters.threshold === index ? 0 : (index as WaitThreshold) });
+                      }}
                     >
                       <Glyph tone={index === 1 ? "warning" : index === 3 ? "danger" : undefined} />
                       {label} <span className={styles.k}>{cumulative[index]}</span>
@@ -1472,7 +1474,7 @@ export function DelaysBoard({
 
           <DelaysBoardGraphs
             rows={rows}
-            shown={shown}
+            shown={matching}
             bins={bins}
             now={now}
             filters={filters}

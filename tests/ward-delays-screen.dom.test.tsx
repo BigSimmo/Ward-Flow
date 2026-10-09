@@ -188,11 +188,14 @@ describe("the Delays screen", () => {
     expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${OPEN_COUNT} of ${OPEN_COUNT}`);
     expect(screen.queryByTestId("delays-hidden-note")).toBeNull();
 
-    // Filtered, it reads the shown figure against the whole, and the table says how many are hidden.
-    // ⚠️ Escapes in a template-literal regex need a doubled backslash (`\\d`); a single one is lost.
+    const locked = seededMovements.filter(isOpen).filter((movement) => movement.security === "Secure");
     fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
-    expect(screen.getByTestId("delays-shown-count").textContent).toMatch(new RegExp(`^\\d+ of ${OPEN_COUNT}$`, "u"));
-    expect(screen.getByTestId("delays-hidden-note")).toHaveTextContent(/hidden by the filters above/u);
+    showEveryDelayRow();
+    expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${locked.length} of ${OPEN_COUNT}`);
+    expect(screen.queryByTestId("delays-hidden-note")).toBeNull();
+    expect(within(screen.getByRole("region", { name: "Waiting" })).getAllByTestId(/^delays-select-/u)).toHaveLength(
+      OPEN_COUNT,
+    );
   });
 
   it("carries the panels the three old screens each carried alone", () => {
@@ -623,24 +626,10 @@ describe("the Delays screen", () => {
 });
 
 /**
- * 🔴 **THE OCTOBER 2026 BOARD FILTERS, AND IT MUST ALWAYS SAY WHO IT IS NOT SHOWING.**
- *
- * History, kept because a flipped expectation is indistinguishable from an accidental one:
- *   - Until 2026-09-07 the chips filtered (and once did nothing at all when clicked).
- *   - On 2026-09-07 the owner extended his Capacity ruling here: *a chip highlights, it never
- *     hides*, because on a bed board a filtered-out patient and a placed patient look identical.
- *   - In October 2026 the owner approved the Delays page mockup and asked for it to be built live.
- *     That mockup filters: the table reads "N of M", a graph cell narrows it, "Nobody matches".
- *
- * ⚠️ **THE TWO ARE IN TENSION AND THE OWNER HAS BEEN ASKED TO CONFIRM.** Until he rules, the board
- * follows the approved mockup and closes the ruling's actual hazard instead: whenever a filter
- * hides anybody, the table states how many are hidden and offers "Show everyone", so a hidden
- * person can never be mistaken for a placed one. These cases guard exactly that.
+ * Owner ruling 2026-09-07 (same as Capacity): a chip highlights its population, it never hides a row.
  */
-describe("the Delays filters narrow the table, and always say how many they hide", () => {
-  const units = allUnits();
+describe("the Delays filter chips highlight the matching people and never remove a row", () => {
   const open = seededMovements.filter(isOpen);
-  const baselineGroups = delayGroups(seededMovements, units, NOW_ANCHOR);
 
   function listed(): string[] {
     const region = screen.getByRole("region", { name: "Waiting" });
@@ -650,7 +639,7 @@ describe("the Delays filters narrow the table, and always say how many they hide
       .sort();
   }
 
-  it("a chip shows exactly its own population, and names how many it hides", () => {
+  it("marks exactly the locked-bed population and leaves every other person on the table", () => {
     const locked = open.filter((movement) => movement.security === "Secure");
     expect(locked.length, "no open movement needs a locked bed in this fixture").toBeGreaterThan(0);
     expect(locked.length, "every open movement needs a locked bed in this fixture").toBeLessThan(open.length);
@@ -660,40 +649,44 @@ describe("the Delays filters narrow the table, and always say how many they hide
     fireEvent.click(chip);
     showEveryDelayRow();
     expect(chip).toHaveAttribute("aria-pressed", "true");
-    expect(listed(), "the chip showed somebody outside its population, or lost somebody inside it").toEqual(
-      locked.map((movement) => movement.id).sort(),
-    );
-    const hidden = open.length - locked.length;
-    expect(screen.getByTestId("delays-hidden-note")).toHaveTextContent(
-      `${hidden} more ${hidden === 1 ? "person is" : "people are"} waiting, hidden by the filters above.`,
-    );
+    expect(listed()).toEqual(open.map((movement) => movement.id).sort());
+    expect(screen.getByTestId("delays-shown-count")).toHaveTextContent(`${locked.length} of ${open.length}`);
+    for (const movement of open) {
+      const row = screen.getByTestId(`delays-row-${movement.id}`);
+      const shouldMatch = movement.security === "Secure";
+      expect(row).toHaveAttribute("data-delays-row-matches", shouldMatch ? "true" : "false");
+    }
+    expect(screen.queryByTestId("delays-hidden-note")).toBeNull();
   });
 
-  it("drops a blocker heading the filter empties, rather than drawing a heading over nobody", () => {
-    const emptiedByLocked = baselineGroups.filter(
+  it("keeps blocker headings when the filter matches nobody in that group", () => {
+    const units = allUnits();
+    const baselineGroups = delayGroups(seededMovements, units, NOW_ANCHOR);
+    const withoutLocked = baselineGroups.filter(
       (group) => !group.movements.some((movement) => movement.security === "Secure"),
     );
-    expect(emptiedByLocked.length, "no cause is free of locked-bed patients, so this proves nothing").toBeGreaterThan(
-      0,
-    );
+    expect(withoutLocked.length, "no cause is free of locked-bed patients, so this proves nothing").toBeGreaterThan(0);
     renderScreen();
     fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
-    for (const group of emptiedByLocked) {
-      expect(screen.queryByTestId(`delays-cause-${group.cause}`), `"${group.title}" is headed over nobody`).toBeNull();
+    for (const group of withoutLocked) {
+      expect(screen.getByTestId(`delays-cause-${group.cause}`)).toBeInTheDocument();
     }
   });
 
-  it("Show everyone brings every hidden person back, and the hero counts never moved", () => {
+  it("Clear brings the highlight off and the hero counts never moved", () => {
     renderScreen();
     const over8Before = screen.getByTestId("delays-stat-over8").textContent;
     fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
     expect(screen.getByTestId("delays-stat-over8").textContent, "a table filter changed a headline count").toBe(
       over8Before,
     );
-    fireEvent.click(within(screen.getByTestId("delays-hidden-note")).getByRole("button", { name: "Show everyone" }));
+    fireEvent.click(within(screen.getByRole("region", { name: "Waiting" })).getByRole("button", { name: "Clear" }));
     showEveryDelayRow();
     expect(listed()).toEqual(open.map((movement) => movement.id).sort());
     expect(screen.queryByTestId("delays-hidden-note")).toBeNull();
+    for (const movement of open) {
+      expect(screen.getByTestId(`delays-row-${movement.id}`)).not.toHaveAttribute("data-delays-row-matches");
+    }
   });
 });
 

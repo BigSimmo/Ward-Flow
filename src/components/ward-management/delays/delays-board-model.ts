@@ -16,6 +16,7 @@ import {
   SILENT_WARD_FIRST_REMINDER_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
 import { edHealthService } from "@/components/ward-management/ward-service-scope";
+import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { edById } from "@/components/ward-management/ward-sites";
 import {
   DELAY_CAUSE_ORDER,
@@ -250,32 +251,42 @@ export function isBreached(row: BoardRow): boolean {
 }
 
 /**
- * Applies every filter. `nameOf` resolves the person's display name and number for the search box;
- * the name never leaves the page (no URL, no storage).
+ * Whether one row matches the active filters. Chips and hero counts highlight the matching
+ * population; the table keeps every person visible and dims non-matching rows (owner ruling,
+ * 2026-09-07, same as Capacity). `nameOf` resolves display name and number for the search box only.
  */
+export function rowMatchesFilters(
+  row: BoardRow,
+  filters: BoardFilters,
+  bins: readonly RunwayBin[],
+  nameOf: (movement: Movement) => string,
+): boolean {
+  const binIds = filters.bin === null ? null : (bins[filters.bin]?.ids ?? new Set<string>());
+  const needle = filters.search.trim().toLowerCase();
+  return (
+    (filters.owner === null || row.owner === filters.owner) &&
+    (filters.origin === null || row.origin === filters.origin) &&
+    (filters.cause === null || row.cause === filters.cause) &&
+    row.waited >= WAIT_THRESHOLDS[filters.threshold] &&
+    (!filters.locked || row.locked) &&
+    (!filters.silent || row.silent) &&
+    (!filters.dueSoon || isDueSoon(row)) &&
+    (!filters.breached || isBreached(row)) &&
+    (binIds === null || binIds.has(row.movement.id)) &&
+    (needle === "" ||
+      nameOf(row.movement).toLowerCase().includes(needle) ||
+      (edById(row.movement.originEdId)?.name ?? row.movement.originEdId).toLowerCase().includes(needle))
+  );
+}
+
+/** Rows that match the active filters (for counts and graph emphasis). */
 export function filterRows(
   rows: readonly BoardRow[],
   filters: BoardFilters,
   bins: readonly RunwayBin[],
   nameOf: (movement: Movement) => string,
 ): BoardRow[] {
-  const binIds = filters.bin === null ? null : (bins[filters.bin]?.ids ?? new Set<string>());
-  const needle = filters.search.trim().toLowerCase();
-  return rows.filter(
-    (row) =>
-      (filters.owner === null || row.owner === filters.owner) &&
-      (filters.origin === null || row.origin === filters.origin) &&
-      (filters.cause === null || row.cause === filters.cause) &&
-      row.waited >= WAIT_THRESHOLDS[filters.threshold] &&
-      (!filters.locked || row.locked) &&
-      (!filters.silent || row.silent) &&
-      (!filters.dueSoon || isDueSoon(row)) &&
-      (!filters.breached || isBreached(row)) &&
-      (binIds === null || binIds.has(row.movement.id)) &&
-      (needle === "" ||
-        nameOf(row.movement).toLowerCase().includes(needle) ||
-        (edById(row.movement.originEdId)?.name ?? row.movement.originEdId).toLowerCase().includes(needle)),
-  );
+  return rows.filter((row) => rowMatchesFilters(row, filters, bins, nameOf));
 }
 
 /* ---------- next four hours ---------- */
@@ -412,7 +423,17 @@ export function rowEvents(row: BoardRow, units: readonly Unit[], now: Instant): 
   if (movement.formedAt !== undefined)
     events.push({ at: movement.formedAt, what: "Referral for examination made", tone: "info" });
   if (movement.legalFormReceivedAt !== undefined && movement.legalForm !== undefined)
-    events.push({ at: movement.legalFormReceivedAt, what: `Form ${movement.legalForm.code} received`, tone: "info" });
+    events.push({
+      at: movement.legalFormReceivedAt,
+      what: `Form ${movement.legalForm.code} receipt recorded`,
+      tone: "info",
+    });
+  for (const change of movement.stageChanges)
+    events.push({
+      at: change.at,
+      what: `Stage ${stageCopy[change.to].label}`,
+      tone: "info",
+    });
   if (movement.examination !== undefined)
     events.push({ at: movement.examination.at, what: "Examination recorded", tone: "info" });
   if (movement.referralAbsence !== undefined)

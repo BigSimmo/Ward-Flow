@@ -585,6 +585,18 @@ button.stat:hover .statV {
   box-shadow: inset 3px 0 0 var(--wf-accent);
 }
 
+.tbl tbody tr[data-delays-row-matches="true"] td {
+  background: var(--wf-subtle, var(--ward-subtle));
+}
+
+.tbl tbody tr[data-delays-row-matches="false"] td {
+  color: var(--wf-muted, var(--ward-muted));
+}
+
+.tbl tbody tr[data-delays-row-matches="false"] .whoBtn b {
+  font-weight: 500;
+}
+
 .whoBtn {
   display: block;
   width: 100%;
@@ -1631,17 +1643,21 @@ button.gLaneL:hover {
     align-items: center;
     min-height: var(--spacing-tap, 3rem);
   }
+}
 
-  /* The dots stay small to read as a spread; their touch area is the full tap size. */
-  .gDot::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: var(--spacing-tap, 3rem);
-    height: var(--spacing-tap, 3rem);
-    transform: translate(-50%, -50%);
-  }
+/* The dots stay small to read as a spread; their touch area is the full tap size. */
+.gDot {
+  position: relative;
+}
+
+.gDot::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--spacing-tap, 3rem);
+  height: var(--spacing-tap, 3rem);
+  transform: translate(-50%, -50%);
 }
 
 /* ---------- narrower desktops and tablets: rail stacks, the person's panel is a sheet ---------- */
@@ -1833,7 +1849,8 @@ button.gLaneL:hover {
     display: flex !important;
   }
 
-  .whoBtn {
+  .whoBtn,
+  .gin {
     display: block !important;
   }
 
