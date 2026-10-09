@@ -172,7 +172,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
       titleAction={<ChangeService current={service} />}
       eyebrowLabel="Health service"
       eyebrowDetail={
-        <span data-testid="ward-statistics-service-identity">
+        <span className={detail.siteIdentity} data-testid="ward-statistics-service-identity">
           <span className={detail.eyebrowSites} aria-hidden="true">
             {serviceSites.map((site) => shortSiteName(site.name)).join(", ") || "No hospital recorded"}
           </span>
@@ -304,7 +304,12 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
         aside="In this service's beds"
         data-testid="ward-statistics-service-repatriation"
       >
-        <div className={styles.tableWrap}>
+        <div
+          className={styles.tableWrap}
+          tabIndex={0}
+          role="region"
+          aria-label="Service ward comparison, scrollable table"
+        >
           <table className={`${tableClasses.table} ${styles.table}`}>
             <caption className={styles.srOnly}>Admissions in this service far from home</caption>
             <thead>
@@ -446,7 +451,13 @@ function ReadyBeds({
               </p>
             </SrOnly>
           </CardBody>
-          <div className={styles.tableWrap} data-testid="ward-statistics-service-ready-beds-table">
+          <div
+            className={styles.tableWrap}
+            data-testid="ward-statistics-service-ready-beds-table"
+            tabIndex={0}
+            role="region"
+            aria-label="Service ready beds, scrollable table"
+          >
             <table className={`${tableClasses.table} ${styles.table}`}>
               <caption className={styles.srOnly}>Ready beds by ward and cohort</caption>
               <thead>
@@ -569,7 +580,12 @@ function Placement({
             rows={rows.map((row) => ({ ...row, display: String(row.value) }))}
           />
         ) : (
-          <div className={styles.tableWrap}>
+          <div
+            className={styles.tableWrap}
+            tabIndex={0}
+            role="region"
+            aria-label="Service out-of-area admissions, scrollable table"
+          >
             <table className={`${tableClasses.table} ${styles.table}`}>
               <caption className={styles.srOnly}>Referrals raised here, by the service whose ward accepted</caption>
               <thead>

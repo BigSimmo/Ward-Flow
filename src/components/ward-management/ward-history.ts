@@ -91,6 +91,10 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   WITHDRAW_ACCEPTANCE: { category: "patient", plainWording: "Ward acceptance withdrawn" },
   WITHDRAW_WARD_REQUEST: { category: "patient", plainWording: "Ward shortlist request withdrawn" },
   SET_ARRIVAL_DETAILS: { category: "patient", plainWording: "Estimated arrival time updated" },
+  RECORD_ED_MEDICAL_DETERIORATION: {
+    category: "both",
+    plainWording: "Medical deterioration — allocation cancelled; referral paused",
+  },
   RECORD_MOVEMENT_MEDICAL_CLEARANCE: { category: "patient", plainWording: "Movement medical clearance recorded" },
   EVALUATE_ARRIVAL_LATENESS: { category: "patient", plainWording: "Arrival lateness evaluated" },
   RELEASE_AND_REOPEN_SEARCH: { category: "both", plainWording: "Bed released and placement search reopened" },
@@ -167,6 +171,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
  * Helper to extract any recorded reason string from an event.
  */
 function extractEventReason(event: WardFlowEvent): string {
+  if (event.type === "RECORD_ED_MEDICAL_DETERIORATION") return "Medical Deterioration - ED Resuscitation Required";
   const ev = event as unknown as Record<string, unknown>;
   if (typeof ev.reason === "string" && ev.reason.trim().length > 0) return ev.reason.trim();
   if (typeof ev.declineReason === "string" && ev.declineReason.trim().length > 0) return ev.declineReason.trim();

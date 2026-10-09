@@ -562,7 +562,12 @@ function StayCard({
             }))}
           />
         ) : (
-          <div className={styles.tableWrap}>
+          <div
+            className={styles.tableWrap}
+            tabIndex={0}
+            role="region"
+            aria-label="Admission stay bands, scrollable table"
+          >
             <table className={`${tableClasses.table} ${styles.table}`}>
               <caption className={styles.srOnly}>Current admissions by stay band</caption>
               <thead>
@@ -826,7 +831,7 @@ function Roster({
           CSV
         </Button>
       </div>
-      <div className={styles.tableWrap}>
+      <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Admission roster, scrollable table">
         <table className={`${tableClasses.table} ${styles.table}`}>
           <caption className={styles.srOnly}>
             Recorded admission roster; numbered bed assignments are not recorded

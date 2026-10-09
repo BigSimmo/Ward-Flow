@@ -2,6 +2,13 @@ import { patientDisplayName, type Patient, type PatientId } from "./ward-patient
 import type { Movement, Referral } from "./ward-model";
 import type { Admission } from "./ward-admissions";
 
+/** A boolean consistency check for one already-linked episode record. It exposes no patient
+ * identity, other referral destinations, history, place or count. Keep identity reads inside
+ * this existing D-14-authorised resolver rather than adding new patient-link readers. */
+export function movementPatientIdentityMatchesRecord(movement: Movement, record: Admission | Referral): boolean {
+  return movement.patientId === undefined || movement.patientId === record.patientId;
+}
+
 export interface ResolvedPatientInfo {
   patient?: Patient;
   displayName: string;

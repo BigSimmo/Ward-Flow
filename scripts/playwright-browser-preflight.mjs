@@ -19,6 +19,8 @@ export const playwrightProjectNames = Object.freeze({
   chromiumArtifacts: "chromium-artifacts",
   firefox: "firefox",
   webkit: "webkit",
+  firefoxWardResponsive: "firefox-ward-responsive",
+  webkitWardResponsive: "webkit-ward-responsive",
 });
 
 const DEFAULT_CONFIG_PROJECTS = Object.freeze({
@@ -27,6 +29,8 @@ const DEFAULT_CONFIG_PROJECTS = Object.freeze({
     playwrightProjectNames.chromiumMockups,
     playwrightProjectNames.firefox,
     playwrightProjectNames.webkit,
+    playwrightProjectNames.firefoxWardResponsive,
+    playwrightProjectNames.webkitWardResponsive,
   ],
   "playwright.visual.config.ts": [playwrightProjectNames.chromiumArtifacts],
 });
@@ -38,6 +42,8 @@ const PROJECT_BROWSER_FAMILIES = Object.freeze({
   [playwrightProjectNames.chromiumArtifacts]: "chromium",
   [playwrightProjectNames.firefox]: "firefox",
   [playwrightProjectNames.webkit]: "webkit",
+  [playwrightProjectNames.firefoxWardResponsive]: "firefox",
+  [playwrightProjectNames.webkitWardResponsive]: "webkit",
 });
 
 // Mirrors Playwright's chromium-headless-shell executable table for the

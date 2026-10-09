@@ -3,6 +3,8 @@ import type { PatientSearchResult } from "@/components/ward-management/ward-deri
 import { minutesUntil } from "@/components/ward-management/ward-clock";
 import { wardSites } from "@/components/ward-management/ward-sites";
 import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import { movementSearchState } from "./search-operational-state";
 
 export type ServiceFilter = "all" | "East Metro" | "North Metro" | "South Metro" | "WACHS";
 export type SettingFilter = "all" | "ed" | "inpatient" | "transit" | "community" | "scheduled" | "discharged";
@@ -94,21 +96,16 @@ export function matchesService(result: PatientSearchResult, service: string): bo
   return false;
 }
 
-export function matchesSetting(result: PatientSearchResult, setting: string): boolean {
+export function matchesSetting(
+  result: PatientSearchResult,
+  setting: string,
+  admissions: readonly Admission[] = [],
+): boolean {
   if (setting === "all") return true;
 
   if (result.kind === "movement") {
-    if (setting === "transit") {
-      return result.movement.stage === "moving" || result.movement.transport !== undefined;
-    }
-    if (setting === "inpatient") {
-      return (
-        Boolean(result.movement.acceptedUnitId) &&
-        (result.movement.stage === "pulled" || result.movement.stage === "accepted_awaiting_bed")
-      );
-    }
-    if (setting === "ed") {
-      return result.movement.stage !== "moving" && result.movement.stage !== "pulled";
+    if (setting === "transit" || setting === "inpatient" || setting === "ed") {
+      return movementSearchState(result.movement, admissions).setting === setting;
     }
     if (setting === "discharged") {
       return result.movement.closure !== undefined;

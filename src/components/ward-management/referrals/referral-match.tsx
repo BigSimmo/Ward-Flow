@@ -1268,7 +1268,7 @@ export function ReferralMatchView({
               <span
                 className={`${styles.triageMiniPill} ${tier2Candidates.length > 0 ? styles.pillWarn : styles.pillMuted}`}
               >
-                <span className={styles.triageGlyph}>▲</span> {tier2Candidates.length} blocked, no bed
+                <span className={styles.triageGlyph}>▲</span> {tier2Candidates.length} capacity unresolved
               </span>
               <span className={`${styles.triageMiniPill} ${styles.pillMuted}`}>
                 <span className={styles.triageGlyph}>✕</span> {tier3Candidates.length} excluded

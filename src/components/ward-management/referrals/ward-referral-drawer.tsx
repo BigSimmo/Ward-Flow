@@ -52,6 +52,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
+  ATS_CATEGORIES,
   COHORTS,
   URGENCY_LEVELS,
   HEALTH_SERVICES,
@@ -59,6 +60,7 @@ import {
   RECORDED_SEXES,
   REFERRAL_GENDERS,
   suburbUnknownLabels,
+  type AtsCategory,
   type HomeRegion,
   type RecordedSex,
   type ReferralGender,
@@ -646,6 +648,8 @@ type KeptDraft = {
   arrivalEta: string;
   legalStatus: string;
   urgency: string;
+  /** Clinician-recorded ATS category, independent of Ward Flow urgency. Omitted when unrecorded. */
+  atsCategory?: AtsCategory;
   security: string;
   provisionalDiag: string;
   doctorNote: string;
@@ -816,6 +820,7 @@ function WardReferralDrawerContent({
           : defaultPatient.legalStatus),
   );
   const [urgency, setUrgency] = useState(kept?.urgency ?? defaultPatient.urgency);
+  const [atsCategory, setAtsCategory] = useState<AtsCategory | undefined>(kept?.atsCategory);
   const [security, setSecurity] = useState(
     kept?.security ?? (defaultPatient.security.toLowerCase().includes("secure") ? "Secure" : "Open"),
   );
@@ -852,6 +857,7 @@ function WardReferralDrawerContent({
     arrivalEta,
     legalStatus,
     urgency,
+    atsCategory,
     security,
     provisionalDiag,
     doctorNote,
@@ -991,6 +997,7 @@ function WardReferralDrawerContent({
     const baseLegal = p.legalStatus.startsWith("Form") ? p.legalStatus.split(" ").slice(0, 2).join(" ") : p.legalStatus;
     setLegalStatus(destType === "community" && baseLegal === NOT_RECORDED ? "Voluntary" : baseLegal);
     setUrgency(p.urgency);
+    setAtsCategory(undefined);
     setSecurity(p.security.toLowerCase().includes("secure") ? "Secure" : "Open");
     setProvisionalDiag(p.provisionalDiag);
     setDoctorNote(p.doctorNote);
@@ -1267,6 +1274,7 @@ function WardReferralDrawerContent({
       originSiteCode,
       sendingTeamName: sourceKind === "community" ? sendingTeam : undefined,
       urgency: tier,
+      ...(atsCategory === undefined ? {} : { atsCategory }),
       transportNeeded: destType === "ward" && transport !== "carer",
       history: clinicalSummary,
       tentativeDiagnosis: isTentativeDiagnosisBlock(provisionalDiag) ? provisionalDiag : undefined,
@@ -2546,6 +2554,31 @@ function WardReferralDrawerContent({
                           })}
                         </div>
                       </fieldset>
+                      <Field
+                        label="ATS category"
+                        htmlFor={`${sectionId}-atsCategory`}
+                        hint="optional — does not change Ward Flow urgency"
+                      >
+                        <SelectBox>
+                          <select
+                            id={`${sectionId}-atsCategory`}
+                            data-testid="ward-referral-drawer-atsCategory"
+                            className={styles.fieldSelect}
+                            aria-label="ATS category (optional)"
+                            value={atsCategory ?? ""}
+                            onChange={(event) =>
+                              setAtsCategory(ATS_CATEGORIES.find((category) => String(category) === event.target.value))
+                            }
+                          >
+                            <option value="">ATS not recorded</option>
+                            {ATS_CATEGORIES.map((category) => (
+                              <option key={category} value={category}>
+                                ATS {category}
+                              </option>
+                            ))}
+                          </select>
+                        </SelectBox>
+                      </Field>
                     </div>
                   </section>
 

@@ -18,7 +18,7 @@ import { announceToWardShell } from "@/components/ward-management/shell/ward-liv
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
-import { patientHref } from "@/components/ward-management/shell/ward-facade";
+import { patientHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 import {
   clockState,
   formatSheetMoment,
@@ -2017,13 +2017,12 @@ export function HandoverPage() {
                             </span>
                           </td>
                           <td>
-                            <button
-                              type="button"
+                            <Link
                               className={pageStyles.btnActionSec}
-                              onClick={() => announceToWardShell("Not wired in this prototype.")}
+                              href={`${movementHref(movement.id)}?taskAction=refer`}
                             >
-                              Allocate Candidate Bed
-                            </button>
+                              Review placement
+                            </Link>
                           </td>
                         </tr>
                       ))}
@@ -3215,9 +3214,12 @@ export function HandoverPage() {
                     <Button variant="ghost" size="sm" onClick={closeMovementDetail}>
                       Close
                     </Button>
-                    <Button variant="pri" size="sm" onClick={() => announceToWardShell("Not wired in this prototype.")}>
-                      Allocate candidate bed
-                    </Button>
+                    <Link
+                      className={pageStyles.drawerLink}
+                      href={`${movementHref(selectedMovement.id)}?taskAction=refer`}
+                    >
+                      Review placement
+                    </Link>
                   </div>
                 </div>
               );

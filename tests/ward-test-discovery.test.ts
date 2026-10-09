@@ -44,11 +44,13 @@ const TESTS_ROOT = path.join(process.cwd(), "tests");
 const TEST_FILE_RE = /\.test\.(ts|tsx)$/;
 const WARD_STAR_RE = /^ward-/;
 
-// Two tests exercise Ward Flow code and do not match `ward-*`. This list is an ACKNOWLEDGEMENT,
+// These tests exercise Ward Flow code and do not match `ward-*`. This list is an ACKNOWLEDGEMENT,
 // not a permission: every entry needs a one-line reason, and a silently-growing list defeats the
 // guard. A new offender should be renamed to `ward-*` where that is the more honest name, or
 // added here with a reason -- never appended without one.
 const EXCEPTIONS: Record<string, string> = {
+  "figma-tokens.test.ts":
+    "named for the Figma token tooling; Ward registry imports verify concrete mapped fixtures, not just route directories",
   "pressure-strip.dom.test.tsx":
     "named for PressureStrip, the coordinator component under test, not the ward-management area",
   "tracker-derivations.test.ts":
@@ -152,11 +154,11 @@ describe("ward test discovery vs. the tests/ward-* naming convention", () => {
     expect(importerRelPaths.length).toBeGreaterThan(150);
   });
 
-  it("detects the two known importers named for their component, not the ward-management area", () => {
+  it("detects the known component and tooling importers outside the ward-management naming prefix", () => {
     // A known-good control, not only known-bad ones: without this, a matcher that detects
     // nothing would report the tree as clean.
     expect(importerRelPaths).toEqual(
-      expect.arrayContaining(["pressure-strip.dom.test.tsx", "tracker-derivations.test.ts"]),
+      expect.arrayContaining(["figma-tokens.test.ts", "pressure-strip.dom.test.tsx", "tracker-derivations.test.ts"]),
     );
   });
 

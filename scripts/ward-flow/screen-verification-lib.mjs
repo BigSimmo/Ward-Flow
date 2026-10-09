@@ -23,7 +23,7 @@
  *     document stale. Only the JSON record (hand-edited by whoever looked) can pin one down.
  */
 
-import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync, lstatSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join, relative, sep } from "node:path";
 
@@ -139,4 +139,76 @@ export function implementationStatus(verified, hash) {
   const recorded = verified && typeof verified === "object" ? verified.implementationSha256 : undefined;
   if (!recorded) return "NOT RECORDED";
   return recorded === hash ? "UNCHANGED since look" : "CHANGED since look";
+}
+
+/**
+ * Conservative first-party render inputs. All src files are included, so a shared engine,
+ * shell or CSS change invalidates the fingerprint even when the mapped folder is unchanged.
+ * Root render configuration and dependency manifests are included. Documents, evidence,
+ * runtime environment values, public assets outside src and installed dependencies are excluded.
+ * This intentionally over-approximates imports; a match is scoped provenance, never screen approval.
+ * Symlinks fail closed rather than reading outside this project's physical source boundary.
+ * @param {string} root
+ * @returns {string[]}
+ */
+export function renderInputFiles(root) {
+  const source = join(root, "src");
+  const files = [];
+  const visit = (directory) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      if (entry.isSymbolicLink()) throw new Error("Render input symlinks unsupported; provenance unverified");
+      const full = join(directory, entry.name);
+      if (entry.isDirectory()) visit(full);
+      else if (entry.isFile()) files.push(full);
+      else throw new Error("Unsupported render input; provenance unverified");
+    }
+  };
+  if (!existsSync(source)) return [];
+  if (!lstatSync(source).isDirectory()) throw new Error("Unsupported source root; provenance unverified");
+  visit(source);
+  if (!files.length) return [];
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (
+      !/^(?:package(?:-lock)?\.json|npm-shrinkwrap\.json|tsconfig[^/]*\.json|(?:next|postcss|tailwind|babel)\.config\.(?:[cm]?[jt]s))$/u.test(
+        entry.name,
+      )
+    )
+      continue;
+    if (!entry.isFile()) throw new Error("Unsupported render configuration; provenance unverified");
+    files.push(join(root, entry.name));
+  }
+  return files.sort();
+}
+
+/** @param {string} root @returns {string | null} */
+export function renderInputSha256(root) {
+  const files = renderInputFiles(root);
+  if (!files.length) return null;
+  const hash = createHash("sha256");
+  hash.update("ward-flow-render-inputs-v1\n");
+  for (const file of files) {
+    const name = relative(root, file).split(sep).join("/");
+    const raw = readFileSync(file);
+    // Source text is portable across checkout line endings; binary source assets stay byte-exact.
+    const content = /\.(?:[cm]?[jt]sx?|css|scss|json|svg|html|mdx)$/u.test(name)
+      ? Buffer.from(raw.toString("binary").replaceAll("\r\n", "\n"), "binary")
+      : raw;
+    hash.update(`${JSON.stringify(name)}:${content.length}\n`, "utf8");
+    hash.update(content);
+    hash.update("\n");
+  }
+  return hash.digest("hex");
+}
+
+/**
+ * @param {{ renderInputSha256?: string, [key: string]: unknown } | null | undefined} verified
+ * @param {string | null | undefined} hash
+ * @returns {"RENDER INPUTS UNAVAILABLE" | "NOT RECORDED" | "MATCH (recorded render inputs only)" | "CHANGED since look" | "INVALID RECORDED HASH"}
+ */
+export function renderInputStatus(verified, hash) {
+  if (!hash) return "RENDER INPUTS UNAVAILABLE";
+  const recorded = verified && typeof verified === "object" ? verified.renderInputSha256 : undefined;
+  if (!recorded) return "NOT RECORDED";
+  if (typeof recorded !== "string" || !/^[a-f0-9]{64}$/iu.test(recorded)) return "INVALID RECORDED HASH";
+  return recorded.toLowerCase() === hash.toLowerCase() ? "MATCH (recorded render inputs only)" : "CHANGED since look";
 }

@@ -896,6 +896,16 @@ export function candidateEvents(
       return movementIds.flatMap((movementId) =>
         [true, false].map((needed) => ({ type, role, now, movementId, needed })),
       );
+    case "RECORD_ED_MEDICAL_DETERIORATION":
+      // Explicit origin scope is part of this command, not supplied by the reducer. Generate
+      // candidates for every movement; the reducer decides which pre-collection ones qualify.
+      return state.movements.map((movement) => ({
+        type,
+        role,
+        now,
+        movementId: movement.id,
+        actingPlaceId: movement.originEdId,
+      }));
     case "RECORD_LEFT_DEPARTMENT":
       return movementIds.map((movementId) => ({ type, role, now, movementId }));
     case "WITHDRAW_WARD_REQUEST":
@@ -1103,6 +1113,8 @@ export function candidateEvents(
 /** Event types that act on one named movement. The rest act on a unit, or on the whole scenario. */
 export const MOVEMENT_TARGETED_EVENTS: ReadonlySet<WardFlowEvent["type"]> = new Set([
   "RECORD_EXAMINATION",
+  // D-34 targets one movement and claims its originating ED; it is not a whole-state command.
+  "RECORD_ED_MEDICAL_DETERIORATION",
   "REFER_TO_UNITS",
   "ACCEPT_IN_PRINCIPLE",
   "PULL_PATIENT",
@@ -1589,6 +1601,39 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
   // satisfies the "Non-vacuity 3" check below rather than sidestepping it.
   for (const code of codes) {
     const accepted = coverage.get(code)!;
+
+    // D-34 needs an accepted pre-collection ED referral. Build that real producer chain for
+    // every legal code instead of treating a round-robin traversal gap as an exclusion.
+    const forDeterioration = buildHeldMovementFor(code, NOW_ANCHOR);
+    if (supplyDueAt) {
+      forDeterioration.state = wardFlowReducer(forDeterioration.state, {
+        type: "RECORD_LEGAL_FORM_EXPIRY",
+        role: "ed",
+        now: NOW_ANCHOR,
+        movementId: forDeterioration.movementId,
+        dueAt: suppliedDueAt(NOW_ANCHOR + 900_000),
+      });
+      expect(forDeterioration.state.rejections).toEqual([]);
+    }
+    const beforeDeterioration = forDeterioration.state.movements.find(
+      (movement) => movement.id === forDeterioration.movementId,
+    )!;
+    expect(beforeDeterioration.acceptedUnitId).toBeDefined();
+    expect(beforeDeterioration.transport?.collectedAt).toBeUndefined();
+    const deteriorated = wardFlowReducer(forDeterioration.state, {
+      type: "RECORD_ED_MEDICAL_DETERIORATION",
+      role: "ed",
+      now: NOW_ANCHOR,
+      movementId: forDeterioration.movementId,
+      actingPlaceId: beforeDeterioration.originEdId,
+    });
+    expect(deteriorated.rejections, `D-34 for Form ${code} was refused`).toEqual([]);
+    const paused = deteriorated.movements.find((movement) => movement.id === forDeterioration.movementId)!;
+    expect(paused.medicalDeterioration?.at).toBe(NOW_ANCHOR);
+    expect(paused.acceptedUnitId).toBeUndefined();
+    expect(paused.legalForm).toEqual(beforeDeterioration.legalForm);
+    accepted.add("RECORD_ED_MEDICAL_DETERIORATION");
+    offenders.push(...offendingFormsIn(deteriorated, `RECORD_ED_MEDICAL_DETERIORATION(${code})`));
 
     const forRelease = buildHeldMovementFor(code, NOW_ANCHOR);
     const released = wardFlowReducer(forRelease.state, {

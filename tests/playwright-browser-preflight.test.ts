@@ -24,6 +24,8 @@ describe("playwright browser preflight", () => {
       playwrightProjectNames.chromiumMockups,
       playwrightProjectNames.firefox,
       playwrightProjectNames.webkit,
+      playwrightProjectNames.firefoxWardResponsive,
+      playwrightProjectNames.webkitWardResponsive,
     ];
     expect(requestedPlaywrightBrowserProjects([])).toEqual(configuredProjects);
     expect(requestedPlaywrightBrowserProjects(["tests/ui-smoke.spec.ts"])).toEqual(configuredProjects);
@@ -49,6 +51,18 @@ describe("playwright browser preflight", () => {
       "firefox",
       "webkit",
     ]);
+  });
+
+  it("resolves the bounded Ward responsive projects to their actual browser families", () => {
+    for (const [project, family] of [
+      [playwrightProjectNames.firefoxWardResponsive, "firefox"],
+      [playwrightProjectNames.webkitWardResponsive, "webkit"],
+    ]) {
+      const result = playwrightBrowserPreflight([`--project=${project}`], process.env);
+      expect(result.projects).toEqual([project]);
+      expect(result.checked.map((entry) => entry.family)).toEqual([family]);
+      expect(result.missing?.some((entry: { family: string }) => entry.family === "unknown") ?? false).toBe(false);
+    }
   });
 
   it("derives the headless-shell binary Playwright launches by default", () => {

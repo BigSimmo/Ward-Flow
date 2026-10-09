@@ -3,6 +3,8 @@
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
+import { DischargeCareJourney } from "../discharges/discharge-care-journey";
+import type { DischargeOpenHandle } from "../ward-discharge-records";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode } from "react";
 
@@ -490,9 +492,15 @@ export function CommunityScreen({
     units,
     movements,
     patients,
+    rejections,
+    openDischargeRecord,
+    readDischargeRecord,
     dispatch,
   } = useWardFlow();
   const now = useWardFlowClock();
+  const team =
+    communityTeamById(teamId) ??
+    (teamId === "fremantle" || teamId === "alma-street" ? communityTeamById("alma-street-fremantle") : null);
   const [followUpFilter, setFollowUpFilter] = useState("all");
   const [declineOpenFor, setDeclineOpenFor] = useState<string | undefined>(undefined);
   const [declineDraft, setDeclineDraft] = useState<CommunityDeclineReason | undefined>(undefined);
@@ -509,7 +517,12 @@ export function CommunityScreen({
   const [activeDrawer, setActiveDrawer] = useState<DrawerType>(null);
   const [activeModalType, setActiveModalType] = useState<ModalType>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
-  const [selectedReferral, setSelectedReferral] = useState<Referral | null>(null);
+  const [selectedReferralId, setSelectedReferralId] = useState<string | null>(null);
+  const selectedReferral = (referrals ?? liveReferrals).find((referral) => referral.id === selectedReferralId);
+  const [pendingAcceptance, setPendingAcceptance] = useState<{ id: string; rejectionCount: number } | null>(null);
+  const [acceptanceError, setAcceptanceError] = useState<string | null>(null);
+  const [showCareEditor, setShowCareEditor] = useState(false);
+  const [careAccess, setCareAccess] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
   const [triageFilter, setTriageFilter] = useState<"all" | "p1" | "p2" | "p3" | "ed">("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [caseloadFilter, setCaseloadFilter] = useState<CaseloadFilter>("all");
@@ -522,7 +535,6 @@ export function CommunityScreen({
   const [contactRecord, setContactRecord] = useState<{ role: WardFlowRole; at: Instant; teamId: string } | null>(null);
   const [dismissedTaskIds, setDismissedTaskIds] = useState<Set<string>>(new Set());
   const [uiState, setUiState] = useState<"populated" | "skeleton" | "empty" | "error">("populated");
-  const [completedContacts, setCompletedContacts] = useState<Set<string>>(new Set());
   const [inpatientFilter, setInpatientFilter] = useState<"all" | "secure" | "open" | "older">("all");
   const [egressFilter, setEgressFilter] = useState<"all" | "overdue" | "today" | "upcoming">("all");
 
@@ -572,14 +584,12 @@ export function CommunityScreen({
     return true;
   });
 
-  const handleCompleteContact = useCallback(
-    (ptId: string) => {
-      setCompletedContacts((prev) => new Set(prev).add(ptId));
-      recordClinicalContact(dispatch, now, teamId);
-      setToastMessage(`Clinical contact confirmed for ${ptId}.`);
-    },
-    [dispatch, now, teamId],
-  );
+  const handleCompleteContact = useCallback((ptId: string) => {
+    setSelectedPatientId(ptId);
+    setCareAccess(null);
+    setShowCareEditor(true);
+    setActiveDrawer("pxDrawer");
+  }, []);
 
   const scrollToSection = useCallback((id: string) => {
     if (typeof document === "undefined") return;
@@ -597,10 +607,15 @@ export function CommunityScreen({
   function handleActionClick(action: "Contacted" | "Review" | "Assign", referral: Referral) {
     if (action === "Contacted") {
       const recorded = recordClinicalContact(dispatch, now, teamId);
-      if (recorded !== null) setContactRecord(recorded);
+      if (recorded !== null) {
+        setContactRecord(recorded);
+        setToastMessage("Team contact logged. This does not record patient or referral contact.");
+      }
     } else if (action === "Review") {
-      setActiveModal({ type: "review", referral });
-      setToastMessage(`Review ${referral.id}: Not wired in this prototype.`);
+      setSelectedReferralId(referral.id);
+      setPendingAcceptance(null);
+      setAcceptanceError(null);
+      setActiveDrawer("referralDrawer");
     } else if (action === "Assign") {
       setActiveModal({ type: "assign", referral });
       setToastMessage(`Assign ${referral.id}: Not wired in this prototype.`);
@@ -680,6 +695,28 @@ export function CommunityScreen({
    */
   const handleConfirmAccept = useCallback(
     (referralId: string) => {
+      const current = liveReferrals.find((referral) => referral.id === referralId);
+      const addressing = current?.destinations.find(
+        (entry) =>
+          entry.destination.kind === "community_team" &&
+          !!team &&
+          [team.name, ...ratifiedSameServiceNames(team.name)].includes(entry.destination.teamName),
+      );
+      const firstCommunityAddressing = current?.destinations.find(
+        (entry) => entry.destination.kind === "community_team",
+      );
+      if (
+        !addressing ||
+        firstCommunityAddressing !== addressing ||
+        addressing.state !== "queued" ||
+        addressing.withdrawnAt !== undefined
+      ) {
+        setAcceptanceError("Referral cannot be accepted: reload the current queued referral for this team.");
+        setPendingAcceptance(null);
+        return;
+      }
+      setAcceptanceError(null);
+      setPendingAcceptance({ id: referralId, rejectionCount: rejections.length });
       dispatch({
         type: "ACCEPT_REFERRAL",
         role: "community",
@@ -688,7 +725,7 @@ export function CommunityScreen({
         destinationKind: "community_team",
       });
     },
-    [dispatch, now],
+    [dispatch, liveReferrals, now, rejections.length, team],
   );
 
   useEffect(() => {
@@ -698,25 +735,9 @@ export function CommunityScreen({
       setActiveTab(tabId);
     };
     win.openReferralDrawer = (refId: string) => {
-      const allReferrals = referrals ?? liveReferrals;
-      const found = allReferrals.find((r: Referral) => r.id === refId);
-      if (found) {
-        setSelectedReferral(found);
-      } else {
-        setSelectedReferral({
-          id: refId,
-          urgency: 1,
-          raisedAt: now - 252,
-          patientId: refId === "RF-8824" ? "PT-4620" : "PT-4409",
-          sendingTeamName: "ED Liaison Team",
-          originSiteCode: "Fiona Stanley Hospital ED Resus",
-          source: "ed_medical",
-          homeRegion: "Perth Metropolitan",
-          history:
-            "Acute behavioural disturbance, persecutory delusions regarding neighbours, severe sleep disturbance.",
-          provisionalDiagnosis: "Acute relapse of paranoid schizophrenia",
-        } as unknown as Referral);
-      }
+      setSelectedReferralId(refId);
+      setPendingAcceptance(null);
+      setAcceptanceError(null);
       setActiveDrawer("referralDrawer");
     };
     win.openPatientDrawer = (ptId: string) => {
@@ -866,9 +887,6 @@ export function CommunityScreen({
     closeTransportCancel();
   }
 
-  const team =
-    communityTeamById(teamId) ??
-    (teamId === "fremantle" || teamId === "alma-street" ? communityTeamById("alma-street-fremantle") : null);
   const source = admissions ?? liveAdmissions;
   // Membership is read off the referral now, so the referrals are as much an input to this screen
   // as the admissions are. Overridable together, and from the same place, so a test cannot supply
@@ -895,6 +913,46 @@ export function CommunityScreen({
   }
 
   const teamConfig = resolveCommunityTeamConfig(team);
+  const careActor = { role: "community", actingTeamId: team.id } as const;
+  const patientAdmissions = liveAdmissions.filter(
+    (admission) => admission.patientId === selectedPatientId && admissionBelongsToTeam(admission, team, liveReferrals),
+  );
+  const careRead =
+    careAccess && patientAdmissions.some((admission) => admission.id === careAccess.admissionId)
+      ? readDischargeRecord(careActor, careAccess.admissionId, careAccess.handle)
+      : null;
+  function openPatientCare() {
+    setShowCareEditor(true);
+    if (patientAdmissions.length === 1) {
+      const admissionId = patientAdmissions[0]!.id;
+      setCareAccess({ admissionId, handle: openDischargeRecord(careActor, admissionId) });
+    } else {
+      setCareAccess(null);
+    }
+  }
+  const acceptedAddressing =
+    pendingAcceptance &&
+    liveReferrals
+      .find((referral) => referral.id === pendingAcceptance.id)
+      ?.destinations.find(
+        (entry) =>
+          entry.destination.kind === "community_team" &&
+          [team.name, ...ratifiedSameServiceNames(team.name)].includes(entry.destination.teamName),
+      );
+  const acceptanceRefusal =
+    pendingAcceptance &&
+    rejections
+      .slice(pendingAcceptance.rejectionCount)
+      .find((rejection) => rejection.attempted === "ACCEPT_REFERRAL" && rejection.movementId === pendingAcceptance.id);
+  const acceptanceMessage =
+    acceptanceError ??
+    (acceptanceRefusal
+      ? `Referral was not accepted: ${acceptanceRefusal.reason}`
+      : pendingAcceptance && acceptedAddressing?.state === "accepted"
+        ? `Referral ${pendingAcceptance.id} accepted for ${team.name} follow-up. No clinician assignment was recorded.`
+        : pendingAcceptance
+          ? "Awaiting referral acceptance result."
+          : null);
   const lists = communityHubLists(source, team, sourceReferrals);
   const filteredDepartures = lists.dischargedIntoTheArea.filter(
     (a) =>
@@ -1795,7 +1853,7 @@ export function CommunityScreen({
                                     <span
                                       className={`${styles.statusPillBadge} ${referral.urgency === 1 ? styles.danger : styles.neutral}`}
                                     >
-                                      {pt?.legalStatus ?? "Form 1A MHA"}
+                                      {pt?.legalStatus ?? "Legal status not recorded"}
                                     </span>
                                   </div>
                                 );
@@ -1822,7 +1880,7 @@ export function CommunityScreen({
                                     className={styles.cardActionButton}
                                     onClick={() => handleActionClick("Contacted", referral)}
                                   >
-                                    Contacted
+                                    Log team contact
                                   </button>
                                   <button
                                     type="button"
@@ -1842,7 +1900,9 @@ export function CommunityScreen({
                                     type="button"
                                     className={styles.cardActionButton}
                                     onClick={() => {
-                                      setSelectedReferral(referral);
+                                      setSelectedReferralId(referral.id);
+                                      setPendingAcceptance(null);
+                                      setAcceptanceError(null);
                                       setActiveDrawer("referralDrawer");
                                     }}
                                     title="Open full referral triage assessment"
@@ -2497,7 +2557,11 @@ export function CommunityScreen({
                       </thead>
                       <tbody>
                         {demoVisibleEgress.map((egr) => {
-                          const isContacted = completedContacts.has(egr.patientId);
+                          const isContacted = liveAdmissions.some(
+                            (admission) =>
+                              admission.patientId === egr.patientId &&
+                              currentCareContactCompleted(admission.careJourney),
+                          );
                           return (
                             <tr
                               key={egr.id}
@@ -3927,7 +3991,7 @@ export function CommunityScreen({
                   )}
                   {(activeDrawer === "referral" || activeDrawer === "referralDrawer") && (
                     <span id="refDrawerHeading">
-                      {selectedReferral ? `Referral Triage: ${selectedReferral.id}` : "Referral Triage: RF-8824"}
+                      {selectedReferral ? `Referral Triage: ${selectedReferral.id}` : "Referral unavailable"}
                     </span>
                   )}
                   {(activeDrawer === "activity" || activeDrawer === "activityDrawer") &&
@@ -3954,6 +4018,17 @@ export function CommunityScreen({
                       : undefined
                 }
               >
+                {(activeDrawer === "referral" || activeDrawer === "referralDrawer") && !selectedReferral && (
+                  <p role="alert">Referral is unavailable. No patient or clinical information has been inferred.</p>
+                )}
+                {(activeDrawer === "referral" || activeDrawer === "referralDrawer") && acceptanceMessage && (
+                  <p
+                    role={acceptanceError || acceptanceRefusal ? "alert" : "status"}
+                    data-testid="community-acceptance-result"
+                  >
+                    {acceptanceMessage}
+                  </p>
+                )}
                 {(activeDrawer === "px" || activeDrawer === "pxDrawer") &&
                   (selectedPatient ? (
                     <>
@@ -4157,6 +4232,43 @@ export function CommunityScreen({
                     </>
                   ))}
 
+                {(activeDrawer === "px" || activeDrawer === "pxDrawer") && showCareEditor && (
+                  <section aria-label="Patient follow-up and contact" data-testid="community-patient-care">
+                    {patientAdmissions.length === 0 ? (
+                      <p role="alert">
+                        No matching admission is available to this team. Follow-up and patient contact cannot be
+                        recorded here.
+                      </p>
+                    ) : (
+                      <>
+                        {patientAdmissions.length > 1 && <p>Choose the admission for this follow-up or contact.</p>}
+                        {(patientAdmissions.length > 1 || !careAccess) &&
+                          patientAdmissions.map((admission) => (
+                            <button
+                              key={admission.id}
+                              type="button"
+                              className={styles.btnSmSec}
+                              onClick={() =>
+                                setCareAccess({
+                                  admissionId: admission.id,
+                                  handle: openDischargeRecord(careActor, admission.id),
+                                })
+                              }
+                            >
+                              Open admission {admission.id} · {admission.state}
+                            </button>
+                          ))}
+                        {careRead?.status === "allowed" ? (
+                          <DischargeCareJourney key={careRead.value.id} record={careRead.value} actor={careActor} />
+                        ) : careAccess ? (
+                          <p role="alert">
+                            Care record access is unavailable. Reopen the current admission before recording.
+                          </p>
+                        ) : null}
+                      </>
+                    )}
+                  </section>
+                )}
                 {(activeDrawer === "referral" || activeDrawer === "referralDrawer") && (
                   <>
                     <p className={styles.footnote}>Priority triage assessment and referral routing record.</p>
@@ -4166,7 +4278,7 @@ export function CommunityScreen({
                           Referral Demographics &amp; Urgency
                         </h4>
                         <span className={`${styles.statusPillBadge} ${styles.danger}`} id="refDrawerUrgencyBadge">
-                          {selectedReferral ? urgencyTierLabel(selectedReferral.urgency) : "Priority 1 Immediate"}
+                          {selectedReferral ? urgencyTierLabel(selectedReferral.urgency) : "Urgency not recorded"}
                         </span>
                       </div>
                       <div className={styles.panelBody} style={{ fontSize: "var(--t-1)" }}>
@@ -4174,32 +4286,28 @@ export function CommunityScreen({
                           <div>
                             <b>Referral ID:</b>{" "}
                             <span className={styles.mono} id="refDrawerId">
-                              {selectedReferral?.id ?? "RF-8812"}
+                              {selectedReferral?.id ?? "Not found"}
                             </span>
                           </div>
                           <div>
                             <b>Patient:</b>{" "}
-                            <span id="refDrawerPatient">{selectedReferral?.patientId ?? "PT-4409 (Male 34y)"}</span>
+                            <span id="refDrawerPatient">{selectedReferral?.patientId ?? "Not recorded"}</span>
                           </div>
                           <div>
                             <b>Referring Service:</b>{" "}
-                            <span id="refDrawerService">
-                              {selectedReferral?.originSiteCode ?? "Fiona Stanley Hospital ED Resus"}
-                            </span>
+                            <span id="refDrawerService">{selectedReferral?.originSiteCode ?? "Not recorded"}</span>
                           </div>
                           <div>
                             <b>Referring Clinician:</b>{" "}
-                            <span id="refDrawerClinician">
-                              {selectedReferral?.sendingTeamName ?? "ED Liaison Team"}
-                            </span>
+                            <span id="refDrawerClinician">{selectedReferral?.sendingTeamName ?? "Not recorded"}</span>
                           </div>
                           <div>
                             <b>Statutory Status:</b>{" "}
                             <span className={`${styles.statusPillBadge} ${styles.danger}`} id="refDrawerLegalBadge">
                               {selectedReferral?.patientId
                                 ? (patients.find((p) => p.id === selectedReferral.patientId)?.legalStatus ??
-                                  "Voluntary")
-                                : "Form 1A MHA"}
+                                  "Not recorded")
+                                : "Not recorded"}
                             </span>
                           </div>
                           <div>
@@ -4209,11 +4317,7 @@ export function CommunityScreen({
                               id="refDrawerWait"
                               style={{ color: "var(--danger-ink)", fontWeight: 700 }}
                             >
-                              {selectedReferral
-                                ? referralWaitLine(selectedReferral, now)
-                                : waitingReferrals[0]
-                                  ? referralWaitLine(waitingReferrals[0], now)
-                                  : "1d"}
+                              {selectedReferral ? referralWaitLine(selectedReferral, now) : "Not recorded"}
                             </span>
                           </div>
                         </div>
@@ -4229,22 +4333,21 @@ export function CommunityScreen({
                       <div className={styles.panelBody} style={{ fontSize: "var(--t-1)", lineHeight: 1.45 }}>
                         <p>
                           <b>Presenting Symptoms:</b>{" "}
-                          <span id="refDrawerSymptoms">
-                            {selectedReferral?.history ||
-                              "Acute behavioural disturbance, persecutory delusions regarding neighbours, severe sleep disturbance. Brought to ED by Police under Section 1A apprehension."}
-                          </span>
+                          <span id="refDrawerSymptoms">{selectedReferral?.history || "History not recorded"}</span>
                         </p>
                         <p>
                           <b>Medical Clearance:</b>{" "}
                           <span id="refDrawerClearance">
-                            Full blood count, U&amp;E, LFT, toxicological screen completed and clear. No organic cause
-                            identified.
+                            {selectedReferral?.medicalClearance
+                              ? `${selectedReferral.medicalClearance.cleared ? "Recorded as medically cleared" : "Recorded as not medically cleared"} · ${formatInstantWithDay(selectedReferral.medicalClearance.at, now)}`
+                              : "Medical clearance not recorded"}
                           </span>
                         </p>
                         <p>
                           <b>Recommended Action:</b>{" "}
                           <span id="refDrawerAction">
-                            Urgent community mental health team follow-up and assertive outreach allocation.
+                            No clinical recommendation is recorded by this dossier. Review the referring team&apos;s
+                            information.
                           </span>
                         </p>
                       </div>
@@ -4260,19 +4363,13 @@ export function CommunityScreen({
                         className={styles.panelBody}
                         style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}
                       >
-                        <label htmlFor="refDrawerClinicianSelect" style={{ fontSize: "var(--t-1)", fontWeight: 600 }}>
-                          Assign Key Clinician:
-                        </label>
-                        <select
-                          id="refDrawerClinicianSelect"
-                          className={styles.declineSelect}
-                          style={{ width: "100%", height: "2.25rem" }}
-                        >
-                          <option>RN K. Vance (NUM) · 12 on Caseload</option>
-                          <option>Dr K. Rao (Consultant Psychiatrist) · 34 on Caseload</option>
-                          <option>Dr J. Lim (Senior Registrar) · 26 on Caseload</option>
-                          <option>RN T. Bradley (Crisis Outreach) · 22 on Caseload</option>
-                        </select>
+                        <p>
+                          Clinician assignment: <strong>Not wired in this prototype.</strong>
+                        </p>
+                        <p>
+                          Accepting records this team&apos;s referral decision only. It does not assign a clinician or
+                          confirm an appointment.
+                        </p>
                       </div>
                     </div>
                   </>
@@ -4455,9 +4552,9 @@ export function CommunityScreen({
                   <button
                     type="button"
                     className={styles.btnSmSec}
-                    onClick={() =>
-                      setToastMessage("EHR Note editor active · Changes logged with digital audit signature.")
-                    }
+                    aria-disabled="true"
+                    title="Not wired in this prototype."
+                    onClick={() => setToastMessage("Not wired in this prototype.")}
                   >
                     Edit Dossier
                   </button>
@@ -4466,8 +4563,7 @@ export function CommunityScreen({
                       type="button"
                       className={styles.btnSmSec}
                       onClick={() => {
-                        setActiveDrawer(null);
-                        setActiveModalType("contact");
+                        openPatientCare();
                       }}
                     >
                       Record Contact
@@ -4476,15 +4572,9 @@ export function CommunityScreen({
                       type="button"
                       className={styles.btnSmPrimary}
                       id="pxConfirmFollowupBtn"
-                      onClick={() =>
-                        setToastMessage(
-                          `Patient follow-up confirmed for ${
-                            selectedPatient ? patientDisplayName(selectedPatient) : selectedPatientId || "patient"
-                          }.`,
-                        )
-                      }
+                      onClick={openPatientCare}
                     >
-                      Confirm Follow-Up
+                      Arrange Follow-Up
                     </button>
                   </div>
                 </div>
@@ -4509,20 +4599,16 @@ export function CommunityScreen({
                     type="button"
                     className={styles.btnSmPrimary}
                     id="refDrawerAcceptBtn"
-                    ref={(node) => {
-                      if (node) {
-                        const rId = selectedReferral?.id ?? "RF-8824";
-                        node.setAttribute("onclick", `acceptReferral('${rId}')`);
-                      }
-                    }}
+                    disabled={
+                      !selectedReferral ||
+                      (pendingAcceptance?.id === selectedReferral.id && acceptedAddressing?.state === "accepted")
+                    }
                     onClick={() => {
-                      const rId = selectedReferral?.id ?? "RF-8824";
-                      handleConfirmAccept(rId);
-                      setToastMessage(`Referral ${rId} accepted for ${team.name} follow-up.`);
-                      setActiveDrawer(null);
+                      if (selectedReferral) handleConfirmAccept(selectedReferral.id);
+                      else setAcceptanceError("Referral is unavailable. No acceptance was recorded.");
                     }}
                   >
-                    Accept &amp; Allocate Clinician
+                    Accept Referral
                   </button>
                 </div>
               )}
@@ -4984,8 +5070,13 @@ export function CommunityScreen({
           <span className={styles.toastIcon} aria-hidden="true">
             ℹ
           </span>
-          <span id="actionToastMsg">{toastMessage ?? "Action completed successfully."}</span>
+          <span id="actionToastMsg">{toastMessage ?? ""}</span>
         </div>
+        {activeDrawer !== "referral" && activeDrawer !== "referralDrawer" && acceptanceMessage && (
+          <p role={acceptanceError || acceptanceRefusal ? "alert" : "status"} data-testid="community-acceptance-result">
+            {acceptanceMessage}
+          </p>
+        )}
         <WardPrototypeFooter
           testId="community-screen-governance"
           note="Community team directory · Not a medical device"

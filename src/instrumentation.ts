@@ -1,3 +1,6 @@
+import type { Instrumentation } from "next";
+import { logger } from "./lib/logger";
+
 // Next.js calls register() once when a server instance starts, before it serves
 // any requests.
 export async function register() {
@@ -28,3 +31,19 @@ export async function register() {
     throw new Error("Refusing to start: invalid isolated Playwright offline environment.");
   }
 }
+
+/** Server operational failures only: never forward raw errors, URLs, headers or bodies. */
+export const onRequestError: Instrumentation.onRequestError = async (_error, request, context) => {
+  try {
+    const method = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"].includes(request.method)
+      ? request.method
+      : "unknown";
+    const routerKind = ["Pages Router", "App Router"].includes(context.routerKind) ? context.routerKind : "unknown";
+    const routeType = ["render", "route", "action", "proxy"].includes(context.routeType)
+      ? context.routeType
+      : "unknown";
+    logger.error("ward.request_failed", { incidentId: crypto.randomUUID(), method, routerKind, routeType });
+  } catch {
+    // Monitoring must not interfere with Next's handling of the original error.
+  }
+};

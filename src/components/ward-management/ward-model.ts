@@ -163,6 +163,10 @@ export type RecordedSex = (typeof RECORDED_SEXES)[number];
 
 /** See `SEXES`'s own doc comment immediately above — the same fix, for urgency. */
 export const URGENCY_LEVELS = [1, 2, 3] as const;
+/** D-32: category recorded by the referring clinician, never inferred by this prototype. */
+export const ATS_CATEGORIES = [1, 2, 3, 4, 5] as const;
+export type AtsCategory = (typeof ATS_CATEGORIES)[number];
+
 export type UrgencyLevel = (typeof URGENCY_LEVELS)[number];
 
 export const ARRIVAL_MODES = ["mental_health_transport", "ambulance", "police", "hospital_transfer", "self"] as const;
@@ -669,6 +673,22 @@ export type Unit = {
    * rejects. **Do not print a subtraction derived from this field.**
    */
   highAcuityCapacity: number;
+  /** Actual arrivals recorded while the physical-empty observation was zero.
+   * These are unresolved observation conflicts, not a derived physical overflow census.
+   * Retained until the corresponding stay leaves; never add them to the bed partition. */
+  arrivalCapacityConflicts?: { movementId: string; admissionId?: string; at: Instant }[];
+  /** A held reservation was actually released after a newer offered observation already
+   * reported its physical/designated ceiling. The observation remains bounded; this records
+   * the disagreement instead of inventing capacity or refusing cancellation. Cleared only by
+   * a subsequent ward capacity confirmation. Never changes the physical-empty bed partition. */
+  reservationReleaseCapacityConflicts?: {
+    movementId: string;
+    admissionId?: string;
+    at: Instant;
+    allocatableBefore: number;
+    allocatableLockedBefore: number;
+    lockedBedReleased: boolean;
+  }[];
   /** Who this bed may hold, as a CONSTRAINT — see `SexDesignation`'s own doc comment. Never
    *  compared to a referral's `sex` by equality; `"Undesignated"` accepts either sex. */
   sexDesignation: SexDesignation;
@@ -1377,6 +1397,8 @@ export type Movement = {
     clearedBy?: WardFlowRole;
   }[];
   urgency: UrgencyLevel;
+  /** Absent means ATS not recorded; independent of the three operational urgency tiers. */
+  atsCategory?: AtsCategory;
   cohort: Cohort;
   security: Security;
   /** Recorded sex (R7, 25 September 2026). See `RECORDED_SEXES`. */
@@ -1655,6 +1677,9 @@ export type Movement = {
    */
   arrivalLateNotifiedAt?: Instant;
   medicalClearance?: { cleared: boolean; at: Instant };
+  /** D-34: explicit ED deterioration; ordinary unknown clearance is not this event.
+   * The unwind/stage trails retain every occurrence, including after fresh re-clearance. */
+  medicalDeterioration?: { at: Instant; by: "ed"; resumedAt?: Instant };
   uploadedForms?: MovementUploadedForm[];
   /**
    * Active legal-form clock computed from an entered start by `ward-legal-clock.ts`. A newer form
@@ -2709,6 +2734,8 @@ export type Referral = {
   sendingTeamName?: string;
   raisedAt: Instant;
   urgency: UrgencyLevel;
+  /** Absent means ATS not recorded; independent of the three operational urgency tiers. */
+  atsCategory?: AtsCategory;
   /** A synthetic site code (see `wardSites`), never an address. */
   originSiteCode: string;
   transportNeeded: boolean;

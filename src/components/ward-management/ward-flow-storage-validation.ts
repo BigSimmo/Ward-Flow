@@ -99,6 +99,7 @@ function nested(value: unknown, depth = 0): boolean {
     (!object(value.medicalClearance) || !bool(value.medicalClearance.cleared) || !finite(value.medicalClearance.at))
   )
     return false;
+  if ("atsCategory" in value && ![1, 2, 3, 4, 5].includes(value.atsCategory as number)) return false;
   if ("legalForm" in value && (!object(value.legalForm) || !text(value.legalForm.code))) return false;
   if (
     object(value.legalForm) &&
@@ -281,7 +282,66 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     // CONFIRM_CAPACITY records an aggregate ward observation, which may disagree with the
     // older feed empty count and does not rewrite the separately recorded locked count.
     // Each count is bounded above; recovery must not invent a relationship the producer rejects.
-    if (unit.sexMix.Female + unit.sexMix.Male > unit.beds) return false;
+    // Release conflicts are bounded historical observations, not evidence of an arrival or a
+    // reason to relax any count invariant. A movement can later be re-pulled (including reusing
+    // its admission id), so current placement/admission presence cannot invalidate that history.
+    const releaseConflicts = unit.reservationReleaseCapacityConflicts;
+    if (releaseConflicts !== undefined && !Array.isArray(releaseConflicts)) return false;
+    const releasedMovementIds = new Set<string>();
+    for (const conflict of releaseConflicts ?? []) {
+      if (
+        !object(conflict) ||
+        !text(conflict.movementId) ||
+        !state.movements.some((movement) => movement.id === conflict.movementId) ||
+        releasedMovementIds.has(conflict.movementId) ||
+        !finite(conflict.at) ||
+        !optional(conflict, "admissionId", (id) => text(id) && id.length > 0) ||
+        !counter(conflict.allocatableBefore) ||
+        conflict.allocatableBefore > unit.beds ||
+        !counter(conflict.allocatableLockedBefore) ||
+        conflict.allocatableLockedBefore > unit.lockedBeds ||
+        !bool(conflict.lockedBedReleased) ||
+        !(
+          conflict.allocatableBefore === unit.beds ||
+          (conflict.lockedBedReleased && conflict.allocatableLockedBefore === unit.lockedBeds)
+        )
+      )
+        return false;
+      releasedMovementIds.add(conflict.movementId);
+    }
+    const conflicts = unit.arrivalCapacityConflicts;
+    if (conflicts !== undefined && !Array.isArray(conflicts)) return false;
+    const seen = new Set<string>();
+    for (const conflict of conflicts ?? []) {
+      if (!object(conflict) || !text(conflict.movementId) || !finite(conflict.at) || seen.has(conflict.movementId))
+        return false;
+      seen.add(conflict.movementId);
+      const movement = state.movements.find((entry) => entry.id === conflict.movementId);
+      if (
+        !movement ||
+        movement.acceptedUnitId !== unit.id ||
+        movement.stage !== "arrived" ||
+        movement.closure?.outcome !== "arrived" ||
+        movement.closure.at !== conflict.at ||
+        movement.admissionId !== conflict.admissionId
+      )
+        return false;
+      if (conflict.admissionId !== undefined) {
+        const admission = state.admissions.find((entry) => entry.id === conflict.admissionId);
+        if (
+          !admission ||
+          admission.unitId !== unit.id ||
+          admission.state !== "occupied" ||
+          (admission.movementId !== movement.id &&
+            !(admission.movementId === null && !admission.id.startsWith("AD-ARR-"))) ||
+          admission.arrivedAt !== conflict.at
+        )
+          return false;
+      }
+    }
+    // Keep the actual arrival and its bounded count disagreement recoverable. This never says
+    // how many physical overflow beds exist; only a corroborated arrival can explain this excess.
+    if (unit.sexMix.Female + unit.sexMix.Male > unit.beds + (conflicts?.length ?? 0)) return false;
   }
   for (const movement of value.movements as RecordValue[]) {
     if (
@@ -407,6 +467,39 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   const samePatient = (left: { patientId?: string | null }, right: { patientId?: string | null } | undefined) =>
     !left.patientId || !right?.patientId || left.patientId === right.patientId;
   for (const movement of state.movements) {
+    if (movement.medicalDeterioration !== undefined) {
+      const pause = movement.medicalDeterioration;
+      if (
+        !object(pause) ||
+        !finite(pause.at) ||
+        pause.by !== "ed" ||
+        (pause.resumedAt !== undefined && (!finite(pause.resumedAt) || pause.resumedAt <= pause.at))
+      )
+        return false;
+      if (
+        pause.resumedAt === undefined &&
+        (movement.acceptedUnitId !== undefined ||
+          movement.admissionId !== undefined ||
+          movement.stage !== "placement_requested" ||
+          movement.medicalClearance?.cleared !== false ||
+          (movement.transport !== undefined && movement.transport.cancelledAt === undefined))
+      )
+        return false;
+    }
+    if (movement.admissionId !== undefined) {
+      const admission = state.admissions.find((entry) => entry.id === movement.admissionId);
+      if (
+        !admission ||
+        admission.unitId !== movement.acceptedUnitId ||
+        (admission.movementId !== movement.id &&
+          !(admission.movementId === null && !admission.id.startsWith("AD-ARR-"))) ||
+        (movement.patientId !== undefined && admission.patientId !== movement.patientId)
+      )
+        return false;
+      if (movement.closure?.outcome === "arrived") {
+        if (admission.state !== "occupied" && admission.state !== "departed") return false;
+      } else if (admission.state !== "pulled") return false;
+    }
     if (
       !samePatient(
         movement,
@@ -420,6 +513,12 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       return false;
   }
   for (const admission of state.admissions) {
+    // Seed admissions deliberately have movementId=null. Runtime destination stays must have
+    // the reciprocal link; sending/source stays keep their own original movement link.
+    if (admission.movementId !== null && (admission.state === "pulled" || admission.state === "occupied")) {
+      const movement = state.movements.find((entry) => entry.id === admission.movementId);
+      if (!movement || movement.admissionId !== admission.id) return false;
+    }
     if (
       !samePatient(
         admission,

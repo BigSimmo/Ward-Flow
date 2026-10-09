@@ -1,5 +1,37 @@
 # Screens A: coordinator, ED, ward, referrals, community, search, statistics
 
+## Current remediation seams — 8 October 2026
+
+Current routed components, not historical drawings, govern appearance. Latest canonical
+main through `0bbcd34` already repaired the original ED, transfer, on-call, intake and statistics
+phone containment; local remediation preserves these changes. Service identity's
+screen-reader content now has its own positioned containing block. The remaining
+historical map below retains old file counts and line references.
+
+The originating ED's expanded record composes `EdMedicalPlacementControls`, with explicit
+confirmation, cancellation and actual reducer outcome/refusal feedback. Compact clearance
+pickers remain unsaved layout drafts and cannot substitute for that clinician record.
+Intake and the coordinator's two queue tabs distinguish ATS 1–5 from urgency 1–3; absent
+ATS is labelled unrecorded. Existing FIFO referral ordering is preserved. The Patients
+queue's urgency-first ordering remains distinct and is an owner clarification item
+SPEC-005, not silently changed by the new ATS field.
+
+Community dossiers derive clinical facts from the selected live referral. Acceptance
+reports the actual reducer outcome and does not imply clinician assignment. Patient-linked
+follow-up opens the existing scoped `DischargeCareJourney`; referral-only review, assigned
+clinician and contact-outcome recording remain incomplete. Fake EHR editors and digital
+signature claims are removed. Search service, collected transport and actual bed-hold
+labels use recorded source facts. Follow-up preview/profile consistency is included in
+the [remediation receipt](../reports/remediation-2026-10-08.md).
+
+PR #130's current Home uses controlled Exceptions/Declines/New events hero panels,
+the shared `useSinceLastLook` hook, and the existing eligibility projection for fitting
+wards across the network. Its placement panel is labelled `Placement`; candidate
+details start open. The older component counts and closed-by-default descriptions
+below remain historical. Local remediation preserves the newer appearance and
+actual action guards; 29 regression files and the production phone/failure/journey
+checks cover the integration.
+
 ## WA remediation update — 3 October 2026
 
 The discharge Dossier mounts `DischargeCareJourney` beside `DischargeFollowUp`. Its forms record attributed planning/document milestones, named synthetic responsibility and appointments, contact outcomes, coding handoff, episode changes, transport assessment, transfer handshake and checked legal-paper facts. Community uses `CommunityFollowUp` with its own scoped actor and explicit referral link; filters distinguish missing arrangements from missing current-appointment contact. `MovementWorkflowActions` exposes expectation, lateness/leave reviews, mismatch, ward request, release/reopen and typed legal expiry controls. The officer footer now receives its existing print-hide CSS class.

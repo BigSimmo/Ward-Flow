@@ -1,5 +1,18 @@
 # Screens B: board, capacity, movements, delays, handover, patients and the rest
 
+## Current remediation seams — 8 October 2026
+
+The original map below preserves historical counts and locations. Current local changes
+wire the expected-discharge editor to the existing guarded `UPDATE_EXPECTED_DISCHARGE`
+action, including cancel-without-mutation and reopen-after-save evidence. This is CAP-001
+in the user's approved audit remediation scope; D-19's earlier “Move the date is left off”
+remains recorded as the prior prototype choice, not rewritten as an original defect.
+Unspecified intervention/forecasting contracts are not invented. Ward allocation actions
+open the actual movement-specific placement review rather than an unwired Allocate button.
+Bed map preparation markers remain visible when observed offered counts disagree;
+arrival discrepancies are explicitly recorded and do not manufacture surge beds.
+See [the current receipt](../reports/remediation-2026-10-08.md).
+
 Covers every file under `src/components/ward-management/` in these folders: `alerts/`, `board/`,
 `capacity/`, `delays/` (no `backup/` subfolder exists there — see "Not checked"), `discharges/`,
 `escalation/`, `governance/`, `handover/`, `hub/`, `legal-forms/`, `movements/`, `officer/`,

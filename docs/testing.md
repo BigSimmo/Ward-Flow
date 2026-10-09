@@ -213,19 +213,29 @@ Phone-chrome work uses `npm run verify:phone-chrome`. Inspect its classification
 
 ### Playwright project cadence, and why the two iPhone projects stay release-only
 
-`playwright.config.ts` defines seven projects. This is where each one actually runs, so a project
+`playwright.config.ts` defines nine project entries (eight always present and one conditional). This is where each one actually runs, so a project
 can never again be defined without a reader being able to see its cadence (pinned by
 `tests/playwright-project-cadence.test.ts`, which fails closed on any project named by no script
 and recorded in no line here).
 
-| Project                  | Runs on                                                                   |
-| ------------------------ | ------------------------------------------------------------------------- |
-| `chromium`               | Blocking PR gate (sharded production journeys) and the release matrix     |
-| `chromium-mockups`       | Advisory PR invocation and the release matrix                             |
-| `chromium-mockups-known` | Ward Flow fold gate, only when `WARD_JOURNEY_KNOWN_FAILURES` is set       |
-| `firefox`, `webkit`      | Release matrix only (`main`, release branches, dispatch, Sunday schedule) |
-| `mobile-webkit`          | Release matrix **full-suite path only** — see the decision below          |
-| `mobile-pwa-standalone`  | Release matrix **full-suite path only** — see the decision below          |
+| Project                   | Runs on                                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------------------- |
+| `chromium`                | Blocking PR gate (sharded production journeys) and the release matrix                     |
+| `chromium-mockups`        | Advisory PR invocation and the release matrix                                             |
+| `chromium-mockups-known`  | Ward Flow fold gate, only when `WARD_JOURNEY_KNOWN_FAILURES` is set                       |
+| `firefox-ward-responsive` | Manual/selective Ward prototype responsive checks only; not a required production project |
+| `webkit-ward-responsive`  | Manual/selective Ward prototype responsive checks only; not a required production project |
+| `firefox`, `webkit`       | Release matrix only (`main`, release branches, dispatch, Sunday schedule)                 |
+| `mobile-webkit`           | Release matrix **full-suite path only** — see the decision below                          |
+| `mobile-pwa-standalone`   | Release matrix **full-suite path only** — see the decision below                          |
+
+The two Ward responsive projects select only `tests/ui-ward-responsive-audit.spec.ts` and require
+`@mockup`. Run them explicitly through the existing wrapper, for example
+`npm run test:e2e -- tests/ui-ward-responsive-audit.spec.ts --project=firefox-ward-responsive`
+(or `--project=webkit-ward-responsive`). The wrapper enables the synthetic Ward prototype for
+these selections. Configuration and Chromium results do not prove Firefox or WebKit execution:
+the 8 October local attempt to install those browser binaries was blocked by CDN HTTP403, so their
+runtime results remain unverified until the selected checks run where binaries are available.
 
 **Decision (2026-09-04, L68): the two iPhone-14 projects stay release-only.** They execute when the
 release matrix runs the whole suite — that is, when UI did not change or in-run Chromium proof is
