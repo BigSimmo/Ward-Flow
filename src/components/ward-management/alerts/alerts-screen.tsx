@@ -351,7 +351,7 @@ function AlertRows({
     <ul className={prominent ? styles.cardRows : styles.rows}>
       {items.map((item) => {
         const isAcknowledged = (acknowledgements[item.id]?.length ?? 0) > 0;
-        const isOwned = currentInboxOwner(ownership?.[item.id]) !== undefined;
+        const isOwned = currentInboxOwner(ownership?.[item.id])?.by === WARD_FLOW_ROLE_LABELS.coordinator;
         const categoryBadge = getCategoryBadge(item);
         const overdueText = extractOverdue(item.detail);
         const movement = movements?.find((m) => m.id === item.movementId);
@@ -418,18 +418,20 @@ function AlertRows({
                   options[next]?.focus();
                 }}
               >
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={styles.quickActionMenuItem}
-                  onClick={() => {
-                    setOpenQuickMenuId(null);
-                    onQuickAction?.(item, "own", patientInfo.displayName);
-                  }}
-                >
-                  <UserRound size={14} aria-hidden="true" />
-                  <span>{isOwned ? "Take ownership again" : "Take ownership"}</span>
-                </button>
+                {!isOwned ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={styles.quickActionMenuItem}
+                    onClick={() => {
+                      setOpenQuickMenuId(null);
+                      onQuickAction?.(item, "own", patientInfo.displayName);
+                    }}
+                  >
+                    <UserRound size={14} aria-hidden="true" />
+                    <span>Take ownership</span>
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   role="menuitem"
@@ -1541,14 +1543,19 @@ function AlertsWorkspace() {
                 const entry = activeSnooze(inboxSnoozes[item.id], now);
                 return (
                   <li key={item.id} className={styles.alertRow} data-tone={item.tone}>
-                    <StatusGlyph tone="neutral" />
+                    <StatusGlyph tone={item.tone} />
                     <div className={styles.alertContent}>
                       <span className={styles.alertTitleText}>{item.title}</span>
                       {entry ? <span className={styles.alertTiming}>{snoozedLine(entry, now)}</span> : null}
                     </div>
                     <span className={styles.ownerCell}>{item.owner}</span>
                     <div className={styles.rowActions}>
-                      <Button size="sm" className={styles.btn} onClick={() => handleReturn(item)}>
+                      <Button
+                        size="sm"
+                        className={styles.btn}
+                        aria-label={`Return ${item.title} now`}
+                        onClick={() => handleReturn(item)}
+                      >
                         Return now
                       </Button>
                     </div>

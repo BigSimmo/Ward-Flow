@@ -766,6 +766,7 @@ export function WardTasksDrawer({
                             type="button"
                             className={styles.btn}
                             data-testid={`ward-task-unsnooze-${item.id}`}
+                            aria-label={`Return ${item.title} now`}
                             onClick={() => returnSnoozed(item.id)}
                           >
                             Return now
