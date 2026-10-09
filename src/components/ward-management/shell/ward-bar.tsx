@@ -303,9 +303,30 @@ export const useAppearanceStore = createBrowserStore(
   "auto" as WardAppearance,
 );
 
+/** Browser chrome colours; the same values as `APP_THEME_COLORS` in `src/lib/theme.ts`, kept here so the ward seam stays closed. */
+const CHROME_COLOURS = { light: "#ffffff", dark: "#0b0e11" } as const;
+
+/**
+ * Puts the root in one theme. The v6 and shell tokens follow `data-theme`, while the compatibility
+ * layers and the page background follow `.dark`; setting only one left pages half light and half
+ * dark. The browser chrome colour follows the same answer.
+ */
+export function syncRootAppearance(appearance: WardAppearance) {
+  const root = document.documentElement;
+  if (appearance === "auto") root.removeAttribute("data-theme");
+  else root.setAttribute("data-theme", appearance);
+  const dark =
+    appearance === "dark" ||
+    (appearance === "auto" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
+  root.classList.toggle("dark", dark);
+  const colour = dark ? CHROME_COLOURS.dark : CHROME_COLOURS.light;
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.setAttribute("content", colour));
+}
+
 export function applyAppearance(next: WardAppearance) {
-  if (next === "auto") document.documentElement.removeAttribute("data-theme");
-  else document.documentElement.setAttribute("data-theme", next);
+  syncRootAppearance(next);
   try {
     if (next === "auto") {
       window.localStorage.removeItem(APPEARANCE_STORAGE_KEY);
