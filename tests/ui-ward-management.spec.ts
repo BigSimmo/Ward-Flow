@@ -294,8 +294,10 @@ test.describe("@mockup Ward Flow command view", () => {
     // and Moodjar. FSH Adult Secure is no longer in it: WF-001 is a Female Adult movement
     // and FSH Adult Secure is Male only, so the sex_designation gate added in 6cc80c774 excludes
     // it and Moodjar (next in unit order) takes the freed slot.
+    // D-39: the Placement panel shows the patient's UMRN (UM100044 for WF-001 / PT-044), never WF-001.
     const shortlist = network.getByRole("complementary", { name: "Placement", exact: true });
-    await expect(shortlist).toContainText("WF-001");
+    await expect(shortlist).toContainText("UM100044");
+    await expect(shortlist).not.toContainText("WF-001");
     await expect(shortlist.getByRole("columnheader", { name: /Dabakarn/ })).toBeVisible();
     // Eligibility is a binary verdict, not a score: gates are not commensurable, so no row
     // ever renders a "N of M passed" fraction.
@@ -321,7 +323,9 @@ test.describe("@mockup Ward Flow command view", () => {
     // Selecting another movement re-routes the diagram and swaps the shortlist. WF-002 is
     // South Metro; Fremantle Older Adult is its one same-service eligible candidate.
     await network.getByTestId("ward-network-queue-WF-002").click();
-    await expect(shortlist).toContainText("WF-002");
+    // D-39: WF-002 is linked through RF-012 to PT-058, so the panel names UM100058, not WF-002.
+    await expect(shortlist).toContainText("UM100058");
+    await expect(shortlist).not.toContainText("WF-002");
     await expect(network.getByTestId("ward-network-card-fre-older-adult")).toHaveAttribute("data-routed", "true");
     // This row compares health services against the *origin* ED, not the patient's catchment
     // (catchment is where a patient lives, not where they presented) — named for what it

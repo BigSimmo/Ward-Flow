@@ -250,7 +250,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await wf005Item.click();
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await expect(shortlist).toBeVisible();
-    await expect(shortlist).toContainText("WF-005");
+    // D-39: the Placement panel names the patient (and UMRN), never the WF journey number.
+    // Selection is still keyed by the journey id on the panel and the queue row.
+    await expect(shortlist).toHaveAttribute("data-subject-movement", "WF-005");
+    await expect(shortlist).toContainText("Noor Tremalow");
     await expect(page.getByTestId("ward-queue-row-WF-005")).toHaveAttribute("aria-pressed", "true");
 
     // Phone: queue and the registers toggle survive, the diagram and the pressure strip do not
@@ -381,7 +384,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await firstRow.click();
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     const selectedId = await queue.locator('[aria-pressed="true"]').getAttribute("data-testid");
-    await expect(shortlist).toContainText(String(selectedId).replace("ward-queue-row-", ""));
+    const selectedMovementId = String(selectedId).replace("ward-queue-row-", "");
+    // D-39: the journey id stays on the panel attribute; visible text is the patient, not WF-…
+    await expect(shortlist).toHaveAttribute("data-subject-movement", selectedMovementId);
   });
 
   test("ranks emergency departments worst first and filters the queue when one is chosen", async ({ page }) => {
