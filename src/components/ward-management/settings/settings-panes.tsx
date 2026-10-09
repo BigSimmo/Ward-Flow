@@ -460,14 +460,14 @@ export function DisplayPane({
 
 /** The sections the printed handover sheet carries, as the Handover screen names them. */
 export const HANDOVER_SHEET_SECTIONS = [
-  "Longest waits",
-  "Beds pulled",
-  "In transit",
-  "Placement gone wrong",
-  "Outside this filter",
-  "Still open at 15:00",
-  "Shift and sign off",
-  "Handover details",
+  "Act now",
+  "Due by the handover",
+  "Waiting for a bed",
+  "Accepted, bed not ready",
+  "Moving",
+  "Beds by ward",
+  "Discharges held up",
+  "Handover signatures",
 ] as const;
 
 export function ProfilePane({ onPreview }: { onPreview: OnPreview }) {
