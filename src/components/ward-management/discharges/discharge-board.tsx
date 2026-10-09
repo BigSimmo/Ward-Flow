@@ -311,8 +311,8 @@ function matchesHighlight(
   if (highlight === null) return false;
   if (highlight.kind === "barrier") return blocker !== null && barrierCategory(blocker) === highlight.id;
   if (expectedAt === null || !Number.isFinite(expectedAt)) return false;
-  if (highlight.day === "past") return expectedAt < now;
-  return expectedAt >= now && dayOf(expectedAt) - dayOf(now) === highlight.day;
+  if (highlight.day === "past") return dayOf(expectedAt) < dayOf(now);
+  return dayOf(expectedAt) - dayOf(now) === highlight.day;
 }
 
 function perthDay(instant: Instant, dayZero: Date, options: Intl.DateTimeFormatOptions): string {
@@ -662,9 +662,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     setHighlight(next);
     if (population !== "records") {
       setPopulation("records");
-      setStatus("all");
       clearSelection();
     }
+    setStatus("all");
     // Highlighted people go to the top, so bring the top of the list into view.
     const list = listRef.current;
     if (list) {
@@ -985,6 +985,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     setStatus("all");
                     setDestination("all");
                     setBlockerCategory("all");
+                    setHighlight(null);
                     clearSelection();
                   }}
                 >
@@ -998,6 +999,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     setStatus("all");
                     setDestination("all");
                     setBlockerCategory("all");
+                    setHighlight(null);
                     clearSelection();
                   }}
                 >
