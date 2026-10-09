@@ -159,6 +159,10 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   DISPATCH_BROADCAST_ALERT: { category: "neither", plainWording: "Statewide broadcast directive dispatched" },
   ACKNOWLEDGE_BROADCAST_ALERT: { category: "neither", plainWording: "Broadcast directive acknowledged" },
   STAND_DOWN_BROADCAST_ALERT: { category: "neither", plainWording: "Broadcast directive stood down" },
+  BOOK_PLANNED_ADMISSION: { category: "neither", plainWording: "Planned admission booked" },
+  CHANGE_PLANNED_ADMISSION: { category: "neither", plainWording: "Planned admission changed" },
+  CANCEL_PLANNED_ADMISSION: { category: "neither", plainWording: "Planned admission cancelled" },
+  CONVERT_PLANNED_ADMISSION: { category: "both", plainWording: "Planned admission arrived on ward" },
 
   // 2.9 World and admin
   ADVANCE_CLOCK: { category: "neither", plainWording: "Operational demonstration clock advanced" },

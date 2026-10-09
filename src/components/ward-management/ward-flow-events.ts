@@ -1,5 +1,11 @@
 import type { CareChange } from "./ward-care-journey";
-import type { DischargeBarrier, LeavingDestination, FollowUpState } from "@/components/ward-management/ward-admissions";
+import type {
+  DischargeBarrier,
+  LeavingDestination,
+  FollowUpState,
+  PlannedAdmissionCancelReason,
+  PlannedAdmissionReason,
+} from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
@@ -2021,6 +2027,59 @@ export type WardFlowEvent =
       now: Instant;
       alertId: string;
       stoodDownByRole?: WardFlowRole;
+    }
+  | {
+      /**
+       * Book a known future admission (stream D, 9 October 2026). Names either an existing
+       * synthetic patient or initials only, never both. `initials` is typed text, so this event is
+       * on the typed-text persistence list. Holds no bed until `CONVERT_PLANNED_ADMISSION`.
+       */
+      type: "BOOK_PLANNED_ADMISSION";
+      role: WardFlowRole;
+      now: Instant;
+      patientId?: PatientId | null;
+      initials?: string | null;
+      sex: RecordedSex;
+      reason: PlannedAdmissionReason;
+      unitId: string;
+      expectedArrivalAt: Instant;
+      expectedStayDays: number;
+      legalStatus: LegalStatus;
+      /** Required when the caller is a ward: the ward it is booking for. */
+      actingUnitId?: string;
+    }
+  | {
+      /** Change a booked planned admission's ward, reason, arrival, stay or legal status. */
+      type: "CHANGE_PLANNED_ADMISSION";
+      role: WardFlowRole;
+      now: Instant;
+      plannedAdmissionId: string;
+      reason: PlannedAdmissionReason;
+      unitId: string;
+      expectedArrivalAt: Instant;
+      expectedStayDays: number;
+      legalStatus: LegalStatus;
+      actingUnitId?: string;
+    }
+  | {
+      /** Cancel a booked planned admission, with a reason chosen from a fixed list. */
+      type: "CANCEL_PLANNED_ADMISSION";
+      role: WardFlowRole;
+      now: Instant;
+      plannedAdmissionId: string;
+      reason: PlannedAdmissionCancelReason;
+      actingUnitId?: string;
+    }
+  | {
+      /**
+       * The planned person has arrived: the booking becomes an ordinary occupied `Admission` on its
+       * ward, taking one empty and allocatable bed. Refused when the ward has no bed to give.
+       */
+      type: "CONVERT_PLANNED_ADMISSION";
+      role: WardFlowRole;
+      now: Instant;
+      plannedAdmissionId: string;
+      actingUnitId?: string;
     };
 
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */
@@ -2511,4 +2570,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
   ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager", "executive"],
   STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
+  // Planned admissions (stream D): booked and managed by the coordinator, bed manager or the
+  // receiving ward; the ward or coordinator records the arrival.
+  BOOK_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
+  CHANGE_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
+  CANCEL_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],
+  CONVERT_PLANNED_ADMISSION: ["ward", "coordinator"],
 };

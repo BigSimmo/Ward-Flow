@@ -51,6 +51,9 @@ export const INBOX_CATEGORIES = {
   destinations_declined: { idPrefix: "declines-", kind: "fact" },
   /** Transport accepted and not yet departed. */
   transport_awaiting_departure: { idPrefix: "transport-", kind: "fact" },
+  /** A planned admission whose expected arrival has passed without the arrival being recorded.
+   *  Its row's remainder is a planned-admission id, not a movement id (stream D). */
+  planned_arrival_overdue: { idPrefix: "planned-arrival-", kind: "fact" },
 } as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
 
 /**
@@ -104,7 +107,13 @@ export function reduceInboxEvent(
       }
       const inboxCategory = Object.values(INBOX_CATEGORIES).find((entry) => inboxItemId.startsWith(entry.idPrefix));
       const inboxMovementId = inboxCategory ? inboxItemId.slice(inboxCategory.idPrefix.length) : undefined;
-      if (!inboxCategory || !state.movements.some((movement: Movement) => movement.id === inboxMovementId)) {
+      const namesPlannedArrival =
+        inboxCategory === INBOX_CATEGORIES.planned_arrival_overdue &&
+        (state.plannedAdmissions ?? []).some((planned) => planned.id === inboxMovementId);
+      if (
+        !inboxCategory ||
+        (!namesPlannedArrival && !state.movements.some((movement: Movement) => movement.id === inboxMovementId))
+      ) {
         return reject(
           state,
           event,

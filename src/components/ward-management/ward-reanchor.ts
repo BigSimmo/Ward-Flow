@@ -154,6 +154,12 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "stoodDownAt",
   // D-34: re-clearance resumes a paused movement at a point in time, never a duration.
   "resumedAt",
+  // Stream D, 9 Oct 2026: a planned admission's booked, changed, expected-arrival and arrival
+  // times. Left out, a booking would sit on the old anchor and read as overdue or days away.
+  "expectedArrivalAt",
+  "bookedAt",
+  "changedAt",
+  "convertedAt",
 ]);
 
 /**

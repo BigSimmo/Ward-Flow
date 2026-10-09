@@ -68,7 +68,14 @@ describe("every action-inbox category is classified as a fact or a commitment", 
    * decided what kind of thing the new row is — which is the point.
    */
   it("gives every row a kind, and every row's kind is the one its category declares", () => {
-    const items = buildActionInbox(movementsCoveringEveryCategory(), NOW, allUnits());
+    // The seeded planned admissions include one past its expected arrival (stream D), which is the
+    // only producer of the planned-arrival category.
+    const items = buildActionInbox(
+      movementsCoveringEveryCategory(),
+      NOW,
+      allUnits(),
+      seedWardFlowState().plannedAdmissions,
+    );
 
     // ANTI-VACUITY. Without this the whole test passes over an empty array — the enumeration
     // "silently returning nothing" failure. Five categories, at least one row each.

@@ -36,6 +36,7 @@ import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
+import { reducePlannedAdmissionEvent } from "./capacity/planned-admissions-reducer";
 import { reduceInboxEvent } from "./ward-inbox-reducer";
 import {
   BED_PREPARATION_NOTES,
@@ -169,11 +170,16 @@ import {
   remainingHighAcuityCapacity,
   remainingSpeciallingCapacity,
   type Admission,
+  type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
 import { GENDERS } from "@/components/ward-management/ward-patients";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { combineWardPatients } from "@/components/ward-management/ward-patients-seed";
-import { generatedOccupantPatients, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import {
+  generatedOccupantPatients,
+  wardAdmissions,
+  wardPlannedAdmissions,
+} from "@/components/ward-management/ward-admissions-seed";
 
 /**
  * Every seeded person: the hand-authored patients plus the generated ones the admission and
@@ -501,6 +507,14 @@ export type WardFlowState = WardAuditState & {
   broadcastAlerts: BroadcastAlert[];
   /** Monotonic sequence counter for broadcast IDs (e.g. BCAST-1). */
   broadcastSequence: number;
+  /**
+   * Known future admissions (stream D, 9 October 2026), booked ahead of arrival. A booking holds
+   * no bed; `CONVERT_PLANNED_ADMISSION` turns one into an occupied admission. Never removed: a
+   * cancelled or arrived booking stays, marked, so the calendar's history holds.
+   */
+  plannedAdmissions: PlannedAdmission[];
+  /** Monotonic id source for `BOOK_PLANNED_ADMISSION` ("PA-NN"), the same discipline as the others. */
+  plannedAdmissionSequence: number;
 };
 
 /** Phone-log of a repatriation arranged off-system. Never a booked transport job. */
@@ -621,6 +635,9 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     clinicalContacts: [],
     broadcastAlerts: [],
     broadcastSequence: 0,
+    // Seeded bookings name standard-night wards, so the network scenarios start with none.
+    plannedAdmissions: network ? [] : structuredClone(wardPlannedAdmissions),
+    plannedAdmissionSequence: 0,
   };
   return network ? seed : applyRulingsDemoOverlay(seed, NOW_ANCHOR);
 }
@@ -753,6 +770,12 @@ function subjectId(event: WardFlowEvent): string {
     case "ACKNOWLEDGE_BROADCAST_ALERT":
     case "STAND_DOWN_BROADCAST_ALERT":
       return event.alertId;
+    case "BOOK_PLANNED_ADMISSION":
+      return event.unitId;
+    case "CHANGE_PLANNED_ADMISSION":
+    case "CANCEL_PLANNED_ADMISSION":
+    case "CONVERT_PLANNED_ADMISSION":
+      return event.plannedAdmissionId;
     default:
       return "movementId" in event ? (event.movementId as string) : "none";
   }
@@ -9442,6 +9465,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const next = reduceBroadcastAlertEvent(state, event, decision, reject);
       if (next) return next;
       return state;
+    }
+
+    case "BOOK_PLANNED_ADMISSION":
+    case "CHANGE_PLANNED_ADMISSION":
+    case "CANCEL_PLANNED_ADMISSION":
+    case "CONVERT_PLANNED_ADMISSION": {
+      return reducePlannedAdmissionEvent(state, event, decision, reject) ?? state;
     }
   }
   return state;

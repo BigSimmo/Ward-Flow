@@ -638,6 +638,11 @@ describe("front-door contract — an ED may close to all admissions, never refus
     ACKNOWLEDGE_BROADCAST_ALERT: false,
     STAND_DOWN_BROADCAST_ALERT: false,
     UPDATE_EXPECTED_DISCHARGE: false,
+    // Stream D: a booking concerns a ward's own plan; none of these refuses a named person.
+    BOOK_PLANNED_ADMISSION: false,
+    CHANGE_PLANNED_ADMISSION: false,
+    CANCEL_PLANNED_ADMISSION: false,
+    CONVERT_PLANNED_ADMISSION: false,
   };
 
   /**

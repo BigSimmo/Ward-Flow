@@ -12,13 +12,15 @@ import {
 } from "@/components/ward-management/ward-flow-reducer";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import type { LucideIcon } from "lucide-react";
-import { CircleAlert, Truck } from "lucide-react";
+import { CalendarClock, CircleAlert, Truck } from "lucide-react";
 
+import { plannedAdmissionIsOverdue, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import {
   clockState,
   formatElapsed,
   formatInstant,
+  formatInstantWithDay,
   formatRemaining,
   minutesUntil,
   type Instant,
@@ -1169,7 +1171,12 @@ export type InboxItem = {
  * legitimately carries a deadline falls due. This is the coordinator's work list, not a report:
  * every qualifying movement gets its own row.
  */
-export function buildActionInbox(movements: Movement[], now: Instant, units: Unit[]): InboxItem[] {
+export function buildActionInbox(
+  movements: Movement[],
+  now: Instant,
+  units: Unit[],
+  plannedAdmissions: readonly PlannedAdmission[] = [],
+): InboxItem[] {
   const items: InboxItem[] = [];
 
   // A legal status change can make an already-accepted destination unlawful — see
@@ -1281,6 +1288,22 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
       detail: `${movement.id} · accepted ${formatInstant(movement.transport.acceptedAt as Instant)}`,
       owner: movement.owner,
       movementId: movement.id,
+    });
+  }
+
+  // Stream D: a booked planned admission whose expected arrival has passed with no arrival
+  // recorded. `movementId` carries the booking's own id: there is no movement behind it.
+  for (const planned of plannedAdmissions.filter((booking) => plannedAdmissionIsOverdue(booking, now))) {
+    const unit = units.find((candidate) => candidate.id === planned.unitId);
+    items.push({
+      id: `${INBOX_CATEGORIES.planned_arrival_overdue.idPrefix}${planned.id}`,
+      kind: INBOX_CATEGORIES.planned_arrival_overdue.kind,
+      tone: "warning",
+      icon: CalendarClock,
+      title: "Planned arrival not recorded",
+      detail: `${planned.id} · ${unit?.name ?? planned.unitId} · expected ${formatInstantWithDay(planned.expectedArrivalAt, now)}, ${formatRemaining(minutesUntil(planned.expectedArrivalAt, now))}`,
+      owner: unit?.name ?? "Ward",
+      movementId: planned.id,
     });
   }
 

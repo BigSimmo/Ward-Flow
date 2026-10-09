@@ -162,6 +162,8 @@ type WardFlowContextValue = {
    *  only writer. */
   configuration: WardFlowState["configuration"];
   broadcastAlerts: BroadcastAlert[];
+  /** Known future admissions (stream D). Optional so hand-built test contexts need not supply it. */
+  plannedAdmissions?: WardFlowState["plannedAdmissions"];
   /** Event log, step 1: every event dispatched this session (type, role, time, accepted, ids). */
   eventLog?: readonly EventLogEntry[];
   dispatch: Dispatch<WardFlowEvent>;
@@ -214,7 +216,8 @@ export const WARD_FLOW_DEMO_STORAGE_KEY = "ward-flow-demo-state-v1";
 // v6 (2026-10-08): explicit deterioration/pause, recorded ATS and corroborated
 // arrival/capacity conflicts; reciprocal runtime admission links are validated.
 // Old automatic saves are refused rather than silently migrating clinical facts.
-const WARD_FLOW_DEMO_STORAGE_VERSION = 6;
+// v7 (2026-10-09, stream D): planned admissions and their id sequence are part of the state.
+const WARD_FLOW_DEMO_STORAGE_VERSION = 7;
 
 /**
  * What actually goes to `sessionStorage`. Carries the world's calendar day ALONGSIDE the state, not
@@ -963,6 +966,7 @@ function WardFlowWorld({
       scenario: state.scenario,
       configuration: state.configuration,
       broadcastAlerts: state.broadcastAlerts ?? [],
+      plannedAdmissions: state.plannedAdmissions ?? [],
       eventLog: container.eventLog ?? [],
       dispatch,
       focusMovementId,

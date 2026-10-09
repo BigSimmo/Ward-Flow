@@ -12,7 +12,7 @@
 // Aggregate only, like the rest of the Capacity screen: nothing here ranks a ward for a person.
 // A pure function with no React, so the morning bed-meeting sheet can print the same figures.
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
-import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
+import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
@@ -60,9 +60,16 @@ export type BedsForecastHorizon = {
   plannedNotFlagged: number;
   /** People waiting for a bed now (open journeys not yet pulled into one). */
   waitingForBed: number;
-  /** `readyNow + confirmed - waitingForBed`: only discharges the ward has confirmed. */
+  /**
+   * Planned admissions (stream D) still booked whose expected arrival falls at or before the end of
+   * the window, overdue ones included: each will occupy a bed when it arrives.
+   */
+  plannedAdmissions: number;
+  /** `waitingForBed + plannedAdmissions`: beds the window must find for people known now. */
+  bedsNeeded: number;
+  /** `readyNow + confirmed - bedsNeeded`: only discharges the ward has confirmed. */
   low: number;
-  /** `readyNow + confirmed + expected - waitingForBed`: the headline figure. */
+  /** `readyNow + confirmed + expected - bedsNeeded`: the headline figure. */
   likely: number;
   /** `likely + heldUp + overdue + plannedNotFlagged`: everything on record goes ahead. */
   high: number;
@@ -77,7 +84,7 @@ export type BedsForecast = {
  * What the forecast cannot see, stated beside it every time it is shown.
  */
 export const BEDS_FORECAST_LIMITS = [
-  "New people arriving at emergency departments are not predicted. The prototype has no arrival history, so only people already waiting are subtracted.",
+  "New people arriving at emergency departments are not predicted. The prototype has no arrival history, so only people already waiting and planned admissions already booked are subtracted.",
   "Whole network, all bed kinds together. A free bed may not suit the person waiting; the mismatch table shows that.",
   "Synthetic demonstration data, not live records and not validated decision support.",
 ] as const;
@@ -88,6 +95,7 @@ export function bedsForecast(
   admissions: Admission[],
   movements: Movement[],
   now: Instant,
+  plannedAdmissions: readonly PlannedAdmission[] = [],
 ): BedsForecast {
   const readyNow = units.reduce((sum, unit) => sum + lockedBedsFree(unit) + openBedsFree(unit), 0);
   const unitIds = new Set(units.map((unit) => unit.id));
@@ -115,7 +123,11 @@ export function bedsForecast(
         admission.expectedDischargeAt <= until &&
         !flaggedAdmissionIds.has(admission.id),
     ).length;
-    const low = readyNow + confirmed - waitingForBed;
+    const planned = plannedAdmissions.filter(
+      (booking) => booking.state === "booked" && unitIds.has(booking.unitId) && booking.expectedArrivalAt <= until,
+    ).length;
+    const bedsNeeded = waitingForBed + planned;
+    const low = readyNow + confirmed - bedsNeeded;
     const likely = low + expected;
     const high = likely + heldUp + overdue + plannedNotFlagged;
     return {
@@ -128,6 +140,8 @@ export function bedsForecast(
       overdue,
       plannedNotFlagged,
       waitingForBed,
+      plannedAdmissions: planned,
+      bedsNeeded,
       low,
       likely,
       high,

@@ -87,6 +87,9 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
   "SET_ARRIVAL_DETAILS",
   "UPLOAD_PATIENT_FORM",
   "DISPATCH_BROADCAST_ALERT",
+  // Stream D, 9 Oct 2026: `initials` is typed by a person (one to three letters, normalised and
+  // pattern-checked, but still typed about a person), so booking locks persistence like ADD_PATIENT.
+  "BOOK_PLANNED_ADMISSION",
 ]);
 
 /**
@@ -250,6 +253,12 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "CONFIRM_MORNING_ROLLUP",
   "ACKNOWLEDGE_BROADCAST_ALERT",
   "STAND_DOWN_BROADCAST_ALERT",
+  // Stream D, 9 Oct 2026: `plannedAdmissionId`/`unitId`/`actingUnitId` are ids, `reason` and
+  // `legalStatus` are closed unions membership-checked by the reducer, and the rest are numbers or
+  // instants. No initials or other typed text travels on these three.
+  "CHANGE_PLANNED_ADMISSION",
+  "CANCEL_PLANNED_ADMISSION",
+  "CONVERT_PLANNED_ADMISSION",
 ] as const satisfies readonly WardFlowEvent["type"][];
 
 /** Runtime form of the tuple above — an O(1)-lookup `Set`, used by the reducer wrapper and by the
@@ -356,7 +365,9 @@ type WardFlowReviewedStringOrUnknownKey =
   | "noticeId"
   | "actingPlaceId"
   | "formCode"
-  | "alertId";
+  | "alertId"
+  // Stream D: names a `PlannedAdmission.id`; the reducer finds the booking or refuses.
+  | "plannedAdmissionId";
 
 /** True exactly when `T` is (or includes) the wide `string` type — never for a literal or a union of
  *  literals, which is what lets a closed code-shaped union field pass untouched while a genuine
