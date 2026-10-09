@@ -1,5 +1,6 @@
 "use client";
 
+import { isOfficerJob } from "./officer-jobs";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Check, Clock, Copy, Lock, MapPin, Search, ShieldCheck, Truck, X } from "lucide-react";
 
@@ -284,14 +285,9 @@ function nextActionVerb(leg: OfficerLeg): string {
   return "Delivered";
 }
 
-/**
- * THE JOBS THIS PHONE SCREEN SHOWS, and the predicate its governance sentence describes.
- */
-export function isOfficerJob(movement: Movement): boolean {
-  return (
-    movement.transport !== undefined && movement.transport.arrivedAt === undefined && movement.closure === undefined
-  );
-}
+// THE JOBS THIS PHONE SCREEN SHOWS: the predicate lives in `officer-jobs.ts` so Settings' workstation
+// drawer counts the same jobs without importing this screen.
+export { isOfficerJob };
 
 type HighlightPill = "requested" | "accepted" | "en_route" | "collected" | "late" | "forms";
 type SortKey = "next" | "wait" | "eta";
