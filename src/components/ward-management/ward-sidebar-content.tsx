@@ -78,15 +78,9 @@ export function WardSidebarNav({
           .filter((movement) =>
             role === "ed" ? movement.originEdId === placeId : destinationUnit(movement, units)?.id === placeId,
           );
-  const attention = buildActionInbox(
-    placeMovements,
-    now,
-    units,
-    {
-      plannedAdmissions:
-        role === "ed" ? [] : plannedAdmissions.filter((planned) => planned.unitId === placeId),
-    },
-  );
+  const attention = buildActionInbox(placeMovements, now, units, {
+    plannedAdmissions: role === "ed" ? [] : plannedAdmissions.filter((planned) => planned.unitId === placeId),
+  });
 
   return (
     <>

@@ -227,19 +227,14 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // admissions (stream D: an overdue booking is a row too), plus the whole record so the advisory
     // carer/PSP/MHAS notification rows are counted too.
     const seed = seedWardFlowState();
-    const expectedCount = buildActionInbox(
-      seed.movements.filter(isOpen),
-      NOW_ANCHOR,
-      seed.units,
-      {
-        movements: seed.movements,
-        admissions: seed.admissions,
-        patients: seed.patients,
-        referrals: seed.referrals,
-        supportNotifications: seed.supportNotifications,
-        plannedAdmissions: seed.plannedAdmissions,
-      },
-    ).length;
+    const expectedCount = buildActionInbox(seed.movements.filter(isOpen), NOW_ANCHOR, seed.units, {
+      movements: seed.movements,
+      admissions: seed.admissions,
+      patients: seed.patients,
+      referrals: seed.referrals,
+      supportNotifications: seed.supportNotifications,
+      plannedAdmissions: seed.plannedAdmissions,
+    }).length;
     expect(expectedCount).toBeGreaterThan(1);
     await expect(items).toHaveCount(expectedCount);
     await expect(page.getByRole("tab", { name: "Exceptions" })).toContainText(String(expectedCount));

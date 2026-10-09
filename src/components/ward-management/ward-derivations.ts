@@ -1343,12 +1343,7 @@ export function buildActionInbox(
   // about COMPLETED moves, so they read every movement in `records`, not the caller's open list.
   // Only when the caller passed the notification record fields — `{ plannedAdmissions }` alone is
   // enough for overdue bookings and must not be treated as a support-notification source.
-  if (
-    records?.movements &&
-    records.admissions &&
-    records.patients &&
-    records.referrals
-  ) {
+  if (records?.movements && records.admissions && records.patients && records.referrals) {
     items.push(
       ...supportNotificationInboxItems(
         {
