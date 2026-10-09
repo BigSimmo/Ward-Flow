@@ -131,6 +131,34 @@ describe("bed dossier inbound bed", () => {
     expect(screen.queryByRole("button", { name: /Record blocker/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Mark at an ED/ })).toBeNull();
   });
+
+  it("still offers the blocker and ED actions on a bed with an admission", () => {
+    const unit = seedWardFlowState().units[0];
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardBedDossierDrawer
+          selectedBed={5}
+          bedItem={{
+            bedNumber: 5,
+            bedLabel: "Bed 05",
+            status: "occupied",
+            statusText: "Inpatient",
+            admissionId: "synthetic-admission",
+            patientAlias: "Synthetic person",
+          }}
+          unit={unit}
+          onClose={() => {}}
+          drawerLeavingDestination={LEAVING_DESTINATIONS[0].id}
+          setDrawerLeavingDestination={() => {}}
+          onRecordLeft={() => {}}
+          bedDrawerRef={createRef<HTMLElement>()}
+          onKeyDown={() => {}}
+        />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByRole("button", { name: /Record blocker/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Mark at an ED/ })).toBeInTheDocument();
+  });
 });
 
 describe("bed dossier patient page link", () => {
