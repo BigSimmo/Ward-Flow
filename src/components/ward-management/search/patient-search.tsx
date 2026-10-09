@@ -745,7 +745,7 @@ Clinical Note: ${p.clinicalNote}`;
                 <HeroStat value={yieldMetrics.unplaced} label="No ward yet" className={styles.v6HeroStat} />
                 <HeroStat
                   value={yieldMetrics.breaches}
-                  label={`Waiting ${LONG_WAIT_TEXT}`}
+                  label={<span className={styles.v6HeroWrapLabel}>Waiting {LONG_WAIT_TEXT}</span>}
                   tone={yieldMetrics.breaches > 0 ? "warning" : undefined}
                   className={styles.v6HeroStat}
                 />

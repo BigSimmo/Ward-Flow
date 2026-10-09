@@ -5235,6 +5235,17 @@
     padding-left: 0;
   }
 
+  /* The long wait label wraps to a second line rather than cutting to "Waiting ove…", and the
+     figures sit at the top so all three values stay on one line. */
+  .v6HeroStat.v6HeroStat {
+    justify-content: flex-start;
+  }
+
+  .v6HeroStat .v6HeroWrapLabel {
+    display: inline;
+    white-space: normal;
+  }
+
   .v6HeroWrap > section > div:nth-child(2) > div:last-child:has(> .v6AddLink) {
     flex-wrap: nowrap;
     align-items: center;
