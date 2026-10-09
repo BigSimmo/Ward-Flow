@@ -364,13 +364,18 @@ function referralDueAt(referral: Referral, now: Instant): Instant | undefined {
   return referral.raisedAt + Math.min(OVERDUE_AFTER_MINUTES_BY_TIER[referral.urgency], OVERDUE_AFTER_ANY_TIER_MINUTES);
 }
 
-/** Age band and sex, with gender beside sex when the ward arm records a different one (R7). */
+/**
+ * Age band and sex, with gender beside sex on a ward referral (R7): named when it differs, and
+ * said to be unrecorded when it is missing, so "not recorded" never reads as "same as sex".
+ */
 function demographicLabel(referral: Referral): string {
-  const ward = referral.destinations.find((d) => d.destination.kind === "psychiatric_ward");
-  const gender = ward && ward.destination.kind === "psychiatric_ward" ? ward.destination.gender : undefined;
+  const ward = wardArm(referral)?.destination;
   const sex = referralSexCell(referral);
-  const showGender = gender && gender.toLowerCase() !== sex.toLowerCase() && gender.toLowerCase() !== "not recorded";
-  return showGender ? `${referral.ageBand}, ${sex} (${gender})` : `${referral.ageBand}, ${sex}`;
+  const base = `${referral.ageBand}, ${sex}`;
+  if (!ward) return base;
+  const gender = ward.gender?.trim();
+  if (!gender || gender.toLowerCase() === "not recorded") return `${base}, gender not recorded`;
+  return gender.toLowerCase() === sex.toLowerCase() ? base : `${base} (${gender})`;
 }
 
 /** The referral's due time as a countdown, or how far past it is, from the shared Timer. */
@@ -499,9 +504,11 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     setHighlight(null);
   }, []);
 
+  // One state object, so the resolver's identity-keyed index is built once per render, not per row.
+  const resolverState = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const nameOf = useCallback(
-    (referral: Referral) => resolveSubjectPatient(referral, { patients, referrals, movements }).displayName,
-    [patients, referrals, movements],
+    (referral: Referral) => resolveSubjectPatient(referral, resolverState).displayName,
+    [resolverState],
   );
 
   const matchesSearch = (referral: Referral) => {
@@ -509,7 +516,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     if (!q) return false;
     const siteName = (siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode).toLowerCase();
     const destinations = referralDestinationLabels(referral).join(" ").toLowerCase();
-    const pat = resolveSubjectPatient(referral, { patients, referrals, movements });
+    const pat = resolveSubjectPatient(referral, resolverState);
     return (
       referral.id.toLowerCase().includes(q) ||
       pat.displayName.toLowerCase().includes(q) ||
@@ -535,7 +542,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
   const selectedReferral = selectedReferralId
     ? referrals.find((referral) => referral.id === selectedReferralId)
     : undefined;
-  const selectedPatientInfo = resolveSubjectPatient(selectedReferral, { patients, referrals, movements });
+  const selectedPatientInfo = resolveSubjectPatient(selectedReferral, resolverState);
   const selectedReadyUnits = selectedReferral ? readyUnitCount(selectedReferral, units, now) : undefined;
   const readmissionIndex = useMemo(
     () => createReadmissionIndex({ admissions, patients, referrals, movements, units }),
@@ -579,7 +586,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
     [units, admissions, bedReleases, leaveBeds, now],
   );
   const meetingRows: MeetingRow[] = queued.map((referral) => {
-    const person = resolveSubjectPatient(referral, { patients, referrals, movements });
+    const person = resolveSubjectPatient(referral, resolverState);
     return { referral, name: person.displayName, umrn: person.umrn };
   });
   const selectedPriority = selectedReferral ? getReferralPriority(selectedReferral, now) : undefined;
@@ -1116,6 +1123,10 @@ function QueuedSection({
   readmissionIndex: ReturnType<typeof createReadmissionIndex>;
   isHighlighted?: (referral: Referral) => boolean;
 }) {
+  const queuedResolverState = useMemo(
+    () => ({ patients, referrals: allReferrals, movements }),
+    [patients, allReferrals, movements],
+  );
   return (
     <section className={styles.v6Section} data-testid="ward-referral-board-queued">
       <h3 className="sr-only">
@@ -1150,7 +1161,7 @@ function QueuedSection({
             </thead>
             <tbody>
               {queued.map((referral) => {
-                const patientInfo = resolveSubjectPatient(referral, { patients, referrals: allReferrals, movements });
+                const patientInfo = resolveSubjectPatient(referral, queuedResolverState);
                 const refusals = refusalLines(referral);
                 const sendingHospital = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
                 const selected = referral.id === selectedId;
@@ -1296,7 +1307,7 @@ function QueuedSection({
 
           <ul className={a.cards} data-testid="ward-referral-board-queued-cards">
             {queued.map((referral) => {
-              const patientInfo = resolveSubjectPatient(referral, { patients, referrals: allReferrals, movements });
+              const patientInfo = resolveSubjectPatient(referral, queuedResolverState);
               const refusals = refusalLines(referral);
               const accepted = acceptedAddressing(referral);
               const linkedMovement = movements.find((m) => m.referralId === referral.id && !m.closure);

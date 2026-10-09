@@ -1,5 +1,6 @@
 "use client";
 
+import { wardAddressing } from "@/components/ward-management/ward-eligibility";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { useState, type ReactNode } from "react";
@@ -64,9 +65,10 @@ export function openArms(referral: Referral) {
   return referral.destinations.filter((arm) => arm.state === "queued" && arm.withdrawnAt === undefined);
 }
 
+/** The live ward request, or the first recorded one when all are answered (`wardAddressing`). */
 export function wardArm(referral: Referral) {
-  const arm = referral.destinations.find((addressing) => addressing.destination.kind === "psychiatric_ward");
-  return arm && arm.destination.kind === "psychiatric_ward" ? { arm, destination: arm.destination } : undefined;
+  const arm = wardAddressing(referral);
+  return arm ? { arm, destination: arm.destination } : undefined;
 }
 
 /** What the referral still asks for, in a few words ("Ward bed and ED review"). */
@@ -667,7 +669,7 @@ export function ReferralPatientTab({
       value: ward ? (ward.highAcuityNursingNeeded ? "High acuity" : "Standard") : "Not asked",
       on: ward?.highAcuityNursingNeeded,
     },
-    { label: "Designation", value: ward ? ward.sex : "Not asked", on: false },
+    { label: "Sex", value: ward ? ward.sex : "Not asked", on: false },
     { label: "Transport", value: referral.transportNeeded ? "Requested" : "Not asked", on: referral.transportNeeded },
     { label: "Units ready", value: readyUnits === undefined ? "No bed asked" : String(readyUnits), on: false },
   ];
@@ -883,16 +885,41 @@ export function ReferralTimeline({
   const dueAt = referral.raisedAt + decisionWindow(referral);
   const overdue = isOverdue(referral, now);
   const open = openArms(referral).length > 0;
+  const showDue = open && clocks.sinceReferralRunning;
+  const all = referralTimeline(referral, units);
+  // Overdue: recorded events up to the due time, then the due marker, then later events.
+  const entries = showDue && overdue ? all.filter((entry) => entry.at <= dueAt) : all;
+  const after = showDue && overdue ? all.filter((entry) => entry.at > dueAt) : [];
+  const due = (
+    <>
+      <li className={cx(styles.timelineDue, overdue && styles.timelineLate)}>
+        <span className={styles.timelineAt}>{formatInstantWithDay(dueAt, now)}</span>
+        {overdue ? <TriangleAlert size={12} aria-hidden="true" /> : <StatusGlyph tone="neutral" size={9} />}
+        <span>
+          {overdue ? "Decision was due" : "Decision due"} (tier {referral.urgency})
+        </span>
+      </li>
+      {after.map((entry, index) => (
+        <li key={`after-${entry.at}-${index}`}>
+          <span className={styles.timelineAt}>{formatInstantWithDay(entry.at, now)}</span>
+          <StatusGlyph tone={entry.tone} size={9} />
+          <span>{entry.text}</span>
+        </li>
+      ))}
+    </>
+  );
   return (
     <div className={styles.pTab} data-testid="ward-referral-timeline-tab">
       <ol className={styles.timeline} aria-label="Referral timeline">
-        {referralTimeline(referral, units).map((entry, index) => (
+        {entries.map((entry, index) => (
           <li key={`${entry.at}-${index}`}>
             <span className={styles.timelineAt}>{formatInstantWithDay(entry.at, now)}</span>
             <StatusGlyph tone={entry.tone} size={9} />
             <span>{entry.text}</span>
           </li>
         ))}
+        {/* The due marker sits in time order: among past events when overdue, after Now when not. */}
+        {showDue && overdue ? due : null}
         {open ? (
           <li className={styles.timelineNow}>
             <span className={styles.timelineAt}>{formatInstantWithDay(now, now)}</span>
@@ -902,15 +929,7 @@ export function ReferralTimeline({
             </span>
           </li>
         ) : null}
-        {open && clocks.sinceReferralRunning ? (
-          <li className={cx(styles.timelineDue, overdue && styles.timelineLate)}>
-            <span className={styles.timelineAt}>{formatInstantWithDay(dueAt, now)}</span>
-            {overdue ? <TriangleAlert size={12} aria-hidden="true" /> : <StatusGlyph tone="neutral" size={9} />}
-            <span>
-              {overdue ? "Decision was due" : "Decision due"} (tier {referral.urgency})
-            </span>
-          </li>
-        ) : null}
+        {showDue && !overdue ? due : null}
       </ol>
       {children}
     </div>
