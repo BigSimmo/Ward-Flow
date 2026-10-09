@@ -1488,32 +1488,20 @@
     background: var(--wf-scrim);
   }
 
-  .side {
+  /* A modal bottom sheet, like the other pages' .detail sheets; not an action row. */
+  .detail {
     position: fixed;
-    top: 3.5rem;
     right: 0;
     bottom: 0;
     left: 0;
     z-index: var(--z-overlay);
-    display: flex;
-  }
-
-  .side .detail {
-    flex: 1;
-    min-height: 0;
+    height: calc(100dvh - 3.5rem);
     padding-bottom: calc(var(--spacing-tap, 3rem) + 2 * var(--wf-s-2) + var(--safe-area-bottom, 0px));
     border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
     box-shadow: var(--wf-e3);
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
-  }
-
-  .detailHead {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background: var(--wf-surface);
   }
 
   .grab {

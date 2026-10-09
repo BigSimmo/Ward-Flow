@@ -509,6 +509,14 @@ export function OfficerScreen() {
     resetDiversion();
     setSelectedId(undefined);
   };
+  // Between the phone sheet and the two-column layout the panel stacks above the lists, so a
+  // newly chosen job is scrolled into view rather than opening off-screen.
+  const sideRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (selectedId === undefined || typeof window.matchMedia !== "function") return;
+    if (!window.matchMedia("(min-width: 48.0625rem) and (max-width: 62.5rem)").matches) return;
+    sideRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  }, [selectedId]);
 
   useEffect(() => {
     if (!formModalJob) return;
@@ -1291,8 +1299,11 @@ export function OfficerScreen() {
                     Involuntary
                   </FilterChip>
                   {anyHighlight ? (
-                    <span className={styles.highlightNote} role="status">
-                      {highlightedCount} highlighted
+                    <span className={styles.highlightNote}>
+                      <span aria-hidden="true">{highlightedCount} highlighted</span>
+                      <span className="sr-only" role="status">
+                        {highlightedCount} synthetic rows highlighted
+                      </span>
                       <Button variant="ghost" size="sm" onClick={clearHighlights}>
                         Clear
                       </Button>
@@ -1650,7 +1661,7 @@ export function OfficerScreen() {
           {panelOpen && selectedJob && selectedJob.transport ? (
             <>
               <div className={styles.scrim} aria-hidden="true" onClick={closeJob} />
-              <div className={styles.side}>
+              <div ref={sideRef} className={styles.side}>
                 <Card
                   className={styles.detail}
                   aria-labelledby="ward-officer-detail-heading"

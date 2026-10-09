@@ -100,7 +100,7 @@ export function FormsPack({ movement, now, who }: { movement: Movement; now: Ins
                       {form.fileName}
                     </>
                   ) : slot.key === "legal" && booked ? (
-                    `Booking names Form ${booked}, file not uploaded`
+                    `Booking names Form ${booked}, not uploaded`
                   ) : (
                     `Needed: ${slot.hint}`
                   )}
