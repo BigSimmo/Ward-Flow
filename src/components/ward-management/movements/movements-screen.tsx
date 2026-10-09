@@ -1216,6 +1216,20 @@ export function MovementsScreen() {
                 }
               />
               {sideView === "transport" ? (
+                <div className={flow.sideFigures}>
+                  {/* Legs and the open movements without one, side by side, so the excluded
+                      count is stated rather than implied. Each figure reads label then value. */}
+                  <div className={flow.sideFigure} data-testid="movements-day-metric">
+                    <span>Transport legs</span>
+                    <strong>{legs.length}</strong>
+                  </div>
+                  <div className={flow.sideFigure} data-testid="movements-day-metric">
+                    <span>No transport leg</span>
+                    <strong>{openMovements.length - legs.length}</strong>
+                  </div>
+                </div>
+              ) : null}
+              {sideView === "transport" ? (
                 legs.length === 0 ? (
                   <p className={styles.absent}>No transport leg is booked or moving right now.</p>
                 ) : (
