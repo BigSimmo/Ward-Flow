@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, Check, Clock, Copy, FileText, FileUp, Scale } from "lucide-react";
+import { AlertCircle, BedDouble, Check, Clock, Copy, FileText, FileUp, Scale } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { PatientHistoryTab, PatientCommunityTab, PatientDetailsTab, PatientDocumentsTab } from "./patient-dossier-tabs";
@@ -25,7 +25,14 @@ import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode } from "./patient-mode";
 import { PatientStatusCard, type PatientStatusContext } from "./patient-status-card";
-import { PatientContactsCard, PatientLegalNowCard, PatientWhyCard, type ContactRow } from "./patient-now-cards";
+import {
+  PatientContactsCard,
+  PatientLastSeenCard,
+  PatientLeaveCard,
+  PatientLegalNowCard,
+  PatientWhyCard,
+  type ContactRow,
+} from "./patient-now-cards";
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
 import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
@@ -135,7 +142,7 @@ export function PatientNowScreen({
   initialExampleId = "WF-009",
   initialTaskAction,
 }: PatientNowScreenProps) {
-  const { patients, movements, referrals, admissions, units, dispatch, dayZero, rejections } = useWardFlow();
+  const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } = useWardFlow();
   const now = useWardFlowClock();
 
   // `now` is a demo-clock `Instant` (minutes from `dayZero`), not a wall-clock millisecond
@@ -266,7 +273,16 @@ export function PatientNowScreen({
   const urgencyTier = liveMovement?.urgency;
 
   // The gate board mode: an open movement, then an occupied bed, otherwise not active.
-  const mode = patientMode({ movement: liveMovement, admission: resolved.liveAdmission });
+  // D-38: the stay's held bed (leave or absence), joined by stay id, never by person.
+  const stayLeaveBed = resolved.liveAdmission
+    ? leaveBeds.find((bed) => bed.admissionId === resolved.liveAdmission?.id)
+    : undefined;
+  const mode = patientMode({
+    movement: liveMovement,
+    admission: resolved.liveAdmission,
+    leaveBed: stayLeaveBed,
+    patient: livePatient,
+  });
   const modeMeta = PATIENT_MODES[mode];
   const isLiveBedflow = modeMeta.placing;
   const isPulled = isLiveBedflow && liveMovement?.pullExpiresAt !== undefined;
@@ -396,9 +412,13 @@ export function PatientNowScreen({
       ? originName
       : mode === "transit"
         ? `On the way to ${acceptingUnit?.name ?? "the receiving ward"}`
-        : mode === "ward"
-          ? (stayUnit?.name ?? acceptingUnit?.name)
-          : livePatient?.suburb;
+        : mode === "leave"
+          ? `On leave from ${stayUnit?.name ?? "the ward"}`
+          : mode === "awol"
+            ? `Missing from ${stayUnit?.name ?? "the ward"}`
+            : mode === "ward"
+              ? (stayUnit?.name ?? acceptingUnit?.name)
+              : livePatient?.suburb;
   const stayArrivedAt = resolved.liveAdmission?.arrivedAt;
   const stayDay =
     stayArrivedAt !== undefined && stayArrivedAt !== null
@@ -412,6 +432,29 @@ export function PatientNowScreen({
     requestAnimationFrame(() =>
       document.getElementById("pnTransportHeading")?.scrollIntoView?.({ block: "center", behavior: "smooth" }),
     );
+  }
+
+  // D-38 ward actions on the stay. The ward records these, so they are raised as the ward the stay is on.
+  function recordReturn() {
+    if (stayLeaveBed)
+      dispatch({
+        type: "END_LEAVE_BED",
+        role: "ward",
+        now,
+        leaveBedId: stayLeaveBed.id,
+        actingUnitId: stayLeaveBed.unitId,
+      });
+  }
+  function markAbsent() {
+    const stay = resolved?.liveAdmission;
+    if (stay)
+      dispatch({
+        type: "RECORD_ABSENT_WITHOUT_LEAVE",
+        role: "ward",
+        now,
+        admissionId: stay.id,
+        actingUnitId: stay.unitId,
+      });
   }
 
   const statusContext: PatientStatusContext = {
@@ -431,6 +474,30 @@ export function PatientNowScreen({
     },
     onBookTransport: openTransportForm,
     onArrivalTime: () => setShowArrivalTimeModal(true),
+    leaveBed: stayLeaveBed,
+    stayUnitName: stayUnit?.name,
+    onRecordReturn: recordReturn,
+    onMarkAbsent: markAbsent,
+    onAbsenceStep: (step) => {
+      const stay = resolved.liveAdmission;
+      if (!stay) return;
+      dispatch({
+        type: "RECORD_ABSENCE_STEP",
+        role: "ward",
+        now,
+        admissionId: stay.id,
+        actingUnitId: stay.unitId,
+        step,
+      });
+    },
+    onRecordCto: () => {
+      if (livePatient)
+        dispatch({ type: "RECORD_COMMUNITY_TREATMENT_ORDER", role: "community", now, patientId: livePatient.id });
+    },
+    onEndCto: () => {
+      if (livePatient)
+        dispatch({ type: "END_COMMUNITY_TREATMENT_ORDER", role: "community", now, patientId: livePatient.id });
+    },
   };
 
   // Who to call now, from the record only. Phone numbers are not held in this prototype.
@@ -446,8 +513,10 @@ export function PatientNowScreen({
         role: displayCadNumber ? `Transport, CAD ${displayCadNumber}` : "Transport",
       });
     if (originName) contacts.push({ name: originName, role: "Sending ED" });
-  } else if (mode === "ward" && (stayUnit ?? acceptingUnit)) {
+  } else if ((mode === "ward" || mode === "leave" || mode === "awol") && (stayUnit ?? acceptingUnit)) {
     contacts.push({ name: (stayUnit ?? acceptingUnit)!.name, role: "Ward, nurse in charge" });
+    const police = stayLeaveBed?.absentWithoutLeave?.steps.police_notified;
+    if (mode === "awol" && police !== undefined) contacts.push({ name: "Police", role: `Notified ${clock(police)}` });
   }
   if (livePatient?.catchmentCommunityTeam)
     contacts.push({ name: livePatient.catchmentCommunityTeam, role: "Catchment community team" });
@@ -530,11 +599,28 @@ export function PatientNowScreen({
                   <span className={styles.v6HeroFact}>
                     <Scale size={14} aria-hidden="true" />
                     {/* Not active: the patient record's own status, not a closed movement's. */}
-                    {(mode === "idle"
-                      ? livePatient?.legalStatus
-                      : (liveMovement?.legalStatus ?? livePatient?.legalStatus)) ?? "Legal status not recorded"}
+                    {mode === "cto"
+                      ? "Community treatment order, Form 5A"
+                      : ((mode === "idle"
+                          ? livePatient?.legalStatus
+                          : (liveMovement?.legalStatus ?? livePatient?.legalStatus)) ?? "Legal status not recorded")}
                   </span>
-                  {mode === "ward" && stayDay !== undefined ? (
+                  {(mode === "leave" || mode === "awol") && (
+                    <span className={styles.v6HeroFact}>
+                      <BedDouble size={14} aria-hidden="true" />
+                      Bed held
+                    </span>
+                  )}
+                  {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
+                    <span className={styles.v6HeroFact}>
+                      <Clock size={14} aria-hidden="true" />
+                      <strong className={styles.v6HeroWait}>
+                        {dur(Math.max(0, now - stayLeaveBed.absentWithoutLeave.since))}
+                      </strong>
+                      absent since {clock(stayLeaveBed.absentWithoutLeave.since)}
+                    </span>
+                  ) : null}
+                  {(mode === "ward" || mode === "leave") && stayDay !== undefined ? (
                     <span className={styles.v6HeroFact}>
                       <strong className={styles.v6HeroWait}>Day {stayDay}</strong>
                     </span>
@@ -642,9 +728,15 @@ export function PatientNowScreen({
               <>
                 {modeMeta.quiet ? null : <LiveChip state="live" onHero />}
                 <Button variant="onHero" size="sm" icon={Copy} onClick={handleCopySummary}>
-                  {copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary"}
+                  {copied
+                    ? "Copied"
+                    : isLiveBedflow
+                      ? "Copy handover"
+                      : mode === "awol"
+                        ? "Copy missing person summary"
+                        : "Copy summary"}
                 </Button>
-                {mode === "idle" ? (
+                {mode === "idle" || mode === "cto" ? (
                   <Link
                     href={
                       livePatient
@@ -1081,7 +1173,17 @@ export function PatientNowScreen({
                       patient={livePatient}
                     />
                   ) : null}
-                  {mode === "idle" ? (
+                  {mode === "leave" && stayLeaveBed ? (
+                    <PatientLeaveCard dueBack={clock(stayLeaveBed.expectedReturn)} onMarkAbsent={markAbsent} />
+                  ) : null}
+                  {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
+                    <PatientLastSeenCard
+                      wardName={stayUnit?.name}
+                      since={clock(stayLeaveBed.absentWithoutLeave.since)}
+                      onRecordReturn={recordReturn}
+                    />
+                  ) : null}
+                  {mode === "idle" || mode === "cto" ? (
                     <PatientRecordOverview
                       patient={livePatient}
                       record={record}

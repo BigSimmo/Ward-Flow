@@ -98,3 +98,16 @@
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   white-space: nowrap;
 }
+
+/* "When found" bar at the foot of Last seen. */
+.dock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  margin: 0 var(--wf-s-2) var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
+}

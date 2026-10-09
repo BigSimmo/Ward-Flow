@@ -1,14 +1,20 @@
 import type { MouseEvent, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { BedDouble, CalendarDays, Clock, Eye, Scale, Stethoscope, Truck, Users } from "lucide-react";
+import { BedDouble, CalendarDays, Clock, DoorOpen, Eye, Scale, Stethoscope, Truck, Users } from "lucide-react";
 import { Button, StatusGlyph, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { Movement } from "@/components/ward-management/ward-model";
+import {
+  ABSENCE_STEPS,
+  ABSENCE_STEP_LABELS,
+  type AbsenceStep,
+  type LeaveBed,
+  type Movement,
+} from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { calendarDateOf } from "@/components/ward-management/ward-clock";
-import { clock } from "./patient-now-records";
+import { clock, dur } from "./patient-now-records";
 import type { PatientMode } from "./patient-mode";
 import styles from "./patient-status-card.module.css";
 
@@ -36,8 +42,22 @@ export interface PatientStatus {
   verdict: string;
   /** Gates clear out of gates counted. Only placement modes count gates. */
   meter?: { clear: number; of: number };
+  /** What the meter counts ("clear" for gates, "steps done" for the missing person steps). */
+  meterWord?: string;
   meta: string;
   cells: StatusCell[];
+  /** A checklist in place of the three cells (absent without leave). */
+  rows?: StatusRow[];
+}
+
+/** One checklist row: done or not, when, and at most one action. */
+export interface StatusRow {
+  key: string;
+  done: boolean;
+  label: string;
+  sub?: string;
+  time?: string;
+  action?: StatusAction;
 }
 
 export interface PatientStatusContext {
@@ -52,6 +72,14 @@ export interface PatientStatusContext {
   onClearance: (event: MouseEvent<HTMLButtonElement>) => void;
   onBookTransport: () => void;
   onArrivalTime: () => void;
+  /** D-38: the stay's held bed when on leave or absent, and the actions on it. */
+  leaveBed?: LeaveBed;
+  stayUnitName?: string;
+  onRecordReturn: () => void;
+  onMarkAbsent: () => void;
+  onAbsenceStep: (step: AbsenceStep) => void;
+  onRecordCto: () => void;
+  onEndCto: () => void;
 }
 
 function clearanceCell(movement: Movement, onClearance: PatientStatusContext["onClearance"]): StatusCell {
@@ -272,12 +300,116 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
               : "Set on the ward",
         },
         {
+          key: "leave",
+          icon: DoorOpen,
+          label: "Leave",
+          owner: "Ward",
+          value: "None now",
+          sub: "Leave is recorded on the ward board",
+          action: { kind: "button", label: "Mark absent", onClick: () => ctx.onMarkAbsent() },
+        },
+      ],
+    };
+  }
+
+  if (mode === "leave" && ctx.leaveBed) {
+    const bed = ctx.leaveBed;
+    const overdue = now > bed.expectedReturn;
+    return {
+      tone: overdue ? "warning" : "neutral",
+      verdict: overdue ? "On leave, past due back" : "On leave",
+      meta: ctx.stayUnitName ? `Bed held on ${ctx.stayUnitName}` : "Bed held",
+      cells: [
+        {
+          key: "leave",
+          icon: DoorOpen,
+          label: "Leave",
+          owner: "Ward",
+          value: bed.kind === "medical_trip" ? "Medical trip" : "Off ward leave",
+          sub: "Bed held while away",
+          time: `Left ${clock(bed.confirmedAt)}`,
+        },
+        {
+          key: "due-back",
+          icon: Clock,
+          label: "Due back",
+          owner: "Nurse in charge",
+          tone: overdue ? "warning" : "neutral",
+          value: clock(bed.expectedReturn),
+          sub: overdue
+            ? `Overdue by ${dur(now - bed.expectedReturn)}, typed by the ward`
+            : `In ${dur(bed.expectedReturn - now)}, typed by the ward`,
+          action: { kind: "button", label: "Record return", onClick: () => ctx.onRecordReturn() },
+        },
+        {
           key: "legal",
           icon: Scale,
           label: "Legal status",
           owner: "Treating team",
           value: legalValue(movement, patient),
           sub: "As recorded, no lapse time shown",
+        },
+      ],
+    };
+  }
+
+  if (mode === "awol" && ctx.leaveBed?.absentWithoutLeave) {
+    const absence = ctx.leaveBed.absentWithoutLeave;
+    const rows: StatusRow[] = ABSENCE_STEPS.map((step) => {
+      const at = absence.steps[step];
+      return {
+        key: step,
+        done: at !== undefined,
+        label: ABSENCE_STEP_LABELS[step],
+        time: at !== undefined ? clock(at) : undefined,
+        action:
+          at === undefined ? { kind: "button", label: "Record", onClick: () => ctx.onAbsenceStep(step) } : undefined,
+      };
+    });
+    return {
+      tone: "danger",
+      verdict: "Absent without leave",
+      meter: { clear: rows.filter((r) => r.done).length, of: rows.length },
+      meterWord: "steps done",
+      meta: `Since ${clock(absence.since)}, owner nurse in charge`,
+      cells: [],
+      rows,
+    };
+  }
+
+  if (mode === "cto" && patient?.communityTreatmentOrder) {
+    const order = patient.communityTreatmentOrder;
+    return {
+      tone: "neutral",
+      verdict: "Not active, on a CTO",
+      meta: "No open placement or stay",
+      cells: [
+        {
+          key: "cto",
+          icon: Scale,
+          label: "Community treatment order",
+          owner: "Community team",
+          tone: "success",
+          value: `Form ${order.form} in force`,
+          sub: `Recorded ${dayLabel(order.recordedAt, ctx.dayZero)} by ${order.recordedBy}`,
+          time: "No lapse time shown",
+          action: { kind: "button", label: "Record ended", onClick: () => ctx.onEndCto() },
+        },
+        {
+          key: "catchment",
+          icon: Users,
+          label: "Catchment team",
+          owner: "Community",
+          value: patient.catchmentCommunityTeam ?? "Not recorded",
+          sub: "Recorded catchment",
+        },
+        {
+          key: "gp",
+          icon: Stethoscope,
+          label: "GP",
+          owner: "Primary care",
+          value: patient.generalPractitioner ?? "Not recorded",
+          sub: patient.suburb ? `Lives in ${patient.suburb}` : "Suburb not recorded",
         },
       ],
     };
@@ -313,6 +445,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
         owner: "Treating team",
         value: legalValue(undefined, patient),
         sub: "As recorded",
+        action: patient ? { kind: "button", label: "Record CTO", onClick: () => ctx.onRecordCto() } : undefined,
       },
     ],
   };
@@ -344,7 +477,10 @@ function CellAction({ action, primary }: { action: StatusAction; primary: boolea
  */
 export function PatientStatusCard({ mode, context }: { mode: PatientMode; context: PatientStatusContext }) {
   const status = buildPatientStatus(mode, context);
-  const primaryKey = status.cells.find((c) => !c.clear && c.action?.kind === "button")?.key;
+  const primaryKey =
+    status.rows?.find((r) => !r.done && r.action?.kind === "button")?.key ??
+    status.cells.find((c) => !c.clear && c.action?.kind === "button")?.key;
+  const word = status.meterWord ?? "clear";
   return (
     <section className={styles.card} aria-label="Status" data-testid="ward-patient-status-card">
       <div className={styles.head}>
@@ -354,19 +490,38 @@ export function PatientStatusCard({ mode, context }: { mode: PatientMode; contex
         </span>
         {status.meter ? (
           <span className={styles.meterGroup}>
-            <span className={styles.meter} role="img" aria-label={`${status.meter.clear} of ${status.meter.of} clear`}>
+            <span
+              className={styles.meter}
+              role="img"
+              aria-label={`${status.meter.clear} of ${status.meter.of} ${word}`}
+            >
               {Array.from({ length: status.meter.of }, (_, i) => (
                 <i key={i} data-on={i < status.meter!.clear} />
               ))}
             </span>
             <span className={styles.meterText} aria-hidden="true">
-              {status.meter.clear} of {status.meter.of} clear
+              {status.meter.clear} of {status.meter.of} {word}
             </span>
           </span>
         ) : null}
         <span className={styles.meta}>{status.meta}</span>
       </div>
-      <div className={styles.cells}>
+      {status.rows ? (
+        <ul className={styles.rows} aria-label="Missing person steps">
+          {status.rows.map((row) => (
+            <li key={row.key} className={styles.row} data-testid={`ward-patient-step-${row.key}`}>
+              <StatusGlyph tone={row.done ? "success" : "warning"} size={11} />
+              <span className={styles.rowText}>
+                <strong>{row.label}</strong>
+                {row.sub ? <span>{row.sub}</span> : null}
+              </span>
+              {row.time ? <span className={styles.time}>{row.time}</span> : <span className={styles.nr}>Not yet</span>}
+              {row.action ? <CellAction action={row.action} primary={row.key === primaryKey} /> : <span />}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <div className={styles.cells} hidden={status.cells.length === 0}>
         {status.cells.map((cell) => (
           <div key={cell.key} className={styles.cell} data-testid={`ward-patient-gate-${cell.key}`}>
             <div className={styles.label}>

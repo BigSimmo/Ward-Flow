@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { MessageSquare, Phone, Scale } from "lucide-react";
+import { Clock, MapPin, MessageSquare, Phone, Scale } from "lucide-react";
 import { Button, Card, CardBody, CardHead, StatusGlyph, type WfTone } from "@/components/wf";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -54,8 +54,9 @@ export function PatientWhyCard({
             {movement.security} {movement.cohort.toLowerCase()} bed{movement.specialling ? ", 1:1 specialling" : ""}
           </Row>
         ) : null}
-        <Row label="Interpreter">{patient?.interpreterLanguage ?? notRecorded}</Row>
-        <Row label="Cultural">{patient?.aboriginalOrTorresStraitIslanderStatus ?? notRecorded}</Row>
+        {/* Interpreter language and Aboriginal status stay in Details, apart from each other and
+            from this history, per the placement rule in person-screen.tsx. */}
+        <Row label="Catchment">{patient?.catchmentCommunityTeam ?? notRecorded}</Row>
       </div>
     </Card>
   );
@@ -97,6 +98,15 @@ export function PatientLegalNowCard({
       code: "Examination",
       name: "Psychiatric examination recorded",
       time: clock(movement.examination.at),
+    });
+  // D-38: a community treatment order in force is shown with when it was recorded, never a lapse time.
+  const order = patient?.communityTreatmentOrder;
+  if (order)
+    rows.push({
+      tone: "success",
+      code: `Form ${order.form}`,
+      name: "Community treatment order, in force",
+      time: clock(order.recordedAt),
     });
   const status = movement?.legalStatus ?? patient?.legalStatus;
   return (
@@ -169,6 +179,68 @@ export function PatientContactsCard({ rows }: { rows: ContactRow[] }) {
           <p className={styles.para}>No contacts recorded for this record.</p>
         )}
       </CardBody>
+    </Card>
+  );
+}
+
+/**
+ * On leave: what happens if they are not back by the time the ward typed. Contact details are not
+ * held in this prototype, so the first two steps are said rather than offered as call buttons.
+ */
+export function PatientLeaveCard({ dueBack, onMarkAbsent }: { dueBack: string; onMarkAbsent: () => void }) {
+  return (
+    <Card data-testid="ward-patient-leave-card">
+      <CardHead level={3} icon={Clock} title={`If not back by ${dueBack}`} />
+      <ol className={styles.list}>
+        <li className={styles.item}>
+          <span className={styles.itemText}>
+            <strong>1. Contact them and their carer</strong>
+            <span>Contact details are not held in this prototype</span>
+          </span>
+        </li>
+        <li className={styles.item}>
+          <span className={styles.itemText}>
+            <strong>2. Tell the treating psychiatrist</strong>
+          </span>
+        </li>
+        <li className={styles.item}>
+          <span className={styles.itemText}>
+            <strong>3. Treat as absent without leave</strong>
+            <span>Starts the missing person steps</span>
+          </span>
+          <Button size="sm" onClick={onMarkAbsent}>
+            Mark absent
+          </Button>
+        </li>
+      </ol>
+    </Card>
+  );
+}
+
+/** Absent without leave: where and since when, with Record return at the foot. */
+export function PatientLastSeenCard({
+  wardName,
+  since,
+  onRecordReturn,
+}: {
+  wardName?: string;
+  since: string;
+  onRecordReturn: () => void;
+}) {
+  return (
+    <Card data-testid="ward-patient-last-seen">
+      <CardHead level={3} icon={MapPin} title="Last seen" aside={<span className={styles.time}>{since}</span>} />
+      <div className={styles.rows}>
+        <Row label="Where">{wardName ?? notRecorded}</Row>
+        <Row label="Recorded">{since}, when the ward recorded the absence</Row>
+        <Row label="Description">Recorded by the ward, not held in this prototype</Row>
+      </div>
+      <div className={styles.dock}>
+        <strong>When found</strong>
+        <Button size="sm" variant="pri" onClick={onRecordReturn}>
+          Record return
+        </Button>
+      </div>
     </Card>
   );
 }

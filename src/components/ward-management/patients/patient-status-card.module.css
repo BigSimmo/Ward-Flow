@@ -154,3 +154,52 @@
     align-self: center;
   }
 }
+
+/* Absent without leave: the five missing person steps as one checklist. */
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto auto;
+  gap: var(--wf-s-3);
+  align-items: center;
+  min-height: 48px;
+  padding: var(--wf-s-1) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.rowText {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--wf-s-2);
+  align-items: baseline;
+  min-width: 0;
+}
+
+.rowText strong {
+  font-weight: 600;
+}
+
+.rowText span {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.nr {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.cells[hidden] {
+  display: none;
+}
