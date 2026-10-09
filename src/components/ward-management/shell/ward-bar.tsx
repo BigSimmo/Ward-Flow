@@ -457,6 +457,7 @@ export function phoneBarAction(action: WardPrimaryAction | undefined, phone: boo
  * Export the figures) keeps it, so the bar still holds one primary button.
  */
 export function routeBarAction(pathname: string): WardPrimaryAction {
+  if (isReferralSheetPath(pathname)) return { kind: "none" };
   const action = resolveWardPrimaryAction(pathname);
   return action === undefined || action.kind === "none" ? NEW_REFERRAL_ACTION : action;
 }
