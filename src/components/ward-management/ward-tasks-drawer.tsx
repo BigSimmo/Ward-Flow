@@ -368,7 +368,9 @@ export function WardTasksDrawer({
               type="button"
               data-testid={`ward-task-${item.id}`}
               className={styles.rowTitle}
-              onClick={() => onSelectMovement(item.movementId, undefined, item.href)}
+              onClick={() => {
+                onSelectMovement(item.movementId, undefined, item.href);
+              }}
             >
               {item.title}
             </button>
@@ -470,7 +472,9 @@ export function WardTasksDrawer({
             type="button"
             className={`${styles.btn} ${isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
             aria-label={item.plannedAdmission ? "Open planned admission in Capacity" : "Open patient"}
-            onClick={() => onSelectMovement(item.movementId, undefined, item.href)}
+            onClick={() => {
+              onSelectMovement(item.movementId, undefined, item.href);
+            }}
           >
             <ArrowUpRight aria-hidden="true" />
             Open
