@@ -219,7 +219,9 @@ export function WardTasksDrawer({
             className={`${styles.btn} ${styles.btnIcon}`}
             aria-label="Refer"
             title="Refer"
-            onClick={() => onSelectMovement(item.movementId, "refer")}
+            onClick={() => {
+              onSelectMovement(item.movementId, "refer");
+            }}
           >
             <Send aria-hidden="true" />
           </button>
@@ -229,7 +231,9 @@ export function WardTasksDrawer({
           className={`${styles.btn} ${styles.btnIcon}`}
           aria-label="Contact"
           title="Contact"
-          onClick={() => onSelectMovement(item.movementId, "contact")}
+          onClick={() => {
+            onSelectMovement(item.movementId, "contact");
+          }}
         >
           <Phone aria-hidden="true" />
         </button>
@@ -297,7 +301,9 @@ export function WardTasksDrawer({
               type="button"
               className={styles.pick}
               aria-pressed={contact === pick}
-              onClick={() => setContact(pick)}
+              onClick={() => {
+                setContact(pick);
+              }}
             >
               {pick}
             </button>
@@ -368,7 +374,9 @@ export function WardTasksDrawer({
               type="button"
               data-testid={`ward-task-${item.id}`}
               className={styles.rowTitle}
-              onClick={() => onSelectMovement(item.movementId, undefined, item.href)}
+              onClick={() => {
+                onSelectMovement(item.movementId, undefined, item.href);
+              }}
             >
               {item.title}
             </button>
@@ -438,7 +446,9 @@ export function WardTasksDrawer({
             <button
               type="button"
               className={`${styles.btn} ${isExpanded && !latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
-              onClick={() => acknowledge(item.id)}
+              onClick={() => {
+                acknowledge(item.id);
+              }}
             >
               <UserCheck aria-hidden="true" />
               Acknowledge
@@ -450,7 +460,9 @@ export function WardTasksDrawer({
               type="button"
               data-testid={`ward-task-reopen-${item.id}`}
               className={styles.btn}
-              onClick={() => reopen(item.id)}
+              onClick={() => {
+                reopen(item.id);
+              }}
             >
               <RotateCcw aria-hidden="true" />
               Reopen
@@ -460,7 +472,9 @@ export function WardTasksDrawer({
               type="button"
               data-testid={`ward-task-complete-${item.id}`}
               className={`${styles.btn} ${isExpanded ? styles.btnPrimary : ""}`}
-              onClick={() => complete(item.id)}
+              onClick={() => {
+                complete(item.id);
+              }}
             >
               <CheckCircle2 aria-hidden="true" />
               Mark done
@@ -470,7 +484,9 @@ export function WardTasksDrawer({
             type="button"
             className={`${styles.btn} ${isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
             aria-label={item.plannedAdmission ? "Open planned admission in Capacity" : "Open patient"}
-            onClick={() => onSelectMovement(item.movementId, undefined, item.href)}
+            onClick={() => {
+              onSelectMovement(item.movementId, undefined, item.href);
+            }}
           >
             <ArrowUpRight aria-hidden="true" />
             Open
@@ -561,7 +577,9 @@ export function WardTasksDrawer({
                   type="button"
                   className={styles.segment}
                   aria-pressed={taskFilter === value}
-                  onClick={() => setTaskFilter(value)}
+                  onClick={() => {
+                    setTaskFilter(value);
+                  }}
                 >
                   {label} <span className={styles.count}>{count}</span>
                 </button>
