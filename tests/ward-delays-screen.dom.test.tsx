@@ -1,4 +1,4 @@
-import { renderAllDelays, inspectDelayPerson } from "./helpers/delays-interactions";
+import { renderAllDelays, inspectDelayPerson, showEveryDelayRow } from "./helpers/delays-interactions";
 import { readFileSync } from "node:fs";
 
 import { fireEvent, screen, within } from "@testing-library/react";
@@ -89,7 +89,7 @@ describe("the Delays screen", () => {
     const scrollIntoView = vi.mocked(Element.prototype.scrollIntoView);
     const view = renderScreen();
 
-    expect(screen.queryByRole("region", { name: "Selected patient delay details" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Why this person is waiting" })).toBeNull();
     view.rerender(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DelaysScreen />
@@ -101,7 +101,9 @@ describe("the Delays screen", () => {
     inspectDelayPerson(wardMovements.find(isOpen)!.id);
     expect(frame).toHaveBeenCalledTimes(1);
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "start" });
-    expect(screen.getByRole("region", { name: "Selected patient delay details" })).toHaveFocus();
+    // The sheet joins the shared modal stack, which puts focus on its first control.
+    const sheet = screen.getByRole("region", { name: "Why this person is waiting" });
+    expect(sheet.contains(document.activeElement), "focus stayed on the covered table").toBe(true);
   });
 
   it("dismisses the slide-over detail inspection panel when clicking the backdrop", () => {
@@ -113,11 +115,11 @@ describe("the Delays screen", () => {
 
     const backdrop = screen.getByTestId("delays-detail-backdrop");
     expect(backdrop).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Selected patient delay details" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Why this person is waiting" })).toBeInTheDocument();
 
     fireEvent.click(backdrop);
     expect(screen.queryByTestId("delays-detail-backdrop")).toBeNull();
-    expect(screen.queryByRole("region", { name: "Selected patient delay details" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Why this person is waiting" })).toBeNull();
   });
 
   it("declares the responsive slide-over drawer contract (< 768px) and print static reset in delays.module.css", () => {
@@ -182,26 +184,23 @@ describe("the Delays screen", () => {
 
   it("says how many of the waiting population it is showing, and does not imply it shows them all", () => {
     renderScreen();
-    // ⚠️ THE HEADER NOW HAS TWO STATES, AND ONLY ONE OF THEM CARRIES "of N". Unmarked it states
-    // the population alone; a second figure there would read as a measured "0 marked" over a
-    // control nobody has pressed. Pressing any chip is what makes the "of N" claim appear, so the
-    // regex below is asserted against the MARKED state — which is the only state that makes it.
-    fireEvent.click(screen.getByRole("button", { name: /^Needs a locked bed \d+$/u }));
-    // ⚠️ `\\b`, NOT `\b`. In a TEMPLATE LITERAL `\b` is the backspace character U+0008, so this
-    // regex was /of 43<BACKSPACE>/ - a literal 0x08 byte where a word-boundary escape was meant -
-    // and could never match anything. The honest-looking repair is to
-    // weaken the assertion until it passes; the real one is the second backslash. This exact
-    // substitution has bitten this repository before and it leaves every gate green.
-    expect(
-      within(screen.getByRole("region", { name: "Waiting" })).getByText(new RegExp(`of ${OPEN_COUNT}\\b.*marked`, "u")),
-    ).toBeInTheDocument();
+    // Unfiltered, the header reads the whole population against itself.
+    expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${OPEN_COUNT} of ${OPEN_COUNT}`);
+    expect(screen.queryByTestId("delays-hidden-note")).toBeNull();
+
+    // Filtered, it reads the shown figure against the whole, and the table says how many are hidden.
+    // ⚠️ Escapes in a template-literal regex need a doubled backslash (`\\d`); a single one is lost.
+    fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
+    expect(screen.getByTestId("delays-shown-count").textContent).toMatch(new RegExp(`^\\d+ of ${OPEN_COUNT}$`, "u"));
+    expect(screen.getByTestId("delays-hidden-note")).toHaveTextContent(/hidden by the filters above/u);
   });
 
   it("carries the panels the three old screens each carried alone", () => {
     renderScreen();
-    // The wait bar and owner cards did not disappear — they moved into one panel, renamed from
-    // "How long" to "Who is holding people up" in the three-column rebuild.
-    expect(screen.getByRole("region", { name: /Action runway/u })).toBeInTheDocument();
+    // The wait bands and owner cards did not disappear: they are the "Whose move" tiles and the
+    // graphs under the table on the October 2026 board.
+    expect(screen.getByRole("region", { name: "Whose move" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Delay graphs" })).toBeInTheDocument();
     // Renamed again, task D1: "Who is waiting" -> "Waiting", the drawing's own word.
     expect(screen.getByRole("region", { name: /Waiting/u })).toBeInTheDocument();
     // "Worth your attention" is integrated into the middle register panel as an Attention tab.
@@ -215,9 +214,9 @@ describe("the Delays screen", () => {
    */
   it("lists every patient at most once across every group", () => {
     renderScreen();
-    const ids = Array.from(document.querySelectorAll("[data-ward-primitive='record-row'][data-record-key]")).map(
-      (node) => node.getAttribute("data-record-key") ?? "",
-    );
+    const ids = screen
+      .getAllByTestId(/^delays-select-/u)
+      .map((node) => (node.getAttribute("data-testid") ?? "").replace("delays-select-", ""));
     expect(ids.length, "no rows rendered — the assertion below would be vacuous").toBeGreaterThan(0);
     expect(new Set(ids).size, `duplicated: ${ids.join(", ")}`).toBe(ids.length);
   });
@@ -303,10 +302,10 @@ describe("the Delays screen", () => {
     const offers = within(panel).getAllByRole("link", { name: /Override/u });
     expect(offers.length, "no override affordance rendered — this guard proved nothing").toBeGreaterThan(0);
 
-    // The row this affordance belongs to, read from the row rather than assumed from fixture order.
-    const row = offers[0].closest("[data-ward-primitive='record-row']");
-    expect(row, "an override affordance rendered outside a record row").not.toBeNull();
-    const id = (row as HTMLElement).getAttribute("data-record-key")?.trim();
+    // The person this affordance belongs to, read from the panel rather than assumed from fixture order.
+    const owner = offers[0].closest("[data-testid^='delays-detail-']");
+    expect(owner, "an override affordance rendered outside a person's panel").not.toBeNull();
+    const id = (owner as HTMLElement).getAttribute("data-testid")?.replace("delays-detail-", "").trim();
     expect(id, "the row carries no record id, so there is nothing to compare the arrival against").toBeTruthy();
 
     fireEvent.click(offers[0]);
@@ -362,6 +361,7 @@ describe("the Delays screen", () => {
    */
   it("states its two absences in words rather than rendering an empty panel", () => {
     renderScreen();
+    fireEvent.click(screen.getByRole("tab", { name: /^System/u }));
     const noPerson = screen.getByRole("region", { name: /Delays with no named person/u });
     expect(noPerson).toHaveTextContent(/records delays only against a movement/u);
     expect(noPerson).toHaveTextContent(/Ward-wide closures and transport outages are not represented/u);
@@ -371,7 +371,7 @@ describe("the Delays screen", () => {
      * "Escalations and resolved" (renamed from "Registers", task D1), alongside "Escalations",
      * and its absence sentence only renders once that tab is the active pane.
      */
-    fireEvent.click(screen.getByRole("tab", { name: /Resolved today/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Resolved/u }));
     const resolved = within(screen.getByRole("region", { name: "Escalations and resolved" })).getByRole("tabpanel");
     expect(resolved).toHaveTextContent(/Kept until midnight for handover/u);
   });
@@ -388,6 +388,7 @@ describe("the Delays screen", () => {
    */
   it("does not present a computed zero in the 'no named person' panel's count slot", () => {
     renderScreen();
+    fireEvent.click(screen.getByRole("tab", { name: /^System/u }));
     const noPerson = screen.getByRole("region", { name: /Delays with no named person/u });
     expect(noPerson.querySelector("[data-ward-panel-count]")).toBeNull();
   });
@@ -537,11 +538,11 @@ describe("the Delays screen", () => {
      * is exactly the distinction that matters, since these two facts were once silently dropped for
      * everybody while the fixture kept some green test passing on the movement it happened to check.
      * So this still walks every open movement; it selects each one first, because the full record
-     * carrying "Owner: …" and the urgency tier now renders only for whoever is chosen.
+     * carrying "Held by …" and the urgency tier now renders only for whoever is chosen.
      */
     for (const movement of openMovements) {
       const panel = selectPerson(movement.id);
-      expect(panel, `Owner missing for ${movement.id}`).toHaveTextContent(`Owner: ${movement.owner}`);
+      expect(panel, `Owner missing for ${movement.id}`).toHaveTextContent(`Held by${movement.owner}`);
       expect(panel, `urgency tier missing for ${movement.id}`).toHaveTextContent(urgencyTierLabel(movement.urgency));
     }
   }, 90_000);
@@ -622,139 +623,80 @@ describe("the Delays screen", () => {
 });
 
 /**
- * 🔴 **TASK 1, 2026-09-07 — THE FILTER CHIPS RENDERED PRESSED, CARRIED REAL COUNTS, AND DID
- * NOTHING WHEN CLICKED.** `onChange={() => {}}` looked exactly like a working control. This
- * proves a click actually narrows who is shown, that the panel header — `${shown} of
- * ${open.length} shown` — follows the filter, and that a cause the filter empties entirely loses
- * its heading rather than crashing the screen on `WardGroupHeading`'s own "count of nought"
- * refusal (`delayGroups` already drops a cause with nobody in it — filtering on top of that can
- * empty a cause that arrived non-empty, and dropping it a second time, after this screen's own
- * filter runs, is the trap this task's brief names by name).
+ * 🔴 **THE OCTOBER 2026 BOARD FILTERS, AND IT MUST ALWAYS SAY WHO IT IS NOT SHOWING.**
+ *
+ * History, kept because a flipped expectation is indistinguishable from an accidental one:
+ *   - Until 2026-09-07 the chips filtered (and once did nothing at all when clicked).
+ *   - On 2026-09-07 the owner extended his Capacity ruling here: *a chip highlights, it never
+ *     hides*, because on a bed board a filtered-out patient and a placed patient look identical.
+ *   - In October 2026 the owner approved the Delays page mockup and asked for it to be built live.
+ *     That mockup filters: the table reads "N of M", a graph cell narrows it, "Nobody matches".
+ *
+ *   - On 2026-10-09 the owner ruled (decisions.md D-38): keep filtering, and show the hidden count.
+ *     For this board that supersedes the 2026-09-07 highlight rule. A Cursor agent had briefly
+ *     switched the board to highlight-only the same morning; that change was reversed.
+ *
+ * The ruling keeps the 7 September hazard closed a different way: whenever a filter hides anybody,
+ * the table states how many are hidden and offers "Show everyone", so a hidden person can never be
+ * mistaken for a placed one. These cases guard exactly that.
  */
-describe("the Delays chips MARK who is shown, and never hide anybody", () => {
+describe("the Delays filters narrow the table, and always say how many they hide", () => {
   const units = allUnits();
   const open = seededMovements.filter(isOpen);
   const baselineGroups = delayGroups(seededMovements, units, NOW_ANCHOR);
-  const allOpenIds = open.map((movement) => movement.id).sort();
 
-  /**
-   * 🔴 **THIS BLOCK ASSERTED THE OPPOSITE UNTIL 2026-09-07, AND BOTH VERSIONS WERE HONEST TESTS.**
-   *
-   * It used to be called *"the Delays filter chips actually filter who is shown"*, and it proved —
-   * correctly, against the code of the day — that pressing a chip REMOVED every non-matching row
-   * and dropped any cause heading the removal emptied. That was a real guard over real behaviour.
-   *
-   * ⚠️ **The behaviour was then ruled wrong by the owner**, who extended his Capacity ruling to
-   * this screen: *a chip highlights, it never hides.* On a bed board a filtered-out patient and a
-   * placed patient look identical, and the coordinator has no way to tell which they are looking at.
-   *
-   * ⚠️ **SO THE INVERSION BELOW IS A RULING BEING RECORDED, NOT A TEST BEING RELAXED**, and it is
-   * written down here because a test expectation flipped in a merge is indistinguishable from a
-   * test expectation flipped by accident. The floors are deliberately STRONGER than the ones they
-   * replace: the old tests could pass on a screen that showed too few people, and these cannot.
-   */
-  it("keeps every person and every heading on screen when a chip is pressed", () => {
+  function listed(): string[] {
+    const region = screen.getByRole("region", { name: "Waiting" });
+    return within(region)
+      .queryAllByTestId(/^delays-select-/u)
+      .map((node) => (node.getAttribute("data-testid") ?? "").replace("delays-select-", ""))
+      .sort();
+  }
+
+  it("a chip shows exactly its own population, and names how many it hides", () => {
     const locked = open.filter((movement) => movement.security === "Secure");
-    // Anti-vacuity floors, unchanged in spirit from the hide-era tests: the mark must have
-    // something to pick out, and must NOT pick out everybody, or "marks a subset" is unprovable.
     expect(locked.length, "no open movement needs a locked bed in this fixture").toBeGreaterThan(0);
     expect(locked.length, "every open movement needs a locked bed in this fixture").toBeLessThan(open.length);
-    // The case that used to prove the old behaviour now proves the new one: a cause with NO locked
-    // member is exactly the heading the old code deleted, so it is the sharpest place to check that
-    // nothing is deleted any more.
-    const emptiedUnderTheOldRule = baselineGroups.filter(
+
+    renderScreen();
+    const chip = screen.getByRole("button", { name: `Locked bed ${locked.length}` });
+    fireEvent.click(chip);
+    showEveryDelayRow();
+    expect(chip).toHaveAttribute("aria-pressed", "true");
+    expect(listed(), "the chip showed somebody outside its population, or lost somebody inside it").toEqual(
+      locked.map((movement) => movement.id).sort(),
+    );
+    const hidden = open.length - locked.length;
+    expect(screen.getByTestId("delays-hidden-note")).toHaveTextContent(
+      `${hidden} more ${hidden === 1 ? "person is" : "people are"} waiting, hidden by the filters above.`,
+    );
+  });
+
+  it("drops a blocker heading the filter empties, rather than drawing a heading over nobody", () => {
+    const emptiedByLocked = baselineGroups.filter(
       (group) => !group.movements.some((movement) => movement.security === "Secure"),
     );
-    expect(
-      emptiedUnderTheOldRule.length,
-      "no cause is free of locked-bed patients — the heading-survival check is vacuous here",
-    ).toBeGreaterThan(0);
-
+    expect(emptiedByLocked.length, "no cause is free of locked-bed patients, so this proves nothing").toBeGreaterThan(
+      0,
+    );
     renderScreen();
-    const chip = screen.getByRole("button", { name: `Needs a locked bed ${locked.length}` });
-    fireEvent.click(chip);
-    expect(chip).toHaveAttribute("aria-pressed", "true");
-
-    // Renamed from "Who is waiting, and on what" to "Who is waiting" in the three-column rebuild,
-    // then to "Waiting" — the drawing's own word — in task D1.
-    const region = screen.getByRole("region", { name: "Waiting" });
-    const renderedIds = Array.from(region.querySelectorAll('[data-ward-primitive="record-row"][data-record-key]'))
-      .map((el) => el.getAttribute("data-record-key"))
-      .sort();
-    expect(renderedIds, "pressing a chip removed somebody from the board").toEqual(allOpenIds);
-
-    /*
-     * ⚠️ THE HEADING MOVED, NOT JUST THE REGION IT SITS IN. Cause headings are no longer drawn with
-     * `WardGroupHeading` inside this list at all — they moved to the middle "What the blocker is"
-     * panel, as a `data-testid="delays-cause-<cause>"` row rather than an `<h3>`. That panel is built
-     * from `groups` alone and is never touched by `delayFilterId`/`markedOwner`, so the property this
-     * test guards — a chip press cannot make a cause heading disappear — now holds even more
-     * directly than before: nothing here can filter that panel's rows at all. Checked by testid,
-     * globally, rather than `within(region)` by role, because the heading no longer lives in the
-     * region this test presses the chip inside of.
-     */
-    for (const group of emptiedUnderTheOldRule) {
-      expect(
-        screen.getByTestId(`delays-cause-${group.cause}`),
-        `"${group.title}" has no locked-bed patient and must STILL be headed — the old code dropped it`,
-      ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
+    for (const group of emptiedByLocked) {
+      expect(screen.queryByTestId(`delays-cause-${group.cause}`), `"${group.title}" is headed over nobody`).toBeNull();
     }
   });
 
-  it("names the mark on the matching rows, and on those rows only", () => {
-    const escalated = open.filter((movement) => movement.escalation !== undefined);
-    expect(escalated.length, "no escalated movement in this fixture").toBeGreaterThan(0);
-    expect(escalated.length, "every open movement is escalated in this fixture").toBeLessThan(open.length);
-
+  it("Show everyone brings every hidden person back, and the hero counts never moved", () => {
     renderScreen();
-    fireEvent.click(screen.getByRole("button", { name: `Escalated ${escalated.length}` }));
-
-    // Renamed from "Who is waiting, and on what" to "Who is waiting" in the three-column rebuild,
-    // then to "Waiting" — the drawing's own word — in task D1.
-    const region = screen.getByRole("region", { name: "Waiting" });
-    // Everybody is still drawn, and the mark is carried by a WORD rather than by a tint — the
-    // property that makes this a highlight a coordinator can read rather than a colour they must
-    // interpret. `WardChip` refuses a wordless child, so a colour-only mark cannot be built here.
-    const rows = Array.from(region.querySelectorAll('[data-ward-primitive="record-row"]'));
-    expect(rows.length, "the board lost rows when a chip was pressed").toBe(open.length);
-
-    // `Set<string>`, not the inferred `Set<`WF-${string}`>` — the ids read back out of the DOM are
-    // plain strings, and a branded set would refuse them at the typecheck the test runner never runs.
-    const escalatedIds = new Set<string>(escalated.map((movement) => movement.id));
-    let markedRows = 0;
-    for (const row of rows) {
-      const id = row.getAttribute("data-record-key") ?? "";
-      const saysMarked = (row.textContent ?? "").includes("Marked: Escalated");
-      if (escalatedIds.has(id)) {
-        expect(saysMarked, `${id} is escalated and the pressed chip must name it as marked`).toBe(true);
-        markedRows += 1;
-      } else {
-        expect(saysMarked, `${id} is NOT escalated and must not be marked`).toBe(false);
-      }
-    }
-    expect(markedRows, "no row carried the mark — the chip is not wired").toBe(escalated.length);
-  });
-
-  it("reports the marked figure and the whole population as two separate numbers", () => {
-    const escalated = open.filter((movement) => movement.escalation !== undefined);
-    renderScreen();
-    // Renamed from "Who is waiting, and on what" to "Who is waiting" in the three-column rebuild,
-    // then to "Waiting" — the drawing's own word — in task D1.
-    const region = screen.getByRole("region", { name: "Waiting" });
-    const count = () => region.querySelector("[data-ward-panel-count]")?.textContent;
-
-    // ⚠️ Unmarked, the header states ONE figure. A second number here would read as "0 marked",
-    // which is a measured nought over a control nobody has touched. The word "waiting" that used to
-    // sit beside the bare figure is gone from this slot — the panel's own title now reads "Who is
-    // waiting", so the count no longer repeats it; the property this test guards (one figure, never
-    // a false second one) is unchanged.
-    expect(count()).toBe(`${open.length}`);
-
-    fireEvent.click(screen.getByRole("button", { name: `Escalated ${escalated.length}` }));
-    // ⚠️ TWO figures, because one count cannot carry two meanings — `capacity-screen.tsx` found
-    // this the hard way. "N shown" is true while a control hides things and becomes a lie the
-    // moment it only marks them.
-    expect(count()).toBe(`${escalated.length} of ${open.length} marked \u00b7 Escalated`);
+    const over8Before = screen.getByTestId("delays-stat-over8").textContent;
+    fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
+    expect(screen.getByTestId("delays-stat-over8").textContent, "a table filter changed a headline count").toBe(
+      over8Before,
+    );
+    fireEvent.click(within(screen.getByTestId("delays-hidden-note")).getByRole("button", { name: "Show everyone" }));
+    showEveryDelayRow();
+    expect(listed()).toEqual(open.map((movement) => movement.id).sort());
+    expect(screen.queryByTestId("delays-hidden-note")).toBeNull();
   });
 });
 

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -131,9 +131,14 @@ describe("the delays screen when nobody is waiting", () => {
 
     renderWith(waiting);
     expect(screen.queryByTestId("ward-delays-nobody-waiting")).toBeNull();
-    const facts = screen.getByRole("img", { name: /Under 8h:/ });
-    expect(facts).toHaveAccessibleName(
-      `Under 8h: ${under8}; 8–12h: ${eightTo12}; Over 12h: ${twelveTo24}; Over 24h: ${over24}`,
-    );
+    // The four "whose move" tiles partition everyone waiting, so their band bars sum to the whole.
+    const tiles = screen.getByRole("region", { name: "Whose move" });
+    const totals = [0, 0, 0, 0];
+    for (const bar of within(tiles).getAllByRole("img", { name: /^Under 8h:/u })) {
+      const counts = [...(bar.getAttribute("aria-label") ?? "").matchAll(/: (\d+)/gu)].map((match) => Number(match[1]));
+      expect(counts, "a band bar no longer names all four bands").toHaveLength(4);
+      counts.forEach((n, index) => (totals[index] += n));
+    }
+    expect(totals).toEqual([under8, eightTo12, twelveTo24, over24]);
   });
 });

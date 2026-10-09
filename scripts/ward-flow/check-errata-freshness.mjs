@@ -52,10 +52,13 @@ const CLAIMS = [
     status: "live",
     claim: "legalDeadlineMinutes HAS a reader (the plan said it had none)",
     check: () => {
-      const body = read("src/components/ward-management/delays/delays-screen.tsx");
+      // Since the October 2026 board the Delays screen reads it through delays-board-model.ts.
+      const readers = ["delays-screen.tsx", "delays-board-model.ts"].filter((file) =>
+        (read(`src/components/ward-management/delays/${file}`) ?? "").includes("legalDeadlineMinutes"),
+      );
       return {
-        ok: !!body && body.includes("legalDeadlineMinutes"),
-        saw: body ? "referenced in delays-screen.tsx" : "delays-screen.tsx not found",
+        ok: readers.length > 0,
+        saw: readers.length > 0 ? `referenced in ${readers.join(", ")}` : "no Delays reader found",
       };
     },
   },
