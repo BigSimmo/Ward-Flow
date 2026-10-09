@@ -1,6 +1,6 @@
-import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 "use client";
 
+import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import { useState, type ReactNode } from "react";
 import {
   ArrowUpRight,
