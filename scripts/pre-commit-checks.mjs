@@ -73,8 +73,26 @@ export const WARD_FLOW_IDENTITY_ANCHOR = "e735c1f8d34df005becf720b96752626a4f1dc
 
 /** Strip Cursor Cloud / gh credential prefixes so destination checks read the repo, not the token. */
 export function stripGithubCredentialPrefix(remoteUrl) {
-  if (typeof remoteUrl !== "string") return remoteUrl;
-  return remoteUrl.replace(/^https:\/\/[^@/]+@github\.com\//i, "https://github.com/");
+  if (typeof remoteUrl !== "string" || !/^https:\/\//i.test(remoteUrl)) return remoteUrl;
+  // Parse rather than pattern-match: `https://attacker.example?@github.com/...` connects to
+  // attacker.example, and only the URL parser reports the host Git will actually contact.
+  let parsed;
+  try {
+    parsed = new URL(remoteUrl);
+  } catch {
+    return remoteUrl;
+  }
+  if (
+    parsed.protocol !== "https:" ||
+    parsed.hostname !== "github.com" ||
+    parsed.port !== "" ||
+    parsed.search !== "" ||
+    parsed.hash !== "" ||
+    !/^https:\/\/[^@/?#\s]+@github\.com\//i.test(remoteUrl)
+  ) {
+    return remoteUrl;
+  }
+  return `https://github.com${parsed.pathname}`;
 }
 
 /** Canonical HTTPS, scp-style and ssh:// Ward-Flow URLs, matching the push guard. */

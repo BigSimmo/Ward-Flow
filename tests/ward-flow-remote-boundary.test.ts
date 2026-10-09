@@ -152,6 +152,19 @@ describe("Ward-Flow push destination", () => {
     expect(wardFlowRemoteVerdict(remoteUrl).ok).toBe(false);
   });
 
+  it.each(["?", "#", "/"])("rejects a userinfo-lookalike host hidden behind %s", (delimiter) => {
+    // Git connects to attacker.example here; github.com is only query, fragment or path text.
+    const remoteUrl = `https://attacker.example${delimiter}@github.com/BigSimmo/Ward-Flow.git`;
+    expect(wardFlowRemoteVerdict(remoteUrl).ok).toBe(false);
+  });
+
+  it("rejects a credential-prefixed github.com remote with a port, query or fragment", () => {
+    const userinfo = ["user", "token"].join(":");
+    for (const suffix of [":8443/BigSimmo/Ward-Flow.git", "/BigSimmo/Ward-Flow.git?x=1", "/BigSimmo/Ward-Flow.git#x"]) {
+      expect(wardFlowRemoteVerdict(`https://${userinfo}@github.com${suffix}`).ok).toBe(false);
+    }
+  });
+
   it("blocks a wrong remote before all other guards, despite legacy overrides", () => {
     const result = run("https://github.com/BigSimmo/PsychSift.git");
     expect(result.status).toBe(1);
