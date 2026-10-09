@@ -362,8 +362,8 @@ function Runway({
                   )
                 }
                 onMouseLeave={() => {
-                      onTip(null);
-                    }}
+                  onTip(null);
+                }}
               >
                 <rect
                   x={xc(bin.index) - pw / 16 + 4}
@@ -517,8 +517,8 @@ function Matrix({
                     )
                   }
                   onMouseLeave={() => {
-                      onTip(null);
-                    }}
+                    onTip(null);
+                  }}
                 >
                   <span className={styles.mxTop}>
                     <span className={`${styles.mxN} ${styles.num}`}>{n}</span>
