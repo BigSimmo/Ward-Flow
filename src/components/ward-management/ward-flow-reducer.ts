@@ -6191,6 +6191,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (bed.absentWithoutLeave.steps.some((done) => done.step === event.step)) {
         return reject(state, event, `${event.step} is already recorded for admission ${event.admissionId}`);
       }
+      if (event.now < bed.absentWithoutLeave.since) {
+        return reject(state, event, `${event.step} cannot be recorded before the absence began`);
+      }
       const absentWithoutLeave = {
         ...bed.absentWithoutLeave,
         steps: [...bed.absentWithoutLeave.steps, { step: event.step, at: event.now }],
@@ -6206,6 +6209,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "RECORD_COMMUNITY_TREATMENT_ORDER": {
       const patient = state.patients.find((candidate) => candidate.id === event.patientId);
       if (!patient) return reject(state, event, `no patient found for id ${event.patientId}`);
+      const hasActiveStay = state.admissions.some(
+        (admission) => admission.patientId === patient.id && admission.state === "occupied",
+      );
+      const hasActivePlacement = state.movements.some(
+        (movement) => movement.patientId === patient.id && movement.closure === undefined && movement.stage !== "arrived",
+      );
+      if (hasActiveStay || hasActivePlacement) {
+        return reject(state, event, `patient ${patient.id} has an active placement or stay`);
+      }
       if (patient.communityTreatmentOrder) {
         return reject(state, event, `patient ${patient.id} already has a community treatment order recorded`);
       }

@@ -439,6 +439,10 @@ export function PatientCommunityTab({
                       <Button size="sm" onClick={onEndCto}>
                         Record ended
                       </Button>
+                    ) : stayOpen ? (
+                      <Button size="sm" disabled title="Unavailable while a placement or stay is open">
+                        Record CTO
+                      </Button>
                     ) : (
                       <Button size="sm" onClick={onRecordCto}>
                         Record CTO
