@@ -1,6 +1,7 @@
-/* Alerts, v6: hero with the escalation tiers, the live directive row, the conditions watched,
-   the addressed-to filter, then "Needs you" beside "For other roles". Tokens only; colour sits in
-   glyphs and dots, never in fills or edge bars. */
+/* Alerts, Command queue (9 Oct 2026, round 2 option A): hero with the counts, tools, the live
+   broadcast and the Checking line; the queue in tabs with a Today chart under it; the selected
+   alert in a sticky panel. Tokens only. Status colour sits in glyphs, marks and dots, never in
+   fills or edge bars; a highlight is a tint, never a hide. Phone is its own pass at the end. */
 
 .screen {
   min-width: 0;
@@ -21,10 +22,6 @@
   box-sizing: border-box;
 }
 
-.heroStats {
-  display: contents;
-}
-
 .quiet {
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
@@ -35,7 +32,156 @@
   font-weight: 600;
 }
 
-/* Feedback line after a broadcast or quick action. */
+.eyebrow {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ---------- Hero ---------- */
+
+.heroStats {
+  display: contents;
+}
+
+.heroTools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.heroBroadcast {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 4px var(--wf-s-3) 4px 5px;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  color: var(--wf-hero-ink);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  cursor: pointer;
+}
+
+.heroBroadcast:hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+}
+
+.heroBroadcast:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+}
+
+.heroBroadcastTitle {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.heroBroadcastMeta {
+  flex: none;
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.heroBroadcastMeta .mono {
+  color: var(--wf-hero-ink);
+}
+
+/* Checking: every condition by name with its count, zero included (ruling 2026-09-12). */
+.checking {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.checkingLabel {
+  flex: none;
+  color: var(--wf-hero-ink-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.checkList {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.checkList::-webkit-scrollbar {
+  display: none;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-pill);
+  background: none;
+  color: var(--wf-hero-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+span.check {
+  cursor: default;
+}
+
+.check .mono {
+  color: var(--wf-hero-ink);
+}
+
+.checkList > [data-zero] .mono {
+  color: var(--wf-hero-ink-3);
+}
+
+a.check:hover,
+button.check:hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  color: var(--wf-hero-ink);
+}
+
+button.check[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--wf-hero-ink) 45%, transparent);
+  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+  color: var(--wf-hero-ink);
+}
+
+.check:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 1px;
+}
+
+.notChecked .check {
+  color: var(--wf-hero-ink-3);
+  cursor: default;
+}
+
+/* ---------- Feedback ---------- */
+
 .feedbackLine {
   display: flex;
   align-items: center;
@@ -53,12 +199,393 @@
   min-width: 0;
 }
 
-/* Live directive. */
-.directiveRow {
+/* ---------- Layout ---------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 23rem;
+  align-items: start;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.queueCard {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tabsBar {
+  padding: var(--wf-s-1) var(--wf-s-4) 0;
+}
+
+.toolbar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.toolbarRule {
+  align-self: stretch;
+  width: 1px;
+  margin: 0 var(--wf-s-1);
+  background: var(--wf-line);
+}
+
+.chipRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}
+
+.tabBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ---------- Queue groups and rows ---------- */
+
+.group {
+  min-width: 0;
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.group:first-child .groupHead {
+  border-top: 0;
+}
+
+.groupAside {
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.groupEmpty {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.rows,
+.cards {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1.7fr) minmax(0, 1.2fr) minmax(0, 0.9fr) 6rem auto;
+  align-items: center;
   gap: var(--wf-s-3);
+  min-height: 52px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--wf-hover);
+}
+
+.row[data-highlighted],
+.card[data-highlighted] {
+  background: var(--wf-accent-tint);
+}
+
+/* The selected row carries a marker on its leading edge (a table row marker, not a card stripe). */
+.row[data-selected] {
+  background: var(--wf-selected);
+  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+}
+
+.row[data-snoozed] .cell,
+.card[data-snoozed] .cardLine {
+  opacity: 0.75;
+}
+
+.rowGlyph {
+  display: inline-flex;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cell > * {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cellMain {
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.rowOpen {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.rowOpen:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+.who {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.name {
+  font-weight: 500;
+}
+
+.umrn {
+  font-family: var(--wf-mono);
+  font-weight: 500;
+}
+
+.rowAction {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.age {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ageTop {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-13);
+}
+
+.ageBar {
+  display: inline-block;
+  flex: none;
+  width: 44px;
+  height: 4px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  overflow: hidden;
+}
+
+.ageBar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--wf-ink-3);
+}
+
+/* Cards: Lanes view and the phone. */
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
   padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  cursor: pointer;
+}
+
+.card[data-selected] {
+  border-color: var(--wf-accent-strong);
+  box-shadow: 0 0 0 1px var(--wf-accent-strong);
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.cardTop .rowOpen {
+  flex: 1 1 auto;
+}
+
+.snoozeIcon {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+.cardLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cardLine .who {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin-top: 2px;
+}
+
+.cardFoot > :last-child {
+  flex: none;
+}
+
+.cardState {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lanes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3);
+}
+
+.lane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: var(--wf-s-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
+}
+
+.lane .groupHead {
+  padding: var(--wf-s-1) var(--wf-s-1) 0;
+  border: 0;
+  background: none;
+}
+
+.lane .groupEmpty {
+  padding: var(--wf-s-1);
+}
+
+/* ---------- Broadcast, notices and history tabs ---------- */
+
+.directive {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--wf-s-4);
+  padding: var(--wf-s-4);
+}
+
+.directiveMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.directiveHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.directiveTitle {
+  min-width: 0;
+  overflow: hidden;
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.directiveMessage {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.directive .facts {
+  padding: var(--wf-s-2) 0;
+  border: 0;
+}
+
+.directiveActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.directiveRing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wf-s-1);
 }
 
 .directiveText {
@@ -69,510 +596,435 @@
   min-width: 0;
 }
 
-.directiveLine {
-  display: flex;
-  align-items: baseline;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.historyList {
+  margin: 0;
+  padding: var(--wf-s-1) 0;
+  list-style: none;
 }
 
-.directiveTitle {
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  color: var(--wf-ink-1);
-}
-
-.directiveMeta {
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.timeChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: var(--wf-h-chip);
-  padding: 0 var(--wf-s-2);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-sm);
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-11) / 1 var(--wf-font);
-  white-space: nowrap;
-}
-
-.timeChip b {
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-}
-
-/* Conditions watched. */
-.tileGrid {
+.historyList > li {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 2.75rem 0.75rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
-.tile {
+.historyList > li:first-child {
+  border-top: 0;
+}
+
+.historyText {
   display: flex;
   flex-direction: column;
-  gap: var(--wf-s-1);
+  gap: 2px;
   min-width: 0;
+}
+
+.historyText > * {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.historyTitle {
+  color: var(--wf-ink-1);
+  font-weight: 500;
+}
+
+.feedEmpty {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   padding: var(--wf-s-3) var(--wf-s-4);
 }
 
-.tile + .tile {
-  border-left: 1px solid var(--wf-line);
+.none {
+  margin: 0;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
-.tileHead {
+/* ---------- Today chart ---------- */
+
+.todayCard {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.todayHead {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.todayTitle {
+  display: inline-flex;
+  align-items: center;
   gap: var(--wf-s-2);
+  margin: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
 }
 
-.tileLabel {
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tileValue {
-  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.tileSub {
-  color: var(--wf-ink-3);
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  margin-left: auto;
+  color: var(--wf-ink-2);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-/* Addressed-to filter. */
-.filterBar {
-  display: flex;
+.legend > span {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.filterGroup {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  flex-wrap: wrap;
+.chartFrame {
   min-width: 0;
 }
 
-.filterLabel {
-  color: var(--wf-ink-2);
-  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  white-space: nowrap;
+.chart {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
 }
 
-.chipRow {
-  flex-wrap: wrap;
+.todayCard > .chartFrame {
+  margin: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
 }
 
-.filterSummary {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
+.gridLine {
+  stroke: var(--wf-line);
 }
 
-/* Alert groups. */
-.panelGrid {
-  display: grid;
-  grid-template-columns: minmax(20rem, 29.375rem) minmax(0, 1fr);
-  gap: var(--wf-s-3);
-  align-items: start;
+.rowLine {
+  stroke: var(--wf-line-2);
 }
 
-.priorityColumn {
+.axisText,
+.axisNow {
+  font: 500 11px var(--wf-mono);
+  fill: var(--wf-ink-3);
+}
+
+.axisNow {
+  font-weight: 700;
+  fill: var(--wf-ink-1);
+}
+
+.nowLine {
+  stroke: var(--wf-ink-2);
+  stroke-dasharray: 3 3;
+}
+
+.rowLabel {
+  font: 500 12px var(--wf-font);
+  fill: var(--wf-ink-2);
+}
+
+.pointLabel {
+  font: 500 11px var(--wf-font);
+  fill: var(--wf-ink-2);
+}
+
+.spanLine {
+  stroke: var(--wf-ink-3);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.spanOn {
+  fill: var(--wf-info);
+}
+
+.spanLeft {
+  fill: none;
+  stroke: var(--wf-info);
+  stroke-dasharray: 3 3;
+}
+
+.mAct {
+  fill: var(--wf-danger);
+}
+
+.mWait {
+  fill: var(--wf-surface);
+  stroke: var(--wf-warning);
+  stroke-width: 1.8;
+}
+
+.mDone {
+  fill: var(--wf-success);
+}
+
+.mClosed {
+  fill: var(--wf-ink-3);
+}
+
+.markHit {
+  cursor: pointer;
+  outline: none;
+}
+
+.markRing {
+  fill: transparent;
+}
+
+.markRingOn {
+  fill: none;
+  stroke: var(--wf-accent-strong);
+  stroke-width: 1.5;
+}
+
+.markHit:focus-visible .markRing,
+.markHit:focus-visible .markRingOn {
+  stroke: var(--wf-focus-ring);
+  stroke-width: 2;
+}
+
+.ring .ringTrack,
+.ringOnHero .ringTrack {
+  fill: none;
+  stroke: var(--wf-track);
+  stroke-width: 5;
+}
+
+.ring .ringFill,
+.ringOnHero .ringFill {
+  fill: none;
+  stroke: var(--wf-info);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.ringText {
+  font: 600 12px var(--wf-mono);
+  fill: var(--wf-ink-1);
+}
+
+.ringOnHero {
+  flex: none;
+}
+
+.ringOnHero .ringTrack {
+  stroke: color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
+  stroke-width: 4;
+}
+
+.ringOnHero .ringFill {
+  stroke: var(--wf-hero-ink);
+  stroke-width: 4;
+}
+
+/* ---------- Selected alert panel ---------- */
+
+.panel {
+  position: sticky;
+  top: var(--wf-s-3);
+  min-width: 0;
+}
+
+.panelCard {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.detail {
   display: flex;
   flex-direction: column;
-  gap: var(--wf-s-3);
   min-width: 0;
 }
 
-.otherCard {
+.detailHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.detailWho {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 
-.panelBody {
+.detailName {
+  margin: 0;
+  overflow: hidden;
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.detailSub {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.detailState {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.detailTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.detailSection {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin-bottom: var(--wf-s-2);
+}
+
+.declineList {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  list-style: none;
+}
+
+.declineRow {
+  display: grid;
+  grid-template-columns: 0.75rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+}
+
+.declineRow:first-child {
+  border-top: 0;
+}
+
+.declineText {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 
-.panelBody:focus-visible,
-.quickActionMenuItem:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
+.declineUnit {
+  overflow: hidden;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.rows,
-.cardRows,
-.feedList {
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-2) var(--wf-s-3);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.facts dt {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.facts dd {
+  margin: 2px 0 0;
+  overflow: hidden;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-overflow: ellipsis;
+}
+
+.detailStatus {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.detailActions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.wide {
+  justify-content: center;
+  width: 100%;
+}
+
+.releaseRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.releaseRow > :last-child button {
+  width: 100%;
+  justify-content: center;
+}
+
+.actionRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.actionRow > * {
+  min-width: 0;
+}
+
+.actionRow button {
+  justify-content: center;
+  width: 100%;
+}
+
+.activity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.rows {
-  border-top: 1px solid var(--wf-line);
-}
-
-.alertRow {
+.activity > li {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: 2.75rem 0.75rem minmax(0, 1fr);
   align-items: center;
-  gap: var(--wf-s-3);
-  min-height: 4.9rem;
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
-}
-
-.alertContent {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.alertHead {
-  display: flex;
-  align-items: baseline;
   gap: var(--wf-s-2);
-  flex-wrap: wrap;
-}
-
-.alertTitleText {
-  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
-  color: var(--wf-ink-1);
-}
-
-.alertTiming {
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-/* Stream A: who saw it, who owns it, and any running decision target. */
-.rowStatus {
-  display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-1) var(--wf-s-3);
-  margin: 0;
   color: var(--wf-ink-2);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
-.overdueText {
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
-  white-space: nowrap;
-}
+/* ---------- Broadcast composer ---------- */
 
-.alertMetaText {
-  color: var(--wf-ink-2);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.patientName {
-  color: var(--wf-ink-1);
-  font-weight: 600;
-}
-
-.locationTag {
-  color: var(--wf-ink-2);
-}
-
-.ownerCell {
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-  max-width: 10rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.rowActions,
-.alertActions {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-}
-
-/* Needs you: a fuller card per alert. */
-.cardRows {
-  border-top: 1px solid var(--wf-line);
-}
-
-.alertCard {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
-}
-
-.alertCard + .alertCard {
-  border-top: 1px solid var(--wf-line);
-}
-
-.cardTop {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: var(--wf-s-2);
-}
-
-.ownerLine {
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.actionGap {
-  flex: 1 1 auto;
-}
-
-.alertActions > :not(.actionGap),
-.rowActions > * {
-  flex: none;
-}
-
-.quickActionDropdownWrap {
-  position: relative;
-}
-
-.quickActionMenu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  min-width: 15rem;
-  padding: var(--wf-s-1);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e2);
-}
-
-.quickActionMenuItem {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-height: var(--wf-h-md);
-  padding: 0 var(--wf-s-2);
-  border: 0;
-  border-radius: var(--wf-r-sm);
-  background: none;
-  color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  text-align: left;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.quickActionMenuItem:hover {
-  background: var(--wf-hover);
-}
-
-.emptyContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-}
-
-/* Role notices. */
-.feedEmpty {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-}
-
-.emptyMark {
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--wf-line);
-  border-radius: 50%;
-  color: var(--wf-ink-3);
-}
-
-.none {
-  margin: 0;
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-}
-
-.feedEmptySub {
-  margin: 2px 0 0;
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.feedList {
-  border-top: 1px solid var(--wf-line);
-}
-
-.feedItem {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
-}
-
-.feedContent {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.feedTitle {
-  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-}
-
-.feedMeta,
-.feedState {
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-}
-
-/* Monitoring scope. */
-.scopeCard {
-  overflow: hidden;
-}
-
-.contextDetails {
-  margin: 0;
-}
-
-.scopeSummary {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-height: 3.75rem;
-  padding: 0 var(--wf-s-4);
-  list-style: none;
-  cursor: pointer;
-}
-
-.scopeSummary::-webkit-details-marker {
-  display: none;
-}
-
-.scopeSummary:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
-}
-
-.scopeTitle {
-  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
-}
-
-.scopeMeta {
-  margin-left: auto;
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-}
-
-.disclosureChevron {
-  flex: none;
-  color: var(--wf-ink-3);
-  transition: transform 120ms ease;
-}
-
-.contextDetails[open] .disclosureChevron {
-  transform: rotate(180deg);
-}
-
-.contextGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--wf-s-3) var(--wf-s-4);
-  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-}
-
-.condition,
-.conditionWide {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.conditionWide {
-  grid-column: 1 / -1;
-  padding-top: var(--wf-s-3);
-  border-top: 1px solid var(--wf-line);
-}
-
-.conditionTitle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-}
-
-.watchMark {
-  flex: none;
-  color: var(--wf-ink-3);
-}
-
-.watches,
-.gap,
-.count {
-  margin: 0;
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.condition .none {
-  font-weight: 400;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
-.gap strong,
-.count strong {
-  color: var(--wf-ink-1);
-  font-weight: 600;
-}
-
-/* Inspector and broadcast sheets. */
-.inspectorOverlay,
 .modalOverlay {
   position: fixed;
   inset: 0;
@@ -584,7 +1036,6 @@
   background: var(--wf-scrim);
 }
 
-.inspectorDrawer,
 .composer {
   display: flex;
   flex-direction: column;
@@ -624,7 +1075,6 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
-.drawerBody,
 .composerBody {
   display: flex;
   flex-direction: column;
@@ -633,62 +1083,12 @@
   overflow-y: auto;
 }
 
-.drawerSection {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--wf-s-2);
-}
-
-.drawerPatient {
-  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
-}
-
 .drawerSectionTitle {
   margin: 0;
   color: var(--wf-ink-3);
   font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-}
-
-.drawerSection > div {
-  align-self: stretch;
-}
-
-.drawerGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--wf-s-3);
-  margin: 0;
-  padding: var(--wf-s-3);
-}
-
-.drawerGrid dt {
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.drawerGrid dd {
-  margin: 2px 0 0;
-  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-}
-
-.ackBox {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-}
-
-.ackText {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
 .drawerFoot {
@@ -736,39 +1136,119 @@
   border-radius: var(--wf-r-md);
 }
 
-@media (max-width: 62.5625rem) {
-  .panelGrid,
-  .contextGrid {
+/* ---------- Narrower desktops ---------- */
+
+/* The "where" column leaves first; the panel narrows. */
+@media (max-width: 70rem) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr) 21rem;
+  }
+
+  .row {
+    grid-template-columns: 1rem minmax(0, 1.6fr) minmax(0, 1fr) 6rem auto;
+  }
+
+  .cellWhere {
+    display: none;
+  }
+}
+
+/* Below the shell boundary the panel sits under the queue. */
+@media (max-width: 62.5rem) {
+  .grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .tileGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .panel {
+    position: static;
+  }
+}
+
+/* ---------- Phone, its own pass (8 Oct phone plan): open an alert, act on it ----------
+   Title and three figures, then the tools; the queue is one column of cards; the selected alert
+   opens in a sheet. Arrange by, highlights, the Today chart and Handover copy stay on the desk.
+   Nothing here applies above 48rem. */
+@media (max-width: 48rem) {
+  .main {
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-3);
   }
 
-  .tile:nth-child(3) {
-    border-left: 0;
+  .heroTools {
+    justify-content: flex-start;
+    width: 100%;
   }
 
-  .tile:nth-child(n + 3) {
-    border-top: 1px solid var(--wf-line);
+  .deskOnly,
+  .toolbar,
+  .todayCard {
+    display: none;
   }
 
-  .directiveRow,
-  .alertRow {
-    flex-wrap: wrap;
+  .heroBroadcast {
+    width: 100%;
   }
 
-  .alertRow {
-    grid-template-columns: auto minmax(0, 1fr);
+  .heroBroadcastTitle {
+    flex: 1 1 auto;
   }
 
-  .ownerCell,
-  .rowActions {
-    grid-column: 2;
+  .checking {
+    width: 100%;
   }
 
-  /* Phone and tablet: every control keeps the 48px tap floor. */
+  .checkList {
+    -webkit-mask-image: linear-gradient(90deg, var(--wf-ink-1) calc(100% - var(--wf-s-4) * 2), transparent 100%);
+    mask-image: linear-gradient(90deg, var(--wf-ink-1) calc(100% - var(--wf-s-4) * 2), transparent 100%);
+  }
+
+  .tabsBar {
+    padding: var(--wf-s-1) var(--wf-s-3) 0;
+  }
+
+  .queueCard {
+    overflow: visible;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .groupHead,
+  .groupEmpty {
+    padding-right: var(--wf-s-1);
+    padding-left: var(--wf-s-1);
+    border: 0;
+    background: none;
+  }
+
+  .group .cards {
+    padding-bottom: var(--wf-s-2);
+  }
+
+  .directive {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--wf-s-3) var(--wf-s-1);
+  }
+
+  .directiveRing {
+    display: none;
+  }
+
+  .historyList > li {
+    grid-template-columns: 2.75rem 0.75rem minmax(0, 1fr);
+    padding: var(--wf-s-2) var(--wf-s-1);
+  }
+
+  .historyList > li > :last-child:not(.historyText) {
+    display: none;
+  }
+
+  .facts {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  /* Every control on a phone keeps the 48px tap floor. */
   .btn {
     min-height: var(--ward-tap);
   }
@@ -781,225 +1261,30 @@
   .filterBtn {
     min-height: var(--ward-tap);
   }
-}
 
-/* Phone (8 Oct 2026, board 03): conditions as a tight 2 x 2 grid, glyph first, figure on the
-   right; the role filter is one row that scrolls sideways; rows put owner and actions on one line. */
-@media (max-width: 48rem) {
-  .tile {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 2px var(--wf-s-2);
-    padding: var(--wf-s-2) var(--wf-s-3);
-  }
-
-  .tileHead {
-    grid-column: 1;
-    justify-content: flex-start;
-    min-width: 0;
-  }
-
-  .tileHead > svg {
-    flex: none;
-    order: -1;
-  }
-
-  .tileLabel {
-    font-size: var(--wf-fs-12);
-    line-height: var(--wf-lh-12);
-  }
-
-  .tileValue {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    font-size: var(--wf-fs-16);
-    line-height: var(--wf-lh-16);
-  }
-
-  .tileSub {
-    grid-column: 1;
-    font-size: var(--wf-fs-11);
-    line-height: var(--wf-lh-11);
-  }
-
-  .filterBar {
-    gap: var(--wf-s-1) var(--wf-s-3);
-  }
-
-  .filterGroup {
-    flex: 1 1 100%;
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--wf-s-1);
-  }
-
-  .chipRow {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    margin-inline: calc(-1 * var(--wf-s-2));
-    padding-inline: var(--wf-s-2);
-    -webkit-mask-image: linear-gradient(
-      90deg,
-      transparent 0,
-      var(--wf-ink-1) var(--wf-s-2),
-      var(--wf-ink-1) calc(100% - var(--wf-s-4)),
-      transparent 100%
-    );
-    mask-image: linear-gradient(
-      90deg,
-      transparent 0,
-      var(--wf-ink-1) var(--wf-s-2),
-      var(--wf-ink-1) calc(100% - var(--wf-s-4)),
-      transparent 100%
-    );
-  }
-
-  .chipRow::-webkit-scrollbar {
-    display: none;
-  }
-
-  .chipRow > * {
-    flex: none;
-  }
-
-  .alertCard {
-    gap: var(--wf-s-2);
-  }
-
-  .alertActions {
-    flex-wrap: wrap;
-  }
-
-  .actionGap {
-    display: none;
-  }
-
-  .alertRow {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: var(--wf-s-1) var(--wf-s-3);
-    min-height: 0;
-  }
-
-  .alertRow .alertContent {
-    grid-column: 2 / span 2;
-  }
-
-  .alertRow .ownerCell {
-    grid-column: 2;
-    max-width: none;
-  }
-
-  .alertRow .rowActions {
-    grid-column: 3;
-    grid-row: 2;
-  }
-
-  .alertRow:last-child {
-    border-bottom: 0;
-  }
-}
-
-/* Phone pass 2 (8 Oct 2026). Phone only; nothing here applies above 48rem.
-   12px gutters. The hero puts Broadcast beside the title, so the band loses a row; the tier track
-   fades at its right edge to show it scrolls. Conditions watched leaves the phone: the hero counts
-   the conditions and Monitoring scope below lists them. `.heroBand` has no rules outside this
-   block, so the desktop hero is untouched. */
-@media (max-width: 48rem) {
-  .main {
-    padding: var(--wf-s-3);
-  }
-
-  .heroBand {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--wf-s-3);
-  }
-
-  .heroBand > div {
-    display: contents;
-  }
-
-  .heroBand > div:first-child > div:first-child {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .heroBand > div:first-child > div:nth-child(2) {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
-  .heroBand > div:last-child > div:first-child {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    min-width: 0;
-  }
-
-  .heroBand > div:last-child > div:last-child {
-    grid-column: 2;
-    grid-row: 1;
-    margin-left: 0;
-  }
-
-  .heroBand > div:last-child > div:first-child > div {
-    scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(90deg, var(--wf-ink-1) calc(100% - var(--wf-s-4) * 2), transparent 100%);
-    mask-image: linear-gradient(90deg, var(--wf-ink-1) calc(100% - var(--wf-s-4) * 2), transparent 100%);
-  }
-
-  .main > [data-testid="ward-alerts-hud-island"] {
-    display: none;
-  }
-
-  .scopeSummary {
-    min-height: 56px;
-  }
-
-  .scopeSummary > :first-child {
-    margin-right: var(--wf-s-1);
-  }
-
-  .scopeTitle {
-    min-width: 0;
-    overflow: hidden;
-    font-size: var(--wf-fs-14);
-    line-height: var(--wf-lh-14);
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  /* Needs you: the primary actions on one row, Acknowledge and Snooze on the next. */
-  .alertCard .actionGap {
-    display: block;
-    flex: 1 0 100%;
-    height: 0;
-  }
-
-  .ownerLine {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+  .modalOverlay {
+    padding: var(--wf-s-2);
   }
 }
 
 @media print {
-  .inspectorOverlay,
   .modalOverlay,
-  .rowActions,
-  .alertActions,
-  .filterBar {
+  .rowAction,
+  .toolbar,
+  .heroTools {
     display: none !important;
   }
 }
 
 @media (forced-colors: active) {
-  .alertRow,
-  .alertCard,
-  .tile {
+  .row,
+  .card,
+  .lane {
     border-color: CanvasText;
+  }
+
+  .row[data-selected],
+  .card[data-selected] {
+    outline: 2px solid Highlight;
   }
 }
