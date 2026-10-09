@@ -277,6 +277,8 @@ export function PatientSearchPage() {
   const showToast = (msg: string) => setCopyNote(msg);
 
   useEffect(() => {
+    // The record drawer is modal: the search behind it stays put until it closes.
+    if (detailsOpen) return;
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if ((e.key === "/" || (e.key === "k" && (e.metaKey || e.ctrlKey))) && !e.altKey) {
         const target = e.target as HTMLElement | null;
@@ -291,7 +293,7 @@ export function PatientSearchPage() {
     };
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, []);
+  }, [detailsOpen]);
 
   const query: MovementSearchQuery = useMemo(
     () => ({
@@ -733,31 +735,24 @@ Clinical Note: ${p.clinicalNote}`;
       .trim();
   };
 
-  const stageCounts = useMemo(() => {
-    const map = new Map<MovementStage, number>();
-    for (const candidate of SELECTABLE_STAGES) {
-      map.set(candidate, searchMovements(movements, units, { text, stage: candidate, edId: query.edId }).length);
-    }
-    return map;
-  }, [movements, units, text, query.edId]);
+  // The counts beside each stage and department match the same way the table does, name included.
+  const countMovements = (stage?: MovementStage, edId?: string) => {
+    const needle = isChip ? "" : foldPatientSearchText(text);
+    const byRecord = new Set(searchMovements(movements, units, { text, stage, edId }).map((m) => m.id));
+    return searchMovements(movements, units, { text: "", stage, edId }).filter(
+      (m) =>
+        text.trim() === "" || byRecord.has(m.id) || (needle !== "" && (subjectWords.get(m.id) ?? "").includes(needle)),
+    ).length;
+  };
 
-  const allStagesCount = useMemo(
-    () => searchMovements(movements, units, { text, edId: query.edId }).length,
-    [movements, units, text, query.edId],
+  const stageCounts = new Map<MovementStage, number>(
+    SELECTABLE_STAGES.map((candidate) => [candidate, countMovements(candidate, query.edId)]),
   );
-
-  const departmentCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const ed of allEmergencyDepartments()) {
-      map.set(ed.id, searchMovements(movements, units, { text, stage: query.stage, edId: ed.id }).length);
-    }
-    return map;
-  }, [movements, units, text, query.stage]);
-
-  const allDepartmentsCount = useMemo(
-    () => searchMovements(movements, units, { text, stage: query.stage }).length,
-    [movements, units, text, query.stage],
+  const allStagesCount = countMovements(undefined, query.edId);
+  const departmentCounts = new Map<string, number>(
+    allEmergencyDepartments().map((ed) => [ed.id, countMovements(query.stage, ed.id)]),
   );
+  const allDepartmentsCount = countMovements(query.stage, undefined);
 
   const nowMs = now * MS_PER_MINUTE;
   const selectedTier = selectedPatient ? tierNumber(selectedPatient.urgency) : null;
@@ -1203,7 +1198,9 @@ Clinical Note: ${p.clinicalNote}`;
         </div>
 
         <Drawer
-          open={detailsOpen && selectedPatient !== null}
+          // Bound to the row that opened it: if that row leaves the results, the drawer closes rather
+          // than showing whichever record the list falls back to.
+          open={detailsOpen && requestedSelectedId !== null && selectedId === requestedSelectedId}
           onClose={() => {
             setDetailsOpen(false);
           }}

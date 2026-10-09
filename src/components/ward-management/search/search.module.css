@@ -4890,6 +4890,14 @@
   flex-wrap: wrap;
 }
 
+/* The kit's action group is flex: 0 0 auto, so the wrap above never took effect and Open patient ran
+   past the card on a 320px phone. Here the group may shrink, and wraps from the right. */
+.v6DetailsSheet > :last-child > div:last-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
 .v6DetailsDrawerClose {
   display: inline-flex;
   align-items: center;
