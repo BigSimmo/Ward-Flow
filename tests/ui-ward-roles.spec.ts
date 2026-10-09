@@ -1472,29 +1472,24 @@ test.describe("@mockup Ward Flow design system showcase", () => {
   });
 });
 
-test("@mockup on-call printing includes all coverage details and preserves screen expansion", async ({ page }) => {
-  // v6 (approved mockup, October 2026): on screen a role's cover shows in the role panel; the
-  // per-role cover rows are print-only and appear for every role when printed.
+test("@mockup on-call printing includes every directory line and preserves screen collapse", async ({ page }) => {
+  // October 2026 contacts directory: collapsing a group hides its lines on screen only. Printing
+  // lists every line, and returning to the screen keeps the group collapsed.
   await page.goto("/mockups/ward-flow/on-call");
-  const rows = page.locator('tr[id^="ward-coverage-"]');
-  const toggles = page.getByRole("button", { name: /^Coverage and handover for / });
-  const count = await rows.count();
-  expect(count).toBeGreaterThan(1);
-  for (let i = 0; i < count; i++) await expect(rows.nth(i)).toBeHidden();
+  const table = page.getByTestId("ward-on-call-dir-table");
+  const group = table.locator("button[aria-expanded]").first();
+  await expect(group).toHaveAttribute("aria-expanded", "true");
+  await group.click();
+  await expect(group).toHaveAttribute("aria-expanded", "false");
 
-  await toggles.nth(1).click();
-  await expect(toggles.nth(1)).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("ward-on-call-role-panel").getByText("Not verified", { exact: true })).toBeVisible();
+  const collapsed = table.locator('tr[data-testid^="ward-on-call-row-"][data-collapsed]');
+  const count = await collapsed.count();
+  expect(count).toBeGreaterThan(0);
+  for (let i = 0; i < count; i++) await expect(collapsed.nth(i)).toBeHidden();
 
   await page.emulateMedia({ media: "print" });
-  for (let i = 0; i < count; i++) {
-    const row = rows.nth(i);
-    await expect(row).toBeVisible();
-    await expect(row.getByText("Current cover", { exact: true })).toBeVisible();
-    await expect(row.getByText("Not verified", { exact: true })).toBeVisible();
-    await expect(row.getByText("Last confirmed", { exact: true })).toBeVisible();
-  }
+  for (let i = 0; i < count; i++) await expect(collapsed.nth(i)).toBeVisible();
   await page.emulateMedia({ media: "screen" });
-  for (let i = 0; i < count; i++) await expect(rows.nth(i)).toBeHidden();
-  await expect(toggles.nth(1)).toHaveAttribute("aria-pressed", "true");
+  for (let i = 0; i < count; i++) await expect(collapsed.nth(i)).toBeHidden();
+  await expect(group).toHaveAttribute("aria-expanded", "false");
 });
