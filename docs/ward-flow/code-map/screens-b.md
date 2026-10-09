@@ -453,6 +453,34 @@ where they live, and for how long." **Dispatches:** `RECORD_REPATRIATION`. **Rea
 
 ## `patients/`
 
+**9 October 2026 gate board, second pass (D-38):** `patient-mode.ts` adds On leave (the stay has a
+leave bed), Absent without leave (that held bed records `absentWithoutLeave`) and On a CTO (the
+patient record holds `communityTreatmentOrder`). The status card gains a missing person checklist
+for absences; `patient-now-cards.tsx` adds the leave and Last seen cards. The record tabs in
+`patient-dossier-tabs.tsx` (with `patient-record-tabs.module.css`, alongside the older module it
+still reuses for search, filters, episodes and documents) now follow the mockup: History opens with
+a pattern strip and a recorded-events timeline for this presentation; Community has Care team, a
+dashed Family and carers Preview, and a Community plan that records or ends a CTO; Details has a
+not-recorded count and a dashed "Not in the record yet" card; Documents has a forms register on the
+shared wf table with no lapse column. Interpreter language and Aboriginal status stay in separate
+Details groups, never beside the Now history (placement rule in `person-screen.tsx`).
+
+**9 October 2026 gate board:** the Patient page follows the chosen "Gate board" mockup.
+`patient-mode.ts` derives the mode from the resolver order (open movement by stage, then occupied
+bed, otherwise not active): Finding a bed, Bed held, In transit, On ward, Not active. On leave,
+absent without leave and CTO are not derived: the record has no field for them yet, and adding one
+needs the owner's OK. `patient-status-card.tsx` (and CSS module) builds the status card: verdict, a
+gates-clear meter in placement modes, and three cells that each name an owner and carry at most one
+action; the first gate not clear holds the primary. `patient-now-cards.tsx` (and CSS module)
+supplies Why they're here, Legal now (recorded times only, no lapse times, D5) and Who to call.
+`patient-flight-header.tsx` takes a mode pill and a `quiet` light hero for Not active records.
+Now shows the status card, then `patient-transit-operations.tsx` (with `showMetrics={false}`, the
+card already states those facts), the transport booking record and arrival plan in held and transit
+modes, and the context cards. The old gate card, Next step card, facts strip, Live journey rail and
+Clinical overview switch are gone, so `patient-clinical-summary.tsx` and `patient-tracker-facts.tsx`
+are no longer rendered by Patient Now. The status card does not read where else a patient has
+stayed (D-14).
+
 **5 October 2026 compact redesign:** `patient-flight-header.tsx` accepts local action controls;
 Patient Now supplies clinical/document/details shortcuts with keyboard focus handoffs. Header,
 tracker and tab styles use a joined compact layout. Community provides a care directory and

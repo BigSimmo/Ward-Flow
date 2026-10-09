@@ -44,6 +44,12 @@ const DECISIONS = new Map<string, string>([
       "refused, and are not covered by this id.",
   ],
   [
+    "D-38",
+    "Owner, 2026-10-09 (docs/ward-flow/decisions.md D-38): a community treatment order may be held " +
+      "on the patient record as Form 5A with when it was recorded and by which role. No lapse or " +
+      "review time, and no typed text. Covers `communityTreatmentOrder` only.",
+  ],
+  [
     "OWNER-2026-09-10-GENDER",
     "Owner, 2026-09-09/2026-09-10 (docs/ward-flow/owner-decisions-2026-09-09.md sections 8-9): sex " +
       "and gender are split into two separate fields; gender is Female or Male, held on the patient " +
@@ -87,6 +93,8 @@ const PLACEMENT_FIELDS = new Map<string, string>([
  * governance model exists to catch.
  */
 const GENDER_RULING_FIELDS = new Map<string, string>([["gender", "OWNER-2026-09-10-GENDER"]]);
+/** `communityTreatmentOrder`, the one field D-38 adds, kept apart for the same provenance reason. */
+const CTO_RULING_FIELDS = new Map<string, string>([["communityTreatmentOrder", "D-38"]]);
 
 /** Fields that predate R-2026-09-04-A and are not its concern — PD-1's own five. */
 const PD1_FIELDS = new Set(["id", "umrn", "givenName", "familyName", "dateOfBirth"]);
@@ -128,6 +136,7 @@ function aPatient(): Required<Patient> {
     legalStatus: "Voluntary",
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
     interpreterLanguage: "English — no interpreter required",
+    communityTreatmentOrder: { form: "5A", recordedAt: 0, recordedBy: "Community team" },
   };
 }
 
@@ -137,6 +146,7 @@ describe("Patient identity is a ruling, not a drift", () => {
       "aboriginalOrTorresStraitIslanderStatus",
       "address",
       "catchmentCommunityTeam",
+      "communityTreatmentOrder",
       "dateOfBirth",
       "familyName",
       "gender",
@@ -199,7 +209,11 @@ describe("Patient identity is a ruling, not a drift", () => {
     // citation. A field added to PATIENT_FIELDS without a line in either fails here rather than
     // slipping through unnoticed.
     const unaccounted = [...PATIENT_FIELDS].filter(
-      (field) => !PD1_FIELDS.has(field) && !PLACEMENT_FIELDS.has(field) && !GENDER_RULING_FIELDS.has(field),
+      (field) =>
+        !PD1_FIELDS.has(field) &&
+        !PLACEMENT_FIELDS.has(field) &&
+        !GENDER_RULING_FIELDS.has(field) &&
+        !CTO_RULING_FIELDS.has(field),
     );
     expect(
       unaccounted,
@@ -219,6 +233,14 @@ describe("Patient identity is a ruling, not a drift", () => {
         `${field} cites "${decision}", which does not resolve to a recorded decision`,
       ).toBe(true);
       expect([...PATIENT_FIELDS], `${field} is authorised by the gender ruling but not declared`).toContain(field);
+    }
+  });
+
+  it("has the D-38 community treatment order field declared, decided, and citing a real decision", () => {
+    expect(CTO_RULING_FIELDS.size, "D-38 named exactly one new patient field").toBe(1);
+    for (const [field, decision] of CTO_RULING_FIELDS) {
+      expect(DECISIONS.has(decision), `${field} cites "${decision}", which does not resolve`).toBe(true);
+      expect([...PATIENT_FIELDS], `${field} is authorised by D-38 but not declared`).toContain(field);
     }
   });
 

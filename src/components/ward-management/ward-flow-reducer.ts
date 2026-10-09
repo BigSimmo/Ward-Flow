@@ -99,6 +99,7 @@ import { isTentativeDiagnosisBlock } from "@/components/ward-management/ward-dia
 import { communityTeamOptions } from "@/components/ward-management/referrals/referral-destination-options";
 import { communityTeamById, communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import {
+  ABSENCE_STEPS,
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
   BED_RELEASE_WAITING_ON,
   COHORTS,
@@ -721,6 +722,12 @@ function subjectId(event: WardFlowEvent): string {
       return event.admissionId;
     case "END_LEAVE_BED":
       return event.leaveBedId;
+    case "RECORD_ABSENT_WITHOUT_LEAVE":
+    case "RECORD_ABSENCE_STEP":
+      return event.admissionId;
+    case "RECORD_COMMUNITY_TREATMENT_ORDER":
+    case "END_COMMUNITY_TREATMENT_ORDER":
+      return event.patientId;
     case "ACCEPT_REFERRAL":
     case "DECLINE_REFERRAL":
     case "RECORD_LOCAL_BED_SOUGHT":
@@ -1067,9 +1074,13 @@ function eligibilityRefusal(
  * never `eligibilityRefusal`'s own front-door wording, which is misleading here: nothing about
  * accepting THIS unit again fixes it (see `GENDER_NO_LONGER_SUITS_REFUSAL`'s own doc comment).
  */
-function heldUnitGenderRefusal(state: WardFlowState, movement: Movement, now: Instant): string | null {
+export function heldUnitGenderRefusal(
+  state: Pick<WardFlowState, "units">,
+  movement: Movement,
+  now: Instant,
+): string | null {
   if (!movement.acceptedUnitId) return null;
-  const unit = findUnit(state, movement.acceptedUnitId);
+  const unit = state.units.find((candidate) => candidate.id === movement.acceptedUnitId);
   if (!unit) return null;
   const genderGate = eligibility(movement, unit, now).gates.find((gate) => gate.gate === "gender_designation");
   if (genderGate && !genderGate.pass) {
@@ -6160,6 +6171,139 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         );
       }
       return { ...state, leaveBeds: state.leaveBeds.filter((candidate) => candidate.id !== leaveBed.id) };
+    }
+
+    case "RECORD_ABSENT_WITHOUT_LEAVE": {
+      const stay = findAdmission(state, event.admissionId);
+      if (!stay) return reject(state, event, `no admission found for id ${event.admissionId}`);
+      if (event.actingUnitId !== stay.unitId) {
+        return reject(
+          state,
+          event,
+          `RECORD_ABSENT_WITHOUT_LEAVE was raised acting as unit ${event.actingUnitId} but admission ${stay.id} is on unit ${stay.unitId}`,
+        );
+      }
+      if (stay.state !== "occupied") {
+        return reject(
+          state,
+          event,
+          `admission ${stay.id} is ${stay.state}, and only somebody occupying a bed can be absent from it`,
+        );
+      }
+      const current = state.leaveBeds.find((bed) => bed.admissionId === stay.id);
+      if (current?.absentWithoutLeave) {
+        return reject(state, event, `admission ${stay.id} is already recorded absent without leave (${current.id})`);
+      }
+      const absence = { since: event.now, steps: [] };
+      if (current) {
+        return {
+          ...state,
+          leaveBeds: state.leaveBeds.map((bed) =>
+            bed.id === current.id ? { ...bed, absentWithoutLeave: absence } : bed,
+          ),
+        };
+      }
+      // Absent straight from the ward: the bed is held the same way leave holds it. There is no
+      // expected return, so the held bed's return time is the moment the absence was recorded.
+      // Ward surfaces check `absentWithoutLeave` before showing it, so it never reads as leave.
+      const unit = findUnit(state, stay.unitId);
+      if (!unit) return reject(state, event, `no unit found for id ${stay.unitId}`);
+      const sequence = state.leaveBedSequence + 1;
+      const created: LeaveBed = {
+        id: nextLeaveBedId(sequence),
+        unitId: unit.id,
+        admissionId: stay.id,
+        expectedReturn: event.now,
+        confirmedAt: event.now,
+        confirmedBy: `NUM ${unit.name}`,
+        kind: "off_ward",
+        absentWithoutLeave: absence,
+      };
+      return { ...state, leaveBeds: [...state.leaveBeds, created], leaveBedSequence: sequence };
+    }
+
+    case "RECORD_ABSENCE_STEP": {
+      if (!(ABSENCE_STEPS as readonly string[]).includes(event.step)) {
+        return reject(state, event, `${String(event.step)} is not a missing person step`);
+      }
+      const bed = state.leaveBeds.find((candidate) => candidate.admissionId === event.admissionId);
+      if (!bed?.absentWithoutLeave) {
+        return reject(state, event, `admission ${event.admissionId} is not recorded absent without leave`);
+      }
+      if (event.actingUnitId !== bed.unitId) {
+        return reject(
+          state,
+          event,
+          `RECORD_ABSENCE_STEP was raised acting as unit ${event.actingUnitId} but the absence is on unit ${bed.unitId}`,
+        );
+      }
+      if (bed.absentWithoutLeave.steps.some((done) => done.step === event.step)) {
+        return reject(state, event, `${event.step} is already recorded for admission ${event.admissionId}`);
+      }
+      if (event.now < bed.absentWithoutLeave.since) {
+        return reject(state, event, `${event.step} cannot be recorded before the absence began`);
+      }
+      const absentWithoutLeave = {
+        ...bed.absentWithoutLeave,
+        steps: [...bed.absentWithoutLeave.steps, { step: event.step, at: event.now }],
+      };
+      return {
+        ...state,
+        leaveBeds: state.leaveBeds.map((candidate) =>
+          candidate.id === bed.id ? { ...candidate, absentWithoutLeave } : candidate,
+        ),
+      };
+    }
+
+    case "RECORD_COMMUNITY_TREATMENT_ORDER": {
+      const patient = state.patients.find((candidate) => candidate.id === event.patientId);
+      if (!patient) return reject(state, event, `no patient found for id ${event.patientId}`);
+      // Only an order still in force refuses a new one. An ended order is kept below (D-40), so a
+      // patient can be placed on a second CTO without the first leaving Documents.
+      if (patient.communityTreatmentOrder && patient.communityTreatmentOrder.endedAt === undefined) {
+        return reject(state, event, `patient ${patient.id} already has a community treatment order recorded`);
+      }
+      // D-40: an ended order is kept in `earlier` rather than overwritten, so Documents still lists it.
+      const previous = patient.communityTreatmentOrder;
+      const earlier =
+        previous?.endedAt !== undefined
+          ? [
+              ...(previous.earlier ?? []),
+              {
+                form: previous.form,
+                recordedAt: previous.recordedAt,
+                recordedBy: previous.recordedBy,
+                endedAt: previous.endedAt,
+              },
+            ]
+          : undefined;
+      const order = {
+        form: "5A" as const,
+        recordedAt: event.now,
+        recordedBy: WARD_FLOW_ROLE_LABELS[event.role],
+        ...(earlier ? { earlier } : {}),
+      };
+      return {
+        ...state,
+        patients: state.patients.map((candidate) =>
+          candidate.id === patient.id ? { ...candidate, communityTreatmentOrder: order } : candidate,
+        ),
+      };
+    }
+
+    case "END_COMMUNITY_TREATMENT_ORDER": {
+      const patient = state.patients.find((candidate) => candidate.id === event.patientId);
+      if (!patient) return reject(state, event, `no patient found for id ${event.patientId}`);
+      if (!patient.communityTreatmentOrder || patient.communityTreatmentOrder.endedAt !== undefined) {
+        return reject(state, event, `patient ${patient.id} has no community treatment order recorded`);
+      }
+      const ended = { ...patient.communityTreatmentOrder, endedAt: event.now };
+      return {
+        ...state,
+        patients: state.patients.map((candidate) =>
+          candidate.id === patient.id ? { ...candidate, communityTreatmentOrder: ended } : candidate,
+        ),
+      };
     }
 
     case "REQUEST_CAPACITY_REFRESH": {
