@@ -122,6 +122,41 @@ describe("the Delays board's data views", () => {
     );
   });
 
+  it("never draws two people's dots on the same spot, however many share a wait", () => {
+    // Fourteen people with the same wait: more than the eleven slots the first version searched.
+    const base = OPEN.find((movement) => movement.acceptedUnitId === undefined)!;
+    const crowd = Array.from({ length: 14 }, (_, index) => ({
+      ...base,
+      id: `WF-CROWD-${index}` as typeof base.id,
+      patientId: undefined,
+    }));
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DelaysScreen movements={crowd} />
+      </WardFlowProvider>,
+    );
+    const spots = [...graphs().querySelectorAll<HTMLElement>("button[aria-label*='waited']")].map(
+      (dot) => `${dot.style.left}|${dot.style.top}`,
+    );
+    expect(spots).toHaveLength(crowd.length);
+    expect(new Set(spots).size, "two dots overlap").toBe(spots.length);
+  });
+
+  it("keeps the table's column headers and cell roles, which the phone card layout relies on", () => {
+    renderDelays();
+    const table = within(waiting()).getByRole("table");
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((th) => th.textContent),
+    ).toEqual(["Person", "Waited", "T", "Wards", "Legal", "Last update"]);
+    const people = within(table).getAllByTestId(/^delays-select-/u);
+    expect(people.length).toBeGreaterThan(0);
+    for (const person of people) {
+      expect(within(person.closest("tr")!).getAllByRole("cell"), "a person's row lost its cells").toHaveLength(6);
+    }
+  });
+
   it("a dot on the spread graph opens that person's row and panel", () => {
     renderDelays();
     const target = ROWS.find((row) => row.cause === "awaiting_transport")!;

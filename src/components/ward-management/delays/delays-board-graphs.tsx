@@ -121,8 +121,10 @@ function Spread({
         const placed: { x: number; y: number; row: BoardRow }[] = [];
         for (const row of sorted) {
           const x = (spreadX(row.waited) / 100) * PLOT_WIDTH;
+          // Nearest free slot, alternating above and below, however many share a wait.
           let y = 0;
-          for (const k of [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5]) {
+          for (let step = 0; ; step += 1) {
+            const k = step % 2 === 0 ? step / 2 : -(step + 1) / 2;
             const candidate = k * DOT;
             if (!placed.some((p) => Math.abs(p.x - x) < DOT && p.y === candidate)) {
               y = candidate;

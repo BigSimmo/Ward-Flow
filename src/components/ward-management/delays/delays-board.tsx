@@ -944,6 +944,7 @@ export function DelaysBoard({
     const ward = wardSummary(row, units);
     return [
       <tr
+        role="row"
         key={movement.id}
         className={styles.r}
         aria-selected={isSelected}
@@ -951,7 +952,7 @@ export function DelaysBoard({
           if ((event.target as HTMLElement).closest("button, a") === null) select(movement.id);
         }}
       >
-        <td className={styles.who}>
+        <td role="cell" className={styles.who}>
           <button
             type="button"
             className={styles.whoBtn}
@@ -965,7 +966,7 @@ export function DelaysBoard({
             </span>
           </button>
         </td>
-        <td className={styles.cWait}>
+        <td role="cell" className={styles.cWait}>
           <span className={styles.wcell}>
             <span className={`${styles.wt} ${styles.num}`} data-ward-type-floor="delays-wait">
               <Glyph tone={waitTone(row.waited)} />
@@ -974,10 +975,10 @@ export function DelaysBoard({
             <WaitBar row={row} />
           </span>
         </td>
-        <td className={styles.cTier}>
+        <td role="cell" className={styles.cTier}>
           <TierTile tier={movement.urgency} label={urgencyTierLabel(movement.urgency)} />
         </td>
-        <td className={styles.cWard} data-ward-type-floor="delays-cause">
+        <td role="cell" className={styles.cWard} data-ward-type-floor="delays-cause">
           <span className={styles.lg}>
             {flat ? (
               <span className={styles.ell}>{causeTitle(row.cause)}</span>
@@ -989,14 +990,16 @@ export function DelaysBoard({
             )}
           </span>
         </td>
-        <td className={styles.cLegal}>{legalCell(row)}</td>
-        <td className={styles.cUpd} data-ward-type-floor="delays-since">
+        <td role="cell" className={styles.cLegal}>
+          {legalCell(row)}
+        </td>
+        <td role="cell" className={styles.cUpd} data-ward-type-floor="delays-since">
           {updateCell(row, now)}
         </td>
       </tr>,
       isSelected ? (
-        <tr key={`${movement.id}-timeline`} className={styles.xrow}>
-          <td colSpan={6}>
+        <tr role="row" key={`${movement.id}-timeline`} className={styles.xrow}>
+          <td role="cell" colSpan={6}>
             <RowTimeline row={row} units={units} now={now} />
           </td>
         </tr>
@@ -1035,8 +1038,8 @@ export function DelaysBoard({
       const limit = moreGroups[group.cause] ? list.length : GROUP_LIMIT;
       const owner = list[0].owner;
       body.push(
-        <tr key={`group-${group.cause}`} className={styles.grpH}>
-          <td colSpan={6}>
+        <tr role="row" key={`group-${group.cause}`} className={styles.grpH}>
+          <td role="cell" colSpan={6}>
             <button
               type="button"
               className={styles.gin}
@@ -1065,8 +1068,8 @@ export function DelaysBoard({
         body.push(...list.slice(0, limit).flatMap(renderRow));
         if (list.length > limit)
           body.push(
-            <tr key={`more-${group.cause}`} className={styles.more}>
-              <td colSpan={6}>
+            <tr role="row" key={`more-${group.cause}`} className={styles.more}>
+              <td role="cell" colSpan={6}>
                 <button
                   type="button"
                   className={styles.moreBtn}
@@ -1084,8 +1087,8 @@ export function DelaysBoard({
     const rest = shown.filter((row) => !isPinned(row)).sort(byWait);
     if (pinned.length > 0) {
       body.push(
-        <tr key="pinned" className={`${styles.grpH} ${styles.grpStatic}`}>
-          <td colSpan={6}>
+        <tr role="row" key="pinned" className={`${styles.grpH} ${styles.grpStatic}`}>
+          <td role="cell" colSpan={6}>
             <span className={styles.gin}>
               <Glyph tone="danger" />
               <span className={styles.gTitle}>{`Recorded time due within ${soonHours}h`}</span>
@@ -1098,8 +1101,8 @@ export function DelaysBoard({
       );
       if (rest.length > 0)
         body.push(
-          <tr key="rest" className={`${styles.grpH} ${styles.grpStatic}`}>
-            <td colSpan={6}>
+          <tr role="row" key="rest" className={`${styles.grpH} ${styles.grpStatic}`}>
+            <td role="cell" colSpan={6}>
               <span className={styles.gin}>
                 <span className={styles.gTitle}>Everyone else</span>
                 <span className={styles.k}>{rest.length}</span>
@@ -1116,8 +1119,8 @@ export function DelaysBoard({
   const hidden = rows.length - shown.length;
   if (hidden > 0 && shown.length > 0)
     body.push(
-      <tr key="hidden" className={styles.more}>
-        <td colSpan={6} className={styles.hiddenNote} data-testid="delays-hidden-note">
+      <tr role="row" key="hidden" className={styles.more}>
+        <td role="cell" colSpan={6} className={styles.hiddenNote} data-testid="delays-hidden-note">
           {`${hidden} more ${hidden === 1 ? "person is" : "people are"} waiting, hidden by the filters above.`}{" "}
           <button type="button" className={styles.lnk} onClick={() => setFilters(NO_FILTERS)}>
             Show everyone
@@ -1127,8 +1130,8 @@ export function DelaysBoard({
     );
   if (shown.length === 0)
     body = [
-      <tr key="none">
-        <td colSpan={6} className={styles.none}>
+      <tr role="row" key="none">
+        <td role="cell" colSpan={6} className={styles.none}>
           {`Nobody matches these filters. ${rows.length} ${rows.length === 1 ? "person is" : "people are"} waiting, all hidden.`}{" "}
           <button type="button" className={styles.lnk} onClick={() => setFilters(NO_FILTERS)}>
             Show everyone
@@ -1353,7 +1356,7 @@ export function DelaysBoard({
                 ) : null}
               </div>
               <div className={styles.tableWrap}>
-                <table className={styles.tbl} data-testid="delays-waiting-list">
+                <table className={styles.tbl} data-testid="delays-waiting-list" role="table">
                   <colgroup>
                     <col className={styles.colP} />
                     <col className={styles.colW} />
@@ -1362,19 +1365,31 @@ export function DelaysBoard({
                     <col className={styles.colL} />
                     <col />
                   </colgroup>
-                  <thead>
+                  <thead role="rowgroup">
                     <tr>
-                      <th scope="col">Person</th>
-                      <th scope="col">Waited</th>
-                      <th scope="col">
+                      <th scope="col" role="columnheader">
+                        Person
+                      </th>
+                      <th scope="col" role="columnheader">
+                        Waited
+                      </th>
+                      <th scope="col" role="columnheader">
                         <abbr title="Urgency tier">T</abbr>
                       </th>
-                      <th scope="col">{flat ? "Blocker" : "Wards"}</th>
-                      <th scope="col">Legal</th>
-                      <th scope="col">Last update</th>
+                      <th scope="col" role="columnheader">
+                        {flat ? "Blocker" : "Wards"}
+                      </th>
+                      <th scope="col" role="columnheader">
+                        Legal
+                      </th>
+                      <th scope="col" role="columnheader">
+                        Last update
+                      </th>
                     </tr>
                   </thead>
-                  <tbody onKeyDown={onListKey}>{body}</tbody>
+                  <tbody role="rowgroup" onKeyDown={onListKey}>
+                    {body}
+                  </tbody>
                 </table>
               </div>
             </section>
