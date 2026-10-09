@@ -59,6 +59,7 @@ type Draft = {
   time: string;
   stayDays: string;
   legalStatus: LegalStatus;
+  originalArrivalAt: Instant | null;
 };
 
 type FormState = { mode: "book" } | { mode: "change"; id: string } | { mode: "cancel"; id: string } | null;
@@ -78,7 +79,7 @@ function parseTime(value: string): number | null {
 }
 
 export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
-  const { units, patients, admissions, dayZero, dispatch, rejections, plannedAdmissions = [] } = useWardFlow();
+  const { units, patients, admissions, movements, dayZero, dispatch, rejections, plannedAdmissions = [] } = useWardFlow();
   const patientOf = usePatientOf();
   const [form, setForm] = useState<FormState>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -100,6 +101,12 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     for (const admission of admissions)
       if (admission.patientId && (admission.state === "pulled" || admission.state === "occupied"))
         busy.add(admission.patientId);
+    for (const movement of movements)
+      if (
+        movement.patientId &&
+        ["placement_requested", "destination_review", "accepted_awaiting_bed"].includes(movement.stage)
+      )
+        busy.add(movement.patientId);
     for (const planned of plannedAdmissions)
       if (planned.patientId && planned.state === "booked") busy.add(planned.patientId);
     return patients
@@ -156,6 +163,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       time: "10:00",
       stayDays: "7",
       legalStatus: PLANNED_ADMISSION_LEGAL_STATUSES[0]!,
+      originalArrivalAt: null,
     });
     setForm({ mode: "book" });
   }
@@ -169,10 +177,11 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       sex: planned.sex,
       reason: planned.reason,
       unitId: planned.unitId,
-      dayOffset: Math.max(0, dayOf(planned.expectedArrivalAt) - dayOf(now)),
+      dayOffset: dayOf(planned.expectedArrivalAt) - dayOf(now),
       time: clockInputValue(planned.expectedArrivalAt),
       stayDays: String(planned.expectedStayDays),
       legalStatus: planned.legalStatus,
+      originalArrivalAt: planned.expectedArrivalAt,
     });
     setForm({ mode: "change", id: planned.id });
   }
@@ -194,7 +203,12 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     const minute = parseTime(draft.time);
     if (minute === null) return setRefusal("Enter the arrival time as hh:mm.");
     const stay = Number(draft.stayDays);
-    const expectedArrivalAt = (dayOf(now) + draft.dayOffset) * MINUTES_PER_DAY + minute;
+    const selectedArrivalAt = (dayOf(now) + draft.dayOffset) * MINUTES_PER_DAY + minute;
+    const expectedArrivalAt =
+      form.mode === "change" && draft.originalArrivalAt !== null &&
+      selectedArrivalAt === draft.originalArrivalAt
+        ? draft.originalArrivalAt
+        : selectedArrivalAt;
     pending.current = { rejections: rejections.length };
     if (form.mode === "book") {
       let sex = draft.sex;
@@ -413,11 +427,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                       ))}
                     </Select>
                   </Field>
-                ) : (
-                  <>
-                    <Field label="Initials" hint="1 to 3 letters">
-                      <TextInput
-                        value={draft.initials}
+                       value={draft.initials}
                         maxLength={5}
                         autoComplete="off"
                         onChange={(event) => update({ initials: event.target.value })}
@@ -485,11 +495,17 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                   onChange={(event) => update({ dayOffset: Number(event.target.value) })}
                   data-testid="ward-planned-day"
                 >
-                  {Array.from({ length: PLANNED_ADMISSION_WINDOW_DAYS }, (_, offset) => (
-                    <option key={offset} value={offset}>
-                      {dayLabel(offset)}
-                    </option>
-                  ))}
+                  {Array.from(
+                    { length: PLANNED_ADMISSION_WINDOW_DAYS },
+                    (_, index) => index,
+                  )
+                    .concat(draft.dayOffset < 0 ? [draft.dayOffset] : [])
+                    .sort((a, b) => a - b)
+                    .map((offset) => (
+                      <option key={offset} value={offset}>
+                        {dayLabel(offset)}
+                      </option>
+                    ))}
                 </Select>
               </Field>
               <Field label="Arrival time">

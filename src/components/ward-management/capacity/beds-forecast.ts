@@ -101,9 +101,13 @@ export function bedsForecast(
   const unitIds = new Set(units.map((unit) => unit.id));
   const pending = releases.filter((release) => release.state !== "discharged" && unitIds.has(release.unitId));
   const flaggedAdmissionIds = new Set(pending.map((release) => release.admissionId));
-  const waitingForBed = movements.filter(
+  const waitingForBedMovements = movements.filter(
     (movement) => isOpen(movement) && STAGES_STILL_NEEDING_A_BED.includes(movement.stage),
-  ).length;
+  );
+  const waitingForBed = waitingForBedMovements.length;
+  const waitingPatientIds = new Set(
+    waitingForBedMovements.map((movement) => movement.patientId).filter((patientId): patientId is string => Boolean(patientId)),
+  );
 
   const horizons = BEDS_FORECAST_HORIZON_DAYS.map((days): BedsForecastHorizon => {
     const until = now + days * MINUTES_PER_DAY;
@@ -124,7 +128,11 @@ export function bedsForecast(
         !flaggedAdmissionIds.has(admission.id),
     ).length;
     const planned = plannedAdmissions.filter(
-      (booking) => booking.state === "booked" && unitIds.has(booking.unitId) && booking.expectedArrivalAt <= until,
+      (booking) =>
+        booking.state === "booked" &&
+        unitIds.has(booking.unitId) &&
+        booking.expectedArrivalAt <= until &&
+        (booking.patientId === null || !waitingPatientIds.has(booking.patientId)),
     ).length;
     const bedsNeeded = waitingForBed + planned;
     const low = readyNow + confirmed - bedsNeeded;
