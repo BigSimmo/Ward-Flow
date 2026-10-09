@@ -327,4 +327,39 @@ test.describe("@mockup Ward patient search", () => {
 
     expect(failures, "control(s) under the 48px production tap-target floor at 375px (width x height)").toEqual([]);
   });
+
+  /**
+   * 6. THE 48PX HIT AREA ON DESKTOP. The compact desktop pills keep their 26px/28px look, but an
+   * invisible pseudo-element grows each hit area to 48px tall. A click 8px above or below the
+   * visible pill must still land on the control (the visible box alone would miss it). The same
+   * rule covers the record's 28px Watch and flow pills, which share the stylesheet block.
+   */
+  test("the compact desktop DOB and Clear controls keep a 48px-tall hit area at 1440px", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gotoSearch(page);
+    await typeaheadInput(page).fill("a");
+
+    const form = page.locator('form[role="search"]');
+    const controls: Array<readonly [Locator, string]> = [
+      [form.getByRole("button", { name: "DOB" }), "the DOB switch"],
+      [form.getByRole("button", { name: "Clear" }), "the Clear button"],
+    ];
+    const failures: string[] = [];
+    for (const [control, label] of controls) {
+      await expect(control, `${label} is not visible`).toBeVisible();
+      const misses = await control.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const probes = [rect.top - 8, rect.bottom + 8, rect.top + rect.height / 2];
+        return probes
+          .filter((y) => {
+            const hit = document.elementFromPoint(x, y);
+            return !(hit && (hit === element || element.contains(hit)));
+          })
+          .map((y) => Math.round(y - rect.top));
+      });
+      if (misses.length > 0) failures.push(`${label}: missed at y offsets ${misses.join(", ")}`);
+    }
+    expect(failures, "desktop control(s) whose hit area is under 48px tall").toEqual([]);
+  });
 });

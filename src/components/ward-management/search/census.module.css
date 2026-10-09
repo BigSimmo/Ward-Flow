@@ -1333,3 +1333,27 @@ table.censusTable {
     display: none !important;
   }
 }
+
+/* ───── desktop hit areas ─────
+   The compact desktop pills keep their approved 26px and 28px look, but the Ward Flow rule is
+   48px tap targets with no desktop exemption. An invisible pseudo-element grows each hit area
+   vertically to 48px; width is untouched so neighbouring pills never overlap. */
+.dobToggle,
+.searchForm > div > div:first-of-type > button:last-child:not(.dobToggle),
+.flow,
+.previewButton {
+  position: relative;
+}
+
+.dobToggle::after,
+.searchForm > div > div:first-of-type > button:last-child:not(.dobToggle)::after,
+.flow::after,
+.previewButton::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: max(100%, var(--ward-tap, var(--spacing-tap, 3rem)));
+  transform: translateY(-50%);
+}
