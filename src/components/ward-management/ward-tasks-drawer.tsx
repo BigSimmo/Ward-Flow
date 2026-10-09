@@ -325,7 +325,8 @@ export function WardTasksDrawer({
 
   function renderRow(item: InboxItem) {
     const movement = records?.movements.find((row) => row.id === item.movementId);
-    const patient = records ? resolveSubjectPatient(movement, records) : undefined;
+    // A planned admission row has no movement: the booking itself names the person.
+    const patient = records ? resolveSubjectPatient(movement ?? item.plannedAdmission, records) : undefined;
     const Icon = rowIcon(item);
     const isFact = item.kind === "fact";
     const ackHistory = acknowledgements[item.id] ?? [];
@@ -468,7 +469,7 @@ export function WardTasksDrawer({
           <button
             type="button"
             className={`${styles.btn} ${isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
-            aria-label="Open patient"
+            aria-label={item.plannedAdmission ? "Open planned admission in Capacity" : "Open patient"}
             onClick={() => onSelectMovement(item.movementId, undefined, item.href)}
           >
             <ArrowUpRight aria-hidden="true" />

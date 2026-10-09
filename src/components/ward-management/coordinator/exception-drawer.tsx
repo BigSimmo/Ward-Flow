@@ -195,30 +195,47 @@ export function ExceptionDrawer({
             <ul className={styles.registerList}>
               {items.map((item) => {
                 const silenceCopy = silenceReminders?.get(item.movementId);
+                const body = (
+                  <>
+                    <span className={styles.registerMain}>
+                      <span className={styles.registerTitle}>{commandInboxTitle(item)}</span>
+                      <span className={styles.registerSub}>
+                        {item.detail} · {item.owner}
+                      </span>
+                      {silenceCopy !== undefined ? (
+                        <span className={styles.registerNote} data-testid={`ward-exception-silence-${item.id}`}>
+                          {silenceCopy}
+                        </span>
+                      ) : null}
+                    </span>
+                    <Badge tone={item.tone === "danger" ? "danger" : "warning"} size="sm" className={styles.noShrink}>
+                      {item.tone === "danger" ? "Act now" : "At risk"}
+                    </Badge>
+                  </>
+                );
                 return (
                   <li key={item.id}>
-                    <button
-                      type="button"
-                      data-testid={`ward-exception-${item.id}`}
-                      data-tone={item.tone}
-                      className={styles.registerRow}
-                      onClick={() => onSelectMovement(item.movementId)}
-                    >
-                      <span className={styles.registerMain}>
-                        <span className={styles.registerTitle}>{commandInboxTitle(item)}</span>
-                        <span className={styles.registerSub}>
-                          {item.detail} · {item.owner}
-                        </span>
-                        {silenceCopy !== undefined ? (
-                          <span className={styles.registerNote} data-testid={`ward-exception-silence-${item.id}`}>
-                            {silenceCopy}
-                          </span>
-                        ) : null}
-                      </span>
-                      <Badge tone={item.tone === "danger" ? "danger" : "warning"} size="sm" className={styles.noShrink}>
-                        {item.tone === "danger" ? "Act now" : "At risk"}
-                      </Badge>
-                    </button>
+                    {item.href ? (
+                      // A planned admission row has no movement to select: it opens Capacity.
+                      <Link
+                        href={item.href}
+                        data-testid={`ward-exception-${item.id}`}
+                        data-tone={item.tone}
+                        className={styles.registerRow}
+                      >
+                        {body}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        data-testid={`ward-exception-${item.id}`}
+                        data-tone={item.tone}
+                        className={styles.registerRow}
+                        onClick={() => onSelectMovement(item.movementId)}
+                      >
+                        {body}
+                      </button>
+                    )}
                   </li>
                 );
               })}

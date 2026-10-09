@@ -159,7 +159,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       dayOffset: 1,
       time: "10:00",
       stayDays: "7",
-      legalStatus: PLANNED_ADMISSION_LEGAL_STATUSES[0]!,
+      legalStatus: PLANNED_ADMISSION_LEGAL_STATUSES[0] ?? "Voluntary",
       ageBand: "Adult",
     });
     setForm({ mode: "book" });
