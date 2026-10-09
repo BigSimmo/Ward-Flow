@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   CHROME_ROLE_LABELS,
+  canSeeReadmissionFlag,
   noticeIsForWardChrome,
   noticeIsMarkableByChrome,
   wardChromeRole,
@@ -68,5 +69,16 @@ describe("Ward Flow Tasks role boundary", () => {
     expect(wardTasksAreActionableForRole("ward")).toBe(false);
     expect(wardTasksAreActionableForRole("ed")).toBe(false);
     expect(wardTasksAreActionableForRole("officer")).toBe(false);
+  });
+});
+
+describe("28 day readmission flag audience (Josh, 9 Oct 2026)", () => {
+  it("shows the flag to the coordinator route only", () => {
+    expect(canSeeReadmissionFlag(wardChromeRole("/mockups/ward-flow/referrals"))).toBe(true);
+    expect(canSeeReadmissionFlag(wardChromeRole(""))).toBe(true);
+    for (const role of ["ward", "ed", "officer", "community", "bed_manager", "executive"] as const)
+      expect(canSeeReadmissionFlag(role)).toBe(false);
+    expect(canSeeReadmissionFlag(wardChromeRole("/mockups/ward-flow/ed/scgh"))).toBe(false);
+    expect(canSeeReadmissionFlag(wardChromeRole("/mockups/ward-flow/ward/fre-adult-open"))).toBe(false);
   });
 });

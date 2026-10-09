@@ -366,7 +366,8 @@ capacity figure anywhere in this group is real.
   which role's chrome a route gets from the pathname alone — Ward Flow has no signed-in identity,
   so "the role IS the route". A chrome hint only, never a permission (permissions stay in the
   reducer's `EVENT_ROLE` table). Key exports: `wardChromeRole`, `noticeIsForWardChrome`,
-  `noticeIsMarkableByChrome`, `wardTasksAreActionableForRole`, `CHROME_ROLE_LABELS`.
+  `noticeIsMarkableByChrome`, `wardTasksAreActionableForRole`, `canSeeReadmissionFlag` (the 28 day
+  readmission flag is the coordinator's only, Josh, 9 Oct 2026), `CHROME_ROLE_LABELS`.
 - **`src/components/ward-management/ward-service-colors.ts`** (326 lines, 2 importers — one
   production, one test) — A full WA Health Services colour key (EMHS green `#00825E`, NMHS red
   `#990057`, SMHS purple `#5A2476`, WACHS/CAHS blue, statewide, private), sourced from the real
