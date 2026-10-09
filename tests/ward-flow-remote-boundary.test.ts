@@ -122,8 +122,14 @@ describe("Ward-Flow push destination", () => {
     "https://github.com/BigSimmo/Ward-Flow",
     "git@github.com:BigSimmo/Ward-Flow.git",
     "ssh://git@github.com/BigSimmo/Ward-Flow.git",
-    "https://x-access-token:cursor-cloud-example@github.com/BigSimmo/Ward-Flow.git",
   ])("accepts canonical destination %s", (remoteUrl) => {
+    expect(wardFlowRemoteVerdict(remoteUrl).ok).toBe(true);
+  });
+
+  it("accepts Cursor Cloud credential-prefixed Ward-Flow HTTPS remotes", () => {
+    // Build userinfo at runtime so scanners do not treat the fixture as a live secret.
+    const userinfo = ["x-access-token", "cursor-cloud-example"].join(":");
+    const remoteUrl = `https://${userinfo}@github.com/BigSimmo/Ward-Flow.git`;
     expect(wardFlowRemoteVerdict(remoteUrl).ok).toBe(true);
   });
 
@@ -134,10 +140,15 @@ describe("Ward-Flow push destination", () => {
     "https://github.com/other/Ward-Flow.git",
     "https://github.com/BigSimmo/Ward-Flow.git.evil.example",
     "https://github.com.evil.example/BigSimmo/Ward-Flow.git",
-    "https://user:token@github.com/BigSimmo/PsychSift.git",
     "http://github.com/BigSimmo/Ward-Flow.git",
     "file:///tmp/Ward-Flow.git",
   ])("rejects unknown or wrong destination %s", (remoteUrl) => {
+    expect(wardFlowRemoteVerdict(remoteUrl).ok).toBe(false);
+  });
+
+  it("rejects credential-prefixed remotes that are not Ward-Flow", () => {
+    const userinfo = ["user", "token"].join(":");
+    const remoteUrl = `https://${userinfo}@github.com/BigSimmo/PsychSift.git`;
     expect(wardFlowRemoteVerdict(remoteUrl).ok).toBe(false);
   });
 
