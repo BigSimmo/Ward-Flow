@@ -812,7 +812,7 @@ export function PatientTransitOperations({
         <summary>
           Additional workflow controls <span>Blockers, urgency, transport exceptions & paper authority</span>
         </summary>
-        <MovementWorkspaceCockpit movementId={movement.id} embedded />
+        <MovementWorkspaceCockpit movementId={movement.id} embedded role="ward" />
       </details>
     </section>
   );

@@ -740,6 +740,12 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   // Refusals are never written (the provider saves `rejections: []`, Josh D-18, 25 Sept 2026,
   // because a refusal can quote a caller-supplied id); refusing a stored one is the second fence.
   if (state.repatriations.length > 0 || state.rejections.length > 0) return false;
+  // Carer/PSP/MHAS notification records hold typed names and reasons (D-18): absent or empty only.
+  if (
+    "supportNotifications" in value &&
+    (!Array.isArray(value.supportNotifications) || value.supportNotifications.length > 0)
+  )
+    return false;
   for (const row of state.handoverSignOffs) if (!object(row) || !finite(row.at) || !text(row.by)) return false;
   for (const row of state.clinicalContacts)
     if (!object(row) || !finite(row.at) || !text(row.by) || !text(row.teamId) || !communityTeamById(row.teamId))
