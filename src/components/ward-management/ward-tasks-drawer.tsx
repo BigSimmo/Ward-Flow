@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AlarmClock,
   ArrowUpRight,
   BedDouble,
   CheckCircle2,
@@ -16,6 +17,7 @@ import {
   ShieldCheck,
   TriangleAlert,
   UserCheck,
+  UserRound,
   X,
 } from "lucide-react";
 import { useRef, useState, type Dispatch } from "react";
@@ -36,6 +38,19 @@ import {
   type InboxCompletionEntry,
 } from "@/components/ward-management/ward-flow-reducer";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import type { WardConfiguration } from "./ward-configuration";
+import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
+import { decisionTargetReading } from "./ward-decision-targets";
+import { DUE_SORT_OPTIONS, sortDueFirst, type DueSortMode } from "./ward-due-sort";
+import { inboxItemIsActNow } from "./ward-inbox-reducer";
+import {
+  activeSnooze,
+  currentInboxOwner,
+  partitionSnoozed,
+  type InboxOwnershipEntry,
+  type InboxSnoozeEntry,
+} from "./ward-inbox-snooze";
+import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "./inbox-snooze-control";
 
 import styles from "./ward-tasks-drawer.module.css";
 
@@ -43,6 +58,12 @@ type WardTasksDrawerProps = {
   items: InboxItem[];
   acknowledgements: Record<string, InboxAcknowledgement[]>;
   completions: Record<string, InboxCompletionEntry[]>;
+  /** Stream A, 9 Oct 2026: who owns each row and each row's snooze history. Optional so a fixture
+   *  render without them shows no owner and nothing snoozed. */
+  ownership?: Record<string, InboxOwnershipEntry[]>;
+  snoozes?: Record<string, InboxSnoozeEntry[]>;
+  /** The configured decision targets; when given, each row shows its running target. */
+  configuration?: WardConfiguration;
   role: WardFlowRole;
   now: Instant;
   dispatch: Dispatch<WardFlowEvent>;
@@ -148,9 +169,12 @@ function rowDetail(
 }
 
 export function WardTasksDrawer({
-  items,
+  items: allItems,
   acknowledgements,
   completions,
+  ownership,
+  snoozes,
+  configuration,
   role,
   now,
   dispatch,
@@ -175,6 +199,7 @@ export function WardTasksDrawer({
   const [ackFilter, setAckFilter] = useState<AckFilter>("all");
   const [taskFilter, setTaskFilter] = useState<"all" | "critical" | "review">("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<DueSortMode>("default");
 
   function acknowledge(inboxItemId: string) {
     dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId });
@@ -188,11 +213,23 @@ export function WardTasksDrawer({
     dispatch({ type: "REOPEN_INBOX_ITEM", role, now, inboxItemId });
   }
 
+  function takeOwnership(inboxItemId: string) {
+    dispatch({ type: "TAKE_INBOX_ITEM_OWNERSHIP", role, now, inboxItemId });
+  }
+
+  function returnSnoozed(inboxItemId: string) {
+    dispatch({ type: "UNSNOOZE_INBOX_ITEM", role, now, inboxItemId });
+  }
+
   function acknowledgeAllFacts() {
     visibleUnacknowledged.forEach((item) => {
       dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId: item.id });
     });
   }
+
+  // Snoozed rows leave the active list and come back by themselves when their time passes.
+  const { active: activeItems, snoozed: snoozedItems } = partitionSnoozed(allItems, snoozes, now);
+  const items = sortMode === "due-first" ? sortDueFirst(activeItems, (item) => item.dueAt) : activeItems;
 
   const isComplete = (item: InboxItem) =>
     item.kind === "commitment" && inboxItemCompletionState(completions[item.id]) === "complete";
@@ -435,10 +472,17 @@ export function WardTasksDrawer({
         {latestAck ? (
           <p className={styles.ackStatus} data-testid={`ward-task-ack-${item.id}`}>
             <StatusGlyph tone="info" size={8} />
-            Acknowledged at {formatInstantWithDay(latestAck.at, now)}
+            Acknowledged by {latestAck.by} at {formatInstantWithDay(latestAck.at, now)}
             {ackHistory.length > 1 ? ` · ${ackHistory.length} times` : ""}, still open
           </p>
         ) : null}
+        <InboxRowStatus
+          className={styles.ackStatus}
+          ownership={ownership?.[item.id]}
+          since={item.since}
+          target={movement && configuration ? decisionTargetReading(movement, now, configuration) : undefined}
+          now={now}
+        />
         {latestCompletion ? (
           <p className={styles.ackStatus} data-testid={`ward-task-done-${item.id}`}>
             <StatusGlyph tone="success" size={9} />
@@ -490,6 +534,30 @@ export function WardTasksDrawer({
             <ArrowUpRight aria-hidden="true" />
             Open
           </button>
+          {role === "coordinator" &&
+          currentInboxOwner(ownership?.[item.id], item.since)?.by !== WARD_FLOW_ROLE_LABELS[role] ? (
+            <button
+              type="button"
+              data-testid={`ward-task-own-${item.id}`}
+              className={styles.btn}
+              onClick={() => {
+                takeOwnership(item.id);
+              }}
+            >
+              <UserRound aria-hidden="true" />
+              Take
+            </button>
+          ) : null}
+          {role === "coordinator" && !done ? (
+            <InboxSnoozeControl
+              subject={`${item.title}, ${patient?.displayName ?? "patient not linked"}`}
+              actNow={inboxItemIsActNow(item.id)}
+              now={now}
+              onSnooze={(until, reason) => {
+                dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason });
+              }}
+            />
+          ) : null}
           {renderMovementActions(item, movement)}
         </div>
         {renderEscalation(item, movement)}
@@ -607,6 +675,23 @@ export function WardTasksDrawer({
               </span>
               <ChevronDown aria-hidden="true" />
             </label>
+            <label className={styles.selectWrap}>
+              <select
+                aria-label="Sort tasks"
+                data-testid="ward-tasks-sort"
+                value={sortMode}
+                onChange={(event) => {
+                  setSortMode(event.target.value as DueSortMode);
+                }}
+              >
+                {DUE_SORT_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown aria-hidden="true" />
+            </label>
           </div>
         </div>
 
@@ -616,7 +701,13 @@ export function WardTasksDrawer({
               <span className={styles.emptyIcon} aria-hidden="true">
                 <ListChecks aria-hidden="true" />
               </span>
-              <h3>{role === "coordinator" ? "No outstanding work" : "Bed coordinator's list"}</h3>
+              <h3>
+                {role !== "coordinator"
+                  ? "Bed coordinator's list"
+                  : snoozedItems.length > 0
+                    ? "Nothing active"
+                    : "No outstanding work"}
+              </h3>
               <p>{role === "coordinator" ? "New tasks appear here" : "Tasks is the bed coordinator's list."}</p>
             </div>
           ) : filteredItems.length === 0 ? (
@@ -676,6 +767,78 @@ export function WardTasksDrawer({
               ) : null}
             </>
           )}
+          {snoozedItems.length > 0 ? (
+            <section className={styles.section} aria-labelledby="ward-tasks-snoozed" data-testid="ward-tasks-snoozed">
+              <div className={styles.sectionHead}>
+                <AlarmClock aria-hidden="true" />
+                <h3 id="ward-tasks-snoozed" className={styles.sectionTitle}>
+                  Snoozed
+                </h3>
+                <span className={styles.count}>{snoozedItems.length}</span>
+                <span className={styles.sectionNote}>Back when due</span>
+              </div>
+              <ul className={styles.list}>
+                {snoozedItems.map((item) => {
+                  const entry = activeSnooze(snoozes?.[item.id], now, item.since);
+                  const movement = records?.movements.find((row) => row.id === item.movementId);
+                  const patient = records ? resolveSubjectPatient(movement, records) : undefined;
+                  return (
+                    <li
+                      key={item.id}
+                      className={styles.row}
+                      data-tone={item.tone}
+                      data-testid={`ward-task-snoozed-${item.id}`}
+                    >
+                      <div className={styles.rowHead}>
+                        <span className={styles.rowIcon} aria-hidden="true">
+                          <AlarmClock aria-hidden="true" />
+                        </span>
+                        <div className={styles.rowText}>
+                          <span className={styles.rowTitle}>{item.title}</span>
+                          <p className={styles.rowMeta}>
+                            <strong>{patient?.displayName ?? "Patient not linked"}</strong>
+                            {patient?.patient ? (
+                              <>
+                                <span aria-hidden="true">·</span>
+                                <span className={styles.mono}>{patient.umrn}</span>
+                              </>
+                            ) : null}
+                          </p>
+                          {entry ? <p className={styles.rowMeta}>{snoozedLine(entry, now)}</p> : null}
+                        </div>
+                        <button
+                          type="button"
+                          className={styles.btn}
+                          aria-label="Open patient"
+                          data-testid={`ward-task-snoozed-open-${item.id}`}
+                          onClick={() => {
+                            // The same routing as an active row: a discharge row opens its stay.
+                            openItem(item);
+                          }}
+                        >
+                          <ArrowUpRight aria-hidden="true" />
+                          Open
+                        </button>
+                        {role === "coordinator" ? (
+                          <button
+                            type="button"
+                            className={styles.btn}
+                            data-testid={`ward-task-unsnooze-${item.id}`}
+                            aria-label={`Return ${item.title} now, ${patient?.displayName ?? "patient not linked"}`}
+                            onClick={() => {
+                              returnSnoozed(item.id);
+                            }}
+                          >
+                            Return now
+                          </button>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
         </div>
 
         <div className={styles.drawerFoot}>

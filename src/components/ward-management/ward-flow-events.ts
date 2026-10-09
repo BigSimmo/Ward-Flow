@@ -55,6 +55,7 @@ import type {
   AbsenceStep,
 } from "@/components/ward-management/ward-model";
 import type { WardScenario } from "@/components/ward-management/ward-scenarios";
+import type { InboxSnoozeReason } from "@/components/ward-management/ward-inbox-snooze";
 
 /**
  * `WardFlowRole` and `WARD_FLOW_ROLE_LABELS` live in `ward-flow-roles.ts` now (Spec D15
@@ -1848,6 +1849,38 @@ export type WardFlowEvent =
       inboxItemId: string;
     }
   | {
+      /**
+       * Stream A, 9 Oct 2026: the acting role takes ownership of an inbox row. Recorded as the
+       * role's label (`WARD_FLOW_ROLE_LABELS`), never a person. Append-only history on
+       * `WardFlowState.inboxOwnership`; refused when the same role already owns the row.
+       */
+      type: "TAKE_INBOX_ITEM_OWNERSHIP";
+      role: WardFlowRole;
+      now: Instant;
+      inboxItemId: string;
+    }
+  | {
+      /**
+       * Stream A, 9 Oct 2026: hides an inbox row from the active list until `until`, with a
+       * reason from the closed `SNOOZE_REASONS` list. The row returns by itself when `until`
+       * passes. An act-now (red) row may not be snoozed past `RED_ROW_SNOOZE_CAP_MINUTES`; the
+       * reducer refuses it. Snoozing never resolves the fact behind the row.
+       */
+      type: "SNOOZE_INBOX_ITEM";
+      role: WardFlowRole;
+      now: Instant;
+      inboxItemId: string;
+      until: Instant;
+      reason: InboxSnoozeReason;
+    }
+  | {
+      /** The undo for `SNOOZE_INBOX_ITEM`: returns a snoozed row to the active list now. Recorded, never a delete. */
+      type: "UNSNOOZE_INBOX_ITEM";
+      role: WardFlowRole;
+      now: Instant;
+      inboxItemId: string;
+    }
+  | {
       type: "SET_ARRIVAL_DETAILS";
       role: WardFlowRole;
       now: Instant;
@@ -2559,6 +2592,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   ACKNOWLEDGE_INBOX_ITEM: ["coordinator"],
   COMPLETE_INBOX_ITEM: ["coordinator"],
   REOPEN_INBOX_ITEM: ["coordinator"],
+  // Stream A, 9 Oct 2026: the same coordinator floor as acknowledging a row.
+  TAKE_INBOX_ITEM_OWNERSHIP: ["coordinator"],
+  SNOOZE_INBOX_ITEM: ["coordinator"],
+  UNSNOOZE_INBOX_ITEM: ["coordinator"],
   SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
   SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],

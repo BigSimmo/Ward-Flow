@@ -616,6 +616,10 @@ describe("front-door contract — an ED may close to all admissions, never refus
     ACKNOWLEDGE_INBOX_ITEM: false,
     COMPLETE_INBOX_ITEM: false,
     REOPEN_INBOX_ITEM: false,
+    // Stream A: ownership and snooze of an inbox row act on the row, never on a referral.
+    TAKE_INBOX_ITEM_OWNERSHIP: false,
+    SNOOZE_INBOX_ITEM: false,
+    UNSNOOZE_INBOX_ITEM: false,
     SET_ARRIVAL_DETAILS: false,
     SET_STEP_DOWN_CANDIDATE: false,
     SET_DISCHARGE_BARRIER: false,
