@@ -158,18 +158,23 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
   const { movement, admission, patient, now } = ctx;
 
   if (mode === "find" && movement) {
-    const asked = movement.referredUnitIds.length;
-    const declined = movement.declines.length;
+    const awaiting = movement.referredUnitIds.length;
+    const declinedUnits = new Set(
+      movement.declines
+        .map((decline) => decline.unitId)
+        .filter((unitId) => !movement.referredUnitIds.includes(unitId)),
+    );
+    const asked = awaiting + declinedUnits.size;
     const lastDecline = movement.declines.at(-1);
-    const allDeclined = asked > 0 && declined >= asked;
+    const allDeclined = awaiting === 0 && asked > 0;
     const bed: StatusCell = {
       key: "bed",
       icon: BedDouble,
       label: `${movement.security} ${movement.cohort.toLowerCase()} bed`,
       owner: "Bed coordinator",
       tone: asked === 0 || allDeclined ? "danger" : "warning",
-      value: asked === 0 ? "No ward asked" : allDeclined ? "None found" : `${asked - declined} awaiting answer`,
-      sub: asked === 0 ? "Refer to fitting wards" : `${declined} of ${asked} declined`,
+      value: asked === 0 ? "No ward asked" : allDeclined ? "None found" : `${awaiting} awaiting answer`,
+      sub: asked === 0 ? "Refer to fitting wards" : `${declinedUnits.size} of ${asked} declined`,
       time: lastDecline ? `Last decline ${clock(lastDecline.at)}` : undefined,
       action: { kind: "button", label: asked === 0 ? "Choose wards" : "Open shortlist", onClick: ctx.onOpenPlacement },
     };
