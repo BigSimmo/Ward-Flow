@@ -104,7 +104,12 @@ function rebuild(
   return { world, kept };
 }
 
-/** Adopts a joined world. Anything queued before joining is replayed by the caller afterwards. */
+/**
+ * Adopts a joined world. Events dispatched before the first join are replayed by the provider
+ * afterwards (`preAdoptionEvents`). On a later join (access code expired, a new day, copies that
+ * disagreed) anything still pending is dropped rather than replayed: the server may already hold
+ * it, so the board is the copy that counts, and the status line says the board was reloaded.
+ */
 export function adoptSharedWorld(
   sync: SharedSync,
   join: SharedJoinResponse,

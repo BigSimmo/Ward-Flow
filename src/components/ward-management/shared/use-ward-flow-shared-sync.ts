@@ -44,6 +44,8 @@ export function useWardFlowSharedSync(options: {
   const syncRef = useRef(sync);
   const awaitingCommit = useRef(false);
   const busy = useRef(false);
+  /** Set when a run was asked for while one was in flight, so it is not lost until the next tick. */
+  const runAgain = useRef(false);
   const lastPollAt = useRef(0);
   const [network, setNetwork] = useState<SharedNetwork>("ok");
   const [tick, setTick] = useState(0);
@@ -63,7 +65,11 @@ export function useWardFlowSharedSync(options: {
 
   const runOnce = useCallback(async () => {
     const current = syncRef.current;
-    if (!current || busy.current || awaitingCommit.current || mountedAtAbsolute === null) return;
+    if (!current || awaitingCommit.current || mountedAtAbsolute === null) return;
+    if (busy.current) {
+      runAgain.current = true;
+      return;
+    }
     busy.current = true;
     try {
       if (current.status === "joining") {
@@ -139,18 +145,21 @@ export function useWardFlowSharedSync(options: {
       if (polled.body.events.length > 0) deliver({ kind: "remote", records: polled.body.events });
     } finally {
       busy.current = false;
+      // A local change landed while this request was in flight. When this request delivered an
+      // answer, the commit runs the loop again anyway; otherwise run it now rather than at the tick.
+      if (runAgain.current && !awaitingCommit.current) setTick((value) => value + 1);
+      runAgain.current = false;
     }
   }, [buildId, deliver, localDayZeroMs, mountedAtAbsolute, onAdopt]);
 
   const status = sync?.status;
-  const pendingCount = sync?.pending.length ?? 0;
-  const confirmedSeq = sync?.confirmedSeq ?? 0;
 
-  // Runs straight away when there is a world to join or something new to send, and on every poll
-  // tick. It runs after commit, after the effect above has cleared `awaitingCommit`.
+  // Runs after every committed change to the sync state (a join to make, a local change to send,
+  // an answer applied) and on every poll tick. It runs after the effect above has cleared
+  // `awaitingCommit`, so it always reads the committed sequence number.
   useEffect(() => {
-    if (status === "joining" || status === "live") void runOnce();
-  }, [status, pendingCount, confirmedSeq, runOnce, tick]);
+    if (sync?.status === "joining" || sync?.status === "live") void runOnce();
+  }, [sync, runOnce, tick]);
 
   useEffect(() => {
     if (status !== "live") return;

@@ -1,5 +1,31 @@
 # Engine: reducer, events, state and persistence
 
+## Shared live state (feature 3) — 9 October 2026
+
+Off unless the server has `DATABASE_URL`. Unset, the ward-flow layout passes `shared={{ enabled:
+false }}` and the provider is the per-browser prototype: no request, browser-session saving as
+above. Set, every browser on `/mockups/ward-flow` works on one shared world. The plan is
+`shared-state-plan.md` in the project notes; this is where the code sits.
+
+| File (`src/components/ward-management/`)                                     | Role                                                                                                                                                                                                                                                 |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `shared/ward-flow-shared-core.ts`                                            | What browser and server must agree on: `applySharedEvent` (the reducer, with the scenario network activated, is the only judge), the typed-text test (default deny, mirrors `ward-flow-persistence-classification.ts`), wire shapes and input checks |
+| `shared/ward-flow-shared-sync.ts`                                            | Pure browser model: `confirmed` world at `confirmedSeq`, `pending` local events, rebase on conflict, detach on typed text or a loaded scenario file                                                                                                  |
+| `shared/ward-flow-shared-client.ts`                                          | The browser's `fetch` calls; tagged results, never throws                                                                                                                                                                                            |
+| `shared/use-ward-flow-shared-sync.ts`                                        | The network loop: one request at a time, posts the oldest pending event or polls (2 s visible, 15 s hidden), waits for the provider to commit each answer                                                                                            |
+| `shared/server/config.ts`                                                    | Reads `DATABASE_URL`, `WARD_FLOW_SHARED_ACCESS_CODE` (16+ characters), `WARD_FLOW_SHARED_TYPED_TEXT`; only a boolean and the build id reach the browser                                                                                              |
+| `shared/server/access.ts`                                                    | Access code → signed 12-hour HttpOnly, SameSite=Strict cookie scoped to the API path                                                                                                                                                                 |
+| `shared/server/service.ts`                                                   | World rules: one world per stored-state version and day, append only at `baseSeq + 1`, idempotent event ids, checkpoints every 200 events                                                                                                            |
+| `shared/server/store.ts`, `migrations.ts`, `migrations/001_shared_state.sql` | Postgres store (`pg`); schema applied once under an advisory lock                                                                                                                                                                                    |
+| `shared/server/http.ts`, `runtime.ts`                                        | Route handlers without Next, and the one place that opens the `pg` pool (`server-only`)                                                                                                                                                              |
+| `shell/ward-shared-sync-status.tsx`                                          | The status line and access-code form, rendered only in shared mode                                                                                                                                                                                   |
+
+`ward-flow-provider.tsx` holds a `shared` slot in its container: local dispatches are queued when
+accepted, sync answers arrive as a private-symbol action, and browser storage is neither read nor
+written in shared mode. The routes are `src/app/api/ward-flow/shared/{access,join,events}/route.ts`,
+which only wire the handlers; they count as Ward Flow's own folder in `tests/ward-flow-seam.test.ts`.
+Not built: metrics tables, named accounts, per-user audit. Hosted Railway is not verified.
+
 ## Current remediation seams — 8 October 2026
 
 The original map below is historical; its line numbers and earlier counts are not current.

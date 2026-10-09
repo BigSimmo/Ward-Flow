@@ -1,5 +1,12 @@
 # Routes, shell, navigation and shared UI
 
+## Shared live state (feature 3) — 9 October 2026
+
+`src/app/mockups/ward-flow/layout.tsx` reads `sharedModeForBrowser()` per request and passes it to
+`WardFlowProvider`. `shell/ward-shared-sync-status.tsx` (with its `.module.css`) is a fixed status
+line shown only when shared mode is on; it carries the access-code form when the server asks for
+it. The API routes and the rest of the feature are mapped in [Engine](engine.md).
+
 ## Statistics and Tools update — 7 October 2026
 
 The statistics layout preserves its seven modes and panel grids. The shared navigation anchors

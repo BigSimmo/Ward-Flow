@@ -2,6 +2,20 @@
 
 Final boundary repairs: protected departures use the approved scoped projection; transfer movements record their own arrival history/closure rather than copying earlier stages. The stage guard uses syntax-tree ancestry and drives the protected transfer. Care clock fields are covered by the re-anchor contract; coding supports a not-applicable receiver and rejects incompatible leave endings. Final offline evidence is in the dated WA audit report.
 
+## Shared live state (feature 3) — 9 October 2026
+
+- `ward-flow-shared-service.test.ts`: event log, conflicts, refusals, idempotent retries, typed-text
+  refusal, days and worlds, other server instances and checkpoints, on the in-memory store in
+  `helpers/ward-flow-shared-memory-store.ts`.
+- `ward-flow-shared-pg-store.test.ts`: the Postgres store and SQL migration on `pg-mem`, including a
+  save, a reload in a new service and a conflict.
+- `ward-flow-shared-http.test.ts`: the switch (404 without `DATABASE_URL`), access cookie, codes-only
+  responses and body limits.
+- `ward-flow-shared-sync.test.ts`: the browser's pure rebase model.
+- `ward-flow-shared-provider.dom.test.tsx`: two providers through the real handlers over a fake
+  `fetch`; no request with shared mode off, typed text never sent.
+- `ward-flow-seam.test.ts` counts `src/app/api/ward-flow` as a Ward Flow folder from this date.
+
 ## WA remediation update — 3 October 2026
 
 Added `ward-care-journey.test.ts`, `ward-care-journey.dom.test.tsx` and `ward-workflow-actions.dom.test.tsx` for guarded care actions, current-appointment attribution, paper transitions, transport requirements and atomic ward transfer. Updated exhaustive event/privacy/history/field guards for 98 events. `ui-ward-discharges.spec.ts` covers all eleven departures and the real care form at phone width. The existing officer print test is enabled; referral table thresholds are additionally measured in their supported print layout. Final gate results are recorded in the dated WA audit report; historical counts below describe their original snapshot.
