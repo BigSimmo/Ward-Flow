@@ -76,15 +76,12 @@ describe("the settings screen", () => {
         <HandoverPage />
       </WardFlowProvider>,
     );
-    const printedSections = within(handover.container)
-      .getAllByRole("heading", { level: 2 })
-      .map((heading) => heading.textContent?.trim() ?? "")
-      .filter((text) => text.length > 0)
-      // ⚠️ **ONE EXCLUSION, NAMED RATHER THAN HAND-PICKED.** "Print" is the panel ABOUT printing —
-      // listing it among the things that print on the sheet would be circular. Every other heading
-      // is content, including "Sign off", which this test caught arriving from another lane.
-      .filter((text) => !text.startsWith("Handover sheet"))
-      .filter((text) => text !== "Print");
+    // Refined Handover A (9 Oct 2026): the sheet's sections are its meeting-order groups. The due
+    // group carries the handover time ("Due by 15:00"), so its time is dropped before comparing.
+    const printedSections = ["act", "due", "bed", "acc", "mov"].map((id) => {
+      const header = within(handover.getByTestId(`ward-handover-group-${id}`)).getAllByRole("button")[0]!;
+      return (header.querySelector(":scope > span:not([class])")?.textContent ?? "").replace(/ \d\d:\d\d$/, "").trim();
+    });
     handover.unmount();
 
     expect(

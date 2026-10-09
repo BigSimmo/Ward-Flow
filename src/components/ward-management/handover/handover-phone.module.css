@@ -1,0 +1,854 @@
+/* Handover, refined phone layout (9 Oct 2026). Tokens only, 12px floor, 44px+ tap targets,
+   status by shape and colour. Its own design, not a squashed desktop. */
+
+.phone {
+  --ph-tap: var(--ward-tap, var(--spacing-tap, 3rem));
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  background: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.spacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.trunc {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--wf-mono);
+}
+
+/* ---------------------------------------------------------------- bar */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 52px;
+  padding: 0 12px 0 16px;
+  min-width: 0;
+}
+
+.barTitle {
+  margin: 0;
+  font: 650 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* The tap area is 44px tall; the visible chip inside it is smaller. */
+.shiftChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+  border-radius: var(--wf-r-pill);
+}
+
+.shiftChipPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  padding: 0 8px 0 10px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  box-shadow: var(--wf-e1);
+}
+
+.shiftChipPill b {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+}
+
+.shiftChip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 0;
+}
+
+/* ---------------------------------------------------------------- main */
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 4px 12px 12px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.note {
+  margin: 0;
+  padding: 4px 0 0;
+  text-align: center;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.empty {
+  margin: 0;
+  padding: 12px 4px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+/* ---------------------------------------------------------------- hero */
+
+.phoneHero {
+  --wf-danger: var(--wf-hero-danger);
+  --wf-warning: var(--wf-hero-warning);
+  --wf-success: var(--wf-hero-success);
+  --wf-info: var(--wf-hero-info);
+  --wf-neutral: var(--wf-hero-neutral);
+  --wf-focus-ring: var(--wf-hero-ink);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 14px 12px;
+  border-radius: var(--wf-r-xl);
+  border: 1px solid var(--wf-hero-edge);
+  background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  color: var(--wf-hero-ink);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 10%, transparent),
+    0 18px 36px -26px color-mix(in srgb, var(--wf-hero-edge) 90%, transparent);
+}
+
+.heroTop {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.heroName {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.eyebrow {
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-hero-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.heroTitle {
+  margin: 0;
+  font: 650 22px / 26px var(--wf-font);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.countdown {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  flex: 0 0 auto;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+}
+
+.countdown b {
+  font: 600 15px / 1 var(--wf-mono);
+  color: var(--wf-hero-ink);
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  min-height: 56px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-lg);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+  color: var(--wf-hero-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.figureValue {
+  font: 600 var(--wf-fs-20) / 24px var(--wf-mono);
+}
+
+.figureLabel {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-hero-ink-2);
+}
+
+/* Pressed: the figure turns light, so its glyph returns to the day status inks. */
+.figure[aria-pressed="true"] {
+  --wf-danger: var(--wf-danger-ink);
+  --wf-warning: var(--wf-warning-ink);
+  --wf-neutral: var(--wf-ink-2);
+  background: var(--wf-hero-ink);
+  border-color: var(--wf-hero-ink);
+  color: var(--wf-hero-2);
+}
+
+.figure[aria-pressed="true"] .figureLabel {
+  color: var(--wf-hero-2);
+}
+
+.figure:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+}
+
+.signed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-hero-ink-2);
+}
+
+/* ---------------------------------------------------------------- tabs */
+
+.tabs {
+  gap: 0;
+  overflow: hidden;
+}
+
+.tabs > [role="tab"] {
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+  height: var(--ph-tap);
+  font-size: var(--wf-fs-14);
+}
+
+/* ---------------------------------------------------------------- banners */
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 4px 6px 4px 12px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-lg);
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+}
+
+.bannerText {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.bannerText b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+}
+
+.bannerAction {
+  flex: 0 0 auto;
+  min-height: 44px;
+}
+
+/* ---------------------------------------------------------------- sections */
+
+.sec {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.secHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.secHeadStatic {
+  cursor: default;
+}
+
+.secTitle {
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chev {
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-m-fast) var(--wf-ease);
+}
+
+.secHead[aria-expanded="false"] .chev {
+  transform: rotate(-90deg);
+}
+
+.secHead:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 0;
+}
+
+/* ---------------------------------------------------------------- cards */
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 14px 10px;
+  border-radius: var(--wf-r-xl);
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.card.hl,
+.prow.hl {
+  background: var(--wf-accent-tint);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* The name button stretches over the whole card, so a tap anywhere opens the patient. */
+.cardButton {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / 20px var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cardButton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--wf-r-xl);
+}
+
+.cardButton:focus-visible {
+  outline: none;
+}
+
+.cardButton:focus-visible::after {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.cardName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tier {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-3);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-2);
+}
+
+.wait {
+  flex: 0 0 auto;
+  font: 600 var(--wf-fs-14) / 1 var(--wf-mono);
+  white-space: nowrap;
+}
+
+.cardRoute {
+  padding-left: 16px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nextBox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: var(--wf-r-md);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+}
+
+.next_act {
+  color: var(--wf-danger-ink);
+  background: color-mix(in srgb, var(--wf-danger) 9%, var(--wf-surface));
+  border-color: color-mix(in srgb, var(--wf-danger) 32%, transparent);
+}
+
+.next_due {
+  color: var(--wf-warning-ink);
+  background: color-mix(in srgb, var(--wf-warning) 9%, var(--wf-surface));
+  border-color: color-mix(in srgb, var(--wf-warning) 32%, transparent);
+}
+
+.next_calm {
+  color: var(--wf-ink-1);
+}
+
+.isbar {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  min-width: 0;
+}
+
+.isbar > div {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 4px;
+  padding: 3px 0;
+  min-width: 0;
+}
+
+.isbar dt {
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-3);
+}
+
+.isbar dd {
+  margin: 0;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------- compact rows and lists */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--wf-r-lg);
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.prow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+  min-height: 64px;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.prow:first-child {
+  border-top: 0;
+}
+
+.prow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.prowTop {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.prowName {
+  min-width: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prowLine {
+  padding-left: 16px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prowNext {
+  color: var(--wf-ink-2);
+}
+
+/* ---------------------------------------------------------------- beds */
+
+.beds {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 12px;
+  border-radius: var(--wf-r-lg);
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.tileOk {
+  background: color-mix(in srgb, var(--wf-success) 7%, var(--wf-surface));
+  border-color: color-mix(in srgb, var(--wf-success) 30%, transparent);
+}
+
+.tileValue {
+  font: 600 var(--wf-fs-20) / 24px var(--wf-mono);
+}
+
+.tileLabel {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tileSub {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tileSub b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+}
+
+.inkSuccess {
+  color: var(--wf-success-ink);
+}
+
+.inkWarning {
+  color: var(--wf-warning-ink);
+}
+
+.wardRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 56px;
+  padding: 8px 14px;
+  box-sizing: border-box;
+  border-top: 1px solid var(--wf-line);
+}
+
+.wardRow:first-child {
+  border-top: 0;
+}
+
+.phoneWardName {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.phoneWardName b {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wardSub {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.wardSub > span:last-child {
+  flex: 0 0 auto;
+}
+
+.stale {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--wf-warning-ink);
+}
+
+.obar {
+  display: inline-flex;
+  gap: 2px;
+  flex: 0 0 auto;
+  width: 64px;
+  height: 10px;
+}
+
+.obar > i {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  flex-basis: 0;
+  border-radius: 3px;
+  box-sizing: border-box;
+}
+
+.segOcc {
+  background: color-mix(in srgb, var(--wf-neutral) 55%, var(--wf-track));
+}
+
+.segEmpty {
+  background: transparent;
+  border: 1.5px dashed var(--wf-line-3);
+}
+
+.segReady {
+  background: var(--wf-success);
+}
+
+.ready {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-3);
+}
+
+.readyOn {
+  color: var(--wf-success-ink);
+  background: color-mix(in srgb, var(--wf-success) 12%, var(--wf-surface));
+  border-color: color-mix(in srgb, var(--wf-success) 40%, transparent);
+}
+
+/* ---------------------------------------------------------------- sticky actions */
+
+.sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px calc(14px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, transparent, var(--wf-canvas) 30%);
+}
+
+.stickyButton {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: var(--ph-tap);
+  justify-content: center;
+}
+
+/* ---------------------------------------------------------------- shift sheet */
+
+.shiftList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shiftOption {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 56px;
+  padding: 6px 12px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--wf-r-lg);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shiftOption[aria-checked="true"] {
+  background: var(--wf-selected);
+}
+
+.shiftOption:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.shiftOptionTime {
+  flex: 0 0 auto;
+  width: 52px;
+  font: 600 var(--wf-fs-16) / 1 var(--wf-mono);
+}
+
+.shiftOptionText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.shiftOptionText b {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.shiftOptionText span {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.shiftOptionCheck {
+  flex: 0 0 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chev {
+    transition: none;
+  }
+}
+
+/* Compact controls keep their look but take a full tap target (CLAUDE.md, 48px). */
+.shiftChip,
+.bannerAction,
+.secHead {
+  position: relative;
+}
+
+.shiftChip::after,
+.bannerAction::after,
+.secHead::after {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto;
+  height: var(--spacing-tap, 3rem);
+  transform: translateY(-50%);
+}

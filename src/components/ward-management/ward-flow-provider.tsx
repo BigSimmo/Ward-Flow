@@ -45,6 +45,7 @@ import type { BroadcastAlert } from "./alerts/ward-broadcast-model";
 import {
   seedWardFlowStateAt,
   wardFlowReducer,
+  type HandoverSignOffRecord,
   type WardFlowState,
 } from "@/components/ward-management/ward-flow-reducer";
 import type {
@@ -122,6 +123,8 @@ type WardFlowContextValue = {
   /** Task 3, spec D12: every `REQUEST_CAPACITY_REFRESH` a coordinator has raised, live from
    *  reducer state. Records that somebody asked — nothing here ever changes a bed figure. */
   refreshRequests: { unitId: string; at: Instant; byRole: string }[];
+  /** Handover sign-offs, role and time only (`RECORD_HANDOVER_SIGN_OFF`). Read by the Handover page's History. */
+  handoverSignOffs: HandoverSignOffRecord[];
   /**
    * Who has acknowledged which inbox item, and who has completed which — live from reducer state so
    * the global tasks drawer shows the same answer on every route rather than each screen keeping
@@ -964,6 +967,7 @@ function WardFlowWorld({
       bedReleases: state.bedReleases,
       leaveBeds: state.leaveBeds,
       refreshRequests: state.refreshRequests,
+      handoverSignOffs: Array.isArray(state.handoverSignOffs) ? state.handoverSignOffs : [],
       inboxAcknowledgements: state.inboxAcknowledgements,
       inboxCompletions: state.inboxCompletions,
       inboxOwnership: state.inboxOwnership,
