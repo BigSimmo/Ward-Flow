@@ -192,7 +192,7 @@
   --wf-data-3: light-dark(#788ea4, #55728f);
   --wf-data-rest: light-dark(#c9d3dd, #2a3a4b);
   --wf-data-ready: light-dark(#2f8a5f, #4cb383);
-  --wf-data-closed: light-dark(#a99058, #a88f55);
+  --wf-data-closed: light-dark(#9c8450, #a88f55);
 
   /* service colours: a dot or stripe beside the service name, never on its own (ruling B-7).
      Day values are the health services' own colours. Night values are lifted to read on slate. */
@@ -2085,7 +2085,8 @@ svg.gl {
   .pt button.on,
   .pt button[aria-selected="true"],
   .pt button[aria-checked="true"],
-  .trk button.on {
+  .trk button.on,
+  .trk [aria-current="page"] {
     border: 2px solid Highlight;
   }
   .fc.on,
@@ -2158,6 +2159,11 @@ svg.gl {
     --wf-info: var(--wf-light-info);
     --wf-neutral: var(--wf-light-neutral);
     --wf-focus-ring: var(--wf-accent);
+    --wf-hero-ink: var(--wf-ink-1);
+    --wf-hero-ink-2: var(--wf-ink-2);
+    --wf-hero-ink-3: var(--wf-ink-3);
+    --wf-on-hero-fill: transparent;
+    --wf-on-hero-line: var(--wf-line-3);
     background: none;
     color: var(--wf-ink-1);
     border-color: var(--wf-line-3);
@@ -2203,7 +2209,8 @@ svg.gl {
     --wf-h-md: var(--wf-touch);
     --wf-h-chip: 32px;
   }
-  .pt button {
+  .pt button,
+  .pt.sm button {
     height: 36px;
   }
   .fc {
