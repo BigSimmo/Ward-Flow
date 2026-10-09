@@ -5,6 +5,7 @@ import styles from "./ward-beds-matrix.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import type { WfTone } from "@/components/wf";
 
 export interface BedItem {
   bedNumber: number | string;
@@ -132,6 +133,21 @@ function cardSignal(bed: BedItem, isPastDate: boolean, isAwayAtEd: boolean): str
 }
 
 type ShiftGroup = "all" | "due-out" | "off-ward" | "in-transit";
+
+/**
+ * One shape per tone for a bed, shared by the Every bed tile and the bed drawer badge so the two
+ * always agree: act now only for a held-up discharge, at risk for a bed past its date, away at an
+ * ED or with a discharge barrier, moving for a bed on its way in or out, waiting for leave, done
+ * for a free bed.
+ */
+export function bedGlyphTone(bed: BedItem): WfTone | null {
+  if (bed.status === "ready") return "success";
+  if (bed.blockReason) return "danger";
+  if (bed.awayAtEdHours != null || bed.pastDate || bed.dischargeBarrier) return "warning";
+  const leaving = bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0);
+  if (leaving || bed.status === "incoming") return "info";
+  return bed.status === "leave" ? "neutral" : null;
+}
 
 export function WardBedsMatrix({
   unit,
@@ -365,7 +381,9 @@ export function WardBedsMatrix({
                 type="button"
                 className={styles.segmentBtn}
                 aria-pressed={shiftGroup === id}
-                onClick={() => setShiftGroup(id)}
+                onClick={() => {
+                  setShiftGroup(id);
+                }}
               >
                 <span>{label}</span>
                 <span className={styles.segmentCount}>{count}</span>
@@ -409,7 +427,9 @@ export function WardBedsMatrix({
                         key={act.label}
                         type="button"
                         className={styles.btnShiftAction}
-                        onClick={() => setSelectedBed(item.bedNumber)}
+                        onClick={() => {
+                          setSelectedBed(item.bedNumber);
+                        }}
                       >
                         {act.label}
                       </button>
@@ -449,7 +469,9 @@ export function WardBedsMatrix({
                 type="button"
                 className={styles.segmentBtn}
                 aria-pressed={sortBy === id}
-                onClick={() => setSortBy(id)}
+                onClick={() => {
+                  setSortBy(id);
+                }}
               >
                 {label}
               </button>
@@ -475,7 +497,9 @@ export function WardBedsMatrix({
               type="button"
               className={styles.segmentBtn}
               aria-pressed={activeFilter === "needs-look"}
-              onClick={() => setActiveFilter("needs-look")}
+              onClick={() => {
+                setActiveFilter("needs-look");
+              }}
             >
               <span>Needs a look</span>
               <span className={styles.segmentCount}>{needsLookBeds.length}</span>
@@ -485,7 +509,9 @@ export function WardBedsMatrix({
               type="button"
               className={styles.segmentBtn}
               aria-pressed={activeFilter === "ready"}
-              onClick={() => setActiveFilter("ready")}
+              onClick={() => {
+                setActiveFilter("ready");
+              }}
             >
               <span>Ready</span>
               <span className={styles.segmentCount}>{readyCount}</span>
@@ -495,7 +521,9 @@ export function WardBedsMatrix({
               type="button"
               className={styles.segmentBtn}
               aria-pressed={activeFilter === "nobody-due"}
-              onClick={() => setActiveFilter("nobody-due")}
+              onClick={() => {
+                setActiveFilter("nobody-due");
+              }}
             >
               <span>Nobody due out</span>
               <span className={styles.segmentCount}>{nobodyDueOutBeds.length}</span>
@@ -507,7 +535,9 @@ export function WardBedsMatrix({
                   type="button"
                   className={styles.segmentBtn}
                   aria-pressed={selectedPod === "locked"}
-                  onClick={() => setSelectedPod("locked")}
+                  onClick={() => {
+                    setSelectedPod("locked");
+                  }}
                 >
                   <span>Locked</span>
                   <span className={styles.segmentCount}>{lockedCount}</span>
@@ -516,7 +546,9 @@ export function WardBedsMatrix({
                   type="button"
                   className={styles.segmentBtn}
                   aria-pressed={selectedPod === "open"}
-                  onClick={() => setSelectedPod("open")}
+                  onClick={() => {
+                    setSelectedPod("open");
+                  }}
                 >
                   <span>Open</span>
                   <span className={styles.segmentCount}>{openCount}</span>
@@ -583,7 +615,9 @@ export function WardBedsMatrix({
                     data-testid={`ward-bed-card-${bed.bedNumber}`}
                     data-admission-id={bed.admissionId}
                     data-state={bed.status}
-                    onClick={() => handleBedClick(bed)}
+                    onClick={() => {
+                      handleBedClick(bed);
+                    }}
                     aria-label={formatBedAriaLabel(bed)}
                   >
                     <div className={styles.bedTopRow}>
