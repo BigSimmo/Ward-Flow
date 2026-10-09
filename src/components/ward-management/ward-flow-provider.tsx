@@ -661,9 +661,13 @@ function WardFlowWorld({
    * without ever touching a ref.
    */
   const [localDayZero] = useState<Date>(() => demoDayZero(new Date()));
+  // Key on the primitive dayZero string, not the snapshot object: SharedWorkspaceClient.adopt
+  // publishes a fresh snapshot every 3s even when the revision is unchanged, and dayZero feeds
+  // the context value memo — so object identity would re-render every consumer every poll.
+  const sharedDayZero = shared.snapshot?.payload.dayZero;
   const dayZero = useMemo(
-    () => (shared.snapshot ? new Date(shared.snapshot.payload.dayZero) : localDayZero),
-    [shared.snapshot, localDayZero],
+    () => (sharedDayZero ? new Date(sharedDayZero) : localDayZero),
+    [sharedDayZero, localDayZero],
   );
 
   // `trackWardFlowTypedTextDispatch` is a plain top-level function — pure, no closure over any
