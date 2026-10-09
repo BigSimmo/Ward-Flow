@@ -733,6 +733,9 @@ export function PatientDocumentsTab({
       recorded: clock(order.recordedAt),
       by: order.recordedBy,
     });
+    // D-39: orders that ended before this one stay listed as Closed, newest first.
+    for (const ended of [...(order.earlier ?? [])].reverse())
+      forms.push({ code: ended.form, status: "Closed", recorded: clock(ended.recordedAt), by: ended.recordedBy });
   }
   const current = forms.filter((f) => f.status === "Current").length;
 
@@ -761,8 +764,8 @@ export function PatientDocumentsTab({
               </tr>
             </thead>
             <tbody>
-              {forms.map((f) => (
-                <tr key={`${f.code}-${f.status}`}>
+              {forms.map((f, i) => (
+                <tr key={`${f.code}-${f.status}-${i}`}>
                   <td>
                     <span className={styles.form} data-off={f.status !== "Current"}>
                       Form {f.code}

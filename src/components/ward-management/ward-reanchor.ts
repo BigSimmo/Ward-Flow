@@ -156,6 +156,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "resumedAt",
   // D-38: when an absence without leave was recorded. Its steps carry `at`, already listed above.
   "since",
+  // D-38/D-39: when a community treatment order ended, on the order and on each earlier one.
+  "endedAt",
 ]);
 
 /**

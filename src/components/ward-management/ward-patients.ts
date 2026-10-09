@@ -1,3 +1,4 @@
+import type { Instant } from "@/components/ward-management/ward-clock";
 /**
  * A person, as distinct from a request for a bed or a stay in one.
  *
@@ -164,18 +165,22 @@ export type Patient = {
 
 /** Form 5A is the community treatment order form under the Mental Health Act 2014 (WA).
  *  When the order ends, `endedAt` is set on the same record (Documents keeps the Closed form;
- *  mode "cto" only applies while `endedAt` is absent). No separate history field. */
+ *  mode "cto" only applies while `endedAt` is absent). Recording a new order after an ended one
+ *  moves the ended one into `earlier`, inside this same D-38 field, so a second CTO never erases
+ *  the first (D-39). Form, times and role only; no lapse time and no typed text. */
 export type CommunityTreatmentOrder = {
   form: "5A";
-  recordedAt: number;
+  recordedAt: Instant;
   recordedBy: string;
-  endedAt?: number;
+  endedAt?: Instant;
+  /** Orders that ended before this one, oldest first. Each has ended, so `endedAt` is required. */
+  earlier?: EndedCommunityTreatmentOrder[];
 };
 
+export type EndedCommunityTreatmentOrder = { form: "5A"; recordedAt: Instant; recordedBy: string; endedAt: Instant };
+
 /** True while a Form 5A is in force (not yet ended). */
-export function activeCommunityTreatmentOrder(
-  patient: Patient | undefined,
-): CommunityTreatmentOrder | undefined {
+export function activeCommunityTreatmentOrder(patient: Patient | undefined): CommunityTreatmentOrder | undefined {
   const order = patient?.communityTreatmentOrder;
   return order && order.endedAt === undefined ? order : undefined;
 }

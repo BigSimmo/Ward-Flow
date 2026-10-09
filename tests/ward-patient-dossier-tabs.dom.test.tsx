@@ -161,4 +161,19 @@ describe("polished patient dossier tabs", () => {
       .map((h) => h.textContent);
     expect(headers).toEqual(["Form", "Status", "Recorded", "By"]);
   });
+  it("lists an ended CTO as Closed beside a second one, never erasing it (D-39)", () => {
+    setup("PT-005");
+    const community = tab("Community");
+    fireEvent.click(community.getByRole("button", { name: "Record CTO" }));
+    fireEvent.click(community.getByRole("button", { name: "Record ended" }));
+    fireEvent.click(community.getByRole("button", { name: "Record CTO" }));
+    const register = tab("Documents").getByRole("table");
+    const rows = within(register)
+      .getAllByRole("row")
+      .slice(1)
+      .map((row) => row.textContent ?? "");
+    expect(rows.filter((row) => row.includes("Form 5A"))).toHaveLength(2);
+    expect(rows.filter((row) => row.includes("Form 5A") && row.includes("Current"))).toHaveLength(1);
+    expect(rows.filter((row) => row.includes("Form 5A") && row.includes("Closed"))).toHaveLength(1);
+  });
 });

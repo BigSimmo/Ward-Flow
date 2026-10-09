@@ -6217,7 +6217,26 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (patient.communityTreatmentOrder && patient.communityTreatmentOrder.endedAt === undefined) {
         return reject(state, event, `patient ${patient.id} already has a community treatment order recorded`);
       }
-      const order = { form: "5A" as const, recordedAt: event.now, recordedBy: WARD_FLOW_ROLE_LABELS[event.role] };
+      // D-39: an ended order is kept in `earlier` rather than overwritten, so Documents still lists it.
+      const previous = patient.communityTreatmentOrder;
+      const earlier =
+        previous?.endedAt !== undefined
+          ? [
+              ...(previous.earlier ?? []),
+              {
+                form: previous.form,
+                recordedAt: previous.recordedAt,
+                recordedBy: previous.recordedBy,
+                endedAt: previous.endedAt,
+              },
+            ]
+          : undefined;
+      const order = {
+        form: "5A" as const,
+        recordedAt: event.now,
+        recordedBy: WARD_FLOW_ROLE_LABELS[event.role],
+        ...(earlier ? { earlier } : {}),
+      };
       return {
         ...state,
         patients: state.patients.map((candidate) =>

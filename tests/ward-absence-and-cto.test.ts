@@ -247,6 +247,41 @@ describe("re-anchoring the demo clock (D-38)", () => {
 });
 
 describe("community treatment order (D-38)", () => {
+  it("keeps an ended order when a second is recorded, so the first is never erased (D-39)", () => {
+    const state = seedWardFlowStateAt(0);
+    const patient = state.patients.find((p) => !p.communityTreatmentOrder)!;
+    const step = (
+      s: typeof state,
+      type: "RECORD_COMMUNITY_TREATMENT_ORDER" | "END_COMMUNITY_TREATMENT_ORDER",
+      now: number,
+    ) => wardFlowReducer(s, { type, role: "community", now, patientId: patient.id });
+    let next = step(state, "RECORD_COMMUNITY_TREATMENT_ORDER", NOW);
+    next = step(next, "END_COMMUNITY_TREATMENT_ORDER", NOW + 10);
+    next = step(next, "RECORD_COMMUNITY_TREATMENT_ORDER", NOW + 20);
+    next = step(next, "END_COMMUNITY_TREATMENT_ORDER", NOW + 30);
+    next = step(next, "RECORD_COMMUNITY_TREATMENT_ORDER", NOW + 40);
+    const order = next.patients.find((p) => p.id === patient.id)!.communityTreatmentOrder!;
+    expect(order.recordedAt).toBe(NOW + 40);
+    expect(order.endedAt).toBeUndefined();
+    expect(order.earlier?.map((e) => [e.recordedAt, e.endedAt])).toEqual([
+      [NOW, NOW + 10],
+      [NOW + 20, NOW + 30],
+    ]);
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(next)))).toBe(true);
+
+    const shifted = shiftInstants(next, 60);
+    const moved = shifted.patients.find((p) => p.id === patient.id)!.communityTreatmentOrder!;
+    expect(moved.earlier?.[0]).toMatchObject({ recordedAt: NOW + 60, endedAt: NOW + 70 });
+
+    const bad = JSON.parse(JSON.stringify(next));
+    const badOrder = bad.patients.find((p: { id: string }) => p.id === patient.id).communityTreatmentOrder;
+    delete badOrder.earlier[0].endedAt;
+    expect(isValidStoredWardFlowState(bad)).toBe(false);
+    badOrder.earlier[0].endedAt = NOW + 10;
+    badOrder.earlier[0].lapsesAt = NOW + 100;
+    expect(isValidStoredWardFlowState(bad)).toBe(false);
+  });
+
   it("records Form 5A with time and role only, refuses a second, and ends on request", () => {
     const state = seedWardFlowStateAt(0);
     const patient = state.patients.find((p) => !p.communityTreatmentOrder)!;

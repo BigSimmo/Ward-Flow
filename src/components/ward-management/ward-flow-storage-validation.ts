@@ -240,8 +240,19 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     if (order !== undefined) {
       if (!object(order) || order.form !== "5A" || !finite(order.recordedAt) || !text(order.recordedBy)) return false;
       if (order.endedAt !== undefined && !finite(order.endedAt)) return false;
-      if (Object.keys(order).some((key) => !["form", "recordedAt", "recordedBy", "endedAt"].includes(key)))
+      if (Object.keys(order).some((key) => !["form", "recordedAt", "recordedBy", "endedAt", "earlier"].includes(key)))
         return false;
+      // D-39: earlier orders have each ended, and hold the same four facts and nothing else.
+      if (order.earlier !== undefined) {
+        if (!Array.isArray(order.earlier)) return false;
+        for (const ended of order.earlier as unknown[]) {
+          if (!object(ended) || ended.form !== "5A" || !finite(ended.recordedAt) || !text(ended.recordedBy))
+            return false;
+          if (!finite(ended.endedAt)) return false;
+          if (Object.keys(ended).some((key) => !["form", "recordedAt", "recordedBy", "endedAt"].includes(key)))
+            return false;
+        }
+      }
     }
     if (!Object.values(identity).every(text)) return false;
     if (!fields(patient, ["id", "umrn", "givenName", "familyName", "dateOfBirth"], text)) return false;

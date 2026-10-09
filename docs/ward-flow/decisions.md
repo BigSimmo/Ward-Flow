@@ -498,3 +498,14 @@ is inferred.
   labelled Preview.
 - **Why:** The ward already has leave beds, but a missing person and a CTO could not be shown
   honestly without a field to read.
+
+## D-39. A second community treatment order keeps the first (9 October 2026)
+
+- **Date:** 9 October 2026. **Decided by:** Josh ("take over and fix the CTO finding", PR #147).
+- **Decision:** Recording a CTO after an earlier one has ended keeps the ended order. It moves into
+  `earlier`, a list inside the same D-38 `communityTreatmentOrder` field, and Documents lists every
+  earlier order as Closed. No new patient field is added. Each earlier order holds the same four
+  facts as D-38 (Form 5A, when recorded, by which role, when ended) and nothing else.
+- **Why:** Review found that a second CTO overwrote the first, so its Closed Form 5A vanished from
+  Documents. Refusing a second order would have blocked a real re-order; a separate history field
+  would have widened what the record holds.
