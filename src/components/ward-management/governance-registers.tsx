@@ -24,7 +24,7 @@ import { LEAVING_DESTINATIONS } from "./ward-admissions";
 import { legalFormReceiptCorrectionReasonLabels } from "./ward-change-reasons";
 import { snoozeReasonLabel } from "./ward-inbox-snooze";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
-import { movementHref, patientHref, unitHref } from "./shell/ward-facade";
+import { movementHref, unitHref } from "./shell/ward-facade";
 import { WardBarPageTools, wardBarToolStyles } from "./shell/ward-bar-page-tools";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF, WEEKLY_REPORT_HREF } from "./reports/report-routes";
 import { isOpen } from "./ward-derivations";
@@ -623,7 +623,6 @@ function siteGaps(flow: WardFlowContextValue | null, now: Instant): SiteGap[] {
       if (!subject.missing.includes(party)) entry.cells[party].done += 1;
     }
     if (subject.missing.length > 0) {
-      const patientId = flow.admissions.find((admission) => admission.id === subject.admissionId)?.patientId;
       entry.gaps += subject.missing.length;
       entry.people.push({
         key: subject.key,
@@ -631,7 +630,8 @@ function siteGaps(flow: WardFlowContextValue | null, now: Instant): SiteGap[] {
         umrn: subject.umrn,
         detail: SUPPORT_NOTIFICATION_OCCASION_LABELS[subject.occasion],
         missing: subject.missing.map((party) => SUPPORT_NOTIFICATION_PARTY_SHORT[party]),
-        href: subject.movementId ? movementHref(subject.movementId) : patientId ? patientHref(patientId) : FORMS_HREF,
+        // D-14: never read the patient link here, so an admission without a move opens its ward.
+        href: subject.movementId ? movementHref(subject.movementId) : unitHref(subject.unitId),
       });
     }
   }
