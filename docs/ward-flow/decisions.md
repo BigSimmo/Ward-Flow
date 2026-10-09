@@ -1,1 +1,40 @@
-LOAD_FROM_FILE:/tmp/ward-flow/docs/ward-flow/decisions.md
+# Ward Flow — decision log
+
+A short record of project-level decisions: how the work is run, what is in and out of scope, and
+where the product is going. Newest at the bottom. Detailed clinical and product rulings on how a
+screen or the engine behaves stay in [`OWNER-RULINGS.md`](OWNER-RULINGS.md); this log points there
+when a decision here depends on one.
+
+**How to add an entry.** Add a numbered entry at the bottom with the date, who decided, the
+decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
+add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
+
+---
+
+## D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)
+
+- **Date:** 25 September 2026. **Decided by:** Josh.
+- **Decision:** All Ward Flow work lives on Josh's own computer, in
+  `D:\Worktrees\Database\ward-lead` and worktrees made from it. No GitHub repository is linked.
+  Nothing is pushed, and no pull request is opened, unless Josh asks.
+- **Why:** The ward line shares history with the live PsychSift app, where pushing to `main`
+  deploys the app and changes the live clinical database. Keeping Ward Flow local removes that risk.
+  "Fold into main" always means the local ward line, never GitHub (ruling of 12 September).
+
+## D-2. Railway is disconnected
+
+- **Date:** 25 September 2026. **Decided by:** Josh.
+- **Decision:** Railway (the hosting service used by the old app) must not be connected to Ward
+  Flow. Any Railway or other deployment tool is ask-first, whatever name it appears under.
+- **Why:** Ward Flow holds only invented data and is not ready to be hosted. Where it is eventually
+  hosted is a separate decision (roadmap milestone 5).
+
+## D-3. The PsychSift and Database code is being retired from Ward Flow
+
+- **Date:** 25 September 2026. **Decided by:** Josh.
+- **Decision:** The PsychSift guideline search app and its Database deployment tooling that sit on
+  the ward line are leftovers. Ward Flow work ignores them, and they will be removed from the ward
+  line (roadmap milestone 1).
+- **Why:** Ward Flow does not use them, and they slow every check and confuse every new chat.
+
+## PLACEHOLDER_RESTORE_IN_PROGRESS — full D-38/D-39 content pending babysit push
