@@ -250,8 +250,7 @@ export function WardHomeTab({
 
   const capacityConfirmed = unit.allocatable.confirmedAt !== undefined;
   // Done only when the figures were confirmed during this shift; an older confirmation is not.
-  const capacityConfirmedThisShift =
-    unit.allocatable.confirmedAt !== undefined && unit.allocatable.confirmedAt >= currentShiftStartInstant(now);
+  const capacityConfirmedThisShift = capacityConfirmed && unit.allocatable.confirmedAt >= currentShiftStartInstant(now);
   const referralsClear = incoming.length === 0;
   const shiftChecks = [
     capacityConfirmedThisShift,
@@ -595,12 +594,11 @@ export function WardHomeTab({
       action: { label: "Open", run: () => onOpenDecisions?.() },
     });
   }
-  for (const [id, label, hint] of [
-    ["drugs", "Controlled drug count", "Tick when the register has been checked."],
-    ["seclusion", "Seclusion check", "Tick when the suite and duress alarm have been checked."],
-    ["afternoon", "Afternoon sign-off", "Tick when the midday numbers have been signed."],
+  for (const [id, label, hint, at] of [
+    ["drugs", "Controlled drug count", "Tick when the register has been checked.", localChecks.drugs],
+    ["seclusion", "Seclusion check", "Tick when the suite and duress alarm have been checked.", localChecks.seclusion],
+    ["afternoon", "Afternoon sign-off", "Tick when the midday numbers have been signed.", localChecks.afternoon],
   ] as const) {
-    const at = localChecks[id];
     const row: TodoRow = {
       key: id,
       title: label,

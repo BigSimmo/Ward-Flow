@@ -114,7 +114,7 @@ export function WardBedDossierDrawer({
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(recordedBlocker(bedItem?.blockReason));
   const [shownBed, setShownBed] = useState(selectedBed);
-  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const tabRefs = useRef(new Map<number, HTMLButtonElement | null>());
   const blockerSelectRef = useRef<HTMLSelectElement | null>(null);
 
   // Stepping to another bed keeps the open tab but drops anything half-done on the last bed.
@@ -220,8 +220,9 @@ export function WardBedDossierDrawer({
     else if (event.key === "End") next = DRAWER_TABS.length - 1;
     if (next === null) return;
     event.preventDefault();
-    tabRefs.current[next]?.focus();
-    setTab(DRAWER_TABS[next].id);
+    tabRefs.current.get(next)?.focus();
+    const nextTab = DRAWER_TABS.at(next);
+    if (nextTab) setTab(nextTab.id);
   };
 
   const panel = (id: DrawerTab, children: ReactNode) => (
@@ -332,7 +333,7 @@ export function WardBedDossierDrawer({
                     <button
                       key={item.id}
                       ref={(node) => {
-                        tabRefs.current[index] = node;
+                        tabRefs.current.set(index, node);
                       }}
                       type="button"
                       role="tab"

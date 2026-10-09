@@ -108,14 +108,19 @@ const WINDOWS: readonly WindowSpec[] = [
 
 const GROUP_ORDER: readonly Group[] = ["act", "wait", "ready", "done"];
 
-const GROUP_TONE: Record<Group, WfTone> = { act: "danger", wait: "neutral", ready: "warning", done: "success" };
+const GROUP_TONE = new Map<Group, WfTone>([
+  ["act", "danger"],
+  ["wait", "neutral"],
+  ["ready", "warning"],
+  ["done", "success"],
+]);
 
 /** An action the cockpit sent, read back against the next props to say whether it was recorded. */
 interface SentAction {
   seq: number;
   kind: ActionKind;
   ids: string[];
-  titles: Record<string, string>;
+  titles: Map<string, string>;
 }
 
 /** "Name (bed not recorded)" and "Bed on leave · back 15:42" read as a title over a short line. */
@@ -246,7 +251,7 @@ function Queue({
   function send(kind: ActionKind, rows: { id: string; title: string; run: () => void }[]) {
     if (rows.length === 0) return;
     for (const row of rows) row.run();
-    const titles = Object.fromEntries(rows.map((row) => [row.id, splitTitle(row.title).name]));
+    const titles = new Map(rows.map((row) => [row.id, splitTitle(row.title).name]));
     setSent((current) => ({ seq: (current?.seq ?? 0) + 1, kind, ids: rows.map((row) => row.id), titles }));
     setHistory((current) => [
       ...current.filter((entry) => !rows.some((row) => row.id === entry.id && entry.kind === kind)),
@@ -442,7 +447,9 @@ function Queue({
   }
 
   const isOpen = (item: DecisionItem) => item.group !== "done" && !item.info;
-  const openCount = (id: WindowId) => items[id].filter(isOpen).length;
+  const windowItems = new Map(Object.entries(items) as Array<[WindowId, DecisionItem[]]>);
+  const itemsOf = (id: WindowId): DecisionItem[] => windowItems.get(id) ?? [];
+  const openCount = (id: WindowId) => itemsOf(id).filter(isOpen).length;
   // The heading's total is the same count the Decisions tab badge shows, and it equals the windows'
   // own counts added up, so it never says Done beside a window that still has something to decide.
   const dueCount = openDecisionCount({
@@ -453,7 +460,7 @@ function Queue({
     rollupActionable: onConfirmRollup !== undefined,
   });
   const windowTone = (id: WindowId): WfTone => {
-    const open = items[id].filter(isOpen);
+    const open = itemsOf(id).filter(isOpen);
     if (open.length === 0) return "success";
     if (open.some((item) => item.group === "act")) return "danger";
     if (open.some((item) => item.tone === "warning")) return "warning";
@@ -462,14 +469,14 @@ function Queue({
 
   const [chosen, setChosen] = useState<WindowId>(() => {
     for (const group of ["act", "ready", "wait"] as const) {
-      const found = WINDOWS.find((spec) => items[spec.id].some((item) => item.group === group));
+      const found = WINDOWS.find((spec) => itemsOf(spec.id).some((item) => item.group === group));
       if (found) return found.id;
     }
     return "staffing";
   });
 
   const spec = WINDOWS.find((entry) => entry.id === chosen) ?? WINDOWS[0];
-  const here = items[chosen];
+  const here = itemsOf(chosen);
   const open = openCount(chosen);
   const decidable = here.filter((item) => !item.info).length;
   const decided = decidable - open;
@@ -486,8 +493,7 @@ function Queue({
   if (sent && sent.seq !== dismissedSeq && chosen === sentWindow) {
     const done = sent.ids.filter((id) => recorded(sent.kind, id));
     const n = sent.ids.length;
-    const firstId = sent.ids[0];
-    const first = firstId !== undefined ? (sent.titles[firstId] ?? "") : "";
+    const first = sent.titles.get(sent.ids[0]) ?? "";
     if (sent.kind === "sign") {
       notice =
         done.length === n
@@ -514,12 +520,12 @@ function Queue({
     }
   }
 
-  const groupLabel: Record<Group, string> = {
-    act: chosen === "departures" ? "Held up" : "Act now",
-    wait: "Waiting",
-    ready: "Ready to sign off",
-    done: "Done",
-  };
+  const groupLabel = new Map<Group, string>([
+    ["act", chosen === "departures" ? "Held up" : "Act now"],
+    ["wait", "Waiting"],
+    ["ready", "Ready to sign off"],
+    ["done", "Done"],
+  ]);
 
   return (
     <div className={styles.container}>
@@ -599,8 +605,8 @@ function Queue({
             return (
               <div key={group} className={styles.group}>
                 <div className={styles.sec}>
-                  <StatusGlyph tone={GROUP_TONE[group]} />
-                  <h4 className={styles.secTitle}>{groupLabel[group]}</h4>
+                  <StatusGlyph tone={GROUP_TONE.get(group) ?? "neutral"} />
+                  <h4 className={styles.secTitle}>{groupLabel.get(group)}</h4>
                   <CountBubble n={list.length} className={cx(group === "act" && styles.countAct)} />
                   {collapsible ? (
                     <button
