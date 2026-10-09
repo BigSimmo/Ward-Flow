@@ -1,3 +1,4 @@
+import type { Instant } from "@/components/ward-management/ward-clock";
 /**
  * A person, as distinct from a request for a bed or a stay in one.
  *
@@ -154,7 +155,35 @@ export type Patient = {
   aboriginalOrTorresStraitIslanderStatus?: string;
   /** ⚠️ NOT SETTLED FOR DISPLAY, same review, same caveat as the field above. */
   interpreterLanguage?: string;
+  /**
+   * A community treatment order in force (owner approval 9 Oct 2026). Form code and when it was
+   * recorded, by role. D5: no lapse time is held or computed; a person ends it by recording that it
+   * ended (`END_COMMUNITY_TREATMENT_ORDER`).
+   */
+  communityTreatmentOrder?: CommunityTreatmentOrder;
 };
+
+/** Form 5A is the community treatment order form under the Mental Health Act 2014 (WA).
+ *  When the order ends, `endedAt` is set on the same record (Documents keeps the Closed form;
+ *  mode "cto" only applies while `endedAt` is absent). Recording a new order after an ended one
+ *  moves the ended one into `earlier`, inside this same D-38 field, so a second CTO never erases
+ *  the first (D-40). Form, times and role only; no lapse time and no typed text. */
+export type CommunityTreatmentOrder = {
+  form: "5A";
+  recordedAt: Instant;
+  recordedBy: string;
+  endedAt?: Instant;
+  /** Orders that ended before this one, oldest first. Each has ended, so `endedAt` is required. */
+  earlier?: EndedCommunityTreatmentOrder[];
+};
+
+export type EndedCommunityTreatmentOrder = { form: "5A"; recordedAt: Instant; recordedBy: string; endedAt: Instant };
+
+/** True while a Form 5A is in force (not yet ended). */
+export function activeCommunityTreatmentOrder(patient: Patient | undefined): CommunityTreatmentOrder | undefined {
+  const order = patient?.communityTreatmentOrder;
+  return order && order.endedAt === undefined ? order : undefined;
+}
 
 /** Alias for patient safety governance and cross-service typing */
 export type WardPatient = Patient;
@@ -180,6 +209,7 @@ export const PATIENT_FIELDS = [
   "legalStatus",
   "aboriginalOrTorresStraitIslanderStatus",
   "interpreterLanguage",
+  "communityTreatmentOrder",
 ] as const;
 
 /** Whole years, from the stored date of birth and a supplied "today". Never stored: see the field's

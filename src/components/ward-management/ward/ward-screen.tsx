@@ -785,7 +785,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       tone: "info" as const,
       title: `Leave bed open more than ${LEAVE_BED_OPEN_WARNING_MINUTES / 60} hours (${OPERATIONAL_DEFAULT_LABEL})`,
       countdown: formatRemaining(now - leaveBed.confirmedAt),
-      text: `A bed on leave at ${unit.name} is still recorded. Expected return ${formatInstant(leaveBed.expectedReturn)}.`,
+      text: leaveBed.absentWithoutLeave
+        ? `A bed held for an absence without leave at ${unit.name} is still recorded. Absent since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}.`
+        : `A bed on leave at ${unit.name} is still recorded. Expected return ${formatInstant(leaveBed.expectedReturn)}.`,
       actionLabel: "Open discharges",
       actionTarget: "discharges" as const,
     })),
@@ -829,7 +831,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       statusText = "Ready Vacant";
     } else if (isLeaveSlot) {
       status = "leave";
-      statusText = "On Leave";
+      // D-38: a bed held for an absence without leave is never shown as approved leave.
+      statusText = unitLeaveBeds[leaveSlotIndex].absentWithoutLeave ? "Absent without leave" : "On Leave";
     } else if (isIncomingSlot) {
       status = "incoming";
       statusText = "Inbound";
@@ -1309,7 +1312,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     }));
   const leaveDecisions = unitLeaveBeds.map((leaveBed) => ({
     id: leaveBed.id,
-    title: `Bed on leave · back ${formatInstant(leaveBed.expectedReturn)}`,
+    title: leaveBed.absentWithoutLeave
+      ? `Bed held · absent without leave since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}`
+      : `Bed on leave · back ${formatInstant(leaveBed.expectedReturn)}`,
   }));
   const intakeDecisions = visibleIncoming.map((movement) => ({
     id: movement.id,
