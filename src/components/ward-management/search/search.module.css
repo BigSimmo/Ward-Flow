@@ -4858,7 +4858,29 @@
 }
 
 .v6Empty {
+  flex-wrap: wrap;
   margin: var(--wf-s-3);
+}
+
+/* No match is not good news, so the mark is neutral, and the action keeps its full label. */
+.v6Empty > span:first-child {
+  color: var(--wf-ink-3);
+}
+
+.v6Empty > :nth-child(2) {
+  flex: 1 1 12rem;
+}
+
+.v6Empty > :last-child {
+  flex: none;
+}
+
+/* The record in the phone and tablet drawer: the same sections as the side card, on one surface. */
+.v6DetailsSheet {
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
 }
 
 .v6Head,
@@ -4962,7 +4984,16 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  max-width: 100%;
+  min-width: 0;
   white-space: nowrap;
+}
+
+/* A long stage ends in an ellipsis inside its column instead of being cut mid word. */
+.v6StageText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .v6Wait {
@@ -5199,6 +5230,13 @@
 @media (pointer: coarse) {
   .v6SelectBox {
     height: calc(var(--ward-tap) + 2px);
+  }
+}
+
+/* One column: a tap opens the record in a drawer, so the card is not left under every row. */
+@media (max-width: 63.99rem) {
+  .v6Preview {
+    display: none;
   }
 }
 

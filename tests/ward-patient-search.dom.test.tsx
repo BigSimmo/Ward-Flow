@@ -1024,6 +1024,49 @@ describe("Third Edition dropdown filters and yield strip", () => {
     expect(total).toBeGreaterThan(0);
   });
 
+  it("finds a row by the patient name the table shows, not only by the record's own fields", () => {
+    const seed = seedWardFlowState();
+    const movement = seed.movements.filter(isOpen)[0];
+    const { displayName } = resolveSubjectPatient(movement, seed);
+    const familyName = displayName.split(" ").at(-1) ?? displayName;
+    renderSearch();
+
+    fireEvent.change(screen.getByLabelText("Search"), { target: { value: familyName.slice(0, 5).toLowerCase() } });
+
+    expect(screen.getByTestId(`ward-patient-search-case-${movement.id}`)).toBeInTheDocument();
+    expect(Number(screen.getByTestId("ward-patient-search-yield-total").textContent)).toBeGreaterThan(0);
+  });
+
+  it("finds a row by its record number", () => {
+    const seed = seedWardFlowState();
+    const movement = seed.movements.filter(isOpen)[0];
+    const { umrn } = resolveSubjectPatient(movement, seed);
+    renderSearch();
+
+    fireEvent.change(screen.getByLabelText("Search"), { target: { value: umrn } });
+
+    expect(screen.getByTestId(`ward-patient-search-case-${movement.id}`)).toBeInTheDocument();
+  });
+
+  it("narrows to the chosen tier when selecting the Tier dropdown filter", () => {
+    const seed = seedWardFlowState();
+    const urgencyById = new Map<string, number>([
+      ...seed.movements.map((m) => [m.id, m.urgency] as [string, number]),
+      ...seed.referrals.map((r) => [r.id, r.urgency] as [string, number]),
+    ]);
+    renderSearch();
+    const before = Number(screen.getByTestId("ward-patient-search-yield-total").textContent);
+
+    fireEvent.change(screen.getByLabelText("Acuity Tier"), { target: { value: "Tier 1" } });
+
+    const total = Number(screen.getByTestId("ward-patient-search-yield-total").textContent);
+    expect(total).toBeGreaterThan(0);
+    expect(total).toBeLessThan(before);
+    const rows = document.querySelectorAll<HTMLElement>('[data-testid^="ward-patient-search-case-"]');
+    expect(rows.length).toBe(total);
+    for (const row of rows) expect(urgencyById.get(row.dataset.id ?? "")).toBe(1);
+  });
+
   it("narrows results when selecting a Wait Band dropdown filter", () => {
     renderSearch();
 

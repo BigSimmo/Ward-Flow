@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Clock, Copy, History, Lock, UserPlus, UsersRound, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { Clock, Copy, History, Lock, SearchX, UserPlus, UsersRound, X } from "lucide-react";
 
 import {
   Avatar,
@@ -12,6 +12,7 @@ import {
   CardFoot,
   CardHead,
   Count,
+  Drawer,
   EmptyState,
   FilterChip,
   Hero,
@@ -42,6 +43,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import {
   calendarDateOf,
+  formatInstant,
   formatInstantWithDay,
   formatRemaining,
   minutesUntil,
@@ -266,6 +268,10 @@ export function PatientSearchPage() {
   const [requestedSelectedId, setSelectedId] = useState<string | null>(null);
   const [copyNote, setCopyNote] = useState<string | null>(null);
   const [accessRecord, setAccessRecord] = useState<AccessEntry[]>([]);
+  // Below the two column layout the record card would sit under every row, so a tap opens it in a
+  // drawer instead, and focus goes back to the row on close.
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsTriggerRef = useRef<HTMLElement | null>(null);
 
   const showToast = (msg: string) => setCopyNote(msg);
 
@@ -297,10 +303,33 @@ export function PatientSearchPage() {
 
   const isChip = isQuickChipQuery(text);
 
-  const baseResults = useMemo(
-    () => searchPatients(movements, referrals, units, isChip ? { ...query, text: "" } : query),
-    [movements, referrals, units, query, isChip],
-  );
+  /*
+   * Each row's person, as the table shows them: display name and record number. The engine's own
+   * text match reads the record's id, department, ward, stage and owner, none of which holds the
+   * name, so typing a name the table shows used to empty the table (9 Oct 2026).
+   */
+  const subjectWords = useMemo(() => {
+    const words = new Map<string, string>();
+    const context = { patients, referrals, movements };
+    for (const movement of movements) {
+      const info = resolveSubjectPatient(movement, context);
+      words.set(movement.id, `${info.displayName} ${info.umrn}`.toLowerCase());
+    }
+    for (const referral of referrals) {
+      const info = resolveSubjectPatient(referral, context);
+      words.set(referral.id, `${info.displayName} ${info.umrn}`.toLowerCase());
+    }
+    return words;
+  }, [patients, referrals, movements]);
+
+  const baseResults = useMemo(() => {
+    const needle = text.trim().toLowerCase();
+    if (isChip || needle === "") return searchPatients(movements, referrals, units, { ...query, text: "" });
+    const byRecord = new Set(searchPatients(movements, referrals, units, query).map(resultId));
+    return searchPatients(movements, referrals, units, { ...query, text: "" }).filter(
+      (result) => byRecord.has(resultId(result)) || (subjectWords.get(resultId(result)) ?? "").includes(needle),
+    );
+  }, [movements, referrals, units, query, isChip, text, subjectWords]);
 
   const passes = (result: PatientSearchResult, skip: { facet?: boolean; presence?: boolean } = {}) =>
     (!isChip || matchesQuickChip(result, text, now)) &&
@@ -309,7 +338,8 @@ export function PatientSearchPage() {
     (serviceFilter === "all" || matchesService(result, serviceFilter)) &&
     (settingFilter === "all" || matchesSetting(result, settingFilter, admissions)) &&
     (legalFilter === "all" || matchesLegal(result, legalFilter)) &&
-    (waitFilter === "all" || matchesWait(result, waitFilter, now));
+    (waitFilter === "all" || matchesWait(result, waitFilter, now)) &&
+    (tierFilter === "all" || matchesTier(result, tierFilter));
 
   const presenceCounts = {
     live: baseResults.filter((r) => passes(r, { presence: true }) && matchesPresence(r, "live")).length,
@@ -359,6 +389,7 @@ export function PatientSearchPage() {
       if (settingFilter !== "all" && !matchesSetting(result, settingFilter, admissions)) return false;
       if (legalFilter !== "all" && !matchesLegal(result, legalFilter)) return false;
       if (waitFilter !== "all" && !matchesWait(result, waitFilter, now)) return false;
+      if (tierFilter !== "all" && !matchesTier(result, tierFilter)) return false;
       return true;
     });
   }, [
@@ -371,6 +402,7 @@ export function PatientSearchPage() {
     settingFilter,
     legalFilter,
     waitFilter,
+    tierFilter,
     now,
     admissions,
   ]);
@@ -619,8 +651,12 @@ export function PatientSearchPage() {
     return unifiedCaseload.find((p) => p.id === selectedId) ?? unifiedCaseload[0] ?? null;
   }, [unifiedCaseload, selectedId]);
 
-  const handleSelectPatient = (p: UnifiedCaseloadPatient) => {
+  const handleSelectPatient = (p: UnifiedCaseloadPatient, trigger?: HTMLElement) => {
     setSelectedId(p.id);
+    if (trigger && typeof window !== "undefined" && window.matchMedia?.(SINGLE_COLUMN_QUERY).matches) {
+      detailsTriggerRef.current = trigger;
+      setDetailsOpen(true);
+    }
     if (p.originalSubject.kind === "movement") {
       setPreview({ kind: "movement", movement: p.originalSubject.movement });
     } else if (p.originalSubject.kind === "referral") {
@@ -1125,6 +1161,7 @@ Clinical Note: ${p.clinicalNote}`;
             {refusal ? null : unifiedCaseload.length === 0 ? (
               <EmptyState
                 className={styles.v6Empty}
+                icon={SearchX}
                 title="No matching records"
                 meta="No patient records match the current search and filters."
                 action={
@@ -1160,134 +1197,19 @@ Clinical Note: ${p.clinicalNote}`;
           </Card>
 
           <Card className={styles.v6Preview} role="region" aria-label="Patient details">
-            {selectedPatient ? (
-              <>
-                <div className={styles.v6PreviewHead}>
-                  <Avatar name={selectedPatient.name} size="lg" decorative />
-                  <div className={styles.v6PreviewId}>
-                    <h2 className={styles.v6PreviewName}>{selectedPatient.name}</h2>
-                    <span className={styles.v6Sub}>
-                      <span className={styles.v6Mono}>{selectedPatient.urm}</span> · {ageSexText(selectedPatient)} ·{" "}
-                      {selectedPatient.service}
-                    </span>
-                  </div>
-                </div>
-                <div className={styles.v6PreviewStatus}>
-                  {selectedTier !== null ? <TierTile tier={selectedTier} /> : null}
-                  <span className={styles.v6Stage}>
-                    <StatusGlyph tone={stageTone(selectedPatient)} size={9} />
-                    {selectedPatient.stage}
-                  </span>
-                  <span className={styles.v6PreviewWait}>
-                    <Icon icon={Clock} size={14} />
-                    {selectedPatient.waitHours > 0 ? (
-                      <Timer
-                        at={selectedPatient.openedAtInstant * MS_PER_MINUTE}
-                        now={nowMs}
-                        direction="waiting"
-                        hideFlagWord
-                      />
-                    ) : (
-                      "No wait"
-                    )}
-                  </span>
-                </div>
-                <dl className={styles.v6Facts}>
-                  <div>
-                    <dt>Where now</dt>
-                    <dd>{formatSiteAcronym(selectedPatient.origin)}</dd>
-                    <dd className={styles.v6Sub}>Opened {selectedPatient.openedAt}</dd>
-                  </div>
-                  <div>
-                    <dt>Heading to</dt>
-                    <dd>{selectedPatient.destinationName}</dd>
-                    <dd className={styles.v6Sub}>{selectedPatient.holdStatus}</dd>
-                  </div>
-                  <div>
-                    <dt>Legal authority</dt>
-                    <dd>{selectedPatient.legalStatus}</dd>
-                    <dd className={styles.v6Sub}>{statutoryDetails.title}</dd>
-                  </div>
-                  <div>
-                    <dt>Transport</dt>
-                    <dd>{selectedPatient.transportStatus}</dd>
-                    {selectedPatient.nurseEscort ? <dd className={styles.v6Sub}>Nurse escort</dd> : null}
-                  </div>
-                </dl>
-                <div className={styles.v6PreviewSection}>
-                  <span className={styles.v6SectionHead}>Legal due time</span>
-                  <span className={cx(/left|overdue/.test(selectedPatient.legalExpires) && styles.v6Mono)}>
-                    {selectedPatient.legalExpires === "Voluntary status"
-                      ? "Not detained"
-                      : selectedPatient.legalExpires}
-                  </span>
-                </div>
-                <div className={styles.v6PreviewSection}>
-                  <span className={styles.v6SectionHead}>Latest</span>
-                  <Timeline
-                    label="Latest for this record"
-                    holdNew={false}
-                    items={[
-                      {
-                        id: `${selectedPatient.id}-opened`,
-                        at: selectedPatient.openedAt,
-                        tone: "info",
-                        text: `Record active from ${formatSiteAcronym(selectedPatient.origin)}`,
-                      },
-                    ]}
-                  />
-                </div>
-                {selectedPatient.communityTeam ? (
-                  <div className={styles.v6PreviewSection}>
-                    <span className={styles.v6SectionHead}>Community team</span>
-                    <span>{selectedPatient.communityTeam}</span>
-                  </div>
-                ) : null}
-                <CardFoot
-                  meta={
-                    copyNote ? (
-                      <span role="status" aria-live="polite">
-                        {copyNote}
-                      </span>
-                    ) : undefined
-                  }
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={Copy}
-                    iconOnly
-                    aria-label="Copy summary"
-                    title="Copy summary"
-                    onClick={copyPatientSummary}
-                  />
-                  {selectedPatient.originalSubject.kind === "movement" ? (
-                    <Link
-                      className={buttonClass({ size: "sm" })}
-                      href={`/mockups/ward-flow/movements/${selectedPatient.originalSubject.movement.id}`}
-                    >
-                      Open movement
-                    </Link>
-                  ) : (
-                    <Link className={buttonClass({ size: "sm" })} href="/mockups/ward-flow/referrals/new">
-                      New referral
-                    </Link>
-                  )}
-                  {selectedPatient.personRecordId ? (
-                    <Link
-                      className={buttonClass({ variant: "pri", size: "sm" })}
-                      href={`/mockups/ward-flow/people/${selectedPatient.personRecordId}`}
-                    >
-                      Open patient
-                    </Link>
-                  ) : null}
-                </CardFoot>
-              </>
-            ) : (
-              <EmptyState title="Nothing selected" meta="Choose a row to see the record." />
-            )}
+            {renderDetails()}
           </Card>
         </div>
+
+        <Drawer
+          open={detailsOpen && selectedPatient !== null}
+          onClose={() => setDetailsOpen(false)}
+          title="Patient details"
+          returnFocusRef={detailsTriggerRef}
+          testId="ward-patient-search-details"
+        >
+          <div className={styles.v6DetailsSheet}>{renderDetails()}</div>
+        </Drawer>
 
         <WardPrototypeFooter
           testId="ward-patient-search-governance"
@@ -1297,22 +1219,154 @@ Clinical Note: ${p.clinicalNote}`;
     </div>
   );
 
+  function renderDetails() {
+    return selectedPatient ? (
+      <>
+        <div className={styles.v6PreviewHead}>
+          <Avatar name={selectedPatient.name} size="lg" decorative />
+          <div className={styles.v6PreviewId}>
+            <h2 className={styles.v6PreviewName}>{selectedPatient.name}</h2>
+            <span className={styles.v6Sub}>
+              <span className={styles.v6Mono}>{selectedPatient.urm}</span> · {ageSexText(selectedPatient)} ·{" "}
+              {selectedPatient.service}
+            </span>
+          </div>
+        </div>
+        <div className={styles.v6PreviewStatus}>
+          {selectedTier !== null ? <TierTile tier={selectedTier} /> : null}
+          <span className={styles.v6Stage}>
+            <StatusGlyph tone={stageTone(selectedPatient)} size={9} />
+            {selectedPatient.stage}
+          </span>
+          <span className={styles.v6PreviewWait}>
+            <Icon icon={Clock} size={14} />
+            {selectedPatient.waitHours > 0 ? (
+              <Timer
+                at={selectedPatient.openedAtInstant * MS_PER_MINUTE}
+                now={nowMs}
+                direction="waiting"
+                hideFlagWord
+              />
+            ) : (
+              "No wait"
+            )}
+          </span>
+        </div>
+        <dl className={styles.v6Facts}>
+          <div>
+            <dt>Where now</dt>
+            <dd>{formatSiteAcronym(selectedPatient.origin)}</dd>
+            <dd className={styles.v6Sub}>Opened {selectedPatient.openedAt}</dd>
+          </div>
+          <div>
+            <dt>Heading to</dt>
+            <dd>{selectedPatient.destinationName}</dd>
+            <dd className={styles.v6Sub}>{selectedPatient.holdStatus}</dd>
+          </div>
+          <div>
+            <dt>Legal authority</dt>
+            <dd>{selectedPatient.legalStatus}</dd>
+            <dd className={styles.v6Sub}>{statutoryDetails.title}</dd>
+          </div>
+          <div>
+            <dt>Transport</dt>
+            <dd>{selectedPatient.transportStatus}</dd>
+            {selectedPatient.nurseEscort ? <dd className={styles.v6Sub}>Nurse escort</dd> : null}
+          </div>
+        </dl>
+        <div className={styles.v6PreviewSection}>
+          <span className={styles.v6SectionHead}>Legal due time</span>
+          <span className={cx(/left|overdue/.test(selectedPatient.legalExpires) && styles.v6Mono)}>
+            {selectedPatient.legalExpires === "Voluntary status" ? "Not detained" : selectedPatient.legalExpires}
+          </span>
+        </div>
+        <div className={styles.v6PreviewSection}>
+          <span className={styles.v6SectionHead}>Latest</span>
+          <Timeline
+            label="Latest for this record"
+            holdNew={false}
+            items={[
+              {
+                id: `${selectedPatient.id}-opened`,
+                // The time column holds a clock face; the day goes with the words so it is not cut off.
+                at: formatInstant(selectedPatient.openedAtInstant),
+                tone: "info",
+                text: withDay(
+                  `Record active from ${formatSiteAcronym(selectedPatient.origin)}`,
+                  selectedPatient.openedAt,
+                  formatInstant(selectedPatient.openedAtInstant),
+                ),
+              },
+            ]}
+          />
+        </div>
+        {selectedPatient.communityTeam ? (
+          <div className={styles.v6PreviewSection}>
+            <span className={styles.v6SectionHead}>Community team</span>
+            <span>{selectedPatient.communityTeam}</span>
+          </div>
+        ) : null}
+        <CardFoot
+          meta={
+            copyNote ? (
+              <span role="status" aria-live="polite">
+                {copyNote}
+              </span>
+            ) : undefined
+          }
+        >
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={Copy}
+            iconOnly
+            aria-label="Copy summary"
+            title="Copy summary"
+            onClick={copyPatientSummary}
+          />
+          {selectedPatient.originalSubject.kind === "movement" ? (
+            <Link
+              className={buttonClass({ size: "sm" })}
+              href={`/mockups/ward-flow/movements/${selectedPatient.originalSubject.movement.id}`}
+            >
+              Open movement
+            </Link>
+          ) : (
+            <Link className={buttonClass({ size: "sm" })} href="/mockups/ward-flow/referrals/new">
+              New referral
+            </Link>
+          )}
+          {selectedPatient.personRecordId ? (
+            <Link
+              className={buttonClass({ variant: "pri", size: "sm" })}
+              href={`/mockups/ward-flow/people/${selectedPatient.personRecordId}`}
+            >
+              Open patient
+            </Link>
+          ) : null}
+        </CardFoot>
+      </>
+    ) : (
+      <EmptyState title="Nothing selected" meta="Choose a row to see the record." />
+    );
+  }
+
   function renderRow(p: UnifiedCaseloadPatient, dense: boolean) {
     const isSelected = p.id === selectedId;
     const tier = tierNumber(p.urgency);
     const cell = dense ? ({ role: "cell" } as const) : {};
-    const select = () => handleSelectPatient(p);
+    const select = (row: HTMLElement) => handleSelectPatient(p, row);
     return (
       <div
         key={p.id}
         className={cx(styles.v6Row, dense && styles.v6RowDense, isSelected && styles.selected)}
         data-id={p.id}
         data-testid={`ward-patient-search-case-${p.id}`}
-        onClick={select}
+        onClick={(e) => select(e.currentTarget)}
         onKeyDown={(e: ReactKeyboardEvent<HTMLDivElement>) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            select();
+            select(e.currentTarget);
           }
         }}
         tabIndex={0}
@@ -1362,7 +1416,7 @@ Clinical Note: ${p.clinicalNote}`;
         <span {...cell} className={styles.v6Cell}>
           <span className={styles.v6Stage}>
             <StatusGlyph tone={stageTone(p)} size={9} />
-            {p.stage}
+            <span className={styles.v6StageText}>{p.stage}</span>
           </span>
           {dense ? null : <span className={styles.v6Sub}>{p.holdStatus}</span>}
         </span>
@@ -1373,6 +1427,25 @@ Clinical Note: ${p.clinicalNote}`;
       </div>
     );
   }
+}
+
+/** "18:50 yesterday" beside a clock of "18:50" leaves "yesterday" to add to the words. */
+function withDay(text: string, openedAt: string, clock: string): string {
+  const day = openedAt.startsWith(clock) ? openedAt.slice(clock.length).replace(/^,?\s*/, "") : "";
+  return day ? `${text}, ${day}` : text;
+}
+
+/** Matches the stylesheet: below 64rem the record card leaves the side column for a drawer. */
+const SINGLE_COLUMN_QUERY = "(max-width: 63.99rem)";
+
+function resultId(result: PatientSearchResult): string {
+  return result.kind === "movement" ? result.movement.id : result.referral.id;
+}
+
+/** The Tier select holds "Tier 1" to "Tier 3", the same words each row shows. */
+function matchesTier(result: PatientSearchResult, tier: string): boolean {
+  const urgency = result.kind === "movement" ? result.movement.urgency : result.referral.urgency;
+  return `Tier ${urgency}` === tier;
 }
 
 function tierNumber(urgency: string): number | null {
