@@ -223,8 +223,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Whole-branch review Minor 6: the register is scoped to OPEN movements, so the independent
     // count here must be too — computing it over all 48 records would agree with a screen that
     // wrongly listed a closed patient's breached deadline.
-    // The same call the screen makes (coordinator-screen.tsx): open movements, plus the whole record
-    // so the advisory carer/PSP/MHAS notification rows are counted too.
+    // The same call the screen makes (coordinator-screen.tsx): open movements, the seeded planned
+    // admissions (stream D: an overdue booking is a row too), plus the whole record so the advisory
+    // carer/PSP/MHAS notification rows are counted too.
     const seed = seedWardFlowState();
     const expectedCount = buildActionInbox(seed.movements.filter(isOpen), NOW_ANCHOR, seed.units, {
       movements: seed.movements,
@@ -232,6 +233,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
       patients: seed.patients,
       referrals: seed.referrals,
       supportNotifications: seed.supportNotifications,
+      plannedAdmissions: seed.plannedAdmissions,
     }).length;
     expect(expectedCount).toBeGreaterThan(1);
     await expect(items).toHaveCount(expectedCount);

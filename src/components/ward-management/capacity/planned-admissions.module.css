@@ -1,0 +1,175 @@
+/* Planned admissions (stream D), v6. Tokens only. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.stripScroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.strip {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+}
+
+.strip th,
+.strip td {
+  height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-1);
+  border-bottom: 1px solid var(--wf-line);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.dayHead {
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+
+.rowHead {
+  padding-right: var(--wf-s-2);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+  text-align: left;
+}
+
+.strip .rowHead {
+  text-align: left;
+}
+
+.count {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.none {
+  color: var(--wf-ink-off);
+}
+
+.totalRow th,
+.totalRow td {
+  border-bottom: 0;
+}
+
+.agenda {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: minmax(112px, auto) minmax(0, 1fr) auto;
+  grid-template-areas:
+    "when who actions"
+    "when facts actions";
+  align-items: center;
+  column-gap: var(--wf-s-3);
+  row-gap: 2px;
+  padding: var(--wf-s-2) 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.when {
+  display: inline-flex;
+  grid-area: when;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.time {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.who {
+  grid-area: who;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.facts {
+  grid-area: facts;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.overdue {
+  color: var(--wf-warning-ink);
+}
+
+.actions {
+  display: inline-flex;
+  grid-area: actions;
+  gap: var(--wf-s-1);
+}
+
+.empty,
+.refusal {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.refusal {
+  color: var(--wf-warning-ink);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.formWho {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+}
+
+.sheetFoot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+}
+
+@media (max-width: 640px) {
+  .item {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "when"
+      "who"
+      "facts"
+      "actions";
+  }
+
+  .pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
