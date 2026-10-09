@@ -28,6 +28,8 @@ const MODEL_FILES = [
   "src/components/ward-management/ward-care-journey.ts",
   "src/components/ward-management/ward-audit.ts",
   "src/components/ward-management/alerts/ward-broadcast-model.ts",
+  // D-38: the community treatment order on the patient record holds instants too.
+  "src/components/ward-management/ward-patients.ts",
 ];
 
 /**
