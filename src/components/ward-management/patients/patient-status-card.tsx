@@ -16,6 +16,7 @@ import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-op
 import { calendarDateOf } from "@/components/ward-management/ward-clock";
 import { clock, dur } from "./patient-now-records";
 import type { PatientMode } from "./patient-mode";
+import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import styles from "./patient-status-card.module.css";
 
 /** One gate or fact on the status card: value, who owns it, when it last changed, at most one action. */
@@ -41,6 +42,8 @@ export type StatusAction =
       ariaLabel?: string;
       icon?: LucideIcon;
       onClick: (event: MouseEvent<HTMLButtonElement>) => void;
+      /** The event this button dispatches, so the route's role can limit it (feature 11). */
+      event?: WardFlowEventType;
     }
   | { kind: "unavailable"; label: string; reason: string };
 
@@ -89,6 +92,8 @@ export interface PatientStatusContext {
   onEndCto: () => void;
   /** Why the next forward step would be refused (the held ward no longer suits), or undefined. */
   handoverRefusal?: string;
+  /** Feature 11: why the route's role may not dispatch this event ("Ward only"), or undefined. */
+  roleLimit?: (eventType: WardFlowEventType) => string | undefined;
 }
 
 function clearanceCell(movement: Movement, onClearance: PatientStatusContext["onClearance"]): StatusCell {
@@ -103,7 +108,12 @@ function clearanceCell(movement: Movement, onClearance: PatientStatusContext["on
     sub: clearance ? "Treating team's stated outcome" : "Needed before transport",
     clear: clearance?.cleared === true,
     // Kept once cleared, so focus can return to it when the clearance dialog closes.
-    action: { kind: "button", label: clearance ? "Update clearance" : "Record clearance", onClick: onClearance },
+    action: {
+      kind: "button",
+      label: clearance ? "Update clearance" : "Record clearance",
+      onClick: onClearance,
+      event: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
+    },
   };
 }
 
@@ -153,6 +163,7 @@ function transportCell(
           onClick: () => {
             onBook();
           },
+          event: "BOOK_TRANSPORT",
         }
       : { kind: "unavailable", label: "Log booking", reason: `Needs ${waitingFor}` },
   };
@@ -177,7 +188,27 @@ function legalValue(record: Movement | undefined, patient: Patient | undefined):
 }
 
 /** Builds the status card for a mode from the live record. Every value comes from shared state. */
+/**
+ * The status for this mode, with every action the route's role may not take shown as unavailable
+ * with its reason ("Ward only"), never hidden. The role rule is `ward-role-permissions.ts`.
+ */
 export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext): PatientStatus {
+  const status = statusFor(mode, ctx);
+  const limit = ctx.roleLimit;
+  if (!limit) return status;
+  const limited = (action: StatusAction | undefined): StatusAction | undefined => {
+    if (action?.kind !== "button" || action.event === undefined) return action;
+    const reason = limit(action.event);
+    return reason ? { kind: "unavailable", label: action.label, reason } : action;
+  };
+  return {
+    ...status,
+    cells: status.cells.map((cell) => ({ ...cell, action: limited(cell.action) })),
+    rows: status.rows?.map((row) => ({ ...row, action: limited(row.action) })),
+  };
+}
+
+function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus {
   const { movement, admission, patient, now } = ctx;
 
   if (mode === "find" && movement) {
@@ -268,6 +299,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
                   onClick: () => {
                     ctx.onBookTransport();
                   },
+                  event: "BOOK_TRANSPORT",
                 }
               : { kind: "unavailable", label: "Log booking", reason: "Not available at this stage" },
         },
@@ -288,6 +320,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
             onClick: () => {
               ctx.onArrivalTime();
             },
+            event: "SET_ARRIVAL_DETAILS",
           },
         },
         {
@@ -361,6 +394,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
                   onClick: () => {
                     ctx.onMarkAbsent();
                   },
+                  event: "RECORD_ABSENT_WITHOUT_LEAVE",
                 }
               : undefined,
         },
@@ -401,6 +435,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
             onClick: () => {
               ctx.onRecordReturn();
             },
+            event: "END_LEAVE_BED",
           },
         },
         {
@@ -433,6 +468,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
                 onClick: () => {
                   ctx.onAbsenceStep(step);
                 },
+                event: "RECORD_ABSENCE_STEP",
               }
             : undefined,
       };
@@ -472,6 +508,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
             onClick: () => {
               ctx.onEndCto();
             },
+            event: "END_COMMUNITY_TREATMENT_ORDER",
           },
         },
         {
@@ -534,6 +571,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
               onClick: () => {
                 ctx.onRecordCto();
               },
+              event: "RECORD_COMMUNITY_TREATMENT_ORDER",
             }
           : undefined,
       },

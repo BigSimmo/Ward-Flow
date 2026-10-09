@@ -34,7 +34,8 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { canDispatch } from "@/components/ward-management/ward-role-permissions";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -238,7 +239,7 @@ function recordHandoverSignOff(
   now: Instant,
 ): { role: WardFlowRole; at: Instant } | null {
   const role: WardFlowRole = "coordinator";
-  if (!EVENT_ROLE.RECORD_HANDOVER_SIGN_OFF.includes(role)) return null;
+  if (!canDispatch(role, "RECORD_HANDOVER_SIGN_OFF")) return null;
   try {
     dispatch({ type: "RECORD_HANDOVER_SIGN_OFF", role, now });
   } catch {
@@ -664,7 +665,7 @@ export function HandoverPage() {
           action: { label: "Start timer", onClick: toggleMeeting },
         },
   ];
-  const canSignOff = EVENT_ROLE.RECORD_HANDOVER_SIGN_OFF.includes("coordinator") && !passed;
+  const canSignOff = canDispatch("coordinator", "RECORD_HANDOVER_SIGN_OFF") && !passed;
 
   const signOffPanel = (
     <div ref={signOffRef}>

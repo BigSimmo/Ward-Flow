@@ -371,6 +371,8 @@ export function PatientCommunityTab({
   stayOpen,
   onRecordCto,
   onEndCto,
+  recordCtoUnavailable,
+  endCtoUnavailable,
 }: {
   record: PatientNowRecord;
   patient?: Patient;
@@ -380,6 +382,9 @@ export function PatientCommunityTab({
   stayOpen: boolean;
   onRecordCto: () => void;
   onEndCto: () => void;
+  /** Feature 11: why this route's role may not record or end a CTO ("Community team only"). */
+  recordCtoUnavailable?: string;
+  endCtoUnavailable?: string;
 }) {
   const summary = `GP: ${patient?.generalPractitioner ?? "Not recorded"}\nCatchment: ${patient?.catchmentCommunityTeam ?? "Not recorded"}\nFollow-up: ${record.community.followUp}`;
   const order = activeCommunityTreatmentOrder(patient);
@@ -441,7 +446,7 @@ export function PatientCommunityTab({
                 action={
                   patient ? (
                     order ? (
-                      <Button size="sm" onClick={onEndCto}>
+                      <Button size="sm" onClick={onEndCto} disabledReason={endCtoUnavailable} reasonDisplay="tooltip">
                         Record ended
                       </Button>
                     ) : stayOpen ? (
@@ -450,7 +455,12 @@ export function PatientCommunityTab({
                         Record CTO
                       </Button>
                     ) : (
-                      <Button size="sm" onClick={onRecordCto}>
+                      <Button
+                        size="sm"
+                        onClick={onRecordCto}
+                        disabledReason={recordCtoUnavailable}
+                        reasonDisplay="tooltip"
+                      >
                         Record CTO
                       </Button>
                     )
