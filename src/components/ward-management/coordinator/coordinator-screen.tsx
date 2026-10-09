@@ -75,6 +75,7 @@ export function CoordinatorScreen() {
     setFocusMovementId,
     configuration,
     scenario,
+    plannedAdmissions = [],
   } = useWardFlow();
   const liveNow = useWardFlowClock();
   const service = useServiceScope();
@@ -198,7 +199,7 @@ export function CoordinatorScreen() {
   // The work list is network-wide and open movements only, never scoped to the ED filter.
   const actionInbox = useMemo(
     () =>
-      buildActionInbox(openMovements, now, units).map((item) => {
+      buildActionInbox(openMovements, now, units, plannedAdmissions).map((item) => {
         if (!item.id.startsWith("bed-pull-") && item.title !== "Bed pull expired") return item;
         return {
           ...item,
@@ -206,7 +207,7 @@ export function CoordinatorScreen() {
           detail: `${item.detail} · Release the bed or set a new reserved time`,
         };
       }),
-    [openMovements, now, units],
+    [openMovements, now, units, plannedAdmissions],
   );
   const silenceReminders = useMemo(() => {
     const notes = new Map<string, string>();

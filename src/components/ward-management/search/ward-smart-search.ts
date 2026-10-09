@@ -515,6 +515,7 @@ export type SmartSearchInput = {
   units: Unit[];
   now?: number;
   limitPerGroup?: number;
+  plannedAdmissions?: readonly import("@/components/ward-management/ward-admissions").PlannedAdmission[];
 };
 
 export type SmartSearchResults = {
@@ -614,7 +615,12 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     limit,
   );
 
-  const tasksInbox = buildActionInbox(input.movements.filter(isOpen), input.now ?? 0, input.units);
+  const tasksInbox = buildActionInbox(
+    input.movements.filter(isOpen),
+    input.now ?? 0,
+    input.units,
+    input.plannedAdmissions ?? [],
+  );
   const tasks = rankAndLimit(
     searchTasks(trimmed, tasksInbox),
     trimmed,

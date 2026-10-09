@@ -12,7 +12,7 @@ import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer"
 import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { serviceRollup, wardsConfirmedLabel } from "@/components/ward-management/ward-morning-rollup";
 import { wardSites } from "@/components/ward-management/ward-sites";
-import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
+import { WARD_CAPACITY_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 
 import styles from "./ward-chrome-header.module.css";
 
@@ -93,6 +93,7 @@ export function WardChromeHeader() {
     dispatch,
     inboxAcknowledgements,
     inboxCompletions,
+    plannedAdmissions = [],
   } = useWardFlow();
   const now = useWardFlowClock();
 
@@ -111,10 +112,17 @@ export function WardChromeHeader() {
     placeId: /\/(?:ward|board|ed)\/([^/]+)/u.exec(pathname)?.[1],
   });
 
-  const tasks = useMemo(() => buildActionInbox(movements.filter(isOpen), now, units), [movements, now, units]);
+  const tasks = useMemo(
+    () => buildActionInbox(movements.filter(isOpen), now, units, plannedAdmissions),
+    [movements, now, units, plannedAdmissions],
+  );
   const openMovement = useCallback(
     (movementId: string, action?: "refer" | "contact") => {
       setTasksOpen(false);
+      if (!movementId) {
+        router.push(WARD_CAPACITY_HREF);
+        return;
+      }
       router.push(
         `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
       );

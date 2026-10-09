@@ -61,7 +61,7 @@ export function WardSidebarNav({
    * `use-ward-nav-counts.ts` for why neither is a prop, and why both trees must read one source.
    */
   const { role, counts, placeId } = useWardNavCounts();
-  const { movements, units } = useWardFlow();
+  const { movements, units, plannedAdmissions = [] } = useWardFlow();
   const now = useWardFlowClock();
   /*
    * Scoped to the reader's own place, not the network — see `WardSidebarAttention`'s doc comment
@@ -78,7 +78,12 @@ export function WardSidebarNav({
           .filter((movement) =>
             role === "ed" ? movement.originEdId === placeId : destinationUnit(movement, units)?.id === placeId,
           );
-  const attention = buildActionInbox(placeMovements, now, units);
+  // Planned arrivals are ward bookings; an ED place has no destination unit to match.
+  const placePlanned =
+    placeId === undefined || role === "ed"
+      ? []
+      : plannedAdmissions.filter((booking) => booking.unitId === placeId);
+  const attention = buildActionInbox(placeMovements, now, units, placePlanned);
 
   return (
     <>

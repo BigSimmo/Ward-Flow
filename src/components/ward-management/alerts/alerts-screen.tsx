@@ -26,6 +26,7 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
+import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -169,6 +170,9 @@ function resolveAlertPatient(
     } else if (movement.acceptedUnitId) {
       location = unitsList?.find((u) => u.id === movement.acceptedUnitId)?.name ?? movement.acceptedUnitId;
     }
+  } else if (subject && typeof subject === "object" && "unitId" in subject) {
+    const unitId = (subject as { unitId?: string }).unitId;
+    if (unitId) location = unitsList?.find((u) => u.id === unitId)?.name ?? unitId;
   }
   if (!location) location = "Location not recorded";
 
@@ -202,11 +206,21 @@ function getPatientDisplayName(
   patientsList: Patient[],
   unitsList?: readonly { id: string; name: string }[],
   state: { units?: readonly { id: string; name: string }[] } = { units: unitsList },
+  plannedAdmission?: PlannedAdmission,
+  personLabel?: string,
 ): string {
-  if (!movement) return "Patient not recorded";
-  const p = resolveAlertPatient(movement, movement.id, patientsList, referralsList, undefined, state.units);
+  const p = resolveAlertPatient(
+    movement,
+    movement?.id,
+    patientsList,
+    referralsList,
+    undefined,
+    state.units,
+    plannedAdmission,
+  );
+  const displayName = personLabel || p.displayName;
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-  return `${p.displayName} (UMRN: ${p.umrn}) · ${p.location}`;
+  return `${displayName} (UMRN: ${p.umrn}) · ${p.location}`;
 }
 
 /**
@@ -489,7 +503,12 @@ function AlertRows({
 
         if (prominent) {
           return (
-            <li key={item.id} className={styles.alertCard} data-tone={item.tone} data-movement-id={item.movementId}>
+            <li
+              key={item.id}
+              className={styles.alertCard}
+              data-tone={item.tone}
+              {...(item.movementId ? { "data-movement-id": item.movementId } : {})}
+            >
               <div className={styles.cardTop}>
                 <StatusGlyph tone={severityGlyph(item)} />
                 <div className={styles.alertContent}>
@@ -537,7 +556,12 @@ function AlertRows({
         }
 
         return (
-          <li key={item.id} className={styles.alertRow} data-tone={item.tone} data-movement-id={item.movementId}>
+          <li
+            key={item.id}
+            className={styles.alertRow}
+            data-tone={item.tone}
+            {...(item.movementId ? { "data-movement-id": item.movementId } : {})}
+          >
             <StatusGlyph tone={severityGlyph(item)} />
             <div className={styles.alertContent}>
               <span className={styles.alertHead}>
@@ -816,8 +840,17 @@ function AlertsWorkspace() {
   }, [selectedAlert, openMovements]);
 
   const selectedPatientName = useMemo(() => {
-    return getPatientDisplayName(selectedMovement, referrals, patients, state.units);
-  }, [selectedMovement, referrals, patients, state.units]);
+    if (!selectedAlert) return "Patient not recorded";
+    return getPatientDisplayName(
+      selectedMovement,
+      referrals,
+      patients,
+      state.units,
+      { units: state.units },
+      selectedAlert.plannedAdmission,
+      selectedAlert.personLabel,
+    );
+  }, [selectedAlert, selectedMovement, referrals, patients, state.units]);
 
   const selectedSeverity = useMemo(() => {
     return selectedAlert ? getAlertSeverity(selectedAlert) : { tone: "accent" as const, label: "Routine" };
@@ -1494,7 +1527,13 @@ function AlertsWorkspace() {
                     <dl className={styles.drawerGrid}>
                       <div>
                         <dt>Origin ED or setting</dt>
-                        <dd>{selectedMovement?.originEdId ?? "Emergency Dept"}</dd>
+                        <dd>
+                          {selectedMovement?.originEdId
+                            ? selectedMovement.originEdId
+                            : selectedAlert.plannedAdmission
+                              ? "Planned admission (no ED origin)"
+                              : "Not recorded"}
+                        </dd>
                       </div>
                       <div>
                         <dt>Assigned role</dt>
@@ -1502,11 +1541,15 @@ function AlertsWorkspace() {
                       </div>
                       <div>
                         <dt>Legal status</dt>
-                        <dd>{selectedMovement?.legalStatus ?? "Voluntary"}</dd>
+                        <dd>
+                          {selectedMovement?.legalStatus ??
+                            selectedAlert.plannedAdmission?.legalStatus ??
+                            "Not recorded"}
+                        </dd>
                       </div>
                       <div>
                         <dt>Declines logged</dt>
-                        <dd>{selectedMovement ? `${selectedMovement.declines.length} units` : "0 units"}</dd>
+                        <dd>{selectedMovement ? `${selectedMovement.declines.length} units` : "Not applicable"}</dd>
                       </div>
                       <div>
                         <dt>Board time</dt>
@@ -1514,7 +1557,13 @@ function AlertsWorkspace() {
                       </div>
                       <div>
                         <dt>Escalation</dt>
-                        <dd>{selectedMovement?.escalation ? "Tier 2 escalated" : "Tier 1 standard"}</dd>
+                        <dd>
+                          {selectedMovement
+                            ? selectedMovement.escalation
+                              ? "Tier 2 escalated"
+                              : "Tier 1 standard"
+                            : "Not applicable"}
+                        </dd>
                       </div>
                     </dl>
                   </Inset>

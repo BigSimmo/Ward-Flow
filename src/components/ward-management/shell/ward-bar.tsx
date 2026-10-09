@@ -40,6 +40,7 @@ import { WardGlobalSearch } from "@/components/ward-management/ward-global-searc
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
   WARD_ADD_PERSON_HREF,
+  WARD_CAPACITY_HREF,
   WARD_ED_HREF,
   WARD_HOME_HREF,
   WARD_NAV,
@@ -495,6 +496,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     dispatch,
     inboxAcknowledgements,
     inboxCompletions,
+    plannedAdmissions = [],
   } = useWardFlow();
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
@@ -594,8 +596,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // for exactly this call. A ward/ED/officer route gets an empty inbox: zero badge, and the drawer's
   // own "No outstanding work right now." empty state, never a network list with every action refused.
   const tasksItems = useMemo(
-    () => (wardTasksAreActionableForRole(role) ? buildActionInbox(movements.filter(isOpen), now, units) : []),
-    [movements, now, units, role],
+    () =>
+      wardTasksAreActionableForRole(role)
+        ? buildActionInbox(movements.filter(isOpen), now, units, plannedAdmissions)
+        : [],
+    [movements, now, units, role, plannedAdmissions],
   );
   /**
    * The Service selector's own "{n} open" / "none open" option counts (build plan §3 "Service
@@ -911,6 +916,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         const nextState = { ...window.history.state };
         delete nextState.wardDrawer;
         window.history.replaceState(nextState, "");
+      }
+      // Planned-arrival rows carry an empty movementId; open Capacity where the booking lives.
+      if (!movementId) {
+        router.push(WARD_CAPACITY_HREF);
+        return;
       }
       router.push(
         `${movementHref(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,

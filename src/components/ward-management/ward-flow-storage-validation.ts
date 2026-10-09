@@ -711,6 +711,19 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       (row.state === "cancelled") !== (row.cancelReason !== null)
     )
       return false;
+    // An arrived booking must point at an admission on the same ward, still for this person.
+    if (row.state === "arrived" && text(row.admissionId)) {
+      const arrivedAdmission = (value.admissions as RecordValue[]).find(
+        (admission) => admission.id === row.admissionId,
+      );
+      if (
+        !arrivedAdmission ||
+        arrivedAdmission.unitId !== row.unitId ||
+        (hasPatient && arrivedAdmission.patientId !== row.patientId) ||
+        arrivedAdmission.state === "departed"
+      )
+        return false;
+    }
   }
   for (const row of value.auditReviews as RecordValue[])
     if (!auditIds.has(row.eventId) || !finite(row.at) || !counter(row.generation)) return false;

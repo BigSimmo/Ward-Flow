@@ -82,6 +82,10 @@ export function WardChromeSearch({
   const movements = useMemo(() => propsMovements ?? context?.movements ?? [], [propsMovements, context?.movements]);
   const patients = useMemo(() => propsPatients ?? context?.patients ?? [], [propsPatients, context?.patients]);
   const units = useMemo(() => propsUnits ?? context?.units ?? [], [propsUnits, context?.units]);
+  const plannedAdmissions = useMemo(
+    () => context?.plannedAdmissions ?? [],
+    [context?.plannedAdmissions],
+  );
 
   const role = wardChromeRole(pathname);
   const scope = propsScope ?? CHROME_ROLE_LABELS[role];
@@ -107,9 +111,10 @@ export function WardChromeSearch({
             patients,
             movements,
             units,
+            plannedAdmissions,
             limitPerGroup: MAX_RESULTS_PER_GROUP,
           }),
-    [trimmed, patients, movements, units],
+    [trimmed, patients, movements, units, plannedAdmissions],
   );
 
   const groups = useMemo(() => {

@@ -28,6 +28,7 @@ import {
   MINUTES_PER_DAY,
   calendarDateOf,
   dayOf,
+  demoDayZero,
   formatInstantWithDay,
   formatRemaining,
   minuteOfDay,
@@ -59,6 +60,8 @@ type Draft = {
   time: string;
   stayDays: string;
   legalStatus: LegalStatus;
+  /** Preserved when editing an overdue booking so an unrelated save does not move its day. */
+  originalArrivalAt: Instant | null;
 };
 
 type FormState = { mode: "book" } | { mode: "change"; id: string } | { mode: "cancel"; id: string } | null;
@@ -79,6 +82,9 @@ function parseTime(value: string): number | null {
 
 export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   const { units, patients, admissions, dayZero, dispatch, rejections, plannedAdmissions = [] } = useWardFlow();
+  // Capacity DOM tests mock `useWardFlow` from seed state and omit `dayZero`; the live provider
+  // always supplies it. Fall back the same way `record-preview` does so label rendering never throws.
+  const activeDayZero = dayZero ?? demoDayZero(new Date());
   const patientOf = usePatientOf();
   const [form, setForm] = useState<FormState>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -124,7 +130,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   function dayLabel(dayOffset: number): string {
     if (dayOffset === 0) return "Today";
     if (dayOffset === 1) return "Tomorrow";
-    return calendarDateOf((dayOf(now) + dayOffset) * MINUTES_PER_DAY, dayZero).toLocaleDateString("en-AU", {
+    return calendarDateOf((dayOf(now) + dayOffset) * MINUTES_PER_DAY, activeDayZero).toLocaleDateString("en-AU", {
       weekday: "short",
       day: "numeric",
       month: "short",
@@ -132,7 +138,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   }
 
   function shortDayLabel(dayOffset: number): string {
-    return calendarDateOf((dayOf(now) + dayOffset) * MINUTES_PER_DAY, dayZero).toLocaleDateString("en-AU", {
+    return calendarDateOf((dayOf(now) + dayOffset) * MINUTES_PER_DAY, activeDayZero).toLocaleDateString("en-AU", {
       weekday: "short",
       day: "numeric",
     });
@@ -156,6 +162,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       time: "10:00",
       stayDays: "7",
       legalStatus: PLANNED_ADMISSION_LEGAL_STATUSES[0]!,
+      originalArrivalAt: null,
     });
     setForm({ mode: "book" });
   }
@@ -169,10 +176,12 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       sex: planned.sex,
       reason: planned.reason,
       unitId: planned.unitId,
-      dayOffset: Math.max(0, dayOf(planned.expectedArrivalAt) - dayOf(now)),
+      // Keep a past day visible so an overdue booking does not silently become "Today".
+      dayOffset: dayOf(planned.expectedArrivalAt) - dayOf(now),
       time: clockInputValue(planned.expectedArrivalAt),
       stayDays: String(planned.expectedStayDays),
       legalStatus: planned.legalStatus,
+      originalArrivalAt: planned.expectedArrivalAt,
     });
     setForm({ mode: "change", id: planned.id });
   }
@@ -192,9 +201,19 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   function submitDraft() {
     if (!draft || !form || form.mode === "cancel") return;
     const minute = parseTime(draft.time);
-    if (minute === null) return setRefusal("Enter the arrival time as hh:mm.");
+    if (minute === null) {
+      setRefusal("Enter the arrival time as hh:mm.");
+      return;
+    }
     const stay = Number(draft.stayDays);
-    const expectedArrivalAt = (dayOf(now) + draft.dayOffset) * MINUTES_PER_DAY + minute;
+    const selectedArrivalAt = (dayOf(now) + draft.dayOffset) * MINUTES_PER_DAY + minute;
+    // Unrelated edits on an overdue booking must keep the recorded instant when day/time are unchanged.
+    const expectedArrivalAt =
+      form.mode === "change" &&
+      draft.originalArrivalAt !== null &&
+      selectedArrivalAt === draft.originalArrivalAt
+        ? draft.originalArrivalAt
+        : selectedArrivalAt;
     pending.current = { rejections: rejections.length };
     if (form.mode === "book") {
       let sex = draft.sex;
@@ -203,11 +222,17 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         initials = normalisePlannedAdmissionInitials(draft.initials);
         if (initials === null) {
           pending.current = null;
-          return setRefusal("Initials are one to three letters.");
+          setRefusal("Initials are one to three letters.");
+          return;
         }
       } else {
         const patient = patients.find((candidate) => candidate.id === draft.patientId);
-        sex = patient?.sex === "Female" || patient?.sex === "Male" ? patient.sex : "Not recorded";
+        // Preserve every recorded sex, including "Another term"; only invent "Not recorded" when absent.
+        const recorded = patient?.sex;
+        sex =
+          recorded && (RECORDED_SEXES as readonly RecordedSex[]).includes(recorded as RecordedSex)
+            ? (recorded as RecordedSex)
+            : "Not recorded";
       }
       dispatch({
         type: "BOOK_PLANNED_ADMISSION",
@@ -485,11 +510,14 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                   onChange={(event) => update({ dayOffset: Number(event.target.value) })}
                   data-testid="ward-planned-day"
                 >
-                  {Array.from({ length: PLANNED_ADMISSION_WINDOW_DAYS }, (_, offset) => (
-                    <option key={offset} value={offset}>
-                      {dayLabel(offset)}
-                    </option>
-                  ))}
+                  {Array.from({ length: PLANNED_ADMISSION_WINDOW_DAYS }, (_, index) => index)
+                    .concat(draft.dayOffset < 0 ? [draft.dayOffset] : [])
+                    .sort((a, b) => a - b)
+                    .map((offset) => (
+                      <option key={offset} value={offset}>
+                        {dayLabel(offset)}
+                      </option>
+                    ))}
                 </Select>
               </Field>
               <Field label="Arrival time">

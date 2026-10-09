@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 
 import styles from "./ward-tasks-panel.module.css";
@@ -36,7 +37,16 @@ import styles from "./ward-tasks-panel.module.css";
  */
 export function WardTasksPanel() {
   const router = useRouter();
-  const { movements, patients, referrals, units, dispatch, inboxAcknowledgements, inboxCompletions } = useWardFlow();
+  const {
+    movements,
+    patients,
+    referrals,
+    units,
+    dispatch,
+    inboxAcknowledgements,
+    inboxCompletions,
+    plannedAdmissions = [],
+  } = useWardFlow();
   const now = useWardFlowClock();
   const [open, setOpen] = useState(false);
   const openerRef = useRef<HTMLButtonElement>(null);
@@ -49,11 +59,19 @@ export function WardTasksPanel() {
     wasOpenRef.current = open;
   }, [open]);
 
-  const items = useMemo(() => buildActionInbox(movements.filter(isOpen), now, units), [movements, now, units]);
+  const items = useMemo(
+    () => buildActionInbox(movements.filter(isOpen), now, units, plannedAdmissions),
+    [movements, now, units, plannedAdmissions],
+  );
 
   const openMovement = useCallback(
     (movementId: string, action?: "refer" | "contact") => {
       setOpen(false);
+      // Planned-arrival rows carry an empty movementId; open Capacity where the booking lives.
+      if (!movementId) {
+        router.push(WARD_CAPACITY_HREF);
+        return;
+      }
       router.push(
         `/mockups/ward-flow/movements/${encodeURIComponent(movementId)}${action ? `?taskAction=${action}#${action === "refer" ? "patient-operations" : "pnTabs"}` : ""}`,
       );
