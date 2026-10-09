@@ -153,7 +153,7 @@ repo-wide guards.
 redirects — see `delays-alias.ts` and the `escalation/` entry below). **Mockup:**
 the approved Delays page mockup (October 2026, built live in October 2026; earlier
 `delays-third-edition.html`). **Dispatches:** `RECORD_ESCALATION` from `delays-screen.tsx`
-(Escalate to Bed Desk in the person's panel); everything else reads and presents. **Reads:**
+(Escalate to State bed coordination desk in the person's panel); everything else reads and presents. **Reads:**
 its own `delays-derivations.ts`, plus `ward-derivations.ts` selectors via the shared
 `ward-service-scope-bar`/`ward-service-store`. **Tests:** the dozen `ward-delays-*` files,
 `ward-bar-zero-is-reachable.test.ts`, `ward-facade-agrees-with-screens.test.ts`,

@@ -503,10 +503,18 @@ button.stat:hover .statV {
 }
 
 .tbl {
+  /* The four waiting columns declare the shared 13px table step rather than inherit it, so a
+     broken token cannot hide behind an inherited size (ui-ward-table-thresholds.spec.ts). */
+  --t-1: var(--wf-fs-13);
+
   width: 100%;
   min-width: 46rem;
   border-collapse: collapse;
   table-layout: fixed;
+}
+
+.tbl [data-ward-type-floor] {
+  font-size: var(--t-1);
 }
 
 .colP {
@@ -1248,7 +1256,7 @@ button.stat:hover .statV {
   cursor: pointer;
 }
 
-.gLaneL:hover {
+button.gLaneL:hover {
   background: var(--wf-hover);
 }
 
@@ -1434,6 +1442,14 @@ button.stat:hover .statV {
   fill: var(--wf-hover);
 }
 
+.rwEmpty {
+  cursor: default;
+}
+
+.rwEmpty:hover .rwHit {
+  fill: transparent;
+}
+
 .rwOn .rwHit {
   fill: var(--wf-accent-tint);
   stroke: var(--wf-accent);
@@ -1604,7 +1620,15 @@ button.stat:hover .statV {
     min-width: var(--spacing-tap, 3rem);
   }
 
-  .whoBtn {
+  .whoBtn,
+  .search,
+  .brow {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .inlineAction {
+    display: inline-flex;
+    align-items: center;
     min-height: var(--spacing-tap, 3rem);
   }
 

@@ -3,10 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { delayGroups, legalDeadlineMinutes, ownerOf } from "@/components/ward-management/delays/delays-derivations";
-import { OVER_8H, boardRows, runwayBins } from "@/components/ward-management/delays/delays-board-model";
+import { OVER_8H, boardRows, isPinned, runwayBins } from "@/components/ward-management/delays/delays-board-model";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { showEveryDelayRow } from "./helpers/delays-interactions";
 import { installMatchMediaStub } from "./setup/jsdom.setup";
@@ -100,10 +101,7 @@ describe("the Delays board's data views", () => {
     const ids = listed();
     expect(ids).toHaveLength(OPEN.length);
     const byId = new Map<string, (typeof ROWS)[number]>(ROWS.map((row) => [row.movement.id, row]));
-    const pinned = ids.filter((id) => {
-      const due = byId.get(id)!.dueIn;
-      return due !== undefined && due <= 180;
-    });
+    const pinned = ids.filter((id) => isPinned(byId.get(id)!));
     expect(ids.slice(0, pinned.length), "a pinned legal time is not at the top").toEqual(pinned);
     const rest = ids.slice(pinned.length).map((id) => byId.get(id)!.waited);
     expect(rest, "everyone else is not longest wait first").toEqual([...rest].sort((a, b) => b - a));
@@ -163,15 +161,21 @@ describe("the Delays board's data views", () => {
     const target = ROWS.find((row) => row.cause === "awaiting_transport")!;
     expect(target, "nobody is awaiting transport").toBeDefined();
     const dots = within(graphs()).getAllByRole("button", { pressed: false });
-    const name = within(waiting()).queryByTestId(`delays-select-${target.movement.id}`);
-    expect(name, "transport starts folded, so this proves the dot unfolds it").toBeNull();
-    const dot = dots.find((button) => (button.getAttribute("aria-label") ?? "").includes("Awaiting transport"))!;
-    fireEvent.click(dot);
+    const row = within(waiting()).queryByTestId(`delays-select-${target.movement.id}`);
+    expect(row, "transport starts folded, so this proves the dot unfolds it").toBeNull();
+    const name = resolveSubjectPatient(target.movement, state).formalName;
+    const dot = dots.find((button) => (button.getAttribute("aria-label") ?? "").startsWith(`${name}, waited`));
+    expect(dot, `no spread dot names ${target.movement.id}`).toBeDefined();
+    fireEvent.click(dot!);
     expect(screen.getByRole("region", { name: "Why this person is waiting" })).toBeInTheDocument();
     const opened = within(waiting())
       .getAllByTestId(/^delays-select-/u)
       .find((button) => button.getAttribute("aria-expanded") === "true");
     expect(opened, "no row opened from the dot").toBeDefined();
+    expect(opened, "the dot opened somebody else's row").toHaveAttribute(
+      "data-testid",
+      `delays-select-${target.movement.id}`,
+    );
   });
 
   it("a half hour on the runway filters to who crosses a line in it, and switches to Longest wait", () => {
@@ -244,7 +248,11 @@ describe("the Delays board's data views", () => {
         );
       expect(quietButton, "Longest quiet lists nobody").toBeDefined();
       fireEvent.click(quietButton!);
-      expect(screen.getByRole("region", { name: "Why this person is waiting" })).toHaveFocus();
+      const sheet = screen.getByRole("region", { name: "Why this person is waiting" });
+      expect(sheet.contains(document.activeElement), "focus stayed on the covered table").toBe(true);
+      // The sheet is in the shared modal stack, which answers Escape at the window.
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(screen.queryByRole("region", { name: "Why this person is waiting" })).toBeNull();
     } finally {
       frame.mockRestore();
       installMatchMediaStub(false);

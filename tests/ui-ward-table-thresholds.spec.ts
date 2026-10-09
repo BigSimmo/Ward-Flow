@@ -556,10 +556,10 @@ test.describe("@mockup every ward table's threshold still describes the table it
 const TYPE_FLOOR_PX = 12;
 
 /**
- * PR47's selected table design declares the four waiting columns at --t-1 (13px).
- * Keep exact computed sizes, paired with the declared-token guard in
- * ward-delays-type-ranks.test.ts: inheritance at 13px must not mask a broken token.
- * Workspace keeps its supporting cause/update text at the canonical 12px floor.
+ * PR47's selected table design declares the four waiting columns at --t-1 (13px), and the
+ * October 2026 Delays board keeps that step on its Waiting table. Keep exact computed sizes, paired
+ * with the declared-token guard in ward-delays-type-ranks.test.ts: inheritance at 13px must not
+ * mask a broken token.
  */
 const TYPE_SIZE_BY_NAME: Readonly<Record<string, number>> = {
   "delays-cause": 13,
@@ -634,26 +634,29 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
     ).toEqual([]);
   });
 
-  test("Delays Workspace keeps its exact declared waiting-column sizes", async ({ page }) => {
+  // The October 2026 board retired the Action workspace view, so this measures the one Waiting
+  // table, with a person open (their panel replaces the rail beside it).
+  test("the Delays board keeps its exact declared waiting-column sizes with a person open", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/mockups/ward-flow/delays", { waitUntil: "load" });
-    await expect(page.getByRole("searchbox", { name: "Filter patient worklist" })).toBeEnabled();
-    const workspaceTab = page.getByRole("tab", { name: /Action workspace/u });
-    await workspaceTab.click();
-    await expect(workspaceTab).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("searchbox", { name: "Find a person or ED" })).toBeEnabled();
+    const first = page.getByTestId(/^delays-select-/u).first();
+    await first.click();
+    await expect(first).toHaveAttribute("aria-expanded", "true");
     const waiting = page.getByRole("region", { name: "Waiting", exact: true });
     const sizes = {
-      "delays-cause": 12,
-      "delays-since": 12,
+      "delays-cause": 13,
+      "delays-profile": 13,
+      "delays-since": 13,
       "delays-wait": 13,
     };
     for (const [name, expectedPx] of Object.entries(sizes)) {
       const cells = waiting.locator(`[data-ward-type-floor="${name}"]`);
-      expect(await cells.count(), `Workspace rendered no ${name} cells`).toBeGreaterThan(0);
+      expect(await cells.count(), `the board rendered no ${name} cells`).toBeGreaterThan(0);
       const found = await cells.evaluateAll((elements) =>
         elements.map((element) => Number.parseFloat(getComputedStyle(element).fontSize)),
       );
-      for (const px of found) expect(px, `Workspace ${name} must match its declared size`).toBe(expectedPx);
+      for (const px of found) expect(px, `${name} must match its declared size`).toBe(expectedPx);
     }
   });
 

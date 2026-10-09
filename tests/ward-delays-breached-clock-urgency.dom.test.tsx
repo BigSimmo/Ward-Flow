@@ -128,7 +128,7 @@ describe("a lapsed legal authority is never quieter than one still running", () 
       const clock = selectedClock();
       expect(
         clock,
-        `${id}: no ED clock rendered once selected — the selector, not the screen, is what failed`,
+        `${id}: no ED clock rendered once selected — the panel is not emitting delays-panel-clock`,
       ).toBeDefined();
       expect(
         clock?.urgent,

@@ -200,13 +200,18 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
     // A blocker group's header folds and unfolds its own rows.
     const groupHeader = screen.getAllByTestId(/^delays-cause-/u)[0];
     expect(groupHeader, "no blocker group rendered under South Metro").toBeDefined();
+    const before = listedIds().length;
+    expect(before, "nobody is listed under the open blocker groups").toBeGreaterThan(0);
     fireEvent.click(groupHeader);
     expect(groupHeader).toHaveAttribute("aria-expanded", "false");
+    expect(listedIds().length, "folding a group left its rows listed").toBeLessThan(before);
     fireEvent.click(groupHeader);
     expect(groupHeader).toHaveAttribute("aria-expanded", "true");
+    expect(listedIds().length, "unfolding a group did not bring its rows back").toBe(before);
 
     fireEvent.click(screen.getByRole("button", { name: `Remove filter ${MARKABLE_OWNER!.name}` }));
     const locked = MEMBER_OPEN.filter((movement) => movement.security === "Secure");
+    expect(locked.length, "no South Metro movement is Secure, so the locked chip proves nothing").toBeGreaterThan(0);
     const lockedChip = screen.getByRole("button", { name: `Locked bed ${locked.length}` });
     fireEvent.click(lockedChip);
     showEveryDelayRow();

@@ -8,7 +8,7 @@
  * Every figure is read from the engine (`delays-board-model.ts`). Selecting, filtering and the
  * graphs are presentation state only; the one write is Escalate, which the screen dispatches.
  */
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
 import Link from "next/link";
 import { ChevronDown, Search, X } from "lucide-react";
 
@@ -63,6 +63,7 @@ import {
 } from "./delays-board-model";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
 import styles from "./delays-board.module.css";
 
@@ -100,8 +101,22 @@ function originLabel(movement: Movement): string {
 }
 
 /** Below 64rem the person's panel is a sheet over the table (see delays-board.module.css). */
+const SHEET_QUERY = "(max-width: 64rem)";
+
 function isSheetLayout(): boolean {
-  return typeof window.matchMedia === "function" && window.matchMedia("(max-width: 64rem)").matches;
+  return typeof window.matchMedia === "function" && window.matchMedia(SHEET_QUERY).matches;
+}
+
+function subscribeSheetLayout(onChange: () => void): () => void {
+  if (typeof window.matchMedia !== "function") return () => undefined;
+  const query = window.matchMedia(SHEET_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+/** True at or below 64rem, where the person's panel is a sheet over the table. */
+function useSheetLayout(): boolean {
+  return useSyncExternalStore(subscribeSheetLayout, isSheetLayout, () => false);
 }
 
 function ago(minutes: number): string {
@@ -203,6 +218,17 @@ function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[]; now: I
       text: `Form ${row.movement.legalForm.code} due, ${splitDuration(due)} left`,
       tone: dueTone(due) ?? "warning",
     });
+  // A recorded legal time that has already passed stays on the journey, marked where it fell.
+  const passed = row.dueIn !== undefined && row.dueIn < 0 && row.movement.legalForm ? -row.dueIn : undefined;
+  const passedP = passed === undefined ? null : at(Math.max(0, row.waited - passed));
+  if (passed !== undefined && passedP !== null && row.movement.legalForm)
+    labels.push({
+      p: passedP,
+      time: formatInstantWithDay(now - passed, now),
+      text: `Form ${row.movement.legalForm.code} time passed, ${splitDuration(passed)} ago`,
+      tone: "danger",
+    });
+  labels.sort((a, b) => a.p - b.p);
   // Keep labels apart: each needs about 18% of the width.
   const width = 18;
   const pos = labels.map((label) => label.p);
@@ -240,6 +266,9 @@ function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[]; now: I
             />
           </>
         ) : null}
+        {passedP !== null ? (
+          <span className={`${styles.sxDue} ${styles.sxDueHot}`} style={{ left: `${passedP}%` }} />
+        ) : null}
       </div>
       <ol className={styles.sxLabs} aria-label="This person's recorded journey">
         {labels.map((label, index) => (
@@ -262,12 +291,14 @@ function PersonPanel({
   now,
   onClose,
   onEscalate,
+  panelRef,
 }: {
   row: BoardRow;
   units: Unit[];
   now: Instant;
   onClose: () => void;
   onEscalate: (movement: Movement) => void;
+  panelRef: RefObject<HTMLElement | null>;
 }) {
   const { referrals, setFocusMovementId } = useWardFlow();
   const patientOf = usePatientOf();
@@ -294,6 +325,7 @@ function PersonPanel({
       data-testid={`delays-detail-${movement.id}`}
       id="delays-person-panel"
       tabIndex={-1}
+      ref={panelRef}
     >
       <div className={styles.sideH}>
         <div className={styles.sideTitle}>
@@ -481,7 +513,7 @@ function PersonPanel({
             onClick={() => onEscalate(movement)}
             data-testid={`delays-escalate-${movement.id}`}
           >
-            Escalate to Bed Desk
+            Escalate to State bed coordination desk
           </button>
         )}
         <Link className={styles.btn} href={`/mockups/ward-flow/movements/${movement.id}`}>
@@ -755,9 +787,11 @@ function Registers({
             Longest quiet <span className={styles.k}>{quietRows.length}</span>
           </h4>
           {quietRows.length === 0 ? (
-            <p
-              className={styles.mute}
-            >{`Everyone has had something recorded in the last ${hoursWord(SILENT_MINUTES)}.`}</p>
+            <p className={styles.mute}>
+              {rows.length === 0
+                ? "Nobody is waiting."
+                : `Everyone has had something recorded in the last ${hoursWord(SILENT_MINUTES)}.`}
+            </p>
           ) : (
             quietRows.slice(0, 7).map((row) => (
               <button
@@ -821,6 +855,8 @@ export function DelaysBoard({
   const [moreGroups, setMoreGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const tableRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const sheet = useSheetLayout();
 
   const nameOf = (movement: Movement) => `${patientOf(movement).formalName} ${patientOf(movement).umrn}`;
   const shown = filterRows(rows, filters, bins, nameOf);
@@ -833,7 +869,7 @@ export function DelaysBoard({
     setFilters((current) => ({ ...current, [key]: current[key] === value ? NO_FILTERS[key] : value }));
   const isOpenGroup = (cause: DelayCause) => openGroups[cause] ?? OPEN_BY_DEFAULT.includes(cause);
 
-  // On a phone or tablet the person's panel is a sheet, so an explicit row choice moves focus to it.
+  // On a phone or tablet the person's panel is a sheet, so an explicit row choice brings it into view.
   const explicitSelect = useRef(false);
   const select = (id: string) => {
     explicitSelect.current = selectedId !== id;
@@ -842,13 +878,12 @@ export function DelaysBoard({
   useEffect(() => {
     if (!explicitSelect.current || selectedId === null) return;
     explicitSelect.current = false;
-    if (!isSheetLayout()) return;
+    if (!sheet) return;
+    // Focus is the shared modal lifecycle's job (useWardModalFocus below); this only scrolls.
     window.requestAnimationFrame(() => {
-      const panel = document.getElementById("delays-person-panel");
-      panel?.scrollIntoView?.({ block: "start" });
-      panel?.focus({ preventScroll: true });
+      document.getElementById("delays-person-panel")?.scrollIntoView?.({ block: "start" });
     });
-  }, [selectedId]);
+  }, [selectedId, sheet]);
   const close = () => {
     const previous = selectedId;
     setSelectedId(null);
@@ -868,13 +903,17 @@ export function DelaysBoard({
     setSelectedId(id);
     setOpenGroups((current) => ({ ...current, [row.cause]: true }));
     setMoreGroups((current) => ({ ...current, [row.cause]: true }));
-    if (isSheetLayout()) return;
+    if (sheet) return;
     window.requestAnimationFrame(() => {
       const button = document.querySelector<HTMLButtonElement>(`[data-testid="delays-select-${id}"]`);
       button?.scrollIntoView?.({ block: "center", behavior: "smooth" });
       button?.focus({ preventScroll: true });
     });
   };
+
+  // As a sheet the panel joins the shared modal stack: focus stays inside it and only the topmost
+  // sheet answers Escape. Beside the table (wider screens) it is an ordinary panel.
+  useWardModalFocus(sheet && selected !== null, panelRef, close);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -1378,7 +1417,7 @@ export function DelaysBoard({
                     <col />
                   </colgroup>
                   <thead role="rowgroup">
-                    <tr>
+                    <tr role="row">
                       <th scope="col" role="columnheader">
                         Person
                       </th>
@@ -1414,7 +1453,14 @@ export function DelaysBoard({
                   aria-hidden="true"
                   data-testid="delays-detail-backdrop"
                 />
-                <PersonPanel row={selected} units={units} now={now} onClose={close} onEscalate={onEscalate} />
+                <PersonPanel
+                  row={selected}
+                  units={units}
+                  now={now}
+                  onClose={close}
+                  onEscalate={onEscalate}
+                  panelRef={panelRef}
+                />
               </>
             ) : (
               registers

@@ -184,7 +184,7 @@ export function ownerTiles(rows: readonly BoardRow[]): OwnerTile[] {
     const over8 = mine.filter((row) => row.waited >= OVER_8H).length;
     const sub =
       id === "yours"
-        ? { tone: "danger" as const, count: severe, text: "form due soon" }
+        ? { tone: "danger" as const, count: severe, text: "form due or past its time" }
         : id === "wards"
           ? { tone: "danger" as const, count: severe, text: "no suitable bed" }
           : id === "transport"
@@ -409,7 +409,10 @@ export function rowEvents(row: BoardRow, units: readonly Unit[], now: Instant): 
   const events: { at: Instant; what: string; tone: RowEvent["tone"] }[] = [
     { at: opened, what: `Arrived, ${edName}`, tone: "neutral" },
   ];
-  if (movement.formedAt !== undefined) events.push({ at: movement.formedAt, what: "Legal form raised", tone: "info" });
+  if (movement.formedAt !== undefined)
+    events.push({ at: movement.formedAt, what: "Referral for examination made", tone: "info" });
+  if (movement.legalFormReceivedAt !== undefined && movement.legalForm !== undefined)
+    events.push({ at: movement.legalFormReceivedAt, what: `Form ${movement.legalForm.code} received`, tone: "info" });
   if (movement.examination !== undefined)
     events.push({ at: movement.examination.at, what: "Examination recorded", tone: "info" });
   if (movement.referralAbsence !== undefined)

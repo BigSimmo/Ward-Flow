@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { DELAY_CAUSE_COPY, delayGroups, ownerOf } from "@/components/ward-management/delays/delays-derivations";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
+import { catchmentName } from "@/components/ward-management/delays/delays-board-model";
 import { edHealthService } from "@/components/ward-management/ward-service-scope";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -99,7 +100,7 @@ describe("the Delays board's filters never leave a stale one pressed", () => {
     expect(locked.length, "every open movement needs a locked bed").toBeLessThan(OPEN.length);
     expect(ownerPeople("wards"), "the 'wards' owner has nobody under it").toBeGreaterThan(0);
     expect(ownerPeople("yours"), "the 'yours' owner has nobody under it").toBeGreaterThan(0);
-    expect(ownerPeople("ed"), "a cause now maps to 'ed', so the board should draw its tile").toBe(0);
+    expect(ownerPeople("ed"), "no cause maps to 'ed', so the board must draw no 'ed' tile").toBe(0);
     const wf018 = seededMovements.find((movement) => movement.id === "WF-018");
     expect(wf018?.flaggedUrgent, "WF-018 is no longer the fixture's one flagged patient").toBe(true);
     expect(isOpen(wf018!), "WF-018 is not open").toBe(true);
@@ -195,7 +196,7 @@ describe("the Delays board's filters never leave a stale one pressed", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Where and whose move" }));
     fireEvent.click(screen.getByRole("button", { name: "Blocker" }));
     const cell = screen.getByRole("button", {
-      name: new RegExp(`^${origin === "WACHS" ? "WA Country" : origin}, Family: 1 waiting`, "u"),
+      name: new RegExp(`^${catchmentName(origin!)}, Family: 1 waiting`, "u"),
     });
     fireEvent.click(cell);
 

@@ -5,7 +5,7 @@
  * a page of its own: a lane label, a matrix cell or a half-hour column narrows the table, and a
  * dot opens that person's row. Everything is drawn from the same rows the table shows.
  */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -72,6 +72,24 @@ const hoursOrDuration = (minutes: number) => (minutes % 60 === 0 ? `${minutes / 
 /** Width assumed before the plot is measured (and in jsdom); the real width replaces it. */
 const ASSUMED_PLOT_WIDTH = 900;
 const DOT = 15;
+
+function LaneLabel({ label, count, over8 }: { label: string; count: number; over8: number }) {
+  return (
+    <>
+      <b>{label}</b>
+      <small>
+        <span className={styles.num}>{count}</span> waiting
+        {over8 > 0 ? (
+          <>
+            {" · "}
+            <StatusGlyph tone="warning" size={9} />
+            <span className={styles.num}>{over8}</span> {`over ${H8}`}
+          </>
+        ) : null}
+      </small>
+    </>
+  );
+}
 
 function Spread({
   rows,
@@ -152,25 +170,23 @@ function Spread({
         const over8 = lane.rows.filter((row) => row.waited >= OVER_8H).length;
         return (
           <div key={lane.id} className={styles.gLane}>
-            <button
-              type="button"
-              className={styles.gLaneL}
-              aria-pressed={lane.pressed}
-              aria-label={`${lane.label}, ${lane.rows.length} waiting, ${over8} over ${H8}. Filter the table`}
-              onClick={lane.press}
-            >
-              <b>{lane.label}</b>
-              <small>
-                <span className={styles.num}>{lane.rows.length}</span> waiting
-                {over8 > 0 ? (
-                  <>
-                    {" · "}
-                    <StatusGlyph tone="warning" size={9} />
-                    <span className={styles.num}>{over8}</span> {`over ${H8}`}
-                  </>
-                ) : null}
-              </small>
-            </button>
+            {/* An empty lane is a label, not a filter that would empty the table. An already pressed
+                one stays a button so its filter can still be removed. */}
+            {lane.rows.length > 0 || lane.pressed ? (
+              <button
+                type="button"
+                className={styles.gLaneL}
+                aria-pressed={lane.pressed}
+                aria-label={`${lane.label}, ${lane.rows.length} waiting, ${over8} over ${H8}. Filter the table`}
+                onClick={lane.press}
+              >
+                <LaneLabel label={lane.label} count={lane.rows.length} over8={over8} />
+              </button>
+            ) : (
+              <div className={styles.gLaneL}>
+                <LaneLabel label={lane.label} count={0} over8={0} />
+              </div>
+            )}
             <div className={styles.gPlot} style={{ height }} ref={laneIndex === 0 ? measureRef : undefined}>
               {grid}
               {placed.map(({ x, y, row }) => {
@@ -305,21 +321,27 @@ function Runway({
             const label = `${at(bin.from)} to ${at(bin.to)}: ${bin.cross8.length} cross ${H8}, ${bin.cross24.length} cross ${H24}, ${bin.formDue.length} recorded legal times due`;
             let acc = 0;
             const press = () => onFilters({ bin: on ? null : bin.index }, !on);
+            // A half hour with nothing in it is drawn but not pressable, unless it is the active filter.
+            const pressable = total > 0 || on;
             return (
               <g
                 key={bin.index}
-                className={`${styles.rwCol} ${on ? styles.rwOn : ""}`}
-                role="button"
-                tabIndex={0}
-                aria-pressed={on}
-                aria-label={label}
-                onClick={press}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    press();
-                  }
-                }}
+                className={`${styles.rwCol} ${on ? styles.rwOn : ""} ${pressable ? "" : styles.rwEmpty}`}
+                {...(pressable
+                  ? {
+                      role: "button",
+                      tabIndex: 0,
+                      "aria-pressed": on,
+                      "aria-label": label,
+                      onClick: press,
+                      onKeyDown: (event: KeyboardEvent<SVGGElement>) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          press();
+                        }
+                      },
+                    }
+                  : { "aria-hidden": true })}
                 onMouseMove={(event) =>
                   onTip(
                     event,

@@ -21,6 +21,7 @@ import {
   waitBand,
   wardSummary,
 } from "@/components/ward-management/delays/delays-board-model";
+import { currentDueSoonThresholds } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -102,6 +103,10 @@ describe("the Delays board model", () => {
 
   it("counts a recorded legal time in the half hour it falls due, never a passed one", () => {
     const bins = runwayBins(ROWS);
+    expect(
+      bins.some((bin) => bin.formDue.length > 0),
+      "no recorded legal time falls in the runway, so this proves nothing",
+    ).toBe(true);
     for (const bin of bins) {
       for (const row of bin.formDue) {
         expect(row.dueIn).toBeGreaterThan(bin.from);
@@ -128,7 +133,17 @@ describe("the Delays board model", () => {
       else if (row.movement.declines.length > 0)
         expect(summary.text).toMatch(new RegExp(`^${row.movement.declines.length} declined`, "u"));
       else if (row.movement.referredUnitIds.length === 0) expect(summary.text).toBe("No ward asked yet");
+      else expect(summary.text).toMatch(new RegExp(`^${row.movement.referredUnitIds.length} asked`, "u"));
     }
+    expect(
+      ROWS.some(
+        (row) =>
+          row.movement.acceptedUnitId === undefined &&
+          row.movement.declines.length === 0 &&
+          row.movement.referredUnitIds.length > 0,
+      ),
+      "nobody in the fixture is only asked, so the asked branch proves nothing",
+    ).toBe(true);
   });
 
   it("starts every timeline at arrival and never shows an event after now", () => {
@@ -143,7 +158,8 @@ describe("the Delays board model", () => {
   });
 
   it("pins only recorded legal times within the soon warning", () => {
-    for (const row of ROWS) expect(isPinned(row)).toBe(row.dueIn !== undefined && row.dueIn <= 180);
+    const soon = currentDueSoonThresholds().soonMinutes;
+    for (const row of ROWS) expect(isPinned(row)).toBe(row.dueIn !== undefined && row.dueIn <= soon);
   });
 
   it("scales the spread linearly to 24 hours, then compresses up to 7 days", () => {

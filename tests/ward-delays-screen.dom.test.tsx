@@ -101,7 +101,9 @@ describe("the Delays screen", () => {
     inspectDelayPerson(wardMovements.find(isOpen)!.id);
     expect(frame).toHaveBeenCalledTimes(1);
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "start" });
-    expect(screen.getByRole("region", { name: "Why this person is waiting" })).toHaveFocus();
+    // The sheet joins the shared modal stack, which puts focus on its first control.
+    const sheet = screen.getByRole("region", { name: "Why this person is waiting" });
+    expect(sheet.contains(document.activeElement), "focus stayed on the covered table").toBe(true);
   });
 
   it("dismisses the slide-over detail inspection panel when clicking the backdrop", () => {
@@ -536,7 +538,7 @@ describe("the Delays screen", () => {
      * is exactly the distinction that matters, since these two facts were once silently dropped for
      * everybody while the fixture kept some green test passing on the movement it happened to check.
      * So this still walks every open movement; it selects each one first, because the full record
-     * carrying "Owner: …" and the urgency tier now renders only for whoever is chosen.
+     * carrying "Held by …" and the urgency tier now renders only for whoever is chosen.
      */
     for (const movement of openMovements) {
       const panel = selectPerson(movement.id);

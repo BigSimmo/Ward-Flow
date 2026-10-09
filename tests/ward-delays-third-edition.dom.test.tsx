@@ -12,8 +12,9 @@ import { delayGroups } from "@/components/ward-management/delays/delays-derivati
 import type { Movement } from "@/components/ward-management/ward-model";
 
 /**
- * TASK D1 — the Delays screen's panel names must read exactly as
- * `docs/ward-flow/mockups/delays-third-edition.html` draws them, and its two dangling-`originEdId`
+ * TASK D1 — the Delays screen's panel names must read exactly as the approved Delays page mockup
+ * (October 2026) draws them (it superseded `docs/ward-flow/mockups/delays-third-edition.html`, which
+ * this file was first written against), and its two dangling-`originEdId`
  * sentences must name the RECORD as the fault rather than the network. Both halves are guarded
  * here because neither was reachable from an existing suite: the panel renames have no prior
  * test at all, and the dangling-id sentence's branch is never entered by the shared seed — measured
@@ -83,8 +84,8 @@ describe("Delays — the drawing's panel names (task D1)", () => {
    * renames ("Waiting" beside "What the blocker is") could each individually be present while the
    * drawing's actual sequence was silently reshuffled.
    *
-   * Nobody is selected on a fresh render, so the state-dependent panel (see the next `describe`)
-   * is expected here as "Nobody selected".
+   * Nobody is selected on a fresh render, so the side column shows the registers rail. Choosing a
+   * person replaces the rail with their panel; there is no "Nobody selected" panel (next `describe`).
    */
   it("renders the drawing's panels, in the drawing's order", () => {
     renderScreen();

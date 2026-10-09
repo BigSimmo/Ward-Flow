@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { delaysAliasBannerCopy, parseDelaysAliasFrom } from "@/components/ward-management/delays/delays-alias";
 import { dayOf } from "@/components/ward-management/ward-clock";
+import { ESCALATION_CONTACTS } from "@/components/ward-management/ward-change-reasons";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -18,6 +19,8 @@ import {
 import { SEVERE_CAUSES, delayGroups } from "./delays-derivations";
 import { DelaysBoard } from "./delays-board";
 import styles from "./delays.module.css";
+
+const ESCALATION_CONTACT = ESCALATION_CONTACTS[0];
 
 export type SystemicHoldCategory = "all" | "emergency" | "ward" | "transport" | "staffing";
 
@@ -60,7 +63,7 @@ function readAliasFromLocation() {
 /**
  * Delays: why each waiting person is still waiting. The layout is the approved Delays page mockup
  * (`delays-board.tsx`); this screen owns the data scope (chosen service), the old-bookmark banner,
- * the one write (Escalate to Bed Desk) and the page shell.
+ * the one write (Escalate to State bed coordination desk) and the page shell.
  */
 export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOverride }: DelaysScreenProps = {}) {
   const fromSearch = useSyncExternalStore(subscribeToLocation, readAliasFromLocation, () => null);
@@ -80,10 +83,14 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
 
   // Prototype notices (owner rule D4).
   const [notice, setNotice] = useState<string | null>(null);
+  // One timer for the latest notice, so an earlier one cannot clear a newer confirmation early.
+  const noticeTimer = useRef<number | undefined>(undefined);
   const showNotice = (text: string) => {
     setNotice(text);
-    window.setTimeout(() => setNotice(null), 4000);
+    window.clearTimeout(noticeTimer.current);
+    noticeTimer.current = window.setTimeout(() => setNotice(null), 4000);
   };
+  useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
 
   const open = movements.filter(isOpen);
   const openNetworkWide = allMovements.filter(isOpen);
@@ -125,9 +132,10 @@ export function DelaysScreen({ aliasFrom: aliasFromProp, movements: movementsOve
       now,
       movementId: movement.id,
       triedUnitIds: movement.declines.map((decline) => decline.unitId),
-      contact: "Bed Desk",
+      // The fixed escalation vocabulary's entry (ward-change-reasons.ts), as the coordinator picker records it.
+      contact: ESCALATION_CONTACT,
     });
-    showNotice("Escalated to Bed Desk.");
+    showNotice(`Escalated to ${ESCALATION_CONTACT}.`);
   };
 
   const banner = (

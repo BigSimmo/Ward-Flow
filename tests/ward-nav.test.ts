@@ -714,7 +714,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     const ward = dynamicRouteScans.get("/mockups/ward-flow/ward/[unitId]");
     // Three builders now, and the list stays exact rather than becoming a `toContain`: the ward
     // index (Phase 8) builds one href per unit over the whole network, the role switcher builds
-    // nought to three over a selection, and the Delays screen builds one per LAPSED BED PULL.
+    // nought to three over a selection, and the Delays screen once built one per LAPSED BED PULL.
     // Which is which is the entire subject of the coverage record above, so a fourth builder
     // appearing here should still cost somebody a decision.
     //
