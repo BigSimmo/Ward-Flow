@@ -29,6 +29,9 @@ const REDUCERS = [
   "src/components/ward-management/ward-flow-reducer.ts",
   // Stream D (9 Oct 2026): planned-admission events live in their own reducer module.
   "src/components/ward-management/capacity/planned-admissions-reducer.ts",
+  // Stream A, 9 Oct 2026: SNOOZE_INBOX_ITEM's membership check lives in the inbox reducer it
+  // delegates to, not in the main switch — scan both so a missing check cannot hide there.
+  "src/components/ward-management/ward-inbox-reducer.ts",
 ] as const;
 const EVENTS = "src/components/ward-management/ward-flow-events.ts";
 
@@ -58,6 +61,8 @@ const LIST_FOR_TYPE: Readonly<Record<string, string>> = {
   // Stream D (9 Oct 2026): planned admission book/change and cancel reasons.
   PlannedAdmissionReason: "PLANNED_ADMISSION_REASONS",
   PlannedAdmissionCancelReason: "PLANNED_ADMISSION_CANCEL_REASONS",
+  // Stream A, 9 Oct 2026: SNOOZE_INBOX_ITEM's closed snooze-reason list.
+  InboxSnoozeReason: "SNOOZE_REASON_IDS",
 };
 
 /** Strips comments so prose naming a constant cannot be read as code naming it. */
@@ -65,7 +70,7 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//gu, " ").replace(/\/\/[^\n]*/gu, " ");
 }
 
-/** Every `case "X":` in one reducer file, with the line it starts on. */
+/** Every `case "X":` in one reducer file, with the file-local line it starts on. */
 function reducerCasesIn(path: string): Array<{ name: string; line: number }> {
   const lines = stripComments(readFileSync(path, "utf8")).split("\n");
   const found: Array<{ name: string; line: number }> = [];
@@ -137,7 +142,8 @@ describe("reason membership checks", () => {
      * check on two lines, a rename of `event.reason` — every assertion below passes over an empty
      * list, which reads exactly like a codebase with no mistakes in it.
      */
-    expect(reducerCases().length, "no reducer cases parsed").toBeGreaterThan(40);
+    const cases = reducerCases();
+    expect(cases.length, "no reducer cases parsed").toBeGreaterThan(40);
     expect(
       reasonChecks().length,
       "no reason checks parsed; the scan pattern has stopped matching",
@@ -205,16 +211,13 @@ describe("reason membership checks", () => {
     );
     // And a comment naming a constant must not be counted as a check.
     expect(reasonChecks().length).toBe(
-      REDUCERS.reduce(
-        (total, path) =>
-          total +
-          readFileSync(path, "utf8")
-            .split("\n")
-            .filter(
-              (line) => !line.trim().startsWith("*") && /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.test(line),
-            ).length,
-        0,
-      ),
+      REDUCERS.flatMap((path) =>
+        readFileSync(path, "utf8")
+          .split("\n")
+          .filter(
+            (line) => !line.trim().startsWith("*") && /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.test(line),
+          ),
+      ).length,
     );
   });
 });

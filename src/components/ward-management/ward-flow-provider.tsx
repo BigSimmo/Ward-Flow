@@ -36,7 +36,7 @@ import { forgetDowntimePack } from "./reports/downtime-pack";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { absoluteWallClockMinutes, applyDueSoonThresholds, demoDayZero } from "@/components/ward-management/ward-clock";
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { isValidStoredWardFlowState } from "./ward-flow-storage-validation";
+import { isValidStoredWardFlowState, withInboxStreamADefaults } from "./ward-flow-storage-validation";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -89,6 +89,8 @@ import {
  */
 type WardFlowContextValue = {
   worldGeneration: number;
+  /** True once the saved session has been read (or declined). Before then the world is the seed. */
+  sessionAdopted: boolean;
   recordWardDeparture(admissionId: string, actingUnitId: string, leavingDestination: LeavingDestination): void;
   readDischargeRecords(actor: WardRecordActor, unitId?: string): RecordRead<readonly DischargeRecord[]>;
   openDischargeRecord(actor: WardRecordActor, admissionId: string): DischargeOpenHandle;
@@ -135,6 +137,9 @@ type WardFlowContextValue = {
    */
   inboxAcknowledgements: WardFlowState["inboxAcknowledgements"];
   inboxCompletions: WardFlowState["inboxCompletions"];
+  /** Stream A, 9 Oct 2026: inbox row ownership and snooze histories, read-only like the two above. */
+  inboxOwnership: WardFlowState["inboxOwnership"];
+  inboxSnoozes: WardFlowState["inboxSnoozes"];
   /** Authored notices remain reducer-owned; Activity reads their existing audience and time. */
   notices: WardFlowState["notices"];
   morningRollupConfirmations: WardFlowState["morningRollupConfirmations"];
@@ -417,7 +422,7 @@ function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number): DemoRead {
       parsed.state.auditEvents.some((event) => event.at !== null && event.at > parsed.now)
     )
       return { recoveryNotice: SAVE_REJECTED };
-    return { saved: parsed };
+    return { saved: { ...parsed, state: withInboxStreamADefaults(parsed.state) } };
   } catch {
     // Do not repeat stored content or an exception message in the recovery notice.
     return { recoveryNotice: STORAGE_UNAVAILABLE };
@@ -910,6 +915,7 @@ function WardFlowWorld({
   const value = useMemo<WardFlowContextValue>(
     () => ({
       worldGeneration: state.worldGeneration,
+      sessionAdopted: container.sessionAdopted === true,
       recordWardDeparture: (admissionId, actingUnitId, leavingDestination) => {
         const read = selectDischargeRecord(state, { role: "ward", actingUnitId }, admissionId);
         if (read.status === "allowed" && read.value.identity.kind === "legacy-anonymous") {
@@ -960,6 +966,8 @@ function WardFlowWorld({
       refreshRequests: state.refreshRequests,
       inboxAcknowledgements: state.inboxAcknowledgements,
       inboxCompletions: state.inboxCompletions,
+      inboxOwnership: state.inboxOwnership,
+      inboxSnoozes: state.inboxSnoozes,
       notices: state.notices,
       morningRollupConfirmations: state.morningRollupConfirmations,
       resolvePatientIdentity: (subject) =>
@@ -998,6 +1006,7 @@ function WardFlowWorld({
       // `react-hooks/exhaustive-deps` flagged the individual fields as redundant once `state` was
       // added, not as a reason to remove `state` and go back to naming fields one at a time.
       state,
+      container.sessionAdopted,
       // The log grows even when an event leaves `state` untouched (a no-op), so it is its own dep.
       container.eventLog,
       now,

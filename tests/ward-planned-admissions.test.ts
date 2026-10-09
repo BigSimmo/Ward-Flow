@@ -22,6 +22,8 @@ import { EVENT_HISTORY_TABLE, selectBedHistory, selectPatientHistory } from "@/c
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
 import { shellFigures } from "@/components/ward-management/shell/ward-facade";
+import { currentInboxOwner, partitionSnoozed, SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooze";
+import { inboxItemIsActNow, inboxRowExists } from "@/components/ward-management/ward-inbox-reducer";
 import { patientCohort, patientDisplayName } from "@/components/ward-management/ward-patients";
 import { shiftInstants } from "@/components/ward-management/ward-reanchor";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -466,6 +468,36 @@ describe("overdue planned arrivals surface in the action inbox", () => {
     });
     expect(arrived.rejections).toEqual([]);
     expect(buildActionInbox([], NOW, arrived.units, { plannedAdmissions: arrived.plannedAdmissions })).toEqual([]);
+  });
+
+  it("can be owned and snoozed like any other amber row (stream A rules)", () => {
+    const state = seedWardFlowState();
+    const ROW = "planned-arrival-PA-SEED-03";
+    const [row] = buildActionInbox([], NOW, state.units, { plannedAdmissions: state.plannedAdmissions });
+    expect(row?.id).toBe(ROW);
+    // Amber, so review-level: no act-now snooze cap. The row starts at the booking's expected arrival.
+    expect(inboxItemIsActNow(ROW)).toBe(false);
+    expect(row!.since).toBe(state.plannedAdmissions.find((planned) => planned.id === "PA-SEED-03")!.expectedArrivalAt);
+    expect(inboxRowExists(state, ROW)).toBe(true);
+    expect(inboxRowExists(state, "planned-arrival-PA-NOPE")).toBe(false);
+
+    const owned = apply(state, { type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now: NOW, inboxItemId: ROW });
+    expect(owned.rejections).toEqual([]);
+    expect(currentInboxOwner(owned.inboxOwnership[ROW], row!.since)).toEqual({ at: NOW, by: "Flow coordinator" });
+
+    const snoozed = apply(owned, {
+      type: "SNOOZE_INBOX_ITEM",
+      role: "coordinator",
+      now: NOW,
+      inboxItemId: ROW,
+      until: NOW + 4 * 60,
+      reason: SNOOZE_REASON_IDS[0]!,
+    });
+    expect(snoozed.rejections).toEqual([]);
+    expect(partitionSnoozed([row!], snoozed.inboxSnoozes, NOW + 60).snoozed.map((item) => item.id)).toEqual([ROW]);
+    expect(partitionSnoozed([row!], snoozed.inboxSnoozes, NOW + 4 * 60 + 1).active.map((item) => item.id)).toEqual([
+      ROW,
+    ]);
   });
 });
 

@@ -35,6 +35,8 @@ import { StatusGlyph, type WfTone } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
+import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
+import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
@@ -528,6 +530,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     inboxAcknowledgements,
     inboxCompletions,
     plannedAdmissions,
+    inboxOwnership,
+    inboxSnoozes,
+    configuration,
     supportNotifications,
   } = useWardFlow();
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
@@ -627,19 +632,37 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // the one place that must gate — `wardTasksAreActionableForRole` exists in `ward-chrome-role.ts`
   // for exactly this call. A ward/ED/officer route gets an empty inbox: zero badge, and the drawer's
   // own "No outstanding work right now." empty state, never a network list with every action refused.
-  const tasksItems = useMemo(
-    () =>
-      wardTasksAreActionableForRole(role)
-        ? buildActionInbox(movements.filter(isOpen), now, units, {
-            movements,
-            admissions,
-            patients,
-            referrals,
-            supportNotifications,
-            plannedAdmissions,
-          })
-        : [],
-    [movements, now, units, role, plannedAdmissions, admissions, patients, referrals, supportNotifications],
+  const tasksItems = useMemo(() => {
+    if (!wardTasksAreActionableForRole(role)) return [];
+    const open = movements.filter(isOpen);
+    // Stream A, 9 Oct 2026: decision targets join the same list.
+    return [
+      ...buildActionInbox(open, now, units, {
+        movements,
+        admissions,
+        patients,
+        referrals,
+        supportNotifications,
+        plannedAdmissions,
+      }),
+      ...decisionTargetInboxItems(open, now, configuration),
+    ];
+  }, [
+    movements,
+    now,
+    units,
+    role,
+    plannedAdmissions,
+    admissions,
+    patients,
+    referrals,
+    supportNotifications,
+    configuration,
+  ]);
+  // Snoozed rows stay in the drawer's own Snoozed section and leave the badge until they return.
+  const tasksActiveCount = useMemo(
+    () => partitionSnoozed(tasksItems, inboxSnoozes, now).active.length,
+    [tasksItems, inboxSnoozes, now],
   );
   /**
    * The Service selector's own "{n} open" / "none open" option counts (build plan §3 "Service
@@ -808,7 +831,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           `Activity opened. Synthetic data: ${scopedNotices.length} notices and ${shownActivity?.changes.length ?? 0} recent changes.`,
         );
       } else if (id === "tasks") {
-        announceToWardShell(`Tasks opened. ${tasksItems.length} invented tasks outstanding.`);
+        announceToWardShell(`Tasks opened. ${tasksActiveCount} invented tasks outstanding.`);
       } else if (id === "tools") {
         announceToWardShell("Tools opened. Figures, utilities, contacts and shift desk are here.");
       } else if (id === "referral") {
@@ -818,7 +841,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // fixed sentences names an announcement for CHOOSING or CLEARING a service, never for opening
       // the selector itself.
     },
-    [scopedNotices.length, shownActivity?.changes.length, tasksItems.length],
+    [scopedNotices.length, shownActivity?.changes.length, tasksActiveCount],
   );
 
   /**
@@ -1262,7 +1285,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         >
           <ListChecks className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
           <span className={styles.triggerLabel}>Tasks</span>
-          <span className={styles.badge}>{tasksItems.length}</span>
+          <span className={styles.badge}>{tasksActiveCount}</span>
         </button>
 
         <button
@@ -1755,6 +1778,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             items={tasksItems}
             acknowledgements={inboxAcknowledgements}
             completions={inboxCompletions}
+            ownership={inboxOwnership}
+            snoozes={inboxSnoozes}
+            configuration={configuration}
             role={role}
             now={now}
             dispatch={dispatch}

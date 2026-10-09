@@ -11,6 +11,7 @@ import {
   BROADCAST_TARGET_SCOPES,
 } from "../../src/components/ward-management/alerts/ward-broadcast-model";
 import { buildActionInbox } from "@/components/ward-management/ward-derivations";
+import { activeSnooze, SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooze";
 import { referralState } from "../../src/components/ward-management/ward-referrals";
 import { expect } from "vitest";
 import {
@@ -1094,12 +1095,30 @@ export function candidateEvents(
     case "ACKNOWLEDGE_INBOX_ITEM":
     case "COMPLETE_INBOX_ITEM":
     case "REOPEN_INBOX_ITEM":
+    case "TAKE_INBOX_ITEM_OWNERSHIP":
       return buildActionInbox(state.movements, now, state.units).map((item) => ({
         type,
         role,
         now,
         inboxItemId: item.id,
       }));
+    /*
+     * Stream A, 9 Oct 2026: snooze / return against live inbox rows. `until` stays inside the
+     * act-now cap so a red row is not refused on length alone; reason is the first closed id.
+     */
+    case "SNOOZE_INBOX_ITEM":
+      return buildActionInbox(state.movements, now, state.units).map((item) => ({
+        type,
+        role,
+        now,
+        inboxItemId: item.id,
+        until: now + 30,
+        reason: SNOOZE_REASON_IDS[0],
+      }));
+    case "UNSNOOZE_INBOX_ITEM":
+      return Object.keys(state.inboxSnoozes)
+        .filter((inboxItemId) => activeSnooze(state.inboxSnoozes[inboxItemId], now) !== undefined)
+        .map((inboxItemId) => ({ type, role, now, inboxItemId }));
     /*
      * Added 25 September 2026 (the four events had no candidate, so the Form sweep could never
      * accept them). UPDATE_EXPECTED_DISCHARGE: one per admission still on a ward, a day ahead.

@@ -1162,6 +1162,18 @@ export type InboxItem = {
    * lives.
    */
   kind: InboxItemKind;
+  /**
+   * When this row's recorded time falls or fell due, where the record holds one: a legal form's
+   * typed due time, a bed hold's expiry, a decision target's due time. Absent otherwise. Read by
+   * the Tasks "Due first" sort (stream A, 9 Oct 2026); never used to decide whether a row exists.
+   */
+  dueAt?: Instant;
+  /**
+   * When this occurrence of the row began, where the record holds it (stream A, 9 Oct 2026): a
+   * snooze or ownership written before it belongs to an earlier occurrence on the same movement
+   * and is ignored. Set from `inboxOccurrenceSince`, which the reducer reads too.
+   */
+  since?: Instant;
 };
 
 /**
@@ -1248,6 +1260,8 @@ export function buildActionInbox(
       detail: `${movement.id} · ${formatRemaining(minutesUntil(dueAt, now))}`,
       owner: movement.owner,
       movementId: movement.id,
+      dueAt,
+      since: dueAt,
     });
   }
 
@@ -1266,6 +1280,8 @@ export function buildActionInbox(
       detail: `${movement.id} · ${formatRemaining(minutesUntil(pullExpiresAt, now))}`,
       owner: movement.owner,
       movementId: movement.id,
+      dueAt: pullExpiresAt,
+      since: pullExpiresAt,
     });
   }
 
@@ -1315,6 +1331,7 @@ export function buildActionInbox(
       detail: `${movement.id} · accepted ${formatInstant(movement.transport.acceptedAt as Instant)}`,
       owner: movement.owner,
       movementId: movement.id,
+      since: movement.transport.acceptedAt,
     });
   }
 
@@ -1333,6 +1350,8 @@ export function buildActionInbox(
       owner: unit?.name ?? "Ward",
       movementId: "",
       plannedAdmission: planned,
+      // The reducer reads the same start for snoozes and owners (`inboxRowSince`).
+      since: planned.expectedArrivalAt,
       // `WARD_CAPACITY_HREF`, spelled out: ward-nav reaches this file through ward-facade.
       href: "/mockups/ward-flow/capacity",
       ...(planned.initials !== null ? { personLabel: `Initials ${planned.initials}` } : {}),
