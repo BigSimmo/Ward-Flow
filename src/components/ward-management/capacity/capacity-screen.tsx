@@ -863,8 +863,8 @@ export function ReadyNowSection({
 }) {
   if (service === null) {
     return (
-      <section className={styles.readySummary} aria-label="Ready now">
-        <h3>Ready now</h3>
+      <section className={styles.readySummary} aria-label="Available capacity">
+        <h3>Available capacity</h3>
         <p className={styles.readyValue}>
           <strong>{netTotals.ready}</strong> of {netTotals.beds} beds
         </p>
@@ -882,14 +882,16 @@ export function ReadyNowSection({
           <p>No ward reports a ready bed.</p>
         )}
         {(netTotals.pendingPreparation ?? 0) > 0 ? (
-          <p className={styles.preparationWarning}>{netTotals.pendingPreparation} still being made ready.</p>
+          <p className={styles.preparationWarning}>
+            {netTotals.pendingPreparation} still being made ready. Included in capacity; cannot be pulled until ready.
+          </p>
         ) : null}
       </section>
     );
   }
   return (
-    <section className={styles.readySummary} aria-label="Ready now">
-      <h3>Ready now</h3>
+    <section className={styles.readySummary} aria-label="Available capacity">
+      <h3>Available capacity</h3>
       {scopedReady > 0 ? (
         <WardBar
           segments={
@@ -909,7 +911,9 @@ export function ReadyNowSection({
         Across the whole network: {netTotals.ready} beds ready, {totalLockedReady} locked.
       </p>
       {scopedPendingPreparation > 0 ? (
-        <p className={styles.preparationWarning}>{scopedPendingPreparation} still being made ready.</p>
+        <p className={styles.preparationWarning}>
+          {scopedPendingPreparation} still being made ready. Included in capacity; cannot be pulled until ready.
+        </p>
       ) : null}
     </section>
   );

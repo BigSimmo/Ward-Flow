@@ -134,7 +134,7 @@ describe("Case 2 — the Ready-now panel states availableNow alone", () => {
     );
 
     renderScreen();
-    const panel = screen.getByRole("region", { name: "Ready now" });
+    const panel = screen.getByRole("region", { name: "Available capacity" });
     expect(
       within(panel).getByText(
         (_, element) =>

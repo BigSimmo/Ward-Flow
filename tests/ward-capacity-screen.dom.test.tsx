@@ -83,7 +83,7 @@ describe("the Capacity screen", () => {
     expect(
       screen.getByRole("img", { name: new RegExp(`Locked ready ${totalLocked}\\b.*Open ready`, "su") }),
     ).toBeInTheDocument();
-    const readySummary = screen.getByRole("region", { name: "Ready now" });
+    const readySummary = screen.getByRole("region", { name: "Available capacity" });
     expect(within(readySummary).getByText(String(totalReady), { selector: "strong" })).toBeInTheDocument();
     expect(within(readySummary).getByText(new RegExp(`^of\\s+${netTotals.beds} beds$`, "u"))).toBeInTheDocument();
   });

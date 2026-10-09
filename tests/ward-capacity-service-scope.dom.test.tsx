@@ -91,7 +91,7 @@ describe("with All services chosen, the screen renders byte-identical to before 
 
   it("keeps the exact pre-C1 Ready now markup: the whole-network headline, and the unscoped bar caption", () => {
     renderScreen();
-    const readySummary = screen.getByRole("region", { name: "Ready now" });
+    const readySummary = screen.getByRole("region", { name: "Available capacity" });
     expect(within(readySummary).getByText(String(netTotals.ready), { selector: "strong" })).toBeInTheDocument();
     expect(within(readySummary).getByText(new RegExp(`^of\\s+${netTotals.beds} beds$`, "u"))).toBeInTheDocument();
     expect(
@@ -165,7 +165,7 @@ describe("with South Metro chosen, the map and ward table are scoped", () => {
   it("shows the exact Ready caption and the whole-network sentence, in words, never hidden", () => {
     setServiceScope(SCOPED_SERVICE);
     renderScreen();
-    const readySummary = screen.getByRole("region", { name: "Ready now" });
+    const readySummary = screen.getByRole("region", { name: "Available capacity" });
     expect(within(readySummary).getByText(`${scopedReady} beds ready in ${SCOPED_SERVICE}`)).toBeInTheDocument();
     expect(within(readySummary).getByTestId("ward-capacity-ready-network-line")).toHaveTextContent(
       `Across the whole network: ${netTotals.ready} beds ready, ${totalLockedReady} locked.`,
@@ -286,7 +286,7 @@ describe("ReadyNowSection — the branch the real fixture at NOW_ANCHOR cannot r
         scopedPendingPreparation={0}
       />,
     );
-    const readySummary = screen.getByRole("region", { name: "Ready now" });
+    const readySummary = screen.getByRole("region", { name: "Available capacity" });
     expect(within(readySummary).getByText(String(netTotals.ready), { selector: "strong" })).toBeInTheDocument();
     expect(within(readySummary).getByText(new RegExp(`^of\\s+${netTotals.beds} beds$`, "u"))).toBeInTheDocument();
     expect(
