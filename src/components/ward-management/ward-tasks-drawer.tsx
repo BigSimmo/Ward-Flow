@@ -755,16 +755,42 @@ export function WardTasksDrawer({
               <ul className={styles.list}>
                 {snoozedItems.map((item) => {
                   const entry = activeSnooze(snoozes?.[item.id], now);
+                  const movement = records?.movements.find((row) => row.id === item.movementId);
+                  const patient = records ? resolveSubjectPatient(movement, records) : undefined;
                   return (
-                    <li key={item.id} className={styles.row} data-tone={item.tone}>
+                    <li
+                      key={item.id}
+                      className={styles.row}
+                      data-tone={item.tone}
+                      data-testid={`ward-task-snoozed-${item.id}`}
+                    >
                       <div className={styles.rowHead}>
                         <span className={styles.rowIcon} aria-hidden="true">
                           <AlarmClock aria-hidden="true" />
                         </span>
                         <div className={styles.rowText}>
                           <span className={styles.rowTitle}>{item.title}</span>
+                          <p className={styles.rowMeta}>
+                            <strong>{patient?.displayName ?? "Patient not linked"}</strong>
+                            {patient?.patient ? (
+                              <>
+                                <span aria-hidden="true">·</span>
+                                <span className={styles.mono}>{patient.umrn}</span>
+                              </>
+                            ) : null}
+                          </p>
                           {entry ? <p className={styles.rowMeta}>{snoozedLine(entry, now)}</p> : null}
                         </div>
+                        <button
+                          type="button"
+                          className={styles.btn}
+                          aria-label="Open patient"
+                          data-testid={`ward-task-snoozed-open-${item.id}`}
+                          onClick={() => onSelectMovement(item.movementId)}
+                        >
+                          <ArrowUpRight aria-hidden="true" />
+                          Open
+                        </button>
                         {role === "coordinator" ? (
                           <button
                             type="button"

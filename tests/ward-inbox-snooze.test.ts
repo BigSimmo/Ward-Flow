@@ -275,7 +275,7 @@ describe("snooze helpers", () => {
     for (const key of ["target_referral_decision", "target_transfer_acceptance", "target_transport_booked"] as const) {
       expect(inboxItemIsActNow(`${INBOX_CATEGORIES[key].idPrefix}WF-001`)).toBe(true);
     }
-    // Decision-target rows are always red, matching the cap.
+    // Decision-target ids stay act-now for the snooze cap (pending warning or overdue danger).
     expect(decisionTargetInboxItems([], NOW, state.configuration)).toEqual([]);
   });
 

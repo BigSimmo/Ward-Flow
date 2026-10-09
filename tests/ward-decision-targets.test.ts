@@ -82,7 +82,19 @@ describe("decision targets through the real event walk", () => {
       overdue: false,
       text: "1h 30m left",
     });
-    expect(decisionTargetInboxItems([movement(state)], NOW + 30, defaults)).toEqual([]);
+    // Pending (not yet overdue) still emits a reachable inbox row so the countdown is visible
+    // when the patient has no other alert.
+    const pending = decisionTargetInboxItems([movement(state)], NOW + 30, defaults);
+    expect(pending).toHaveLength(1);
+    expect(pending[0]).toMatchObject({
+      id: `target-referral-decision-${MOVEMENT}`,
+      tone: "warning",
+      kind: "fact",
+      title: "Referral decision",
+      detail: expect.stringContaining("1h 30m left"),
+      movementId: MOVEMENT,
+      dueAt: NOW + defaults.referralDecisionTargetMinutes,
+    });
   });
 
   it("raises one act-now inbox row once the referral decision is overdue", () => {

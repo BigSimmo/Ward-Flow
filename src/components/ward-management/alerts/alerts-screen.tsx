@@ -1546,15 +1546,48 @@ function AlertsWorkspace() {
             <ul className={styles.rows}>
               {snoozedInbox.map((item) => {
                 const entry = activeSnooze(inboxSnoozes[item.id], now);
+                const movement = movements.find((candidate) => candidate.id === item.movementId);
+                const patientInfo = resolveAlertPatient(
+                  movement,
+                  item.movementId,
+                  patients,
+                  referrals,
+                  movements,
+                  units,
+                );
                 return (
-                  <li key={item.id} className={styles.alertRow} data-tone={item.tone}>
+                  <li
+                    key={item.id}
+                    className={styles.alertRow}
+                    data-tone={item.tone}
+                    data-movement-id={item.movementId}
+                    data-testid={`ward-alerts-snoozed-${item.id}`}
+                  >
                     <StatusGlyph tone="neutral" />
                     <div className={styles.alertContent}>
                       <span className={styles.alertTitleText}>{item.title}</span>
+                      <span className={styles.alertMetaText}>
+                        <strong className={styles.patientName}>{patientInfo.displayName}</strong>
+                        <span aria-hidden="true"> · </span>
+                        <strong className={styles.mono}>{patientInfo.umrn}</strong>
+                        <span aria-hidden="true"> · </span>
+                        <span className={styles.locationTag}>{patientInfo.location}</span>
+                      </span>
                       {entry ? <span className={styles.alertTiming}>{snoozedLine(entry, now)}</span> : null}
                     </div>
                     <span className={styles.ownerCell}>{item.owner}</span>
                     <div className={styles.rowActions}>
+                      <Button
+                        size="sm"
+                        variant="sec"
+                        className={styles.btn}
+                        aria-label={`Open for ${patientInfo.displayName}`}
+                        title={`Open: ${item.title}`}
+                        data-testid={`ward-alerts-snoozed-open-${item.id}`}
+                        onClick={(event) => handleOpenAction(item, event.currentTarget)}
+                      >
+                        Open
+                      </Button>
                       <Button size="sm" className={styles.btn} onClick={() => handleReturn(item)}>
                         Return now
                       </Button>

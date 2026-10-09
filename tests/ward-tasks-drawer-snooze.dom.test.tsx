@@ -82,7 +82,15 @@ describe("tasks drawer: ownership and snooze", () => {
   });
 
   it("moves a snoozed row into the Snoozed section with who and why, and returns it on request", () => {
+    const onSelectMovement = vi.fn();
     const { dispatch, drawer } = renderDrawer({
+      onSelectMovement,
+      records: {
+        movements: seed.movements,
+        patients: seed.patients,
+        referrals: seed.referrals,
+        units: seed.units,
+      },
       snoozes: {
         [red.id]: [
           {
@@ -99,6 +107,11 @@ describe("tasks drawer: ownership and snooze", () => {
     const snoozed = screen.getByTestId("ward-tasks-snoozed");
     expect(snoozed).toHaveTextContent(red.title);
     expect(snoozed).toHaveTextContent(/Back .* · Awaiting call back · Flow coordinator/i);
+    // Patient identity stays on the snoozed row so two patients with the same title are distinct.
+    const snoozedRow = screen.getByTestId(`ward-task-snoozed-${red.id}`);
+    expect(snoozedRow.textContent).toMatch(/UMRN|[A-Za-z].+/);
+    fireEvent.click(screen.getByTestId(`ward-task-snoozed-open-${red.id}`));
+    expect(onSelectMovement).toHaveBeenCalledWith(red.movementId);
     fireEvent.click(screen.getByTestId(`ward-task-unsnooze-${red.id}`));
     expect(dispatch).toHaveBeenCalledWith({
       type: "UNSNOOZE_INBOX_ITEM",

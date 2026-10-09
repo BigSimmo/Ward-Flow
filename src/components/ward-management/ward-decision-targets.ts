@@ -14,9 +14,10 @@ import type { Movement } from "./ward-model";
  * a prototype default, never a clinical, legal or service standard. A step's clock starts at a
  * time the record itself holds and stops when the record shows the step done:
  *
- *   - Referral decision: from `referralDecisionOpenedAt` (every successful `REFER_TO_UNITS` that
- *     adds a ward, including a re-refer) until a ward accepts or every referred ward has answered.
- *     Falls back to `referredAt` on older records. A parallel decline alone does not restart it.
+ *   - Referral decision: from `referralDecisionOpenedAt` when a refer opens a fresh wait (first
+ *     referral, or re-refer after every ward declined or withdrew) until a ward accepts or every
+ *     referred ward has answered. Falls back to `referredAt` on older records. Adding wards while
+ *     others are still live does not restart it.
  *   - Transfer acceptance: from `acceptedAt` (acceptance in principle) until the bed is pulled.
  *   - Transport booked: from the recorded move to `pulled` until a transport job is booked.
  *     A pulled movement recorded as needing no transport has no booking target.
@@ -146,10 +147,12 @@ export function decisionTargetReading(
 }
 
 /**
- * One act-now inbox row per open movement whose decision target has passed. Concatenated onto
- * `buildActionInbox`'s rows by every screen that lists alerts or tasks, so an overdue target shows
- * on Alerts, in Tasks and in browser notifications alike. Callers pass open movements only, the
- * same scoping `buildActionInbox` requires.
+ * One inbox row per open movement with a running decision target. Pending (not yet overdue) rows
+ * are warning tone with the step label and countdown in `detail`; overdue rows are act-now danger
+ * with the overdue title. Concatenated onto `buildActionInbox`'s rows by every screen that lists
+ * alerts or tasks, so a newly referred patient with no other alert still has a reachable countdown
+ * on Alerts and in Tasks. Browser notifications still filter danger only. Callers pass open
+ * movements only, the same scoping `buildActionInbox` requires.
  */
 export function decisionTargetInboxItems(
   movements: readonly Movement[],
@@ -159,16 +162,16 @@ export function decisionTargetInboxItems(
   const items: InboxItem[] = [];
   for (const movement of movements) {
     const reading = decisionTargetReading(movement, now, configuration);
-    if (!reading?.overdue) continue;
+    if (!reading) continue;
     const definition = DECISION_TARGET_STEPS.find((entry) => entry.step === reading.step);
     if (!definition) continue;
     const category = INBOX_CATEGORIES[definition.category];
     items.push({
       id: `${category.idPrefix}${movement.id}`,
       kind: category.kind,
-      tone: "danger",
+      tone: reading.overdue ? "danger" : "warning",
       icon: Timer,
-      title: definition.overdueTitle,
+      title: reading.overdue ? definition.overdueTitle : definition.label,
       detail: `${reading.text} · target ${splitDuration(reading.targetMinutes)}, default set in Settings`,
       owner: definition.owner,
       movementId: movement.id,
