@@ -247,16 +247,20 @@ export function MovementDrawer({
         : `recorded expiry ${formatInstantWithDay(dueAt, now)}`;
 
   const declined = movement.declines.length;
-  const asked = movement.referredUnitIds.length;
-  const wardsAsked = accepted
-    ? asked === 0
-      ? "Accepted"
-      : `${asked}, accepted`
-    : asked === 0
+  const pending = movement.referredUnitIds.length;
+  const askedWardIds = new Set([
+    ...movement.referredUnitIds,
+    ...movement.declines.map((decline) => decline.unitId),
+    ...(movement.acceptedUnitId === undefined ? [] : [movement.acceptedUnitId]),
+  ]);
+  const wardsAsked =
+    askedWardIds.size === 0
       ? "None yet"
-      : declined >= asked
-        ? `${asked}, all declined`
-        : `${asked}, ${declined} declined`;
+      : accepted
+        ? `${askedWardIds.size}, accepted`
+        : pending === 0
+          ? `${askedWardIds.size}, all declined`
+          : `${askedWardIds.size}, ${declined} declined`;
 
   // Only an arrival completes the track. A movement that did not proceed keeps the stage it held.
   const currentStep =
@@ -324,6 +328,7 @@ export function MovementDrawer({
           className={buttonClass({ variant: "sec", size: "sm", iconOnly: true })}
           onClick={onClose}
           aria-label="Close"
+          data-sheet-autofocus="true"
         >
           <X size={14} aria-hidden="true" />
         </button>
