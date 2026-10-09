@@ -10,6 +10,7 @@ import { OverrideRegister } from "@/components/ward-management/override-register
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DeclineEntry, InboxItem, OverrideEntry } from "@/components/ward-management/ward-derivations";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { dischargeHref } from "@/components/ward-management/shell/ward-facade";
 import type { Rejection, Unit } from "@/components/ward-management/ward-model";
 
 import styles from "./home.module.css";
@@ -44,7 +45,11 @@ type ExceptionDrawerProps = {
   open: boolean;
   onToggle: () => void;
   onSelectMovement: (movementId: string) => void;
-  /** Discharge notification rows carry `admissionId` and open the discharges board, not a movement. */
+  /**
+   * Discharge notification rows carry `admissionId` and link to that stay on the discharges board,
+   * not a movement. Called as the link opens, so the caller can close its panel; the link itself
+   * navigates, so the drawer needs no router.
+   */
   onSelectDischarge?: (admissionId: string) => void;
   /** `band`: the desktop strip under the Home hero. `column`: the phone card under the queue. */
   placement?: "band" | "column";
@@ -95,12 +100,6 @@ export function ExceptionDrawer({
   const setActiveTab = onTabChange ?? setOwnTab;
   // Owner, 26 Sept 2026: resolves a silence reminder's bare movement id to the patient's name.
   const resolvePatientIdentity = usePatientOf();
-
-  /** Same routing as the Tasks drawer: discharge notification rows open by admission, not movement. */
-  function openException(item: InboxItem) {
-    if (item.admissionId !== undefined && onSelectDischarge) onSelectDischarge(item.admissionId);
-    else onSelectMovement(item.movementId);
-  }
 
   // Newest first: a coordinator wants to see what just got refused.
   const refusalsNewestFirst = [...rejections].reverse();
@@ -204,32 +203,53 @@ export function ExceptionDrawer({
             <ul className={styles.registerList}>
               {items.map((item) => {
                 const silenceCopy = silenceReminders?.get(item.movementId);
+                const content = (
+                  <>
+                    <span className={styles.registerMain}>
+                      <span className={styles.registerTitle}>{commandInboxTitle(item)}</span>
+                      <span className={styles.registerSub}>
+                        {item.detail} · {item.owner}
+                      </span>
+                      {silenceCopy !== undefined ? (
+                        <span className={styles.registerNote} data-testid={`ward-exception-silence-${item.id}`}>
+                          {silenceCopy}
+                        </span>
+                      ) : null}
+                    </span>
+                    <Badge tone={item.tone === "danger" ? "danger" : "warning"} size="sm" className={styles.noShrink}>
+                      {item.tone === "danger" ? "Act now" : "At risk"}
+                    </Badge>
+                  </>
+                );
+                // Same routing as the Tasks drawer: a discharge notification row opens by admission.
+                const { admissionId } = item;
                 return (
                   <li key={item.id}>
-                    <button
-                      type="button"
-                      data-testid={`ward-exception-${item.id}`}
-                      data-tone={item.tone}
-                      className={styles.registerRow}
-                      onClick={() => {
-                        openException(item);
-                      }}
-                    >
-                      <span className={styles.registerMain}>
-                        <span className={styles.registerTitle}>{commandInboxTitle(item)}</span>
-                        <span className={styles.registerSub}>
-                          {item.detail} · {item.owner}
-                        </span>
-                        {silenceCopy !== undefined ? (
-                          <span className={styles.registerNote} data-testid={`ward-exception-silence-${item.id}`}>
-                            {silenceCopy}
-                          </span>
-                        ) : null}
-                      </span>
-                      <Badge tone={item.tone === "danger" ? "danger" : "warning"} size="sm" className={styles.noShrink}>
-                        {item.tone === "danger" ? "Act now" : "At risk"}
-                      </Badge>
-                    </button>
+                    {admissionId !== undefined ? (
+                      <Link
+                        href={dischargeHref(admissionId)}
+                        data-testid={`ward-exception-${item.id}`}
+                        data-tone={item.tone}
+                        className={styles.registerRow}
+                        onClick={() => {
+                          onSelectDischarge?.(admissionId);
+                        }}
+                      >
+                        {content}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        data-testid={`ward-exception-${item.id}`}
+                        data-tone={item.tone}
+                        className={styles.registerRow}
+                        onClick={() => {
+                          onSelectMovement(item.movementId);
+                        }}
+                      >
+                        {content}
+                      </button>
+                    )}
                   </li>
                 );
               })}

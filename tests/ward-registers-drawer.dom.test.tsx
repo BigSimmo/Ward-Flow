@@ -325,7 +325,9 @@ describe("the coordinator's registers drawer", () => {
         onSelectDischarge={onSelectDischarge}
       />,
     );
-    fireEvent.click(screen.getByTestId("ward-exception-notify-discharge-AD-LEFT-01"));
+    const row = screen.getByTestId("ward-exception-notify-discharge-AD-LEFT-01");
+    expect(row).toHaveAttribute("href", "/mockups/ward-flow/discharges?admissionId=AD-LEFT-01");
+    fireEvent.click(row);
     expect(onSelectDischarge).toHaveBeenCalledWith("AD-LEFT-01");
     expect(onSelectMovement).not.toHaveBeenCalled();
   });
