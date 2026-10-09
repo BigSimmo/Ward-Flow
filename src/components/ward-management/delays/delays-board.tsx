@@ -121,7 +121,9 @@ function subscribeSheetLayout(onChange: () => void): () => void {
   if (typeof window.matchMedia !== "function") return () => undefined;
   const query = window.matchMedia(SHEET_QUERY);
   query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
+  return () => {
+    query.removeEventListener("change", onChange);
+  };
 }
 
 /** True at or below 64rem, where the person's panel is a sheet over the table. */
@@ -581,7 +583,9 @@ function PersonPanel({
           <button
             type="button"
             className={`${styles.btn} ${styles.btnPri}`}
-            onClick={() => onEscalate(movement)}
+            onClick={() => {
+              onEscalate(movement);
+            }}
             data-testid={`delays-escalate-${movement.id}`}
           >
             Escalate to State bed coordination desk
@@ -611,7 +615,14 @@ function RegisterItem({
 }) {
   if (onBoard)
     return (
-      <button type="button" className={styles.brow} onClick={() => onPick(movement.id)} data-testid={testId}>
+      <button
+        type="button"
+        className={styles.brow}
+        onClick={() => {
+          onPick(movement.id);
+        }}
+        data-testid={testId}
+      >
         {children}
       </button>
     );
@@ -872,7 +883,9 @@ function Registers({
                 key={row.movement.id}
                 type="button"
                 className={`${styles.brow} ${styles.browQuiet}`}
-                onClick={() => onPick(row.movement.id)}
+                onClick={() => {
+                  onPick(row.movement.id);
+                }}
               >
                 <span className={styles.browText}>
                   <span className={styles.ell}>{patientOf(row.movement).formalName}</span>
@@ -949,9 +962,12 @@ export function DelaysBoard({
   if (selectedId !== null && selected === null) setSelectedId(null);
   const filtered = hasFilters(filters);
 
-  const set = (patch: Partial<BoardFilters>) => setFilters((current) => ({ ...current, ...patch }));
-  const toggle = <K extends keyof BoardFilters>(key: K, value: BoardFilters[K]) =>
+  const set = (patch: Partial<BoardFilters>) => {
+    setFilters((current) => ({ ...current, ...patch }));
+  };
+  const toggle = <K extends keyof BoardFilters>(key: K, value: BoardFilters[K]) => {
     setFilters((current) => ({ ...current, [key]: current[key] === value ? NO_FILTERS[key] : value }));
+  };
   const isOpenGroup = (cause: DelayCause) => openGroups[cause] ?? OPEN_BY_DEFAULT.includes(cause);
 
   // On a phone or tablet the person's panel is a sheet, so an explicit row choice brings it into view.
@@ -966,7 +982,7 @@ export function DelaysBoard({
     if (!sheet) return;
     // Focus is the shared modal lifecycle's job (useWardModalFocus below); this only scrolls.
     window.requestAnimationFrame(() => {
-      document.getElementById("delays-person-panel")?.scrollIntoView?.({ block: "start" });
+      document.getElementById("delays-person-panel")?.scrollIntoView({ block: "start" });
     });
   }, [selectedId, sheet]);
   const close = useCallback(() => {
@@ -991,7 +1007,7 @@ export function DelaysBoard({
     if (sheet) return;
     window.requestAnimationFrame(() => {
       const button = document.querySelector<HTMLButtonElement>(`[data-testid="delays-select-${id}"]`);
-      button?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+      button?.scrollIntoView({ block: "center", behavior: "smooth" });
       button?.focus({ preventScroll: true });
     });
   };
@@ -1126,7 +1142,9 @@ export function DelaysBoard({
             type="button"
             className={styles.whoBtn}
             aria-expanded={isSelected}
-            onClick={() => select(movement.id)}
+            onClick={() => {
+              select(movement.id);
+            }}
             data-testid={`delays-select-${movement.id}`}
           >
             <b className={styles.ellBlock}>{patient.formalName}</b>
@@ -1359,7 +1377,11 @@ export function DelaysBoard({
               `Over ${H8}`,
               "warning",
               filters.threshold === 1,
-              over8 > 0 || filters.threshold === 1 ? () => toggle("threshold", 1) : undefined,
+              over8 > 0 || filters.threshold === 1
+                ? () => {
+                    toggle("threshold", 1);
+                  }
+                : undefined,
               "delays-stat-over8",
             )}
             {heroStat(
@@ -1367,7 +1389,11 @@ export function DelaysBoard({
               `Over ${H24}`,
               "danger",
               filters.threshold === 3,
-              over24 > 0 || filters.threshold === 3 ? () => toggle("threshold", 3) : undefined,
+              over24 > 0 || filters.threshold === 3
+                ? () => {
+                    toggle("threshold", 3);
+                  }
+                : undefined,
               "delays-stat-over24",
             )}
             {heroStat(
@@ -1647,7 +1673,7 @@ export function DelaysBoard({
             }}
             onPick={reveal}
             onToTable={() => {
-              tableRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+              tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
               tableRef.current?.focus({ preventScroll: true });
             }}
           />
