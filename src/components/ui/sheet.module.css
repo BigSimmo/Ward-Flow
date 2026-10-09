@@ -96,3 +96,9 @@
     outline-color: CanvasText;
   }
 }
+
+/* The dialog takes focus only as a last resort (a sheet with its header hidden). The dialog role
+   announces it, so the container itself draws no ring. */
+.panel:focus:not(:focus-visible) {
+  outline: none;
+}

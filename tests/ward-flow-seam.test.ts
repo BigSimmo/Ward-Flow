@@ -68,6 +68,13 @@ const APPROVED_SHARED_MODULES = new Map([
   ["@/lib/form-register", "shared form registration"],
   ["@/lib/client-store-factory", "shared client-side store helper"],
   [
+    "@/lib/theme-client",
+    "the app's ONE theme switch (design system v8, approved by Josh 9 October 2026). Before v8 the ward " +
+      "kept its own appearance key and set only data-theme while the rest of the app set .dark, so a " +
+      "ward pin rendered the shell in one theme and the page in the other. One owner is the fix, so the " +
+      "ward controls must call it rather than keep a copy.",
+  ],
+  [
     "@/components/ui/missing-value",
     "the shared empty-value renderer, which distinguishes a field that CANNOT apply from one nobody filled in -- arrived with main and is a clinical-meaning distinction, not a convenience",
   ],
@@ -264,7 +271,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // 9 → 10 on 2026-09-23: the same Sheet stack must coordinate custom Ward dialogs.
     // 10 -> 9 on 2026-09-28: the developer-key access gate was removed at Josh's request.
     // 9 -> 10 on 2026-10-07: the v6 design system kit, @/components/wf, approved by Josh.
-    expect(APPROVED_SHARED_MODULES.size).toBe(10);
+    // 10 -> 11 on 2026-10-09: @/lib/theme-client, the one theme switch in design system v8,
+    // approved by Josh. The ward's own appearance key was the defect, so the ward now calls the owner.
+    expect(APPROVED_SHARED_MODULES.size).toBe(11);
     // ⚠️ AND THE MEMBERSHIP, NOT ONLY THE COUNT. A size pin cannot tell a widening from a SWAP:
     // remove one approved module, add another, and the count stays unchanged while Ward Flow's seam
     // has changed — which is the thing this list exists to control. The argument is already made
@@ -283,6 +292,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/components/wf",
       "@/lib/client-store-factory",
       "@/lib/form-register",
+      "@/lib/theme-client",
     ]);
     // 4 -> 6 on 2026-09-12, when the sign-in screen arrived as a SIBLING route
     // (`/mockups/ward-flow-sign-in`) whose path contains this guard's literal as a prefix. Raised

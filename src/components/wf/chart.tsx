@@ -485,7 +485,8 @@ export function Donut({ value, size = 56, thickness = 6, fill = "data-1", text, 
           fill="none"
           stroke={fillVar(fill)}
           strokeWidth={thickness}
-          strokeLinecap="round"
+          // Butt caps: round caps drew a dot at 0% and closed the gap from about 96% (v8, I5).
+          strokeLinecap="butt"
           strokeDasharray={`${c * v} ${c}`}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />

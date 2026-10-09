@@ -1,66 +1,31 @@
-/* v6 tabs (`.tabs`), segmented (`.seg`), hero track (`.trk`) and filter chips. */
+/* v8 pill tabs and segmented: one control, three jobs (page tabs, panel tabs, view toggles).
+   `.tabs` is role=tablist, `.seg` role=radiogroup, `.trk` the same on the hero band. Filter chips are
+   raised pills that press; applied filters are flat pills. Dashed means unavailable (rule 15). */
 
-/* Tabs: ink underline. */
-.tabs {
-  display: flex;
-  gap: var(--wf-s-4);
-  min-width: 0;
-  border-bottom: 1px solid var(--wf-line);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.tab {
-  height: 34px;
-  padding: 0;
-  border: 0;
-  background: none;
-  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
-  color: var(--wf-ink-3);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  white-space: nowrap;
-  flex: 0 0 auto;
-}
-
-.tab:hover {
-  color: var(--wf-ink-1);
-}
-
-.tab[aria-selected="true"] {
-  color: var(--wf-ink-1);
-  font-weight: 600;
-  border-bottom-color: var(--wf-ink-1);
-}
-
-.tab:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
-/* Segmented: the selected item has a 3:1 edge. */
+/* Tabs and segmented share the pill track. v7 retired the underline tab. */
+.tabs,
 .seg {
   display: inline-flex;
-  padding: var(--wf-s-1);
+  align-items: center;
+  padding: 2px;
   gap: 2px;
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  border-radius: var(--wf-r-md);
+  border-radius: var(--wf-r-pill);
   background: var(--wf-track);
   border: 1px solid var(--wf-line);
-  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
+  box-shadow: var(--wf-e-well);
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
+.tab,
 .segItem {
   height: 26px;
-  padding: 0 10px;
+  padding: 0 var(--wf-s-3);
   border: 0;
-  border-radius: var(--wf-r-xs);
+  border-radius: var(--wf-r-pill);
   background: transparent;
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
@@ -70,14 +35,22 @@
   gap: 6px;
   white-space: nowrap;
   min-width: 0;
+  flex: 0 0 auto;
   text-decoration: none;
   transition: background var(--wf-m-base) var(--wf-ease);
 }
 
+.tab {
+  height: 28px;
+  font-size: var(--wf-fs-13);
+}
+
+.tab:hover,
 .segItem:hover {
   color: var(--wf-ink-1);
 }
 
+.tab[aria-selected="true"],
 .segOn {
   background: var(--wf-surface);
   color: var(--wf-ink-1);
@@ -88,14 +61,33 @@
     0 0 0 1px var(--wf-line-ctl);
 }
 
-.unavailable .segItem {
-  cursor: default;
-  opacity: 0.6;
+/* Counts inside a pill item sit flat, a step smaller than a free count. */
+.tab .k,
+.segItem .k {
+  height: 18px;
+  min-width: 18px;
+  background: transparent;
 }
 
+/* The ring sits inside the item, because the track scrolls and would clip an outer ring. */
+.tab:focus-visible,
 .segItem:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
+  outline-offset: -2px;
+}
+
+.unavailable {
+  border: 1px dashed var(--wf-line-3);
+  box-shadow: none;
+}
+
+.unavailable .segItem {
+  cursor: not-allowed;
+  color: var(--wf-ink-off);
+}
+
+.unavailable .segOn {
+  box-shadow: 0 0 0 1px var(--wf-line-3);
 }
 
 .md .segItem {
@@ -103,22 +95,22 @@
   font-size: var(--wf-fs-13);
 }
 
-/* Hero track: the dark segmented control on the hero band. */
+/* Hero track: the same pill control on the hero band. */
 .trk {
   display: inline-flex;
-  padding: var(--wf-s-1);
+  padding: 2px;
   gap: 2px;
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  border-radius: var(--wf-r-md);
-  background: color-mix(in srgb, var(--wf-hero-edge) 60%, transparent);
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-on-hero-track);
+  border: 1px solid var(--wf-on-hero-fill);
 }
 
 .trk .segItem {
   border: 1px solid transparent;
-  color: var(--wf-hero-ink-2);
+  color: var(--wf-on-hero-ink);
   font-size: var(--wf-fs-13);
 }
 
@@ -127,24 +119,28 @@
 }
 
 .trk .segOn {
-  background: var(--wf-hero-ink);
-  border-color: var(--wf-hero-ink);
+  background: var(--wf-light-1);
+  border-color: var(--wf-light-1);
   color: var(--wf-hero-2);
   font-weight: 600;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-hero-edge) 80%, transparent);
+  box-shadow: var(--wf-e-on-hero-press);
+}
+
+.trk .segItem:focus-visible {
+  outline-color: var(--wf-light-1);
 }
 
 .trk .k {
-  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
   color: var(--wf-hero-ink);
+  border-color: var(--wf-on-hero-line);
 }
 
 .trk .segOn .k {
-  background: color-mix(in srgb, var(--wf-hero-2) 10%, transparent);
   color: var(--wf-hero-2);
+  border-color: color-mix(in srgb, var(--wf-hero-2) 24%, transparent);
 }
 
-/* Filter chips. */
+/* Filter chips: raised pills that press, count inside. On is an accent edge and a heavier label. */
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -157,12 +153,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: var(--wf-h-sm);
-  padding: 0 10px;
+  height: 28px;
+  padding: 0 10px 0 var(--wf-s-3);
   box-sizing: border-box;
-  border-radius: var(--wf-r-md);
+  border-radius: var(--wf-r-pill);
   border: 1px solid var(--wf-line-2);
-  background: var(--wf-surface);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  box-shadow: var(--wf-e-raise);
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
   white-space: nowrap;
@@ -178,15 +175,22 @@
 .chip[aria-pressed="true"] {
   color: var(--wf-ink-1);
   font-weight: 600;
-  border-color: var(--wf-line-ctl);
-  box-shadow:
-    inset 0 1px 0 var(--wf-hl),
-    0 1px 2px color-mix(in srgb, var(--wf-ink-1) 10%, transparent);
+  border-color: var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+
+.chip .k {
+  height: 18px;
+  min-width: 18px;
 }
 
 .unavailableChip {
-  cursor: default;
-  opacity: 0.65;
+  cursor: not-allowed;
+  color: var(--wf-ink-off);
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--wf-line-3);
+  box-shadow: none;
 }
 
 .chip:focus-visible,
@@ -201,15 +205,15 @@
   text-overflow: ellipsis;
 }
 
-/* Applied filter: label plus a remove button. */
+/* Applied filter: a flat pill with a round remove button. */
 .applied {
   display: inline-flex;
   align-items: center;
   gap: 2px;
   height: var(--wf-h-chip);
-  padding: 0 2px 0 8px;
+  padding: 0 2px 0 10px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-xs);
+  border-radius: var(--wf-r-pill);
   border: 1px solid var(--wf-line-2);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
@@ -225,7 +229,7 @@
   height: 18px;
   padding: 0;
   border: 0;
-  border-radius: var(--wf-r-xs);
+  border-radius: 50%;
   background: transparent;
   color: var(--wf-ink-3);
   cursor: pointer;
@@ -243,11 +247,10 @@
 
 @media (pointer: coarse) {
   .segItem,
-  .trk .segItem {
+  .trk .segItem,
+  .tab,
+  .chip {
     height: 36px;
-  }
-  .tab {
-    height: 44px;
   }
 }
 
@@ -269,33 +272,38 @@
     overscroll-behavior-x: contain;
     scrollbar-width: none;
   }
-  .tab {
-    height: 2.75rem;
-  }
   .seg::-webkit-scrollbar,
   .trk::-webkit-scrollbar,
   .tabs::-webkit-scrollbar {
     display: none;
   }
-  .segItem {
+  .segItem,
+  .tab {
     flex: 0 0 auto;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .tab,
   .segItem {
     transition: none;
   }
 }
 
 @media (forced-colors: active) {
+  /* Selection is drawn with box shadows, which forced colours removes, so it gets a real edge. */
   .segOn,
   .trk .segOn,
-  .chip[aria-pressed="true"] {
-    outline: 2px solid Highlight;
-  }
   .tab[aria-selected="true"] {
-    border-bottom-color: Highlight;
+    border: 2px solid Highlight;
+  }
+  .chip[aria-pressed="true"] {
+    border: 2px solid Highlight;
+  }
+  .unavailable,
+  .unavailableChip {
+    border-style: dashed;
+    color: GrayText;
   }
   .tab:focus-visible,
   .segItem:focus-visible,

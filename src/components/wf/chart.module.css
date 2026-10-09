@@ -36,7 +36,7 @@
   position: absolute;
   top: 0;
   transform: translateX(-50%);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   color: var(--wf-ink-3);
   white-space: nowrap;
 }
@@ -45,7 +45,7 @@
   position: absolute;
   bottom: 0;
   transform: translateX(-50%);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-ink-2);
   white-space: nowrap;
 }
@@ -194,8 +194,8 @@
   flex: 1 1 0;
   min-width: 0;
   text-align: center;
-  font-size: var(--wf-fs-11);
-  line-height: var(--wf-lh-11);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
   color: var(--wf-ink-3);
   white-space: nowrap;
   overflow: hidden;
@@ -223,8 +223,8 @@
   position: absolute;
   right: 0;
   bottom: 2px;
-  font-size: var(--wf-fs-11);
-  line-height: var(--wf-lh-11);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
   color: var(--wf-ink-2);
   white-space: nowrap;
   background: var(--wf-surface);
@@ -238,7 +238,7 @@
 }
 
 .svgText {
-  font: 500 var(--wf-fs-11) var(--wf-mono);
+  font: 500 var(--wf-fs-12) var(--wf-mono);
   fill: var(--wf-ink-3);
 }
 

@@ -54,7 +54,7 @@
 }
 
 .time {
-  font: 500 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
   font-feature-settings:
     "zero" 1,
     "tnum" 1;
@@ -98,7 +98,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font: 600 var(--wf-fs-11) / 1 var(--wf-font);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
   background: var(--wf-accent-tint);
   color: var(--wf-accent-ink);
   box-shadow: 0 0 0 2px var(--wf-surface);
@@ -114,7 +114,7 @@
 
 .me {
   background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
-  color: var(--wf-on-accent);
+  color: var(--wf-on-pri);
 }
 
 .online {

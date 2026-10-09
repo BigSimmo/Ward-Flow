@@ -45,7 +45,7 @@
 
 /* Header cell (`.th`). */
 .th {
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--wf-ink-3);
@@ -80,25 +80,28 @@
   border-radius: 2px;
 }
 
-/* Tier digit tile (`.sq`). Tier 1 has danger ink and a stronger edge, never a fill. */
+/* Tier (`.sq`): a flat T-digit pill, so it never reads as a count. Tier 1 is bold with a darker
+   edge, never red: red means act now, and tier is a rank, not an alarm. */
 .sq {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
+  height: var(--wf-count);
+  min-width: 28px;
+  flex: 0 0 auto;
+  padding: 0 6px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-xs);
+  border-radius: var(--wf-r-pill);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--wf-surface-2);
-  border: 1px solid var(--wf-line-2);
+  letter-spacing: 0.02em;
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-3);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   color: var(--wf-ink-2);
 }
 
 .t1 {
-  color: var(--wf-danger-ink);
-  border-color: var(--wf-line-3);
+  color: var(--wf-ink-1);
+  border: 1.5px solid var(--wf-ink-2);
 }
 
 /* Bulk bar under a table. */
@@ -134,7 +137,7 @@
   height: 36px;
   padding: 0 var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--wf-ink-3);

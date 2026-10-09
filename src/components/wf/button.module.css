@@ -1,4 +1,4 @@
-/* v6 buttons (`.b`). Tokens only. One primary per area. */
+/* v8 buttons (`.b`): pills. Tokens only. One primary per area. */
 
 .b {
   position: relative;
@@ -8,9 +8,9 @@
   gap: 6px;
   height: var(--wf-h-md);
   min-width: 0;
-  padding: 0 12px;
+  padding: 0 14px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-md);
+  border-radius: var(--wf-r-pill);
   font: 600 var(--wf-fs-13) / 1 var(--wf-font);
   white-space: nowrap;
   cursor: pointer;
@@ -41,14 +41,13 @@
 
 .sm {
   height: var(--wf-h-sm);
-  padding: 0 10px;
-  border-radius: var(--wf-r-sm);
+  padding: 0 var(--wf-s-3);
   font-size: var(--wf-fs-12);
 }
 
 .lg {
   height: var(--wf-h-lg);
-  padding: 0 16px;
+  padding: 0 18px;
   font-size: var(--wf-fs-14);
 }
 
@@ -67,11 +66,11 @@
 
 /* Primary: deep slate. One per area. */
 .pri {
-  color: var(--wf-on-accent);
+  color: var(--wf-on-pri);
   background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
   border-color: var(--wf-pri-edge);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--wf-on-pri) 18%, transparent),
     0 1px 2px color-mix(in srgb, var(--wf-hero-2) 22%, transparent),
     0 4px 10px -6px color-mix(in srgb, var(--wf-hero-2) 45%, transparent);
 }
@@ -200,18 +199,20 @@
 }
 
 .pri .kbd {
-  background: color-mix(in srgb, var(--wf-on-accent) 14%, transparent);
-  border-color: color-mix(in srgb, var(--wf-on-accent) 24%, transparent);
-  color: var(--wf-on-accent);
+  background: color-mix(in srgb, var(--wf-on-pri) 14%, transparent);
+  border-color: color-mix(in srgb, var(--wf-on-pri) 24%, transparent);
+  color: var(--wf-on-pri);
 }
 
 .pri .count {
-  background: color-mix(in srgb, var(--wf-on-accent) 16%, transparent);
-  color: var(--wf-on-accent);
+  background: color-mix(in srgb, var(--wf-on-pri) 16%, transparent);
+  border-color: transparent;
+  color: var(--wf-on-pri);
 }
 
 .onHero .count {
   background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+  border-color: transparent;
   color: var(--wf-hero-ink);
 }
 
@@ -264,7 +265,7 @@
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   border-left-width: 0;
-  width: 32px;
+  width: 34px;
   padding: 0;
 }
 

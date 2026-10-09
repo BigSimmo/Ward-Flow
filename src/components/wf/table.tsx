@@ -136,8 +136,10 @@ export function SortHeader({
 export function TierTile({ tier, label = "Tier", className }: { tier: number; label?: string; className?: string }) {
   return (
     <span className={cx(styles.sq, tier === 1 && styles.t1, className)}>
-      <SrOnly>{label} </SrOnly>
-      {tier}
+      <SrOnly>
+        {label} {tier}
+      </SrOnly>
+      <span aria-hidden="true">T{tier}</span>
     </span>
   );
 }

@@ -44,7 +44,15 @@ export function Tooltip({
   disabled = false,
 }: TooltipProps) {
   const id = useId();
-  const [open, setOpen] = useState(false);
+  // Open while the trigger is hovered or focused, while the pointer is on the tip itself, and for a
+  // short grace period after the pointer leaves, so it can cross onto the tip (hoverable, WCAG
+  // 1.4.13). Escape dismisses it until the next hover or focus (dismissible, WCAG 1.4.13).
+  const [hoverTrigger, setHoverTrigger] = useState(false);
+  const [hoverTip, setHoverTip] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [linger, setLinger] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const open = !dismissed && (focused || hoverTrigger || hoverTip || linger);
   const visibleOpen = open && !disabled;
   const [position, setPosition] = useState<Position>({ left: 0, top: 0, placement });
   // Keep the first paint invisible until geometry is measured so the tooltip never
@@ -59,6 +67,27 @@ export function Tooltip({
   }
   const triggerWrapRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!linger) return;
+    const timer = setTimeout(() => setLinger(false), 120);
+    return () => clearTimeout(timer);
+  }, [linger, hoverTrigger, hoverTip]);
+
+  // Dismissible (WCAG 1.4.13): Escape closes an open tip however it was opened, hover or focus, and
+  // closes only the tip. The listener sits on the document in the bubble phase: the trigger's own
+  // handlers run first, then this stops the event before a Sheet's window listener, which used to
+  // close the whole drawer around a disabled-reason tip (design system v8, contract I3).
+  useEffect(() => {
+    if (!visibleOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      setLinger(false);
+      setDismissed(true);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [visibleOpen]);
 
   const updatePosition = useCallback(() => {
     const trigger = triggerWrapRef.current;
@@ -144,13 +173,22 @@ export function Tooltip({
 
   const trigger = cloneElement(children, {
     "aria-describedby": describedBy,
-    onMouseEnter: compose(() => setOpen(true), childProps.onMouseEnter),
-    onMouseLeave: compose(() => setOpen(false), childProps.onMouseLeave),
-    onFocus: compose(() => setOpen(true), childProps.onFocus),
-    onBlur: compose(() => setOpen(false), childProps.onBlur),
-    onKeyDown: compose((event: React.KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    }, childProps.onKeyDown),
+    onMouseEnter: compose(() => {
+      setDismissed(false);
+      setHoverTrigger(true);
+    }, childProps.onMouseEnter),
+    onMouseLeave: compose(() => {
+      setHoverTrigger(false);
+      setLinger(true);
+    }, childProps.onMouseLeave),
+    onFocus: compose(() => {
+      setDismissed(false);
+      setFocused(true);
+    }, childProps.onFocus),
+    onBlur: compose(() => {
+      setFocused(false);
+      setLinger(false);
+    }, childProps.onBlur),
   });
 
   return (
@@ -166,6 +204,11 @@ export function Tooltip({
             aria-label={presentationOnly ? undefined : content}
             data-testid="tooltip"
             data-placement={position.placement}
+            onMouseEnter={() => setHoverTip(true)}
+            onMouseLeave={() => {
+              setHoverTip(false);
+              setLinger(true);
+            }}
             style={{
               position: "fixed",
               left: position.left,

@@ -43,7 +43,7 @@
 }
 
 .eyebrow {
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--wf-hero-ink-3);
@@ -193,7 +193,7 @@
   box-sizing: border-box;
   border-radius: 50%;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
 .done .stepMark {
@@ -324,9 +324,10 @@
   gap: 2px;
   margin: calc(-1 * var(--wf-s-1)) calc(-1 * var(--wf-s-2));
   padding: var(--wf-s-1) var(--wf-s-2);
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
-  border-radius: var(--wf-r-md);
-  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-on-hero-fill);
+  box-shadow: var(--wf-e-on-hero);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -337,13 +338,26 @@
   background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
 }
 
+/* Pressed: a white pill, so tones return to their day values and glyphs keep 3:1 (v7 E1). */
 .statToggle[aria-expanded="true"] {
-  border-color: color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
-  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  --wf-danger: var(--wf-light-danger);
+  --wf-warning: var(--wf-light-warning);
+  --wf-success: var(--wf-light-success);
+  --wf-info: var(--wf-light-info);
+  --wf-neutral: var(--wf-light-neutral);
+  border-color: var(--wf-light-1);
+  background: var(--wf-light-1);
+  box-shadow: var(--wf-e-on-hero-press);
+}
+
+.statToggle[aria-expanded="true"] .value,
+.statToggle[aria-expanded="true"] .label,
+.statToggle[aria-expanded="true"] .trend {
+  color: var(--wf-hero-2);
 }
 
 .statToggle:focus-visible {
-  outline: 2px solid var(--wf-hero-ink);
+  outline: 2px solid var(--wf-light-1);
   outline-offset: 2px;
 }
 
@@ -370,7 +384,8 @@
 
 .inline .statToggle {
   margin: 0;
-  height: var(--wf-h-sm);
+  height: auto;
+  min-height: var(--wf-h-md);
   padding: 0 var(--wf-s-3);
   border-radius: var(--wf-r-pill);
 }

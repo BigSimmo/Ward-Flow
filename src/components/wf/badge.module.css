@@ -1,15 +1,15 @@
-/* v6 badge (`.bd`): neutral body, coloured glyph. The text carries the meaning. */
+/* v8 badge (`.bd`): a flat pill that labels. Neutral body, coloured glyph. The text carries the meaning. */
 
 .bd {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   height: var(--wf-h-chip);
   max-width: 100%;
   min-width: 0;
-  padding: 0 8px 0 7px;
+  padding: 0 10px 0 8px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-xs);
+  border-radius: var(--wf-r-pill);
   font: 600 var(--wf-fs-12) / 1 var(--wf-font);
   white-space: nowrap;
   color: var(--wf-ink-1);
@@ -33,8 +33,7 @@
 
 .sm {
   height: 20px;
-  font-size: var(--wf-fs-11);
-  padding: 0 6px;
+  padding: 0 var(--wf-s-2);
 }
 
 /* In table rows and running text the chip drops away. */
@@ -54,10 +53,10 @@
 }
 
 .solid {
-  color: var(--wf-on-accent);
+  color: var(--wf-on-pri);
   background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
   border-color: var(--wf-pri-edge);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-on-pri) 18%, transparent);
 }
 
 .onHero {
@@ -81,7 +80,7 @@
 .solid .n,
 .onHero .n {
   color: inherit;
-  border-left-color: color-mix(in srgb, var(--wf-on-accent) 28%, transparent);
+  border-left-color: color-mix(in srgb, var(--wf-on-pri) 28%, transparent);
 }
 
 @media (forced-colors: active) {

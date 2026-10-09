@@ -1,4 +1,4 @@
-/* Shared small v6 pieces: icon, screen-reader text, Kbd, counts, divider, inset, spinner, tile. */
+/* Shared small v8 pieces: icon, screen-reader text, Kbd, counts, divider, inset, spinner, tile. */
 
 .icon {
   flex: 0 0 auto;
@@ -21,11 +21,11 @@
 .kbd {
   display: inline-flex;
   align-items: center;
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   font-feature-settings:
     "zero" 1,
     "tnum" 1;
-  padding: 3px 5px;
+  padding: 2px 6px;
   border-radius: var(--wf-r-xs);
   border: 1px solid var(--wf-line-2);
   background: var(--wf-surface-2);
@@ -33,18 +33,20 @@
   white-space: nowrap;
 }
 
-/* `.k` count: rounded square, mono, inside tabs, segments and buttons. */
+/* `.k` count: a circle (a pill from two digits), mono, always neutral. Status sits in the glyph
+   beside the label, never in the count's colour. 0 shows as 0. */
 .count {
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   font-feature-settings:
     "zero" 1,
     "tnum" 1;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
+  min-width: var(--wf-count);
+  height: var(--wf-count);
+  padding: 0 6px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-xs);
-  background: var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-2);
   color: var(--wf-ink-2);
   display: inline-flex;
   align-items: center;
@@ -97,13 +99,13 @@
   animation: wfSpinLocal 0.8s linear infinite;
 }
 
-/* Neutral icon tile for card heads. Line icon, never a coloured fill. */
+/* Neutral icon tile for card heads: a circle with a line icon, never a coloured fill. */
 .tile {
   width: 30px;
   height: 30px;
   flex: 0 0 30px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-sm);
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;

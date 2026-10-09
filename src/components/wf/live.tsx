@@ -60,7 +60,9 @@ export function LiveChip({ state, age, asAt, onHero = false, onTogglePause, clas
           size="sm"
           iconOnly
           icon={paused ? Play : Pause}
-          aria-label={paused ? "Resume live updates" : "Pause live updates"}
+          // One name with aria-pressed: "Pause live updates, pressed" means paused. Swapping the name
+          // as well read as "Resume live updates, pressed", which contradicts itself (v8, I1).
+          aria-label="Pause live updates"
           aria-pressed={paused}
           className={styles.pause}
           onClick={onTogglePause}

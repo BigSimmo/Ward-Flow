@@ -11,7 +11,7 @@ import {
   type RefObject,
 } from "react";
 import { Check, type LucideIcon } from "lucide-react";
-import { cx } from "./cx";
+import { cx, present } from "./cx";
 import { Icon } from "./icon";
 import { Kbd } from "./primitives";
 import styles from "./overlay.module.css";
@@ -233,7 +233,7 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
                 ) : null}
                 {item.icon ? <Icon icon={item.icon} size={16} className={styles.itemIcon} /> : null}
                 <span className={styles.itemLabel}>{item.label}</span>
-                {item.meta ? <span className={styles.itemMeta}>{item.meta}</span> : null}
+                {present(item.meta) ? <span className={styles.itemMeta}>{item.meta}</span> : null}
                 {item.kbd ? <Kbd>{item.kbd}</Kbd> : null}
               </button>
             );

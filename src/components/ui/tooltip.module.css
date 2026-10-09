@@ -1,24 +1,17 @@
-/* v6 tooltip (`.tip`): small ink bubble. Dark on day, raised slate on night. Tokens only. */
+/* v8 tooltip (`.tip`): a small ink bubble. Its day and night looks come from the --wf-tip-* tokens,
+   so it follows the one theme switch. It is hoverable (WCAG 1.4.13): the pointer may move onto it. */
 .tip {
-  pointer-events: none;
   width: max-content;
   max-width: 220px;
   box-sizing: border-box;
-  padding: 6px 9px;
+  padding: 6px 10px;
   border-radius: var(--wf-r-sm);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  color: var(--wf-surface);
-  background: color-mix(in srgb, var(--wf-ink-1) 92%, transparent);
-  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--wf-ink-1) 45%, transparent);
-}
-
-:global(html.dark) .tip,
-:global(.night) .tip {
-  color: var(--wf-ink-1);
-  background: color-mix(in srgb, var(--wf-track) 97%, transparent);
+  color: var(--wf-tip-ink);
+  background: var(--wf-tip-bg);
   box-shadow:
-    0 0 0 1px var(--wf-line-2),
-    0 8px 20px -6px color-mix(in srgb, var(--wf-canvas) 60%, transparent);
+    0 0 0 1px var(--wf-tip-ring),
+    var(--wf-e-tip);
 }
 
 @media (forced-colors: active) {

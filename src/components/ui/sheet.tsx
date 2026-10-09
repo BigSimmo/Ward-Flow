@@ -262,10 +262,13 @@ export function Sheet({
       // The close button is only a fallback: the controller upgrades to a
       // deferred `data-sheet-autofocus` child (lazy DocumentDrawer Find field /
       // UtilityDrawer) as soon as it mounts.
+      // A sheet with its header hidden has no close button, so the dialog itself is the last
+      // fallback: focus always enters the sheet (design system v8, contract I4).
       resolveTarget: () =>
         initialFocusRef?.current ??
         panelRef.current?.querySelector<HTMLElement>('[data-sheet-autofocus="true"]') ??
-        closeRef.current,
+        closeRef.current ??
+        panelRef.current,
     });
 
     function onKeyDown(event: KeyboardEvent) {
@@ -334,7 +337,16 @@ export function Sheet({
         window.clearTimeout(restoreTimers.timeout);
         restoreTimers.timeout = null;
       }
-      if (unmountingRef.current) return;
+      if (unmountingRef.current) {
+        // Removed while open (a drawer rendered only while it has a record). The timers above are
+        // cancelled and nothing would run them, so restore now, synchronously, and only when focus
+        // was lost with the panel. A click that moved focus somewhere real keeps it there.
+        if (typeof document === "undefined") return;
+        const active = document.activeElement;
+        if (active && active !== document.body && active.isConnected) return;
+        resolveConnectedRestoreTarget()?.focus({ preventScroll: true });
+        return;
+      }
       // Focus restore is best-effort. Under Vitest coverage workers the jsdom
       // `document` can be torn down before this rAF/setTimeout pair fires; bare
       // `document` access then becomes an unhandled ReferenceError that fails
@@ -433,6 +445,7 @@ export function Sheet({
         data-mobile-header-safe-area={resolvedMobileHeaderSafeArea}
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         aria-labelledby={resolvedLabelledBy}
         aria-label={resolvedAriaLabel}
         aria-describedby={description || descriptionContent ? descId : undefined}
