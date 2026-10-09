@@ -4,6 +4,8 @@ Synthetic prototype, not a medical device. v8 builds on v7.1 (`../v7/`, kept unc
 
 **Status.** This is the standard, not the build. Nothing in `src/` changes until Josh says build. When he does, the sheet is ported into `src/components/wf` CSS Modules and React components, per the 5 October React direction in `AGENTS.md`. The board is the reference drawing, not a second UI.
 
+**v8.1 (9 October 2026).** Josh found the system was making pages boring and alike. Thirteen of the sixteen rules only took things away, and every audit scored compliance, so pages lost their colour, focus and character. v8.1 adds rules 17 to 21 and amends rules 3, 6 and 16 so that each page can have a focal element, spend a small colour budget and carry a part of its own. Section 14 explains each change. Josh chose this on 9 October after an expression test of the Ward page drawn both ways.
+
 **How v8 was made.** v7.1 was checked against the app source at `main` `a9330ed`, the 9 October code audit of the token layers, the `ui/` and `wf/` libraries, feature CSS and theme switching, and the owner rulings. Every contrast figure below was computed on the token values with the WCAG 2.2 formula, alpha composited onto the real surface.
 
 ## 1. What v8 changes
@@ -71,14 +73,14 @@ Everything else in v7.1 carries over unchanged: the rules, the status glyphs, ra
 | J4  | Gates that never run       | `check:type-scale` claims `verify:cheap` but is not wired. `drift-ratchet.json` names a script that does not exist. `GATES.md` cites a missing baseline                                                    | Six per-file ratchets in `npm test` (section 10)                            |
 | J5  | Docs describe PsychSift    | `docs/design-system` is titled PsychSift, names `ckb-v2` and documents components that do not exist                                                                                                        | This spec is the Ward standard. The old set gets an archive banner at build |
 
-## 3. Rules (16)
+## 3. Rules (21)
 
 1. **Calm and dense.** Space between parts is 4, 8, 12 or 16. Inside a control, insets may step by 2.
 2. **Every surface has an edge.** Hairline first, light shadows. _(Amended)_ 3:1 wherever the edge is the only cue: inputs, checkboxes, radios, switch tracks and the selected state. A labelled button's edge is decoration.
-3. **Glass for chrome only.** Bars, menus, toasts, sheets and the palette. Never data. Phone bars are solid.
+3. **Glass for chrome, plus one panel.** Bars, menus, toasts, sheets and the palette. _(v8.1)_ One floating panel in the page body may also be glass, such as the side panel that swaps to the clicked item. Never a table, row or data cell. Phone bars are solid.
 4. **One hero band per page.** Slate while anything is live, quiet when nothing is.
 5. **One primary per area.**
-6. **Colour is a dot or glyph.** Never a card fill. Fit and hold tints only inside data. _(Amended)_ Words take the `-ink` partner, never the tone itself.
+6. **Colour has a budget.** _(v8.1)_ A dot or glyph by default. Each screen may also tint the items in three states only: act now, a fit or free place, and a hold, using `.tinted` with `.tint-act`, `.tint-fit` or `.tint-hold`. Tint the item that carries the state, such as a bed, card or row, never a whole panel. When more than six items qualify, tint act now only and leave the rest as glyphs. The key figure's panel in the hero is not part of the budget. _(Amended)_ Words take the `-ink` partner, never the tone itself.
 7. **Shape carries status.** One shape per tone everywhere.
 8. **Signal, not explanation.** Titles 5 words at most, actions 6.
 9. **Live and honest.** Values show their age. Stale or offline is marked on the value.
@@ -88,7 +90,12 @@ Everything else in v7.1 carries over unchanged: the rules, the status glyphs, ra
 13. **Shape tells you what it does.** Raised pills press, flat pills label, circles count.
 14. **Mono is for figures.** Numbers, ids, clock times.
 15. **Dashed means unavailable.** On controls and surfaces. Chart guides are exempt.
-16. **Twelve is the floor.** _(New)_ No word, count or label under 12px. Uppercase is a treatment at 12, never a licence to go smaller.
+16. **Twelve is the floor, not the scale.** _(New)_ No word, count or label under 12px. Uppercase is a treatment at 12, never a licence to go smaller. _(v8.1)_ The floor never sets the scale: page titles are 28, section titles 16 to 20, and the key figure is 40.
+17. **Every page has a focal element.** _(v8.1)_ It answers the page's question. It gets the most space and the page's strongest colour, and the key figure sits on it or in the hero directly above it (rule 18). Everything else supports it.
+18. **One key figure per screen.** _(v8.1)_ `.keyfig` at 40px, on the focal element or in the hero. It is the number that says what to do now.
+19. **Every page has a part of its own.** _(v8.1)_ One component built for that page from these tokens, such as the shift runway on the Ward page. The hero carries page-specific actions and facts, never a generic header. Page anatomy (hero, core with side panel) is a default, not a template.
+20. **Phone is its own design.** _(v8.1)_ Draw it at 390 by 844 for the job on the move: a priority list, cards with their one action, bottom sheets, a sticky bottom bar and a segmented control. The first screen shows the work. Phone never reflows the desktop and never changes it.
+21. **Every never needs a do.** _(v8.1)_ A rule or review that removes emphasis says what carries it instead. Reviews judge the task first: can the user answer the page's question in 5 seconds? Token compliance comes second.
 
 Voice is unchanged: Australian English, sentence case, verbs first, 24 hour time, digits.
 
@@ -136,6 +143,8 @@ Voice is unchanged: Australian English, sentence case, verbs first, 24 hour time
 | Breakpoints     | `--wf-bp-phone` 40rem, `--wf-bp-narrow` 48rem, `--wf-bp-wide` 64rem                                              | Media queries cannot read custom properties. These record the only widths allowed, written `(width <= 48rem)`. 48rem is the component phone rule. 40 and 64 are for layout only                                            |
 | Row             | `--wf-row-group` 40px                                                                                            | Grouped table headers                                                                                                                                                                                                      |
 | Control shadows | `--wf-e-pri`, `-pri-press`, `-hero`, `-on-hero`, `-on-hero-press`, `-light`, `-well`, `-knob`, `-tip`, `-bar`    | v7 left 13 raw shadows in rules                                                                                                                                                                                            |
+| Key figure      | `--wf-fs-40`, `--wf-lh-40` (v8.1)                                                                                | One per screen, `.keyfig` only (rule 18)                                                                                                                                                                                   |
+| Act now tint    | `--wf-act-tint`, `--wf-act-edge` (v8.1)                                                                          | With the existing fit and hold tints, the colour budget (rule 6). Used through `.tinted` with `.tint-act`, `.tint-fit` or `.tint-hold`. On the live hero, the act tint darkens over slate instead                          |
 | Theme parts     | `--wf-rim-1` to `-3`, `--wf-sheen-top`, `--wf-glow-1`, `-2`, `--wf-sh-*`, `--wf-ring-*`, `--wf-press`            | Internal. Components read `--wf-e1`, `--wf-glass-rim` and so on, never these                                                                                                                                               |
 
 ## 6. Contrast (v8 values)
@@ -160,9 +169,13 @@ Voice is unchanged: Australian English, sentence case, verbs first, 24 hour time
 | Pressed hero glyph (warning, the lowest)        | 4.1           | 4.1           | 3     |
 | Hero meta on slate                              | 5.9           | 5.9           | 4.5   |
 | Tooltip text                                    | 13.3          | 10.5          | 4.5   |
+| Danger words on act tint (v8.1)                 | 6.3           | 7.0           | 4.5   |
+| Success words on fit tint (v8.1)                | 6.3           | 8.2           | 4.5   |
+| Warning words on hold tint (v8.1)               | 6.1           | 8.8           | 4.5   |
+| Meta text on any v8.1 tint                      | 5.2           | 5.3           | 4.5   |
 | Service dots (lowest: CAHS day, east day)       | 4.8           | 6.4           | 3     |
 
-Disabled ink (`--wf-ink-off`, 3.3 day, 3.8 night) is exempt under WCAG 1.4.3 and is kept above 3:1 anyway. Fit and hold edges (1.5:1) are decoration: the tick, circle and words carry the state.
+Disabled ink (`--wf-ink-off`, 3.3 day, 3.8 night) is exempt under WCAG 1.4.3 and is kept above 3:1 anyway. Fit, hold and act edges (1.5 to 2.9:1) are decoration: the tick, circle and words carry the state.
 
 ## 7. Status glyphs and tone
 
@@ -213,26 +226,26 @@ New in v8: `.tone-*` colours a glyph or mark. `.ink-*` colours words. In high co
 
 **Aliases hold no values.** All legacy names are aliased in one file. Each line is `--old: var(--wf-role)`, with no literal value. Because the `--wf-` role already carries both themes, an alias cannot miss a theme or point at itself (G8). A test forbids literals and cycles in that file.
 
-| Legacy                                                           | v8 role                                                                            | Visible change                             |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------ |
-| `--ink`, `--ward-text`, `--ward-heading`, `--text`               | `--wf-ink-1`                                                                       | None                                       |
-| `--ink-soft`                                                     | `--wf-ink-2`                                                                       | None                                       |
-| `--muted`, `--text-muted`, `--ward-muted`, `--ink3`              | `--wf-ink-3`                                                                       | Slightly darker (`#5f6873` to `#5b646f`)   |
-| `--line`, `--border`                                             | `--wf-line`                                                                        | Lighter hairline (0.11 to 0.08 alpha)      |
-| `--line-strong`, `--ward-border`, `--ward-divider`               | `--wf-line-3`                                                                      | None for `--line-strong`                   |
-| `--surface`, `--surface-2`, `--sunk`                             | `--wf-surface`, `--wf-surface-2`, `--wf-track`                                     | Small                                      |
-| `--accent`, `--accent-ink`, `--accent-soft`                      | `--wf-accent`, `--wf-accent-ink`, `--wf-accent-tint`                               | Small                                      |
-| `--danger`, `--warn`, `--good`                                   | Tone when it colours a glyph or edge. `-ink` when it colours words. Check each use | Yes, per use                               |
-| `--danger-soft`, `--warn-soft`, `--good-soft`                    | `--wf-fit-tint` or `--wf-hold-tint` inside data. Card fills are removed (rule 6)   | Yes                                        |
-| `--lift`, `--ward-shadow`                                        | `--wf-e1`, only in a `box-shadow` slot                                             | Fixes the invalid shadows in `patient-now` |
-| `--focus`                                                        | `--wf-focus-ring`                                                                  | None                                       |
-| `--r1` (10px), `--r2` (6px), `--pill`, `--radius-pill`           | `--wf-r-sm`, `--wf-r-xs`, `--wf-r-pill`                                            | None                                       |
-| `--body`, `--mono`                                               | `--wf-font`, `--wf-mono`                                                           | None                                       |
-| `--t-0`, `--text-xs`, `--text-3xs`                               | `--wf-fs-12`                                                                       | None                                       |
-| `--t-1`, `--t-2` (13.5), `--t-3`, `--t-4`, `--t-5`, `--t-6` (26) | `--wf-fs-13`, `-14`, `-14`, `-16`, `-20`, `-28`                                    | 13.5 to 14, 26 to 28                       |
-| `--ward-space-4`, `-8`, `-12`, `-16`                             | `--wf-s-1` to `--wf-s-4`                                                           | None                                       |
-| `--ward-space-2`, `-6`, `-10`                                    | Inside a control only, as 2, 6 and 10px                                            | None                                       |
-| `--ward-tap`, `--spacing-tap`                                    | `--wf-touch`                                                                       | Check the 48px PsychSift knob. Ward is 44  |
+| Legacy                                                           | v8 role                                                                                                                           | Visible change                             |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `--ink`, `--ward-text`, `--ward-heading`, `--text`               | `--wf-ink-1`                                                                                                                      | None                                       |
+| `--ink-soft`                                                     | `--wf-ink-2`                                                                                                                      | None                                       |
+| `--muted`, `--text-muted`, `--ward-muted`, `--ink3`              | `--wf-ink-3`                                                                                                                      | Slightly darker (`#5f6873` to `#5b646f`)   |
+| `--line`, `--border`                                             | `--wf-line`                                                                                                                       | Lighter hairline (0.11 to 0.08 alpha)      |
+| `--line-strong`, `--ward-border`, `--ward-divider`               | `--wf-line-3`                                                                                                                     | None for `--line-strong`                   |
+| `--surface`, `--surface-2`, `--sunk`                             | `--wf-surface`, `--wf-surface-2`, `--wf-track`                                                                                    | Small                                      |
+| `--accent`, `--accent-ink`, `--accent-soft`                      | `--wf-accent`, `--wf-accent-ink`, `--wf-accent-tint`                                                                              | Small                                      |
+| `--danger`, `--warn`, `--good`                                   | Tone when it colours a glyph or edge. `-ink` when it colours words. Check each use                                                | Yes, per use                               |
+| `--danger-soft`, `--warn-soft`, `--good-soft`                    | `.tinted` with `.tint-act`, `.tint-fit` or `.tint-hold` on the item that carries the state (rule 6). Other card fills are removed | Yes                                        |
+| `--lift`, `--ward-shadow`                                        | `--wf-e1`, only in a `box-shadow` slot                                                                                            | Fixes the invalid shadows in `patient-now` |
+| `--focus`                                                        | `--wf-focus-ring`                                                                                                                 | None                                       |
+| `--r1` (10px), `--r2` (6px), `--pill`, `--radius-pill`           | `--wf-r-sm`, `--wf-r-xs`, `--wf-r-pill`                                                                                           | None                                       |
+| `--body`, `--mono`                                               | `--wf-font`, `--wf-mono`                                                                                                          | None                                       |
+| `--t-0`, `--text-xs`, `--text-3xs`                               | `--wf-fs-12`                                                                                                                      | None                                       |
+| `--t-1`, `--t-2` (13.5), `--t-3`, `--t-4`, `--t-5`, `--t-6` (26) | `--wf-fs-13`, `-14`, `-14`, `-16`, `-20`, `-28`                                                                                   | 13.5 to 14, 26 to 28                       |
+| `--ward-space-4`, `-8`, `-12`, `-16`                             | `--wf-s-1` to `--wf-s-4`                                                                                                          | None                                       |
+| `--ward-space-2`, `-6`, `-10`                                    | Inside a control only, as 2, 6 and 10px                                                                                           | None                                       |
+| `--ward-tap`, `--spacing-tap`                                    | `--wf-touch`                                                                                                                      | Check the 48px PsychSift knob. Ward is 44  |
 
 **Order, as each screen is touched.**
 
@@ -249,7 +262,7 @@ Each gate is a per-file ratchet run by `npm test`, so it runs in CI. A count can
 
 1. **Token graph.** Parse CSS and TSX style objects. Fail on a self-reference or cycle, a reference with no definition and no fallback (TSX included), and a shadow-valued token used in a colour slot.
 2. **Theme completeness.** Every colour token in the v8 sheet is a `light-dark()` pair, or is on the short theme-independent list (hero, on-hero, light parts).
-3. **Type.** Raw `font-size` values, and any size off the six, per file. This replaces the unwired `check:type-scale` and extends the existing 12px ratchet.
+3. **Type.** Raw `font-size` values, and any size off the six, per file. `--wf-fs-40` is allowed only in a `.keyfig` or `KeyFigure`. This replaces the unwired `check:type-scale` and extends the existing 12px ratchet.
 4. **Layers and widths.** CSS `z-index` must read `var(--wf-z-*)`. Media query widths must be 40, 48 or 64rem. Extends `require-z-index-ladder`, which only sees TSX.
 5. **Focus.** `outline: none` or `outline: 0` only in a rule that also draws a visible replacement, or under `:focus:not(:focus-visible)`.
 6. **Inline style.** TSX `style={{}}` count per file, and no hex in a style object. Extends `no-hardcoded-hex`, which only sees Tailwind classes. Delete the orphaned `drift-ratchet.json`.
@@ -265,7 +278,41 @@ Shared components (SidePanel, TabbedCard, ChartCard, BedBoard, ShapeKey, RecordD
 3. **Night service colours.** CAHS and Statewide get their own night hues. Day keeps the services' own colours.
 4. **Carried from v7.** Capsule for moving, quiet hero and dash, T1 pills. The tier time thresholds remain synthetic and need clinical sign-off.
 
+**State on 9 October, 11:25Z.** Capsule for moving is built (#178). Night service colours are settled by #173. The 12px floor is applied page by page as each page is rebuilt (ruling D-3, no sweep). The darker data ramp is not built, because every app use of `--wf-data-3` is a fill. The quiet hero is only for inactive records. **Still open:** whether the T1 pill stays neutral, or keeps red because T1 is the act now tier.
+
 ## 13. Verified and not verified
 
 - **Verified.** The board was rendered in Chromium (Playwright 1.56) in day and night, desktop and phone, every tab, with no script errors and no sideways scroll at 420px. Computed styles confirm `light-dark()` resolves to the night surface under `.night` and the day surface under `.day`. Contrast figures come from the token values.
 - **Not verified.** The app has not been changed or run against v8. High contrast mode and print were checked by reading the rules, not on a Windows ward PC or a printer. Edge version support for `light-dark()` on WA Health desktops is unconfirmed.
+
+## 14. v8.1 expression rules
+
+**Why.** On 9 October Josh said parts of the system made pages "more boring, standard" and alike. The review behind this (project notes, `design-system-flattening-review.md`) found five causes:
+
+- **Rules only took away.** Thirteen of the sixteen v8 rules restrict. None says what a page should have.
+- **Colour had no channel left.** There were no fills, stripes or tiles, counts were neutral and words used `-ink`. Only a 10px glyph was left.
+- **One anatomy for every page.** Hero, core and side panel became a template, and recent page mockups shared one stylesheet byte for byte.
+- **Type was compressed.** Most sizes sat at 12 or 13px. The floor became the scale.
+- **Audits scored compliance.** Each audit removed something, so scores rose while pages got duller.
+
+**What changes.** Rules 3, 6 and 16 are amended, and rules 17 to 21 are new (section 3). Every existing protection stays: red means act now, words use `-ink`, shape carries status, and the 12px floor holds.
+
+**The Ward page, as the worked example.**
+
+| Rule               | On the Ward page                                                                                                                         |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 17 Focal element   | The bed board, two thirds of the width                                                                                                   |
+| 18 Key figure      | "3 Act now" at 40px in the hero, on a soft danger panel                                                                                  |
+| 6 Colour budget    | Act now beds tinted, the free bed with a fit tint and an Offer button, the held bed with a hold tint. At risk beds keep the amber circle |
+| 3 Glass panel      | The "Needs you now" side panel, over a soft canvas gradient                                                                              |
+| 19 Part of its own | The shift runway: 07:00 to 15:30, with a now line, due items as glyphs and the discharge window                                          |
+| 20 Phone           | Act now list with one action per card, a bed bottom sheet, a toast with Undo, and a sticky Raise referral bar                            |
+
+**For reviews and redesigns.**
+
+1. Name the page's question and its focal element before drawing anything.
+2. Do a 5 second check: does the page answer its question at a glance?
+3. Look at the page beside two others. If they share a skeleton and look the same, change one.
+4. Only then check tokens, contrast and the gates.
+
+**Not verified.** v8.1 is a spec change only. The board (`ward-flow-design-system-v8.html`) has not been redrawn with the new classes. No app page uses them yet. Pages adopt them as each page is rebuilt.
