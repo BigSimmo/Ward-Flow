@@ -1,0 +1,1331 @@
+/*
+ * The Patients census (direction A with search bar 1, Josh's pick, 9 Oct 2026). Tokens only: every
+ * colour, radius and size comes from the v6 tokens, so day and night follow them.
+ */
+
+.spacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+}
+
+.truncate {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grow {
+  flex: 1 1 0;
+}
+
+/* ───── hero and search bar 1 ───── */
+
+.censusHero {
+  padding-block: var(--wf-s-3);
+}
+
+.heroBar {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.searchForm {
+  position: relative;
+  flex: 1 1 300px;
+  max-width: 400px;
+  min-width: 300px;
+}
+
+/* The typeahead's own label is kept for screen readers; the pill shows the icon instead. */
+/* With the date of birth open, the name keeps room to be read; the group pills scroll instead. */
+.searchForm:has(.dobSeg) {
+  flex-basis: 400px;
+  min-width: 380px;
+}
+
+.searchForm > div > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.searchForm > div > div:first-of-type {
+  min-width: 0;
+  min-height: 36px;
+  height: 36px;
+  gap: var(--wf-s-2);
+  padding: 0 4px 0 12px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 60%, transparent);
+  background: var(--wf-hero-ink);
+  color: color-mix(in srgb, var(--wf-hero-2) 70%, transparent);
+  box-shadow: 0 2px 6px -2px color-mix(in srgb, var(--wf-hero-edge) 70%, transparent);
+}
+
+.searchForm > div > div:first-of-type:focus-within {
+  border-color: var(--wf-hero-ink);
+  box-shadow:
+    0 2px 6px -2px color-mix(in srgb, var(--wf-hero-edge) 70%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--wf-hero-ink) 30%, transparent);
+}
+
+.searchForm > div > div:first-of-type svg {
+  flex: none;
+}
+
+.searchForm input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  align-self: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-hero-2);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.searchForm input::placeholder {
+  color: color-mix(in srgb, var(--wf-hero-2) 55%, transparent);
+  font-weight: 400;
+}
+
+.searchForm input:focus {
+  outline: none;
+}
+
+/* The typeahead's own Clear: a small pill at the end of the field. */
+.searchForm > div > div:first-of-type > button:last-child {
+  flex: none;
+  align-self: center;
+  min-height: 0;
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-2) 8%, transparent);
+  color: var(--wf-hero-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.dobSeg {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding-left: 10px;
+  border-left: 1px solid color-mix(in srgb, var(--wf-hero-2) 18%, transparent);
+}
+
+.searchForm .dobInput {
+  flex: none;
+  width: 88px;
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.count {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-2) 10%, transparent);
+  color: var(--wf-hero-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.dobToggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 10px 0 8px;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-2) 22%, transparent);
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  color: var(--wf-hero-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.dobToggle:hover {
+  background: color-mix(in srgb, var(--wf-hero-2) 8%, transparent);
+}
+
+.dobToggle[aria-pressed="true"] {
+  border-color: var(--wf-hero-2);
+  background: var(--wf-hero-2);
+  color: var(--wf-hero-ink);
+}
+
+.dobToggle:focus-visible {
+  outline: 2px solid var(--wf-hero-2);
+  outline-offset: 1px;
+}
+
+.kbd {
+  flex: none;
+  margin-right: 4px;
+  padding: 4px 8px;
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-2) 8%, transparent);
+  color: var(--wf-hero-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+/* "Today ✓ 6 arrived ✕ 2 left – 1 did not proceed" */
+.flow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+  color: var(--wf-hero-ink);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.flow:hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+}
+
+.flow:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+}
+
+.flowLead {
+  color: var(--wf-hero-ink-2);
+}
+
+.flowPart {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.flowPart b {
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+/* Match map: five pill counts. While a search runs each reads "8 of 47"; an empty group dims. */
+.mapPills {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-left: auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.mapPills > * {
+  flex: none;
+}
+
+.mapPill.mapPill {
+  padding: 0;
+  border-left: 0;
+}
+
+.mapPill button {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+  cursor: pointer;
+}
+
+.mapPill button:hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+}
+
+.mapPill button > span:first-child > span {
+  font-size: var(--wf-fs-14);
+  line-height: 1;
+}
+
+.mapPillZero {
+  opacity: 0.45;
+}
+
+.of {
+  margin-left: 4px;
+  color: var(--wf-hero-ink-3);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.mapLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ───── glyphs and tier ───── */
+
+.offGlyph {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.tier {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-3);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.tier1 {
+  border-color: var(--wf-ink-2);
+  background: var(--wf-ink-1);
+  color: var(--wf-surface);
+}
+
+.noTier {
+  color: var(--wf-ink-3);
+}
+
+.mark {
+  border-radius: 3px;
+  background: var(--wf-accent-tint);
+  box-shadow: inset 0 -2px 0 var(--wf-accent);
+  color: inherit;
+}
+
+/* ───── layout ───── */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+  min-width: 0;
+}
+
+.side {
+  display: none;
+  min-width: 0;
+}
+
+/* Under 75rem the match map drops its "of 47" so the five counts still sit beside the search. */
+@container patient-search (max-width: 74.99rem) {
+  .of {
+    display: none;
+  }
+}
+
+/* Narrower pages keep every group on one line: the glyphs go, the words stay. */
+@container patient-search (max-width: 62rem) {
+  .mapLabel > :first-child {
+    display: none;
+  }
+
+  .mapPill button {
+    padding: 0 10px;
+  }
+}
+
+@container patient-search (min-width: 56rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+
+  .side {
+    display: block;
+    position: sticky;
+    top: var(--wf-s-3);
+    padding: 0;
+    overflow: hidden;
+  }
+}
+
+@container patient-search (min-width: 80rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}
+
+/* ───── the census table ───── */
+
+.tableCard {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 48px;
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.chipBar {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 44px;
+  padding: 6px var(--wf-s-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.chipLead {
+  flex: none;
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.chipBar > button {
+  flex: none;
+}
+
+.copyNote {
+  flex: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.notice {
+  margin: 0;
+  padding: var(--wf-s-3);
+  color: var(--wf-ink-2);
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+/* Cells, borders and padding come from the shared wf table; this adds the fixed layout and sticky head. */
+table.censusTable {
+  min-width: 720px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+/* Tier and Time are fixed; Patient takes a quarter and the four middle columns share the rest. */
+.colTier {
+  width: 68px;
+}
+
+.colWho {
+  width: 24%;
+}
+
+.colTime {
+  width: 100px;
+}
+
+.censusTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--wf-surface);
+  font: 600 var(--wf-fs-12) / 16px var(--wf-font);
+  letter-spacing: 0.05em;
+}
+
+.censusTable td {
+  vertical-align: middle;
+}
+
+.censusTable .num {
+  text-align: right;
+}
+
+.groupRow th {
+  height: 40px;
+  padding: 0;
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  text-align: left;
+}
+
+.groupButton {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  box-sizing: border-box;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.groupButton:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+  border-radius: var(--wf-r-sm);
+}
+
+.chev {
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-m-fast) var(--wf-ease);
+}
+
+.groupButton[aria-expanded="false"] .chev {
+  transform: rotate(-90deg);
+}
+
+.groupQuiet .groupButton {
+  color: var(--wf-ink-2);
+}
+
+.groupLabel {
+  white-space: nowrap;
+}
+
+.groupCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-2);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.groupHint {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+.row {
+  cursor: pointer;
+}
+
+.row:hover td {
+  background: var(--wf-hover);
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+}
+
+.lifted td {
+  background: var(--wf-accent-tint);
+}
+
+.row.selected td,
+.lifted.selected td {
+  background: var(--wf-selected);
+}
+
+.row.selected td:first-child {
+  box-shadow: inset 3px 0 0 var(--wf-accent);
+}
+
+.flash td {
+  animation: censusFlash 1.6s var(--wf-ease);
+}
+
+@keyframes censusFlash {
+  0%,
+  40% {
+    background: var(--wf-accent-tint);
+  }
+}
+
+.quietRow td {
+  color: var(--wf-ink-3);
+}
+
+.quietRow .name {
+  color: var(--wf-ink-2);
+  font-weight: 500;
+}
+
+.moreRow td {
+  height: 44px;
+}
+
+.two {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.two > b,
+.two > span,
+.two > h2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.two > b {
+  font-weight: 600;
+}
+
+.two > span {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.restricted {
+  padding: 0 6px;
+  border: 1px solid var(--wf-line-3);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-11) / 16px var(--wf-font);
+}
+
+.next {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.next > svg,
+.next > span:first-child {
+  flex: none;
+}
+
+.time {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.timeValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+}
+
+.timeSub {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 120px;
+  padding: var(--wf-s-4);
+  color: var(--wf-ink-2);
+}
+
+.emptyActions {
+  display: inline-flex;
+  gap: var(--wf-s-2);
+}
+
+/* ───── history ───── */
+
+.history {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historyHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.historyNote {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.historyRow {
+  display: grid;
+  grid-template-columns: 48px 14px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 44px;
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+
+.historyRow > .mono {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.historyEmpty {
+  padding: var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+}
+
+/* ───── side panel ───── */
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 48px;
+  padding: 0 var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+}
+
+.panelTitle {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.panelHead .mono {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.summaryList {
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+}
+
+.summaryItem {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 6px var(--wf-s-4);
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  text-align: left;
+  cursor: pointer;
+}
+
+.summaryItem:hover:not(:disabled) {
+  background: var(--wf-hover);
+}
+
+.summaryItem:disabled {
+  cursor: default;
+}
+
+.summaryItem[aria-pressed="true"] {
+  background: var(--wf-accent-tint);
+}
+
+.summaryItem:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+}
+
+.summaryValue {
+  font: 600 var(--wf-fs-14) / 1 var(--wf-mono);
+}
+
+.panelFoot {
+  margin: 0;
+  padding: 10px var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+}
+
+.detailHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.detailHead > .two {
+  flex: 1 1 auto;
+}
+
+.detailName {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+}
+
+.avatarQuiet {
+  opacity: 0.6;
+}
+
+.statusCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.statusQuiet {
+  border-style: dashed;
+  background: transparent;
+}
+
+.statusLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.statusSub {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.statusSub .mono {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.facts > div {
+  min-width: 0;
+  padding: 8px 12px;
+  border-top: 1px solid var(--wf-line);
+}
+
+.facts > div:nth-child(-n + 2) {
+  border-top: 0;
+}
+
+.facts > div:nth-child(2n) {
+  border-left: 1px solid var(--wf-line);
+}
+
+.facts dt,
+.phoneFacts dt {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.facts dd,
+.phoneFacts dd {
+  margin: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.facts .factSub,
+.phoneFacts .factSub {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sectionHead {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.previewRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.previewButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px dashed var(--wf-line-3);
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.previewTag {
+  padding: 2px 8px;
+  border: 1px dashed var(--wf-line-3);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-11) / 14px var(--wf-font);
+}
+
+.previewNote {
+  flex-basis: 100%;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+/* ───── phone (its own design, 390 by 844) ───── */
+
+.heroPhone {
+  padding-block: var(--wf-s-3);
+}
+
+.searchFormPhone {
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+.searchFormPhone > div > div:first-of-type {
+  min-height: 48px;
+  height: 48px;
+  padding: 0 6px 0 16px;
+}
+
+.searchFormPhone input {
+  font-size: var(--wf-fs-16);
+}
+
+.searchFormPhone .dobToggle {
+  height: 36px;
+  padding: 0 12px 0 10px;
+}
+
+.searchFormPhone .count {
+  min-width: 26px;
+  height: 26px;
+}
+
+.searchFormPhone > div > div:first-of-type > button:last-child {
+  height: 36px;
+}
+
+.phoneDob {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  height: 48px;
+  margin-top: var(--wf-s-2);
+  padding: 0 16px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-hero-ink);
+  color: color-mix(in srgb, var(--wf-hero-2) 70%, transparent);
+}
+
+.phoneDob input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-hero-2);
+  font: 500 var(--wf-fs-16) / 1 var(--wf-mono);
+}
+
+.phone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.phoneGroups {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
+}
+
+.phoneGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 6px 0;
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+
+.phoneGroup b {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / 1 var(--wf-mono);
+}
+
+.phoneGroup span {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneGroup[aria-checked="true"] {
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+}
+
+.phoneGroup:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+}
+
+.phoneTools {
+  display: flex;
+  gap: var(--wf-s-2);
+}
+
+.phoneTool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-14) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.phoneToolOn {
+  border-color: var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+  font-weight: 600;
+}
+
+.phoneToolDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wf-accent);
+}
+
+.phoneList {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.phoneRow + .phoneRow {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneRow.lifted {
+  background: var(--wf-accent-tint);
+}
+
+.phoneRowOpen {
+  background: var(--wf-surface-2);
+}
+
+.phoneRowButton {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  row-gap: 4px;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-14);
+  text-align: left;
+  cursor: pointer;
+}
+
+.phoneRowButton:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+}
+
+.phoneAvatar {
+  display: inline-flex;
+  grid-row: 1 / span 2;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line-2);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+}
+
+.phoneTime {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+}
+
+.phoneLine {
+  display: flex;
+  grid-column: 2 / span 2;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  white-space: nowrap;
+}
+
+.phoneLine > svg,
+.phoneLine > span:not(.truncate) {
+  flex: none;
+}
+
+.phoneMore {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: 0 16px 16px;
+}
+
+.phoneFacts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-line);
+}
+
+.phoneFacts > div {
+  min-width: 0;
+  padding: 8px 12px;
+  background: var(--wf-surface);
+  font-size: var(--wf-fs-13);
+}
+
+.phoneActions {
+  display: flex;
+  gap: var(--wf-s-2);
+}
+
+.phoneActions .tap,
+.phoneActions > button {
+  min-height: 48px;
+}
+
+.sheetList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sheetOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 4px;
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-16) / 1 var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sheetOption[aria-pressed="true"] {
+  font-weight: 600;
+}
+
+.sheetOption[aria-pressed="true"]::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wf-accent);
+}
+
+.glyphSpace {
+  display: inline-block;
+  width: 10px;
+}
+
+.sheetFoot {
+  display: flex;
+  gap: var(--wf-s-2);
+  width: 100%;
+}
+
+.sheetFoot > button {
+  min-height: 48px;
+}
+
+@media (forced-colors: active) {
+  .lifted td,
+  .phoneRow.lifted {
+    outline: 1px solid CanvasText;
+  }
+
+  .row.selected td:first-child {
+    box-shadow: none;
+    border-left: 3px solid Highlight;
+  }
+}
+
+@media print {
+  .side,
+  .chipBar,
+  .toolbar button {
+    display: none !important;
+  }
+}
