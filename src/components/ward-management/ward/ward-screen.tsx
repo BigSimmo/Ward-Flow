@@ -36,7 +36,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { Hero, LiveChip, Menu, TextInput, buttonClass, durMinutes } from "@/components/wf";
+import { Hero, Menu, TextInput, buttonClass, durMinutes } from "@/components/wf";
 import { dayShiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
@@ -239,6 +239,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     useState<LeavingDestination>("discharged-to-the-community");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const bedDrawerOpenerRef = useRef<HTMLElement | null>(null);
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);
   const capacityModalRef = useRef<HTMLDivElement | null>(null);
   const bedDrawerRef = useRef<HTMLElement | null>(null);
@@ -305,12 +306,22 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     });
   }
 
+  useEffect(() => {
+    if (selectedBed !== null && bedDrawerOpenerRef.current === null) {
+      bedDrawerOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    }
+    if (selectedBed === null) bedDrawerOpenerRef.current = null;
+  }, [selectedBed]);
+
   const closeBedDrawer = useCallback(() => {
     if (selectedBed !== null) {
       const bedNum = selectedBed;
+      const opener = bedDrawerOpenerRef.current;
       setSelectedBed(null);
       setTimeout(() => {
-        bedTriggerRefs.current.get(bedNum)?.focus();
+        if (opener?.isConnected) opener.focus();
+        else if (bedTriggerRefs.current.get(bedNum)?.isConnected) bedTriggerRefs.current.get(bedNum)?.focus();
+        else document.getElementById("bed-capacity")?.focus();
       }, 0);
     }
   }, [selectedBed]);
@@ -1412,7 +1423,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             }
             aside={
               <>
-                <LiveChip state="live" onHero age={formatInstant(now)} />
+                <span className={styles.syntheticHeroLabel}>Synthetic demonstration</span>
                 <button
                   ref={confirmTriggerRef}
                   type="button"
@@ -1488,7 +1499,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   className={styles.tabBtn}
                   role="tab"
                   id="tabBtn-attn"
-                  aria-selected={activeTab !== "return"}
+                  aria-selected={activeTab === "attn"}
                   aria-controls="tab-attn"
                   aria-label="Home (Worth Your Attention)"
                   onClick={() => setActiveTab("attn")}
@@ -1666,6 +1677,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             onOpenBeds={() => setActiveTab("beds")}
             registerBedTrigger={(bedNumber, element) => {
               if (element) bedTriggerRefs.current.set(bedNumber, element);
+              else bedTriggerRefs.current.delete(bedNumber);
             }}
             figures={
               <section aria-label="Ward figures, right now" className={styles.figuresFoot} data-ward-primitive="panel">

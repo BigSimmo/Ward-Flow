@@ -6272,7 +6272,13 @@
     text-overflow: ellipsis;
   }
 
-  .heroMetaIcon {
+  .syntheticHeroLabel {
+  font-size: var(--wf-text-xs);
+  color: var(--wf-muted);
+  white-space: nowrap;
+}
+
+.heroMetaIcon {
     display: inline-block;
     margin-right: var(--wf-s-2);
     vertical-align: -3px;
