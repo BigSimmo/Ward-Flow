@@ -123,7 +123,7 @@ describe("token graph", () => {
     expect((tokens.match(/light-dark\(/g) ?? []).length).toBeGreaterThan(60);
   });
 
-  it("the shell layer's explicit Dark declares everything its OS dark block does", () => {
+  it("the shell layer's explicit Dark and OS dark declare the same tokens", () => {
     const shell = readFileSync("src/app/ward-flow-shell-tokens.module.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
     const block = (selector: string) => {
       const at = shell.indexOf(selector);
@@ -134,7 +134,14 @@ describe("token graph", () => {
     const os = block(':global(:root:not([data-theme="light"])) .wardShellTokens {');
     const explicit = block(':global([data-theme="dark"]) .wardShellTokens {');
     expect(os.size).toBeGreaterThan(20);
-    expect([...os].filter((name) => !explicit.has(name))).toEqual([]);
+    expect(
+      [...os].filter((name) => !explicit.has(name)),
+      "explicit Dark misses what OS dark sets",
+    ).toEqual([]);
+    expect(
+      [...explicit].filter((name) => !os.has(name)),
+      "OS dark misses what explicit Dark sets",
+    ).toEqual([]);
   });
 
   it("print carries every day service colour", () => {
