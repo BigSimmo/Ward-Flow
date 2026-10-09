@@ -67,6 +67,7 @@ type EdRow = {
   short: string;
   people: EdPerson[];
   pastTarget: number;
+  /** Everyone at or over the 8h line, past-target people included. */
   severe: number;
   noBed: number;
   held: number;
@@ -168,7 +169,7 @@ export function EdIndex() {
         short: edShortName(summary.ed),
         people,
         pastTarget: summary.pastAccessTarget,
-        severe: people.filter((person) => person.clock === "severe").length,
+        severe: people.filter((person) => person.clock !== "in").length,
         noBed: inStages(NO_BED),
         held: inStages(HELD),
         leaving: inStages(LEAVING),
