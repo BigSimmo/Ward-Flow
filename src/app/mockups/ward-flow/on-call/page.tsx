@@ -11,12 +11,14 @@ import { OnCallScreen } from "@/components/ward-management/on-call/on-call-scree
  * confuses the two would look for ward roles in a guideline library.
  *
  * `src/components/caring-contacts/team-roster.tsx` is a third unrelated thing with a near-identical
- * name. **None of the three is a source of staff data for the others**, and this one holds no staff
- * data at all — see `on-call-screen.tsx`.
+ * name. **None of the three is a source of staff data for the others.** This one holds no staff
+ * data: its contact records are synthetic, with mock numbers and emails that cannot reach anyone
+ * (see `on-call-directory.ts`).
  */
 export const metadata: Metadata = {
   title: "On-call and contacts - Ward Flow",
-  description: "Synthetic prototype view of which on-call roles are recorded. Holds no names and no contact details.",
+  description:
+    "Synthetic prototype contacts directory: who answers now and until when. Mock numbers and emails only, no names.",
 };
 
 export default function WardOnCallPage() {
