@@ -429,11 +429,8 @@
   margin-left: auto;
 }
 
-/* The queue table. Fixed layout so the wait and tier columns line up; text truncates, never wraps. */
-.tableScroll {
-  overflow-x: auto;
-}
-
+/* The queue table. Fixed layout so the wait and tier columns line up; text truncates, never wraps.
+   Its scroller and the phone swap to cards live in referral-queue.module.css. */
 .table {
   width: 100%;
   min-width: 44rem;
@@ -652,14 +649,6 @@
 .fit b {
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-14) / 1 var(--wf-mono);
-}
-
-/* Cards: the phone's queue. Hidden while the table has room. */
-.cards {
-  display: none;
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 .card {
@@ -1368,14 +1357,6 @@
     display: none;
   }
 
-  .tableScroll {
-    display: none;
-  }
-
-  .cards {
-    display: block;
-  }
-
   .heroBand {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1417,7 +1398,9 @@
     inset: calc((var(--spacing-tap, 3rem) - 1.25rem) / -2);
   }
 
+  /* The phone bar is the one top-anchored phone element, so the toolbar scrolls with the queue. */
   .toolbar {
+    position: static;
     padding: var(--wf-s-2);
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { wardAddressing } from "@/components/ward-management/ward-eligibility";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { useState, type ReactNode } from "react";
@@ -233,7 +234,12 @@ export function WaitRunway({
 
 /* ─── Hero band: beds ready statewide ───────────────────────────────────────────────────────── */
 
-export type BedsReadySummary = { cells: { label: string; value: number }[]; oldestUpdateMinutes: number | undefined };
+export type BedsReadySummary = {
+  cells: { label: string; value: number }[];
+  /** Beds counted as ready that are still being made ready, so a pull would be refused today. */
+  preparing: number;
+  oldestUpdateMinutes: number | undefined;
+};
 
 export function bedsReadySummary(
   units: Unit[],
@@ -244,17 +250,20 @@ export function bedsReadySummary(
 ): BedsReadySummary {
   const totals = { Adult: 0, "Older adult": 0, Youth: 0, Locked: 0 };
   let oldest: number | undefined;
+  let preparing = 0;
   for (const unit of units) {
     // Every unit counts: a unit without authorisation still takes voluntary admissions.
     const ready = bedStates(unit, admissions, bedReleases, leaveBeds).ready;
     totals[unit.cohort] += ready;
     // Locked is the ready locked portion of any ward, mixed wards included.
     totals.Locked += Math.min(ready, lockedBedsFree(unit));
+    preparing += bedsPendingPreparation(unit.id, bedReleases);
     const age = Math.max(0, now - unit.allocatable.confirmedAt);
     oldest = oldest === undefined ? age : Math.max(oldest, age);
   }
   return {
     cells: (Object.keys(totals) as (keyof typeof totals)[]).map((label) => ({ label, value: totals[label] })),
+    preparing,
     oldestUpdateMinutes: oldest,
   };
 }
@@ -264,6 +273,11 @@ export function BedsReady({ summary, compact = false }: { summary: BedsReadySumm
     <div className={cx(styles.beds, compact && styles.bedsCompact)} data-testid="ward-referral-beds-ready">
       <div className={styles.bandHead}>
         <span className={styles.bandEyebrow}>Beds ready statewide</span>
+        {summary.preparing > 0 ? (
+          <span className={styles.bandKey} data-testid="ward-referral-beds-preparing">
+            <span className={styles.mono}>{summary.preparing}</span> still being made ready
+          </span>
+        ) : null}
         {summary.oldestUpdateMinutes !== undefined ? (
           <span className={styles.bandKey} title="Oldest ward bed confirmation">
             oldest update <span className={styles.mono}>{durMinutes(summary.oldestUpdateMinutes)}</span>

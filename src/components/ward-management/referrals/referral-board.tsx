@@ -28,6 +28,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
+import { ReferralQueueCards, ReferralQueueTable } from "./referral-queue-layouts";
 import { genderReviewNeeded, type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { createReadmissionIndex, referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
@@ -1138,7 +1139,7 @@ function QueuedSection({
         </p>
       ) : (
         <>
-          <WardTable className={a.table} wrapperClassName={a.tableScroll} testId="ward-referral-board-queued-table">
+          <ReferralQueueTable>
             <colgroup>
               <col className={a.colTier} />
               <col className={a.colPatient} />
@@ -1303,9 +1304,9 @@ function QueuedSection({
                 );
               })}
             </tbody>
-          </WardTable>
+          </ReferralQueueTable>
 
-          <ul className={a.cards} data-testid="ward-referral-board-queued-cards">
+          <ReferralQueueCards>
             {queued.map((referral) => {
               const patientInfo = resolveSubjectPatient(referral, queuedResolverState);
               const refusals = refusalLines(referral);
@@ -1374,7 +1375,7 @@ function QueuedSection({
                 </li>
               );
             })}
-          </ul>
+          </ReferralQueueCards>
         </>
       )}
     </section>
