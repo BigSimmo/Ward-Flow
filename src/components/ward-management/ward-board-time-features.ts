@@ -26,16 +26,21 @@ export function dayShiftEndInstant(now: Instant): Instant {
   return dayOf(now) * MINUTES_PER_DAY + DAY_SHIFT_END_MINUTE;
 }
 
-/** When the shift `now` falls in began, on the one shift pattern every screen uses. */
-export function currentShiftStartInstant(now: Instant): Instant {
+/** The shift `now` falls in, on the one shift pattern every screen uses (night wraps midnight). */
+export function currentShift(now: Instant): (typeof SHIFT_PATTERN)[number] {
   const minute = minuteOfDay(now);
-  const shift =
+  return (
     SHIFT_PATTERN.find(({ startMinute, endMinute }) =>
       endMinute <= startMinute
         ? minute >= startMinute || minute < endMinute
         : minute >= startMinute && minute < endMinute,
-    ) ?? SHIFT_PATTERN[SHIFT_PATTERN.length - 1];
-  return now - ((minute - shift.startMinute + MINUTES_PER_DAY) % MINUTES_PER_DAY);
+    ) ?? SHIFT_PATTERN[SHIFT_PATTERN.length - 1]
+  );
+}
+
+/** When the shift `now` falls in began. */
+export function currentShiftStartInstant(now: Instant): Instant {
+  return now - ((minuteOfDay(now) - currentShift(now).startMinute + MINUTES_PER_DAY) % MINUTES_PER_DAY);
 }
 
 /**

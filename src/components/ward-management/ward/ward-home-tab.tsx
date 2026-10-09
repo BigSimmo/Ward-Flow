@@ -379,7 +379,14 @@ export function WardHomeTab({
     const glyph = bedGlyphTone(bed);
     const number = String(bed.bedNumber).padStart(2, "0");
     const name = free ? "Free to offer" : (bed.patientAlias ?? stateWord);
-    const accessibleName = [bed.bedLabel, stateWord, days ? `day ${bed.stayDays}` : "", note]
+    // The occupant's name is shown on the tile, so a screen reader hears it too.
+    const accessibleName = [
+      bed.bedLabel,
+      free ? "" : (bed.patientAlias ?? ""),
+      stateWord,
+      days ? `day ${bed.stayDays}` : "",
+      note,
+    ]
       .filter(Boolean)
       .join(", ");
     return { bed, free, leaving, look, readyByShiftEnd, stateWord, days, note, glyph, number, name, accessibleName };
@@ -843,6 +850,9 @@ export function WardHomeTab({
                   ))}
                 </tbody>
               </table>
+              {shownBeds.filter(matchesQuery).length === 0 ? (
+                <p className={styles.v6Empty}>No bed matches this choice.</p>
+              ) : null}
             </div>
           )}
           <div className={styles.bedKey}>

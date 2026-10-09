@@ -119,6 +119,12 @@ describe("ward decisions cockpit", () => {
     expect(screen.getAllByText("Not wired in this prototype.").length).toBeGreaterThan(0);
   });
 
+  it("shows the decision windows on a quiet ward when the screen supplies its rollup action", () => {
+    render(<WardDecisionsCockpit unit={mockUnit} onConfirmRollup={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Staffing, 07:00–09:30" })).toBeInTheDocument();
+    expect(screen.queryByText(/This illustrative cockpit does not record/)).not.toBeInTheDocument();
+  });
+
   it("does not count people on leave as decisions still to make", () => {
     render(
       <WardDecisionsCockpit

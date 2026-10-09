@@ -6444,10 +6444,14 @@
   }
 }
 
-/* Touch screens: the ward switch keeps the 48px tap target. */
+/* Touch screens: the ward switch and the find box keep the 48px tap target. */
 @media (pointer: coarse) {
   .wardSwitch {
     width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+  }
+
+  .findBox {
     height: var(--spacing-tap, 3rem);
   }
 }

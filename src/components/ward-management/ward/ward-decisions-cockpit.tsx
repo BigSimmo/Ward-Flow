@@ -132,7 +132,16 @@ export function WardDecisionsCockpit({
   projection,
   children,
 }: WardDecisionsCockpitProps) {
-  const live = demonstration || children != null || intakes.length > 0 || departures.length > 0 || leaves.length > 0;
+  // A screen that supplies the rollup action or the bed projection is wired, even on a quiet ward
+  // with nothing to decide yet; only a bare cockpit falls back to the placeholder.
+  const live =
+    demonstration ||
+    children != null ||
+    onConfirmRollup !== undefined ||
+    projection !== undefined ||
+    intakes.length > 0 ||
+    departures.length > 0 ||
+    leaves.length > 0;
   if (!live) {
     return (
       <section className={styles.container} aria-label="Ward decision controls">
@@ -204,7 +213,7 @@ function Queue({
   // recorded once the row no longer offers Sign off, a hold once the row is no longer held up, and
   // an accept once the referral has left the intake list.
   function recorded(kind: ActionKind, id: string): boolean {
-    if (kind === "sign") return !departures.some((row) => row.id === id && row.onConfirm);
+    if (kind === "sign") return !departures.some((row) => row.id === id && row.onConfirm && row.badge !== "Done");
     if (kind === "clear") return !departures.some((row) => row.id === id && row.badge === "Blocked");
     return !intakes.some((row) => row.id === id);
   }

@@ -789,8 +789,10 @@ const FOCUSABLE =
  * the chrome the sheet itself must never carry (Copy, Print, Close — the sheet holds no control, see
  * `WardDailySheet`) and nothing else: every figure is still the sheet's, from the same props.
  *
- * Rendered in-tree, never through a portal: portalled content leaves the shell's print reset
- * (tests/ward-shell-print-ancestor.test.ts), and this dialog's job includes being printed.
+ * Portalled into `document.body`, so it sits outside the shell's print reset
+ * (tests/ward-shell-print-ancestor.test.ts). That is why `ward-daily-sheet.module.css` carries its
+ * own `@media print` block, which hides every other body child while the brief is open so the
+ * brief prints alone. Do not remove that block as redundant.
  *
  * - Escape and the scrim close it; Tab stays inside it; focus returns to the opener on close.
  * - Copy writes the brief's own rendered text to the clipboard. It is offered only where the

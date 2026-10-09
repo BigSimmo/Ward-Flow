@@ -533,23 +533,29 @@ export function WardBedDossierDrawer({
                   </Button>
                 </>
               ) : null}
-              <Button
-                variant="sec"
-                size="lg"
-                className={styles.pill}
-                aria-expanded={quickBlockerOpen}
-                onClick={openBlockerEditor}
-              >
-                {bedItem?.blockReason ? "Update blocker" : "Record blocker"}
-              </Button>
-              <Button
-                variant="sec"
-                size="lg"
-                className={styles.pill}
-                onClick={() => (isAwayAtEd ? onMarkBack?.(selectedBed) : onMarkAtEd?.(selectedBed))}
-              >
-                {isAwayAtEd ? "Mark them back" : "Mark at an ED"}
-              </Button>
+              {/* Blockers and ED trips belong to a stay; a bed with no admission yet (an inbound
+                  bed) has nothing for them to change, so they are not offered. */}
+              {bedItem?.admissionId ? (
+                <>
+                  <Button
+                    variant="sec"
+                    size="lg"
+                    className={styles.pill}
+                    aria-expanded={quickBlockerOpen}
+                    onClick={openBlockerEditor}
+                  >
+                    {bedItem.blockReason ? "Update blocker" : "Record blocker"}
+                  </Button>
+                  <Button
+                    variant="sec"
+                    size="lg"
+                    className={styles.pill}
+                    onClick={() => (isAwayAtEd ? onMarkBack?.(selectedBed) : onMarkAtEd?.(selectedBed))}
+                  >
+                    {isAwayAtEd ? "Mark them back" : "Mark at an ED"}
+                  </Button>
+                </>
+              ) : null}
             </>
           )}
           <span className={styles.footSpacer} />

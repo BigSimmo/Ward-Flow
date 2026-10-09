@@ -953,6 +953,19 @@ label.todoMain:has(.todoTick:focus-visible) {
   }
 }
 
+/* Phone: the flow tabs share the width but never shrink below their labels; a narrow screen
+ * scrolls the row instead of overlapping them. */
+@media (max-width: 48rem) {
+  .flowSwitch > div {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .flowSwitch > div > button {
+    flex: 1 0 auto;
+  }
+}
+
 /* Touch screens: the view switch, the list view's bed buttons and the key links keep the 48px
  * tap target. */
 @media (pointer: coarse) {

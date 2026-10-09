@@ -459,3 +459,11 @@
     min-height: var(--spacing-tap, 3rem);
   }
 }
+
+/* Reduced motion: the window steps and the progress bar change without animating. */
+@media (prefers-reduced-motion: reduce) {
+  .windowStep,
+  .bar i {
+    transition: none;
+  }
+}

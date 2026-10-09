@@ -37,7 +37,11 @@ import {
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { Hero, LiveChip, Menu, TextInput, buttonClass, durMinutes } from "@/components/wf";
-import { dayShiftEndInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
+import {
+  currentShift,
+  dayShiftEndInstant,
+  releasesDueByShiftEnd,
+} from "@/components/ward-management/ward-board-time-features";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
@@ -73,7 +77,6 @@ import {
   LATE_ARRIVAL_GRACE_MINUTES,
   LEAVE_BED_OPEN_WARNING_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
-  SHIFT_PATTERN,
 } from "@/components/ward-management/ward-operational-defaults";
 
 /** The router, or null where the screen renders outside the app router (a test or preview). */
@@ -87,13 +90,7 @@ function useOptionalRouter(): ReturnType<typeof useRouter> | null {
 
 /** "Day shift 07:00 to 15:00" for the shift `now` falls in, read from the labelled default pattern. */
 function shiftLine(now: Instant): string {
-  const minute = ((now % 1440) + 1440) % 1440;
-  const shift =
-    SHIFT_PATTERN.find(({ startMinute, endMinute }) =>
-      endMinute <= startMinute
-        ? minute >= startMinute || minute < endMinute
-        : minute >= startMinute && minute < endMinute,
-    ) ?? SHIFT_PATTERN[SHIFT_PATTERN.length - 1];
+  const shift = currentShift(now);
   const clock = (value: number) =>
     `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
   const name = shift.name.charAt(0) + shift.name.slice(1).toLowerCase();
@@ -1342,7 +1339,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   function showHome(targetId: string) {
     setActiveTab("attn");
     window.requestAnimationFrame(() => {
-      document.getElementById(targetId)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+      document
+        .getElementById(targetId)
+        ?.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
     });
   }
 

@@ -110,6 +110,29 @@ describe("ready-bed dossier tells the truth", () => {
   });
 });
 
+describe("bed dossier inbound bed", () => {
+  it("offers no blocker or ED action on a bed with no admission yet", () => {
+    const unit = seedWardFlowState().units[0];
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardBedDossierDrawer
+          selectedBed={4}
+          bedItem={{ bedNumber: 4, bedLabel: "Bed 04", status: "incoming", statusText: "Inbound" }}
+          unit={unit}
+          onClose={() => {}}
+          drawerLeavingDestination={LEAVING_DESTINATIONS[0].id}
+          setDrawerLeavingDestination={() => {}}
+          onRecordLeft={() => {}}
+          bedDrawerRef={createRef<HTMLElement>()}
+          onKeyDown={() => {}}
+        />
+      </WardFlowProvider>,
+    );
+    expect(screen.queryByRole("button", { name: /Record blocker/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Mark at an ED/ })).toBeNull();
+  });
+});
+
 describe("bed dossier patient page link", () => {
   it("opens the person's own page, read through the admission, and is absent with no person", () => {
     const state = seedWardFlowState();
