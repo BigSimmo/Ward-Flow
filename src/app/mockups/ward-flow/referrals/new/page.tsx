@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 
-import { ReferralIntakeForm } from "@/components/ward-management/referrals/referral-intake";
+import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 
 export const metadata: Metadata = {
   title: "New referral — Ward Flow",
-  description: "Synthetic front-door referral intake for the Ward Flow prototype.",
+  description:
+    "Synthetic prototype: opens the referral slide-out over the Referrals board. The slide-out is the one place a referral is written.",
 };
 
-export default function ReferralIntakePage() {
-  return <ReferralIntakeForm />;
+export default function NewReferralPage() {
+  return <ReferralBoard defaultSelectFirst />;
 }

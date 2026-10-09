@@ -1279,7 +1279,9 @@
 }
 
 .drawerSheetReferral {
-  max-width: min(calc(100vw - 1.5rem), 38rem) !important;
+  /* Option B (8 Oct 2026): room for the form and the Ready to send rail. */
+  width: min(calc(100vw - 1.5rem), 64rem) !important;
+  max-width: min(calc(100vw - 1.5rem), 64rem) !important;
   overflow-x: hidden !important;
 }
 

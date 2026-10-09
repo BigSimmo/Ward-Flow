@@ -16,7 +16,7 @@
  * D8 happen — it says nothing about a route with no link pointing at it at all.
  */
 
-import { raiseReferralHref, type ReferralSource } from "@/components/ward-management/shell/ward-facade";
+import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 
@@ -193,7 +193,9 @@ export type WardNavItem = {
 };
 
 /**
- * The referral intake form's path, in one place.
+ * The referral slide-out's path, in one place. Since 8 Oct 2026 the full-page form is retired: this
+ * route shows the Referrals board with the slide-out open, and the bar opens the slide-out in place
+ * for any link to it (`referrals/referral-sheet-link.ts`).
  *
  * ⚠️ MUST STAY ABOVE `WARD_NAV`, which now references it (owner ruling 2026-09-03 put the form in
  * the rail). A `const` used before its declaration throws at module load, and because the rail
@@ -502,30 +504,28 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
  * ══════════════════════════════════════════════════════════════════════════════════════════════ */
 
 /**
- * One entry in the "New referral" menu — the three places a referral can be raised from, shared
- * by every route whose primary action is `"new-referral"`.
+ * One entry in the "New referral" menu — where the referral goes (Josh, 8 Oct 2026: the slide-out's
+ * first choice is "Refer to" Ward / Community / ED), shared by every route whose primary action is
+ * `"new-referral"`. The bar opens the referral slide-out in place with that destination chosen.
  *
- * 🔴 **EACH `href` IS BUILT BY `raiseReferralHref`, NEVER TYPED.** That is the blocker this task
- * was dispatched against — see this file's own import above. `tests/ward-nav.test.ts` proves it by
- * recomputing each href from `raiseReferralHref` independently and comparing, not by matching a
- * literal string this file happens to contain.
+ * 🔴 **EACH `href` IS BUILT BY `raiseReferralHref`, NEVER TYPED.** `tests/ward-nav.test.ts` proves it
+ * by recomputing each href from `raiseReferralHref` independently and comparing. The href is what a
+ * modified click (new tab) follows: the slide-out route opens over the Referrals board.
  *
- * ⚠️ **GENERIC ON PURPOSE — SOURCE ONLY, NO `patientId`/`originEdId`/`teamId`.** This module is a
- * static table evaluated once at import time; it has no patient, ward, ED or team in scope. A
- * screen that DOES have that context (the ED screen raising a referral from *this* ED, say) calls
- * `raiseReferralHref` again itself with the extra fields — this menu is the three-way choice every
- * "New referral" route shares, not the richer link any one of them can build once it knows more.
+ * ⚠️ **GENERIC ON PURPOSE — DESTINATION ONLY.** This module is a static table evaluated once at
+ * import time; it has no patient, ward, ED or team in scope. A screen that DOES have that context
+ * calls `raiseReferralHref` itself with the extra fields.
  */
 export type WardReferralMenuEntry = {
-  readonly source: ReferralSource;
-  readonly label: string;
+  readonly destination: "ward" | "community" | "ed";
+  readonly label: "To a ward" | "To community" | "To an ED";
   readonly href: string;
 };
 
 export const WARD_NEW_REFERRAL_MENU: readonly WardReferralMenuEntry[] = [
-  { source: "community", label: "From community", href: raiseReferralHref({ source: "community" }) },
-  { source: "ed_medical", label: "From ED", href: raiseReferralHref({ source: "ed_medical" }) },
-  { source: "inter_hospital", label: "From a ward", href: raiseReferralHref({ source: "inter_hospital" }) },
+  { destination: "ward", label: "To a ward", href: raiseReferralHref({ refer: "ward" }) },
+  { destination: "community", label: "To community", href: raiseReferralHref({ refer: "community" }) },
+  { destination: "ed", label: "To an ED", href: raiseReferralHref({ refer: "ed" }) },
 ];
 
 /**
@@ -533,7 +533,7 @@ export const WARD_NEW_REFERRAL_MENU: readonly WardReferralMenuEntry[] = [
  * `.kind` gets a compiler error, not a silent `undefined`, the day a sixth kind is ever added.
  *
  * `"none"` is its own arm rather than an absent entry. "Patient search", "Patient", "Search hub"
- * and "Raise a referral" all carry it: their primary lives in a panel, or is the form's own Send,
+ * and "Raise a referral" all carry it: their primary lives in a panel, or is the open slide-out's own Send,
  * and a route that deliberately has no bar action must say so — an ABSENT route and a route that
  * deliberately has none look identical to every gate unless the list states which.
  */
@@ -631,7 +631,7 @@ export const WARD_PRIMARY_ACTIONS: readonly WardPrimaryActionEntry[] = [
     route: "/mockups/ward-flow/statistics/service/[serviceId]",
     action: { kind: "export-figures", label: "Export the figures" },
   },
-  // None in the bar — Patient search, Patient, Search hub, Raise a referral.
+  // None in the bar — Patient search, Patient, Search hub, Raise a referral (the slide-out is already open).
   { route: "/mockups/ward-flow/search", action: { kind: "none" } },
   { route: "/mockups/ward-flow/people/[patientId]", action: { kind: "none" } },
   { route: "/mockups/ward-flow/hub", action: { kind: "none" } },

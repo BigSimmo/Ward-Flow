@@ -85,7 +85,6 @@ import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-
 import { PersonScreen } from "@/components/ward-management/patients/person-screen";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
-import { ReferralIntakeForm } from "@/components/ward-management/referrals/referral-intake";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/sovereign-showcase-screen";
@@ -166,7 +165,7 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   ["/mockups/ward-flow/referrals", { concrete: "/mockups/ward-flow/referrals", render: () => <ReferralBoard /> }],
   [
     "/mockups/ward-flow/referrals/new",
-    { concrete: "/mockups/ward-flow/referrals/new", render: () => <ReferralIntakeForm /> },
+    { concrete: "/mockups/ward-flow/referrals/new", render: () => <ReferralBoard defaultSelectFirst /> },
   ],
   ["/mockups/ward-flow/search", { concrete: "/mockups/ward-flow/search", render: () => <PatientSearchPage /> }],
   ["/mockups/ward-flow/settings", { concrete: "/mockups/ward-flow/settings", render: () => <SettingsScreen /> }],

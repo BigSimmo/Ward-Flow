@@ -58,7 +58,7 @@ describe("approved four-tab referral drawer journey", () => {
     setup();
     // v6 (ReferralDrawer.webp): the footer always offers "Next: Referral"; it checks the patient step when pressed.
     expect(screen.getByRole("button", { name: "Next: Referral" })).toBeInTheDocument();
-    tab("Locations");
+    tab("Wards");
     fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Confirm the patient's catchment");
     tab("Patient");
@@ -67,7 +67,7 @@ describe("approved four-tab referral drawer journey", () => {
     expect(screen.getByLabelText(/Patient story/)).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Medical clearance" })).not.toBeInTheDocument();
     expect(screen.queryByText(/Mental State Examination/)).not.toBeInTheDocument();
-    tab("Documents");
+    tab("Clearance");
     expect(screen.getByRole("group", { name: "Has the patient been medically cleared?" })).toBeVisible();
     expect(screen.queryByRole("textbox", { name: /Patient story/ })).not.toBeInTheDocument();
   });
@@ -77,7 +77,7 @@ describe("approved four-tab referral drawer journey", () => {
     confirmCatchment();
     tab("Referral");
     fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic story retained" } });
-    tab("Documents");
+    tab("Clearance");
     answer("Has the patient been medically cleared?", "No");
     fireEvent.change(screen.getByLabelText("Contact name"), { target: { value: "Demo Doctor" } });
     tab("Referral");
@@ -89,7 +89,7 @@ describe("approved four-tab referral drawer journey", () => {
     expect(screen.getByRole("button", { name: "Confirm catchment" })).toBeInTheDocument();
     tab("Referral");
     expect(screen.getByLabelText(/Patient story/)).toHaveValue("");
-    tab("Documents");
+    tab("Clearance");
     expect(
       within(screen.getByRole("group", { name: "Has the patient been medically cleared?" })).getByLabelText("No"),
     ).not.toBeChecked();
@@ -104,7 +104,7 @@ describe("approved four-tab referral drawer journey", () => {
     fireEvent.change(screen.getByLabelText(/Patient story/), {
       target: { value: "Synthetic patient story for inbox review" },
     });
-    next("Next: Documents");
+    next("Next: Clearance");
     answer("Has the patient been medically cleared?", "No");
     fireEvent.change(screen.getByLabelText("Expected clearance"), { target: { value: "2026-10-07T18:00" } });
     fireEvent.change(screen.getByLabelText("Contact name"), { target: { value: "Demo Doctor" } });
@@ -119,7 +119,7 @@ describe("approved four-tab referral drawer journey", () => {
     await waitFor(() => expect(screen.getAllByRole("button", { name: "Replace" })).toHaveLength(2), {
       timeout: 10_000,
     });
-    next("Next: Locations");
+    next("Next: Wards");
     const locations = screen.getByRole("list", { name: "Placement Destination Options" });
     const first = within(locations).getByRole("checkbox", { name: /rph-adult-secure/ });
     fireEvent.click(first);

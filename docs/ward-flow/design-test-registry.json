@@ -164,11 +164,11 @@
       "mockup": "raise-a-referral-third-edition.html",
       "route": "/referrals/new",
       "folder": "referrals",
-      "component": "src/components/ward-management/referrals/referral-intake.tsx",
-      "testFiles": ["tests/ward-referral-intake-third-edition.dom.test.tsx", "tests/ward-nav.test.ts"],
+      "component": "src/components/ward-management/referrals/ward-referral-drawer.tsx",
+      "testFiles": ["tests/ward-bar-referral-link.dom.test.tsx", "tests/ward-nav.test.ts"],
       "invariants": {
         "protectedClinicalFields": ["patientId", "originEdId", "targetUnits", "legalStatus"],
-        "primaryTestIds": ["referral-intake-form"],
+        "primaryTestIds": ["ward-bar-referral-sheet"],
         "landmarkHeadings": ["Raise Bed Referral"]
       }
     },
@@ -308,10 +308,7 @@
       "route": "/alerts",
       "folder": "alerts",
       "component": "src/components/ward-management/alerts/alerts-screen.tsx",
-      "testFiles": [
-        "tests/ward-alerts-screen.dom.test.tsx",
-        "tests/ward-alerts-open-movements-only.dom.test.tsx"
-      ],
+      "testFiles": ["tests/ward-alerts-screen.dom.test.tsx", "tests/ward-alerts-open-movements-only.dom.test.tsx"],
       "invariants": {
         "protectedClinicalFields": ["legal_timing_breached", "destination_unlawful", "dueAt"],
         "primaryTestIds": ["ward-alerts-page"],

@@ -143,16 +143,15 @@ describe("Ward referrals — every card container resets its dark-theme backgrou
     // per-option cards (`.destinationOption`, and `.destinationName` which is both the card's label
     // and its text). Every one carries its own explicit background and printed as a near-black
     // island until this fix.
+    // `.fieldCard`, `.destinationOption` and `.destinationName` left with the full-page referral form
+    // when it was retired on 8 Oct 2026; their rules went with it.
     for (const selector of [
-      ".fieldCard",
       ".section",
       ".card",
       ".matchPanel",
       ".bandGroup",
       ".choiceCard",
       ".choiceOption",
-      ".destinationOption",
-      ".destinationName",
       ".matchRowAccepts",
       ".matchRowDeclines",
     ]) {
@@ -236,13 +235,11 @@ describe("Ward referrals — every muted or themed text selector gets CanvasText
       // word "Yes" and a destination's name are direct children of the labelled element — and
       // `.fieldNote`, `.destinationNote` and `.destinationFact` are the muted sentences that say
       // which team the catchment table names, how many units accept, and why an option is offered.
+      // The intake-only ones (`.destinationName`, `.fieldNote`, `.destinationNote`, `.destinationFact`)
+      // left with that form on 8 Oct 2026, and their rules went with it.
       // Each uses `--text-muted` or `--text-heading`, pale grey-blue in the dark theme whatever
       // `color-scheme` says.
       ".choiceOption",
-      ".destinationName",
-      ".fieldNote",
-      ".destinationNote",
-      ".destinationFact",
       ".rejection",
       ".confirmation",
       ".structuralGap",
