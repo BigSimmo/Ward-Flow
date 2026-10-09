@@ -112,7 +112,9 @@ const COUNTED_ROUTES = [
   "/mockups/ward-flow",
   DELAYS_ROUTE,
   "/mockups/ward-flow/ward/rph-adult-secure",
-  "/mockups/ward-flow/referrals/new",
+  // A form route. Was `/referrals/new` until 8 Oct 2026, when that route became the Referrals board
+  // with the referral slide-out open; the add-a-person form is the remaining full-page form.
+  "/mockups/ward-flow/people/new",
   "/mockups/ward-flow/statistics/overview",
   PUBLISHED_CHECKS_ROUTE,
 ] as const;
@@ -678,17 +680,23 @@ test("@mockup compact Referrals opens from Tools and retains a draft across sect
   const sections = referral.getByRole("group", { name: "Referral sections" });
   await sections.getByRole("button", { name: "Referral", exact: true }).click();
   await referral.locator("#refDocInput").fill("Synthetic draft clinician");
-  await sections.getByRole("button", { name: "Locations", exact: true }).click();
+  await sections.getByRole("button", { name: "Wards", exact: true }).click();
   await expect(referral.getByRole("list", { name: "Placement Destination Options" })).toBeVisible();
   await sections.getByRole("button", { name: "Referral", exact: true }).click();
   await expect(referral.locator("#refDocInput")).toHaveValue("Synthetic draft clinician");
-  await sections.getByRole("button", { name: "Locations", exact: true }).click();
+  await sections.getByRole("button", { name: "Wards", exact: true }).click();
   await page.keyboard.press("/");
   await expect(sections.getByRole("button", { name: "Patient", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await expect(referral.getByRole("searchbox", { name: "Search sample patients" })).toBeFocused();
+  await expect(referral.getByRole("searchbox", { name: "Find a patient" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(referral).toBeVisible();
+  // The typed reason makes this an unsent draft, so Escape asks before discarding it (8 Oct 2026)
+  // rather than closing straight away. Discard then closes the slide-out.
   await page.keyboard.press("Escape");
+  const guard = page.getByRole("alertdialog", { name: "Close without sending?" });
+  await expect(guard).toBeVisible();
+  await expect(referral).toBeVisible();
+  await guard.getByRole("button", { name: "Discard", exact: true }).click();
   await expect(referral).toHaveCount(0);
   await expect(toolsTrigger).toBeFocused();
 });

@@ -114,7 +114,7 @@ component the page renders; its file is named once in §1.4 rather than repeated
 | `/people/new`                     | `AddPatientForm`                                                                                |
 | `/queue`                          | redirect → `/delays?from=queue`                                                                 |
 | `/referrals`                      | `ReferralBoard`                                                                                 |
-| `/referrals/new`                  | `ReferralIntakeForm`                                                                            |
+| `/referrals/new`                  | `ReferralBoard` with the referral slide-out open (`shell/ward-bar.tsx`)                         |
 | `/search`                         | `PatientSearchPage`                                                                             |
 | `/settings`                       | `SettingsScreen`                                                                                |
 | `/sovereign`                      | `SovereignShowcaseScreen`                                                                       |
@@ -228,8 +228,8 @@ mode="network"`.
 - **`src/app/mockups/ward-flow/queue/page.tsx`** (13) — redirect → `/delays?from=queue`.
 - **`src/app/mockups/ward-flow/referrals/page.tsx`** (13) — `/referrals` → `ReferralBoard
 defaultSelectFirst`.
-- **`src/app/mockups/ward-flow/referrals/new/page.tsx`** (12) — `/referrals/new` →
-  `ReferralIntakeForm`.
+- **`src/app/mockups/ward-flow/referrals/new/page.tsx`** (13) — `/referrals/new` →
+  `ReferralBoard defaultSelectFirst`; the bar opens the referral slide-out over it on arrival.
 - **`src/app/mockups/ward-flow/search/page.tsx`** (12) — `/search` → `PatientSearchPage`.
 - **`src/app/mockups/ward-flow/settings/page.tsx`** (13) — `/settings` → `SettingsScreen`.
 - **`src/app/mockups/ward-flow/sovereign/page.tsx`** (12) — `/sovereign` →

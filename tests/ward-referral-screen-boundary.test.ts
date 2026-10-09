@@ -162,7 +162,6 @@ const SEES_EVERYTHING: ReadonlyArray<{ file: string; reason: string }> = [
     file: "referrals/referral-board.tsx",
     reason: "the referral queue — a coordinator's working list of every referral",
   },
-  { file: "referrals/referral-intake.tsx", reason: "raising a referral: the referrer chooses the destinations" },
   {
     file: "referrals/referral-match.tsx",
     reason: "matching a referral to units — coordinator work over the whole record",
@@ -534,9 +533,10 @@ describe("FD-23 at the screen boundary", () => {
     // set — a stale entry silently WIDENS the guarded set rather than narrowing it. Either way it
     // must not sit here unnoticed.
     // 22, not 24: item 41 (owner-approved 2026-09-17) deleted morning/morning-page.tsx and
-    // morning/morning-tour.tsx outright, so their entries left this list. Re-derived by running
-    // this file, not by arithmetic.
-    expect(SEES_EVERYTHING.length, "the allowed-surface list changed size — re-read section 3 above").toBe(22);
+    // morning/morning-tour.tsx outright, so their entries left this list. 21, not 22: the
+    // full-page referrals/referral-intake.tsx was deleted on 8 Oct 2026 (the referral slide-out is
+    // the one place a referral is written). Re-derived by running this file, not by arithmetic.
+    expect(SEES_EVERYTHING.length, "the allowed-surface list changed size — re-read section 3 above").toBe(21);
     for (const { file, reason } of SEES_EVERYTHING) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no reason beside it`).toBeGreaterThan(10);

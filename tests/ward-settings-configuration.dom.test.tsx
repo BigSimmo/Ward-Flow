@@ -20,7 +20,7 @@ import { ED_ACCESS_TARGET_RANGE_MINUTES } from "@/components/ward-management/war
 
 /**
  * Task 9 of the audit-wiring plan, 2026-09-16: the settings screen edits a local draft of
- * `state.configuration` and dispatches once, on "Save coordination rules" — never per slider move.
+ * `state.configuration` and dispatches once, on Save — never per slider move.
  */
 function Probe() {
   const { configuration, readAuditEvents } = useWardFlow();
@@ -59,15 +59,14 @@ describe("settings screen configuration draft", () => {
   it("announces surge values as an unsaved draft and shows saved status only after acceptance", () => {
     renderSettings();
     const beforeTarget = screen.getByTestId("probe-ed-target").textContent;
-    fireEvent.click(screen.getByRole("button", { name: "Select surge values" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Surge" }));
     expect(screen.getByTestId("probe-ed-target").textContent).toBe(beforeTarget);
-    expect(screen.getByText("Unsaved changes — Save coordination rules to apply.")).toBeVisible();
-    // v6 Settings (7 Oct 2026): the toolbar status reads in sentence case.
-    expect(screen.queryByText("Surge values saved")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Save coordination rules" }));
+    expect(screen.getByRole("region", { name: "Unsaved rule changes" })).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("Surge values are in the draft. Save to apply them.");
+    fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
     expect(screen.getByTestId("probe-ed-target")).toHaveTextContent(String(ED_ACCESS_TARGET_RANGE_MINUTES.min));
-    expect(screen.getByText("Surge values saved")).toBeVisible();
-    expect(screen.queryByText("Unsaved changes — Save coordination rules to apply.")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/saved and recorded/);
+    expect(screen.queryByRole("region", { name: "Unsaved rule changes" })).not.toBeInTheDocument();
   });
 
   it("moving a slider without saving leaves the provider's configuration and the audit trail unchanged", () => {
@@ -84,12 +83,12 @@ describe("settings screen configuration draft", () => {
     expect(screen.getByTestId("probe-audit-count").textContent).toBe(beforeAuditCount);
   });
 
-  it('"Save coordination rules" dispatches the edited draft and records exactly one audit event', () => {
+  it("Save dispatches the edited draft and records exactly one audit event", () => {
     renderSettings();
     const beforeAuditCount = Number(screen.getByTestId("probe-audit-count").textContent);
 
     fireEvent.change(edSlider(), { target: { value: "720" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save coordination rules" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
 
     expect(screen.getByTestId("probe-ed-target").textContent).toBe("720");
     expect(Number(screen.getByTestId("probe-audit-count").textContent)).toBe(beforeAuditCount + 1);
@@ -118,7 +117,7 @@ describe("settings screen configuration draft", () => {
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("570");
 
     // Save coordination rules
-    fireEvent.click(screen.getByRole("button", { name: "Save coordination rules" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("600");
   });
 
@@ -140,10 +139,11 @@ describe("settings screen configuration draft", () => {
     // Move all three sliders away from their defaults first, and save, so the reset has
     // something real to undo.
     fireEvent.change(edSlider(), { target: { value: "720" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save coordination rules" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
     expect(screen.getByTestId("probe-ed-target").textContent).toBe("720");
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Restore all defaults" }).at(-1)!);
+    fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Restore all defaults" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Restore all defaults" }).at(-1)!);
 
     const defaults = defaultWardConfiguration();

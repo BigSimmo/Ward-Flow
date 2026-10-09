@@ -374,6 +374,13 @@
       "after": 0,
       "reason": "Josh requested the removal of the Mental Health Act disclaimer notice ('Not legally checked: these Mental Health Act time limits are typed in and have not been checked against the Act by anyone with legal knowledge. Do not rely on them.') from the top and bottom of all pages across the prototype, and the removal of tests asserting that text. This suite enforced the disclaimer notice presence across ward screens and is retired per request.",
       "approvedOn": "2026-10-04"
+    },
+    {
+      "path": "tests/ward-referral-destinations.dom.test.tsx",
+      "before": 25,
+      "after": 10,
+      "reason": "The 15 removed cases drove the retired full-page New referral form (referral-intake.tsx), deleted with Josh's approval on 8 Oct 2026 when the referral slide-out (option B) became the only place a referral is written. Destination rules the slide-out still has are kept here and in tests/ward-referral-drawer-sheet.dom.test.tsx.",
+      "approvedOn": "2026-10-08"
     }
   ]
 }

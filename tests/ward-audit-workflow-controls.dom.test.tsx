@@ -12,8 +12,8 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
-import { ReferralIntakeForm } from "@/components/ward-management/referrals/referral-intake";
 import { ReferralMatchView } from "@/components/ward-management/referrals/referral-match";
+import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import type { Referral } from "@/components/ward-management/ward-model";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
@@ -154,15 +154,6 @@ describe("ward board departure correction uses the real admission", () => {
 });
 
 describe("referral evidence is visible and honestly qualified", () => {
-  it("shows absent hospital catchment data instead of inventing statewide routing", () => {
-    window.history.replaceState({}, "", "/mockups/ward-flow/referrals/new");
-    wrap(<ReferralIntakeForm />);
-    expect(document.body).not.toHaveTextContent("Statewide hospital catchment");
-    const wardOption = screen.getByTestId("ward-referral-intake-destination-option-psychiatric_ward");
-    const disclosure = within(wardOption).getByText(/approved-hospital column is not seeded/);
-    expect(disclosure).not.toHaveClass("sr-only");
-    expect(disclosure.closest(".sr-only")).toBeNull();
-  });
   it("qualifies a stale but available candidate as unresolved capacity", () => {
     const unit = seedWardFlowState().units.find((unit) => unit.id === "scgh-adult-open")!;
     const stale = {
@@ -202,77 +193,11 @@ describe("referral evidence is visible and honestly qualified", () => {
   });
 });
 
-describe("draft handover cannot invent missing triage answers", () => {
-  it("shows unanswered urgency and referral source in its letterhead and clipboard", async () => {
-    window.history.replaceState({}, "", "/mockups/ward-flow/referrals/new");
-    const previous = Object.getOwnPropertyDescriptor(navigator, "clipboard");
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
-    try {
-      wrap(<ReferralIntakeForm />);
-      fireEvent.click(screen.getByRole("button", { name: "Copy Handover" }));
-      expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Urgency: Not answered"));
-      fireEvent.click(screen.getByRole("button", { name: /Preview Referral/ }));
-      const dialog = screen.getByRole("dialog", { name: "Referral Letterhead Preview" });
-      expect(dialog).toHaveTextContent("Urgency: Not answered");
-      expect(dialog).toHaveTextContent("Referral Source: Not answered");
-      expect(dialog).not.toHaveTextContent("Tier 2 (Urgent)");
-      expect(dialog).not.toHaveTextContent("Community CMHT");
-      await waitFor(() => expect(screen.getByText("Clinical handover text copied to clipboard.")).toBeInTheDocument());
-    } finally {
-      if (previous) Object.defineProperty(navigator, "clipboard", previous);
-      else Reflect.deleteProperty(navigator, "clipboard");
-    }
-  });
-});
-
-function AtsReferralProbe() {
-  const { referrals, rejections } = useWardFlow();
-  const newest = referrals.at(-1);
-  return (
-    <output
-      data-testid="ats-referral-probe"
-      data-count={referrals.length}
-      data-ats={newest?.atsCategory ?? "absent"}
-      data-urgency={newest?.urgency}
-      data-rejections={rejections.length}
-    />
-  );
-}
-function answerAtsIntake() {
-  const answers: Record<string, string> = {
-    ageBand: "Adult",
-    sex: "Female",
-    gender: "Female",
-    homeRegion: "Perth Metropolitan",
-    suburb: "Armadale",
-    source: "community",
-    urgency: "2",
-    originSiteCode: "RPH",
-  };
-  for (const [field, value] of Object.entries(answers)) {
-    const control = screen.getByTestId(`ward-referral-intake-${field}`);
-    if (control instanceof HTMLSelectElement) fireEvent.change(control, { target: { value } });
-    else
-      fireEvent.click(
-        within(control)
-          .getAllByRole("radio")
-          .find((input) => (input as HTMLInputElement).value === value)!,
-      );
-  }
-  for (const field of ["secureBedNeeded", "involuntaryBedNeeded", "highAcuityNursingNeeded", "transportNeeded"])
-    fireEvent.click(screen.getByTestId(`ward-referral-intake-${field}-no`));
-  fireEvent.click(screen.getByTestId("ward-referral-intake-destination-psychiatric_ward"));
-}
-
 describe("optional clinician-recorded ATS remains distinct from Ward Flow urgency", () => {
-  it.each([undefined, 5])("persists only explicitly selected ATS (%s), without changing urgency", (ats) => {
-    window.history.replaceState({}, "", "/mockups/ward-flow/referrals/new");
-    wrap(
-      <>
-        <ReferralIntakeForm />
-        <AtsReferralProbe />
-      </>,
+  it("offers ATS on the referral slide-out without changing the selected urgency", () => {
+    wrap(<WardReferralDrawer onClose={() => {}} />);
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name: "Referral" }),
     );
     const chooser = screen.getByRole("combobox", { name: "ATS category (optional)" });
     expect(chooser).toHaveValue("");
@@ -281,15 +206,19 @@ describe("optional clinician-recorded ATS remains distinct from Ward Flow urgenc
         .getAllByRole("option")
         .map((option) => option.textContent),
     ).toEqual(["ATS not recorded", "ATS 1", "ATS 2", "ATS 3", "ATS 4", "ATS 5"]);
-    const probe = screen.getByTestId("ats-referral-probe");
-    const before = Number(probe.getAttribute("data-count"));
-    answerAtsIntake();
-    if (ats !== undefined) fireEvent.change(chooser, { target: { value: String(ats) } });
-    expect(screen.getByTestId("ward-referral-intake-urgency")).toHaveValue("2");
-    fireEvent.click(screen.getByTestId("ward-referral-intake-submit"));
-    expect(probe).toHaveAttribute("data-count", String(before + 1));
-    expect(probe).toHaveAttribute("data-ats", ats === undefined ? "absent" : String(ats));
-    expect(probe).toHaveAttribute("data-urgency", "2");
-    expect(probe).toHaveAttribute("data-rejections", "0");
+    const urgencyBefore = (
+      within(screen.getByRole("group", { name: "Urgency" }))
+        .getAllByRole("radio")
+        .find((input) => (input as HTMLInputElement).checked) as HTMLInputElement | undefined
+    )?.value;
+    expect(urgencyBefore).toBeTruthy();
+    fireEvent.change(chooser, { target: { value: "5" } });
+    expect(chooser).toHaveValue("5");
+    const urgencyAfter = (
+      within(screen.getByRole("group", { name: "Urgency" }))
+        .getAllByRole("radio")
+        .find((input) => (input as HTMLInputElement).checked) as HTMLInputElement | undefined
+    )?.value;
+    expect(urgencyAfter).toBe(urgencyBefore);
   });
 });

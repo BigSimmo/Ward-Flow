@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS, travelBand } from "@/components/ward-management/ward-distance";
+import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { HOME_REGIONS, type UrgencyLevel } from "@/components/ward-management/ward-model";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { referrals } from "@/components/ward-management/ward-movements";
@@ -13,8 +14,9 @@ import {
 import { allUnits, unitById, wardSites } from "@/components/ward-management/ward-sites";
 
 /**
- * Task 7 (Phase 7, "The front door"). One journey: a referral is raised from the PHONE-WIDTH
- * intake form (`/mockups/ward-flow/referrals/new`), appears on the coordinator's board
+ * Task 7 (Phase 7, "The front door"). One journey: a referral is raised at PHONE WIDTH in the
+ * referral slide-out (`ward-bar-referral-sheet`, the one place a referral is written since 8 October
+ * 2026, when the full-page intake form was retired), appears on the coordinator's board
  * (`/mockups/ward-flow/referrals`), is matched against the whole network, and is accepted — and
  * the board reflects every one of those steps on the very next render, with **no `page.goto()`
  * anywhere after the first navigation**.
@@ -23,15 +25,15 @@ import { allUnits, unitById, wardSites } from "@/components/ward-management/ward
  * states for its own journey: a `goto` is a full page load that re-mounts `WardFlowProvider`
  * (mounted once in `src/app/mockups/ward-flow/layout.tsx`, above every ward route) and resets
  * every referral back to the seed fixture. Every assertion below would then pass whether or not
- * the intake form's `RECEIVE_REFERRAL` ever reached the coordinator's board at all. Because
+ * the slide-out's `RECEIVE_REFERRAL` ever reached the coordinator's board at all. Because
  * "I did not call `goto`" is a claim about the test rather than about the browser, the journey
  * also plants `__wardFlowJourneySentinel` on `window` immediately after the single navigation and
  * re-checks it after each route change: a full document load clears it, so an accidentally
  * reintroduced reload fails loudly here rather than silently making the journey vacuous.
  *
  * Navigation is the app's own, never a typed URL — the board's "New referral" `<Link>`
- * (`referral-board.tsx`, the intake form's only entry point, see `WARD_NAV_INTENTIONALLY_UNLISTED`
- * in `ward-nav.ts`) on the way in, and the coordinator's own navigation rail on the way back.
+ * (`referral-board.tsx`), which the shell bar opens as the slide-out in place, on the way in, and
+ * the coordinator's own navigation rail on the way back.
  *
  * ⚠️ **WHAT "THE RAIL" MEANS AT PHONE WIDTH CHANGED ON 2026-09-11.** It used to be `ClinicalRail`'s
  * phone bar — an "Open Ward Flow menu" button and the drawer it opened — with the desktop icon rail
@@ -50,137 +52,150 @@ import { allUnits, unitById, wardSites } from "@/components/ward-management/ward
  */
 
 /** The referral this journey raises. Adult / Male, needing neither a secure bed nor one that can
- *  hold someone involuntarily, at the most urgent tier. Chosen so the two dimensions that decide
- *  the outcome below are the interesting ones — sex designation and forensic — rather than
- *  security or legal status, which would exclude most of the network before those were reached. */
+ *  hold someone involuntarily, at the most urgent tier. Chosen so the dimension that decides the
+ *  outcome below is the interesting one — sex designation — rather than security or legal status,
+ *  which would exclude most of the network before that was reached.
+ *
+ *  Since 8 October 2026 the referral is raised in the referral slide-out (`ward-referral-drawer.tsx`),
+ *  the one place a referral is written. Its source is Community: the slide-out offers Emergency or
+ *  Community, and the retired form's "police" source has no control there. */
 const RAISED = {
   ageBand: "Adult",
   sex: "Male",
-  // T11/T10 (owner answer 17 September 2026): a separate required question from Sex above it. This
-  // helper has now been missed four times when a new required question landed (see the comment
-  // trail inside `answerEveryIntakeQuestion` below) — this is the fifth, and the fix is the same:
-  // a real answer here, never a softened assertion in the helper.
+  // T11/T10 (owner answer 17 September 2026): a separate question from Sex, answered in the
+  // slide-out's own "Gender identity" select rather than left to the patient record.
   gender: "Male",
   homeRegion: "Perth Metropolitan",
-  source: "police",
   urgency: "1",
 } as const;
 
 /**
- * Phase R2.1. The intake form no longer answers anything for the clinician, so every journey
- * below answers every question before Send becomes available.
- *
- * Both journeys used to lean on the defaults — one left the two need toggles and the origin site
- * untouched, the other left five of the eight questions untouched — and both submitted
- * successfully anyway. They were pinned to the behaviour this phase deliberately removes; each
- * now states the referral it is raising instead of inheriting one.
- *
- * The two need questions are answered "No" in both, which is exactly what the untouched
- * checkboxes used to send, so the acceptance arithmetic these journeys assert is unchanged — the
- * difference is that the "no" is now chosen rather than assumed. The origin site is taken from
- * the site table rather than typed, so no hospital code lives in this file.
+ * The slide-out's radios and switches sit inside the `<label>` a person taps, and several are
+ * visually hidden behind a segmented or tile face. So tap the label — the control a person
+ * actually touches — and prove the control took the answer. Not a softening: `force: true` would
+ * skip the tappability check; this keeps it and adds the checked-state assertion.
  */
-/**
- * The intake's yes/no questions are segmented toggles since f997ac75a1 (2026-09-22): each radio is
- * visually hidden (`srOnlyRadio` — 1px, clipped, opacity 0) inside the `<label>` a person taps.
- * `.check()` aims at the 1px radio, so the wrapping label takes the hit and Playwright refuses the
- * click ("<label …toggleOption> intercepts pointer events", batch-2 run, full journey :140). So tap
- * the label — the control a person actually touches — and prove the radio took the answer. Not a
- * softening: `force: true` would skip the tappability check; this keeps it and adds a checked-state
- * assertion `.check()` only implied.
- */
-async function answerToggle(page: Page, testId: string) {
-  const radio = page.getByTestId(testId);
-  await page.locator("label", { has: radio }).click();
-  await expect(radio).toBeChecked();
+async function tapChoice(control: Locator) {
+  // The nearest enclosing label, found from the control itself: a `has:` filter would re-resolve
+  // the control's whole chain (from the sheet) inside each label and match nothing.
+  await control.locator("xpath=ancestor::label[1]").click();
+  await expect(control).toBeChecked();
 }
 
-async function answerEveryIntakeQuestion(
-  page: Page,
-  answers: {
-    ageBand: string;
-    sex: string;
-    gender: string;
-    homeRegion: string;
-    source: string;
-    urgency: string;
-    highAcuityNursingNeeded: "yes" | "no";
-  },
-) {
-  // v6 (7 Oct 2026): Age band and Sex are segmented radio groups.
-  await page
-    .getByTestId("ward-referral-intake-ageBand")
-    .locator("label")
-    .filter({ has: page.getByRole("radio", { name: answers.ageBand, exact: true }) })
-    .click();
-  await page
-    .getByTestId("ward-referral-intake-sex")
-    .locator("label")
-    .filter({ has: page.getByRole("radio", { name: answers.sex, exact: true }) })
-    .click();
-  // T11/T10 (owner answer 17 September 2026): a separate required question from Sex — the fifth
-  // question this helper has been missed for (see the trail below on the ninth through twelfth).
-  await page.getByTestId("ward-referral-intake-gender").selectOption(answers.gender);
-  await page.getByTestId("ward-referral-intake-homeRegion").selectOption(answers.homeRegion);
-  await page.getByTestId("ward-referral-intake-source").selectOption(answers.source);
-  await page.getByTestId("ward-referral-intake-urgency").selectOption(answers.urgency);
-  await page.getByTestId("ward-referral-intake-originSiteCode").selectOption(wardSites[0].code);
-  await answerToggle(page, "ward-referral-intake-secureBedNeeded-no");
-  await answerToggle(page, "ward-referral-intake-involuntaryBedNeeded-no");
-  // The THIRTEENTH question, required since the owner's 2026-09-10 ruling that high-acuity nursing
-  // need is marked by the REFERRING CLINICIAN, not defaulted — `UNANSWERED_VALUE` exists on this
-  // field for exactly the reason this whole comment thread describes: a default of `false` would
-  // record "no high-acuity nursing needed" for a referral nobody asked about, and the acuity gate
-  // (`ward-eligibility.ts`, `referralEligibility`'s "acuity" gate) would silently never fire. This
-  // helper answers it explicitly rather than defaulting it, and the caller chooses which way — see
-  // each call site for why that journey answers "yes" or "no".
-  await answerToggle(page, `ward-referral-intake-highAcuityNursingNeeded-${answers.highAcuityNursingNeeded}`);
-  // The ninth question, on the owner's 2026-08-30 ruling ("Take all recommendations"): transport
-  // is a yes/no group that starts unanswered, not a checkbox that starts at `false`. A journey
-  // that skips it never gets an available Send, so it belongs here with the other eight.
-  await answerToggle(page, "ward-referral-intake-transportNeeded-no");
-  // The tenth question, added when `521888a23` made a destination required ("The referrer chooses
-  // where to refer, and is shown why"). This spec was last touched seven hours earlier, so it went
-  // on answering nine and then asserting an available Send — two journeys red on a requirement that
-  // did not exist when they were written. The repair is a new ANSWER here, never a softened
-  // assertion on line 89: that assertion is what makes a missed question fail loudly instead of
-  // timing out on a click, and it did exactly its job.
-  //
-  // `psychiatric_ward` specifically, and that is a decision rather than the first option to hand.
-  // Both journeys below accept the patient at a unit, and one asserts out-of-area ledger
-  // arithmetic. An ED or community destination would satisfy Send just as well and would quietly
-  // change what the rest of each journey is testing.
-  await page.getByTestId("ward-referral-intake-destination-psychiatric_ward").check();
-  // The ELEVENTH question, required since CM-4 (2026-08-30). ⚠️ THIS IS THE THIRD TIME THIS HELPER
-  // HAS BEEN MISSED — the ninth and tenth are recorded above, in their own words, by the two people
-  // who hit this before. Each time a required question landed, this helper went on answering the
-  // old set and two journeys went red on a requirement that did not exist when they were written.
-  // The repair is a new ANSWER here, never a softened assertion below: fixing the two call sites
-  // instead would leave the helper wrong for the twelfth question.
-  //
-  // A real suburb from the catchment table rather than a typed string — the picker is built from
-  // suburbOptions(), so an invented value would not be selectable. No assertion in this file
-  // depends on WHICH suburb, only that the question is answered.
-  await page.getByTestId("ward-referral-intake-suburb").selectOption("Albany");
-  // The TWELFTH question, required since the written-history change (2026-09-05) — and this is the
-  // FOURTH time this helper has been missed, exactly as the note above predicted. Three journeys
-  // in this file and `ui-ward-discharges.spec.ts` went red the moment `historyWhyNow` became
-  // required, and stayed red all day: no routine gate runs a `@mockup` spec, so nothing said so.
-  //
-  // ⚠️ THE REPAIR IS THIS ANSWER, NOT A SOFTENED ASSERTION BELOW — the instruction the previous
-  // two people left here, followed rather than rediscovered. Only `historyWhyNow` is filled:
-  // `historyBackground` and `historyRiskAndSafety` are genuinely optional and answering them here
-  // would hide a future change that made either one required.
-  //
-  // Free text, so any non-blank string serves; the reducer stores it byte for byte and refuses
-  // only a blank one. No assertion in this file depends on WHAT it says.
-  await page
-    .getByTestId("ward-referral-intake-history")
-    .fill("Brought in by family after two days of not sleeping and increasing agitation at home.");
-  // Send only becomes available once the last question is answered, so this is both a wait and an
-  // assertion: a journey that had missed one would fail here rather than time out on a click.
-  await expect(page.getByTestId("ward-referral-intake-submit")).not.toHaveAttribute("aria-disabled", "true");
-  await expect(page.getByTestId("ward-referral-intake-unavailable")).toHaveCount(0);
+/** A tiny synthetic PDF: the slide-out reads the bytes and checks only the type and size. */
+function syntheticChart(name: string) {
+  return { name, mimeType: "application/pdf", buffer: Buffer.from(`%PDF-1.7\nSynthetic demo chart: ${name}\n`) };
+}
+
+type SlideOutReferral = {
+  /** A synthetic person registered inside the slide-out ("New patient"), so the age band is the
+   *  journey's own choice rather than the one a sample movement already carries. */
+  patient: { familyName: string; givenName: string; umrn: string };
+  ageBand: string;
+  homeRegion: string;
+  sex: string;
+  gender: string;
+  urgency: UrgencyLevel;
+  bedSecurity: "Open" | "Secure";
+  highAcuityNursing: boolean;
+  /** `mht` needs transport; `carer` (patient or carer accompanied) does not. */
+  transport: "mht" | "carer";
+  /** The wards the referral is addressed to, in the order they are ticked. */
+  unitIds: readonly string[];
+  /** Units the Wards step must NOT offer for this person (asserted before ticking). */
+  notOffered?: readonly string[];
+};
+
+/**
+ * Raises one referral to named wards through the referral slide-out, answering every question its
+ * Send checks — patient, catchment, home region, source, urgency, legal status, bed security, bed
+ * requirements, clearance, triage, both charts and the attachments question — then confirms with
+ * the sender's contact details. Ends on "Referral sent" and closes the slide-out with Done.
+ *
+ * Each answer is chosen here rather than inherited from a sample patient, for the reason the
+ * retired intake helper gave: a journey that leans on defaults is pinned to behaviour nobody chose.
+ */
+async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
+  const sheet = page.getByTestId("ward-bar-referral-sheet");
+  await expect(sheet).toBeVisible({ timeout: 15_000 });
+  const steps = sheet.getByRole("group", { name: "Referral sections" });
+
+  // Refer to: a ward. That names the last two steps Clearance and Wards.
+  await sheet.getByTestId("ward-referral-refer-to-ward").click();
+  await expect(sheet.getByTestId("ward-referral-refer-to-ward")).toHaveAttribute("aria-pressed", "true");
+
+  // Patient: register a new synthetic person and give the age band.
+  await steps.getByRole("button", { name: "Patient", exact: true }).click();
+  await sheet.getByTestId("ward-referral-new-patient-toggle").click();
+  const newPatient = sheet.getByTestId("ward-referral-new-patient");
+  await newPatient.getByLabel("Family name", { exact: true }).fill(referral.patient.familyName);
+  await newPatient.getByLabel("Given name", { exact: true }).fill(referral.patient.givenName);
+  await newPatient.getByLabel("Date of birth", { exact: true }).fill("1990-01-02");
+  await newPatient.getByLabel("UMRN", { exact: true }).fill(referral.patient.umrn);
+  // A real suburb from the catchment table, so the slide-out suggests its catchment team.
+  await newPatient.getByLabel("Suburb", { exact: true }).fill("Albany");
+  await newPatient.getByRole("button", { name: "Add patient" }).click();
+  await expect(newPatient).toHaveCount(0);
+  await expect(sheet).toContainText(`${referral.patient.familyName}, ${referral.patient.givenName}`);
+  await sheet.getByLabel("Age band", { exact: true }).selectOption(referral.ageBand);
+  await sheet.getByLabel("Home region", { exact: true }).selectOption(referral.homeRegion);
+  await sheet.getByRole("button", { name: "Confirm catchment" }).click();
+  await expect(sheet.getByText("Catchment confirmed", { exact: true }).first()).toBeVisible();
+
+  // Referral: from a community service, voluntary, the bed security, the urgency and bed needs.
+  await steps.getByRole("button", { name: "Referral", exact: true }).click();
+  await sheet.getByRole("group", { name: "Source" }).getByRole("button", { name: "Community", exact: true }).click();
+  await sheet.getByLabel("Referring service location", { exact: true }).selectOption(wardSites[0].code);
+  await sheet.getByLabel("Referring community service", { exact: true }).fill("Synthetic community mental health team");
+  await sheet.getByLabel("Legal status", { exact: true }).selectOption("Voluntary");
+  await tapChoice(
+    sheet.getByRole("group", { name: "Bed security" }).getByRole("radio", { name: referral.bedSecurity, exact: true }),
+  );
+  await tapChoice(sheet.getByRole("radio", { name: urgencyTierLabel(referral.urgency), exact: true }));
+  await sheet.getByLabel("Recorded sex", { exact: true }).selectOption(referral.sex);
+  await sheet.getByLabel("Gender identity", { exact: true }).selectOption(referral.gender);
+  const acuity = sheet.getByRole("switch", { name: "High-acuity nursing" });
+  if ((await acuity.getAttribute("aria-checked")) !== String(referral.highAcuityNursing)) await acuity.click();
+  await expect(acuity).toHaveAttribute("aria-checked", String(referral.highAcuityNursing));
+
+  // Clearance: cleared, triaged, both charts attached, nothing else to attach.
+  await steps.getByRole("button", { name: "Clearance", exact: true }).click();
+  await tapChoice(
+    sheet.getByRole("group", { name: "Has the patient been medically cleared?" }).getByRole("radio", { name: "Yes" }),
+  );
+  await tapChoice(sheet.getByRole("group", { name: "Triage and RAMP completed" }).getByRole("radio", { name: "Yes" }));
+  await sheet.getByLabel("Medication chart", { exact: true }).setInputFiles(syntheticChart("medication-chart.pdf"));
+  await sheet.getByLabel("Observation chart", { exact: true }).setInputFiles(syntheticChart("observation-chart.pdf"));
+  await expect(sheet.getByRole("button", { name: "Replace" })).toHaveCount(2);
+  await tapChoice(sheet.getByRole("group", { name: "Anything else to attach?" }).getByRole("radio", { name: "No" }));
+
+  // Wards: the named wards, then the transport for the arrival plan.
+  await steps.getByRole("button", { name: "Wards", exact: true }).click();
+  const wards = sheet.getByRole("list", { name: "Placement Destination Options" });
+  await expect(wards).toBeVisible();
+  for (const unitId of referral.notOffered ?? []) {
+    await expect(wards.getByRole("checkbox", { name: new RegExp(`\\b${unitId}\\b`, "u") })).toHaveCount(0);
+  }
+  for (const unitId of referral.unitIds) {
+    await tapChoice(wards.getByRole("checkbox", { name: new RegExp(`\\b${unitId}\\b`, "u") }));
+  }
+  await sheet.getByLabel("Transport", { exact: true }).selectOption(referral.transport);
+
+  // Send, then confirm with the sender's contact details. Nothing is sent before Confirm and send.
+  await sheet.getByRole("button", { name: "Send referral", exact: true }).click();
+  await expect(sheet.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
+  await sheet.getByLabel("Your name", { exact: true }).fill("Synthetic Referrer");
+  await sheet.getByLabel("Email address", { exact: true }).fill("referrer@example.org");
+  await sheet.getByLabel("Phone number", { exact: true }).fill("0412345678");
+  await sheet.getByLabel("Your role", { exact: true }).fill("Community mental health nurse");
+  await sheet.getByLabel("Location or service", { exact: true }).fill("Synthetic community mental health team");
+  await sheet.getByRole("button", { name: "Confirm and send", exact: true }).click();
+  await expect(sheet.getByRole("heading", { name: "Referral sent" })).toBeVisible();
+  // A refusal renders as the footer's `role="alert"`; the sent heading and a refusal are separate
+  // elements, so asserting only the first would pass on a screen showing both.
+  await expect(sheet.getByRole("alert")).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Done", exact: true }).click();
+  await expect(sheet).toHaveCount(0);
 }
 
 /** Phase 8: the four travel bands plus the not-recorded group. Written out here rather than
@@ -189,10 +204,15 @@ async function answerEveryIntakeQuestion(
  *  band stays a decision somebody takes in a test. It counts groups on a screen. */
 const BAND_GROUP_COUNT = 5;
 
-/** The unit this journey accepts at: the first unit in the site table's own order, and the order
- *  the match view lists every unit in (D10 — it never sorts, ranks or truncates). */
-const ACCEPT_UNIT_ID = "rph-adult-secure";
-const ACCEPT_UNIT_NAME = "Dabakarn";
+/** The unit this journey accepts at: the first ADULT unit in the site table's own order that the
+ *  referral slide-out offers for an open bed — Mental Health Unit (Sir Charles Gairdner).
+ *
+ *  It was Dabakarn (`rph-adult-secure`), the first unit in site order, until 8 October 2026. The
+ *  slide-out lists only wards whose beds match the chosen bed security, and Dabakarn has no open
+ *  bed (all locked), so a referral needing an open bed — `RAISED` needs no secure bed — can no
+ *  longer be addressed to it. Checked by name in the fixture-assumption block. */
+const ACCEPT_UNIT_ID = "scgh-adult-open";
+const ACCEPT_UNIT_NAME = "Mental Health Unit";
 
 /** Units that must NOT accept this referral, one per reason, named individually so a rule that
  *  quietly stopped excluding anything cannot pass this journey.
@@ -201,6 +221,11 @@ const ACCEPT_UNIT_NAME = "Dabakarn";
  *  show that refusal. The forensic rule is proven where a made-up forensic ward can be put in
  *  (`tests/helpers/ward-made-up-forensic-ward.ts`): its wording in `tests/ward-eligibility.test.ts`,
  *  and the refusal on screen in `tests/ward-referral-screens.dom.test.tsx`. */
+//
+// Since 8 October 2026 these are met in two places. The slide-out lists only wards of the person's
+// own age band, so the wrong-age unit is never OFFERED (asserted at its Wards step); the female-only
+// unit IS offered, the referral is addressed to it alongside the accepting unit, and the match view
+// gives its reason when the coordinator reviews that recipient.
 const FEMALE_ONLY_UNIT_ID = "ger-adult-open";
 const FEMALE_ONLY_UNIT_NAME = "Geraldton Adult Open";
 const WRONG_AGE_UNIT_ID = "rph-older-adult";
@@ -369,16 +394,29 @@ if (decidedInTheSeed !== SEEDED_DECIDED_STRUCTURAL) {
  * for that is running the journeys, not weakening the pin.
  */
 
-/** Every unit in the network, and how many of them accept the referral raised above. Both are
- *  hardcoded rather than recomputed from `referralEligibility`: re-deriving the expected number
- *  with the very function under test would make this assertion true by construction whatever the
- *  matching rules did. The fixture assumptions guarded at the top of the test are what keep a
- *  hardcoded number honest — if the network changes, this fails at the assumption, by name. */
+/** Every unit in the network, and — below — how many units the match view weighs for the referral
+ *  raised above and how many of those accept it. All hardcoded rather than recomputed from
+ *  `referralEligibility`: re-deriving the expected number with the very function under test would
+ *  make this assertion true by construction whatever the matching rules did. The fixture
+ *  assumptions guarded at the top of the test are what keep a hardcoded number honest — if the
+ *  network changes, this fails at the assumption, by name. */
 // 22 since 26 Sept 2026 (confirmed ward facts: Kununurra's ward removed; allUnits() on the seed
-// returns 22). ACCEPTING_UNITS stays 13: the removed ward had no allocatable bed
-// (allocatable.value 0), so it never passed the allocatable-bed gate and was never one of the 13.
+// returns 22).
 const NETWORK_UNITS = 22;
-const ACCEPTING_UNITS = 13;
+/*
+ * 🔴 **8 OCTOBER 2026: "13 OF 22" BECAME "1 OF 1", AND THE DESTINATION SHAPE IS WHY.** The retired
+ * intake form sent a BROAD ward request (`psychiatric_ward` with no `unitId`), and the match view
+ * weighed it against every unit: 13 of 22 accepted. The referral slide-out — now the one place a
+ * referral is written — addresses NAMED wards only (`psychiatric_ward` with a `unitId`), and the
+ * match view reviews one addressed ward at a time: `referralCandidates` keeps only the unit that
+ * ward names. So the view lists exactly one unit, and the accepting unit accepts.
+ *
+ * Still hardcoded, not recomputed from `referralEligibility`, for the reason above. What keeps the
+ * "1 accepts" honest is the fixture-assumption block: the accepting unit is Adult, undesignated, not
+ * forensic, has an open bed and has an allocatable bed — the same facts that made it one of the 13.
+ */
+const REVIEWED_UNITS = 1;
+const REVIEWED_ACCEPTING = 1;
 
 /**
  * The seeded queued ids, so a referral this spec raises can be told apart from them without
@@ -556,26 +594,38 @@ async function goToBoardViaPhoneRail(page: Page) {
   await expect(page.getByTestId("ward-referral-board-screen")).toBeVisible({ timeout: 15_000 });
 }
 
-/**
- * Since 22 September (f997ac75a1) sending opens a modal "Referral recorded locally" receipt over
- * the whole screen. A person reads it and closes it before using the rail, so these journeys do the
- * same: the receipt must appear, and its footer "Close" (not the header "Close dialog") must close it.
- */
-async function closeReferralReceipt(page: Page) {
-  const receipt = page.getByRole("dialog", { name: "Referral recorded locally" });
-  await expect(receipt).toBeVisible();
-  await receipt.getByRole("button", { name: "Close", exact: true }).click();
-  await expect(receipt).toHaveCount(0);
-}
-
 test.describe("@mockup Ward referrals — the front door, phone to board to accepted", () => {
   test.describe.configure({ timeout: 60_000 });
 
-  test("a referral raised on the phone-width intake form reaches the coordinator's board, matches against the network, and is accepted — with the board reflecting every step without a reload", async ({
+  test("the New referral route is the Referrals board with the referral slide-out open over it", async ({ page }) => {
+    await page.goto("/mockups/ward-flow/referrals/new?refer=community", { waitUntil: "load" });
+    await expect(page.getByTestId("ward-bar-referral-sheet")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("ward-referral-refer-to-community")).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("ward-referral-board-screen")).toBeAttached();
+  });
+
+  test("the board's New referral link opens the slide-out in place, without leaving the board", async ({ page }) => {
+    await page.goto("/mockups/ward-flow/referrals", { waitUntil: "load" });
+    await expect(page.getByTestId("ward-referral-board-screen")).toBeVisible({ timeout: 15_000 });
+    await plantSentinel(page);
+    await page.getByTestId("ward-referral-board-new").click();
+    await expect(page.getByTestId("ward-bar-referral-sheet")).toBeVisible();
+    await expect(page).toHaveURL(/\/mockups\/ward-flow\/referrals$/);
+    await expectNoReloadSince(page, "board -> referral slide-out");
+  });
+
+  /*
+   * Re-driven 8 October 2026: the referral is raised in the referral slide-out
+   * (`ward-bar-referral-sheet`), which the board's "New referral" link opens in place over the
+   * board. The full-page intake form this journey used before is retired. The board, match and
+   * acceptance half stands as written, with the match counts re-derived for the slide-out's named
+   * wards (see `REVIEWED_UNITS`).
+   */
+  test("a referral raised in the phone-width referral slide-out reaches the coordinator's board, matches against the wards it names, and is accepted — with the board reflecting every step without a reload", async ({
     page,
   }) => {
-    // D12: the intake form is designed for a phone and adapted upward. The whole journey runs at
-    // phone width, including the coordinator's half — the board must be usable there too.
+    // D12: referring is designed for a phone and adapted upward. The whole journey runs at phone
+    // width, including the coordinator's half — the board must be usable there too.
     await page.setViewportSize({ width: 375, height: 812 });
 
     // Fixture assumptions, checked against the real data rather than assumed, so a fixture change
@@ -622,6 +672,23 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
       unitById(FEMALE_ONLY_UNIT_ID)?.sexDesignation,
       `fixture assumption: ${FEMALE_ONLY_UNIT_NAME} is female only`,
     ).toBe("Female only");
+    // The slide-out lists only wards of the person's age band whose beds match the chosen bed
+    // security (`ward-referral-drawer.tsx`'s `realTimeMatch`). `RAISED` needs an open bed, so both
+    // addressed units must be Adult with an open bed, and the wrong-age unit must not be Adult.
+    for (const [unitId, name] of [
+      [ACCEPT_UNIT_ID, ACCEPT_UNIT_NAME],
+      [FEMALE_ONLY_UNIT_ID, FEMALE_ONLY_UNIT_NAME],
+    ] as const) {
+      expect(unitById(unitId)?.cohort, `fixture assumption: ${name} is an Adult unit`).toBe(RAISED.ageBand);
+      expect(unitHasOpenBeds(unitById(unitId)!), `fixture assumption: ${name} has an open bed`).toBe(true);
+    }
+    expect(
+      acceptUnit!.allocatable.value,
+      `fixture assumption: ${ACCEPT_UNIT_NAME} has an allocatable bed`,
+    ).toBeGreaterThan(0);
+    expect(unitById(WRONG_AGE_UNIT_ID)?.cohort, "fixture assumption: the wrong-age unit is not an Adult unit").not.toBe(
+      RAISED.ageBand,
+    );
 
     // --- The one and only navigation in this journey. ---
     //
@@ -660,38 +727,41 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     const queuedBefore = await queuedCardIds(page);
     expect(queuedBefore).toHaveLength(SEEDED_QUEUED);
 
-    // --- Step 1: into the intake form, through the board's own "New referral" <Link>. ---
+    // --- Step 1: the referral slide-out, opened in place through the board's own "New referral"
+    // <Link>. The board stays mounted underneath it; nothing navigates. ---
     await page.getByTestId("ward-referral-board-new").click();
-    await expect(page.getByTestId("ward-referral-intake-screen")).toBeVisible({ timeout: 15_000 });
-    await expectNoReloadSince(page, "board -> intake form");
+    const sheet = page.getByTestId("ward-bar-referral-sheet");
+    await expect(sheet).toBeVisible({ timeout: 15_000 });
+    await expectNoReloadSince(page, "board -> referral slide-out");
 
-    // --- Step 2: raise the referral. Every control is a picker or a toggle; there is no free-text
-    // input on this screen and there must never be one (binding constraint: no free text
-    // anywhere, and no fact about the person beyond the permitted few). ---
-    // R2.1: nothing on this form arrives answered, and Send stays unavailable — with the
-    // outstanding questions named on screen — until every one of them has an answer.
-    await expect(page.getByTestId("ward-referral-intake-submit")).toHaveAttribute("aria-disabled", "true");
-    await expect(page.getByTestId("ward-referral-intake-unavailable")).toBeVisible();
-    // Answered "no" here: the acceptance arithmetic below (`ACCEPTING_UNITS`, `ACCEPT_UNIT_ID`) is
-    // hardcoded, and every one of those 13 units is staffed for high-acuity nursing anyway — so
-    // "no" is the answer that keeps this journey's counts exactly what they were before this
-    // question existed. The far-placement journey below answers "yes" instead, so the acuity gate
-    // is exercised both ways somewhere in this file rather than only ever seeing "no".
-    await answerEveryIntakeQuestion(page, { ...RAISED, highAcuityNursingNeeded: "no" });
-    await answerToggle(page, "ward-referral-intake-transportNeeded-yes");
-
-    await page.getByTestId("ward-referral-intake-submit").click();
-    await expect(page.getByTestId("ward-referral-intake-confirmation")).toBeVisible();
-    // A refusal renders its own `role="alert"` instead (`ward-referral-intake-rejection`). The
-    // confirmation and the rejection are separate elements, so asserting only the first would
-    // pass on a screen showing both.
-    await expect(page.getByTestId("ward-referral-intake-rejection")).toHaveCount(0);
-    await expectNoReloadSince(page, "submitting the intake form");
-    await closeReferralReceipt(page);
+    // --- Step 2: raise the referral. R2.1: nothing arrives answered — the footer names how many
+    // answers are still needed until every one of them is given. ---
+    await expect(sheet).toContainText(/[0-9]+ answers? still needed/u);
+    // High-acuity nursing answered "no" here and "yes" in the far-placement journey below, so the
+    // acuity gate is exercised both ways somewhere in this file rather than only ever seeing "no".
+    // Transport is needed (Mental Health Transport), as it was on the retired form.
+    //
+    // Addressed to two wards, accepting unit first: the accepting unit, and the female-only unit
+    // the match view must refuse by name. The wrong-age unit is never offered for an adult, which
+    // is asserted at the Wards step.
+    await raiseReferralInSlideOut(page, {
+      patient: { familyName: "Journeyfield", givenName: "Synthetic", umrn: "UM990701" },
+      ageBand: RAISED.ageBand,
+      homeRegion: RAISED.homeRegion,
+      sex: RAISED.sex,
+      gender: RAISED.gender,
+      urgency: Number(RAISED.urgency) as UrgencyLevel,
+      bedSecurity: "Open",
+      highAcuityNursing: false,
+      transport: "mht",
+      unitIds: [ACCEPT_UNIT_ID, FEMALE_ONLY_UNIT_ID],
+      notOffered: [WRONG_AGE_UNIT_ID],
+    });
+    await expectNoReloadSince(page, "sending from the referral slide-out");
 
     // --- Step 3: back to the board through the rail, and the referral is there. ---
     await goToBoardViaPhoneRail(page);
-    await expectNoReloadSince(page, "intake form -> board via the phone rail");
+    await expectNoReloadSince(page, "referral slide-out -> board via the phone rail");
 
     await expect(page.getByTestId("ward-referral-board-queued")).toContainText(
       `Awaiting decision ${SEEDED_QUEUED + 1}`,
@@ -720,10 +790,14 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // is never left implicit.
     await expect(page.getByTestId(`ward-referral-board-card-wait-${referralId}`)).toContainText("waiting");
 
-    // --- Step 4: match it against the network. ---
+    // --- Step 4: match it against the wards it names. ---
     await raisedCard.click();
     const matchPanel = page.getByTestId("ward-referral-match-panel");
     await expect(matchPanel).toBeVisible();
+    // Two wards were named, so the coordinator chooses which recipient to review. It opens on the
+    // first one ticked, the accepting unit.
+    const reviewWard = matchPanel.getByLabel("Review recipient ward");
+    await expect(reviewWard).toHaveValue(ACCEPT_UNIT_ID);
     // Review finding I1 / Task 8 finding B: the tier is its OWN element here, and the summary
     // line carries no tier at all. `toHaveText` is exact both times, so a component that put the
     // tier back inside the dot-separated run — the shape that printed a bare "Tier 2" directly
@@ -738,13 +812,15 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
       // string "1"; `urgencyTierLabel` takes the tier itself.
       urgencyTierLabel(Number(RAISED.urgency) as UrgencyLevel),
     );
+    // One addressed ward is reviewed at a time, so the count covers that ward alone (see
+    // `REVIEWED_UNITS` for why this was "13 of 22" before 8 October 2026).
     await expect(page.getByTestId("ward-referral-match-accepting-count")).toHaveText(
-      `${ACCEPTING_UNITS} of ${NETWORK_UNITS} units accept this referral right now.`,
+      `${REVIEWED_ACCEPTING} of ${REVIEWED_UNITS} units accept this referral right now.`,
     );
-    // Every unit in the network is listed, never a shortlist (D10). Phase 8 groups those rows by
+    // Every unit under review is listed, never a shortlist (D10). Phase 8 groups those rows by
     // travel band, so they are spread across five `<details>` groups rather than one flat list —
     // the count is unchanged, which is the property this line has always pinned.
-    await expect(page.getByTestId("ward-referral-match-list").locator("li")).toHaveCount(NETWORK_UNITS);
+    await expect(page.getByTestId("ward-referral-match-list").locator("li")).toHaveCount(REVIEWED_UNITS);
 
     // Phase 8, Task 4 (owner decision, 2026-08-29): the band groups are SHUT by default at phone
     // width, and this journey is phone width throughout. Nothing is hidden by that — every heading
@@ -773,20 +849,35 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
       expect(Number.isNaN(units), `band heading ${index} states no unit count: ${text}`).toBe(false);
       unitsAcrossBands += units;
     }
-    // The five shut headings between them account for the whole network, so nothing is hidden by
-    // the fold: every bed is answered for before anything is opened.
-    expect(unitsAcrossBands).toBe(NETWORK_UNITS);
+    // The five shut headings between them account for every unit under review, so nothing is
+    // hidden by the fold: every bed is answered for before anything is opened.
+    expect(unitsAcrossBands).toBe(REVIEWED_UNITS);
     // The invented-travel-times sentence is on this screen, once, wherever a band is shown.
     await expect(page.getByTestId("ward-referral-match-synthetic-notice")).toBeVisible();
-    // A coordinator on a phone opens the groups to reach the rows. Every group is expanded here so
-    // the assertions below see the whole network exactly as they did before the grouping existed.
-    for (let index = 0; index < BAND_GROUP_COUNT; index += 1) {
-      await bandGroups.nth(index).locator(":scope > summary").click();
+    // A coordinator on a phone opens the groups to reach the rows. Every shut group is expanded
+    // here so the assertions below see every unit under review, as they did before the grouping
+    // existed. Run again after changing the reviewed ward, whose unit may sit in another band.
+    async function openEveryBandGroup() {
+      for (let index = 0; index < BAND_GROUP_COUNT; index += 1) {
+        const group = bandGroups.nth(index);
+        if (!(await group.evaluate((element) => (element as HTMLDetailsElement).open))) {
+          await group.locator(":scope > summary").click();
+        }
+        await expect(group).toHaveJSProperty("open", true);
+      }
     }
+    await openEveryBandGroup();
 
     // The bed accepted below, and one unit per reason it is not offered — each named, so a rule
     // that stopped excluding anything cannot pass unnoticed.
     await expect(page.getByTestId(`ward-referral-match-accepts-${ACCEPT_UNIT_ID}`)).toBeVisible();
+    // The other named recipient, reviewed by choosing it. The wrong-age unit was never offered in
+    // the slide-out (asserted at its Wards step), so its refusal is not reached here.
+    await reviewWard.selectOption(FEMALE_ONLY_UNIT_ID);
+    await expect(page.getByTestId("ward-referral-match-accepting-count")).toHaveText(
+      `0 of ${REVIEWED_UNITS} units accept this referral right now.`,
+    );
+    await openEveryBandGroup();
     // D7 (a forensic bed is never offered) is not shown here: the sample network has no forensic
     // ward since owner ruling 1A. See the note on the unit constants above for where it is proven.
     // D3 rule 3: a designated bed constrains who may occupy it. This is the one dimension whose
@@ -799,14 +890,13 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await expect(page.getByTestId(`ward-referral-match-reason-${FEMALE_ONLY_UNIT_ID}`)).toHaveText(
       `${FEMALE_ONLY_UNIT_NAME} is female only and does not suit this patient`,
     );
-    await expect(page.getByTestId(`ward-referral-match-reason-${WRONG_AGE_UNIT_ID}`)).toHaveText(
-      "Older adult unit does not match an adult referral",
-    );
     // A unit that does not accept offers no accept control at all — the refusal is not merely
     // described, it is enforced in the UI.
     await expect(page.getByTestId(`ward-referral-match-accept-${FEMALE_ONLY_UNIT_ID}`)).toHaveCount(0);
 
     // --- Step 5: accept it. A human decides; nothing here allocated on its own (D10). ---
+    await reviewWard.selectOption(ACCEPT_UNIT_ID);
+    await openEveryBandGroup();
     await page.getByTestId(`ward-referral-match-accept-${ACCEPT_UNIT_ID}`).click();
     await expect(page.getByTestId("ward-referral-match-rejection")).toHaveCount(0);
     await expect(page.getByTestId("ward-referral-match-decided")).toHaveText(`Accepted at ${ACCEPT_UNIT_NAME}.`);
@@ -882,6 +972,11 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
    * are absolute — and if the fixture ever holds no such pair this fails loudly by name instead of
    * quietly testing a near unit.
    */
+  /*
+   * Re-driven 8 October 2026: the far referral is raised in the referral slide-out, addressed to the
+   * far unit by name — the slide-out names wards rather than asking the whole network — and every
+   * step after it stands as written.
+   */
   test("a referral accepted at a unit the fixture puts out of area does not reach the out-of-area ledger, which says why", async ({
     page,
   }) => {
@@ -901,9 +996,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await expect(page.getByTestId("ward-referral-board-screen")).toBeVisible({ timeout: 15_000 });
     await plantSentinel(page);
 
-    // Raise a referral from the far home region, through the board's own "New referral" link.
+    // Raise a referral from the far home region, through the board's own "New referral" link,
+    // which opens the slide-out in place over the board.
     await page.getByTestId("ward-referral-board-new").click();
-    await expect(page.getByTestId("ward-referral-intake-screen")).toBeVisible({ timeout: 15_000 });
     // Age band and home region are what this journey is actually about; the rest are answered
     // because R2.1 requires every question to be, and the `FAR_PLACEMENT` search has already
     // excluded sex-designated and forensic units, so none of them changes the acceptance below.
@@ -912,22 +1007,29 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     // ways: `FAR_PLACEMENT.unit` (`arm-adult-open`) is staffed for high-acuity nursing
     // (`highAcuityCapacity: 2`) and remains the far band group's only accepting unit either way, so
     // "yes" exercises the gate's other branch without changing which unit this journey accepts at.
-    await answerEveryIntakeQuestion(page, {
-      ...RAISED,
+    //
+    // The slide-out lists only wards whose beds match the chosen bed security, so the security is
+    // read off the far unit itself: an open bed when it has one, otherwise a secure bed. No
+    // transport is needed (patient or carer accompanied), as on the retired form's helper.
+    await raiseReferralInSlideOut(page, {
+      patient: { familyName: "Farfield", givenName: "Synthetic", umrn: "UM990702" },
       ageBand: unit.cohort,
       homeRegion,
-      highAcuityNursingNeeded: "yes",
+      sex: RAISED.sex,
+      gender: RAISED.gender,
+      urgency: Number(RAISED.urgency) as UrgencyLevel,
+      bedSecurity: unitHasOpenBeds(unit) ? "Open" : "Secure",
+      highAcuityNursing: true,
+      transport: "carer",
+      unitIds: [unit.id],
     });
-    await page.getByTestId("ward-referral-intake-submit").click();
-    await expect(page.getByTestId("ward-referral-intake-confirmation")).toBeVisible();
-    await expect(page.getByTestId("ward-referral-intake-rejection")).toHaveCount(0);
-    await closeReferralReceipt(page);
+    await expectNoReloadSince(page, "sending the far referral from the slide-out");
 
     await goToBoardViaPhoneRail(page);
     await expectNoReloadSince(page, "back to the board after raising the far referral");
 
     const raisedId = (await queuedCardIds(page)).find((id) => !SEEDED_QUEUED_IDS.has(id));
-    expect(raisedId, "the referral raised on the intake form never reached the board").toBeDefined();
+    expect(raisedId, "the referral raised in the slide-out never reached the board").toBeDefined();
     await page.getByTestId(`ward-referral-board-card-select-${raisedId}`).click();
 
     // The five groups, and the sentence saying the times are invented, on the screen where the

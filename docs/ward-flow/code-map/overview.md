@@ -259,7 +259,7 @@ Every page file is a server component that renders one client screen.
 | `/people/[patientId]`                                                                    | `PersonScreen` + `PatientNowScreen` (patients)                           |
 | `/people/new`                                                                            | `AddPatientForm` (patients)                                              |
 | `/referrals`                                                                             | `ReferralBoard` (referrals)                                              |
-| `/referrals/new`                                                                         | `ReferralIntakeForm` (referrals)                                         |
+| `/referrals/new`                                                                         | `ReferralBoard` + referral slide-out (referrals)                         |
 | `/search`                                                                                | `PatientSearchPage` (search)                                             |
 | `/settings`                                                                              | `SettingsScreen` (settings)                                              |
 | `/sovereign`                                                                             | `SovereignShowcaseScreen` — chrome showcase, no link to it anywhere      |
@@ -332,7 +332,7 @@ events the screen dispatches.
 | Folder                                                                |      Lines | What the user does there                                                                                           | Actions                            |
 | --------------------------------------------------------------------- | ---------: | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
 | `statistics/`                                                         |     16,363 | Read-only reporting: hub, overview, compare, per ward/ED/service/team                                              | none                               |
-| `referrals/`                                                          |     10,355 | Referral board, raise a referral (`referral-intake.tsx` 4,440), match view, referral drawer                        | 10 types                           |
+| `referrals/`                                                          |      9,260 | Referral board, match view, referral slide-out (the one place a referral is written since 8 Oct 2026)              | 10 types                           |
 | `community/`                                                          |      7,093 | Team directory and one team's caseload, referrals, transport                                                       | 7 types                            |
 | `ward/`                                                               |      6,924 | The per-ward operational screen (`ward-screen.tsx` 5,034): bed release, pulls, morning roll-up, intake constraints | **20 types, 29 call sites (most)** |
 | `ed/`                                                                 |      6,409 | ED board (`ed-screen.tsx` 5,810, the largest file): referral, legal forms, clearance, transport, outcomes          | 20 types                           |

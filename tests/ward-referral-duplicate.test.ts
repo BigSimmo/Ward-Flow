@@ -225,13 +225,19 @@ describe("FD-23 — the duplicate sentence never says where", () => {
  * keystroke.
  *
  * ⚠️ **PINNED STRUCTURALLY, BECAUSE THE BEHAVIOURAL VERSION CANNOT SEE THE DANGEROUS CASE.** A DOM
- * test can show the sentence is absent when nobody is named — and it should, and it does, in
- * `ward-referral-intake-sections.dom.test.tsx`. But it cannot show that no OTHER screen has started
+ * test can show the sentence is absent when nobody is named — and the referral form's own suite
+ * should. But it cannot show that no OTHER screen has started
  * calling this: a search screen importing `duplicateSentence` would be a probe, every DOM test of
  * this form would still pass, and nothing would go red. **The importer set is the property.**
  */
 describe("D-19 condition 2 — only the referral form may ask this", () => {
-  const ALLOWED_CALLER = "referrals/referral-intake.tsx";
+  /*
+   * The referral form. The full-page intake form (`referrals/referral-intake.tsx`) was this file's
+   * only importer until it was retired on 8 Oct 2026; the referral slide-out is now the one place a
+   * referral is written, so it is the only file D-19 lets ask. Nothing may import it today; the
+   * slide-out may, and nothing else ever.
+   */
+  const ALLOWED_CALLERS = ["referrals/ward-referral-drawer.tsx"];
   const WARD_DIR = "src/components/ward-management";
 
   function wardSources(dir: string, found: string[] = []): string[] {
@@ -243,7 +249,7 @@ describe("D-19 condition 2 — only the referral form may ask this", () => {
     return found;
   }
 
-  it("is imported by the referral form and by nothing else", () => {
+  it("is imported by the referral form, if by anything, and by nothing else", () => {
     const files = wardSources("src/components/ward-management");
     // Floor: a sweep that reads nothing passes while every screen probes freely.
     expect(files.length, "no ward source read — this guard would prove nothing").toBeGreaterThan(20);
@@ -261,6 +267,6 @@ describe("D-19 condition 2 — only the referral form may ask this", () => {
         "ONLY from the form already naming a person; reachable from a free search it becomes a probe " +
         "for whether any named person is currently in a mental-health pathway. The allowlist entry " +
         "in ward-patient-link-default-deny.test.ts is void if this bound is widened.",
-    ).toEqual([ALLOWED_CALLER]);
+    ).toEqual(importers.filter((file) => ALLOWED_CALLERS.includes(file)));
   });
 });

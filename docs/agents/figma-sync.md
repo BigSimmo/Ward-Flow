@@ -6,8 +6,13 @@ skill named `figma-sync` can point at it.
 
 Code is the source of truth. Figma Professional has no Code Connect or Variables REST API, so
 Claude runs the sync on request through the Figma MCP (`use_figma`, `get_variable_defs`,
-`get_metadata`, `get_design_context`, `get_screenshot`). The Figma MCP is reachable only on
-Josh's device (Remote Control), not from the cloud container.
+`get_metadata`, `get_design_context`, `get_screenshot`). The Figma MCP tools work from the cloud
+container, but image uploads (`upload_assets`) post to `mcp.figma.com`, which the cloud network
+policy must allow; otherwise run uploads through Remote Control on Josh's device.
+
+Phone screens live on the Figma page "Phone · 8 Oct" as captures of the app at 390px (2x, sliced
+into tiles of at most 2000px so Figma keeps full resolution). The editable phone bar is the
+`Shell/Phone header` component set (State Top and Scrolled).
 
 - Map: `design/figma/figma-sync.json` (file key, collections, naming rule, component and screen map).
 - Tokens: `node scripts/figma-tokens.mjs --export | --diff <file> | --apply <file>`.
@@ -41,7 +46,7 @@ syntax is `var(--wf-name)`, which is the key in the token JSON. Skip `alpha/*` a
      if (!group) continue;
      for (const id of c.variableIds) {
        const v = await figma.variables.getVariableByIdAsync(id);
-       const name = v?.codeSyntax?.WEB?.match(/var\((--wf-[\w-]+)\)/)?.[1];
+       const name = v?.codeSyntax?.WEB?.match(/^var\((--wf-[\w-]+)\)$/)?.[1];
        if (!name) continue;
        for (const m of c.modes) {
          const value = v.valuesByMode[m.modeId];

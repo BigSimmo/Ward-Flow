@@ -258,6 +258,9 @@ export type SwitchProps = {
   block?: boolean;
   onHero?: boolean;
   disabled?: boolean;
+  /** Shown for review but not connected: `aria-disabled`, still focusable, clicks still call
+   *  `onCheckedChange` so the screen can say why. */
+  unavailable?: boolean;
   className?: string;
 };
 
@@ -271,6 +274,7 @@ export function Switch({
   block = false,
   onHero = false,
   disabled,
+  unavailable = false,
   className,
 }: SwitchProps) {
   const labelId = useId();
@@ -280,8 +284,14 @@ export function Switch({
       role="switch"
       aria-checked={checked}
       aria-labelledby={labelId}
-      disabled={disabled}
-      className={cx(styles.switchRow, !block && styles.inline, onHero && styles.onHero, className)}
+      {...(unavailable ? { "aria-disabled": true } : { disabled })}
+      className={cx(
+        styles.switchRow,
+        !block && styles.inline,
+        onHero && styles.onHero,
+        unavailable && styles.unavailable,
+        className,
+      )}
       onClick={() => onCheckedChange(!checked)}
     >
       <span id={labelId} className={styles.switchLabel}>
@@ -307,6 +317,13 @@ export type StepperProps = {
   valueText?: string;
   /** Short note after the control ("Clinical pair"). */
   note?: ReactNode;
+  /** Shown in place of the raw number ("24h", "09:30"). */
+  display?: ReactNode;
+  /** `data-testid` on the value. */
+  valueTestId?: string;
+  /** Shown for review but not connected: every part is `aria-disabled` and still focusable;
+   *  presses still call `onChange` so the screen can say why. */
+  unavailable?: boolean;
   className?: string;
 };
 
@@ -320,12 +337,15 @@ export function Stepper({
   noun,
   valueText,
   note,
+  display,
+  valueTestId,
+  unavailable = false,
   className,
 }: StepperProps) {
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
   const set = (n: number) => {
     const next = clamp(n);
-    if (next !== value) onChange(next);
+    if (next !== value || unavailable) onChange(next);
   };
   const onKeyDown = (event: KeyboardEvent<HTMLSpanElement>) => {
     const map: Record<string, number | undefined> = {
@@ -343,13 +363,13 @@ export function Stepper({
   };
   const capitalised = noun.charAt(0).toUpperCase() + noun.slice(1);
   return (
-    <span className={cx(styles.stepperRow, className)}>
+    <span className={cx(styles.stepperRow, unavailable && styles.unavailable, className)}>
       <span className={styles.stp}>
         <button
           type="button"
           className={styles.stpButton}
           aria-label={`Decrease ${noun}`}
-          aria-disabled={value <= min || undefined}
+          aria-disabled={unavailable || value <= min || undefined}
           onClick={() => set(value - step)}
         >
           <Icon icon={Minus} size={16} />
@@ -362,16 +382,18 @@ export function Stepper({
           aria-valuemax={max === Number.MAX_SAFE_INTEGER ? undefined : max}
           aria-valuenow={value}
           aria-valuetext={valueText ?? `${value} ${noun}`}
+          aria-disabled={unavailable || undefined}
           className={styles.stpValue}
+          data-testid={valueTestId}
           onKeyDown={onKeyDown}
         >
-          {value}
+          {display ?? value}
         </span>
         <button
           type="button"
           className={styles.stpButton}
           aria-label={`Increase ${noun}`}
-          aria-disabled={value >= max || undefined}
+          aria-disabled={unavailable || value >= max || undefined}
           onClick={() => set(value + step)}
         >
           <Icon icon={Plus} size={16} />

@@ -11,6 +11,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
@@ -51,10 +52,12 @@ import {
   Inbox,
   LayoutDashboard,
   PhoneCall,
+  Plus,
   Route,
   Scale,
   Search,
   Settings,
+  UserPlus,
   UserRound,
   Users,
   X,
@@ -181,6 +184,12 @@ function SearchResultIcon({ kind, id }: { kind: string; id?: string }) {
       return <FileText className={styles.itemIcon} aria-hidden="true" />;
     case "task":
       return <CheckSquare className={styles.itemIcon} aria-hidden="true" />;
+    case "action":
+      return id === "add-patient" ? (
+        <UserPlus className={styles.itemIcon} aria-hidden="true" />
+      ) : (
+        <Plus className={styles.itemIcon} aria-hidden="true" />
+      );
     case "view": {
       switch (id) {
         case "delays":
@@ -956,7 +965,14 @@ export function WardGlobalSearch({
   ) : null;
 
   return (
-    <div className={styles.root} ref={rootRef} data-testid="ward-global-search" data-open={showPopup || undefined}>
+    <div
+      className={styles.root}
+      ref={rootRef}
+      data-testid="ward-global-search"
+      data-open={showPopup || undefined}
+      // The compact bar lays the open field over itself at the bar's measured height.
+      style={top > 0 ? ({ "--wgs-bar-h": `${top}px` } as CSSProperties) : undefined}
+    >
       {scope !== undefined ? (
         <span className={styles.scopeChip} data-testid="ward-global-search-scope">
           {scope}
@@ -973,6 +989,7 @@ export function WardGlobalSearch({
           className={styles.input}
           type="text"
           autoComplete="off"
+          enterKeyHint="search"
           spellCheck={false}
           aria-haspopup="listbox"
           aria-controls={showPopup && options.length > 0 ? listId : undefined}
@@ -1019,6 +1036,23 @@ export function WardGlobalSearch({
           >
             <X className={styles.clearIcon} width={12} height={12} aria-hidden="true" />
             <span className={styles.clearText}>Clear</span>
+          </button>
+        ) : null}
+        {/* Phone only (the compact bar shows it while the palette is open): the field takes over the
+            bar, and this is the one way back out on a touch screen with no Esc key. */}
+        {showPopup ? (
+          <button
+            type="button"
+            className={styles.cancel}
+            data-testid="ward-global-search-cancel"
+            onClick={() => {
+              setQuery("");
+              setKindFilter("all");
+              close();
+              inputRef.current?.blur();
+            }}
+          >
+            Cancel
           </button>
         ) : null}
       </div>
