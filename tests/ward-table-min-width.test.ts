@@ -140,6 +140,10 @@ const PINNED: Record<string, string | readonly string[] | null> = {
   /* Settings' preferences table declares a 54rem floor. Source-pinned so a later column/layout
    * change cannot move it silently; no browser intrinsic-width measurement is claimed here. */
   "settings/settings.module.css": "54rem",
+  /* Ward page list view (Bed board). Measured 2026-10-09 on the running page: the narrowest
+   * desktop card (1200px viewport) draws the table at 586px, so 36rem keeps every desktop width
+   * unscrolled and lets a 375px phone scroll instead of squashing the last three columns. */
+  "ward/ward-home-tab.module.css": "36rem",
   /*
    * MEASURED 2026-09-05 ON THE RUNNING PAGE, and the entry below is no longer an estimate.
    * Ward Builder One swept the wrapper width on `/mockups/ward-flow/queue` — 7 columns, 43 seeded
