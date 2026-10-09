@@ -34,6 +34,7 @@ import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formTitleForCode } from "@/lib/form-register";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import {
   arrivalEtaLabel,
   arrivalModeLabel,
@@ -721,6 +722,11 @@ function WardReferralDrawerContent({
   const capacityRecords = useWardCapacity();
   // No sign-in: the route gives the role, and the role gives the profile (or why there is none).
   const myProfile = profileForChromeRole(wardChromeRole(usePathname() ?? ""));
+  // Feature 11: the sheet dispatches as the referral's source; routes whose role `EVENT_ROLE` omits
+  // keep it through the listed cross-role pairs in `ward-role-permissions.ts`.
+  const gate = useRoleGate();
+  const sendGate = gate("RECEIVE_REFERRAL");
+  const addPatientGate = gate("ADD_PATIENT");
 
   const {
     movements,
@@ -1115,6 +1121,7 @@ function WardReferralDrawerContent({
     if (!familyName || !givenName) return setNewPatientError("Enter the family and given names.");
     if (!newPatient.dateOfBirth) return setNewPatientError("Enter the date of birth.");
     if (!umrn) return setNewPatientError("Enter the UMRN.");
+    if (!addPatientGate.allowed) return setNewPatientError(addPatientGate.reason ?? null);
     setNewPatientError(null);
     pendingNewPatient.current = patients.length;
     dispatch({
@@ -1262,7 +1269,7 @@ function WardReferralDrawerContent({
   }
   function confirmAndSend(event: React.FormEvent) {
     event.preventDefault();
-    if (sendPending || sentReferralId) return;
+    if (sendPending || sentReferralId || !sendGate.allowed) return;
     const validation =
       patientError() ?? referralError() ?? documentationError(documentation) ?? referralContactError(contact);
     if (validation) {
@@ -2049,10 +2056,15 @@ function WardReferralDrawerContent({
                             </p>
                           ) : null}
                           <div className={styles.confirmRow}>
-                            <button type="submit" className={`${styles.btn} ${styles.btnTint}`}>
+                            <button
+                              type="submit"
+                              className={`${styles.btn} ${styles.btnTint}`}
+                              {...addPatientGate.buttonProps}
+                            >
                               <UserPlus aria-hidden="true" />
                               Add patient
                             </button>
+                            {addPatientGate.note}
                             <button type="button" className={styles.btn} onClick={() => setNewPatientOpen(false)}>
                               Cancel
                             </button>
@@ -3409,7 +3421,8 @@ function WardReferralDrawerContent({
                   }
                   type={confirmationOpen ? "submit" : "button"}
                   form={confirmationOpen ? "referralConfirmForm" : undefined}
-                  disabled={sendPending}
+                  disabled={sendPending || (confirmationOpen && !sendGate.allowed)}
+                  aria-describedby={confirmationOpen ? sendGate.buttonProps["aria-describedby"] : undefined}
                 >
                   {sendPending
                     ? "Sending…"
@@ -3419,6 +3432,7 @@ function WardReferralDrawerContent({
                         ? "Send referral"
                         : `Next: ${sectionLabel(SECTION_IDS[SECTION_IDS.indexOf(activeSection) + 1]!, destType)}`}
                 </button>
+                {confirmationOpen ? sendGate.note : null}
               </>
             )}
           </div>

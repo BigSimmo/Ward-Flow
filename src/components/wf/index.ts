@@ -10,6 +10,7 @@ export { Icon, type IconProps, type IconSize } from "./icon";
 export { SrOnly, Kbd, Count, CountBubble, Divider, Inset, Spinner, IconTile } from "./primitives";
 export {
   Button,
+  DisabledReason,
   SplitButton,
   buttonClass,
   type ButtonProps,

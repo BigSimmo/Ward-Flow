@@ -178,6 +178,8 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-change-audit-enumeration.dom.test.tsx`** (85 lines) — the change-audit panel's description of itself
 - **`tests/ward-change-reasons.test.ts`** (250 lines) — ward-change-reasons
 - **`tests/ward-chrome-role.test.ts`** (72 lines) — route-derived Ward Flow chrome roles
+- **`tests/ward-role-permissions.test.ts`** (213 lines) — feature 11: `canDispatch` equals `EVENT_ROLE` plus the listed cross-role pairs; role screens dispatch only what their route's role may take
+- **`tests/ward-role-gated-actions.dom.test.tsx`** (62 lines) — feature 11: a disallowed action renders disabled with its visible reason and dispatches nothing
 - **`tests/ward-clock-decoupling-and-history.dom.test.tsx`** (139 lines) — Issue 2: coherent clock across board and event consumers
 - **`tests/ward-clock.test.ts`** (219 lines) — ward clock
 - **`tests/ward-command-activity.test.ts`** (146 lines) — Command activity from current records
