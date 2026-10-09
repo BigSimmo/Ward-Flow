@@ -678,7 +678,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     (admission) => admission.unitId === unit.id && admission.state === "occupied" && admission.specialling,
   ).length;
   const overdueLeaveBeds = unitLeaveBeds.filter(
-    (leaveBed) => now - leaveBed.confirmedAt >= LEAVE_BED_OPEN_WARNING_MINUTES,
+    (leaveBed) => !leaveBed.absentWithoutLeave && now - leaveBed.confirmedAt >= LEAVE_BED_OPEN_WARNING_MINUTES,
   );
   const liveFormAlerts = [
     ...incoming.map((movement) => ({
@@ -1244,7 +1244,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     }));
   const leaveDecisions = unitLeaveBeds.map((leaveBed) => ({
     id: leaveBed.id,
-    title: `Bed on leave · back ${formatInstant(leaveBed.expectedReturn)}`,
+    title: leaveBed.absentWithoutLeave
+      ? `Absent without leave since ${formatInstant(leaveBed.absentWithoutLeave.since)}`
+      : `Bed on leave · back ${formatInstant(leaveBed.expectedReturn)}`,
   }));
   const intakeDecisions = visibleIncoming.map((movement) => ({
     id: movement.id,
