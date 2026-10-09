@@ -10,11 +10,12 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const seeded = seedWardFlowState();
 const stored: unknown = JSON.parse(JSON.stringify(seeded));
 const serialised = JSON.stringify(seeded);
-// WF-009 is referred to a Male-only ward, so record its gender as the reducer tests do.
+// WF-009 is referred to a Male-only ward, so record its gender as the reducer tests do. Clear
+// its historical declines so this benchmark measures successful referrals rather than rejections.
 const referable = {
   ...seeded,
   movements: seeded.movements.map((movement) =>
-    movement.id === "WF-009" ? { ...movement, gender: "Male" as const } : movement,
+    movement.id === "WF-009" ? { ...movement, gender: "Male" as const, declines: [] } : movement,
   ),
 };
 
