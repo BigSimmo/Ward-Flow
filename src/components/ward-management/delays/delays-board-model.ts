@@ -417,6 +417,22 @@ export type CandidateWards = {
 };
 
 /**
+ * What a candidate needs, read from the shortlist's own availability, never from `eligible` alone.
+ * Only an `overridable` ward can be bought with a recorded reason. A ward failing only the gender
+ * designation for a patient whose gender is not female or male needs a recorded gender placement
+ * instead (`shortlistCandidates`, `genderPlacementPending`); calling that an override would send the
+ * coordinator down a path the reducer refuses.
+ */
+function candidateText(candidate: ShortlistCandidate): string {
+  const detail = candidateReason(candidate.verdict);
+  if (candidate.availability === "eligible") return "Eligible now";
+  if (candidate.availability === "overridable") return `Override needs a reason: ${detail}`;
+  if (candidate.verdict.gates.some((gate) => !gate.pass && gate.gate === "gender_designation"))
+    return `Needs a recorded gender placement: ${detail}`;
+  return detail;
+}
+
+/**
  * The person panel's candidate wards. Every ward the shortlist judges, in the shortlist's own order,
  * minus the wards already in the Wards section (accepted, declined or asked). Nothing is cut to a
  * count: `shortlistCandidates` forbids truncation, and an overridable ward dropped off the end is
@@ -434,10 +450,8 @@ export function candidateWards(movement: Movement, units: Unit[], now: Instant):
     .map((candidate: ShortlistCandidate) => ({
       unitId: candidate.unit.id,
       name: candidate.unit.name,
-      tone: candidate.verdict.eligible ? ("success" as const) : ("warning" as const),
-      text: candidate.verdict.eligible
-        ? "Eligible now"
-        : `Override needs a reason: ${candidateReason(candidate.verdict)}`,
+      tone: candidate.availability === "eligible" ? ("success" as const) : ("warning" as const),
+      text: candidateText(candidate),
       waitlist: candidate.waitlist === true,
     }));
   const unavailable = fresh

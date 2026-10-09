@@ -198,9 +198,11 @@ describe("the Delays board model", () => {
         shortlist.filter((c) => c.availability === "unavailable").map((c) => c.unit.id),
       );
       for (const ward of offerable) {
-        const verdict = shortlist.find((c) => c.unit.id === ward.unitId)!.verdict;
-        expect(ward.tone).toBe(verdict.eligible ? "success" : "warning");
-        if (!verdict.eligible) expect(ward.text).toMatch(/^Override needs a reason: \S/u);
+        const { availability } = shortlist.find((c) => c.unit.id === ward.unitId)!;
+        expect(ward.tone).toBe(availability === "eligible" ? "success" : "warning");
+        // Only an overridable ward can be bought with a recorded reason, so only it may say so.
+        if (availability === "overridable") expect(ward.text).toMatch(/^Override needs a reason: \S/u);
+        else expect(ward.text).not.toMatch(/^Override/u);
       }
       for (const ward of unavailable) expect(ward.reason.length).toBeGreaterThan(0);
       checked += listed.length;
@@ -210,5 +212,28 @@ describe("the Delays board model", () => {
       OPEN.some((movement) => candidateWards(movement, UNITS, NOW_ANCHOR).offerable.some((w) => w.tone === "warning")),
       "no overridable candidate in the fixture",
     ).toBe(true);
+  });
+
+  it("never calls a ward that needs a recorded gender placement an override", () => {
+    // A patient whose gender is not female or male, against single-gender wards, with no placement
+    // recorded: the gender gate alone fails, and only a GenderPlacement record can clear it.
+    let found = 0;
+    for (const movement of OPEN) {
+      const person = { ...movement, gender: "Non-binary" as const, genderPlacements: [] };
+      const pending = shortlistCandidates(person, UNITS, NOW_ANCHOR).filter(
+        (c) =>
+          c.availability === "previously_declined" &&
+          c.verdict.gates.some((g) => !g.pass && g.gate === "gender_designation"),
+      );
+      const offerable = candidateWards(person, UNITS, NOW_ANCHOR).offerable;
+      for (const candidate of pending) {
+        const ward = offerable.find((w) => w.unitId === candidate.unit.id);
+        if (ward === undefined) continue;
+        expect(ward.text, `${movement.id} at ${ward.name}`).toMatch(/^Needs a recorded gender placement: \S/u);
+        expect(ward.tone).toBe("warning");
+        found += 1;
+      }
+    }
+    expect(found, "no ward needs a gender placement in this fixture, so this proves nothing").toBeGreaterThan(0);
   });
 });
