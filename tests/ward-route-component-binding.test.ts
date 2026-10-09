@@ -113,6 +113,9 @@ const PINNED: Record<string, string | null> = {
   referrals: "ReferralBoard",
   // 8 Oct 2026: the full-page form is retired; this route is the Referrals board with the slide-out open.
   "referrals/new": "ReferralBoard",
+  // Read-only reports, 9 Oct 2026 (stream C).
+  "reports/chronology": "PatientChronologyScreen",
+  "reports/downtime": "DowntimePackScreen",
   search: "PatientSearchPage",
   // Added 2026-09-12 with the Settings screen. ⚠️ **THIS IS THE SIXTH PINNED TALLY OVER ONE
   // ROUTE, and the comment four rows below already called itself the fourth.** The other five:
@@ -133,6 +136,7 @@ const PINNED: Record<string, string | null> = {
   // that the full suite caught and the focused runs did not.
   "statistics/community/[teamId]": "StatisticsCommunityScreen",
   "statistics/ward/[unitId]": "StatisticsWardScreen",
+  "statistics/weekly": "WeeklyReportScreen",
   transport: "redirect:/mockups/ward-flow/movements",
   "transport/officer": "OfficerScreen",
   "ward/[unitId]": "WardScreen",
