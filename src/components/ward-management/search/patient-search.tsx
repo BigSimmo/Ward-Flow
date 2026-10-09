@@ -51,6 +51,7 @@ import {
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
   findPatients,
+  foldPatientSearchText,
   patientDisplayName,
   patientAgeYears,
   type Patient,
@@ -313,17 +314,17 @@ export function PatientSearchPage() {
     const context = { patients, referrals, movements };
     for (const movement of movements) {
       const info = resolveSubjectPatient(movement, context);
-      words.set(movement.id, `${info.displayName} ${info.umrn}`.toLowerCase());
+      words.set(movement.id, foldPatientSearchText(`${info.displayName} ${info.umrn}`));
     }
     for (const referral of referrals) {
       const info = resolveSubjectPatient(referral, context);
-      words.set(referral.id, `${info.displayName} ${info.umrn}`.toLowerCase());
+      words.set(referral.id, foldPatientSearchText(`${info.displayName} ${info.umrn}`));
     }
     return words;
   }, [patients, referrals, movements]);
 
   const baseResults = useMemo(() => {
-    const needle = text.trim().toLowerCase();
+    const needle = foldPatientSearchText(text);
     if (isChip || needle === "") return searchPatients(movements, referrals, units, { ...query, text: "" });
     const byRecord = new Set(searchPatients(movements, referrals, units, query).map(resultId));
     return searchPatients(movements, referrals, units, { ...query, text: "" }).filter(
@@ -1207,6 +1208,8 @@ Clinical Note: ${p.clinicalNote}`;
             setDetailsOpen(false);
           }}
           title="Patient details"
+          closeLabel="Close patient details"
+          closeButtonClassName={styles.v6DetailsDrawerClose}
           returnFocusRef={detailsTriggerRef}
           testId="ward-patient-search-details"
         >

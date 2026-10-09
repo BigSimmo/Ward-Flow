@@ -4884,6 +4884,35 @@
   background: var(--wf-surface);
 }
 
+/* Phone drawer: same foot action wrap as the side preview card. */
+.v6DetailsSheet > :last-child,
+.v6DetailsSheet > :last-child > div {
+  flex-wrap: wrap;
+}
+
+.v6DetailsDrawerClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--ward-tap, 3rem);
+  min-height: var(--ward-tap, 3rem);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+
+.v6DetailsDrawerClose:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.v6DetailsDrawerClose:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
 .v6Head,
 .v6Row {
   display: grid;

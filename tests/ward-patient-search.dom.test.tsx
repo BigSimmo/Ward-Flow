@@ -322,6 +322,21 @@ describe("search finds PEOPLE, including ones the movement search structurally c
     ).toBeInTheDocument();
   });
 
+  it("finds a live caseload row when the typed surname ignores punctuation in the displayed name", () => {
+    renderSearch();
+
+    const seed = seedWardFlowState();
+    const movement = seed.movements.find((m) => isOpen(m) && m.patientId === "PT-006");
+    if (!movement) throw new Error("fixture WF-308 / PT-006 is required by this test and is missing");
+    const { displayName } = resolveSubjectPatient(movement, seed);
+    expect(displayName).toMatch(/Oquinn/i);
+
+    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "oquinn" } });
+
+    const row = screen.getByTestId(`ward-patient-search-case-${movement.id}`);
+    expect(within(row).getByText(displayName)).toBeInTheDocument();
+  });
+
   it("says plainly that nobody is known, rather than showing an empty list", () => {
     renderSearch();
 

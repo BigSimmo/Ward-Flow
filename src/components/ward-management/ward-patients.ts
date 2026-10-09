@@ -549,6 +549,11 @@ export function duplicateCandidates(patients: readonly Patient[], draft: Patient
   };
 }
 
-function fold(value: string): string {
+/** Fold text the way `findPatients` does before comparing needles and haystacks. */
+export function foldPatientSearchText(value: string): string {
   return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/['’-]/g, "").trim();
+}
+
+function fold(value: string): string {
+  return foldPatientSearchText(value);
 }
