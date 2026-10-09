@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { seedWardFlowState, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import {
   READMISSION_WINDOW_DAYS,
+  createReadmissionIndex,
   admissionReadmissionFlag,
   movementReadmissionFlag,
   priorDischargeWithinWindow,
@@ -34,7 +35,7 @@ describe("28 day readmission flag", () => {
     const state = withReferralAt(leftAt(seed) + 3 * 1440 + 10, seed);
     const flag = referralReadmissionFlag(
       state.referrals.find((referral) => referral.id === "RF-010")!,
-      state,
+      createReadmissionIndex(state),
     );
     expect(flag).toEqual({
       admissionId: "AD-LEFT-01",
@@ -50,7 +51,7 @@ describe("28 day readmission flag", () => {
     const at = (offset: number) =>
       referralReadmissionFlag(
         withReferralAt(leftAt(seed) + offset, seed).referrals.find((referral) => referral.id === "RF-010")!,
-        seed,
+        createReadmissionIndex(seed),
       );
     // `seed` still holds the original referral; the subject is resolved through its own patient link.
     expect(at(WINDOW)?.daysBefore).toBe(READMISSION_WINDOW_DAYS);
@@ -62,7 +63,7 @@ describe("28 day readmission flag", () => {
     expect(
       referralReadmissionFlag(
         state.referrals.find((referral) => referral.id === "RF-010")!,
-        state,
+        createReadmissionIndex(state),
       ),
     ).toBeNull();
   });
@@ -71,13 +72,17 @@ describe("28 day readmission flag", () => {
     const state = seedWardFlowState();
     const transfer = state.admissions.find((admission) => admission.id === "AD-LEFT-02")!;
     expect(transfer.leavingDestination).toBe("transferred-to-another-psychiatric-ward");
-    expect(priorDischargeWithinWindow(transfer, transfer.leftAt! + 60, state, "none")).toBeNull();
+    expect(
+      priorDischargeWithinWindow(transfer, transfer.leftAt! + 60, createReadmissionIndex(state), "none"),
+    ).toBeNull();
   });
 
   it("matches nobody when the subject has no resolvable person", () => {
     const state = seedWardFlowState();
-    expect(priorDischargeWithinWindow({}, leftAt(state) + 60, state)).toBeNull();
-    expect(priorDischargeWithinWindow({ patientId: "PT-NOBODY" }, leftAt(state) + 60, state)).toBeNull();
+    expect(priorDischargeWithinWindow({}, leftAt(state) + 60, createReadmissionIndex(state))).toBeNull();
+    expect(
+      priorDischargeWithinWindow({ patientId: "PT-NOBODY" }, leftAt(state) + 60, createReadmissionIndex(state)),
+    ).toBeNull();
   });
 
   it("picks the most recent discharge when there are two", () => {
@@ -92,7 +97,7 @@ describe("28 day readmission flag", () => {
     expect(
       referralReadmissionFlag(
         state.referrals.find((r) => r.id === "RF-010")!,
-        state,
+        createReadmissionIndex(state),
       )?.admissionId,
     ).toBe("AD-LEFT-01");
   });
@@ -107,8 +112,8 @@ describe("28 day readmission flag", () => {
       openedAt: leftAt(seed) + 120,
     };
     const state = { ...seed, movements: [...seed.movements, movement] };
-    expect(movementReadmissionFlag(movement, state)?.admissionId).toBe("AD-LEFT-01");
+    expect(movementReadmissionFlag(movement, createReadmissionIndex(state))?.admissionId).toBe("AD-LEFT-01");
     const own = state.admissions.find((admission) => admission.id === "AD-LEFT-01")!;
-    expect(admissionReadmissionFlag(own, state)).toBeNull();
+    expect(admissionReadmissionFlag(own, createReadmissionIndex(state))).toBeNull();
   });
 });

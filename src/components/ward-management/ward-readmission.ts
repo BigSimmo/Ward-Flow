@@ -27,7 +27,7 @@ export type ReadmissionFlag = {
   daysBefore: number;
 };
 
-type ReadmissionRecords = {
+export type ReadmissionRecords = {
   admissions: readonly Admission[];
   patients: readonly Patient[];
   referrals: readonly Referral[];
@@ -35,14 +35,49 @@ type ReadmissionRecords = {
   units: readonly Unit[];
 };
 
+type DischargedStay = Admission & { leftAt: Instant };
+
+/**
+ * Built once per list (a screen memoises it on its records) so one resolver index and one pass
+ * over the discharges serve every row. Pure: nothing here reads the clock or the browser.
+ */
+export type ReadmissionIndex = {
+  readonly resolve: ReturnType<typeof createPatientResolver>;
+  /** Each resolved person's discharged stays (transfers excluded). */
+  readonly dischargesByPerson: ReadonlyMap<string, readonly DischargedStay[]>;
+  readonly unitNames: ReadonlyMap<string, string>;
+};
+
 /** A stay that ended in a discharge. A ward-to-ward transfer is not a discharge. */
-function endedInDischarge(admission: Admission): admission is Admission & { leftAt: Instant } {
+function endedInDischarge(admission: Admission): admission is DischargedStay {
   return (
     admission.state === "departed" &&
     admission.leftAt !== null &&
     admission.leavingDestination !== null &&
     admission.leavingDestination !== "transferred-to-another-psychiatric-ward"
   );
+}
+
+/**
+ * The index for one set of records. Pass the full referral list, not a filtered queue: a prior
+ * stay is often linked to its person only through a referral that has since left the queue.
+ */
+export function createReadmissionIndex(records: ReadmissionRecords): ReadmissionIndex {
+  const resolve = createPatientResolver(records);
+  const dischargesByPerson = new Map<string, DischargedStay[]>();
+  for (const admission of records.admissions) {
+    if (!endedInDischarge(admission)) continue;
+    const personId = resolve(admission).patient?.id;
+    if (!personId) continue;
+    const stays = dischargesByPerson.get(personId);
+    if (stays) stays.push(admission);
+    else dischargesByPerson.set(personId, [admission]);
+  }
+  return {
+    resolve,
+    dischargesByPerson,
+    unitNames: new Map(records.units.map((unit) => [unit.id, unit.name])),
+  };
 }
 
 /**
@@ -53,42 +88,40 @@ function endedInDischarge(admission: Admission): admission is Admission & { left
 export function priorDischargeWithinWindow(
   subject: PatientResolutionSubject,
   at: Instant,
-  records: ReadmissionRecords,
+  index: ReadmissionIndex,
   excludeAdmissionId?: string,
 ): ReadmissionFlag | null {
   if (!Number.isFinite(at)) return null;
-  const resolve = createPatientResolver(records);
-  const person = resolve(subject).patient;
+  const person = index.resolve(subject).patient;
   if (!person) return null;
-  let latest: (Admission & { leftAt: Instant }) | undefined;
-  for (const admission of records.admissions) {
-    if (admission.id === excludeAdmissionId || !endedInDischarge(admission)) continue;
+  let latest: DischargedStay | undefined;
+  for (const admission of index.dischargesByPerson.get(person.id) ?? []) {
+    if (admission.id === excludeAdmissionId) continue;
     if (admission.leftAt > at || at - admission.leftAt > WINDOW_MINUTES) continue;
-    if (resolve(admission).patient?.id !== person.id) continue;
     if (!latest || admission.leftAt > latest.leftAt) latest = admission;
   }
   if (!latest) return null;
   return {
     admissionId: latest.id,
     unitId: latest.unitId,
-    unitName: records.units.find((unit) => unit.id === latest.unitId)?.name ?? latest.unitId,
+    unitName: index.unitNames.get(latest.unitId) ?? latest.unitId,
     dischargedAt: latest.leftAt,
     daysBefore: Math.floor((at - latest.leftAt) / (24 * 60)),
   };
 }
 
 /** The flag for a referral, measured from when it was raised. */
-export function referralReadmissionFlag(referral: Referral, records: ReadmissionRecords): ReadmissionFlag | null {
-  return priorDischargeWithinWindow(referral, referral.raisedAt, records);
+export function referralReadmissionFlag(referral: Referral, index: ReadmissionIndex): ReadmissionFlag | null {
+  return priorDischargeWithinWindow(referral, referral.raisedAt, index);
 }
 
 /** The flag for an ED or ward movement, measured from when it was opened. */
-export function movementReadmissionFlag(movement: Movement, records: ReadmissionRecords): ReadmissionFlag | null {
-  return priorDischargeWithinWindow(movement, movement.openedAt, records, movement.admissionId);
+export function movementReadmissionFlag(movement: Movement, index: ReadmissionIndex): ReadmissionFlag | null {
+  return priorDischargeWithinWindow(movement, movement.openedAt, index, movement.admissionId);
 }
 
 /** The flag for an admission, measured from arrival (or the bed being held, before arrival). */
-export function admissionReadmissionFlag(admission: Admission, records: ReadmissionRecords): ReadmissionFlag | null {
+export function admissionReadmissionFlag(admission: Admission, index: ReadmissionIndex): ReadmissionFlag | null {
   const at = admission.arrivedAt ?? admission.pulledAt;
-  return at === null ? null : priorDischargeWithinWindow(admission, at, records, admission.id);
+  return at === null ? null : priorDischargeWithinWindow(admission, at, index, admission.id);
 }

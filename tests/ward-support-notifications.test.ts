@@ -21,7 +21,7 @@ import {
   supportNotificationTaskId,
 } from "@/components/ward-management/ward-support-notifications";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import type { Movement } from "@/components/ward-management/ward-model";
+import type { Movement, Referral } from "@/components/ward-management/ward-model";
 
 const NOW = NOW_ANCHOR;
 
@@ -41,32 +41,83 @@ function told(overrides: Partial<NotificationEvent> = {}): NotificationEvent {
   };
 }
 
+/**
+ * WF-300 as an involuntary inpatient, whatever the seed says, so the arrival cases keep their
+ * subject if the seed's statuses change.
+ */
+function involuntarySeed(): WardFlowState {
+  const state = seedWardFlowState();
+  return {
+    ...state,
+    movements: state.movements.map((movement): Movement =>
+      movement.id === "WF-300" ? { ...movement, legalStatus: "Involuntary inpatient" } : movement,
+    ),
+  };
+}
+
+/** WF-321 as an arrival referred for examination rather than an involuntary inpatient. */
+function referredSeed(): WardFlowState {
+  const state = seedWardFlowState();
+  return {
+    ...state,
+    movements: state.movements.map((movement): Movement =>
+      movement.id === "WF-321" ? { ...movement, legalStatus: "Referred for psychiatric examination" } : movement,
+    ),
+  };
+}
+
 function lastRejection(state: WardFlowState): string | undefined {
   return state.rejections.at(-1)?.reason;
 }
 
 describe("which moves the checklist covers", () => {
-  it("lists the seed's involuntary arrivals and its involuntary discharge, and skips voluntary moves", () => {
-    const state = seedWardFlowState();
-    const subjects = supportNotificationSubjects(state);
-    expect(subjects.map((subject) => `${subject.occasion}:${subject.subjectId}`).sort()).toEqual([
-      "admission:WF-300",
-      "admission:WF-321",
-      "discharge:AD-LEFT-01",
-    ]);
-    for (const subject of subjects.filter((entry) => entry.occasion !== "discharge")) {
-      const status = state.movements.find((movement) => movement.id === subject.subjectId)?.legalStatus;
-      expect(status === "Involuntary inpatient" || status === "Detained awaiting examination").toBe(true);
+  it("covers involuntary arrivals and discharges only, not a referral for examination", () => {
+    const seed = seedWardFlowState();
+    expect(
+      supportNotificationSubjects(seed)
+        .map((subject) => `${subject.occasion}:${subject.subjectId}`)
+        .sort(),
+    ).toEqual(["admission:WF-300", "admission:WF-321", "discharge:AD-LEFT-01"]);
+    for (const subject of supportNotificationSubjects(seed).filter((entry) => entry.occasion !== "discharge")) {
+      expect(seed.movements.find((movement) => movement.id === subject.subjectId)?.legalStatus).toBe(
+        "Involuntary inpatient",
+      );
     }
+    // The same arrival referred for examination is not covered: that status is not involuntary.
+    const referred = referredSeed();
+    expect(supportNotificationSubjects(referred).some((subject) => subject.subjectId === "WF-321")).toBe(false);
   });
 
   it("calls an arrival from a ward a transfer", () => {
-    const state = seedWardFlowState();
+    const state = involuntarySeed();
     const movements = state.movements.map((movement): Movement =>
       movement.id === "WF-300" ? { ...movement, sourceAdmissionId: "AD-ANY" } : movement,
     );
     const subject = supportNotificationSubjects({ ...state, movements }).find((entry) => entry.subjectId === "WF-300");
     expect(subject?.occasion).toBe("transfer");
+  });
+
+  it("calls a psychiatric-ward referral's arrival a transfer when it names the sending ward", () => {
+    const state = involuntarySeed();
+    const transferReferral = {
+      ...state.referrals[0]!,
+      id: "RF-TRANSFER-TEST",
+      source: "psychiatric_ward" as const,
+      originUnitId: state.units[0]!.id,
+    };
+    const movements = state.movements.map((movement): Movement =>
+      movement.id === "WF-300"
+        ? { ...movement, referralId: transferReferral.id, sourceAdmissionId: undefined }
+        : movement,
+    );
+    const occasionWith = (referral: Referral) =>
+      supportNotificationSubjects({ ...state, movements, referrals: [...state.referrals, referral] }).find(
+        (entry) => entry.subjectId === "WF-300",
+      )?.occasion;
+    expect(occasionWith(transferReferral)).toBe("transfer");
+    const withoutSendingWard: Referral = { ...transferReferral };
+    delete withoutSendingWard.originUnitId;
+    expect(occasionWith(withoutSendingWard)).toBe("admission");
   });
 
   it("never treats a ward-to-ward departure as a discharge", () => {
@@ -78,13 +129,14 @@ describe("which moves the checklist covers", () => {
     expect(legalStatusTextIsInvoluntary("Involuntary patient (recorded)")).toBe(true);
     expect(legalStatusTextIsInvoluntary("Detained awaiting examination")).toBe(true);
     expect(legalStatusTextIsInvoluntary("Voluntary")).toBe(false);
+    expect(legalStatusTextIsInvoluntary("Referred for psychiatric examination")).toBe(false);
     expect(legalStatusTextIsInvoluntary(undefined)).toBe(false);
   });
 });
 
 describe("RECORD_SUPPORT_NOTIFICATION", () => {
   it("records who was told and when, defaulting the time to now", () => {
-    const next = wardFlowReducer(seedWardFlowState(), told());
+    const next = wardFlowReducer(involuntarySeed(), told());
     expect(next.rejections).toHaveLength(0);
     expect(next.supportNotifications).toEqual([
       {
@@ -102,7 +154,7 @@ describe("RECORD_SUPPORT_NOTIFICATION", () => {
   });
 
   it("records not applicable with a reason, and the latest record per party is the one shown", () => {
-    let state = wardFlowReducer(seedWardFlowState(), told({ party: "mhas", who: "Advocate on duty" }));
+    let state = wardFlowReducer(involuntarySeed(), told({ party: "mhas", who: "Advocate on duty" }));
     state = wardFlowReducer(
       state,
       told({ party: "mhas", outcome: "not_applicable", who: undefined, reason: "Synthetic reason" }),
@@ -114,7 +166,7 @@ describe("RECORD_SUPPORT_NOTIFICATION", () => {
 
   it("records a discharge against the admission", () => {
     const next = wardFlowReducer(
-      seedWardFlowState(),
+      involuntarySeed(),
       told({ occasion: "discharge", movementId: undefined, admissionId: "AD-LEFT-01", contactedAt: NOW - 30 }),
     );
     expect(next.rejections).toHaveLength(0);
@@ -122,13 +174,13 @@ describe("RECORD_SUPPORT_NOTIFICATION", () => {
   });
 
   it("refuses a role outside ward and coordinator", () => {
-    const next = wardFlowReducer(seedWardFlowState(), told({ role: "ed" }));
+    const next = wardFlowReducer(involuntarySeed(), told({ role: "ed" }));
     expect(next.supportNotifications).toBeUndefined();
     expect(lastRejection(next)).toMatch(/requires role ward or coordinator/);
   });
 
   it("refuses a voluntary or unfinished move, and the wrong occasion", () => {
-    const state = seedWardFlowState();
+    const state = involuntarySeed();
     const voluntary = state.movements.find(
       (movement) => movement.stage === "arrived" && movement.legalStatus === "Voluntary",
     );
@@ -137,6 +189,10 @@ describe("RECORD_SUPPORT_NOTIFICATION", () => {
       /not a completed arrival/,
     );
     expect(lastRejection(wardFlowReducer(state, told({ movementId: "WF-001" })))).toMatch(/not a completed arrival/);
+    // Referred for examination is not an involuntary status.
+    expect(lastRejection(wardFlowReducer(referredSeed(), told({ movementId: "WF-321" })))).toMatch(
+      /not a completed arrival/,
+    );
     expect(lastRejection(wardFlowReducer(state, told({ occasion: "transfer" })))).toMatch(
       /is a admission, not a transfer/,
     );
@@ -150,7 +206,7 @@ describe("RECORD_SUPPORT_NOTIFICATION", () => {
   });
 
   it("refuses a blank or over-long name, a future time, and a reason on a told record", () => {
-    const state = seedWardFlowState();
+    const state = involuntarySeed();
     expect(lastRejection(wardFlowReducer(state, told({ who: "   " })))).toBe("say who was told");
     expect(
       lastRejection(wardFlowReducer(state, told({ who: "x".repeat(SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS + 1) }))),
@@ -163,7 +219,7 @@ describe("RECORD_SUPPORT_NOTIFICATION", () => {
   });
 
   it("refuses not applicable without a reason, with a name, or over the length limit", () => {
-    const state = seedWardFlowState();
+    const state = involuntarySeed();
     const na = (overrides: Partial<NotificationEvent>) =>
       told({ outcome: "not_applicable", who: undefined, reason: "Synthetic", ...overrides });
     expect(lastRejection(wardFlowReducer(state, na({ reason: " " })))).toBe("say why it does not apply");
@@ -174,7 +230,7 @@ describe("RECORD_SUPPORT_NOTIFICATION", () => {
   });
 
   it("refuses an off-list party, occasion or outcome", () => {
-    const state = seedWardFlowState();
+    const state = involuntarySeed();
     const bad = (overrides: Record<string, unknown>) => ({ ...told(), ...overrides }) as unknown as WardFlowEvent;
     expect(lastRejection(wardFlowReducer(state, bad({ party: "gp" })))).toMatch(/party must be/);
     expect(lastRejection(wardFlowReducer(state, bad({ occasion: "leave" })))).toMatch(/occasion/);
@@ -183,7 +239,7 @@ describe("RECORD_SUPPORT_NOTIFICATION", () => {
 
   it("is a typed-text event, kept out of browser storage and scenario files", () => {
     expect(WARD_FLOW_TYPED_TEXT_EVENT_TYPES.has("RECORD_SUPPORT_NOTIFICATION")).toBe(true);
-    const recorded = wardFlowReducer(seedWardFlowState(), told());
+    const recorded = wardFlowReducer(involuntarySeed(), told());
     expect(isValidStoredWardFlowState(recorded)).toBe(false);
     // An empty list changes nothing about whether a stored session is acceptable.
     const plain = { ...recorded, rejections: [] };
@@ -205,29 +261,37 @@ describe("RECORD_SUPPORT_NOTIFICATION", () => {
 
 describe("outstanding notifications as tasks", () => {
   it("lists one task per recent move with a party unrecorded, and drops it once all three are recorded", () => {
-    let state = seedWardFlowState();
+    let state = involuntarySeed();
     const ids = supportNotificationInboxItems(state, NOW).map((item) => item.id);
     expect(ids).toContain(supportNotificationTaskId("admission", "WF-300"));
-    expect(ids).toContain(supportNotificationTaskId("admission", "WF-321"));
-    // The seeded discharge has no movement to open, so it stays on the discharges board only.
-    expect(ids.some((id) => id.includes("AD-LEFT-01"))).toBe(false);
+    // A discharge row is keyed by its stay, which has no movement here, and opens by admission id.
+    const discharge = supportNotificationInboxItems(state, NOW).find(
+      (item) => item.id === supportNotificationTaskId("discharge", "AD-LEFT-01"),
+    );
+    expect(discharge).toMatchObject({ admissionId: "AD-LEFT-01", movementId: "" });
+    // An arrival row has no admission id, so it opens its movement.
+    expect(
+      supportNotificationInboxItems(state, NOW).find(
+        (item) => item.id === supportNotificationTaskId("admission", "WF-300"),
+      )?.admissionId,
+    ).toBeUndefined();
 
     for (const party of ["carer", "personal_support_person", "mhas"] as const) {
       state = wardFlowReducer(state, told({ party }));
     }
     const after = supportNotificationInboxItems(state, NOW);
     expect(after.map((item) => item.id)).not.toContain(supportNotificationTaskId("admission", "WF-300"));
-    expect(after.find((item) => item.movementId === "WF-321")?.detail).toContain("Carer, PSP, MHAS not recorded");
+    expect(after.find((item) => item.admissionId === "AD-LEFT-01")?.detail).toContain("Carer, PSP, MHAS not recorded");
   });
 
   it("looks back a set window only, as a display default", () => {
-    const state = seedWardFlowState();
+    const state = involuntarySeed();
     const later = NOW + SUPPORT_NOTIFICATION_TASK_LOOKBACK_MINUTES + 60;
     expect(supportNotificationInboxItems(state, later)).toEqual([]);
   });
 
   it("joins the action inbox when the caller hands it the records, and the ids acknowledge", () => {
-    const state = seedWardFlowState();
+    const state = involuntarySeed();
     const withRecords = buildActionInbox(state.movements.filter(isOpen), NOW, state.units, state);
     expect(withRecords.some((item) => item.id === supportNotificationTaskId("admission", "WF-300"))).toBe(true);
     expect(
@@ -240,5 +304,10 @@ describe("outstanding notifications as tasks", () => {
       inboxItemId: supportNotificationTaskId("admission", "WF-300"),
     });
     expect(acked.rejections).toHaveLength(0);
+    // A discharge row acknowledges by its stay's admission id, and only that.
+    const ackDischarge = (inboxItemId: string) =>
+      wardFlowReducer(state, { type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now: NOW, inboxItemId });
+    expect(ackDischarge(supportNotificationTaskId("discharge", "AD-LEFT-01")).rejections).toHaveLength(0);
+    expect(ackDischarge(supportNotificationTaskId("discharge", "WF-300")).rejections).toHaveLength(1);
   });
 });

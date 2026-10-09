@@ -88,7 +88,16 @@ const WardMhaCalculator = dynamic(
 
 import { announceToWardShell } from "./ward-live-region";
 import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
-import { digestHref, edHref, handoverHref, movementHref, officerHref, onCallHref, settingsHref } from "./ward-facade";
+import {
+  digestHref,
+  dischargeHref,
+  edHref,
+  handoverHref,
+  movementHref,
+  officerHref,
+  onCallHref,
+  settingsHref,
+} from "./ward-facade";
 import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
@@ -940,6 +949,20 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     [router],
   );
 
+  // A discharge notification task opens the stay's checklist on the discharges board.
+  const openDischarge = useCallback(
+    (admissionId: string) => {
+      setOpenPanel(null);
+      if (typeof window !== "undefined" && window.history && window.history.state?.wardDrawer) {
+        const nextState = { ...window.history.state };
+        delete nextState.wardDrawer;
+        window.history.replaceState(nextState, "");
+      }
+      router.push(dischargeHref(admissionId));
+    },
+    [router],
+  );
+
   // Close the Service selector, or the "New referral" popover, on an outside click — the three
   // drawers get the same behaviour from `<Sheet>`'s own backdrop; these are the only two pop-outs
   // that manage their own chrome. The mockup's own `newMenu` is the same shape of control as the
@@ -1718,7 +1741,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             dispatch={dispatch}
             onClose={() => closePopover("tasks")}
             onSelectMovement={openMovement}
-            records={{ movements, patients, referrals, units }}
+            onSelectDischarge={openDischarge}
+            records={{ movements, admissions, patients, referrals, units }}
           />
         </div>
       </Sheet>

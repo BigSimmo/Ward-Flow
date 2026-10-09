@@ -1133,6 +1133,11 @@ export type InboxItem = {
   owner: string;
   movementId: string;
   /**
+   * Set on a discharge notification row: the discharged stay it is about. The Tasks drawer opens
+   * that stay's checklist on the discharges board instead of the movement page.
+   */
+  admissionId?: string;
+  /**
    * 🔴 **WHETHER THIS ROW CAN BE TICKED OFF AT ALL** — ward-lead task, 2026-09-06. A `"fact"` is a
    * live clinical or legal truth that leaves this list when it stops being true; a `"commitment"`
    * is a human undertaking that leaves when the person says they finished. See `InboxItemKind` and
@@ -1293,36 +1298,7 @@ export function buildActionInbox(
 
   // Advisory carer/PSP/MHAS notifications still to record for recent involuntary moves. These are
   // about COMPLETED moves, so they read every movement in `records`, not the caller's open list.
-  // Two push sites — one per INBOX_CATEGORIES entry — so the classification rot guard stays honest.
-  if (records) {
-    const notifyItems = supportNotificationInboxItems({ ...records, units }, now);
-    for (const item of notifyItems) {
-      if (!item.id.startsWith(INBOX_CATEGORIES.support_notification_arrival.idPrefix)) continue;
-      items.push({
-        id: item.id,
-        kind: item.kind,
-        tone: item.tone,
-        icon: item.icon,
-        title: item.title,
-        detail: item.detail,
-        owner: item.owner,
-        movementId: item.movementId,
-      });
-    }
-    for (const item of notifyItems) {
-      if (!item.id.startsWith(INBOX_CATEGORIES.support_notification_discharge.idPrefix)) continue;
-      items.push({
-        id: item.id,
-        kind: item.kind,
-        tone: item.tone,
-        icon: item.icon,
-        title: item.title,
-        detail: item.detail,
-        owner: item.owner,
-        movementId: item.movementId,
-      });
-    }
-  }
+  if (records) items.push(...supportNotificationInboxItems({ ...records, units }, now));
 
   return items;
 }

@@ -44,22 +44,27 @@ export function referralDraftAgeText(keptAt: number, nowMs: number): string {
 
 /**
  * Keeps `draft` in this tab's memory while the referrer types: `REFERRAL_DRAFT_AUTOSAVE_MS` after
- * the last change, and at once if the slide-out unmounts with a change still waiting. `active`
- * is false until something was entered and after sending. `stop()` is for Discard and Send: no
- * later save may bring the draft back.
+ * the last change, and at once if the slide-out unmounts with a change still waiting.
+ *
+ * - `enabled` false: the hook leaves the store alone (for example, it holds another person's draft).
+ * - `dirty` false on a fresh sheet means the draft is back to how it opened, so a copy kept earlier
+ *   in this sheet is out of date and is dropped. A reopened draft keeps its copy.
+ * - `stop()` is for Discard and Send: no later save may bring the draft back.
  *
  * Returns when the draft was last kept (wall-clock ms) and a ticking `nowMs` for its age.
  */
 export function useReferralDraftAutosave<T>({
   draft,
   draftJson,
-  active,
+  enabled,
+  dirty,
   initialKeptAt,
   initialKeptJson,
 }: {
   draft: T;
   draftJson: string;
-  active: boolean;
+  enabled: boolean;
+  dirty: boolean;
   /** When a reopened draft was kept, or null for a fresh one. */
   initialKeptAt: number | null;
   /** The reopened draft's own JSON, so reopening alone does not count as a change. */
@@ -67,25 +72,29 @@ export function useReferralDraftAutosave<T>({
 }) {
   const [keptAt, setKeptAt] = useState<number | null>(initialKeptAt);
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const latest = useRef({ draft, draftJson });
+  const latest = useRef({ draft, draftJson, enabled, dirty });
   const lastKeptJson = useRef<string | null>(initialKeptJson);
   const stopped = useRef(false);
+  const reopened = initialKeptJson !== null;
 
   useEffect(() => {
-    latest.current = { draft, draftJson };
+    latest.current = { draft, draftJson, enabled, dirty };
   });
 
   useEffect(() => {
-    if (stopped.current) return;
-    // Unsent draft returned to its opening state: clear the autosaved copy so reopen does not
-    // restore answers the user already removed. Separate from stop() after Send or Discard.
-    if (!active) {
-      if (lastKeptJson.current !== null && lastKeptJson.current !== initialKeptJson) {
+    if (!enabled || stopped.current) return;
+    if (!dirty) {
+      // Back to how a fresh sheet opened: drop the copy this sheet kept, so it cannot come back.
+      if (reopened || lastKeptJson.current === null) return;
+      const timer = window.setTimeout(() => {
+        if (stopped.current) return;
         discardReferralDraft();
-        lastKeptJson.current = initialKeptJson;
-        setKeptAt(initialKeptAt);
-      }
-      return;
+        lastKeptJson.current = null;
+        setKeptAt(null);
+      }, REFERRAL_DRAFT_AUTOSAVE_MS);
+      return () => {
+        window.clearTimeout(timer);
+      };
     }
     if (draftJson === lastKeptJson.current) return;
     const timer = window.setTimeout(() => {
@@ -99,20 +108,25 @@ export function useReferralDraftAutosave<T>({
     return () => {
       window.clearTimeout(timer);
     };
-  }, [active, draftJson, initialKeptAt, initialKeptJson]);
+  }, [enabled, dirty, draftJson, reopened]);
 
-  // Unmounting with a change still waiting keeps it at once, so no close path loses it.
-  const activeRef = useRef(active);
-  useEffect(() => {
-    activeRef.current = active;
-  }, [active]);
+  // Unmounting with a change still waiting settles it at once, so no close path loses it.
   useEffect(
     () => () => {
-      if (stopped.current || !activeRef.current) return;
-      if (latest.current.draftJson !== lastKeptJson.current) {
-        keepReferralDraft(latest.current.draft);
+      const current = latest.current;
+      if (stopped.current || !current.enabled) return;
+      if (!current.dirty) {
+        if (!reopened && lastKeptJson.current !== null) {
+          discardReferralDraft();
+        }
+        return;
+      }
+      if (current.draftJson !== lastKeptJson.current) {
+        keepReferralDraft(current.draft);
       }
     },
+    // `reopened` is fixed for the sheet's life.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 

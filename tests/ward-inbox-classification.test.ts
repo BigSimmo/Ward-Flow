@@ -10,11 +10,9 @@ import {
   wardFlowReducer,
   type InboxItemKind,
 } from "../src/components/ward-management/ward-flow-reducer";
-import { type Decline, type Movement, type Referral } from "../src/components/ward-management/ward-model";
+import { type Decline, type Movement } from "../src/components/ward-management/ward-model";
 import { wardMovements } from "../src/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
-import type { Admission } from "../src/components/ward-management/ward-admissions";
-import type { Patient } from "../src/components/ward-management/ward-patients";
 
 const NOW = NOW_ANCHOR;
 const DERIVATIONS = "src/components/ward-management/ward-derivations.ts";
@@ -35,12 +33,12 @@ function movementFrom(id: string, overrides: Partial<Movement>): Movement {
 }
 
 /**
- * ⚠️ **EVERY CATEGORY, INCLUDING THOSE THE REAL FIXTURE LEAVES EMPTY.** Measured on 2026-09-06,
- * the seeded state emits only three of the then-five categories — no breached statutory form and no
+ * ⚠️ **EVERY CATEGORY, INCLUDING THE TWO THE REAL FIXTURE LEAVES EMPTY.** Measured on 2026-09-06,
+ * the seeded state emits only three of the five categories — no breached statutory form and no
  * unlawful destination exist in it. A classification test that ran only over the seed would
- * therefore never look at the rows the whole safety property was written for. These injected
- * movements (and notification records) exist so every INBOX_CATEGORIES entry is exercised; the
- * seeded state is asserted separately below, because it is the population the running app shows.
+ * therefore never look at the two rows the whole safety property was written for. These injected
+ * movements exist so all five are exercised; the seeded state is asserted separately below,
+ * because it is the population the running app actually shows.
  */
 function movementsCoveringEveryCategory(): Movement[] {
   return [
@@ -54,46 +52,43 @@ function movementsCoveringEveryCategory(): Movement[] {
     wardMovements.find((movement) => movement.id === "WF-009")!,
     // transport_awaiting_departure — the real fixture movement whose transport has not set off.
     wardMovements.find((movement) => movement.id === "WF-005")!,
-    // support_notification_arrival — involuntary arrival within the lookback, nothing recorded yet.
-    movementFrom("WF-T04", {
-      legalStatus: "Involuntary inpatient",
-      stage: "arrived",
-      acceptedUnitId: "scgh-adult-open",
-      closure: { at: NOW - 30, outcome: "arrived", reason: "Handover complete" },
-      transport: {
-        id: "TR-T04",
-        provider: "Patient transport service",
-        escortRequired: false,
-        acceptedAt: NOW - 90,
-        enRouteAt: NOW - 70,
-        collectedAt: NOW - 50,
-        arrivedAt: NOW - 30,
-      },
-    }),
   ];
 }
 
-/** Records that produce the discharge notification category alongside the arrival injection above. */
-function recordsCoveringNotificationCategories(movements: Movement[]): {
-  movements: Movement[];
-  admissions: Admission[];
-  patients: Patient[];
-  referrals: Referral[];
-} {
+/**
+ * The two carer, PSP and MHAS categories (9 Oct 2026) come from the whole record, not the open
+ * movements: an involuntary arrival completed an hour ago, and the seed's involuntary discharge.
+ */
+function recordsCoveringSupportNotifications() {
   const seed = seedWardFlowState();
-  const dischargeAdmission: Admission = {
-    ...seed.admissions.find((admission) => admission.id === "AD-LEFT-01")!,
-    leftAt: NOW - 60,
-    state: "departed",
-    movementId: "WF-T04",
-  };
+  const arrived = movementFrom("WF-T04", {
+    legalStatus: "Involuntary inpatient",
+    stage: "arrived",
+    closure: { at: NOW - 60, outcome: "arrived", reason: "Synthetic arrival" },
+  });
   return {
-    movements,
-    admissions: [dischargeAdmission],
+    movements: [...seed.movements, arrived],
+    admissions: seed.admissions,
     patients: seed.patients,
     referrals: seed.referrals,
+    supportNotifications: [],
   };
 }
+
+/**
+ * Categories whose rows a producer module builds and \`buildActionInbox\` appends, so the source
+ * scan below finds their blocks in that module rather than in \`buildActionInbox\` itself.
+ */
+const DELEGATED_PRODUCERS: ReadonlyArray<{ call: string; file: string; fn: string; categories: number }> = [
+  {
+    call: "supportNotificationInboxItems(",
+    file: "src/components/ward-management/ward-support-notifications.ts",
+    fn: "export function supportNotificationInboxItems",
+    // Its one block emits both categories, chosen by occasion: arrival (admission or transfer) and
+    // discharge. The runtime test above proves each is reached.
+    categories: 2,
+  },
+];
 
 function categoryKeyOf(item: InboxItem): string | undefined {
   return Object.entries(INBOX_CATEGORIES).find(([, entry]) => item.id.startsWith(entry.idPrefix))?.[0];
@@ -108,11 +103,15 @@ describe("every action-inbox category is classified as a fact or a commitment", 
    * decided what kind of thing the new row is — which is the point.
    */
   it("gives every row a kind, and every row's kind is the one its category declares", () => {
-    const movements = movementsCoveringEveryCategory();
-    const items = buildActionInbox(movements, NOW, allUnits(), recordsCoveringNotificationCategories(movements));
+    const items = buildActionInbox(
+      movementsCoveringEveryCategory(),
+      NOW,
+      allUnits(),
+      recordsCoveringSupportNotifications(),
+    );
 
     // ANTI-VACUITY. Without this the whole test passes over an empty array — the enumeration
-    // "silently returning nothing" failure. Every category, at least one row each.
+    // "silently returning nothing" failure. Five categories, at least one row each.
     expect(items.length, "the injected movements no longer populate the inbox at all").toBeGreaterThanOrEqual(
       Object.keys(INBOX_CATEGORIES).length,
     );
@@ -157,8 +156,22 @@ describe("every action-inbox category is classified as a fact or a commitment", 
     const pushes = body.match(/items\.push\(\{/g) ?? [];
     // Anti-vacuity on the scan itself: a body that matched nothing would agree with an empty table.
     expect(pushes.length, "the scan found no row-emitting blocks — it is measuring the wrong text").toBeGreaterThan(0);
+    // A delegated producer counts only while buildActionInbox still calls it and it still emits.
+    let delegated = 0;
+    for (const producer of DELEGATED_PRODUCERS) {
+      expect(body, `buildActionInbox no longer calls ${producer.call}`).toContain(producer.call);
+      const producerSource = readFileSync(producer.file, "utf8");
+      const producerStart = producerSource.indexOf(producer.fn);
+      expect(producerStart, `${producer.fn} is no longer where this guard looks`).toBeGreaterThan(-1);
+      const producerBody = producerSource.slice(
+        producerStart,
+        producerSource.indexOf("\n}", producerSource.indexOf("return items;", producerStart)),
+      );
+      expect(producerBody, `${producer.fn} no longer emits rows`).toMatch(/items\.push\(\{/);
+      delegated += producer.categories;
+    }
     expect(
-      pushes.length,
+      pushes.length + delegated,
       "buildActionInbox emits a number of categories that INBOX_CATEGORIES does not account for",
     ).toBe(Object.keys(INBOX_CATEGORIES).length);
   });

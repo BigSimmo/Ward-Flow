@@ -2,23 +2,23 @@
 
 import { useId, useMemo, useState } from "react";
 import { BellRing } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 import { Button, Field, Segmented, StatusGlyph, TextInput, type WfTone } from "@/components/wf";
 import { formatInstant, formatInstantWithDay } from "../ward-clock";
+import { wardChromeRole } from "../ward-chrome-role";
+import { EVENT_ROLE, type WardFlowRole } from "../ward-flow-events";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import {
-  SUPPORT_NOTIFICATION_CONTACT_DAYS,
-  SUPPORT_NOTIFICATION_CONTACT_DAY_LABELS,
   SUPPORT_NOTIFICATION_OCCASION_LABELS,
   SUPPORT_NOTIFICATION_PARTIES,
   SUPPORT_NOTIFICATION_PARTY_LABELS,
   SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS,
   SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS,
   admissionSupportNotificationSubject,
-  contactClockTextToInstant,
+  clockTextOnDay,
   movementSupportNotificationSubject,
   supportNotificationChecklist,
-  type SupportNotificationContactDay,
   type SupportNotificationOutcome,
   type SupportNotificationParty,
   type SupportNotificationRecord,
@@ -31,9 +31,13 @@ const OUTCOME_ITEMS: { id: SupportNotificationOutcome; label: string }[] = [
   { id: "not_applicable", label: "Not applicable" },
 ];
 
-const CONTACT_DAY_ITEMS: { id: SupportNotificationContactDay; label: string }[] = SUPPORT_NOTIFICATION_CONTACT_DAYS.map(
-  (day) => ({ id: day, label: SUPPORT_NOTIFICATION_CONTACT_DAY_LABELS[day] }),
-);
+/** The day the person was told, so a contact before yesterday keeps its own date. */
+type ToldDay = "0" | "1" | "2";
+const DAY_ITEMS: { id: ToldDay; label: string }[] = [
+  { id: "0", label: "Today" },
+  { id: "1", label: "Yesterday" },
+  { id: "2", label: "2 days ago" },
+];
 
 function recordTone(record: SupportNotificationRecord | undefined): WfTone {
   if (!record) return "warning";
@@ -55,22 +59,27 @@ function recordText(record: SupportNotificationRecord | undefined, now: number):
 export function SupportNotificationChecklist({
   movementId,
   admissionId,
-  role,
+  role: roleOverride,
 }: {
   /** An arrival (admission or transfer). */
   movementId?: string;
   /** A discharge. */
   admissionId?: string;
-  role: "ward" | "coordinator";
+  /** The acting role. Defaults to the role this route gives (`ward-chrome-role.ts`), so history
+   *  names who recorded it; a role the event does not allow sees the checklist read-only. */
+  role?: WardFlowRole;
 }) {
+  const routeRole = wardChromeRole(usePathname() ?? "");
+  const role = roleOverride ?? routeRole;
+  const canRecord = EVENT_ROLE.RECORD_SUPPORT_NOTIFICATION.includes(role);
   const { movements, admissions, patients, referrals, supportNotifications, dispatch, rejections } = useWardFlow();
   const now = useWardFlowClock();
   const headingId = useId();
   const [editing, setEditing] = useState<SupportNotificationParty | null>(null);
   const [outcome, setOutcome] = useState<SupportNotificationOutcome>("told");
   const [who, setWho] = useState("");
-  const [day, setDay] = useState<SupportNotificationContactDay>("today");
   const [time, setTime] = useState("");
+  const [day, setDay] = useState<ToldDay>("0");
   const [reason, setReason] = useState("");
   const [submittedAt, setSubmittedAt] = useState<number | null>(null);
   const [savedFrom, setSavedFrom] = useState<number | null>(null);
@@ -82,7 +91,7 @@ export function SupportNotificationChecklist({
   const subject = useMemo(() => {
     if (movementId) {
       const movement = movements.find((candidate) => candidate.id === movementId);
-      return movement ? movementSupportNotificationSubject(movement, { referrals }) : undefined;
+      return movement ? movementSupportNotificationSubject(movement, referrals) : undefined;
     }
     if (admissionId) {
       const admission = admissions.find((candidate) => candidate.id === admissionId);
@@ -107,8 +116,8 @@ export function SupportNotificationChecklist({
     setEditing(party);
     setOutcome("told");
     setWho("");
-    setDay("today");
     setTime(formatInstant(now));
+    setDay("0");
     setReason("");
     setSubmittedAt(null);
     setSavedFrom(null);
@@ -117,13 +126,13 @@ export function SupportNotificationChecklist({
 
   function save(party: SupportNotificationParty) {
     if (!subject) return;
-    const contactedAt = contactClockTextToInstant(time, day, now);
+    const contactedAt = clockTextOnDay(time, Number(day), now);
     if (outcome === "told" && contactedAt === null) {
-      setTimeError(
-        /^([01]\d|2[0-3]):([0-5]\d)$/.test(time.trim())
-          ? "That day and time is still in the future"
-          : "Enter the time as HH:MM, for example 14:05",
-      );
+      setTimeError("Enter the time as HH:MM, for example 14:05");
+      return;
+    }
+    if (outcome === "told" && contactedAt !== null && contactedAt > now) {
+      setTimeError("That time is later than now");
       return;
     }
     setTimeError(null);
@@ -173,7 +182,7 @@ export function SupportNotificationChecklist({
                 <span className={styles.value} data-testid={`ward-support-notification-${party}`}>
                   {recordText(record, now)}
                 </span>
-                {openParty === party ? null : (
+                {openParty === party || !canRecord ? null : (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -202,7 +211,7 @@ export function SupportNotificationChecklist({
                     onChange={setOutcome}
                   />
                   {outcome === "told" ? (
-                    <>
+                    <div className={styles.fields}>
                       <Field label="Who was told">
                         <TextInput
                           value={who}
@@ -213,26 +222,19 @@ export function SupportNotificationChecklist({
                           }}
                         />
                       </Field>
-                      <div className={styles.when}>
-                        <Segmented<SupportNotificationContactDay>
-                          label="Day told"
-                          items={CONTACT_DAY_ITEMS}
-                          value={day}
-                          onChange={setDay}
+                      <Segmented<ToldDay> label="Day told" items={DAY_ITEMS} value={day} onChange={setDay} />
+                      <Field label="Time told" hint="24h" error={timeError ?? undefined}>
+                        <TextInput
+                          value={time}
+                          inputMode="numeric"
+                          placeholder="HH:MM"
+                          maxLength={5}
+                          onChange={(event) => {
+                            setTime(event.target.value);
+                          }}
                         />
-                        <Field label="Time told" hint="24h" error={timeError ?? undefined}>
-                          <TextInput
-                            value={time}
-                            inputMode="numeric"
-                            placeholder="HH:MM"
-                            maxLength={5}
-                            onChange={(event) => {
-                              setTime(event.target.value);
-                            }}
-                          />
-                        </Field>
-                      </div>
-                    </>
+                      </Field>
+                    </div>
                   ) : (
                     <Field label="Reason">
                       <TextInput

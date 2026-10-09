@@ -182,10 +182,10 @@ describe("the ruled Ready expression has exactly the sanctioned homes", () => {
       // 581 -> 579, 4 Oct 2026 (PR #37 whole-tree lint): two unused ward-legal-clock imports were
       // removed at the top of ward-derivations.ts. VERIFIED a move and not a fifth copy: the guard's
       // received list still holds exactly one ward-derivations.ts match, the same `available` line.
-      // 579 -> 580, 9 Oct 2026 (PR #159 support-notification inbox): one import line for
-      // `supportNotificationInboxItems` landed above `unitCapacity`. VERIFIED a move and not a fifth
-      // copy: still exactly one match, the same `available` line inside `unitCapacity`. The smart
-      // search Ready path calls `unitCapacity` rather than adding a fifth inline copy.
+      // 579 -> 580, 9 Oct 2026 (PR #159, carer/PSP/MHAS tasks): one import
+      // (`supportNotificationInboxItems`) was added at the top of ward-derivations.ts. VERIFIED a
+      // move and not a fifth copy: the file still holds exactly one match, the same `available`
+      // line inside `unitCapacity`.
       "src/components/ward-management/ward-derivations.ts:580",
       // 424 -> 426, owner ruling 2026-09-09/2026-09-10 (sex and gender split, P1 #BAY1TY): the
       // gender gate task added two imports (`Patient`, `OverrideReason`) to the top of
