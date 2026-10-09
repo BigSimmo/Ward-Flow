@@ -1,0 +1,224 @@
+/*
+ * Read-only reports: the PIR chronology, the weekly operations report and the downtime pack.
+ * Built for paper first: dense native tables, tokens only, and a print block that turns the page
+ * into plain ink on white with the controls removed.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--wf-s-4);
+  box-sizing: border-box;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--wf-s-3);
+}
+
+.controls > * {
+  min-width: 0;
+}
+
+.picker {
+  width: min(100%, 320px);
+}
+
+.stamp {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.disclosure {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.tableWrap {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.tableWrap:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.table {
+  width: 100%;
+  table-layout: auto;
+}
+
+.table th,
+.table td {
+  height: 32px;
+  vertical-align: top;
+}
+
+.table thead th {
+  white-space: nowrap;
+}
+
+.table tbody th {
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-transform: none;
+  letter-spacing: 0;
+  text-align: left;
+  color: var(--wf-ink-1);
+}
+
+.num {
+  font-family: var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table th.num {
+  text-align: right;
+}
+
+.time {
+  font-family: var(--wf-mono);
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--wf-ink-3);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-3);
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}
+
+.figure dt {
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.figure dd {
+  margin: 0;
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
+}
+
+.figure small {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.reasons {
+  margin: 0;
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+  list-style: none;
+}
+
+.reasons li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-1) 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 1100px) {
+  .grid2,
+  .grid3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 48rem) {
+  .page {
+    padding: var(--wf-s-3);
+  }
+}
+
+@media print {
+  .page,
+  .page * {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+    box-shadow: none !important;
+  }
+
+  .page {
+    padding: 0;
+  }
+
+  .grid2,
+  .grid3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tableWrap {
+    overflow: visible;
+  }
+
+  .table tr {
+    break-inside: avoid;
+  }
+
+  .page [data-print-hide] {
+    display: none !important;
+  }
+}
