@@ -80,7 +80,8 @@ export interface WardAnswerViewProps {
 }
 
 export function WardAnswerView({ unitId }: WardAnswerViewProps) {
-  const { movements, units, bedReleases, leaveBeds, admissions, dispatch, rejections, patients } = useWardFlow();
+  const { movements, units, bedReleases, leaveBeds, admissions, dispatch, rejections, patients, referrals } =
+    useWardFlow();
   const now = useWardFlowClock();
   const unit = units.find((candidate) => candidate.id === unitId);
 
@@ -1018,7 +1019,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   <ul className={styles.historyList} data-testid="ward-answer-history">
                     {recentAnswers.map((answer) => (
                       <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
-                        <strong>{movementUmrn(answer.movementId, { patients, movements })}</strong>
+                        <strong>{movementUmrn(answer.movementId, { patients, referrals, movements })}</strong>
                         <span>{answer.outcome}</span>
                         <span>{answer.reason ? answer.reason.replace(/_/g, " ") : "Accepted by this ward"}</span>
                         {answer.at === undefined ? (

@@ -1161,6 +1161,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           <WardGlobalSearch
             movements={movements}
             patients={patients}
+            referrals={referrals}
             units={units}
             tasks={tasksItems}
             now={now}

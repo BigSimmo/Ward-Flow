@@ -356,9 +356,14 @@ export function OfficerScreen() {
     return info.patient ? info.displayName : undefined;
   };
   // D-39: the patient's UMRN is shown wherever the WF journey number used to be.
-  const umrnFor = useCallback(
-    (movement: Movement) => movementUmrn(movement, { patients, referrals, movements }),
+  // Memoize the resolver state object so each call hits the WeakMap index cache.
+  const umrnResolverState = useMemo(
+    () => ({ patients, referrals, movements }),
     [patients, referrals, movements],
+  );
+  const umrnFor = useCallback(
+    (movement: Movement) => movementUmrn(movement, umrnResolverState),
+    [umrnResolverState],
   );
   const patientNameForMovementId = (movementId: string) => {
     const movement = movements.find((candidate) => candidate.id === movementId);

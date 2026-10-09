@@ -9,7 +9,6 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
 import {
   resolveSubjectPatient,
-  withUmrnInPlaceOfMovementIds,
   type ResolvedPatientInfo,
 } from "@/components/ward-management/ward-patient-resolver";
 import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
@@ -80,6 +79,29 @@ function getPatientDisplayName(
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     return movement.id ? "Unknown Patient" : "Name not recorded";
   }
+}
+
+/** D-39: swap WF tokens via the provider identity projection so referral-linked notices resolve
+ *  without this ward surface importing the referrals array. */
+const NOTICE_MOVEMENT_ID_TOKEN = /(?<![A-Z0-9-])WF-[A-Z0-9-]+/g;
+
+function rewriteNoticeUmrns(
+  text: string,
+  movements: Movement[],
+  resolveIdentity: ((subject: Movement) => ResolvedPatientInfo) | undefined,
+  patients?: readonly Patient[],
+): string {
+  if (!text.includes("WF-")) return text;
+  return text.replace(NOTICE_MOVEMENT_ID_TOKEN, (token) => {
+    const id = token.replace(/-+$/, "");
+    const movement = movements.find((candidate) => candidate.id === id);
+    if (!movement) return token;
+    const info = resolveIdentity
+      ? resolveIdentity(movement)
+      : resolveSubjectPatient(movement, { movements, patients });
+    if (info.umrn === "UMRN not recorded") return token;
+    return info.umrn + token.slice(id.length);
+  });
 }
 
 export function WardNotificationCenter({
@@ -399,7 +421,7 @@ export function WardNotificationCenter({
                           {isRead && <span className={styles.readBadge}>Read</span>}
                         </div>
                         <p className={styles.cardMessage}>
-                          {withUmrnInPlaceOfMovementIds(notice.sentence, { patients, movements })}
+                          {rewriteNoticeUmrns(notice.sentence, movements, resolveIdentity, effectivePatients)}
                         </p>
                       </div>
 

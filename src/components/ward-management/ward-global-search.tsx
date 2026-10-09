@@ -33,7 +33,7 @@ import { StatusGlyph } from "@/components/wf";
 import { destinationUnit, stageCopy, type InboxItem } from "@/components/ward-management/ward-derivations";
 import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
-import type { Movement, Unit } from "@/components/ward-management/ward-model";
+import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import {
@@ -133,6 +133,7 @@ import styles from "./ward-global-search.module.css";
 export type WardGlobalSearchProps = {
   movements: Movement[];
   patients: readonly Patient[];
+  referrals?: readonly Referral[];
   units: Unit[];
   /**
    * The one thing that may differ by role — rendered exactly as given, with no interpretation.
@@ -320,6 +321,7 @@ function headerBottom(root: HTMLElement | null): number {
 export function WardGlobalSearch({
   movements,
   patients,
+  referrals,
   units,
   tasks,
   now,
@@ -398,8 +400,8 @@ export function WardGlobalSearch({
             kind: "movement",
             kindLabel: "Movement",
             id: m.id,
-            title: resolveSubjectPatient(m, { patients, movements }).displayName,
-            meta: `${resolveSubjectPatient(m, { patients, movements }).umrn} · ${stageCopy[m.stage].label}${dest ? ` · ${dest.name}` : ""}`,
+            title: resolveSubjectPatient(m, { patients, referrals, movements }).displayName,
+            meta: `${resolveSubjectPatient(m, { patients, referrals, movements }).umrn} · ${stageCopy[m.stage].label}${dest ? ` · ${dest.name}` : ""}`,
             href: movementHref(m.id),
           };
         }),
@@ -504,7 +506,7 @@ export function WardGlobalSearch({
     const position = new Map<string, number>(order.map((key, index) => [key, index]));
     g.sort((left, right) => (position.get(left.key) ?? order.length) - (position.get(right.key) ?? order.length));
     return g;
-  }, [smartResults, refusal, trimmed, units, patients, movements]);
+  }, [smartResults, refusal, trimmed, units, patients, referrals, movements]);
 
   const kindCounts = useMemo(() => {
     const counts = new Map<KindFilter, number>();
@@ -919,6 +921,7 @@ export function WardGlobalSearch({
               <GlobalSearchPreview
                 item={previewItem}
                 patients={patients}
+                referrals={referrals}
                 movements={movements}
                 units={units}
                 now={now}
