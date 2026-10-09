@@ -28,7 +28,7 @@ import {
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement, MovementStage } from "@/components/ward-management/ward-model";
-import type { Patient } from "@/components/ward-management/ward-patients";
+import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { edShortName, unitById } from "@/components/ward-management/ward-sites";
@@ -117,13 +117,8 @@ function rowClock(row: EdRow): WaitClock {
   return row.pastTarget > 0 ? "past" : row.severe > 0 ? "severe" : "in";
 }
 
-function personName(movement: Movement, patients: readonly Patient[]): string {
-  const patient = movement.patientId ? patients.find((candidate) => candidate.id === movement.patientId) : undefined;
-  return patient ? `${patient.familyName}, ${patient.givenName}` : movement.id;
-}
-
 export function EdIndex() {
-  const { movements, patients, configuration } = useWardFlow();
+  const { movements, patients, referrals, configuration } = useWardFlow();
   const { now, paused, togglePause } = usePageLive();
   const accessTarget = configuration.edAccessTargetMinutes;
 
@@ -146,40 +141,41 @@ export function EdIndex() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const rows: EdRow[] = useMemo(
-    () =>
-      edHomeSummaries(movements, now, accessTarget).map((summary) => {
-        const people = summary.open
-          .map((movement): EdPerson => {
-            const wait = Math.max(0, now - movement.openedAt);
-            const destination = movement.acceptedUnitId ? unitById(movement.acceptedUnitId)?.name : undefined;
-            return {
-              movement,
-              name: personName(movement, patients),
-              href: patientHref(movement.patientId ?? movement.id),
-              wait,
-              clock: wait >= accessTarget ? "past" : wait >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? "severe" : "in",
-              stage: STAGE_LABEL[movement.stage],
-              destination,
-            };
-          })
-          .sort((a, b) => b.wait - a.wait);
-        const inStages = (stages: readonly MovementStage[]) =>
-          people.filter((person) => stages.includes(person.movement.stage)).length;
-        return {
-          summary,
-          short: edShortName(summary.ed),
-          people,
-          pastTarget: summary.pastAccessTarget,
-          severe: people.filter((person) => person.clock === "severe").length,
-          noBed: inStages(NO_BED),
-          held: inStages(HELD),
-          leaving: inStages(LEAVING),
-          forms: people.filter((person) => person.movement.legalForm).length,
-        };
-      }),
-    [movements, patients, now, accessTarget],
-  );
+  const rows: EdRow[] = useMemo(() => {
+    // D-14: names come through the shared resolver, the same one the ED board uses.
+    const resolve = createPatientResolver({ patients, referrals, movements });
+    return edHomeSummaries(movements, now, accessTarget).map((summary) => {
+      const people = summary.open
+        .map((movement): EdPerson => {
+          const wait = Math.max(0, now - movement.openedAt);
+          const destination = movement.acceptedUnitId ? unitById(movement.acceptedUnitId)?.name : undefined;
+          const person = resolve(movement).patient;
+          return {
+            movement,
+            name: person ? `${person.familyName}, ${person.givenName}` : movement.id,
+            href: patientHref(person?.id ?? movement.id),
+            wait,
+            clock: wait >= accessTarget ? "past" : wait >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? "severe" : "in",
+            stage: STAGE_LABEL[movement.stage],
+            destination,
+          };
+        })
+        .sort((a, b) => b.wait - a.wait);
+      const inStages = (stages: readonly MovementStage[]) =>
+        people.filter((person) => stages.includes(person.movement.stage)).length;
+      return {
+        summary,
+        short: edShortName(summary.ed),
+        people,
+        pastTarget: summary.pastAccessTarget,
+        severe: people.filter((person) => person.clock === "severe").length,
+        noBed: inStages(NO_BED),
+        held: inStages(HELD),
+        leaving: inStages(LEAVING),
+        forms: people.filter((person) => person.movement.legalForm).length,
+      };
+    });
+  }, [movements, patients, referrals, now, accessTarget]);
 
   // Statewide hero counts.
   const total = (pick: (row: EdRow) => number) => rows.reduce((sum, row) => sum + pick(row), 0);
