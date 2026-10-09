@@ -1170,7 +1170,7 @@
   overflow-x: auto;
   border-top: 1px solid var(--line);
   scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: var(--wf-line-2) transparent;
 }
 
 .tableWrap::-webkit-scrollbar {
