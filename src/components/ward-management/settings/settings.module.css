@@ -952,16 +952,28 @@
   }
 
   .ruleRow {
-    grid-template-columns: minmax(0, 1fr) 28px 9.5rem;
+    grid-template-columns: minmax(0, 1fr) 28px 10.5rem;
   }
 
-  /* Phone (9 Oct 2026): the stepper's minus and plus reach the 48px tap size. */
+  /* A long rule name wraps in its own column rather than running under the stepper. */
+  .ruleRow .rowTitle {
+    white-space: normal;
+  }
+
+  /* Phone (9 Oct 2026): the stepper's minus and plus reach the 48px tap size. The box adds its
+   * 1px border on each side, and the buttons never shrink; the value takes what is left. */
   .ruleStepper > span:first-child {
-    height: var(--spacing-tap, 3rem);
+    height: calc(var(--spacing-tap, 3rem) + 2px);
   }
 
   .ruleStepper > span:first-child > button {
+    flex: none;
     width: var(--spacing-tap, 3rem);
+  }
+
+  .ruleStepper > span:first-child > [role="spinbutton"] {
+    min-width: 0;
+    white-space: nowrap;
   }
 
   .effectCell {
