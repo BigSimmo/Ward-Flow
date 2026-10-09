@@ -17,6 +17,26 @@ import type { Patient } from "./ward-patients";
 export const READMISSION_WINDOW_DAYS = 28;
 const WINDOW_MINUTES = READMISSION_WINDOW_DAYS * 24 * 60;
 
+type DischargeIndex = Map<string, (Admission & { leftAt: Instant })[]>;
+const dischargeIndexes = new WeakMap<object, DischargeIndex>();
+
+function dischargeIndex(records: ReadmissionRecords, resolve: ReturnType<typeof createPatientResolver>): DischargeIndex {
+  const cached = dischargeIndexes.get(records);
+  if (cached) return cached;
+  const index: DischargeIndex = new Map();
+  for (const admission of records.admissions) {
+    if (!endedInDischarge(admission)) continue;
+    const patient = resolve(admission).patient;
+    if (!patient) continue;
+    const list = index.get(patient.id) ?? [];
+    list.push(admission);
+    index.set(patient.id, list);
+  }
+  for (const list of index.values()) list.sort((a, b) => b.leftAt - a.leftAt);
+  dischargeIndexes.set(records, index);
+  return index;
+}
+
 export type ReadmissionFlag = {
   admissionId: string;
   unitId: string;
@@ -60,13 +80,12 @@ export function priorDischargeWithinWindow(
   const resolve = createPatientResolver(records);
   const person = resolve(subject).patient;
   if (!person) return null;
-  let latest: (Admission & { leftAt: Instant }) | undefined;
-  for (const admission of records.admissions) {
-    if (admission.id === excludeAdmissionId || !endedInDischarge(admission)) continue;
-    if (admission.leftAt > at || at - admission.leftAt > WINDOW_MINUTES) continue;
-    if (resolve(admission).patient?.id !== person.id) continue;
-    if (!latest || admission.leftAt > latest.leftAt) latest = admission;
-  }
+  const latest = dischargeIndex(records, resolve)
+    .get(person.id)
+    ?.find(
+      (admission) =>
+        admission.id !== excludeAdmissionId && admission.leftAt <= at && at - admission.leftAt <= WINDOW_MINUTES,
+    );
   if (!latest) return null;
   return {
     admissionId: latest.id,
