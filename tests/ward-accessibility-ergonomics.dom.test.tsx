@@ -88,34 +88,23 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       const firstCard = patientCards[0];
       const secondCard = patientCards[1];
 
-      // Second card selected via Enter
+      // Second row selected via Enter. The 9 Oct 2026 census is one table of rows, so selection is
+      // `aria-selected` on the row (the Comfort / Dense switch and its card buttons are gone).
       fireEvent.keyDown(secondCard, { key: "Enter" });
       expect(secondCard.className).toContain("selected");
-      expect(secondCard).toHaveAttribute("aria-pressed", "true");
-      expect(firstCard).toHaveAttribute("aria-pressed", "false");
+      expect(secondCard).toHaveAttribute("aria-selected", "true");
+      expect(firstCard).toHaveAttribute("aria-selected", "false");
       expect(screen.getByTestId("ward-patient-search-preview")).toBeInTheDocument();
 
-      // First card re-selected via Space
+      // First row re-selected via Space
       fireEvent.keyDown(firstCard, { key: " " });
       expect(firstCard.className).toContain("selected");
-      expect(firstCard).toHaveAttribute("aria-pressed", "true");
-      expect(secondCard).toHaveAttribute("aria-pressed", "false");
+      expect(firstCard).toHaveAttribute("aria-selected", "true");
+      expect(secondCard).toHaveAttribute("aria-selected", "false");
       expect(screen.getByTestId("ward-patient-search-preview")).toBeInTheDocument();
-
-      // Switch to dense view and verify aria-selected on row. v6 (Patients.png): Comfort / Dense is a
-      // segmented control, so Dense is a radio.
-      const denseBtn = screen.getByRole("radio", { name: /dense/i });
-      fireEvent.click(denseBtn);
-
-      const denseContainer = screen.getByRole("table", { name: "Dense caseload list" });
-      const denseRows = within(denseContainer).getAllByRole("row");
-      expect(denseRows.length).toBeGreaterThanOrEqual(2);
-      expect(denseRows[0]).toHaveAttribute("aria-selected", "true");
-      expect(denseRows[1]).toHaveAttribute("aria-selected", "false");
-
-      fireEvent.keyDown(denseRows[1], { key: "Enter" });
-      expect(denseRows[1]).toHaveAttribute("aria-selected", "true");
-      expect(denseRows[0]).toHaveAttribute("aria-selected", "false");
+      expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent(
+        firstCard.querySelector("b")?.textContent ?? "",
+      );
     });
   });
 

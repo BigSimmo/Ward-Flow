@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 import type { Referral, ReferralState } from "@/components/ward-management/ward-model";
 import {
@@ -89,6 +89,8 @@ export function PatientTypeahead({
   label = "Find a person",
   placeholder = "Name or UMRN…",
   offerAddPerson = true,
+  suggestions = true,
+  adornment,
 }: {
   patients: readonly Patient[];
   referrals: readonly Referral[];
@@ -110,6 +112,13 @@ export function PatientTypeahead({
    * are different.
    */
   offerAddPerson?: boolean;
+  /**
+   * Whether typing opens the list of people found. The Patients census passes false: there the
+   * search narrows the table itself, so a second list over it would show the same people twice.
+   */
+  suggestions?: boolean;
+  /** Small controls drawn inside the field after the text, such as a live count. */
+  adornment?: ReactNode;
 }) {
   const id = useId();
   const listId = `${id}-list`;
@@ -202,7 +211,7 @@ export function PatientTypeahead({
     return () => document.removeEventListener("mousedown", onDocumentPointerDown);
   }, [open]);
 
-  const showPopup = open && query.length > 0;
+  const showPopup = suggestions && open && query.length > 0;
 
   /*
    * D1 FIX: keep the active row on screen. The popup clips at `max-height: 24rem` with its own
@@ -296,11 +305,11 @@ export function PatientTypeahead({
            * states of role `textbox`. `aria-expanded` is NOT, which is why it is gone rather than
            * merely unused — it would have been invalid on a plain textbox.
            */
-          aria-haspopup="listbox"
+          aria-haspopup={suggestions ? "listbox" : undefined}
           aria-controls={showPopup ? listId : undefined}
           aria-activedescendant={activeIndex >= 0 ? `${id}-opt-${activeIndex}` : undefined}
-          aria-autocomplete="list"
-          aria-describedby={`${id}-hint`}
+          aria-autocomplete={suggestions ? "list" : undefined}
+          aria-describedby={suggestions ? `${id}-hint` : undefined}
           placeholder={placeholder}
           value={value}
           onChange={(event) => {
@@ -312,6 +321,7 @@ export function PatientTypeahead({
           data-testid="ward-patient-typeahead-input"
         />
 
+        {adornment}
         {value.length > 0 ? (
           <button
             type="button"
@@ -327,9 +337,11 @@ export function PatientTypeahead({
         ) : null}
       </div>
 
-      <p className={styles.guidance} id={`${id}-hint`}>
-        Related spellings are found too. Press <kbd>↓</kbd> to step through the list — nothing is chosen for you.
-      </p>
+      {suggestions ? (
+        <p className={styles.guidance} id={`${id}-hint`}>
+          Related spellings are found too. Press <kbd>↓</kbd> to step through the list — nothing is chosen for you.
+        </p>
+      ) : null}
 
       {/*
         The count is announced rather than only drawn, because a clinician using a screen reader
@@ -353,8 +365,9 @@ export function PatientTypeahead({
         foot, standard §8.3) are BOTH visual. A screen-reader user reaches neither, which is why
         the marker has to be in the sentence at all.
       */}
+      {/* Without suggestions the host page announces its own results, so this stays silent. */}
       <p className="sr-only" role="status" aria-live="polite">
-        {query.length === 0 || refused
+        {!suggestions || query.length === 0 || refused
           ? ""
           : matches.length > 0
             ? `${matches.length} invented ${matches.length === 1 ? "name" : "names"} found.`

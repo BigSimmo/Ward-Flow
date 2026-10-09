@@ -333,8 +333,9 @@ describe("search finds PEOPLE, including ones the movement search structurally c
 
     fireEvent.change(screen.getByLabelText("Search"), { target: { value: "oquinn" } });
 
+    // The census marks the matched letters inside the name, so the name spans two text nodes.
     const row = screen.getByTestId(`ward-patient-search-case-${movement.id}`);
-    expect(within(row).getByText(displayName)).toBeInTheDocument();
+    expect(row).toHaveTextContent(displayName);
   });
 
   it("says plainly that nobody is known, rather than showing an empty list", () => {
