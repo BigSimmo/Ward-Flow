@@ -1,0 +1,75 @@
+name: babysit-145-resolve-merge
+on:
+  push:
+    paths:
+      - "docs/ward-flow/.resolve-145/**"
+      - ".github/workflows/babysit-145-resolve-merge.yml"
+    branches:
+      - claude/brave-wright-aiqisd
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/brave-wright-aiqisd
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Assemble resolved docs, merge main, push
+        run: |
+          set -euo pipefail
+          MANIFEST=docs/ward-flow/.resolve-145/manifest.txt
+          if [ ! -f "$MANIFEST" ]; then
+            echo "No manifest yet"; exit 0
+          fi
+          DEC_N=$(sed -n 's/^dec=//p' "$MANIFEST")
+          OWN_N=$(sed -n 's/^own=//p' "$MANIFEST")
+          missing=0
+          for i in $(seq 0 $((DEC_N-1))); do
+            test -f "docs/ward-flow/.resolve-145/dec-$i.txt" || { echo "missing dec-$i"; missing=1; }
+          done
+          for i in $(seq 0 $((OWN_N-1))); do
+            test -f "docs/ward-flow/.resolve-145/own-$i.txt" || { echo "missing own-$i"; missing=1; }
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Waiting for all parts"; exit 0
+          fi
+          echo "All parts present: dec=$DEC_N own=$OWN_N"
+          : > /tmp/decisions.resolved.md
+          for i in $(seq 0 $((DEC_N-1))); do
+            cat "docs/ward-flow/.resolve-145/dec-$i.txt" >> /tmp/decisions.resolved.md
+          done
+          : > /tmp/owner.resolved.md
+          for i in $(seq 0 $((OWN_N-1))); do
+            cat "docs/ward-flow/.resolve-145/own-$i.txt" >> /tmp/owner.resolved.md
+          done
+          wc -c /tmp/decisions.resolved.md /tmp/owner.resolved.md
+          grep -q 'D-38. Delays board filters' /tmp/decisions.resolved.md
+          grep -q 'D-39. Patients are identified by UMRN' /tmp/decisions.resolved.md
+
+          git config user.name "Ward Flow Babysit"
+          git config user.email "ward-flow-babysit@users.noreply.github.com"
+          git fetch origin main
+          set +e
+          git merge origin/main -m "Merge origin/main into delays-page branch"
+          merge_rc=$?
+          set -e
+          cp /tmp/decisions.resolved.md docs/ward-flow/decisions.md
+          cp /tmp/owner.resolved.md docs/ward-flow/OWNER-RULINGS.md
+          rm -rf docs/ward-flow/.resolve-145 docs/ward-flow/.restore-parts
+          rm -f docs/ward-flow/.babysit-canary
+          rm -f .github/workflows/babysit-145-resolve-merge.yml
+          rm -f .github/workflows/babysit-145-restore-decisions.yml
+          git add -A
+          if [ "$merge_rc" -ne 0 ]; then
+            git commit -m "Merge origin/main into delays-page branch
+
+Keep Delays D-38 and main UMRN D-39 in decisions.md; update OWNER-RULINGS index."
+          else
+            if ! git diff --cached --quiet; then
+              git commit -m "Babysit #145: apply D-38 Delays + D-39 UMRN decisions resolution after main merge"
+            fi
+          fi
+          git push origin HEAD:claude/brave-wright-aiqisd
