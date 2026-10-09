@@ -13,7 +13,7 @@ import Link from "next/link";
 import { ChevronDown, Search, X } from "lucide-react";
 
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
-import { stageCopy } from "@/components/ward-management/ward-derivations";
+import { shortlistCandidates, stageCopy } from "@/components/ward-management/ward-derivations";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import {
@@ -97,11 +97,6 @@ export type DelaysBoardProps = {
 /** The origin department by name, or a sentence that names the record as the fault (task D1). */
 function originLabel(movement: Movement): string {
   return edById(movement.originEdId)?.name ?? `This movement names ${departmentLabel(movement.originEdId, undefined)}`;
-}
-
-/** Below 64rem the person's panel is a sheet over the table (see delays-board.module.css). */
-function isSheetLayout(): boolean {
-  return typeof window.matchMedia === "function" && window.matchMedia("(max-width: 64rem)").matches;
 }
 
 function ago(minutes: number): string {
@@ -283,12 +278,16 @@ function PersonPanel({
   const silenceReminder = answerSilenceReminder(movement, referrals, now);
   const cleared = isCleared(movement, referrals);
   const lines = wardLines(row, units);
+  const candidates = shortlistCandidates(movement, units, now);
+  const askedUnitIds = new Set(movement.referredUnitIds);
   const pullHolder = units.find((unit) => unit.id === movement.acceptedUnitId);
   const legalForm = movement.legalForm;
 
   return (
     <section
       className={`${styles.card} ${styles.side}`}
+      role="dialog"
+      aria-modal="true"
       aria-label="Why this person is waiting"
       data-ward-primitive="panel"
       data-testid={`delays-detail-${movement.id}`}
@@ -440,6 +439,35 @@ function PersonPanel({
                   <small className={styles.ell}>{line.text}</small>
                 </li>
               ))}
+            </ul>
+          )}
+        </div>
+
+        <div className={styles.sec} data-testid={`delays-shortlist-${movement.id}`}>
+          <h4 className={styles.h4r}>Candidate wards</h4>
+          {candidates.length === 0 ? (
+            <p className={styles.mute}>No candidate wards recorded</p>
+          ) : (
+            <ul className={styles.wards}>
+              {candidates.slice(0, 3).map((candidate) => {
+                const failed = candidate.verdict.gates.find((gate) => !gate.pass);
+                const assessment = candidate.verdict.eligible
+                  ? "Eligible now"
+                  : candidate.availability === "overridable"
+                    ? `Needs override${failed?.detail ? `: ${failed.detail}` : ""}`
+                    : failed?.detail ?? "Not eligible";
+                return (
+                  <li key={candidate.unit.id}>
+                    <span className={styles.lg}>
+                      <Glyph tone={candidate.verdict.eligible ? "success" : "warning"} />
+                      <span className={styles.ell}>{candidate.unit.name}</span>
+                    </span>
+                    <small className={styles.ell}>
+                      {askedUnitIds.has(candidate.unit.id) ? `Already asked · ${assessment}` : assessment}
+                    </small>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -812,10 +840,6 @@ export function DelaysBoard({
     chosenFilters.cause !== null && !rows.some((row) => row.cause === chosenFilters.cause)
       ? { ...chosenFilters, cause: null }
       : chosenFilters;
-  // Clear a stored blocker filter once it stops applying, so a later change cannot bring it back.
-  // Adjusting state during render is React's pattern for state derived from changed props.
-  if (chosenFilters.cause !== null && !rows.some((row) => row.cause === chosenFilters.cause))
-    setFilters((current) => ({ ...current, cause: null }));
   const [flat, setFlat] = useState(false);
   const [openGroups, setOpenGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
   const [moreGroups, setMoreGroups] = useState<Partial<Record<DelayCause, boolean>>>({});
@@ -824,9 +848,14 @@ export function DelaysBoard({
 
   const nameOf = (movement: Movement) => `${patientOf(movement).formalName} ${patientOf(movement).umrn}`;
   const shown = filterRows(rows, filters, bins, nameOf);
-  // A person the filters hide is never shown as open: their panel closes rather than sit beside no row.
   const selected = selectedId === null ? null : (shown.find((row) => row.movement.id === selectedId) ?? null);
   const filtered = hasFilters(filters);
+
+  // A filtered-out person cannot have an open panel. Keep the stored selection in sync with
+  // what is visible so Escape and graph pressed state do not refer to a hidden row.
+  useEffect(() => {
+    if (selectedId !== null && selected === null) setSelectedId(null);
+  }, [selected, selectedId]);
 
   const set = (patch: Partial<BoardFilters>) => setFilters((current) => ({ ...current, ...patch }));
   const toggle = <K extends keyof BoardFilters>(key: K, value: BoardFilters[K]) =>
@@ -842,7 +871,7 @@ export function DelaysBoard({
   useEffect(() => {
     if (!explicitSelect.current || selectedId === null) return;
     explicitSelect.current = false;
-    if (!isSheetLayout()) return;
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 64rem)").matches) return;
     window.requestAnimationFrame(() => {
       const panel = document.getElementById("delays-person-panel");
       panel?.scrollIntoView?.({ block: "start" });
@@ -861,14 +890,11 @@ export function DelaysBoard({
   const reveal = (id: string) => {
     const row = rows.find((candidate) => candidate.movement.id === id);
     if (row === undefined) return;
-    // Opening someone the filters hide shows everyone first, so their row is there to open.
-    if (!shown.some((candidate) => candidate.movement.id === id)) setFilters(NO_FILTERS);
-    // On a phone or tablet the panel is a sheet over the table, so focus goes to the sheet instead.
-    explicitSelect.current = true;
+    // Graph/register choices are explicit: reveal the row before opening its panel.
+    setFilters(NO_FILTERS);
     setSelectedId(id);
     setOpenGroups((current) => ({ ...current, [row.cause]: true }));
     setMoreGroups((current) => ({ ...current, [row.cause]: true }));
-    if (isSheetLayout()) return;
     window.requestAnimationFrame(() => {
       const button = document.querySelector<HTMLButtonElement>(`[data-testid="delays-select-${id}"]`);
       button?.scrollIntoView?.({ block: "center", behavior: "smooth" });
@@ -878,6 +904,26 @@ export function DelaysBoard({
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (selectedId !== null && event.key === "Tab") {
+        const panel = document.getElementById("delays-person-panel");
+        const focusable = panel
+          ? Array.from(
+              panel.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+            ).filter((element) => !element.hasAttribute("disabled"))
+          : [];
+        if (focusable.length > 0) {
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
+        return;
+      }
       if (event.key !== "Escape") return;
       if (selectedId !== null) {
         event.preventDefault();
@@ -956,7 +1002,6 @@ export function DelaysBoard({
     const ward = wardSummary(row, units);
     return [
       <tr
-        role="row"
         key={movement.id}
         className={styles.r}
         aria-selected={isSelected}
@@ -964,7 +1009,7 @@ export function DelaysBoard({
           if ((event.target as HTMLElement).closest("button, a") === null) select(movement.id);
         }}
       >
-        <td role="cell" className={styles.who}>
+        <td className={styles.who}>
           <button
             type="button"
             className={styles.whoBtn}
@@ -978,7 +1023,7 @@ export function DelaysBoard({
             </span>
           </button>
         </td>
-        <td role="cell" className={styles.cWait}>
+        <td className={styles.cWait}>
           <span className={styles.wcell}>
             <span className={`${styles.wt} ${styles.num}`} data-ward-type-floor="delays-wait">
               <Glyph tone={waitTone(row.waited)} />
@@ -987,10 +1032,10 @@ export function DelaysBoard({
             <WaitBar row={row} />
           </span>
         </td>
-        <td role="cell" className={styles.cTier}>
+        <td className={styles.cTier}>
           <TierTile tier={movement.urgency} label={urgencyTierLabel(movement.urgency)} />
         </td>
-        <td role="cell" className={styles.cWard} data-ward-type-floor="delays-cause">
+        <td className={styles.cWard} data-ward-type-floor="delays-cause">
           <span className={styles.lg}>
             {flat ? (
               <span className={styles.ell}>{causeTitle(row.cause)}</span>
@@ -1002,16 +1047,14 @@ export function DelaysBoard({
             )}
           </span>
         </td>
-        <td role="cell" className={styles.cLegal}>
-          {legalCell(row)}
-        </td>
-        <td role="cell" className={styles.cUpd} data-ward-type-floor="delays-since">
+        <td className={styles.cLegal}>{legalCell(row)}</td>
+        <td className={styles.cUpd} data-ward-type-floor="delays-since">
           {updateCell(row, now)}
         </td>
       </tr>,
       isSelected ? (
-        <tr role="row" key={`${movement.id}-timeline`} className={styles.xrow}>
-          <td role="cell" colSpan={6}>
+        <tr key={`${movement.id}-timeline`} className={styles.xrow}>
+          <td colSpan={6}>
             <RowTimeline row={row} units={units} now={now} />
           </td>
         </tr>
@@ -1050,8 +1093,8 @@ export function DelaysBoard({
       const limit = moreGroups[group.cause] ? list.length : GROUP_LIMIT;
       const owner = list[0].owner;
       body.push(
-        <tr role="row" key={`group-${group.cause}`} className={styles.grpH}>
-          <td role="cell" colSpan={6}>
+        <tr key={`group-${group.cause}`} className={styles.grpH}>
+          <td colSpan={6}>
             <button
               type="button"
               className={styles.gin}
@@ -1080,8 +1123,8 @@ export function DelaysBoard({
         body.push(...list.slice(0, limit).flatMap(renderRow));
         if (list.length > limit)
           body.push(
-            <tr role="row" key={`more-${group.cause}`} className={styles.more}>
-              <td role="cell" colSpan={6}>
+            <tr key={`more-${group.cause}`} className={styles.more}>
+              <td colSpan={6}>
                 <button
                   type="button"
                   className={styles.moreBtn}
@@ -1099,8 +1142,8 @@ export function DelaysBoard({
     const rest = shown.filter((row) => !isPinned(row)).sort(byWait);
     if (pinned.length > 0) {
       body.push(
-        <tr role="row" key="pinned" className={`${styles.grpH} ${styles.grpStatic}`}>
-          <td role="cell" colSpan={6}>
+        <tr key="pinned" className={`${styles.grpH} ${styles.grpStatic}`}>
+          <td colSpan={6}>
             <span className={styles.gin}>
               <Glyph tone="danger" />
               <span className={styles.gTitle}>{`Recorded time due within ${soonHours}h`}</span>
@@ -1113,8 +1156,8 @@ export function DelaysBoard({
       );
       if (rest.length > 0)
         body.push(
-          <tr role="row" key="rest" className={`${styles.grpH} ${styles.grpStatic}`}>
-            <td role="cell" colSpan={6}>
+          <tr key="rest" className={`${styles.grpH} ${styles.grpStatic}`}>
+            <td colSpan={6}>
               <span className={styles.gin}>
                 <span className={styles.gTitle}>Everyone else</span>
                 <span className={styles.k}>{rest.length}</span>
@@ -1131,8 +1174,8 @@ export function DelaysBoard({
   const hidden = rows.length - shown.length;
   if (hidden > 0 && shown.length > 0)
     body.push(
-      <tr role="row" key="hidden" className={styles.more}>
-        <td role="cell" colSpan={6} className={styles.hiddenNote} data-testid="delays-hidden-note">
+      <tr key="hidden" className={styles.more}>
+        <td colSpan={6} className={styles.hiddenNote} data-testid="delays-hidden-note">
           {`${hidden} more ${hidden === 1 ? "person is" : "people are"} waiting, hidden by the filters above.`}{" "}
           <button type="button" className={styles.lnk} onClick={() => setFilters(NO_FILTERS)}>
             Show everyone
@@ -1142,8 +1185,8 @@ export function DelaysBoard({
     );
   if (shown.length === 0)
     body = [
-      <tr role="row" key="none">
-        <td role="cell" colSpan={6} className={styles.none}>
+      <tr key="none">
+        <td colSpan={6} className={styles.none}>
           {`Nobody matches these filters. ${rows.length} ${rows.length === 1 ? "person is" : "people are"} waiting, all hidden.`}{" "}
           <button type="button" className={styles.lnk} onClick={() => setFilters(NO_FILTERS)}>
             Show everyone
@@ -1185,7 +1228,7 @@ export function DelaysBoard({
               `Over ${H8}`,
               "warning",
               filters.threshold === 1,
-              over8 > 0 || filters.threshold === 1 ? () => toggle("threshold", 1) : undefined,
+              () => toggle("threshold", 1),
               "delays-stat-over8",
             )}
             {heroStat(
@@ -1193,7 +1236,7 @@ export function DelaysBoard({
               `Over ${H24}`,
               "danger",
               filters.threshold === 3,
-              over24 > 0 || filters.threshold === 3 ? () => toggle("threshold", 3) : undefined,
+              () => toggle("threshold", 3),
               "delays-stat-over24",
             )}
             {heroStat(
@@ -1235,7 +1278,12 @@ export function DelaysBoard({
         </div>
       ) : (
         <>
-          <section className={`${styles.card} ${styles.owners}`} aria-label="Whose move" data-ward-primitive="panel">
+          <section
+            className={`${styles.card} ${styles.owners}`}
+            aria-label="Whose move"
+            data-ward-primitive="panel"
+            inert={selected !== null}
+          >
             {tiles.map((tile) => (
               <button
                 key={tile.owner}
@@ -1272,6 +1320,7 @@ export function DelaysBoard({
               aria-label="Waiting"
               data-ward-primitive="panel"
               tabIndex={-1}
+              inert={selected !== null}
             >
               <div className={styles.chead}>
                 <h2>{flat ? "Waiting" : "Waiting by blocker"}</h2>
@@ -1368,7 +1417,7 @@ export function DelaysBoard({
                 ) : null}
               </div>
               <div className={styles.tableWrap}>
-                <table className={styles.tbl} data-testid="delays-waiting-list" role="table">
+                <table className={styles.tbl} data-testid="delays-waiting-list">
                   <colgroup>
                     <col className={styles.colP} />
                     <col className={styles.colW} />
@@ -1377,31 +1426,19 @@ export function DelaysBoard({
                     <col className={styles.colL} />
                     <col />
                   </colgroup>
-                  <thead role="rowgroup">
+                  <thead>
                     <tr>
-                      <th scope="col" role="columnheader">
-                        Person
-                      </th>
-                      <th scope="col" role="columnheader">
-                        Waited
-                      </th>
-                      <th scope="col" role="columnheader">
+                      <th scope="col">Person</th>
+                      <th scope="col">Waited</th>
+                      <th scope="col">
                         <abbr title="Urgency tier">T</abbr>
                       </th>
-                      <th scope="col" role="columnheader">
-                        {flat ? "Blocker" : "Wards"}
-                      </th>
-                      <th scope="col" role="columnheader">
-                        Legal
-                      </th>
-                      <th scope="col" role="columnheader">
-                        Last update
-                      </th>
+                      <th scope="col">{flat ? "Blocker" : "Wards"}</th>
+                      <th scope="col">Legal</th>
+                      <th scope="col">Last update</th>
                     </tr>
                   </thead>
-                  <tbody role="rowgroup" onKeyDown={onListKey}>
-                    {body}
-                  </tbody>
+                  <tbody onKeyDown={onListKey}>{body}</tbody>
                 </table>
               </div>
             </section>
@@ -1421,6 +1458,7 @@ export function DelaysBoard({
             )}
           </div>
 
+          <div inert={selected !== null}>
           <DelaysBoardGraphs
             rows={rows}
             shown={shown}
@@ -1440,6 +1478,7 @@ export function DelaysBoard({
               tableRef.current?.focus({ preventScroll: true });
             }}
           />
+          </div>
         </>
       )}
     </>
