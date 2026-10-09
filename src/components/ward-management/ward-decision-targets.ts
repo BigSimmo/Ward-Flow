@@ -14,9 +14,9 @@ import type { Movement } from "./ward-model";
  * a prototype default, never a clinical, legal or service standard. A step's clock starts at a
  * time the record itself holds and stops when the record shows the step done:
  *
- *   - Referral decision: from the latest referral episode (first `referredAt`, or after the last
- *     decline/withdrawal that cleared the path for a re-refer) until a ward accepts or every
- *     referred ward has answered. `referredAt` itself stays the first referral's moment.
+ *   - Referral decision: from `referralDecisionOpenedAt` (every successful `REFER_TO_UNITS` that
+ *     adds a ward, including a re-refer) until a ward accepts or every referred ward has answered.
+ *     Falls back to `referredAt` on older records. A parallel decline alone does not restart it.
  *   - Transfer acceptance: from `acceptedAt` (acceptance in principle) until the bed is pulled.
  *   - Transport booked: from the recorded move to `pulled` until a transport job is booked.
  *     A pulled movement recorded as needing no transport has no booking target.
@@ -83,26 +83,10 @@ const DECIDING_STAGES: readonly Movement["stage"][] = ["placement_requested", "d
 function lastPulledAt(movement: Movement): Instant | undefined {
   for (let index = movement.stageChanges.length - 1; index >= 0; index -= 1) {
     const change = movement.stageChanges[index];
-    if (change?.to === "pulled") return change.at;
+    if (!change) continue;
+    if (change.to === "pulled") return change.at;
   }
   return undefined;
-}
-
-/**
- * When the current referral-decision wait began. `referredAt` is the first referral and never
- * rewrites on a re-refer, so after wards decline (or are withdrawn) and new wards are referred the
- * clock must restart from that later clearance — otherwise a fresh re-refer reads as already overdue.
- */
-function referralDecisionStartedAt(movement: Movement): Instant | undefined {
-  if (movement.referredAt === undefined) return undefined;
-  let started = movement.referredAt;
-  for (const decline of movement.declines) {
-    if (decline.at > started) started = decline.at;
-  }
-  for (const withdrawn of movement.withdrawnReferrals) {
-    if (withdrawn.at > started) started = withdrawn.at;
-  }
-  return started;
 }
 
 /** When the step this movement is waiting on started, or undefined when no target is running. */
@@ -114,8 +98,8 @@ function pendingStep(movement: Movement): { step: DecisionTargetStep; startedAt:
     movement.referredUnitIds.length > 0 &&
     DECIDING_STAGES.includes(movement.stage)
   ) {
-    const startedAt = referralDecisionStartedAt(movement);
-    if (startedAt === undefined) return undefined;
+    // Prefer the act that opened this wait (`REFER_TO_UNITS`); fall back for older records.
+    const startedAt = movement.referralDecisionOpenedAt ?? movement.referredAt;
     return { step: "referral_decision", startedAt };
   }
   if (

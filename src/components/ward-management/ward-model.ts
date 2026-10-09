@@ -1502,6 +1502,15 @@ export type Movement = {
    * and `pullExpiresAt` and nothing for this.
    */
   referredAt?: Instant;
+  /**
+   * When the current referral-decision wait began — written by `REFER_TO_UNITS` when it adds wards
+   * into an empty live set (first referral, or re-refer after every ward declined/withdrew).
+   * Adding wards while others are still live, and declines themselves, leave this alone. Stream A
+   * decision targets read it (falling back to `referredAt` on older records). Distinct from
+   * `referredAt`, which stays the first referral's moment for the ED board. Absent on every seeded
+   * movement, same discipline as `referredAt`.
+   */
+  referralDecisionOpenedAt?: Instant;
 
   acceptedAt?: Instant;
   declines: Decline[];

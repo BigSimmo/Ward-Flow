@@ -1,7 +1,7 @@
 // Stream A, 9 Oct 2026: decision targets per step, labelled defaults set in Settings.
 import { describe, expect, it } from "vitest";
 
-import { GENDER_PLACEMENT_REASONS } from "../src/components/ward-management/ward-change-reasons";
+import { GENDER_PLACEMENT_REASONS, OVERRIDE_REASONS } from "../src/components/ward-management/ward-change-reasons";
 import { defaultWardConfiguration } from "../src/components/ward-management/ward-configuration";
 import {
   decisionTargetInboxItems,
@@ -157,27 +157,79 @@ describe("decision targets through the real event walk", () => {
     expect(decisionTargetReading(booked, NOW + 5, defaults)).toBeUndefined();
   });
 
-  it("restarts the referral decision clock after a decline and re-refer", () => {
+  it("restarts the referral decision clock on re-refer, not on a parallel decline alone", () => {
     const first = referred();
-    const declineAt = NOW + defaults.referralDecisionTargetMinutes + 30;
-    const declined = step(first, { type: "DECLINE", role: "ward", unitId: UNIT, reason: "no_bed" }, declineAt);
-    // Re-refer to the same unit after its decline: capacity was already opened for UNIT above.
-    const reReferAt = declineAt + 15;
+    expect(movement(first).referralDecisionOpenedAt).toBe(NOW);
+
+    // A second ward referred in parallel keeps the original decision open time.
+    const secondUnit = "fsh-adult-secure";
+    const withSecondRoom = {
+      ...first,
+      units: first.units.map((candidate) =>
+        candidate.id === secondUnit
+          ? {
+              ...candidate,
+              empty: { ...candidate.empty, value: 6, confirmedAt: NOW },
+              allocatable: { ...candidate.allocatable, value: 6, confirmedAt: NOW },
+            }
+          : candidate,
+      ),
+    };
+    const parallel = step(
+      withSecondRoom,
+      {
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        unitIds: [secondUnit],
+        genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
+        genderPlacementChecked: true,
+      },
+      NOW + 10,
+    );
+    // Parallel add while UNIT is still live keeps the original open time.
+    expect(movement(parallel).referralDecisionOpenedAt).toBe(NOW);
+    expect(decisionTargetReading(movement(parallel), NOW + 15, defaults)?.startedAt).toBe(NOW);
+
+    // One of two wards declining must not rewind or advance the clock by itself.
+    // Use a hard decline reason (not waitlist-instead-of-decline) so the live set actually shrinks.
+    const afterDecline = step(
+      parallel,
+      { type: "DECLINE", role: "ward", unitId: UNIT, reason: "capability_mismatch" },
+      NOW + defaults.referralDecisionTargetMinutes + 30,
+    );
+    expect(movement(afterDecline).referralDecisionOpenedAt).toBe(NOW);
+    expect(movement(afterDecline).referredUnitIds).toEqual([secondUnit]);
+    expect(
+      decisionTargetReading(movement(afterDecline), NOW + defaults.referralDecisionTargetMinutes + 35, defaults)
+        ?.startedAt,
+    ).toBe(NOW);
+
+    // Re-refer after the last live ward declined opens a fresh wait at the REFER act.
+    const cleared = step(
+      afterDecline,
+      { type: "DECLINE", role: "ward", unitId: secondUnit, reason: "capability_mismatch" },
+      NOW + defaults.referralDecisionTargetMinutes + 40,
+    );
+    expect(movement(cleared).referredUnitIds).toEqual([]);
+    const reReferAt = NOW + defaults.referralDecisionTargetMinutes + 45;
     const reReferred = step(
-      declined,
+      cleared,
       {
         type: "REFER_TO_UNITS",
         role: "coordinator",
         unitIds: [UNIT],
         genderPlacementReason: GENDER_PLACEMENT_REASONS[0],
         genderPlacementChecked: true,
+        // Dabakarn already declined this movement; a recorded override is required to refer again.
+        overrideReason: OVERRIDE_REASONS[0],
       },
       reReferAt,
     );
-    const reading = decisionTargetReading(movement(reReferred), reReferAt + 5, defaults);
-    expect(reading).toMatchObject({
+    expect(movement(reReferred).referredAt).toBe(NOW);
+    expect(movement(reReferred).referralDecisionOpenedAt).toBe(reReferAt);
+    expect(decisionTargetReading(movement(reReferred), reReferAt + 5, defaults)).toMatchObject({
       step: "referral_decision",
-      startedAt: declineAt,
+      startedAt: reReferAt,
       overdue: false,
     });
   });

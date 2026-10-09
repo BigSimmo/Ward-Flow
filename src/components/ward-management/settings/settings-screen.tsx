@@ -889,7 +889,9 @@ export function SettingsScreen() {
                       onChange={(minutes) => {
                         setRule({ [step.configKey]: minutes });
                       }}
-                      onReset={() => setRule({ [step.configKey]: saved[ruleKey] })}
+                      onReset={() => {
+                        setRule({ [step.configKey]: saved[ruleKey] });
+                      }}
                       usedBy="Alerts, Tasks"
                     />
                   );

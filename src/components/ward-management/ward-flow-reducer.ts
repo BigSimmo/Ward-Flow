@@ -3664,6 +3664,15 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         // rewritten by a later re-referral — every seeded movement still carries none, and a row
         // without it goes on saying so rather than borrowing `openedAt`.
         referredAt: movement.referredAt ?? event.now,
+        // Stream A decision targets: open a fresh wait when this act refers into an empty live set
+        // (first referral, or re-refer after every ward declined/withdrew). Adding wards while
+        // others are still live keeps the standing clock. A decline alone never writes this field.
+        referralDecisionOpenedAt:
+          permitted.length === 0
+            ? movement.referralDecisionOpenedAt
+            : liveUnitIds.length === 0
+              ? event.now
+              : (movement.referralDecisionOpenedAt ?? movement.referredAt ?? event.now),
         // OD-3: the reason is KEPT. It used to live in the shortlist panel's own `useState` and be
         // discarded on the next selection, while the governance page said override reasons were
         // recorded. Appended rather than replaced, because a movement can be overridden more than
