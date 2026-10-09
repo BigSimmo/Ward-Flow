@@ -92,9 +92,9 @@ function rewriteNoticeUmrns(
   return text.replace(NOTICE_MOVEMENT_ID_TOKEN, (token) => {
     const id = token.replace(/-+$/, "");
     const movement = movements.find((candidate) => candidate.id === id);
-    if (!movement) return token;
+    // D-39: never leave a raw WF journey number in notice prose, even when unlinked.
+    if (!movement) return "UMRN not recorded" + token.slice(id.length);
     const info = resolveIdentity ? resolveIdentity(movement) : resolveSubjectPatient(movement, { movements, patients });
-    if (info.umrn === "UMRN not recorded") return token;
     return info.umrn + token.slice(id.length);
   });
 }
