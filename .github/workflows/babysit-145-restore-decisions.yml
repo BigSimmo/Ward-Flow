@@ -1,6 +1,10 @@
 name: babysit-145-restore-decisions
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - "docs/ward-flow/.restore-parts/**"
+    branches:
+      - claude/brave-wright-aiqisd
 jobs:
   restore:
     runs-on: ubuntu-latest
@@ -11,21 +15,21 @@ jobs:
         with:
           ref: claude/brave-wright-aiqisd
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Restore decisions.md
+      - name: Assemble decisions.md from parts when complete
         run: |
           set -euo pipefail
-          curl -fsSL "https://raw.githubusercontent.com/BigSimmo/Ward-Flow/0b7c90df7c07b913aa3366116c636aba6c6c8ad3/docs/ward-flow/decisions.md" -o /tmp/d38.md
-          curl -fsSL "https://raw.githubusercontent.com/BigSimmo/Ward-Flow/main/docs/ward-flow/decisions.md" -o /tmp/main.md
-          python3 - <<'PY'
-          from pathlib import Path
-          prestub = Path("/tmp/d38.md").read_text()
-          main = Path("/tmp/main.md").read_text()
-          d39 = main[main.index("## D-39. Patients are identified by UMRN"):]
-          Path("docs/ward-flow/decisions.md").write_text(prestub.rstrip() + "\n\n" + d39)
-          print("wrote", Path("docs/ward-flow/decisions.md").stat().st_size)
-          PY
+          if [ ! -f docs/ward-flow/.restore-parts/part-3.txt ]; then
+            echo "Waiting for all parts"; exit 0
+          fi
+          cat docs/ward-flow/.restore-parts/part-0.txt \
+              docs/ward-flow/.restore-parts/part-1.txt \
+              docs/ward-flow/.restore-parts/part-2.txt \
+              docs/ward-flow/.restore-parts/part-3.txt > docs/ward-flow/decisions.md
+          wc -c docs/ward-flow/decisions.md
+          rm -rf docs/ward-flow/.restore-parts
+          rm -f .github/workflows/babysit-145-restore-decisions.yml
           git config user.name "Ward Flow Babysit"
           git config user.email "ward-flow-babysit@users.noreply.github.com"
-          git add docs/ward-flow/decisions.md
-          git commit -m "Babysit #145: restore decisions.md with D-38/D-39 merge resolution" || exit 0
+          git add -A
+          git commit -m "Babysit #145: restore decisions.md with D-38/D-39 merge resolution"
           git push origin HEAD:claude/brave-wright-aiqisd
