@@ -63,6 +63,20 @@ describe("Discharges charts under the table (direction A)", () => {
     expect(within(table).getByText("No barrier recorded")).toBeInTheDocument();
   });
 
+  it("clears a hiding status filter on a chart click, and drops the highlight on a population switch", () => {
+    renderBoard();
+    fireEvent.click(screen.getByRole("button", { name: /^Admission records/u }));
+    fireEvent.click(screen.getByTestId("ward-discharge-kpi-confirmed"));
+    const first = within(screen.getByTestId("ward-discharge-barrier-bars")).getAllByRole("button")[0]!;
+    const count = Number(/: (\d+) blocked/u.exec(first.getAttribute("aria-label") ?? "")?.[1]);
+    expect(count).toBeGreaterThan(0);
+    fireEvent.click(first);
+    expect(screen.getByTestId("ward-discharge-kpi-confirmed")).toHaveAttribute("aria-pressed", "false");
+    expect(worklistRows().filter((row) => row.getAttribute("data-highlighted") === "true")).toHaveLength(count);
+    fireEvent.click(screen.getByRole("button", { name: /^Anonymous releases/u }));
+    expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
+  });
+
   it("keeps the table full width until a row is opened", () => {
     renderBoard();
     const workspace = screen.getByRole("region", { name: "Discharge worklist" }).closest("[data-detail-open]");

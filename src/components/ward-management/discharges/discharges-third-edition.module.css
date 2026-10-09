@@ -1334,6 +1334,7 @@
   .filterCard,
   .flowCharts,
   .heroTools button,
+  .planActionWrapper,
   .viewSwitch,
   .highlightNote,
   .rightRail,
@@ -1387,7 +1388,7 @@
    the admission-records population and the quick blocker chips are left to the larger screen
    (the status tabs still filter Blocked), and each release row becomes a compact block: ward
    first, then timing and stage side by side. Desktop and tablet above 48rem are unchanged. */
-@media (max-width: 48rem) {
+@media screen and (max-width: 48rem) {
   /* 12px gutters on phone. */
   .main {
     gap: var(--wf-s-3);
