@@ -40,10 +40,11 @@ import { NOW_ANCHOR, STANDARD_WARD_SITES } from "@/components/ward-management/wa
  *   - discharges due are admissions whose expected discharge falls today, each with its release.
  * Held and blocked beds, which no record here can back, are zero.
  *
- * Every person on every record is a generated patient (`PT-DN-nnnn`, record number `WF-P-nnnn`)
- * with a family name from a fixed list of minerals, so the data is obviously synthetic. No
- * Medicare, UMRN or PSOLIS number appears anywhere. Optional details (preferred name, GP,
- * interpreter, Aboriginal and Torres Strait Islander status, address) are deliberately left
+ * Every person on every record is a generated patient (`PT-DN-nnnn`, synthetic UMRN `UM7nnnnn`)
+ * with a family name from a fixed list of minerals, so the data is obviously synthetic. The UMRN is
+ * two letters and six digits, a shape no real WA UMRN takes, and no Medicare or PSOLIS number
+ * appears anywhere. Optional details (preferred name, GP, interpreter, Aboriginal and Torres Strait
+ * Islander status, address) are deliberately left
  * empty so screens show "Not recorded".
  *
  * Legal status uses only the app's existing form wording, with no section numbers and no
@@ -610,7 +611,7 @@ class NetworkBuilder {
           : this.between(1962, 2000);
     this.patients.push({
       id,
-      umrn: `WF-P-${number}`,
+      umrn: `UM${700000 + index}`,
       givenName: givenNames[index % givenNames.length],
       familyName: MINERALS[(index * 7) % MINERALS.length],
       dateOfBirth: `${birthYear}-${String(this.between(1, 12)).padStart(2, "0")}-${String(this.between(1, 28)).padStart(2, "0")}`,
@@ -801,15 +802,7 @@ function edMovement(
       movement.admissionId = admissionId;
       movement.pullExpiresAt = NOW_ANCHOR + 40 + (index % 4) * 15;
       build.admissions.push(
-        pulledAdmission(
-          admissionId,
-          ward.id,
-          id,
-          patientId,
-          person,
-          security === "Secure",
-          NOW_ANCHOR - 25,
-        ),
+        pulledAdmission(admissionId, ward.id, id, patientId, person, security === "Secure", NOW_ANCHOR - 25),
       );
     }
   }

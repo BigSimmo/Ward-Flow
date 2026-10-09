@@ -241,6 +241,7 @@ export function CoordinatorScreen() {
   const recentActivity = useMemo(() => {
     const activity = deriveCommandActivity({
       movements,
+      patients,
       units,
       referrals,
       rejections,
@@ -253,7 +254,7 @@ export function CoordinatorScreen() {
       ...change,
       tone: activity.tones[change.id] ?? "info",
     }));
-  }, [movements, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now]);
+  }, [movements, patients, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now]);
 
   // Hero counts: every one is read from an existing derivation, never typed.
   const counts = useMemo(

@@ -9,7 +9,7 @@ import { DeclineRegister } from "@/components/ward-management/decline-register";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DeclineEntry, InboxItem, OverrideEntry } from "@/components/ward-management/ward-derivations";
-import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
 import { dischargeHref } from "@/components/ward-management/shell/ward-facade";
 import type { Rejection, Unit } from "@/components/ward-management/ward-model";
 
@@ -100,6 +100,7 @@ export function ExceptionDrawer({
   const setActiveTab = onTabChange ?? setOwnTab;
   // Owner, 26 Sept 2026: resolves a silence reminder's bare movement id to the patient's name.
   const resolvePatientIdentity = usePatientOf();
+  const umrnText = useUmrnText();
 
   // Newest first: a coordinator wants to see what just got refused.
   const refusalsNewestFirst = [...rejections].reverse();
@@ -208,7 +209,7 @@ export function ExceptionDrawer({
                     <span className={styles.registerMain}>
                       <span className={styles.registerTitle}>{commandInboxTitle(item)}</span>
                       <span className={styles.registerSub}>
-                        {item.detail} · {item.owner}
+                        {umrnText(item.detail)} · {item.owner}
                       </span>
                       {silenceCopy !== undefined ? (
                         <span className={styles.registerNote} data-testid={`ward-exception-silence-${item.id}`}>

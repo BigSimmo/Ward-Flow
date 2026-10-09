@@ -47,6 +47,7 @@ import { wardMovements } from "@/components/ward-management/ward-movements";
 import { findPatients, patientDisplayName } from "@/components/ward-management/ward-patients";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { allUnits } from "@/components/ward-management/ward-sites";
+import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 
 const units = allUnits();
 
@@ -500,7 +501,11 @@ describe("WardGlobalSearch palette (option B)", () => {
     fireEvent.keyDown(input, { key: "ArrowDown" });
 
     const preview = screen.getByTestId("ward-global-search-preview");
-    expect(preview).toHaveTextContent(targetMovement.id);
+    // D-39: the preview names the patient by UMRN, never by the WF journey number.
+    expect(preview).toHaveTextContent(
+      movementUmrn(targetMovement, { patients: wardPatients, movements: wardMovements }),
+    );
+    expect(preview).not.toHaveTextContent(targetMovement.id);
     expect(within(preview).getByTestId("ward-global-search-preview-open")).toHaveAttribute(
       "href",
       `/mockups/ward-flow/movements/${targetMovement.id}`,
