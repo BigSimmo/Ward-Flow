@@ -359,7 +359,8 @@ function mmss(ms: number): string {
  * the sheet builder, where what you see is what prints.
  */
 export function HandoverPage() {
-  const { movements, units, referrals, patients, admissions, dispatch, dayZero, handoverSignOffs } = useWardFlow();
+  const { movements, units, referrals, patients, admissions, bedReleases, dispatch, dayZero, handoverSignOffs } =
+    useWardFlow();
   const now = useWardFlowClock();
   const isPhoneWidth = useSyncExternalStore(subscribePhoneWidth, readPhoneWidth, () => false);
 
@@ -428,7 +429,10 @@ export function HandoverPage() {
     () => allRows.filter((row) => !movementInHandoverScope(row.movement, scope, units, referrals)),
     [allRows, scope, units, referrals],
   );
-  const allWards = useMemo(() => units.map((unit) => toHandoverWard(unit, admissions, now)), [units, admissions, now]);
+  const allWards = useMemo(
+    () => units.map((unit) => toHandoverWard(unit, admissions, now, bedReleases)),
+    [units, admissions, now, bedReleases],
+  );
   const wards = useMemo(
     () =>
       allWards.filter((ward) => {
@@ -547,7 +551,7 @@ export function HandoverPage() {
     void navigator.clipboard?.writeText(text).then(
       () => {
         setCopied(true);
-        announceToWardShell(`Summary copied, ${rows.length} patients.`);
+        announceToWardShell(`Summary copied, ${rows.length} synthetic patients.`);
       },
       () => announceToWardShell("Copy was blocked by the browser."),
     );

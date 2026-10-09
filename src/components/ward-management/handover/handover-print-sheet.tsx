@@ -8,7 +8,7 @@
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ChevronLeft, Printer } from "lucide-react";
 import { Button, Card, Segmented, StatusGlyph, Switch, cx, type WfTone } from "@/components/wf";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { rowTone, type ColumnContext, type HandoverColumn } from "./handover-columns";
@@ -239,6 +239,7 @@ export function HandoverPrintSheet({
     ["Waiting for a bed", rows.filter(isWaitingForBed).length],
     ["Moving", rows.filter(isMoving).length],
     ["Beds ready", wards.reduce((sum, ward) => sum + ward.ready, 0)],
+    ["Being made ready", wards.reduce((sum, ward) => sum + ward.pendingPreparation, 0)],
   ];
 
   const taken = formatInstantWithDay(takenAt ?? now, now);
@@ -508,7 +509,7 @@ export function HandoverPrintSheet({
       <style>{printCss(options.orientation)}</style>
       <Card as="div" className={styles.rail}>
         <div className={styles.opt}>
-          <Button variant="sec" size="sm" icon={ArrowLeft} onClick={onBack} className={styles.back}>
+          <Button variant="sec" size="sm" icon={ChevronLeft} onClick={onBack} className={styles.back}>
             Back to handover
           </Button>
           <p className={styles.sub}>The sheet follows the board. Printing freezes a copy with the time it was taken.</p>

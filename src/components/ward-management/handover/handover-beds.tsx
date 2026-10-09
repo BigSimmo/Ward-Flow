@@ -113,6 +113,7 @@ function BedTiles({ rows, wards, held, now }: Omit<HandoverBedsProps, "onOpenPat
   const sum = (key: "ready" | "beds" | "occupied" | "outToday" | "pastEdd" | "longStays") =>
     wards.reduce((total, ward) => total + ward[key], 0);
   const ready = sum("ready");
+  const preparing = wards.reduce((total, ward) => total + ward.pendingPreparation, 0);
   const beds = sum("beds");
   const occupied = sum("occupied");
   const stale = wards.filter((ward) => wardIsStale(ward, now)).length;
@@ -123,7 +124,7 @@ function BedTiles({ rows, wards, held, now }: Omit<HandoverBedsProps, "onOpenPat
         <b className={cx(styles.tileValue, styles.inkSuccess)}>{ready}</b>
         <span className={styles.tileLabel}>Beds ready</span>
         <span className={styles.tileSub}>
-          for <b>{waiting}</b> waiting
+          for <b>{waiting}</b> waiting{preparing > 0 ? `, ${preparing} being made ready` : ""}
         </span>
       </div>
       <div className={styles.tile}>
@@ -201,6 +202,7 @@ function WardPanel({
       value: `${durMinutes(age)} ago, at ${formatInstantWithDay(ward.confirmedAt, now)}${stale ? ", over 15 min" : ""}`,
       warn: stale,
     },
+    { label: "Being made ready", value: String(ward.pendingPreparation) },
     { label: "Held for incoming", value: String(ward.held) },
     { label: "Due out today", value: String(ward.outToday) },
     { label: "Past EDD", value: String(ward.pastEdd) },
@@ -471,7 +473,7 @@ export function HandoverBeds({ rows, wards, held, now, onOpenPatient }: Handover
               <>
                 <span className={styles.spacer} />
                 <span className={styles.sub} role="status">
-                  <b className={styles.ink1}>{highlightedCount}</b> highlighted, all wards stay
+                  <b className={styles.ink1}>{highlightedCount}</b> synthetic rows highlighted, all wards stay
                 </span>
                 <Button variant="ghost" size="sm" onClick={() => setChips(new Set())}>
                   Clear

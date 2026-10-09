@@ -10,7 +10,9 @@ import { durMinutes } from "@/components/wf";
 import { formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type {
+  BedRelease,
   HealthService,
   LegalStatus,
   Movement,
@@ -466,6 +468,8 @@ export type HandoverWard = {
   occupied: number;
   empty: number;
   ready: number;
+  /** Free beds still being made ready: counted in ready, but a pull is refused until they are done. */
+  pendingPreparation: number;
   confirmedAt: Instant;
   staleAfter: number;
   held: number;
@@ -475,7 +479,12 @@ export type HandoverWard = {
   holds: number;
 };
 
-export function toHandoverWard(unit: Unit, admissions: Admission[], now: Instant): HandoverWard {
+export function toHandoverWard(
+  unit: Unit,
+  admissions: Admission[],
+  now: Instant,
+  bedReleases: BedRelease[] = [],
+): HandoverWard {
   const here = admissions.filter((admission) => admission.unitId === unit.id && bedIsOccupied(admission));
   const dayEnd = now - minuteOfDay(now) + 24 * 60;
   return {
@@ -487,6 +496,7 @@ export function toHandoverWard(unit: Unit, admissions: Admission[], now: Instant
     occupied: here.length,
     empty: unit.empty.value,
     ready: unit.allocatable.value,
+    pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
     confirmedAt: unit.empty.confirmedAt,
     staleAfter: unit.empty.staleAfterMinutes,
     held: unit.held,

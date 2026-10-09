@@ -362,6 +362,7 @@ function BedsView({
     .filter((ward) => ward.ready > 0)
     .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name));
   const noReady = wards.filter((ward) => ward.ready <= 0).sort((a, b) => a.name.localeCompare(b.name));
+  const preparing = wards.reduce((total, ward) => total + ward.pendingPreparation, 0);
   return (
     <div className={styles.beds} data-testid="ward-handover-phone-beds">
       <div className={styles.tiles}>
@@ -370,6 +371,7 @@ function BedsView({
           <span className={styles.tileLabel}>Beds ready</span>
           <span className={styles.tileSub}>
             for <b>{waiting}</b> waiting
+            {preparing > 0 ? `, ${preparing} being made ready` : ""}
           </span>
         </div>
         <div className={styles.tile}>
@@ -579,7 +581,7 @@ export function HandoverPhone({
               <div className={styles.banner} role="status">
                 <StatusGlyph tone="neutral" size={9} />
                 <span className={styles.bannerText}>
-                  <b>{highlightedCount}</b> highlighted, all rows stay
+                  <b>{highlightedCount}</b> synthetic rows highlighted, all rows stay
                 </span>
                 <Button variant="ghost" size="sm" className={styles.bannerAction} onClick={onClearHighlight}>
                   Clear
