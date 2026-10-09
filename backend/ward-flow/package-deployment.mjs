@@ -32,6 +32,8 @@ root = Path.cwd()
 with ZipFile(sys.argv[1], "w", ZIP_DEFLATED) as archive:
     for name in sys.argv[2:]:
         source = root / name
+        if not source.exists():
+            raise FileNotFoundError(f"Missing packaging source: {name}")
         entries = [source] if source.is_file() else source.rglob("*")
         for entry in entries:
             if entry.is_file():
