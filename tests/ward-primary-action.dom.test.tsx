@@ -219,4 +219,15 @@ describe("WardBarMount — the layout-level route resolution, D-16", () => {
       expect(screen.getByTestId("ward-bar-primary-action")).toHaveTextContent("New referral");
     },
   );
+
+  it("keeps the referral intake route, where the slide-out is already open, without a header action", () => {
+    route.pathname = "/mockups/ward-flow/referrals/new";
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardLiveRegion />
+        <WardBarMount />
+      </WardFlowProvider>,
+    );
+    expect(screen.queryByTestId("ward-bar-primary-action")).toBeNull();
+  });
 });
