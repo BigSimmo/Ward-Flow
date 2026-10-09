@@ -44,6 +44,10 @@ const MAY_ASSERT_TODAY = new Map([
   // `formatInstantWithDay(rejection.at, now)` — the expiry condition this entry itself named.
   ["movement.transport.acceptedAt as Instant", "STILL TO SWEEP - transport accepted yesterday reads as today"],
   ["referral.localBedSought.at", "referral surface, owned by another session"],
+  [
+    "selectedPatient.openedAtInstant",
+    "Patient search Latest timeline: the clock sits in the time column and withDay adds the day from formatInstantWithDay to the event text beside it, so the row still names the day.",
+  ],
 ]);
 
 function walk(dir: string): string[] {
