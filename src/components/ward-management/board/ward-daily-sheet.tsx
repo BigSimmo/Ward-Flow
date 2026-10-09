@@ -73,6 +73,7 @@ export type DailySheetPerson = {
    * carried to a meeting and believed.
    */
   awayAtEdHours: number | null;
+  absentWithoutLeaveHours?: number | null;
   expectedDays: number | null;
   blockReason: string | null;
 };
@@ -224,6 +225,11 @@ function SheetPerson({ person, testId }: { person: DailySheetPerson; testId: str
        * Says the bed is still theirs in the same breath, as the board's panel does: "away" on a
        * bed sheet otherwise reads as "so the bed is free", and it is not — the ward is holding it.
        */}
+      {person.absentWithoutLeaveHours != null && (
+        <p className={styles.sheetRowAway} data-testid={`${testId}-absent-without-leave`}>
+          Absent without leave for {person.absentWithoutLeaveHours} {person.absentWithoutLeaveHours === 1 ? "hour" : "hours"}.
+        </p>
+      )}
       {person.awayAtEdHours !== null && (
         <p className={styles.sheetRowAway} data-testid={`${testId}-away`}>
           {person.awayAtEdHours === 0
@@ -405,6 +411,10 @@ export function WardDailySheet({
           admission.awayAtEmergencyDepartmentSince === null
             ? null
             : Math.max(0, Math.floor((currentNow - admission.awayAtEmergencyDepartmentSince) / 60)),
+        absentWithoutLeaveHours:
+          admission.absentWithoutLeaveSince === null
+            ? null
+            : Math.max(0, Math.floor((currentNow - admission.absentWithoutLeaveSince) / 60)),
         expectedDays:
           admission.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
             ? Math.floor((admission.expectedDischargeAt - currentNow) / 1440)

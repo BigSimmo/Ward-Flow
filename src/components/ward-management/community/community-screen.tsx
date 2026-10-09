@@ -5027,6 +5027,7 @@ function unitName(unitId: string, units: readonly Unit[]): string {
  */
 function bedStateLabel(admission: Admission): string {
   if (admission.state !== "occupied") return "A bed is pulled — not yet arrived";
+  if (admission.absentWithoutLeaveSince !== null) return "In the bed — recorded absent without leave";
   if (admission.awayAtEmergencyDepartmentSince !== null) return "In the bed — currently at an emergency department";
   return "In the bed";
 }

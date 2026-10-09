@@ -126,6 +126,7 @@ type Tile =
        * bed is not on the board.
        */
       awayAtEd: boolean;
+      absentWithoutLeave: boolean;
       who?: string;
     }
   | { kind: "waiting"; key: string }
@@ -254,6 +255,7 @@ function buildTiles(
       bandLabel: band?.label ?? "Stay not banded",
       pastDate: isPastExpectedDischarge(admission, now),
       awayAtEd: admission.awayAtEmergencyDepartmentSince !== null,
+      absentWithoutLeave: admission.absentWithoutLeaveSince !== null,
     };
   });
 
@@ -337,6 +339,7 @@ type Occupant = {
    * capacity figure reads it.
    */
   awayAtEdHours: number | null;
+  absentWithoutLeaveHours: number | null;
   /** Whole days from `now` to the ward's own expected date — NEGATIVE when it has passed, `null`
    *  when nobody has set one. */
   expectedDays: number | null;
@@ -420,6 +423,10 @@ function buildOccupants(unit: Unit, admissions: readonly Admission[], now: Insta
         admission.awayAtEmergencyDepartmentSince === null
           ? null
           : Math.max(0, Math.floor((now - admission.awayAtEmergencyDepartmentSince) / 60)),
+      absentWithoutLeaveHours:
+        admission.absentWithoutLeaveSince === null
+          ? null
+          : Math.max(0, Math.floor((now - admission.absentWithoutLeaveSince) / 60)),
       expectedDays: daysUntilExpected(admission, now),
       dischargeDateMoves: admission.dischargeDateMoves,
       dischargeDateSetBy: admission.dischargeDateSetBy,
@@ -1313,7 +1320,7 @@ export function WardBoard({
           tile.kind === "closed" ||
           tile.kind === "waiting" ||
           (tile.kind === "occupied" &&
-            (tile.pastDate || tile.awayAtEd || (occupant !== undefined && occupant.blockReason !== null)))
+            (tile.pastDate || tile.awayAtEd || tile.absentWithoutLeave || (occupant !== undefined && occupant.blockReason !== null)))
         );
       case "ready":
         return tile.kind === "empty";
@@ -2540,6 +2547,14 @@ export function WardBoard({
                             above, and the same direction.** The tile is 80px on a phone, not 390px.
                             **Two comments in one component carried the same wrong width**, which is
                             how a number gets believed: it was consistent with itself. */}
+                          {tile.absentWithoutLeave && (
+                            <span className={styles.awayMark} data-testid={`ward-board-bed-${index + 1}-absent-without-leave`}>
+                              <span aria-hidden="true" className={styles.statusGlyph}>
+                                !{" "}
+                              </span>
+                              <span>AWOL</span>
+                            </span>
+                          )}
                           {tile.awayAtEd && (
                             <span className={styles.awayMark} data-testid={`ward-board-bed-${index + 1}-away`}>
                               <span aria-hidden="true" className={styles.statusGlyph}>

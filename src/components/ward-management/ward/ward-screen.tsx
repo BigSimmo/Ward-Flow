@@ -818,6 +818,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const daysInBed = stayDays === null ? undefined : `${stayDays}d`;
     const isSpecialling = admission?.specialling === true;
 
+    if (absentWithoutLeaveHours !== null) {
+      statusText = `Absent without leave for ${absentWithoutLeaveHours} ${absentWithoutLeaveHours === 1 ? "hour" : "hours"}`;
+    }
+
     const patientLegalStatus = linkedMovement?.legalStatus;
     const patientLegalForm = linkedMovement?.legalForm;
     const legalStatusLabel = patientLegalForm
@@ -829,6 +833,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const awayHours =
       admission?.awayAtEmergencyDepartmentSince != null
         ? Math.max(0, Math.floor((now - admission.awayAtEmergencyDepartmentSince) / 60))
+        : null;
+    const absentWithoutLeaveHours =
+      admission?.absentWithoutLeaveSince != null
+        ? Math.max(0, Math.floor((now - admission.absentWithoutLeaveSince) / 60))
         : null;
     const expDays =
       admission?.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
