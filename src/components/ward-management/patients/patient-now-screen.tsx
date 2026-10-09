@@ -515,7 +515,7 @@ export function PatientNowScreen({
     if (originName) contacts.push({ name: originName, role: "Sending ED" });
   } else if ((mode === "ward" || mode === "leave" || mode === "awol") && (stayUnit ?? acceptingUnit)) {
     contacts.push({ name: (stayUnit ?? acceptingUnit)!.name, role: "Ward, nurse in charge" });
-    const police = stayLeaveBed?.absentWithoutLeave?.steps.police_notified;
+    const police = stayLeaveBed?.absentWithoutLeave?.steps.find((done) => done.step === "police_notified")?.at;
     if (mode === "awol" && police !== undefined) contacts.push({ name: "Police", role: `Notified ${clock(police)}` });
   }
   if (livePatient?.catchmentCommunityTeam)
@@ -1228,7 +1228,17 @@ export function PatientNowScreen({
               aria-labelledby="pntab-history"
               hidden={activeTab !== "history"}
             >
-              <PatientHistoryTab record={record} movement={liveMovement} />
+              <PatientHistoryTab
+                record={record}
+                movement={liveMovement}
+                dayZero={dayZero}
+                unitName={(id) => units.find((u) => u.id === id)?.name}
+                open={!modeMeta.quiet}
+                onBackToNow={() => {
+                  setActiveTab("now");
+                  requestAnimationFrame(() => document.getElementById("pntab-now")?.focus());
+                }}
+              />
             </div>
 
             {/* Tab 3: COMMUNITY */}
@@ -1244,6 +1254,9 @@ export function PatientNowScreen({
                 patient={livePatient}
                 movement={liveMovement}
                 receivingWardName={acceptingUnit?.name}
+                stayOpen={!modeMeta.quiet}
+                onRecordCto={statusContext.onRecordCto}
+                onEndCto={statusContext.onEndCto}
               />
             </div>
 
@@ -1282,6 +1295,7 @@ export function PatientNowScreen({
                   })),
                 }}
                 movement={liveMovement}
+                patient={livePatient}
                 now={now}
                 onRecordDocument={() => setShowUploadFormsModal(true)}
               />

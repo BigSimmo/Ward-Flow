@@ -459,6 +459,18 @@ where they live, and for how long." **Dispatches:** `RECORD_REPATRIATION`. **Rea
 
 ## `patients/`
 
+**9 October 2026 gate board, second pass (D-38):** `patient-mode.ts` adds On leave (the stay has a
+leave bed), Absent without leave (that held bed records `absentWithoutLeave`) and On a CTO (the
+patient record holds `communityTreatmentOrder`). The status card gains a missing person checklist
+for absences; `patient-now-cards.tsx` adds the leave and Last seen cards. The record tabs in
+`patient-dossier-tabs.tsx` (with `patient-record-tabs.module.css`, alongside the older module it
+still reuses for search, filters, episodes and documents) now follow the mockup: History opens with
+a pattern strip and a recorded-events timeline for this presentation; Community has Care team, a
+dashed Family and carers Preview, and a Community plan that records or ends a CTO; Details has a
+not-recorded count and a dashed "Not in the record yet" card; Documents has a forms register on the
+shared wf table with no lapse column. Interpreter language and Aboriginal status stay in separate
+Details groups, never beside the Now history (placement rule in `person-screen.tsx`).
+
 **9 October 2026 gate board:** the Patient page follows the chosen "Gate board" mockup.
 `patient-mode.ts` derives the mode from the resolver order (open movement by stage, then occupied
 bed, otherwise not active): Finding a bed, Bed held, In transit, On ward, Not active. On leave,

@@ -1,21 +1,45 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowUpRight, Clipboard, FileText, History, MapPin, Search, ShieldCheck, Users, Contact } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  Clipboard,
+  FileText,
+  History,
+  IdCard,
+  List,
+  MapPin,
+  Phone,
+  Scale,
+  Search,
+  Users,
+  Wrench,
+} from "lucide-react";
+import { Button, Card, CardHead, StatusGlyph, cx, tableClasses, type WfTone } from "@/components/wf";
 import type { Movement } from "../ward-model";
 import type { Patient } from "../ward-patients";
 import { edById } from "../ward-sites";
+import { calendarDateOf } from "../ward-clock";
 import { legalFormName } from "../ward-legal-forms";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { clock, STAGES, type PatientNowRecord } from "./patient-now-records";
-import styles from "./patient-dossier-tabs.module.css";
+import legacy from "./patient-dossier-tabs.module.css";
+import styles from "./patient-record-tabs.module.css";
+
+/**
+ * The record tabs, rebuilt to the gate board mockup (9 Oct 2026). Now holds the present; History,
+ * Community, Details and Documents hold everything else. Every value comes from the record: a
+ * field the record cannot hold yet is a dashed Preview card that says so, never a guess.
+ */
 
 function CopyFact({ value, label }: { value: string; label: string }) {
   const [message, setMessage] = useState("");
   return (
-    <div className={styles.copy}>
-      <button
-        type="button"
+    <span className={styles.copy}>
+      <Button
+        size="sm"
+        icon={Clipboard}
         onClick={async () => {
           try {
             if (!navigator.clipboard) throw new Error("Clipboard unavailable");
@@ -26,24 +50,97 @@ function CopyFact({ value, label }: { value: string; label: string }) {
           }
         }}
       >
-        <Clipboard size={15} aria-hidden="true" />
         {label}
-      </button>
+      </Button>
       <span role="status">{message}</span>
-    </div>
-  );
-}
-function Heading({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
-  return (
-    <header className={styles.heading}>
-      <span>{eyebrow}</span>
-      <h2>{title}</h2>
-      <p>{description}</p>
-    </header>
+    </span>
   );
 }
 
-export function PatientHistoryTab({ record, movement }: { record: PatientNowRecord; movement?: Movement }) {
+function dayLabel(instant: number, dayZero: Date): string {
+  return calendarDateOf(instant, dayZero).toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Australia/Perth",
+  });
+}
+
+type LogEvent = { at: number; tone: WfTone; text: string };
+
+/** The open episode's recorded events, newest first. Nothing is inferred between them. */
+function movementEvents(movement: Movement, unitName: (id: string) => string | undefined): LogEvent[] {
+  const events: LogEvent[] = [
+    {
+      at: movement.openedAt,
+      tone: "neutral",
+      text: `Opened at ${edById(movement.originEdId)?.name ?? "an origin not recorded"}`,
+    },
+  ];
+  if (movement.examination)
+    events.push({ at: movement.examination.at, tone: "success", text: "Psychiatric examination recorded" });
+  const formAt = movement.legalFormReceivedAt ?? movement.formedAt;
+  if (movement.legalForm && formAt !== undefined)
+    events.push({ at: formAt, tone: "success", text: `Form ${movement.legalForm.code} recorded` });
+  if (movement.referredAt !== undefined)
+    events.push({
+      at: movement.referredAt,
+      tone: "info",
+      text: `Referred to ${movement.referredUnitIds.length} ward${movement.referredUnitIds.length === 1 ? "" : "s"}`,
+    });
+  for (const decline of movement.declines)
+    events.push({ at: decline.at, tone: "closed", text: `Declined, ${unitName(decline.unitId) ?? decline.unitId}` });
+  if (movement.escalation)
+    events.push({
+      at: movement.escalation.at,
+      tone: "info",
+      text: `Escalated after ${movement.escalation.triedUnitIds.length} wards tried`,
+    });
+  if (movement.acceptedAt !== undefined && movement.acceptedUnitId)
+    events.push({
+      at: movement.acceptedAt,
+      tone: "success",
+      text: `Accepted for ${unitName(movement.acceptedUnitId) ?? movement.acceptedUnitId}`,
+    });
+  if (movement.medicalClearance)
+    events.push({
+      at: movement.medicalClearance.at,
+      tone: movement.medicalClearance.cleared ? "success" : "danger",
+      text: movement.medicalClearance.cleared ? "Cleared fit to travel" : "Not cleared to travel",
+    });
+  for (const change of movement.stageChanges)
+    events.push({
+      at: change.at,
+      tone: "info",
+      text: `${STAGES.find((s) => s.id === change.to)?.label ?? change.to}, by ${change.by}`,
+    });
+  const job = movement.transport;
+  if (job?.collectedAt !== undefined) events.push({ at: job.collectedAt, tone: "info", text: "Collected" });
+  if (job?.arrivedAt !== undefined) events.push({ at: job.arrivedAt, tone: "success", text: "Arrived" });
+  if (movement.closure)
+    events.push({
+      at: movement.closure.at,
+      tone: movement.closure.outcome === "arrived" ? "success" : "closed",
+      text: movement.closure.outcome === "arrived" ? "Closed on arrival" : "Closed, did not proceed",
+    });
+  return events.sort((a, b) => b.at - a.at);
+}
+
+export function PatientHistoryTab({
+  record,
+  movement,
+  dayZero,
+  unitName,
+  open,
+  onBackToNow,
+}: {
+  record: PatientNowRecord;
+  movement?: Movement;
+  dayZero: Date;
+  unitName: (id: string) => string | undefined;
+  /** True while something is open now, so the log offers Back to Now rather than Overview. */
+  open: boolean;
+  onBackToNow: () => void;
+}) {
   const [filter, setFilter] = useState<"all" | "emergency" | "inpatient">("all");
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState(true);
@@ -63,159 +160,201 @@ export function PatientHistoryTab({ record, movement }: { record: PatientNowReco
     .slice()
     .sort((a, b) => (recent ? b.year - a.year : a.year - b.year));
   const prior = record.presentations.filter((p) => !p.current);
+  // Each event carries its day heading only when the day changes, worked out before render.
+  const events = (movement ? movementEvents(movement, unitName) : []).map((event, i, list) => {
+    const day = dayLabel(event.at, dayZero);
+    const previous = i > 0 ? dayLabel(list[i - 1]!.at, dayZero) : undefined;
+    return { ...event, heading: day !== previous ? day : null };
+  });
   return (
     <section className={styles.pane} aria-label="Presentation history" data-layout="history">
-      <Heading
-        eyebrow="LONGITUDINAL CONTEXT"
-        title="Presentations"
-        description="Episodes, outcomes and recorded journey events."
-      />
-      <div className={styles.summaryStrip}>
-        <div>
-          <span>Linked episodes</span>
-          <strong>{record.presentations.length}</strong>
-        </div>
-        <div>
-          <span>Earlier presentations</span>
-          <strong>{prior.length}</strong>
-        </div>
-        <div>
-          <span>Recorded stage changes</span>
-          <strong>{movement?.stageChanges.length ?? 0}</strong>
-        </div>
-        {record.presentations.length > 0 && (
-          <span className={styles.tag} data-testid="pn-history-example-label">
-            Example history
-          </span>
-        )}
-      </div>
-      <div className={styles.toolbar}>
-        <label className={styles.search}>
-          <Search size={16} aria-hidden="true" />
-          <input
-            aria-label="Search presentation history"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search place, outcome or episode…"
-          />
-        </label>
-        <button type="button" className={styles.sort} onClick={() => setRecent(!recent)}>
-          {recent ? "Newest first ↓" : "Oldest first ↑"}
-        </button>
-      </div>
-      <div className={styles.filters} role="group" aria-label="History filter">
-        {(
-          [
-            ["all", `All (${record.presentations.length})`],
-            ["emergency", "Emergency"],
-            ["inpatient", "Inpatient"],
-          ] as const
-        ).map(([key, label]) => (
-          <button type="button" key={key} aria-pressed={filter === key} onClick={() => setFilter(key)}>
-            {label}
-          </button>
-        ))}
-        <span role="status">{items.length} synthetic records shown</span>
-      </div>
-      <div className={styles.historyGrid}>
-        <div className={styles.episodes}>
-          {items.map((p, i) => (
-            <details className={styles.episode} key={`${p.date}-${p.where}-${i}`} open={p.current ? true : undefined}>
-              <summary>
-                <span className={styles.episodeMark}>
-                  <History size={18} aria-hidden="true" />
-                </span>
-                <span>
-                  <strong>{p.date}</strong>
-                  <small>{p.where}</small>
-                </span>
-                <span className={styles.tag}>{p.current ? "Linked journey" : p.los}</span>
-              </summary>
-              <div className={styles.episodeBody}>
-                <div className={styles.route}>
-                  <MapPin size={15} aria-hidden="true" />
-                  <strong>{p.where}</strong>
-                  <ArrowUpRight size={16} aria-hidden="true" />
-                  <span>{p.to}</span>
-                </div>
-                <p>{p.outcome}</p>
-                {p.story && <p className={styles.muted}>{p.story}</p>}
-                <dl className={styles.facts}>
-                  <dt>Duration</dt>
-                  <dd>{p.losFull}</dd>
-                  <dt>Legal authority</dt>
-                  <dd>{p.legal}</dd>
-                  <dt>Community team</dt>
-                  <dd>{p.team}</dd>
-                </dl>
-                {p.asked.length > 0 && (
-                  <details className={styles.innerDetails}>
-                    <summary>Ward responses · {p.asked.length}</summary>
-                    {p.asked.map((a, j) => (
-                      <p key={j}>
-                        <strong>{a.ward}</strong> · {a.outcome}
-                        {a.why ? ` · ${a.why}` : ""}
-                      </p>
-                    ))}
-                  </details>
-                )}
-              </div>
-            </details>
-          ))}
-          {items.length === 0 && (
-            <div className={styles.empty}>
-              <History size={24} aria-hidden="true" />
-              <strong>
-                {query || filter !== "all" ? "No matching presentations" : "No presentation history available"}
-              </strong>
-              <p>
-                {query || filter !== "all"
-                  ? "Change the search or filter to review other episodes."
-                  : (record.presentationsAbsent ?? "Earlier clinical history is not recorded here.")}
-              </p>
-            </div>
-          )}
-          {prior.length === 0 && items.length > 0 && (
-            <p className={styles.note}>No earlier presentation history is available in this record.</p>
-          )}
-        </div>
-        <aside className={styles.surface} aria-label="Journey event log">
-          <div className={styles.cardTitle}>
-            <span className={styles.icon}>
-              <History size={18} aria-hidden="true" />
+      {/* The pattern first: counts the record holds, never an estimate. */}
+      <Card>
+        <div className={styles.cells}>
+          <div className={styles.cell}>
+            <span className={styles.cellLabel}>
+              <History size={14} aria-hidden="true" />
+              Presentations
             </span>
-            <h3>Journey event log</h3>
+            <span className={styles.cellValue}>
+              {record.presentations.length}
+              {record.presentations.length > 0 ? (
+                <span className={legacy.tag} data-testid="pn-history-example-label">
+                  Example history
+                </span>
+              ) : null}
+            </span>
+            <span className={styles.cellSub}>Linked to this record</span>
           </div>
-          {movement ? (
-            <ol className={styles.events}>
-              {movement.stageChanges
-                .slice()
-                .reverse()
-                .map((change, i) => (
-                  <li key={i}>
-                    <time>{clock(change.at)} AWST</time>
-                    <strong>{STAGES.find((s) => s.id === change.to)?.label ?? change.to}</strong>
-                    <span>
-                      Recorded by {change.by}
-                      {change.reason ? ` · ${change.reason}` : ""}
+          <div className={styles.cell}>
+            <span className={styles.cellLabel}>
+              <CalendarDays size={14} aria-hidden="true" />
+              Earlier presentations
+            </span>
+            <span className={styles.cellValue}>{prior.length}</span>
+            <span className={styles.cellSub}>
+              {prior.length === 0 ? "None earlier in this record" : "Closed, read only"}
+            </span>
+          </div>
+          <div className={styles.cell}>
+            <span className={styles.cellLabel}>
+              <List size={14} aria-hidden="true" />
+              Recorded events
+            </span>
+            <span className={styles.cellValue}>{events.length}</span>
+            <span className={styles.cellSub}>
+              {movement ? `${movement.stageChanges.length} stage changes` : "No linked movement"}
+            </span>
+          </div>
+        </div>
+      </Card>
+      <div className={styles.cols}>
+        <Card>
+          <CardHead level={3} icon={List} title="Episodes" meta={`${items.length} shown`} />
+          <div className={styles.bodyPad}>
+            <div className={legacy.toolbar}>
+              <label className={legacy.search}>
+                <Search size={16} aria-hidden="true" />
+                <input
+                  aria-label="Search presentation history"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search place, outcome or episode"
+                />
+              </label>
+              <Button size="sm" onClick={() => setRecent(!recent)}>
+                {recent ? "Newest first" : "Oldest first"}
+              </Button>
+            </div>
+            <div className={cx(legacy.filters, styles.filterRow)} role="group" aria-label="History filter">
+              {(
+                [
+                  ["all", `All (${record.presentations.length})`],
+                  ["emergency", "Emergency"],
+                  ["inpatient", "Inpatient"],
+                ] as const
+              ).map(([key, label]) => (
+                <button type="button" key={key} aria-pressed={filter === key} onClick={() => setFilter(key)}>
+                  {label}
+                </button>
+              ))}
+              <span role="status">{items.length} synthetic records shown</span>
+            </div>
+            <div className={legacy.episodes}>
+              {items.map((p, i) => (
+                <details
+                  className={legacy.episode}
+                  key={`${p.date}-${p.where}-${i}`}
+                  open={p.current ? true : undefined}
+                >
+                  <summary>
+                    <span className={legacy.episodeMark}>
+                      <History size={18} aria-hidden="true" />
                     </span>
+                    <span>
+                      <strong>{p.date}</strong>
+                      <small>{p.where}</small>
+                    </span>
+                    <span className={legacy.tag}>{p.current ? "Open now" : p.los}</span>
+                  </summary>
+                  <div className={legacy.episodeBody}>
+                    <div className={legacy.route}>
+                      <MapPin size={15} aria-hidden="true" />
+                      <strong>{p.where}</strong>
+                      <ArrowUpRight size={16} aria-hidden="true" />
+                      <span>{p.to}</span>
+                    </div>
+                    <p>{p.outcome}</p>
+                    {p.story && <p className={legacy.muted}>{p.story}</p>}
+                    <dl className={legacy.facts}>
+                      <dt>Duration</dt>
+                      <dd>{p.losFull}</dd>
+                      <dt>Legal authority</dt>
+                      <dd>{p.legal}</dd>
+                      <dt>Community team</dt>
+                      <dd>{p.team}</dd>
+                    </dl>
+                    {p.asked.length > 0 && (
+                      <details className={legacy.innerDetails}>
+                        <summary>Ward responses, {p.asked.length}</summary>
+                        {p.asked.map((a, j) => (
+                          <p key={j}>
+                            <strong>{a.ward}</strong>, {a.outcome}
+                            {a.why ? `, ${a.why}` : ""}
+                          </p>
+                        ))}
+                      </details>
+                    )}
+                  </div>
+                </details>
+              ))}
+              {items.length === 0 && (
+                <div className={legacy.empty}>
+                  <History size={24} aria-hidden="true" />
+                  <strong>
+                    {query || filter !== "all" ? "No matching presentations" : "No presentation history available"}
+                  </strong>
+                  <p>
+                    {query || filter !== "all"
+                      ? "Change the search or filter to review other episodes."
+                      : (record.presentationsAbsent ?? "Earlier clinical history is not recorded here.")}
+                  </p>
+                </div>
+              )}
+              {prior.length === 0 && items.length > 0 && (
+                <p className={legacy.note}>No earlier presentation history is available in this record.</p>
+              )}
+            </div>
+          </div>
+        </Card>
+        <Card aria-label="Journey event log">
+          <CardHead
+            level={3}
+            icon={History}
+            title="This presentation"
+            aside={movement ? <span className={styles.chip}>{open ? "Open" : "Closed"}</span> : null}
+            action={
+              <Button size="sm" variant="ghost" onClick={onBackToNow}>
+                {open ? "Back to Now" : "Back to Overview"}
+              </Button>
+            }
+          />
+          {movement ? (
+            <ol className={styles.log}>
+              {events.map((event, i) => {
+                return (
+                  <li key={i}>
+                    {event.heading ? <div className={styles.day}>{event.heading}</div> : null}
+                    <div className={styles.event}>
+                      <time>{clock(event.at)}</time>
+                      <StatusGlyph tone={event.tone} size={10} />
+                      <span>{event.text}</span>
+                    </div>
                   </li>
-                ))}
-              <li>
-                <time>{clock(movement.openedAt)} AWST</time>
-                <strong>Journey opened</strong>
-                <span>{edById(movement.originEdId)?.name ?? "Origin not recorded"}</span>
-              </li>
+                );
+              })}
             </ol>
           ) : (
-            <p className={styles.muted}>No linked movement events. Patient information remains available in Details.</p>
+            <p className={cx(styles.bodyPad, legacy.muted)}>
+              No linked movement events. Patient information remains available in Details.
+            </p>
           )}
-          <p className={styles.note}>
-            Stage events reflect recorded transitions. Missing transitions are not inferred.
+          <p className={cx(styles.bodyPad, legacy.note)}>
+            Events are the ones recorded. Missing transitions are not inferred.
           </p>
-        </aside>
+        </Card>
       </div>
     </section>
+  );
+}
+
+function Row({ k, children, action }: { k: string; children: ReactNode; action?: ReactNode }) {
+  return (
+    <div className={styles.row}>
+      <span className={styles.k}>{k}</span>
+      <span className={styles.v}>{children}</span>
+      {action ?? <span />}
+    </div>
   );
 }
 
@@ -224,109 +363,135 @@ export function PatientCommunityTab({
   patient,
   movement,
   receivingWardName,
+  stayOpen,
+  onRecordCto,
+  onEndCto,
 }: {
   record: PatientNowRecord;
   patient?: Patient;
   movement?: Movement;
   receivingWardName?: string;
+  /** True while a placement or stay is open, so community review is paused. */
+  stayOpen: boolean;
+  onRecordCto: () => void;
+  onEndCto: () => void;
 }) {
   const summary = `GP: ${patient?.generalPractitioner ?? "Not recorded"}\nCatchment: ${patient?.catchmentCommunityTeam ?? "Not recorded"}\nFollow-up: ${record.community.followUp}`;
+  const order = patient?.communityTreatmentOrder;
+  const notRecorded = <span className={styles.nr}>Not recorded</span>;
   return (
     <section className={styles.pane} aria-label="Community and care continuity" data-layout="community">
-      <Heading
-        eyebrow="CARE CONTINUITY"
-        title="Care & community"
-        description="Care links, follow-up and transfer contacts."
-      />
-      <div className={styles.careDirectory}>
-        <section className={styles.careLinks} aria-label="Recorded care directory">
-          <h3>Care directory</h3>
-          <div className={styles.serviceRow}>
-            <span className={styles.icon}>
-              <Users size={18} aria-hidden="true" />
-            </span>
-            <div>
-              <span>Community catchment</span>
-              <strong>{patient?.catchmentCommunityTeam ?? "Not recorded"}</strong>
-              <small>Catchment link · current team involvement unconfirmed</small>
+      <div className={styles.cols}>
+        <div className={styles.col}>
+          <Card aria-label="Recorded care directory">
+            <CardHead
+              level={3}
+              icon={Users}
+              title="Care team"
+              meta={patient?.suburb ? `Lives in ${patient.suburb}` : undefined}
+            />
+            <div className={styles.rows}>
+              <Row k="Catchment team">{patient?.catchmentCommunityTeam ?? notRecorded}</Row>
+              <Row k="GP">{patient?.generalPractitioner ?? notRecorded}</Row>
+              <Row k="Suburb">{patient?.suburb ?? notRecorded}</Row>
             </div>
-          </div>
-          <div className={styles.serviceRow}>
-            <span className={styles.icon}>
-              <Contact size={18} aria-hidden="true" />
-            </span>
-            <div>
-              <span>General practitioner</span>
-              <strong>{patient?.generalPractitioner ?? "Not recorded"}</strong>
-            </div>
-          </div>
-          <div className={styles.serviceRow}>
-            <span className={styles.icon}>
-              <MapPin size={18} aria-hidden="true" />
-            </span>
-            <div>
-              <span>Residential area</span>
-              <strong>{patient?.suburb ?? "Not recorded"}</strong>
-            </div>
-          </div>
-          <p className={styles.note}>
-            A recorded catchment does not confirm current case management or an active appointment.
-          </p>
-        </section>
-        <section className={styles.continuity}>
-          <div className={styles.cardTitle}>
-            <Clipboard size={18} aria-hidden="true" />
-            <h3>Follow-up record</h3>
-          </div>
-          <p className={styles.prose}>{record.community.followUp}</p>
-          <div className={styles.cardTitle}>
-            <h3>Team allocation</h3>
-            <span className={styles.tag}>{record.community.teams.length} linked</span>
-          </div>
-          {record.community.teams.length > 0 ? (
-            <div className={styles.teamRows}>
-              {record.community.teams.map((t, i) => (
-                <article key={i}>
-                  <div>
-                    <strong>{t.name}</strong>
-                    <span className={styles.tag}>{t.state}</span>
-                  </div>
-                  <p>{t.note}</p>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className={styles.muted}>
-              {record.community.absent ?? "No community team allocation is established by this movement record."}
+            <p className={cx(styles.bodyPad, legacy.note)}>
+              A recorded catchment does not confirm current case management or an active appointment.
             </p>
+          </Card>
+          <Card className={styles.dashed}>
+            <CardHead
+              level={3}
+              icon={Users}
+              title="Family and carers"
+              aside={<span className={styles.preview}>Preview, not in the record yet</span>}
+            />
+            <div className={styles.rows}>
+              <Row k="Next of kin">
+                <span className={styles.nr}>Needs a record field</span>
+              </Row>
+              <Row k="Carer">
+                <span className={styles.nr}>Needs a record field</span>
+              </Row>
+              <Row k="Guardian">
+                <span className={styles.nr}>Needs a record field</span>
+              </Row>
+            </div>
+          </Card>
+        </div>
+        <div className={styles.col}>
+          <Card>
+            <CardHead level={3} icon={CalendarDays} title="Community plan" />
+            <div className={styles.rows}>
+              <Row k="Follow-up">{record.community.followUp}</Row>
+              <Row k="Next review">
+                {stayOpen ? (
+                  <span className={styles.nr}>Paused while a placement or stay is open</span>
+                ) : (
+                  <span className={styles.nr}>Not held in this prototype</span>
+                )}
+              </Row>
+              <Row
+                k="CTO"
+                action={
+                  patient ? (
+                    order ? (
+                      <Button size="sm" onClick={onEndCto}>
+                        Record ended
+                      </Button>
+                    ) : (
+                      <Button size="sm" onClick={onRecordCto}>
+                        Record CTO
+                      </Button>
+                    )
+                  ) : undefined
+                }
+              >
+                {order ? (
+                  <>
+                    Form {order.form} in force <small>no lapse time shown</small>
+                  </>
+                ) : (
+                  "None recorded"
+                )}
+              </Row>
+            </div>
+            <div className={styles.bodyPad}>
+              <strong>Team allocation, {record.community.teams.length} linked</strong>
+              {record.community.teams.length > 0 ? (
+                <div className={legacy.teamRows}>
+                  {record.community.teams.map((t, i) => (
+                    <article key={i}>
+                      <div>
+                        <strong>{t.name}</strong>
+                        <span className={legacy.tag}>{t.state}</span>
+                      </div>
+                      <p>{t.note}</p>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className={legacy.muted}>
+                  {record.community.absent ?? "No community team allocation is established by this movement record."}
+                </p>
+              )}
+              <CopyFact value={summary} label="Copy care links" />
+            </div>
+          </Card>
+          {movement && (
+            <Card>
+              <CardHead level={3} icon={Phone} title="Transfer coordination contacts" meta="Service roles" />
+              <div className={styles.rows}>
+                <Row k="Sending location">{edById(movement.originEdId)?.name ?? notRecorded}</Row>
+                <Row k="Receiving ward">
+                  {movement.acceptedUnitId ? (receivingWardName ?? "Not recorded") : "Destination under review"}
+                </Row>
+                <Row k="Movement owner">{movement.owner?.trim() ? movement.owner : notRecorded}</Row>
+              </div>
+            </Card>
           )}
-          <CopyFact value={summary} label="Copy care links" />
-        </section>
+        </div>
       </div>
-      {movement && (
-        <section className={styles.surface}>
-          <div className={styles.cardTitle}>
-            <h3>Transfer coordination contacts</h3>
-            <span className={styles.tag}>Service roles</span>
-          </div>
-          <div className={styles.grid}>
-            <div className={styles.contact}>
-              <span>SENDING LOCATION</span>
-              <strong>{edById(movement.originEdId)?.name ?? "Not recorded"}</strong>
-              <small>Referring emergency department</small>
-            </div>
-            <div className={styles.contact}>
-              <span>RECEIVING WARD</span>
-              <strong>
-                {movement.acceptedUnitId ? (receivingWardName ?? "Not recorded") : "Destination under review"}
-              </strong>
-              <small>
-                {movement.owner?.trim() ? `Movement owner: ${movement.owner}` : "Movement owner not recorded"}
-              </small>
-            </div>
-          </div>
-        </section>
-      )}
     </section>
   );
 }
@@ -344,6 +509,8 @@ export function PatientDetailsTab({
   preferredName?: string;
 }) {
   const [missingOnly, setMissingOnly] = useState(false);
+  // Interpreter language and Aboriginal status sit in different groups, never side by side (the
+  // placement rule in person-screen.tsx).
   const groups: { title: string; facts: Fact[] }[] = [
     {
       title: "Who",
@@ -394,79 +561,100 @@ export function PatientDetailsTab({
   );
   return (
     <section className={styles.pane} aria-label="Patient details" data-layout="details">
-      <Heading
-        eyebrow="PATIENT RECORD"
-        title="Patient details"
-        description="Patient identity, ongoing care and placement context."
-      />
-      <div className={styles.detailsToolbar}>
-        <div>
-          <strong>
-            {all.length - missing} / {all.length}
-          </strong>
-          <span> fields recorded · {missing} unrecorded</span>
-          <meter
-            className={styles.completeness}
-            min={0}
-            max={all.length}
-            value={all.length - missing}
-            aria-label="Recorded patient and placement fields"
-          />
+      <Card>
+        <CardHead
+          level={3}
+          icon={IdCard}
+          title="Record details"
+          aside={
+            <span className={styles.chip}>
+              <StatusGlyph tone={missing > 0 ? "neutral" : "success"} size={10} />
+              {missing} not recorded
+            </span>
+          }
+        />
+        {/* Actions sit under the head so they wrap on a phone rather than run off the card. */}
+        <div className={styles.bodyPad}>
+          <span className={styles.headActions}>
+            <meter
+              className={legacy.completeness}
+              min={0}
+              max={all.length}
+              value={all.length - missing}
+              aria-label="Recorded patient and placement fields"
+            />
+            <Button size="sm" aria-pressed={missingOnly} onClick={() => setMissingOnly(!missingOnly)}>
+              Missing information
+            </Button>
+            <CopyFact
+              label="Copy patient identifiers"
+              value={`${displayName}\nUMRN: ${patient?.umrn ?? "Not recorded"}\nDOB: ${patient?.dateOfBirth ?? "Not recorded"}`}
+            />
+          </span>
         </div>
-        <button type="button" aria-pressed={missingOnly} onClick={() => setMissingOnly(!missingOnly)}>
-          Missing information {missingOnly ? "✓" : ""}
-        </button>
-      </div>
+      </Card>
       {mismatch && (
-        <p className={styles.attention} role="status">
+        <p className={legacy.attention} role="status">
           Patient sex or gender differs from the movement placement record. Both values are shown below for review.
         </p>
       )}
-      <div className={styles.grid}>
+      <div className={styles.cols}>
         {groups.map((g, i) => (
-          <section
-            className={styles.surface}
-            key={g.title}
-            data-testid={i === 0 ? "ward-person-placement-details" : undefined}
-          >
-            <div className={styles.cardTitle}>
-              <h3>{g.title}</h3>
-            </div>
-            <dl className={styles.facts}>
+          <Card key={g.title} data-testid={i === 0 ? "ward-person-placement-details" : undefined}>
+            <CardHead level={3} title={g.title} />
+            <dl className={styles.fields}>
               {g.facts
                 .filter(([, v]) => !missingOnly || !v)
                 .map(([label, value]) => (
-                  <div className={styles.factRow} key={label}>
+                  <div className={styles.detailField} key={label}>
                     <dt>{label}</dt>
                     <dd data-missing={!value}>{value ?? "Not recorded"}</dd>
                   </div>
                 ))}
             </dl>
             {missingOnly && g.facts.every(([, v]) => v) && (
-              <p className={styles.muted}>All fields in this section are recorded.</p>
+              <p className={cx(styles.bodyPad, legacy.muted)}>All fields in this section are recorded.</p>
             )}
-          </section>
+          </Card>
         ))}
+        <Card className={styles.dashed}>
+          <CardHead
+            level={3}
+            icon={Wrench}
+            title="Not in the record yet"
+            aside={<span className={styles.preview}>Preview</span>}
+          />
+          <dl className={styles.fields}>
+            {["Next of kin", "Carer", "Guardian", "Advance health directive", "NDIS participant", "Alerts"].map(
+              (label) => (
+                <div className={styles.detailField} key={label}>
+                  <dt>{label}</dt>
+                  <dd data-missing="true">Needs a record field</dd>
+                </div>
+              ),
+            )}
+          </dl>
+        </Card>
       </div>
-      <CopyFact
-        label="Copy patient identifiers"
-        value={`${displayName}\nUMRN: ${patient?.umrn ?? "Not recorded"}\nDOB: ${patient?.dateOfBirth ?? "Not recorded"}`}
-      />
-      <p className={styles.note}>
+      <p className={legacy.note}>
         Record completeness describes available fields; it is not a clinical safety assessment.
       </p>
     </section>
   );
 }
 
+type FormRow = { code: string; status: "Current" | "Continued"; recorded?: string; by: string; due?: number };
+
 export function PatientDocumentsTab({
   record,
   movement,
+  patient,
   now,
   onRecordDocument,
 }: {
   record: PatientNowRecord;
   movement?: Movement;
+  patient?: Patient;
   now: number;
   onRecordDocument: () => void;
 }) {
@@ -501,124 +689,175 @@ export function PatientDocumentsTab({
       (filter === "all" || d.kind === filter) &&
       `${d.title} ${d.code} ${d.from} ${d.file ?? ""}`.toLowerCase().includes(query.toLowerCase().trim()),
   );
-  const due = movement?.legalForm?.dueAt;
-  const expired = due !== undefined && now >= due;
+
+  // The forms register: forms in force, as recorded. No lapse column (D5); a person-typed paper
+  // expiry, where one exists, is shown beside its form as typed and marked not legally checked.
+  const forms: FormRow[] = [];
+  if (movement?.legalForm) {
+    const recordedAt = movement.legalFormReceivedAt ?? movement.formedAt;
+    const continued = movement.legalForm.continuedBy;
+    if (continued)
+      forms.push({ code: continued.code, status: "Current", recorded: clock(continued.recordedAt), by: continued.by });
+    forms.push({
+      code: movement.legalForm.code,
+      status: continued ? "Continued" : "Current",
+      recorded: recordedAt !== undefined ? clock(recordedAt) : undefined,
+      by: "Movement record",
+      due: movement.legalForm.dueAt,
+    });
+  }
+  if (patient?.communityTreatmentOrder)
+    forms.push({
+      code: patient.communityTreatmentOrder.form,
+      status: "Current",
+      recorded: clock(patient.communityTreatmentOrder.recordedAt),
+      by: patient.communityTreatmentOrder.recordedBy,
+    });
+  const current = forms.filter((f) => f.status === "Current").length;
+
   return (
     <section className={styles.pane} aria-label="Documents and legal authority" data-layout="documents">
-      <Heading
-        eyebrow="TRANSFER EVIDENCE"
-        title="Documents & legal authority"
-        description="Current authority and the transfer document register."
-      />
-      <div className={styles.documentSummary}>
-        <section className={`${styles.surface} ${styles.tinted}`}>
-          <div className={styles.cardTitle}>
-            <ShieldCheck size={20} aria-hidden="true" />
-            <h3>Current transfer authority</h3>
-          </div>
-          <strong className={styles.lead}>
-            {movement?.legalForm
-              ? legalFormName(movement.legalForm)
-              : movement
-                ? "No legal form recorded"
-                : "No active transfer authority"}
-          </strong>
-          <p>{movement?.legalStatus ?? "Legal status not recorded for a movement"}</p>
-        </section>
-        <section className={styles.surface} data-attention={expired}>
-          <span className={styles.label}>PAPER EXPIRY</span>
-          <strong className={styles.lead}>
-            {due === undefined ? (
-              "Not recorded"
-            ) : (
-              <>
-                {`${clock(due)} AWST`} <LegalLimitsNotChecked variant="tag" />
-              </>
-            )}
-          </strong>
-          <p className={styles.muted}>
-            {due === undefined
-              ? "No expiry has been entered; validity is not inferred."
-              : expired
-                ? "Recorded expiry has passed. Review authority before progressing."
-                : "Recorded expiry is shown without inferring legal validity."}
+      <Card>
+        <CardHead
+          level={3}
+          icon={Scale}
+          title="Legal forms"
+          aside={<span className={styles.chip}>Current {current}</span>}
+          meta={movement?.legalStatus ?? patient?.legalStatus ?? "Legal status not recorded"}
+        />
+        {forms.length > 0 ? (
+          <table className={tableClasses.table}>
+            <thead>
+              <tr>
+                <th scope="col">Form</th>
+                <th scope="col">Status</th>
+                <th scope="col">Recorded</th>
+                <th scope="col" className={styles.byCol}>
+                  By
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {forms.map((f) => (
+                <tr key={`${f.code}-${f.status}`}>
+                  <td>
+                    <span className={styles.form} data-off={f.status !== "Current"}>
+                      Form {f.code}
+                    </span>
+                  </td>
+                  <td className={styles.wrap}>
+                    <span className={styles.state}>
+                      <StatusGlyph tone={f.status === "Current" ? "success" : "closed"} size={10} />
+                      {f.status}
+                    </span>
+                    {f.due !== undefined ? (
+                      <span className={styles.cellSub}>
+                        {" "}
+                        Paper expiry typed {clock(f.due)}
+                        {now >= f.due ? ", passed" : ""} <LegalLimitsNotChecked variant="tag" />
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className={styles.mono}>{f.recorded ?? <span className={styles.nr}>Not recorded</span>}</td>
+                  <td className={styles.byCol}>{f.by}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className={cx(styles.bodyPad, legacy.muted)}>
+            {movement ? "No legal form recorded." : "No active transfer authority."}
           </p>
-          {due !== undefined ? <LegalLimitsNotChecked /> : null}
-        </section>
-      </div>
-      <div className={styles.toolbar}>
-        <label className={styles.search}>
-          <Search size={16} aria-hidden="true" />
-          <input
-            aria-label="Search patient documents"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search document, form or source…"
-          />
-        </label>
-        {movement && (
-          <button type="button" className={styles.primary} onClick={onRecordDocument}>
-            Record document details
-          </button>
         )}
-      </div>
-      <div className={styles.filters} role="group" aria-label="Document filter">
-        {[
-          ["all", "All documents"],
-          ["legal", "Legal authority"],
-          ["transport", "Transfer documents"],
-        ].map(([key, label]) => (
-          <button type="button" key={key} aria-pressed={filter === key} onClick={() => setFilter(key)}>
-            {label}
-          </button>
-        ))}
-        <span role="status">{rows.length} synthetic records shown</span>
-      </div>
-      <div className={styles.documentList}>
-        {rows.map((d) => (
-          <details className={styles.document} key={d.id}>
-            <summary>
-              <span className={styles.docIcon}>
-                <FileText size={21} aria-hidden="true" />
-              </span>
-              <span>
-                <strong>{d.title}</strong>
-                <small>
-                  {d.code} · {d.from}
-                </small>
-              </span>
-              <span className={styles.tag}>{d.status}</span>
-            </summary>
-            <div className={styles.documentBody}>
-              <dl className={styles.facts}>
-                <dt>Recorded by</dt>
-                <dd>{d.by}</dd>
-                <dt>Date / time</dt>
-                <dd>{d.when}</dd>
-                {d.file && (
-                  <>
-                    <dt>File reference</dt>
-                    <dd>{d.file}</dd>
-                  </>
-                )}
-              </dl>
-              <p className={styles.note}>
-                {d.file
-                  ? "Document metadata only. No uploaded file or binary preview is stored in this prototype."
-                  : "This entry records authority information. It is not a preview of a signed legal document."}
-              </p>
-            </div>
-          </details>
-        ))}
-        {rows.length === 0 && (
-          <div className={styles.empty}>
-            <FileText size={24} aria-hidden="true" />
-            <strong>{query || filter !== "all" ? "No matching document records" : "No documents recorded"}</strong>
-            <p>{query || filter !== "all" ? "Change the search or document filter." : record.documentsAbsent}</p>
+        {movement?.legalForm ? (
+          <p className={cx(styles.bodyPad, legacy.note)}>{legalFormName(movement.legalForm)}</p>
+        ) : null}
+      </Card>
+      <Card>
+        <CardHead
+          level={3}
+          icon={FileText}
+          title="Documents"
+          aside={<span className={styles.chip}>{rows.length}</span>}
+          action={
+            movement ? (
+              <Button size="sm" variant="pri" onClick={onRecordDocument}>
+                Record document details
+              </Button>
+            ) : undefined
+          }
+        />
+        <div className={styles.bodyPad}>
+          <div className={legacy.toolbar}>
+            <label className={legacy.search}>
+              <Search size={16} aria-hidden="true" />
+              <input
+                aria-label="Search patient documents"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search document, form or source"
+              />
+            </label>
           </div>
-        )}
-      </div>
-      <p className={styles.note}>
+          <div className={cx(legacy.filters, styles.filterRow)} role="group" aria-label="Document filter">
+            {[
+              ["all", "All documents"],
+              ["legal", "Legal authority"],
+              ["transport", "Transfer documents"],
+            ].map(([key, label]) => (
+              <button type="button" key={key} aria-pressed={filter === key} onClick={() => setFilter(key)}>
+                {label}
+              </button>
+            ))}
+            <span role="status">{rows.length} synthetic records shown</span>
+          </div>
+          <div className={legacy.documentList}>
+            {rows.map((d) => (
+              <details className={legacy.document} key={d.id}>
+                <summary>
+                  <span className={legacy.docIcon}>
+                    <FileText size={21} aria-hidden="true" />
+                  </span>
+                  <span>
+                    <strong>{d.title}</strong>
+                    <small>
+                      {d.code}, {d.from}
+                    </small>
+                  </span>
+                  <span className={legacy.tag}>{d.status}</span>
+                </summary>
+                <div className={legacy.documentBody}>
+                  <dl className={legacy.facts}>
+                    <dt>Recorded by</dt>
+                    <dd>{d.by}</dd>
+                    <dt>Date / time</dt>
+                    <dd>{d.when}</dd>
+                    {d.file && (
+                      <>
+                        <dt>File reference</dt>
+                        <dd>{d.file}</dd>
+                      </>
+                    )}
+                  </dl>
+                  <p className={legacy.note}>
+                    {d.file
+                      ? "Document metadata only. No uploaded file or binary preview is stored in this prototype."
+                      : "This entry records authority information. It is not a preview of a signed legal document."}
+                  </p>
+                </div>
+              </details>
+            ))}
+            {rows.length === 0 && (
+              <div className={legacy.empty}>
+                <FileText size={24} aria-hidden="true" />
+                <strong>{query || filter !== "all" ? "No matching document records" : "No documents recorded"}</strong>
+                <p>{query || filter !== "all" ? "Change the search or document filter." : record.documentsAbsent}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+      <p className={legacy.note}>
         A document entry does not establish medical clearance, travel fitness or a completed handover.
       </p>
     </section>

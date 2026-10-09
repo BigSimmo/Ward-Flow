@@ -139,4 +139,26 @@ describe("polished patient dossier tabs", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
   });
+  it("shows fields the record cannot hold as a dashed Preview, never as data", () => {
+    setup("PT-005");
+    const details = tab("Details");
+    expect(details.getByRole("heading", { name: "Not in the record yet" })).toBeVisible();
+    expect(details.getAllByText("Needs a record field")).toHaveLength(6);
+    const community = tab("Community");
+    expect(community.getByRole("heading", { name: "Family and carers" })).toBeVisible();
+    expect(community.getByText("Preview, not in the record yet")).toBeVisible();
+  });
+  it("lists a CTO recorded on the Community tab in the forms register, with no lapse column (D5, D-38)", () => {
+    setup("PT-005");
+    const community = tab("Community");
+    fireEvent.click(community.getByRole("button", { name: "Record CTO" }));
+    expect(community.getByText(/Form 5A in force/)).toBeVisible();
+    const documents = tab("Documents");
+    const register = documents.getByRole("table");
+    expect(within(register).getByText("Form 5A")).toBeVisible();
+    const headers = within(register)
+      .getAllByRole("columnheader")
+      .map((h) => h.textContent);
+    expect(headers).toEqual(["Form", "Status", "Recorded", "By"]);
+  });
 });

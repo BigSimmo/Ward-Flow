@@ -305,8 +305,14 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
           label: "Leave",
           owner: "Ward",
           value: "None now",
-          sub: "Leave is recorded on the ward board",
-          action: { kind: "button", label: "Mark absent", onClick: () => ctx.onMarkAbsent() },
+          clear: true,
+          // An absence is recorded against the stay, so it is offered only when one is linked.
+          sub:
+            admission?.state === "occupied" ? "Leave is recorded on the ward board" : "No stay linked to this record",
+          action:
+            admission?.state === "occupied"
+              ? { kind: "button", label: "Mark absent", onClick: () => ctx.onMarkAbsent() }
+              : undefined,
         },
       ],
     };
@@ -356,7 +362,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
   if (mode === "awol" && ctx.leaveBed?.absentWithoutLeave) {
     const absence = ctx.leaveBed.absentWithoutLeave;
     const rows: StatusRow[] = ABSENCE_STEPS.map((step) => {
-      const at = absence.steps[step];
+      const at = absence.steps.find((done) => done.step === step)?.at;
       return {
         key: step,
         done: at !== undefined,
@@ -393,6 +399,8 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
           value: `Form ${order.form} in force`,
           sub: `Recorded ${dayLabel(order.recordedAt, ctx.dayZero)} by ${order.recordedBy}`,
           time: "No lapse time shown",
+          // Nothing blocks here, so this action never takes the page's primary.
+          clear: true,
           action: { kind: "button", label: "Record ended", onClick: () => ctx.onEndCto() },
         },
         {
@@ -445,6 +453,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
         owner: "Treating team",
         value: legalValue(undefined, patient),
         sub: "As recorded",
+        clear: true,
         action: patient ? { kind: "button", label: "Record CTO", onClick: () => ctx.onRecordCto() } : undefined,
       },
     ],
