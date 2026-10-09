@@ -21,47 +21,47 @@ This list records remaining scope rather than re-reporting corrected baseline de
 
 ## Prioritised task index
 
-| ID | Priority | Current disposition | Component |
-| --- | --- | --- | --- |
-| BE-001 | P1 | Requires owner decision | Frontend identity and session integration |
-| BE-002 | P1 | Requires owner decision | Authoritative shared persistence |
-| BE-003 | P1 | Requires owner decision | Service membership and server-side roles |
-| BE-004 | P1 | Requires owner decision | Cross-user update delivery |
-| BE-005 | P1 | Requires owner decision | Shared domain commands and allocation invariants |
-| BE-010 | P1 | Requires owner decision | Immutable shared action history |
-| BE-011 | P1 | Unverified external | Live Azure backend/resource evidence |
-| GOV-001 | P1 | Requires owner decision | TGA intended-purpose determination |
-| GOV-002 | P1 | Requires owner decision | WA Health privacy and data governance |
-| GOV-003 | P1 | Requires owner decision | Safety case / accountable clinical governance |
-| OPS-001 | P1 | Unverified external | Staging and environment isolation |
-| OPS-003 | P1 | Unverified external | Backups and recovery |
-| QA-001 | P1 | Partial | Shared-user acceptance scenarios |
-| SPEC-001 | P1 | Partial | Medical deterioration / held-bed lifecycle |
-| ARC-001 | P2 | Partial | Domain policy / transition maintainability |
-| BE-006 | P2 | Partial | Write outcome and safe retries |
-| BE-008 | P2 | Partial | Stored session deletion and retention |
-| BE-009 | P2 | Partial | Backend request failure diagnostics |
-| CAP-002 | P2 | Requires owner decision | Alert intervention recording |
-| CAP-004 | P2 | Requires owner decision | Operational Settings preview controls |
-| CAP-005 | P2 | Unverified external | WA Health pathways / directories / PAS / HMDC |
-| CAP-006 | P2 | Requires owner decision | Unwired global export / notification / admin surfaces |
-| DEV-002 | P2 | Requires owner decision | Canonical blocked Notion work / owner recovery |
-| DEV-003 | P2 | Unverified external | Native coding agents / remote device readiness |
-| DEV-004 | P2 | Partial | Historical registers and exhaustive semantic verification |
-| DOC-003 | P2 | Partial | Screen verification provenance |
-| NEW-OBSERVABILITY-001 | P2 | Partial | Next request error instrumentation |
-| OPS-002 | P2 | Partial | End-to-end error monitoring |
-| OPS-004 | P2 | Unverified external | Release rollback / incident response |
-| OPS-005 | P2 | Unverified external | Capacity limits and edge abuse controls |
-| QA-002 | P2 | Partial | Ward browser compatibility and accessibility acceptance |
-| QA-003 | P2 | Partial | Representative performance and large-state limits |
-| QA-004 | P2 | Unverified external | Host JWT / security contract verification |
-| RT-008 | P2 | Partial | Discharge status accessibility |
-| SEC-003 | P2 | Partial | ESLint glob / braces dependency chain |
-| SPEC-005 | P2 | Requires owner decision | Queue ordering policy reconciliation |
-| SPEC-007 | P2 | Partial | Community clinician allocation |
-| SPEC-012 | P2 | Partial | Community review/assignment capabilities |
-| OPT-001 | P3 | Deferred optional | Review approvals for higher-risk releases |
+| ID                    | Priority | Current disposition     | Component                                                 |
+| --------------------- | -------- | ----------------------- | --------------------------------------------------------- |
+| BE-001                | P1       | Requires owner decision | Frontend identity and session integration                 |
+| BE-002                | P1       | Requires owner decision | Authoritative shared persistence                          |
+| BE-003                | P1       | Requires owner decision | Service membership and server-side roles                  |
+| BE-004                | P1       | Requires owner decision | Cross-user update delivery                                |
+| BE-005                | P1       | Requires owner decision | Shared domain commands and allocation invariants          |
+| BE-010                | P1       | Requires owner decision | Immutable shared action history                           |
+| BE-011                | P1       | Unverified external     | Live Azure backend/resource evidence                      |
+| GOV-001               | P1       | Requires owner decision | TGA intended-purpose determination                        |
+| GOV-002               | P1       | Requires owner decision | WA Health privacy and data governance                     |
+| GOV-003               | P1       | Requires owner decision | Safety case / accountable clinical governance             |
+| OPS-001               | P1       | Unverified external     | Staging and environment isolation                         |
+| OPS-003               | P1       | Unverified external     | Backups and recovery                                      |
+| QA-001                | P1       | Partial                 | Shared-user acceptance scenarios                          |
+| SPEC-001              | P1       | Partial                 | Medical deterioration / held-bed lifecycle                |
+| ARC-001               | P2       | Partial                 | Domain policy / transition maintainability                |
+| BE-006                | P2       | Partial                 | Write outcome and safe retries                            |
+| BE-008                | P2       | Partial                 | Stored session deletion and retention                     |
+| BE-009                | P2       | Partial                 | Backend request failure diagnostics                       |
+| CAP-002               | P2       | Requires owner decision | Alert intervention recording                              |
+| CAP-004               | P2       | Requires owner decision | Operational Settings preview controls                     |
+| CAP-005               | P2       | Unverified external     | WA Health pathways / directories / PAS / HMDC             |
+| CAP-006               | P2       | Requires owner decision | Unwired global export / notification / admin surfaces     |
+| DEV-002               | P2       | Requires owner decision | Canonical blocked Notion work / owner recovery            |
+| DEV-003               | P2       | Unverified external     | Native coding agents / remote device readiness            |
+| DEV-004               | P2       | Partial                 | Historical registers and exhaustive semantic verification |
+| DOC-003               | P2       | Partial                 | Screen verification provenance                            |
+| NEW-OBSERVABILITY-001 | P2       | Partial                 | Next request error instrumentation                        |
+| OPS-002               | P2       | Partial                 | End-to-end error monitoring                               |
+| OPS-004               | P2       | Unverified external     | Release rollback / incident response                      |
+| OPS-005               | P2       | Unverified external     | Capacity limits and edge abuse controls                   |
+| QA-002                | P2       | Partial                 | Ward browser compatibility and accessibility acceptance   |
+| QA-003                | P2       | Partial                 | Representative performance and large-state limits         |
+| QA-004                | P2       | Unverified external     | Host JWT / security contract verification                 |
+| RT-008                | P2       | Partial                 | Discharge status accessibility                            |
+| SEC-003               | P2       | Partial                 | ESLint glob / braces dependency chain                     |
+| SPEC-005              | P2       | Requires owner decision | Queue ordering policy reconciliation                      |
+| SPEC-007              | P2       | Partial                 | Community clinician allocation                            |
+| SPEC-012              | P2       | Partial                 | Community review/assignment capabilities                  |
+| OPT-001               | P3       | Deferred optional       | Review approvals for higher-risk releases                 |
 
 ## P1 — remaining tasks
 
@@ -349,7 +349,6 @@ This list records remaining scope rather than re-reporting corrected baseline de
 - Repeat event idempotency, no-transport, booked transport, cancellation, source-transfer and capacity conservation tests.
 
 **Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
-
 
 ## P2 — remaining tasks
 
@@ -840,7 +839,6 @@ This list records remaining scope rather than re-reporting corrected baseline de
 - Workflow review → assignment → follow-up, cancellation, denied service access and concurrency once shared.
 
 **Verification boundary:** Local remediation gates completed for the documented source scopes: full suite3d01bf9; merged8682118 changed-scope325tests, whole lint, all-route production build with normal TypeScript,12selected Chromium checks and10Settings steps. Final documentation6files77tests and scoped commit guards passed atb31c78b. Original acceptance for live/shared/clinical or broader accessibility remains separate; skipped tests are not passing evidence. This item remains Partial for the exact higher-level requirement in Remaining_action.
-
 
 ## P3 — remaining tasks
 

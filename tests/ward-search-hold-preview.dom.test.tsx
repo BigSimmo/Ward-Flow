@@ -115,8 +115,7 @@ describe("record preview shares current bed hold truth", () => {
         <WorkflowHarness />
       </WardFlowProvider>,
     );
-    for (const name of ["create", "raise", "refer", "accept"])
-      fireEvent.click(screen.getByRole("button", { name }));
+    for (const name of ["create", "raise", "refer", "accept"]) fireEvent.click(screen.getByRole("button", { name }));
     const probe = screen.getByTestId("workflow");
     expect(probe).toHaveAttribute("data-rejections", "0");
     expect(probe).toHaveAttribute("data-held", "false");
