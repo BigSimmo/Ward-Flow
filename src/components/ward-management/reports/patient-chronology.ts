@@ -1,6 +1,10 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { AuditEvent } from "@/components/ward-management/ward-audit";
-import { changeReasonLabels, withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
+import {
+  changeReasonLabels,
+  legalFormReceiptCorrectionReasonLabels,
+  withdrawalReasonLabels,
+} from "@/components/ward-management/ward-change-reasons";
 import { formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
@@ -79,22 +83,23 @@ function whoLabel(by: string | null | undefined): string {
   return WARD_FLOW_ROLE_LABELS[by as WardFlowRole] ?? by;
 }
 
-const REASON_MAPS: Record<string, string>[] = [
-  changeReasonLabels,
-  declineReasonLabels,
-  stepBackReasonLabels,
-  withdrawalReasonLabels,
-  DECLINE_REASON_LABELS,
-  COMMUNITY_DECLINE_REASON_LABELS,
-];
+/** Every reason code's words, as one `Map`, so a recorded string is looked up, never used as a key. */
+const REASON_LABELS: ReadonlyMap<string, string> = new Map(
+  [
+    COMMUNITY_DECLINE_REASON_LABELS,
+    DECLINE_REASON_LABELS,
+    withdrawalReasonLabels,
+    stepBackReasonLabels,
+    declineReasonLabels,
+    legalFormReceiptCorrectionReasonLabels,
+    changeReasonLabels,
+  ].flatMap((labels): [string, string][] => Object.entries(labels)),
+);
 
 /** A reason code in words. A reason that is already a sentence (override reasons) is returned as is. */
 export function reasonLabel(reason: string | null | undefined): string {
   if (!reason) return "";
-  for (const map of REASON_MAPS) {
-    if (Object.hasOwn(map, reason)) return map[reason];
-  }
-  return reason;
+  return REASON_LABELS.get(reason) ?? reason;
 }
 
 function finite(value: Instant | null | undefined): Instant | null {
@@ -158,7 +163,81 @@ export function patientIdsWithRecords(
 
 /** Internally a draft's `record` is "<kind> <id>", so rows can be matched to their record. */
 type RowDraft = Omit<ChronologyRow, "key" | "source" | "before" | "after" | "reason" | "occurredAt"> &
-  Partial<Pick<ChronologyRow, "before" | "after" | "reason" | "occurredAt">>;
+  Partial<Pick<ChronologyRow, "before" | "after" | "reason" | "occurredAt">> & {
+    /** The event types that write this row, so a session-log entry for the same act is not repeated. */
+    eventTypes?: readonly string[];
+  };
+
+/** Every reducer case that appends to `Movement.stageChanges` (`ward-flow-reducer.ts`). */
+const STAGE_EVENTS = [
+  "REFER_TO_UNITS",
+  "ACCEPT_IN_PRINCIPLE",
+  "PULL_PATIENT",
+  "DECLINE",
+  "HANDOVER_READY",
+  "PATIENT_COLLECTED",
+  "PATIENT_ARRIVED",
+  "RELEASE_PULL",
+  "STEP_BACK_STAGE",
+  "WITHDRAW_ACCEPTANCE",
+  "RECORD_ED_MEDICAL_DETERIORATION",
+] as const;
+
+/**
+ * Which event types write each record row, by the row's action. A session-log entry is a repeat
+ * only when it is the same record, the same minute AND one of these types: a different act in the
+ * same minute (a transport step beside a stage change) still gets its own row.
+ */
+const ACTION_EVENT_TYPES: ReadonlyMap<string, readonly string[]> = new Map<string, readonly string[]>(
+  Object.entries({
+    "Placement request opened": ["RAISE_REFERRAL", "RECORD_ARRIVED_IN_DEPARTMENT"],
+    "Referred to wards": ["REFER_TO_UNITS"],
+    "Stage changed": STAGE_EVENTS,
+    "Legal status changed": ["CHANGE_LEGAL_STATUS"],
+    "Urgency changed": ["CHANGE_URGENCY"],
+    "Marked urgent": ["FLAG_MOVEMENT_URGENT"],
+    "Urgent mark cleared": ["CLEAR_MOVEMENT_URGENT_FLAG"],
+    "Placement override": ["REFER_TO_UNITS", "PULL_PATIENT", "ACCEPT_IN_PRINCIPLE", "ACCEPT_REFERRAL"],
+    "Placed after checking with the ward": ["REFER_TO_UNITS", "PULL_PATIENT", "ACCEPT_IN_PRINCIPLE"],
+    "Ward declined": ["DECLINE"],
+    "Ward request withdrawn": ["WITHDRAW_REFERRAL", "WITHDRAW_WARD_REQUEST"],
+    Accepted: ["ACCEPT_IN_PRINCIPLE"],
+    "Bed hold released": ["RELEASE_PULL", "RELEASE_AND_REOPEN_SEARCH"],
+    "Transport cancelled": ["CANCEL_TRANSPORT"],
+    "Stage stepped back": ["STEP_BACK_STAGE"],
+    "Acceptance withdrawn": ["WITHDRAW_ACCEPTANCE"],
+    Escalated: ["RECORD_ESCALATION"],
+    "Examination outcome recorded": ["RECORD_EXAMINATION"],
+    "Medical clearance recorded": ["RECORD_MOVEMENT_MEDICAL_CLEARANCE", "RECORD_MEDICAL_CLEARANCE"],
+    "Form extension recorded": ["RECORD_COUNTRY_EXTENSION", "RECORD_LEGAL_FORM_EXPIRY"],
+    "Form expiry recorded": ["RECORD_LEGAL_FORM_EXPIRY", "RECORD_LEGAL_FORM_CONTINUATION"],
+    "Form receipt time corrected": ["CORRECT_LEGAL_FORM_RECEIPT"],
+    "Arrival details recorded": ["SET_ARRIVAL_DETAILS"],
+    "Left the emergency department": ["RECORD_LEFT_DEPARTMENT"],
+    "Movement closed": ["PATIENT_ARRIVED", "WITHDRAW_REFERRAL", "RECORD_ED_OUTCOME"],
+    "Referral raised": ["RECEIVE_REFERRAL", "RAISE_REFERRAL"],
+    "Referral accepted": ["ACCEPT_REFERRAL"],
+    "Referral declined": ["DECLINE_REFERRAL"],
+    "Referral cancelled": ["ACCEPT_REFERRAL"],
+    "Transport need recorded": ["RECORD_TRANSPORT_NEED"],
+    "Transport booked": ["BOOK_TRANSPORT"],
+    "Transport accepted": ["TRANSPORT_ACCEPTED"],
+    "Transport en route": ["TRANSPORT_EN_ROUTE"],
+    "Patient collected by transport": ["PATIENT_COLLECTED"],
+    "Transport arrived": ["PATIENT_ARRIVED"],
+    "Transport diverted": ["RECORD_DIVERSION"],
+    "Transport stopped": ["STOP_TRANSPORT"],
+    "Transport job closed": ["WITHDRAW_REFERRAL", "RECORD_EXAMINATION", "STOP_TRANSPORT", "RELEASE_DIVERTED_BED"],
+    "Document recorded": ["UPLOAD_PATIENT_FORM"],
+    "Referral withdrawn by referrer": ["RECORD_REFERRER_WITHDRAWAL"],
+    "Bed held": ["PULL_PATIENT"],
+    "Arrived on ward": ["PATIENT_ARRIVED"],
+    "Expected discharge date set": ["UPDATE_EXPECTED_DISCHARGE"],
+    "Discharge confirmed": ["RECORD_PATIENT_DISCHARGE"],
+    "Follow-up recorded": ["RECORD_ADMISSION_FOLLOW_UP"],
+    "Left the ward": ["RECORD_LEAVING", "RECORD_PATIENT_DISCHARGE"],
+  }),
+);
 
 function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date): RowDraft[] {
   const unitName = (id: string | undefined) => (id ? (units.find((unit) => unit.id === id)?.name ?? id) : "");
@@ -290,7 +369,7 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
       recordedAt: finite(examination.at),
       who: NOT_RECORDED,
       action: "Examination outcome recorded",
-      after: EXAMINATION_LABELS[examination.outcome] ?? examination.outcome,
+      after: EXAMINATION_LABELS[examination.outcome],
     });
   }
   if (movement.medicalClearance) {
@@ -347,6 +426,23 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
       action: "Arrival details recorded",
     });
   }
+  if (movement.transportNeed) {
+    add({
+      recordedAt: finite(movement.transportNeed.at),
+      who: NOT_RECORDED,
+      action: "Transport need recorded",
+      after: movement.transportNeed.needed ? "Needed" : "Not needed",
+    });
+  }
+  rows.push(...transportRows(movement, record, dayZero));
+  for (const form of movement.uploadedForms ?? []) {
+    add({
+      recordedAt: finite(form.uploadedAt),
+      who: whoLabel(form.uploadedBy),
+      action: "Document recorded",
+      after: form.formName,
+    });
+  }
   if (finite(movement.leftDepartmentAt) !== null) {
     add({ recordedAt: finite(movement.leftDepartmentAt), who: NOT_RECORDED, action: "Left the emergency department" });
   }
@@ -357,6 +453,60 @@ function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date)
       action: "Movement closed",
       after: movement.closure.outcome === "arrived" ? "Arrived" : "Did not proceed",
     });
+  }
+  return rows;
+}
+
+/**
+ * The current transport job's recorded steps. The job keeps no booking time, so the booking row
+ * carries none (the session log shows when it was logged in this browser); every other row uses the
+ * step's own recorded instant. A job replaced by CANCEL_TRANSPORT appears as its unwind row.
+ */
+function transportRows(movement: Movement, record: string, dayZero: Date): RowDraft[] {
+  const job = movement.transport;
+  if (!job) return [];
+  const rows: RowDraft[] = [];
+  const legal = job.transportLegalStatus
+    ? `, ${job.transportLegalStatus === "involuntary" ? "Involuntary" : "Voluntary"}`
+    : "";
+  const eta = finite(job.estimatedAt) !== null ? `, typed ETA ${formatSheetMoment(job.estimatedAt!, dayZero)}` : "";
+  rows.push({
+    record,
+    recordedAt: null,
+    who: whoLabel(job.bookedBy?.role ?? job.bookedByRole),
+    action: "Transport booked",
+    after: `${job.provider}${job.escortRequired ? ", escort required" : ""}${legal}${eta}`,
+  });
+  const steps: [string, Instant | undefined][] = [
+    ["Transport accepted", job.acceptedAt],
+    ["Transport en route", job.enRouteAt],
+    ["Patient collected by transport", job.collectedAt],
+    ["Transport arrived", job.arrivedAt],
+  ];
+  for (const [action, at] of steps) {
+    if (finite(at) !== null) rows.push({ record, recordedAt: finite(at), who: NOT_RECORDED, action });
+  }
+  if (job.diversion) {
+    rows.push({
+      record,
+      recordedAt: finite(job.diversion.at),
+      who: whoLabel(job.diversion.by),
+      action: "Transport diverted",
+      after: job.diversion.place,
+      reason: job.diversion.reason,
+    });
+  }
+  if (finite(job.stoppedAt) !== null) {
+    rows.push({
+      record,
+      recordedAt: finite(job.stoppedAt),
+      who: whoLabel(job.stoppedBy),
+      action: "Transport stopped",
+      after: job.stoppedWhereabouts ?? "",
+      reason: job.stopReason ?? "",
+    });
+  } else if (finite(job.cancelledAt) !== null) {
+    rows.push({ record, recordedAt: finite(job.cancelledAt), who: NOT_RECORDED, action: "Transport job closed" });
   }
   return rows;
 }
@@ -383,6 +533,18 @@ function referralRows(referral: Referral, units: readonly Unit[]): RowDraft[] {
           addressing.state === "accepted"
             ? (addressing.acceptOverrideReason ?? "")
             : reasonLabel(addressing.declineReason),
+      });
+    }
+    if (addressing.state === "cancelled") {
+      // Nobody decided this: another destination accepted first (FD-22). `decidedBy` is absent by
+      // design, so the row names no role rather than implying a refusal.
+      rows.push({
+        record,
+        recordedAt: finite(addressing.decidedAt),
+        who: "No one (automatic)",
+        action: "Referral cancelled",
+        after: place,
+        reason: "Accepted somewhere else",
       });
     }
     if (finite(addressing.withdrawnAt) !== null) {
@@ -502,6 +664,7 @@ function auditRows(events: readonly AuditEvent[], recordKeys: Set<string>): RowD
       recordedAt: finite(event.at),
       who: whoLabel(event.actor.role),
       action: `${wording}${outcome}`,
+      eventTypes: [event.action],
       ...auditBeforeAfter(event),
     });
   }
@@ -541,19 +704,22 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     for (const draft of auditRows(input.auditEvents, recordKeys)) drafts.push({ draft, source: "Audit" });
   }
 
-  // A session act already shown at the same moment for the same action on the same record is not
-  // repeated. Matching only record and time would drop a distinct act (e.g. transport accepted in
-  // the same minute as handover ready) that has no audit or history row of its own.
+  // A session act already shown on the same record, at the same moment, as the same act is not
+  // repeated. A different act in the same minute keeps its own row.
   const seen = new Set(
-    drafts.map(({ draft }) => `${draft.record}@${draft.recordedAt ?? draft.occurredAt}@${draft.action}`),
+    drafts.flatMap(({ draft }) =>
+      (draft.eventTypes ?? ACTION_EVENT_TYPES.get(draft.action) ?? []).map(
+        (type) => `${draft.record}@${draft.recordedAt ?? draft.occurredAt}@${type}`,
+      ),
+    ),
   );
   for (const entry of input.eventLog) {
     const record = logRecord(entry, recordIds);
     const at = finite(entry.now);
     if (record === null) continue;
+    if (entry.accepted && seen.has(`${record}@${at}@${entry.type}`)) continue;
     const wording = EVENT_HISTORY_TABLE[entry.type]?.plainWording ?? entry.type;
     const action = entry.accepted ? wording : `${wording} (refused)`;
-    if (entry.accepted && seen.has(`${record}@${at}@${action}`)) continue;
     drafts.push({
       draft: {
         record,
@@ -606,12 +772,22 @@ export const CHRONOLOGY_CSV_HEADER = [
  * The chronology as CSV. The first line says it is synthetic demo data, so a downloaded copy can
  * never be mistaken for a real record.
  */
-export function chronologyCsv(rows: readonly ChronologyRow[], dayZero: Date, generatedAt: Instant): string {
+/**
+ * `patient` is the person as the screen names them (`patientDisplayName` and UMRN), so a downloaded
+ * copy says whose chronology it is; it is never a record id.
+ */
+export function chronologyCsv(
+  rows: readonly ChronologyRow[],
+  dayZero: Date,
+  generatedAt: Instant,
+  patient?: string,
+): string {
   const lines = [
     [
       csvCell("Synthetic demo data. Not a clinical record."),
       csvCell(`Generated ${formatSheetMoment(generatedAt, dayZero)}`),
     ].join(","),
+    ...(patient ? [[csvCell("Patient"), csvCell(patient)].join(",")] : []),
     CHRONOLOGY_CSV_HEADER.map(csvCell).join(","),
     ...rows.map((row) =>
       [

@@ -1,10 +1,12 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Download, ListOrdered, Printer } from "lucide-react";
 
 import { Button, Card, CardHead, Field, Hero, HeroStat, Select, tableClasses } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { patientDisplayName } from "@/components/ward-management/ward-patients";
@@ -15,13 +17,16 @@ import styles from "./reports.module.css";
 /**
  * PIR CHRONOLOGY (D-37, WF-57). Choose one synthetic person and read every recorded event for them
  * in time order: occurred and recorded time, role, action, before and after, and any override or
- * change reason. Prints from the browser and downloads as CSV. Coordinator view: the audit trail
- * it reads is coordinator-only. Read-only; nothing here dispatches.
+ * change reason. Prints from the browser and downloads as CSV. The audit trail is coordinator-only,
+ * so it is read only when the route's role is the coordinator; any other role sees records and the
+ * session log with one line saying the audit is left out. Read-only; nothing here dispatches.
  */
 export function PatientChronologyScreen({ initialPatientId }: { initialPatientId?: string }) {
   const { patients, movements, referrals, admissions, units, eventLog, readAuditEvents, dayZero } = useWardFlow();
   const now = useWardFlowClock();
   const pickerId = useId();
+  // The role is the route (`ward-chrome-role.ts`); nothing else holds a current role.
+  const coordinator = wardChromeRole(usePathname() ?? "") === "coordinator";
 
   // Only people with at least one record of their own can have a chronology.
   const people = useMemo(() => {
@@ -35,7 +40,12 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     initialPatientId && patients.some((patient) => patient.id === initialPatientId) ? initialPatientId : "",
   );
 
-  const auditRead = readAuditEvents({ role: "coordinator" });
+  // Read once per world (the read returns a fresh copy each call), and only for the coordinator.
+  const auditEvents = useMemo(() => {
+    if (!coordinator) return null;
+    const read = readAuditEvents({ role: "coordinator" });
+    return read.status === "allowed" ? read.value : null;
+  }, [coordinator, readAuditEvents]);
   const chronology = useMemo(
     () =>
       patientId
@@ -46,14 +56,12 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
             referrals,
             admissions,
             units,
-            auditEvents: auditRead.status === "allowed" ? auditRead.value : null,
+            auditEvents,
             eventLog: eventLog ?? [],
             dayZero,
           })
         : null,
-    // `auditRead` is a fresh clone each render; the world it reads changes with `movements` and the log.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [patientId, patients, movements, referrals, admissions, units, eventLog, dayZero],
+    [patientId, patients, movements, referrals, admissions, units, auditEvents, eventLog, dayZero],
   );
 
   const name = chronology?.patient ? patientDisplayName(chronology.patient) : null;
@@ -66,7 +74,17 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   function downloadCsv() {
     if (!chronology) return;
     const url = URL.createObjectURL(
-      new Blob([chronologyCsv(chronology.rows, dayZero, now)], { type: "text/csv;charset=utf-8" }),
+      new Blob(
+        [
+          chronologyCsv(
+            chronology.rows,
+            dayZero,
+            now,
+            chronology.patient ? `${patientDisplayName(chronology.patient)} · ${chronology.patient.umrn}` : undefined,
+          ),
+        ],
+        { type: "text/csv;charset=utf-8" },
+      ),
     );
     const link = document.createElement("a");
     link.href = url;
@@ -145,6 +163,11 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
               title="Every recorded event"
               meta={chronology.auditIncluded ? "Records, audit trail and session log" : "Records and session log"}
             />
+            {coordinator ? null : (
+              <p className={styles.muted} data-testid="ward-chronology-audit-withheld">
+                Coordinator audit not shown for this role
+              </p>
+            )}
             {chronology.rows.length === 0 ? (
               <p className={styles.empty}>No events recorded</p>
             ) : (

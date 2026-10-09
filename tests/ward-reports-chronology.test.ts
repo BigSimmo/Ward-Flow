@@ -8,7 +8,11 @@ import {
   reasonLabel,
   type ChronologyInput,
 } from "@/components/ward-management/reports/patient-chronology";
-import { OVERRIDE_REASONS } from "@/components/ward-management/ward-change-reasons";
+import {
+  legalFormReceiptCorrectionReasonLabels,
+  OVERRIDE_REASONS,
+} from "@/components/ward-management/ward-change-reasons";
+import { formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { eventLogEntryFor } from "@/components/ward-management/ward-event-log";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -212,6 +216,161 @@ describe("PIR chronology: one person's records", () => {
     expect(chronology.rows).toEqual(patientChronology(inputFor(state)).rows);
   });
 
+  it("keeps a different act in the same minute on the same record, and drops only the same act", () => {
+    const seed = seedWardFlowState();
+    const at = NOW_ANCHOR + 11;
+    const state: WardFlowState = {
+      ...seed,
+      movements: seed.movements.map((movement) =>
+        movement.id === MOVEMENT
+          ? {
+              ...movement,
+              transport: undefined,
+              stageChanges: [
+                ...movement.stageChanges,
+                { at, from: "pulled" as const, to: "handover_ready" as const, by: "ward" },
+              ],
+            }
+          : movement,
+      ),
+    };
+    const log = [
+      { type: "HANDOVER_READY" as const, role: "ward" as const, now: at, accepted: true, movementId: MOVEMENT },
+      { type: "TRANSPORT_ACCEPTED" as const, role: "officer" as const, now: at, accepted: true, movementId: MOVEMENT },
+    ];
+    const chronology = patientChronology(inputFor(state, { auditEvents: null, eventLog: log }));
+    const session = chronology.rows.filter((row) => row.source === "Session log");
+    expect(session).toHaveLength(1);
+    expect(session[0]?.recordedAt).toBe(at);
+    expect(chronology.rows.filter((row) => row.action === "Stage changed" && row.recordedAt === at)).toHaveLength(1);
+  });
+
+  it("shows a corrected form receipt with the original time before and cleared after", () => {
+    const seed = seedWardFlowState();
+    const received = NOW_ANCHOR - 120;
+    const state: WardFlowState = {
+      ...seed,
+      movements: seed.movements.map((movement) =>
+        movement.id === MOVEMENT
+          ? {
+              ...movement,
+              legalFormReceivedAt: undefined,
+              legalFormReceiptCorrections: [
+                { at: NOW_ANCHOR - 60, by: "coordinator", reason: "recorded_in_error" as const, receivedAt: received },
+              ],
+            }
+          : movement,
+      ),
+    };
+    const row = patientChronology(inputFor(state)).rows.find((r) => r.action === "Form receipt time corrected");
+    expect(row).toMatchObject({
+      before: formatSheetMoment(received, DAY_ZERO),
+      after: "Cleared",
+      who: "Flow coordinator",
+      reason: legalFormReceiptCorrectionReasonLabels.recorded_in_error,
+    });
+  });
+
+  it("lists the transport job's recorded steps, the transport need and recorded documents", () => {
+    const seed = seedWardFlowState();
+    const state: WardFlowState = {
+      ...seed,
+      movements: seed.movements.map((movement) =>
+        movement.id === MOVEMENT
+          ? {
+              ...movement,
+              transportNeed: { needed: true, at: NOW_ANCHOR - 50 },
+              transport: {
+                id: `${MOVEMENT}-transport`,
+                provider: "Patient transport service" as const,
+                escortRequired: true,
+                bookedBy: { role: "coordinator" as const },
+                acceptedAt: NOW_ANCHOR - 40,
+                enRouteAt: NOW_ANCHOR - 30,
+              },
+              uploadedForms: [
+                {
+                  id: "FORM-1",
+                  formName: "Transfer letter",
+                  fileName: "letter.pdf",
+                  uploadedAt: NOW_ANCHOR - 20,
+                  uploadedBy: "ed" as const,
+                },
+              ],
+            }
+          : movement,
+      ),
+    };
+    const log = [
+      {
+        type: "TRANSPORT_ACCEPTED" as const,
+        role: "officer" as const,
+        now: NOW_ANCHOR - 40,
+        accepted: true,
+        movementId: MOVEMENT,
+      },
+    ];
+    const rows = patientChronology(inputFor(state, { eventLog: log })).rows;
+    const actions = rows.map((row) => row.action);
+    expect(actions).toEqual(
+      expect.arrayContaining([
+        "Transport need recorded",
+        "Transport booked",
+        "Transport accepted",
+        "Transport en route",
+        "Document recorded",
+      ]),
+    );
+    expect(rows.find((row) => row.action === "Transport booked")).toMatchObject({
+      who: "Flow coordinator",
+      recordedAt: null,
+      after: "Patient transport service, escort required",
+    });
+    expect(rows.find((row) => row.action === "Document recorded")?.after).toBe("Transfer letter");
+    expect(rows.some((row) => Object.values(row).some((value) => String(value).includes("letter.pdf")))).toBe(false);
+    // The recorded acceptance already says it, so the session log does not repeat it.
+    expect(rows.filter((row) => row.source === "Session log")).toEqual([]);
+  });
+
+  it("shows a destination cancelled by an acceptance elsewhere, naming no decider", () => {
+    const seed = seedWardFlowState();
+    const person = seed.patients.find(
+      (patient) =>
+        patientRecordIds(patient.id, seed.patients, seed.movements, seed.referrals, seed.admissions).referrals.length >
+        0,
+    )!;
+    const referralId = patientRecordIds(person.id, seed.patients, seed.movements, seed.referrals, seed.admissions)
+      .referrals[0]!;
+    const state: WardFlowState = {
+      ...seed,
+      referrals: seed.referrals.map((referral) =>
+        referral.id === referralId
+          ? {
+              ...referral,
+              destinations: [
+                ...referral.destinations,
+                {
+                  ...referral.destinations[0]!,
+                  state: "cancelled" as const,
+                  decidedAt: NOW_ANCHOR - 15,
+                  decidedBy: undefined,
+                  withdrawnAt: undefined,
+                },
+              ],
+            }
+          : referral,
+      ),
+    };
+    const row = patientChronology(inputFor(state, { personId: person.id })).rows.find(
+      (candidate) => candidate.action === "Referral cancelled",
+    );
+    expect(row).toMatchObject({
+      recordedAt: NOW_ANCHOR - 15,
+      who: "No one (automatic)",
+      reason: "Accepted somewhere else",
+    });
+  });
+
   it("returns no rows for a person with no records", () => {
     const state = seedWardFlowState();
     const chronology = patientChronology(inputFor(state, { personId: "PT-does-not-exist" }));
@@ -232,5 +391,12 @@ describe("PIR chronology CSV", () => {
     expect(lines).toHaveLength(rows.length + 2);
     expect(csv).toContain(`"'=HYPERLINK(1)"`);
     expect(csv).toContain(OVERRIDE_REASONS[1]);
+  });
+
+  it("names the person on its own line when given, before the column header", () => {
+    const chronology = patientChronology(inputFor(seedWardFlowState()));
+    const lines = chronologyCsv(chronology.rows, DAY_ZERO, NOW_ANCHOR, "Sample Person · 1000001").split("\r\n");
+    expect(lines[1]).toBe(`"Patient","Sample Person · 1000001"`);
+    expect(lines[2]).toBe(CHRONOLOGY_CSV_HEADER.map((cell) => `"${cell}"`).join(","));
   });
 });

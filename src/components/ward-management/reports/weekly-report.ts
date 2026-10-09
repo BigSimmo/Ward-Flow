@@ -1,9 +1,9 @@
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { OUT_OF_AREA_BANDS, travelBand } from "@/components/ward-management/ward-distance";
-import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
-import type { Patient } from "@/components/ward-management/ward-patients";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
+import type { Patient } from "@/components/ward-management/ward-patients";
+import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { declinesByReason } from "@/components/ward-management/statistics/statistics-derivations";
 import { occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
 import { reasonLabel } from "./patient-chronology";
@@ -52,16 +52,17 @@ function days(minutes: number): number {
   return Math.round((minutes / MINUTES_PER_DAY) * 10) / 10;
 }
 
-/** When the person left the emergency department, or `now` while they are still there. */
-export function edWaitEnd(movement: Movement, now: Instant): Instant {
+/**
+ * When the person left the emergency department, or `now` while they are still there. `null` when
+ * they have gone (moving or arrived) but no departure time was recorded: the wait has no known end,
+ * so it is left out rather than counted as still waiting.
+ */
+export function edWaitEnd(movement: Movement, now: Instant): Instant | null {
   if (movement.leftDepartmentAt !== undefined) return movement.leftDepartmentAt;
   const departed = movement.stageChanges.find((change) => change.to === "moving" || change.to === "arrived");
   if (departed) return departed.at;
   if (movement.closure) return movement.closure.at;
-  // Already past the ED wait without a departure time recorded — do not treat them as still waiting.
-  if (movement.stage === "moving" || movement.stage === "arrived") {
-    return movement.acceptedAt ?? movement.openedAt;
-  }
+  if (movement.stage === "moving" || movement.stage === "arrived") return null;
   return now;
 }
 
@@ -71,7 +72,7 @@ export type WeeklyReport = {
   week: ReportWeek;
   edWaits: {
     targetMinutes: number;
-    /** People whose wait passed the target at any point in the week. */
+    /** People whose wait passed the target during the week (crossing time inside it). */
     count: number;
     /** The longest wait any of them reached by the end of the week (or now). */
     longestMinutes: number;
@@ -114,15 +115,15 @@ function tally(reasons: string[]): ReasonCount[] {
 export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWeek): WeeklyReport {
   const { movements, referrals, admissions, patients, units, now } = input;
   const target = input.edAccessTargetMinutes;
-  // People totals go through the D-14 resolver — this module never reads the patient link itself.
-  const resolvePerson = createPatientResolver({ patients, referrals, movements });
 
-  // ED waits past the target: the over-target part of a stay overlaps the week.
+  // ED waits that passed the target inside the week. A wait that crossed it in an earlier week was
+  // counted there, so a long wait is counted once, in the week it went over.
   const edRows = movements
     .map((movement) => {
       const end = edWaitEnd(movement, now);
+      if (end === null) return null;
       const crossed = movement.openedAt + target;
-      if (!(crossed < week.countedEnd && end > week.start && end > crossed)) return null;
+      if (!(crossed >= week.start && crossed < week.countedEnd && end > crossed)) return null;
       const waitedMinutes = Math.min(end, week.countedEnd) - movement.openedAt;
       return { movement, waitedMinutes, stillWaiting: end >= now && movement.leftDepartmentAt === undefined };
     })
@@ -138,36 +139,42 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
       to: admission.leftAt ?? (bedIsOccupied(admission) ? now : (admission.arrivedAt as Instant)),
     }));
 
+  // People, not stays: resolved through the D-14 resolver (this module never reads the patient link
+  // itself); an unresolved stay counts as its own person.
+  const resolve = createPatientResolver({ patients, referrals, movements });
+  const personOf = (admission: Admission) => resolve(admission).patient?.id ?? `stay:${admission.id}`;
   let outOfAreaMinutes = 0;
-  const outOfAreaPeopleIds = new Set<string>();
+  const outOfAreaPeople = new Set<string>();
   let delayedMinutes = 0;
-  const delayedPeopleIds = new Set<string>();
+  const delayedPeople = new Set<string>();
   let occupiedMinutes = 0;
   for (const stay of stays) {
     const minutes = overlapMinutes(stay.from, stay.to, week);
     occupiedMinutes += minutes;
-    const personKey = resolvePerson(stay.admission).patient?.id ?? stay.admission.id;
     const unit = units.find((candidate) => candidate.id === stay.admission.unitId);
     const band =
       unit && stay.admission.homeRegion !== null ? travelBand(stay.admission.homeRegion, unit.siteCode) : undefined;
     if (band !== undefined && OUT_OF_AREA_BANDS.includes(band) && minutes > 0) {
       outOfAreaMinutes += minutes;
-      outOfAreaPeopleIds.add(personKey);
+      outOfAreaPeople.add(personOf(stay.admission));
     }
-    // Current expected-discharge date applied across the stay: the admission holds only the latest
-    // plan, so a past week's delayed days can change when that date is moved. Labelled as such on
-    // the screen — not a historical audit of when the plan was set.
+    // Today's expected date: the history of earlier dates is not kept. It counts only from when it
+    // was set, so a past week is not measured against a date nobody had chosen yet.
     const expected = stay.admission.expectedDischargeAt;
+    const setAt = stay.admission.dischargeDateSetAt;
     if (expected !== null && Number.isFinite(expected)) {
-      const late = overlapMinutes(Math.max(expected, stay.from), stay.to, week);
+      const from = Math.max(
+        expected,
+        stay.from,
+        typeof setAt === "number" && Number.isFinite(setAt) ? setAt : -Infinity,
+      );
+      const late = overlapMinutes(from, stay.to, week);
       if (late > 0) {
         delayedMinutes += late;
-        delayedPeopleIds.add(personKey);
+        delayedPeople.add(personOf(stay.admission));
       }
     }
   }
-  const outOfAreaPeople = outOfAreaPeopleIds.size;
-  const delayedPeople = delayedPeopleIds.size;
 
   // Declines and overrides: placement ones on the movement, referral ones on each addressing.
   const weekMovements = movements.map((movement) => ({
@@ -201,8 +208,8 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
       longestMinutes: edRows[0]?.waitedMinutes ?? 0,
       rows: edRows,
     },
-    outOfArea: { bedDays: days(outOfAreaMinutes), people: outOfAreaPeople },
-    delayedDischarge: { bedDays: days(delayedMinutes), people: delayedPeople },
+    outOfArea: { bedDays: days(outOfAreaMinutes), people: outOfAreaPeople.size },
+    delayedDischarge: { bedDays: days(delayedMinutes), people: delayedPeople.size },
     declines: {
       placement: placementDeclines.totalCount,
       referral: referralDeclines.length,

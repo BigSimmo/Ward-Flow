@@ -1,15 +1,22 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { Ambulance, BedDouble, Camera, FileText, Printer, Users } from "lucide-react";
 
 import { Button, Card, CardHead, Hero, HeroStat, tableClasses } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { formatSheetMoment, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 
-import { downtimePack, lastDowntimePack, rememberDowntimePack, subscribeDowntimePack } from "./downtime-pack";
+import {
+  downtimePack,
+  downtimePackIsStale,
+  lastDowntimePack,
+  rememberDowntimePack,
+  subscribeDowntimePack,
+} from "./downtime-pack";
 import styles from "./reports.module.css";
 
 const NOT_RECORDED = "Not recorded";
@@ -22,32 +29,35 @@ const NOT_RECORDED = "Not recorded";
 export function DowntimePackScreen() {
   const world = useWardFlow();
   const now = useWardFlowClock();
-  const { dayZero } = world;
+  const { dayZero, units, admissions, bedReleases, leaveBeds, movements, worldGeneration } = world;
   const patientOf = usePatientOf();
 
-  const take = (): void => {
+  const take = useCallback((): void => {
     const pack = downtimePack({
-      units: world.units,
-      admissions: world.admissions,
-      bedReleases: world.bedReleases,
-      leaveBeds: world.leaveBeds,
-      movements: world.movements,
+      units,
+      admissions,
+      bedReleases,
+      leaveBeds,
+      movements,
       now,
       identify: (movement) => {
         const person = patientOf(movement);
         return `${person.displayName} · ${person.umrn}`;
       },
     });
-    rememberDowntimePack(pack);
-  };
+    rememberDowntimePack(pack, worldGeneration);
+  }, [units, admissions, bedReleases, leaveBeds, movements, now, patientOf, worldGeneration]);
 
   // Taken or restored only after mount: the server snapshot is always null, so a server render never
   // holds a pack (it would be shared across visitors and its stamp would not match the browser's).
   const pack = useSyncExternalStore(subscribeDowntimePack, lastDowntimePack, () => null);
+  // Take a pack whenever there is none: on first opening, and after a restored session has dropped
+  // the one taken from the seed (the provider forgets it and notifies, whether or not the tree is
+  // re-keyed). A reset or scenario switch (a new world generation) retakes it too, even while open.
+  // A later world change alone never retakes: the pack is frozen until "New snapshot".
   useEffect(() => {
-    if (lastDowntimePack() === null) take();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- take once on mount; "New snapshot" retakes
-  }, []);
+    if (pack === null || downtimePackIsStale(worldGeneration)) take();
+  }, [pack, worldGeneration, take]);
   const at = (instant: Instant | null) => (instant === null ? NOT_RECORDED : formatSheetMoment(instant, dayZero));
 
   if (pack === null) {
@@ -139,23 +149,23 @@ export function DowntimePackScreen() {
                   <th scope="col" className={styles.num}>
                     Beds
                   </th>
-                  <th scope="col" className={styles.num}>
-                    Ready
+                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.ready}>
+                    {BED_STATE_LABELS.ready}
                   </th>
-                  <th scope="col" className={styles.num}>
-                    Being made ready
+                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.beingMadeReady}>
+                    {BED_STATE_LABELS.beingMadeReady}
                   </th>
-                  <th scope="col" className={styles.num}>
-                    Occupied
+                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.occupied}>
+                    {BED_STATE_LABELS.occupied}
                   </th>
-                  <th scope="col" className={styles.num}>
-                    On leave
+                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.onLeave}>
+                    Held on leave
                   </th>
-                  <th scope="col" className={styles.num}>
-                    Held
+                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.pulled}>
+                    {BED_STATE_LABELS.pulled}
                   </th>
-                  <th scope="col" className={styles.num}>
-                    Closed
+                  <th scope="col" className={styles.num} title={BED_STATE_DETAILS.closed}>
+                    {BED_STATE_LABELS.closed}
                   </th>
                 </tr>
               </thead>
@@ -176,6 +186,9 @@ export function DowntimePackScreen() {
               </tbody>
             </table>
           </div>
+          <p className={styles.empty}>
+            Being made ready beds are counted in Ready; held on leave beds are counted in Occupied
+          </p>
         </Card>
 
         <Card aria-labelledby="downtime-ed">

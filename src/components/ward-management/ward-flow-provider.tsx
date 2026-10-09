@@ -777,9 +777,10 @@ function WardFlowWorld({
 
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
-   * `mountedAtAbsolute`. This replaced re-keying (and so remounting) the whole tree: the restored
-   * state arrives through the reducer, so every node rendered at hydration stays the same node.
-   * Runs once per mount; `sessionAdopted` gates the storage write below until it has run.
+   * `mountedAtAbsolute`. The restored state arrives through the reducer. The screens are re-keyed
+   * (remounted) once only when the restored day differs from the seed — see the `Fragment` key in
+   * the render below; a first visit or an unchanged reload keeps every node. Runs once per mount;
+   * `sessionAdopted` gates the storage write below until it has run.
    */
   useEffect(() => {
     if (initialNow !== undefined || mountedAtAbsolute === null) return;
@@ -806,9 +807,6 @@ function WardFlowWorld({
           // Anything dispatched before adoption is replayed on the restored day through the same
           // tracker, so its log entry and typed-text lock survive, and a now-stale action is refused
           // on screen rather than lost.
-          // Drop any downtime pack taken against the seed world before this remount; the reports
-          // screen will take a fresh snapshot from the restored session.
-          forgetDowntimePack();
           let restored: WardFlowContainer = {
             world: saved.state,
             typedTextSeen: false,
@@ -825,6 +823,11 @@ function WardFlowWorld({
         return { ...current, sessionAdopted: true, preAdoptionEvents: undefined };
       },
     });
+    // A downtime pack taken from the first-render seed no longer describes a restored day. Forget
+    // it here, after the dispatch and outside the updater (an updater must stay pure): the open
+    // downtime screen is told and takes a fresh pack from the restored world, whether or not the
+    // tree is re-keyed below. A saved day identical to the seed only costs a retaken snapshot.
+    if (saved) forgetDowntimePack();
   }, [initialNow, mountedAtAbsolute, dayZero]);
 
   const [focusMovementId, setFocusMovementId] = useState<string | undefined>(undefined);

@@ -19,7 +19,7 @@ import styles from "./reports.module.css";
 /** The out of area bands, in the words the rest of the app uses for them. */
 const OUT_OF_AREA_META = OUT_OF_AREA_BANDS.map((band) => TRAVEL_BAND_LABELS[band]).join(" or ");
 
-/** Offsets offered in the week picker: this week so far, the last full week, then six before it. */
+/** Offsets offered in the week picker: this week so far, the last full week, then seven before it. */
 const WEEK_OFFSETS = [-1, 0, 1, 2, 3, 4, 5, 6, 7] as const;
 
 function weekLabel(week: ReportWeek, dayZero: Date): string {
@@ -145,7 +145,11 @@ export function WeeklyReportScreen() {
         </div>
 
         <div className={styles.grid3}>
-          <StatCard title={`ED waits ${targetText}`} icon={Clock} meta="Target is a default set in Settings">
+          <StatCard
+            title={`ED waits ${targetText}`}
+            icon={Clock}
+            meta="Counted in the week the wait passes the target (a default set in Settings)"
+          >
             <dl className={styles.figures}>
               <div className={styles.figure}>
                 <dt>People</dt>
@@ -172,7 +176,7 @@ export function WeeklyReportScreen() {
           <StatCard
             title="Delayed discharge"
             icon={BedDouble}
-            meta="Current expected date applied to the week (not a dated plan history)"
+            meta="Current expected date, counted only from when it was set (earlier dates are not kept)"
           >
             <dl className={styles.figures}>
               <div className={styles.figure}>

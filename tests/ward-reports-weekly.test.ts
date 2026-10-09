@@ -58,6 +58,7 @@ function fixture() {
     state: "occupied",
     leftAt: null,
     expectedDischargeAt: null,
+    dischargeDateSetAt: null,
     homeRegion: "Perth Metropolitan",
     ...patch,
   });
@@ -118,10 +119,20 @@ describe("weeklyOperationsReport", () => {
     });
     expect(edWaitEnd(moved, NOW)).toBe(300);
     expect(edWaitEnd(f.movement("WF-F", { openedAt: 0 }), NOW)).toBe(NOW);
-    // Already moving with no stage-change row: do not pretend they are still waiting until now.
+    // Already moving with no stage-change row: not still waiting, and no end time is invented
+    // (the acceptance time is not when they left the department).
     expect(
       edWaitEnd(f.movement("WF-F2", { openedAt: 0, acceptedAt: 90, stage: "moving", stageChanges: [] }), NOW),
-    ).toBe(90);
+    ).toBeNull();
+  });
+
+  it("leaves out a wait for someone already moving with no departure recorded, not 'still waiting'", () => {
+    const f = fixture();
+    const gone = f.movement("WF-G", { openedAt: week.start - 2 * DAY, stage: "moving" });
+    expect(edWaitEnd(gone, NOW)).toBeNull();
+    const report = weeklyOperationsReport(inputOf(f, { movements: [gone] }), reportWeek(-1, NOW, WEDNESDAY));
+    expect(report.edWaits.rows).toEqual([]);
+    expect(report.edWaits.count).toBe(0);
   });
 
   it("adds out-of-area and delayed discharge bed days from stays overlapping the week", () => {
@@ -167,6 +178,58 @@ describe("weeklyOperationsReport", () => {
     expect(report.outOfArea.people).toBe(1);
     expect(report.delayedDischarge.people).toBe(1);
     expect(report.outOfArea.bedDays).toBe(7);
+  });
+
+  it("counts people, not stays: one person with two out-of-area stays is one person", () => {
+    const f = fixture();
+    const first = f.admission("AD-ONE", {
+      homeRegion: f.farRegion!,
+      arrivedAt: week.start,
+      leftAt: week.start + DAY,
+      state: "departed",
+    });
+    const second = f.admission("AD-TWO", { homeRegion: f.farRegion!, arrivedAt: week.start + 3 * DAY });
+    expect(weeklyOperationsReport(inputOf(f, { admissions: [first, second] }), week).outOfArea.people).toBe(1);
+    // Without the people list nothing can be joined, so each stay stands alone.
+    expect(
+      weeklyOperationsReport(inputOf(f, { admissions: [first, second], patients: [] }), week).outOfArea.people,
+    ).toBe(2);
+  });
+
+  it("measures a delay only from when the current expected date was set", () => {
+    const f = fixture();
+    const stay = f.admission("AD-LATE", {
+      arrivedAt: week.start - 5 * DAY,
+      expectedDischargeAt: week.start - DAY,
+      dischargeDateSetAt: week.start + 5 * DAY,
+    });
+    // Set on day five of the week, against a date already past: only the last two days count.
+    expect(weeklyOperationsReport(inputOf(f, { admissions: [stay] }), week).delayedDischarge).toEqual({
+      bedDays: 2,
+      people: 1,
+    });
+    // Set after the week ended: that week is not measured against it at all.
+    const later = { ...stay, dischargeDateSetAt: week.end + DAY };
+    expect(weeklyOperationsReport(inputOf(f, { admissions: [later] }), week).delayedDischarge).toEqual({
+      bedDays: 0,
+      people: 0,
+    });
+  });
+
+  it("counts an over-target wait only in the week its target crossing falls in", () => {
+    const f = fixture();
+    // Crossed the target the week before and is still waiting: counted then, not again now.
+    const crossedEarlier = f.movement("WF-EARLY", { openedAt: week.start - 3 * DAY });
+    // Crosses the target inside the week.
+    const crossedNow = f.movement("WF-NOW", { openedAt: week.start });
+    const report = weeklyOperationsReport(inputOf(f, { movements: [crossedEarlier, crossedNow] }), week);
+    expect(report.edWaits.rows.map((row) => row.movement.id)).toEqual(["WF-NOW"]);
+    expect(report.edWaits.count).toBe(1);
+    const earlier = weeklyOperationsReport(
+      inputOf(f, { movements: [crossedEarlier, crossedNow] }),
+      reportWeek(1, NOW, WEDNESDAY),
+    );
+    expect(earlier.edWaits.rows.map((row) => row.movement.id)).toEqual(["WF-EARLY"]);
   });
 
   it("counts declines and overrides by reason inside the week only", () => {

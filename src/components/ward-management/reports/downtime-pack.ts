@@ -164,19 +164,31 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
  * and is gone on reload. Nothing is written to browser storage.
  */
 let lastPack: DowntimePack | null = null;
+/** The world generation the pack was taken in. A reset or scenario switch makes any pack stale. */
+let packGeneration: number | null = null;
 const listeners = new Set<() => void>();
 
-export function rememberDowntimePack(pack: DowntimePack): void {
+function notify(): void {
+  for (const listener of listeners) listener();
+}
+
+export function rememberDowntimePack(pack: DowntimePack, worldGeneration: number | null = null): void {
   if (typeof window === "undefined") return; // never hold a pack in the server process
   lastPack = pack;
-  for (const listener of listeners) listener();
+  packGeneration = worldGeneration;
+  notify();
+}
+
+/** True when the remembered pack was taken in another world generation (a reset or scenario switch). */
+export function downtimePackIsStale(worldGeneration: number): boolean {
+  return lastPack !== null && packGeneration !== null && packGeneration !== worldGeneration;
 }
 
 export function lastDowntimePack(): DowntimePack | null {
   return lastPack;
 }
 
-/** For `useSyncExternalStore`: the screen re-renders when a new pack is remembered. */
+/** For `useSyncExternalStore`: the screen re-renders when a pack is remembered or forgotten. */
 export function subscribeDowntimePack(listener: () => void): () => void {
   listeners.add(listener);
   return () => {
@@ -184,7 +196,12 @@ export function subscribeDowntimePack(listener: () => void): () => void {
   };
 }
 
-/** Test seam: forget the remembered pack. */
+/**
+ * Forget the remembered pack and tell any open screen, which then takes a fresh one. Called when a
+ * saved session is restored (the seed's pack no longer describes the world) and by tests.
+ */
 export function forgetDowntimePack(): void {
   lastPack = null;
+  packGeneration = null;
+  notify();
 }

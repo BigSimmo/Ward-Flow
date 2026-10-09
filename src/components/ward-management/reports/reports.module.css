@@ -77,8 +77,10 @@
   table-layout: auto;
 }
 
-.table th,
-.table td {
+/* Scoped under .page so these outrank the shared table's equal-weight clipping rules whatever order
+   the two stylesheets load in. */
+.page .table th,
+.page .table td {
   height: auto;
   min-height: 32px;
   vertical-align: top;
@@ -89,7 +91,7 @@
   max-width: none;
 }
 
-.table thead th {
+.page .table thead th {
   white-space: nowrap;
 }
 
@@ -218,14 +220,6 @@
 
   .tableWrap {
     overflow: visible;
-  }
-
-  .table th,
-  .table td {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
-    max-width: none;
   }
 
   .table tr {
