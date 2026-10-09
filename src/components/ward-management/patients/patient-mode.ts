@@ -48,7 +48,7 @@ export function patientMode({
     if (movement.stage === "accepted_awaiting_bed" || movement.stage === "pulled") return "held";
     return "transit";
   }
-  const onWard = admission?.state === "occupied" || (movement?.stage === "arrived" && admission?.state !== "departed");
+  const onWard = admission?.state === "occupied";
   if (onWard) {
     if (leaveBed && admission && leaveBed.admissionId === admission.id) {
       return leaveBed.absentWithoutLeave ? "awol" : "leave";
