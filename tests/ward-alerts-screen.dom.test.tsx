@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
@@ -50,23 +50,29 @@ function countInCategory(category: keyof typeof INBOX_CATEGORIES): number {
     .length;
 }
 
-/** Every condition this screen claims to watch, by its rendered heading. */
+/** Every condition this screen claims to watch, by its name in the hero's Checking list. */
 const CONDITIONS = [
-  "Form expiry passed",
-  "Every ward asked has declined",
-  "Destination no longer suitable",
+  "Form due passed",
+  "Every ward declined",
+  "Unsuitable destination",
   "Bed hold expired",
-  "Transport waiting to leave",
-  "Referral awaiting triage",
+  "Transport not left",
+  "Target overdue",
+  "Triage waiting",
+  "ED over a day",
   "Override recorded",
 ] as const;
+
+function checkingList() {
+  return screen.getByRole("list", { name: "Conditions checked" });
+}
 
 describe("the Alerts screen reports on every condition it watches, firing or not", () => {
   it("renders every named condition, including the ones with nothing to show", () => {
     renderScreen();
     for (const condition of CONDITIONS) {
       expect(
-        screen.getByRole("heading", { name: condition }),
+        within(checkingList()).getByRole("listitem", { name: condition }),
         `"${condition}" is not on the screen. A condition that appears only when it fires makes an ` +
           `empty screen claim a completeness it does not have: the reader cannot tell "checked and ` +
           `clear" from "not checked at all".`,
@@ -114,7 +120,7 @@ describe("the Alerts screen reports on every condition it watches, firing or not
     ).toBeGreaterThan(0);
 
     renderScreen();
-    const section = screen.getByLabelText("Transport waiting to leave");
+    const section = within(checkingList()).getByRole("listitem", { name: "Transport not left" });
 
     expect(
       within(section).getByText(/Watches accepted transport legs/u),
@@ -131,8 +137,7 @@ describe("the Alerts screen reports on every condition it watches, firing or not
    */
   it("says out loud that it cannot watch handover sheets", () => {
     renderScreen();
-    fireEvent.click(screen.getByText("Monitoring scope", { selector: "summary span" }));
-    const section = screen.getByRole("region", { name: "What this screen does not watch" });
+    const section = within(checkingList()).getByRole("listitem", { name: "Not checked: handover sheets" });
 
     expect(section).toHaveTextContent(/handover/iu);
     expect(
@@ -149,7 +154,7 @@ describe("the Alerts screen reports on every condition it watches, firing or not
    */
   it("states the override record's prior-gate absence and retained record facts", () => {
     renderScreen();
-    const section = screen.getByLabelText("Override recorded");
+    const section = within(checkingList()).getByRole("listitem", { name: "Override recorded" });
     expect(section).toHaveTextContent(/cannot identify a prior gate verdict/u);
     expect(section).toHaveTextContent(/who, when, which fixed reason and which wards/u);
     expect(section).toHaveTextContent(/does not retain a prior gate verdict/u);
@@ -183,7 +188,7 @@ describe("the Alerts screen reports on every condition it watches, firing or not
       renderedRows.length,
       "the screen drew no alert row at all, so every assertion in this file is over a page with no " + "alerts on it",
     ).toBe(rows);
-    const untriagedNotice = screen.getByText(/referrals have never been triaged/u);
-    expect(untriagedNotice.closest("p")).toHaveTextContent(/\d+ of \d+ referrals have never been triaged/u);
+    const triage = within(checkingList()).getByRole("listitem", { name: "Triage waiting" });
+    expect(triage).toHaveTextContent(/\d+ of \d+ referrals have never been triaged/u);
   });
 });
