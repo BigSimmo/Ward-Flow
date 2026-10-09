@@ -39,7 +39,9 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
     />
+    <link rel="stylesheet" href="ward-flow-v8.css" />
     <style>
+      /* Board-specific chrome below; design-system values are loaded from ward-flow-v8.css. */
       /* Ward Flow design system v8. Soft glass, calm, live. Synthetic prototype, not a medical device.
    Built on v7.1. design-system-v8.md is the spec; this sheet is the single source of values.
 
@@ -2164,6 +2166,17 @@
    drawn as backgrounds, so they are kept with print-color-adjust. ShiftBrief prints bed numbers only. */
       @media print {
         :root,
+        :root[data-theme] {
+          --pg-bg: #dfe5eb;
+          --pg-fg: #161a20;
+          --pg-mute: #5b646f;
+          --pg-bar: rgba(250, 251, 253, 0.9);
+          --pg-line: rgba(22, 30, 40, 0.12);
+          --pg-on: #fdfdfe;
+          --pg-track: #e6ebf0;
+          --pg-acc: #2b4762;
+        }
+        :root,
         :root[data-theme],
         .day,
         .night {
@@ -2843,6 +2856,14 @@
         grid-template-columns: 44px minmax(0, 1.4fr) 70px minmax(0, 1fr) minmax(0, 1.2fr);
         min-height: 40px;
         font-size: 13px;
+      }
+      .bed-list button.row {
+        width: 100%;
+        border: 0;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
       }
       .shift3 {
         display: grid;
@@ -4327,7 +4348,7 @@
                   </h1>
                 </div>
                 <span style="flex: 1"></span>
-                <span class="lv onhero desk-only"><span class="pulse"></span>Live <span class="clk">10:42</span></span>
+                <span class="lv onhero"><span class="pulse"></span>Synthetic data · updated <span class="clk">10:42</span></span>
                 <button
                   class="b onhero icon sm desk-only"
                   type="button"
@@ -4414,9 +4435,9 @@
                     ><svg class="ic"><use href="#i-bed" /></svg>Every bed</span
                   ><span class="sp"></span><span class="mute t-12" id="boardNote"></span>
                   <span class="pt icons sm" role="radiogroup" aria-label="View" id="viewTog"
-                    ><button class="on" type="button" aria-label="Board" data-v="board">
+                    ><button class="on" type="button" role="radio" aria-checked="true" aria-label="Board" data-v="board">
                       <svg class="ic s14"><use href="#i-grid" /></svg></button
-                    ><button type="button" aria-label="List" data-v="list">
+                    ><button type="button" role="radio" aria-checked="false" aria-label="List" data-v="list">
                       <svg class="ic s14"><use href="#i-list" /></svg></button
                   ></span>
                 </div>
@@ -4445,10 +4466,10 @@
                   </div>
                   <div style="padding: 10px 12px 4px">
                     <span class="pt sm fill" role="tablist" id="flowTabs"
-                      ><button class="on" role="tab" type="button" data-t="ref">
+                      ><button class="on" role="tab" aria-selected="true" type="button" data-t="ref">
                         Referrals <span class="k">1</span></button
-                      ><button role="tab" type="button" data-t="adm">Admissions <span class="k">2</span></button
-                      ><button role="tab" type="button" data-t="dis">Discharges <span class="k">2</span></button></span
+                      ><button role="tab" aria-selected="false" type="button" data-t="adm">Admissions <span class="k">2</span></button
+                      ><button role="tab" aria-selected="false" type="button" data-t="dis">Discharges <span class="k">2</span></button></span
                     >
                   </div>
                   <div id="flowBody"></div>
@@ -5481,7 +5502,7 @@
             `<div class="row" style="min-height:32px"><span class="th">Bed</span><span class="th">Patient</span><span class="th">Stay</span><span class="th">Legal</span><span class="th">Status</span></div>` +
             BEDS.map(
               (b, i) =>
-                `<div class="row ${sel === i ? "sel" : ""}" data-i="${i}" style="cursor:pointer"><span class="num">${b.no}</span><span class="ell" style="font-weight:600">${b.nm}</span><span class="num" style="font-weight:500">${b.d || ""}</span><span class="ell">${b.st ? "" : "Form 6A"}</span><span class="cg">${g(b.t)}${b.s || "Stable"}</span></div>`,
+                `<button type="button" class="row ${sel === i ? "sel" : ""}" data-i="${i}"><span class="num">${b.no}</span><span class="ell" style="font-weight:600">${b.nm}</span><span class="num" style="font-weight:500">${b.d || ""}</span><span class="ell">${b.st ? "" : "Form 6A"}</span><span class="cg">${g(b.t)}${b.s || "Stable"}</span></button>`,
             ).join("")
           );
         }
@@ -5519,7 +5540,7 @@
           }
           $("#panelRest").hidden = true;
           $("#panelFocus").hidden = false;
-          const h = $("#spName");
+          const h = $("#spName") || $("#panelFocus [data-back]");
           if (h) h.focus({ preventScroll: true });
         }
         function restPanel() {
@@ -5527,7 +5548,8 @@
           $("#panelFocus").hidden = true;
         }
         let dIdx = 3,
-          dTab = "ov";
+          dTab = "ov",
+          drawerOpener = null;
         function renderDrawer() {
           const b = BEDS[dIdx];
           $("#drName").textContent = b.nm;
@@ -5553,10 +5575,15 @@
               .join("")}</div>`,
           };
           $("#drBody").innerHTML = body[dTab];
-          $$("#drTabs button").forEach((x) => x.classList.toggle("on", x.dataset.d === dTab));
+          $$("#drTabs button").forEach((x) => {
+            const selected = x.dataset.d === dTab;
+            x.classList.toggle("on", selected);
+            x.setAttribute("aria-selected", selected);
+          });
           $("#drPrimary").textContent = b.t === "danger" ? "Escalate blocker" : "Plan to leave";
         }
         function openDrawer(i) {
+          drawerOpener = document.activeElement;
           dIdx = i;
           dTab = "ov";
           renderDrawer();
@@ -5596,7 +5623,10 @@
         $("#flowTabs").addEventListener("click", (e) => {
           const b = e.target.closest("button");
           if (!b) return;
-          $$("#flowTabs button").forEach((x) => x.classList.toggle("on", x === b));
+          $$("#flowTabs button").forEach((x) => {
+            x.classList.toggle("on", x === b);
+            x.setAttribute("aria-selected", x === b);
+          });
           renderFlow(b.dataset.t);
         });
         $("#wardToggles").addEventListener("click", (e) => {
@@ -5657,6 +5687,13 @@
           renderDrawer();
         });
         $("#drawerOv").addEventListener("click", (e) => {
+          if (e.target.closest("[data-close]")) {
+            $("#drawerOv").hidden = true;
+            fitNow();
+            if (drawerOpener && drawerOpener.isConnected) drawerOpener.focus({ preventScroll: true });
+            drawerOpener = null;
+            return;
+          }
           const s = e.target.closest("[data-step-bed]");
           if (s) {
             dIdx = (dIdx + +s.dataset.stepBed + 20) % 20;
@@ -5664,8 +5701,17 @@
           }
         });
         document.addEventListener("keydown", (e) => {
+          if (!$("#drawerOv").hidden && e.key === "Tab") {
+            const focusables = $$("#drawerOv .drawer button");
+            const first = focusables[0], last = focusables[focusables.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+          }
           if (e.key === "Escape") {
+            const drawerWasOpen = !$("#drawerOv").hidden;
             $$(".overlay").forEach((o) => (o.hidden = true));
+            if (drawerWasOpen && drawerOpener && drawerOpener.isConnected) drawerOpener.focus({ preventScroll: true });
+            drawerOpener = null;
             $("#keyPop").hidden = true;
             fitNow();
           }
@@ -6035,3 +6081,62 @@
     </script>
   </body>
 </html>
+,();
+      })();
+    </script>
+  </body>
+</html>
+l();
+      })();
+    </script>
+  </body>
+</html>
+l>
+    </script>
+  </body>
+</html>
+,();
+      })();
+    </script>
+  </body>
+</html>
+l();
+      })();
+    </script>
+  </body>
+</html>
+l>
+") || "rev";
+        } catch (e) {}
+        if (["rev", "fnd", "ctl", "ward", "pat"].includes(h)) start = h;
+        showSec(start);
+        fitNow();
+      })();
+    </script>
+  </body>
+</html>
+,();
+      })();
+    </script>
+  </body>
+</html>
+l();
+      })();
+    </script>
+  </body>
+</html>
+l>
+    </script>
+  </body>
+</html>
+,();
+      })();
+    </script>
+  </body>
+</html>
+l();
+      })();
+    </script>
+  </body>
+</html>
+l>
