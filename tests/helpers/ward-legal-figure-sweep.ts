@@ -29,6 +29,7 @@ import {
   WARD_REQUEST_WITHDRAWAL_REASONS,
 } from "../../src/components/ward-management/ward-change-reasons";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
+import { ABSENCE_STEPS } from "@/components/ward-management/ward-model";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
 import {
   seedWardFlowState,
@@ -863,6 +864,33 @@ export function candidateEvents(
         leaveBedId: leaveBed.id,
         actingUnitId: leaveBed.unitId,
       }));
+    case "RECORD_ABSENT_WITHOUT_LEAVE":
+      // D-38. One candidate per occupied stay, unconditioned: the reducer refuses a second absence,
+      // and a stay already on leave turns into an absence rather than gaining a second held bed.
+      return state.admissions
+        .filter((admission) => admission.state === "occupied")
+        .map((admission) => ({ type, role, now, admissionId: admission.id, actingUnitId: admission.unitId }));
+    case "RECORD_ABSENCE_STEP":
+      // D-38. Every fixed step for every held bed that records an absence, crossed rather than
+      // sampled: each step is a real domain value the reducer stores.
+      return state.leaveBeds
+        .filter((bed) => bed.absentWithoutLeave)
+        .flatMap((bed) =>
+          ABSENCE_STEPS.map((step) => ({
+            type,
+            role,
+            now,
+            admissionId: bed.admissionId,
+            actingUnitId: bed.unitId,
+            step,
+          })),
+        );
+    case "RECORD_COMMUNITY_TREATMENT_ORDER":
+      // D-38. One candidate per patient. The order holds a form code, a time and a role, never a
+      // lapse time, so it cannot carry a legal figure onto a record.
+      return state.patients.map((patient) => ({ type, role, now, patientId: patient.id }));
+    case "END_COMMUNITY_TREATMENT_ORDER":
+      return state.patients.map((patient) => ({ type, role, now, patientId: patient.id }));
     case "WITHDRAW_REFERRAL":
       // One candidate per movement, unconditioned. The reducer's own guards decide which are
       // refused — a movement that has closed, one already accepted, one holding no live referral —

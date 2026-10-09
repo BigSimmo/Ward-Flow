@@ -623,9 +623,13 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     // D-38: an absence holds when it was recorded and the time of each fixed missing person step.
     const absence = row.absentWithoutLeave;
     if (absence !== undefined) {
-      if (!object(absence) || !finite(absence.since) || !object(absence.steps)) return false;
-      for (const [step, at] of Object.entries(absence.steps)) {
-        if (!(ABSENCE_STEPS as readonly string[]).includes(step) || !finite(at)) return false;
+      if (!object(absence) || !finite(absence.since) || !Array.isArray(absence.steps)) return false;
+      const seen = new Set<unknown>();
+      for (const done of absence.steps as unknown[]) {
+        if (!object(done) || !(ABSENCE_STEPS as readonly string[]).includes(done.step as string) || !finite(done.at))
+          return false;
+        if (Object.keys(done).some((key) => key !== "step" && key !== "at") || seen.has(done.step)) return false;
+        seen.add(done.step);
       }
     }
   }

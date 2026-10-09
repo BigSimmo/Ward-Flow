@@ -1937,10 +1937,12 @@ export type LeaveBed = {
   /**
    * Absent without leave (Patient page gate board, owner approval 9 Oct 2026). Present only while
    * the person is missing: the bed stays held exactly as it does for leave, so no bed figure moves.
-   * `since` is when the ward recorded the absence. `steps` holds the time each missing person step
-   * was recorded, keyed by a fixed choice, never typed text. Ended by `END_LEAVE_BED` on return.
+   * `since` is when the ward recorded the absence. `steps` lists each missing person step done, a
+   * fixed choice and the time it was recorded, never typed text. A list of `{ step, at }` rather than
+   * a map keyed by step, so `at` moves with every other time when the demo clock re-anchors
+   * (`ward-reanchor.ts` shifts by field name). Ended by `END_LEAVE_BED` on return.
    */
-  absentWithoutLeave?: { since: Instant; steps: Partial<Record<AbsenceStep, Instant>> };
+  absentWithoutLeave?: { since: Instant; steps: { step: AbsenceStep; at: Instant }[] };
 };
 
 /**

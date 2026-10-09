@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { seedWardFlowStateAt, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { ABSENCE_STEPS } from "@/components/ward-management/ward-model";
+import { shiftInstants } from "@/components/ward-management/ward-reanchor";
 
 /**
  * D-38 (9 October 2026): absent without leave rides on the stay's held bed, and a community
@@ -28,7 +29,7 @@ describe("absent without leave (D-38)", () => {
       actingUnitId: stay.unitId,
     });
     const bed = next.leaveBeds.find((b) => b.admissionId === stay.id)!;
-    expect(bed.absentWithoutLeave).toEqual({ since: NOW, steps: {} });
+    expect(bed.absentWithoutLeave).toEqual({ since: NOW, steps: [] });
     expect(next.leaveBeds).toHaveLength(state.leaveBeds.length + 1);
     expect(next.admissions).toEqual(state.admissions);
   });
@@ -87,7 +88,8 @@ describe("absent without leave (D-38)", () => {
       });
     }
     const steps = next.leaveBeds.find((b) => b.admissionId === stay.id)!.absentWithoutLeave!.steps;
-    expect(Object.keys(steps).sort()).toEqual([...ABSENCE_STEPS].sort());
+    expect(steps.map((done) => done.step)).toEqual([...ABSENCE_STEPS]);
+    expect(steps.map((done) => done.at)).toEqual([NOW + 1, NOW + 2, NOW + 3, NOW + 4, NOW + 5]);
     const again = wardFlowReducer(next, {
       type: "RECORD_ABSENCE_STEP",
       role: "ward",
@@ -159,7 +161,7 @@ describe("absent without leave (D-38)", () => {
 
     const bad = JSON.parse(JSON.stringify(next));
     const badBed = bad.leaveBeds.find((b: { admissionId: string }) => b.admissionId === stay.id);
-    badBed.absentWithoutLeave.steps = { typed_step: NOW };
+    badBed.absentWithoutLeave.steps = [{ step: "typed_step", at: NOW }];
     expect(isValidStoredWardFlowState(bad)).toBe(false);
 
     const bed = next.leaveBeds.find((b) => b.admissionId === stay.id)!;
@@ -171,6 +173,38 @@ describe("absent without leave (D-38)", () => {
       actingUnitId: stay.unitId,
     });
     expect(back.leaveBeds.some((b) => b.admissionId === stay.id)).toBe(false);
+  });
+});
+
+describe("re-anchoring the demo clock (D-38)", () => {
+  it("moves an absence's start, its step times and a CTO's recorded time with every other time", () => {
+    const { state, stay } = occupiedStay();
+    let next = wardFlowReducer(state, {
+      type: "RECORD_ABSENT_WITHOUT_LEAVE",
+      role: "ward",
+      now: NOW,
+      admissionId: stay.id,
+      actingUnitId: stay.unitId,
+    });
+    next = wardFlowReducer(next, {
+      type: "RECORD_ABSENCE_STEP",
+      role: "ward",
+      now: NOW + 5,
+      admissionId: stay.id,
+      actingUnitId: stay.unitId,
+      step: "searched",
+    });
+    next = wardFlowReducer(next, {
+      type: "RECORD_COMMUNITY_TREATMENT_ORDER",
+      role: "community",
+      now: NOW,
+      patientId: next.patients[0]!.id,
+    });
+    const shifted = shiftInstants(next, 60);
+    const absence = shifted.leaveBeds.find((b) => b.admissionId === stay.id)!.absentWithoutLeave!;
+    expect(absence.since).toBe(NOW + 60);
+    expect(absence.steps[0]).toEqual({ step: "searched", at: NOW + 65 });
+    expect(shifted.patients[0]!.communityTreatmentOrder!.recordedAt).toBe(NOW + 60);
   });
 });
 

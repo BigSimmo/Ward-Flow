@@ -6146,7 +6146,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (current?.absentWithoutLeave) {
         return reject(state, event, `admission ${stay.id} is already recorded absent without leave (${current.id})`);
       }
-      const absence = { since: event.now, steps: {} };
+      const absence = { since: event.now, steps: [] };
       if (current) {
         return {
           ...state,
@@ -6188,12 +6188,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           `RECORD_ABSENCE_STEP was raised acting as unit ${event.actingUnitId} but the absence is on unit ${bed.unitId}`,
         );
       }
-      if (bed.absentWithoutLeave.steps[event.step] !== undefined) {
+      if (bed.absentWithoutLeave.steps.some((done) => done.step === event.step)) {
         return reject(state, event, `${event.step} is already recorded for admission ${event.admissionId}`);
       }
       const absentWithoutLeave = {
         ...bed.absentWithoutLeave,
-        steps: { ...bed.absentWithoutLeave.steps, [event.step]: event.now },
+        steps: [...bed.absentWithoutLeave.steps, { step: event.step, at: event.now }],
       };
       return {
         ...state,

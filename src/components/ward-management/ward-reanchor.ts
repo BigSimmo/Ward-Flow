@@ -154,6 +154,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "stoodDownAt",
   // D-34: re-clearance resumes a paused movement at a point in time, never a duration.
   "resumedAt",
+  // D-38: when an absence without leave was recorded. Its steps carry `at`, already listed above.
+  "since",
 ]);
 
 /**
