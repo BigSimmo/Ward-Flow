@@ -140,7 +140,9 @@ export function buildGateContext({
           : leaveBed
             ? "leave"
             : "ward";
-    return { ...base, mode, admission, leaveBed, lastStay };
+    const currentMovement =
+      movement && (admission.movementId === movement.id || movement.admissionId === admission.id) ? movement : undefined;
+    return { ...base, mode, admission, movement: currentMovement, leaveBed, lastStay };
   }
 
   return { ...base, mode: isOnCommunityTreatmentOrder(patient) ? "cto" : "inactive", lastStay };
@@ -269,9 +271,14 @@ function useGateStatus(ctx: GateContext, actions: GateActions, begin: () => void
   const admission = ctx.admission;
 
   if (ctx.mode === "finding" && movement) {
-    const asked = movement.referredUnitIds.length;
+    const historicalUnitIds = [
+      ...movement.referredUnitIds,
+      ...movement.declines.map((decline) => decline.unitId),
+      ...movement.withdrawnReferrals.map((withdrawal) => withdrawal.unitId),
+    ];
+    const asked = [...new Set(historicalUnitIds)].length;
     const declined = movement.declines.filter((decline) => movement.referredUnitIds.includes(decline.unitId)).length;
-    const waiting = Math.max(0, asked - declined);
+    const waiting = Math.max(0, movement.referredUnitIds.length - declined);
     const bed: GateCell = {
       key: "bed",
       label: "Bed",
@@ -488,7 +495,13 @@ function useGateStatus(ctx: GateContext, actions: GateActions, begin: () => void
     const cleared = [true, moving, false].filter(Boolean).length;
     return {
       tone: overdue ? "danger" : "info",
-      title: overdue ? "Arrival overdue" : moving ? "On the way" : "Waiting for collection",
+      title: overdue
+        ? "Arrival overdue"
+        : moving
+          ? "On the way"
+          : noTransportNeeded(movement)
+            ? "Ready for ward arrival"
+            : "Waiting for collection",
       meter: { cleared, total: 3, label: `${cleared} of 3 cleared` },
       cells: [transport, arrival, receiving],
     };
@@ -697,6 +710,7 @@ function useGateStatus(ctx: GateContext, actions: GateActions, begin: () => void
   const daysOut = stay?.leftAt !== null && stay?.leftAt !== undefined ? daysBetween(stay.leftAt, now) : undefined;
   const inFollowUpWindow = daysOut !== undefined && daysOut < 7;
   const followUp = stay?.followUp;
+  const followUpOverdue = daysOut !== undefined && daysOut >= 7 && followUp?.state !== "arranged";
   const cells: GateCell[] = [
     {
       key: "stay",
@@ -710,22 +724,19 @@ function useGateStatus(ctx: GateContext, actions: GateActions, begin: () => void
       key: "followup",
       label: "7-day follow-up",
       owner: "Community team",
-      tone: !inFollowUpWindow
-        ? "neutral"
-        : followUp?.state === "arranged"
-          ? "success"
+      tone: followUp?.state === "arranged" ? "success" : followUpOverdue || inFollowUpWindow ? "danger" : "neutral",
+      value:
+        followUp?.state === "arranged"
+          ? "Arranged"
           : followUp
-            ? "danger"
-            : "warning",
-      value: !inFollowUpWindow
-        ? "Not due"
-        : followUp
-          ? followUp.state === "arranged"
-            ? "Arranged"
-            : "Not arranged"
-          : "Not recorded",
-      sub: inFollowUpWindow ? `Day ${daysOut + 1} of 7 after discharge` : undefined,
-      action: inFollowUpWindow ? (
+            ? "Not arranged"
+            : followUpOverdue
+              ? "Overdue"
+              : inFollowUpWindow
+                ? "Not recorded"
+                : "Not due",
+      sub: daysOut !== undefined && (inFollowUpWindow || followUpOverdue) ? `Day ${daysOut + 1} after discharge` : undefined,
+      action: inFollowUpWindow || followUpOverdue ? (
         <Link href="/mockups/ward-flow/discharges" className={buttonClass({ size: "sm", variant: "ghost" })}>
           Discharges
         </Link>
@@ -830,22 +841,32 @@ export function PatientStatusCard({ ctx, actions }: { ctx: GateContext; actions:
 /* ---------------------------------------------------------------- Now cards */
 
 function WardsAskedCard({ ctx, movement, actions }: { ctx: GateContext; movement: Movement; actions: GateActions }) {
-  const rows = movement.referredUnitIds.map((unitId) => {
+  const unitIds = [
+    ...new Set([
+      ...movement.referredUnitIds,
+      ...movement.declines.map((item) => item.unitId),
+      ...movement.withdrawnReferrals.map((item) => item.unitId),
+    ]),
+  ];
+  const rows = unitIds.map((unitId) => {
     const decline = movement.declines.filter((item) => item.unitId === unitId).at(-1);
+    const withdrawal = movement.withdrawnReferrals.filter((item) => item.unitId === unitId).at(-1);
     const accepted = movement.acceptedUnitId === unitId;
     const waitlisted = movement.waitlistedUnitIds?.includes(unitId) ?? false;
     return {
       unitId,
       name: unitName(ctx, unitId) ?? "Ward not recorded",
-      tone: (accepted ? "success" : decline ? "closed" : waitlisted ? "warning" : "neutral") as WfTone,
+      tone: (accepted ? "success" : waitlisted ? "warning" : decline || withdrawal ? "closed" : "neutral") as WfTone,
       outcome: accepted
         ? "Accepted"
-        : decline
-          ? `Declined, ${declineReasonLabels[decline.reason].toLowerCase()}`
-          : waitlisted
-            ? "Waitlisted"
-            : "Deciding",
-      time: decline ? when(ctx, decline.at) : undefined,
+        : waitlisted
+          ? "Waitlisted"
+          : decline
+            ? `Declined, ${declineReasonLabels[decline.reason].toLowerCase()}`
+            : withdrawal
+              ? "Withdrawn"
+              : "Deciding",
+      time: decline ? when(ctx, decline.at) : withdrawal ? when(ctx, withdrawal.at) : undefined,
     };
   });
   return (
