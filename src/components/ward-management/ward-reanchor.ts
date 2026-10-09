@@ -161,6 +161,12 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "since",
   // D-38/D-40: when a community treatment order ended, on the order and on each earlier one.
   "endedAt",
+  // Stream D, 9 Oct 2026: a planned admission's booked, changed, expected-arrival and arrival
+  // times. Left out, a booking would sit on the old anchor and read as overdue or days away.
+  "expectedArrivalAt",
+  "bookedAt",
+  "changedAt",
+  "convertedAt",
 ]);
 
 /**

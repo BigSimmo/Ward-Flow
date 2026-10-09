@@ -730,12 +730,23 @@ describe("Capacity's tables declare the scroll affordance they have earned", () 
 describe("tomorrow's beds forecast", () => {
   it("shows the 24 and 48 hour estimates from bedsForecast cleanly in the network summary", () => {
     const seeded = seedWardFlowState();
-    const forecast = bedsForecast(seeded.units, seeded.bedReleases, seeded.admissions, seeded.movements, NOW_ANCHOR);
+    // Stream D: the screen counts the seeded planned admissions as beds needed.
+    const forecast = bedsForecast(
+      seeded.units,
+      seeded.bedReleases,
+      seeded.admissions,
+      seeded.movements,
+      NOW_ANCHOR,
+      seeded.plannedAdmissions,
+    );
     renderScreen();
     const panel = screen.getByTestId("ward-capacity-beds-forecast");
     for (const entry of forecast.horizons) {
       expect(within(panel).getByTestId(`ward-capacity-beds-forecast-${entry.hours}h-likely`)).toHaveTextContent(
         forecastHeadline(entry.likely),
+      );
+      expect(within(panel).getByTestId(`ward-capacity-beds-forecast-${entry.hours}h-needed`)).toHaveTextContent(
+        `${entry.bedsNeeded} beds needed, ${entry.plannedAdmissions} planned admissions.`,
       );
     }
     expect(within(panel).queryByText("How this was worked out")).toBeNull();
