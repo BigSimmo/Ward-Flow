@@ -152,12 +152,10 @@ describe("approved four-tab referral drawer journey", () => {
     fireEvent.click(within(inbox).getByRole("button", { name: "Waitlist" }));
     expect(inbox).toHaveTextContent("Waitlisted");
     const board = screen.getByTestId("ward-referral-board-screen");
-    // v6 (Referrals.png): the stream and status filters are hero tracks (radio groups), not buttons.
-    fireEvent.click(within(board).getByRole("radio", { name: /^Ward\s*\d/ }));
-    fireEvent.click(within(board).getByRole("radio", { name: /^Waitlisted/ }));
+    // Option A (9 Oct 2026): filters highlight and never hide, so the waitlisted referral is on the queue as it stands.
     expect(board).toHaveTextContent("Tobias Wren");
     fireEvent.click(within(board).getAllByRole("button", { name: /Tobias Wren/ })[0]);
-    fireEvent.click(within(board).getByRole("tab", { name: "Clinical dossier" }));
+    fireEvent.click(within(board).getByRole("tab", { name: "Patient" }));
     expect(board).toHaveTextContent("Synthetic patient story for inbox review");
   }, 90_000);
 });

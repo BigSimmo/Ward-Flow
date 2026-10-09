@@ -370,9 +370,9 @@ describe("PR15 discharge and referral provenance", () => {
     )!;
     renderFlow(<ReferralBoard />, { referrals: [referral] });
     fireEvent.click(screen.getByTestId(`ward-referral-board-select-${referral.id}`));
-    // v6 (Referrals--clinical-dossier.webp): the tab reads "Clinical dossier" and the facts are a
-    // labelled grid ("Direct contact" over "Not recorded"), with no colon between label and value.
-    fireEvent.click(screen.getByRole("tab", { name: "Clinical dossier" }));
+    // Option A (9 Oct 2026): the dossier is the Patient tab and the facts are a labelled grid
+    // ("Direct contact" over "Not recorded"), with no colon between label and value.
+    fireEvent.click(screen.getByRole("tab", { name: "Patient" }));
     const detail = screen.getByRole("region", { name: "Selected referral detail" });
     expect(detail.textContent).toMatch(/Direct contact\s*Not recorded/);
     expect(detail.textContent).toContain("Referral raised");
