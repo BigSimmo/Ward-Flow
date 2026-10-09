@@ -474,6 +474,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     dispatch,
     inboxAcknowledgements,
     inboxCompletions,
+    supportNotifications,
   } = useWardFlow();
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
@@ -573,8 +574,17 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // for exactly this call. A ward/ED/officer route gets an empty inbox: zero badge, and the drawer's
   // own "No outstanding work right now." empty state, never a network list with every action refused.
   const tasksItems = useMemo(
-    () => (wardTasksAreActionableForRole(role) ? buildActionInbox(movements.filter(isOpen), now, units) : []),
-    [movements, now, units, role],
+    () =>
+      wardTasksAreActionableForRole(role)
+        ? buildActionInbox(movements.filter(isOpen), now, units, {
+            movements,
+            admissions,
+            patients,
+            referrals,
+            supportNotifications,
+          })
+        : [],
+    [movements, now, units, role, admissions, patients, referrals, supportNotifications],
   );
   /**
    * The Service selector's own "{n} open" / "none open" option counts (build plan §3 "Service

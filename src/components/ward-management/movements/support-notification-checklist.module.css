@@ -1,0 +1,125 @@
+.panel {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  font-family: var(--wf-font);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+}
+
+.meta {
+  margin-left: auto;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) 0;
+  border-top: 1px solid var(--wf-line-2);
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.party {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  flex: none;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+}
+
+.value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.form {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 8rem);
+  gap: var(--wf-s-3);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-danger-ink);
+}
+
+@media (max-width: 40rem) {
+  .line {
+    flex-wrap: wrap;
+  }
+
+  .value {
+    flex-basis: 100%;
+    order: 3;
+    white-space: normal;
+  }
+
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

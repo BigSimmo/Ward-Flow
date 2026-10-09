@@ -51,6 +51,11 @@ export const INBOX_CATEGORIES = {
   destinations_declined: { idPrefix: "declines-", kind: "fact" },
   /** Transport accepted and not yet departed. */
   transport_awaiting_departure: { idPrefix: "transport-", kind: "fact" },
+  /** An involuntary patient's admission or transfer with a carer, PSP or MHAS notification not yet
+   *  recorded (advisory). Leaves when every party has a record. Remainder is the movement id. */
+  support_notification_arrival: { idPrefix: "notify-arrival-", kind: "fact" },
+  /** The same, for a discharge. Remainder is the discharged stay's linked movement id. */
+  support_notification_discharge: { idPrefix: "notify-discharge-", kind: "fact" },
 } as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
 
 /**

@@ -48,6 +48,7 @@ import {
 } from "@/components/wf";
 
 import { DischargeFollowUp } from "./discharge-follow-up";
+import { SupportNotificationChecklist } from "../movements/support-notification-checklist";
 import styles from "./discharges.module.css";
 import pageStyles from "./discharges-third-edition.module.css";
 
@@ -1482,6 +1483,12 @@ function DischargeWorkspace() {
                         key={`care-${activeRecord.id}`}
                         record={activeRecord}
                         actor={RECORD_ACTOR}
+                      />
+                      {/* Advisory carer/PSP/MHAS checklist: renders only for an involuntary patient's discharge. */}
+                      <SupportNotificationChecklist
+                        key={`notify-${activeRecord.id}`}
+                        admissionId={activeRecord.admissionId}
+                        role="coordinator"
                       />
                     </div>
                   </>

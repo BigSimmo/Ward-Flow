@@ -68,6 +68,7 @@ import { REFERRABLE_MOVEMENT_STAGES } from "@/components/ward-management/ward-fl
 export type WardRole = "flow" | "ed" | "ward";
 
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
+import { supportNotificationInboxItems } from "@/components/ward-management/ward-support-notifications";
 export { stageCopy };
 
 /** Same reason `stageCopy` exists: `BedReleaseState`'s own values (`BED_RELEASE_STATES` in
@@ -1169,7 +1170,13 @@ export type InboxItem = {
  * legitimately carries a deadline falls due. This is the coordinator's work list, not a report:
  * every qualifying movement gets its own row.
  */
-export function buildActionInbox(movements: Movement[], now: Instant, units: Unit[]): InboxItem[] {
+export function buildActionInbox(
+  movements: Movement[],
+  now: Instant,
+  units: Unit[],
+  /** Optional: the whole record, to add outstanding carer/PSP/MHAS notification rows. */
+  records?: Omit<Parameters<typeof supportNotificationInboxItems>[0], "units">,
+): InboxItem[] {
   const items: InboxItem[] = [];
 
   // A legal status change can make an already-accepted destination unlawful — see
@@ -1283,6 +1290,10 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
       movementId: movement.id,
     });
   }
+
+  // Advisory carer/PSP/MHAS notifications still to record for recent involuntary moves. These are
+  // about COMPLETED moves, so they read every movement in `records`, not the caller's open list.
+  if (records) items.push(...supportNotificationInboxItems({ ...records, units }, now));
 
   return items;
 }

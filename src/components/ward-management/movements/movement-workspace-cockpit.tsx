@@ -9,6 +9,7 @@
 
 "use client";
 import { MovementWorkflowActions } from "./movement-workflow-actions";
+import { SupportNotificationChecklist } from "./support-notification-checklist";
 
 import { useState } from "react";
 import {
@@ -636,6 +637,8 @@ export function MovementWorkspaceCockpit({
               </p>
             </div>
           ) : null}
+          {/* Advisory carer/PSP/MHAS checklist: renders only for an involuntary patient's completed arrival. */}
+          <SupportNotificationChecklist movementId={patient.id} role="coordinator" />
         </section>
 
         {/* =========================================================================
