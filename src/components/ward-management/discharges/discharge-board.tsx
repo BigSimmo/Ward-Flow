@@ -23,6 +23,7 @@ import type {
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
+import { DUE_SORT_OPTIONS, sortDueFirst, type DueSortMode } from "@/components/ward-management/ward-due-sort";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -327,6 +328,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const [identity, setIdentity] = useState("all");
   const [destination, setDestination] = useState<string>("all");
   const [blockerCategory, setBlockerCategory] = useState<string>("all");
+  const [sortMode, setSortMode] = useState<DueSortMode>("default");
   const [selected, setSelected] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
   const [releaseId, setReleaseId] = useState<string | null>(null);
   const [showUpdateDate, setShowUpdateDate] = useState(false);
@@ -370,7 +372,19 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       (blockerCategory === "all" ||
         (release.blocker !== null && release.blocker.toLowerCase().includes(blockerCategory.toLowerCase()))),
   );
-  const releaseGroups = groupDischarges(scopedReleases, now);
+  const groupedReleases = groupDischarges(scopedReleases, now);
+  // Stream A, 9 Oct 2026: "Due first" orders each release group by its expected time, earliest
+  // first; the groups themselves keep their order. Default keeps the band order.
+  const releaseDue = (release: BedRelease) => release.expectedAt;
+  const releaseGroups =
+    sortMode === "due-first"
+      ? {
+          ...groupedReleases,
+          blocked: sortDueFirst(groupedReleases.blocked, releaseDue),
+          confirmed: sortDueFirst(groupedReleases.confirmed, releaseDue),
+          expected: sortDueFirst(groupedReleases.expected, releaseDue),
+        }
+      : groupedReleases;
   const scopedRecords = records.filter(
     (record) =>
       inScope(record.unitId) &&
@@ -391,13 +405,21 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       : (Object.fromEntries(
           WORK_ORDER.map((key) => [key, scopedRecords.filter((record) => recordStatus(record) === key).length]),
         ) as Record<WorkStatus, number>);
-  const visibleRecords = scopedRecords
+  const workOrderedRecords = scopedRecords
     .filter((record) => status === "all" || recordStatus(record) === status)
     .sort(
       (a, b) =>
         WORK_ORDER.indexOf(recordStatus(a)) - WORK_ORDER.indexOf(recordStatus(b)) ||
         (a.expectedDischargeAt ?? Infinity) - (b.expectedDischargeAt ?? Infinity),
     );
+  // "Due first" is one list by expected discharge, earliest first. A record that has left, or has
+  // no expected date, is not due and goes last in its work order.
+  const visibleRecords =
+    sortMode === "due-first"
+      ? sortDueFirst(workOrderedRecords, (record) =>
+          recordStatus(record) === "departed" ? null : record.expectedDischargeAt,
+        )
+      : workOrderedRecords;
   const visibleReleaseGroups = GROUP_ORDER.filter(
     (key) => status === "all" || (key === "discharged-today" ? "departed" : key) === status,
   );
@@ -848,6 +870,25 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 </label>
               </>
             )}
+            <label htmlFor="discharges-sort" className={pageStyles.filterField}>
+              <span className={pageStyles.filterLabelText}>Sort</span>
+              <Select
+                id="discharges-sort"
+                name="dischargesSort"
+                value={sortMode}
+                boxClassName={pageStyles.filterSelect}
+                data-testid="ward-discharges-sort"
+                onChange={(event) => {
+                  setSortMode(event.target.value as DueSortMode);
+                }}
+              >
+                {DUE_SORT_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+            </label>
             {filtersActive && (
               <Button size="sm" variant="ghost" className={pageStyles.clearButton} onClick={clearAllFilters}>
                 Clear filters
@@ -1096,6 +1137,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                             return (
                               <tr
                                 key={release.id}
+                                data-release-id={release.id}
                                 data-selected={releaseId === release.id}
                                 onClick={(e) => selectRelease(release.id, e.currentTarget)}
                                 onKeyDown={(e) => {

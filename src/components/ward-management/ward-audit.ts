@@ -31,6 +31,8 @@ import { SELECTABLE_LEGAL_FORMS } from "./ward-legal-forms";
 import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
+import { inboxRowMovementId } from "./ward-inbox-reducer";
+import { isSnoozeReason, type InboxSnoozeReason } from "./ward-inbox-snooze";
 import type { PatientId } from "./ward-patients";
 import {
   uniqueRecord,
@@ -183,6 +185,12 @@ export type AuditEvent = AuditBase &
     | { category: "record-access"; action: "OPEN_DISCHARGE_RECORD"; details: { requestId: number | null } }
     | { category: "review"; action: "REVIEW_AUDIT_EVENT"; details: { decision: AuditReview["decision"] | null } }
     | {
+        // Stream A, 9 Oct 2026: who took, snoozed or returned an action item. The reason is a closed list.
+        category: "inbox";
+        action: "TAKE_INBOX_ITEM_OWNERSHIP" | "SNOOZE_INBOX_ITEM" | "UNSNOOZE_INBOX_ITEM";
+        details: { inboxItemId: string; reason: InboxSnoozeReason | null; until: Instant | null };
+      }
+    | {
         category: "configuration";
         action: "SET_CONFIGURATION";
         details: {
@@ -247,6 +255,10 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
       return "review";
     case "SET_CONFIGURATION":
       return "configuration";
+    case "TAKE_INBOX_ITEM_OWNERSHIP":
+    case "SNOOZE_INBOX_ITEM":
+    case "UNSNOOZE_INBOX_ITEM":
+      return "inbox";
     default:
       return null;
   }
@@ -301,6 +313,18 @@ export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditS
     if (entry) return { kind: "audit-event", eventId: entry.id };
   } else if (event.type === "SET_CONFIGURATION") {
     return { kind: "configuration" };
+  } else if (
+    event.type === "TAKE_INBOX_ITEM_OWNERSHIP" ||
+    event.type === "SNOOZE_INBOX_ITEM" ||
+    event.type === "UNSNOOZE_INBOX_ITEM"
+  ) {
+    const movement = uniqueRecord(state.movements, inboxRowMovementId(state.movements, event.inboxItemId.trim()));
+    if (movement)
+      return {
+        kind: "movement",
+        movementId: movement.id,
+        patientId: patientReference(state, uniqueRecord(state.referrals, movement.referralId)?.patientId),
+      };
   }
   return { kind: "unresolved" };
 }
@@ -409,6 +433,20 @@ export function appendAudit(
         category: "review",
         action: event.type,
         details: { decision: reviewDecision(event.decision) },
+      };
+      break;
+    case "TAKE_INBOX_ITEM_OWNERSHIP":
+    case "SNOOZE_INBOX_ITEM":
+    case "UNSNOOZE_INBOX_ITEM":
+      captured = {
+        ...base,
+        category: "inbox",
+        action: event.type,
+        details: {
+          inboxItemId: event.inboxItemId.trim(),
+          reason: event.type === "SNOOZE_INBOX_ITEM" && isSnoozeReason(event.reason) ? event.reason : null,
+          until: event.type === "SNOOZE_INBOX_ITEM" && Number.isFinite(event.until) ? event.until : null,
+        },
       };
       break;
     case "SET_CONFIGURATION":
