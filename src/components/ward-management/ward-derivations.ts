@@ -1145,6 +1145,12 @@ export type InboxItem = {
    * lives.
    */
   kind: InboxItemKind;
+  /**
+   * When this row's recorded time falls or fell due, where the record holds one: a legal form's
+   * typed due time, a bed hold's expiry, a decision target's due time. Absent otherwise. Read by
+   * the Tasks "Due first" sort (stream A, 9 Oct 2026); never used to decide whether a row exists.
+   */
+  dueAt?: Instant;
 };
 
 /**
@@ -1214,6 +1220,7 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
       detail: `${movement.id} · ${formatRemaining(minutesUntil(dueAt, now))}`,
       owner: movement.owner,
       movementId: movement.id,
+      dueAt,
     });
   }
 
@@ -1232,6 +1239,7 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
       detail: `${movement.id} · ${formatRemaining(minutesUntil(pullExpiresAt, now))}`,
       owner: movement.owner,
       movementId: movement.id,
+      dueAt: pullExpiresAt,
     });
   }
 

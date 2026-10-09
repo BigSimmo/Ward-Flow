@@ -11,6 +11,7 @@ import {
   REFERRAL_ADDRESSING_STATES,
 } from "./ward-model";
 import { validateConfiguration } from "./ward-configuration";
+import { isSnoozeReason } from "./ward-inbox-snooze";
 import { WARD_SCENARIOS } from "./ward-scenarios";
 import { allEmergencyDepartments, siteByCode } from "./ward-sites";
 import { communityTeamById } from "./community/community-derivations";
@@ -188,7 +189,14 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   if (
     !fields(
       value,
-      ["dischargeRevisions", "inboxAcknowledgements", "inboxCompletions", "morningRollupConfirmations"],
+      [
+        "dischargeRevisions",
+        "inboxAcknowledgements",
+        "inboxCompletions",
+        "inboxOwnership",
+        "inboxSnoozes",
+        "morningRollupConfirmations",
+      ],
       object,
     )
   )
@@ -674,7 +682,18 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       return false;
   for (const [id, revision] of Object.entries(state.dischargeRevisions))
     if (!admissionIds.has(id) || !counter(revision)) return false;
-  for (const name of ["inboxAcknowledgements", "inboxCompletions"]) {
+  for (const rows of Object.values(value.inboxSnoozes as RecordValue))
+    if (
+      !records(rows) ||
+      !rows.every(
+        (row) =>
+          finite(row.at) &&
+          text(row.by) &&
+          (row.kind === "returned" || (row.kind === "snoozed" && finite(row.until) && isSnoozeReason(row.reason))),
+      )
+    )
+      return false;
+  for (const name of ["inboxAcknowledgements", "inboxCompletions", "inboxOwnership"]) {
     for (const rows of Object.values(value[name] as RecordValue))
       if (
         !records(rows) ||

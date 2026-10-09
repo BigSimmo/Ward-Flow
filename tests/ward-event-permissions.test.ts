@@ -369,6 +369,10 @@ describe("who may raise which event", () => {
     ACKNOWLEDGE_INBOX_ITEM: ["coordinator"],
     COMPLETE_INBOX_ITEM: ["coordinator"],
     REOPEN_INBOX_ITEM: ["coordinator"],
+    // Stream A, 9 Oct 2026: owning or snoozing a row sits on the same coordinator floor as acknowledging it.
+    TAKE_INBOX_ITEM_OWNERSHIP: ["coordinator"],
+    SNOOZE_INBOX_ITEM: ["coordinator"],
+    UNSNOOZE_INBOX_ITEM: ["coordinator"],
     // 2026-09-07. The ED psychiatry team records that a referred person is physically in the
     // department — the only door from the Expects list to the Referrals list. `ed` alone, and
     // narrowly: the owner named the party ("the ED psychiatry doctors notice the patient has

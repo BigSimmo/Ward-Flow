@@ -37,6 +37,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { reduceBroadcastAlertEvent } from "./alerts/ward-broadcast-reducer";
 import { reduceInboxEvent } from "./ward-inbox-reducer";
+import type { InboxOwnershipEntry, InboxSnoozeEntry } from "./ward-inbox-snooze";
 import {
   BED_PREPARATION_NOTES,
   BED_RELEASE_BLOCKERS,
@@ -464,6 +465,14 @@ export type WardFlowState = WardAuditState & {
    */
   inboxCompletions: Record<string, InboxCompletionEntry[]>;
   /**
+   * Stream A, 9 Oct 2026: who took ownership of each inbox row (`TAKE_INBOX_ITEM_OWNERSHIP`) and
+   * each row's snooze history (`SNOOZE_INBOX_ITEM`/`UNSNOOZE_INBOX_ITEM`), keyed by `InboxItem.id`.
+   * Append-only. Like the acknowledgement map, never read by `buildActionInbox`: a snooze hides a
+   * row from the active list on screen, it never changes whether the fact is true.
+   */
+  inboxOwnership: Record<string, InboxOwnershipEntry[]>;
+  inboxSnoozes: Record<string, InboxSnoozeEntry[]>;
+  /**
    * Communication addendum (`docs/ward-flow/plans/2026-09-1x-communication-addendum.md`, §1.1),
    * owner ruling D-2, 2026-09-10 — the AUTHORED list beside `buildActionInbox`'s DERIVED one. See
    * `ward-model.ts`'s own header comment on `Notice` for why a second list is the correct shape here
@@ -574,6 +583,7 @@ export {
   type InboxItemKind,
   INBOX_CATEGORIES,
   inboxItemKindOf,
+  inboxItemIsActNow,
   reduceInboxEvent,
 } from "./ward-inbox-reducer";
 
@@ -614,6 +624,8 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     admissionSequence: 0,
     inboxAcknowledgements: {},
     inboxCompletions: {},
+    inboxOwnership: {},
+    inboxSnoozes: {},
     notices: [],
     configuration: defaultWardConfiguration(),
     repatriations: [],
@@ -733,6 +745,9 @@ function subjectId(event: WardFlowEvent): string {
     case "ACKNOWLEDGE_INBOX_ITEM":
     case "COMPLETE_INBOX_ITEM":
     case "REOPEN_INBOX_ITEM":
+    case "TAKE_INBOX_ITEM_OWNERSHIP":
+    case "SNOOZE_INBOX_ITEM":
+    case "UNSNOOZE_INBOX_ITEM":
       return event.inboxItemId;
     // Item 48, Q2 (owner answer 48, 2026-09-17): notice-scoped, not movement-scoped — carries no
     // `movementId` to return, the same reason `ACKNOWLEDGE_INBOX_ITEM` and its two siblings just
@@ -8591,7 +8606,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
     case "MARK_NOTICE_READ":
     case "ACKNOWLEDGE_INBOX_ITEM":
     case "COMPLETE_INBOX_ITEM":
-    case "REOPEN_INBOX_ITEM": {
+    case "REOPEN_INBOX_ITEM":
+    case "TAKE_INBOX_ITEM_OWNERSHIP":
+    case "SNOOZE_INBOX_ITEM":
+    case "UNSNOOZE_INBOX_ITEM": {
       const next = reduceInboxEvent(state, event, decision, reject);
       if (next) return next;
       return state;

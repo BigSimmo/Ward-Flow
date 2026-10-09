@@ -20,6 +20,9 @@ import {
   DUE_SOON_RANGE_MINUTES,
   DUE_SOON_URGENT_MINUTES,
   DUE_SOON_URGENT_RANGE_MINUTES,
+  REFERRAL_DECISION_TARGET_MINUTES,
+  TRANSFER_ACCEPTANCE_TARGET_MINUTES,
+  TRANSPORT_BOOKED_TARGET_MINUTES,
 } from "../src/components/ward-management/ward-operational-defaults";
 
 describe("defaultWardConfiguration", () => {
@@ -31,6 +34,9 @@ describe("defaultWardConfiguration", () => {
       morningRollupDeadlineMinutes: MORNING_ROLLUP_TIME_MINUTES,
       dueSoonUrgentMinutes: DUE_SOON_URGENT_MINUTES,
       dueSoonMinutes: DUE_SOON_MINUTES,
+      referralDecisionTargetMinutes: REFERRAL_DECISION_TARGET_MINUTES,
+      transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
+      transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
     });
   });
 
@@ -71,6 +77,9 @@ describe("validateConfiguration", () => {
     morningRollupDeadlineMinutes: 570,
     dueSoonUrgentMinutes: 30,
     dueSoonMinutes: 240,
+    referralDecisionTargetMinutes: 90,
+    transferAcceptanceTargetMinutes: 180,
+    transportBookedTargetMinutes: 45,
   };
 
   it("accepts a valid in-range, on-step payload", () => {
@@ -128,22 +137,46 @@ describe("validateConfiguration", () => {
       morningRollupDeadlineMinutes: MORNING_ROLLUP_TIME_MINUTES,
       dueSoonUrgentMinutes: DUE_SOON_URGENT_MINUTES,
       dueSoonMinutes: DUE_SOON_MINUTES,
+      referralDecisionTargetMinutes: REFERRAL_DECISION_TARGET_MINUTES,
+      transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
+      transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
     });
   });
 
   // Josh, 26 Sept 2026 ("All yes", question 3): the 1-hour and 3-hour warnings are changeable in
   // Settings. A configuration saved before the two keys existed still loads, with the defaults.
   it("accepts a stored 4-key payload and defaults the two due-time warnings", () => {
-    const stored = { edAccessTargetMinutes: 1200, parallelReferralCap: 2, pullHoldMinutes: 90, morningRollupDeadlineMinutes: 570 };
+    const stored = {
+      edAccessTargetMinutes: 1200,
+      parallelReferralCap: 2,
+      pullHoldMinutes: 90,
+      morningRollupDeadlineMinutes: 570,
+    };
     expect(validateConfiguration(stored)).toEqual({
       ...stored,
       dueSoonUrgentMinutes: DUE_SOON_URGENT_MINUTES,
       dueSoonMinutes: DUE_SOON_MINUTES,
+      referralDecisionTargetMinutes: REFERRAL_DECISION_TARGET_MINUTES,
+      transferAcceptanceTargetMinutes: TRANSFER_ACCEPTANCE_TARGET_MINUTES,
+      transportBookedTargetMinutes: TRANSPORT_BOOKED_TARGET_MINUTES,
+    });
+  });
+
+  // Stream A, 9 Oct 2026: decision targets are labelled defaults set in Settings.
+  it("rejects decision targets out of range or off step", () => {
+    expect(validateConfiguration({ ...valid, referralDecisionTargetMinutes: 10 })).toBeNull();
+    expect(validateConfiguration({ ...valid, transferAcceptanceTargetMinutes: 50 })).toBeNull();
+    expect(validateConfiguration({ ...valid, transportBookedTargetMinutes: 13 * 60 })).toBeNull();
+    expect(validateConfiguration({ ...valid, transportBookedTargetMinutes: 30 })).toEqual({
+      ...valid,
+      transportBookedTargetMinutes: 30,
     });
   });
 
   it("rejects due-time warnings out of range, off step, or with the first not before the second", () => {
-    expect(validateConfiguration({ ...valid, dueSoonUrgentMinutes: DUE_SOON_URGENT_RANGE_MINUTES.min - 15 })).toBeNull();
+    expect(
+      validateConfiguration({ ...valid, dueSoonUrgentMinutes: DUE_SOON_URGENT_RANGE_MINUTES.min - 15 }),
+    ).toBeNull();
     expect(validateConfiguration({ ...valid, dueSoonMinutes: DUE_SOON_RANGE_MINUTES.max + 30 })).toBeNull();
     expect(validateConfiguration({ ...valid, dueSoonUrgentMinutes: 20 })).toBeNull();
     expect(validateConfiguration({ ...valid, dueSoonUrgentMinutes: 120, dueSoonMinutes: 120 })).toBeNull();
