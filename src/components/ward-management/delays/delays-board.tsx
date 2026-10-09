@@ -495,8 +495,7 @@ function PersonPanel({
             behind a disclosure that states how many, each with the gate that blocks it. */}
         <div className={styles.sec} data-testid={`delays-candidates-${movement.id}`}>
           <h4 className={styles.h4r}>
-            Candidate wards
-            <span className={styles.mut}>{`${candidates.offerable.length} could take this person`}</span>
+            Candidate wards <span className={styles.k}>{candidates.offerable.length}</span>
           </h4>
           {candidates.offerable.length === 0 ? (
             <p className={styles.mute}>No other ward could take this person now.</p>

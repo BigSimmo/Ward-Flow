@@ -181,7 +181,9 @@ figures/links), and by `ward-nav-counts.ts` and `ward-service-scope.ts`.
   tiles, the Waiting table grouped by blocker (or Longest wait, with recorded legal times pinned)
   with a timeline under the open row, and a rail holding the Escalated / Attention / Resolved /
   System registers plus Longest quiet, which becomes the person's panel when a row is open (a sheet
-  below 64rem). Filters narrow the table and it always states how many are hidden, with "Show
+  below 64rem). The person's panel lists their wards (accepted, declined, asked) and then
+  Candidate wards: every other ward from `shortlistCandidates`, eligible or overridable with the
+  reason, never cut to a count, plus a disclosure for wards no reason can buy. Filters narrow the table and it always states how many are hidden, with "Show
   everyone" (owner ruling D-38, 9 October 2026, superseding the 2026-09-07 highlight rule here).
   Below 40rem each row becomes a card.
 - **`src/components/ward-management/delays/delays-board-graphs.tsx`** — the three graphs under the
@@ -191,7 +193,7 @@ figures/links), and by `ward-nav-counts.ts` and `ward-service-scope.ts`.
   the same table; a dot opens that person's row.
 - **`src/components/ward-management/delays/delays-board-model.ts`** — pure board derivations over
   `delayGroups`: rows with wait, quiet time and recorded legal time, 8/12/24h bands, owner tiles,
-  catchments, filters, runway bins and projection, ward summaries and row events. Tested by
+  catchments, filters, runway bins and projection, ward summaries, candidate wards and row events. Tested by
   `tests/ward-delays-board-model.test.ts`.
 - **`src/components/ward-management/delays/delays-view-model.ts`** — pure origin counts,
   radar precedence/intervals/outliers and common linear timeline geometry. All durations use minutes.
