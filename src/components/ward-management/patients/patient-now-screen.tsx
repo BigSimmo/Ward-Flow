@@ -1207,7 +1207,7 @@ export function PatientNowScreen({
                   ) : null}
                   {mode !== "idle" ? (
                     <PatientLegalNowCard
-                      movement={liveMovement}
+                      movement={mode === "cto" ? undefined : liveMovement}
                       patient={livePatient}
                       onAllForms={() => {
                         setActiveTab("documents");
@@ -1404,6 +1404,10 @@ export function PatientNowScreen({
         </>
       )}
       <WardPrototypeFooter testId="ward-patient-now-governance" />
+    </main>
+  );
+}
+
     </main>
   );
 }
