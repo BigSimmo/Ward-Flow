@@ -596,7 +596,7 @@
   }
 
   .chip {
-    height: 36px;
+    height: var(--ward-tap, 3rem);
   }
 
   .stateTile {
@@ -610,7 +610,7 @@
 
   .siteHead,
   .deskHead {
-    min-height: 48px;
+    min-height: var(--ward-tap, 3rem);
   }
 
   .preview2 {
@@ -625,7 +625,7 @@
   .previewFoot > a,
   .previewFoot > span[aria-disabled] {
     justify-content: center;
-    min-height: 44px;
+    min-height: var(--ward-tap, 3rem);
   }
 
   .roleName {

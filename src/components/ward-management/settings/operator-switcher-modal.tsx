@@ -125,8 +125,12 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
     onClose();
   }
 
+  // "Current" follows the role (Settings is the coordinator's desk); navigation is only blocked when
+  // the browser is already on that desk's own home, so the coordinator home still opens from here.
+  const atHome = (desk: Desk) => pathname === desk.href;
+
   function go(desk: Desk) {
-    if (desk.id === hereId) return;
+    if (atHome(desk)) return;
     open(desk);
     router.push(desk.href);
   }
@@ -178,6 +182,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
       label={label}
       now={now}
       isHere={desk.id === hereId}
+      isAtHome={atHome(desk)}
       isOpen={expanded === desk.id}
       onToggle={() => setExpanded((current) => (current === desk.id ? null : desk.id))}
       onGo={() => go(desk)}
@@ -301,7 +306,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
               className={styles.stateTile}
               aria-current={desk.id === hereId ? "page" : undefined}
               onClick={(event) => {
-                if (desk.id === hereId) event.preventDefault();
+                if (atHome(desk)) event.preventDefault();
                 else open(desk);
               }}
             >
@@ -457,7 +462,7 @@ function TeamGroup({ count, forceOpen, children }: { count: number; forceOpen: b
 
 function DeskFigure({ desk, now, accessTargetMinutes }: { desk: Desk; now: number; accessTargetMinutes: number }) {
   if (desk.role === "ward") {
-    const age = desk.confirmedAt != null ? now - desk.confirmedAt : null;
+    const age = desk.confirmedAt != null ? Math.max(0, now - desk.confirmedAt) : null;
     return (
       <span className={styles.fig}>
         <b className={styles.mono}>{desk.ready ?? 0}</b>
@@ -505,6 +510,7 @@ function DeskRow({
   label,
   now,
   isHere,
+  isAtHome,
   isOpen,
   onToggle,
   onGo,
@@ -515,6 +521,7 @@ function DeskRow({
   label?: string;
   now: number;
   isHere: boolean;
+  isAtHome: boolean;
   isOpen: boolean;
   onToggle: () => void;
   onGo: () => void;
@@ -551,7 +558,7 @@ function DeskRow({
           <CanList role={desk.role} short />
           <div className={styles.previewFoot}>
             <span className={styles.roleName}>{deskRoleLabel(desk.role)}</span>
-            {isHere ? (
+            {isAtHome ? (
               <span className={buttonClass({ variant: "sec", size: "sm" })} aria-disabled="true">
                 You are here
               </span>
@@ -576,7 +583,7 @@ function DeskRow({
 function DeskFacts({ desk, now, accessTargetMinutes }: { desk: Desk; now: number; accessTargetMinutes: number }) {
   let facts: [string, ReactNode, string?][] = [];
   if (desk.role === "ward") {
-    const age = desk.confirmedAt != null ? now - desk.confirmedAt : null;
+    const age = desk.confirmedAt != null ? Math.max(0, now - desk.confirmedAt) : null;
     facts = [
       [
         "Ready",
