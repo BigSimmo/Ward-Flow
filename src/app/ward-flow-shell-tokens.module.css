@@ -378,6 +378,7 @@
 
   --danger: #ff8b76;
   --danger-soft: #33201b;
+  --danger-ink: #ffa08e;
   --svc-east: #34d399;
   --svc-east-bg: rgba(16, 185, 129, 0.15);
   --svc-east-border: rgba(52, 211, 153, 0.3);
@@ -502,11 +503,35 @@
     --danger-soft: #f8e6e2;
     --danger-ink: #973121;
 
-    --svc-east: #2f4c66;
-    --svc-north: #685a94;
-    --svc-south: #356a70;
-    --svc-wachs: #8c5a3c;
+    /* Service colours match the light theme on paper, including chips printed from dark. */
+    --svc-east: #00825e;
+    --svc-east-bg: #ecfdf5;
+    --svc-east-border: #a7f3d0;
+    --svc-east-ink: #065f46;
+    --svc-north: #990057;
+    --svc-north-bg: #fdf2f8;
+    --svc-north-border: #fbcfe8;
+    --svc-north-ink: #831843;
+    --svc-south: #5a2476;
+    --svc-south-bg: #faf5ff;
+    --svc-south-border: #e9d5ff;
+    --svc-south-ink: #581c87;
+    --svc-wachs: #005b94;
+    --svc-wachs-bg: #f0f9ff;
+    --svc-wachs-border: #bae6fd;
+    --svc-wachs-ink: #0369a1;
+    --svc-cahs: #0076be;
+    --svc-cahs-bg: #f0f9ff;
+    --svc-cahs-border: #bae6fd;
+    --svc-cahs-ink: #026aa7;
+    --svc-statewide: #0071a5;
+    --svc-statewide-bg: #ecfdf5;
+    --svc-statewide-border: #a7f3d0;
+    --svc-statewide-ink: #065f46;
     --svc-private: #475569;
+    --svc-private-bg: #f8fafc;
+    --svc-private-border: #cbd5e1;
+    --svc-private-ink: #334155;
 
     --lift: none;
     --hl: transparent;

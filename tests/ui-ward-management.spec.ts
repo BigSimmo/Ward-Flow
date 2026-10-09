@@ -294,8 +294,10 @@ test.describe("@mockup Ward Flow command view", () => {
     // and Moodjar. FSH Adult Secure is no longer in it: WF-001 is a Female Adult movement
     // and FSH Adult Secure is Male only, so the sex_designation gate added in 6cc80c774 excludes
     // it and Moodjar (next in unit order) takes the freed slot.
+    // D-39: the Placement panel shows the patient's UMRN (UM100044 for WF-001 / PT-044), never WF-001.
     const shortlist = network.getByRole("complementary", { name: "Placement", exact: true });
-    await expect(shortlist).toContainText("WF-001");
+    await expect(shortlist).toContainText("UM100044");
+    await expect(shortlist).not.toContainText("WF-001");
     await expect(shortlist.getByRole("columnheader", { name: /Dabakarn/ })).toBeVisible();
     // Eligibility is a binary verdict, not a score: gates are not commensurable, so no row
     // ever renders a "N of M passed" fraction.

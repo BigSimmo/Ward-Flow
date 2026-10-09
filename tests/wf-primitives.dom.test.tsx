@@ -12,6 +12,7 @@ import {
   Button,
   Card,
   Checkbox,
+  Donut,
   Drawer,
   Hero,
   LiveChip,
@@ -214,8 +215,27 @@ describe("LiveChip", () => {
     expect(screen.getByRole("status")).toHaveTextContent(/^Live$/);
     await userEvent.click(screen.getByRole("button", { name: "Pause live updates" }));
     expect(onTogglePause).toHaveBeenCalledOnce();
+    rerender(<LiveChip state="paused" onTogglePause={onTogglePause} />);
+    expect(screen.getByRole("button", { name: "Pause live updates" })).toHaveAttribute("aria-pressed", "true");
     rerender(<LiveChip state="stale" asAt={new Date(2026, 9, 7, 10, 26)} />);
     expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
+  });
+});
+
+describe("Donut", () => {
+  it("draws no arc at 0% and a closed ring only at 100%", () => {
+    const arcs = (value: number) => {
+      const { container, unmount } = render(<Donut value={value} label="Occupancy" />);
+      const circles = Array.from(container.querySelectorAll("circle"));
+      unmount();
+      return circles;
+    };
+    expect(arcs(0)).toHaveLength(1);
+    expect(arcs(Number.NaN)).toHaveLength(1);
+    const nearlyFull = arcs(0.97)[1];
+    expect(nearlyFull.getAttribute("stroke-linecap")).toBe("round");
+    const full = arcs(1)[1];
+    expect(full.getAttribute("stroke-linecap")).toBe("butt");
   });
 });
 

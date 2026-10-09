@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
+import { CalendarClock } from "lucide-react";
 import type { Unit } from "@/components/ward-management/ward-model";
+import { CountBubble, Icon, SrOnly, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
 import styles from "./ward-decisions-cockpit.module.css";
 
 export interface DepartureDecision {
@@ -23,6 +25,42 @@ export interface IntakeDecision {
   onAccept?: () => void;
 }
 
+/**
+ * How many decisions are still open: referrals to answer, discharges ready or held up, and the
+ * morning rollup until it is confirmed (overdue, or due and actionable). Leave rows are for
+ * awareness only and never count. The Decisions tab badge and the cockpit heading both read this,
+ * so they always agree with the windows' own counts.
+ */
+export function openDecisionCount({
+  intakes,
+  departures,
+  rollupOverdue,
+  rollupConfirmed,
+  rollupActionable,
+}: {
+  intakes: readonly IntakeDecision[];
+  departures: readonly DepartureDecision[];
+  rollupOverdue: boolean;
+  rollupConfirmed: boolean;
+  rollupActionable: boolean;
+}): number {
+  const rollupOpen = !rollupConfirmed && (rollupOverdue || rollupActionable) ? 1 : 0;
+  return (
+    intakes.length + departures.filter((row) => row.badge === "Ready" || row.badge === "Blocked").length + rollupOpen
+  );
+}
+
+/**
+ * Bed projection for the Departures window. Shown only when the screen supplies it: the cockpit
+ * never works out a bed figure of its own.
+ */
+export interface DecisionBedProjection {
+  freeNow: number;
+  freeBy: number;
+  /** Clock time the second figure is for, such as "14:00". */
+  byLabel: string;
+}
+
 export interface WardDecisionsCockpitProps {
   unit: Unit;
   demonstration?: boolean;
@@ -35,43 +73,78 @@ export interface WardDecisionsCockpitProps {
   intakes?: IntakeDecision[];
   departures?: DepartureDecision[];
   leaves?: LeaveDecision[];
+  projection?: DecisionBedProjection;
   children?: ReactNode;
 }
 
-type QueueFilter = "all" | "due" | "barriers" | "leave";
+type WindowId = "staffing" | "intake" | "departures" | "leave";
+type Group = "act" | "wait" | "ready" | "done";
+type ActionKind = "sign" | "clear" | "accept";
 
-function Stroke({ d, size = 14 }: { d: string | readonly string[]; size?: number }) {
-  const paths = Array.isArray(d) ? d : [d];
-  return (
-    <svg
-      viewBox="0 0 16 16"
-      width={size}
-      height={size}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      aria-hidden="true"
-    >
-      {paths.map((path) => (
-        <path key={path} d={path} strokeLinecap="round" strokeLinejoin="round" />
-      ))}
-    </svg>
-  );
+interface DecisionItem {
+  id: string;
+  group: Group;
+  tone: WfTone;
+  title: string;
+  sub?: string;
+  testId?: string;
+  actions?: ReactNode;
+  /** Shown for awareness only. Nothing here can be decided, so it never counts as open. */
+  info?: boolean;
 }
 
-function Chip({ tone, children }: { tone: "good" | "danger" | "warn" | "accent" | "neutral"; children: ReactNode }) {
-  return <span className={`${styles.chip} ${styles[tone]}`}>{children}</span>;
+interface WindowSpec {
+  id: WindowId;
+  title: string;
+  hours: string;
 }
 
-function jumpTo(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+const WINDOWS: readonly WindowSpec[] = [
+  { id: "staffing", title: "Staffing", hours: "07:00–09:30" },
+  { id: "intake", title: "Intake", hours: "09:30–13:00" },
+  { id: "departures", title: "Departures", hours: "11:00–14:00" },
+  { id: "leave", title: "Leave", hours: "14:00–18:00" },
+];
+
+const GROUP_ORDER: readonly Group[] = ["act", "wait", "ready", "done"];
+
+const GROUP_TONE = new Map<Group, WfTone>([
+  ["act", "danger"],
+  ["wait", "neutral"],
+  ["ready", "warning"],
+  ["done", "success"],
+]);
+
+/** An action the cockpit sent, read back against the next props to say whether it was recorded. */
+interface SentAction {
+  seq: number;
+  kind: ActionKind;
+  ids: string[];
+  titles: Map<string, string>;
 }
 
-function onSummaryKey(event: KeyboardEvent<HTMLButtonElement>, id: string) {
-  if (event.key === "Enter" || event.key === " ") {
-    event.preventDefault();
-    jumpTo(id);
+/** "Name (bed not recorded)" and "Bed on leave · back 15:42" read as a title over a short line. */
+function splitTitle(title: string): { name: string; detail?: string } {
+  const bracket = /^(.*\S)\s*\(([^()]+)\)$/.exec(title);
+  if (bracket) {
+    const detail = bracket[2];
+    return { name: bracket[1], detail: detail.charAt(0).toUpperCase() + detail.slice(1) };
   }
+  const dot = title.indexOf(" · ");
+  if (dot > 0) {
+    const detail = title.slice(dot + 3);
+    return { name: title.slice(0, dot), detail: detail.charAt(0).toUpperCase() + detail.slice(1) };
+  }
+  return { name: title };
+}
+
+function joinSub(...parts: (string | undefined)[]): string | undefined {
+  const kept = parts.filter((part): part is string => Boolean(part));
+  return kept.length > 0 ? kept.join(" · ") : undefined;
+}
+
+function plural(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
 }
 
 export function WardDecisionsCockpit({
@@ -86,9 +159,19 @@ export function WardDecisionsCockpit({
   intakes = [],
   departures = [],
   leaves = [],
+  projection,
   children,
 }: WardDecisionsCockpitProps) {
-  const live = demonstration || children != null || intakes.length > 0 || departures.length > 0 || leaves.length > 0;
+  // A screen that supplies the rollup action or the bed projection is wired, even on a quiet ward
+  // with nothing to decide yet; only a bare cockpit falls back to the placeholder.
+  const live =
+    demonstration ||
+    children != null ||
+    onConfirmRollup !== undefined ||
+    projection !== undefined ||
+    intakes.length > 0 ||
+    departures.length > 0 ||
+    leaves.length > 0;
   if (!live) {
     return (
       <section className={styles.container} aria-label="Ward decision controls">
@@ -113,6 +196,7 @@ export function WardDecisionsCockpit({
       intakes={intakes}
       departures={departures}
       leaves={leaves}
+      projection={projection}
       wired={children != null}
     >
       {children}
@@ -131,6 +215,7 @@ function Queue({
   intakes,
   departures,
   leaves,
+  projection,
   wired,
   children,
 }: {
@@ -144,251 +229,531 @@ function Queue({
   intakes: IntakeDecision[];
   departures: DepartureDecision[];
   leaves: LeaveDecision[];
+  projection?: DecisionBedProjection;
   wired: boolean;
   children?: ReactNode;
 }) {
-  const [filter, setFilter] = useState<QueueFilter>("all");
-  const readyCount = departures.filter((row) => row.badge === "Ready").length;
-  const blockedCount = departures.filter((row) => row.badge === "Blocked").length;
-  const dueCount = intakes.length + readyCount + (rollupOverdue ? 1 : 0);
-  const showStaffing = filter === "all" || (filter === "due" && (rollupOverdue || !rollupConfirmed));
-  const showIntake = filter === "all" || filter === "due";
-  const showDepartures = filter === "all" || filter === "due" || filter === "barriers";
-  const visibleDepartures =
-    filter === "barriers"
-      ? departures.filter((row) => row.badge === "Blocked")
-      : filter === "due"
-        ? departures.filter((row) => row.badge === "Ready" || row.badge === "Blocked")
-        : departures;
-  const showLeave = filter === "all" || filter === "leave";
-  const staffingBadge = rollupOverdue ? "Due" : "Done";
-  const intakeBadge = intakes.length > 0 ? "Due" : "Done";
-  const departureBadge = blockedCount > 0 ? "Blocked" : readyCount > 0 ? "Ready" : "Done";
-  const leaveBadge = leaves.length > 0 ? String(leaves.length) : "Done";
+  const baseId = useId();
+  const [sent, setSent] = useState<SentAction | null>(null);
+  const [history, setHistory] = useState<{ id: string; kind: ActionKind; title: string }[]>([]);
+  const [dismissedSeq, setDismissedSeq] = useState(0);
+  const [showDone, setShowDone] = useState(false);
+
+  // Whether an action was recorded is read back from the live rows, never assumed: a sign-off is
+  // recorded once the row no longer offers Sign off, a hold once the row is no longer held up, and
+  // an accept once the referral has left the intake list.
+  function recorded(kind: ActionKind, id: string): boolean {
+    if (kind === "sign") return !departures.some((row) => row.id === id && row.onConfirm && row.badge !== "Done");
+    if (kind === "clear") return !departures.some((row) => row.id === id && row.badge === "Blocked");
+    return !intakes.some((row) => row.id === id);
+  }
+
+  function send(kind: ActionKind, rows: { id: string; title: string; run: () => void }[]) {
+    if (rows.length === 0) return;
+    for (const row of rows) row.run();
+    const titles = new Map(rows.map((row) => [row.id, splitTitle(row.title).name]));
+    setSent((current) => ({ seq: (current?.seq ?? 0) + 1, kind, ids: rows.map((row) => row.id), titles }));
+    setHistory((current) => [
+      ...current.filter((entry) => !rows.some((row) => row.id === entry.id && entry.kind === kind)),
+      ...rows.map((row) => ({ id: row.id, kind, title: splitTitle(row.title).name })),
+    ]);
+  }
+
+  useEffect(() => {
+    if (!sent) return;
+    const timer = window.setTimeout(() => {
+      setDismissedSeq(sent.seq);
+    }, 6000);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [sent]);
+
+  const readyRows = departures.filter((row) => row.badge === "Ready");
+  const heldRows = departures.filter((row) => row.badge === "Blocked");
+  const doneRows = departures.filter((row) => row.badge === "Done");
+  const signable = readyRows.filter((row): row is DepartureDecision & { onConfirm: () => void } => !!row.onConfirm);
+
+  const doneHere = (kind: ActionKind) =>
+    history.filter(
+      (entry) => entry.kind === kind && recorded(kind, entry.id) && !departures.some((row) => row.id === entry.id),
+    );
+
+  const items: Record<WindowId, DecisionItem[]> = {
+    staffing: [],
+    intake: [],
+    departures: [],
+    leave: [],
+  };
+
+  if (rollupOverdue) {
+    items.staffing.push({
+      id: "rollup",
+      group: "act",
+      tone: "danger",
+      title: `${rollupTimeLabel} Morning Bed Rollup Overdue`,
+      sub: staffingFact,
+      testId: "ward-morning-rollup-overdue-banner",
+      actions: onConfirmRollup ? (
+        <button
+          type="button"
+          className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
+          data-testid="ward-confirm-morning-rollup-btn"
+          onClick={onConfirmRollup}
+        >
+          Confirm rollup
+        </button>
+      ) : (
+        <span className={styles.unwired}>Not wired in this prototype.</span>
+      ),
+    });
+  } else if (!rollupConfirmed && onConfirmRollup) {
+    items.staffing.push({
+      id: "rollup",
+      group: "wait",
+      tone: "neutral",
+      title: `Morning Bed Rollup due ${rollupTimeLabel}`,
+      sub: staffingFact,
+    });
+  }
+  if (rollupConfirmed) {
+    items.staffing.push({
+      id: "rollup-done",
+      group: "done",
+      tone: "success",
+      title: `${rollupTimeLabel} Morning Bed Rollup Confirmed`,
+      sub: `${plannedDischarges} discharges scheduled today`,
+      testId: "ward-morning-rollup-confirmed-banner",
+    });
+  }
+
+  for (const row of intakes) {
+    const { name, detail } = splitTitle(row.title);
+    const { onAccept } = row;
+    items.intake.push({
+      id: row.id,
+      group: "wait",
+      tone: "warning",
+      title: name,
+      sub: joinSub(detail, "Referral to answer"),
+      actions: onAccept ? (
+        <button
+          type="button"
+          className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
+          onClick={() => {
+            send("accept", [{ id: row.id, title: row.title, run: onAccept }]);
+          }}
+        >
+          Accept
+        </button>
+      ) : (
+        <span className={styles.unwired}>Not wired in this prototype.</span>
+      ),
+    });
+  }
+  for (const entry of doneHere("accept")) {
+    items.intake.push({ id: `done-${entry.id}`, group: "done", tone: "success", title: entry.title, sub: "Accepted" });
+  }
+
+  for (const row of heldRows) {
+    const { name, detail } = splitTitle(row.title);
+    const { onConfirm, onClear } = row;
+    items.departures.push({
+      id: row.id,
+      group: "act",
+      tone: "danger",
+      title: name,
+      sub: joinSub(detail, "Held up"),
+      actions: (
+        <>
+          {onConfirm ? (
+            <button
+              type="button"
+              className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.pill)}
+              onClick={() => {
+                send("sign", [{ id: row.id, title: row.title, run: onConfirm }]);
+              }}
+            >
+              Sign off
+            </button>
+          ) : null}
+          {onClear ? (
+            <button
+              type="button"
+              className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
+              onClick={() => {
+                send("clear", [{ id: row.id, title: row.title, run: onClear }]);
+              }}
+            >
+              Clear
+            </button>
+          ) : null}
+        </>
+      ),
+    });
+  }
+  for (const row of readyRows) {
+    const { name, detail } = splitTitle(row.title);
+    const { onConfirm } = row;
+    items.departures.push({
+      id: row.id,
+      group: "ready",
+      tone: "warning",
+      title: name,
+      sub: detail ?? "Ready to sign off",
+      actions: onConfirm ? (
+        <button
+          type="button"
+          className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.pill)}
+          onClick={() => {
+            send("sign", [{ id: row.id, title: row.title, run: onConfirm }]);
+          }}
+        >
+          Sign off
+        </button>
+      ) : null,
+    });
+  }
+  for (const row of doneRows) {
+    const { name, detail } = splitTitle(row.title);
+    items.departures.push({
+      id: row.id,
+      group: "done",
+      tone: "success",
+      title: name,
+      sub: joinSub(detail, "Signed off"),
+    });
+  }
+  for (const entry of doneHere("sign")) {
+    items.departures.push({
+      id: `done-${entry.id}`,
+      group: "done",
+      tone: "success",
+      title: entry.title,
+      sub: "Signed off",
+    });
+  }
+
+  for (const row of leaves) {
+    const { name, detail } = splitTitle(row.title);
+    items.leave.push({
+      id: row.id,
+      group: "wait",
+      tone: "neutral",
+      title: name,
+      sub: detail ?? "On leave",
+      info: true,
+    });
+  }
+
+  const isOpen = (item: DecisionItem) => item.group !== "done" && !item.info;
+  const windowItems = new Map(Object.entries(items) as Array<[WindowId, DecisionItem[]]>);
+  const itemsOf = (id: WindowId): DecisionItem[] => windowItems.get(id) ?? [];
+  const openCount = (id: WindowId) => itemsOf(id).filter(isOpen).length;
+  // The heading's total is the same count the Decisions tab badge shows, and it equals the windows'
+  // own counts added up, so it never says Done beside a window that still has something to decide.
+  const dueCount = openDecisionCount({
+    intakes,
+    departures,
+    rollupOverdue,
+    rollupConfirmed,
+    rollupActionable: onConfirmRollup !== undefined,
+  });
+  const windowTone = (id: WindowId): WfTone => {
+    const open = itemsOf(id).filter(isOpen);
+    if (open.length === 0) return "success";
+    if (open.some((item) => item.group === "act")) return "danger";
+    if (open.some((item) => item.tone === "warning")) return "warning";
+    return "neutral";
+  };
+
+  const [chosen, setChosen] = useState<WindowId>(() => {
+    for (const group of ["act", "ready", "wait"] as const) {
+      const found = WINDOWS.find((spec) => itemsOf(spec.id).some((item) => item.group === group));
+      if (found) return found.id;
+    }
+    return "staffing";
+  });
+
+  const spec = WINDOWS.find((entry) => entry.id === chosen) ?? WINDOWS[0];
+  const here = itemsOf(chosen);
+  const open = openCount(chosen);
+  const decidable = here.filter((item) => !item.info).length;
+  const decided = decidable - open;
+  const showBulk = chosen === "departures" && signable.length > 0;
+
+  function choose(id: WindowId) {
+    setChosen(id);
+    setShowDone(false);
+  }
+
+  let notice: { tone: WfTone; text: string } | null = null;
+  // The notice belongs to the window the action was taken in, so another window never shows it.
+  const sentWindow: WindowId | null = sent ? (sent.kind === "accept" ? "intake" : "departures") : null;
+  if (sent && sent.seq !== dismissedSeq && chosen === sentWindow) {
+    const done = sent.ids.filter((id) => recorded(sent.kind, id));
+    const n = sent.ids.length;
+    const first = sent.titles.get(sent.ids[0]) ?? "";
+    if (sent.kind === "sign") {
+      notice =
+        done.length === n
+          ? {
+              tone: "success",
+              text: n === 1 ? `${first} signed off` : `${plural(n, "discharge", "discharges")} signed off`,
+            }
+          : done.length === 0
+            ? { tone: "closed", text: "Sign off not recorded. Nothing was changed." }
+            : {
+                tone: "closed",
+                text: `${done.length} of ${n} signed off. ${n - done.length} not recorded, nothing changed for them.`,
+              };
+    } else if (sent.kind === "clear") {
+      notice =
+        done.length === n
+          ? { tone: "success", text: `Hold cleared for ${first}` }
+          : { tone: "closed", text: "Hold not cleared. Nothing was changed." };
+    } else {
+      notice =
+        done.length === n
+          ? { tone: "success", text: `${first} accepted` }
+          : { tone: "closed", text: "Accept not recorded. Nothing was changed." };
+    }
+  }
+
+  const groupLabel = new Map<Group, string>([
+    ["act", chosen === "departures" ? "Held up" : "Act now"],
+    ["wait", "Waiting"],
+    ["ready", "Ready to sign off"],
+    ["done", "Done"],
+  ]);
+
   return (
     <div className={styles.container}>
-      <div className={styles.summaryGrid}>
-        <button
-          type="button"
-          className={`${styles.summary} ${rollupOverdue ? styles.signalDanger : ""}`}
-          aria-label="Staffing, 07:00–09:30"
-          onClick={() => jumpTo("gate-staffing")}
-          onKeyDown={(event) => onSummaryKey(event, "gate-staffing")}
-        >
-          <span className={styles.summaryTitle}>
-            <Stroke d="M3 13V8M8 13V3M13 13V6" />
-            Staffing
-          </span>
-          <span className={styles.summaryWindow}>07:00–09:30</span>
-          <Chip tone={rollupOverdue ? "danger" : "good"}>{staffingBadge}</Chip>
-          <span className={styles.summaryFact}>{staffingFact ?? `${unitName}`}</span>
-        </button>
-        <button
-          type="button"
-          className={`${styles.summary} ${intakes.length > 0 ? styles.signalDanger : ""}`}
-          aria-label="Intake, 09:30–13:00"
-          onClick={() => jumpTo("gate-intake")}
-          onKeyDown={(event) => onSummaryKey(event, "gate-intake")}
-        >
-          <span className={styles.summaryTitle}>
-            <Stroke d="M3 8h10M9 4l4 4-4 4" />
-            Intake
-          </span>
-          <span className={styles.summaryWindow}>09:30–13:00</span>
-          <Chip tone={intakes.length > 0 ? "danger" : "good"}>{intakeBadge}</Chip>
-          <span className={styles.summaryFact}>{intakes[0]?.title ?? "None waiting"}</span>
-        </button>
-        <button
-          type="button"
-          className={`${styles.summary} ${blockedCount > 0 ? styles.signalWarn : ""}`}
-          aria-label="Departures, 11:00–14:00"
-          onClick={() => jumpTo("gate-departures")}
-          onKeyDown={(event) => onSummaryKey(event, "gate-departures")}
-        >
-          <span className={styles.summaryTitle}>
-            <Stroke d="M13 8H3M7 4L3 8l4 4" />
-            Departures
-          </span>
-          <span className={styles.summaryWindow}>11:00–14:00</span>
-          <Chip tone={blockedCount > 0 ? "warn" : readyCount > 0 ? "good" : "neutral"}>{departureBadge}</Chip>
-          <span className={styles.summaryFact}>{departures[0]?.title ?? "None waiting"}</span>
-        </button>
-        <button
-          type="button"
-          className={styles.summary}
-          aria-label="Leave, 14:00–18:00"
-          onClick={() => jumpTo("gate-leave")}
-          onKeyDown={(event) => onSummaryKey(event, "gate-leave")}
-        >
-          <span className={styles.summaryTitle}>
-            <Stroke d="M8 2v4M8 14v-4M3 8h10" />
-            Leave
-          </span>
-          <span className={styles.summaryWindow}>14:00–18:00</span>
-          <Chip tone={leaves.length > 0 ? "accent" : "good"}>{leaveBadge}</Chip>
-          <span className={styles.summaryFact}>{leaves[0]?.title ?? "None out"}</span>
-        </button>
-      </div>
+      <h2 className={styles.srOnly}>Decisions, {dueCount > 0 ? `${dueCount} due` : "Done"}</h2>
 
-      <div className={styles.queueBar}>
-        <h2 className={styles.queueTitle}>
-          Decisions
-          {dueCount > 0 ? <Chip tone="danger">{dueCount} due</Chip> : <Chip tone="good">Done</Chip>}
-        </h2>
-        <div className={styles.filters} role="toolbar" aria-label="Decision filters">
-          {(
-            [
-              ["all", "All", "M3 3h4.2v4.2H3zM8.8 3H13v4.2H8.8zM3 8.8h4.2V13H3zM8.8 8.8H13V13H8.8z"],
-              ["due", "Due now", "M8 2.4a5.6 5.6 0 1 0 0 11.2 5.6 5.6 0 0 0 0-11.2zM8 4.6V8l2.3 1.4"],
-              ["barriers", "Barriers", "M3.5 4.5h9M3.5 8h9M3.5 11.5h5.5"],
-              ["leave", "Leave", "M8 3v10M3 8h10"],
-            ] as const
-          ).map(([key, label, icon]) => (
+      <div className={styles.steps} role="group" aria-label="Decision windows">
+        {WINDOWS.map((entry) => {
+          const count = openCount(entry.id);
+          const tone = windowTone(entry.id);
+          const describedBy = `${baseId}-${entry.id}-count`;
+          return (
             <button
-              key={key}
+              key={entry.id}
               type="button"
-              className={styles.filter}
-              data-active={filter === key}
-              aria-pressed={filter === key}
-              onClick={() => setFilter(key)}
+              className={styles.windowStep}
+              data-on={chosen === entry.id}
+              aria-pressed={chosen === entry.id}
+              aria-label={`${entry.title}, ${entry.hours}`}
+              aria-describedby={describedBy}
+              onClick={() => {
+                choose(entry.id);
+              }}
             >
-              <Stroke d={icon} size={12} />
-              {label}
+              <StatusGlyph tone={tone} />
+              <span className={styles.stepText}>
+                <b>{entry.title}</b>
+                <span>
+                  {entry.hours}
+                  {entry.id === "staffing" && staffingFact ? ` · ${staffingFact}` : ""}
+                </span>
+              </span>
+              <CountBubble n={count} className={cx(styles.stepCount, tone === "danger" && styles.countAct)} />
+              <SrOnly id={describedBy}>{count > 0 ? `${count} to decide` : "Clear"}</SrOnly>
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      <div className={styles.board}>
-        {showStaffing || showIntake || showLeave ? (
-          <div className={styles.stack}>
-            {showStaffing ? (
-              <section className={styles.panel} id="gate-staffing" aria-label="Staffing">
-                <header className={styles.panelHead}>
-                  <h3 className={styles.panelTitle}>Staffing</h3>
-                  <span className={styles.panelWindow}>07:00–09:30</span>
-                  <Chip tone={rollupOverdue ? "danger" : "good"}>{staffingBadge}</Chip>
-                </header>
-                <div className={styles.panelBody}>
-                  {rollupOverdue ? (
-                    <div
-                      className={`${styles.row} ${styles.signalDanger}`}
-                      data-testid="ward-morning-rollup-overdue-banner"
+      <div className={styles.split}>
+        <section className={styles.card} aria-label={spec.title} id={`gate-${chosen}`}>
+          <header className={styles.head}>
+            <Icon icon={CalendarClock} size={16} className={styles.headIcon} />
+            <h3 className={styles.headTitle}>{spec.title}</h3>
+            <span className={cx(styles.mono, styles.hideNarrow)}>{spec.hours}</span>
+            <span className={styles.headMeta}>{open > 0 ? `${open} to decide` : "Nothing due"}</span>
+          </header>
+
+          <p className={styles.notice} role="status" aria-live="polite">
+            {notice ? (
+              <>
+                <StatusGlyph tone={notice.tone} />
+                <span>{notice.text}</span>
+              </>
+            ) : null}
+          </p>
+
+          {here.length === 0 && chosen !== "staffing" ? (
+            <ul className={styles.rows}>
+              <DecisionRow
+                item={{
+                  id: "none",
+                  group: "done",
+                  tone: "success",
+                  title: "Nothing due",
+                  sub: "Clear for this window",
+                }}
+              />
+            </ul>
+          ) : null}
+
+          {GROUP_ORDER.map((group) => {
+            const list = here.filter((item) => item.group === group);
+            if (list.length === 0) return null;
+            const collapsible = group === "done" && list.length > 2;
+            const hidden = collapsible && !showDone;
+            const listId = `${baseId}-${chosen}-${group}`;
+            return (
+              <div key={group} className={styles.group}>
+                <div className={styles.sec}>
+                  <StatusGlyph tone={GROUP_TONE.get(group) ?? "neutral"} />
+                  <h4 className={styles.secTitle}>{groupLabel.get(group)}</h4>
+                  <CountBubble n={list.length} className={cx(group === "act" && styles.countAct)} />
+                  {collapsible ? (
+                    <button
+                      type="button"
+                      className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.pill, styles.secToggle)}
+                      aria-expanded={showDone}
+                      aria-controls={listId}
+                      onClick={() => {
+                        setShowDone((value) => !value);
+                      }}
                     >
-                      <span className={styles.rowTitle}>{rollupTimeLabel} Morning Bed Rollup Overdue</span>
-                      <button
-                        type="button"
-                        className={styles.action}
-                        data-testid="ward-confirm-morning-rollup-btn"
-                        onClick={onConfirmRollup}
-                      >
-                        Confirm rollup
-                      </button>
-                    </div>
+                      {showDone ? "Hide" : "Show"}
+                    </button>
                   ) : null}
-                  {rollupConfirmed ? (
-                    <div className={styles.row} data-testid="ward-morning-rollup-confirmed-banner">
-                      <span className={styles.rowTitle}>
-                        {rollupTimeLabel} Morning Bed Rollup Confirmed · {plannedDischarges} discharges scheduled today
-                      </span>
-                      <Chip tone="good">Done</Chip>
-                    </div>
-                  ) : null}
-                  {children}
-                  {!wired && !onConfirmRollup ? <p className={styles.empty}>Not wired in this prototype.</p> : null}
                 </div>
-              </section>
-            ) : null}
-
-            {showIntake ? (
-              <section className={styles.panel} id="gate-intake" aria-label="Intake">
-                <header className={styles.panelHead}>
-                  <h3 className={styles.panelTitle}>Intake</h3>
-                  <span className={styles.panelWindow}>09:30–13:00</span>
-                  <Chip tone={intakes.length > 0 ? "danger" : "good"}>{intakeBadge}</Chip>
-                </header>
-                <div className={styles.panelBody}>
-                  {intakes.length === 0 ? (
-                    <p className={styles.empty}>None waiting</p>
-                  ) : (
-                    intakes.map((row) => (
-                      <div className={`${styles.row} ${styles.signalDanger}`} key={row.id}>
-                        <span className={styles.rowTitle}>{row.title}</span>
-                        <Chip tone="danger">Due</Chip>
-                        {row.onAccept ? (
-                          <button type="button" className={styles.action} onClick={row.onAccept}>
-                            Accept
-                          </button>
-                        ) : (
-                          <span className={styles.empty}>Not wired in this prototype.</span>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </section>
-            ) : null}
-
-            {showLeave ? (
-              <section className={styles.panel} id="gate-leave" aria-label="Leave">
-                <header className={styles.panelHead}>
-                  <h3 className={styles.panelTitle}>Leave</h3>
-                  <span className={styles.panelWindow}>14:00–18:00</span>
-                  <Chip tone={leaves.length > 0 ? "accent" : "good"}>{leaveBadge}</Chip>
-                </header>
-                <div className={styles.panelBody}>
-                  {leaves.length === 0 ? (
-                    <p className={styles.empty}>None out</p>
-                  ) : (
-                    leaves.map((row) => (
-                      <div className={styles.row} key={row.id}>
-                        <span className={styles.rowTitle}>{row.title}</span>
-                        <Chip tone="accent">Out</Chip>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </section>
-            ) : null}
-          </div>
-        ) : null}
-
-        {showDepartures ? (
-          <div className={styles.stack}>
-            <section className={styles.panel} id="gate-departures" aria-label="Departures">
-              <header className={styles.panelHead}>
-                <h3 className={styles.panelTitle}>Departures</h3>
-                <span className={styles.panelWindow}>11:00–14:00</span>
-                <Chip tone={blockedCount > 0 ? "warn" : readyCount > 0 ? "good" : "neutral"}>{departureBadge}</Chip>
-              </header>
-              <div className={styles.panelBody}>
-                {visibleDepartures.length === 0 ? (
-                  <p className={styles.empty}>None waiting</p>
-                ) : (
-                  visibleDepartures.map((row) => (
-                    <div className={`${styles.row} ${row.badge === "Blocked" ? styles.signalWarn : ""}`} key={row.id}>
-                      <span className={styles.rowTitle}>{row.title}</span>
-                      <Chip tone={row.badge === "Blocked" ? "warn" : row.badge === "Ready" ? "good" : "neutral"}>
-                        {row.badge}
-                      </Chip>
-                      {row.onConfirm ? (
-                        <button type="button" className={styles.action} onClick={row.onConfirm}>
-                          Sign off
-                        </button>
-                      ) : null}
-                      {row.onClear ? (
-                        <button type="button" className={styles.actionQuiet} onClick={row.onClear}>
-                          Clear
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
+                {hidden ? null : (
+                  <ul id={listId} className={cx(styles.rows, (group === "ready" || group === "done") && styles.grid2)}>
+                    {list.map((item) => (
+                      <DecisionRow key={item.id} item={item} />
+                    ))}
+                  </ul>
                 )}
               </div>
-            </section>
+            );
+          })}
+
+          {chosen === "staffing" ? (
+            <div className={styles.staffingBody}>
+              {here.length === 0 ? (
+                <ul className={styles.rows}>
+                  <DecisionRow
+                    item={{
+                      id: "none",
+                      group: "done",
+                      tone: "success",
+                      title: "Nothing due",
+                      sub: staffingFact ?? unitName,
+                    }}
+                  />
+                </ul>
+              ) : null}
+              {children}
+              {!wired && !onConfirmRollup ? <p className={styles.unwiredLine}>Not wired in this prototype.</p> : null}
+            </div>
+          ) : null}
+
+          {showBulk ? (
+            <div className={styles.bulk}>
+              <span className={styles.bulkMeta}>
+                <b>{signable.length}</b> ready to sign off
+              </span>
+              <button
+                type="button"
+                className={cx(buttonClass({ variant: "pri", size: "lg" }), styles.pill)}
+                onClick={() => {
+                  send(
+                    "sign",
+                    signable.map((row) => ({ id: row.id, title: row.title, run: row.onConfirm })),
+                  );
+                }}
+              >
+                Sign off {signable.length}
+              </button>
+            </div>
+          ) : null}
+        </section>
+
+        <aside className={styles.card} aria-label="Window progress">
+          <div className={styles.head}>
+            <Icon icon={CalendarClock} size={16} className={styles.headIcon} />
+            <span className={styles.headTitle}>{spec.title}</span>
+            <span className={cx(styles.mono, styles.headEnd)}>{spec.hours}</span>
           </div>
-        ) : null}
+          <div className={styles.progress}>
+            <div className={styles.prow}>
+              <span>{decidable > 0 ? `${decided} of ${decidable} decided` : "Nothing due"}</span>
+            </div>
+            {decidable > 0 ? (
+              <div
+                className={styles.bar}
+                role="progressbar"
+                aria-label={`${spec.title} decided`}
+                aria-valuemin={0}
+                aria-valuemax={decidable}
+                aria-valuenow={decided}
+              >
+                <i style={{ width: `${(decided / decidable) * 100}%` }} />
+              </div>
+            ) : null}
+            {chosen === "departures" && projection ? (
+              <div className={styles.proj}>
+                <div>
+                  <b>{projection.freeNow}</b>
+                  <span>Free beds now</span>
+                </div>
+                <div>
+                  <b>{projection.freeBy}</b>
+                  <span>Free by {projection.byLabel}</span>
+                </div>
+              </div>
+            ) : null}
+          </div>
+          <h3 className={styles.sideSec}>Other windows</h3>
+          <ul className={styles.rows}>
+            {WINDOWS.filter((entry) => entry.id !== chosen).map((entry) => {
+              const count = openCount(entry.id);
+              return (
+                <li key={entry.id} className={styles.row}>
+                  <StatusGlyph tone={windowTone(entry.id)} />
+                  <div className={styles.rowText}>
+                    <h4 className={styles.rowTitle}>{entry.title}</h4>
+                    <span className={styles.rowSub}>{entry.hours}</span>
+                  </div>
+                  <span className={styles.when}>{count > 0 ? `${count} to decide` : "Clear"}</span>
+                  <span className={styles.rowActions}>
+                    {count > 0 ? (
+                      <button
+                        type="button"
+                        className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
+                        aria-label={`Open ${entry.title} window`}
+                        onClick={() => {
+                          choose(entry.id);
+                        }}
+                      >
+                        Open
+                      </button>
+                    ) : null}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </aside>
       </div>
     </div>
+  );
+}
+
+function DecisionRow({ item }: { item: DecisionItem }) {
+  return (
+    <li className={styles.row} data-testid={item.testId}>
+      <StatusGlyph tone={item.tone} />
+      <span className={styles.rowText}>
+        <span className={styles.rowTitle}>{item.title}</span>
+        {item.sub ? <span className={styles.rowSub}>{item.sub}</span> : null}
+      </span>
+      {item.actions ? <span className={styles.rowActions}>{item.actions}</span> : null}
+    </li>
   );
 }

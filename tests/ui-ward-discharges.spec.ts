@@ -79,9 +79,11 @@ async function gotoWard(page: Page) {
  * this rather than selecting the tab once at the top.
  */
 async function openBedRecordsTab(page: Page) {
-  const discharges = page.getByRole("tab", { name: "Discharges (On the way out)" });
-  await discharges.click();
-  await expect(discharges).toHaveAttribute("aria-selected", "true");
+  // Ward Hub (9 Oct 2026): the Discharges tab now opens from the Home tab's Ward flow card.
+  await page.locator("#tabBtn-attn").click();
+  await page.getByRole("radio", { name: /^Discharges/u }).click();
+  await page.getByRole("button", { name: "All discharges", exact: true }).click();
+  await expect(page.locator("#tab-out")).toHaveAttribute("data-active", "true");
 }
 
 async function goToCapacityBoard(page: Page) {
@@ -360,8 +362,12 @@ test.describe("@mockup WA disposition pathways", () => {
       await page.goto(`/mockups/ward-flow/ward/${release.unitId}?tab=departure-planning`);
       await page.waitForLoadState("networkidle");
       await expect(page.getByRole("tab", { name: "Decisions (Ward record)" })).toHaveAttribute("aria-selected", "true");
-      await page.getByRole("tab", { name: "Beds (Bed Board & Roster)" }).click();
+      // Ward Hub (9 Oct 2026): the full bed list opens from the Home tab's Every bed card.
+      await page.locator("#tabBtn-attn").click();
+      await page.getByRole("button", { name: "Full bed list", exact: true }).click();
       await page.locator(`[data-admission-id="${admission.id}"]`).click();
+      // The destination picker lives on the bed drawer's Plan to leave tab.
+      await page.getByTestId("bed-telemetry-drawer").getByRole("tab", { name: "Plan to leave" }).click();
       const picker = page.locator("#drawer-leaving-dest");
       await expect(picker.locator("option")).toHaveCount(LEAVING_DESTINATIONS.length);
       await picker.selectOption(destination.id);
