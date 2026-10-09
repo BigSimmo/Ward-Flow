@@ -129,6 +129,21 @@ export function Tooltip({
     };
   }, [updatePosition, visibleOpen]);
 
+  // Escape dismisses an open tooltip first, even one opened by hover (WCAG 1.4.13), and stops at
+  // the document so it does not also reach a Sheet's window listener and close the drawer too.
+  useEffect(() => {
+    if (!visibleOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [visibleOpen]);
+
   if (!isValidElement(children)) return <>{children}</>;
 
   const childProps = children.props as Record<string, unknown>;
@@ -148,9 +163,6 @@ export function Tooltip({
     onMouseLeave: compose(() => setOpen(false), childProps.onMouseLeave),
     onFocus: compose(() => setOpen(true), childProps.onFocus),
     onBlur: compose(() => setOpen(false), childProps.onBlur),
-    onKeyDown: compose((event: React.KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    }, childProps.onKeyDown),
   });
 
   return (

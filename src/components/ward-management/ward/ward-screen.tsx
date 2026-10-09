@@ -3,6 +3,8 @@
 import { WardReferralInbox } from "../referrals/ward-referral-inbox";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ChevronDown, ChevronLeft, Clock, FileText, ListChecks, Printer, Search, Send } from "lucide-react";
 import { useEffect, useCallback, useRef, useState, type FormEvent } from "react";
 
 import {
@@ -34,7 +36,13 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { Hero, buttonClass } from "@/components/wf";
+import { Hero, LiveChip, Menu, TextInput, buttonClass, durMinutes } from "@/components/wf";
+import {
+  currentShift,
+  dayShiftEndInstant,
+  releasesDueByShiftEnd,
+} from "@/components/ward-management/ward-board-time-features";
+import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -48,7 +56,7 @@ import {
 } from "@/components/ward-management/ward-admissions";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
-import { WardDailySheet } from "@/components/ward-management/board/ward-daily-sheet";
+import { WardDailySheetDialog } from "@/components/ward-management/board/ward-daily-sheet";
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { WardNotificationCenter } from "./ward-notification-center";
 
@@ -58,9 +66,9 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { WardAnswerView } from "./ward-answer-view";
 import styles from "./ward.module.css";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
-import { WardDecisionsCockpit } from "./ward-decisions-cockpit";
-import { WardTelemetryRibbon } from "./ward-telemetry-ribbon";
-import { WardHomeTab } from "./ward-home-tab";
+import { WardDecisionsCockpit, openDecisionCount } from "./ward-decisions-cockpit";
+import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon";
+import { WardHomeTab, wardActNowCount, type WardFlowTab, type WardShiftView } from "./ward-home-tab";
 import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
 import { WardDischargesMatrix } from "./ward-discharges-matrix";
 import { WardBedsMatrix } from "./ward-beds-matrix";
@@ -70,6 +78,24 @@ import {
   LEAVE_BED_OPEN_WARNING_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
+
+/** The router, or null where the screen renders outside the app router (a test or preview). */
+function useOptionalRouter(): ReturnType<typeof useRouter> | null {
+  try {
+    return useRouter();
+  } catch {
+    return null;
+  }
+}
+
+/** "Day shift 07:00 to 15:00" for the shift `now` falls in, read from the labelled default pattern. */
+function shiftLine(now: Instant): string {
+  const shift = currentShift(now);
+  const clock = (value: number) =>
+    `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+  const name = shift.name.charAt(0) + shift.name.slice(1).toLowerCase();
+  return `${name} ${clock(shift.startMinute)} to ${clock(shift.endMinute)}`;
+}
 
 type WardScreenProps = { departurePlanning?: boolean; unitId: string; presentation?: "overview" | "answer" };
 
@@ -197,11 +223,24 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     departurePlanning ? "return" : "attn",
   );
   const [selectedPod, setSelectedPod] = useState<string>("all");
+  // Ward Hub (9 Oct 2026): the hero pills, the Find box and the home panels share this state.
+  const [bedFilter, setBedFilter] = useState<WardBedFilter>("all");
+  const [bedQuery, setBedQuery] = useState("");
+  const [flowTab, setFlowTab] = useState<WardFlowTab>("referrals");
+  const [shiftView, setShiftView] = useState<WardShiftView>("todo");
+  const router = useOptionalRouter();
   const [selectedBed, setSelectedBed] = useState<number | null>(null);
   const [confirmNumbersOpen, setConfirmNumbersOpen] = useState(false);
   const [dailySheetOpen, setDailySheetOpen] = useState(false);
   const [drawerLeavingDestination, setDrawerLeavingDestination] =
     useState<LeavingDestination>("discharged-to-the-community");
+  // A destination belongs to the bed it was chosen for: opening or stepping to another bed starts
+  // from the default again, so one person's choice is never recorded against the next.
+  const [destinationBed, setDestinationBed] = useState<number | null>(null);
+  if (destinationBed !== selectedBed) {
+    setDestinationBed(selectedBed);
+    setDrawerLeavingDestination("discharged-to-the-community");
+  }
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -240,7 +279,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     }
     syncTabWithHash();
     window.addEventListener("hashchange", syncTabWithHash);
-    return () => window.removeEventListener("hashchange", syncTabWithHash);
+    return () => {
+      window.removeEventListener("hashchange", syncTabWithHash);
+    };
   }, []);
 
   function handleRaiseWardReferral() {
@@ -274,8 +315,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     if (selectedBed !== null) {
       const bedNum = selectedBed;
       setSelectedBed(null);
+      // The drawer hands focus back to whatever opened it (a tile, a list row, a Ward flow row).
+      // Only when that is gone does focus fall back to the bed's own tile, if it is still drawn.
       setTimeout(() => {
-        bedTriggerRefs.current.get(bedNum)?.focus();
+        const active = document.activeElement;
+        if (active instanceof HTMLElement && active !== document.body && active.isConnected) return;
+        const tile = bedTriggerRefs.current.get(bedNum);
+        if (tile?.isConnected) tile.focus();
       }, 0);
     }
   }, [selectedBed]);
@@ -302,7 +348,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       }
     }
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [selectedBed, dailySheetOpen, confirmNumbersOpen, notificationCenterOpen, closeBedDrawer, closeCapacityModal]);
 
   // Click-outside listener for floating notification center
@@ -362,9 +410,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const focusable = Array.from(
       drawer.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
     ).filter((el) => !el.hasAttribute("disabled"));
-    if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
+    const first = focusable.at(0);
+    const last = focusable.at(-1);
+    if (!first || !last) return;
     if (event.shiftKey && (document.activeElement === first || !drawer.contains(document.activeElement))) {
       event.preventDefault();
       last.focus();
@@ -386,9 +434,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const focusable = Array.from(
       modal.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
     ).filter((el) => !el.hasAttribute("disabled"));
-    if (focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
+    const first = focusable.at(0);
+    const last = focusable.at(-1);
+    if (!first || !last) return;
     if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) {
       event.preventDefault();
       last.focus();
@@ -1041,7 +1089,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     return (
       <form
         className={styles.declineForm}
-        onSubmit={(event) => submitOverride(event, movementId)}
+        onSubmit={(event) => {
+          submitOverride(event, movementId);
+        }}
         data-testid={`ward-override-form-${movementId}`}
       >
         <fieldset className={styles.declineFieldset}>
@@ -1058,7 +1108,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 name={`ward-override-${movementId}`}
                 value={reason}
                 checked={overrideReason === reason}
-                onChange={() => setOverrideReason(reason)}
+                onChange={() => {
+                  setOverrideReason(reason);
+                }}
                 data-testid={`ward-override-option-${movementId}`}
               />
               {reason}
@@ -1069,7 +1121,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               <input
                 type="checkbox"
                 checked={numConsulted}
-                onChange={(event) => setNumConsulted(event.target.checked)}
+                onChange={(event) => {
+                  setNumConsulted(event.target.checked);
+                }}
                 data-testid={`ward-override-num-consulted-${movementId}`}
               />
               Nurse unit manager consulted
@@ -1128,7 +1182,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             min={0}
             max={unit.beds}
             value={capacityValue}
-            onChange={(event) => setCapacityValue(event.target.value)}
+            onChange={(event) => {
+              setCapacityValue(event.target.value);
+            }}
             className={styles.capacityInput}
             style={{
               minHeight: "var(--ward-tap, 48px)",
@@ -1239,8 +1295,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       id: release.id,
       title: bedRecordLabel(release.admissionId),
       badge: (release.blocker ? "Blocked" : "Ready") as "Blocked" | "Ready",
-      onConfirm: release.state === "expected" ? () => confirmBedRelease(release.id) : undefined,
-      onClear: release.blocker ? () => clearBedReleaseBlock(release.id) : undefined,
+      onConfirm:
+        release.state === "expected"
+          ? () => {
+              confirmBedRelease(release.id);
+            }
+          : undefined,
+      onClear: release.blocker
+        ? () => {
+            clearBedReleaseBlock(release.id);
+          }
+        : undefined,
     }));
   const leaveDecisions = unitLeaveBeds.map((leaveBed) => ({
     id: leaveBed.id,
@@ -1249,12 +1314,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const intakeDecisions = visibleIncoming.map((movement) => ({
     id: movement.id,
     title: resolvePatientIdentity(movement).displayName,
-    onAccept: () => handleAcceptInPrinciple(movement.id, unit.id),
+    onAccept: () => {
+      handleAcceptInPrinciple(movement.id, unit.id);
+    },
   }));
-  const decisionsDue =
-    intakeDecisions.length +
-    departureDecisions.filter((row) => row.badge === "Ready").length +
-    (!isRollupConfirmedToday && morningRollupDeadlinePassed ? 1 : 0);
+  // The same count the Decisions cockpit heading and windows show.
+  const decisionsDue = openDecisionCount({
+    intakes: intakeDecisions,
+    departures: departureDecisions,
+    rollupOverdue: !isRollupConfirmedToday && morningRollupDeadlinePassed,
+    rollupConfirmed: isRollupConfirmedToday,
+    rollupActionable: true,
+  });
   const decisionsDueLabel =
     decisionsDue > 0 ? `${decisionsDue} decisions due this shift` : "No decisions due this shift";
 
@@ -1291,6 +1362,36 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     setActiveTab("out");
   }
 
+  /** Shows Home and brings one of its cards into view. */
+  function showHome(targetId: string) {
+    setActiveTab("attn");
+    window.requestAnimationFrame(() => {
+      const reduceMotion = "matchMedia" in window && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      document
+        .getElementById(targetId)
+        ?.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
+    });
+  }
+
+  const actNowCount = wardActNowCount({
+    alerts: liveFormAlerts.length,
+    incoming: incoming.length,
+    heldUp: blockedReleases.length,
+    rollupOverdue: !isRollupConfirmedToday && morningRollupDeadlinePassed,
+  });
+  const readyByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;
+  // The ward switch lists the other wards on this site, or failing that in this health service.
+  const siteUnits = units.filter((candidate) => candidate.id !== unit.id && candidate.siteCode === unit.siteCode);
+  const switchUnits =
+    siteUnits.length > 0
+      ? siteUnits
+      : units.filter(
+          (candidate) =>
+            candidate.id !== unit.id &&
+            unitHealthService(candidate) !== undefined &&
+            unitHealthService(candidate) === unitHealthService(unit),
+        );
+
   return (
     <div
       className={styles.screen}
@@ -1319,24 +1420,90 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             className={styles.wardHero}
             eyebrow={`Ward · ${site ? site.name : unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`}
             title={unit.name}
-            stats={
-              <WardTelemetryRibbon unit={unit} capacity={capacity} staffedSpecialling={staffedSpecialling} now={now} />
+            titleMeta={
+              switchUnits.length > 0 ? (
+                <Menu
+                  label="Switch ward"
+                  align="start"
+                  items={switchUnits.map((candidate) => ({
+                    id: candidate.id,
+                    label: candidate.name,
+                    meta: candidate.siteCode,
+                    onSelect: () => {
+                      const href = unitHref(candidate.id);
+                      if (router) router.push(href);
+                      else window.location.assign(href);
+                    },
+                  }))}
+                  trigger={(props) => (
+                    <button
+                      type="button"
+                      {...props}
+                      className={styles.wardSwitch}
+                      aria-label={`Switch ward, now ${unit.name}`}
+                      data-testid="ward-switch-btn"
+                    >
+                      <ChevronDown size={16} aria-hidden="true" />
+                    </button>
+                  )}
+                />
+              ) : null
             }
             aside={
-              <button
-                ref={confirmTriggerRef}
-                type="button"
-                className={buttonClass({ variant: "light", size: "sm" })}
-                onClick={() => setConfirmNumbersOpen(true)}
-              >
-                Confirm numbers
-              </button>
+              <>
+                <LiveChip state="live" onHero age={formatInstant(now)} />
+                <button
+                  ref={confirmTriggerRef}
+                  type="button"
+                  className={buttonClass({ variant: "light", size: "sm" })}
+                  onClick={() => {
+                    setConfirmNumbersOpen(true);
+                  }}
+                >
+                  Confirm numbers
+                </button>
+              </>
             }
             bar={
+              <WardTelemetryRibbon
+                unit={unit}
+                capacity={capacity}
+                staffedSpecialling={staffedSpecialling}
+                now={now}
+                filter={activeTab === "attn" ? bedFilter : undefined}
+                onFilter={(next) => {
+                  setBedFilter(next);
+                  if (next === "shift-end") setFlowTab("discharges");
+                  showHome("bed-capacity");
+                }}
+                actNow={actNowCount}
+                onActNow={() => {
+                  setShiftView("todo");
+                  showHome("ward-this-shift");
+                }}
+              />
+            }
+            foot={
               <span className={styles.heroMeta}>
-                {unit.cohort} · {designationSummary(unit).toLowerCase()} · {unit.beds} beds ·{" "}
+                <Clock size={14} aria-hidden="true" className={styles.heroMetaIcon} />
+                <span>{shiftLine(now)}</span>
+                {" · "}
+                {unit.cohort} · {designationSummary(unit).toLowerCase()} ·{" "}
+                <Link
+                  className={styles.heroBedListLink}
+                  href="#bed-capacity"
+                  data-testid="ward-hero-open-bed-list"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setBedFilter("all");
+                    showHome("bed-capacity");
+                  }}
+                >
+                  {unit.beds} beds · {capacity.available} ready
+                </Link>
+                {" · "}
                 {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
-                <span>Roster not recorded</span> ·{" "}
+                <span>Roster not recorded</span> · {staffedSpecialling} on 1:1 specialling ·{" "}
                 {unit.authorised ? "authorised for involuntary" : "not set up for involuntary admissions (demo)"}
                 {(unit.intakeConstraints ?? []).length > 0
                   ? ` · ${(unit.intakeConstraints ?? [])
@@ -1345,18 +1512,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   : ""}
               </span>
             }
-            barAside={
-              <Link
-                className={styles.heroBedListLink}
-                href="#bed-capacity"
-                data-testid="ward-hero-open-bed-list"
-                onClick={(event) => {
-                  event.preventDefault();
-                  setActiveTab("return");
-                }}
-              >
-                Open bed list · {unit.beds} beds · {capacity.available} ready
-              </Link>
+            footAside={
+              <span>
+                {unit.allocatable.source === "ward" ? "Confirmed" : "Last figure"}{" "}
+                {formatInstant(unit.allocatable.confirmedAt)} ·{" "}
+                {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
+              </span>
             }
           />
 
@@ -1368,66 +1529,22 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   className={styles.tabBtn}
                   role="tab"
                   id="tabBtn-attn"
-                  aria-selected={activeTab === "attn"}
-                  aria-controls="tab-attn"
+                  aria-selected={activeTab !== "return"}
+                  aria-controls={
+                    activeTab === "coming"
+                      ? "tab-coming"
+                      : activeTab === "out"
+                        ? "tab-out"
+                        : activeTab === "beds"
+                          ? "tab-beds"
+                          : "tab-attn"
+                  }
                   aria-label="Home (Worth Your Attention)"
-                  onClick={() => setActiveTab("attn")}
+                  onClick={() => {
+                    setActiveTab("attn");
+                  }}
                 >
                   <span>Home</span>
-                  <span className={styles.tabBadge} id="badgeAttn">
-                    {incoming.length}
-                  </span>
-                </button>
-              </li>
-              <li role="presentation">
-                <button
-                  type="button"
-                  className={styles.tabBtn}
-                  role="tab"
-                  id="tabBtn-coming"
-                  aria-selected={activeTab === "coming"}
-                  aria-controls="tab-coming"
-                  aria-label="Arrivals (Coming in)"
-                  onClick={() => setActiveTab("coming")}
-                >
-                  <span>Arrivals</span>
-                  <span className={styles.tabBadge} id="badgeComing">
-                    {accepted.length}
-                  </span>
-                </button>
-              </li>
-              <li role="presentation">
-                <button
-                  type="button"
-                  className={styles.tabBtn}
-                  role="tab"
-                  id="tabBtn-out"
-                  aria-selected={activeTab === "out"}
-                  aria-controls="tab-out"
-                  aria-label="Discharges (On the way out)"
-                  onClick={() => setActiveTab("out")}
-                >
-                  <span>Discharges</span>
-                  <span className={styles.tabBadge} id="badgeOut">
-                    {pendingBedReleases.length + unitLeaveBeds.length}
-                  </span>
-                </button>
-              </li>
-              <li role="presentation">
-                <button
-                  type="button"
-                  className={styles.tabBtn}
-                  role="tab"
-                  id="tabBtn-beds"
-                  aria-selected={activeTab === "beds"}
-                  aria-controls="tab-beds"
-                  aria-label="Beds (Bed Board & Roster)"
-                  onClick={() => setActiveTab("beds")}
-                >
-                  <span>Beds</span>
-                  <span className={styles.tabBadge} id="badgeBeds">
-                    {unit.beds}
-                  </span>
                 </button>
               </li>
               <li role="presentation">
@@ -1439,13 +1556,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   aria-selected={activeTab === "return"}
                   aria-controls="tab-return"
                   aria-label="Decisions (Ward record)"
-                  onClick={() => setActiveTab("return")}
+                  onClick={() => {
+                    setActiveTab("return");
+                  }}
                 >
                   <span>Decisions</span>
                   <span
                     className={styles.tabBadge}
                     id="badgeReturn"
-                    style={decisionsDue > 0 ? { color: "var(--danger)", fontWeight: 700 } : undefined}
                     title={decisionsDueLabel}
                     aria-label={decisionsDueLabel}
                   >
@@ -1455,23 +1573,36 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               </li>
             </ul>
             <div className={styles.tabTools} role="toolbar" aria-label="Ward actions">
-              <Link
-                className={buttonClass({ variant: "ghost", size: "sm" })}
-                href={`/mockups/ward-flow/ward/${unit.id}/answer`}
-              >
-                Answer requests
-              </Link>
+              <TextInput
+                type="search"
+                icon={Search}
+                boxClassName={styles.findBox}
+                aria-label="Find a bed or person on this ward"
+                placeholder="Find bed or person"
+                value={bedQuery}
+                onChange={(event) => {
+                  setBedQuery(event.target.value);
+                  if (activeTab !== "attn") setActiveTab("attn");
+                }}
+                onClear={() => {
+                  setBedQuery("");
+                }}
+                data-testid="ward-find-input"
+              />
               <div className={styles.notificationTriggerWrap}>
                 <button
                   ref={notificationTriggerRef}
                   type="button"
                   className={buttonClass({ variant: "ghost", size: "sm" })}
-                  onClick={() => setNotificationCenterOpen((prev) => !prev)}
+                  onClick={() => {
+                    setNotificationCenterOpen((prev) => !prev);
+                  }}
                   aria-expanded={notificationCenterOpen}
                   data-testid="ward-notifications-toggle-btn"
                   title="Buzzes, urgent tasks and notices"
                 >
-                  <span>Tasks &amp; Buzzes</span>
+                  <ListChecks size={16} aria-hidden="true" />
+                  <span>Tasks</span>
                   {unreadAlertsCount > 0 ? (
                     <span className={styles.notificationCountBadge} data-testid="ward-notification-count-badge">
                       {unreadAlertsCount}
@@ -1497,7 +1628,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                       onConfirmMorningRollup={handleConfirmMorningRollup}
                       onAcknowledgeNotice={handleAcknowledgeNotice}
                       onDismissBuzz={handleDismissBuzz}
-                      onClose={() => setNotificationCenterOpen(false)}
+                      onClose={() => {
+                        setNotificationCenterOpen(false);
+                      }}
                     />
                   </div>
                 ) : null}
@@ -1505,17 +1638,21 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               <button
                 type="button"
                 className={buttonClass({ variant: "ghost", size: "sm" })}
-                onClick={() => setDailySheetOpen(true)}
+                onClick={() => {
+                  setDailySheetOpen(true);
+                }}
                 title="Open this shift's brief."
                 data-testid="ward-open-daily-sheet-btn"
               >
+                <FileText size={16} aria-hidden="true" />
                 Shift brief
               </button>
               <Link
-                className={buttonClass({ variant: "ghost", size: "sm" })}
+                className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
                 href={`/mockups/ward-flow/handover?scope=${encodeURIComponent(handoverScopeValue({ kind: "ward", id: unit.id }))}`}
               >
-                Print handover
+                <Printer size={16} aria-hidden="true" />
+                Handover
               </Link>
               <button
                 type="button"
@@ -1523,6 +1660,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 onClick={handleRaiseWardReferral}
                 title="Record a ward-to-ward referral with this ward as the sending ward."
               >
+                <Send size={16} aria-hidden="true" />
                 Raise referral
               </button>
             </div>
@@ -1569,14 +1707,38 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             lastActionRejection={lastActionRejection}
             overrideReasonForm={overrideReasonForm}
             liveFormAlerts={liveFormAlerts}
-            onOpenDecisions={() => setActiveTab("return")}
+            onOpenDecisions={() => {
+              setActiveTab("return");
+            }}
             morningRollupConfirmed={isRollupConfirmedToday}
             onConfirmMorningRollup={handleConfirmMorningRollup}
-            onOpenConfirmNumbers={() => setConfirmNumbersOpen(true)}
+            onOpenConfirmNumbers={() => {
+              setConfirmNumbersOpen(true);
+            }}
             onOpenArrival={openArrival}
             onOpenDischarges={openDischargesTab}
             bedsList={bedsList}
-            onSelectBed={(bedNumber) => setSelectedBed(bedNumber)}
+            onSelectBed={(bedNumber) => {
+              setSelectedBed(bedNumber);
+            }}
+            bedFilter={bedFilter}
+            onBedFilterChange={setBedFilter}
+            bedQuery={bedQuery}
+            flowTab={flowTab}
+            onFlowTabChange={setFlowTab}
+            shiftView={shiftView}
+            onShiftViewChange={setShiftView}
+            morningRollupOverdue={!isRollupConfirmedToday && morningRollupDeadlinePassed}
+            onOpenArrivals={() => {
+              setActiveTab("coming");
+            }}
+            onOpenBeds={() => {
+              setActiveTab("beds");
+            }}
+            registerBedTrigger={(bedNumber, element) => {
+              if (element) bedTriggerRefs.current.set(bedNumber, element);
+              else bedTriggerRefs.current.delete(bedNumber);
+            }}
             figures={
               <section aria-label="Ward figures, right now" className={styles.figuresFoot} data-ward-primitive="panel">
                 <div className={styles.commandHeader} data-ward-primitive="panel-header">
@@ -1744,6 +1906,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             intakes={intakeDecisions}
             departures={departureDecisions}
             leaves={leaveDecisions}
+            projection={{
+              freeNow: capacity.available,
+              freeBy: capacity.available + readyByShiftEnd,
+              byLabel: formatInstantWithDay(dayShiftEndInstant(now), now),
+            }}
           />
           <footer className={styles.protoBanner}>
             SYNTHETIC PROTOTYPE &middot; Scoped to {unit.name} &middot; Bed decisions remain human-confirmed &middot;
@@ -1756,9 +1923,22 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           className={styles.tabPanel}
           id="tab-coming"
           role="tabpanel"
-          aria-labelledby="tabBtn-coming"
+          aria-label="All arrivals"
           data-active={activeTab === "coming"}
         >
+          <div className={styles.subViewBar}>
+            <button
+              type="button"
+              className={buttonClass({ variant: "ghost", size: "sm" })}
+              onClick={() => {
+                setActiveTab("attn");
+              }}
+            >
+              <ChevronLeft size={16} aria-hidden="true" />
+              Home
+            </button>
+            <h2 className={styles.subViewTitle}>All arrivals</h2>
+          </div>
           <WardArrivalsCorridor
             unit={unit}
             onPullPatient={handlePullPatient}
@@ -1784,9 +1964,22 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           className={styles.tabPanel}
           id="tab-out"
           role="tabpanel"
-          aria-labelledby="tabBtn-out"
+          aria-label="All discharges"
           data-active={activeTab === "out"}
         >
+          <div className={styles.subViewBar}>
+            <button
+              type="button"
+              className={buttonClass({ variant: "ghost", size: "sm" })}
+              onClick={() => {
+                setActiveTab("attn");
+              }}
+            >
+              <ChevronLeft size={16} aria-hidden="true" />
+              Home
+            </button>
+            <h2 className={styles.subViewTitle}>All discharges</h2>
+          </div>
           <WardDischargesMatrix
             unit={unit}
             releasesCountedToday={releasesCountedToday}
@@ -1804,9 +1997,22 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           className={styles.tabPanel}
           id="tab-beds"
           role="tabpanel"
-          aria-labelledby="tabBtn-beds"
+          aria-label="Full bed list"
           data-active={activeTab === "beds"}
         >
+          <div className={styles.subViewBar}>
+            <button
+              type="button"
+              className={buttonClass({ variant: "ghost", size: "sm" })}
+              onClick={() => {
+                setActiveTab("attn");
+              }}
+            >
+              <ChevronLeft size={16} aria-hidden="true" />
+              Home
+            </button>
+            <h2 className={styles.subViewTitle}>Full bed list</h2>
+          </div>
           <WardBedsMatrix
             unit={unit}
             bedsList={bedsList}
@@ -1828,9 +2034,19 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   bedItem={selectedBedItem}
                   unit={unit}
                   onClose={closeBedDrawer}
+                  onPrevBed={() => {
+                    const index = bedsList.findIndex((bed) => bed.bedNumber === selectedBed);
+                    setSelectedBed(Number(bedsList[(index - 1 + bedsList.length) % bedsList.length].bedNumber));
+                  }}
+                  onNextBed={() => {
+                    const index = bedsList.findIndex((bed) => bed.bedNumber === selectedBed);
+                    setSelectedBed(Number(bedsList[(index + 1) % bedsList.length].bedNumber));
+                  }}
                   drawerLeavingDestination={drawerLeavingDestination}
                   setDrawerLeavingDestination={setDrawerLeavingDestination}
-                  onRecordLeft={(admissionId, who) => handleDrawerRecordLeft(admissionId, who)}
+                  onRecordLeft={(admissionId, who) => {
+                    handleDrawerRecordLeft(admissionId, who);
+                  }}
                   onUpdateBlocker={(admissionId, blocker) => {
                     const pendingRelease = pendingBedReleases.find((r) => r.admissionId === admissionId);
                     if (pendingRelease) {
@@ -1889,7 +2105,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             <div
               ref={capacityModalRef}
               className={styles.modalBox}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
               onKeyDown={handleCapacityModalKeyDown}
             >
               <div className={styles.modalHead}>
@@ -2059,49 +2277,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
         {/* ─── Ward Daily Sheet Modal Overlay ───────────────────────────── */}
         {dailySheetOpen ? (
-          <div
-            className={`${styles.modalOverlay} ${styles.show}`}
-            onClick={() => setDailySheetOpen(false)}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-daily-sheet-title"
-            data-testid="ward-daily-sheet-modal"
-          >
-            <div className={styles.dailySheetModalContent} onClick={(e) => e.stopPropagation()}>
-              <header className={styles.dailySheetModalHeader}>
-                <div>
-                  <h2 id="modal-daily-sheet-title" className={styles.dailySheetModalTitle}>
-                    {unit.name} · Shift brief
-                  </h2>
-                  <p className={styles.dailySheetModalSub}>As at {formatInstant(now)}</p>
-                </div>
-                <div className={styles.dailySheetModalActions}>
-                  <button
-                    type="button"
-                    className={styles.btnActionSec}
-                    onClick={() => window.print()}
-                    aria-label="Print shift brief"
-                  >
-                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
-                      <path d="M4 2h8v4H4zM3 6h10a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1V7a1 1 0 011-1zM4 11h8v3H4z" />
-                    </svg>
-                    <span>Print Sheet</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.btnActionSec}
-                    onClick={() => setDailySheetOpen(false)}
-                    aria-label="Close shift brief"
-                  >
-                    &times; Close
-                  </button>
-                </div>
-              </header>
-              <div className={styles.dailySheetModalBody}>
-                <WardDailySheet unit={unit} now={now} onClose={() => setDailySheetOpen(false)} />
-              </div>
-            </div>
-          </div>
+          <WardDailySheetDialog
+            unit={unit}
+            now={now}
+            onClose={() => {
+              setDailySheetOpen(false);
+            }}
+          />
         ) : null}
 
         {/* Action Toast (Owner Rule D4) */}
