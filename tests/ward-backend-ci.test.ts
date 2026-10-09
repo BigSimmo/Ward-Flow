@@ -16,11 +16,12 @@ function step(name: string): { text: string; start: number } {
 }
 
 /** The job a workflow offset belongs to, so the check survives the workflow being split into jobs. */
-function jobAt(offset: number): string | undefined {
-  let job: string | undefined;
-  for (const match of workflow.matchAll(/^ {2}([\w-]+):\n/gm)) {
+function jobAt(offset: number): { name: string; text: string } | undefined {
+  const matches = [...workflow.matchAll(/^ {2}([\w-]+):\n/gm)];
+  let job: { name: string; text: string } | undefined;
+  for (const [index, match] of matches.entries()) {
     if ((match.index ?? 0) > offset) break;
-    job = match[1];
+    job = { name: match[1], text: workflow.slice(match.index, matches[index + 1]?.index) };
   }
   return job;
 }
@@ -41,17 +42,20 @@ describe("Ward backend CI", () => {
     expect(backendTest.text).toMatch(
       /WARD_TEST_DATABASE_URL: postgresql:\/\/postgres@127\.0\.0\.1:5432\/wardflow_test/u,
     );
-    expect(workflow).toMatch(/image: postgres:16/u);
+    const backendJob = jobAt(backendTest.start);
+    expect(backendJob?.text).toMatch(/^\s*image:\s*postgres:16\s*$/mu);
+    expect(backendJob?.text).toMatch(/^\s*POSTGRES_DB:\s*wardflow_test\s*$/mu);
+    expect(backendJob?.text).toMatch(/^\s*ports:\s*\[\s*5432\s*:\s*5432\s*\]\s*$/mu);
     expect(install.start).toBeLessThan(backendTest.start);
     expect(workflow).not.toMatch(/continue-on-error:/u);
 
     const job = jobAt(install.start);
-    expect(job).toBeDefined();
-    expect(jobAt(backendTest.start)).toBe(job);
+    expect(job?.name).toBeDefined();
+    expect(backendJob?.name).toBe(job?.name);
     const needs = /^ {2}required:\n[\s\S]*?needs: \[([^\]]*)\]/mu
       .exec(workflow)?.[1]
       .split(",")
       .map((name) => name.trim());
-    expect(needs).toContain(job);
+    expect(needs).toContain(job?.name);
   });
 });
