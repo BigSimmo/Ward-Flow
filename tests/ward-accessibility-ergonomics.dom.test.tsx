@@ -233,7 +233,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
     });
   });
 
-  describe("6. HandoverPage long-stay table keyboard accessibility", () => {
+  describe("6. HandoverPage patient table keyboard accessibility", () => {
     it("renders table wrap with tabindex='0', role='region', and accessible label", () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -241,10 +241,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
         </WardFlowProvider>,
       );
 
-      const rollupTab = screen.getByRole("tab", { name: /16:30 Rollup/i });
-      fireEvent.click(rollupTab);
-
-      const tableRegion = screen.getByRole("region", { name: "Long stay handover table" });
+      const tableRegion = screen.getByRole("region", { name: "Handover patients" });
       expect(tableRegion).toBeInTheDocument();
       expect(tableRegion).toHaveAttribute("tabindex", "0");
       expect(within(tableRegion).getByRole("table")).toBeInTheDocument();

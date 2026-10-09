@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -68,19 +68,19 @@ describe("a movement's patient comes from the record, never from a typed-in tabl
     expect(mismatches).toEqual([]);
   });
 
-  it("handover cards show the recorded name and record number beside each movement", () => {
-    render(
+  it("handover rows show the recorded name and record number beside each movement", () => {
+    const { container } = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <HandoverPage />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: /ISBAR cards/ }));
 
-    const cards = screen.getAllByTestId(/^patient-card-/);
+    // Refined Handover A (9 Oct 2026): each open movement is a table row keyed by its movement.
+    const cards = [...container.querySelectorAll<HTMLElement>("tr[data-row-id]")];
     expect(cards.length).toBeGreaterThan(5);
     let linked = 0;
     for (const card of cards) {
-      const movementId = card.getAttribute("data-testid")!.replace("patient-card-", "");
+      const movementId = card.getAttribute("data-row-id")!;
       const recorded = expectedFor(movementId);
       if (recorded.name !== "Unknown Patient") linked += 1;
       expect(card.textContent, movementId).toContain(recorded.name);

@@ -1,0 +1,415 @@
+/*
+ * Handover print sheet builder (approved option C, refined Handover, 9 Oct 2026). Options rail and
+ * a live A4 preview that is exactly what prints. Tokens only. Each page carries the global `.day`
+ * class so the paper keeps day tokens in dark mode. The global print isolation (hide everything but
+ * the stack) is in the component's <style> element, since CSS Modules allow scoped selectors only.
+ */
+
+.build {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------ rail */
+
+.rail {
+  overflow: hidden;
+}
+
+.opt,
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  min-width: 0;
+}
+
+.controls:empty {
+  display: none;
+}
+
+.opt:last-child {
+  border-bottom: 0;
+}
+
+.lab {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.sub {
+  margin: 0;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.back {
+  align-self: flex-start;
+}
+
+.printButton {
+  width: 100%;
+}
+
+/* ------------------------------------------------------------------ preview */
+
+.deskPaper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-3);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+}
+
+.scopeline {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  min-width: 0;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.scopeline > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scopeline b {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.stack {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.frame {
+  flex: 0 0 auto;
+}
+
+.pscale {
+  transform-origin: 0 0;
+}
+
+/* ------------------------------------------------------------------ paper */
+
+.paper {
+  box-sizing: border-box;
+  width: 1123px;
+  height: 794px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: 30px 36px 24px;
+  overflow: hidden;
+  position: relative;
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-12) / 1.35 var(--wf-font);
+  border-radius: var(--wf-r-xs);
+  box-shadow: var(--wf-e2);
+  color-scheme: light;
+}
+
+.port {
+  width: 794px;
+  height: 1123px;
+}
+
+.ph {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--wf-s-4);
+  padding-bottom: var(--wf-s-2);
+  border-bottom: 1.5px solid var(--wf-ink-1);
+}
+
+.phTitle {
+  min-width: 0;
+}
+
+.ph h2 {
+  margin: 0;
+  font: 700 18px / 22px var(--wf-font);
+}
+
+.meta {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stamp {
+  margin-left: auto;
+  flex: 0 0 auto;
+  text-align: right;
+  font: 600 var(--wf-fs-12) / 16px var(--wf-mono);
+  white-space: nowrap;
+}
+
+.stamp span {
+  display: block;
+  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.sum {
+  display: flex;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+
+.sum div {
+  flex: 1;
+  min-width: 0;
+  padding: var(--wf-s-1) 10px;
+  border-left: 1px solid var(--wf-line-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sum div:first-child {
+  border-left: 0;
+}
+
+.sum b {
+  font: 700 var(--wf-fs-14) var(--wf-mono);
+  margin-right: 6px;
+}
+
+.paper table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.paper th {
+  font: 700 var(--wf-fs-12) / 16px var(--wf-font);
+  text-align: left;
+  padding: 3px 6px;
+  border-bottom: 1.5px solid var(--wf-ink-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.paper td {
+  height: 22px;
+  padding: 3px 6px;
+  border-bottom: 1px solid var(--wf-line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.paper h3 {
+  margin: 6px 0 2px;
+  font: 700 var(--wf-fs-13) var(--wf-font);
+}
+
+.pg td {
+  height: 20px;
+  font: 700 var(--wf-fs-12) var(--wf-font);
+  background: var(--wf-surface-2);
+  border-bottom: 1px solid var(--wf-line-2);
+}
+
+.ib2 td {
+  height: auto;
+  padding: 0 6px 4px 22px;
+  color: var(--wf-ink-2);
+}
+
+.ib2 span {
+  margin-right: 10px;
+}
+
+.ib2 b {
+  margin-right: 3px;
+  font: 700 var(--wf-fs-12) var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+/* Highlighted rows: a light tint and the name in bold. Never a stripe or edge marker. */
+.hlr td {
+  background: var(--wf-accent-tint);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.patientRow {
+  cursor: pointer;
+}
+
+.patientRow:hover td {
+  background: var(--wf-hover);
+}
+
+.patientRow:focus-within td {
+  background: var(--wf-selected);
+}
+
+.rowButton {
+  all: unset;
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  border-radius: var(--wf-r-xs);
+}
+
+.rowButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+.mn {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.mnInline {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.gl {
+  vertical-align: -1px;
+  margin-right: var(--wf-s-1);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.pf {
+  margin-top: auto;
+  display: flex;
+  gap: var(--wf-s-3);
+  padding-top: 6px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  border-top: 1px solid var(--wf-line-2);
+  white-space: nowrap;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.sig {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--wf-s-4);
+  margin-top: 6px;
+}
+
+.sig div {
+  display: flex;
+  align-items: flex-start;
+  height: 34px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  border-bottom: 1px solid var(--wf-ink-1);
+}
+
+.cols2 {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: var(--wf-s-4);
+  min-height: 0;
+}
+
+.cols1 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-height: 0;
+}
+
+.cols2 > div,
+.cols1 > div {
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------ narrow screens */
+
+@media (max-width: 900px) {
+  .build {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ------------------------------------------------------------------ print */
+
+@media print {
+  .stack {
+    display: block;
+    gap: 0;
+  }
+
+  .frame {
+    width: auto !important;
+    height: auto !important;
+  }
+
+  .pscale {
+    transform: none !important;
+  }
+
+  .paper {
+    height: 792px;
+    border-radius: 0;
+    box-shadow: none;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .port {
+    height: 1120px;
+  }
+
+  .frame:last-child .paper {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .patientRow:hover td,
+  .patientRow:focus-within td {
+    background: transparent;
+  }
+
+  .hlr td,
+  .patientRow.hlr:hover td,
+  .patientRow.hlr:focus-within td {
+    background: var(--wf-accent-tint);
+  }
+}

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -69,10 +69,9 @@ describe("a movement linked to nobody says so", () => {
     expect(text).not.toMatch(/\b38y\b|\b34y\b/);
   });
 
-  it("the handover card for that movement says the patient is unknown and the record number is not recorded", () => {
-    render(<HandoverPage />);
-    fireEvent.click(screen.getByRole("radio", { name: /ISBAR cards/ }));
-    const card = screen.getByTestId(`patient-card-${UNLINKED.id}`);
+  it("the handover row for that movement says the patient is unknown and the record number is not recorded", () => {
+    const { container } = render(<HandoverPage />);
+    const card = container.querySelector<HTMLElement>(`tr[data-row-id="${UNLINKED.id}"]`)!;
     expect(card.textContent).toContain("Unknown Patient");
     expect(card.textContent).toContain("UMRN not recorded");
   });
