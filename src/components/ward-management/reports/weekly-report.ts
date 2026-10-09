@@ -130,9 +130,9 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
     }));
 
   let outOfAreaMinutes = 0;
-  let outOfAreaPeople = 0;
+  const outOfAreaPatientIds = new Set<string>();
   let delayedMinutes = 0;
-  let delayedPeople = 0;
+  const delayedPatientIds = new Set<string>();
   let occupiedMinutes = 0;
   for (const stay of stays) {
     const minutes = overlapMinutes(stay.from, stay.to, week);
@@ -142,14 +142,15 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
       unit && stay.admission.homeRegion !== null ? travelBand(stay.admission.homeRegion, unit.siteCode) : undefined;
     if (band !== undefined && OUT_OF_AREA_BANDS.includes(band) && minutes > 0) {
       outOfAreaMinutes += minutes;
-      outOfAreaPeople += 1;
+      if (stay.admission.patientId !== null) outOfAreaPatientIds.add(stay.admission.patientId);
     }
     const expected = stay.admission.expectedDischargeAt;
-    if (expected !== null && Number.isFinite(expected)) {
+    const planSetAt = stay.admission.dischargeDateSetAt;
+    if (expected !== null && Number.isFinite(expected) && planSetAt !== null && planSetAt < week.countedEnd) {
       const late = overlapMinutes(Math.max(expected, stay.from), stay.to, week);
       if (late > 0) {
         delayedMinutes += late;
-        delayedPeople += 1;
+        if (stay.admission.patientId !== null) delayedPatientIds.add(stay.admission.patientId);
       }
     }
   }
@@ -186,8 +187,8 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
       longestMinutes: edRows[0]?.waitedMinutes ?? 0,
       rows: edRows,
     },
-    outOfArea: { bedDays: days(outOfAreaMinutes), people: outOfAreaPeople },
-    delayedDischarge: { bedDays: days(delayedMinutes), people: delayedPeople },
+    outOfArea: { bedDays: days(outOfAreaMinutes), people: outOfAreaPatientIds.size },
+    delayedDischarge: { bedDays: days(delayedMinutes), people: delayedPatientIds.size },
     declines: {
       placement: placementDeclines.totalCount,
       referral: referralDeclines.length,
@@ -211,6 +212,19 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
       occupiedBedDays: days(occupiedMinutes),
       averagePercent:
         beds > 0 && countedMinutes > 0 ? Math.round((occupiedMinutes / (beds * countedMinutes)) * 100) : null,
+      now: occupiedBeds(units, admissions, input.bedReleases, input.leaveBeds),
+    },
+  };
+}
+leaveBeds),
+    },
+  };
+}
+leaveBeds),
+    },
+  };
+}
+ > 0 && countedMinutes > 0 ? Math.round((occupiedMinutes / (beds * countedMinutes)) * 100) : null,
       now: occupiedBeds(units, admissions, input.bedReleases, input.leaveBeds),
     },
   };
