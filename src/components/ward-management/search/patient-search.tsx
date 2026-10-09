@@ -594,6 +594,11 @@ export function PatientSearchPage() {
   // Derive the fallback from the current filtered population instead of synchronising state in an effect.
   const selectedRow = unifiedCaseload.find((row) => row.id === requestedSelectedId) ?? unifiedCaseload[0] ?? null;
   const selectedId = selectedRow?.id ?? null;
+  // The drawer belongs to the row that opened it. If that row leaves the results the drawer closes,
+  // and the open flag is cleared here (during render, not in an effect) so the shortcut comes back
+  // and the drawer cannot reopen by itself if the row later returns.
+  const drawerOpen = detailsOpen && requestedSelectedId !== null && selectedId === requestedSelectedId;
+  if (detailsOpen && !drawerOpen) setDetailsOpen(false);
   const preview: PreviewSelection | null =
     selectedRow === null
       ? null
@@ -736,23 +741,28 @@ Clinical Note: ${p.clinicalNote}`;
   };
 
   // The counts beside each stage and department match the same way the table does, name included.
-  const countMovements = (stage?: MovementStage, edId?: string) => {
+  const { stageCounts, allStagesCount, departmentCounts, allDepartmentsCount } = useMemo(() => {
     const needle = isChip ? "" : foldPatientSearchText(text);
-    const byRecord = new Set(searchMovements(movements, units, { text, stage, edId }).map((m) => m.id));
-    return searchMovements(movements, units, { text: "", stage, edId }).filter(
-      (m) =>
-        text.trim() === "" || byRecord.has(m.id) || (needle !== "" && (subjectWords.get(m.id) ?? "").includes(needle)),
-    ).length;
-  };
-
-  const stageCounts = new Map<MovementStage, number>(
-    SELECTABLE_STAGES.map((candidate) => [candidate, countMovements(candidate, query.edId)]),
-  );
-  const allStagesCount = countMovements(undefined, query.edId);
-  const departmentCounts = new Map<string, number>(
-    allEmergencyDepartments().map((ed) => [ed.id, countMovements(query.stage, ed.id)]),
-  );
-  const allDepartmentsCount = countMovements(query.stage, undefined);
+    const countMovements = (stage?: MovementStage, edId?: string) => {
+      const byRecord = new Set(searchMovements(movements, units, { text, stage, edId }).map((m) => m.id));
+      return searchMovements(movements, units, { text: "", stage, edId }).filter(
+        (m) =>
+          text.trim() === "" ||
+          byRecord.has(m.id) ||
+          (needle !== "" && (subjectWords.get(m.id) ?? "").includes(needle)),
+      ).length;
+    };
+    return {
+      stageCounts: new Map<MovementStage, number>(
+        SELECTABLE_STAGES.map((candidate) => [candidate, countMovements(candidate, query.edId)]),
+      ),
+      allStagesCount: countMovements(undefined, query.edId),
+      departmentCounts: new Map<string, number>(
+        allEmergencyDepartments().map((ed) => [ed.id, countMovements(query.stage, ed.id)]),
+      ),
+      allDepartmentsCount: countMovements(query.stage, undefined),
+    };
+  }, [movements, units, text, isChip, subjectWords, query.stage, query.edId]);
 
   const nowMs = now * MS_PER_MINUTE;
   const selectedTier = selectedPatient ? tierNumber(selectedPatient.urgency) : null;
@@ -1198,9 +1208,7 @@ Clinical Note: ${p.clinicalNote}`;
         </div>
 
         <Drawer
-          // Bound to the row that opened it: if that row leaves the results, the drawer closes rather
-          // than showing whichever record the list falls back to.
-          open={detailsOpen && requestedSelectedId !== null && selectedId === requestedSelectedId}
+          open={drawerOpen}
           onClose={() => {
             setDetailsOpen(false);
           }}
