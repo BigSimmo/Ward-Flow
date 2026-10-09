@@ -7,7 +7,7 @@ import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow
 const fake = vi.hoisted(() => ({ connection: null as WardSharedConnection | null }));
 vi.mock("../src/components/ward-management/ward-shared-access", async (original) => {
   const actual = await original<typeof import("../src/components/ward-management/ward-shared-access")>();
-  return { ...actual, useWardShared: () => fake.connection! };
+  return { ...actual, useWardShared: (enabled: boolean) => ({ ...fake.connection!, enabled }) };
 });
 function Probe() {
   const { configuration, now, dispatch } = useWardFlow();
@@ -52,6 +52,31 @@ afterEach(() => {
 });
 
 describe("shared provider boundary", () => {
+  it("keeps the demonstration local when shared mode is disabled", () => {
+    vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
+    render(
+      <WardFlowProvider>
+        <Probe />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByText(/Local demonstration/)).toBeInTheDocument();
+    expect(screen.queryByText("45")).toBeNull();
+    expect(screen.getByRole("status").textContent).toBe(String(seedWardFlowStateAt(0).configuration.pullHoldMinutes));
+    fireEvent.click(screen.getByRole("button", { name: "Advance" }));
+    expect(fake.connection!.dispatch).not.toHaveBeenCalled();
+  });
+  it("keeps a pinned demonstration local even when shared mode is enabled", () => {
+    render(
+      <WardFlowProvider initialNow={642}>
+        <Probe />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByText(/Local demonstration/)).toBeInTheDocument();
+    expect(screen.queryByText("45")).toBeNull();
+    expect(screen.getByRole("status").textContent).toBe(String(seedWardFlowStateAt(0).configuration.pullHoldMinutes));
+    fireEvent.click(screen.getByRole("button", { name: "Advance" }));
+    expect(fake.connection!.dispatch).not.toHaveBeenCalled();
+  });
   it("explains live data without switching databases or losing a prototype draft", () => {
     render(
       <WardFlowProvider>
