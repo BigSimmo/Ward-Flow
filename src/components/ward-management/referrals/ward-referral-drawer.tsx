@@ -791,10 +791,11 @@ function WardReferralDrawerContent({
   const [catchmentConfirmed, setCatchmentConfirmed] = useState(kept?.catchmentConfirmed ?? false);
   const [catchmentEditing, setCatchmentEditing] = useState(false);
   const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(kept?.homeRegion ?? liveMovement?.homeRegion ?? "");
+  // What a menu or link asks for wins over a kept draft; the draft fills in everything else.
   const [sourceKind, setSourceKind] = useState<"community" | "ed">(
-    kept?.sourceKind ?? (initialCategory === "ed" ? "ed" : "community"),
+    (initialOriginSiteCode ? undefined : kept?.sourceKind) ?? (initialCategory === "ed" ? "ed" : "community"),
   );
-  const [originSiteCode, setOriginSiteCode] = useState(kept?.originSiteCode ?? initialOriginSiteCode ?? "");
+  const [originSiteCode, setOriginSiteCode] = useState(initialOriginSiteCode ?? kept?.originSiteCode ?? "");
   const [sendingTeam, setSendingTeam] = useState(kept?.sendingTeam ?? "");
   const [referralSex, setReferralSex] = useState<RecordedSex>(
     kept?.referralSex ?? RECORDED_SEXES.find((sex) => sex === patientRecord?.sex) ?? "Not recorded",
@@ -804,7 +805,7 @@ function WardReferralDrawerContent({
   );
   const [highAcuity, setHighAcuity] = useState(kept?.highAcuity ?? false);
   const [arrivalEta, setArrivalEta] = useState(kept?.arrivalEta ?? "");
-  const [destType, setDestType] = useState<DrawerCategory>(kept?.destType ?? initialDestination ?? "ward");
+  const [destType, setDestType] = useState<DrawerCategory>(initialDestination ?? kept?.destType ?? "ward");
   // Form field state - fully synced and editable
   const [legalStatus, setLegalStatus] = useState(
     kept?.legalStatus ??
@@ -2085,7 +2086,18 @@ function WardReferralDrawerContent({
                             <strong>{alreadyOpen}</strong>
                             <small>Check the Referrals board before sending another</small>
                           </span>
-                          <Link className={styles.btn} href="/mockups/ward-flow/referrals" onClick={onClose}>
+                          <Link
+                            className={styles.btn}
+                            href="/mockups/ward-flow/referrals"
+                            onClick={(event) => {
+                              if (dirty) {
+                                event.preventDefault();
+                                setGuardOpen(true);
+                                return;
+                              }
+                              onClose();
+                            }}
+                          >
                             Open board
                           </Link>
                         </div>

@@ -110,6 +110,31 @@ describe("referral slide-out, option B", () => {
     setItem.mockRestore();
   });
 
+  it("opens on the destination and site a link asks for, even over a kept draft", () => {
+    const first = renderDrawer();
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Kept reason" } });
+    fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep draft" }));
+    first.unmount();
+
+    renderDrawer({ initialDestination: "ed", initialCategory: "ed", initialOriginSiteCode: "RPH" });
+    expect(referTo().getByRole("button", { name: "ED" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Kept reason");
+    expect(screen.getByLabelText("Referring emergency department")).toHaveValue("RPH");
+  });
+
+  it("asks before Open board leaves a draft with answers", () => {
+    const { onClose } = renderDrawer({ initialPatientId: "PT-003" });
+    const note = screen.getByTestId("ward-referral-already-open");
+    fireEvent.click(steps().getByRole("button", { name: "Referral" }));
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Typed reason" } });
+    fireEvent.click(steps().getByRole("button", { name: "Patient" }));
+    fireEvent.click(within(note).getByRole("link", { name: "Open board" }));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole("alertdialog", { name: "Close without sending?" })).toBeInTheDocument();
+  });
+
   it("Discard drops the draft", () => {
     const first = renderDrawer();
     fireEvent.click(steps().getByRole("button", { name: "Referral" }));
