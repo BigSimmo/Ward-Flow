@@ -82,6 +82,6 @@ describe("ward notices name the patient by UMRN", () => {
     );
     const umrn = resolveSubjectPatient(linked, seed).umrn;
     expect(screen.getByText(`Transport for ${umrn} was cancelled.`)).toBeInTheDocument();
-    expect(screen.queryByText(new RegExp(linked.id))).not.toBeInTheDocument();
+    expect(document.body.textContent).not.toContain(linked.id);
   });
 });
