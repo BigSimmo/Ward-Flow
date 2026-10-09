@@ -211,7 +211,10 @@ export const WARD_FLOW_DEMO_STORAGE_KEY = "ward-flow-demo-state-v1";
 // release now names the admission it belongs to (`BedRelease.admissionId`, owner decision
 // 2026-09-25) — a v4 save has no such field and no honest migration exists, so it is refused
 // exactly like every other version mismatch above, never guessed or backfilled.
-const WARD_FLOW_DEMO_STORAGE_VERSION = 5;
+// v6 (2026-10-08): explicit deterioration/pause, recorded ATS and corroborated
+// arrival/capacity conflicts; reciprocal runtime admission links are validated.
+// Old automatic saves are refused rather than silently migrating clinical facts.
+const WARD_FLOW_DEMO_STORAGE_VERSION = 6;
 
 /**
  * What actually goes to `sessionStorage`. Carries the world's calendar day ALONGSIDE the state, not

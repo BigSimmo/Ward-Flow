@@ -32,7 +32,13 @@
  * make `SCREEN-VERIFICATION.md` stale.
  *
  *     node scripts/ward-flow/screen-verification.mjs --report        # live implementation status per screen, always exits 0
- *     node scripts/ward-flow/screen-verification.mjs --hash <mockup> # print that screen's current implementation hash, to paste into the JSON
+ *     node scripts/ward-flow/screen-verification.mjs --hash <mockup> # print the existing folder/page hash
+ *     node scripts/ward-flow/screen-verification.mjs --render-input-hash # optional conservative shared-input fingerprint
+ *
+ * renderInputSha256 covers all first-party src and root render/dependency configuration.
+ * It excludes runtime environment values, public assets outside src and installed binaries.
+ * Matching inputs preserve only the recorded browser scope, not whole-screen or clinical approval.
+ * Missing old fingerprints/revisions remain unrecorded; never infer them from dates or newer code.
  */
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -43,6 +49,8 @@ import {
   implementationFiles,
   implementationSha256,
   implementationStatus,
+  renderInputSha256,
+  renderInputStatus,
 } from "./screen-verification-lib.mjs";
 
 const ROOT = process.cwd();
@@ -140,6 +148,12 @@ for (const [i, entry] of record.screens.entries()) {
     ) {
       problems.push([`${entry.mockup}: "checkedRevision" must be a full 40-character commit SHA`, [entry.mockup]]);
     }
+    if (
+      v.renderInputSha256 !== undefined &&
+      (typeof v.renderInputSha256 !== "string" || !/^[a-f0-9]{64}$/iu.test(v.renderInputSha256))
+    ) {
+      problems.push([`${entry.mockup}: "renderInputSha256" must be a 64-character SHA-256`, [entry.mockup]]);
+    }
   }
 }
 
@@ -181,19 +195,43 @@ const rows = ROSTER.map(({ mockup, route }) => {
 });
 
 const looked = rows.filter((r) => r.verified !== null).length;
+const hasRenderInputHashes = rows.some((row) => row.verified?.renderInputSha256 !== undefined);
 
 // --report and --hash are read-only, on-demand LIVE checks over the BUILT screen. Neither feeds
 // the generated page or --check: computing an implementation hash there would make
 // SCREEN-VERIFICATION.md go stale on every component edit — exactly the failure this file's own
 // header warns against reintroducing for the unverified/stale drawing cases.
+if (process.argv.includes("--render-input-hash")) {
+  try {
+    const hash = renderInputSha256(ROOT);
+    if (!hash) throw new Error("No source inputs");
+    console.log(hash);
+    process.exit(0);
+  } catch {
+    console.error("Render inputs unavailable: source/configuration missing, unreadable or unsupported.");
+    process.exit(1);
+  }
+}
+
 if (process.argv.includes("--report")) {
+  let renderHash = null;
+  try {
+    renderHash = renderInputSha256(ROOT);
+  } catch {
+    /* Status explicitly reports unavailable inputs. */
+  }
+  console.log(
+    "Render fingerprint: first-party src and render configuration only; runtime environment, installed binaries and external assets unassessed.",
+  );
   console.log(`Ward Flow — live implementation status (${rows.length} screens)`);
   for (const { mockup, route, folder } of ROSTER) {
     const files = implementationFiles(ROOT, folder, route);
     const hash = implementationSha256(ROOT, files);
     const entryVerified = byMockup.get(mockup)?.verified;
     const verified = entryVerified && typeof entryVerified === "object" ? entryVerified : null;
-    console.log(`${mockup}: ${implementationStatus(verified, hash)}`);
+    console.log(
+      `${mockup}: folder/page: ${implementationStatus(verified, hash)}; render inputs: ${renderInputStatus(verified, renderHash)}`,
+    );
   }
   process.exit(0);
 }
@@ -225,11 +263,18 @@ const lines = [
   "> Historical verdicts are retained. Current appearance is judged against the accepted app, not old drawings.",
   "> Checked revision identifies the reviewed commit; missing revisions remain unrecorded. Dirty inputs belong in notes.",
   "> Implementation hashes cover mapped screen folders/pages only, excluding shared shell, global CSS and transitive imports.",
+  ...(hasRenderInputHashes
+    ? [
+        "> Optional render-input hashes include all first-party src and root render/dependency configuration; they exclude runtime environment values, installed binaries and public assets outside src.",
+        "> A render-input match preserves only the recorded browser scope. Missing hashes remain unrecorded; no whole-screen or clinical approval is implied.",
+      ]
+    : []),
   "",
   `**${looked} of ${rows.length} screens have been looked at.**`,
   "",
-  "| Screen (mockup) | Route | Verified on | By | Widths | Themes | Verdict | Historical drawing | Local implementation hash at look | Checked revision |",
-  "|---|---|---|---|---|---|---|---|---|---|",
+  "| Screen (mockup) | Route | Verified on | By | Widths | Themes | Verdict | Historical drawing | Local implementation hash at look | Checked revision |" +
+    (hasRenderInputHashes ? " Render-input hash at look |" : ""),
+  "|---|---|---|---|---|---|---|---|---|---|" + (hasRenderInputHashes ? "---|" : ""),
   ...rows.map((r) => {
     const v = r.verified;
     const date = v ? (v.date ?? "—") : "—";
@@ -245,7 +290,8 @@ const lines = [
         ? v.implementationSha256.slice(0, 12)
         : "not recorded";
     const checkedRevision = v?.checkedRevision ?? "not recorded";
-    return `| \`${r.mockup}\` | \`${r.route}\` | ${date} | ${who} | ${widths} | ${themes} | ${verdict} | ${r.status} | ${implementationHash} | ${checkedRevision} |`;
+    const renderInputHash = v?.renderInputSha256 ?? "not recorded";
+    return `| \`${r.mockup}\` | \`${r.route}\` | ${date} | ${who} | ${widths} | ${themes} | ${verdict} | ${r.status} | ${implementationHash} | ${checkedRevision} |${hasRenderInputHashes ? ` ${renderInputHash} |` : ""}`;
   }),
   "",
   "## Deviations",

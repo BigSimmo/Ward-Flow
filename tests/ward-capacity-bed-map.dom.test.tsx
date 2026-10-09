@@ -8,6 +8,7 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { bedReleases, leaveBeds } from "@/components/ward-management/ward-movements";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
 const units = allUnits();
@@ -267,5 +268,57 @@ describe("bed-map service shortcut feedback", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+describe("valid capacity observations with ongoing preparation", () => {
+  it("renders zero offered beds and the actual preparation record without crashing or extra squares", () => {
+    const state = seedWardFlowState();
+    const release = state.bedReleases.find((row) => row.state === "discharged" && row.preparing)!;
+    const unit = state.units.find((row) => row.id === release.unitId)!;
+    const next = wardFlowReducer(state, {
+      type: "CONFIRM_CAPACITY",
+      role: "ward",
+      now: NOW_ANCHOR,
+      unitId: unit.id,
+      actingUnitId: unit.id,
+      value: 0,
+      expectedRevision: unit.allocatable.revision ?? 0,
+    });
+    expect(next.rejections).toEqual([]);
+    render(
+      <BedMap
+        units={next.units}
+        bedReleases={next.bedReleases}
+        admissions={next.admissions}
+        leaveBeds={next.leaveBeds}
+      />,
+    );
+    const block = screen.getByTestId(`ward-bed-map-ward-${unit.id}`);
+    expect(squaresIn(block, "ready")).toHaveLength(0);
+    expect(screen.getByTestId(`ward-bed-map-preparation-unoffered-${unit.id}`)).toHaveTextContent(
+      "1 discharged bed(s) still being made ready outside the offered Ready count",
+    );
+    expect(block.querySelectorAll("[data-bed-map-state]")).toHaveLength(unit.beds);
+    expect(block.querySelectorAll('[data-bed-map-preparing="true"]')).toHaveLength(0);
+  });
+  it("renders an explicit arrival reconciliation warning without adding a physical overflow square", () => {
+    const state = seedWardFlowState();
+    const unit = state.units[0];
+    const observed = { ...unit, arrivalCapacityConflicts: [{ movementId: "SYN-ARRIVAL", at: NOW_ANCHOR }] };
+    render(
+      <BedMap
+        units={[observed]}
+        bedReleases={state.bedReleases}
+        admissions={state.admissions}
+        leaveBeds={state.leaveBeds}
+      />,
+    );
+    expect(screen.getByTestId(`ward-bed-map-arrival-conflict-${unit.id}`)).toHaveTextContent(
+      "1 arrival(s) awaiting capacity reconciliation",
+    );
+    expect(screen.getByTestId(`ward-bed-map-ward-${unit.id}`).querySelectorAll("[data-bed-map-state]")).toHaveLength(
+      unit.beds,
+    );
   });
 });

@@ -1,12 +1,13 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import ts from "typescript";
 import { NODE_UNIT_TEST_GLOBS, DOM_UNIT_TEST_GLOBS, LIVE_UNIT_TEST_GLOBS } from "../scripts/unit-test-population.mjs";
 
 /**
  * A file under `tests/` is only actually tested if SOME runner's include/testMatch pattern
  * collects it. `vitest.config.mts` runs two projects on disjoint globs (`tests/**\/*.test.ts` for
- * node, `tests/**\/*.dom.test.tsx` for jsdom); `playwright.config.ts` adds three more patterns. A file whose name satisfies none of them runs
+ * node, `tests/**\/*.dom.test.tsx` for jsdom); `playwright.config.ts` supplies each browser project's matcher. A file whose name satisfies none of them runs
  * nothing, reports nothing, and — because `vitest run` walks its include globs rather than
  * enumerating `tests/` and complaining about leftovers — a whole-suite run is simply silent about
  * it. `tests/foo.test.tsx` (missing the `.dom.` infix the jsdom project requires) is the shape
@@ -54,24 +55,60 @@ function globToRegExp(glob: string): RegExp {
   return new RegExp(pattern);
 }
 
-/**
- * Pull a named regex literal (`const NAME = /.../;`, possibly split across two lines) out of a
- * Playwright config. The config cannot be imported here — it calls `getPlaywrightBaseUrl` at
- * module scope, which refuses to resolve without a runner-owned local server — so reading the
- * source is the only way a unit test can see these patterns. Mirrors the identically-named helper
- * in tests/playwright-project-isolation.test.ts; duplicated rather than imported so this file's
- * extraction stands on its own and a change to that file's internals cannot silently affect this
- * one's verdicts.
+/** Read project objects and their explicit named matchers from the config AST.
+ * Importing the config would require a runner-owned server. Counting unrelated name/testMatch
+ * strings cannot prove that each project's own matcher was read, and comments are not config.
+ * Conditional project arrays are traversed too; unsupported matcher shapes fail closed.
  */
-function configRegexConst(source: string, name: string): RegExp {
-  const match = source.match(new RegExp(`const ${name} =\\s*(/.*/);`));
-  if (!match) {
-    throw new Error(
-      `could not read the \`${name}\` regex literal from its config. If it moved or changed shape, ` +
-        "update this extraction — do not delete the assertions that depend on it.",
-    );
+function configuredBrowserMatchers(source: string) {
+  const parsed = ts.createSourceFile("playwright.config.ts", source, ts.ScriptTarget.Latest, true);
+  const namedPatterns = new Map<string, RegExp>();
+  let projects: ts.ArrayLiteralExpression | undefined;
+  function read(node: ts.Node): void {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isRegularExpressionLiteral(node.initializer)
+    ) {
+      const literal = node.initializer.text;
+      const lastSlash = literal.lastIndexOf("/");
+      namedPatterns.set(node.name.text, new RegExp(literal.slice(1, lastSlash), literal.slice(lastSlash + 1)));
+    }
+    if (ts.isPropertyAssignment(node) && node.name.getText(parsed) === "projects") {
+      if (!ts.isArrayLiteralExpression(node.initializer) || projects) {
+        throw new Error("playwright.config.ts: expected one explicit projects array — update extraction.");
+      }
+      projects = node.initializer;
+    }
+    ts.forEachChild(node, read);
   }
-  return new RegExp(match[1]!.slice(1, -1));
+  read(parsed);
+  if (!projects) throw new Error("playwright.config.ts: projects array missing.");
+  const bindings: { name: string; patternName: string; pattern: RegExp }[] = [];
+  function project(node: ts.Node): void {
+    if (ts.isObjectLiteralExpression(node)) {
+      const properties = node.properties.filter(ts.isPropertyAssignment);
+      const name = properties.find((property) => property.name.getText(parsed) === "name");
+      if (name) {
+        const testMatch = properties.find((property) => property.name.getText(parsed) === "testMatch");
+        if (!ts.isStringLiteral(name.initializer) || !testMatch || !ts.isIdentifier(testMatch.initializer)) {
+          throw new Error("playwright.config.ts: project needs a literal name and explicit named testMatch.");
+        }
+        const patternName = testMatch.initializer.text;
+        const pattern = namedPatterns.get(patternName);
+        if (!pattern) throw new Error(`playwright.config.ts: matcher ${patternName} is not a parsed regex literal.`);
+        bindings.push({ name: name.initializer.text, patternName, pattern });
+        return;
+      }
+    }
+    ts.forEachChild(node, project);
+  }
+  project(projects);
+  if (!bindings.length || new Set(bindings.map((binding) => binding.name)).size !== bindings.length) {
+    throw new Error("playwright.config.ts: project list empty or names duplicated.");
+  }
+  return bindings;
 }
 
 function walk(dir: string, root: string, out: string[]): void {
@@ -129,24 +166,13 @@ describe("no file under tests/ is invisible to every runner", () => {
   // Playwright resolves a project's testMatch via `takeFirst(projectConfig.testMatch,
   // config.testMatch, ...)` (node_modules/playwright/lib/common/index.js:639) — the project's OWN
   // pattern wins outright, and the top-level one is consulted only when a project sets none.
-  // Every project in playwright.config.ts sets its own; playwright.visual.config.ts's one project
-  // does not, so its top-level pattern is what actually governs there. Both branches are handled
-  // explicitly below rather than assumed, and each assumption is pinned so a future project that
-  // breaks the pattern fails loudly instead of quietly under-covering.
+  // Every current project sets an explicit named regex. Parse each actual project binding rather
+  // than assuming all projects share a matcher. An unsupported shape fails closed, so future
+  // config changes require updating this guard instead of quietly leaving specs uncovered.
 
   const playwrightSource = readConfigSource("playwright.config.ts");
-  const mainProjectNameMatches = [...playwrightSource.matchAll(/name: "[a-z0-9-]+",/g)];
-  const mainNamedTestMatchMatches = [...playwrightSource.matchAll(/testMatch: (\w+),/g)];
-  if (mainNamedTestMatchMatches.length !== mainProjectNameMatches.length) {
-    throw new Error(
-      "playwright.config.ts: a project's count of named `testMatch: WORD,` references no longer " +
-        'matches its count of `name: "...",` entries — some project now falls back to the ' +
-        "top-level testMatch (Playwright's takeFirst), which this extraction does not account for. " +
-        "Update the extraction before trusting it.",
-    );
-  }
-  const mainPatternNames = [...new Set(mainNamedTestMatchMatches.map((m) => m[1]!))];
-  const playwrightMainPatterns = mainPatternNames.map((name) => configRegexConst(playwrightSource, name));
+  const mainProjects = configuredBrowserMatchers(playwrightSource);
+  const playwrightMainPatterns = mainProjects.map((project) => project.pattern);
 
   // playwright.visual.config.ts left with PsychSift (26 September 2026); if it comes back, read its
   // pattern here again.
@@ -170,10 +196,47 @@ describe("no file under tests/ is invisible to every runner", () => {
     expect(NODE_DEFAULT_INCLUDE_GLOBS).toEqual(["tests/**/*.test.ts"]);
     expect(NODE_LIVE_INCLUDE_GLOBS).toEqual(["tests/**/*.live.test.ts"]);
     expect(JSDOM_INCLUDE_GLOBS).toEqual(["tests/**/*.dom.test.tsx", "tests/**/*.contract.test.tsx"]);
-    // Playwright: two distinct named patterns across the projects (production browsers, the
-    // mockup projects).
-    expect(mainPatternNames.sort()).toEqual(["mockupSpecPattern", "productionSpecPattern"]);
-    expect(mainProjectNameMatches.length).toBeGreaterThan(3);
+    // Check the actual project→matcher bindings, not the number of distinct patterns.
+    // A wrongly reused mockup matcher could collect unrelated journeys into the narrow projects.
+    const responsiveSpec = "tests/ui-ward-responsive-audit.spec.ts";
+    const otherWardSpec = "tests/ui-ward-management.spec.ts";
+    for (const project of mainProjects) {
+      if (["firefox-ward-responsive", "webkit-ward-responsive"].includes(project.name)) {
+        expect(project.pattern.test(responsiveSpec), project.name).toBe(true);
+        expect(project.pattern.test(otherWardSpec), project.name).toBe(false);
+        expect(project.pattern.test("tests/ui-smoke.spec.ts"), project.name).toBe(false);
+      } else if (["chromium-mockups", "chromium-mockups-known"].includes(project.name)) {
+        expect(project.pattern.test(responsiveSpec), project.name).toBe(true);
+        expect(project.pattern.test(otherWardSpec), project.name).toBe(true);
+      } else {
+        expect(project.patternName, project.name).toBe("productionSpecPattern");
+        expect(project.pattern.test("tests/ui-smoke.spec.ts"), project.name).toBe(true);
+        expect(project.pattern.test(responsiveSpec), project.name).toBe(false);
+        expect(project.pattern.test(otherWardSpec), project.name).toBe(false);
+      }
+    }
+    expect(mainProjects.map((project) => project.name)).toEqual(
+      expect.arrayContaining(["chromium", "chromium-mockups", "firefox-ward-responsive", "webkit-ward-responsive"]),
+    );
+  });
+
+  it("rejects an unparsed or missing matcher instead of treating a project name as coverage", () => {
+    expect(() =>
+      configuredBrowserMatchers(
+        'const pattern = /ward/; defineConfig({ projects: [{ name: "ward", testMatch: missing }] });',
+      ),
+    ).toThrow(/not a parsed regex literal/);
+    expect(() => configuredBrowserMatchers('defineConfig({ projects: [{ name: "ward" }] });')).toThrow(
+      /explicit named testMatch/,
+    );
+  });
+
+  it("reads conditional projects and ignores misleading config-shaped comments", () => {
+    const projects = configuredBrowserMatchers(
+      'const pattern = /ward/; /* name: "fake", testMatch: absent, */ defineConfig({ projects: [...(enabled ? [{ name: "ward", testMatch: pattern }] : [])] });',
+    );
+    expect(projects.map((project) => project.name)).toEqual(["ward"]);
+    expect(projects[0]!.pattern.test("ward")).toBe(true);
   });
 
   describe("the visibility matcher itself, pinned against literal example paths", () => {

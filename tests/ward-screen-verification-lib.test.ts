@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, symlinkSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -9,6 +9,9 @@ import {
   implementationFiles,
   implementationSha256,
   implementationStatus,
+  renderInputFiles,
+  renderInputSha256,
+  renderInputStatus,
 } from "../scripts/ward-flow/screen-verification-lib.mjs";
 import { PAIRS } from "../scripts/ward-flow/screen-pairs.mjs";
 
@@ -216,6 +219,170 @@ describe("screen verification checked revision", () => {
       const invalid = run("--check");
       expect(invalid.status).toBe(1);
       expect(invalid.stderr).toContain('"checkedRevision" must be a full 40-character commit SHA');
+    } finally {
+      cleanup(dir);
+    }
+  });
+});
+
+describe("conservative render input provenance", () => {
+  function fixture() {
+    const dir = tempDir("wf-render-inputs-");
+    for (const [file, content] of Object.entries({
+      "src/components/ward-management/capacity/view.tsx": "export const view = 1;\n",
+      "src/components/ward-management/ward-flow-reducer.ts": "export const engine = 1;\n",
+      "src/components/ward-management/shell/rail.tsx": "export const shell = 1;\n",
+      "src/app/globals.css": ":root { --fixture: 1; }\n",
+      "src/app/ward-flow-v6-tokens.css": ":root { --wf-fixture: 1; }\n",
+      "package.json": "{}\n",
+      "package-lock.json": "{}\n",
+      "next.config.ts": "export default {};\n",
+      "tsconfig.json": "{}\n",
+      "postcss.config.mjs": "export default {};\n",
+      "docs/ward-flow/notes.md": "Historical evidence\n",
+    })) {
+      const full = path.join(dir, file);
+      mkdirSync(path.dirname(full), { recursive: true });
+      writeFileSync(full, content);
+    }
+    return dir;
+  }
+
+  it.each([
+    "src/app/globals.css",
+    "src/app/ward-flow-v6-tokens.css",
+    "src/components/ward-management/shell/rail.tsx",
+    "src/components/ward-management/ward-flow-reducer.ts",
+    "package.json",
+    "package-lock.json",
+    "next.config.ts",
+    "tsconfig.json",
+    "postcss.config.mjs",
+  ])("invalidates a recorded render fingerprint after %s changes", (changed) => {
+    const dir = fixture();
+    try {
+      const oldFolderHash = implementationSha256(dir, implementationFiles(dir, "capacity", null));
+      const recorded = renderInputSha256(dir);
+      if (recorded === null) throw new Error("Synthetic fixture has no render inputs");
+      expect(recorded).toMatch(/^[a-f0-9]{64}$/u);
+      writeFileSync(path.join(dir, changed), "changed render input\n");
+      expect(implementationSha256(dir, implementationFiles(dir, "capacity", null))).toBe(oldFolderHash);
+      expect(renderInputStatus({ renderInputSha256: recorded }, renderInputSha256(dir))).toBe("CHANGED since look");
+    } finally {
+      cleanup(dir);
+    }
+  });
+
+  it("does not invalidate render evidence for document-only changes", () => {
+    const dir = fixture();
+    try {
+      const recorded = renderInputSha256(dir);
+      if (recorded === null) throw new Error("Synthetic fixture has no render inputs");
+      writeFileSync(path.join(dir, "docs/ward-flow/notes.md"), "New evidence notes\n");
+      expect(renderInputSha256(dir)).toBe(recorded);
+      expect(renderInputStatus({ renderInputSha256: recorded }, recorded)).toBe("MATCH (recorded render inputs only)");
+    } finally {
+      cleanup(dir);
+    }
+  });
+
+  it("detects new and removed source/configuration inputs", () => {
+    const dir = fixture();
+    try {
+      const old = renderInputSha256(dir);
+      const source = path.join(dir, "src/new-shared.ts");
+      writeFileSync(source, "export {};\n");
+      expect(renderInputSha256(dir)).not.toBe(old);
+      rmSync(source);
+      expect(renderInputSha256(dir)).toBe(old);
+      writeFileSync(path.join(dir, "tsconfig.extra.json"), "{}\n");
+      expect(renderInputSha256(dir)).not.toBe(old);
+    } finally {
+      cleanup(dir);
+    }
+  });
+
+  it("normalises source line endings and reports absent provenance without inventing it", () => {
+    const dir = fixture();
+    try {
+      const hash = renderInputSha256(dir);
+      writeFileSync(path.join(dir, "src/app/globals.css"), ":root { --fixture: 1; }\r\n");
+      expect(renderInputSha256(dir)).toBe(hash);
+      expect(renderInputStatus(null, hash)).toBe("NOT RECORDED");
+      expect(renderInputStatus({ renderInputSha256: "invalid" }, hash)).toBe("INVALID RECORDED HASH");
+      expect(renderInputStatus({ implementationSha256: "old-folder-only" }, hash)).toBe("NOT RECORDED");
+      expect(renderInputFiles(dir).some((file) => file.includes("docs/"))).toBe(false);
+    } finally {
+      cleanup(dir);
+    }
+    const empty = tempDir("wf-render-empty-");
+    try {
+      expect(renderInputSha256(empty)).toBeNull();
+    } finally {
+      cleanup(empty);
+    }
+    expect(renderInputStatus({ renderInputSha256: "a".repeat(64) }, null)).toBe("RENDER INPUTS UNAVAILABLE");
+  });
+
+  it("hashes binary source assets byte-exactly rather than normalising their data", () => {
+    const dir = fixture();
+    try {
+      const asset = path.join(dir, "src/fixture.png");
+      writeFileSync(asset, Buffer.from([137, 13, 10, 26]));
+      const hash = renderInputSha256(dir);
+      writeFileSync(asset, Buffer.from([137, 10, 26]));
+      expect(renderInputSha256(dir)).not.toBe(hash);
+    } finally {
+      cleanup(dir);
+    }
+  });
+
+  it.skipIf(process.platform === "win32")(
+    "refuses symlinked inputs rather than reading another project's source",
+    () => {
+      const dir = fixture();
+      const target = tempDir("wf-render-symlink-target-");
+      try {
+        symlinkSync(target, path.join(dir, "src/linked-source"), "dir");
+        expect(() => renderInputFiles(dir)).toThrow(/provenance unverified/u);
+      } finally {
+        cleanup(dir);
+        cleanup(target);
+      }
+    },
+  );
+
+  it("CLI reports optional hashes, retains the folder hash command and keeps --check structural", () => {
+    const dir = fixture();
+    const script = path.join(repositoryRoot, "scripts/ward-flow/screen-verification.mjs");
+    const run = (...args: string[]) => spawnSync(process.execPath, [script, ...args], { cwd: dir, encoding: "utf8" });
+    try {
+      const record = JSON.parse(
+        readFileSync(path.join(repositoryRoot, "docs/ward-flow/screen-verification.json"), "utf8"),
+      );
+      const jsonPath = path.join(dir, "docs/ward-flow/screen-verification.json");
+      const recorded = renderInputSha256(dir);
+      if (recorded === null) throw new Error("Synthetic fixture has no render inputs");
+      record.screens[0].verified.renderInputSha256 = recorded;
+      writeFileSync(jsonPath, JSON.stringify(record));
+      expect(run("--render-input-hash").stdout.trim()).toBe(recorded);
+      const legacy = implementationSha256(dir, implementationFiles(dir, "capacity", "/capacity"));
+      expect(run("--hash", "capacity-third-edition.html").stdout.trim()).toBe(legacy);
+      const report = run("--report");
+      expect(report.status).toBe(0);
+      expect(report.stdout).toContain("MATCH (recorded render inputs only)");
+      expect(report.stdout).toContain("render inputs: NOT RECORDED");
+      expect(report.stdout).not.toContain("CURRENT");
+      expect(run().status).toBe(0);
+      expect(run("--check").status).toBe(0);
+      writeFileSync(path.join(dir, "src/app/globals.css"), "changed\n");
+      expect(run("--report").stdout).toContain("render inputs: CHANGED since look");
+      expect(run("--check").status).toBe(0);
+      record.screens[0].verified.renderInputSha256 = "not-a-hash";
+      writeFileSync(jsonPath, JSON.stringify(record));
+      const invalid = run("--check");
+      expect(invalid.status).toBe(1);
+      expect(invalid.stderr).toContain('"renderInputSha256" must be a 64-character SHA-256');
     } finally {
       cleanup(dir);
     }

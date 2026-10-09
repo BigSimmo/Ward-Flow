@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { classifyChanges, hasDependencyChanges, parseNameStatus } from "./plan.mjs";
+import { classifyChanges, documentChecks, hasDependencyChanges, parseNameStatus } from "./plan.mjs";
 
 const sha = /^[0-9a-f]{40}$/iu;
 
@@ -28,7 +28,7 @@ function expectedScope() {
   // given but could not be used. `reason` is dropped: it is a console message for a human.
   const failClosed = (dependencyReview) => {
     const { full, unit, browser, policy } = classifyChanges([]);
-    return { full, unit, browser, policy: policy ?? false, dependencyReview };
+    return { full, unit, browser, policy: policy ?? false, dependencyReview, ...documentChecks([]) };
   };
   if (!base) return failClosed(false);
   if (!sha.test(base)) return failClosed(true);
@@ -46,6 +46,7 @@ function expectedScope() {
       browser: plan.browser,
       policy: plan.policy ?? false,
       dependencyReview: hasDependencyChanges(changes),
+      ...documentChecks(changes),
     };
   } catch {
     return failClosed(true);
@@ -58,6 +59,9 @@ const written = {
   browser: process.env.WARD_PLAN_BROWSER,
   policy: process.env.WARD_PLAN_POLICY,
   dependencyReview: process.env.WARD_PLAN_DEPENDENCY_REVIEW,
+  owner_index: process.env.WARD_PLAN_OWNER_INDEX,
+  rules_index: process.env.WARD_PLAN_RULES_INDEX,
+  organisation: process.env.WARD_PLAN_ORGANISATION,
 };
 const expected = expectedScope();
 // `reason` is plan.mjs's own console message for a human, not a gate, so it is not compared.

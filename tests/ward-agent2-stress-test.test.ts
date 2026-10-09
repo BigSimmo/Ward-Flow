@@ -85,7 +85,7 @@ describe("Agent 2 Stress Test Suite", () => {
     expect(cap.held).toBe(5);
   });
 
-  it("Scenario 3: bedMapWards throws if pendingPreparation > capacity.available", () => {
+  it("Scenario 3: preparing beds remain visible when the ward offers no Ready beds", () => {
     const unit: Unit = {
       id: "prep-ward",
       name: "Prep Ward",
@@ -122,8 +122,14 @@ describe("Agent 2 Stress Test Suite", () => {
         confirmedBy: "coordinator",
       },
     ];
-    // bedsPendingPreparation is 1, but capacity.available is 0
-    expect(() => bedMapWards([unit], releases)).toThrowError(/still being made ready but only 0 ready/);
+    // A newer ward observation may offer zero even while a discharged bed is still being
+    // prepared. Preparation is a separately recorded fact, not an additional Ready square.
+    expect(() => bedMapWards([unit], releases)).not.toThrow();
+    const [ward] = bedMapWards([unit], releases);
+    expect(ward.pendingPreparation).toBe(1);
+    expect(ward.ready).toBe(0);
+    expect(ward.pendingPreparation - ward.ready).toBe(1);
+    expect(ward.ready + ward.pulled + ward.closed + ward.occupied).toBe(unit.beds);
   });
 
   it("Scenario 4: Gender Segregation Breach when noTransportNeeded and gender corrected at pulled", () => {

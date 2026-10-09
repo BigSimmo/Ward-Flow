@@ -1,26 +1,51 @@
 # Ward Flow — status
 
-**Current as of 6 October 2026, `main` at `1695b40` (pull request #79 / #80).** This top section is the
-current "what is built and what is left" page. Everything under
-[Historical record](#historical-record-25-september-2026) is the older 25 September snapshot from the
-former Database repository, kept as evidence only. When this page and the code disagree, the code
-and its tests win; check `git log -1` and update this section rather than trusting its date.
+**Source baseline audited 8 October 2026:** dedicated `BigSimmo/Ward-Flow` main
+`e7b7f325346ea7abb5004bd2e60e63f64f5c9f95` (PR #121). This page describes that
+verified baseline and the local remediation programme. A later local change,
+publication and deployment each require separate evidence.
 
-Synthetic data only. Ward Flow is a prototype, not validated clinical decision support. Do not
-enter real patient information.
+Synthetic data only. Do not enter real patient information. Ward Flow is not
+approved for clinical deployment.
 
-## In one paragraph
+**Remediation integration update:** canonical main was freshly fetched and verified at
+`0bbcd341d08ad1b2e0c67a77a9cab84367e03769` (including PRs #131 and #130). Its intervening eight PRs
+are preserved in local branch `codex/audit-remediation-20261008`. Five original
+phone-layout findings were already fixed by that newer main. Local domain,
+workflow, snapshot and documentation corrections are recorded in the dated
+[remediation receipt](reports/remediation-2026-10-08.md). Main and local verification
+have separate evidence; the earlier CI result below does not verify the later tree.
 
-Ward Flow is a working browser prototype for coordinating psychiatric beds across Western Australian
-mental health services. Patients, beds, referrals and other scenario data are invented and held only
-in each user's browser. Some reference content is real public information: the community directory
-shows published contact details and catchment counts for real WA services, which are not call-tested
-and may be out of date. Since moving to this repository on 27 September, 80 pull requests have been
-opened: 79 merged (#1 to #3, #5 to #80), and #4 closed as replaced. There are no open GitHub
-issues. The recent merges (#79, #80) passed static checks, balanced five unit-test shards, three
-browser-journey groups, production build, full-tree lint, and the Gitleaks secret scan. Nothing is
-known to be broken or urgent. The main gaps are a shared backend with proper log-in, and the outside
-reviews that must happen before any real patient.
+**Completed local verification:** the remediation source at `3d01bf9` passed
+936 files / 10,881 tests (9 files / 146 tests skipped), whole-source lint and type
+checking. After preserving the newer main, candidate `8682118` passed all 325
+tests in 29 affected/regression files, whole-source lint, an all-route production
+build with its normal full type check, and 12 selected Chromium browser checks,
+including the complete referral-to-discharge journey. Ten additional bounded
+Settings checks passed. These are local synthetic results; no full-suite rerun,
+hosted CI, shared-user operation or clinical approval is claimed for `8682118`.
+
+## Current state
+
+The Next.js application is an interactive browser prototype with a shared in-tab
+reducer, synthetic records, scoped role simulation, local scenario import/export,
+and extensive unit/browser checks. Different users do not share an authoritative
+board. The separate Azure Functions backend stores owner-private demonstration
+snapshots; it is not connected to the screens and is not a service-scoped clinical
+backend. A PostgreSQL schema proposal does not establish a deployed database.
+
+The audit's clean exact-lock run passed **916 test files and 10,688 tests**, with
+**9 files / 146 tests skipped**. The separate backend mock suite passed 24 tests.
+Latest main CI passed, using successful identical-tree PR #121 application checks.
+These dated results are a baseline, not a pass for untested remediation changes.
+Local desktop/phone inspection covered 46 routes and identified supported defects,
+including arrival/held-bed integrity, misleading community actions and phone
+overflow. An all-green baseline does not mean every workflow is complete.
+
+The audit verified the named Ward Railway frontend deployment against this main
+SHA. It did not verify Azure's current host configuration, storage recovery,
+Sentry setup or approved patient-data processing. Provider health is separate
+from end-to-end application verification.
 
 ## What is built
 
@@ -36,7 +61,7 @@ reviews that must happen before any real patient.
 | Records and reports    | Handover (Command Horizon flight deck and print), legal forms (with MHA expiry reminders), statistics dashboards and charts (with CSV export)                  |
 | Other                  | Settings, compact floating drawers (Tools, Tasks, Activity, Referrals), scenario save/load, universal prototype banner, showcase                               |
 
-**Recent work since the move (27 September to 6 October), by theme:**
+**Dated work summary (27 September to 6 October; not a fresh verification claim):**
 
 - **Patient flight deck & search (#66, #69):** Unified Patient Now flight deck consolidating patient dossier and transit operations into a 3-column brief with live journey tracking (`usePatientNow`, #69); Direction 3 Floating Glass Command Horizon for patient search console (#66); perfected referral detail inspector with a 4-column demographic strip, live ready badge, and clear placement rationale (#66).
 - **Handover Command Horizon & print (#42, #72):** 3-tier flight deck and shift switcher, rapid snapshot sections, KPI tiles (caseload, vacancies, form expiries, 1:1s), and verified table sheet (#42, #72); dedicated print stylesheet with `CanvasText` and D7 landmark compliance (#72); restored legal notice HUD tag (#42).
@@ -56,45 +81,44 @@ reviews that must happen before any real patient.
   scenario vault with a synthetic-data guard (#32). See [the backend guide](../../backend/ward-flow/README.md).
 - **Rules:** owner-approved prototype operating mode recorded in `AGENTS.md` on 3 October (#32).
 
-## What is not done
+## Remaining work and local remediation
 
-1. **Shared backend and log-in.** Data lives only in each browser. It survives a page refresh
-   through `sessionStorage` until someone types free text (for example adding a patient); from then
-   on nothing is saved for the rest of the session, by design (owner decision D-18). Demo scenarios
-   can now be saved to and loaded from local JSON files (#50). The Azure backend is code-complete but
-   deliberately not connected to the UI; that waits on WF-29 (privacy and service-scoped access) and a later owner decision. It is not
-   "ready" until an authenticated shared save, reload and conflict case are proven.
-2. **Live site not rechecked.** The Railway production site (https://ward-flow-production.up.railway.app/)
-   has not been verified since recent merges. A separate preview service was deployed on 5 October to verify
-   the compact drawers (#70), and healthcheck diagnostics were documented (#60, #63), but deploying or updating
-   the production Railway service requires Josh's go-ahead; see [hosting](../hosting.md).
-3. **Checks on `main` itself (resolved).** Automated GitHub checks now run on every push to `main`,
-   including Gitleaks secret scanning, production build verification, and full-tree lint (#37). Test-shard
-   rebalancing, coverage aggregation, and Next.js / Playwright caching (#75–#78) keep `main` verification fast
-   without duplicate CI execution.
-4. **Known screen follow-ups (fully resolved).** All screen follow-ups are completed: the unprovable aggregate guarantee copy ("nobody goes without today") on the Capacity screen was replaced with truthful operational wording ("net available capacity today", WF-51); the comprehensive 10-minute guided demonstration script across 5 clinical acts was authored in `docs/ward-flow/DEMO-SCRIPT.md` (WF-60); clinical decisions D-30 through D-36 resolved or formally deferred inter-ward transfers, gender-diverse placement safety, ATS priority sorting, ward note privacy, deterioration escalation, and regional transport; sending a referral remains an unwired prototype action by design (#70).
-5. **Housekeeping.** 53 historical top-level documents were moved into `docs/archive/` (#51). Residual historical documents in `docs/ward-flow/` and leftover remote PR branches on GitHub remain to be cleaned up as routine housekeeping.
+The [remediation checkpoint](reports/remediation-2026-10-08.md) records actual fixes
+and checks against the audit's stable task IDs. Confirmed source defects are being
+fixed locally; publication, deployment and hosted validation remain separate.
+
+- **Shared synthetic operation:** configured staff sign-in, trusted service/role
+  membership, authoritative shared commands, cross-user synchronisation and
+  authenticated action history still require implementation and agreed boundaries.
+  Existing snapshot CAS prevents blind overwrite, but does not supply those features.
+- **Persistence privacy:** D-18 intentionally stops browser session persistence
+  after a typed-text event. Saving a JSON scenario is an explicit file action;
+  it is not automatic shared persistence. Do not restore typed drafts to browser
+  storage to make refresh seem more reliable.
+- **Incomplete secondary controls:** clinician referral assignment, intervention
+  recording, safeguard previews and some shell/admin actions remain explicitly
+  disclosed as unavailable. A toast is not a saved record.
+- **Infrastructure:** isolated staging, monitoring/alerts, backup/restore,
+  app-plus-data rollback, provider rate limits and account revocation require
+  verified Ward-only configuration and acceptance evidence. Inaccessible provider
+  tools do not prove a service is absent.
+- **Outstanding ownership:** historical Notion holds and unpublished candidates
+  remain with their original owners. Local fixes do not reconcile those records.
 
 ## Before any real patient
 
-These are hard gates, not tasks for now. The owner has parked them; do not re-ask about the cultural
-safety review (R2-6).
-
-- Outside reviews: Aboriginal cultural safety, medical device (TGA), clinical safety officer, privacy,
-  WA legal advice on forms, catchment data, and post-incident review (owner item 63, D-36; operational postures and compliance dossiers ratified in D-37; execution scheduled pre-pilot).
-- Internal patient codes (item 58) to be decided again.
-- On-call roster data is illustrative only.
-- Reverse the prototype-mode relaxations in `AGENTS.md` (#32): clinical-safety and legal sign-off
-  files currently do not block merges.
+The [production-readiness register](governance/PRODUCTION-READINESS.md) distinguishes
+local engineering from required institutional and qualified external decisions:
+clinical safety, WA privacy/information governance, legal forms, cultural safety,
+reference-data verification, intended-purpose/TGA assessment and accountable
+support. Internal D-37 statements record intended standards; they are neither
+external approval nor proof those standards are implemented.
 
 ## Where to look next
 
-- Product, design authority and running the app: [README.md](README.md).
-- How work is done now: [HOW-WE-WORK.md](HOW-WE-WORK.md).
-- Tasks and decisions: [task ledger](../ward-flow-task-ledger.md), [decisions](decisions.md),
-  [owner rulings](OWNER-RULINGS.md).
-
----
+Start with [the current roadmap](roadmap.md), the [remediation checkpoint](reports/remediation-2026-10-08.md)
+and [the product entry point](README.md). Preserve the historical record below;
+reconfirm its claims against current code before reviving work.
 
 ## Historical record (25 September 2026)
 

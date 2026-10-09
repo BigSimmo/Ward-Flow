@@ -91,7 +91,7 @@ describe("bedMapWards — the bed map's per-ward figures", () => {
     }
   });
 
-  it("throws rather than silently drawing more hatched squares than ready ones", () => {
+  it("retains preparation records beyond offered capacity without fabricating ready beds", () => {
     const brokenUnit: Unit = {
       ...units[0],
       id: "test-broken-unit",
@@ -131,7 +131,10 @@ describe("bedMapWards — the bed map's per-ward figures", () => {
       },
     ];
     // `available` for this unit is 1 (min(1, 1)); two preparing releases exceed it.
-    expect(() => bedMapWards([brokenUnit], brokenReleases)).toThrow(/still being made ready/iu);
+    const ward = bedMapWards([brokenUnit], brokenReleases)[0];
+    expect(ward.pendingPreparation).toBe(2);
+    expect(ward.ready).toBe(1);
+    expect(ward.ready + ward.pulled + ward.closed + ward.occupied).toBe(brokenUnit.beds);
   });
 
   /**

@@ -165,7 +165,7 @@
           "verdict": "matches",
           "mockupSha256": "f110345a8c70f54fa55bf30b8cfd70d719bf21ee8f0018668e2c9bd69c4c3f36",
           "implementationSha256": "647304fff1c5b123e86524ec0fb0b3b6223c7ad4bf786dd56a3b143ee377d3ac",
-          "notes": "Ward Directory Cards rebuilt to Third Edition Sovereign standard: 4 statewide KPI summary cards; 5 Health Service Cluster tabs (All Units, NMHS, SMHS, EMHS, WACHS); interactive cohort and availability filter pills; live instant search input; 23 square ward cards with live occupancy progress bars, 2x2 stats tiles, flow badges, and Enter Ward navigation; quick Bed Board links; interactive Profile modal dialog showing unit details and designations. Verified across all 79 tests in tests/ward-nav.test.ts and tests/ward-screen-overview-and-entry.dom.test.tsx. | 2026-09-18: the rendered text on this screen CHANGED after this look — legal wording reworded (§7.18), and/or ward and community-team names replaced with real WA ones. This verdict predates those edits and must not be read as current. A fresh look is owed."
+          "notes": "Ward Directory Cards rebuilt to Third Edition Sovereign standard: 4 statewide KPI summary cards; 5 Health Service Cluster tabs (All Units, NMHS, SMHS, EMHS, WACHS); interactive cohort and availability filter pills; live instant search input; 23 square ward cards with live occupancy progress bars, 2x2 stats tiles, flow badges, and Enter Ward navigation; quick Bed Board links; interactive Profile modal dialog showing unit details and designations. Verified across all 79 tests in tests/ward-nav.test.ts and tests/ward-screen-overview-and-entry.dom.test.tsx. | 2026-09-18: the rendered text on this screen CHANGED after this look \u2014 legal wording reworded (\u00a77.18), and/or ward and community-team names replaced with real WA ones. This verdict predates those edits and must not be read as current. A fresh look is owed."
         }
       ]
     },
@@ -216,6 +216,71 @@
           "mockupSha256": "d36cb73e621c18d744d3bd49848a9b7d85090ddf4a097efc75326cc15ab469ef",
           "implementationSha256": "787c652cc49473c817337dbdc4b606a8cb80ff954fc3d46f4295f3f889a37071",
           "notes": "Emergency department board (/mockups/ward-flow/ed/peel-ed) elevated and compactified: unified \"Recent\" and \"Still to be moved\" tabs into a single-column \"Referred\" tab with stacked sub-sections (\"Still to be moved\" patients waiting to physically move and \"Recent decisions\" answered referrals). Verified in browser with active indicator, tokenized CSS styles, zero hardcoded colors, 201/201 css class tests, 41/41 ward-ed-screen DOM tests, 4/4 answered-cap tests, and verified visual capture."
+        }
+      ],
+      "scopedVerifications": [
+        {
+          "date": "2026-10-08",
+          "who": "Codex responsive remediation browser reviewer",
+          "result": "passed",
+          "checkedRevision": "868211848897291197fbd0d3106fa9ae1a618c92",
+          "renderInputSha256": "659b58adf6d90659ab9306947265d23c068146c7ed5b1b973ecbbd9cb9f7f13b",
+          "dirtyInputs": [
+            " M docs/scripts-index.md",
+            " M docs/ward-flow/OWNER-RULINGS.md",
+            " M docs/ward-flow/STATUS.md",
+            " M docs/ward-flow/code-map/engine.md",
+            " M docs/ward-flow/code-map/screens-a.md",
+            " M docs/ward-flow/code-map/screens-b.md",
+            " M docs/ward-flow/decisions.md",
+            " M docs/ward-flow/roadmap.md"
+          ],
+          "actualRoute": "/mockups/ward-flow/ed/rph-ed",
+          "widths": [320, 390, 768],
+          "height": 844,
+          "themes": ["light"],
+          "themeWidthScopes": {
+            "light": [320, 390, 768]
+          },
+          "geometry": [
+            {
+              "viewport": 320,
+              "document": 320
+            },
+            {
+              "viewport": 390,
+              "document": 390
+            },
+            {
+              "viewport": 768,
+              "document": 768
+            }
+          ],
+          "browser": {
+            "family": "Chromium",
+            "version": "151.0.7922.173",
+            "executable": "/usr/bin/chromium"
+          },
+          "runtime": "Root-owned isolated local production build served by scripts/run-playwright.mjs; no hosted/deployed assertion",
+          "runtimeWarmth": "Built application, serial route checks; no development Fast Refresh source mutations",
+          "evidence": {
+            "report": "/workspace/ward-flow-remediation-output/final-production-browser-results.json",
+            "testTitle": "ED workspace fits phone and tablet without concealing its local scrolling regions",
+            "startedAt": "2026-10-08T22:57:53.505Z",
+            "durationMs": 1556,
+            "screenshots": [
+              {
+                "name": "phone-layout",
+                "path": "/workspace/ward-flow-remediation-output/production-browser-results/ui-ward-responsive-audit---8a4a8-its-local-scrolling-regions-chromium-mockups/attachments/phone-layout-fa1d368dd5558789ad3e8476f509f476019503d5.png",
+                "sha256": "c403a39369d700a59ad3594f783085e63fa7e7559e1b46ddf188b2f556c9b435",
+                "width": 390,
+                "height": 844,
+                "theme": "light"
+              }
+            ]
+          },
+          "scopeNotes": "Passed document containment within1px and keyboard scrolling of actual overflowing labelled local table regions where present; visible service identity check on service route. Seven light390 screenshots and one service dark390 screenshot exist across the complete responsive set. Aggregate widths/themes are explicit measured scopes, not a full cross-product. Preserves approved running appearance; no historical drawing match, exhaustive interaction/accessibility, physical device, Firefox/WebKit runtime, hosted or clinical acceptance claim.",
+          "implementationSha256": "5c8f4905ce915934bd3536d74bff36ee1faca84cccf92ed654e5ff453025c09a"
         }
       ]
     },
@@ -341,6 +406,71 @@
           "implementationSha256": "095070904ffa962891fc69e188918e4edf2dc2fc28353f909af70ede5657a98e",
           "notes": "Raise a Referral screen fully elevated and verified against Third Edition Mockup (raise-a-referral-third-edition.html): Replaced bloated single-column admission gates with sleek 2-column horizontal clinicalSwitchCards featuring compact [No] [Yes] pill toggles and accessible sr-only states (eliminating shouting brown uppercase text). Elevated Where to refer destination cards with structured Geist sans-serif metric/guidance items, subtle bullets, soft green in-catchment badges, and clear selection highlighting. Simplified Step 3 heading to 'Patient presentation', removing both wordy caution notice boxes while preserving sr-only test hooks. Enforced dual-column sticky layout (sticky top 72px, max-height viewport bounds) so when either column is scrolled, the other column stays anchored in view. Passed 12px font floor ratchet, zero horizontal overflow (390px, 820px, 1440px), min 48px touch targets, and all 41/41 referral unit and DOM test suites."
         }
+      ],
+      "scopedVerifications": [
+        {
+          "date": "2026-10-08",
+          "who": "Codex responsive remediation browser reviewer",
+          "result": "passed",
+          "checkedRevision": "868211848897291197fbd0d3106fa9ae1a618c92",
+          "renderInputSha256": "659b58adf6d90659ab9306947265d23c068146c7ed5b1b973ecbbd9cb9f7f13b",
+          "dirtyInputs": [
+            " M docs/scripts-index.md",
+            " M docs/ward-flow/OWNER-RULINGS.md",
+            " M docs/ward-flow/STATUS.md",
+            " M docs/ward-flow/code-map/engine.md",
+            " M docs/ward-flow/code-map/screens-a.md",
+            " M docs/ward-flow/code-map/screens-b.md",
+            " M docs/ward-flow/decisions.md",
+            " M docs/ward-flow/roadmap.md"
+          ],
+          "actualRoute": "/mockups/ward-flow/referrals/new",
+          "widths": [320, 390, 768],
+          "height": 844,
+          "themes": ["light"],
+          "themeWidthScopes": {
+            "light": [320, 390, 768]
+          },
+          "geometry": [
+            {
+              "viewport": 320,
+              "document": 320
+            },
+            {
+              "viewport": 390,
+              "document": 390
+            },
+            {
+              "viewport": 768,
+              "document": 768
+            }
+          ],
+          "browser": {
+            "family": "Chromium",
+            "version": "151.0.7922.173",
+            "executable": "/usr/bin/chromium"
+          },
+          "runtime": "Root-owned isolated local production build served by scripts/run-playwright.mjs; no hosted/deployed assertion",
+          "runtimeWarmth": "Built application, serial route checks; no development Fast Refresh source mutations",
+          "evidence": {
+            "report": "/workspace/ward-flow-remediation-output/final-production-browser-results.json",
+            "testTitle": "Referral intake fits phone and tablet without concealing its local scrolling regions",
+            "startedAt": "2026-10-08T22:57:57.840Z",
+            "durationMs": 1224,
+            "screenshots": [
+              {
+                "name": "phone-layout",
+                "path": "/workspace/ward-flow-remediation-output/production-browser-results/ui-ward-responsive-audit---0da85-its-local-scrolling-regions-chromium-mockups/attachments/phone-layout-11bbe35bfea49050a1ab7538bbd607894e34acb6.png",
+                "sha256": "bb7b6ad1d8b8fdae18986ec0da831ab6eed32b167941a4f4f557a0d592678762",
+                "width": 390,
+                "height": 844,
+                "theme": "light"
+              }
+            ]
+          },
+          "scopeNotes": "Passed document containment within1px and keyboard scrolling of actual overflowing labelled local table regions where present; visible service identity check on service route. Seven light390 screenshots and one service dark390 screenshot exist across the complete responsive set. Aggregate widths/themes are explicit measured scopes, not a full cross-product. Preserves approved running appearance; no historical drawing match, exhaustive interaction/accessibility, physical device, Firefox/WebKit runtime, hosted or clinical acceptance claim.",
+          "implementationSha256": "793a671b8fef692020d8584a305ab2fa6fb088ec13e610215fbafaaab2e0fd08"
+        }
       ]
     },
     {
@@ -412,6 +542,71 @@
           "themes": ["light", "dark"],
           "mockupSha256": "a6377d7cb6e4273c5434dae443bbfe7c66472c88dc491a0e665304d47c7efb6e",
           "notes": "Q004 scoped visual acceptance under the active lean policy. Desktop light/dark served comparisons plus dark 390/820 states show ward identity, four bed measures, the complete bed-meaning table, phone table scroll affordance and lower chart reachability. Exact evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. Responsive light, print, hosted behavior, physical devices and cumulative gates remain unverified."
+        }
+      ],
+      "scopedVerifications": [
+        {
+          "date": "2026-10-08",
+          "who": "Codex responsive remediation browser reviewer",
+          "result": "passed",
+          "checkedRevision": "868211848897291197fbd0d3106fa9ae1a618c92",
+          "renderInputSha256": "659b58adf6d90659ab9306947265d23c068146c7ed5b1b973ecbbd9cb9f7f13b",
+          "dirtyInputs": [
+            " M docs/scripts-index.md",
+            " M docs/ward-flow/OWNER-RULINGS.md",
+            " M docs/ward-flow/STATUS.md",
+            " M docs/ward-flow/code-map/engine.md",
+            " M docs/ward-flow/code-map/screens-a.md",
+            " M docs/ward-flow/code-map/screens-b.md",
+            " M docs/ward-flow/decisions.md",
+            " M docs/ward-flow/roadmap.md"
+          ],
+          "actualRoute": "/mockups/ward-flow/statistics/ward/rph-adult-secure",
+          "widths": [320, 390, 768],
+          "height": 844,
+          "themes": ["light"],
+          "themeWidthScopes": {
+            "light": [320, 390, 768]
+          },
+          "geometry": [
+            {
+              "viewport": 320,
+              "document": 320
+            },
+            {
+              "viewport": 390,
+              "document": 390
+            },
+            {
+              "viewport": 768,
+              "document": 768
+            }
+          ],
+          "browser": {
+            "family": "Chromium",
+            "version": "151.0.7922.173",
+            "executable": "/usr/bin/chromium"
+          },
+          "runtime": "Root-owned isolated local production build served by scripts/run-playwright.mjs; no hosted/deployed assertion",
+          "runtimeWarmth": "Built application, serial route checks; no development Fast Refresh source mutations",
+          "evidence": {
+            "report": "/workspace/ward-flow-remediation-output/final-production-browser-results.json",
+            "testTitle": "Ward statistics fits phone and tablet without concealing its local scrolling regions",
+            "startedAt": "2026-10-08T22:57:59.073Z",
+            "durationMs": 1597,
+            "screenshots": [
+              {
+                "name": "phone-layout",
+                "path": "/workspace/ward-flow-remediation-output/production-browser-results/ui-ward-responsive-audit---9ba5b-its-local-scrolling-regions-chromium-mockups/attachments/phone-layout-a66db252cec365562f7655f9843d05447d2eb9da.png",
+                "sha256": "a9dffdb43002f5921574c074de2ee3f9c4bb1f0991e53c4a444bf9ba0715a368",
+                "width": 390,
+                "height": 844,
+                "theme": "light"
+              }
+            ]
+          },
+          "scopeNotes": "Passed document containment within1px and keyboard scrolling of actual overflowing labelled local table regions where present; visible service identity check on service route. Seven light390 screenshots and one service dark390 screenshot exist across the complete responsive set. Aggregate widths/themes are explicit measured scopes, not a full cross-product. Preserves approved running appearance; no historical drawing match, exhaustive interaction/accessibility, physical device, Firefox/WebKit runtime, hosted or clinical acceptance claim.",
+          "implementationSha256": "72e5836cd1150792620b5dbc01a7e1d0fa495a232b028a5cca22767b5484f76b"
         }
       ]
     },
@@ -597,6 +792,71 @@
           "mockupSha256": "1a3551241241d7a82b6a2471607f026515ec928e7f4e1e80eb6b42bb7ac8a0d2",
           "implementationSha256": "69a7b31b2763a902b801bacbda47855fd20c75a44b9084b24fff9a906b99deb4",
           "notes": "On-call and contacts (/mockups/ward-flow/on-call) fully elevated to Third Edition Sovereign standard (on-call-third-edition.html): Full operational header with active duty matrix indicator and Tier 3 Escalation trigger; 4-card KPI glance strip with mono figures, subtle surface depth, and hairline borders; multi-service filter pills with counts and search query typeahead; unified specialist on-call roster table composing WardTable with status pills, shift window details, and Connect action; Emergency Department Liaison table listing all 8 emergency departments, sites, and health services with Direct Connect actions; clinical directory protocol cards (Hospital Switchboard, Bed Coordination Desk, ED Liaison); accessible Escape key dismissal and focus restoration for Tier 3 escalation modal; Rule D4 toast feedback ('Not wired in this prototype.'); strict adherence to zero diallable contacts/phone numbers (tests/ward-on-call-holds-no-people.test.ts); 100% semantic CSS variables with zero raw colours; 0 horizontal overflow and 0 text clipping across 390px, 820px, and 1440px in light and dark themes; scored 199.0/200 on independent adversarial audit."
+        }
+      ],
+      "scopedVerifications": [
+        {
+          "date": "2026-10-08",
+          "who": "Codex responsive remediation browser reviewer",
+          "result": "passed",
+          "checkedRevision": "868211848897291197fbd0d3106fa9ae1a618c92",
+          "renderInputSha256": "659b58adf6d90659ab9306947265d23c068146c7ed5b1b973ecbbd9cb9f7f13b",
+          "dirtyInputs": [
+            " M docs/scripts-index.md",
+            " M docs/ward-flow/OWNER-RULINGS.md",
+            " M docs/ward-flow/STATUS.md",
+            " M docs/ward-flow/code-map/engine.md",
+            " M docs/ward-flow/code-map/screens-a.md",
+            " M docs/ward-flow/code-map/screens-b.md",
+            " M docs/ward-flow/decisions.md",
+            " M docs/ward-flow/roadmap.md"
+          ],
+          "actualRoute": "/mockups/ward-flow/on-call",
+          "widths": [320, 390, 768],
+          "height": 844,
+          "themes": ["light"],
+          "themeWidthScopes": {
+            "light": [320, 390, 768]
+          },
+          "geometry": [
+            {
+              "viewport": 320,
+              "document": 320
+            },
+            {
+              "viewport": 390,
+              "document": 390
+            },
+            {
+              "viewport": 768,
+              "document": 768
+            }
+          ],
+          "browser": {
+            "family": "Chromium",
+            "version": "151.0.7922.173",
+            "executable": "/usr/bin/chromium"
+          },
+          "runtime": "Root-owned isolated local production build served by scripts/run-playwright.mjs; no hosted/deployed assertion",
+          "runtimeWarmth": "Built application, serial route checks; no development Fast Refresh source mutations",
+          "evidence": {
+            "report": "/workspace/ward-flow-remediation-output/final-production-browser-results.json",
+            "testTitle": "On-call directory fits phone and tablet without concealing its local scrolling regions",
+            "startedAt": "2026-10-08T22:57:56.651Z",
+            "durationMs": 1181,
+            "screenshots": [
+              {
+                "name": "phone-layout",
+                "path": "/workspace/ward-flow-remediation-output/production-browser-results/ui-ward-responsive-audit---d44ed-its-local-scrolling-regions-chromium-mockups/attachments/phone-layout-1bfa2f3a94263418c67d91bd2bf5f637c223bcd8.png",
+                "sha256": "f3ccadc89a039abb54f1e36dfb5881fa1828b66fdbc0d5d20559d1f0c1d9aca5",
+                "width": 390,
+                "height": 844,
+                "theme": "light"
+              }
+            ]
+          },
+          "scopeNotes": "Passed document containment within1px and keyboard scrolling of actual overflowing labelled local table regions where present; visible service identity check on service route. Seven light390 screenshots and one service dark390 screenshot exist across the complete responsive set. Aggregate widths/themes are explicit measured scopes, not a full cross-product. Preserves approved running appearance; no historical drawing match, exhaustive interaction/accessibility, physical device, Firefox/WebKit runtime, hosted or clinical acceptance claim.",
+          "implementationSha256": "cb85082366d8208787653ca39742316fb199bb7786623e88aa323da05aac747d"
         }
       ]
     },
@@ -785,6 +1045,80 @@
           "mockupSha256": "80cd8c1c8b8b8e96714f4ef2b2d4ed1c1eca3e4e1d441c12a4b6160e3ea5576d",
           "notes": "Q004 scoped visual acceptance under the active lean policy. Final desktop light/dark served comparisons and light 390/820 states show service identity, Ready definition, hospital/ward rows, travel bands and responsive wrapping. The corrected net-flow sentence remains below the latest crop and source-verified. Exact evidence and limits: plans/product-refinement/statistics-visual-acceptance.md. Responsive dark, every lower section, print, hosted behavior, physical devices and cumulative gates remain unverified."
         }
+      ],
+      "scopedVerifications": [
+        {
+          "date": "2026-10-08",
+          "who": "Codex responsive remediation browser reviewer",
+          "result": "passed",
+          "checkedRevision": "868211848897291197fbd0d3106fa9ae1a618c92",
+          "renderInputSha256": "659b58adf6d90659ab9306947265d23c068146c7ed5b1b973ecbbd9cb9f7f13b",
+          "dirtyInputs": [
+            " M docs/scripts-index.md",
+            " M docs/ward-flow/OWNER-RULINGS.md",
+            " M docs/ward-flow/STATUS.md",
+            " M docs/ward-flow/code-map/engine.md",
+            " M docs/ward-flow/code-map/screens-a.md",
+            " M docs/ward-flow/code-map/screens-b.md",
+            " M docs/ward-flow/decisions.md",
+            " M docs/ward-flow/roadmap.md"
+          ],
+          "actualRoute": "/mockups/ward-flow/statistics/service/East%20Metro",
+          "widths": [320, 390, 768],
+          "height": 844,
+          "themes": ["light", "dark"],
+          "themeWidthScopes": {
+            "light": [320, 390, 768],
+            "dark": [390]
+          },
+          "geometry": [
+            {
+              "viewport": 320,
+              "document": 320
+            },
+            {
+              "viewport": 390,
+              "document": 390
+            },
+            {
+              "viewport": 768,
+              "document": 768
+            }
+          ],
+          "browser": {
+            "family": "Chromium",
+            "version": "151.0.7922.173",
+            "executable": "/usr/bin/chromium"
+          },
+          "runtime": "Root-owned isolated local production build served by scripts/run-playwright.mjs; no hosted/deployed assertion",
+          "runtimeWarmth": "Built application, serial route checks; no development Fast Refresh source mutations",
+          "evidence": {
+            "report": "/workspace/ward-flow-remediation-output/final-production-browser-results.json",
+            "testTitle": "Service statistics fits phone and tablet without concealing its local scrolling regions",
+            "startedAt": "2026-10-08T22:58:00.682Z",
+            "durationMs": 2163,
+            "screenshots": [
+              {
+                "name": "phone-layout",
+                "path": "/workspace/ward-flow-remediation-output/production-browser-results/ui-ward-responsive-audit---d905f-its-local-scrolling-regions-chromium-mockups/attachments/phone-layout-f8ee6ad6a7c9ac1cbd99c2fc17ade7835a177647.png",
+                "sha256": "6e8cadadc0c9d5cbdd65407939d8429f1bc8ad05d5faff5476d9aa030ec02dbc",
+                "width": 390,
+                "height": 844,
+                "theme": "light"
+              },
+              {
+                "name": "phone-layout-dark",
+                "path": "/workspace/ward-flow-remediation-output/production-browser-results/ui-ward-responsive-audit---d905f-its-local-scrolling-regions-chromium-mockups/attachments/phone-layout-dark-a90b5e54205fa48e97bf256869af4a66c49aeef0.png",
+                "sha256": "b929835ecc3add7fbcc3af25d7025c8ad5cb3fb19950535e62e499033405e22b",
+                "width": 390,
+                "height": 844,
+                "theme": "dark"
+              }
+            ]
+          },
+          "scopeNotes": "Passed document containment within1px and keyboard scrolling of actual overflowing labelled local table regions where present; visible service identity check on service route. Seven light390 screenshots and one service dark390 screenshot exist across the complete responsive set. Aggregate widths/themes are explicit measured scopes, not a full cross-product. Preserves approved running appearance; no historical drawing match, exhaustive interaction/accessibility, physical device, Firefox/WebKit runtime, hosted or clinical acceptance claim.",
+          "implementationSha256": "8a254dc1c2fd0828bcc8cd1278c9a5cab88b57f50f280cb9e29e0448b8dd40d7"
+        }
       ]
     },
     {
@@ -832,9 +1166,207 @@
           "themes": ["light", "dark"],
           "verdict": "deviates",
           "mockupSha256": "a81fbd1e1e40a224feaac7cd5a1a34e514965ea5cb291fc4f0614b4507e00826",
-          "notes": "Q004 scoped visual acceptance for populated request WF-010 on SJGM Adult Open. Current desktop light/dark and light 390 top/action states were inspected against served references; the eleven gate facts, decision controls and phone wrapping remained clear. The engine’s actual request and capacity facts take precedence over drawing fixtures. Exact evidence and limits: plans/product-refinement/task-5-report.md. Width/theme lists are aggregate; dark phone, tablet, print, physical devices and other request states are not claimed."
+          "notes": "Q004 scoped visual acceptance for populated request WF-010 on SJGM Adult Open. Current desktop light/dark and light 390 top/action states were inspected against served references; the eleven gate facts, decision controls and phone wrapping remained clear. The engine\u2019s actual request and capacity facts take precedence over drawing fixtures. Exact evidence and limits: plans/product-refinement/task-5-report.md. Width/theme lists are aggregate; dark phone, tablet, print, physical devices and other request states are not claimed."
         }
       ]
     }
-  ]
+  ],
+  "_finalResponsiveEvidence": {
+    "source": {
+      "repository": "BigSimmo/Ward-Flow",
+      "head": "868211848897291197fbd0d3106fa9ae1a618c92",
+      "canonical_main": "0bbcd341d08ad1b2e0c67a77a9cab84367e03769",
+      "render_input_sha256": "659b58adf6d90659ab9306947265d23c068146c7ed5b1b973ecbbd9cb9f7f13b",
+      "timestamp": "2026-10-08T22:55:51.027999+00:00",
+      "source_status": [
+        " M docs/scripts-index.md",
+        " M docs/ward-flow/OWNER-RULINGS.md",
+        " M docs/ward-flow/STATUS.md",
+        " M docs/ward-flow/code-map/engine.md",
+        " M docs/ward-flow/code-map/screens-a.md",
+        " M docs/ward-flow/code-map/screens-b.md",
+        " M docs/ward-flow/decisions.md",
+        " M docs/ward-flow/roadmap.md"
+      ],
+      "phase": "Final source frozen after preserving fresh main; focused merge-overlap tests, whole-source lint, full-all-route isolated production build and selected browser proof pending"
+    },
+    "actualSourceEnd": {
+      "head": "868211848897291197fbd0d3106fa9ae1a618c92",
+      "renderInputSha256": "659b58adf6d90659ab9306947265d23c068146c7ed5b1b973ecbbd9cb9f7f13b"
+    },
+    "responsivePassed": 7,
+    "registryRowsPreserved": 34,
+    "exactRosterRowsWithNewScopedEvidence": 5,
+    "supplementalRoutes": [
+      {
+        "date": "2026-10-08",
+        "who": "Codex responsive remediation browser reviewer",
+        "result": "passed",
+        "checkedRevision": "868211848897291197fbd0d3106fa9ae1a618c92",
+        "renderInputSha256": "659b58adf6d90659ab9306947265d23c068146c7ed5b1b973ecbbd9cb9f7f13b",
+        "dirtyInputs": [
+          " M docs/scripts-index.md",
+          " M docs/ward-flow/OWNER-RULINGS.md",
+          " M docs/ward-flow/STATUS.md",
+          " M docs/ward-flow/code-map/engine.md",
+          " M docs/ward-flow/code-map/screens-a.md",
+          " M docs/ward-flow/code-map/screens-b.md",
+          " M docs/ward-flow/decisions.md",
+          " M docs/ward-flow/roadmap.md"
+        ],
+        "actualRoute": "/mockups/ward-flow/ed",
+        "widths": [320, 390, 768],
+        "height": 844,
+        "themes": ["light"],
+        "themeWidthScopes": {
+          "light": [320, 390, 768]
+        },
+        "geometry": [
+          {
+            "viewport": 320,
+            "document": 320
+          },
+          {
+            "viewport": 390,
+            "document": 390
+          },
+          {
+            "viewport": 768,
+            "document": 768
+          }
+        ],
+        "browser": {
+          "family": "Chromium",
+          "version": "151.0.7922.173",
+          "executable": "/usr/bin/chromium"
+        },
+        "runtime": "Root-owned isolated local production build served by scripts/run-playwright.mjs; no hosted/deployed assertion",
+        "runtimeWarmth": "Built application, serial route checks; no development Fast Refresh source mutations",
+        "evidence": {
+          "report": "/workspace/ward-flow-remediation-output/final-production-browser-results.json",
+          "testTitle": "ED overview fits phone and tablet without concealing its local scrolling regions",
+          "startedAt": "2026-10-08T22:57:51.663Z",
+          "durationMs": 1829,
+          "screenshots": [
+            {
+              "name": "phone-layout",
+              "path": "/workspace/ward-flow-remediation-output/production-browser-results/ui-ward-responsive-audit---0eb54-its-local-scrolling-regions-chromium-mockups/attachments/phone-layout-d106fae95f68165cc9425cbc91d7ca4232aca3d2.png",
+              "sha256": "ffa938daafa2edea4fe6173b7c1ad349ec9cc874fed6f926689b5c38262d9362",
+              "width": 390,
+              "height": 844,
+              "theme": "light"
+            }
+          ]
+        },
+        "scopeNotes": "Passed document containment within1px and keyboard scrolling of actual overflowing labelled local table regions where present; visible service identity check on service route. Seven light390 screenshots and one service dark390 screenshot exist across the complete responsive set. Aggregate widths/themes are explicit measured scopes, not a full cross-product. Preserves approved running appearance; no historical drawing match, exhaustive interaction/accessibility, physical device, Firefox/WebKit runtime, hosted or clinical acceptance claim.",
+        "mockup": null
+      },
+      {
+        "date": "2026-10-08",
+        "who": "Codex responsive remediation browser reviewer",
+        "result": "passed",
+        "checkedRevision": "868211848897291197fbd0d3106fa9ae1a618c92",
+        "renderInputSha256": "659b58adf6d90659ab9306947265d23c068146c7ed5b1b973ecbbd9cb9f7f13b",
+        "dirtyInputs": [
+          " M docs/scripts-index.md",
+          " M docs/ward-flow/OWNER-RULINGS.md",
+          " M docs/ward-flow/STATUS.md",
+          " M docs/ward-flow/code-map/engine.md",
+          " M docs/ward-flow/code-map/screens-a.md",
+          " M docs/ward-flow/code-map/screens-b.md",
+          " M docs/ward-flow/decisions.md",
+          " M docs/ward-flow/roadmap.md"
+        ],
+        "actualRoute": "/mockups/ward-flow/movements/WF-001",
+        "widths": [320, 390, 768],
+        "height": 844,
+        "themes": ["light"],
+        "themeWidthScopes": {
+          "light": [320, 390, 768]
+        },
+        "geometry": [
+          {
+            "viewport": 320,
+            "document": 320
+          },
+          {
+            "viewport": 390,
+            "document": 390
+          },
+          {
+            "viewport": 768,
+            "document": 768
+          }
+        ],
+        "browser": {
+          "family": "Chromium",
+          "version": "151.0.7922.173",
+          "executable": "/usr/bin/chromium"
+        },
+        "runtime": "Root-owned isolated local production build served by scripts/run-playwright.mjs; no hosted/deployed assertion",
+        "runtimeWarmth": "Built application, serial route checks; no development Fast Refresh source mutations",
+        "evidence": {
+          "report": "/workspace/ward-flow-remediation-output/final-production-browser-results.json",
+          "testTitle": "Movement workspace fits phone and tablet without concealing its local scrolling regions",
+          "startedAt": "2026-10-08T22:57:55.076Z",
+          "durationMs": 1562,
+          "screenshots": [
+            {
+              "name": "phone-layout",
+              "path": "/workspace/ward-flow-remediation-output/production-browser-results/ui-ward-responsive-audit---83d60-its-local-scrolling-regions-chromium-mockups/attachments/phone-layout-bca5ec641dba499e71c30e1f57120542352574a9.png",
+              "sha256": "b6833f361de04aa72ae90297f9105a82b82c94d05d37baad627ca8d1d94718c4",
+              "width": 390,
+              "height": 844,
+              "theme": "light"
+            }
+          ]
+        },
+        "scopeNotes": "Passed document containment within1px and keyboard scrolling of actual overflowing labelled local table regions where present; visible service identity check on service route. Seven light390 screenshots and one service dark390 screenshot exist across the complete responsive set. Aggregate widths/themes are explicit measured scopes, not a full cross-product. Preserves approved running appearance; no historical drawing match, exhaustive interaction/accessibility, physical device, Firefox/WebKit runtime, hosted or clinical acceptance claim.",
+        "mockup": null
+      }
+    ],
+    "otherQueuedTests": [
+      {
+        "file": "ui-ward-coordinator.spec.ts",
+        "title": "keeps exceptions reachable and collapses to a queue-first phone form",
+        "status": "expected",
+        "results": ["passed"]
+      },
+      {
+        "file": "ui-ward-coordinator.spec.ts",
+        "title": "shows a failing gate as a failure and never auto-allocates",
+        "status": "expected",
+        "results": ["passed"]
+      },
+      {
+        "file": "ui-ward-coordinator.spec.ts",
+        "title": "never claims a referral succeeded on a non-referable movement",
+        "status": "expected",
+        "results": ["passed"]
+      },
+      {
+        "file": "ui-ward-coordinator.spec.ts",
+        "title": "keeps the referral control reachable on a phone, in the panel's natural flow",
+        "status": "expected",
+        "results": ["passed"]
+      },
+      {
+        "file": "ui-ward-full-journey.spec.ts",
+        "title": "walks community intake, the ED bed request, coordinator placement, ward acceptance, transport and discharge planning without a dead end",
+        "status": "expected",
+        "results": ["passed"]
+      }
+    ],
+    "limits": [
+      "whole-screen historical mockup equality",
+      "all-width all-theme combinations",
+      "exhaustive accessibility",
+      "physical devices",
+      "Firefox runtime",
+      "WebKit runtime",
+      "hosted deployment",
+      "clinical safety approval",
+      "Full unit suite on latest integrated main: prior 10881-test pass was source3d01bf9, not latest8682118"
+    ]
+  }
 }

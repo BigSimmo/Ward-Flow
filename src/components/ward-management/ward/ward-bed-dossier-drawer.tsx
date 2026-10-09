@@ -32,14 +32,6 @@ interface WardBedDossierDrawerProps {
   onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
 }
 
-const WAITING_MATCH = {
-  name: "Aaron K.",
-  detail: "34yo male",
-  source: "Emergency Dept (Psychiatric Assessment Team)",
-  status: "Medically cleared",
-  wait: "Wait recorded",
-};
-
 const VITAL_SIGNS_NOTE = "Not recorded in Ward Flow. Check the ward's own observation chart.";
 
 type DrawerTab = "over" | "plan" | "time";
@@ -118,7 +110,6 @@ export function WardBedDossierDrawer({
   const { admissions } = useWardFlow();
   const now = useWardFlowClock();
   const [tab, setTab] = useState<DrawerTab>("over");
-  const [candidateAllocated, setCandidateAllocated] = useState(false);
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker>(recordedBlocker(bedItem?.blockReason));
   const [shownBed, setShownBed] = useState(selectedBed);
@@ -128,7 +119,6 @@ export function WardBedDossierDrawer({
   // Stepping to another bed keeps the open tab but drops anything half-done on the last bed.
   if (shownBed !== selectedBed) {
     setShownBed(selectedBed);
-    setCandidateAllocated(false);
     setQuickBlockerOpen(false);
     setSelectedBlocker(recordedBlocker(bedItem?.blockReason));
   }
@@ -136,7 +126,7 @@ export function WardBedDossierDrawer({
   useWardModalFocus(true, bedDrawerRef, onClose);
 
   const bedLabel = `Bed ${String(selectedBed).padStart(2, "0")}`;
-  const isReady = bedItem?.status === "ready" || (!bedItem?.patientAlias && selectedBed === 20);
+  const isReady = bedItem?.status === "ready";
   const occupantAlias = bedItem?.patientAlias ?? "No occupant recorded";
   const isOccupied = Boolean(bedItem?.patientAlias);
   const isAwayAtEd = bedItem?.awayAtEdHours !== null && bedItem?.awayAtEdHours !== undefined;
@@ -146,7 +136,7 @@ export function WardBedDossierDrawer({
   const stayDays = typeof bedItem?.stayDays === "number" ? bedItem.stayDays : null;
   const ageSex = [typeof bedItem?.age === "number" ? String(bedItem.age) : null, bedItem?.sex ?? null];
   const subline = isReady
-    ? "Empty and offered"
+    ? "No patient is allocated by this drawer. Review current referrals with the flow coordinator."
     : [...ageSex, bedItem?.stayBand ?? (bedItem?.status === "incoming" ? "Arriving" : null)]
         .filter(Boolean)
         .join(" · ") || "On this ward";
@@ -267,7 +257,7 @@ export function WardBedDossierDrawer({
           </span>
           <div className={styles.drawerHeading}>
             <h2 id="drawer-bed-title" className={styles.drawerTitle}>
-              {isReady ? "Free to offer" : occupantAlias}
+              {isReady ? "Ready bed" : occupantAlias}
             </h2>
             <p className={styles.drawerKicker}>{subline}</p>
           </div>
@@ -305,24 +295,19 @@ export function WardBedDossierDrawer({
           <>
             <div className={styles.facts}>
               <FactTile label="State" value="Ready" tone="success" />
-              <FactTile label="Held for" value={candidateAllocated ? WAITING_MATCH.name : "No one"} />
+              <FactTile label="Held for" value="No one" />
               {bedItem?.designation ? <FactTile label="Bed" value={bedItem.designation} /> : null}
             </div>
             <div className={styles.drawerBody}>
-              <Section title="Person waiting">
+              <Section title="Placement review">
                 <dl className={styles.kv}>
-                  <Row label="Who">{`${WAITING_MATCH.name} · ${WAITING_MATCH.detail}`}</Row>
-                  <Row label="From">{WAITING_MATCH.source}</Row>
-                  <Row label="Status">{WAITING_MATCH.status}</Row>
-                  <Row label="Wait">{WAITING_MATCH.wait}</Row>
+                  <Row label="Candidate">No patient match is recorded for this bed.</Row>
+                  <Row label="Allocation">
+                    The flow coordinator reviews eligibility and current capacity before recording a shared bed
+                    reservation.
+                  </Row>
                   <Row label="Vital signs">{VITAL_SIGNS_NOTE}</Row>
                 </dl>
-                {candidateAllocated ? (
-                  <p className={styles.done} role="status">
-                    <StatusGlyph tone="success" />
-                    <span>Allocated to {WAITING_MATCH.name}. Bed locked for transit.</span>
-                  </p>
-                ) : null}
               </Section>
             </div>
           </>
@@ -510,11 +495,12 @@ export function WardBedDossierDrawer({
 
         <footer className={styles.drawerFoot}>
           {isReady ? (
-            candidateAllocated ? null : (
-              <Button variant="pri" size="lg" className={styles.pill} onClick={() => setCandidateAllocated(true)}>
-                Allocate this bed to {WAITING_MATCH.name}
-              </Button>
-            )
+            <Link
+              className={buttonClass({ variant: "pri", size: "lg", className: styles.pill })}
+              href="/mockups/ward-flow/referrals"
+            >
+              Review current referrals
+            </Link>
           ) : (
             <>
               {isOccupied && bedItem?.admissionId ? (

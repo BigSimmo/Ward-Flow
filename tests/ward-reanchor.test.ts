@@ -116,6 +116,63 @@ describe("re-anchoring moves every instant and nothing else", () => {
     ).toEqual([...INSTANT_FIELDS].sort());
   });
 
+  it("moves both D-34 pause and producer-recorded re-clearance times while preserving their interval", () => {
+    let state = seedWardFlowState();
+    state = wardFlowReducer(state, {
+      type: "RAISE_REFERRAL",
+      role: "ed",
+      now: NOW_ANCHOR,
+      edId: "jhc-ed",
+      draft: {
+        cohort: "Adult",
+        security: "Open",
+        sex: "Female",
+        gender: "Female",
+        specialling: false,
+        highAcuity: false,
+        legalStatus: "Voluntary",
+        urgency: 2,
+        legalFormCode: null,
+      },
+    });
+    const movementId = state.movements.at(-1)!.id;
+    state = wardFlowReducer(state, {
+      type: "REFER_TO_UNITS",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      movementId,
+      unitIds: ["scgh-adult-open"],
+    });
+    state = wardFlowReducer(state, {
+      type: "ACCEPT_IN_PRINCIPLE",
+      role: "ward",
+      now: NOW_ANCHOR,
+      movementId,
+      unitId: "scgh-adult-open",
+    });
+    state = wardFlowReducer(state, {
+      type: "RECORD_ED_MEDICAL_DETERIORATION",
+      role: "ed",
+      now: NOW_ANCHOR,
+      movementId,
+      actingPlaceId: "jhc-ed",
+    });
+    state = wardFlowReducer(state, {
+      type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
+      role: "ed",
+      now: NOW_ANCHOR + 15,
+      movementId,
+      cleared: true,
+    });
+    expect(state.rejections).toEqual([]);
+    const before = state.movements.at(-1)!.medicalDeterioration!;
+    expect(before.resumedAt).toBe(NOW_ANCHOR + 15);
+    const after = shiftInstants(state, 137).movements.at(-1)!.medicalDeterioration!;
+    expect(after.at).toBe(before.at + 137);
+    expect(after.resumedAt).toBe(before.resumedAt! + 137);
+    expect(after.resumedAt! - after.at).toBe(15);
+  });
+
   it("preserves every relative offset, which is the whole property", () => {
     const state = seedWardFlowState();
     const shifted = shiftInstants(state, 137);

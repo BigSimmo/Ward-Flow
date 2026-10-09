@@ -9,6 +9,7 @@ import { referralCandidates } from "../src/components/ward-management/ward-refer
 import type { Referral, Unit, WardReferralDestination } from "../src/components/ward-management/ward-model";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { collectWardModuleGraph } from "./helpers/ward-module-graph";
 const NOW = 10 * 60 + 42;
 
 function unit(overrides: Partial<Unit> = {}): Unit {
@@ -612,9 +613,10 @@ describe("matching stays independent of the bed-release model", () => {
    * third instance, because it inspects one hand-written sample inside its own self-test and never
    * scans real source. The `/g` is the tell: the guards sweep files, that one does not.
    *
-   * ⚠️ **AND THE BLAST RADIUS IS NOT ONLY THE VOCABULARY CHECK.** This is used twice — by
+   * ⚠️ **AND THE BLAST RADIUS WAS NOT ONLY THE VOCABULARY CHECK.** This was used twice — by
    * `importsMention` below, and by the graph walk further down that decides **which files get
-   * swept at all**. A module reachable ONLY by a re-export was never visited, so nothing inside it
+   * swept at all**. NEW-QA-001 replaces traversal with the shared AST helper below. Before the
+   * re-export repair, a module reachable ONLY by a re-export was never visited, so nothing inside it
    * was scanned either. That defeats this guard's own defence against reaching a forbidden name
    * through an intermediate module, one level above where anyone was looking.
    *
@@ -639,11 +641,6 @@ describe("matching stays independent of the bed-release model", () => {
     return moduleEdgeStatementsOf(source).some((statement) => needle.test(statement));
   }
 
-  function specifierOf(statement: string): string | null {
-    const match = statement.match(/from\s+["']([^"']+)["']/);
-    return match ? match[1] : null;
-  }
-
   /** Resolves a `@/…` or relative import specifier to a real file on disk, trying each extension
    *  TypeScript's own resolution would. Returns null for a bare package specifier (react,
    *  vitest, node:fs, …) — those are not part of this project's own module graph. */
@@ -664,24 +661,12 @@ describe("matching stays independent of the bed-release model", () => {
    *  source text — the module graph the D15 contract must hold across, not just the two files
    *  someone remembered to list by hand. */
   function collectModuleGraph(entryFiles: string[]): Map<string, string> {
-    const visited = new Map<string, string>();
-    const queue = [...entryFiles];
-    while (queue.length > 0) {
-      const file = queue.shift()!;
-      if (visited.has(file)) continue;
-      const source = readFileSync(file, "utf8");
-      visited.set(file, source);
-      // ⚠️ The graph walk, and the half nobody noticed: this decides WHICH FILES GET SWEPT. While
-      // this read only `import` statements, a module reachable solely by a re-export was never
-      // visited and nothing inside it was scanned either.
-      for (const statement of moduleEdgeStatementsOf(source)) {
-        const specifier = specifierOf(statement);
-        if (!specifier) continue;
-        const resolved = resolveLocalImport(specifier, file);
-        if (resolved && !visited.has(resolved)) queue.push(resolved);
-      }
-    }
-    return visited;
+    // The vocabulary scanner above retains its existing contract. Traversal includes literal
+    // dynamic imports and import types too, and fails closed on computed dynamic paths.
+    return collectWardModuleGraph(entryFiles, {
+      readSource: (file) => readFileSync(file, "utf8"),
+      resolveSpecifier: resolveLocalImport,
+    });
   }
 
   /**

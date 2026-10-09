@@ -1,5 +1,39 @@
 # Ward Flow — roadmap
 
+## Current programme — 8 October 2026
+
+The original audit baseline is dedicated Ward main `e7b7f325346ea7abb5004bd2e60e63f64f5c9f95`.
+During remediation, canonical main advanced through PR #131 to
+`0bbcd341d08ad1b2e0c67a77a9cab84367e03769` (PR #130); those changes are preserved
+in the isolated local candidate. Local integrity fixes and verification are complete
+for the scopes in the dated remediation receipt. The next milestone is the approved,
+authenticated shared synthetic backend, rather than a clinical deployment.
+The 25 September plan below is historical: its former shared repository, red test
+baseline and drawing-based restyling instructions do not describe the current app.
+Preserve the latest accepted appearance and current AGENTS.md repository boundary.
+
+1. Fix confirmed lifecycle/data-integrity defects and misleading controls; add
+   meaningful regressions and verify the integrated local candidate.
+2. Complete source-backed workflow controls and phone/keyboard behaviour. Keep
+   missing capabilities explicit where a role or product decision is unresolved.
+3. Agree and implement the authenticated **shared synthetic** backend boundary,
+   retaining Azure Functions/Entra and conditional Blob writes where adequate.
+   Do not introduce a database vendor without a demonstrated requirement.
+4. Verify isolated environments, operational monitoring, recovery and release
+   protections against named Ward resources; do not deploy under a local-fix request.
+5. Prove concurrent users, conflicting reservations, retries, reconnects, permission
+   revocation, performance and browser/accessibility acceptance.
+6. Obtain the qualified/institutional approvals in the
+   [production-readiness register](governance/PRODUCTION-READINESS.md), then approve
+   a controlled clinical pilot. A synthetic demonstration is a different milestone.
+
+Steps 1–2 and local backend contract work can run in parallel with exact file
+ownership. Shared-user acceptance requires 3; clinical piloting requires 4–6.
+The [remediation checkpoint](reports/remediation-2026-10-08.md) records evidence and
+remaining decisions. Historical proposals below do not mark current tasks complete.
+
+## Historical programme — 25 September 2026
+
 Written 25 September 2026 from the [product brief](product-brief.md), the two audits of that day
 ([`audit-2026-09-25-full-review.md`](audit-2026-09-25-full-review.md) and the fresh full audit
 written the same day) and [`STATUS.md`](STATUS.md), on the ward line at `64c6be7ab2`. **Josh

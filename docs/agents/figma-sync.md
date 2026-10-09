@@ -62,6 +62,9 @@ syntax is `var(--wf-name)`, which is the key in the token JSON. Skip `alpha/*` a
 2. `node scripts/figma-tokens.mjs --diff figma-pull.json` and show Josh the changed tokens.
 3. `node scripts/figma-tokens.mjs --apply figma-pull.json`, then
    `npx vitest run tests/figma-tokens.test.ts` and `npm run format -- --files src/app/ward-flow-v6-tokens.css`.
+   Invalid collection shapes, sizes or colours fail before any CSS is written. Writes replace the
+   complete file atomically; a malformed pull leaves source CSS unchanged. Partial valid pulls
+   are allowed. Figma helper variables remain ignored.
    A skipped line means the CSS has no separate value for that mode; edit it by hand if Josh wants it.
 4. Layout or component edits: find the changed node with `get_metadata`, map it to code through
    `figma-sync.json`, read it with `get_design_context` (load `figma-design-to-code` first), and
@@ -71,4 +74,5 @@ syntax is `var(--wf-name)`, which is the key in the token JSON. Skip `alpha/*` a
 ## Keep the map current
 
 When a screen, route or component is added or renamed, update `figma-sync.json` in the same PR.
-`tests/figma-tokens.test.ts` fails if a mapped file or route no longer exists.
+`tests/figma-tokens.test.ts` fails if a mapped file or route no longer exists, or a mapped ward/service
+example does not resolve a current operational record. Reference ward IDs are not operational unit IDs.

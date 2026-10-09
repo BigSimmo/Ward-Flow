@@ -4,13 +4,7 @@ import { useEffect, useState } from "react";
 import { formTitleForCode } from "@/lib/form-register";
 import Link from "next/link";
 
-import {
-  elapsedLabel,
-  isOpen,
-  referralForMovement,
-  stageCopy,
-  transportStatusLabel,
-} from "@/components/ward-management/ward-derivations";
+import { elapsedLabel, isOpen, referralForMovement, stageCopy } from "@/components/ward-management/ward-derivations";
 import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
 import type { Movement, Referral, ReferralState, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -28,11 +22,23 @@ import { withSendingTeam } from "@/components/ward-management/referrals/referral
 import { WardPanel } from "@/components/ward-management/ward-panel";
 import { LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "@/components/ward-management/ward-operational-defaults";
 import { waitedHours } from "./search-filters";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import { movementSearchState } from "./search-operational-state";
 
 import styles from "./record-preview.module.css";
 import searchStyles from "./search.module.css";
 
 const NOT_RECORDED = "Not recorded";
+
+function settingLabel(setting: string): string {
+  return setting === "transit"
+    ? "In-Transit"
+    : setting === "ed"
+      ? "Emergency Dept"
+      : setting === "inpatient"
+        ? "Inpatient Ward"
+        : "Location not recorded";
+}
 
 export type PreviewSelection =
   | { kind: "person"; patient: Patient }
@@ -225,6 +231,7 @@ export function RecordPreview({
   referrals,
   movements,
   patients,
+  admissions = [],
   units,
   now,
   dayZero,
@@ -234,6 +241,7 @@ export function RecordPreview({
   referrals: Referral[];
   movements: Movement[];
   patients: Patient[];
+  admissions?: readonly Admission[];
   units: Unit[];
   now: number;
   dayZero?: Date;
@@ -298,23 +306,15 @@ export function RecordPreview({
     let recordOpenedAt: number | undefined = referral?.raisedAt;
 
     if (linkedMovement && movementSummary) {
+      const operational = movementSearchState(linkedMovement, admissions);
       presenceStatus = "live";
       bannerTitle = "In hospital now";
-      bannerTag = movementSummary.departmentText.includes("ED")
-        ? "Emergency Dept"
-        : linkedMovement.stage === "moving"
-          ? "In-Transit"
-          : "Inpatient Ward";
+      bannerTag = settingLabel(operational.setting);
       waitTimeHours = waitedHours(linkedMovement, now);
-      disposition =
-        linkedMovement.stage === "moving"
-          ? "In-Transit"
-          : linkedMovement.acceptedUnitId
-            ? "Bed hold active"
-            : "Unplaced";
+      disposition = operational.holdStatus;
       targetWard = movementSummary.destinationCell;
       currentStage = movementSummary.stageLabel;
-      transportStatus = transportStatusLabel(linkedMovement.transport);
+      transportStatus = operational.transportStatus;
       nurseEscort = "escort" in linkedMovement && linkedMovement.escort !== undefined;
       originSite = movementSummary.departmentText;
       legalStatus = movementLegalStatus(linkedMovement);
@@ -874,22 +874,17 @@ export function RecordPreview({
   const summary = buildMovementSummary(movement, units, now);
   const referral = referralForMovement(movement, referrals);
   const linkedPatient = resolveSubjectPatient(movement, { patients, referrals, movements }).patient;
+  const operational = movementSearchState(movement, admissions);
 
   const presenceStatus: "live" | "past" = isOpen(movement) ? "live" : "past";
   const bannerTitle = isOpen(movement) ? "In hospital now" : "Not in hospital now";
-  const bannerTag =
-    movement.stage === "moving"
-      ? "In-Transit"
-      : summary.departmentText.includes("ED")
-        ? "Emergency Dept"
-        : "Inpatient Ward";
+  const bannerTag = settingLabel(operational.setting);
   const waitTimeHours = waitedHours(movement, now);
   const isBreaching = waitTimeHours * 60 >= LONG_WAIT_MINUTES;
-  const disposition =
-    movement.stage === "moving" ? "In-Transit" : movement.acceptedUnitId ? "Bed hold active" : "Unplaced";
+  const disposition = operational.holdStatus;
   const targetWard = summary.destinationCell;
   const currentStage = summary.stageLabel;
-  const transportStatus = transportStatusLabel(movement.transport);
+  const transportStatus = operational.transportStatus;
   const nurseEscort = "escort" in movement && movement.escort !== undefined;
   const originSite = summary.departmentText;
   // The movement's own legal record and urgency. A default "Form 1A", a fixed "Tier 1" and an age
