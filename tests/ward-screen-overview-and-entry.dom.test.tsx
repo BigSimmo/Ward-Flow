@@ -193,6 +193,26 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(screen.getAllByText(/Profile/i).length).toBeGreaterThan(0);
   });
 
+  it("keeps a checked Show beds option when a hero pill sets a filter the group does not list", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardScreen unitId="rph-adult-secure" />
+      </WardFlowProvider>,
+    );
+    const hero = screen.getByRole("region", { name: "Live Capacity Telemetry" });
+    const showBeds = screen.getByRole("radiogroup", { name: "Show beds" });
+
+    fireEvent.click(within(hero).getByRole("button", { name: /Occupied/ }));
+    expect(within(hero).getByRole("button", { name: /Occupied/ })).toHaveAttribute("aria-pressed", "true");
+    expect(within(showBeds).getByRole("radio", { checked: true })).toHaveTextContent(/Occupied/);
+
+    fireEvent.click(within(hero).getByRole("button", { name: /Ready by/ }));
+    expect(within(showBeds).getByRole("radio", { checked: true })).toHaveTextContent(/Ready by shift end/);
+
+    fireEvent.click(within(showBeds).getByRole("radio", { name: /^All/ }));
+    expect(within(showBeds).queryByRole("radio", { name: /Ready by shift end|Occupied/ })).toBeNull();
+  });
+
   it("renders the Ward Console third edition action bar, tab navigation, and interactive telemetry drawer", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -205,15 +225,13 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(screen.queryByRole("link", { name: "Bed board" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Live Capacity Telemetry" })).toBeInTheDocument();
 
-    // Operational Tabs exist
-    const bedBoardTab = screen.getByRole("tab", { name: /Bed Board & Roster/i });
-    expect(bedBoardTab).toBeInTheDocument();
-    expect(bedBoardTab).toHaveAttribute("aria-selected", "false");
-
-    fireEvent.click(bedBoardTab);
-
-    // Bed Board tab is now active
-    expect(bedBoardTab).toHaveAttribute("aria-selected", "true");
+    // Ward Hub (9 Oct 2026): the full bed list is no longer a tab; Every bed opens it from Home.
+    expect(screen.queryByRole("tab", { name: /Bed Board & Roster/i })).not.toBeInTheDocument();
+    const bedList = document.getElementById("tab-beds")!;
+    expect(bedList).toHaveAttribute("data-active", "false");
+    fireEvent.click(screen.getByRole("button", { name: "Full bed list" }));
+    expect(bedList).toHaveAttribute("data-active", "true");
+    expect(screen.getByRole("tab", { name: "Home (Worth Your Attention)" })).toHaveAttribute("aria-selected", "true");
 
     // Interactive Bed Matrix is visible
     /*
@@ -259,7 +277,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     expect(screen.queryByTestId("bed-telemetry-drawer")).not.toBeInTheDocument();
   });
 
-  it("shows the shift log and awaiting answers side by side, with no switch between them (v6 ward home)", () => {
+  it("keeps the shift log and awaiting answers on Home, neither behind a tab (Ward Hub)", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardScreen unitId={RPH_ADULT_SECURE} />
