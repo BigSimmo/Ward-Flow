@@ -136,7 +136,7 @@ describe("Alerts — Third Edition Sovereign Enhancements", () => {
     if (ackButton) {
       fireEvent.click(ackButton);
       // State updates to Acknowledged
-      expect(screen.getByText("Acknowledged by Duty Coordinator")).toBeInTheDocument();
+      expect(screen.getByText(/^Acknowledged by Flow coordinator/)).toBeInTheDocument();
     }
   });
 

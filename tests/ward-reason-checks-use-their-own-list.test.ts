@@ -25,7 +25,12 @@ import { describe, expect, it } from "vitest";
  * graph. It runs in the full suite.
  */
 
-const REDUCER = "src/components/ward-management/ward-flow-reducer.ts";
+const REDUCERS = [
+  "src/components/ward-management/ward-flow-reducer.ts",
+  // Stream A, 9 Oct 2026: SNOOZE_INBOX_ITEM's membership check lives in the inbox reducer it
+  // delegates to, not in the main switch — scan both so a missing check cannot hide there.
+  "src/components/ward-management/ward-inbox-reducer.ts",
+] as const;
 const EVENTS = "src/components/ward-management/ward-flow-events.ts";
 
 /**
@@ -51,6 +56,8 @@ const LIST_FOR_TYPE: Readonly<Record<string, string>> = {
   LegalFormReceiptCorrectionReason: "LEGAL_FORM_RECEIPT_CORRECTION_REASONS",
   // Wave 4 diversions (T4a): RECORD_DIVERSION's own fixed list.
   DiversionReason: "DIVERSION_REASONS",
+  // Stream A, 9 Oct 2026: SNOOZE_INBOX_ITEM's closed snooze-reason list.
+  InboxSnoozeReason: "SNOOZE_REASON_IDS",
 };
 
 /** Strips comments so prose naming a constant cannot be read as code naming it. */
@@ -58,9 +65,9 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//gu, " ").replace(/\/\/[^\n]*/gu, " ");
 }
 
-/** Every `case "X":` in the reducer, with the line it starts on. */
-function reducerCases(): Array<{ name: string; line: number }> {
-  const lines = stripComments(readFileSync(REDUCER, "utf8")).split("\n");
+/** Every `case "X":` across the scanned reducers, with a file-local line it starts on. */
+function reducerCases(path: string): Array<{ name: string; line: number }> {
+  const lines = stripComments(readFileSync(path, "utf8")).split("\n");
   const found: Array<{ name: string; line: number }> = [];
   lines.forEach((text, index) => {
     const match = /case "([A-Z][A-Z0-9_]*)":/u.exec(text);
@@ -71,15 +78,17 @@ function reducerCases(): Array<{ name: string; line: number }> {
 
 /** Every membership check on an event reason, attributed to the case it sits inside. */
 function reasonChecks(): Array<{ event: string; list: string }> {
-  const lines = stripComments(readFileSync(REDUCER, "utf8")).split("\n");
-  const cases = reducerCases();
   const checks: Array<{ event: string; list: string }> = [];
-  lines.forEach((text, index) => {
-    const match = /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.exec(text);
-    if (!match) return;
-    const owning = [...cases].reverse().find((entry) => entry.line < index);
-    checks.push({ event: owning?.name ?? "(no enclosing case)", list: match[1] });
-  });
+  for (const path of REDUCERS) {
+    const lines = stripComments(readFileSync(path, "utf8")).split("\n");
+    const cases = reducerCases(path);
+    lines.forEach((text, index) => {
+      const match = /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.exec(text);
+      if (!match) return;
+      const owning = [...cases].reverse().find((entry) => entry.line < index);
+      checks.push({ event: owning?.name ?? "(no enclosing case)", list: match[1] });
+    });
+  }
   return checks;
 }
 
@@ -123,7 +132,8 @@ describe("reason membership checks", () => {
      * check on two lines, a rename of `event.reason` — every assertion below passes over an empty
      * list, which reads exactly like a codebase with no mistakes in it.
      */
-    expect(reducerCases().length, "no reducer cases parsed").toBeGreaterThan(40);
+    const cases = REDUCERS.flatMap((path) => reducerCases(path));
+    expect(cases.length, "no reducer cases parsed").toBeGreaterThan(40);
     expect(
       reasonChecks().length,
       "no reason checks parsed; the scan pattern has stopped matching",
@@ -191,10 +201,13 @@ describe("reason membership checks", () => {
     );
     // And a comment naming a constant must not be counted as a check.
     expect(reasonChecks().length).toBe(
-      readFileSync(REDUCER, "utf8")
-        .split("\n")
-        .filter((line) => !line.trim().startsWith("*") && /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.test(line))
-        .length,
+      REDUCERS.flatMap((path) =>
+        readFileSync(path, "utf8")
+          .split("\n")
+          .filter(
+            (line) => !line.trim().startsWith("*") && /!([A-Z][A-Z0-9_]*)\.includes\(event\.reason\)/u.test(line),
+          ),
+      ).length,
     );
   });
 });
