@@ -742,6 +742,8 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       !isPlannedAdmissionLegalStatus(row.legalStatus) ||
       !COHORTS.includes(row.ageBand as never) ||
       !RECORDED_SEXES.includes(row.sex as never) ||
+      // Gender (9 Oct 2026) is optional: a v7 save made before bookings kept it has none.
+      !optional(row, "gender", (gender) => REFERRAL_GENDERS.includes(gender as never)) ||
       !isPlannedAdmissionStayDays(row.expectedStayDays) ||
       !finite(row.expectedArrivalAt) ||
       !finite(row.bookedAt) ||

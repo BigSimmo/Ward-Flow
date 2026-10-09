@@ -2115,6 +2115,11 @@ export type WardFlowEvent =
       patientId?: PatientId | null;
       initials?: string | null;
       sex: RecordedSex;
+      /**
+       * Gender identity for an initials-only booking, picked by the person booking; absent means
+       * not recorded. Ignored for a linked patient: the reducer takes `Patient.gender` instead.
+       */
+      gender?: ReferralGender;
       reason: PlannedAdmissionReason;
       unitId: string;
       expectedArrivalAt: Instant;
@@ -2133,11 +2138,16 @@ export type WardFlowEvent =
       actingUnitId?: string;
     }
   | {
-      /** Change a booked planned admission's ward, reason, arrival, stay or legal status. */
+      /** Change a booked planned admission's ward, reason, arrival, stay, legal status or gender. */
       type: "CHANGE_PLANNED_ADMISSION";
       role: WardFlowRole;
       now: Instant;
       plannedAdmissionId: string;
+      /**
+       * A gender to record on an initials-only booking; absent keeps the booking's own. Ignored for
+       * a linked patient, whose gender is always the record's.
+       */
+      gender?: ReferralGender;
       reason: PlannedAdmissionReason;
       unitId: string;
       expectedArrivalAt: Instant;
