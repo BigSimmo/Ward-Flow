@@ -86,10 +86,11 @@
   gap: var(--wf-s-3);
 }
 
-.fields {
+.when {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 8rem);
   gap: var(--wf-s-3);
+  align-items: start;
 }
 
 .actions {
@@ -119,7 +120,7 @@
     white-space: normal;
   }
 
-  .fields {
+  .when {
     grid-template-columns: minmax(0, 1fr);
   }
 }

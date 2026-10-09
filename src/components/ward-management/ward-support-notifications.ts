@@ -1,7 +1,7 @@
 import { BellRing } from "lucide-react";
 
 import type { Admission } from "./ward-admissions";
-import { MINUTES_PER_DAY, type Instant } from "./ward-clock";
+import { MINUTES_PER_DAY, dayOf, type Instant } from "./ward-clock";
 import type { InboxItem } from "./ward-derivations";
 import type { WardFlowRole } from "./ward-flow-roles";
 import { INBOX_CATEGORIES } from "./ward-inbox-reducer";
@@ -189,16 +189,40 @@ export function supportNotificationSubjects(records: NotificationRecords): Suppo
 }
 
 /**
- * The most recent instant, at or before `now`, whose clock time is the typed `HH:MM`: today's if
- * that has passed, otherwise yesterday's. Null for anything that is not a 24-hour clock time.
+ * Which calendar day a "told" contact happened on, relative to `now`. The checklist offers these
+ * so a morning contact from yesterday or two days ago keeps its absolute day inside the 72-hour
+ * lookback, instead of collapsing to the latest same clock time (the old HH:MM-only behaviour).
+ * Same shape as the release-day Today/Tomorrow chooser, facing the past.
  */
-export function clockTextToInstantNotAfter(text: string, now: Instant): Instant | null {
+export const SUPPORT_NOTIFICATION_CONTACT_DAYS = ["today", "yesterday", "two_days_ago"] as const;
+export type SupportNotificationContactDay = (typeof SUPPORT_NOTIFICATION_CONTACT_DAYS)[number];
+
+export const SUPPORT_NOTIFICATION_CONTACT_DAY_LABELS: Record<SupportNotificationContactDay, string> = {
+  today: "Today",
+  yesterday: "Yesterday",
+  two_days_ago: "2 days ago",
+};
+
+const CONTACT_DAY_OFFSET: Record<SupportNotificationContactDay, number> = {
+  today: 0,
+  yesterday: 1,
+  two_days_ago: 2,
+};
+
+/**
+ * Instant for a typed `HH:MM` on the chosen contact day at or before `now`. Null when the text is
+ * not a 24-hour clock time, or when that day+time would fall after `now`.
+ */
+export function contactClockTextToInstant(
+  text: string,
+  day: SupportNotificationContactDay,
+  now: Instant,
+): Instant | null {
   const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(text.trim());
   if (!match) return null;
   const typed = Number(match[1]) * 60 + Number(match[2]);
-  const nowOfDay = ((Math.floor(now) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
-  const candidate = Math.floor(now) - nowOfDay + typed;
-  return (candidate > now ? candidate - MINUTES_PER_DAY : candidate) as Instant;
+  const candidate = ((dayOf(now) - CONTACT_DAY_OFFSET[day]) * MINUTES_PER_DAY + typed) as Instant;
+  return candidate > now ? null : candidate;
 }
 
 /** The latest record for each party on one move. */

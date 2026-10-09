@@ -7,15 +7,18 @@ import { Button, Field, Segmented, StatusGlyph, TextInput, type WfTone } from "@
 import { formatInstant, formatInstantWithDay } from "../ward-clock";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import {
+  SUPPORT_NOTIFICATION_CONTACT_DAYS,
+  SUPPORT_NOTIFICATION_CONTACT_DAY_LABELS,
   SUPPORT_NOTIFICATION_OCCASION_LABELS,
   SUPPORT_NOTIFICATION_PARTIES,
   SUPPORT_NOTIFICATION_PARTY_LABELS,
   SUPPORT_NOTIFICATION_REASON_MAX_CHARACTERS,
   SUPPORT_NOTIFICATION_WHO_MAX_CHARACTERS,
   admissionSupportNotificationSubject,
-  clockTextToInstantNotAfter,
+  contactClockTextToInstant,
   movementSupportNotificationSubject,
   supportNotificationChecklist,
+  type SupportNotificationContactDay,
   type SupportNotificationOutcome,
   type SupportNotificationParty,
   type SupportNotificationRecord,
@@ -27,6 +30,10 @@ const OUTCOME_ITEMS: { id: SupportNotificationOutcome; label: string }[] = [
   { id: "told", label: "Told" },
   { id: "not_applicable", label: "Not applicable" },
 ];
+
+const CONTACT_DAY_ITEMS: { id: SupportNotificationContactDay; label: string }[] = SUPPORT_NOTIFICATION_CONTACT_DAYS.map(
+  (day) => ({ id: day, label: SUPPORT_NOTIFICATION_CONTACT_DAY_LABELS[day] }),
+);
 
 function recordTone(record: SupportNotificationRecord | undefined): WfTone {
   if (!record) return "warning";
@@ -62,6 +69,7 @@ export function SupportNotificationChecklist({
   const [editing, setEditing] = useState<SupportNotificationParty | null>(null);
   const [outcome, setOutcome] = useState<SupportNotificationOutcome>("told");
   const [who, setWho] = useState("");
+  const [day, setDay] = useState<SupportNotificationContactDay>("today");
   const [time, setTime] = useState("");
   const [reason, setReason] = useState("");
   const [submittedAt, setSubmittedAt] = useState<number | null>(null);
@@ -99,6 +107,7 @@ export function SupportNotificationChecklist({
     setEditing(party);
     setOutcome("told");
     setWho("");
+    setDay("today");
     setTime(formatInstant(now));
     setReason("");
     setSubmittedAt(null);
@@ -108,9 +117,13 @@ export function SupportNotificationChecklist({
 
   function save(party: SupportNotificationParty) {
     if (!subject) return;
-    const contactedAt = clockTextToInstantNotAfter(time, now);
+    const contactedAt = contactClockTextToInstant(time, day, now);
     if (outcome === "told" && contactedAt === null) {
-      setTimeError("Enter the time as HH:MM, for example 14:05");
+      setTimeError(
+        /^([01]\d|2[0-3]):([0-5]\d)$/.test(time.trim())
+          ? "That day and time is still in the future"
+          : "Enter the time as HH:MM, for example 14:05",
+      );
       return;
     }
     setTimeError(null);
@@ -189,7 +202,7 @@ export function SupportNotificationChecklist({
                     onChange={setOutcome}
                   />
                   {outcome === "told" ? (
-                    <div className={styles.fields}>
+                    <>
                       <Field label="Who was told">
                         <TextInput
                           value={who}
@@ -200,18 +213,26 @@ export function SupportNotificationChecklist({
                           }}
                         />
                       </Field>
-                      <Field label="Time told" hint="24h" error={timeError ?? undefined}>
-                        <TextInput
-                          value={time}
-                          inputMode="numeric"
-                          placeholder="HH:MM"
-                          maxLength={5}
-                          onChange={(event) => {
-                            setTime(event.target.value);
-                          }}
+                      <div className={styles.when}>
+                        <Segmented<SupportNotificationContactDay>
+                          label="Day told"
+                          items={CONTACT_DAY_ITEMS}
+                          value={day}
+                          onChange={setDay}
                         />
-                      </Field>
-                    </div>
+                        <Field label="Time told" hint="24h" error={timeError ?? undefined}>
+                          <TextInput
+                            value={time}
+                            inputMode="numeric"
+                            placeholder="HH:MM"
+                            maxLength={5}
+                            onChange={(event) => {
+                              setTime(event.target.value);
+                            }}
+                          />
+                        </Field>
+                      </div>
+                    </>
                   ) : (
                     <Field label="Reason">
                       <TextInput
