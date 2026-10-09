@@ -368,6 +368,13 @@ capacity figure anywhere in this group is real.
   reducer's `EVENT_ROLE` table). Key exports: `wardChromeRole`, `noticeIsForWardChrome`,
   `noticeIsMarkableByChrome`, `wardTasksAreActionableForRole`, `canSeeReadmissionFlag` (the 28 day
   readmission flag is the coordinator's only, Josh, 9 Oct 2026), `CHROME_ROLE_LABELS`.
+- **`src/components/ward-management/ward-role-permissions.ts`** (145 lines, added 9 Oct 2026,
+  feature 11) — Whether the route's role may take an action: `EVENT_ROLE` plus the one explicit
+  `CROSS_ROLE_ALLOWED` list of borrowed-role pairs (Patient page, Legal forms Mark received, ward
+  Raise referral, New referral sheet), kept as listed exceptions (Josh, 9 Oct 2026). Never widens what the
+  reducer accepts. Key exports: `canDispatch`, `dispatchPermission`, `roleLimitReason`,
+  `rolesOnlyReason`, `CROSS_ROLE_ALLOWED`. Its hooks are in `ward-role-gate.tsx` (`useRouteRole`,
+  `useRoleGate`), which renders the kit's `DisabledReason` beside a disabled button.
 - **`src/components/ward-management/ward-service-colors.ts`** (326 lines, 2 importers — one
   production, one test) — A full WA Health Services colour key (EMHS green `#00825E`, NMHS red
   `#990057`, SMHS purple `#5A2476`, WACHS/CAHS blue, statewide, private), sourced from the real
