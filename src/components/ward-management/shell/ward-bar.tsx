@@ -90,6 +90,7 @@ const WardMhaCalculator = dynamic(
 );
 
 import { announceToWardShell } from "./ward-live-region";
+import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
 import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import {
   digestHref,
@@ -1202,6 +1203,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             </div>
           ) : null}
         </div>
+
+        {/* A page's own header tools land here (`ward-bar-page-tools.tsx`). Empty on most pages. */}
+        <div id={WARD_BAR_PAGE_TOOLS_ID} className={styles.pageTools} data-testid="ward-bar-page-tools" />
 
         <span
           className={styles.mark}

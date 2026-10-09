@@ -97,6 +97,11 @@ function renderGovernance(includeOverrideRecorder = false) {
   );
 }
 
+/** The captured-event register sits on the Audit trail tab since the Tabs build (9 Oct 2026). */
+function openAuditTrail() {
+  fireEvent.click(screen.getByRole("radio", { name: /^Audit trail/ }));
+}
+
 describe("GovernanceView", () => {
   it("carries the not-a-medical-device statement, the same wording the coordinator screen uses", () => {
     renderGovernance();
@@ -112,6 +117,7 @@ describe("GovernanceView", () => {
     expect(screen.getByTestId("governance-override-rejections"), "the reducer refused the override").toHaveTextContent(
       "0",
     );
+    openAuditTrail();
     const register = screen.getByRole("region", { name: "Captured events" });
     fireEvent.click(within(register).getByRole("button", { name: /Refer to wards/i }));
     const detail = screen.getByTestId("ward-governance-override-detail");
@@ -126,6 +132,7 @@ describe("GovernanceView", () => {
     renderGovernance(true);
     fireEvent.click(screen.getByRole("button", { name: "record governance override" }));
 
+    openAuditTrail();
     const register = screen.getByRole("region", { name: "Captured events" });
     const overrideEvent = within(register).getByRole("button", { name: /Refer to wards/i });
     expect(overrideEvent).toHaveTextContent("Accepted");
@@ -167,6 +174,7 @@ describe("GovernanceView", () => {
     renderGovernance(true);
     fireEvent.click(screen.getByRole("button", { name: "record governance override" }));
 
+    openAuditTrail();
     const register = screen.getByRole("region", { name: "Captured events" });
     fireEvent.click(within(register).getByRole("button", { name: /Refer to wards/i }));
     expect(screen.getByRole("heading", { name: "Refer to wards" })).toBeInTheDocument();

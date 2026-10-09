@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -31,7 +31,8 @@ const auditMovement: Movement = {
     ageBand: "adult",
   },
 };
-const inspectButtonName = `Open dossier for ${resolveSubjectPatient(auditMovement, context).formalName}`;
+// Forms (9 Oct 2026): the row itself opens the side panel; there is no dossier drawer on desktop.
+const inspectButtonName = new RegExp(`^${resolveSubjectPatient(auditMovement, context).formalName}, `);
 
 beforeEach(() => {
   context.dispatch.mockClear();
@@ -42,14 +43,18 @@ describe("Legal Forms current paper facts", () => {
   it("does not present a conflicting legacy legal clock as a second current expiry", () => {
     render(<LegalFormsScreen />);
     fireEvent.click(screen.getByRole("button", { name: inspectButtonName }));
+    fireEvent.click(screen.getByRole("radio", { name: "Form" }));
     expect(screen.getByText("Recorded deadline")).toBeVisible();
     expect(screen.queryByTestId("ward-legal-forms-clock-WF-AUDIT-LEGAL")).not.toBeInTheDocument();
-    expect(screen.getByText("Time written")).toBeVisible();
+    fireEvent.click(screen.getByRole("radio", { name: "Now" }));
+    expect(within(screen.getByTestId("ward-legal-selected")).getByText("Time written")).toBeVisible();
   });
 
   it("records an entered written time without calculating or gating on a statutory expiry", () => {
     render(<LegalFormsScreen />);
     fireEvent.click(screen.getByRole("button", { name: inspectButtonName }));
+    // The written time is already recorded on this fixture, so the form opens from "Change".
+    fireEvent.click(screen.getByRole("button", { name: "Change" }));
     fireEvent.change(screen.getByLabelText("Date written"), { target: { value: "2026-09-23" } });
     fireEvent.change(screen.getByLabelText("Time"), { target: { value: "09:30" } });
     expect(screen.getByTestId("ward-legal-forms-clock-preview-WF-AUDIT-LEGAL")).toHaveTextContent(

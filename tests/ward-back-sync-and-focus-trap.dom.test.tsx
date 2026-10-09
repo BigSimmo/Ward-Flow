@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -140,74 +140,66 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
     });
   });
 
-  describe("Governance Registers Endorse Modal", () => {
-    it("captures trigger, sets initial focus, traps tab, and restores focus on close", () => {
+  // Tabs build (9 Oct 2026): the hand-rolled endorse modal became the shared Sheet, which owns the
+  // focus trap and restore. These pin that the Governance call site still gets both.
+  describe("Governance Registers Endorse Sheet", () => {
+    it("captures trigger, sets initial focus, traps tab, and restores focus on close", async () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <WardModeWorkspace mode="governance" />
         </WardFlowProvider>,
       );
 
-      const trigger = document.getElementById("btnEndorseHeader") as HTMLElement;
-      expect(trigger).toBeInTheDocument();
+      const trigger = screen.getByRole("button", { name: "Record review" });
       trigger.focus();
       expect(document.activeElement).toBe(trigger);
 
       fireEvent.click(trigger);
 
-      const modal = document.getElementById("endorseModal") as HTMLElement;
-      expect(modal).toBeInTheDocument();
-      expect(modal.style.display).not.toBe("none");
-
-      // Initial focus inside modal (e.g. close button or first actionable element)
-      expect(modal.contains(document.activeElement)).toBe(true);
+      const modal = screen.getByRole("dialog", { name: "Record a review" });
+      await waitFor(() => expect(modal.contains(document.activeElement)).toBe(true));
 
       const focusable = Array.from(
         modal.querySelectorAll<HTMLElement>(
           'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])',
         ),
-      ).filter((el) => !el.hasAttribute("disabled"));
+      ).filter((el) => !el.hasAttribute("disabled") && el.getAttribute("tabindex") !== "-1");
       expect(focusable.length).toBeGreaterThanOrEqual(2);
 
       const first = focusable[0]!;
       const last = focusable[focusable.length - 1]!;
 
-      // Shift+Tab on first element wraps to last
       first.focus();
-      fireEvent.keyDown(modal, { key: "Tab", shiftKey: true });
-      expect(document.activeElement).toBe(last);
+      fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
+      expect(modal.contains(document.activeElement)).toBe(true);
 
-      // Tab on last element wraps to first
-      fireEvent.keyDown(modal, { key: "Tab", shiftKey: false });
-      expect(document.activeElement).toBe(first);
+      last.focus();
+      fireEvent.keyDown(window, { key: "Tab", shiftKey: false });
+      expect(modal.contains(document.activeElement)).toBe(true);
 
-      // Close modal restores focus to trigger
-      const closeBtn = within(modal).getByRole("button", { name: "Close modal" });
-      fireEvent.click(closeBtn);
+      fireEvent.click(within(modal).getByRole("button", { name: "Cancel" }));
 
-      expect(modal.style.display).toBe("none");
-      expect(document.activeElement).toBe(trigger);
+      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Record a review" })).not.toBeInTheDocument());
+      await waitFor(() => expect(document.activeElement).toBe(trigger));
     });
 
-    it("restores focus on Escape key dismissal of endorseModal", () => {
+    it("restores focus on Escape key dismissal of the endorse sheet", async () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <WardModeWorkspace mode="governance" />
         </WardFlowProvider>,
       );
 
-      const trigger = document.getElementById("btnEndorseHeader") as HTMLElement;
+      const trigger = screen.getByRole("button", { name: "Record review" });
       trigger.focus();
       fireEvent.click(trigger);
+      const modal = screen.getByRole("dialog", { name: "Record a review" });
+      await waitFor(() => expect(modal.contains(document.activeElement)).toBe(true));
 
-      const modal = document.getElementById("endorseModal") as HTMLElement;
-      expect(modal.style.display).not.toBe("none");
-
-      // Press Escape
       fireEvent.keyDown(window, { key: "Escape" });
 
-      expect(modal.style.display).toBe("none");
-      expect(document.activeElement).toBe(trigger);
+      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Record a review" })).not.toBeInTheDocument());
+      await waitFor(() => expect(document.activeElement).toBe(trigger));
     });
   });
 

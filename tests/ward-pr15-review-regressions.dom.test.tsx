@@ -385,9 +385,10 @@ describe("PR15 discharge and referral provenance", () => {
     renderFlow(<LegalFormsScreen />, {
       movements: [{ ...movement, legalForm: { ...movement.legalForm!, dueAt: NOW_ANCHOR - 1 } }],
     });
-    // v6 hero: the passed count is a hero figure labelled "Passed".
+    // Forms hero (9 Oct 2026): the passed count is the bay at the start of the clock rail; the
+    // next-to-end card beside it may also read "Passed", so the bay is the first match.
     const hud = screen.getByTestId("ward-legal-hud-island");
-    expect(within(hud).getByText("Passed").parentElement?.textContent).toBe("1Passed");
+    expect(within(hud).getAllByText("Passed")[0]!.parentElement?.textContent).toBe("1Passed");
     expect(hud.textContent).toContain("forms on open moves");
     expect(hud.textContent).not.toContain("statutory deadline");
   });

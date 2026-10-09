@@ -111,7 +111,7 @@ export const CORE_SEARCH_VIEWS: readonly CoreSearchView[] = [
   },
   {
     key: "legal-forms",
-    title: "Legal forms",
+    title: "Forms",
     href: "/mockups/ward-flow/legal-forms",
     keywords: ["legal-forms", "legal forms", "forms", "mha", "mental health act", "mental health act forms"],
     description: "Recorded forms (demo)",
