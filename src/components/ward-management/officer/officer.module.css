@@ -1397,10 +1397,6 @@
     flex: none;
   }
 
-  .jobMeta {
-    display: none;
-  }
-
   .stageCell {
     flex-wrap: nowrap;
   }
