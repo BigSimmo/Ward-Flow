@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { FileUp, Send, Upload, X } from "lucide-react";
 
 import { Button, Icon, StatusGlyph } from "@/components/wf";
@@ -195,14 +195,26 @@ function PackUploadDialog({
         <div className={styles.modalBody}>
           {needsCode ? (
             <div className={styles.codeChoice} role="radiogroup" aria-label="Which form">
-              {slot.codes.map((option) => (
+              {slot.codes.map((option, index) => (
                 <button
                   key={option}
                   type="button"
                   role="radio"
                   aria-checked={code === option}
+                  tabIndex={code === option || (code === undefined && index === 0) ? 0 : -1}
                   title={formTitleForCode(option) ?? undefined}
                   onClick={() => setCode(option)}
+                  onKeyDown={(event: ReactKeyboardEvent<HTMLButtonElement>) => {
+                    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+                    event.preventDefault();
+                    const direction = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
+                    const nextIndex = (index + direction + slot.codes.length) % slot.codes.length;
+                    const next = slot.codes[nextIndex]!;
+                    setCode(next);
+                    event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(
+                      `button:nth-child(${nextIndex + 1})`,
+                    )?.focus();
+                  }}
                 >
                   Form {option}
                 </button>
