@@ -38,7 +38,7 @@ import {
   type WfTone,
 } from "@/components/wf";
 import { dayOf } from "@/components/ward-management/ward-clock";
-import type { BedItem } from "./ward-beds-matrix";
+import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 
 function referralAnswerBlocked(movement: Movement, unit: Unit, who?: string): string | undefined {
@@ -370,19 +370,7 @@ export function WardHomeTab({
                 : free
                   ? "Free to offer"
                   : stateWord;
-    // One shape per tone: act now only for a held-up discharge, at risk for a bed past its date or
-    // away at an ED, moving for a bed on its way in or out, waiting for leave, done for a free bed.
-    const glyph: WfTone | null = free
-      ? "success"
-      : bed.blockReason
-        ? "danger"
-        : awayAtEd || bed.pastDate || bed.dischargeBarrier
-          ? "warning"
-          : leaving || bed.status === "incoming"
-            ? "info"
-            : bed.status === "leave"
-              ? "neutral"
-              : null;
+    const glyph = bedGlyphTone(bed);
     const number = String(bed.bedNumber).padStart(2, "0");
     const name = free ? "Free to offer" : (bed.patientAlias ?? stateWord);
     const accessibleName = [bed.bedLabel, stateWord, days ? `day ${bed.stayDays}` : "", note]

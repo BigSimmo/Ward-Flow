@@ -5,6 +5,7 @@ import styles from "./ward-beds-matrix.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { WardFlowContext } from "@/components/ward-management/ward-flow-provider";
+import type { WfTone } from "@/components/wf";
 
 export interface BedItem {
   bedNumber: number | string;
@@ -132,6 +133,21 @@ function cardSignal(bed: BedItem, isPastDate: boolean, isAwayAtEd: boolean): str
 }
 
 type ShiftGroup = "all" | "due-out" | "off-ward" | "in-transit";
+
+/**
+ * One shape per tone for a bed, shared by the Every bed tile and the bed drawer badge so the two
+ * always agree: act now only for a held-up discharge, at risk for a bed past its date, away at an
+ * ED or with a discharge barrier, moving for a bed on its way in or out, waiting for leave, done
+ * for a free bed.
+ */
+export function bedGlyphTone(bed: BedItem): WfTone | null {
+  if (bed.status === "ready") return "success";
+  if (bed.blockReason) return "danger";
+  if (bed.awayAtEdHours != null || bed.pastDate || bed.dischargeBarrier) return "warning";
+  const leaving = bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0);
+  if (leaving || bed.status === "incoming") return "info";
+  return bed.status === "leave" ? "neutral" : null;
+}
 
 export function WardBedsMatrix({
   unit,

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
-import type { BedItem } from "./ward-beds-matrix";
+import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
@@ -60,12 +60,7 @@ function recordedBlocker(value: string | undefined): BedReleaseBlocker {
 /** The same shape the Every bed tile shows, so the badge and the tile always agree. */
 function bedTone(bedItem: BedItem | undefined, isReady: boolean): WfTone | null {
   if (isReady) return "success";
-  if (!bedItem) return null;
-  const awayAtEd = bedItem.awayAtEdHours != null;
-  if (awayAtEd || bedItem.pastDate) return "danger";
-  if (bedItem.dischargeBarrier || bedItem.blockReason) return "warning";
-  const leaving = bedItem.dischargeConfirmed === true || (bedItem.expectedDays != null && bedItem.expectedDays <= 0);
-  return leaving ? "info" : null;
+  return bedItem ? bedGlyphTone(bedItem) : null;
 }
 
 /** Shortens "Form 6A Involuntary inpatient" to "Form 6A" for the fact tile; the full label stays in Overview. */
