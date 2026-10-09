@@ -60,12 +60,12 @@
       "route": "/delays",
       "verified": {
         "date": "2026-10-09",
-        "who": "Claude Code (rendered Chromium review of the October 2026 Delays board after owner ruling D-38)",
+        "who": "Claude Code (rendered Chromium review of the October 2026 Delays board after owner ruling D-41)",
         "widths": [1440, 820, 390],
         "themes": ["light", "dark"],
         "verdict": "matches",
         "checkedRevision": "e224769281694905d11f2d292155e61cd2776863",
-        "notes": "Owner ruling D-38 (9 October 2026): Delays filters narrow the Waiting table and the table states how many people are hidden, with Show everyone. This replaces the highlight-only entry at 2a373b10, now in verificationHistory. Checked in real Chromium against the local dev server at this revision with a clean tree: 1440 light, 1440 dark (data-theme=dark), 820 light and 390 light. At each, pressing the Over 8h count narrowed the table from 70 of 70 to 19 of 70, the note read '51 more people are waiting, hidden by the filters above.', Show everyone restored 70 of 70, there were no page errors and no page-level horizontal overflow. This check found and this revision fixes a phone defect: at 390 the note did not wrap, so Show everyone was clipped off the cell; tests/ui-ward-table-thresholds.spec.ts now clicks it at 390 and 1440 and fails without the fix. Layout of the hero, tiles, rail and graphs is not re-reviewed here beyond these views; the full-board captures at d535963 (earlier history entry) remain the layout evidence. Print, forced colours, physical touch, screen readers and hosted deployment were not verified."
+        "notes": "Owner ruling D-41 (9 October 2026): Delays filters narrow the Waiting table and the table states how many people are hidden, with Show everyone. This replaces the highlight-only entry at 2a373b10, now in verificationHistory. Checked in real Chromium against the local dev server at this revision with a clean tree: 1440 light, 1440 dark (data-theme=dark), 820 light and 390 light. At each, pressing the Over 8h count narrowed the table from 70 of 70 to 19 of 70, the note read '51 more people are waiting, hidden by the filters above.', Show everyone restored 70 of 70, there were no page errors and no page-level horizontal overflow. This check found and this revision fixes a phone defect: at 390 the note did not wrap, so Show everyone was clipped off the cell; tests/ui-ward-table-thresholds.spec.ts now clicks it at 390 and 1440 and fails without the fix. Layout of the hero, tiles, rail and graphs is not re-reviewed here beyond these views; the full-board captures at d535963 (earlier history entry) remain the layout evidence. Print, forced colours, physical touch, screen readers and hosted deployment were not verified."
       },
       "verificationHistory": [
         {

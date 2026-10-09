@@ -186,7 +186,11 @@ describe("the ruled Ready expression has exactly the sanctioned homes", () => {
       // (`supportNotificationInboxItems`) was added at the top of ward-derivations.ts. VERIFIED a
       // move and not a fifth copy: the file still holds exactly one match, the same `available`
       // line inside `unitCapacity`.
-      "src/components/ward-management/ward-derivations.ts:580",
+      // 580 -> 582, 9 Oct 2026 (PR #164 planned admissions, merged after #159): two imports for
+      // planned-admission overdue inbox rows landed at the top of ward-derivations.ts. VERIFIED a move and not a
+      // fifth copy: the file still holds exactly one match, the same `available` line inside
+      // `unitCapacity`.
+      "src/components/ward-management/ward-derivations.ts:582",
       // 424 -> 426, owner ruling 2026-09-09/2026-09-10 (sex and gender split, P1 #BAY1TY): the
       // gender gate task added two imports (`Patient`, `OverrideReason`) to the top of
       // ward-eligibility.ts for the new standalone `genderEligibility` function. VERIFIED a move
