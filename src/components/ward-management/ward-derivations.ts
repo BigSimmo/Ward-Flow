@@ -314,7 +314,7 @@ export function destinationNoLongerLawful(movement: Movement, units: Unit[]): Un
  */
 export function referralBlockedReason(movement: Movement): string | undefined {
   if (REFERRABLE_MOVEMENT_STAGES.includes(movement.stage)) return undefined;
-  return `${movement.id} cannot be referred while it is ${stageCopy[movement.stage].label.toLowerCase()} — referral is only available while placement is requested or a destination is under review.`;
+  return `This patient cannot be referred while the journey is ${stageCopy[movement.stage].label.toLowerCase()} — referral is only available while placement is requested or a destination is under review.`;
 }
 
 /**

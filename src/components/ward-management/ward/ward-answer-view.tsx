@@ -79,7 +79,8 @@ export interface WardAnswerViewProps {
 }
 
 export function WardAnswerView({ unitId }: WardAnswerViewProps) {
-  const { movements, units, bedReleases, leaveBeds, admissions, dispatch, rejections } = useWardFlow();
+  const { movements, units, bedReleases, leaveBeds, admissions, dispatch, rejections, resolvePatientIdentity } =
+    useWardFlow();
   const now = useWardFlowClock();
   const unit = units.find((candidate) => candidate.id === unitId);
 
@@ -1017,7 +1018,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                   <ul className={styles.historyList} data-testid="ward-answer-history">
                     {recentAnswers.map((answer) => (
                       <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
-                        <strong>{answer.movementId}</strong>
+                        {/* D-39 through the provider's identity projection, so a referral-linked journey keeps its UMRN. */}
+                        <strong>{resolvePatientIdentity({ movementId: answer.movementId }).umrn}</strong>
                         <span>{answer.outcome}</span>
                         <span>{answer.reason ? answer.reason.replace(/_/g, " ") : "Accepted by this ward"}</span>
                         {answer.at === undefined ? (

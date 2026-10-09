@@ -132,7 +132,7 @@ This 10-minute guided demonstration script details a second-by-second clinical w
 - **Clinical Role:** Emergency Psychiatric Liaison Nurse (EPLN) / ED Psychiatric Registrar
 - **Screen:** Emergency Department Console (`/ed/rph-ed`) & Referral Intake Drawer (`/referrals/new` or `/referrals`)
 - **Patient Profile:**
-  - **Name:** Sarah Jenkins (Synthetic Record `WF-P-8842` / `UM100088`)
+  - **Name:** Sarah Jenkins (synthetic UMRN `UM100088`)
   - **Demographics:** 28-year-old Female, resident of Bayswater (East Metropolitan Catchment)
   - **Triage:** Australasian Triage Scale (ATS) Category 2 (Emergency — 10-minute medical assessment)
   - **Clinical Picture:** Severe acute psychotic exacerbation, persecutory delusions, extreme agitation, poor oral intake, refusing voluntary treatment.

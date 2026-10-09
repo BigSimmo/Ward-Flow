@@ -73,6 +73,7 @@ import {
 import styles from "./handover.module.css";
 import pageStyles from "./handover-third-edition.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import {
   Activity,
   Check,
@@ -560,7 +561,7 @@ export function HandoverPage() {
         const q = searchQuery.toLowerCase().trim();
         const pat = resolveMovementPatient(movement, patients, referrals);
         const text =
-          `${movement.id} ${pat.name} ${pat.umrn} ${movement.owner} ${movement.originEdId ?? ""} ${movement.acceptedUnitId ?? ""}`.toLowerCase();
+          `${pat.name} ${pat.umrn} ${movement.owner} ${movement.originEdId ?? ""} ${movement.acceptedUnitId ?? ""}`.toLowerCase();
         if (!text.includes(q)) return false;
       }
 
@@ -3810,6 +3811,8 @@ export function SignOffSection({
   signOffRecord?: { role: WardFlowRole; at: Instant } | null;
 }) {
   const signed = Boolean(signOffRecord);
+  // D-39: urgent journeys outside the filter are named by UMRN, never by their WF number.
+  const patientOf = usePatientOf();
   return (
     <Card as="section" className={pageStyles.signOffCard} data-testid="ward-handover-sign-off">
       <CardHead
@@ -3837,7 +3840,7 @@ export function SignOffSection({
             {" · "}
             {urgentOutsideFilter.length === 0
               ? "none urgent outside the filter."
-              : `${urgentOutsideFilter.length} urgent outside: ${urgentOutsideFilter.map((movement) => movement.id).join(", ")}.`}
+              : `${urgentOutsideFilter.length} urgent outside: ${urgentOutsideFilter.map((movement) => patientOf(movement).umrn).join(", ")}.`}
           </li>
         </ul>
         <div className={pageStyles.signAction}>

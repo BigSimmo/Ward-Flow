@@ -85,6 +85,7 @@ import {
   NetworkBedflow,
   NetworkUnitDetail,
 } from "@/components/ward-management/network/network-overview";
+import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 
 import styles from "./ward-management-network.module.css";
 import thirdEdition from "./ward-management-network-third-edition.module.css";
@@ -728,7 +729,7 @@ export function initialNetworkPatientId(movements: Movement[]): string | null {
 
 /** `now` is the page's own clock from `usePageLive()`, so pausing the hero freezes this workspace too. */
 function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
-  const { movements, units, referrals, bedReleases, leaveBeds, admissions } = useWardFlow();
+  const { movements, units, referrals, bedReleases, leaveBeds, admissions, patients } = useWardFlow();
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(() => initialNetworkPatientId(movements));
   const [selectedReferralId, setSelectedReferralId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
@@ -756,6 +757,8 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
     [movements, selectedPatientId],
   );
   const candidates = useMemo(() => (patient ? candidatesFor(patient, units, now) : []), [patient, units, now]);
+  // D-39: the selected journey is named by its patient's UMRN, never its WF number.
+  const patientUmrn = movementUmrn(patient, { patients, referrals, movements });
   const originEd = patient ? allEmergencyDepartments().find((ed) => ed.id === patient.originEdId) : undefined;
 
   /*
@@ -1282,7 +1285,7 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
                   <strong>STATEWIDE FLOW</strong>
                   <span>Coordinated visibility and placement</span>
                   <span className={styles.hubMeta}>
-                    {patient.id} routing · {openMovements} open movements
+                    {patientUmrn} routing · {openMovements} open movements
                   </span>
                 </div>
               </>
@@ -1331,7 +1334,7 @@ function WardNetworkPlacementWorkspace({ now }: { now: Instant }) {
             <>
               <header className={styles.panelHeader}>
                 <h2>
-                  <ListChecks aria-hidden="true" /> Placement · {patient.id}
+                  <ListChecks aria-hidden="true" /> Placement · {patientUmrn}
                 </h2>
               </header>
               {/* `data-label` is read by nothing on screen — same job as the bed chips' own
