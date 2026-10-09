@@ -42,21 +42,22 @@ function tab(name: string) {
   return within(document.getElementById(`pnpane-${name.toLowerCase()}`)!);
 }
 describe("polished patient dossier tabs", () => {
-  it("opens clinical checks and documents locally from the patient brief with focus handoff", async () => {
+  it("opens documents from Legal now and returns to the status card on Now with focus handoff", async () => {
     setup();
-    fireEvent.click(screen.getByRole("button", { name: /^Documents/ }));
+    fireEvent.click(within(screen.getByTestId("ward-patient-legal-now")).getByRole("button", { name: "All forms" }));
     await waitFor(() => expect(screen.getByRole("tab", { name: /^Documents/ })).toHaveFocus());
     expect(screen.getByRole("region", { name: "Documents and legal authority" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: /^Clinical checks/ }));
-    await waitFor(() => expect(screen.getByRole("tab", { name: /^Now/ })).toHaveFocus());
-    expect(screen.getByRole("region", { name: "Clinical handover overview" })).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: /^Now/ }));
+    expect(screen.getByRole("region", { name: "Status" })).toBeVisible();
+    expect(screen.getByTestId("ward-patient-gate-clearance")).toBeVisible();
   });
   it("makes the record-only brief shortcut open patient details", async () => {
     setup("PT-005");
-    fireEvent.click(screen.getByRole("button", { name: /^Patient details/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^View patient details/ }));
     await waitFor(() => expect(screen.getByRole("tab", { name: /^Details/ })).toHaveFocus());
     expect(screen.getByRole("region", { name: "Patient details" })).toBeVisible();
-    expect(screen.queryByRole("button", { name: /^Clinical checks/ })).not.toBeInTheDocument();
+    // Nothing is open, so there is no fit to travel gate to offer.
+    expect(screen.queryByTestId("ward-patient-gate-clearance")).not.toBeInTheDocument();
   });
   it("searches history and makes unmatched filters explicit without losing the episode", () => {
     setup();
@@ -113,9 +114,8 @@ describe("polished patient dossier tabs", () => {
   });
   it("records medical clearance only after an explicit outcome and attestation", () => {
     setup();
-    fireEvent.click(screen.getByRole("button", { name: "Clinical overview" }));
-    const clinical = within(screen.getByRole("region", { name: "Clinical handover overview" }));
-    const trigger = clinical.getByRole("button", { name: "Record treating-team clearance" });
+    const clinical = within(screen.getByTestId("ward-patient-gate-clearance"));
+    const trigger = clinical.getByRole("button", { name: "Record clearance" });
     fireEvent.click(trigger);
     const dialog = within(screen.getByRole("dialog", { name: "Record treating-team medical clearance" }));
     const save = dialog.getByRole("button", { name: "Save clearance outcome" });
@@ -125,16 +125,15 @@ describe("polished patient dossier tabs", () => {
     fireEvent.click(dialog.getByRole("checkbox"));
     fireEvent.click(save);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(clinical.getByText("Clearance recorded")).toBeVisible();
+    expect(clinical.getByText(/^Cleared \d{2}:\d{2}$/)).toBeVisible();
     expect(trigger).toHaveFocus();
-    expect(
-      screen.getByText("Clearance recorded", { selector: "[data-patient-tracker-facts] strong" }),
-    ).toBeInTheDocument();
+    expect(trigger).toHaveTextContent("Update clearance");
   });
   it("closes the clearance dialog on Escape and returns focus to its trigger", () => {
     setup();
-    fireEvent.click(screen.getByRole("button", { name: "Clinical overview" }));
-    const trigger = screen.getByRole("button", { name: "Record treating-team clearance" });
+    const trigger = within(screen.getByTestId("ward-patient-gate-clearance")).getByRole("button", {
+      name: "Record clearance",
+    });
     fireEvent.click(trigger);
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

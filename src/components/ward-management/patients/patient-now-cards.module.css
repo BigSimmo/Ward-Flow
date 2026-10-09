@@ -1,0 +1,100 @@
+/* Gate board context cards on Now: Why here, Legal now and Who to call. */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.para {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: 1.5;
+}
+
+.rows {
+  border-top: 1px solid var(--wf-line);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: center;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.k {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.v {
+  min-width: 0;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+
+.nr {
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 46px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.item:last-child {
+  border-bottom: 0;
+}
+
+.itemText {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--wf-s-2);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.itemText strong {
+  font-weight: 600;
+}
+
+.itemText span {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.time {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  white-space: nowrap;
+}

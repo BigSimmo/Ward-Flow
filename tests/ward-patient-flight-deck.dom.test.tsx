@@ -28,7 +28,8 @@ function setup() {
       <StateProbe />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Place them" }));
+  // Gate board: the bed gate's one action opens the placement work on Now.
+  fireEvent.click(within(screen.getByTestId("ward-patient-gate-bed")).getByRole("button"));
 }
 function referAndAccept() {
   const shortlist = screen.getByRole("region", { name: "Network ward shortlist" });
@@ -50,10 +51,11 @@ describe("unified Patient Now clinical flight deck", () => {
     expect(screen.queryByRole("link", { name: "Open the movement" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("tab")).toHaveLength(5);
     expect(screen.getByTestId("ward-patient-live-status")).toHaveAttribute("data-live", "true");
-    expect(screen.getByText("LIVE BEDFLOW")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("In placement");
     expect(screen.getByRole("heading", { name: "Transit operations" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Clinical overview" }));
-    expect(screen.getByRole("heading", { name: /This presentation/ })).toBeInTheDocument();
+    // The clinical context sits beside the placement work on Now, not behind a second switch.
+    expect(screen.getByRole("heading", { name: "Why they're here" })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Cannot move");
   });
   it("refers, accepts, pulls, books, dispatches and arrives through shared reducer state", () => {
     setup();
@@ -79,7 +81,7 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(screen.getByRole("button", { name: "Confirm arrival · receiving ward" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("arrived");
     expect(screen.getByTestId("ward-patient-live-status")).toHaveAttribute("data-live", "false");
-    expect(screen.getByText("NOT IN LIVE BEDFLOW")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("On ward");
     expect(screen.queryByRole("button", { name: "Confirm arrival · receiving ward" })).not.toBeInTheDocument();
   });
   it("requires a step-back reason and preserves the reserved bed when correcting only the stage", () => {
@@ -121,14 +123,14 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(screen.getByLabelText("Confirm this bed search is no longer required"));
     fireEvent.click(screen.getByRole("button", { name: /^Withdraw referral$/ }));
     expect(screen.getByTestId("ward-patient-live-status")).toHaveAttribute("data-live", "false");
-    expect(screen.getByText("NOT IN LIVE BEDFLOW")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("Not active");
     expect(screen.getByText("Referral closed · no active transfer")).toBeInTheDocument();
   });
   it("legacy movement route renders the same dossier", async () => {
     const { default: Page } = await import("@/app/mockups/ward-flow/movements/[movementId]/page");
     const page = await Page({ params: Promise.resolve({ movementId: "WF-012" }) });
     render(<WardFlowProvider initialNow={NOW_ANCHOR}>{page}</WardFlowProvider>);
-    fireEvent.click(screen.getByRole("button", { name: "Place them" }));
+    fireEvent.click(within(screen.getByTestId("ward-patient-gate-bed")).getByRole("button"));
     expect(screen.getByRole("heading", { name: "Transit operations" })).toBeInTheDocument();
   });
   it("opens the ward shortlist directly from a task referral action", async () => {

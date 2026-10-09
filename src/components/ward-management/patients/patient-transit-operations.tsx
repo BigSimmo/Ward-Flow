@@ -31,7 +31,17 @@ import { clock, dur } from "./patient-now-records";
 import styles from "./patient-transit-operations.module.css";
 
 /** All operational facts and eligibility are calculated from the current provider state. */
-export function PatientTransitOperations({ movement }: { movement: Movement }) {
+/**
+ * `showMetrics={false}` on the Patient page, where the gate board status card above already states
+ * the destination, bed, legal authority and transport. The strip stays for any other host.
+ */
+export function PatientTransitOperations({
+  movement,
+  showMetrics = true,
+}: {
+  movement: Movement;
+  showMetrics?: boolean;
+}) {
   const { units, admissions, dispatch, rejections, readAuditEvents } = useWardFlow();
   const now = useWardFlowClock();
   const auditRead = readAuditEvents({ role: "coordinator" });
@@ -750,42 +760,44 @@ export function PatientTransitOperations({ movement }: { movement: Movement }) {
           </p>
         ) : null}
       </div>
-      <div className={styles.metrics}>
-        <div>
-          <Hospital size={18} aria-hidden="true" />
-          <span>Destination</span>
-          <strong>{destination?.name ?? "Awaiting acceptance"}</strong>
-          <small>{movement.referredUnitIds.length} open ward referrals</small>
+      {showMetrics ? (
+        <div className={styles.metrics}>
+          <div>
+            <Hospital size={18} aria-hidden="true" />
+            <span>Destination</span>
+            <strong>{destination?.name ?? "Awaiting acceptance"}</strong>
+            <small>{movement.referredUnitIds.length} open ward referrals</small>
+          </div>
+          <div>
+            <BedDouble size={18} aria-hidden="true" />
+            <span>Bed reservation</span>
+            <strong>{heldBed ? (heldBed.state === "occupied" ? "Occupied" : "Bed held") : "No bed held"}</strong>
+            <small>
+              {remaining === undefined
+                ? "No hold expiry recorded"
+                : remaining <= 0
+                  ? "Hold expired · review required"
+                  : `${dur(remaining)} remaining`}
+            </small>
+          </div>
+          <div>
+            <ShieldCheck size={18} aria-hidden="true" />
+            <span>Legal authority</span>
+            <strong>{movement.legalForm ? legalFormName(movement.legalForm) : "Not recorded"}</strong>
+            <small>
+              {movement.legalForm?.dueAt === undefined
+                ? "No paper expiry recorded"
+                : `Paper expiry ${clock(movement.legalForm.dueAt)}`}
+            </small>
+          </div>
+          <div>
+            <Truck size={18} aria-hidden="true" />
+            <span>Transport</span>
+            <strong>{activeJob ? job.provider : noTransport ? "Not required" : "Awaiting booking"}</strong>
+            <small>{activeJob ? `CAD ${job.cadNumber ?? "not recorded"}` : "Sending team records booking"}</small>
+          </div>
         </div>
-        <div>
-          <BedDouble size={18} aria-hidden="true" />
-          <span>Bed reservation</span>
-          <strong>{heldBed ? (heldBed.state === "occupied" ? "Occupied" : "Bed held") : "No bed held"}</strong>
-          <small>
-            {remaining === undefined
-              ? "No hold expiry recorded"
-              : remaining <= 0
-                ? "Hold expired · review required"
-                : `${dur(remaining)} remaining`}
-          </small>
-        </div>
-        <div>
-          <ShieldCheck size={18} aria-hidden="true" />
-          <span>Legal authority</span>
-          <strong>{movement.legalForm ? legalFormName(movement.legalForm) : "Not recorded"}</strong>
-          <small>
-            {movement.legalForm?.dueAt === undefined
-              ? "No paper expiry recorded"
-              : `Paper expiry ${clock(movement.legalForm.dueAt)}`}
-          </small>
-        </div>
-        <div>
-          <Truck size={18} aria-hidden="true" />
-          <span>Transport</span>
-          <strong>{activeJob ? job.provider : noTransport ? "Not required" : "Awaiting booking"}</strong>
-          <small>{activeJob ? `CAD ${job.cadNumber ?? "not recorded"}` : "Sending team records booking"}</small>
-        </div>
-      </div>
+      ) : null}
       {!open && (
         <p className={styles.notice}>
           Journey complete. The recorded placement and transport remain visible; operational actions are closed.
