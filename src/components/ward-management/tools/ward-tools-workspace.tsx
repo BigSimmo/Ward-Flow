@@ -2,7 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, BedDouble, Search, Phone, Mail, ClipboardList, Truck, Clock, Users } from "lucide-react";
+import {
+  ArrowUpRight,
+  BedDouble,
+  Search,
+  Phone,
+  Mail,
+  ClipboardList,
+  Truck,
+  Clock,
+  Users,
+  FileClock,
+  Printer,
+} from "lucide-react";
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import { standingFigures } from "../ward-standing-strip";
 import { capacityBreakdown, bedsPendingPreparation, openBedsNow } from "../ward-bed-availability";
@@ -13,6 +25,7 @@ import { wardSites, siteByCode, allEmergencyDepartments } from "../ward-sites";
 import { COMMUNITY_TEAM_PAGES } from "../community/community-derivations";
 import { contactForTeam } from "../community/community-team-contact-mapping";
 import { HEALTH_SERVICES, TRANSPORT_PROVIDERS, type Unit } from "../ward-model";
+import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "../reports/report-routes";
 import { StatusGlyph } from "@/components/wf";
 import styles from "./ward-tools-workspace.module.css";
 
@@ -411,11 +424,24 @@ export function OperationalLinks({ onNavigate }: { onNavigate: () => void }) {
     { href: "movements", name: "Transport", detail: "Track current journeys", icon: Truck },
     { href: "on-call", name: "On-call and escalation", detail: "Find covering roles", icon: Phone },
     { href: "legal-forms", name: "Recorded form limits", detail: "Review legal form records", icon: ClipboardList },
+    { to: DOWNTIME_PACK_HREF, href: "downtime", name: "Downtime pack", detail: "Print a snapshot now", icon: Printer },
+    {
+      to: PATIENT_CHRONOLOGY_HREF,
+      href: "chronology",
+      name: "Patient chronology",
+      detail: "PIR export",
+      icon: FileClock,
+    },
   ];
   return (
     <div className={styles.actionGrid}>
       {links.map((link) => (
-        <Link className={styles.action} href={`${root}/${link.href}`} key={link.href} onClick={onNavigate}>
+        <Link
+          className={styles.action}
+          href={"to" in link && link.to ? link.to : `${root}/${link.href}`}
+          key={link.href}
+          onClick={onNavigate}
+        >
           <link.icon aria-hidden="true" strokeWidth={1.75} />
           <span>
             <strong>{link.name}</strong>
