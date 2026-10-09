@@ -17,6 +17,7 @@ import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-mana
 import { HEALTH_SERVICES, type HealthService, type Movement } from "@/components/ward-management/ward-model";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
+import { isOfficerJob } from "@/components/ward-management/officer/officer-jobs";
 
 export const COORDINATOR_DESK_ID = "coordinator";
 export const OFFICER_DESK_ID = "officer";
@@ -56,17 +57,6 @@ export type DeskSite = {
   desks: Desk[];
 };
 
-/**
- * Jobs still on an officer's list: booked, not arrived, movement not closed. Same predicate as
- * `isOfficerJob` in `officer/officer-screen.tsx`, restated here so Settings does not import the
- * officer screen; `tests/ward-workstation-desks.test.ts` pins the two together.
- */
-export function isActiveTransportJob(movement: Movement): boolean {
-  return (
-    movement.transport !== undefined && movement.transport.arrivedAt === undefined && movement.closure === undefined
-  );
-}
-
 export function workstationDesks(input: {
   hub: readonly HubEntry[];
   eds: readonly EdSummary[];
@@ -89,7 +79,7 @@ export function workstationDesks(input: {
       role: "officer",
       name: "Transport jobs",
       href: OFFICER_HREF,
-      activeJobs: movements.filter(isActiveTransportJob).length,
+      activeJobs: movements.filter(isOfficerJob).length,
     },
   ];
 
@@ -185,7 +175,7 @@ export function currentDeskId(pathname: string): string | null {
 }
 
 /**
- * The plain-language actions a desk is told about. Whether a role may do each one is read from
+ * The headline actions a desk is told about, at least the main ones for each role; not every event. Whether a role may do each one is read from
  * `EVENT_ROLE` at render time; this list only names them, in the order a person would look for them.
  */
 const DESK_ACTIONS: readonly { event: WardFlowEvent["type"]; label: string }[] = [
@@ -196,14 +186,20 @@ const DESK_ACTIONS: readonly { event: WardFlowEvent["type"]; label: string }[] =
   { event: "RECORD_ESCALATION", label: "Record an escalation" },
   { event: "CHANGE_URGENCY", label: "Change urgency" },
   { event: "PULL_PATIENT", label: "Pull a patient into a ready bed" },
+  { event: "DECLINE", label: "Decline for the ward" },
+  { event: "SET_BED_PREPARATION", label: "Mark a bed being made ready" },
+  { event: "RECORD_LEAVE_BED", label: "Record leave" },
   { event: "RAISE_REFERRAL", label: "Raise a referral" },
   { event: "RECORD_EXAMINATION", label: "Record an examination" },
+  { event: "RECORD_MEDICAL_CLEARANCE", label: "Record medical clearance" },
   { event: "RECORD_LEGAL_FORM_RECEIVED", label: "Record a legal form received" },
   { event: "HANDOVER_READY", label: "Mark handover ready" },
   { event: "BOOK_TRANSPORT", label: "Book transport" },
   { event: "TRANSPORT_ACCEPTED", label: "Accept a transport job" },
   { event: "PATIENT_COLLECTED", label: "Mark a patient collected" },
   { event: "PATIENT_ARRIVED", label: "Mark a patient arrived" },
+  { event: "RECORD_DIVERSION", label: "Record a diversion" },
+  { event: "RECORD_COMMUNITY_TREATMENT_ORDER", label: "Record a community treatment order" },
 ];
 
 export type DeskActions = {

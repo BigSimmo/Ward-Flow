@@ -8,7 +8,6 @@ import {
   currentDeskId,
   deskActions,
   deskMatches,
-  isActiveTransportJob,
   OFFICER_DESK_ID,
   workstationDesks,
 } from "../src/components/ward-management/settings/workstation-desks";
@@ -54,7 +53,6 @@ describe("workstation desks", () => {
   });
 
   it("counts transport jobs exactly as the officer screen does", () => {
-    for (const movement of seed.movements) expect(isActiveTransportJob(movement)).toBe(isOfficerJob(movement));
     const officer = desks.statewide.find((desk) => desk.id === OFFICER_DESK_ID)!;
     expect(officer.activeJobs).toBe(seed.movements.filter(isOfficerJob).length);
   });
@@ -94,5 +92,9 @@ describe("what a desk can do comes from EVENT_ROLE", () => {
     const coordinator = deskActions("coordinator");
     expect(coordinator.can).toContain("Refer to wards");
     expect(coordinator.can).not.toContain("Book transport");
+  });
+
+  it("an ED can record medical clearance", () => {
+    expect(deskActions("ed").can).toContain("Record medical clearance");
   });
 });

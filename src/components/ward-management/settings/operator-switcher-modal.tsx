@@ -24,6 +24,7 @@ import { Badge, Drawer, Icon, Kbd, StatusGlyph, TextInput, buttonClass, cx, durM
 import { edHomeSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -150,7 +151,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
   // Owner answer 38: the patient-in-focus shortcut names other wards, so it is coordinators-only,
   // exactly as on the rail's Change view.
   const focusMovement =
-    isCoordinatorRoute && focusMovementId ? movements.find((movement) => movement.id === focusMovementId) : undefined;
+    isCoordinatorRoute && focusMovementId
+      ? movements.find((movement) => movement.id === focusMovementId && isOpenMovement(movement))
+      : undefined;
   const focusWardIds = focusMovement
     ? focusMovement.acceptedUnitId
       ? [focusMovement.acceptedUnitId]

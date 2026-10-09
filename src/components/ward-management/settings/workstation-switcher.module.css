@@ -592,7 +592,7 @@
    preview, chips scrolling sideways rather than wrapping, no keyboard hints. */
 @media (max-width: 639px) {
   .drawer {
-    min-height: calc(100dvh - 2rem);
+    min-height: 96dvh;
   }
 
   .chip {
