@@ -1572,6 +1572,7 @@ export function MovementsScreen() {
           referrals={referrals}
           patients={patients}
           edAccessTargetMinutes={configuration.edAccessTargetMinutes}
+          legalUrgentMinutes={configuration.dueSoonUrgentMinutes}
           dispatch={dispatch}
           onClose={closeDetail}
           onFocusMovement={setFocusMovementId}

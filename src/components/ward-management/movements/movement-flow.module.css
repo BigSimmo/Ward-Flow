@@ -666,6 +666,13 @@
 /* ---------- phone: a card per row (never alters the desktop grid above) ---------- */
 
 @media (max-width: 48rem) {
+  /* 48px tap floor on phone for the hero's own controls (shared buttons carry their own). */
+  .highlight,
+  .stageButton,
+  .highlightNote {
+    min-height: var(--ward-tap, 3rem);
+  }
+
   /* Phone hero: title, then each tool row scrolls sideways on its own line rather than
      overlapping. Run sheet is a desk task and stays on the larger screen. */
   .heroTitleMeta {
@@ -790,7 +797,7 @@
   grid-template-columns: minmax(0, 1fr) 20rem;
 }
 
-@media (max-width: 81.25rem) {
+@media (max-width: 85rem) {
   .layout.layout {
     grid-template-columns: minmax(0, 1fr);
   }

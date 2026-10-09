@@ -32,6 +32,7 @@ import type { Movement, Referral, Unit } from "@/components/ward-management/ward
 import { StatusGlyph, buttonClass, type WfTone } from "@/components/wf";
 
 import { movementNextStep, nextStepTarget } from "./movement-next-step";
+import { declineReasonLabels } from "./movement-workspace-derivations";
 import d from "./movement-drawer.module.css";
 
 /**
@@ -147,6 +148,7 @@ export function MovementDrawer({
   referrals,
   patients,
   edAccessTargetMinutes,
+  legalUrgentMinutes,
   dispatch,
   onClose,
   onFocusMovement,
@@ -168,6 +170,8 @@ export function MovementDrawer({
    * than the module default (`tests/ward-configuration-read-sites.test.ts`).
    */
   edAccessTargetMinutes: number;
+  /** Settings' `dueSoonUrgentMinutes`: how close a recorded legal expiry turns the line amber. */
+  legalUrgentMinutes: number;
   /** The same store the board behind this pop-up reads from. */
   dispatch: (event: WardFlowEvent) => void;
   onClose: () => void;
@@ -234,7 +238,13 @@ export function MovementDrawer({
   // Legal: the register title plus the recorded expiry only. Never a computed limit (D5).
   const dueAt = movement.legalForm?.dueAt;
   const legalTone: WfTone | undefined =
-    dueAt === undefined || closure ? undefined : dueAt < now ? "danger" : dueAt - now < 60 ? "warning" : undefined;
+    dueAt === undefined || closure
+      ? undefined
+      : dueAt < now
+        ? "danger"
+        : dueAt - now < legalUrgentMinutes
+          ? "warning"
+          : undefined;
   const legalTitle = movement.legalForm
     ? legalFormName(movement.legalForm)
     : movement.legalStatus === "Voluntary"
@@ -591,7 +601,10 @@ export function MovementDrawer({
               {[...movement.stageChanges].reverse().map((change) => (
                 <li key={`${change.at} ${change.to}`}>
                   <span className={d.mono}>{formatInstantWithDay(change.at, now)}</span>
-                  <span className={d.trunc}>
+                  <span
+                    className={d.trunc}
+                    title={`${change.from === undefined ? "Opened" : stageCopy[change.from].label} to ${stageCopy[change.to].label} · ${change.by}${change.reason === undefined ? "" : ` · ${change.reason}`}`}
+                  >
                     {change.from === undefined ? "Opened" : stageCopy[change.from].label} to{" "}
                     {stageCopy[change.to].label}
                     {` · ${change.by}`}
@@ -604,18 +617,18 @@ export function MovementDrawer({
         </Section>
 
         <Section title="Which wards were asked">
-          {movement.referredUnitIds.length === 0 ? (
+          {askedIds.size === 0 ? (
             <p className={d.muted}>No ward has been asked yet.</p>
           ) : (
             <ul className={d.list}>
-              {movement.referredUnitIds.map((unitId) => {
+              {[...askedIds].map((unitId) => {
                 const unit = units.find((candidate) => candidate.id === unitId);
-                const decline = movement.declines.find((entry) => entry.unitId === unitId);
+                const decline = movement.declines.findLast((entry) => entry.unitId === unitId);
                 const answer =
                   movement.acceptedUnitId === unitId
                     ? "Accepted"
                     : decline
-                      ? `Declined, ${decline.reason}`
+                      ? `Declined, ${declineReasonLabels[decline.reason] ?? decline.reason}`
                       : "No answer yet";
                 return (
                   <li key={unitId}>
@@ -623,7 +636,7 @@ export function MovementDrawer({
                       tone={movement.acceptedUnitId === unitId ? "success" : decline ? "closed" : "neutral"}
                       size={9}
                     />
-                    <span className={d.trunc}>
+                    <span className={d.trunc} title={`${wardLabel(unitId, unit?.name)} · ${answer}`}>
                       <strong>{wardLabel(unitId, unit?.name)}</strong> · {answer}
                     </span>
                   </li>
