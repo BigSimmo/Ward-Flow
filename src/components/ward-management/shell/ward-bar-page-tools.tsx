@@ -32,6 +32,16 @@ export function WardBarPageTools({ label, children }: { label: string; children:
 /**
  * Classes for a page's header tools, so every page's tools look the same: `tool` for a button or
  * link, `count` for the count inside it, and `label` for text that hides when the header is short
- * of room. Read at render, never at module load, because Node test runners load CSS modules empty.
+ * of room. Getters, so nothing reads the CSS module at load: the browser test runner strips CSS imports.
  */
-export { styles as wardBarToolStyles };
+export const wardBarToolStyles = {
+  get tool() {
+    return styles.tool;
+  },
+  get count() {
+    return styles.count;
+  },
+  get label() {
+    return styles.label;
+  },
+};
