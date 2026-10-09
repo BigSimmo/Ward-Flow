@@ -1,0 +1,205 @@
+/* Gate board status card (Patient page, 9 Oct 2026): verdict and meter, then three owned cells. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  min-height: 48px;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  letter-spacing: -0.01em;
+}
+
+.meterGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.meter {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.meter i {
+  display: block;
+  width: 18px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
+}
+
+.meter i[data-on="true"] {
+  background: var(--wf-success);
+  box-shadow: none;
+}
+
+.meterText {
+  color: var(--wf-ink-2);
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.meta {
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.cells {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--wf-s-2);
+  row-gap: 3px;
+  align-content: start;
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}
+
+.cell > * {
+  grid-column: 1;
+}
+
+.cell + .cell {
+  border-left: 1px solid var(--wf-line);
+}
+
+.label {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 550;
+  min-width: 0;
+}
+
+.owner {
+  margin-left: auto;
+  padding-left: var(--wf-s-2);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.value {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  letter-spacing: -0.01em;
+  min-width: 0;
+}
+
+.value > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.time {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+}
+
+.action {
+  grid-column: 2;
+  grid-row: 2 / span 3;
+  align-self: end;
+}
+
+@media (max-width: 760px) {
+  .cells {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cell + .cell {
+    border-left: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .action {
+    align-self: center;
+  }
+}
+
+/* Absent without leave: the five missing person steps as one checklist. */
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto auto;
+  gap: var(--wf-s-3);
+  align-items: center;
+  min-height: 48px;
+  padding: var(--wf-s-1) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.rowText {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--wf-s-2);
+  align-items: baseline;
+  min-width: 0;
+}
+
+.rowText strong {
+  font-weight: 600;
+}
+
+.rowText span {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.nr {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.cells[hidden] {
+  display: none;
+}

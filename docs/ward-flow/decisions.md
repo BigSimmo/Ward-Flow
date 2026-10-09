@@ -494,6 +494,24 @@ is inferred.
   (a filtered-out patient looking like a placed one) is closed by the stated hidden count, which
   `tests/ward-delays-screen.dom.test.tsx` guards.
 
+## D-38. Leave, absent without leave and CTO on the Patient page (9 October 2026)
+
+- **Date:** 9 October 2026. **Decided by:** Josh, in the Patient page gate board session ("go
+  ahead and do now", approving the engine change the build handed back).
+- **Decision:** The Patient page shows On leave, Absent without leave and On a CTO as their own
+  modes. On leave reads the existing leave bed on the stay (no new field). Absent without leave is
+  recorded on that same held bed (`absentWithoutLeave`: when it was recorded and the time each of
+  five fixed missing person steps was done), so no bed figure moves. A community treatment order is
+  a new optional patient field, `communityTreatmentOrder` (Form 5A, when recorded and by which
+  role). Four events carry them: `RECORD_ABSENT_WITHOUT_LEAVE` and `RECORD_ABSENCE_STEP` (ward),
+  `RECORD_COMMUNITY_TREATMENT_ORDER` and `END_COMMUNITY_TREATMENT_ORDER` (community). Return from
+  an absence uses the existing `END_LEAVE_BED`.
+- **Limits:** Ids, fixed choices and times only, never typed text. No lapse or review time is held
+  or computed for a CTO (D5). Next of kin, carer and guardian are still not on the record and stay
+  labelled Preview.
+- **Why:** The ward already has leave beds, but a missing person and a CTO could not be shown
+  honestly without a field to read.
+
 ## D-39. Patients are identified by UMRN, never by a WF number (9 October 2026)
 
 - **Date:** 9 October 2026. **Decided by:** Josh ("remove the old patient numbers you have
@@ -523,3 +541,14 @@ is inferred.
     patient identity.
 - **Why:** Staff on shift search and hand over by UMRN. A journey number nobody else uses reads as
   a second patient number and invites mistakes.
+
+## D-40. A second community treatment order keeps the first (9 October 2026)
+
+- **Date:** 9 October 2026. **Decided by:** Josh ("take over and fix the CTO finding", PR #147).
+- **Decision:** Recording a CTO after an earlier one has ended keeps the ended order. It moves into
+  `earlier`, a list inside the same D-38 `communityTreatmentOrder` field, and Documents lists every
+  earlier order as Closed. No new patient field is added. Each earlier order holds the same four
+  facts as D-38 (Form 5A, when recorded, by which role, when ended) and nothing else.
+- **Why:** Review found that a second CTO overwrote the first, so its Closed Form 5A vanished from
+  Documents. Refusing a second order would have blocked a real re-order; a separate history field
+  would have widened what the record holds.

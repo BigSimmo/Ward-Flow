@@ -571,6 +571,12 @@ describe("front-door contract — an ED may close to all admissions, never refus
     SET_BED_PREPARATION: false,
     RELEASE_BED: false,
     RECORD_LEAVE_BED: false,
+    // D-38: an absence, its steps and a community treatment order are about one stay or one
+    // person's own record, never a refusal of a referral or placement.
+    RECORD_ABSENT_WITHOUT_LEAVE: false,
+    RECORD_ABSENCE_STEP: false,
+    RECORD_COMMUNITY_TREATMENT_ORDER: false,
+    END_COMMUNITY_TREATMENT_ORDER: false,
     END_LEAVE_BED: false,
     REQUEST_CAPACITY_REFRESH: false,
     RECEIVE_REFERRAL: false,

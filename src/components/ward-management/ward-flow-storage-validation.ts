@@ -9,6 +9,7 @@ import {
   REFERRAL_GENDERS,
   BED_RELEASE_STATES,
   REFERRAL_ADDRESSING_STATES,
+  ABSENCE_STEPS,
 } from "./ward-model";
 import { validateConfiguration } from "./ward-configuration";
 import { WARD_SCENARIOS } from "./ward-scenarios";
@@ -233,7 +234,27 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   const reference = (record: RecordValue, key: string, targets: Set<unknown>) =>
     !(key in record) || record[key] === null || targets.has(record[key]);
   for (const patient of value.patients as RecordValue[]) {
-    if (!Object.values(patient).every(text)) return false;
+    // D-38: a community treatment order is the one non-text patient field: Form 5A, a finite
+    // recorded time and a role label. Every other field stays plain text.
+    const { communityTreatmentOrder: order, ...identity } = patient;
+    if (order !== undefined) {
+      if (!object(order) || order.form !== "5A" || !finite(order.recordedAt) || !text(order.recordedBy)) return false;
+      if (order.endedAt !== undefined && !finite(order.endedAt)) return false;
+      if (Object.keys(order).some((key) => !["form", "recordedAt", "recordedBy", "endedAt", "earlier"].includes(key)))
+        return false;
+      // D-40: earlier orders have each ended, and hold the same four facts and nothing else.
+      if (order.earlier !== undefined) {
+        if (!Array.isArray(order.earlier)) return false;
+        for (const ended of order.earlier as unknown[]) {
+          if (!object(ended) || ended.form !== "5A" || !finite(ended.recordedAt) || !text(ended.recordedBy))
+            return false;
+          if (!finite(ended.endedAt)) return false;
+          if (Object.keys(ended).some((key) => !["form", "recordedAt", "recordedBy", "endedAt"].includes(key)))
+            return false;
+        }
+      }
+    }
+    if (!Object.values(identity).every(text)) return false;
     if (!fields(patient, ["id", "umrn", "givenName", "familyName", "dateOfBirth"], text)) return false;
     if (!/^PT-/.test(patient.id as string) || !/^\d{4}-\d{2}-\d{2}$/.test(patient.dateOfBirth as string)) return false;
   }
@@ -612,6 +633,25 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     const onLeave = admissionById.get(row.admissionId);
     if (!onLeave || onLeave.unitId !== row.unitId || onLeave.state !== "occupied") return false;
     if ((leaveCountByAdmission.get(row.admissionId) ?? 0) > 1) return false;
+    // D-38: an absence holds when it was recorded and the time of each fixed missing person step.
+    const absence = row.absentWithoutLeave;
+    if (absence !== undefined) {
+      if (!object(absence) || !finite(absence.since) || !Array.isArray(absence.steps)) return false;
+      // Only the two fixed fields: a restored absence must carry no free text.
+      if (Object.keys(absence).some((key) => key !== "since" && key !== "steps")) return false;
+      const seen = new Set<unknown>();
+      for (const done of absence.steps as unknown[]) {
+        if (
+          !object(done) ||
+          !(ABSENCE_STEPS as readonly string[]).includes(done.step as string) ||
+          !finite(done.at) ||
+          done.at < absence.since
+        )
+          return false;
+        if (Object.keys(done).some((key) => key !== "step" && key !== "at") || seen.has(done.step)) return false;
+        seen.add(done.step);
+      }
+    }
   }
   for (const row of value.refreshRequests as RecordValue[]) if (!finite(row.at) || !text(row.byRole)) return false;
   for (const row of value.auditEvents as RecordValue[]) {

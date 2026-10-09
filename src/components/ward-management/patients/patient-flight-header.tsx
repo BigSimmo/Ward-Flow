@@ -22,6 +22,8 @@ export function PatientFlightHeader({
   patient,
   displayToday,
   isLiveBedflow,
+  quiet = false,
+  statePill,
   statusDetail,
   location,
   facts,
@@ -34,6 +36,10 @@ export function PatientFlightHeader({
   patient?: Patient & { confidential?: boolean };
   displayToday: Date;
   isLiveBedflow: boolean;
+  /** Not active records use a light hero: no stepper, no timers and no red. */
+  quiet?: boolean;
+  /** The mode, as a glyph and words beside the name. */
+  statePill?: ReactNode;
   statusDetail: string;
   /** Where the person is now, when a movement records it. */
   location?: string;
@@ -45,12 +51,19 @@ export function PatientFlightHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className={styles.v6HeroWrap} data-testid="ward-person-identity">
+    <div className={styles.v6HeroWrap} data-testid="ward-person-identity" data-quiet={quiet}>
       <Hero
         level={1}
-        className={styles.v6Hero}
+        className={quiet ? `${styles.v6Hero} ${styles.v6HeroQuiet}` : styles.v6Hero}
         title={displayName}
-        titleMeta={preferredName ? `known as ${preferredName}` : undefined}
+        titleMeta={
+          preferredName || statePill ? (
+            <>
+              {preferredName ? `known as ${preferredName}` : null}
+              {statePill}
+            </>
+          ) : undefined
+        }
         eyebrow={
           <span className={styles.v6IdLine}>
             {patient ? (
