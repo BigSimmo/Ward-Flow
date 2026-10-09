@@ -81,13 +81,7 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
       if (!rows.length) throw new Error("Shared schema unavailable");
     },
     async read(actorId) {
-      const at = clock();
-      const { rows } = await pool.query(
-        "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
-        [workspaceId],
-      );
-      if (rows[0] && engine.validWorld(rows[0].payload)) return snapshot(rows[0], at);
-      return transaction(async (client, now) => snapshot(await lock(client, actorId, now), now));
+      return transaction(async (client, at) => snapshot(await lock(client, actorId, at), at));
     },
     async audit() {
       const { rows } = await pool.query(
