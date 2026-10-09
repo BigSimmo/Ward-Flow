@@ -1129,9 +1129,9 @@ function QueuedSection({
   );
   return (
     <section className={styles.v6Section} data-testid="ward-referral-board-queued">
-      <h3 className="sr-only">
+      <h2 className="sr-only">
         Awaiting decision <Count n={queued.length} />
-      </h3>
+      </h2>
       {queued.length === 0 ? (
         <p className={styles.v6Empty} data-testid="ward-referral-board-queued-empty">
           None. No referral is currently queued.

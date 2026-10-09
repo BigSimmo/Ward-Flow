@@ -487,7 +487,8 @@ export function DecisionClock({ referral, now }: { referral: Referral; now: Inst
   const dueAt = referral.raisedAt + window;
   const overdue = isOverdue(referral, now);
   const used = Math.min(100, Math.round((clocks.sinceReferral / window) * 100));
-  const near = !overdue && used >= 75;
+  // A clock stopped at triage owes nothing more, so it never warns.
+  const near = clocks.sinceReferralRunning && !overdue && used >= 75;
   const tone = overdue ? "danger" : near ? "warning" : "neutral";
   return (
     <div

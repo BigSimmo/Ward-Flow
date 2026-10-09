@@ -695,8 +695,11 @@
   outline-offset: -2px;
 }
 
+/* Owner ruling, answer 13 (17 Sep 2026): the tier reads in bold, dark ink beside the plain facts. */
 .cardTier {
   display: inline-flex;
+  color: var(--wf-ink-1);
+  font-weight: 700;
 }
 
 .cardMain {
@@ -1483,5 +1486,11 @@
   .queueFoot,
   .panelFoot {
     display: none;
+  }
+
+  /* globals.css hides every button on paper, and the row's button carries the patient's name.
+     !important is needed because the rule it overrides is itself !important. */
+  .rowSelect {
+    display: inline !important;
   }
 }
