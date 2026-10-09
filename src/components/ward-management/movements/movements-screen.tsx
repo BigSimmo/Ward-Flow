@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { dayOf, splitDuration } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import {
   isOpen,
   movementHealthService,
@@ -46,12 +46,10 @@ import {
   noRecordedServiceMovementCount,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { ArrowRightLeft, ChartColumn, Search, Truck } from "lucide-react";
+import { ArrowRightLeft, ChartColumn, ChevronRight, Lock, Printer, Search, ShieldCheck, Truck, X } from "lucide-react";
 import {
   Card,
   CardHead,
-  ChipGroup,
-  FilterChip,
   Hero,
   Legend,
   LiveChip,
@@ -59,14 +57,16 @@ import {
   StatusGlyph,
   TextInput,
   Timer,
-  TierTile,
   buttonClass,
+  cx,
   durMinutes,
   type WfFill,
   type WfTone,
 } from "@/components/wf";
 import { MovementDrawer } from "./movement-drawer";
 import { MovementHorizonGantt } from "./movement-horizon-gantt";
+import { isCoordinatorStep, movementNextStep } from "./movement-next-step";
+import flow from "./movement-flow.module.css";
 import styles from "./movements.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
@@ -247,7 +247,7 @@ function bedReadyNote(items: Movement[]): string {
  * Delays merge's own 30-of-42 audit as exactly the failure mode this guards against.
  */
 export function MovementsScreen() {
-  const { movements, units, referrals, patients, dispatch, configuration } = useWardFlow();
+  const { movements, units, referrals, patients, dispatch, configuration, rejections } = useWardFlow();
   const now = useWardFlowClock();
   // Task 6 of the audit-wiring plan, 2026-09-16: StageRow's wait-meter bar and its "of N hours"
   // caption are read against the coordinator-configured ED access target, not a bare 24h literal.
@@ -302,6 +302,32 @@ export function MovementsScreen() {
   // v6 worklist: a search over name, UMRN or ED, and a short list per group until Show all.
   const [search, setSearch] = useState("");
   const [showAll, setShowAll] = useState(false);
+  // Hero highlight: one of `heroHighlights` by id, or `stage:<stage>` from the stage track.
+  const [highlight, setHighlight] = useState<string | null>(null);
+  function toggleHighlight(key: string) {
+    setHighlight((current) => (current === key ? null : key));
+    setSearch("");
+    setBoardTab("every");
+  }
+
+  // Pull bed is the one next step this page records itself (PULL_PATIENT is a coordinator event).
+  // The engine may refuse it, so the outcome is announced once the reducer has answered.
+  const pendingPull = useRef<{ rejectionCount: number; who: string } | null>(null);
+  useEffect(() => {
+    const pending = pendingPull.current;
+    if (pending === null) return;
+    pendingPull.current = null;
+    const refused = rejections.length > pending.rejectionCount ? rejections.at(-1) : undefined;
+    announceToWardShell(refused ? `Bed not pulled. ${refused.reason}` : `Bed pulled for ${pending.who}.`);
+  }, [rejections, movements]);
+  function pullBed(movement: Movement) {
+    if (movement.acceptedUnitId === undefined) return;
+    pendingPull.current = {
+      rejectionCount: rejections.length,
+      who: resolveSubjectPatient(movement, { patients, referrals }).formalName,
+    };
+    dispatch({ type: "PULL_PATIENT", role: "coordinator", now, movementId: movement.id, unitId: movement.acceptedUnitId });
+  }
   const [reveal, setReveal] = useState<{ id: string; request: number } | null>(null);
   const consumedReveal = useRef(0);
   const consumeReveal = useCallback((request: number) => {
@@ -412,9 +438,6 @@ export function MovementsScreen() {
   );
   const legs = transportLegs(openMovements, now);
   const counts = transportCounts(legs);
-  const [transportFilter, setTransportFilter] = useState<MovementLegState | "all">("all");
-  const filteredLegs = transportFilter === "all" ? legs : legs.filter((leg) => leg.state === transportFilter);
-  const withoutBookedTransport = openMovements.length - legs.length;
   const activeCorridorCount = new Set(
     corridors.map((corridor) => JSON.stringify([corridor.originEdId, corridor.acceptedUnitId])),
   ).size;
@@ -555,34 +578,45 @@ export function MovementsScreen() {
     return urgentMovementsOutsideService(movements.filter(isOpen), chosenService, units, now, configuration).length;
   }, [service, movements, units, now, configuration]);
 
-  // v6 worklist search (7 Oct 2026): filters the rows already derived above, by name, UMRN or
-  // ED. Nothing new is computed about a movement; a row either matches or is left out.
+  // Movements overhaul (9 Oct 2026): search and the hero highlights MARK rows, they never hide one
+  // ("filters highlight, never hide"). A marked row stays on screen past its group's short list.
   const searchTerm = search.trim().toLowerCase();
   const matchesSearch =
     searchTerm === ""
       ? null
       : (movement: Movement) => movementSearchText(movement, patients, referrals).includes(searchTerm);
-  const shownStages = matchesSearch
-    ? worklistStages.map((stage) => ({ ...stage, movements: stage.movements.filter(matchesSearch) }))
-    : worklistStages;
-  const shownCauseGroups = matchesSearch
-    ? worklistCauseGroups
-        .map((group) => ({ ...group, movements: group.movements.filter(matchesSearch) }))
-        .filter((group) => group.movements.length > 0)
-    : worklistCauseGroups;
-  const shownTransportGroups = matchesSearch
-    ? worklistTransportGroups.map((group) => ({ ...group, rows: group.rows.filter(matchesSearch) }))
-    : worklistTransportGroups;
-  const shownByWait = byLongestWait(matchesSearch ? worklistMovements.filter(matchesSearch) : worklistMovements, now);
-  const shownClosedToday = matchesSearch ? worklistClosedToday.filter(matchesSearch) : worklistClosedToday;
-  const searchedTotal = matchesSearch ? shownByWait.length : null;
+  const highlightOptions = heroHighlights(now, accessTarget);
+  const highlightTest: ((movement: Movement) => boolean) | null =
+    highlight === null
+      ? null
+      : highlight.startsWith("stage:")
+        ? (movement) => isOpen(movement) && movement.stage === highlight.slice("stage:".length)
+        : (highlightOptions.find((option) => option.id === highlight)?.test ?? null);
+  const isMarked = (movement: Movement) =>
+    matchesSearch !== null ? matchesSearch(movement) : highlightTest !== null && highlightTest(movement);
+  const shownStages = worklistStages;
+  const shownCauseGroups = worklistCauseGroups;
+  const shownTransportGroups = worklistTransportGroups;
+  const shownByWait = byLongestWait(worklistMovements, now);
+  const shownClosedToday = worklistClosedToday;
+  const searchedTotal = matchesSearch ? worklistMovements.filter(matchesSearch).length : null;
+  const markedTotal =
+    matchesSearch !== null || highlightTest !== null
+      ? (boardTab === "resolved" ? worklistClosedToday : worklistMovements).filter(isMarked).length
+      : null;
+  const highlightLabel =
+    highlight === null
+      ? null
+      : highlight.startsWith("stage:")
+        ? (STAGE_SHORT[highlight.slice("stage:".length) as Movement["stage"]] ?? null)
+        : (highlightOptions.find((option) => option.id === highlight)?.label ?? null);
 
-  // Each group shows its first rows until Show all. A row the reader jumped to or opened stays on
-  // screen even past that point, so a jump always lands on a visible row.
+  // Each group shows its first rows until Show all. A row the reader jumped to, opened or marked
+  // stays on screen even past that point, so a jump or a highlight always lands on a visible row.
   const pinnedRowIds = new Set<string>([reveal?.id, detailId].filter((id): id is string => typeof id === "string"));
-  const capping = !showAll && matchesSearch === null;
+  const capping = !showAll;
   const capRows = (rows: Movement[], cap: number) =>
-    capping ? rows.filter((movement, index) => index < cap || pinnedRowIds.has(movement.id)) : rows;
+    capping ? rows.filter((movement, index) => index < cap || pinnedRowIds.has(movement.id) || isMarked(movement)) : rows;
   const hiddenIn = (groups: Movement[][], cap: number) =>
     groups.reduce((sum, rows) => sum + rows.length - capRows(rows, cap).length, 0);
   const hiddenRowCount =
@@ -606,7 +640,7 @@ export function MovementsScreen() {
             : hiddenIn([shownByWait], LIST_CAP);
   const worklistListTotal = boardTab === "resolved" ? worklistClosedToday.length : worklistMovements.length;
   const worklistFootText = matchesSearch
-    ? `${boardTab === "resolved" ? shownClosedToday.length : shownByWait.length} of ${worklistListTotal} match`
+    ? `${markedTotal ?? 0} of ${worklistListTotal} match, highlighted`
     : boardTab === "resolved"
       ? "Resolved today"
       : order === "stands"
@@ -628,6 +662,9 @@ export function MovementsScreen() {
       reveal={reveal}
       consumeReveal={consumeReveal}
       onOpenDetail={openDetail}
+      marked={isMarked(movement)}
+      selected={detailId === movement.id}
+      onPull={pullBed}
     />
   );
 
@@ -659,6 +696,30 @@ export function MovementsScreen() {
 
   const arrivedMovements = closedToday.filter((m) => m.closure?.outcome === "arrived");
   const didNotProceedMovements = closedToday.filter((m) => m.closure?.outcome === "did_not_proceed");
+
+  // Hero tools (Josh, 9 Oct 2026: every page header carries page-specific tools). Each reads only
+  // the open records: the longest wait, the next recorded legal expiry (a typed `dueAt`, never a
+  // computed limit, D5), and the coordinator's own queue of next steps.
+  const movingCount = openMovements.filter((movement) => movement.stage === "moving").length;
+  const longestWaiting = byLongestWait(openMovements, now)[0];
+  const nextExpiry = openMovements
+    .filter((movement) => movement.legalForm?.dueAt !== undefined && movement.legalForm.dueAt >= now)
+    .sort((a, b) => a.legalForm!.dueAt! - b.legalForm!.dueAt!)[0];
+  const myQueue = byLongestWait(
+    openMovements.filter((movement) => isCoordinatorStep(movementNextStep(movement))),
+    now,
+  ).sort((a, b) => Number(Boolean(b.flaggedUrgent)) - Number(Boolean(a.flaggedUrgent)) || a.urgency - b.urgency);
+  const surname = (movement: Movement) =>
+    resolveSubjectPatient(movement, { patients, referrals }).formalName.split(",")[0];
+  function openFromHero(id: string) {
+    const target = movements.find((candidate) => candidate.id === id);
+    if (target !== undefined && isInServiceScope !== null && !isInServiceScope(target)) {
+      jumpToMovement(id);
+      return;
+    }
+    revealMovement(id);
+    openDetail(id);
+  }
 
   return (
     <div
@@ -701,7 +762,7 @@ export function MovementsScreen() {
         <section className={styles.daySection} aria-label="The day" data-ward-primitive="panel">
           <Hero
             className={styles.dayHero}
-            eyebrow="The day"
+            eyebrow="Movements"
             title={
               // The title doubles as the "Open" day figure. Its DOM reads label first ("Open
               // movements 70"), so the figure's own label anchors it like every stat beside it;
@@ -711,16 +772,105 @@ export function MovementsScreen() {
                 <strong className={styles.dayOpenValue}>{openMovements.length}</strong>
               </span>
             }
-            stats={
-              <>
-                <DayMetric label="Resolved today" value={closedToday.length} />
-                <DayMetric label="Tier 1 open" value={tierOneOpen.length} tone="danger" />
-                <DayMetric label="Transport legs" value={legs.length} />
-                <DayMetric label="No transport leg" value={withoutBookedTransport} tone="warning" />
-                <DayMetric label="Active corridors" value={activeCorridorCount} />
-              </>
+            titleMeta={
+              <span className={flow.heroTitleMeta}>
+                {movingCount} moving · {closedToday.length} resolved today · {activeCorridorCount} active corridors
+              </span>
             }
-            aside={<LiveChip state="live" onHero />}
+            aside={
+              <div className={flow.heroAside}>
+                {longestWaiting ? (
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "onHero", size: "sm", className: flow.jump })}
+                    onClick={() => openFromHero(longestWaiting.id)}
+                    title={`Open ${resolveSubjectPatient(longestWaiting, { patients, referrals }).formalName}`}
+                  >
+                    <span className={flow.jumpLabel}>Longest wait</span>
+                    <span className={flow.jumpName}>{surname(longestWaiting)}</span>
+                    <span className={flow.jumpValue}>{splitDuration(Math.max(now - longestWaiting.openedAt, 0))}</span>
+                  </button>
+                ) : null}
+                {nextExpiry ? (
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "onHero", size: "sm", className: flow.jump })}
+                    onClick={() => openFromHero(nextExpiry.id)}
+                    title="The soonest recorded legal expiry still ahead"
+                  >
+                    <span className={flow.jumpLabel}>Next expiry</span>
+                    <span className={flow.jumpName}>{surname(nextExpiry)}</span>
+                    <span className={flow.jumpValue}>{formatInstantWithDay(nextExpiry.legalForm!.dueAt!, now)}</span>
+                  </button>
+                ) : null}
+                <LiveChip state="live" onHero />
+              </div>
+            }
+            bar={
+              <div className={flow.highlights} role="group" aria-label="Highlight movements">
+                {highlightOptions.map((option) => (
+                  <HighlightStat
+                    key={option.id}
+                    label={option.label}
+                    tone={option.tone}
+                    value={openMovements.filter(option.test).length}
+                    pressed={highlight === option.id}
+                    onToggle={() => toggleHighlight(option.id)}
+                  />
+                ))}
+              </div>
+            }
+            barAside={
+              <div className={flow.heroTools}>
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "onHero", size: "sm", className: flow.previewTool })}
+                  aria-disabled="true"
+                  title="Preview. Not wired in this prototype."
+                  onClick={() => announceToWardShell("Run sheet is a preview. Not wired in this prototype.")}
+                >
+                  <Printer size={14} aria-hidden="true" />
+                  Run sheet
+                </button>
+                <Link href="/mockups/ward-flow/transport" className={buttonClass({ variant: "onHero", size: "sm" })}>
+                  <Truck size={14} aria-hidden="true" />
+                  Transport
+                </Link>
+                {myQueue[0] ? (
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "light", size: "sm" })}
+                    onClick={() => openFromHero(myQueue[0].id)}
+                    title={`Top of your queue: ${resolveSubjectPatient(myQueue[0], { patients, referrals }).formalName}`}
+                  >
+                    Next in my queue
+                    <span className={flow.queueCount}>{myQueue.length}</span>
+                  </button>
+                ) : null}
+              </div>
+            }
+            foot={
+              <div className={flow.heroAside}>
+                <span className={flow.heroBarLabel}>Stage</span>
+                <div className={flow.stageTrack} role="group" aria-label="Highlight a stage">
+                  {openStages
+                    .filter((stage) => stage.id !== "arrived")
+                    .map((stage) => (
+                      <button
+                        key={stage.id}
+                        type="button"
+                        className={flow.stageButton}
+                        aria-pressed={highlight === `stage:${stage.id}`}
+                        onClick={() => toggleHighlight(`stage:${stage.id}`)}
+                        title={stage.label}
+                      >
+                        {STAGE_SHORT[stage.id]}
+                        <span className={flow.stageCount}>{stage.movements.length}</span>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            }
           />
 
           <div className={styles.needsYou} role="group" aria-label="Needs you" data-testid="movements-needs-you">
@@ -737,24 +887,40 @@ export function MovementsScreen() {
             ) : (
               // D-b (Ward Lead's decisions, 2026-09-17): built off `openMovements`, never the scoped
               // worklist, and a movement outside the chosen service says so.
-              <ul className={styles.needsYouList}>
+              <ul className={flow.needsList}>
                 {attentionMovements.map((movement) => {
                   const outsideService = service !== null && isInServiceScope !== null && !isInServiceScope(movement);
                   const who = resolveSubjectPatient(movement, { patients, referrals }).displayName;
                   const reason = meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
                   return (
-                    <li key={movement.id} className={styles.needsYouCell}>
+                    <li key={movement.id} className={flow.needsCell}>
                       <button
                         type="button"
-                        className={styles.needsYouItem}
+                        className={flow.needsItem}
                         data-record-key={movement.id}
                         onClick={() => jumpToMovement(movement.id)}
                         aria-label={`Find ${who} in worklist: ${reason}${outsideService ? ` — outside ${service}` : ""}`}
                       >
-                        <TierTile tier={movement.urgency} />
-                        <span className={styles.needsYouMain}>
-                          <strong className={styles.needsYouName}>{who}</strong>
-                          <span className={styles.needsYouReason}>
+                        <TierPill tier={movement.urgency} />
+                        <span className={flow.needsMain}>
+                          <span className={flow.needsTop}>
+                            <strong className={flow.needsName}>{who}</strong>
+                            <span className={flow.needsWait}>
+                              <Timer
+                                at={movement.openedAt * MS_PER_MINUTE}
+                                now={now * MS_PER_MINUTE}
+                                direction="waiting"
+                                thresholds={{
+                                  dueSoon: ED_SEVERE_PRESSURE_WAIT_MINUTES * MS_PER_MINUTE,
+                                  overdue: accessTarget * MS_PER_MINUTE,
+                                }}
+                                hideFlagWord
+                                hideDirection
+                              />
+                              <span className="sr-only"> waiting</span>
+                            </span>
+                          </span>
+                          <span className={flow.needsReason} title={reason}>
                             {reason}
                             {outsideService ? (
                               <span
@@ -763,24 +929,7 @@ export function MovementsScreen() {
                             ) : null}
                           </span>
                         </span>
-                        <span className={styles.needsYouWait}>
-                          <Timer
-                            at={movement.openedAt * MS_PER_MINUTE}
-                            now={now * MS_PER_MINUTE}
-                            direction="waiting"
-                            thresholds={{
-                              dueSoon: ED_SEVERE_PRESSURE_WAIT_MINUTES * MS_PER_MINUTE,
-                              overdue: accessTarget * MS_PER_MINUTE,
-                            }}
-                            hideFlagWord
-                            hideDirection
-                          />
-                          <span className={styles.needsYouWord}>waiting</span>
-                        </span>
-                        {/* The whole cell is the button; this is its visible label, not a second control. */}
-                        <span className={buttonClass({ variant: "sec", size: "sm" })} aria-hidden="true">
-                          Open
-                        </span>
+                        <ChevronRight size={16} className={flow.needsChevron} aria-hidden="true" />
                       </button>
                     </li>
                   );
@@ -843,7 +992,7 @@ export function MovementsScreen() {
                   </div>
                 }
               />
-              <div className={styles.worklistToolbar}>
+              <div className={flow.toolbar}>
                 {boardTab === "every" ? (
                   <div className={styles.orderBar} role="radiogroup" aria-label="Order">
                     <span className={styles.orderLegend} aria-hidden="true">
@@ -851,13 +1000,8 @@ export function MovementsScreen() {
                     </span>
                     {(
                       [
-                        { id: "stands", label: "Stage", description: "By where it stands", count: 7 },
-                        {
-                          id: "transport",
-                          label: "Transport",
-                          description: "By transport leg, and what has none",
-                          count: worklistTransportGroups.filter((g) => g.rows.length > 0).length,
-                        },
+                        { id: "stands", label: "Stage", description: "By where it stands" },
+                        { id: "transport", label: "Transport", description: "By transport leg, and what has none" },
                         { id: "wait", label: "Longest wait", description: "By how long it has waited" },
                       ] as const
                     ).map((option) => (
@@ -871,33 +1015,49 @@ export function MovementsScreen() {
                         onClick={() => setOrder(option.id)}
                       >
                         <span>{option.label}</span>
-                        {"count" in option ? <span className={styles.orderBtnBadge}>{option.count}</span> : null}
                       </button>
                     ))}
                   </div>
-                ) : (
-                  <span />
-                )}
+                ) : null}
+                <span className={flow.toolbarSpacer} />
+                {highlightLabel !== null && matchesSearch === null ? (
+                  <button
+                    type="button"
+                    className={flow.highlightNote}
+                    aria-pressed="true"
+                    onClick={() => setHighlight(null)}
+                    title="Clear the highlight. Highlights never hide a row."
+                  >
+                    {highlightLabel} · {markedTotal ?? 0} highlighted
+                    <span className="sr-only">, clear</span>
+                    <X size={14} aria-hidden="true" />
+                  </button>
+                ) : null}
                 <TextInput
                   type="search"
                   icon={Search}
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setHighlight(null);
+                  }}
                   onClear={() => setSearch("")}
                   placeholder="Name, UMRN or ED"
                   aria-label="Search movements by name, UMRN or ED"
-                  boxClassName={styles.wlSearch}
+                  boxClassName={flow.search}
                 />
               </div>
 
               {/* Column heads for the rows below. The rows are list items, so these are a visual
                   guide only; each row names its own cells for assistive technology. */}
-              <div className={styles.wlColumns} aria-hidden="true">
+              <div className={cx(flow.grid, flow.columns)} aria-hidden="true">
                 <span>Tier</span>
-                <span>Person</span>
-                <span>From and to</span>
-                <span>Barrier</span>
-                <span className={styles.wlColumnEnd}>Waited</span>
+                <span>Patient</span>
+                <span>Route</span>
+                <span>Barrier and legal</span>
+                <span className={flow.columnEnd}>Waited</span>
+                <span className={flow.columnEnd}>Next step</span>
+                <span />
               </div>
 
               {boardTab === "every" ? (
@@ -1054,7 +1214,7 @@ export function MovementsScreen() {
                       aria-pressed={sideView === "transport"}
                       onClick={() => setSideView("transport")}
                     >
-                      Jobs
+                      Transport
                     </button>
                     <button type="button" aria-pressed={sideView === "shape"} onClick={() => setSideView("shape")}>
                       Shape of the day
@@ -1090,72 +1250,46 @@ export function MovementsScreen() {
                       />
                     </div>
 
-                    <ChipGroup label="Filter transport legs by status" className={styles.transportFilterBar}>
-                      <FilterChip
-                        pressed={transportFilter === "all"}
-                        onPressedChange={() => setTransportFilter("all")}
-                        count={legs.length}
-                      >
-                        All
-                      </FilterChip>
-                      {TRANSPORT_STATES.filter((st) => counts[st.id] > 0 || transportFilter === st.id).map((st) => (
-                        <FilterChip
-                          key={st.id}
-                          pressed={transportFilter === st.id}
-                          onPressedChange={(pressed) => setTransportFilter(pressed ? st.id : "all")}
-                          count={counts[st.id] === 0 ? "none" : counts[st.id]}
-                        >
-                          {LEG_STATE_LABEL[st.id]}
-                        </FilterChip>
-                      ))}
-                    </ChipGroup>
-
                     <div className={styles.transportRunsFeed} role="feed" aria-label="Active transport legs">
-                      {filteredLegs.length === 0 ? (
-                        <p className={styles.transportRunsEmpty}>No transport legs in this status.</p>
-                      ) : (
-                        filteredLegs.map((leg) => {
-                          const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
-                          const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
-                          const originEd = edById(leg.movement.originEdId);
-                          const shortOrigin = originEd ? `${originEd.siteCode} ED` : originLabel;
-                          const stateLabel = LEG_STATE_LABEL[leg.state] ?? leg.state;
-                          const selected = detailId === leg.movement.id;
-
-                          return (
-                            <button
-                              key={leg.movement.id}
-                              type="button"
-                              className={styles.transportRunCard}
-                              data-selected={selected ? "true" : undefined}
-                              onClick={() => {
-                                openDetail(leg.movement.id);
-                                revealMovement(leg.movement.id);
-                              }}
-                              aria-label={`Inspect ${patientInfo.formalName}, ${stateLabel} via ${leg.provider}`}
-                            >
-                              <span className={styles.trCell}>
-                                <span className={styles.trName}>{patientInfo.formalName}</span>
-                                <span className={styles.trSub} title={`${originLabel} to ${destinationLabel}`}>
-                                  {shortOrigin} to {destinationLabel}
-                                </span>
-                              </span>
-                              <span className={styles.trCell}>
-                                <span className={styles.trState}>
-                                  <StatusGlyph tone={LEG_STATE_TONE[leg.state]} size={9} />
-                                  {stateLabel}
-                                </span>
-                                <span className={styles.trSub}>{leg.provider}</span>
-                              </span>
-                              <span className={styles.trWhen}>
-                                <span className="sr-only">Booked </span>
-                                {durMinutes(leg.minutesSinceBooked)}
-                                <span className="sr-only"> ago</span>
-                              </span>
-                            </button>
-                          );
-                        })
-                      )}
+                      {legs.map((leg) => {
+                        const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
+                        const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
+                        const originEd = edById(leg.movement.originEdId);
+                        const shortOrigin = originEd ? `${originEd.siteCode} ED` : originLabel;
+                        const stateLabel = LEG_STATE_LABEL[leg.state] ?? leg.state;
+                        return (
+                          <button
+                            key={leg.movement.id}
+                            type="button"
+                            className={flow.trRow}
+                            data-selected={detailId === leg.movement.id ? "true" : undefined}
+                            onClick={() => {
+                              openDetail(leg.movement.id);
+                              revealMovement(leg.movement.id);
+                            }}
+                            aria-label={`Inspect ${patientInfo.formalName}, ${stateLabel} via ${leg.provider}`}
+                          >
+                            <span className={flow.trName}>
+                              <span className={flow.trNameText}>{patientInfo.formalName}</span>
+                              {leg.movement.transport?.escortRequired ? (
+                                <ShieldCheck size={14} className={flow.lock} aria-label="Escort required" />
+                              ) : null}
+                            </span>
+                            <span className={flow.trState}>
+                              <StatusGlyph tone={LEG_STATE_TONE[leg.state]} size={9} />
+                              {stateLabel}
+                            </span>
+                            <span className={flow.trWhen}>
+                              <span className="sr-only">Booked </span>
+                              {durMinutes(leg.minutesSinceBooked)}
+                              <span className="sr-only"> ago</span>
+                            </span>
+                            <span className={flow.trRoute} title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}>
+                              {shortOrigin} to {destinationLabel} · {leg.provider}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )
@@ -1429,28 +1563,92 @@ export function MovementsScreen() {
   );
 }
 
-function DayMetric({ label, value, tone }: { label: string; value: number; tone?: "warning" | "danger" }) {
-  const shownTone = value > 0 ? tone : undefined;
+/** Short stage words for the hero stage track and the highlight note. */
+const STAGE_SHORT: Record<Movement["stage"], string> = {
+  placement_requested: "Referred",
+  destination_review: "Review",
+  accepted_awaiting_bed: "Accepted",
+  pulled: "Pulled",
+  handover_ready: "Handover",
+  moving: "Moving",
+  arrived: "Arrived",
+};
+
+type HeroHighlight = { id: string; label: string; tone?: WfTone; test: (movement: Movement) => boolean };
+
+/**
+ * The hero's highlight pills. Each one counts OPEN movements only, from fields the record holds:
+ * tier, time waited against the configured ED access target and the named 8 hour severe-pressure
+ * default, a typed legal expiry, and an escort on the transport leg. Pressing one highlights its
+ * rows in the worklist; it never hides a row.
+ */
+function heroHighlights(now: Instant, accessTarget: number): HeroHighlight[] {
+  const waited = (movement: Movement) => Math.max(now - movement.openedAt, 0);
+  const hours = (minutes: number) => `${Math.round(minutes / 60)}h`;
+  return [
+    { id: "tier1", label: "Tier 1", test: (m) => isOpen(m) && m.urgency === 1 },
+    { id: "past", label: `Past ${hours(accessTarget)}`, tone: "danger", test: (m) => isOpen(m) && waited(m) >= accessTarget },
+    {
+      id: "over",
+      label: `Over ${hours(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`,
+      tone: "warning",
+      test: (m) => isOpen(m) && waited(m) >= ED_SEVERE_PRESSURE_WAIT_MINUTES && waited(m) < accessTarget,
+    },
+    { id: "form", label: "Form expiry", test: (m) => isOpen(m) && m.legalForm?.dueAt !== undefined },
+    { id: "escort", label: "Escort", test: (m) => isOpen(m) && m.transport?.escortRequired === true },
+  ];
+}
+
+function HighlightStat({
+  label,
+  value,
+  tone,
+  pressed,
+  onToggle,
+}: {
+  label: string;
+  value: number;
+  tone?: WfTone;
+  pressed: boolean;
+  onToggle: () => void;
+}) {
   return (
-    // `data-testid` for D-b/D-f coverage: it isolates the hero's whole-network FIGURES from the
-    // "Needs you" list, which carries an "Outside {S}" marker when a service is chosen. The DOM
-    // reads label then value, so each figure is found by its own label and a screen reader hears
-    // "Transport legs 13"; `column-reverse` draws the number above the label, as the hero does.
-    <div className={styles.dayStat} data-tone={shownTone} data-testid="movements-day-metric">
-      <span className={styles.dayStatLabel}>
-        {shownTone ? <StatusGlyph tone={shownTone} size={9} /> : null}
-        {label}
+    // `data-testid` for D-b/D-f coverage: these whole-network figures must read the same with and
+    // without a chosen service. The DOM reads label then value ("Tier 1 18"); CSS draws the number first.
+    <button
+      type="button"
+      className={flow.highlight}
+      aria-pressed={pressed}
+      onClick={onToggle}
+      data-testid="movements-day-metric"
+    >
+      <span className={flow.highlightFigure}>
+        <span className={flow.highlightLabel}>
+          {tone && value > 0 ? <StatusGlyph tone={tone} size={9} /> : null}
+          {label}
+        </span>
+        <strong className={flow.highlightValue}>{value}</strong>
       </span>
-      <strong className={styles.dayStatValue}>{value}</strong>
-    </div>
+    </button>
+  );
+}
+
+/** Urgency tier as a T1 to T3 pill: neutral, never red, with the word "Tier" for screen readers. */
+function TierPill({ tier }: { tier: number }) {
+  return (
+    <span className={flow.tier} data-tier={tier}>
+      <span className="sr-only">Tier </span>
+      <span aria-hidden="true">T</span>
+      {tier}
+    </span>
   );
 }
 
 /**
- * One patient's row inside a stage group. The urgency tier IS the row's state word — the same
- * `urgencyTierLabel` spelling every other screen uses, never a bare "P1"/"P2"/"P3" badge — so a
- * tier-1 row is toned danger with the word right beside the colour, and every other row still
- * carries a word even though nothing about it is urgent.
+ * One patient's worklist row (Movements overhaul, option A): tier, patient, route, barrier and
+ * legal, time waited and the one next step, on a single line. The whole record lives in the
+ * pop-up the name opens; the chevron opens the Patient page. The tier word is kept for screen
+ * readers, so every row still carries the same `urgencyTierLabel` every other screen uses.
  */
 function StageRow({
   movement,
@@ -1462,6 +1660,9 @@ function StageRow({
   reveal,
   consumeReveal,
   onOpenDetail,
+  marked,
+  selected,
+  onPull,
 }: {
   movement: Movement;
   now: Instant;
@@ -1469,12 +1670,15 @@ function StageRow({
   referrals?: Referral[];
   patients?: readonly Patient[];
   /** The coordinator-configured ED access target, in minutes — Task 6 of the audit-wiring plan
-   *  (2026-09-16). Required, not defaulted: the wait-meter bar below must never fall back to the
-   *  bare 24-hour literal it used to read. */
+   *  (2026-09-16). Required, not defaulted: the wait meter must never fall back to a bare 24h. */
   accessTargetMinutes: number;
   reveal: { id: string; request: number } | null;
   consumeReveal: (request: number) => boolean;
   onOpenDetail: (id: string) => void;
+  /** Matched by the search or the hero highlight. Marked rows are tinted, never filtered. */
+  marked: boolean;
+  selected: boolean;
+  onPull: (movement: Movement) => void;
 }) {
   const rowRef = useRef<HTMLLIElement>(null);
   const revealRequest = reveal?.id === movement.id ? reveal.request : null;
@@ -1491,39 +1695,8 @@ function StageRow({
   const healthService = movementHealthService(movement) ?? "Origin service not identified";
 
   /*
-   * 🔴 **A CLOSED MOVEMENT WAS RENDERING AS A PERSON STILL WAITING FOR A BED, WITH A RUNNING
-   * CLOCK, AND COUNTED IN THE STAGE TOTAL.**
-   *
-   * Found 2026-09-05 by Ward Builder Two, on the merged screen, by checking one number against
-   * the record. `WF-008` sat under "Accepted, awaiting bed" reading "2h 30m in journey" and
-   * climbing. Its record says `closure.outcome: "did_not_proceed"` twenty minutes before now,
-   * reason *"Patient self-discharged from ED before transport was arranged"* — and **nothing
-   * anywhere on the page said so.** Grepped the rendered DOM: no "closed", no "did not proceed",
-   * no "self-discharged".
-   *
-   * ⚠️ **EVERY INDIVIDUAL DECISION WAS CORRECT, WHICH IS WHY IT PASSED EVERY GATE.**
-   * `journeyStages` groups by `stage` with no `isOpen` filter, faithfully matching what the
-   * pre-merge screen did; `transportLegs` runs on `movements.filter(isOpen)`, faithfully matching
-   * what ITS pre-merge screen did. Both were preserved deliberately, with the reasoning written
-   * down at the time — introducing a filter the folded screen never had would have been a
-   * behaviour change rather than a fold.
-   *
-   * **THE DEFECT IS CREATED BY ADJACENCY.** Before the merge those two counts lived on two pages
-   * nobody saw together, so neither was a claim about the other. The merge made them one page.
-   * **Neither half changed and the combination started lying** — which is also why the page shows
-   * "50 moves" at the top and "8 of 43 open moves" at the bottom with nothing accounting for the
-   * difference.
-   *
-   * ⚠️ **THE OWNER RULED: MARK IT, DO NOT FILTER IT** (2026-09-05, shown the row, the record and
-   * three options). Filtering would delete the useful fact — that a move was abandoned is exactly
-   * what a board like this is for — and would silently shrink the count with nothing explaining
-   * why.
-   *
-   * **NO CLINICAL WORDING IS INVENTED HERE.** `routine` and `cancelled` are existing
-   * `WardChipLevel`s; "Arrived" and "Did not proceed" are the two recorded `closure.outcome`
-   * values in words; the sentence shown is the recorded `closure.reason` verbatim. The app's own
-   * phrase for the latter state, in `ed-screen.tsx` and `officer-screen.tsx`, is "has already
-   * closed (reason)".
+   * A closed movement is MARKED, never filtered (owner ruling 2026-09-05): the recorded outcome as
+   * a chip, the recorded reason as its barrier, and a clock frozen at closure.
    */
   const closure = movement.closure;
   const closureState: { level: WardChipLevel; text: string } | null =
@@ -1536,14 +1709,13 @@ function StageRow({
   const clockEnd = closure ? closure.at : now;
   const patientInfo = resolveSubjectPatient(movement, { patients, referrals });
 
-  // Legal tag derivation matching third edition
+  // Legal line: register title plus the recorded expiry only. Never a computed limit (D5).
   const dueAt = movement.legalForm?.dueAt;
   const isBreached = dueAt !== undefined && dueAt < now;
   const isExpiring = dueAt !== undefined && dueAt >= now && dueAt - now < 60;
   let legalTagTone: "danger" | "warn" | undefined = undefined;
   let legalText = "";
   if (movement.legalForm) {
-    // Keep register titles (owner-approved) but never frame typed dueAt as a live order clock.
     const formTitle = legalFormNameLabelFirst(movement.legalForm);
     if (dueAt === undefined) {
       legalText = `${formTitle} - no recorded expiry on this record`;
@@ -1561,38 +1733,51 @@ function StageRow({
     legalText = "No legal form recorded";
   }
 
-  // Transport tag derivation
+  // Route second line: the transport leg when there is one, otherwise where the bed stands.
   const leg = movement.transport;
   const legState = transportLeg(leg);
   const need = transportNeedState(movement);
-  let transportText = "";
-  let transportTone: "warn" | "danger" | "good" | undefined = undefined;
+  let routeSub = "";
   if (leg && legState) {
-    if (legState === "Cancelled") transportTone = "warn";
-    else if (legState === "Arrived") transportTone = "good";
     const stateLabel =
       legState === "Requested" ? "Requested" : (LEG_STATE_LABEL[legState as MovementLegState] ?? legState);
-    transportText = `${stateLabel}, ${leg.provider}`;
-  } else if (need === "not_needed") {
-    transportText = "No transport needed, same site";
-  } else if (need === "needed") {
-    transportTone = "warn";
-    transportText = "Transport needed, none booked";
+    routeSub = `${stateLabel}, ${leg.provider}${leg.escortRequired ? " · escort" : ""}`;
+  } else if (movement.acceptedUnitId) {
+    routeSub =
+      movement.stage === "accepted_awaiting_bed"
+        ? "Accepted, bed not pulled"
+        : need === "not_needed"
+          ? "Bed allocated · no transport needed"
+          : need === "needed"
+            ? "Bed allocated · no transport booked"
+            : "Bed allocated";
+  } else if (movement.declines.length > 0) {
+    routeSub = `${movement.declines.length} decline${movement.declines.length === 1 ? "" : "s"} recorded${
+      movement.escalation ? " · state desk escalated" : ""
+    }`;
   } else {
-    transportText = "Transport not tracked here yet";
+    routeSub =
+      movement.referredUnitIds.length > 0
+        ? `${movement.referredUnitIds.length} ward${movement.referredUnitIds.length === 1 ? "" : "s"} asked`
+        : "No ward asked yet";
   }
 
-  // v6 worklist row (7 Oct 2026): one line per person (tier, person, from and to, barrier, waited),
-  // then a quiet second line with the record's tags and its two actions.
   const waitedMinutes = Math.max(clockEnd - movement.openedAt, 0);
   // "Due soon" from the named ED severe-pressure default, "Overdue" past the configured ED access
   // target. No tier-specific window is invented here.
   const waitThresholds = { dueSoon: ED_SEVERE_PRESSURE_WAIT_MINUTES, overdue: accessTargetMinutes };
+  const waitTone: "danger" | "warning" | undefined = closure
+    ? undefined
+    : waitedMinutes >= waitThresholds.overdue
+      ? "danger"
+      : waitedMinutes >= waitThresholds.dueSoon
+        ? "warning"
+        : undefined;
   const waitWord = closure
     ? "in journey before it ended"
-    : waitedMinutes >= waitThresholds.overdue
+    : waitTone === "danger"
       ? "Overdue"
-      : waitedMinutes >= waitThresholds.dueSoon
+      : waitTone === "warning"
         ? "Due soon"
         : "waited";
   const barrierText = closure ? closure.reason : (blocker ?? stageCopy[movement.stage].label);
@@ -1602,165 +1787,157 @@ function StageRow({
       ? "danger"
       : blocker || legalTagTone
         ? "warning"
-        : "info";
-  const tags = [
-    stageCopy[movement.stage].label,
-    movement.security === "Secure" ? "Needs locked bed" : "Open bed suits",
+        : "neutral";
+  const detailTitle = [
+    healthService,
+    `Owner: ${movement.owner.trim() || "Not recorded"}`,
     movement.specialling ? "One-to-one nursing" : null,
     movement.highAcuity ? "High acuity" : null,
-  ].filter((tag): tag is string => tag !== null);
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const step = movementNextStep(movement);
 
   return (
     <li
       ref={rowRef}
       tabIndex={-1}
-      className={styles.wlRow}
+      className={cx(flow.grid, flow.row)}
       data-ward-primitive="record-row"
       data-record-key={movement.id}
       data-revealed={revealRequest !== null ? "true" : undefined}
+      data-highlight={marked ? "true" : undefined}
+      data-selected={selected ? "true" : undefined}
+      data-closed={closure ? "true" : undefined}
       data-tone={closure ? "neutral" : movement.urgency === 1 ? "danger" : "neutral"}
       aria-label={`Movement for ${patientInfo.formalName}`}
+      onClick={(event) => {
+        // The row is a large target for the pointer; the name button is the keyboard route.
+        if ((event.target as HTMLElement).closest("a, button, input, select")) return;
+        onOpenDetail(movement.id);
+      }}
     >
-      <div className={styles.wlLine}>
-        <span aria-hidden="true">
-          <TierTile tier={movement.urgency} />
-        </span>
-        <span className={styles.wlCell}>
-          <strong className={styles.wlName} data-ward-primitive="record-id">
-            {patientInfo.formalName}
-          </strong>
-          <span className="sr-only">{urgencyTierLabel(movement.urgency)}</span>
-          <span className={styles.wlSub}>
-            <span className="sr-only">UMRN </span>
-            {patientInfo.umrn} · {movement.cohort} · {movement.sex}
-          </span>
-        </span>
-        <span className={styles.wlCell}>
-          <strong className={styles.wlStrong} title={originLabel} aria-label={originLabel}>
-            {originEd ? `${originEd.siteCode} ED` : originLabel}
-          </strong>
-          <span className={styles.wlSub}>
-            {movement.acceptedUnitId ? (
-              <>
-                {destinationLabel}
-                {/* Walkthrough code-read, 25 Sept 2026: say "accepted" until the bed is pulled. */}
-                {movement.stage === "accepted_awaiting_bed" ? ", accepted" : ", bed allocated"}
-              </>
-            ) : (
-              <>
-                <span title="No accepted destination recorded">Destination pending</span>
-                {movement.declines.length > 0
-                  ? ` · ${movement.declines.length} decline${movement.declines.length === 1 ? "" : "s"} recorded`
-                  : null}
-                {movement.escalation ? " · state desk escalated" : null}
-              </>
-            )}
-          </span>
-        </span>
-        <span className={styles.wlCell}>
-          <span className={styles.wlBarrier}>
-            <StatusGlyph tone={barrierTone} size={9} />
-            <span className={styles.wlEllipsis}>
-              <span className="sr-only">{closure ? "Closure note: " : blocker ? "Delay barrier: " : "Stage: "}</span>
-              {barrierText}
-            </span>
-          </span>
-          <span className={styles.wlSub} data-tone={legalTagTone}>
-            {legalText}
-          </span>
-        </span>
-        <span className={styles.wlWait}>
-          <Timer
-            at={movement.openedAt * MS_PER_MINUTE}
-            now={clockEnd * MS_PER_MINUTE}
-            direction="waiting"
-            thresholds={
-              closure
-                ? undefined
-                : { dueSoon: waitThresholds.dueSoon * MS_PER_MINUTE, overdue: waitThresholds.overdue * MS_PER_MINUTE }
-            }
-            hideFlagWord
-            hideDirection
-          />
-          <span className={styles.wlWord}>{waitWord}</span>
-          {/* Task 6 (2026-09-16): the meter reads the configured ED access target, never 24h. */}
-          <span
-            className={styles.wlMeter}
-            aria-hidden="true"
-            title={`${splitDuration(waitedMinutes)} of ${splitDuration(accessTargetMinutes)}`}
-          >
-            <i style={{ width: `${Math.min(100, (waitedMinutes / accessTargetMinutes) * 100).toFixed(0)}%` }} />
-          </span>
-        </span>
-      </div>
-      <div className={styles.wlMeta}>
-        <span className={styles.wlTags}>
-          {closureState ? (
-            <span className={styles.wlTag}>
-              <StatusGlyph tone="closed" size={9} />
-              <span data-ward-primitive="chip">{closureState.text}</span>
-            </span>
-          ) : null}
+      <span>
+        <TierPill tier={movement.urgency} />
+        <span className="sr-only">{urgencyTierLabel(movement.urgency)}</span>
+      </span>
+      <span className={flow.cell} title={detailTitle}>
+        <span className={flow.line}>
           {movement.flaggedUrgent ? (
-            <span className={styles.wlTag}>
+            <span title="Flagged urgent">
               <StatusGlyph tone="danger" size={9} />
-              Flagged urgent
+              <span className="sr-only">Flagged urgent </span>
             </span>
-          ) : null}
-          {!movement.owner.trim() ? (
-            <span className={styles.wlTag}>
-              <StatusGlyph tone="warning" size={9} />
-              No owner
-            </span>
-          ) : null}
-          <span className={styles.wlTag}>
-            {transportTone ? (
-              <StatusGlyph
-                tone={transportTone === "good" ? "success" : transportTone === "warn" ? "warning" : "danger"}
-                size={9}
-              />
-            ) : null}
-            {transportText}
-          </span>
-          <span className={styles.wlTagText}>{tags.join(" · ")}</span>
-          <span className={styles.wlTagText}>
-            {healthService} · Owner: {movement.owner.trim() || "Not recorded"}
-          </span>
-          {movement.escalation ? (
-            <span className={styles.wlTagText}>
-              Escalated {splitDuration(Math.max(now - movement.escalation.at, 0))} ago to {movement.escalation.contact}
-              {" · tried "}
-              {movement.escalation.triedUnitIds
-                .map((id) => units.find((candidate) => candidate.id === id)?.name ?? id)
-                .join(", ") || "No units recorded"}
-            </span>
-          ) : null}
-        </span>
-        <span className={styles.wlActions}>
-          {movement.acceptedUnitId ? (
-            <Link
-              href={`/mockups/ward-flow/board/${movement.acceptedUnitId}`}
-              className={styles.wlLink}
-              title={`Open ${destinationLabel} Bed Board`}
-            >
-              Ward board
-            </Link>
           ) : null}
           <button
             type="button"
-            className={buttonClass({ variant: "ghost", size: "sm" })}
+            className={flow.name}
+            data-ward-primitive="record-id"
             onClick={() => onOpenDetail(movement.id)}
+            aria-label={`What is recorded for ${patientInfo.formalName}`}
           >
-            What is recorded
+            {patientInfo.formalName}
           </button>
+          {movement.security === "Secure" ? (
+            <Lock size={13} className={flow.lock} aria-label="Needs a locked bed" />
+          ) : null}
+        </span>
+        <span className={flow.sub}>
+          <span className="sr-only">UMRN </span>
+          <span className={flow.mono}>{patientInfo.umrn}</span> · {movement.cohort} · {movement.sex}
+          {!movement.owner.trim() ? " · No owner" : ""}
+        </span>
+      </span>
+      <span className={flow.cell}>
+        <span className={flow.main}>
+          <span title={originLabel} aria-label={originLabel}>
+            {originEd ? `${originEd.siteCode} ED` : originLabel}
+          </span>{" "}
+          to {movement.acceptedUnitId ? destinationLabel : "Destination pending"}
+        </span>
+        <span className={flow.sub} title={routeSub}>
+          {routeSub}
+        </span>
+      </span>
+      <span className={flow.cell}>
+        <span className={flow.line}>
+          <StatusGlyph tone={barrierTone} size={9} />
+          {closureState ? (
+            <span className={flow.chip} data-ward-primitive="chip">
+              {closureState.text}
+            </span>
+          ) : null}
+          <span className={flow.main} title={barrierText}>
+            <span className="sr-only">{closure ? "Closure note: " : blocker ? "Delay barrier: " : "Stage: "}</span>
+            {closureState ? " · " : ""}
+            {barrierText}
+          </span>
+        </span>
+        <span className={flow.sub} data-tone={legalTagTone} title={legalText}>
+          {legalText}
+        </span>
+      </span>
+      <span className={flow.wait}>
+        <Timer
+          at={movement.openedAt * MS_PER_MINUTE}
+          now={clockEnd * MS_PER_MINUTE}
+          direction="waiting"
+          thresholds={
+            closure
+              ? undefined
+              : { dueSoon: waitThresholds.dueSoon * MS_PER_MINUTE, overdue: waitThresholds.overdue * MS_PER_MINUTE }
+          }
+          hideFlagWord
+          hideDirection
+        />
+        {/* Task 6 (2026-09-16): the meter reads the configured ED access target, never 24h. */}
+        <span
+          className={flow.meter}
+          data-tone={waitTone}
+          aria-hidden="true"
+          title={`${splitDuration(waitedMinutes)} of ${splitDuration(accessTargetMinutes)}`}
+        >
+          <i style={{ width: `${Math.min(100, (waitedMinutes / accessTargetMinutes) * 100).toFixed(0)}%` }} />
+        </span>
+        <span className={flow.waitWord} data-tone={waitTone}>
+          {waitWord}
+        </span>
+      </span>
+      <span className={flow.next}>
+        {step === null ? (
+          <span className={flow.nextOwner}>{closure ? `Closed ${formatInstantWithDay(closure.at, now)}` : ""}</span>
+        ) : step.kind === "pull" ? (
+          <button
+            type="button"
+            className={buttonClass({ variant: "sec", size: "sm" })}
+            onClick={() => onPull(movement)}
+            title={`Pull the bed at ${destinationLabel}`}
+          >
+            {step.label}
+          </button>
+        ) : step.kind === "refer" || step.kind === "escalate" ? (
           <Link
             className={buttonClass({ variant: "sec", size: "sm" })}
             href={`/mockups/ward-flow/movements/${movement.id}`}
+            title={`${step.label} on the Patient page`}
           >
-            Review patient
+            {step.label}
           </Link>
-        </span>
-      </div>
+        ) : (
+          <>
+            <span className={flow.nextLabel}>{step.label}</span>
+            <span className={flow.nextOwner}>{step.owner}</span>
+          </>
+        )}
+      </span>
+      <Link
+        className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true, className: flow.review })}
+        href={`/mockups/ward-flow/movements/${movement.id}`}
+        aria-label={`Review patient ${patientInfo.formalName}`}
+        title="Open the Patient page"
+      >
+        <ChevronRight size={16} aria-hidden="true" />
+      </Link>
     </li>
   );
 }
