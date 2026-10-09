@@ -77,6 +77,15 @@ export function handoverNewSince(id: HandoverShiftId, now: Instant): Instant {
   return handoverAt(id, now) - 8 * 60;
 }
 
+/** Whether a sign-off belongs to this handover's bounded reporting window. */
+export function signOffMatchesHandover(
+  signOff: { at: Instant },
+  id: HandoverShiftId,
+  now: Instant,
+): boolean {
+  return signOff.at >= handoverNewSince(id, now) && signOff.at <= handoverAt(id, now);
+}
+
 /* ------------------------------------------------------------------ rows */
 
 export const STAGE_LABEL: Record<MovementStage, string> = {

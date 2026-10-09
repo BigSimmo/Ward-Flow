@@ -94,6 +94,7 @@ import {
   handoverCutoff,
   handoverNewSince,
   handoverShift,
+  signOffMatchesHandover,
   heldDischarges,
   isActNow,
   isbarText,
@@ -447,7 +448,13 @@ export function HandoverPage() {
     [admissions, wards, patients, referrals, now],
   );
   const wardOf = useCallback((unitId: string) => allWards.find((ward) => ward.id === unitId), [allWards]);
-  const readyBeds = useCallback((unitId: string) => wardOf(unitId)?.ready ?? 0, [wardOf]);
+  const readyBeds = useCallback(
+    (unitId: string) => {
+      const ward = wardOf(unitId);
+      return ward === undefined ? 0 : Math.max(0, ward.ready - ward.pendingPreparation);
+    },
+    [wardOf],
+  );
   const ctx: ColumnContext = useMemo(() => ({ now, cutoff, readyBeds }), [now, cutoff, readyBeds]);
 
   /* highlight, never hide */
@@ -511,8 +518,8 @@ export function HandoverPage() {
   );
 
   /* sign-off */
-  const lastSignOff = handoverSignOffs.length ? handoverSignOffs[handoverSignOffs.length - 1]! : null;
-  const signedAt = lastSignOff !== null && lastSignOff.at >= newSince ? lastSignOff.at : null;
+  const signedAt =
+    [...handoverSignOffs].reverse().find((signOff) => signOffMatchesHandover(signOff, shift, now))?.at ?? null;
   const handleSignOff = useCallback(() => {
     const recorded = recordHandoverSignOff(dispatch, now);
     if (recorded === null) {
@@ -1193,7 +1200,7 @@ export function HandoverPage() {
         onOpenPatient={(id) => {
           setSheetOpen(false);
           setTab("pts");
-          setSelectedId(id);
+          pick(id);
         }}
         onBack={() => setSheetOpen(false)}
         onPrinted={(at) => setTakenAt(at)}
@@ -1211,7 +1218,7 @@ export function HandoverPage() {
           now={now}
           onOpenPatient={(id) => {
             setTab("pts");
-            setSelectedId(id);
+            pick(id);
           }}
         />
       </TabPanel>
@@ -1274,7 +1281,7 @@ function HandoverHistory({
 }) {
   const unsigned = HANDOVER_SHIFTS.filter((shift) => {
     const at = handoverAt(shift.id, now);
-    return at <= now && !signOffs.some((record) => record.at >= at - 8 * 60 && record.at <= at + 60);
+    return at <= now && !signOffs.some((record) => signOffMatchesHandover(record, shift.id, now));
   });
   return (
     <Card as="section" aria-label="Handover history" data-testid="ward-handover-history">
