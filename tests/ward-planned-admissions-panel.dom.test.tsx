@@ -1,0 +1,65 @@
+// tests/ward-planned-admissions-panel.dom.test.tsx
+//
+// The planned admissions panel on the Capacity screen (stream D): the fourteen-day strip, the
+// agenda, and booking, cancelling and recording an arrival through the real provider.
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import "@testing-library/jest-dom/vitest";
+
+import { PlannedAdmissionsPanel } from "@/components/ward-management/capacity/planned-admissions-panel";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+function renderPanel() {
+  return render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <PlannedAdmissionsPanel now={NOW_ANCHOR} />
+    </WardFlowProvider>,
+  );
+}
+
+describe("planned admissions panel", () => {
+  it("counts the seeded bookings per day and lists them, flagging the overdue one", () => {
+    renderPanel();
+    expect(screen.getByTestId("ward-planned-day-0")).toHaveTextContent("1");
+    expect(screen.getByTestId("ward-planned-day-1")).toHaveTextContent("1");
+    expect(screen.getByTestId("ward-planned-day-2")).toHaveTextContent("·");
+    expect(screen.getByTestId("ward-planned-day-3")).toHaveTextContent("1");
+    const list = screen.getByRole("list", { name: "Booked planned admissions" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(3);
+    expect(screen.getByTestId("ward-planned-PA-SEED-03")).toHaveTextContent(/arrival not recorded/);
+    expect(screen.getByTestId("ward-planned-PA-SEED-01")).toHaveTextContent("Initials JM");
+    // A linked patient is shown by name through the resolver, never by record id.
+    expect(screen.getByTestId("ward-planned-PA-SEED-02")).not.toHaveTextContent("PT-007");
+  });
+
+  it("books initials only, and refuses initials that are not one to three letters", () => {
+    renderPanel();
+    fireEvent.click(screen.getByTestId("ward-planned-book"));
+    fireEvent.change(screen.getByTestId("ward-planned-who"), { target: { value: "initials" } });
+    fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "Alice" } });
+    fireEvent.click(screen.getByTestId("ward-planned-submit"));
+    expect(screen.getByTestId("ward-planned-form-refusal")).toHaveTextContent("one to three letters");
+
+    fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "x.y" } });
+    fireEvent.change(screen.getByTestId("ward-planned-sex"), { target: { value: "Female" } });
+    fireEvent.change(screen.getByTestId("ward-planned-reason"), { target: { value: "planned_ect" } });
+    fireEvent.click(screen.getByTestId("ward-planned-submit"));
+    expect(screen.queryByTestId("ward-planned-form-refusal")).toBeNull();
+    const booked = screen.getByTestId("ward-planned-PA-01");
+    expect(booked).toHaveTextContent("Initials XY");
+    expect(booked).toHaveTextContent("Planned ECT");
+  });
+
+  it("cancels a booking with a listed reason, and records an arrival", () => {
+    renderPanel();
+    fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-01")).getByRole("button", { name: "Cancel" }));
+    fireEvent.change(screen.getByTestId("ward-planned-cancel-reason"), { target: { value: "rebooked" } });
+    fireEvent.click(screen.getByTestId("ward-planned-cancel-confirm"));
+    expect(screen.queryByTestId("ward-planned-PA-SEED-01")).toBeNull();
+
+    fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-03")).getByRole("button", { name: "Arrived" }));
+    expect(screen.queryByTestId("ward-planned-PA-SEED-03")).toBeNull();
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+  });
+});

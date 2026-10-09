@@ -238,6 +238,24 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "and transport for the person currently in focus. Confined to the single subject patient requested, " +
       "disclosing no other person's clinical episode.",
   },
+  {
+    file: "capacity/planned-admissions-reducer.ts",
+    reason:
+      "Planned admissions reducer (stream D, coordinator ruling A, 9 Oct 2026; flagged for Josh in " +
+      "the PR): like PULL_PATIENT, CONVERT_PLANNED_ADMISSION copies the booking's own patientId onto " +
+      "the Admission it creates. BOOK checks that patientId exists in state.patients and refuses a " +
+      "second waiting booking; CONVERT refuses when that person already holds a pulled or occupied " +
+      "stay. Reads compare ids only, write state, render nothing and disclose no other stay or referral.",
+  },
+  {
+    file: "capacity/planned-admissions-panel.tsx",
+    reason:
+      "Planned admissions panel (stream D, coordinator ruling A, 9 Oct 2026; flagged for Josh in the " +
+      "PR): coordinator Capacity screen only, mirroring the PULL_PATIENT picker. It reads patientId " +
+      "solely to (1) drop people with a pulled/occupied stay or a waiting booking from the booking " +
+      "picker, a yes/no that shows no ward, bed or referral, and (2) name a booked person through " +
+      "usePatientOf, never printing the id. Void if rendered on a ward screen.",
+  },
 ].map((entry) => ({ ...entry, file: resolve(WARD_DIR, entry.file) }));
 
 const shortPath = (file: string) => relative(process.cwd(), file).replace(/\\/g, "/");
@@ -260,7 +278,8 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 14 → 15 on 2026-09-23: restore-only identity consistency, exact decision above.
     // 15 → 16 on 2026-09-24: patient-now adapter live episode trajectory resolution.
     // Approved recipient projection and its own inbox renderer add two exact, scoped readers.
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(18);
+    // 18 → 20 on 2026-10-09: stream D planned admissions, pending Ward Lead review (see entries).
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(20);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);
