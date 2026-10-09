@@ -76,7 +76,7 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 
-import { FormsPack, PACK_SLOTS, packCount, packForm } from "./officer-forms-pack";
+import { FormsPack, PACK_SLOTS, packCount, packForm, packOutstanding, packRequired } from "./officer-forms-pack";
 import styles from "./officer.module.css";
 
 /**
@@ -419,7 +419,7 @@ export function OfficerScreen() {
     if (which === "en_route") return leg === "En route";
     if (which === "collected") return leg === "Collected";
     if (which === "late") return late(movement);
-    return packCount(movement) < PACK_SLOTS.length;
+    return packOutstanding(movement);
   };
   const query = searchQuery.toLowerCase().trim();
   const matchesSearch = (movement: Movement) => {
@@ -458,7 +458,7 @@ export function OfficerScreen() {
   // Next action first: late, then forms still to upload, then the jobs furthest along.
   const priority = (movement: Movement) => {
     if (late(movement)) return 0;
-    if (packCount(movement) < PACK_SLOTS.length) return 1;
+    if (packOutstanding(movement)) return 1;
     const leg = movement.transport ? officerLeg(movement.transport) : undefined;
     return 2 + (3 - (leg ? OFFICER_LEG_STEPS.indexOf(leg) : 0));
   };
@@ -609,7 +609,7 @@ export function OfficerScreen() {
   const crewToSend = legCount("Accepted");
   const crewEnRoute = legCount("En route");
   const pastEta = jobs.filter(late).length;
-  const formsOutstanding = jobs.filter((job) => packCount(job) < PACK_SLOTS.length).length;
+  const formsOutstanding = jobs.filter(packOutstanding).length;
 
   const nextArrival = jobs
     .map((movement) => ({ movement, at: expectedArrival(movement)?.at }))
@@ -763,7 +763,7 @@ export function OfficerScreen() {
       const eta = expected
         ? `${expected.booked ? "est." : "ward ETA"} ${formatSheetMoment(expected.at, dayZero)}${late(movement) ? ", late" : ""}`
         : "no ETA";
-      return `${officerPatientName(movement)} (${umrnFor(movement)}): ${originShortFor(movement)} to ${destinationLabelFor(movement)}, ${transportLeg(transport)}, ${transport.provider}${transport.escortRequired ? ", escort" : ""}, ${eta}, forms ${packCount(movement)} of ${PACK_SLOTS.length}`;
+      return `${officerPatientName(movement)} (${umrnFor(movement)}): ${originShortFor(movement)} to ${destinationLabelFor(movement)}, ${transportLeg(transport)}, ${transport.provider}${transport.escortRequired ? ", escort" : ""}, ${eta}, ${packRequired(movement) ? `forms ${packCount(movement)} of ${PACK_SLOTS.length}` : "no forms needed"}`;
     });
     const text = [
       `Transport handover ${formatSheetMoment(now, dayZero)}. ${jobs.length} open, ${inCustody} on board, ${crewEnRoute} en route, ${pastEta} past ward ETA.`,
@@ -975,7 +975,14 @@ export function OfficerScreen() {
           </div>
         ) : null}
 
-        <FormsPack movement={movement} now={now} who={officerPatientName(movement)} />
+        {packRequired(movement) ? (
+          <FormsPack movement={movement} now={now} who={officerPatientName(movement)} />
+        ) : (
+          <section className={styles.section} aria-label="Forms">
+            <h3 className={styles.sectionTitle}>Forms</h3>
+            <span className={styles.muted}>None needed for a voluntary transfer.</span>
+          </section>
+        )}
 
         <section className={styles.section} aria-label="Booking">
           <h3 className={styles.sectionTitle}>Booking</h3>
@@ -1256,7 +1263,7 @@ export function OfficerScreen() {
                 <StatusGlyph tone="warning" size={9} /> Past ward ETA{" "}
                 {formatInstantWithDay(topJob.arrivalDetails.estimatedArrivalAt, now)}
               </span>
-            ) : packCount(topJob) < PACK_SLOTS.length ? (
+            ) : packOutstanding(topJob) ? (
               <span className={styles.nextCardLine}>
                 <StatusGlyph tone="neutral" size={9} /> {PACK_SLOTS.length - packCount(topJob)} of {PACK_SLOTS.length}{" "}
                 forms still to upload
@@ -1461,23 +1468,27 @@ export function OfficerScreen() {
                                 )}
                               </td>
                               <td>
-                                <span
-                                  className={styles.formsCell}
-                                  title={`${forms} of ${PACK_SLOTS.length} forms recorded`}
-                                >
-                                  <span className={styles.formDots} aria-hidden="true">
-                                    {PACK_SLOTS.map((slot) => (
-                                      <StatusGlyph
-                                        key={slot.key}
-                                        tone={packForm(movement, slot.key) ? "success" : "neutral"}
-                                        size={9}
-                                      />
-                                    ))}
+                                {!packRequired(movement) ? (
+                                  <span className={styles.muted}>Not needed</span>
+                                ) : (
+                                  <span
+                                    className={styles.formsCell}
+                                    title={`${forms} of ${PACK_SLOTS.length} forms recorded`}
+                                  >
+                                    <span className={styles.formDots} aria-hidden="true">
+                                      {PACK_SLOTS.map((slot) => (
+                                        <StatusGlyph
+                                          key={slot.key}
+                                          tone={packForm(movement, slot.key) ? "success" : "neutral"}
+                                          size={9}
+                                        />
+                                      ))}
+                                    </span>
+                                    <span data-complete={forms === PACK_SLOTS.length ? "true" : undefined}>
+                                      {forms} of {PACK_SLOTS.length}
+                                    </span>
                                   </span>
-                                  <span data-complete={forms === PACK_SLOTS.length ? "true" : undefined}>
-                                    {forms} of {PACK_SLOTS.length}
-                                  </span>
-                                </span>
+                                )}
                               </td>
                               <td>
                                 {expected ? (
