@@ -439,15 +439,6 @@ export function PatientCommunityTab({
                       <Button size="sm" onClick={onEndCto}>
                         Record ended
                       </Button>
-                    ) : patient.communityTreatmentOrder ? (
-                      // One Form 5A slot only: the reducer refuses a second order so the Closed form stays.
-                      <Button
-                        size="sm"
-                        disabledReason="An ended Form 5A is already on the record"
-                        reasonDisplay="tooltip"
-                      >
-                        Record CTO
-                      </Button>
                     ) : stayOpen ? (
                       // The page shows a placement or stay ahead of a CTO, so one recorded now would be hidden.
                       <Button size="sm" disabledReason="Not while a placement or stay is open" reasonDisplay="tooltip">

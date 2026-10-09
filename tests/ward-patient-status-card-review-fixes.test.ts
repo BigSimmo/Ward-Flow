@@ -125,7 +125,7 @@ describe("gate board status card review fixes", () => {
     expect(legalOnLeave("did_not_proceed")).toBe("Voluntary patient");
   });
 
-  it("does not offer Record CTO when an ended Form 5A already holds the single order slot", () => {
+  it("still offers Record CTO after an ended Form 5A, which a new order keeps as Closed (D-39)", () => {
     const legalAction = (patient: PatientStatusContext["patient"]) =>
       buildPatientStatus("idle", ctx(base, { patient })).cells.find((cell) => cell.key === "legal")?.action;
     expect(legalAction({} as PatientStatusContext["patient"])?.kind).toBe("button");
@@ -137,10 +137,6 @@ describe("gate board status card review fixes", () => {
         endedAt: NOW_ANCHOR - 60,
       },
     } as PatientStatusContext["patient"]);
-    expect(ended).toEqual({
-      kind: "unavailable",
-      label: "Record CTO",
-      reason: "An ended Form 5A is already on the record",
-    });
+    expect(ended).toMatchObject({ kind: "button", label: "Record CTO" });
   });
 });
