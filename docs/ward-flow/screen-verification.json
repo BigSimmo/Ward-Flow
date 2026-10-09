@@ -31,14 +31,23 @@
       "route": "/delays",
       "verified": {
         "date": "2026-10-09",
-        "who": "Claude Code (rendered Chromium review of the October 2026 Delays board)",
+        "who": "Claude Code (rendered Chromium review of the October 2026 Delays board after owner ruling D-38)",
         "widths": [1440, 820, 390],
         "themes": ["light", "dark"],
         "verdict": "matches",
-        "checkedRevision": "2a373b10acaeb300c4f6a84d8f0e8e13f8906c25",
-        "notes": "Delays rebuilt as the owner-approved Delays page mockup (October 2026), replacing the earlier action workspace in verificationHistory. Filters highlight matching rows in the Waiting table (2026-09-07 ruling: chips never hide rows); the header shows N of total when a filter is active. Checked at this revision via focused Delays DOM tests (78 cases) and source review of hero counts, whose-move tiles, grouped table with row timeline, registers rail, and three linked graphs. Prior Chromium captures at d535963 remain background for layout chrome only; this entry does not renew full-width browser pixel review. Print, forced colours, physical touch, hosted deployment and exhaustive screen-reader passes are unverified here."
+        "checkedRevision": "e224769281694905d11f2d292155e61cd2776863",
+        "notes": "Owner ruling D-38 (9 October 2026): Delays filters narrow the Waiting table and the table states how many people are hidden, with Show everyone. This replaces the highlight-only entry at 2a373b10, now in verificationHistory. Checked in real Chromium against the local dev server at this revision with a clean tree: 1440 light, 1440 dark (data-theme=dark), 820 light and 390 light. At each, pressing the Over 8h count narrowed the table from 70 of 70 to 19 of 70, the note read '51 more people are waiting, hidden by the filters above.', Show everyone restored 70 of 70, there were no page errors and no page-level horizontal overflow. This check found and this revision fixes a phone defect: at 390 the note did not wrap, so Show everyone was clipped off the cell; tests/ui-ward-table-thresholds.spec.ts now clicks it at 390 and 1440 and fails without the fix. Layout of the hero, tiles, rail and graphs is not re-reviewed here beyond these views; the full-board captures at d535963 (earlier history entry) remain the layout evidence. Print, forced colours, physical touch, screen readers and hosted deployment were not verified."
       },
       "verificationHistory": [
+        {
+          "date": "2026-10-09",
+          "who": "Claude Code (rendered Chromium review of the October 2026 Delays board)",
+          "widths": [1440, 820, 390],
+          "themes": ["light", "dark"],
+          "verdict": "matches",
+          "checkedRevision": "2a373b10acaeb300c4f6a84d8f0e8e13f8906c25",
+          "notes": "Delays rebuilt as the owner-approved Delays page mockup (October 2026), replacing the earlier action workspace in verificationHistory. Filters highlight matching rows in the Waiting table (2026-09-07 ruling: chips never hide rows); the header shows N of total when a filter is active. Checked at this revision via focused Delays DOM tests (78 cases) and source review of hero counts, whose-move tiles, grouped table with row timeline, registers rail, and three linked graphs. Prior Chromium captures at d535963 remain background for layout chrome only; this entry does not renew full-width browser pixel review. Print, forced colours, physical touch, hosted deployment and exhaustive screen-reader passes are unverified here."
+        },
         {
           "date": "2026-10-05",
           "who": "Codex (rendered workspace review and shell regression check)",

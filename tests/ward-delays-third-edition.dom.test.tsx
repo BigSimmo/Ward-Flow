@@ -204,9 +204,11 @@ describe("Delays — the dangling-originEdId sentence names the record, not the 
 
     // Site 2 — the "From" line in the panel facts, identical wording, no drift between the two.
     const bodyText = document.body.textContent ?? "";
-    expect(screen.getByTestId("delays-panel-from")).toHaveTextContent(
-      `This movement names a department we cannot find: "${DANGLING_ED_ID}"`,
-    );
+    expect(
+      within(screen.getByTestId("delays-panel-from")).getByText(
+        `This movement names a department we cannot find: "${DANGLING_ED_ID}"`,
+      ),
+    ).toBeInTheDocument();
 
     // Neither site may still carry the old, network-blaming wording.
     expect(bodyText).not.toContain("No department matches");

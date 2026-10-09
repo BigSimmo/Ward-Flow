@@ -15,7 +15,7 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 /**
  * The Delays board's data views (approved Delays page mockup, October 2026): the waiting table with
  * its row timeline, the search box, the Longest wait order, and the three graphs under the table.
- * Each graph highlights the same table rather than opening a view of its own, so every case below
+ * Each graph narrows the same table rather than opening a view of its own, so every case below
  * checks the TABLE after pressing something in a graph.
  *
  * This replaces the PR 48 Focus table / Action workspace layouts, their pagination and the
@@ -47,18 +47,6 @@ function listed(): string[] {
 
 function graphs(): HTMLElement {
   return screen.getByRole("region", { name: "Delay graphs" });
-}
-
-function expectHighlight(expectedIds: Set<string>): void {
-  showEveryDelayRow();
-  expect(listed().sort()).toEqual(OPEN.map((movement) => movement.id).sort());
-  expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${expectedIds.size} of ${OPEN.length}`);
-  for (const row of ROWS) {
-    expect(screen.getByTestId(`delays-row-${row.movement.id}`)).toHaveAttribute(
-      "data-delays-row-matches",
-      expectedIds.has(row.movement.id) ? "true" : "false",
-    );
-  }
 }
 
 describe("the Delays board's data views", () => {
@@ -99,13 +87,12 @@ describe("the Delays board's data views", () => {
     const name = first.querySelector("b")?.textContent ?? "";
     expect(name, "the first row shows no name").not.toBe("");
     fireEvent.change(screen.getByRole("searchbox", { name: "Find a person or ED" }), { target: { value: name } });
-    const matching = new Set(
-      ROWS.filter((row) => resolveSubjectPatient(row.movement, state).formalName === name).map(
-        (row) => row.movement.id,
-      ),
-    );
-    expect(matching.size, "the search matched nobody").toBeGreaterThanOrEqual(1);
-    expectHighlight(matching);
+    showEveryDelayRow();
+    expect(listed().length, "the search matched more than that one person").toBeGreaterThanOrEqual(1);
+    for (const button of within(waiting()).getAllByTestId(/^delays-select-/u)) {
+      expect(button).toHaveTextContent(name);
+    }
+    expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${listed().length} of ${OPEN.length}`);
   });
 
   it("Longest wait lists pinned recorded legal times first, then everyone else longest first", () => {
@@ -124,8 +111,9 @@ describe("the Delays board's data views", () => {
     renderDelays();
     const lane = within(graphs()).getByRole("button", { name: /^Wards\b/u });
     fireEvent.click(lane);
-    const expected = new Set(ROWS.filter((row) => ownerOf(row.cause) === "wards").map((row) => row.movement.id));
-    expectHighlight(expected);
+    showEveryDelayRow();
+    const expected = ROWS.filter((row) => ownerOf(row.cause) === "wards").map((row) => row.movement.id);
+    expect(new Set(listed())).toEqual(new Set(expected));
     expect(lane).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("delays-owner-wards"), "the tile and the lane disagree").toHaveAttribute(
       "aria-pressed",
@@ -198,9 +186,9 @@ describe("the Delays board's data views", () => {
     const column = within(graphs()).getAllByRole("button", { name: /cross 8h/u })[busy.index];
     fireEvent.click(column);
     expect(column).toHaveAttribute("aria-pressed", "true");
-    expectHighlight(busy.ids);
+    expect(new Set(listed())).toEqual(busy.ids);
     expect(screen.getByRole("button", { name: "Longest wait" })).toHaveAttribute("aria-pressed", "true");
-    expect(within(graphs()).getByText(/highlighted in the table/u)).toBeInTheDocument();
+    expect(within(graphs()).getByText(/match the current filters/u)).toBeInTheDocument();
   });
 
   it("a matrix cell filters to that catchment and owner, and pressing it again clears both", () => {
@@ -210,18 +198,16 @@ describe("the Delays board's data views", () => {
     const count = Number(/: (\d+) waiting/u.exec(cell.getAttribute("aria-label") ?? "")?.[1]);
     expect(count, "nobody is in that cell").toBeGreaterThan(0);
     fireEvent.click(cell);
-    const expected = new Set(
-      ROWS.filter((row) => row.origin === "East Metro" && row.owner === "yours").map((row) => row.movement.id),
-    );
-    expect(expected.size).toBe(count);
-    expectHighlight(expected);
+    showEveryDelayRow();
+    expect(listed()).toHaveLength(count);
     expect(screen.getByRole("button", { name: "Remove filter East Metro" })).toBeInTheDocument();
     fireEvent.click(within(graphs()).getByRole("button", { name: /^East Metro, Yours: \d+ waiting/u }));
     expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${OPEN.length} of ${OPEN.length}`);
   });
 
-  it("opening a person from the rail keeps them on the table even when a filter would not match", () => {
+  it("opening a person the filters hide shows everyone first, so their row is there", () => {
     renderDelays();
+    // Longest quiet lists the seven quietest; take the first of them a locked-bed filter hides.
     const topQuiet = ROWS.filter((row) => row.silent)
       .sort((a, b) => b.quiet - a.quiet)
       .slice(0, 7);
@@ -232,15 +218,16 @@ describe("the Delays board's data views", () => {
     expect(name).not.toBe("");
 
     fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
-    expect(within(waiting()).getByTestId(`delays-select-${target!.movement.id}`)).toBeInTheDocument();
+    expect(within(waiting()).queryByTestId(`delays-select-${target!.movement.id}`)).toBeNull();
 
     const rail = screen.getByRole("region", { name: "Escalations and resolved" });
     const button = within(rail)
       .getAllByRole("button")
       .find((candidate) => candidate.textContent?.startsWith(name));
-    expect(button, "the person is not in Longest quiet").toBeDefined();
+    expect(button, "the hidden person is not in Longest quiet").toBeDefined();
     fireEvent.click(button!);
 
+    expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${OPEN.length} of ${OPEN.length}`);
     expect(screen.getByTestId(`delays-select-${target!.movement.id}`)).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId(`delays-detail-${target!.movement.id}`)).toBeInTheDocument();
   });
@@ -304,21 +291,19 @@ describe("the Delays board's data views", () => {
     expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${sameOrigin.length} of ${OPEN.length}`);
   });
 
-  it("a filter that does not match the open person keeps their panel open beside a dimmed row", () => {
+  it("a filter that hides the open person closes their panel rather than leave it beside no row", () => {
     renderDelays();
     const open = ROWS.find((row) => !row.locked)!;
     showEveryDelayRow();
     fireEvent.click(screen.getByTestId(`delays-select-${open.movement.id}`));
     expect(screen.getByTestId(`delays-detail-${open.movement.id}`)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
-    expect(screen.getByTestId(`delays-detail-${open.movement.id}`)).toBeInTheDocument();
-    expect(screen.getByTestId(`delays-row-${open.movement.id}`)).toHaveAttribute("data-delays-row-matches", "false");
+    expect(screen.queryByTestId(`delays-detail-${open.movement.id}`)).toBeNull();
+    // Clearing the filter must not quietly reopen a panel nobody chose again.
     fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
     showEveryDelayRow();
-    expect(
-      screen.queryByTestId(`delays-detail-${open.movement.id}`),
-      "the panel stayed open after clearing",
-    ).toBeNull();
+    expect(screen.getByTestId(`delays-select-${open.movement.id}`)).toBeInTheDocument();
+    expect(screen.queryByTestId(`delays-detail-${open.movement.id}`), "the hidden panel came back").toBeNull();
   });
 
   it("a headline count with nobody behind it is plain text, never a button that empties the table", () => {

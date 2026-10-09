@@ -480,3 +480,16 @@ is inferred.
   8. **WF-55 (External Privacy Impact Assessment):** Ratified Privacy Architecture Standard. 100% synthetic patient isolation guaranteed; data minimisation on public flight decks and ward boards (Bed ID, initials, age, gender code, legal status only); detailed clinical notes restricted to authenticated role-scoped views. External legal PIA scheduled during hospital IT onboarding.
   9. **WF-57 (Post-Incident Review Architectural Scope):** Ratified PIR Immutable Telemetry Specification. The system captures append-only timeline events under Invariants I-01 through I-14 (recording occurrence, dispatch, and commit timestamps, user ID, prior state, new state, and clinician override reasons). A single-click "PIR Chronology Export" standard is adopted to supply tamper-evident chronologies for hospital clinical incident reviews (SAC 1) and Coronial inquiries.
 - **Why:** Replaces passive parking with definitive, clinically and legally defensible governance standards across all 10 items, establishing complete pre-pilot governance readiness.
+
+## D-38. Delays board filters narrow the table and state the hidden count (9 October 2026)
+
+- **Date:** 9 October 2026. **Decided by:** Josh.
+- **Decision:** On the October 2026 Delays board, hero counts, whose-move tiles, chips and graph
+  choices keep filtering the Waiting table, as the approved Delays page mockup draws it. Whenever a
+  filter hides anyone, the table must say how many people are hidden and offer "Show everyone".
+  For this board, this supersedes the 2026-09-07 "a chip highlights, it never hides" ruling. The
+  old Delays table and graph components (`delays-data-views.tsx`, `delays-coordination.tsx` and
+  their stylesheets) are deleted.
+- **Why:** The mockup's narrowing is the approved behaviour. The hazard behind the September ruling
+  (a filtered-out patient looking like a placed one) is closed by the stated hidden count, which
+  `tests/ward-delays-screen.dom.test.tsx` guards.
