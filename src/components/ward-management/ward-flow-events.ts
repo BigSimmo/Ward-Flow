@@ -2092,7 +2092,8 @@ export type WardFlowEvent =
       /**
        * The demo calendar's date at `now` ("yyyy-mm-dd", from `calendarDateOf(now, dayZero)`).
        * Required with `patientId`: the reducer holds no calendar, and refuses an `ageBand` that the
-       * record's date of birth does not give on this date. Not about the person; never displayed.
+       * record's date of birth does not give on the expected arrival's date, counted from this one.
+       * Not about the person; never displayed.
        */
       calendarDate?: string;
       /** Required when the caller is a ward: the ward it is booking for. */
@@ -2109,6 +2110,8 @@ export type WardFlowEvent =
       expectedArrivalAt: Instant;
       expectedStayDays: number;
       legalStatus: LegalStatus;
+      /** As on `BOOK_PLANNED_ADMISSION`: required when a linked booking's arrival moves to another day. */
+      calendarDate?: string;
       actingUnitId?: string;
     }
   | {

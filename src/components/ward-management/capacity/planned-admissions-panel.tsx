@@ -204,11 +204,23 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       return;
     }
     const { expectedArrivalAt, expectedStayDays } = timing;
+    // Today's demo calendar date, which the reducer counts on from to the arrival's date when it
+    // checks a linked patient's age group.
+    const calendarDate =
+      dayZero instanceof Date
+        ? (() => {
+            const today = calendarDateOf(now, dayZero);
+            return [
+              String(today.getFullYear()),
+              String(today.getMonth() + 1).padStart(2, "0"),
+              String(today.getDate()).padStart(2, "0"),
+            ].join("-");
+          })()
+        : undefined;
     pending.current = { rejections: rejections.length };
     if (form.mode === "book") {
       let sex = draft.sex;
       let ageBand: Cohort = draft.ageBand;
-      let calendarDate: string | undefined;
       let initials: string | null = null;
       if (draft.who === "initials") {
         initials = normalisePlannedAdmissionInitials(draft.initials);
@@ -220,17 +232,10 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       } else {
         const patient = patients.find((candidate) => candidate.id === draft.patientId);
         sex = recordedSexOf(patient?.sex);
-        // The age group comes from the record's date of birth on today's calendar date; the
-        // reducer checks it against the same date.
-        if (patient && dayZero instanceof Date) {
-          const today = calendarDateOf(now, dayZero);
-          ageBand = patientCohort(patient.dateOfBirth, today);
-          calendarDate = [
-            String(today.getFullYear()),
-            String(today.getMonth() + 1).padStart(2, "0"),
-            String(today.getDate()).padStart(2, "0"),
-          ].join("-");
-        }
+        // The age group comes from the record's date of birth on the expected arrival's calendar
+        // date; the reducer checks it against the same date.
+        if (patient && dayZero instanceof Date)
+          ageBand = patientCohort(patient.dateOfBirth, calendarDateOf(expectedArrivalAt, dayZero));
       }
       dispatch({
         type: "BOOK_PLANNED_ADMISSION",
@@ -257,6 +262,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         expectedArrivalAt,
         expectedStayDays,
         legalStatus: draft.legalStatus,
+        ...(calendarDate !== undefined ? { calendarDate } : {}),
       });
     }
   }

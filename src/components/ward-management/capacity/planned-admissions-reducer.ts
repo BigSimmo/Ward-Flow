@@ -20,12 +20,20 @@ import {
 } from "../ward-admissions";
 import { finiteInstant, type AuditDecision } from "../ward-audit";
 import { emptyCareJourney } from "../ward-care-journey";
-import { MINUTES_PER_DAY, type Instant } from "../ward-clock";
+import { dayOf, MINUTES_PER_DAY, type Instant } from "../ward-clock";
 import { adjustSexMix, mixSexOf } from "../ward-eligibility";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
-import { COHORTS, RECORDED_SEXES, type LegalStatus, type Movement, type MovementId, type Unit } from "../ward-model";
+import {
+  COHORTS,
+  RECORDED_SEXES,
+  type Cohort,
+  type LegalStatus,
+  type Movement,
+  type MovementId,
+  type Unit,
+} from "../ward-model";
 import { patientCohort } from "../ward-patients";
 
 export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
@@ -123,6 +131,31 @@ export function plannedAdmissionsStillNeedingABed(
   );
 }
 
+/**
+ * Why a linked patient's booked age group is not the record's on the expected arrival's calendar
+ * date, or null when it is. The reducer holds no calendar: that date is the event's `calendarDate`
+ * (today) moved on by the whole days between `now` and the arrival, so a birthday inside the
+ * booking window (turning 25 or 65) counts.
+ */
+function linkedAgeBandRefusal(
+  event: Extract<PlannedAdmissionEvent, { type: "BOOK_PLANNED_ADMISSION" | "CHANGE_PLANNED_ADMISSION" }>,
+  dateOfBirth: string,
+  ageBand: Cohort,
+): string | null {
+  const today = localCalendarDate(event.calendarDate);
+  if (today === null)
+    return `${event.type} needs today's calendar date (yyyy-mm-dd) to check a linked patient's age group`;
+  const arrivalDay = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() + dayOf(event.expectedArrivalAt) - dayOf(event.now),
+  );
+  const recorded = patientCohort(dateOfBirth, arrivalDay);
+  return recorded === ageBand
+    ? null
+    : `On the expected arrival date this patient's recorded date of birth gives the ${recorded} age group, not ${ageBand}.`;
+}
+
 /** A "yyyy-mm-dd" calendar date as local midnight, or null when it is not one. */
 function localCalendarDate(value: unknown): Date | null {
   if (typeof value !== "string") return null;
@@ -209,20 +242,8 @@ export function reducePlannedAdmissionEvent(
           return reject(state, event, "This patient already has a planned admission booked.");
         // A linked patient's age group is the record's, never the caller's: a Youth record booked
         // as Adult would otherwise pass the cohort gate onto an Adult ward when it converts.
-        const today = localCalendarDate(event.calendarDate);
-        if (today === null)
-          return reject(
-            state,
-            event,
-            "BOOK_PLANNED_ADMISSION needs today's calendar date (yyyy-mm-dd) to check a linked patient's age group",
-          );
-        const recordedBand = patientCohort(patient.dateOfBirth, today);
-        if (recordedBand !== event.ageBand)
-          return reject(
-            state,
-            event,
-            `This patient's recorded date of birth gives the ${recordedBand} age group, not ${event.ageBand}.`,
-          );
+        const ageBand = linkedAgeBandRefusal(event, patient.dateOfBirth, event.ageBand);
+        if (ageBand) return reject(state, event, ageBand);
       } else {
         initials = normalisePlannedAdmissionInitials(event.initials);
         if (initials === null)
@@ -274,6 +295,14 @@ export function reducePlannedAdmissionEvent(
       // other fields are edited.
       if (event.expectedArrivalAt !== planned.expectedArrivalAt && event.expectedArrivalAt < event.now)
         return reject(state, event, "CHANGE_PLANNED_ADMISSION expected arrival must not be in the past");
+      // Moving a linked booking's arrival to another day can cross a birthday that changes its
+      // age group; the booked age group must still be the record's on the new day.
+      if (planned.patientId !== null && dayOf(event.expectedArrivalAt) !== dayOf(planned.expectedArrivalAt)) {
+        const patient = state.patients.find((candidate) => candidate.id === planned.patientId);
+        if (!patient) return reject(state, event, `no patient found for id ${planned.patientId}`);
+        const ageBand = linkedAgeBandRefusal(event, patient.dateOfBirth, planned.ageBand);
+        if (ageBand) return reject(state, event, ageBand);
+      }
       const changed: PlannedAdmission = {
         ...planned,
         reason: event.reason,

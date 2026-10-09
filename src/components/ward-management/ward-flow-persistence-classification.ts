@@ -374,7 +374,10 @@ type WardFlowReviewedStringOrUnknownKey =
   | "formCode"
   | "alertId"
   // Stream D: names a `PlannedAdmission.id`; the reducer finds the booking or refuses.
-  | "plannedAdmissionId";
+  | "plannedAdmissionId"
+  // Stream D: the demo calendar's "yyyy-mm-dd" date at `now`, computed by the panel from
+  // `calendarDateOf(now, dayZero)` for the linked age-group check. Not about a person; never typed.
+  | "calendarDate";
 
 /** True exactly when `T` is (or includes) the wide `string` type — never for a literal or a union of
  *  literals, which is what lets a closed code-shaped union field pass untouched while a genuine

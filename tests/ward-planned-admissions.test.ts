@@ -510,7 +510,9 @@ describe("review follow-up: a linked patient's age group comes from the record",
     expect(youth).toBeDefined();
 
     const asAdult = book(seed, { initials: null, patientId: youth.id, ageBand: "Adult" });
-    expect(lastRejection(asAdult)).toBe("This patient's recorded date of birth gives the Youth age group, not Adult.");
+    expect(lastRejection(asAdult)).toBe(
+      "On the expected arrival date this patient's recorded date of birth gives the Youth age group, not Adult.",
+    );
     expect(asAdult.plannedAdmissions).toBe(seed.plannedAdmissions);
 
     const undated = book(seed, { initials: null, patientId: youth.id, ageBand: "Youth", calendarDate: undefined });
@@ -519,6 +521,55 @@ describe("review follow-up: a linked patient's age group comes from the record",
     const recorded = book(seed, { initials: null, patientId: youth.id, ageBand: "Youth" });
     expect(recorded.rejections).toEqual([]);
     expect(newest(recorded)).toMatchObject({ patientId: youth.id, ageBand: "Youth" });
+  });
+
+  it("checks the age group on the arrival date, so a 25th birthday inside the window counts", () => {
+    const seed = seedWardFlowState();
+    const busy = new Set(
+      [
+        ...seed.admissions.filter((admission) => admission.state === "occupied" || admission.state === "pulled"),
+        ...seed.plannedAdmissions,
+      ].map((record) => record.patientId),
+    );
+    const free = seed.patients.find((patient) => !busy.has(patient.id))!;
+    // Today (CALENDAR_DATE) is 9 Oct 2026: 24 now, 25 from 14 Oct 2026.
+    const turning25 = { ...free, dateOfBirth: "2001-10-14" };
+    const state: WardFlowState = {
+      ...seed,
+      patients: seed.patients.map((patient) => (patient.id === free.id ? turning25 : patient)),
+    };
+    const linked = { initials: null, patientId: free.id };
+
+    const youthAfterBirthday = book(state, {
+      ...linked,
+      ageBand: "Youth",
+      expectedArrivalAt: NOW + 7 * MINUTES_PER_DAY,
+    });
+    expect(lastRejection(youthAfterBirthday)).toBe(
+      "On the expected arrival date this patient's recorded date of birth gives the Adult age group, not Youth.",
+    );
+    expect(
+      book(state, { ...linked, ageBand: "Adult", expectedArrivalAt: NOW + 7 * MINUTES_PER_DAY }).rejections,
+    ).toEqual([]);
+
+    // Booked as Youth for tomorrow, then moved past the birthday: the change is refused.
+    const tomorrow = book(state, { ...linked, ageBand: "Youth" });
+    expect(tomorrow.rejections).toEqual([]);
+    const booking = newest(tomorrow);
+    const moved = apply(tomorrow, {
+      type: "CHANGE_PLANNED_ADMISSION",
+      role: "coordinator",
+      now: NOW,
+      plannedAdmissionId: booking.id,
+      reason: booking.reason,
+      unitId: booking.unitId,
+      expectedArrivalAt: NOW + 7 * MINUTES_PER_DAY,
+      expectedStayDays: booking.expectedStayDays,
+      legalStatus: booking.legalStatus,
+      calendarDate: CALENDAR_DATE,
+    });
+    expect(lastRejection(moved)).toMatch(/gives the Adult age group, not Youth/);
+    expect(newest(moved).expectedArrivalAt).toBe(booking.expectedArrivalAt);
   });
 });
 
