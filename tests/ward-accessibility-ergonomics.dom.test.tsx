@@ -285,16 +285,9 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
   });
 
   describe("9. CSS contract: safe-area-inset on sticky bars and tablet rail breakpoint", () => {
-    it("enforces env(safe-area-inset-bottom) on bottom bars without distorting submit button", () => {
-      const referralIntakeCss = readFileSync(
-        "src/components/ward-management/referrals/referral-intake-third-edition.module.css",
-        "utf8",
-      );
-      expect(referralIntakeCss).toMatch(/\.submitBar\s*\{[^}]*env\(safe-area-inset-bottom\)/);
-      expect(referralIntakeCss).toMatch(/\.dispatchCard\s*\{[^}]*env\(safe-area-inset-bottom\)/);
-      // btnSubmit itself must not have safe-area padding so vertical centering is preserved
-      expect(referralIntakeCss).not.toMatch(/\.btnSubmit\s*\{[^}]*env\(safe-area-inset-bottom\)/);
-
+    it("keeps the tablet rail breakpoint", () => {
+      // The safe-area pins on the full-page intake form's submit bar went with that form (retired
+      // 8 Oct 2026); the referral slide-out's own suite owns its sticky footer.
       const railCss = readFileSync("src/components/ward-management/shell/ward-rail.module.css", "utf8");
       expect(railCss).toMatch(/@media\s*\(\s*max-width:\s*48rem\s*\)\s*\{/);
     });

@@ -4,8 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 
 // Same reason as every sibling dom suite: `ClinicalRail` renders next/link anchors and this suite
 // never checks routing, so a plain <a> avoids an App Router context jsdom cannot provide.
-// `ReferralIntakeForm` also reads the URL through `next/navigation`'s `useSearchParams`, which
-// jsdom has no App Router context for either.
 vi.mock("next/navigation", () => ({
   // The Ward Flow sidebar derives its role from the route (ward-nav-role-order.ts), so every
   // suite that renders a rail needs a pathname. A whole-module mock without one makes
@@ -22,7 +20,6 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { ReferralIntakeForm } from "@/components/ward-management/referrals/referral-intake";
 import { ReferralMatchView } from "@/components/ward-management/referrals/referral-match";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { referrals } from "@/components/ward-management/ward-movements";
@@ -54,17 +51,11 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * place that says so out loud — which is the whole point of it going red.
  */
 describe("the two referral controls are findable by the words on them", () => {
-  it('the intake form\'s submit control reads "Send referral"', () => {
-    render(
-      <WardFlowProvider>
-        <ReferralIntakeForm />
-      </WardFlowProvider>,
-    );
-
-    // By role and accessible name, so the pin survives the label moving between elements but not
-    // the label ceasing to say what the control does.
-    expect(screen.getByRole("button", { name: /send referral/i })).toBeInTheDocument();
-  });
+  /*
+   * The "Send referral" pin read the full-page intake form, retired on 8 Oct 2026: the referral
+   * slide-out (`referrals/ward-referral-drawer.tsx`) is now the one place a referral is sent, and the
+   * owner's pin on that control's words moves with it, to the slide-out's own suite.
+   */
 
   it('the match view\'s decline control reads "Decline referral"', () => {
     const referral = referrals[0];
