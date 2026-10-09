@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { readFileSync } from "node:fs";
 import { useState } from "react";
@@ -209,10 +209,10 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
     });
   });
 
-  // v6 (LegalForms.png): "Record a form" is an in-page card, not a modal, so the hero button moves
-  // focus into the card's first field rather than opening and trapping a dialog.
+  // Forms (9 Oct 2026): "Record a form" opens a sheet from the hero, so focus moves into the
+  // dialog and returns when it closes; the form type picker is inside it.
   describe("5. LegalFormsScreen Record a form focus", () => {
-    it("moves focus from the hero's Record a form button into the Record a form card", () => {
+    it("moves focus from the hero's Record a form button into the Record a form dialog", async () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <LegalFormsScreen />
@@ -225,11 +225,8 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
 
       fireEvent.click(recordBtn);
 
-      const card = screen.getByRole("region", { name: "Record a form" });
-      expect(card).toBeInTheDocument();
-      expect(card.contains(document.activeElement)).toBe(true);
-      expect(document.activeElement).toBe(screen.getByLabelText("Form type"));
-      expect(screen.queryByRole("dialog", { name: "Record a form" })).toBeNull();
+      const dialog = screen.getByRole("dialog", { name: "Record a form" });
+      await waitFor(() => expect(document.activeElement).toBe(within(dialog).getByLabelText("Form type")));
     });
   });
 

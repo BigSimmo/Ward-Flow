@@ -149,6 +149,7 @@ describe("the override and decision registers hold only what this session record
   it("starts empty, says so, and states no invented safety record", () => {
     const seed = seedWardFlowState();
     const { container } = render(<GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />);
+    fireEvent.click(screen.getByRole("radio", { name: /^Review/ }));
     const text = container.textContent ?? "";
     expect(text).toContain("No override audit is recorded in this session.");
     expect(text).toContain("Safety incidents not recorded");
