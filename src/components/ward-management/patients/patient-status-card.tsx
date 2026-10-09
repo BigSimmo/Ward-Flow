@@ -146,7 +146,7 @@ function transportCell(
     value: "Not booked",
     sub: ready ? "Book by phone, then log it" : `Needs ${waitingFor}`,
     action: ready
-      ? { kind: "button", label: "Log booking", icon: Truck, onClick: () => onBook() }
+      ? { kind: "button", label: "Log booking", icon: Truck, onClick: () => { onBook(); } }
       : { kind: "unavailable", label: "Log booking", reason: `Needs ${waitingFor}` },
   };
 }
@@ -254,7 +254,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
           action: job
             ? undefined
             : movement.stage === "handover_ready"
-              ? { kind: "button", label: "Log booking", icon: Truck, onClick: () => ctx.onBookTransport() }
+              ? { kind: "button", label: "Log booking", icon: Truck, onClick: () => { ctx.onBookTransport(); } }
               : { kind: "unavailable", label: "Log booking", reason: "Not available at this stage" },
         },
         {
@@ -271,9 +271,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
           action: {
             kind: "button",
             label: etaAt === undefined ? "Set arrival time" : "Update arrival",
-            onClick: () => {
-              ctx.onArrivalTime();
-            },
+            onClick: () => { ctx.onArrivalTime(); },
           },
         },
         {
@@ -341,13 +339,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
             admission?.state === "occupied" ? "Leave is recorded on the ward board" : "No stay linked to this record",
           action:
             admission?.state === "occupied"
-              ? {
-                  kind: "button",
-                  label: "Mark absent",
-                  onClick: () => {
-                    ctx.onMarkAbsent();
-                  },
-                }
+              ? { kind: "button", label: "Mark absent", onClick: () => { ctx.onMarkAbsent(); } }
               : undefined,
         },
       ],
@@ -381,7 +373,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
           sub: overdue
             ? `Overdue by ${dur(now - bed.expectedReturn)}, typed by the ward`
             : `In ${dur(bed.expectedReturn - now)}, typed by the ward`,
-          action: { kind: "button", label: "Record return", onClick: () => ctx.onRecordReturn() },
+          action: { kind: "button", label: "Record return", onClick: () => { ctx.onRecordReturn(); } },
         },
         {
           key: "legal",
@@ -410,9 +402,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
                 kind: "button",
                 label: "Record",
                 ariaLabel: `Record ${ABSENCE_STEP_LABELS[step]}`,
-                onClick: () => {
-                  ctx.onAbsenceStep(step);
-                },
+                onClick: () => { ctx.onAbsenceStep(step); },
               }
             : undefined,
       };
@@ -507,7 +497,7 @@ export function buildPatientStatus(mode: PatientMode, ctx: PatientStatusContext)
         clear: true,
         // An order here can only be an ended one (an active order shows the CTO mode). A new order
         // keeps the ended one as Closed in `earlier` (D-40), so Record CTO stays available.
-        action: patient ? { kind: "button", label: "Record CTO", onClick: () => ctx.onRecordCto() } : undefined,
+        action: patient ? { kind: "button", label: "Record CTO", onClick: () => { ctx.onRecordCto(); } } : undefined,
       },
     ],
   };
@@ -564,7 +554,7 @@ export function PatientStatusCard({ mode, context }: { mode: PatientMode; contex
               aria-label={`${status.meter.clear} of ${status.meter.of} ${word}`}
             >
               {Array.from({ length: status.meter.of }, (_, i) => (
-                <i key={i} data-on={i < status.meter!.clear} />
+                <i key={i} data-on={i < status.meter?.clear} />
               ))}
             </span>
             <span className={styles.meterText} aria-hidden="true">

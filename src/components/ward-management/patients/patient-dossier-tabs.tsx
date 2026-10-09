@@ -222,12 +222,7 @@ export function PatientHistoryTab({
                   placeholder="Search place, outcome or episode"
                 />
               </label>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setRecent(!recent);
-                }}
-              >
+              <Button size="sm" onClick={() => { setRecent(!recent); }}>
                 {recent ? "Newest first" : "Oldest first"}
               </Button>
             </div>
