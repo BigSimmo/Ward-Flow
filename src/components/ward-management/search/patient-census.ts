@@ -197,6 +197,8 @@ export function buildCensus(state: {
   }
 
   const busy = new Set<string>();
+  // A ward patient on an open transfer is shown by that movement, so their ward bed adds no row.
+  const coveredAdmissions = new Set<string>();
   const rows: CensusRow[] = [];
 
   const person = (subject: Movement | Referral | Admission) => {
@@ -222,6 +224,7 @@ export function buildCensus(state: {
     if (!isOpen(movement)) continue;
     const who = person(movement);
     const operational = movementSearchState(movement, admissions);
+    if (operational.sourceAdmission) coveredAdmissions.add(operational.sourceAdmission.id);
     const moving = operational.holdStatus === "In-Transit";
     const accepted = movement.acceptedUnitId ? unitOf.get(movement.acceptedUnitId) : undefined;
     const cause = causeById.get(movement.id);
@@ -324,7 +327,7 @@ export function buildCensus(state: {
   }
 
   for (const admission of admissions) {
-    if (admission.state === "departed") continue;
+    if (admission.state === "departed" || coveredAdmissions.has(admission.id)) continue;
     if (admission.state !== "occupied") {
       // A waitlisted or pulled bed for somebody already on an open movement adds no second row.
       // Without one (a community admission) the bed is the only open record, so it is their row.
