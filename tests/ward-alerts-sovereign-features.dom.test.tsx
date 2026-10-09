@@ -15,22 +15,74 @@ function renderScreen() {
   );
 }
 
-describe("Alerts — Third Edition Sovereign Enhancements", () => {
-  it("renders 3 escalation tier tabs and All Active Tiers tab", () => {
+describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
+  function selectedPanel() {
+    return screen.getByRole("complementary", { name: "Selected alert" });
+  }
+
+  it("arranges the queue by urgency, lanes or owner", () => {
     renderScreen();
-    expect(screen.getByRole("radio", { name: /All Active Tiers/i })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Tier 1: Clinical Emergency/i })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Tier 2: Capacity Pressure/i })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Tier 3: Administrative/i })).toBeInTheDocument();
+    const arrange = screen.getByRole("radiogroup", { name: "Arrange by" });
+    expect(within(arrange).getByRole("radio", { name: /Urgency/ })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("region", { name: "Act now" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Waiting" })).toBeInTheDocument();
+
+    fireEvent.click(within(arrange).getByRole("radio", { name: /Lanes/ }));
+    expect(screen.getByRole("region", { name: "Snoozed" })).toHaveTextContent("None now");
+
+    fireEvent.click(within(arrange).getByRole("radio", { name: /Owner/ }));
+    expect(screen.getByRole("region", { name: "Flow coordinator" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "ED mental health team" })).toBeInTheDocument();
   });
 
-  it("includes each visible tier label in its accessible name", () => {
-    renderScreen();
-    for (const label of ["All alerts", "Clinical risk", "Capacity and delay", "Admin and transfer"]) {
-      const tab = screen.getByRole("radio", { name: new RegExp(label) });
-      expect(within(tab).getByText(label)).toBeVisible();
-      expect(tab).toHaveAccessibleName(new RegExp(label));
+  it("highlights rows from a hero figure or an owner chip without hiding any", () => {
+    const { container } = renderScreen();
+    const total = container.querySelectorAll("li[data-alert-id]").length;
+    expect(total).toBeGreaterThan(0);
+
+    const summary = screen.getByRole("group", { name: "Alert summary" });
+    const actNow = within(summary).getByRole("button", { name: /Act now/ });
+    fireEvent.click(actNow);
+    expect(actNow).toHaveAttribute("aria-pressed", "true");
+    const highlighted = container.querySelectorAll("li[data-highlighted]");
+    expect(highlighted.length).toBeGreaterThan(0);
+    for (const row of highlighted) expect(row).toHaveAttribute("data-tone", "danger");
+    expect(container.querySelectorAll("li[data-alert-id]")).toHaveLength(total);
+    const clear = screen.getByRole("button", { name: `Clear highlights, ${highlighted.length} highlighted` });
+
+    fireEvent.click(clear);
+    expect(container.querySelectorAll("li[data-highlighted]")).toHaveLength(0);
+
+    const owners = screen.getByRole("group", { name: "Highlight by owner" });
+    fireEvent.click(within(owners).getByRole("button", { name: /ED team/ }));
+    for (const row of container.querySelectorAll("li[data-highlighted]")) {
+      expect(row).toHaveTextContent("ED mental health team");
     }
+  });
+
+  it("opens the most urgent alert in the side panel and moves with Next alert", () => {
+    renderScreen();
+    const firstName = within(selectedPanel()).getByRole("heading", { level: 2 }).textContent;
+    expect(firstName).toBeTruthy();
+    expect(within(selectedPanel()).getByText(/UM\d{6}/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Next alert/ }));
+    expect(within(selectedPanel()).getByRole("heading", { level: 2 }).textContent).not.toBe(firstName);
+
+    const open = screen.getAllByTestId("ward-alerts-open").at(-1)!;
+    fireEvent.click(open);
+    expect(open).toHaveAttribute("aria-current", "true");
+    expect(open.getAttribute("aria-label")).toContain(
+      within(selectedPanel()).getByRole("heading", { level: 2 }).textContent!,
+    );
+  });
+
+  it("acknowledges the selected alert from the panel", () => {
+    renderScreen();
+    const panel = selectedPanel();
+    fireEvent.click(within(panel).getByRole("button", { name: /^Acknowledge / }));
+    expect(within(panel).getByRole("button", { name: /^Acknowledged / })).toHaveTextContent("Seen");
+    expect(within(panel).getByText(/Seen by Flow coordinator/)).toBeInTheDocument();
   });
 
   it.each([
@@ -68,38 +120,6 @@ describe("Alerts — Third Edition Sovereign Enhancements", () => {
     expect(screen.getByText(expected, { exact: true })).toBeVisible();
   });
 
-  it("supports keyboard navigation and focus return in the alert action menu", () => {
-    renderScreen();
-    const trigger = screen.getAllByRole("button", { name: /More actions for/ })[0]!;
-    fireEvent.click(trigger);
-    const options = screen.getAllByRole("menuitem");
-    expect(options[0]).toHaveFocus();
-    fireEvent.keyDown(options[0]!, { key: "ArrowDown" });
-    expect(options[1]).toHaveFocus();
-    fireEvent.keyDown(options[1]!, { key: "End" });
-    expect(options[options.length - 1]).toHaveFocus();
-    fireEvent.keyDown(options[options.length - 1]!, { key: "Escape" });
-    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
-    expect(trigger).toHaveFocus();
-  });
-
-  it("renders role-based addressed filter pills", () => {
-    renderScreen();
-    expect(screen.getByRole("button", { name: /All Roles/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Coordinator/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Duty Registrar/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Bed Manager/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /NUM/i })).toBeInTheDocument();
-  });
-
-  it("renders 4-KPI summary strip with tabular figures", () => {
-    renderScreen();
-    expect(screen.getByText("Form expiries passed")).toBeInTheDocument();
-    expect(screen.getByText("Placement gridlock")).toBeInTheDocument();
-    expect(screen.getByText(/Prolonged ED Wait/i)).toBeInTheDocument();
-    expect(screen.getByText("Active monitored")).toBeInTheDocument();
-  });
-
   it("renders synthetic prototype badge in the subheader (FF8)", () => {
     renderScreen();
     const badge = screen.getAllByText("Synthetic prototype")[0];
@@ -107,44 +127,12 @@ describe("Alerts — Third Edition Sovereign Enhancements", () => {
     expect(badge).toHaveAttribute("data-ward-type-floor", "badge");
   });
 
-  it("opens Right Inspector Drawer on Action button click, closes on Escape, and restores focus", () => {
-    renderScreen();
-    const actionButtons = screen.getAllByTestId("ward-alerts-action-btn");
-    expect(actionButtons.length).toBeGreaterThan(0);
-
-    const firstActionBtn = actionButtons[0];
-    firstActionBtn.focus();
-    fireEvent.click(firstActionBtn);
-
-    // Inspector drawer should now be in the document
-    const drawer = screen.getByRole("dialog", { name: /Alert Escalation & Triage/i });
-    expect(drawer).toBeInTheDocument();
-    expect(within(drawer).getByText("Case Parameters & Tracking")).toBeInTheDocument();
-    expect(within(drawer).getByTestId("ward-alerts-action-confirm")).toBeInTheDocument();
-
-    // Press Escape to dismiss drawer
-    fireEvent.keyDown(window, { key: "Escape", code: "Escape" });
-    expect(screen.queryByRole("dialog", { name: /Alert Escalation & Triage/i })).not.toBeInTheDocument();
-  });
-
-  it("can acknowledge an alert from the Right Inspector Drawer", () => {
-    renderScreen();
-    const actionButtons = screen.getAllByTestId("ward-alerts-action-btn");
-    fireEvent.click(actionButtons[0]);
-
-    const ackButton = screen.queryByRole("button", { name: "Acknowledge Alert" });
-    if (ackButton) {
-      fireEvent.click(ackButton);
-      // State updates to Acknowledged
-      expect(screen.getByText(/^Acknowledged by Flow coordinator/)).toBeInTheDocument();
-    }
-  });
-
   // The feed used to render two typed-in items, one naming "Luke Davies" as WF-021's patient and
   // calling a transfer complete that the record does not hold (25 September 2026 audit, A7). It
   // now lists only the notices the reducer has raised, and says plainly when there are none.
   it("renders the Operational Notices & Shift Communication Feed from recorded notices only", () => {
     renderScreen();
+    fireEvent.click(screen.getByRole("tab", { name: /Notices/ }));
     const feed = screen.getByRole("region", { name: "Operational Notices and Shift Communication Feed" });
     expect(within(feed).getByText("Role notices")).toBeInTheDocument();
     expect(within(feed).getByText("No notices have been raised this session.")).toBeInTheDocument();
@@ -178,6 +166,7 @@ describe("Alerts — Third Edition Sovereign Enhancements", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "release the pull" }));
+    fireEvent.click(screen.getByRole("tab", { name: /Notices/ }));
 
     const feed = screen.getByRole("region", { name: "Operational Notices and Shift Communication Feed" });
     expect(within(feed).queryByText("No notices have been raised this session.")).not.toBeInTheDocument();
