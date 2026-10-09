@@ -502,7 +502,7 @@ export const DEMO_COMMUNITY_EGRESS: DemoEgress[] = [
 export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   {
     id: "CL-01",
-    umrn: "UMRN-981023",
+    umrn: "UM981023",
     patientId: "PT-4409",
     ageSex: "34y Male",
     statutoryStatus: `Form 5A${formTitleForCode("5A") ? ` (${formTitleForCode("5A")})` : ""}`,
@@ -515,7 +515,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-02",
-    umrn: "UMRN-945201",
+    umrn: "UM945201",
     patientId: "PT-4105",
     ageSex: "24y Male",
     statutoryStatus: `Form 5A${formTitleForCode("5A") ? ` (${formTitleForCode("5A")})` : ""}`,
@@ -528,7 +528,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-03",
-    umrn: "UMRN-892410",
+    umrn: "UM892410",
     patientId: "PT-3891",
     ageSex: "41y Female",
     statutoryStatus: "Voluntary",
@@ -541,7 +541,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-04",
-    umrn: "UMRN-778912",
+    umrn: "UM778912",
     patientId: "PT-3650",
     ageSex: "31y Female",
     statutoryStatus: `Form 5A${formTitleForCode("5A") ? ` (${formTitleForCode("5A")})` : ""}`,
@@ -554,7 +554,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-05",
-    umrn: "UMRN-662309",
+    umrn: "UM662309",
     patientId: "PT-3522",
     ageSex: "22y Male",
     statutoryStatus: "Form 1A MHA",
@@ -567,7 +567,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-06",
-    umrn: "UMRN-551980",
+    umrn: "UM551980",
     patientId: "PT-3304",
     ageSex: "48y Male",
     statutoryStatus: "Voluntary",
@@ -580,7 +580,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-07",
-    umrn: "UMRN-441290",
+    umrn: "UM441290",
     patientId: "PT-3211",
     ageSex: "27y Female",
     statutoryStatus: `Form 5A${formTitleForCode("5A") ? ` (${formTitleForCode("5A")})` : ""}`,
@@ -593,7 +593,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-08",
-    umrn: "UMRN-331089",
+    umrn: "UM331089",
     patientId: "PT-3108",
     ageSex: "36y Male",
     statutoryStatus: "Voluntary",
@@ -606,7 +606,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-09",
-    umrn: "UMRN-221054",
+    umrn: "UM221054",
     patientId: "PT-3055",
     ageSex: "54y Female",
     statutoryStatus: `Form 5A${formTitleForCode("5A") ? ` (${formTitleForCode("5A")})` : ""}`,
@@ -619,7 +619,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-10",
-    umrn: "UMRN-110982",
+    umrn: "UM110982",
     patientId: "PT-2980",
     ageSex: "62y Male",
     statutoryStatus: "Voluntary",
@@ -632,7 +632,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-11",
-    umrn: "UMRN-902341",
+    umrn: "UM902341",
     patientId: "PT-2845",
     ageSex: "40y Male",
     statutoryStatus: "Voluntary",
@@ -645,7 +645,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-12",
-    umrn: "UMRN-881230",
+    umrn: "UM881230",
     patientId: "PT-2710",
     ageSex: "29y Female",
     statutoryStatus: `Form 5A${formTitleForCode("5A") ? ` (${formTitleForCode("5A")})` : ""}`,
@@ -658,7 +658,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-13",
-    umrn: "UMRN-773412",
+    umrn: "UM773412",
     patientId: "PT-2601",
     ageSex: "51y Male",
     statutoryStatus: `Form 5A${formTitleForCode("5A") ? ` (${formTitleForCode("5A")})` : ""}`,
@@ -671,7 +671,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-14",
-    umrn: "UMRN-664120",
+    umrn: "UM664120",
     patientId: "PT-2509",
     ageSex: "38y Female",
     statutoryStatus: "Voluntary",
@@ -684,7 +684,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-15",
-    umrn: "UMRN-552319",
+    umrn: "UM552319",
     patientId: "PT-2418",
     ageSex: "44y Male",
     statutoryStatus: `Form 5A${formTitleForCode("5A") ? ` (${formTitleForCode("5A")})` : ""}`,
@@ -697,7 +697,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-16",
-    umrn: "UMRN-441098",
+    umrn: "UM441098",
     patientId: "PT-2315",
     ageSex: "30y Female",
     statutoryStatus: `Form 5A${formTitleForCode("5A") ? ` (${formTitleForCode("5A")})` : ""}`,
@@ -710,7 +710,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-17",
-    umrn: "UMRN-330912",
+    umrn: "UM330912",
     patientId: "PT-2210",
     ageSex: "67y Male",
     statutoryStatus: "Voluntary",
@@ -723,7 +723,7 @@ export const DEMO_COMMUNITY_CASELOAD: DemoCaseloadRow[] = [
   },
   {
     id: "CL-18",
-    umrn: "UMRN-220194",
+    umrn: "UM220194",
     patientId: "PT-2104",
     ageSex: "25y Female",
     statutoryStatus: `Form 5A${formTitleForCode("5A") ? ` (${formTitleForCode("5A")})` : ""}`,

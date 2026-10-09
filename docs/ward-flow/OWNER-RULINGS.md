@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**518 rulings/items extracted, across 30 of 35 files.**
+**519 rulings/items extracted, across 30 of 35 files.**
 **5 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -24,7 +24,7 @@ specifically so that distinction survives. A file's own title (also quoted) is u
 tell: `owner-question-*` and `owner-*-to-settle-*` files are frequently still open.
 
 ⚠️ **IDs are NOT globally unique across this corpus.** The same token has been issued
-independently in more than one file 42 time(s) below (e.g. `D-1`).
+independently in more than one file 43 time(s) below (e.g. `D-1`).
 Where that happens every occurrence is listed, in the order discovered — confirm which file's
 instance is the one you mean before citing it.
 
@@ -189,7 +189,9 @@ safe global key across 30 files.
 | ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1411 | D-37 · _Clinically ready, not yet gone_ — PRESENTATION, and the heading must name its subject |
 | ↳ | `decisions.md`:457 | D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026) |
 | `D-38` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1417 | D-38 · _People currently in a hospital bed_ on community team statistics — an aggregate that identifies at small N |
-| `D-39` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1437 | D-39 · _Contacts_ and _Time to first contact_ — HELD, build neither |
+| `D-39` ⚠️ **2 occurrences — not unique** | | |
+| ↳ | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1437 | D-39 · _Contacts_ and _Time to first contact_ — HELD, build neither |
+| ↳ | `decisions.md`:484 | D-39. Patients are identified by UMRN, never by a WF number (9 October 2026) |
 | `D-40` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1445 | D-40 · An empty check array never claims reconciliation — on either shell surface |
 | `D-41` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1478 | D-41 · `corridorCounts` is extended, and its POPULATION changes |
 | `D-42` | `archive/dated-notes/owner-decisions-2026-09-1x.md`:1490 | D-42 · _Referrals into this ward_ renders bare counts. No share. |
@@ -471,7 +473,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-37 item(s):
+38 item(s):
 
 - `D-1` — line 14, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 24, heading: "D-2. Railway is disconnected"
@@ -510,6 +512,7 @@ safe global key across 30 files.
 - `D-35` — line 436, heading: "D-35. Deferral of Regional Multi-Leg Transport & RFDS Repatriation (6 October 2026)"
 - `D-36` — line 442, heading: "D-36. Affirmation of External Governance & Clinical Safety Hard Gates (6 October 2026)"
 - `D-37` — line 457, heading: "D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026)"
+- `D-39` — line 484, heading: "D-39. Patients are identified by UMRN, never by a WF number (9 October 2026)"
 
 ### `archive/dated-notes/owner-answers-2026-09-18.md` (2026-09-18)
 

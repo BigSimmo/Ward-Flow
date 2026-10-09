@@ -4,6 +4,7 @@ import { deriveCommandActivity } from "@/components/ward-management/shell/ward-c
 import { URGENCY_CHANGE_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
+import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 describe("Command activity from current records", () => {
@@ -31,7 +32,11 @@ describe("Command activity from current records", () => {
     const count = (value: typeof before) =>
       Number(value.content.tiles.find((tile) => tile.label === "Open movements")?.value);
     expect(count(after)).toBe(count(before) + 1);
-    expect(after.content.changes.some((event) => event.text.includes("WF-ACTIVITY-CHECK"))).toBe(true);
+    const added = after.content.changes.find((event) => event.id === "movement-opened:WF-ACTIVITY-CHECK");
+    expect(added).toBeDefined();
+    // D-39: the line names the patient by UMRN, never by the WF journey number.
+    expect(added!.text).not.toContain("WF-ACTIVITY-CHECK");
+    expect(added!.text).toContain(movementUmrn(movement, state));
   });
 
   it("shows the opening urgency tier on past events, not the current tier (WF-49)", () => {
@@ -58,6 +63,7 @@ describe("Command activity from current records", () => {
 
     const result = deriveCommandActivity({
       movements: [updated],
+      patients: after.patients,
       units: after.units,
       referrals: [],
       rejections: [],
@@ -76,7 +82,9 @@ describe("Command activity from current records", () => {
       (event) => event.id === `urgency-change:${target.id}:${changedAt}:0`,
     );
     expect(changeEvent).toBeDefined();
-    expect(changeEvent!.text).toBe(`${target.id} urgency changed from Tier ${openingTier} to Tier ${changedTier}.`);
+    expect(changeEvent!.text).toBe(
+      `${movementUmrn(updated, after)} urgency changed from Tier ${openingTier} to Tier ${changedTier}.`,
+    );
   });
 
   it("shows the current tier for a movement whose urgency has never changed (WF-49)", () => {
@@ -87,6 +95,7 @@ describe("Command activity from current records", () => {
 
     const result = deriveCommandActivity({
       movements: [target],
+      patients: state.patients,
       units: state.units,
       referrals: [],
       rejections: [],
@@ -126,6 +135,7 @@ describe("Command activity from current records", () => {
 
     const result = deriveCommandActivity({
       movements: [withEscalation!, withDecline!, stageCarrier],
+      patients: state.patients,
       units: state.units,
       referrals: [withReferral!],
       rejections: [],
