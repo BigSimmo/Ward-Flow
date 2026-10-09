@@ -236,6 +236,7 @@ export function FocusPanel({
   refusal,
   onSaveWritten,
   onMarkReceived,
+  markReceivedUnavailable,
   onExtend,
   onRecordNext,
   onRequirements,
@@ -257,6 +258,8 @@ export function FocusPanel({
   refusal: string | undefined;
   onSaveWritten: (draft: { writtenAt: number; region: LegalClockRegion; ageBand: LegalClockAgeBand }) => void;
   onMarkReceived: () => void;
+  /** Feature 11: why this route's role may not mark a form received ("ED only"), if it may not. */
+  markReceivedUnavailable?: string;
   onExtend: () => void;
   onRecordNext: () => void;
   onRequirements: (code: string) => void;
@@ -408,6 +411,7 @@ export function FocusPanel({
                     size="sm"
                     data-testid={`ward-legal-forms-mark-received-${movement.id}`}
                     onClick={onMarkReceived}
+                    disabledReason={markReceivedUnavailable}
                   >
                     Mark Form {legalForm?.code} received
                   </Button>

@@ -27,6 +27,7 @@ import {
   type ReleasePullReason,
 } from "../ward-change-reasons";
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
+import { useRoleGate } from "../ward-role-gate";
 import { clock, dur } from "./patient-now-records";
 import styles from "./patient-transit-operations.module.css";
 
@@ -44,6 +45,14 @@ export function PatientTransitOperations({
 }) {
   const { units, admissions, dispatch, rejections, readAuditEvents } = useWardFlow();
   const now = useWardFlowClock();
+  // Feature 11: each action asks the route's role; cross-role pairs are listed in `ward-role-permissions.ts`.
+  const gate = useRoleGate();
+  const bookGate = gate("BOOK_TRANSPORT");
+  const handoverGate = gate("HANDOVER_READY");
+  const acceptedGate = gate("TRANSPORT_ACCEPTED");
+  const enRouteGate = gate("TRANSPORT_EN_ROUTE");
+  const collectedGate = gate("PATIENT_COLLECTED");
+  const arrivedGate = gate("PATIENT_ARRIVED");
   const auditRead = readAuditEvents({ role: "coordinator" });
   const auditEvents = auditRead.status === "allowed" ? auditRead.value : [];
   const [rejectionBaseline] = useState(rejections.length);
@@ -172,6 +181,7 @@ export function PatientTransitOperations({
               const reason = overrideReason;
               noteAttempt();
               if (lastActionRejection.attempted === "ACCEPT_IN_PRINCIPLE") {
+                if (!gate("ACCEPT_IN_PRINCIPLE").allowed) return;
                 const unitId = overrideUnitId || destination?.id;
                 if (!unitId) return;
                 dispatch({
@@ -300,24 +310,29 @@ export function PatientTransitOperations({
                 </ul>
               </details>
               {referred && open && movement.stage === "destination_review" && (
-                <button
-                  type="button"
-                  className={styles.secondary}
-                  disabled={!verdict.eligible}
-                  onClick={() => {
-                    setOverrideUnitId(unit.id);
-                    noteAttempt();
-                    dispatch({
-                      type: "ACCEPT_IN_PRINCIPLE",
-                      role: "ward",
-                      now,
-                      movementId: movement.id,
-                      unitId: unit.id,
-                    });
-                  }}
-                >
-                  Accept bed <ArrowRight size={15} aria-hidden="true" />
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className={styles.secondary}
+                    disabled={!verdict.eligible || !gate("ACCEPT_IN_PRINCIPLE", unit.id).allowed}
+                    aria-describedby={gate("ACCEPT_IN_PRINCIPLE", unit.id).buttonProps["aria-describedby"]}
+                    onClick={() => {
+                      if (!gate("ACCEPT_IN_PRINCIPLE", unit.id).allowed) return;
+                      setOverrideUnitId(unit.id);
+                      noteAttempt();
+                      dispatch({
+                        type: "ACCEPT_IN_PRINCIPLE",
+                        role: "ward",
+                        now,
+                        movementId: movement.id,
+                        unitId: unit.id,
+                      });
+                    }}
+                  >
+                    Accept bed <ArrowRight size={15} aria-hidden="true" />
+                  </button>
+                  {gate("ACCEPT_IN_PRINCIPLE", unit.id).note}
+                </>
               )}
             </article>
           );
@@ -452,7 +467,9 @@ export function PatientTransitOperations({
               ref={bookTriggerRef}
               type="button"
               className={styles.primary}
+              {...bookGate.buttonProps}
               onClick={() => {
+                if (!bookGate.allowed) return;
                 setBooking(true);
                 requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>("select")?.focus());
               }}
@@ -460,6 +477,7 @@ export function PatientTransitOperations({
               Record transport booking
             </button>
           )}
+          {open && movement.stage === "pulled" && !job && !booking && bookGate.note}
           {booking && !job && (
             <form
               ref={formRef}
@@ -476,6 +494,7 @@ export function PatientTransitOperations({
                   Number(eta) < 0
                 )
                   return;
+                if (!bookGate.allowed) return;
                 noteAttempt();
                 dispatch({
                   type: "BOOK_TRANSPORT",
@@ -539,7 +558,9 @@ export function PatientTransitOperations({
             <button
               type="button"
               className={styles.primary}
+              {...handoverGate.buttonProps}
               onClick={() => {
+                if (!handoverGate.allowed) return;
                 closeBooking();
                 noteAttempt();
                 dispatch({ type: "HANDOVER_READY", role: "ed", now, movementId: movement.id });
@@ -548,14 +569,17 @@ export function PatientTransitOperations({
               Mark handover ready · sending team
             </button>
           )}
+          {open && movement.stage === "pulled" && (activeJob || noTransport) && handoverGate.note}
           {open && movement.stage === "handover_ready" && activeJob && (
             <div className={styles.actionStack}>
               <p className={styles.deckHint}>Transport officer · record each confirmed milestone.</p>
               <button
                 type="button"
                 className={styles.secondary}
-                disabled={job.acceptedAt !== undefined}
+                disabled={job.acceptedAt !== undefined || !acceptedGate.allowed}
+                aria-describedby={acceptedGate.buttonProps["aria-describedby"]}
                 onClick={() => {
+                  if (!acceptedGate.allowed) return;
                   noteAttempt();
                   dispatch({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id });
                 }}
@@ -565,8 +589,10 @@ export function PatientTransitOperations({
               <button
                 type="button"
                 className={styles.secondary}
-                disabled={job.acceptedAt === undefined || job.enRouteAt !== undefined}
+                disabled={job.acceptedAt === undefined || job.enRouteAt !== undefined || !enRouteGate.allowed}
+                aria-describedby={enRouteGate.buttonProps["aria-describedby"]}
                 onClick={() => {
+                  if (!enRouteGate.allowed) return;
                   noteAttempt();
                   dispatch({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id });
                 }}
@@ -576,35 +602,45 @@ export function PatientTransitOperations({
               <button
                 type="button"
                 className={styles.primary}
-                disabled={job.enRouteAt === undefined}
+                disabled={job.enRouteAt === undefined || !collectedGate.allowed}
+                aria-describedby={collectedGate.buttonProps["aria-describedby"]}
                 onClick={() => {
+                  if (!collectedGate.allowed) return;
                   noteAttempt();
                   dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id });
                 }}
               >
                 Mark moving · patient collected
               </button>
+              {acceptedGate.note}
+              {enRouteGate.note}
+              {collectedGate.note}
             </div>
           )}
           {open &&
             (movement.stage === "moving" || (noTransport && ["pulled", "handover_ready"].includes(movement.stage))) &&
             destination && (
-              <button
-                type="button"
-                className={styles.primary}
-                onClick={() => {
-                  noteAttempt();
-                  dispatch({
-                    type: "PATIENT_ARRIVED",
-                    role: "ward",
-                    now,
-                    movementId: movement.id,
-                    actingUnitId: destination.id,
-                  });
-                }}
-              >
-                Confirm arrival · receiving ward
-              </button>
+              <>
+                <button
+                  type="button"
+                  className={styles.primary}
+                  {...arrivedGate.buttonProps}
+                  onClick={() => {
+                    if (!arrivedGate.allowed) return;
+                    noteAttempt();
+                    dispatch({
+                      type: "PATIENT_ARRIVED",
+                      role: "ward",
+                      now,
+                      movementId: movement.id,
+                      actingUnitId: destination.id,
+                    });
+                  }}
+                >
+                  Confirm arrival · receiving ward
+                </button>
+                {arrivedGate.note}
+              </>
             )}
           {!destination && (
             <p className={styles.deckHint}>Select eligible wards and refer. Record acceptance before pulling a bed.</p>
