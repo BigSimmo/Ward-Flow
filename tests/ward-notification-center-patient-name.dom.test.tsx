@@ -7,7 +7,8 @@ import "@testing-library/jest-dom/vitest";
 import { WardNotificationCenter } from "@/components/ward-management/ward/ward-notification-center";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import type { Movement } from "@/components/ward-management/ward-model";
+import type { Movement, Notice } from "@/components/ward-management/ward-model";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -46,5 +47,41 @@ describe("ward Tasks & Buzzes names linked patients", () => {
     );
     expect(screen.getAllByText(new RegExp(patient.familyName)).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Unknown Patient/)).not.toBeInTheDocument();
+  });
+});
+
+// D-39: a notice names the patient by UMRN, including a journey linked only through a referral.
+describe("ward notices name the patient by UMRN", () => {
+  it("swaps a referral-linked journey number for its UMRN", () => {
+    const seed = seedWardFlowState();
+    const linked = seed.movements.find(
+      (movement) =>
+        resolveSubjectPatient(movement, { patients: seed.patients, movements: seed.movements }).umrn ===
+          "UMRN not recorded" && resolveSubjectPatient(movement, seed).umrn !== "UMRN not recorded",
+    )!;
+    expect(linked, "the seed holds a referral-linked journey").toBeDefined();
+    const notice: Notice = {
+      id: "NT-UMRN",
+      raisedAt: NOW_ANCHOR - 10,
+      to: { role: "ward", placeId: "ward-alpha" },
+      about: { unitId: "ward-alpha" },
+      kind: "referral_accepted_ward",
+      sentence: `Transport for ${linked.id} was cancelled.`,
+    };
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardNotificationCenter
+          unitId="ward-alpha"
+          unitName="Test ward"
+          now={NOW_ANCHOR}
+          movements={seed.movements}
+          notices={[notice]}
+          refreshRequests={[]}
+        />
+      </WardFlowProvider>,
+    );
+    const umrn = resolveSubjectPatient(linked, seed).umrn;
+    expect(screen.getByText(`Transport for ${umrn} was cancelled.`)).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain(linked.id);
   });
 });

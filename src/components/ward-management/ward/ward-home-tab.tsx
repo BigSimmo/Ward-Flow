@@ -1374,7 +1374,7 @@ export function WardHomeTab({
             <ul>
               {recentAnswers.map((answer) => (
                 <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
-                  <strong>{answer.movementId}</strong>
+                  <strong>{resolvePatientIdentity({ movementId: answer.movementId }).umrn}</strong>
                   <span>{answer.outcome}</span>
                   <span>{answer.reason ? answer.reason.replace(/_/g, " ") : "Accepted by this ward"}</span>
                   {answer.at === undefined ? (

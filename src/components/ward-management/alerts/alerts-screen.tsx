@@ -30,7 +30,10 @@ import type { Movement, Referral } from "@/components/ward-management/ward-model
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import {
+  resolveSubjectPatient,
+  withUmrnInPlaceOfMovementIds,
+} from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
 import {
   WA_BROADCAST_TEMPLATES,
@@ -563,6 +566,7 @@ function AlertsWorkspace() {
   const { movements, units, referrals, patients, dispatch, inboxAcknowledgements, broadcastAlerts, notices } = state;
   const now = useWardFlowClock();
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
+  const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const inbox = useMemo(() => buildActionInbox(openMovements, now, units), [openMovements, now, units]);
   const feedNotices = useMemo(() => [...notices].sort((a, b) => b.raisedAt - a.raisedAt), [notices]);
 
@@ -1277,7 +1281,9 @@ function AlertsWorkspace() {
                       <li key={notice.id} className={styles.feedItem}>
                         <StatusGlyph tone={isRead ? "neutral" : "info"} size={9} />
                         <div className={styles.feedContent}>
-                          <span className={styles.feedTitle}>{notice.sentence}</span>
+                          <span className={styles.feedTitle}>
+                            {withUmrnInPlaceOfMovementIds(notice.sentence, umrnLookup)}
+                          </span>
                           <span className={styles.feedMeta}>
                             To {WARD_FLOW_ROLE_LABELS[notice.to.role]} · raised{" "}
                             {formatInstantWithDay(notice.raisedAt, now)}

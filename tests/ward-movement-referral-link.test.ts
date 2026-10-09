@@ -474,7 +474,9 @@ describe("RECORD_NO_REFERRAL records that nobody referred this patient", () => {
       movementId: "WF-DOES-NOT-EXIST",
     });
     expect(after.rejections).toHaveLength(1);
-    expect(after.rejections[0].reason).toContain("WF-DOES-NOT-EXIST");
+    // D-39: the refusal never shows a WF number; the id stays on the record for diagnosis.
+    expect(after.rejections[0].reason).toContain("UMRN not recorded");
+    expect(after.rejections[0].movementId).toBe("WF-DOES-NOT-EXIST");
     expect(after.movements).toEqual(seeded.movements);
   });
 

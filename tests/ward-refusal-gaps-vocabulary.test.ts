@@ -27,6 +27,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { WardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+import { movementUmrn } from "@/components/ward-management/ward-patient-resolver";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import type {
   GenderPlacementReason,
@@ -292,7 +293,9 @@ describe("a ward that does not exist, and a step already taken", () => {
       now: NOW + 3,
       movementId: "WF-005",
     });
-    expect(added(departed, again)).toEqual(["transport for movement WF-005 is already en route"]);
+    expect(added(departed, again)).toEqual([
+      `transport for movement ${movementUmrn("WF-005", departed)} is already en route`,
+    ]);
 
     // Control: the same event on the same movement BEFORE it ever departed must not draw that
     // refusal — so the refusal is caused by the departure, not by the stage or the correction.
