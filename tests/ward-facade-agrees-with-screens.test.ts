@@ -395,7 +395,7 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
     },
   },
   /**
-   * The Delays screen marks each cause control `data-severe`, and prints the group size in its table row.
+   * The Delays screen marks each blocker group header `data-severe`, and prints the group size inside it.
    * Summing the severe rows is what the screen SHOWS as needing attention now — and it is read off
    * the rows rather than from any single printed total, because the screen prints no single total.
    */
@@ -407,9 +407,8 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
       const buttons = [...document.querySelectorAll<HTMLButtonElement>("button[data-testid^='delays-cause-']")];
       expect(buttons.length, "the Delays screen rendered no cause rows to count").toBeGreaterThan(0);
       return buttons.reduce((total, button) => {
-        const row = button.closest("tr");
-        expect(row, "a cause control must belong to its displayed count row").not.toBeNull();
-        const count = row?.querySelector("td:last-child")?.textContent?.trim() ?? "";
+        // The October 2026 board prints each blocker group's size in its own header button.
+        const count = button.querySelector("[data-delays-group-count]")?.textContent?.trim() ?? "";
         expect(count, "every cause row must display an integer count").toMatch(/^\d+$/u);
         expect(button.dataset.severe, "every cause must identify whether it needs attention").toMatch(
           /^(true|false)$/u,

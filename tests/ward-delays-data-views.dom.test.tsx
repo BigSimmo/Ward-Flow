@@ -1,12 +1,29 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
+import { delayGroups, legalDeadlineMinutes, ownerOf } from "@/components/ward-management/delays/delays-derivations";
+import { OVER_8H, boardRows, runwayBins } from "@/components/ward-management/delays/delays-board-model";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { isOpen } from "@/components/ward-management/ward-derivations";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { installMatchMediaStub } from "./setup/jsdom.setup";
-import { delayGroups, ownerOf } from "@/components/ward-management/delays/delays-derivations";
+import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { showEveryDelayRow } from "./helpers/delays-interactions";
+
+/**
+ * The Delays board's data views (approved Delays page mockup, October 2026): the waiting table with
+ * its row timeline, the search box, the Longest wait order, and the three graphs under the table.
+ * Each graph narrows the same table rather than opening a view of its own, so every case below
+ * checks the TABLE after pressing something in a graph.
+ *
+ * This replaces the PR 48 Focus table / Action workspace layouts, their pagination and the
+ * separate wait timeline table, which the approved mockup removed.
+ */
+
+const state = seedWardFlowState();
+const OPEN = state.movements.filter(isOpen);
+const GROUPS = delayGroups(state.movements, allUnits(), NOW_ANCHOR);
+const ROWS = boardRows(GROUPS, NOW_ANCHOR);
 
 function renderDelays() {
   render(
@@ -16,152 +33,169 @@ function renderDelays() {
   );
 }
 
-/** The persistent runway sits above the three graph tabs. */
-function showWaitTimeline(): HTMLElement {
-  const switcher = screen.getByRole("tablist", { name: "Delay graph" });
-  fireEvent.click(within(switcher).getByRole("tab", { name: "Waits" }));
-  expect(within(switcher).getByRole("tab", { name: "Waits" })).toHaveAttribute("aria-selected", "true");
-  return screen.getByRole("region", { name: "Wait timeline" });
+function waiting(): HTMLElement {
+  return screen.getByRole("region", { name: "Waiting" });
 }
 
-describe("the selected delay data views", () => {
-  it("adds the named wait timeline as an overview view and renders both lower sections as tables", () => {
-    renderDelays();
-    expect(screen.queryByRole("region", { name: "Wait timeline" })).not.toBeInTheDocument();
-    const timeline = showWaitTimeline();
-    const currentGraph = screen.getByRole("region", { name: "Delay graphs" });
-    expect(currentGraph).toContainElement(timeline);
+function listed(): string[] {
+  return within(waiting())
+    .queryAllByTestId(/^delays-select-/u)
+    .map((node) => (node.getAttribute("data-testid") ?? "").replace("delays-select-", ""));
+}
+
+function graphs(): HTMLElement {
+  return screen.getByRole("region", { name: "Delay graphs" });
+}
+
+describe("the Delays board's data views", () => {
+  it("has the populations the cases below need, or they prove nothing", () => {
+    expect(OPEN.length).toBeGreaterThan(20);
     expect(
-      timeline.compareDocumentPosition(screen.getByRole("region", { name: "Waiting" })) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(within(timeline).getByRole("table")).toBeInTheDocument();
-    expect(within(screen.getByRole("region", { name: "Waiting" })).getByRole("table")).toBeInTheDocument();
-    expect(within(screen.getByRole("region", { name: "What the blocker is" })).getByRole("table")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Focus table/u })).toHaveAttribute("aria-selected", "true");
+      ROWS.some((row) => row.waited >= OVER_8H),
+      "nobody has waited 8h",
+    ).toBe(true);
+    expect(OPEN.some((movement) => legalDeadlineMinutes(movement, NOW_ANCHOR) !== undefined)).toBe(true);
+    expect(
+      runwayBins(ROWS).some((bin) => bin.ids.size > 0),
+      "nothing crosses a line in the next 4 hours, so the runway has nothing to filter",
+    ).toBe(true);
   });
 
-  it("preserves patient-name search and selection when switching layouts", () => {
+  it("opens a timeline under the chosen row, naming arrival, now, and any recorded legal time", () => {
     renderDelays();
-    const list = screen.getByTestId("delays-waiting-list");
-    const first = within(list).getAllByRole("button")[0];
-    const name = first.querySelector('[data-ward-primitive="record-id"]')?.textContent;
-    expect(name).toBeTruthy();
-    fireEvent.change(screen.getByRole("searchbox", { name: "Filter patient worklist" }), { target: { value: name } });
-    expect(within(list).getAllByRole("row")).toHaveLength(1);
-    fireEvent.click(within(list).getAllByRole("button")[0]);
-    expect(screen.getByRole("region", { name: "Selected patient delay details" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: /Action workspace/u }));
-    expect(screen.getByRole("searchbox", { name: "Filter patient worklist" })).toHaveValue(name);
-    expect(within(screen.getByTestId("delays-waiting-list")).getAllByRole("button")[0]).toHaveAttribute(
+    const withDue = ROWS.filter((row) => row.dueIn !== undefined && row.dueIn >= 0)[0];
+    expect(withDue, "no open person carries a future legal time").toBeDefined();
+    showEveryDelayRow();
+    fireEvent.click(screen.getByTestId(`delays-select-${withDue.movement.id}`));
+    const timeline = screen.getByTestId(`delays-row-timeline-${withDue.movement.id}`);
+    expect(timeline).toHaveTextContent(/Arrived, /u);
+    expect(timeline).toHaveTextContent(/Now/u);
+    expect(timeline).toHaveTextContent(new RegExp(`Form ${withDue.movement.legalForm!.code} due`, "u"));
+    expect(screen.getByTestId(`delays-select-${withDue.movement.id}`)).toHaveAttribute("aria-expanded", "true");
+
+    // Choosing the same row again closes it; only one row's timeline is ever open.
+    fireEvent.click(screen.getByTestId(`delays-select-${withDue.movement.id}`));
+    expect(screen.queryByTestId(`delays-row-timeline-${withDue.movement.id}`)).toBeNull();
+  });
+
+  it("finds a person by name, and the count follows", () => {
+    renderDelays();
+    showEveryDelayRow();
+    const first = within(waiting()).getAllByTestId(/^delays-select-/u)[0];
+    const name = first.querySelector("b")?.textContent ?? "";
+    expect(name, "the first row shows no name").not.toBe("");
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find a person or ED" }), { target: { value: name } });
+    showEveryDelayRow();
+    expect(listed().length, "the search matched more than that one person").toBeGreaterThanOrEqual(1);
+    for (const button of within(waiting()).getAllByTestId(/^delays-select-/u)) {
+      expect(button).toHaveTextContent(name);
+    }
+    expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${listed().length} of ${OPEN.length}`);
+  });
+
+  it("Longest wait lists pinned recorded legal times first, then everyone else longest first", () => {
+    renderDelays();
+    fireEvent.click(screen.getByRole("button", { name: "Longest wait" }));
+    const ids = listed();
+    expect(ids).toHaveLength(OPEN.length);
+    const byId = new Map<string, (typeof ROWS)[number]>(ROWS.map((row) => [row.movement.id, row]));
+    const pinned = ids.filter((id) => {
+      const due = byId.get(id)!.dueIn;
+      return due !== undefined && due <= 180;
+    });
+    expect(ids.slice(0, pinned.length), "a pinned legal time is not at the top").toEqual(pinned);
+    const rest = ids.slice(pinned.length).map((id) => byId.get(id)!.waited);
+    expect(rest, "everyone else is not longest wait first").toEqual([...rest].sort((a, b) => b - a));
+  });
+
+  it("the spread graph's lane label filters the table to that owner", () => {
+    renderDelays();
+    const lane = within(graphs()).getByRole("button", { name: /^Wards\b/u });
+    fireEvent.click(lane);
+    showEveryDelayRow();
+    const expected = ROWS.filter((row) => ownerOf(row.cause) === "wards").map((row) => row.movement.id);
+    expect(new Set(listed())).toEqual(new Set(expected));
+    expect(lane).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("delays-owner-wards"), "the tile and the lane disagree").toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    expect(screen.getByRole("region", { name: "Selected patient delay details" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "What the blocker is" })).toBeInTheDocument();
   });
 
-  it("filters by the responsible team without changing the service-scope blocker totals", () => {
+  it("a dot on the spread graph opens that person's row and panel", () => {
     renderDelays();
-    const state = seedWardFlowState();
-    const expectedTransport = delayGroups(state.movements, state.units, NOW_ANCHOR)
-      .filter((group) => ownerOf(group.cause) === "transport")
-      .reduce((sum, group) => sum + group.movements.length, 0);
-    fireEvent.click(screen.getByRole("tab", { name: /Action workspace/u }));
-    const queues = screen.getByRole("complementary", { name: "Responsible team queues" });
-    fireEvent.click(within(queues).getByRole("button", { name: /^Transport/u }));
-    expect(within(screen.getByTestId("delays-waiting-list")).getAllByRole("row")).toHaveLength(
-      Math.min(6, expectedTransport),
-    );
-    expect(screen.getByRole("heading", { name: `Transport · ${expectedTransport} people` })).toBeInTheDocument();
-    const blockers = screen.getByRole("region", { name: "What the blocker is" });
-    expect(within(blockers).getByRole("row", { name: /Total waiting/u })).toHaveTextContent(
-      String(state.movements.filter(isOpen).length),
-    );
+    const target = ROWS.find((row) => row.cause === "awaiting_transport")!;
+    expect(target, "nobody is awaiting transport").toBeDefined();
+    const dots = within(graphs()).getAllByRole("button", { pressed: false });
+    const name = within(waiting()).queryByTestId(`delays-select-${target.movement.id}`);
+    expect(name, "transport starts folded, so this proves the dot unfolds it").toBeNull();
+    const dot = dots.find((button) => (button.getAttribute("aria-label") ?? "").includes("Awaiting transport"))!;
+    fireEvent.click(dot);
+    expect(screen.getByRole("region", { name: "Why this person is waiting" })).toBeInTheDocument();
+    const opened = within(waiting())
+      .getAllByTestId(/^delays-select-/u)
+      .find((button) => button.getAttribute("aria-expanded") === "true");
+    expect(opened, "no row opened from the dot").toBeDefined();
   });
 
-  it("makes the entire scoped waiting population reachable through table pagination", () => {
+  it("a half hour on the runway filters to who crosses a line in it, and switches to Longest wait", () => {
     renderDelays();
-    const waiting = screen.getByRole("region", { name: "Waiting" });
-    const readIds = () =>
-      Array.from(screen.getByTestId("delays-waiting-list").querySelectorAll("[data-record-key]")).map((row) =>
-        row.getAttribute("data-record-key"),
-      );
-    expect(readIds()).toHaveLength(10);
-    const seen = new Set(readIds());
-    const next = within(waiting).getByRole("button", { name: "Next waiting page" });
-    while (!(next as HTMLButtonElement).disabled) {
-      fireEvent.click(next);
-      for (const id of readIds()) {
-        expect(seen.has(id)).toBe(false);
-        seen.add(id);
-      }
-    }
-    expect([...seen].sort()).toEqual(
-      seedWardFlowState()
-        .movements.filter(isOpen)
-        .map((movement) => movement.id)
-        .sort(),
-    );
-    fireEvent.change(within(waiting).getByRole("combobox", { name: "Rows per page" }), { target: { value: "20" } });
-    expect(readIds()).toHaveLength(20);
-    expect(within(waiting).getByRole("button", { name: "Previous waiting page" })).toBeDisabled();
+    fireEvent.click(within(graphs()).getByRole("tab", { name: "Next 4 hours" }));
+    const bins = runwayBins(ROWS);
+    const busy = bins.find((bin) => bin.ids.size > 0)!;
+    const column = within(graphs()).getAllByRole("button", { name: /cross 8h/u })[busy.index];
+    fireEvent.click(column);
+    expect(column).toHaveAttribute("aria-pressed", "true");
+    expect(new Set(listed())).toEqual(busy.ids);
+    expect(screen.getByRole("button", { name: "Longest wait" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(graphs()).getByText(/match the current filters/u)).toBeInTheDocument();
   });
 
-  it("paginates the timeline and supports keyboard switching between table layouts", () => {
+  it("a matrix cell filters to that catchment and owner, and pressing it again clears both", () => {
     renderDelays();
-    const timeline = showWaitTimeline();
-    expect(within(timeline).getByRole("button", { name: "Previous timeline page" })).toBeDisabled();
-    const first = within(timeline).getAllByRole("button", { name: /^Inspect timeline/u })[0].textContent;
-    fireEvent.click(within(timeline).getByRole("button", { name: "Next timeline page" }));
-    expect(within(timeline).getAllByRole("button", { name: /^Inspect timeline/u })[0].textContent).not.toBe(first);
-    const tab = screen.getByRole("tab", { name: /Focus table/u });
-    fireEvent.keyDown(tab, { key: "ArrowRight" });
-    expect(screen.getByRole("tab", { name: /Action workspace/u })).toHaveFocus();
-    expect(screen.getByRole("tab", { name: /Action workspace/u })).toHaveAttribute("aria-selected", "true");
-  });
-  it.each(["ArrowDown", "ArrowUp", "Home", "End"])("leaves %s available to the inline patient details", (key) => {
-    renderDelays();
-    const list = screen.getByTestId("delays-waiting-list");
-    fireEvent.click(within(list).getAllByRole("button", { name: /^Select patient/u })[0]);
-    screen.getByText("Patient actions and full details").closest("details")?.setAttribute("open", "");
-    const details = screen.getByRole("region", { name: "Extended patient delay details" });
-    details.focus();
-    expect(fireEvent.keyDown(details, { key })).toBe(true);
-    expect(details).toHaveFocus();
+    fireEvent.click(within(graphs()).getByRole("tab", { name: "Where and whose move" }));
+    const cell = within(graphs()).getByRole("button", { name: /^East Metro, Yours: \d+ waiting/u });
+    const count = Number(/: (\d+) waiting/u.exec(cell.getAttribute("aria-label") ?? "")?.[1]);
+    expect(count, "nobody is in that cell").toBeGreaterThan(0);
+    fireEvent.click(cell);
+    showEveryDelayRow();
+    expect(listed()).toHaveLength(count);
+    expect(screen.getByRole("button", { name: "Remove filter East Metro" })).toBeInTheDocument();
+    fireEvent.click(within(graphs()).getByRole("button", { name: /^East Metro, Yours: \d+ waiting/u }));
+    expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${OPEN.length} of ${OPEN.length}`);
   });
 
-  it("keeps arrow and endpoint navigation between waiting patient buttons", () => {
+  it("moves between people with the arrow keys, Home and End", () => {
     renderDelays();
-    const patients = within(screen.getByTestId("delays-waiting-list")).getAllByRole("button", {
-      name: /^Select patient/u,
-    });
-    patients[0].focus();
-    fireEvent.keyDown(patients[0], { key: "ArrowDown" });
-    expect(patients[1]).toHaveFocus();
-    fireEvent.keyDown(patients[1], { key: "End" });
-    expect(patients[patients.length - 1]).toHaveFocus();
-    fireEvent.keyDown(patients[patients.length - 1], { key: "Home" });
-    expect(patients[0]).toHaveFocus();
+    const people = within(waiting()).getAllByTestId(/^delays-select-/u);
+    people[0].focus();
+    fireEvent.keyDown(people[0], { key: "ArrowDown" });
+    expect(people[1]).toHaveFocus();
+    fireEvent.keyDown(people[1], { key: "End" });
+    expect(people[people.length - 1]).toHaveFocus();
+    fireEvent.keyDown(people[people.length - 1], { key: "Home" });
+    expect(people[0]).toHaveFocus();
+    fireEvent.keyDown(people[0], { key: "ArrowUp" });
+    expect(people[0]).toHaveFocus();
   });
 
-  it("returns phone focus to the selected timeline trigger on Escape, outside the waiting page", () => {
-    installMatchMediaStub(true);
-    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+  it("Escape closes the panel and returns focus to the row that opened it", () => {
+    const frame = (callback: FrameRequestCallback) => {
       callback(0);
       return 1;
-    });
-    renderDelays();
-    const timeline = showWaitTimeline();
-    const next = within(timeline).getByRole("button", { name: "Next timeline page" });
-    fireEvent.click(next);
-    fireEvent.click(next);
-    const trigger = within(timeline).getAllByRole("button", { name: /^Inspect timeline/u })[0];
-    fireEvent.click(trigger);
-    const details = screen.getByRole("region", { name: "Selected timeline details" });
-    expect(details).toHaveFocus();
-    fireEvent.keyDown(details, { key: "Escape" });
-    expect(screen.queryByRole("region", { name: "Selected timeline details" })).not.toBeInTheDocument();
-    expect(trigger).toHaveFocus();
+    };
+    const original = window.requestAnimationFrame;
+    window.requestAnimationFrame = frame;
+    try {
+      renderDelays();
+      const person = within(waiting()).getAllByTestId(/^delays-select-/u)[0];
+      fireEvent.click(person);
+      expect(screen.getByRole("region", { name: "Why this person is waiting" })).toBeInTheDocument();
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(screen.queryByRole("region", { name: "Why this person is waiting" })).toBeNull();
+      expect(within(waiting()).getAllByTestId(/^delays-select-/u)[0]).toHaveFocus();
+    } finally {
+      window.requestAnimationFrame = original;
+    }
   });
 });

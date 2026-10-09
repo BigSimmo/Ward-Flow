@@ -1,5 +1,5 @@
-import { renderAllDelays } from "./helpers/delays-interactions";
-import { fireEvent, screen } from "@testing-library/react";
+import { renderAllDelays, showEveryDelayRow } from "./helpers/delays-interactions";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { DELAY_OWNERS, delayGroups, ownerOf } from "@/components/ward-management/delays/delays-derivations";
@@ -72,6 +72,14 @@ function ownerPeopleUnderService(ownerId: string): number {
 // network.
 const MARKABLE_OWNER = DELAY_OWNERS.find((owner) => ownerPeopleUnderService(owner.id) > 0);
 
+/** The people the Waiting table lists, by movement id. */
+function listedIds(): string[] {
+  const waiting = screen.getByRole("region", { name: "Waiting" });
+  return within(waiting)
+    .queryAllByTestId(/^delays-select-/u)
+    .map((button) => (button.getAttribute("data-testid") ?? "").replace("delays-select-", ""));
+}
+
 beforeEach(() => {
   // The provider persists demo state to sessionStorage and the service choice lives there too
   // (`ward-service-store.ts`) — both cleared so no earlier test's choice or dispatch leaks in.
@@ -130,13 +138,11 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
       </WardFlowProvider>,
     );
 
-    const region = screen.getByRole("region", { name: "Waiting" });
-    const rows = Array.from(region.querySelectorAll('[data-ward-primitive="record-row"]'));
-    expect(rows.length, "row count must equal South Metro's own open population, not the whole network").toBe(
+    const listed = listedIds();
+    expect(listed.length, "row count must equal South Metro's own open population, not the whole network").toBe(
       MEMBER_OPEN.length,
     );
-
-    const renderedIds = new Set(rows.map((row) => row.getAttribute("data-record-key") ?? ""));
+    const renderedIds = new Set(listed);
     for (const movement of MEMBER_OPEN) {
       expect(renderedIds.has(movement.id), `${movement.id} belongs to South Metro and must be on the list`).toBe(true);
     }
@@ -166,7 +172,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
     );
   });
 
-  it("marks (owner, cause, chip) still work under a service — highlighting the scoped population, never hiding it", () => {
+  it("filters (owner, blocker, chip) still work under a service, and count against the scoped population", () => {
     setServiceScope(SERVICE);
     renderAllDelays(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -175,53 +181,37 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
     );
 
     const ownerId = MARKABLE_OWNER!.id;
-    const ownerCard = screen.getByTestId(`delays-owner-${ownerId}`);
-    fireEvent.click(ownerCard);
-    expect(ownerCard).toHaveAttribute("aria-pressed", "true");
-
-    const region = screen.getByRole("region", { name: "Waiting" });
-    const rows = Array.from(region.querySelectorAll('[data-ward-primitive="record-row"]'));
-    expect(rows.length, "an owner mark must never hide a row, scoped or not").toBe(MEMBER_OPEN.length);
+    const ownerTile = screen.getByTestId(`delays-owner-${ownerId}`);
+    fireEvent.click(ownerTile);
+    showEveryDelayRow();
+    expect(ownerTile).toHaveAttribute("aria-pressed", "true");
 
     const memberIdsForOwner = new Set<string>(
       GROUPS_UNDER_SERVICE.filter((group) => ownerOf(group.cause) === ownerId).flatMap((group) =>
         group.movements.map((movement) => movement.id),
       ),
     );
-    let markedRows = 0;
-    for (const row of rows) {
-      const id = row.getAttribute("data-record-key") ?? "";
-      const saysMarked = (row.textContent ?? "").includes(`Marked: ${MARKABLE_OWNER!.name}`);
-      expect(saysMarked, `${id}'s marked state disagrees with the scoped owner grouping`).toBe(
-        memberIdsForOwner.has(id),
-      );
-      if (saysMarked) markedRows += 1;
-    }
-    expect(markedRows).toBe(memberIdsForOwner.size);
-
+    expect(new Set(listedIds())).toEqual(memberIdsForOwner);
     expect(
-      region.querySelector("[data-ward-panel-count]")?.textContent,
-      "the panel count must read against the SCOPED population, not the whole network",
-    ).toBe(`${memberIdsForOwner.size} of ${MEMBER_OPEN.length} marked · ${MARKABLE_OWNER!.name}`);
+      screen.getByTestId("delays-shown-count").textContent,
+      "the count must read against the SCOPED population, not the whole network",
+    ).toBe(`${memberIdsForOwner.size} of ${MEMBER_OPEN.length}`);
 
-    // A cause row and the chip bar are the other two mark sources over the same scoped population;
-    // this proves neither one hides a row either, over-and-above the owner-card case above.
-    const causeButton = screen.getAllByTestId(new RegExp("^delays-cause-"))[0] as HTMLElement | undefined;
-    expect(causeButton, "no cause row rendered under South Metro to prove the second mark source").toBeDefined();
-    fireEvent.click(causeButton!);
-    expect(causeButton).toHaveAttribute("aria-pressed", "true");
-    expect(
-      Array.from(region.querySelectorAll('[data-ward-primitive="record-row"]')).length,
-      "a cause mark must never hide a row, scoped or not",
-    ).toBe(MEMBER_OPEN.length);
+    // A blocker group's header folds and unfolds its own rows.
+    const groupHeader = screen.getAllByTestId(/^delays-cause-/u)[0];
+    expect(groupHeader, "no blocker group rendered under South Metro").toBeDefined();
+    fireEvent.click(groupHeader);
+    expect(groupHeader).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(groupHeader);
+    expect(groupHeader).toHaveAttribute("aria-expanded", "true");
 
-    const lockedChipLabel = `Needs a locked bed ${MEMBER_OPEN.filter((movement) => movement.security === "Secure").length}`;
-    fireEvent.click(screen.getByRole("button", { name: lockedChipLabel }));
-    expect(screen.getByRole("button", { name: lockedChipLabel })).toHaveAttribute("aria-pressed", "true");
-    expect(
-      Array.from(region.querySelectorAll('[data-ward-primitive="record-row"]')).length,
-      "a chip mark must never hide a row, scoped or not",
-    ).toBe(MEMBER_OPEN.length);
+    fireEvent.click(screen.getByRole("button", { name: `Remove filter ${MARKABLE_OWNER!.name}` }));
+    const locked = MEMBER_OPEN.filter((movement) => movement.security === "Secure");
+    const lockedChip = screen.getByRole("button", { name: `Locked bed ${locked.length}` });
+    fireEvent.click(lockedChip);
+    showEveryDelayRow();
+    expect(lockedChip).toHaveAttribute("aria-pressed", "true");
+    expect(listedIds().sort()).toEqual(locked.map((movement) => movement.id).sort());
   });
 
   it("with All services chosen, the screen is unchanged — no scope bar, and every open movement is on the list", () => {
@@ -233,14 +223,9 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
     );
 
     expect(screen.queryByTestId("ward-service-scope-bar")).not.toBeInTheDocument();
-    const region = screen.getByRole("region", { name: "Waiting" });
-    const rows = Array.from(region.querySelectorAll('[data-ward-primitive="record-row"]'));
     // ⚠️ TEST 7: a bare row COUNT is unfailable against a mutation that renders the right number of
-    // WRONG rows (swap two movements of equal group size, say) — it was a length check only until
-    // this task. Comparing the full, sorted list of rendered ids is a property that can actually
-    // fail on that mutation, not only on a dropped or duplicated row.
-    const renderedIds = rows.map((row) => row.getAttribute("data-record-key") ?? "").sort();
-    expect(renderedIds).toEqual(OPEN.map((movement) => movement.id).sort());
+    // WRONG rows, so the full, sorted list of listed ids is compared.
+    expect(listedIds().sort()).toEqual(OPEN.map((movement) => movement.id).sort());
   });
 });
 
@@ -373,8 +358,8 @@ describe("the zero-case sentence states D-a's definition, and D-c's narrowed abs
     // D-c: "Nobody who was on this screen this morning has left it yet" — narrowed (`closedToday`
     // is built off the already-scoped `movements`), so it names the service too. On the "Resolved
     // today" tab, since that sentence only exists in that pane.
-    fireEvent.click(screen.getByRole("tab", { name: /Resolved today/ }));
-    expect(screen.getByRole("tabpanel", { name: /Resolved today/ }).textContent ?? "").toContain(
+    fireEvent.click(screen.getByRole("tab", { name: /^Resolved/u }));
+    expect(screen.getByRole("tabpanel", { name: /^Resolved/u }).textContent ?? "").toContain(
       `Nobody who was on this screen this morning has left it yet, in ${SERVICE}.`,
     );
   });

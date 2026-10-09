@@ -88,57 +88,40 @@ describe("Delays — the drawing's panel names (task D1)", () => {
    */
   it("renders the drawing's panels, in the drawing's order", () => {
     renderScreen();
-    // The wait timeline is a view inside "Who is holding people up" (the PR 48 overview switcher),
-    // so the default overview does not render it as a panel of its own.
+    // The approved Delays page mockup (October 2026): whose move, the waiting table with the
+    // registers rail beside it, then the graphs. "Delays with no named person" sits in the rail's
+    // System tab (Q-12 below).
     expect(panelTitlesInOrder()).toEqual([
-      "Action runway",
-      "Delay graphs",
+      "Whose move",
       "Waiting",
-      "What the blocker is",
       "Escalations and resolved",
       "Delays with no named person",
+      "Delay graphs",
     ]);
 
-    // When a person is selected, "Why this person is waiting" appears
+    // Choosing somebody turns the rail into their panel, in the same place.
     const [firstSelectButton] = screen.getAllByTestId(/^delays-select-/u);
     fireEvent.click(firstSelectButton);
-    expect(panelTitlesInOrder()).toEqual([
-      "Action runway",
-      "Delay graphs",
-      "Waiting",
-      "Why this person is waiting",
-      "What the blocker is",
-      "Escalations and resolved",
-      "Delays with no named person",
-    ]);
+    expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Why this person is waiting", "Delay graphs"]);
 
-    // Choosing the Wait timeline view places the timeline inside the overview panel, ahead of the worklist.
+    // Switching graph changes what the graph panel draws, never which panels exist.
     fireEvent.click(
-      within(screen.getByRole("tablist", { name: "Delay graph" })).getByRole("tab", {
-        name: "Waits",
-      }),
+      within(screen.getByRole("tablist", { name: "Delay graph" })).getByRole("tab", { name: "Next 4 hours" }),
     );
-    expect(panelTitlesInOrder()).toEqual([
-      "Action runway",
-      "Delay graphs",
-      "Waiting",
-      "Why this person is waiting",
-      "What the blocker is",
-      "Escalations and resolved",
-      "Delays with no named person",
-    ]);
+    expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Why this person is waiting", "Delay graphs"]);
   });
 
   /**
-   * The "Escalations and resolved" panel's three tabs: Escalations, Attention, Resolved today.
+   * The registers rail's four tabs: Escalated, Attention, Resolved and System.
    */
   it("carries the register tabs in order", () => {
     renderScreen();
     const tabs = within(screen.getByRole("tablist", { name: "Registers" })).getAllByRole("tab");
-    expect(tabs.length, "the register tabs did not render — this guard proves nothing").toBe(3);
-    expect(tabs[0]).toHaveTextContent(/Escalations/u);
+    expect(tabs.length, "the register tabs did not render — this guard proves nothing").toBe(4);
+    expect(tabs[0]).toHaveTextContent(/Escalated/u);
     expect(tabs[1]).toHaveTextContent(/Attention/u);
-    expect(tabs[2]).toHaveTextContent(/Resolved today/u);
+    expect(tabs[2]).toHaveTextContent(/Resolved/u);
+    expect(tabs[3]).toHaveTextContent(/System/u);
   });
 
   /**
@@ -162,6 +145,8 @@ describe("Delays — the drawing's panel names (task D1)", () => {
   it("keeps the Q-12 items: the 'Attention' tab and 'Delays with no named person' (provenance panel removed per owner instruction 2026-09-21)", () => {
     renderScreen();
     expect(screen.getByRole("tab", { name: /Attention/u })).toBeInTheDocument();
+    // October 2026 board: the provenance box is the rail's System tab, reachable with its count shown.
+    fireEvent.click(screen.getByRole("tab", { name: /^System/u }));
     expect(screen.getByRole("region", { name: "Delays with no named person" })).toBeInTheDocument();
   });
 });
@@ -207,18 +192,22 @@ describe("Delays — the dangling-originEdId sentence names the record, not the 
      * cannot be "the branch was never entered and the assertion below happened to still hold".
      */
     expect(
-      within(detailPanel).getByText(new RegExp(DANGLING_ED_ID, "u")),
+      within(detailPanel).getAllByText(new RegExp(DANGLING_ED_ID, "u"))[0],
       "the dangling originEdId never appears in the detail panel — the fallback branch was not reached",
     ).toBeInTheDocument();
 
-    // Site 1 — `SelectedPerson`'s "From" field.
-    expect(
-      within(detailPanel).getByText(`This movement names a department we cannot find: "${DANGLING_ED_ID}"`),
-    ).toBeInTheDocument();
+    // Site 1 — the panel's sub line under the name.
+    expect(within(detailPanel).getByTestId("delays-panel-sub")).toHaveTextContent(
+      `This movement names a department we cannot find: "${DANGLING_ED_ID}"`,
+    );
 
-    // Site 2 — `DelayRow`'s attribute list ("from …"), identical wording, no drift between the two.
+    // Site 2 — the "From" line in the panel facts, identical wording, no drift between the two.
     const bodyText = document.body.textContent ?? "";
-    expect(bodyText).toContain(`from This movement names a department we cannot find: "${DANGLING_ED_ID}"`);
+    expect(
+      within(screen.getByTestId("delays-panel-from")).getByText(
+        `This movement names a department we cannot find: "${DANGLING_ED_ID}"`,
+      ),
+    ).toBeInTheDocument();
 
     // Neither site may still carry the old, network-blaming wording.
     expect(bodyText).not.toContain("No department matches");

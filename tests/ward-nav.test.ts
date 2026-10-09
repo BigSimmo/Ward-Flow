@@ -754,9 +754,11 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     //     is the whole subject of the coverage record above, and this file's own comment says a route
     //     ledger is invisible to every screen test - a count would have absorbed the facade silently
     //     and then absorbed the next one too.
+    //
+    // SEVEN AS OF THE OCTOBER 2026 DELAYS BOARD: its release-the-bed link now takes `unitHref`
+    // from the facade instead of typing the route, the re-pointing the note above expected.
     expect([...(ward?.builtSites ?? [])].sort()).toEqual([
       "src/components/ward-management/capacity/capacity-screen.tsx",
-      "src/components/ward-management/delays/delays-screen.tsx",
       "src/components/ward-management/discharges/discharge-board.tsx",
       "src/components/ward-management/hub/hub-derivations.ts",
       "src/components/ward-management/shell/ward-facade.ts",
