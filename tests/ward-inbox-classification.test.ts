@@ -75,6 +75,24 @@ function movementsCoveringEveryCategory(): Movement[] {
       referredUnitIds: [],
       stageChanges: [{ at: NOW - 600, to: "pulled", by: "ward" }],
     }),
+    // The same three targets still running: their pending (countdown) categories.
+    movementFrom("WF-T07", {
+      stage: "destination_review",
+      referredAt: NOW - 10,
+      referredUnitIds: ["rph-adult-secure"],
+    }),
+    movementFrom("WF-T08", {
+      stage: "accepted_awaiting_bed",
+      acceptedUnitId: "rph-adult-secure",
+      acceptedAt: NOW - 10,
+      referredUnitIds: [],
+    }),
+    movementFrom("WF-T09", {
+      stage: "pulled",
+      acceptedUnitId: "rph-adult-secure",
+      referredUnitIds: [],
+      stageChanges: [{ at: NOW - 10, to: "pulled", by: "ward" }],
+    }),
   ];
 }
 
@@ -148,7 +166,7 @@ describe("every action-inbox category is classified as a fact or a commitment", 
     // Anti-vacuity on the scan itself: a body that matched nothing would agree with an empty table.
     expect(pushes.length, "the scan found no row-emitting blocks — it is measuring the wrong text").toBeGreaterThan(0);
     // The decision-target categories are emitted by `decisionTargetInboxItems`, one per step.
-    const targetCategories = DECISION_TARGET_STEPS.map((entry) => entry.category);
+    const targetCategories = DECISION_TARGET_STEPS.flatMap((entry) => [entry.category, entry.pendingCategory]);
     expect(targetCategories.every((key) => key in INBOX_CATEGORIES)).toBe(true);
     expect(
       pushes.length,

@@ -66,6 +66,13 @@ export const INBOX_CATEGORIES = {
   target_transfer_acceptance: { idPrefix: "target-transfer-acceptance-", kind: "fact" },
   /** A pulled bed with no transport booked within its target. */
   target_transport_booked: { idPrefix: "target-transport-booked-", kind: "fact" },
+  /**
+   * The same three targets while still running (a countdown, amber). Their own ids, so snoozing a
+   * countdown never hides the overdue row that replaces it, and a review-level row for the cap.
+   */
+  target_pending_referral_decision: { idPrefix: "target-pending-referral-decision-", kind: "fact" },
+  target_pending_transfer_acceptance: { idPrefix: "target-pending-transfer-acceptance-", kind: "fact" },
+  target_pending_transport_booked: { idPrefix: "target-pending-transport-booked-", kind: "fact" },
 } as const satisfies Record<string, { readonly idPrefix: string; readonly kind: InboxItemKind }>;
 
 /**
@@ -82,7 +89,12 @@ export function inboxItemKindOf(inboxItemId: string): InboxItemKind | undefined 
  * safe. `buildActionInbox` and `decisionTargetInboxItems` must agree with this list (pinned in
  * `tests/ward-inbox-snooze.test.ts`).
  */
-export const INBOX_REVIEW_CATEGORIES: readonly (keyof typeof INBOX_CATEGORIES)[] = ["transport_awaiting_departure"];
+export const INBOX_REVIEW_CATEGORIES: readonly (keyof typeof INBOX_CATEGORIES)[] = [
+  "transport_awaiting_departure",
+  "target_pending_referral_decision",
+  "target_pending_transfer_acceptance",
+  "target_pending_transport_booked",
+];
 
 /** Whether a row is act-now (red), read from its id alone so the reducer can enforce the snooze cap. */
 export function inboxItemIsActNow(inboxItemId: string): boolean {

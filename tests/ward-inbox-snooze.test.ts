@@ -340,7 +340,14 @@ describe("snooze helpers", () => {
     for (const key of ["target_referral_decision", "target_transfer_acceptance", "target_transport_booked"] as const) {
       expect(inboxItemIsActNow(`${INBOX_CATEGORIES[key].idPrefix}WF-001`)).toBe(true);
     }
-    // Decision-target rows are always red, matching the cap.
+    // A running countdown is review-level (amber, no cap); only the overdue row is act-now.
+    for (const key of [
+      "target_pending_referral_decision",
+      "target_pending_transfer_acceptance",
+      "target_pending_transport_booked",
+    ] as const) {
+      expect(inboxItemIsActNow(`${INBOX_CATEGORIES[key].idPrefix}WF-001`)).toBe(false);
+    }
     expect(decisionTargetInboxItems([], NOW, state.configuration)).toEqual([]);
   });
 
@@ -349,5 +356,6 @@ describe("snooze helpers", () => {
     expect(inboxRowExists(state, "target-transport-booked-WF-004")).toBe(true);
     expect(inboxRowExists(state, "target-transport-booked-WF-NOPE")).toBe(false);
     expect(inboxRowExists(state, "nonsense-WF-004")).toBe(false);
+    expect(inboxRowExists(state, "target-pending-transport-booked-WF-004")).toBe(true);
   });
 });

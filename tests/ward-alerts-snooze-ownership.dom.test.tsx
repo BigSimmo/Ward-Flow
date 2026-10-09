@@ -13,6 +13,8 @@ vi.mock("next/link", () => ({
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /** Stream A, 9 Oct 2026: ownership and snooze on the Alerts screen, as the reducer records them. */
@@ -70,9 +72,22 @@ describe("alerts: ownership and snooze", () => {
     const row = within(snoozed).getAllByRole("listitem")[0]!;
     expect(row).toHaveTextContent(/Back .* · Awaiting call back · Flow coordinator/);
     expect(row.textContent).not.toMatch(/WF-\d/);
+    // The same patient the live row named: display name and UMRN, never the journey id.
+    const seed = seedWardFlowState();
+    const first = buildActionInbox(seed.movements.filter(isOpen), NOW, seed.units)[0]!;
+    expect(row).toHaveAttribute("data-movement-id", first.movementId);
+    const expected = resolveSubjectPatient(
+      seed.movements.find((movement) => movement.id === first.movementId),
+      seed,
+    );
+    expect(within(row).getByText(expected.displayName)).toBeInTheDocument();
+    expect(within(row).getByText(expected.umrn)).toBeInTheDocument();
+    // The row keeps its real severity glyph: a red row shows the triangle, not a neutral mark.
+    expect(first.tone).toBe("danger");
+    expect(row.querySelector('svg path[d="M5 0.8 9.6 9.2H0.4Z"]')).not.toBeNull();
     expect(within(row).getByRole("button", { name: /^Return .* now, / })).toBeInTheDocument();
 
-    fireEvent.click(within(row).getByRole("button", { name: /^Open / }));
+    fireEvent.click(within(row).getByRole("button", { name: `Open for ${expected.displayName}` }));
     expect(screen.getByRole("dialog", { name: /Alert Escalation & Triage/i })).toBeInTheDocument();
   });
 });

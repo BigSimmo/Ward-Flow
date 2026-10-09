@@ -8,6 +8,8 @@ import {
   decisionTargetReading,
 } from "../src/components/ward-management/ward-decision-targets";
 import { isOpen } from "../src/components/ward-management/ward-derivations";
+import { newActNowItems } from "../src/components/ward-management/shell/ward-act-now-notifications";
+import { partitionSnoozed } from "../src/components/ward-management/ward-inbox-snooze";
 import {
   seedWardFlowState,
   wardFlowReducer,
@@ -82,7 +84,49 @@ describe("decision targets through the real event walk", () => {
       overdue: false,
       text: "1h 30m left",
     });
-    expect(decisionTargetInboxItems([movement(state)], NOW + 30, defaults)).toEqual([]);
+    // Pending (not yet overdue) still emits a reachable inbox row so the countdown is visible
+    // when the patient has no other alert.
+    const pending = decisionTargetInboxItems([movement(state)], NOW + 30, defaults);
+    expect(pending).toHaveLength(1);
+    expect(pending[0]).toMatchObject({
+      id: `target-pending-referral-decision-${MOVEMENT}`,
+      tone: "warning",
+      kind: "fact",
+      title: "Referral decision",
+      detail: expect.stringContaining("1h 30m left"),
+      movementId: MOVEMENT,
+      dueAt: NOW + defaults.referralDecisionTargetMinutes,
+    });
+  });
+
+  it("gives a running countdown its own id, so snoozing it never hides the overdue row", () => {
+    const state = referred();
+    const [pending] = decisionTargetInboxItems([movement(state)], NOW + 30, defaults);
+    expect(pending).toBeDefined();
+    if (!pending) return;
+    // Snoozed for 4h (allowed: a countdown is review-level), longer than the target has left.
+    const snoozes = {
+      [pending.id]: [
+        {
+          at: NOW + 30,
+          by: "Flow coordinator",
+          kind: "snoozed" as const,
+          until: NOW + 30 + 240,
+          reason: "awaiting_call_back" as const,
+        },
+      ],
+    };
+    const late = NOW + defaults.referralDecisionTargetMinutes + 1;
+    const overdueRows = decisionTargetInboxItems([movement(state)], late, defaults);
+    expect(overdueRows.map((row) => row.id)).toEqual([`target-referral-decision-${MOVEMENT}`]);
+    expect(overdueRows[0]?.id).not.toBe(pending.id);
+    const { active, snoozed } = partitionSnoozed(overdueRows, snoozes, late);
+    expect(snoozed).toEqual([]);
+    expect(active.map((row) => row.tone)).toEqual(["danger"]);
+    // And the act-now notifier sees it as new, not as the countdown it already knew.
+    expect(newActNowItems(new Set([pending.id]), active).map((row) => row.id)).toEqual([
+      `target-referral-decision-${MOVEMENT}`,
+    ]);
   });
 
   it("raises one act-now inbox row once the referral decision is overdue", () => {

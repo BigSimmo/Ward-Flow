@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { buildActionInbox, isOpen, type InboxItem } from "@/components/ward-management/ward-derivations";
 import { inboxItemIsActNow, seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -82,7 +83,15 @@ describe("tasks drawer: ownership and snooze", () => {
   });
 
   it("moves a snoozed row into the Snoozed section with who and why, and returns it on request", () => {
+    const onSelectMovement = vi.fn();
     const { dispatch, drawer } = renderDrawer({
+      onSelectMovement,
+      records: {
+        movements: seed.movements,
+        patients: seed.patients,
+        referrals: seed.referrals,
+        units: seed.units,
+      },
       snoozes: {
         [red.id]: [
           {
@@ -99,6 +108,20 @@ describe("tasks drawer: ownership and snooze", () => {
     const snoozed = screen.getByTestId("ward-tasks-snoozed");
     expect(snoozed).toHaveTextContent(red.title);
     expect(snoozed).toHaveTextContent(/Back .* · Awaiting call back · Flow coordinator/i);
+    // Patient identity stays on the snoozed row so two patients with the same title are distinct.
+    const snoozedRow = screen.getByTestId(`ward-task-snoozed-${red.id}`);
+    const expected = resolveSubjectPatient(
+      seed.movements.find((row) => row.id === red.movementId),
+      seed,
+    );
+    expect(expected.patient, "the red row's movement has a linked synthetic patient").toBeDefined();
+    expect(within(snoozedRow).getByText(expected.displayName)).toBeInTheDocument();
+    expect(within(snoozedRow).getByText(expected.umrn)).toBeInTheDocument();
+    expect(snoozedRow.textContent).not.toMatch(/WF-\d/);
+    const open = within(snoozedRow).getByRole("button", { name: "Open patient" });
+    expect(open).toBe(screen.getByTestId(`ward-task-snoozed-open-${red.id}`));
+    fireEvent.click(open);
+    expect(onSelectMovement).toHaveBeenCalledWith(red.movementId);
     fireEvent.click(screen.getByTestId(`ward-task-unsnooze-${red.id}`));
     expect(dispatch).toHaveBeenCalledWith({
       type: "UNSNOOZE_INBOX_ITEM",

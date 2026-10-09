@@ -36,7 +36,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
@@ -113,7 +113,8 @@ function tierOfItem(item: InboxItem): "emergency" | "capacity" | "admin" {
   if (
     item.id.startsWith(INBOX_CATEGORIES.destinations_declined.idPrefix) ||
     item.id.startsWith(INBOX_CATEGORIES.bed_pull_expired.idPrefix) ||
-    isDecisionTargetItem(item)
+    isDecisionTargetItem(item) ||
+    isPendingDecisionTargetItem(item)
   ) {
     return "capacity";
   }
@@ -126,6 +127,15 @@ function isDecisionTargetItem(item: InboxItem): boolean {
     item.id.startsWith(INBOX_CATEGORIES.target_referral_decision.idPrefix) ||
     item.id.startsWith(INBOX_CATEGORIES.target_transfer_acceptance.idPrefix) ||
     item.id.startsWith(INBOX_CATEGORIES.target_transport_booked.idPrefix)
+  );
+}
+
+/** A decision target still running: an amber countdown, listed but never counted as an alert. */
+function isPendingDecisionTargetItem(item: InboxItem): boolean {
+  return (
+    item.id.startsWith(INBOX_CATEGORIES.target_pending_referral_decision.idPrefix) ||
+    item.id.startsWith(INBOX_CATEGORIES.target_pending_transfer_acceptance.idPrefix) ||
+    item.id.startsWith(INBOX_CATEGORIES.target_pending_transport_booked.idPrefix)
   );
 }
 
@@ -212,8 +222,9 @@ function getCategoryBadge(item: InboxItem): { tone: "danger" | "warn" | "accent"
   if (item.id.startsWith(INBOX_CATEGORIES.transport_awaiting_departure.idPrefix)) {
     return { tone: "accent", label: "Transport Leg" };
   }
-  if (isDecisionTargetItem(item)) {
-    return { tone: "danger", label: "Decision target" };
+  if (isDecisionTargetItem(item) || isPendingDecisionTargetItem(item)) {
+    // Red only once the target has passed; a running countdown is amber.
+    return { tone: item.tone === "danger" ? "danger" : "warn", label: "Decision target" };
   }
   return { tone: "accent", label: "Operational Alert" };
 }
@@ -240,14 +251,11 @@ function ConditionContext({
   watches,
   none,
   items,
-  running,
 }: {
   title: string;
   watches: string;
   none: string;
   items: InboxItem[];
-  /** Still-running clocks to show before they pass (decision targets), each one line. */
-  running?: readonly { id: string; text: string }[];
 }) {
   return (
     <section className={styles.condition} aria-label={title}>
@@ -257,15 +265,6 @@ function ConditionContext({
       </h3>
       <p className={styles.watches}>{watches}</p>
       {items.length === 0 ? <p className={styles.none}>{none}</p> : null}
-      {running && running.length > 0 ? (
-        <ul className={styles.runningList} data-testid="ward-alerts-running-targets">
-          {running.map((entry) => (
-            <li key={entry.id} className={styles.watches}>
-              {entry.text}
-            </li>
-          ))}
-        </ul>
-      ) : null}
     </section>
   );
 }
@@ -838,25 +837,14 @@ function AlertsWorkspace() {
     [inbox],
   );
   const decisionTargets = useMemo(() => [...referralTargets, ...otherTargets], [referralTargets, otherTargets]);
-  // A running target shows its countdown here before it passes, so a newly referred patient with
-  // no other alert still has a visible clock. Soonest first.
-  const runningTargets = useMemo(
-    () =>
-      openMovements
-        .flatMap((movement) => {
-          const reading = decisionTargetReading(movement, now, configuration);
-          if (!reading || reading.overdue) return [];
-          const who = resolveAlertPatient(movement, movement.id, patients, referrals, movements, state.units);
-          return [
-            {
-              id: movement.id,
-              left: reading.minutesLeft,
-              text: `${reading.label} due in ${splitDuration(reading.minutesLeft)} · ${who.displayName}`,
-            },
-          ];
-        })
-        .sort((a, b) => a.left - b.left),
-    [openMovements, now, configuration, patients, referrals, movements, state.units],
+  // Running countdowns: listed beside the alerts so they stay reachable, never counted as alerts.
+  const pendingReferralTargets = useMemo(() => itemsInCategory(inbox, "target_pending_referral_decision"), [inbox]);
+  const pendingOtherTargets = useMemo(
+    () => [
+      ...itemsInCategory(inbox, "target_pending_transfer_acceptance"),
+      ...itemsInCategory(inbox, "target_pending_transport_booked"),
+    ],
+    [inbox],
   );
 
   const withDeadline = openMovements.filter((movement: Movement) => movement.legalForm?.dueAt !== undefined);
@@ -877,11 +865,12 @@ function AlertsWorkspace() {
   const tier2Count = declined.length + pullExpired.length + decisionTargets.length;
   const tier3Count = transport.length;
 
-  // Role counts
-  const coordinatorCount = inbox.filter((item) => roleMatches(item, "coordinator")).length;
-  const registrarCount = inbox.filter((item) => roleMatches(item, "registrar")).length;
-  const bedManagerCount = inbox.filter((item) => roleMatches(item, "bed_manager")).length;
-  const numCount = inbox.filter((item) => roleMatches(item, "num")).length;
+  // Role counts: alerts only, never a running decision-target countdown.
+  const alertRows = inbox.filter((item) => !isPendingDecisionTargetItem(item));
+  const coordinatorCount = alertRows.filter((item) => roleMatches(item, "coordinator")).length;
+  const registrarCount = alertRows.filter((item) => roleMatches(item, "registrar")).length;
+  const bedManagerCount = alertRows.filter((item) => roleMatches(item, "bed_manager")).length;
+  const numCount = alertRows.filter((item) => roleMatches(item, "num")).length;
 
   const handleSnooze = useCallback(
     (item: InboxItem, until: Instant, reason: InboxSnoozeReason) => {
@@ -923,22 +912,22 @@ function AlertsWorkspace() {
 
   // Filtered collections
   const filteredNeedsYou = useMemo(() => {
-    const allNeeds = [...legal, ...declined, ...unlawful, ...referralTargets];
+    const allNeeds = [...legal, ...declined, ...unlawful, ...referralTargets, ...pendingReferralTargets];
     return allNeeds.filter((item) => {
       if (tierFilter !== "all" && tierOfItem(item) !== tierFilter) return false;
       if (roleFilter !== "all" && !roleMatches(item, roleFilter)) return false;
       return true;
     });
-  }, [legal, declined, unlawful, referralTargets, tierFilter, roleFilter]);
+  }, [legal, declined, unlawful, referralTargets, pendingReferralTargets, tierFilter, roleFilter]);
 
   const filteredOtherRoles = useMemo(() => {
-    const allOther = [...pullExpired, ...transport, ...otherTargets];
+    const allOther = [...pullExpired, ...transport, ...otherTargets, ...pendingOtherTargets];
     return allOther.filter((item) => {
       if (tierFilter !== "all" && tierOfItem(item) !== tierFilter) return false;
       if (roleFilter !== "all" && !roleMatches(item, roleFilter)) return false;
       return true;
     });
-  }, [pullExpired, transport, otherTargets, tierFilter, roleFilter]);
+  }, [pullExpired, transport, otherTargets, pendingOtherTargets, tierFilter, roleFilter]);
 
   // Selected alert details
   const selectedMovement = useMemo(() => {
@@ -1095,7 +1084,10 @@ function AlertsWorkspace() {
     setRoleFilter("all");
   };
   const isFiltered = tierFilter !== "all" || roleFilter !== "all";
-  const shownCount = filteredNeedsYou.length + filteredOtherRoles.length;
+  // Counts alerts only, the same set as totalActive: a running countdown is listed, not counted.
+  const shownCount = [...filteredNeedsYou, ...filteredOtherRoles].filter(
+    (item) => !isPendingDecisionTargetItem(item),
+  ).length;
   const tierItems = [
     {
       id: "all" as const,
@@ -1486,7 +1478,6 @@ function AlertsWorkspace() {
                     watches="Watches referral decisions, transfer acceptances and transport bookings against their targets, defaults set in Settings."
                     none="No running decision target has passed."
                     items={decisionTargets}
-                    running={runningTargets}
                   />
                   <ConditionContext
                     title="Transport waiting to leave"
@@ -1587,20 +1578,32 @@ function AlertsWorkspace() {
             <ul className={styles.rows}>
               {snoozedInbox.map((item) => {
                 const entry = activeSnooze(inboxSnoozes[item.id], now);
-                const movement = openMovements.find((candidate) => candidate.id === item.movementId);
-                const who = resolveAlertPatient(movement, item.movementId, patients, referrals, movements, state.units);
+                const movement = movements.find((candidate) => candidate.id === item.movementId);
+                const patientInfo = resolveAlertPatient(
+                  movement,
+                  item.movementId,
+                  patients,
+                  referrals,
+                  movements,
+                  units,
+                );
                 return (
                   <li
                     key={item.id}
                     className={styles.alertRow}
                     data-tone={item.tone}
                     data-movement-id={item.movementId}
+                    data-testid={`ward-alerts-snoozed-${item.id}`}
                   >
                     <StatusGlyph tone={severityGlyph(item)} />
                     <div className={styles.alertContent}>
                       <span className={styles.alertTitleText}>{item.title}</span>
                       <span className={styles.alertMetaText}>
-                        <strong className={styles.patientName}>{who.displayName}</strong>
+                        <strong className={styles.patientName}>{patientInfo.displayName}</strong>
+                        <span aria-hidden="true"> · </span>
+                        <strong className={styles.mono}>{patientInfo.umrn}</strong>
+                        <span aria-hidden="true"> · </span>
+                        <span className={styles.locationTag}>{patientInfo.location}</span>
                       </span>
                       {entry ? <span className={styles.alertTiming}>{snoozedLine(entry, now)}</span> : null}
                     </div>
@@ -1608,9 +1611,11 @@ function AlertsWorkspace() {
                     <div className={styles.rowActions}>
                       <Button
                         size="sm"
-                        variant="ghost"
+                        variant="sec"
                         className={styles.btn}
-                        aria-label={`Open ${item.title}, ${who.displayName}`}
+                        aria-label={`Open for ${patientInfo.displayName}`}
+                        title={`Open: ${item.title}`}
+                        data-testid={`ward-alerts-snoozed-open-${item.id}`}
                         onClick={(event) => {
                           handleOpenAction(item, event.currentTarget);
                         }}
@@ -1620,7 +1625,7 @@ function AlertsWorkspace() {
                       <Button
                         size="sm"
                         className={styles.btn}
-                        aria-label={`Return ${item.title} now, ${who.displayName}`}
+                        aria-label={`Return ${item.title} now, ${patientInfo.displayName}`}
                         onClick={() => {
                           handleReturn(item);
                         }}

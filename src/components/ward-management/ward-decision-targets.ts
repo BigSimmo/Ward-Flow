@@ -14,10 +14,10 @@ import type { Movement } from "./ward-model";
  * a prototype default, never a clinical, legal or service standard. A step's clock starts at a
  * time the record itself holds and stops when the record shows the step done:
  *
- *   - Referral decision: from `referralDecisionOpenedAt`, set when a refer opens a fresh wait
- *     (first referral, or re-refer after every ward declined or withdrew), until a ward accepts
- *     or every referred ward has answered. Falls back to `referredAt` on older records. A parallel
- *     decline or a waitlist entry alone does not restart it.
+ *   - Referral decision: from `referralDecisionOpenedAt` when a refer opens a fresh wait (first
+ *     referral, or re-refer after every ward declined or withdrew) until a ward accepts or every
+ *     referred ward has answered. Falls back to `referredAt` on older records. Adding wards while
+ *     others are still live does not restart it.
  *   - Transfer acceptance: from `acceptedAt` (acceptance in principle) until the bed is pulled.
  *   - Transport booked: from the recorded move to `pulled` until a transport job is booked.
  *     A pulled movement recorded as needing no transport has no booking target.
@@ -35,6 +35,9 @@ type StepDefinition = {
     "referralDecisionTargetMinutes" | "transferAcceptanceTargetMinutes" | "transportBookedTargetMinutes"
   >;
   readonly category: "target_referral_decision" | "target_transfer_acceptance" | "target_transport_booked";
+  /** The running (not yet overdue) row's own category, so its id never matches the overdue row's. */
+  readonly pendingCategory:
+    "target_pending_referral_decision" | "target_pending_transfer_acceptance" | "target_pending_transport_booked";
   readonly owner: string;
   readonly overdueTitle: string;
 };
@@ -45,6 +48,7 @@ export const DECISION_TARGET_STEPS: readonly StepDefinition[] = [
     label: "Referral decision",
     configKey: "referralDecisionTargetMinutes",
     category: "target_referral_decision",
+    pendingCategory: "target_pending_referral_decision",
     owner: "Coordinator",
     overdueTitle: "Referral decision overdue",
   },
@@ -53,6 +57,7 @@ export const DECISION_TARGET_STEPS: readonly StepDefinition[] = [
     label: "Transfer acceptance",
     configKey: "transferAcceptanceTargetMinutes",
     category: "target_transfer_acceptance",
+    pendingCategory: "target_pending_transfer_acceptance",
     owner: "Accepting ward",
     overdueTitle: "Transfer acceptance overdue",
   },
@@ -61,6 +66,7 @@ export const DECISION_TARGET_STEPS: readonly StepDefinition[] = [
     label: "Transport booked",
     configKey: "transportBookedTargetMinutes",
     category: "target_transport_booked",
+    pendingCategory: "target_pending_transport_booked",
     owner: "Sending team",
     overdueTitle: "Transport booking overdue",
   },
@@ -146,10 +152,14 @@ export function decisionTargetReading(
 }
 
 /**
- * One act-now inbox row per open movement whose decision target has passed. Concatenated onto
- * `buildActionInbox`'s rows by every screen that lists alerts or tasks, so an overdue target shows
- * on Alerts, in Tasks and in browser notifications alike. Callers pass open movements only, the
- * same scoping `buildActionInbox` requires.
+ * One inbox row per open movement with a running decision target. Pending (not yet overdue) rows
+ * are warning tone with the step label and countdown in `detail`; overdue rows are act-now danger
+ * with the overdue title. The two have different ids (a pending row uses the step's pending
+ * category), so a snoozed or acknowledged countdown does not carry over to the overdue row and the
+ * act-now notifier still sees it as new. Concatenated onto `buildActionInbox`'s rows by every screen that lists
+ * alerts or tasks, so a newly referred patient with no other alert still has a reachable countdown
+ * on Alerts and in Tasks. Browser notifications still filter danger only. Callers pass open
+ * movements only, the same scoping `buildActionInbox` requires.
  */
 export function decisionTargetInboxItems(
   movements: readonly Movement[],
@@ -159,16 +169,16 @@ export function decisionTargetInboxItems(
   const items: InboxItem[] = [];
   for (const movement of movements) {
     const reading = decisionTargetReading(movement, now, configuration);
-    if (!reading?.overdue) continue;
+    if (!reading) continue;
     const definition = DECISION_TARGET_STEPS.find((entry) => entry.step === reading.step);
     if (!definition) continue;
-    const category = INBOX_CATEGORIES[definition.category];
+    const category = INBOX_CATEGORIES[reading.overdue ? definition.category : definition.pendingCategory];
     items.push({
       id: `${category.idPrefix}${movement.id}`,
       kind: category.kind,
-      tone: "danger",
+      tone: reading.overdue ? "danger" : "warning",
       icon: Timer,
-      title: definition.overdueTitle,
+      title: reading.overdue ? definition.overdueTitle : definition.label,
       detail: `${reading.text} · target ${splitDuration(reading.targetMinutes)}, default set in Settings`,
       owner: definition.owner,
       movementId: movement.id,
