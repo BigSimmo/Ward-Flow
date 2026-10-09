@@ -554,7 +554,7 @@ table.snapSheet {
   overflow-y: auto;
   overflow-x: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: var(--wf-line-2) transparent;
 }
 
 .snapSheetBounded::-webkit-scrollbar {
@@ -603,7 +603,7 @@ table.snapSheet {
   min-height: 0;
   overflow: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: var(--wf-line-2) transparent;
 }
 
 .enlargedTableScroll::-webkit-scrollbar {
@@ -660,7 +660,7 @@ table.snapSheet {
   border-radius: var(--r1, 4px);
   background: var(--surface);
   scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: var(--wf-line-2) transparent;
 }
 
 .boundedTableScroll::-webkit-scrollbar {

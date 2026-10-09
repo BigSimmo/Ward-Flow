@@ -338,7 +338,7 @@
   list-style: none;
   margin: 0;
   scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: var(--wf-line-2) transparent;
 }
 
 .edList::-webkit-scrollbar {
@@ -612,7 +612,7 @@
 }
 
 .attentionWrap:hover {
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: var(--wf-line-2) transparent;
 }
 
 .attentionWrap::-webkit-scrollbar {
@@ -925,7 +925,7 @@
 }
 
 .lstWrap:hover {
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: var(--wf-line-2) transparent;
 }
 
 .lstWrap::-webkit-scrollbar {
@@ -1443,7 +1443,7 @@
   min-height: 20rem;
   scroll-padding: 0.5rem;
   scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: var(--wf-line-2) transparent;
   overscroll-behavior-inline: contain;
   -webkit-overflow-scrolling: touch;
 }
