@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Check, FileCheck, Lock, MapPin, Search, ShieldCheck, X } from "lucide-react";
+import { Check, Clock, Copy, Lock, MapPin, Search, ShieldCheck, Truck, X } from "lucide-react";
 
 import {
   Badge,
@@ -14,9 +14,9 @@ import {
   FilterChip,
   Hero,
   HeroStat,
-  HeroTrack,
   Icon,
   Kbd,
+  Segmented,
   Select,
   SrOnly,
   StatusGlyph,
@@ -25,6 +25,7 @@ import {
   Tabs,
   TextInput,
   Timeline,
+  cx,
   durMinutes,
   tableClasses,
   type TimelineItem,
@@ -38,7 +39,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import {
@@ -64,6 +65,7 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 
+import { FormsPack, PACK_SLOTS, packCount, packForm } from "./officer-forms-pack";
 import styles from "./officer.module.css";
 
 /**
@@ -291,8 +293,24 @@ export function isOfficerJob(movement: Movement): boolean {
   );
 }
 
-type StatusFilter = "all" | "requested" | "accepted" | "en_route" | "collected";
-type JobsTab = "active" | "refused" | "cancelled";
+type HighlightPill = "requested" | "accepted" | "en_route" | "collected" | "late" | "forms";
+type SortKey = "next" | "wait" | "eta";
+type JobsTab = "jobs" | "history";
+type HistoryTab = "delivered" | "refused" | "cancelled";
+
+/** The three hero figures a phone keeps (phone plan: title plus at most three figures). */
+const PHONE_PILLS: HighlightPill[] = ["late", "forms", "requested"];
+
+/** When the job reached its current leg, if the record says. A requested job carries no time. */
+function stageStartedAt(movement: Movement): Instant | undefined {
+  const transport = movement.transport;
+  return transport?.collectedAt ?? transport?.enRouteAt ?? transport?.acceptedAt;
+}
+
+/** For sorting by longest wait: the leg's start, or when the movement opened. */
+function stageSince(movement: Movement): Instant {
+  return stageStartedAt(movement) ?? movement.openedAt;
+}
 
 /**
  * The ward ETA a job carries, if any: the arrival plan's time only. The time typed at booking is
@@ -326,19 +344,18 @@ const LEG_TONE: Record<OfficerLeg, WfTone> = {
 };
 
 /**
- * THE V6 REBUILD, 7 October 2026 — `design/pages-v6/TransportOfficer.png`. One hero band counts
- * the jobs (patients on board, accepted but not collected, not yet accepted, escort needed, past
- * the ward ETA), filters by stage on its track and by provider on its right. The "Jobs" card holds
- * the active list as a table with Refused and Cancelled tabs beside it; the job panel on the right
- * holds the selected job's route, the four stage actions, its recorded facts, arrival plan and
- * activity, with Inspect form and Divert at its foot. "Arrivals" sets each job's recorded ward ETA
- * on a time line.
+ * TRANSPORT PAGE A, 9 October 2026 (Josh picked direction A of the Transport mockups). The hero
+ * counts the jobs by what each is waiting on; its pills, the provider row, the chips and the search
+ * HIGHLIGHT rows and never hide one. The jobs table runs the full width until a patient is chosen,
+ * then the job panel opens beside it (a bottom sheet on a phone) with the route, the four stage
+ * actions, the forms pack, the booking facts, the arrival plan and activity. Arrivals sits under
+ * the table. Closed work (delivered today, refused, cancelled) lives in History.
  *
  * **Left out, because the app has no such action or record:** Dispatch comms and Call ward (no
  * call is placed from this prototype), Stand down (the officer may not cancel a transport — see
- * `EVENT_ROLE.CANCEL_TRANSPORT`), the booking script copy, the receiving nurse and bed on the
- * arrival plan, the before-departure checklist, the "over 4h waiting" marker (a threshold nobody
- * has set), the Longest wait sort and Delivered today.
+ * `EVENT_ROLE.CANCEL_TRANSPORT`), the receiving nurse and bed on the arrival plan. Log booking and
+ * Send to officer are Preview: `BOOK_TRANSPORT` is the sending team's event, and no event sends a
+ * forms pack yet.
  */
 export function OfficerScreen() {
   const { movements, units, dispatch, rejections, patients, referrals } = useWardFlow();
@@ -375,94 +392,86 @@ export function OfficerScreen() {
     const originEd = edById(movement.originEdId);
     return departmentLabel(movement.originEdId, originEd && `${originEd.name} (${originEd.siteCode})`);
   };
+  const originShortFor = (movement: Movement) => edById(movement.originEdId)?.siteCode ?? originLabelFor(movement);
 
-  // Filter states
+  // Highlights (Josh, 9 Oct 2026, page A): a pill, chip, provider or search lights rows up. Nothing
+  // here hides a job, so the officer never loses a job behind a filter they forgot was on.
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [providerFilter, setProviderFilter] = useState<string>("all");
-  const [escortFilter, setEscortFilter] = useState<boolean>(false);
-  const [jobsTab, setJobsTab] = useState<JobsTab>("active");
+  const [pill, setPill] = useState<HighlightPill | null>(null);
+  const [providerHighlight, setProviderHighlight] = useState<string | null>(null);
+  const [escortHighlight, setEscortHighlight] = useState(false);
+  const [involuntaryHighlight, setInvoluntaryHighlight] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("next");
+  const [jobsTab, setJobsTab] = useState<JobsTab>("jobs");
+  const [historyTab, setHistoryTab] = useState<HistoryTab>("delivered");
 
-  // Status and escort counts across all active officer jobs
-  const statusCounts = useMemo(() => {
-    const counts = { all: jobs.length, requested: 0, accepted: 0, en_route: 0, collected: 0 };
-    for (const job of jobs) {
-      if (!job.transport) continue;
-      const leg = officerLeg(job.transport);
-      if (leg === "Requested") counts.requested++;
-      else if (leg === "Accepted") counts.accepted++;
-      else if (leg === "En route") counts.en_route++;
-      else if (leg === "Collected") counts.collected++;
-    }
-    return counts;
-  }, [jobs]);
-
-  const escortCount = useMemo(() => {
-    return jobs.filter((j) => j.transport?.escortRequired).length;
-  }, [jobs]);
-
-  const isFiltered = searchQuery.trim() !== "" || statusFilter !== "all" || providerFilter !== "all" || escortFilter;
-  const resetFilters = () => {
+  const late = (movement: Movement) => pastWardEta(movement, now);
+  const matchesPill = (movement: Movement, which: HighlightPill): boolean => {
+    const leg = movement.transport ? officerLeg(movement.transport) : undefined;
+    if (which === "requested") return leg === "Requested";
+    if (which === "accepted") return leg === "Accepted";
+    if (which === "en_route") return leg === "En route";
+    if (which === "collected") return leg === "Collected";
+    if (which === "late") return late(movement);
+    return packCount(movement) < PACK_SLOTS.length;
+  };
+  const query = searchQuery.toLowerCase().trim();
+  const matchesSearch = (movement: Movement) => {
+    if (!query) return false;
+    const transport = movement.transport;
+    const originEd = edById(movement.originEdId);
+    const haystack = [
+      officerPatientName(movement),
+      umrnFor(movement),
+      originEd ? `${originEd.name} ${originEd.siteCode}` : "",
+      unitFor(movement)?.name ?? "",
+      transport?.provider ?? "",
+      transport?.cadNumber ?? "",
+    ]
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(query);
+  };
+  const isHighlighted = (movement: Movement) =>
+    (pill !== null && matchesPill(movement, pill)) ||
+    (providerHighlight !== null && movement.transport?.provider === providerHighlight) ||
+    (escortHighlight && movement.transport?.escortRequired === true) ||
+    (involuntaryHighlight && movement.transport?.transportLegalStatus === "involuntary") ||
+    matchesSearch(movement);
+  const anyHighlight =
+    pill !== null || providerHighlight !== null || escortHighlight || involuntaryHighlight || query !== "";
+  const highlightedCount = anyHighlight ? jobs.filter(isHighlighted).length : 0;
+  const clearHighlights = () => {
     setSearchQuery("");
-    setStatusFilter("all");
-    setProviderFilter("all");
-    setEscortFilter(false);
+    setPill(null);
+    setProviderHighlight(null);
+    setEscortHighlight(false);
+    setInvoluntaryHighlight(false);
   };
 
-  // Filtered jobs derivation
-  const filteredJobs = useMemo(() => {
-    return jobs.filter((movement) => {
-      const transport = movement.transport;
-      if (!transport) return false;
-      const leg = officerLeg(transport);
+  // Next action first: late, then forms still to upload, then the jobs furthest along.
+  const priority = (movement: Movement) => {
+    if (late(movement)) return 0;
+    if (packCount(movement) < PACK_SLOTS.length) return 1;
+    const leg = movement.transport ? officerLeg(movement.transport) : undefined;
+    return 2 + (3 - (leg ? OFFICER_LEG_STEPS.indexOf(leg) : 0));
+  };
+  const sortedJobs = [...jobs].sort((a, b) => {
+    if (sortKey === "wait") return stageSince(a) - stageSince(b);
+    if (sortKey === "eta") {
+      return (
+        (expectedArrival(a)?.at ?? Number.POSITIVE_INFINITY) - (expectedArrival(b)?.at ?? Number.POSITIVE_INFINITY)
+      );
+    }
+    return priority(a) - priority(b) || stageSince(a) - stageSince(b);
+  });
 
-      if (statusFilter !== "all") {
-        if (statusFilter === "requested" && leg !== "Requested") return false;
-        if (statusFilter === "accepted" && leg !== "Accepted") return false;
-        if (statusFilter === "en_route" && leg !== "En route") return false;
-        if (statusFilter === "collected" && leg !== "Collected") return false;
-      }
-
-      if (providerFilter !== "all" && transport.provider !== providerFilter) {
-        return false;
-      }
-
-      if (escortFilter && !transport.escortRequired) {
-        return false;
-      }
-
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const pName = officerPatientName(movement).toLowerCase();
-        const umrn = umrnFor(movement).toLowerCase();
-        const originEd = edById(movement.originEdId);
-        const originName = originEd ? `${originEd.name} ${originEd.siteCode}`.toLowerCase() : "";
-        const destinationUnit = movement.acceptedUnitId
-          ? units.find((unit) => unit.id === movement.acceptedUnitId)
-          : undefined;
-        const destName = destinationUnit ? destinationUnit.name.toLowerCase() : "";
-
-        const matches =
-          pName.includes(q) ||
-          umrn.includes(q) ||
-          originName.includes(q) ||
-          destName.includes(q) ||
-          transport.provider.toLowerCase().includes(q) ||
-          (transport.cadNumber && transport.cadNumber.toLowerCase().includes(q));
-
-        if (!matches) return false;
-      }
-
-      return true;
-    });
-  }, [jobs, statusFilter, providerFilter, escortFilter, searchQuery, units, officerPatientName, umrnFor]);
-
+  // The panel opens only when a patient is chosen (Josh, 9 Oct 2026): until then the table runs
+  // the full width of the page.
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
-  const selectedJob = jobs.find((job) => job.id === selectedId) ?? filteredJobs[0] ?? jobs[0];
+  const selectedJob = selectedId === undefined ? undefined : jobs.find((job) => job.id === selectedId);
 
-  // Modals and toast state
   const [formModalJob, setFormModalJob] = useState<Movement | null>(null);
-  const [handoverModalMovementId, setHandoverModalMovementId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<
     { message: string } | { success: string; refused: string; priorRejections: number } | null
   >(null);
@@ -481,20 +490,24 @@ export function OfficerScreen() {
   };
   const lastTriggerRef = useRef<HTMLElement | null>(null);
   const formModalRef = useRef<HTMLDivElement>(null);
-  const handoverModalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const detailRef = useRef<HTMLDivElement>(null);
 
+  const resetDiversion = () => {
+    setDiversionOpen(false);
+    setDiversionReason(undefined);
+    setDiversionPlace(undefined);
+  };
   const selectJob = (id: string) => {
-    if (id !== selectedJob?.id) {
-      setDiversionOpen(false);
-      setDiversionReason(undefined);
-      setDiversionPlace(undefined);
-    }
+    resetDiversion();
+    setSelectedId((current) => (current === id ? undefined : id));
+  };
+  const openJob = (id: string) => {
+    if (id !== selectedId) resetDiversion();
     setSelectedId(id);
-    if (typeof window.matchMedia === "function" && window.matchMedia("(max-width: 1000px)").matches) {
-      window.requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-    }
+  };
+  const closeJob = () => {
+    resetDiversion();
+    setSelectedId(undefined);
   };
 
   useEffect(() => {
@@ -506,16 +519,6 @@ export function OfficerScreen() {
     );
     firstFocusable?.focus();
   }, [formModalJob]);
-
-  useEffect(() => {
-    if (!handoverModalMovementId) return;
-    const modal = handoverModalRef.current;
-    if (!modal) return;
-    const firstFocusable = modal.querySelector<HTMLElement>(
-      'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    firstFocusable?.focus();
-  }, [handoverModalMovementId]);
 
   const handleModalTabTrap = (modalElement: HTMLElement | null, event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.key !== "Tab" || !modalElement) return;
@@ -557,16 +560,28 @@ export function OfficerScreen() {
       })),
   );
 
+  // Delivered today: closed jobs leave the live list and land here, newest first.
+  const deliveredToday = movements
+    .filter(
+      (movement) => movement.transport?.arrivedAt !== undefined && dayOf(movement.transport.arrivedAt) === dayOf(now),
+    )
+    .sort((a, b) => b.transport!.arrivedAt! - a.transport!.arrivedAt!);
+
   // Hero counts. Each label names exactly the population its count holds.
-  const activeRuns = jobs.filter(
-    (job) => job.transport?.acceptedAt !== undefined && job.transport?.collectedAt === undefined,
-  ).length;
+  const legCount = (leg: OfficerLeg) => jobs.filter((job) => job.transport && officerLeg(job.transport) === leg).length;
   const inCustody = jobs.filter(
     (job) => job.transport?.collectedAt !== undefined && job.transport?.arrivedAt === undefined,
   ).length;
   const awaitingDeparture = jobs.filter((job) => job.transport?.acceptedAt === undefined).length;
-  const escortRequired = jobs.filter((job) => job.transport?.escortRequired).length;
-  const pastEta = jobs.filter((job) => pastWardEta(job, now)).length;
+  const crewToSend = legCount("Accepted");
+  const crewEnRoute = legCount("En route");
+  const pastEta = jobs.filter(late).length;
+  const formsOutstanding = jobs.filter((job) => packCount(job) < PACK_SLOTS.length).length;
+
+  const nextArrival = jobs
+    .map((movement) => ({ movement, at: expectedArrival(movement)?.at }))
+    .filter((item): item is { movement: Movement; at: Instant } => item.at !== undefined && item.at >= now)
+    .sort((a, b) => a.at - b.at)[0];
 
   // Escape and "/" shortcut handler
   useEffect(() => {
@@ -575,26 +590,24 @@ export function OfficerScreen() {
         if (formModalJob) {
           setFormModalJob(null);
           lastTriggerRef.current?.focus();
-        } else if (handoverModalMovementId) {
-          setHandoverModalMovementId(null);
-          lastTriggerRef.current?.focus();
+        } else if (selectedId !== undefined && !document.querySelector('[role="dialog"][aria-modal="true"]')) {
+          setSelectedId(undefined);
         }
       } else if (
         e.key === "/" &&
         !formModalJob &&
-        !handoverModalMovementId &&
         document.activeElement?.tagName !== "INPUT" &&
         document.activeElement?.tagName !== "TEXTAREA" &&
         document.activeElement?.tagName !== "SELECT"
       ) {
         e.preventDefault();
-        setJobsTab("active");
+        setJobsTab("jobs");
         searchInputRef.current?.focus();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [formModalJob, handoverModalMovementId]);
+  }, [formModalJob, selectedId]);
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -616,13 +629,13 @@ export function OfficerScreen() {
    * both sentences and the count, and the render picks the true one.
    */
   // Called straight after `dispatch` in the same handler, so `rejections` here is still the
-  // pre-dispatch list. Each button calls `dispatch({ type: "..." })` itself, with a literal type,
+  // pre-dispatch list. Each action calls `dispatch({ type: "..." })` itself, with a literal type,
   // so the override-surface guard can read every transport event.
   const reportOutcome = (success: string, action: string, who: string) => {
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     setToastMessage({
       success,
-      refused: `${action} for ${who} was refused. See the Refused tab.`,
+      refused: `${action} for ${who} was refused. See History, Refused.`,
       priorRejections: rejections.length,
     });
   };
@@ -635,6 +648,104 @@ export function OfficerScreen() {
           ? toastMessage.refused
           : toastMessage.success;
 
+  const runAccepted = (movement: Movement) => {
+    dispatch({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id });
+    reportOutcome(
+      `Transport accepted for ${officerPatientName(movement)}.`,
+      "Transport acceptance",
+      officerPatientName(movement),
+    );
+  };
+  const runEnRoute = (movement: Movement) => {
+    dispatch({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id });
+    reportOutcome(`Transport en route for ${officerPatientName(movement)}.`, "En route", officerPatientName(movement));
+  };
+  const runCollected = (movement: Movement) => {
+    dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id });
+    reportOutcome(
+      `Patient collected for ${officerPatientName(movement)}. In transit.`,
+      "Collection",
+      officerPatientName(movement),
+    );
+  };
+  const runDelivered = (movement: Movement) => {
+    dispatch({ type: "PATIENT_ARRIVED", role: "officer", now, movementId: movement.id });
+    reportOutcome(
+      `Delivery recorded for ${officerPatientName(movement)}. Delivered to receiving unit.`,
+      "Delivery",
+      officerPatientName(movement),
+    );
+  };
+
+  /** The one action a job is waiting on, why it cannot be taken yet, and how to take it. */
+  const nextStep = (movement: Movement) => {
+    const transport = movement.transport;
+    const leg = transport ? officerLeg(transport) : undefined;
+    if (!leg) return undefined;
+    const who = resolvedPatientName(movement);
+    if (leg === "Requested") {
+      return { leg, verb: "Accept", blocked: acceptedBlockedReason(movement, who), run: runAccepted };
+    }
+    if (leg === "Accepted") {
+      return { leg, verb: "Send crew", blocked: enRouteBlockedReason(movement, who), run: runEnRoute };
+    }
+    if (leg === "En route") {
+      return { leg, verb: "Collected", blocked: collectedBlockedReason(movement, who), run: runCollected };
+    }
+    return {
+      leg,
+      verb: "Delivered",
+      blocked: arrivedBlockedReason(movement, unitFor(movement), who),
+      run: runDelivered,
+    };
+  };
+
+  const nextButton = (movement: Movement, testId: string, variant: "pri" | "sec", size: "sm" | "md" | "lg") => {
+    const step = nextStep(movement);
+    if (!step) return null;
+    return (
+      <Button
+        variant={step.blocked ? "sec" : variant}
+        size={size}
+        data-testid={`${testId}-${movement.id}`}
+        aria-disabled={step.blocked ? "true" : undefined}
+        title={step.blocked ?? undefined}
+        aria-label={`${step.verb}, ${officerPatientName(movement)}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (step.blocked) return;
+          step.run(movement);
+        }}
+      >
+        {step.verb}
+      </Button>
+    );
+  };
+
+  const copyHandover = () => {
+    const lines = sortedJobs.map((movement) => {
+      const transport = movement.transport!;
+      const expected = expectedArrival(movement);
+      const eta = expected
+        ? `${expected.booked ? "est." : "ward ETA"} ${formatInstantWithDay(expected.at, now)}${late(movement) ? ", late" : ""}`
+        : "no ETA";
+      return `${officerPatientName(movement)} (${umrnFor(movement)}): ${originShortFor(movement)} to ${destinationLabelFor(movement)}, ${transportLeg(transport)}, ${transport.provider}${transport.escortRequired ? ", escort" : ""}, ${eta}, forms ${packCount(movement)} of ${PACK_SLOTS.length}`;
+    });
+    const text = [
+      `Transport handover ${formatInstantWithDay(now, now)}. ${jobs.length} open, ${inCustody} on board, ${crewEnRoute} en route, ${pastEta} past ward ETA.`,
+      ...lines,
+    ].join("\n");
+    const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
+    if (!clipboard) {
+      showToast("Copying is not available in this browser.");
+      return;
+    }
+    clipboard.writeText(text).then(
+      () => showToast(`Handover copied, ${jobs.length} open jobs.`),
+      () => showToast("Copying is not available in this browser."),
+    );
+  };
+
   const openFormModal = (movement: Movement, e: React.MouseEvent<HTMLElement>) => {
     lastTriggerRef.current = e.currentTarget;
     setFormModalJob(movement);
@@ -644,48 +755,6 @@ export function OfficerScreen() {
     setFormModalJob(null);
     lastTriggerRef.current?.focus();
   };
-
-  const openHandoverModal = (movementId: string | undefined, e: React.MouseEvent<HTMLElement>) => {
-    if (!movementId) return;
-    lastTriggerRef.current = e.currentTarget;
-    setHandoverModalMovementId(movementId);
-  };
-
-  const closeHandoverModal = () => {
-    setHandoverModalMovementId(null);
-    lastTriggerRef.current?.focus();
-  };
-
-  const executeHandover = (movement: Movement) => {
-    const blocked = arrivedBlockedReason(movement, unitFor(movement), resolvedPatientName(movement));
-    if (blocked) {
-      showToast(`Arrival blocked: ${blocked}`);
-      return;
-    }
-    dispatch({
-      type: "PATIENT_ARRIVED",
-      role: "officer",
-      now,
-      movementId: movement.id,
-    });
-    closeHandoverModal();
-    // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-    reportOutcome(
-      `Arrival submitted for ${officerPatientName(movement)}. No receiving nurse signature is recorded.`,
-      "Arrival",
-      officerPatientName(movement),
-    );
-  };
-
-  const handoverJob = jobs.find((j) => j.id === handoverModalMovementId) ?? selectedJob;
-
-  const stageItems: { id: StatusFilter; label: string; count: number }[] = [
-    { id: "all", label: "All", count: statusCounts.all },
-    { id: "requested", label: "Requested", count: statusCounts.requested },
-    { id: "accepted", label: "Accepted", count: statusCounts.accepted },
-    { id: "en_route", label: "En route", count: statusCounts.en_route },
-    { id: "collected", label: "Collected", count: statusCounts.collected },
-  ];
 
   // Every open job with a recorded ward ETA or booking estimate. The axis runs from the earlier of
   // now and the first to the later of now and the last, so no window length is invented.
@@ -702,6 +771,10 @@ export function OfficerScreen() {
   const arrivalsLeft = (at: Instant) => `${((at - arrivalsStart) / arrivalsSpan) * 100}%`;
   const hourTicks: Instant[] = [];
   for (let tick = Math.ceil(arrivalsStart / 60) * 60; tick <= arrivalsEnd; tick += 60) hourTicks.push(tick);
+  const dueSoon = arrivals.filter((item) => item.eta >= now && item.eta <= now + 180).length;
+  const firstUpcoming = arrivals.findIndex((item) => item.eta >= now);
+
+  const topJob = sortedJobs[0];
 
   function renderDetail(movement: Movement) {
     const transport = movement.transport;
@@ -765,6 +838,14 @@ export function OfficerScreen() {
         text: `Accepted by ${transport.provider}`,
       });
     }
+    for (const form of [...(movement.uploadedForms ?? [])].reverse()) {
+      activity.push({
+        id: form.id,
+        at: formatInstantWithDay(form.uploadedAt, now),
+        tone: "success",
+        text: `${form.formName} recorded (${form.fileName})`,
+      });
+    }
 
     const step = (index: number, label: string, testId: string, blocked: string | undefined, onRun: () => void) => {
       // Action `index` moves the leg to OFFICER_LEG_STEPS[index + 1]; it is done once the leg is there.
@@ -812,39 +893,10 @@ export function OfficerScreen() {
         </div>
 
         <div className={styles.actionRow}>
-          {step(0, "Accepted", "ward-officer-accept", acceptedBlocked, () => {
-            dispatch({ type: "TRANSPORT_ACCEPTED", role: "officer", now, movementId: movement.id });
-            // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-            reportOutcome(
-              `Transport accepted for ${officerPatientName(movement)}.`,
-              "Transport acceptance",
-              officerPatientName(movement),
-            );
-          })}
-          {step(1, "En route", "ward-officer-enroute", enRouteBlocked, () => {
-            dispatch({ type: "TRANSPORT_EN_ROUTE", role: "officer", now, movementId: movement.id });
-            reportOutcome(
-              `Transport en route for ${officerPatientName(movement)}.`,
-              "En route",
-              officerPatientName(movement),
-            );
-          })}
-          {step(2, "Collected", "ward-officer-collect", collectedBlocked, () => {
-            dispatch({ type: "PATIENT_COLLECTED", role: "officer", now, movementId: movement.id });
-            reportOutcome(
-              `Patient collected for ${officerPatientName(movement)}. In transit.`,
-              "Collection",
-              officerPatientName(movement),
-            );
-          })}
-          {step(3, "Delivered", "ward-officer-arrive", arrivedBlocked, () => {
-            dispatch({ type: "PATIENT_ARRIVED", role: "officer", now, movementId: movement.id });
-            reportOutcome(
-              `Delivery recorded for ${officerPatientName(movement)}. Delivered to receiving unit.`,
-              "Delivery",
-              officerPatientName(movement),
-            );
-          })}
+          {step(0, "Accepted", "ward-officer-accept", acceptedBlocked, () => runAccepted(movement))}
+          {step(1, "En route", "ward-officer-enroute", enRouteBlocked, () => runEnRoute(movement))}
+          {step(2, "Collected", "ward-officer-collect", collectedBlocked, () => runCollected(movement))}
+          {step(3, "Delivered", "ward-officer-arrive", arrivedBlocked, () => runDelivered(movement))}
         </div>
         {nextBlocked ? (
           <p className={styles.nextNote}>
@@ -873,32 +925,53 @@ export function OfficerScreen() {
           </span>
         ) : null}
 
-        <dl className={styles.facts}>
-          <div>
-            <dt>Provider</dt>
-            <dd>{transport.provider}</dd>
+        {pastWardEta(movement, now) && movement.arrivalDetails ? (
+          <div
+            className={styles.overdue}
+            role="alert"
+            data-testid={`ward-officer-overdue-alert-${movement.id}`}
+            title={OPERATIONAL_DEFAULT_LABEL}
+          >
+            <StatusGlyph tone="warning" size={9} />
+            <span>
+              <strong>Arrival overdue.</strong> More than {LATE_ARRIVAL_GRACE_MINUTES}m past the ward ETA (
+              {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST). Notification is not
+              recorded here.
+            </span>
           </div>
-          <div data-testid={`ward-officer-transport-legal-status-${movement.id}`}>
-            <dt>Transport logged as</dt>
-            <dd>{transportLegalStatusLabel(transport)}</dd>
-          </div>
-          <div data-testid={`ward-officer-cad-number-${movement.id}`}>
-            <dt>CAD (dispatch) number</dt>
-            <dd>{cadNumberLabel(transport)}</dd>
-          </div>
-          <div>
-            <dt>Escort required</dt>
-            <dd>{transport.escortRequired ? "Yes" : "No"}</dd>
-          </div>
-          <div>
-            <dt>Form on file</dt>
-            <dd>{formRequiredLabel(transport)}</dd>
-          </div>
-          <div data-testid={`ward-officer-estimated-at-${movement.id}`}>
-            <dt>Estimated time</dt>
-            <dd>{estimatedTimeLabel(transport, now)}</dd>
-          </div>
-        </dl>
+        ) : null}
+
+        <FormsPack movement={movement} now={now} who={officerPatientName(movement)} />
+
+        <section className={styles.section} aria-label="Booking">
+          <h3 className={styles.sectionTitle}>Booking</h3>
+          <dl className={styles.facts}>
+            <div>
+              <dt>Provider</dt>
+              <dd>{transport.provider}</dd>
+            </div>
+            <div data-testid={`ward-officer-cad-number-${movement.id}`}>
+              <dt>CAD (dispatch) number</dt>
+              <dd>{cadNumberLabel(transport)}</dd>
+            </div>
+            <div data-testid={`ward-officer-transport-legal-status-${movement.id}`}>
+              <dt>Transport logged as</dt>
+              <dd>{transportLegalStatusLabel(transport)}</dd>
+            </div>
+            <div>
+              <dt>Escort required</dt>
+              <dd>{transport.escortRequired ? "Yes" : "No"}</dd>
+            </div>
+            <div>
+              <dt>Form named at booking</dt>
+              <dd>{formRequiredLabel(transport)}</dd>
+            </div>
+            <div data-testid={`ward-officer-estimated-at-${movement.id}`}>
+              <dt>Estimated time</dt>
+              <dd>{estimatedTimeLabel(transport, now)}</dd>
+            </div>
+          </dl>
+        </section>
 
         {movement.arrivalDetails ? (
           <section className={styles.section} aria-label="Arrival plan">
@@ -919,37 +992,6 @@ export function OfficerScreen() {
                 </dd>
               </div>
             </dl>
-            {pastWardEta(movement, now) ? (
-              <div
-                className={styles.overdue}
-                role="alert"
-                data-testid={`ward-officer-overdue-alert-${movement.id}`}
-                title={OPERATIONAL_DEFAULT_LABEL}
-              >
-                <StatusGlyph tone="warning" size={9} />
-                <span>
-                  <strong>Arrival overdue.</strong> More than {LATE_ARRIVAL_GRACE_MINUTES}m past the ward ETA (
-                  {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST). Notification is not
-                  recorded here.
-                </span>
-              </div>
-            ) : null}
-          </section>
-        ) : null}
-
-        {movement.uploadedForms && movement.uploadedForms.length > 0 ? (
-          <section className={styles.section} aria-label="Document details">
-            <h3 className={styles.sectionTitle}>Documents</h3>
-            <div className={styles.docs} data-testid={`ward-officer-uploaded-forms-${movement.id}`}>
-              <span className={styles.docsNote}>
-                Document details ({movement.uploadedForms.length}) — file contents not stored
-              </span>
-              {movement.uploadedForms.map((f) => (
-                <Badge key={f.id} variant="default" size="sm">
-                  {f.formName} ({f.fileName})
-                </Badge>
-              ))}
-            </div>
           </section>
         ) : null}
 
@@ -1057,79 +1099,103 @@ export function OfficerScreen() {
     );
   }
 
+  const pillStat = (which: HighlightPill, value: number, label: string, short: string, tone?: WfTone) => (
+    <HeroStat
+      className={cx(styles.heroPill, PHONE_PILLS.includes(which) ? undefined : styles.deskOnly)}
+      value={value}
+      label={
+        <>
+          <span className={styles.longLabel}>{label}</span>
+          <span className={styles.shortLabel} aria-hidden="true">
+            {short}
+          </span>
+        </>
+      }
+      tone={tone}
+      pressed={pill === which}
+      onToggle={() => setPill((current) => (current === which ? null : which))}
+    />
+  );
+
+  const panelOpen = selectedJob !== undefined && selectedJob.transport !== undefined;
+
   return (
-    <div className={styles.screen} data-testid="ward-officer-screen" data-ward-design="v6">
+    <div className={styles.screen} data-testid="ward-officer-screen" data-ward-design="v8">
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
+          className={styles.dispatchHero}
           eyebrow="Transport dispatch"
           title={`${inCustody} on board`}
-          stats={
-            <div className={styles.heroStats}>
-              <HeroStat className={styles.heroStat} value={activeRuns} label="Accepted, not collected" />
-              <HeroStat className={styles.heroStat} value={awaitingDeparture} label="Not yet accepted" />
-              <HeroStat className={styles.heroStat} value={escortRequired} label="Escort required" />
-              <HeroStat
-                className={styles.heroStat}
-                value={pastEta}
-                label="Past ward ETA"
-                tone={pastEta > 0 ? "warning" : undefined}
-              />
-            </div>
-          }
+          titleMeta={`${crewEnRoute} ${crewEnRoute === 1 ? "crew" : "crews"} en route`}
           aside={
-            <Button
-              variant="light"
-              size="sm"
-              icon={FileCheck}
-              onClick={(e) => openHandoverModal(selectedJob?.id, e)}
-              disabled={!selectedJob}
-            >
-              Transport handover
-            </Button>
+            <div className={styles.heroTools}>
+              {nextArrival ? (
+                <span className={styles.nextArrival} title="Next expected arrival">
+                  <Icon icon={Clock} size={14} />
+                  Next <b>{formatInstantWithDay(nextArrival.at, now)}</b>
+                  <span className={styles.nextArrivalPlace}>{destinationLabelFor(nextArrival.movement)}</span>
+                </span>
+              ) : null}
+              <Button
+                variant="onHero"
+                size="sm"
+                icon={Copy}
+                className={styles.copyButton}
+                onClick={copyHandover}
+                aria-label="Copy handover"
+                title="Copy a plain text summary of open jobs"
+              >
+                <span className={styles.longLabel}>Copy handover</span>
+              </Button>
+              <span className={cx(styles.preview, styles.onHeroPreview, styles.deskOnly)}>Preview</span>
+              <Button
+                variant="onHero"
+                size="sm"
+                icon={Truck}
+                className={cx(styles.previewButton, styles.deskOnly)}
+                aria-disabled="true"
+                title="Bookings are logged by the sending team on the ED or patient page. Logging one here is not wired in this prototype."
+                onClick={(event) => event.preventDefault()}
+              >
+                Log booking
+              </Button>
+            </div>
           }
           bar={
-            <div className={styles.trackScroll}>
-              <HeroTrack
-                label="Filter by transport stage"
-                value={statusFilter}
-                onChange={setStatusFilter}
-                items={stageItems}
-              />
+            <div className={styles.heroPills} role="group" aria-label="Highlight jobs">
+              {pillStat("requested", awaitingDeparture, "Not accepted", "To accept", "neutral")}
+              {pillStat("accepted", crewToSend, "Crew to send", "To send", "neutral")}
+              {pillStat("en_route", crewEnRoute, "Crew en route", "En route", "info")}
+              {pillStat("collected", inCustody, "On board", "On board", "info")}
+              {pillStat("late", pastEta, "Past ward ETA", "Late", pastEta > 0 ? "warning" : "neutral")}
+              {pillStat("forms", formsOutstanding, "Forms to upload", "Forms", "neutral")}
             </div>
           }
-          barAside={
-            <div className={styles.fleetPanel} role="group" aria-label="Jobs by provider">
+          foot={
+            <div className={styles.fleetPanel} role="group" aria-label="Highlight jobs by provider">
+              <span className={styles.fleetLabel}>Providers</span>
               {TRANSPORT_PROVIDERS.map((provider) => {
-                const providerJobs = movements.filter(
-                  (movement) => !movement.closure && movement.transport?.provider === provider,
-                );
+                const providerJobs = jobs.filter((movement) => movement.transport?.provider === provider);
                 const moving = providerJobs.filter((movement) => {
                   const leg = transportLeg(movement.transport);
                   return leg === "En route" || leg === "Collected";
                 }).length;
-                const waiting = providerJobs.filter((movement) => {
-                  const leg = transportLeg(movement.transport);
-                  return leg === "Requested" || leg === "Accepted";
-                }).length;
-                const isSelected = providerFilter === provider;
+                const waiting = providerJobs.length - moving;
+                const isSelected = providerHighlight === provider;
                 return (
                   <button
                     key={provider}
                     type="button"
                     className={styles.fleetButton}
-                    onClick={() => setProviderFilter((prev) => (prev === provider ? "all" : provider))}
-                    title={isSelected ? `Show every provider` : `Filter by ${provider}`}
+                    onClick={() => setProviderHighlight((prev) => (prev === provider ? null : provider))}
+                    title={isSelected ? "Stop highlighting this provider" : `Highlight ${provider} jobs`}
                     aria-pressed={isSelected}
                   >
                     <span className={styles.fleetName}>{provider.replace(/ service$/, "")}</span>
                     <SrOnly>{provider.endsWith(" service") ? " service" : ""}</SrOnly>
                     <span className={styles.fleetCounts}>
-                      <span>{moving} on road</span>
-                      <span className={styles.fleetDot} aria-hidden="true">
-                        {" · "}
-                      </span>
-                      <span>{waiting} booked</span>
+                      {moving} moving, {waiting} waiting
                     </span>
                   </button>
                 );
@@ -1138,19 +1204,43 @@ export function OfficerScreen() {
           }
         />
 
-        <div className={styles.layout}>
+        {topJob && topJob.transport ? (
+          <Card className={styles.nextCard} aria-label="Next action">
+            <div className={styles.nextCardHead}>
+              <span className={styles.eyebrow}>Next action</span>
+              <span className={styles.nextCardStage}>
+                <StatusGlyph tone={LEG_TONE[officerLeg(topJob.transport) ?? "Requested"]} size={9} />
+                {transportLeg(topJob.transport)}
+              </span>
+            </div>
+            <strong className={styles.nextCardName}>{officerPatientName(topJob)}</strong>
+            <span className={styles.nextCardLine}>
+              <span className={styles.mono}>{umrnFor(topJob)}</span> · {originShortFor(topJob)} to{" "}
+              {destinationLabelFor(topJob)}
+            </span>
+            {late(topJob) && topJob.arrivalDetails ? (
+              <span className={cx(styles.nextCardLine, styles.warnText)}>
+                <StatusGlyph tone="warning" size={9} /> Past ward ETA{" "}
+                {formatInstantWithDay(topJob.arrivalDetails.estimatedArrivalAt, now)}
+              </span>
+            ) : packCount(topJob) < PACK_SLOTS.length ? (
+              <span className={styles.nextCardLine}>
+                <StatusGlyph tone="neutral" size={9} /> {PACK_SLOTS.length - packCount(topJob)} of {PACK_SLOTS.length}{" "}
+                forms still to upload
+              </span>
+            ) : null}
+            <div className={styles.nextCardActions}>
+              <Button variant="sec" size="lg" onClick={() => openJob(topJob.id)}>
+                Open
+              </Button>
+              {nextButton(topJob, "ward-officer-nextcard", "pri", "lg")}
+            </div>
+          </Card>
+        ) : null}
+
+        <div className={styles.layout} data-open={panelOpen ? "true" : undefined}>
           <div className={styles.leftColumn}>
-            <Card className={styles.jobsPanel} aria-labelledby="ward-officer-jobs-heading">
-              <CardHead
-                id="ward-officer-jobs-heading"
-                title="Jobs"
-                eyebrow
-                aside={
-                  <span className={styles.headNote}>
-                    <b>{filteredJobs.length}</b> of {jobs.length} active
-                  </span>
-                }
-              />
+            <Card className={styles.jobsPanel} aria-label="Jobs">
               <div className={styles.tabsRow}>
                 <Tabs
                   label="Job lists"
@@ -1158,36 +1248,69 @@ export function OfficerScreen() {
                   value={jobsTab}
                   onChange={setJobsTab}
                   items={[
-                    { id: "active", label: "Active", count: jobs.length },
-                    { id: "refused", label: "Refused", count: officerRefusals.length },
-                    { id: "cancelled", label: "Cancelled", count: cancelledTransports.length },
+                    { id: "jobs", label: "Jobs", count: jobs.length },
+                    {
+                      id: "history",
+                      label: "History",
+                      count: deliveredToday.length + officerRefusals.length + cancelledTransports.length,
+                    },
                   ]}
                 />
+                <span className={styles.headNote}>
+                  {panelOpen ? "Highlights never hide a job" : "Choose a patient to open their job"}
+                </span>
               </div>
 
-              <TabPanel idPrefix="ward-officer-jobs" id="active" hidden={jobsTab !== "active"}>
-                <div className={styles.toolbar} role="search" aria-label="Filter transport jobs">
+              <TabPanel idPrefix="ward-officer-jobs" id="jobs" hidden={jobsTab !== "jobs"}>
+                <div className={styles.toolbar} role="search" aria-label="Find transport jobs">
                   <TextInput
                     ref={searchInputRef}
                     icon={Search}
                     boxClassName={styles.searchBox}
                     id="officer-transfer-search"
                     name="transferSearch"
-                    placeholder="Patient, UMRN, ED, ward or CAD number"
-                    aria-label="Search transport jobs"
+                    placeholder="Patient, UMRN, ED, ward or CAD"
+                    aria-label="Highlight transport jobs"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onClear={() => setSearchQuery("")}
                     trailing={searchQuery ? undefined : <Kbd>/</Kbd>}
                   />
-                  <FilterChip pressed={escortFilter} onPressedChange={setEscortFilter} count={escortCount}>
-                    Escort only
+                  <FilterChip
+                    pressed={escortHighlight}
+                    onPressedChange={setEscortHighlight}
+                    count={jobs.filter((job) => job.transport?.escortRequired).length}
+                  >
+                    Escort
                   </FilterChip>
-                  {isFiltered ? (
-                    <Button variant="ghost" size="sm" onClick={resetFilters} aria-label="Reset all filters">
-                      Reset filters
-                    </Button>
+                  <FilterChip
+                    pressed={involuntaryHighlight}
+                    onPressedChange={setInvoluntaryHighlight}
+                    count={jobs.filter((job) => job.transport?.transportLegalStatus === "involuntary").length}
+                  >
+                    Involuntary
+                  </FilterChip>
+                  {anyHighlight ? (
+                    <span className={styles.highlightNote} role="status">
+                      {highlightedCount} highlighted
+                      <Button variant="ghost" size="sm" onClick={clearHighlights}>
+                        Clear
+                      </Button>
+                    </span>
                   ) : null}
+                  <span className={styles.toolbarSpacer} />
+                  <span className={styles.sortLabel}>Sort</span>
+                  <Segmented
+                    className={styles.sortControl}
+                    label="Sort jobs"
+                    value={sortKey}
+                    onChange={setSortKey}
+                    items={[
+                      { id: "next", label: "Next action" },
+                      { id: "wait", label: "Longest wait" },
+                      { id: "eta", label: "ETA" },
+                    ]}
+                  />
                 </div>
 
                 {jobs.length === 0 ? (
@@ -1195,18 +1318,6 @@ export function OfficerScreen() {
                     No transport job is currently outstanding &mdash; every job has either arrived or its movement has
                     closed.
                   </p>
-                ) : filteredJobs.length === 0 ? (
-                  <div className={styles.filterEmpty}>
-                    <EmptyState
-                      icon={Search}
-                      title="No transport jobs match the selected filters."
-                      action={
-                        <Button variant="sec" size="sm" onClick={resetFilters}>
-                          Clear all filters
-                        </Button>
-                      }
-                    />
-                  </div>
                 ) : (
                   <div className={styles.tableScroll}>
                     <table
@@ -1215,54 +1326,49 @@ export function OfficerScreen() {
                     >
                       <thead>
                         <tr>
-                          <th scope="col">UMRN</th>
-                          <th scope="col">Patient and route</th>
-                          <th scope="col">Provider</th>
+                          <th scope="col">Patient</th>
+                          <th scope="col">Route</th>
                           <th scope="col">Stage</th>
-                          <th scope="col">Escort</th>
-                          <th scope="col">CAD</th>
+                          <th scope="col">Forms</th>
+                          <th scope="col">ETA</th>
                           <th scope="col" className={tableClasses.num}>
-                            Waiting
+                            Next
                           </th>
                         </tr>
                       </thead>
                       <tbody data-testid="ward-officer-joblist">
-                        {filteredJobs.map((movement) => {
+                        {sortedJobs.map((movement) => {
                           const transport = movement.transport;
                           if (!transport) return null;
                           const active = movement.id === selectedJob?.id;
-                          const patientName = resolvedPatientName(movement);
+                          const lit = anyHighlight && isHighlighted(movement);
                           const leg = officerLeg(transport);
                           const legIndex = leg ? OFFICER_LEG_STEPS.indexOf(leg) : -1;
-                          const stepBlockedReason =
-                            leg === "Requested"
-                              ? acceptedBlockedReason(movement, patientName)
-                              : leg === "Accepted"
-                                ? enRouteBlockedReason(movement, patientName)
-                                : leg === "En route"
-                                  ? collectedBlockedReason(movement, patientName)
-                                  : leg === "Collected"
-                                    ? arrivedBlockedReason(movement, unitFor(movement), patientName)
-                                    : undefined;
+                          const step = nextStep(movement);
                           const stepStatusText = leg
-                            ? stepBlockedReason
+                            ? step?.blocked
                               ? `blocked before ${nextActionVerb(leg).toLowerCase()}`
                               : `next ${nextActionVerb(leg).toLowerCase()}`
                             : undefined;
+                          const since = stageStartedAt(movement);
+                          const expected = expectedArrival(movement);
+                          const isLate = late(movement);
+                          const forms = packCount(movement);
                           return (
                             <tr
                               key={movement.id}
                               data-testid={`ward-officer-job-${movement.id}`}
+                              data-highlight={lit ? "true" : undefined}
                               className={active ? `${tableClasses.selected} ${styles.jobRow}` : styles.jobRow}
                               aria-selected={active}
                             >
-                              <td className={styles.jobId}>{umrnFor(movement)}</td>
                               <td>
                                 <button
                                   type="button"
                                   className={styles.selectButton}
                                   data-testid={`ward-officer-select-${movement.id}`}
                                   aria-current={active ? "true" : undefined}
+                                  aria-expanded={active}
                                   onClick={() => selectJob(movement.id)}
                                 >
                                   {/* Josh, 25 Sept 2026: the transport officer sees the patient's name. Same
@@ -1274,12 +1380,20 @@ export function OfficerScreen() {
                                   >
                                     {officerPatientName(movement)}
                                   </strong>
-                                  <span className={styles.jobRoute}>
-                                    {originLabelFor(movement)} to {destinationLabelFor(movement)}
-                                  </span>
+                                  <span className={styles.jobUmrn}>{umrnFor(movement)}</span>
                                 </button>
                               </td>
-                              <td className={styles.clip}>{transport.provider}</td>
+                              <td>
+                                <span className={styles.jobRoute}>
+                                  <span className={styles.jobRouteTo}>{destinationLabelFor(movement)}</span>
+                                  <span className={styles.jobRouteFrom}> from {originShortFor(movement)}</span>
+                                </span>
+                                <span className={styles.jobMeta}>
+                                  {transport.provider.replace(/ service$/, "")}
+                                  {transport.escortRequired ? " · escort" : ""}
+                                  {transport.transportLegalStatus === "voluntary" ? " · voluntary" : ""}
+                                </span>
+                              </td>
                               <td>
                                 {leg && stepStatusText ? (
                                   <span className={styles.stageCell}>
@@ -1301,15 +1415,52 @@ export function OfficerScreen() {
                                       <strong>{leg}</strong>
                                       <SrOnly>, {stepStatusText}</SrOnly>
                                     </p>
+                                    {since !== undefined ? (
+                                      <span className={styles.stageFor}>{durMinutes(Math.max(0, now - since))}</span>
+                                    ) : null}
                                   </span>
                                 ) : (
                                   transportLeg(transport)
                                 )}
                               </td>
-                              <td>{transport.escortRequired ? "Escort" : "None"}</td>
-                              <td className={styles.mono}>{transport.cadNumber ?? "None"}</td>
-                              <td className={`${tableClasses.num} ${styles.waiting}`}>
-                                {durMinutes(Math.max(0, now - movement.openedAt))}
+                              <td>
+                                <span
+                                  className={styles.formsCell}
+                                  title={`${forms} of ${PACK_SLOTS.length} forms recorded`}
+                                >
+                                  <span className={styles.formDots} aria-hidden="true">
+                                    {PACK_SLOTS.map((slot) => (
+                                      <StatusGlyph
+                                        key={slot.key}
+                                        tone={packForm(movement, slot.key) ? "success" : "neutral"}
+                                        size={9}
+                                      />
+                                    ))}
+                                  </span>
+                                  <span data-complete={forms === PACK_SLOTS.length ? "true" : undefined}>
+                                    {forms} of {PACK_SLOTS.length}
+                                  </span>
+                                </span>
+                              </td>
+                              <td>
+                                {expected ? (
+                                  <span className={styles.etaCell}>
+                                    {isLate ? <StatusGlyph tone="warning" size={9} /> : null}
+                                    <b>{formatInstantWithDay(expected.at, now)}</b>
+                                    <span className={isLate ? styles.warnText : styles.etaNote}>
+                                      {isLate
+                                        ? `${durMinutes(Math.max(0, now - expected.at))} late`
+                                        : expected.booked
+                                          ? "est."
+                                          : transportEtaRemainingLabel(expected.at, now)}
+                                    </span>
+                                  </span>
+                                ) : (
+                                  <span className={styles.etaNote}>No ETA</span>
+                                )}
+                              </td>
+                              <td className={tableClasses.num}>
+                                {nextButton(movement, "ward-officer-next", "sec", "sm")}
                               </td>
                             </tr>
                           );
@@ -1320,60 +1471,100 @@ export function OfficerScreen() {
                 )}
               </TabPanel>
 
-              <TabPanel idPrefix="ward-officer-jobs" id="refused" hidden={jobsTab !== "refused"}>
-                {officerRefusals.length > 0 ? (
-                  <section className={styles.refusals} aria-label="Refused" data-testid="ward-officer-refusals">
-                    <div className={styles.panelBody} role="region" aria-label="Refused list" tabIndex={0}>
-                      <ul className={styles.plainList}>
-                        {officerRefusals.map((rejection) => (
-                          <li key={rejection.id} className={styles.plainItem}>
-                            <Icon icon={X} size={14} />
-                            <span>
-                              {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                              <strong>{patientNameForMovementId(rejection.movementId)}</strong> &mdash;{" "}
-                              {OFFICER_ACTION_REJECTION_LABELS[rejection.attempted]} was refused: {rejection.reason}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+              <TabPanel idPrefix="ward-officer-jobs" id="history" hidden={jobsTab !== "history"}>
+                <div className={styles.historyHead}>
+                  <span className={styles.muted}>Today, closed records</span>
+                  <Tabs
+                    label="History lists"
+                    idPrefix="ward-officer-history"
+                    value={historyTab}
+                    onChange={setHistoryTab}
+                    items={[
+                      { id: "delivered", label: "Delivered today", count: deliveredToday.length },
+                      { id: "refused", label: "Refused", count: officerRefusals.length },
+                      { id: "cancelled", label: "Cancelled", count: cancelledTransports.length },
+                    ]}
+                  />
+                </div>
+                <TabPanel idPrefix="ward-officer-history" id="delivered" hidden={historyTab !== "delivered"}>
+                  {deliveredToday.length > 0 ? (
+                    <ul className={styles.plainList} data-testid="ward-officer-delivered">
+                      {deliveredToday.map((movement) => (
+                        <li key={movement.id} className={styles.plainItem}>
+                          <StatusGlyph tone="success" size={9} />
+                          <span>
+                            <span className={styles.mono}>
+                              {formatInstantWithDay(movement.transport!.arrivedAt!, now)}
+                            </span>{" "}
+                            <strong>{officerPatientName(movement)}</strong>{" "}
+                            <span className={styles.mono}>{umrnFor(movement)}</span> · {destinationLabelFor(movement)}{" "}
+                            <span className={styles.muted}>({movement.transport!.provider})</span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className={styles.filterEmpty}>
+                      <EmptyState icon={Check} title="Nothing delivered yet today." />
                     </div>
-                    <p className={styles.panelNote}>Recorded refusals remain visible for this session.</p>
-                  </section>
-                ) : (
-                  <div className={styles.filterEmpty}>
-                    <EmptyState icon={Check} title="No action has been refused this session." />
-                  </div>
-                )}
-              </TabPanel>
-
-              <TabPanel idPrefix="ward-officer-jobs" id="cancelled" hidden={jobsTab !== "cancelled"}>
-                {cancelledTransports.length > 0 ? (
-                  <section
-                    className={styles.cancelledSection}
-                    aria-label="Cancelled"
-                    data-testid="ward-officer-cancelled-transports"
-                  >
-                    <div className={styles.panelBody} role="region" aria-label="Cancelled list" tabIndex={0}>
-                      <ul className={styles.plainList}>
-                        {cancelledTransports.map((item, idx) => (
-                          <li key={`${item.movementId}-${idx}`} className={styles.plainItem}>
-                            <StatusGlyph tone="closed" size={9} />
-                            <span>
-                              {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                              <strong>{item.patientName}</strong> &mdash; stand-down, CAD (dispatch) number:{" "}
-                              <code>{item.cadNumber}</code> <span className={styles.muted}>({item.note})</span>
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                  )}
+                </TabPanel>
+                <TabPanel idPrefix="ward-officer-history" id="refused" hidden={historyTab !== "refused"}>
+                  {officerRefusals.length > 0 ? (
+                    <section className={styles.refusals} aria-label="Refused" data-testid="ward-officer-refusals">
+                      <div className={styles.panelBody} role="region" aria-label="Refused list" tabIndex={0}>
+                        <ul className={styles.plainList}>
+                          {officerRefusals.map((rejection) => (
+                            <li key={rejection.id} className={styles.plainItem}>
+                              <Icon icon={X} size={14} />
+                              <span>
+                                {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
+                                <strong>{patientNameForMovementId(rejection.movementId)}</strong> &mdash;{" "}
+                                {OFFICER_ACTION_REJECTION_LABELS[rejection.attempted]} was refused: {rejection.reason}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <p className={styles.panelNote}>Recorded refusals remain visible for this session.</p>
+                    </section>
+                  ) : (
+                    <div className={styles.filterEmpty}>
+                      <EmptyState icon={Check} title="No action has been refused this session." />
                     </div>
-                    <p className={styles.panelNote}>Cancelled dispatches and ambulance stand-downs for this session.</p>
-                  </section>
-                ) : (
-                  <div className={styles.filterEmpty}>
-                    <EmptyState icon={Check} title="No transport has been cancelled this session." />
-                  </div>
-                )}
+                  )}
+                </TabPanel>
+                <TabPanel idPrefix="ward-officer-history" id="cancelled" hidden={historyTab !== "cancelled"}>
+                  {cancelledTransports.length > 0 ? (
+                    <section
+                      className={styles.cancelledSection}
+                      aria-label="Cancelled"
+                      data-testid="ward-officer-cancelled-transports"
+                    >
+                      <div className={styles.panelBody} role="region" aria-label="Cancelled list" tabIndex={0}>
+                        <ul className={styles.plainList}>
+                          {cancelledTransports.map((item, idx) => (
+                            <li key={`${item.movementId}-${idx}`} className={styles.plainItem}>
+                              <StatusGlyph tone="closed" size={9} />
+                              <span>
+                                {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
+                                <strong>{item.patientName}</strong> &mdash; stand-down, CAD (dispatch) number:{" "}
+                                <code>{item.cadNumber}</code> <span className={styles.muted}>({item.note})</span>
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <p className={styles.panelNote}>
+                        Cancelled dispatches and ambulance stand-downs for this session.
+                      </p>
+                    </section>
+                  ) : (
+                    <div className={styles.filterEmpty}>
+                      <EmptyState icon={Check} title="No transport has been cancelled this session." />
+                    </div>
+                  )}
+                </TabPanel>
               </TabPanel>
             </Card>
 
@@ -1381,8 +1572,9 @@ export function OfficerScreen() {
               <CardHead
                 id="ward-officer-arrivals-heading"
                 title="Arrivals"
-                eyebrow
-                aside={<span className={styles.headNote}>Recorded ward ETA</span>}
+                icon={undefined}
+                meta={`${dueSoon} due in the next 3h`}
+                aside={<span className={styles.headNote}>Ward ETA first, else booking estimate</span>}
               />
               <CardBody>
                 {arrivals.length === 0 ? (
@@ -1402,23 +1594,42 @@ export function OfficerScreen() {
                       <span className={styles.nowLine} style={{ left: arrivalsLeft(now) }} />
                     </div>
                     <ul className={styles.arrivalsList}>
-                      {arrivals.map(({ movement, eta, booked }) => {
+                      {arrivals.map(({ movement, eta, booked }, index) => {
                         // Only a ward ETA can make a job late; a booking estimate says it is one.
-                        const late = pastWardEta(movement, now);
+                        const isLate = pastWardEta(movement, now);
                         return (
-                          <li key={movement.id} className={styles.arrivalRow}>
-                            <span className={styles.arrivalWho}>
+                          <li
+                            key={movement.id}
+                            className={styles.arrivalRow}
+                            data-now-before={index === firstUpcoming ? "true" : undefined}
+                          >
+                            {index === firstUpcoming ? (
+                              <span className={styles.arrivalNow} aria-hidden="true">
+                                Now {formatInstantWithDay(now, now)}
+                              </span>
+                            ) : null}
+                            <button
+                              type="button"
+                              className={styles.arrivalWho}
+                              aria-label={`Open the job for ${officerPatientName(movement)}`}
+                              onClick={() => openJob(movement.id)}
+                            >
+                              <b className={styles.arrivalTime}>{formatInstantWithDay(eta, now)}</b>
+                              <StatusGlyph tone={isLate ? "warning" : booked ? "neutral" : "info"} size={9} />
                               <strong>{destinationLabelFor(movement)}</strong>
                               <span>
-                                {umrnFor(movement)} · {originLabelFor(movement)}
+                                {officerPatientName(movement)} · {umrnFor(movement)}
                               </span>
-                            </span>
+                              <span className={cx(styles.arrivalKind, isLate && styles.warnText)}>
+                                {isLate ? "Late" : booked ? "Est." : "Ward ETA"}
+                              </span>
+                            </button>
                             <span className={styles.arrivalTrack}>
                               <span className={styles.arrivalMark} style={{ left: arrivalsLeft(eta) }}>
-                                <StatusGlyph tone={late ? "warning" : "info"} size={9} />
+                                <StatusGlyph tone={isLate ? "warning" : booked ? "neutral" : "info"} size={9} />
                                 <b>{formatInstantWithDay(eta, now)}</b>
-                                <span>
-                                  {late
+                                <span className={isLate ? styles.warnText : undefined}>
+                                  {isLate
                                     ? "Late"
                                     : booked
                                       ? `Booking estimate · ${transportEtaRemainingLabel(eta, now)}`
@@ -1436,67 +1647,80 @@ export function OfficerScreen() {
             </Card>
           </div>
 
-          <div ref={detailRef} className={styles.side}>
-            {selectedJob && selectedJob.transport ? (
-              <Card
-                className={styles.detail}
-                aria-labelledby="ward-officer-detail-heading"
-                data-testid="ward-officer-detail"
-              >
-                <CardHead
-                  id="ward-officer-detail-heading"
-                  title={officerPatientName(selectedJob)}
-                  meta={<span className={styles.mono}>{umrnFor(selectedJob)}</span>}
-                  aside={
-                    <Badge
-                      tone={
-                        officerLeg(selectedJob.transport) ? LEG_TONE[officerLeg(selectedJob.transport)!] : "neutral"
-                      }
-                    >
-                      {transportLeg(selectedJob.transport)}
-                    </Badge>
-                  }
-                />
-                <CardBody className={styles.detailBody}>{renderDetail(selectedJob)}</CardBody>
-                <CardFoot className={styles.inactiveRow}>
-                  <Button
-                    variant="sec"
-                    size="sm"
-                    icon={ShieldCheck}
-                    data-testid={`ward-officer-inspect-form-${selectedJob.id}`}
-                    onClick={(e) => openFormModal(selectedJob, e)}
-                  >
-                    Inspect form
-                  </Button>
-                  {!selectedJob.closure &&
-                  selectedJob.transport.collectedAt !== undefined &&
-                  selectedJob.transport.arrivedAt === undefined &&
-                  selectedJob.transport.diversion === undefined ? (
+          {panelOpen && selectedJob && selectedJob.transport ? (
+            <>
+              <div className={styles.scrim} aria-hidden="true" onClick={closeJob} />
+              <div className={styles.side}>
+                <Card
+                  className={styles.detail}
+                  aria-labelledby="ward-officer-detail-heading"
+                  data-testid="ward-officer-detail"
+                >
+                  <span className={styles.grab} aria-hidden="true" />
+                  <CardHead
+                    id="ward-officer-detail-heading"
+                    className={styles.detailHead}
+                    title={officerPatientName(selectedJob)}
+                    meta={
+                      <>
+                        <span className={styles.mono}>{umrnFor(selectedJob)}</span>
+                        {" · "}
+                        {transportLegalStatusLabel(selectedJob.transport)}
+                        {selectedJob.transport.escortRequired ? " · Escort" : ""}
+                      </>
+                    }
+                    aside={
+                      <>
+                        <Badge
+                          tone={
+                            officerLeg(selectedJob.transport) ? LEG_TONE[officerLeg(selectedJob.transport)!] : "neutral"
+                          }
+                        >
+                          {transportLeg(selectedJob.transport)}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          iconOnly
+                          icon={X}
+                          onClick={closeJob}
+                          aria-label="Close job panel"
+                          data-testid="ward-officer-detail-close"
+                        />
+                      </>
+                    }
+                  />
+                  <CardBody className={styles.detailBody}>{renderDetail(selectedJob)}</CardBody>
+                  <CardFoot className={styles.inactiveRow}>
                     <Button
                       variant="sec"
                       size="sm"
-                      icon={MapPin}
-                      aria-expanded={diversionOpen}
-                      data-testid={`ward-officer-divert-${selectedJob.id}`}
-                      onClick={() => setDiversionOpen((open) => !open)}
+                      icon={ShieldCheck}
+                      data-testid={`ward-officer-inspect-form-${selectedJob.id}`}
+                      onClick={(e) => openFormModal(selectedJob, e)}
                     >
-                      Divert
+                      Inspect form
                     </Button>
-                  ) : null}
-                </CardFoot>
-              </Card>
-            ) : (
-              <Card className={styles.detail}>
-                <CardBody>
-                  <EmptyState
-                    icon={Check}
-                    title="No job to work"
-                    meta="Every job has arrived or its movement has closed."
-                  />
-                </CardBody>
-              </Card>
-            )}
-          </div>
+                    {!selectedJob.closure &&
+                    selectedJob.transport.collectedAt !== undefined &&
+                    selectedJob.transport.arrivedAt === undefined &&
+                    selectedJob.transport.diversion === undefined ? (
+                      <Button
+                        variant="sec"
+                        size="sm"
+                        icon={MapPin}
+                        aria-expanded={diversionOpen}
+                        data-testid={`ward-officer-divert-${selectedJob.id}`}
+                        onClick={() => setDiversionOpen((open) => !open)}
+                      >
+                        Divert
+                      </Button>
+                    ) : null}
+                  </CardFoot>
+                </Card>
+              </div>
+            </>
+          ) : null}
         </div>
 
         <WardPrototypeFooter
@@ -1526,7 +1750,8 @@ export function OfficerScreen() {
                   Form verification
                 </h3>
                 <span className={styles.modalSub}>
-                  {formRequiredLabel(formModalJob.transport!)} · {formModalJob.id} · {officerPatientName(formModalJob)}
+                  {formRequiredLabel(formModalJob.transport!)} · {umrnFor(formModalJob)} ·{" "}
+                  {officerPatientName(formModalJob)}
                 </span>
               </span>
               <Button
@@ -1573,94 +1798,6 @@ export function OfficerScreen() {
               </span>
               <Button variant="pri" size="sm" onClick={closeFormModal}>
                 Close checks
-              </Button>
-            </footer>
-          </div>
-        </div>
-      ) : null}
-
-      {/* Record arrival dialog */}
-      {handoverModalMovementId && handoverJob ? (
-        <div
-          ref={handoverModalRef}
-          className={styles.modalBackdrop}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="handover-modal-title"
-          onClick={closeHandoverModal}
-          onKeyDown={(e) => handleModalTabTrap(handoverModalRef.current, e)}
-        >
-          <div className={styles.modalDialog} onClick={(e) => e.stopPropagation()}>
-            <header className={styles.modalHead}>
-              <span className={styles.modalTile} aria-hidden="true">
-                <Icon icon={FileCheck} size={16} />
-              </span>
-              <span className={styles.modalTitles}>
-                <h3 id="handover-modal-title" className={styles.modalTitle}>
-                  Record arrival at receiving ward
-                </h3>
-                <span className={styles.modalSub}>
-                  {umrnFor(handoverJob)} · {originLabelFor(handoverJob)} to {destinationLabelFor(handoverJob)}
-                </span>
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                iconOnly
-                icon={X}
-                onClick={closeHandoverModal}
-                aria-label="Close handover dialog"
-              />
-            </header>
-            <div className={styles.modalBody}>
-              <div className={styles.modalFields}>
-                <div className={styles.modalField}>
-                  <label className={styles.modalLabel} htmlFor="officer-handover-movement">
-                    Patient movement reference
-                  </label>
-                  <TextInput
-                    id="officer-handover-movement"
-                    locked
-                    // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-                    value={officerPatientName(handoverJob)}
-                  />
-                </div>
-                <div className={styles.modalField}>
-                  <label className={styles.modalLabel} htmlFor="officer-handover-destination">
-                    Destination inpatient unit
-                  </label>
-                  <TextInput id="officer-handover-destination" locked value={destinationLabelFor(handoverJob)} />
-                </div>
-              </div>
-              <dl className={styles.facts}>
-                <div>
-                  <dt>Collected</dt>
-                  <dd>
-                    {handoverJob.transport?.collectedAt !== undefined
-                      ? formatInstantWithDay(handoverJob.transport.collectedAt, now)
-                      : "Not collected"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Ward ETA</dt>
-                  <dd>
-                    {wardEta(handoverJob) !== undefined
-                      ? formatInstantWithDay(wardEta(handoverJob)!, now)
-                      : "Not recorded"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Receiving nurse</dt>
-                  <dd>Not recorded in this prototype.</dd>
-                </div>
-              </dl>
-            </div>
-            <footer className={styles.modalFoot}>
-              <Button variant="ghost" size="sm" onClick={closeHandoverModal}>
-                Cancel
-              </Button>
-              <Button variant="pri" size="sm" onClick={() => executeHandover(handoverJob)}>
-                Record arrival
               </Button>
             </footer>
           </div>
