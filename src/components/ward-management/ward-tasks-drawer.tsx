@@ -812,7 +812,8 @@ export function WardTasksDrawer({
                           aria-label="Open patient"
                           data-testid={`ward-task-snoozed-open-${item.id}`}
                           onClick={() => {
-                            onSelectMovement(item.movementId);
+                            // The same routing as an active row: a discharge row opens its stay.
+                            openItem(item);
                           }}
                         >
                           <ArrowUpRight aria-hidden="true" />

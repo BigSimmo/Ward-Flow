@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { CircleAlert } from "lucide-react";
 
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
 import { buildActionInbox, isOpen, type InboxItem } from "@/components/ward-management/ward-derivations";
@@ -200,5 +201,41 @@ describe("tasks drawer: ownership and snooze", () => {
     expect(within(snoozed).getByRole("button", { name: /^Return .* now, / })).toBeInTheDocument();
     fireEvent.click(within(snoozed).getByRole("button", { name: "Open patient" }));
     expect(onSelectMovement).toHaveBeenCalledWith(red.movementId);
+  });
+
+  it("opens a snoozed discharge notification row by its stay, never an empty movement", () => {
+    const onSelectMovement = vi.fn();
+    const onSelectDischarge = vi.fn();
+    const discharge: InboxItem = {
+      id: "notify-discharge-AD-LEFT-01",
+      tone: "warning",
+      icon: CircleAlert,
+      title: "Discharge notifications to record",
+      detail: "Carer, PSP, MHAS not recorded",
+      owner: "Ward",
+      movementId: "",
+      admissionId: "AD-LEFT-01",
+      kind: "fact",
+    };
+    renderDrawer({
+      items: [discharge],
+      onSelectMovement,
+      onSelectDischarge,
+      snoozes: {
+        [discharge.id]: [
+          {
+            at: NOW_ANCHOR,
+            by: "Flow coordinator",
+            kind: "snoozed",
+            until: NOW_ANCHOR + 60,
+            reason: "awaiting_call_back",
+          },
+        ],
+      },
+    });
+    const snoozed = screen.getByTestId("ward-tasks-snoozed");
+    fireEvent.click(within(snoozed).getByTestId(`ward-task-snoozed-open-${discharge.id}`));
+    expect(onSelectDischarge).toHaveBeenCalledWith("AD-LEFT-01");
+    expect(onSelectMovement).not.toHaveBeenCalled();
   });
 });
