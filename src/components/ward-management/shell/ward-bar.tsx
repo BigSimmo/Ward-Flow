@@ -36,6 +36,7 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { formatInstant, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import {
@@ -88,7 +89,16 @@ const WardMhaCalculator = dynamic(
 
 import { announceToWardShell } from "./ward-live-region";
 import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
-import { digestHref, edHref, handoverHref, movementHref, officerHref, onCallHref, settingsHref } from "./ward-facade";
+import {
+  digestHref,
+  dischargeHref,
+  edHref,
+  handoverHref,
+  movementHref,
+  officerHref,
+  onCallHref,
+  settingsHref,
+} from "./ward-facade";
 import type { WardActivityCategory, WardActivityContent, WardAppearance, WardPrimaryAction } from "./ward-shell-types";
 import { deriveCommandActivity, type WardActivityEventTone } from "./ward-command-activity";
 import { useWardChecks } from "./ward-checks";
@@ -245,6 +255,15 @@ const SERVICE_SWATCH_KEY: Record<HealthService, "north" | "south" | "east" | "wa
   CAHS: "cahs",
   Private: "private",
 };
+
+/** What the service choice narrows, named from `SERVICE_SCOPED_SCREENS` so it cannot drift (D-e).
+ *  Screen readers only: the painted note and its "scopes the lists" hint were removed at the
+ *  owner's request (9 Oct 2026). */
+const SERVICE_SCOPE_NOTE = `One service, or all of them. ${
+  SERVICE_SCOPED_SCREENS.length > 1
+    ? `${SERVICE_SCOPED_SCREENS.slice(0, -1).join(", ")} and ${SERVICE_SCOPED_SCREENS[SERVICE_SCOPED_SCREENS.length - 1]}`
+    : SERVICE_SCOPED_SCREENS.join(", ")
+} narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not.`;
 
 /** The exact sentence standard §8.6 already uses for a drawn-and-not-wired control (D-16) — named
  *  in one place so the three "not wired" primary-action kinds and any future caller share the
@@ -458,6 +477,8 @@ export function phoneBarAction(action: WardPrimaryAction | undefined, phone: boo
  */
 export function routeBarAction(pathname: string): WardPrimaryAction {
   const action = resolveWardPrimaryAction(pathname);
+  // The intake route IS the open referral slide-out, so a second referral trigger stays off there.
+  if (action?.kind === "none" && pathname.replace(/\/$/, "") === WARD_REFERRAL_INTAKE_HREF) return action;
   return action === undefined || action.kind === "none" ? NEW_REFERRAL_ACTION : action;
 }
 
@@ -506,6 +527,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     dispatch,
     inboxAcknowledgements,
     inboxCompletions,
+    supportNotifications,
   } = useWardFlow();
   // Live ticking clock for waits, freshness lines, notice scoping, and recorded actions — not the
   // stale `now` on the main context value, which only updates when something else dispatches.
@@ -605,8 +627,17 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   // for exactly this call. A ward/ED/officer route gets an empty inbox: zero badge, and the drawer's
   // own "No outstanding work right now." empty state, never a network list with every action refused.
   const tasksItems = useMemo(
-    () => (wardTasksAreActionableForRole(role) ? buildActionInbox(movements.filter(isOpen), now, units) : []),
-    [movements, now, units, role],
+    () =>
+      wardTasksAreActionableForRole(role)
+        ? buildActionInbox(movements.filter(isOpen), now, units, {
+            movements,
+            admissions,
+            patients,
+            referrals,
+            supportNotifications,
+          })
+        : [],
+    [movements, now, units, role, admissions, patients, referrals, supportNotifications],
   );
   /**
    * The Service selector's own "{n} open" / "none open" option counts (build plan §3 "Service
@@ -639,6 +670,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     () =>
       deriveCommandActivity({
         movements,
+        patients,
         units,
         referrals,
         rejections,
@@ -647,7 +679,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         refreshRequests,
         now,
       }),
-    [movements, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now],
+    [movements, patients, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now],
   );
   const usesDerivedActivity = activity === undefined;
   const currentScreenTitle = useMemo(() => resolveWardScreenTitle(pathname, units), [pathname, units]);
@@ -691,10 +723,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
         .sort((left, right) => right.raisedAt - left.raisedAt),
     [notices, now, placeId, role],
   );
+  // D-39: a notice names the patient by UMRN, never by the WF journey number it was raised on.
+  const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
+  const noticeText = (sentence: string) => withUmrnInPlaceOfMovementIds(sentence, umrnLookup);
   const visibleNotices = scopedNotices.filter(
     (notice) =>
       (!unreadOnly || notice.readAt === undefined) &&
-      notice.sentence.toLowerCase().includes(activityQuery.trim().toLowerCase()),
+      noticeText(notice.sentence).toLowerCase().includes(activityQuery.trim().toLowerCase()),
   );
   // Item 48, Q2 (owner answer 48, 2026-09-17): "counts show unread only" — `scopedNotices` itself
   // still carries every notice this chrome may see, read or not (read notices stay in the list),
@@ -930,6 +965,20 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     [router],
   );
 
+  // A discharge notification task opens the stay's checklist on the discharges board.
+  const openDischarge = useCallback(
+    (admissionId: string) => {
+      setOpenPanel(null);
+      if (typeof window !== "undefined" && window.history && window.history.state?.wardDrawer) {
+        const nextState = { ...window.history.state };
+        delete nextState.wardDrawer;
+        window.history.replaceState(nextState, "");
+      }
+      router.push(dischargeHref(admissionId));
+    },
+    [router],
+  );
+
   // Close the Service selector, or the "New referral" popover, on an outside click — the three
   // drawers get the same behaviour from `<Sheet>`'s own backdrop; these are the only two pop-outs
   // that manage their own chrome. The mockup's own `newMenu` is the same shape of control as the
@@ -1108,15 +1157,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
               aria-label="Choose a health service"
               data-testid="ward-bar-service-panel"
             >
-              <p className={styles.popoverHead}>
-                Service<span className={styles.popoverHint}>scopes the lists</span>
-              </p>
+              <p className={styles.popoverHead}>Service</p>
+              <p className="sr-only">{SERVICE_SCOPE_NOTE}</p>
               <button
                 type="button"
                 className={styles.serviceOption}
                 aria-pressed={service === null}
                 onClick={() => selectService(null)}
               >
+                <span className={styles.serviceDot} data-service="statewide" aria-hidden="true" />
                 <span className={styles.serviceName}>All services</span>
                 <Check className={styles.serviceCheck} aria-hidden="true" data-visible={service === null} />
               </button>
@@ -1131,6 +1180,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                     aria-pressed={service === candidate}
                     onClick={() => selectService(candidate)}
                   >
+                    <span
+                      className={styles.serviceDot}
+                      data-service={SERVICE_SWATCH_KEY[candidate]}
+                      aria-hidden="true"
+                    />
                     <span className={styles.serviceName}>{candidate}</span>
                     <span className={styles.serviceOptionCount} aria-hidden="true">
                       {openCount > 0 ? `${openCount} open` : "none open"}
@@ -1139,13 +1193,6 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                   </button>
                 );
               })}
-              <p className={styles.popoverNote}>
-                {`One service, or all of them. ${
-                  SERVICE_SCOPED_SCREENS.length > 1
-                    ? `${SERVICE_SCOPED_SCREENS.slice(0, -1).join(", ")} and ${SERVICE_SCOPED_SCREENS[SERVICE_SCOPED_SCREENS.length - 1]}`
-                    : SERVICE_SCOPED_SCREENS.join(", ")
-                } narrow${SERVICE_SCOPED_SCREENS.length === 1 ? "s" : ""} their lists to it. The bed shortlist, whole-network figures, the rail counts and the drawers do not.`}
-              </p>
             </div>
           ) : null}
         </div>
@@ -1168,6 +1215,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           <WardGlobalSearch
             movements={movements}
             patients={patients}
+            referrals={referrals}
             units={units}
             tasks={tasksItems}
             now={now}
@@ -1504,7 +1552,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
                       <time className={styles.feedTime}>{formatInstantWithDay(notice.raisedAt, now)}</time>
                       <StatusGlyph tone={isRead ? "neutral" : "info"} size={8} className={styles.feedGlyph} />
                       <div className={styles.noticeContent}>
-                        <span>{notice.sentence}</span>
+                        <span>{noticeText(notice.sentence)}</span>
                         {/* No automatic read on opening the drawer — this is the only place
                             `MARK_NOTICE_READ` is dispatched from, and only a person's own click
                             reaches it (item 48, Q2, owner answer 48). */}
@@ -1708,7 +1756,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             dispatch={dispatch}
             onClose={() => closePopover("tasks")}
             onSelectMovement={openMovement}
-            records={{ movements, patients, referrals, units }}
+            onSelectDischarge={openDischarge}
+            records={{ movements, admissions, patients, referrals, units }}
           />
         </div>
       </Sheet>

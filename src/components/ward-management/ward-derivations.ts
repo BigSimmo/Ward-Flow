@@ -68,6 +68,7 @@ import { REFERRABLE_MOVEMENT_STAGES } from "@/components/ward-management/ward-fl
 export type WardRole = "flow" | "ed" | "ward";
 
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
+import { supportNotificationInboxItems } from "@/components/ward-management/ward-support-notifications";
 export { stageCopy };
 
 /** Same reason `stageCopy` exists: `BedReleaseState`'s own values (`BED_RELEASE_STATES` in
@@ -312,7 +313,7 @@ export function destinationNoLongerLawful(movement: Movement, units: Unit[]): Un
  */
 export function referralBlockedReason(movement: Movement): string | undefined {
   if (REFERRABLE_MOVEMENT_STAGES.includes(movement.stage)) return undefined;
-  return `${movement.id} cannot be referred while it is ${stageCopy[movement.stage].label.toLowerCase()} — referral is only available while placement is requested or a destination is under review.`;
+  return `This patient cannot be referred while the journey is ${stageCopy[movement.stage].label.toLowerCase()} — referral is only available while placement is requested or a destination is under review.`;
 }
 
 /**
@@ -1132,6 +1133,11 @@ export type InboxItem = {
   owner: string;
   movementId: string;
   /**
+   * Set on a discharge notification row: the discharged stay it is about. The Tasks drawer opens
+   * that stay's checklist on the discharges board instead of the movement page.
+   */
+  admissionId?: string;
+  /**
    * 🔴 **WHETHER THIS ROW CAN BE TICKED OFF AT ALL** — ward-lead task, 2026-09-06. A `"fact"` is a
    * live clinical or legal truth that leaves this list when it stops being true; a `"commitment"`
    * is a human undertaking that leaves when the person says they finished. See `InboxItemKind` and
@@ -1169,7 +1175,13 @@ export type InboxItem = {
  * legitimately carries a deadline falls due. This is the coordinator's work list, not a report:
  * every qualifying movement gets its own row.
  */
-export function buildActionInbox(movements: Movement[], now: Instant, units: Unit[]): InboxItem[] {
+export function buildActionInbox(
+  movements: Movement[],
+  now: Instant,
+  units: Unit[],
+  /** Optional: the whole record, to add outstanding carer/PSP/MHAS notification rows. */
+  records?: Omit<Parameters<typeof supportNotificationInboxItems>[0], "units">,
+): InboxItem[] {
   const items: InboxItem[] = [];
 
   // A legal status change can make an already-accepted destination unlawful — see
@@ -1283,6 +1295,10 @@ export function buildActionInbox(movements: Movement[], now: Instant, units: Uni
       movementId: movement.id,
     });
   }
+
+  // Advisory carer/PSP/MHAS notifications still to record for recent involuntary moves. These are
+  // about COMPLETED moves, so they read every movement in `records`, not the caller's open list.
+  if (records) items.push(...supportNotificationInboxItems({ ...records, units }, now));
 
   return items;
 }

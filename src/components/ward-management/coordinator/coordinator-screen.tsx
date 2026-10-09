@@ -75,6 +75,8 @@ export function CoordinatorScreen() {
     setFocusMovementId,
     configuration,
     scenario,
+    patients,
+    supportNotifications,
   } = useWardFlow();
   const liveNow = useWardFlowClock();
   const service = useServiceScope();
@@ -198,7 +200,13 @@ export function CoordinatorScreen() {
   // The work list is network-wide and open movements only, never scoped to the ED filter.
   const actionInbox = useMemo(
     () =>
-      buildActionInbox(openMovements, now, units).map((item) => {
+      buildActionInbox(openMovements, now, units, {
+        movements,
+        admissions,
+        patients,
+        referrals,
+        supportNotifications,
+      }).map((item) => {
         if (!item.id.startsWith("bed-pull-") && item.title !== "Bed pull expired") return item;
         return {
           ...item,
@@ -206,7 +214,7 @@ export function CoordinatorScreen() {
           detail: `${item.detail} · Release the bed or set a new reserved time`,
         };
       }),
-    [openMovements, now, units],
+    [openMovements, now, units, movements, admissions, patients, referrals, supportNotifications],
   );
   const silenceReminders = useMemo(() => {
     const notes = new Map<string, string>();
@@ -233,6 +241,7 @@ export function CoordinatorScreen() {
   const recentActivity = useMemo(() => {
     const activity = deriveCommandActivity({
       movements,
+      patients,
       units,
       referrals,
       rejections,
@@ -245,7 +254,7 @@ export function CoordinatorScreen() {
       ...change,
       tone: activity.tones[change.id] ?? "info",
     }));
-  }, [movements, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now]);
+  }, [movements, patients, units, referrals, rejections, bedReleases, leaveBeds, refreshRequests, now]);
 
   // Hero counts: every one is read from an existing derivation, never typed.
   const counts = useMemo(
@@ -283,6 +292,9 @@ export function CoordinatorScreen() {
         // row closes them in the same tap.
         onSelectMovement={(movementId) => {
           selectMovement(movementId);
+          setExceptionsOpen(false);
+        }}
+        onSelectDischarge={() => {
           setExceptionsOpen(false);
         }}
       />

@@ -310,7 +310,9 @@ describe("the override form says what the bed failed on, in text a coordinator c
       line.getAttribute("title"),
       "the stage reason has become a tooltip, invisible to exactly the users this was built for",
     ).toBeNull();
-    expect(block.textContent).toContain(NON_REFERABLE_STAGE_MOVEMENT);
+    // D-39: the stage block names no WF journey number.
+    expect(block.textContent).toContain("This patient cannot be referred");
+    expect(block.textContent).not.toContain(NON_REFERABLE_STAGE_MOVEMENT);
   });
 });
 
