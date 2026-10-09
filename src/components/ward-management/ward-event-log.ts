@@ -21,6 +21,8 @@ export type EventLogEntry = {
   actingUnitId?: string;
   bedId?: string;
   releaseId?: string;
+  /** The booking a planned-admission event acts on (stream D). An id, never the initials. */
+  plannedAdmissionId?: string;
 };
 
 const ID_FIELDS = [
@@ -31,6 +33,7 @@ const ID_FIELDS = [
   "actingUnitId",
   "bedId",
   "releaseId",
+  "plannedAdmissionId",
 ] as const;
 
 export function eventLogEntryFor(event: WardFlowEvent, accepted: boolean): EventLogEntry {

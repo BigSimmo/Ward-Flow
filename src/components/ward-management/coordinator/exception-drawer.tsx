@@ -226,7 +226,17 @@ export function ExceptionDrawer({
                 const { admissionId } = item;
                 return (
                   <li key={item.id}>
-                    {admissionId !== undefined ? (
+                    {item.href ? (
+                      // A planned admission row has no movement to select: it opens Capacity.
+                      <Link
+                        href={item.href}
+                        data-testid={`ward-exception-${item.id}`}
+                        data-tone={item.tone}
+                        className={styles.registerRow}
+                      >
+                        {content}
+                      </Link>
+                    ) : admissionId !== undefined ? (
                       <Link
                         href={dischargeHref(admissionId)}
                         data-testid={`ward-exception-${item.id}`}

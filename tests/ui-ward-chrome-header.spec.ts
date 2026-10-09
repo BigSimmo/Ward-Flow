@@ -671,8 +671,16 @@ test("@mockup drawer workspace keeps Figures focus and every task reachable on a
   const lastCard = tasks.locator("li").last();
   await expect(lastCard).toBeInViewport();
   await expect(tasks.getByRole("button", { name: "Close tasks panel" })).toBeInViewport();
-  await lastCard.getByRole("button", { name: "Open patient" }).click();
-  // The last card may be a move or a carer, PSP and MHAS discharge row (9 Oct 2026), which opens
+  // Stream D (9 Oct 2026): a planned admission row has no movement and opens Capacity, so the
+  // journey is checked on the last card still labelled "Open patient", scrolled to like the rest.
+  const lastPatientCard = tasks
+    .locator("li")
+    .filter({ has: page.getByRole("button", { name: "Open patient", exact: true }) })
+    .last();
+  await lastPatientCard.scrollIntoViewIfNeeded();
+  await expect(lastPatientCard).toBeInViewport();
+  await lastPatientCard.getByRole("button", { name: "Open patient", exact: true }).click();
+  // That card may be a move or a carer, PSP and MHAS discharge row (9 Oct 2026), which opens
   // its stay on the discharges board. Either way the task is reachable and the drawer closes.
   await expect(page).toHaveURL(/\/movements\/WF-|\/discharges\?admissionId=/u);
   await expect(tasks).toHaveCount(0);

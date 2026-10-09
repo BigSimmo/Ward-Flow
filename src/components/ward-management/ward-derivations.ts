@@ -12,13 +12,15 @@ import {
 } from "@/components/ward-management/ward-flow-reducer";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import type { LucideIcon } from "lucide-react";
-import { CircleAlert, Truck } from "lucide-react";
+import { CalendarClock, CircleAlert, Truck } from "lucide-react";
 
+import { plannedAdmissionIsOverdue, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import {
   clockState,
   formatElapsed,
   formatInstant,
+  formatInstantWithDay,
   formatRemaining,
   minutesUntil,
   type Instant,
@@ -1133,6 +1135,15 @@ export type InboxItem = {
   owner: string;
   movementId: string;
   /**
+   * A planned admission row's own booking, for the patient resolver to name a linked person. The
+   * row has no movement, so `movementId` is empty and the booking id is never shown.
+   */
+  plannedAdmission?: PlannedAdmission;
+  /** The person's label when the booking holds initials only, such as "Initials RK". */
+  personLabel?: string;
+  /** Where the row opens when it is not about a movement: a planned admission opens Capacity. */
+  href?: string;
+  /**
    * Set on a discharge notification row: the discharged stay it is about. The Tasks drawer opens
    * that stay's checklist on the discharges board instead of the movement page.
    */
@@ -1187,14 +1198,25 @@ export type InboxItem = {
  * legitimately carries a deadline falls due. This is the coordinator's work list, not a report:
  * every qualifying movement gets its own row.
  */
+/**
+ * Optional fourth argument for `buildActionInbox`: support-notification fields (#159) plus planned
+ * admissions (stream D). One records object carries both; call sites that need either set of rows
+ * pass that object rather than two positional extras. Every field is optional so a planned-only
+ * caller need not invent empty support-notification collections.
+ */
+export type ActionInboxRecords = Partial<Omit<Parameters<typeof supportNotificationInboxItems>[0], "units">> & {
+  plannedAdmissions?: readonly PlannedAdmission[];
+};
+
 export function buildActionInbox(
   movements: Movement[],
   now: Instant,
   units: Unit[],
-  /** Optional: the whole record, to add outstanding carer/PSP/MHAS notification rows. */
-  records?: Omit<Parameters<typeof supportNotificationInboxItems>[0], "units">,
+  /** Optional: planned admissions and/or support-notification fields for extra inbox rows. */
+  records?: ActionInboxRecords,
 ): InboxItem[] {
   const items: InboxItem[] = [];
+  const plannedAdmissions = records?.plannedAdmissions ?? [];
 
   // A legal status change can make an already-accepted destination unlawful — see
   // `destinationNoLongerLawful`'s own doc comment. This never re-sorts or un-accepts the
@@ -1313,9 +1335,48 @@ export function buildActionInbox(
     });
   }
 
+  // Stream D: a booked planned admission whose expected arrival has passed with no arrival
+  // recorded. There is no movement behind the row — leave `movementId` empty so movement-only
+  // surfaces skip it, and carry the booking on `plannedAdmission`.
+  for (const planned of plannedAdmissions.filter((booking) => plannedAdmissionIsOverdue(booking, now))) {
+    const unit = units.find((candidate) => candidate.id === planned.unitId);
+    items.push({
+      id: `${INBOX_CATEGORIES.planned_arrival_overdue.idPrefix}${planned.id}`,
+      kind: INBOX_CATEGORIES.planned_arrival_overdue.kind,
+      tone: "warning",
+      icon: CalendarClock,
+      title: "Planned arrival not recorded",
+      detail: `${unit?.name ?? "Ward not recorded"} · expected ${formatInstantWithDay(planned.expectedArrivalAt, now)}, ${formatRemaining(minutesUntil(planned.expectedArrivalAt, now))}`,
+      owner: unit?.name ?? "Ward",
+      movementId: "",
+      plannedAdmission: planned,
+      // The reducer reads the same start for snoozes and owners (`inboxRowSince`).
+      since: planned.expectedArrivalAt,
+      // `WARD_CAPACITY_HREF`, spelled out: ward-nav reaches this file through ward-facade.
+      href: "/mockups/ward-flow/capacity",
+      ...(planned.initials !== null ? { personLabel: `Initials ${planned.initials}` } : {}),
+    });
+  }
+
   // Advisory carer/PSP/MHAS notifications still to record for recent involuntary moves. These are
   // about COMPLETED moves, so they read every movement in `records`, not the caller's open list.
-  if (records) items.push(...supportNotificationInboxItems({ ...records, units }, now));
+  // Only when the caller passed the notification record fields — `{ plannedAdmissions }` alone is
+  // enough for overdue bookings and must not be treated as a support-notification source.
+  if (records?.movements && records.admissions && records.patients && records.referrals) {
+    items.push(
+      ...supportNotificationInboxItems(
+        {
+          movements: records.movements,
+          admissions: records.admissions,
+          patients: records.patients,
+          referrals: records.referrals,
+          supportNotifications: records.supportNotifications,
+          units,
+        },
+        now,
+      ),
+    );
+  }
 
   return items;
 }

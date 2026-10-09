@@ -22,7 +22,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // leave, its steps, and recording or ending a community treatment order.
       // Stream A (9 Oct 2026) adds inbox ownership, snooze and return.
       // #159 adds RECORD_SUPPORT_NOTIFICATION (advisory carer/PSP/MHAS checklist).
-      expect(allEventTypes.length).toBe(107);
+      // Stream D planned admissions (book, change, cancel, convert).
+      expect(allEventTypes.length).toBe(111);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

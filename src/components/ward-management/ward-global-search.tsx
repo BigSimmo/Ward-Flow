@@ -153,6 +153,8 @@ export type WardGlobalSearchProps = {
    * means no "Needs you now" group, never an ungated network list.
    */
   tasks?: readonly InboxItem[];
+  /** Booked planned admissions, so search finds the same overdue rows the task count holds. */
+  plannedAdmissions?: Parameters<typeof searchWardFlow>[0]["plannedAdmissions"];
   /** The Ward Flow clock, for waits in the preview. Absent means waits are simply not shown. */
   now?: number;
   label?: string;
@@ -325,6 +327,7 @@ export function WardGlobalSearch({
   referrals,
   units,
   tasks,
+  plannedAdmissions,
   now,
   scope,
   onNavigate,
@@ -363,8 +366,9 @@ export function WardGlobalSearch({
             units,
             now,
             limitPerGroup: FULL_RESULTS_PER_GROUP,
+            plannedAdmissions,
           }),
-    [trimmed, patients, movements, units, now],
+    [trimmed, patients, movements, units, now, plannedAdmissions],
   );
 
   const refusal = trimmed.length === 0 ? undefined : refusalFor(trimmed);
@@ -539,7 +543,7 @@ export function WardGlobalSearch({
           id: task.id,
           title: task.title,
           meta: task.detail,
-          href: movementHref(task.movementId),
+          href: task.href ?? movementHref(task.movementId),
           movementId: task.movementId,
           tone: task.tone,
         })),
