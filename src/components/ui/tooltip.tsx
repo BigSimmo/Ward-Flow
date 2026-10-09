@@ -14,6 +14,8 @@ import { OverlayPortal } from "@/components/ui/overlay-root";
 import { cn } from "@/components/ui-primitives";
 import styles from "./tooltip.module.css";
 
+const activeTooltipDismissers: Array<() => void> = [];
+
 export type TooltipProps = {
   children: ReactElement<Record<string, unknown>>;
   /** Plain text shown by the tooltip and, by default, added to the trigger's description. */
@@ -133,13 +135,19 @@ export function Tooltip({
   // the document so it does not also reach a Sheet's window listener and close the drawer too.
   useEffect(() => {
     if (!visibleOpen) return;
+    const dismiss = () => setOpen(false);
+    activeTooltipDismissers.push(dismiss);
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || activeTooltipDismissers[activeTooltipDismissers.length - 1] !== dismiss) return;
       event.stopPropagation();
-      setOpen(false);
+      dismiss();
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      const index = activeTooltipDismissers.indexOf(dismiss);
+      if (index !== -1) activeTooltipDismissers.splice(index, 1);
+    };
   }, [visibleOpen]);
 
   if (!isValidElement(children)) return <>{children}</>;
