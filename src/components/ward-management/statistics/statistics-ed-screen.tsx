@@ -365,7 +365,8 @@ export function StatisticsEdScreen({
             label={`Each person waiting in ED, by how long they have waited, ${department.name} first`}
           />
           <p className={detail.note}>
-            {department.name} is the first row. 24h and 48h lines are your defaults, not legal limits.
+            {department.name} is the first row. {LONG_WAIT_MINUTES / 60}h and {VERY_LONG_WAIT_MINUTES / 60}h lines are
+            your defaults, not legal limits.
           </p>
         </CardBody>
       </StatCard>

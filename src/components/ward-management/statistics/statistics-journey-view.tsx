@@ -19,7 +19,7 @@ import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 
 import { StatisticsEdSwarm, type EdSwarmRow } from "./statistics-ed-swarm";
-import { edWaitFigures } from "./statistics-ed-waits";
+import { LONG_WAIT_HOURS, edWaitFigures } from "./statistics-ed-waits";
 import { StatCard } from "./statistics-hero";
 import { FlushRow, Follow } from "./statistics-layout";
 import styles from "./statistics-journey-view.module.css";
@@ -123,7 +123,7 @@ export function journeyStages({
       tone: "neutral",
       count: waiting.length,
       breakdown: [
-        { label: "Past 24h", value: pastADay(waiting), tone: warnIf(pastADay(waiting)) },
+        { label: `Past ${LONG_WAIT_HOURS}h`, value: pastADay(waiting), tone: warnIf(pastADay(waiting)) },
         { label: "Urgent", value: urgent(waiting) },
         { label: "EDs", value: new Set(waiting.map((movement) => movement.originEdId)).size },
       ],
@@ -135,7 +135,7 @@ export function journeyStages({
       tone: "neutral",
       count: referred.length,
       breakdown: [
-        { label: "Past 24h", value: pastADay(referred), tone: warnIf(pastADay(referred)) },
+        { label: `Past ${LONG_WAIT_HOURS}h`, value: pastADay(referred), tone: warnIf(pastADay(referred)) },
         { label: "Urgent", value: urgent(referred) },
         { label: "Declined", value: referred.filter((movement) => movement.declines.length > 0).length },
       ],
@@ -147,7 +147,7 @@ export function journeyStages({
       tone: "success",
       count: accepted.length,
       breakdown: [
-        { label: "Past 24h", value: pastADay(accepted), tone: warnIf(pastADay(accepted)) },
+        { label: `Past ${LONG_WAIT_HOURS}h`, value: pastADay(accepted), tone: warnIf(pastADay(accepted)) },
         { label: "Urgent", value: urgent(accepted) },
         { label: "Wards", value: new Set(accepted.map((movement) => movement.acceptedUnitId)).size },
       ],
@@ -218,6 +218,9 @@ const NODE_MIN = 28;
  * Seven stages left to right. Box height grows with the square root of the count, so a ward of 240
  * and a queue of 9 both stay readable, and the bands between them narrow or widen with the flow.
  */
+/** The bed bar's axis ticks, in per cent. */
+const AXIS_PERCENTS = [0, 50, 100] as const;
+
 function JourneyRibbon({
   stages,
   selected,
@@ -470,9 +473,9 @@ export function StatisticsJourneyView({ onShowBoard }: { onShowBoard: () => void
                 <div className={styles.hospitalHead} aria-hidden="true">
                   <span>Hospital</span>
                   <span className={styles.ticks}>
-                    <span style={{ left: "0%" }}>0%</span>
-                    <span style={{ left: "50%" }}>50%</span>
-                    <span style={{ left: "100%" }}>100%</span>
+                    {AXIS_PERCENTS.map((percent) => (
+                      <span key={percent} style={{ left: `${percent}%` }}>{`${percent}%`}</span>
+                    ))}
                   </span>
                   <span className={styles.readyHead}>Ready</span>
                 </div>

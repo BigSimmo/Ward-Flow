@@ -31,6 +31,24 @@
   outline-offset: 2px;
 }
 
+/* Under 1600px a tool shows its icon only; its name stays for a screen reader and as the tooltip. */
+@media (max-width: 100rem) {
+  .toolLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .tool:has(.toolLabel) {
+    position: relative;
+    width: var(--wf-h-sm);
+    padding: 0;
+  }
+}
+
 .range {
   position: relative;
   display: inline-flex;
@@ -116,9 +134,9 @@
     display: none;
   }
 
-  .stepLink {
-    width: var(--spacing-tap, 3rem);
-    height: var(--spacing-tap, 3rem);
+  /* Phone: the title row has no room beside Change ward; that control picks any unit. */
+  .stepper {
+    display: none;
   }
 }
 

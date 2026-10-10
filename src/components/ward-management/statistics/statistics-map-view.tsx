@@ -44,7 +44,7 @@ import { allEmergencyDepartments, siteByCode } from "@/components/ward-managemen
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
 
 import { blockedDischargesByReason } from "./statistics-derivations";
-import { edWaitFigures, type EdWaitingEntry } from "./statistics-ed-waits";
+import { LONG_WAIT_HOURS, VERY_LONG_WAIT_HOURS, edWaitFigures, type EdWaitingEntry } from "./statistics-ed-waits";
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
 import { StatCard, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, Follow } from "./statistics-layout";
@@ -246,7 +246,7 @@ const lensAria = (site: SiteFigures, lens: MapLens): string => {
   if (lens === "beds")
     return `${site.name}: ${site.ready} ready beds, ${site.pct}% occupied${site.wardsOverLine ? `, ${site.wardsOverLine} ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
   if (lens === "ed")
-    return `${site.name} ED: ${site.edWaiting} waiting${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${site.edOver24 ? `, ${site.edOver24} over 24 hours` : ""}`;
+    return `${site.name} ED: ${site.edWaiting} waiting${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${site.edOver24 ? `, ${site.edOver24} over ${LONG_WAIT_HOURS} hours` : ""}`;
   if (lens === "dis")
     return `${site.name}: ${site.dischargedToday} discharged today, ${site.dueToday} due later today${site.blocked ? `, ${site.blocked} blocked` : ""}`;
   return `${site.name}: mean stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${site.longStays} over 3 months`;
@@ -263,7 +263,7 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key
     id: "ed",
     label: "ED waits",
     rankTitle: "Most waiting in ED",
-    key: "Ring: longest wait, to 48h. Centre: people waiting. Amber dot: over 24h. Triangle: over 48h.",
+    key: `Ring: longest wait, to ${VERY_LONG_WAIT_HOURS}h. Centre: people waiting. Amber dot: over ${LONG_WAIT_HOURS}h. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
   },
   {
     id: "dis",
@@ -370,7 +370,11 @@ export function StatisticsMapView({
               label: network.longest ? `Longest, ${network.longest.name}` : "Longest",
               tone: network.edOver48 ? "danger" : undefined,
             },
-            { value: String(network.edOver24), label: "Over 24h", tone: network.edOver24 ? "warning" : undefined },
+            {
+              value: String(network.edOver24),
+              label: `Over ${LONG_WAIT_HOURS}h`,
+              tone: network.edOver24 ? "warning" : undefined,
+            },
           ]
         : lens === "dis"
           ? [

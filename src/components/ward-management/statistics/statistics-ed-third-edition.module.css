@@ -925,7 +925,7 @@
 /* Change ED and the previous/next stepper, side by side beside the title. */
 .titleTools {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--wf-s-2);
 }

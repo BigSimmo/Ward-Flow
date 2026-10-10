@@ -6,12 +6,12 @@ import Link from "next/link";
 import { StatusGlyph } from "@/components/wf";
 import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
-import type { EdWaitingEntry } from "./statistics-ed-waits";
+import { LONG_WAIT_HOURS, VERY_LONG_WAIT_HOURS, type EdWaitingEntry } from "./statistics-ed-waits";
 import styles from "./statistics-ed-swarm.module.css";
 
-/** The axis runs to 72 hours; anyone past it sits on the 72h+ line. */
-const AXIS_MAX_MINUTES = 72 * 60;
-const TICKS_HOURS = [0, 12, 24, 36, 48, 60, 72] as const;
+/** The axis runs half as far again past the very long wait line; anyone past it sits on the last line. */
+const AXIS_MAX_MINUTES = VERY_LONG_WAIT_MINUTES * 1.5;
+const TICKS_HOURS = Array.from({ length: 7 }, (_, index) => (index * AXIS_MAX_MINUTES) / 60 / 6);
 const RADIUS = 5;
 /** Centre to centre, so two marks never touch (Josh, 9 Oct 2026: the old field was messy). */
 const SPACING = RADIUS * 2 + 3;
@@ -78,7 +78,7 @@ function hoursLabel(minutes: number): string {
 /**
  * Everyone waiting in ED, one row per department and one mark per person along a 0 to 72 hour line,
  * with the 24 and 48 hour lines drawn. Shape carries the state: a filled dot has a ward, a ring has
- * none yet, an amber dot is past 24 hours and a triangle past 48. A row grows to fit its marks, so
+ * none yet, an amber dot is past the long wait line and a triangle past the very long one. A row grows to fit its marks, so
  * they never overlap. Sized to its card, so the marks keep their size at every width.
  */
 export function StatisticsEdSwarm({
@@ -138,12 +138,12 @@ export function StatisticsEdSwarm({
         <svg width={width} height={totalH} viewBox={`0 0 ${width} ${totalH}`} role="img" aria-label={label}>
           {TICKS_HOURS.map((hours) => {
             const x = toX(hours * 60);
-            const line = hours === 24 || hours === 48;
+            const line = hours === LONG_WAIT_HOURS || hours === VERY_LONG_WAIT_HOURS;
             return (
               <g key={hours}>
                 <line x1={x} x2={x} y1={0} y2={plotH} className={line ? styles.threshold : styles.grid} />
                 <text x={x} y={plotH + 16} className={styles.axis} textAnchor="middle">
-                  {hours === 72 ? "72h+" : `${hours}h`}
+                  {hours * 60 === AXIS_MAX_MINUTES ? `${hours}h+` : `${hours}h`}
                 </text>
               </g>
             );
@@ -190,7 +190,7 @@ export function StatisticsEdSwarm({
           {laid.map(({ row, top, height, median: middle }) => {
             const summary = `${row.name}: ${row.entries.length} waiting${
               middle !== undefined ? `, median ${hoursLabel(middle)}` : ""
-            }, ${row.entries.filter((e) => e.waitMinutes >= LONG_WAIT_MINUTES).length} past 24 hours`;
+            }, ${row.entries.filter((e) => e.waitMinutes >= LONG_WAIT_MINUTES).length} past ${LONG_WAIT_HOURS} hours`;
             return (
               <li key={row.id} style={{ top, height }}>
                 {row.href ? (
@@ -218,11 +218,11 @@ export function StatisticsEdSwarm({
         </span>
         <span>
           <StatusGlyph tone="warning" size={10} />
-          Past 24h
+          Past {LONG_WAIT_HOURS}h
         </span>
         <span>
           <StatusGlyph tone="danger" size={10} />
-          Past 48h
+          Past {VERY_LONG_WAIT_HOURS}h
         </span>
         <span className={styles.medianKey}>Median</span>
       </p>

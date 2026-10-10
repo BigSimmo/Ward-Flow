@@ -119,7 +119,7 @@ export function HeroTool({
     return (
       <Link href={href} className={className} data-testid={testId}>
         {icon}
-        {children}
+        <span className={styles.toolLabel}>{children}</span>
       </Link>
     );
   }
@@ -133,7 +133,7 @@ export function HeroTool({
       data-testid={testId}
     >
       {icon}
-      {children}
+      <span className={styles.toolLabel}>{children}</span>
       {preview ? <SrOnly>. {NOT_WIRED}</SrOnly> : null}
     </button>
   );
