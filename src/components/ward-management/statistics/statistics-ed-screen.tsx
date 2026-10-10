@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Activity, AlertTriangle, ChevronDown, Clock, Hospital, Scale } from "lucide-react";
+import { Activity, AlertTriangle, ChevronDown, Clock, Hospital, ListOrdered, Scale, Users } from "lucide-react";
 
 import {
   Card,
@@ -17,6 +17,7 @@ import {
   SrOnly,
   StatusGlyph,
   buttonClass,
+  cx,
   durMinutes,
   tableClasses,
 } from "@/components/wf";
@@ -24,6 +25,8 @@ import { readDeclinesByReason } from "@/components/ward-management/statistics/st
 import { ED_WAIT_BANDS, edWaitBands, edWaitFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
   statisticsSectionById,
+  STATISTICS_COMPARE_HREF,
+  STATISTICS_EDS_HREF,
   STATISTICS_UNIT_CHOOSER_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
 import { edStatisticsHref, movementHref } from "@/components/ward-management/shell/ward-facade";
@@ -34,10 +37,14 @@ import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-man
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
 
+import { StatisticsEdSwarm } from "./statistics-ed-swarm";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
+import { HeroTool, UnitStepper } from "./statistics-hero-tools";
+import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { useOptionalRouter } from "./statistics-nav";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
+import ed from "./statistics-ed-third-edition.module.css";
 
 /**
  * ONE EMERGENCY DEPARTMENT IN DETAIL — the per-department statistics page.
@@ -118,6 +125,7 @@ export function StatisticsEdScreen({
     edWaitFigures(movements, department.id, now);
   const bands = edWaitBands(movements, department.id, now);
   const nameOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals }).formalName;
+  const umrnOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals }).umrn;
 
   const sortedWaits = [...waitingMovements].map((entry) => entry.waitMinutes).sort((a, b) => a - b);
   const middle = Math.floor(sortedWaits.length / 2);
@@ -128,7 +136,8 @@ export function StatisticsEdScreen({
         ? sortedWaits[middle]!
         : (sortedWaits[middle - 1]! + sortedWaits[middle]!) / 2;
 
-  const comparison = allEmergencyDepartments().map((each) => {
+  const departments = allEmergencyDepartments();
+  const comparison = departments.map((each) => {
     const figures = edWaitFigures(movements, each.id, now);
     return {
       department: each,
@@ -139,6 +148,19 @@ export function StatisticsEdScreen({
       ).length,
     };
   });
+
+  // This department first, then the others busiest first: the swarm gives every one a full-width line.
+  const swarmRows = [
+    ...comparison.filter(({ department: each }) => each.id === department.id),
+    ...comparison
+      .filter(({ department: each }) => each.id !== department.id)
+      .sort((a, b) => b.figures.onTheList - a.figures.onTheList || a.department.name.localeCompare(b.department.name)),
+  ].map(({ department: each, figures }) => ({
+    id: each.id,
+    name: shortName(each.name),
+    href: each.id === department.id ? undefined : edStatisticsHref(each.id),
+    entries: figures.waitingMovements,
+  }));
 
   // Reported in place, never thrown: the wait figures do not read the decline vocabulary.
   const declinesReadout = readDeclinesByReason([...allDepartmentMovements]);
@@ -163,7 +185,34 @@ export function StatisticsEdScreen({
       slug={department.id}
       testId="ward-statistics-ed-screen"
       title={department.name}
-      titleAction={<ChangeDepartment currentId={department.id} />}
+      titleAction={
+        <span className={ed.titleTools}>
+          <ChangeDepartment currentId={department.id} />
+          <UnitStepper
+            noun="ED"
+            currentId={department.id}
+            items={departments.map((each) => ({ id: each.id, href: edStatisticsHref(each.id), label: each.name }))}
+          />
+        </span>
+      }
+      tools={
+        <>
+          <HeroTool
+            href={STATISTICS_EDS_HREF}
+            icon={<ListOrdered size={14} aria-hidden="true" />}
+            testId="ward-statistics-ed-all-eds"
+          >
+            All EDs
+          </HeroTool>
+          <HeroTool
+            href={STATISTICS_COMPARE_HREF}
+            icon={<Scale size={14} aria-hidden="true" />}
+            testId="ward-statistics-ed-compare"
+          >
+            Compare
+          </HeroTool>
+        </>
+      }
       eyebrowLabel="Emergency department"
       eyebrowDetail={<span data-testid="ward-statistics-ed-site">{site ? site.name : "Hospital not recorded"}</span>}
       now={now}
@@ -192,21 +241,51 @@ export function StatisticsEdScreen({
         </>
       }
     >
-      <div className={styles.gridMain}>
-        <Waits
-          waiting={waitingMovements}
-          nameOf={nameOf}
-          over24h={over24h}
-          over48h={over48h}
-          onTheList={onTheList}
-          longestName={longestWait ? nameOf(longestWait.movement) : ""}
-          longestText={longestWait ? splitDuration(longestWait.waitMinutes) : ""}
-        />
-        <div className={styles.stack}>
+      {/* Direction A: the cards on the right set the row's height; the wait list follows it and
+          scrolls inside, so both columns end on the same line however many people are waiting. */}
+      <FlushRow layout="lead2">
+        <Follow>
+          <Waits
+            waiting={waitingMovements}
+            nameOf={nameOf}
+            over24h={over24h}
+            over48h={over48h}
+            onTheList={onTheList}
+            longestName={longestWait ? nameOf(longestWait.movement) : ""}
+            longestText={longestWait ? splitDuration(longestWait.waitMinutes) : ""}
+            umrnOf={umrnOf}
+          />
+        </Follow>
+        <FlushStack>
+          <StatCard icon={AlertTriangle} title={`Next to cross ${longHours}h`} aside="Count down" id="ed-next">
+            <CardBody className={styles.bodyStack}>
+              {nextToCross.length === 0 ? (
+                <p className={styles.muted}>Nobody is waiting under {longHours}h</p>
+              ) : (
+                <ul className={detail.crossList}>
+                  {nextToCross.map(({ movement, waitMinutes }) => (
+                    <li key={movement.id} className={detail.crossRow}>
+                      <span>
+                        <Link href={movementHref(movement.id)} className={detail.crossName}>
+                          {nameOf(movement)}
+                        </Link>
+                        <span className={detail.secondary}>{durMinutes(waitMinutes)} waiting</span>
+                      </span>
+                      <span className={detail.crossDue}>
+                        <b>in {durMinutes(LONG_WAIT_MINUTES - waitMinutes)}</b>
+                        <span className={detail.secondary}>to {longHours}h</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardBody>
+          </StatCard>
           <StatCard
             icon={Activity}
             title="Wait bands"
             aside="People waiting now"
+            id="ed-bands"
             data-testid="ward-statistics-ed-bands"
           >
             <CardBody className={styles.bodyStack}>
@@ -229,6 +308,11 @@ export function StatisticsEdScreen({
                   </li>
                 ))}
               </ul>
+            </CardBody>
+          </StatCard>
+
+          <StatCard icon={Users} title="Declines" aside="Referrals from here" id="ed-declines">
+            <CardBody className={styles.bodyStack}>
               <div data-testid="ward-statistics-ed-declines">
                 <div className={styles.tiles} aria-hidden="true">
                   <div className={styles.tile}>
@@ -264,37 +348,33 @@ export function StatisticsEdScreen({
               </div>
             </CardBody>
           </StatCard>
+        </FlushStack>
+      </FlushRow>
 
-          <StatCard icon={AlertTriangle} title={`Next to cross ${longHours}h`} aside="Count down">
-            <CardBody className={styles.bodyStack}>
-              {nextToCross.length === 0 ? (
-                <p className={styles.muted}>Nobody is waiting under {longHours}h</p>
-              ) : (
-                <ul className={detail.crossList}>
-                  {nextToCross.map(({ movement, waitMinutes }) => (
-                    <li key={movement.id} className={detail.crossRow}>
-                      <span>
-                        <Link href={movementHref(movement.id)} className={detail.crossName}>
-                          {nameOf(movement)}
-                        </Link>
-                        <span className={detail.secondary}>{durMinutes(waitMinutes)} waiting</span>
-                      </span>
-                      <span className={detail.crossDue}>
-                        <b>in {durMinutes(LONG_WAIT_MINUTES - waitMinutes)}</b>
-                        <span className={detail.secondary}>to {longHours}h</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardBody>
-          </StatCard>
-        </div>
-      </div>
+      <StatCard
+        icon={Activity}
+        title="Everyone waiting, by ED"
+        aside="One mark per person"
+        id="ed-everyone"
+        data-testid="ward-statistics-ed-everyone"
+      >
+        <CardBody className={styles.bodyStack}>
+          <StatisticsEdSwarm
+            rows={swarmRows}
+            labelWidth={176}
+            label={`Each person waiting in ED, by how long they have waited, ${department.name} first`}
+          />
+          <p className={detail.note}>
+            {department.name} is the first row. {LONG_WAIT_MINUTES / 60}h and {VERY_LONG_WAIT_MINUTES / 60}h lines are
+            your defaults, not legal limits.
+          </p>
+        </CardBody>
+      </StatCard>
 
       <StatCard
         icon={Scale}
         title="Across departments"
+        id="ed-departments"
         aside={<LegalLimitsNotChecked variant="tag" />}
         data-testid="ward-stat-ed-comparison"
       >
@@ -396,6 +476,12 @@ export function StatisticsEdScreen({
   );
 }
 
+/** "Royal Perth Hospital Emergency Department" reads "Royal Perth", as on the all-EDs page. */
+const shortName = (name: string) =>
+  name
+    .replace(/ Emergency Department$/u, "")
+    .replace(/ (Memorial |General )?(Hospital|Health Campus|Health Service)$/u, "");
+
 const slug = (label: string) => label.replace(/\s+/gu, "-").toLowerCase();
 
 /** "<4h", "4-8h" … "24h+": a column label built from the band's own floor and the next one's. */
@@ -442,6 +528,7 @@ function Waits({
   onTheList,
   longestName,
   longestText,
+  umrnOf,
 }: {
   waiting: readonly { movement: Movement; waitMinutes: number }[];
   nameOf: (movement: Movement) => string;
@@ -450,6 +537,7 @@ function Waits({
   onTheList: number;
   longestName: string;
   longestText: string;
+  umrnOf: (movement: Movement) => string;
 }) {
   const [filter, setFilter] = useState<WaitFilter>("all");
   const [sort, setSort] = useState<"longest" | "name">("longest");
@@ -474,7 +562,13 @@ function Waits({
   const max = Math.max(VERY_LONG_WAIT_MINUTES, ...waiting.map((entry) => entry.waitMinutes));
 
   return (
-    <StatCard icon={Clock} title="Open placement waits" data-testid="ward-statistics-ed-wait">
+    <StatCard
+      icon={Clock}
+      title="Open placement waits"
+      aside={onTheList === 0 ? undefined : `${onTheList} waiting`}
+      id="ed-waiting"
+      data-testid="ward-statistics-ed-wait"
+    >
       {onTheList === 0 ? (
         <CardBody>
           <p className={styles.muted} data-testid="ward-stat-ed-wait-empty">
@@ -482,7 +576,7 @@ function Waits({
           </p>
         </CardBody>
       ) : (
-        <>
+        <div className={ed.waitBody}>
           <div className={styles.toolbar}>
             <Segmented
               label="Waits shown"
@@ -519,8 +613,8 @@ function Waits({
               Longest wait, {longestName}, {longestText} waiting.
             </p>
           </SrOnly>
-          <div data-testid="ward-stat-ed-wait-chart" data-ward-primitive="wait-chart">
-            <div className={styles.tableWrap}>
+          <div className={ed.waitChart} data-testid="ward-stat-ed-wait-chart" data-ward-primitive="wait-chart">
+            <div className={cx(styles.tableWrap, ed.waitScroll)}>
               <table className={`${tableClasses.table} ${styles.table}`} data-testid="ward-stat-ed-wait-table">
                 <caption className={styles.srOnly}>Open placement waits from this department, synthetic</caption>
                 <thead>
@@ -563,9 +657,12 @@ function Waits({
                     return (
                       <tr key={movement.id} data-level={level} data-testid={`ward-stat-ed-wait-row-${movement.id}`}>
                         <th scope="row">
-                          <Link href={movementHref(movement.id)} className={styles.rowLink}>
-                            {nameOf(movement)}
-                          </Link>
+                          <span className={ed.who}>
+                            <Link href={movementHref(movement.id)} className={styles.rowLink}>
+                              {nameOf(movement)}
+                            </Link>
+                            <span className={ed.umrn}>{umrnOf(movement)}</span>
+                          </span>
                         </th>
                         <td>
                           <span className={styles.flagged}>
@@ -618,7 +715,7 @@ function Waits({
               }
             />
           </div>
-        </>
+        </div>
       )}
     </StatCard>
   );

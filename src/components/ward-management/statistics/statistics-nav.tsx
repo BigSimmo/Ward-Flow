@@ -8,9 +8,12 @@ import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import {
   STATISTICS_COMPARE_HREF,
-  STATISTICS_UNIT_CHOOSER_HREF,
-  STATISTICS_SERVICE_CHOOSER_HREF,
-  STATISTICS_COMMUNITY_CHOOSER_HREF,
+  STATISTICS_EDS_HREF,
+  STATISTICS_HOME_HREF,
+  STATISTICS_OVERVIEW_HREF,
+  STATISTICS_SERVICES_HREF,
+  STATISTICS_TEAMS_HREF,
+  STATISTICS_WARDS_HREF,
 } from "./statistics-sections";
 import { WEEKLY_REPORT_HREF } from "@/components/ward-management/reports/report-routes";
 import { useStatisticsSamples, setStatisticsSamples } from "./statistics-samples";
@@ -20,6 +23,10 @@ export type StatisticsNavSection = "hub" | "overview" | "compare" | "service" | 
 
 interface StatisticsNavProps {
   currentSection?: StatisticsNavSection;
+  /**
+   * The unit, service or team the page shows. No longer read: since the four index pages
+   * (9 Oct 2026) each unit tab opens its index, from a detail page as from anywhere else.
+   */
   activeSlug?: string;
   /** Leave the Samples switch out, when the hero places it on its own. */
   withSamples?: boolean;
@@ -27,23 +34,16 @@ interface StatisticsNavProps {
   wardCount?: number;
 }
 
+/** Each unit kind's tab is current on its index page and on any one unit's page of that kind. */
 function sectionOf(pathname: string): StatisticsNavSection {
   if (pathname.includes("/statistics/overview")) return "overview";
   if (pathname.includes("/statistics/compare")) return "compare";
   if (pathname.includes("/statistics/service")) return "service";
   if (pathname.includes("/statistics/ward")) return "ward";
   if (pathname.includes("/statistics/ed")) return "ed";
-  if (pathname.includes("/statistics/community")) return "community";
+  if (pathname.includes("/statistics/community") || pathname.includes("/statistics/teams")) return "community";
   if (pathname.includes("/statistics/weekly")) return "weekly";
   return "hub";
-}
-
-function slugOf(pathname: string): string | undefined {
-  for (const part of ["service", "ward", "ed", "community"]) {
-    const marker = `/statistics/${part}/`;
-    if (pathname.includes(marker)) return pathname.split(marker)[1]?.split("/")[0]?.split("?")[0];
-  }
-  return undefined;
 }
 
 /**
@@ -84,43 +84,22 @@ export function StatisticsSamplesSwitch() {
  * The statistics section track. It sits on each page's hero band: Summary, Overview and Compare,
  * then the four unit kinds with their counts. On a phone it becomes one native select.
  */
-export function StatisticsNav({ currentSection, activeSlug, withSamples = true, wardCount }: StatisticsNavProps) {
+export function StatisticsNav({ currentSection, withSamples = true, wardCount }: StatisticsNavProps) {
   const pathname = useOptionalPathname();
   const router = useOptionalRouter();
 
   const activeSection = currentSection || sectionOf(pathname);
-  const slug = activeSlug ?? slugOf(pathname);
-  const detail = (section: StatisticsNavSection, base: string, fallback: string) =>
-    activeSection === section && slug ? `/mockups/ward-flow/statistics/${base}/${slug}` : fallback;
 
+  // The four unit kinds open their index pages (Statistics A, 9 Oct 2026): every service, ward, ED
+  // and team on one page, each the way into its own page. The tab stays current on a detail page.
   const items = [
-    { id: "hub", label: "Summary", href: "/mockups/ward-flow/statistics" },
-    { id: "overview", label: "Overview", href: "/mockups/ward-flow/statistics/overview" },
-    { id: "compare", label: "Compare", href: "/mockups/ward-flow/statistics/compare" },
-    {
-      id: "service",
-      label: "Services",
-      count: HEALTH_SERVICES.length,
-      href: detail("service", "service", STATISTICS_SERVICE_CHOOSER_HREF),
-    },
-    {
-      id: "ward",
-      label: "Wards",
-      count: wardCount,
-      href: detail("ward", "ward", STATISTICS_UNIT_CHOOSER_HREF),
-    },
-    {
-      id: "ed",
-      label: "EDs",
-      count: allEmergencyDepartments().length,
-      href: detail("ed", "ed", STATISTICS_COMPARE_HREF),
-    },
-    {
-      id: "community",
-      label: "Teams",
-      count: COMMUNITY_TEAM_PAGES.length,
-      href: detail("community", "community", STATISTICS_COMMUNITY_CHOOSER_HREF),
-    },
+    { id: "hub", label: "Summary", href: STATISTICS_HOME_HREF },
+    { id: "overview", label: "Overview", href: STATISTICS_OVERVIEW_HREF },
+    { id: "compare", label: "Compare", href: STATISTICS_COMPARE_HREF },
+    { id: "service", label: "Services", count: HEALTH_SERVICES.length, href: STATISTICS_SERVICES_HREF },
+    { id: "ward", label: "Wards", count: wardCount, href: STATISTICS_WARDS_HREF },
+    { id: "ed", label: "EDs", count: allEmergencyDepartments().length, href: STATISTICS_EDS_HREF },
+    { id: "community", label: "Teams", count: COMMUNITY_TEAM_PAGES.length, href: STATISTICS_TEAMS_HREF },
     { id: "weekly", label: "Weekly", href: WEEKLY_REPORT_HREF },
   ] satisfies Array<{ id: StatisticsNavSection; label: string; href: string; count?: number }>;
 
@@ -136,13 +115,6 @@ export function StatisticsNav({ currentSection, activeSlug, withSamples = true, 
           onChange={(event) => {
             const item = items.find((entry) => entry.id === event.target.value);
             if (!item) return;
-            // A chooser on this same page is reached by its fragment alone. Setting the hash fires
-            // `hashchange`, which opens the chooser's tab; a router push of the same path would not.
-            const target = new URL(item.href, window.location.href);
-            if (target.pathname === window.location.pathname && target.hash) {
-              window.location.hash = target.hash;
-              return;
-            }
             if (router) router.push(item.href);
             else window.location.assign(item.href);
           }}

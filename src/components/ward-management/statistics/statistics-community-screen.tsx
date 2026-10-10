@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarClock, ChevronDown, FileText, PhoneCall, Search, Users } from "lucide-react";
+import { CalendarClock, ChevronDown, FileText, LayoutList, PhoneCall, Search, Users } from "lucide-react";
 
 import {
   BarList,
@@ -32,6 +32,7 @@ import { communityStatisticsHref, communityTeamHref } from "@/components/ward-ma
 import {
   statisticsSectionById,
   STATISTICS_COMMUNITY_CHOOSER_HREF,
+  STATISTICS_TEAMS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 
@@ -41,6 +42,8 @@ import { communityFigures, type CommunityFigures } from "./statistics-community-
 import { csvCell } from "./statistics-csv";
 import { dateOf, fromToday } from "./statistics-dates";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
+import { HeroTool, UnitStepper } from "./statistics-hero-tools";
+import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { useOptionalRouter } from "./statistics-nav";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
@@ -143,7 +146,29 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
       slug={team.id}
       testId="ward-statistics-community-screen"
       title={team.name}
-      titleAction={<ChangeTeam currentId={team.id} />}
+      titleAction={
+        <>
+          <ChangeTeam currentId={team.id} />
+          <UnitStepper
+            items={COMMUNITY_TEAM_PAGES.map((each) => ({
+              id: each.id,
+              href: communityStatisticsHref(each.id),
+              label: each.name,
+            }))}
+            currentId={team.id}
+            noun="team"
+          />
+        </>
+      }
+      tools={
+        <HeroTool
+          href={STATISTICS_TEAMS_HREF}
+          icon={<LayoutList size={14} aria-hidden="true" />}
+          testId="ward-statistics-community-tool-teams"
+        >
+          All teams
+        </HeroTool>
+      }
       eyebrowLabel="Community team"
       eyebrowDetail={<span>{COMMUNITY_TEAM_PAGES.length} teams in the network</span>}
       now={now}
@@ -179,10 +204,13 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         </>
       }
     >
-      <div className={styles.gridMain}>
-        <TeamComparison current={team} rows={allTeams} />
-        <div className={styles.stack}>
+      <FlushRow layout="lead2">
+        <Follow className={detail.followBody}>
+          <TeamComparison current={team} rows={allTeams} />
+        </Follow>
+        <FlushStack>
           <StatCard
+            id="handover"
             icon={FileText}
             title="Community handover"
             aside="Current snapshot"
@@ -269,7 +297,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
             </CardFoot>
           </StatCard>
 
-          <StatCard icon={PhoneCall} title="Follow-up" aside="Discharged here">
+          <StatCard id="follow-up" icon={PhoneCall} title="Follow-up" aside="Discharged here">
             <CardBody className={styles.bodyStack}>
               {lists.dischargedIntoTheArea.length === 0 ? (
                 <p className={styles.muted}>
@@ -319,10 +347,16 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
               </Link>
             </CardFoot>
           </StatCard>
-        </div>
-      </div>
+        </FlushStack>
+      </FlushRow>
 
-      <StatCard icon={CalendarClock} title="Due out to this team" aside="With a discharge date">
+      <StatCard
+        id="due-out"
+        className={detail.anchor}
+        icon={CalendarClock}
+        title="Due out to this team"
+        aside="With a discharge date"
+      >
         <div className={styles.tableWrap}>
           <table className={`${tableClasses.table} ${styles.table}`}>
             <caption className={styles.srOnly}>Admissions referred to {team.name} with a discharge date</caption>
@@ -463,6 +497,7 @@ function TeamComparison({
 
   return (
     <StatCard
+      id="comparison"
       icon={Users}
       title="Team comparison"
       action={
@@ -505,7 +540,10 @@ function TeamComparison({
         />
       </div>
       {view === "chart" ? (
-        <CardBody className={styles.bodyStack} data-testid="statistics-community-comparison-chart">
+        <CardBody
+          className={`${styles.bodyStack} ${detail.scrolls}`}
+          data-testid="statistics-community-comparison-chart"
+        >
           {shown.length === 0 ? (
             <p className={styles.muted}>No team matches</p>
           ) : (
@@ -548,7 +586,7 @@ function TeamComparison({
           ) : null}
         </CardBody>
       ) : (
-        <div className={styles.tableWrap}>
+        <div className={`${styles.tableWrap} ${detail.scrolls}`}>
           <table
             className={`${tableClasses.table} ${styles.table}`}
             data-testid="ward-statistics-community-comparison-table"

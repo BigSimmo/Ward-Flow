@@ -10,6 +10,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import type { StatisticsSection } from "./statistics-sections";
 
 import { StatisticsNav, StatisticsSamplesSwitch, type StatisticsNavSection } from "./statistics-nav";
+import { StatisticsRange } from "./statistics-hero-tools";
 import styles from "./statistics-hero.module.css";
 
 /**
@@ -42,6 +43,7 @@ export function StatisticsHero({
   paused,
   onTogglePause,
   navTestId,
+  tools,
 }: {
   section: StatisticsNavSection;
   /** The unit, service or team the page shows, so its own tab links back to it. */
@@ -54,6 +56,8 @@ export function StatisticsHero({
   paused: boolean;
   onTogglePause: () => void;
   navTestId?: string;
+  /** Page tools on the band (print, the matching index), before the time range. */
+  tools?: ReactNode;
 }) {
   const wardCount = useWardFlow().units.length;
   return (
@@ -72,6 +76,8 @@ export function StatisticsHero({
       }
       barAside={
         <>
+          {tools ? <span className={styles.heroTools}>{tools}</span> : null}
+          <StatisticsRange />
           <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={onTogglePause} />
           <span className={styles.divider} aria-hidden="true" />
           <StatisticsSamplesSwitch />
@@ -129,6 +135,7 @@ export function StatisticsPage({
   onTogglePause,
   eyebrowLabel,
   eyebrowDetail,
+  tools,
   children,
 }: {
   section: StatisticsSection;
@@ -145,6 +152,7 @@ export function StatisticsPage({
   eyebrowLabel?: string;
   /** What the page is about (a ward's hospital and kind), in place of the clock. */
   eyebrowDetail?: ReactNode;
+  tools?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -164,6 +172,7 @@ export function StatisticsPage({
           stats={stats}
           paused={paused}
           onTogglePause={onTogglePause}
+          tools={tools}
         />
         {children}
         <WardPrototypeFooter testId="ward-statistics-section-footer" note="Synthetic data" />
