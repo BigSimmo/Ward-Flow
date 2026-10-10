@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { expectNeverSaysAgain, expectSays } from "./helpers/ward-caption";
@@ -2513,36 +2513,38 @@ describe("OutOfAreaBoard — the entries", () => {
     // No countdown, no target, no "overdue", no "left". `formatElapsed` is not reused either: it
     // appends "waiting", and somebody in a bed far from home is not waiting for anything this
     // prototype has recorded.
+    //
+    // Option A (10 Oct 2026) scopes this to the Days away cells. The register now also shows the
+    // ward's own expected discharge date ("Due in 5 days") and the ward's recorded bed release
+    // reason ("Awaiting accommodation"). Both are facts a ward typed, not a deadline this screen
+    // invents, so the ban is on the elapsed-time figure itself.
     renderLedger();
-    const entries = (screen.getByTestId("ward-out-of-area-entries").textContent ?? "").toLowerCase();
-    for (const word of ["overdue", "target", "deadline", "breach", "waiting", "remaining", " left", " due"]) {
-      expect(entries, `"${word.trim()}" reads as a deadline on a screen that has none`).not.toContain(word);
+    const rows = Array.from(screen.getByTestId("ward-out-of-area-table").querySelectorAll("tr[data-testid]"));
+    expect(rows.length).toBeGreaterThan(0);
+    const days = rows.map((row) => {
+      const cells = row.querySelectorAll("td");
+      return (cells[cells.length - 1]?.textContent ?? "").toLowerCase();
+    });
+    for (const cell of days) {
+      for (const word of ["overdue", "target", "deadline", "breach", "waiting", "remaining", "left", "due"]) {
+        expect(cell, `"${word}" reads as a deadline in the Days away column`).not.toContain(word);
+      }
     }
     // And a real length of stay is rendered, so the absences above are not the absence of the
-    // whole column.
-    //
-    // The floor this replaced was `/\d+ days?\b/` over this same region, and it did not do what
-    // its comment claimed. `textContent` concatenates without separators, so a table cell reading
-    // "34 days" is immediately followed by the next row's "South West" and there is NO word
-    // boundary after "days"; only the card, which renders "34 days since arrival", ever satisfied
-    // it. Proven by a mutation that emptied the table's cell and left this test green while only
-    // the per-row walk failed. A plain `toContain` of a value computed from the seed has no such
-    // dependence on where the string happens to sit.
-    expect(entries).toContain(expectedStayLabel(outOfAreaAdmissions()[0]).toLowerCase());
+    // whole column. A plain comparison with a value computed from the seed, never a regex over
+    // concatenated text, which once passed on a screen whose table cell had been emptied.
+    expect(days[0]).toBe(expectedStayLabel(outOfAreaAdmissions()[0]).toLowerCase());
   });
 
   it("renders the same four facts on the phone card, which is all a phone shows", () => {
     /*
-     * `in the document` is not `on the screen`. Below 40rem `out-of-area.module.css` sets the
-     * table's `.tableScroll` to `display: none` and swaps in `.cardList`, so every row assertion
-     * above targets markup a phone never renders. Without this test the phone layout carries no
-     * content assertion at all.
-     *
-     * jsdom applies no CSS module, so this checks the card's CONTENT, not its visibility. That is
-     * the half that can silently go missing: a card that dropped its band or its length of stay
-     * would leave the table — and every other test here — completely green.
+     * The phone is its own layout (option A, 10 Oct 2026): the board renders the card list and no
+     * table under the phone media query, so this renders with the phone stub installed. A card
+     * that dropped its band or its length of stay would leave every desktop test green.
      */
+    installMatchMediaStub(true);
     renderLedger();
+    expect(screen.queryByTestId("ward-out-of-area-table")).not.toBeInTheDocument();
     const subject = outOfAreaAdmissions()[0];
     expect(subject, "the seed no longer holds an out-of-area admission; this test proves nothing").toBeDefined();
     const unit = allUnits().find((candidate) => candidate.id === subject.unitId)!;
@@ -2553,7 +2555,7 @@ describe("OutOfAreaBoard — the entries", () => {
     expect(card).toHaveTextContent(subjectRegion!);
     expect(card).toHaveTextContent(unit.name);
     expect(card).toHaveTextContent(TRAVEL_BAND_LABELS[travelBand(subjectRegion!, unit.siteCode)!]);
-    expect(card.textContent ?? "").toMatch(/\d+ days? since arrival|Under a day since arrival/);
+    expect(card.textContent ?? "").toMatch(/\d+ days? away|Under a day away/);
   });
 
   it("gives every length of stay in whole days, the way a stay is spoken about", () => {
@@ -2608,10 +2610,17 @@ describe("OutOfAreaBoard — the entries", () => {
       expect(cells[cells.length - 1]?.textContent, `${admission.id}'s row shows the wrong length of stay`).toBe(
         expected,
       );
+    }
+
+    // The phone is its own layout, so its cards are checked in a phone render of the same seed.
+    cleanup();
+    installMatchMediaStub(true);
+    renderLedger();
+    for (const admission of subjects) {
       expect(
         screen.getByTestId(`ward-out-of-area-card-${admission.id}`).textContent ?? "",
         `${admission.id}'s phone card shows the wrong length of stay`,
-      ).toContain(`${expected} since arrival`);
+      ).toContain(`${expectedStayLabel(admission)} away`);
     }
   });
 

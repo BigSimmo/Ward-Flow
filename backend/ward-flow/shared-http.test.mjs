@@ -126,23 +126,59 @@ test("shared configuration refuses a host that differs from its Ward Flow resour
     AzureWebJobsStorage__accountName: "wflowdev7273a083aue",
     WARD_SHARED_ENABLED: "true",
     WARD_WORKSPACE_ID: commandId,
-    WARD_PG_RESOURCE_ID: `/subscriptions/${other}/resourceGroups/rg-wardflow-dev-aue/providers/Microsoft.DBforPostgreSQL/flexibleServers/wardflow-test`,
-    WARD_PG_HOST: "wardflow-test.postgres.database.azure.com",
-    WARD_PG_DATABASE: "wardflow",
+    WARD_PG_RESOURCE_ID: `/subscriptions/${other}/resourceGroups/rg-wardflow-dev-aue/providers/Microsoft.DBforPostgreSQL/flexibleServers/wardflow-dev-aue`,
+    WARD_PG_HOST: "wardflow-dev-aue.postgres.database.azure.com",
+    WARD_PG_DATABASE: "wardflow_dev",
     WARD_PG_USER: "wardflow_backend",
   };
   assert.ok(readConfig(env).shared);
+  assert.equal(readConfig(env).postgres.database, "wardflow_dev");
   assert.equal(readConfig(env).dataMode, "prototype");
   assert.throws(() => readConfig({ ...env, WARD_DATA_MODE: "live" }), /not commissioned/);
   assert.throws(() => readConfig({ ...env, WARD_DATA_MODE: "invalid" }), /not commissioned/);
   assert.throws(() => readConfig({ ...env, WARD_PG_HOST: "different.postgres.database.azure.com" }), /Unapproved/);
-  const existing = {
-    ...env,
-    WARD_PG_RESOURCE_ID: env.WARD_PG_RESOURCE_ID.replace("wardflow-test", "wardflow-dev-aue"),
-    WARD_PG_HOST: "wardflow-dev-aue.postgres.database.azure.com",
-    WARD_PG_DATABASE: "wardflow_dev",
+  assert.throws(() => readConfig({ ...env, WARD_PG_DATABASE: "wardflow" }), /Unapproved/);
+  assert.throws(() => readConfig({ ...env, WARD_PG_USER: "postgres" }), /Unapproved/);
+});
+
+test("shared configuration refuses any other server, even in the approved resource group", () => {
+  const base = {
+    AZURE_TENANT_ID: other,
+    WARD_ALLOWED_OBJECT_ID: coordinator,
+    WARD_API_AUDIENCE: "9b7b160d-9bc7-4712-b748-17ff3e70b706", // gitleaks:allow -- synthetic API audience (client ID)
+    AzureWebJobsStorage__accountName: "wflowdev7273a083aue",
+    WARD_SHARED_ENABLED: "true",
+    WARD_WORKSPACE_ID: commandId,
+    WARD_PG_USER: "wardflow_backend",
   };
-  assert.equal(readConfig(existing).postgres.database, "wardflow_dev");
-  assert.throws(() => readConfig({ ...existing, WARD_PG_DATABASE: "wardflow" }), /Unapproved/);
-  assert.throws(() => readConfig({ ...env, WARD_PG_DATABASE: "wardflow_dev" }), /Unapproved/);
+  const group = `/subscriptions/${other}/resourceGroups/rg-wardflow-dev-aue/providers/Microsoft.DBforPostgreSQL/flexibleServers`;
+  for (const [name, database] of [
+    ["wardflow-test", "wardflow"],
+    ["wardflow-dev-pg-aue", "wardflow"],
+    ["wardflow-dev-aue2", "wardflow_dev"],
+    ["wardflow-dev-aue-x", "wardflow_dev"],
+  ]) {
+    assert.throws(
+      () =>
+        readConfig({
+          ...base,
+          WARD_PG_RESOURCE_ID: `${group}/${name}`,
+          WARD_PG_HOST: `${name}.postgres.database.azure.com`,
+          WARD_PG_DATABASE: database,
+        }),
+      /Unapproved/,
+      name,
+    );
+  }
+  const approvedElsewhere = `/subscriptions/${other}/resourceGroups/rg-other/providers/Microsoft.DBforPostgreSQL/flexibleServers/wardflow-dev-aue`;
+  assert.throws(
+    () =>
+      readConfig({
+        ...base,
+        WARD_PG_RESOURCE_ID: approvedElsewhere,
+        WARD_PG_HOST: "wardflow-dev-aue.postgres.database.azure.com",
+        WARD_PG_DATABASE: "wardflow_dev",
+      }),
+    /Unapproved/,
+  );
 });

@@ -51,6 +51,7 @@ import {
   seedWardFlowStateAt,
   wardFlowReducer,
   type HandoverSignOffRecord,
+  type RepatriationRecord,
   type WardFlowState,
 } from "@/components/ward-management/ward-flow-reducer";
 import type {
@@ -131,6 +132,9 @@ type WardFlowContextValue = {
   refreshRequests: { unitId: string; at: Instant; byRole: string }[];
   /** Handover sign-offs, role and time only (`RECORD_HANDOVER_SIGN_OFF`). Read by the Handover page's History. */
   handoverSignOffs: HandoverSignOffRecord[];
+  /** Phone-logged repatriations (`RECORD_REPATRIATION`), read by the Out of area page's return status.
+   *  Optional so hand-built test contexts need not supply it. */
+  repatriations?: RepatriationRecord[];
   /**
    * Who has acknowledged which inbox item, and who has completed which — live from reducer state so
    * the global tasks drawer shows the same answer on every route rather than each screen keeping
@@ -1061,6 +1065,7 @@ function WardFlowWorld({
       leaveBeds: state.leaveBeds,
       refreshRequests: state.refreshRequests,
       handoverSignOffs: Array.isArray(state.handoverSignOffs) ? state.handoverSignOffs : [],
+      repatriations: Array.isArray(state.repatriations) ? state.repatriations : [],
       inboxAcknowledgements: state.inboxAcknowledgements,
       inboxCompletions: state.inboxCompletions,
       inboxOwnership: state.inboxOwnership,

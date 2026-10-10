@@ -2,6 +2,8 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { installMatchMediaStub } from "./setup/jsdom.setup";
+
 // `OutOfAreaBoard` composes `ward-tokens.module.css`, and (per the sibling DOM test files for this
 // same board) something in that shared chain renders `next/link` even though this board is
 // mounted standalone here, with no rail around it. Mocked exactly as
@@ -54,6 +56,15 @@ function renderBoard() {
   );
 }
 
+// Option A (10 Oct 2026): the phone is its own layout, rendered only under the phone media query.
+// The shared jsdom setup puts the desktop stub back before every test.
+function renderPhoneBoard() {
+  installMatchMediaStub(true);
+  return renderBoard();
+}
+
+const isHighlighted = (id: string) => screen.getByTestId(`ward-out-of-area-row-${id}`).hasAttribute("data-highlighted");
+
 describe("out-of-area upgrade — functional layout and clean presentation", () => {
   it("shows the shared prototype footer at the bottom of the board", () => {
     renderBoard();
@@ -66,7 +77,7 @@ describe("out-of-area upgrade — functional layout and clean presentation", () 
   });
 
   it("keeps the phone card list as a second, independently keyed rendering of every entry", () => {
-    renderBoard();
+    renderPhoneBoard();
     expect(entries.length).toBeGreaterThan(0);
 
     const cards = screen.getByTestId("ward-out-of-area-cards");
@@ -112,11 +123,11 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(facts).toHaveTextContent(first.admission.homeRegion as string);
     expect(facts).toHaveTextContent(first.unit.name);
     expect(facts).toHaveTextContent(TRAVEL_BAND_LABELS[first.band]);
-    const travelCell = screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`).children[3];
-    expect(travelCell.textContent?.trim()).toBe(TRAVEL_BAND_LABELS[first.band]);
+    const travelCell = screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`).children[1];
+    expect(travelCell.querySelector("[title]")?.getAttribute("title")).toBe(TRAVEL_BAND_LABELS[first.band]);
     expect(facts).toHaveTextContent(sinceArrivalLabel(first, NOW_ANCHOR));
     expect(facts).toHaveTextContent("Current placement");
-    expect(facts).toHaveTextContent("Home catchment");
+    expect(facts).toHaveTextContent("Home region");
 
     expect(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`)).toHaveAttribute("aria-selected", "true");
   });
@@ -141,13 +152,19 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(screen.queryByTestId("ward-out-of-area-subject-catchment")).not.toBeInTheDocument();
   });
 
-  it("selecting the phone card selects the same entry as its table row counterpart", () => {
-    renderBoard();
+  it("selecting the phone card selects the same entry and plans its return", () => {
+    renderPhoneBoard();
     const first = entries[0];
-    fireEvent.click(screen.getByTestId(`ward-out-of-area-card-${first.admission.id}`));
+    // One button covers each card, so the profile link inside it is never nested in a button.
+    fireEvent.click(screen.getByRole("tab", { name: /Everyone/ }));
+    const card = screen.getByTestId(`ward-out-of-area-card-${first.admission.id}`);
+    fireEvent.click(within(card).getByRole("button", { name: /^Open / }));
+    expect(card).toHaveAttribute("data-selected", "true");
+    expect(within(card).getByRole("button", { name: /^Open / })).toHaveAttribute("aria-current", "true");
 
+    const peek = screen.getByTestId("ward-out-of-area-peek");
+    fireEvent.click(within(peek).getByRole("button", { name: /Plan return/ }));
     expect(screen.getByTestId("ward-out-of-area-subject-facts")).toHaveTextContent(first.unit.name);
-    expect(screen.getByTestId(`ward-out-of-area-card-${first.admission.id}`)).toHaveAttribute("aria-selected", "true");
   });
 
   it("triggers repatriation workflow and provides clear feedback that a return movement has been queued", () => {
@@ -174,45 +191,26 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(notice.textContent).toContain("Royal Perth Hospital");
   });
 
-  it("filters placements when a home catchment is chosen in the catchment filter", () => {
+  it("highlights a home region's people from the Home regions card, without hiding anyone", () => {
     renderBoard();
-    const group = screen.getByRole("radiogroup", { name: "Filter by home catchment" });
-    expect(group).toBeInTheDocument();
-
-    fireEvent.click(within(group).getByRole("radio", { name: /^South West/ }));
+    const button = screen.getByRole("button", { name: /^Highlight people from South West/ });
+    expect(button).toHaveAttribute("aria-pressed", "false");
     const swEntries = entries.filter((e) => e.admission.homeRegion === "South West");
     expect(swEntries.length).toBeGreaterThan(0);
 
-    for (const entry of swEntries) {
-      expect(screen.getByTestId(`ward-out-of-area-row-${entry.admission.id}`)).toBeInTheDocument();
-    }
-
+    fireEvent.click(button);
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    for (const entry of swEntries) expect(isHighlighted(entry.admission.id)).toBe(true);
     const nonSw = entries.find((e) => e.admission.homeRegion !== "South West");
     if (nonSw) {
-      expect(screen.queryByTestId(`ward-out-of-area-row-${nonSw.admission.id}`)).not.toBeInTheDocument();
-    }
-  });
-
-  it("filters placements when an interactive catchment pill is clicked in the default view", () => {
-    renderBoard();
-    const pill = screen.getByRole("button", { name: /Filter by South West/i });
-    expect(pill).toBeInTheDocument();
-    expect(pill).toHaveAttribute("aria-pressed", "false");
-
-    fireEvent.click(pill);
-    expect(pill).toHaveAttribute("aria-pressed", "true");
-
-    const nonSw = entries.find((e) => e.admission.homeRegion !== "South West");
-    if (nonSw) {
-      expect(screen.queryByTestId(`ward-out-of-area-row-${nonSw.admission.id}`)).not.toBeInTheDocument();
+      expect(screen.getByTestId(`ward-out-of-area-row-${nonSw.admission.id}`)).toBeInTheDocument();
+      expect(isHighlighted(nonSw.admission.id)).toBe(false);
     }
 
     // Clicking again toggles off
-    fireEvent.click(pill);
-    expect(pill).toHaveAttribute("aria-pressed", "false");
-    if (nonSw) {
-      expect(screen.getByTestId(`ward-out-of-area-row-${nonSw.admission.id}`)).toBeInTheDocument();
-    }
+    fireEvent.click(button);
+    expect(button).toHaveAttribute("aria-pressed", "false");
+    for (const entry of swEntries) expect(isHighlighted(entry.admission.id)).toBe(false);
   });
 
   it("clears selection back to cohort overview when Escape key is pressed", () => {
@@ -226,15 +224,14 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(screen.getByTestId("ward-out-of-area-subject-empty")).toBeInTheDocument();
   });
 
-  it("inspects the longest case directly from the priority case button", () => {
+  it("opens the next return to plan straight from the header", () => {
     renderBoard();
-    const inspectBtn = screen.getByRole("button", { name: /Inspect Longest Case/i });
-    expect(inspectBtn).toBeInTheDocument();
-
-    fireEvent.click(inspectBtn);
-    const facts = screen.getByTestId("ward-out-of-area-subject-facts");
-    expect(facts).toBeInTheDocument();
-    expect(facts).toHaveTextContent("AD-ALBA-01");
+    fireEvent.click(screen.getByRole("button", { name: /Plan next return/i }));
+    expect(screen.getByTestId("ward-out-of-area-subject-facts")).toBeInTheDocument();
+    const selected = screen
+      .getAllByTestId(/^ward-out-of-area-row-/)
+      .filter((row) => row.getAttribute("aria-selected") === "true");
+    expect(selected).toHaveLength(1);
   });
 
   it("renders patient name and interactive UMRN links in table rows and headers", () => {
@@ -252,7 +249,8 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
   });
 
   it("renders patient name and UMRN link in mobile cards", () => {
-    renderBoard();
+    renderPhoneBoard();
+    fireEvent.click(screen.getByRole("tab", { name: /Everyone/ }));
     const cards = screen.getByTestId("ward-out-of-area-cards");
     const first = entries[0];
     const card = within(cards).getByTestId(`ward-out-of-area-card-${first.admission.id}`);
@@ -273,21 +271,21 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(link.textContent).toMatch(/UM\d+|UMRN/);
   });
 
-  it("filters placements when searching by patient name or UMRN", () => {
+  it("highlights placements when searching by patient name or UMRN, and hides none", () => {
     renderBoard();
-    const searchInput = screen.getByLabelText(/Filter out-of-area placements/i);
+    const searchInput = screen.getByLabelText(/Highlight people by name, UMRN or ward/i);
     const first = entries[0];
     const row = screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`);
     const link = within(row).getByRole("link");
     const umrn = link.textContent?.trim() ?? "";
+    expect(umrn).toMatch(/^UM\d{6}$/);
 
-    if (umrn && umrn.startsWith("UM")) {
-      fireEvent.change(searchInput, { target: { value: umrn } });
-      expect(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`)).toBeInTheDocument();
-      const other = entries.find((e) => e.admission.id !== first.admission.id);
-      if (other) {
-        expect(screen.queryByTestId(`ward-out-of-area-row-${other.admission.id}`)).not.toBeInTheDocument();
-      }
+    fireEvent.change(searchInput, { target: { value: umrn } });
+    expect(isHighlighted(first.admission.id)).toBe(true);
+    const other = entries.find((e) => e.admission.id !== first.admission.id);
+    if (other) {
+      expect(screen.getByTestId(`ward-out-of-area-row-${other.admission.id}`)).toBeInTheDocument();
+      expect(isHighlighted(other.admission.id)).toBe(false);
     }
   });
 });
@@ -323,39 +321,30 @@ describe("out-of-area inspector — navigation and explicit patient choice", () 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("navigates within the filtered register and keeps its row selection in sync", () => {
+  it("navigates the register in order and keeps its row selection in sync", () => {
     renderBoard();
-    const region = entries[0].admission.homeRegion as string;
-    const cohort = entries.filter((entry) => entry.admission.homeRegion === region);
-    expect(cohort.length).toBeGreaterThan(1);
-    fireEvent.click(
-      within(screen.getByRole("radiogroup", { name: "Filter by home catchment" })).getByRole("radio", {
-        name: new RegExp(`^${region}`),
-      }),
-    );
-    fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${cohort[0].admission.id}`));
+    const rows = () => within(screen.getByTestId("ward-out-of-area-table")).getAllByTestId(/^ward-out-of-area-row-/);
+    fireEvent.click(rows()[0]);
     expect(screen.getByRole("button", { name: "Inspect previous patient" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Inspect next patient" }));
-    expect(screen.getByTestId("ward-out-of-area-subject-facts")).toHaveTextContent(cohort[1].admission.id);
-    expect(screen.getByTestId(`ward-out-of-area-row-${cohort[1].admission.id}`)).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    expect(rows()[1]).toHaveAttribute("aria-selected", "true");
     fireEvent.click(screen.getByRole("button", { name: "Inspect previous patient" }));
-    expect(screen.getByTestId("ward-out-of-area-subject-facts")).toHaveTextContent(cohort[0].admission.id);
+    expect(rows()[0]).toHaveAttribute("aria-selected", "true");
   });
 
-  it("explains a selection outside the current filters and restores the full register", () => {
+  it("keeps the selection while a search highlights nobody, and Clear removes the highlight", () => {
     renderBoard();
     const first = entries[0];
     fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`));
-    fireEvent.change(screen.getByLabelText("Filter out-of-area placements"), {
+    fireEvent.change(screen.getByLabelText("Highlight people by name, UMRN or ward"), {
       target: { value: "no matching patient" },
     });
-    expect(screen.getByTestId("ward-out-of-area-subject")).toHaveTextContent("Outside current filters");
-    expect(screen.getByRole("button", { name: "Inspect next patient" })).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByTestId("ward-out-of-area-subject-facts")).toBeInTheDocument();
     expect(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`)).toHaveAttribute("aria-selected", "true");
+    // The search box has its own clear icon; this is the highlight line's text button.
+    const clear = screen.getAllByRole("button", { name: "Clear" }).find((button) => button.textContent === "Clear");
+    fireEvent.click(clear as HTMLElement);
+    expect(screen.getByLabelText("Highlight people by name, UMRN or ward")).toHaveValue("");
   });
 
   it("returns focus to the selected row when the inspector closes", () => {
