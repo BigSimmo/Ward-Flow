@@ -751,6 +751,14 @@
         });
       }
       const allCaps = () => document.querySelectorAll(".pt.slide").forEach(placeCap);
+      document.querySelectorAll("#tabs [role=tab]").forEach((tab) => {
+        const panel = document.querySelector(`section[data-p="${tab.dataset.t}"]`);
+        tab.id = "tab-" + tab.dataset.t;
+        panel.id = "panel-" + tab.dataset.t;
+        panel.setAttribute("role", "tabpanel");
+        panel.setAttribute("aria-labelledby", tab.id);
+        tab.setAttribute("aria-controls", panel.id);
+      });
       wireGroup(document.getElementById("tabs"), (b) => {
         document.querySelectorAll("section[data-p]").forEach((s) => (s.hidden = s.dataset.p !== b.dataset.t));
         requestAnimationFrame(allCaps);
@@ -930,10 +938,18 @@
         d.className = "drawer glass sheet enter";
         d.setAttribute("role", "dialog");
         d.setAttribute("aria-label", "Bed 05");
+        d.setAttribute("aria-modal", "true");
         d.innerHTML = `<b class="t-14">Bed 05</b><span class="meta"><span class="g danger"></span> Act now · Form 1A ends <span class="clk">13:42</span></span><span style="flex:1"></span><button class="b pri">Mark reviewed</button>`;
         d.querySelector(".b").addEventListener("click", () => {
           closeSheet();
           toast("Bed 05 marked reviewed");
+        });
+        d.addEventListener("keydown", (e) => {
+          if (e.key !== "Tab") return;
+          const f = [...d.querySelectorAll("button")];
+          const i = f.indexOf(document.activeElement);
+          e.preventDefault();
+          f[(i + (e.shiftKey ? -1 : 1) + f.length) % f.length].focus();
         });
         stage.append(s, d);
         open.setAttribute("aria-expanded", "true");

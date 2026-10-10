@@ -91,7 +91,7 @@
   --wf-row-default: 44px;
   --wf-row-touch: 52px;
   --wf-row: var(--wf-row-default);
-  --wf-row-compact: var(--wf-row-dense);
+  --wf-row-compact: var(--wf-row-default);
   --wf-row-group: 40px;
   --wf-count: 20px;
   /* status glyphs: 10 beside text, 12 in hero chips. The triangle is drawn a little wider. */
@@ -2693,12 +2693,20 @@ svg.gl {
     --wf-h-md: var(--wf-touch);
     --wf-h-chip: 32px;
   }
+  /* tabs and chips keep a 36px face but take a 44px hit area */
   .pt button,
   .pt.sm button {
     height: 36px;
   }
   .fc {
+    position: relative;
     height: 36px;
+  }
+  .pt button::after,
+  .fc::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
   }
   :root:not([data-density]) {
     --wf-row: var(--wf-row-touch);
@@ -2751,7 +2759,7 @@ svg.gl {
 .bed.edge-act:not(.sel, [aria-pressed="true"]):hover {
   border-color: var(--wf-act-edge);
 }
-.row.edge-act:not(.sel, [aria-selected="true"]) {
+.row.edge-act:not(.sel, [aria-selected="true"], :focus-visible) {
   box-shadow: inset 0 0 0 1px var(--wf-act-edge);
 }
 @media (forced-colors: active) {
