@@ -304,19 +304,30 @@ export function undoRoleRefusal(
   return null;
 }
 
-/** Key-order-independent JSON, with `undefined` members dropped as JSON drops them. */
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map((item) => canonical(item === undefined ? null : item)).join(",")}]`;
-  if (value !== null && typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>)
-      .filter(([, item]) => item !== undefined)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonical(item)}`).join(",")}}`;
-  }
-  return JSON.stringify(value);
+/** JSON reads a non-finite number and an `undefined` array item as `null`. */
+function jsonScalar(value: unknown): unknown {
+  if (value === undefined) return null;
+  return typeof value === "number" && !Number.isFinite(value) ? null : value;
 }
 
-/** Rule 2: whether a record still reads exactly as the decision left it (survives a save and restore). */
+/**
+ * Rule 2: whether a record still reads exactly as the decision left it (survives a save and
+ * restore). Key-order independent, with `undefined` members dropped as JSON drops them. Walks the two values directly and stops at
+ * the first difference or shared reference, so diffing a step stays cheap on a full state.
+ */
 export function sameRecord(a: unknown, b: unknown): boolean {
-  return canonical(a) === canonical(b);
+  if (a === b) return true;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+    return a.every((item, index) => sameRecord(jsonScalar(item), jsonScalar(b[index])));
+  }
+  if (a !== null && b !== null && typeof a === "object" && typeof b === "object") {
+    const left = Object.entries(a as Record<string, unknown>).filter(([, item]) => item !== undefined);
+    const right = b as Record<string, unknown>;
+    if (left.length !== Object.values(right).filter((item) => item !== undefined).length) return false;
+    return left.every(([key, item]) => Object.hasOwn(right, key) && sameRecord(item, right[key]));
+  }
+  const isObject = (value: unknown) => value !== null && typeof value === "object";
+  if (isObject(a) || isObject(b) || a === undefined || b === undefined) return false;
+  return JSON.stringify(jsonScalar(a)) === JSON.stringify(jsonScalar(b));
 }
