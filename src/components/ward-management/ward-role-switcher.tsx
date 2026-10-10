@@ -1,48 +1,27 @@
 "use client";
 
 import { ArrowLeftRight } from "lucide-react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
-import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import { edById } from "@/components/ward-management/ward-sites";
 
 import styles from "./ward-role-switcher.module.css";
 
-const COORDINATOR_HREF = "/mockups/ward-flow";
-const OFFICER_HREF = "/mockups/ward-flow/transport/officer";
-
 /**
- * Task 12 (addendum R41/R42/R48/R52/R67). The role switcher: four roles, one control, and the
- * one piece of navigation the whole eleven-step journey (spec §14) relies on to prove the loop
- * survives a role change without a `page.goto()` resetting the world underneath it. Every
- * destination below is a real `<Link>`, never a `router.push` from a click handler that only
- * happens to look like navigation, so the routes stay reachable the same way the rest of this
- * phase's rail links do.
+ * "Change view": the rail's and Tools drawer's trigger for the Switch workstation drawer
+ * (`settings/operator-switcher-modal.tsx`, direction D, 9 October 2026). It used to open its own
+ * four-item menu; it now opens the same drawer Settings does, so there is one workstation picker.
+ * Every destination in that drawer is a real `<Link>` or a router push to a role's home, so the
+ * proof journey (spec section 14) still changes role without a `page.goto()` resetting the world.
  *
- * **The coordinator has no place.** Spec §9 and the addendum both say this explicitly: the
- * coordinator is statewide, so this control shows that as a real fact ("Statewide — no ward or
- * department") rather than inventing a location for it the way a naive "current role's screen"
- * design would.
+ * The coordinator has no place: the drawer shows it as a statewide desk, never a location. The
+ * focused patient's wards and department come from the shared `focusMovementId`, and the wards are
+ * named to coordinators only (owner answer 38), both here on the trigger and inside the drawer.
  *
- * **Ward and Emergency department are inferred from the shared `focusMovementId`** — the patient
- * last selected on the coordinator screen (`coordinator-screen.tsx`'s `selectMovement`, mirrored
- * into `WardFlowProvider` so it survives the screen unmounting on a role switch). Addendum R52:
- * where that movement implies exactly one destination, it is a direct link; where it implies
- * several — a live parallel referral, up to `PARALLEL_REFERRAL_CAP` units at once — every
- * candidate is offered rather than any one silently chosen. That is the same conservative-failure
- * discipline `shortlist-panel.tsx`'s `canRefer` and `ward-screen.tsx`'s blocked-reason helpers
- * already hold to, applied to navigation instead of a dispatch: this is a `?? array[0]` in
- * interaction form the moment it picks for you, and the addendum forbids exactly that. Where no
- * destination is implied at all (no patient selected yet), the control names that reason rather
- * than guessing — `aria-disabled` plus `title` plus an `ignoreUnavailableActivation` handler,
- * the same pattern `ed-screen.tsx`'s `examinationBlockedReason`/`handoverBlockedReason` and
- * every other conditionally-available control in this phase already use.
- *
- * ⚠️ **EVERY DESTINATION BELOW IS THAT ROLE'S OWN HOME, NEVER THE REFERRAL YOU WERE JUST LOOKING
+ * ⚠️ **EVERY DESTINATION IN THAT DRAWER IS THAT ROLE'S OWN HOME, NEVER THE REFERRAL YOU WERE JUST LOOKING
  * AT — AND THAT IS FORCED, NOT A SIMPLIFICATION.** Ward Flow navigation-shell plan
  * (`docs/superpowers/plans/2026-09-04-ward-flow-navigation-shell.md`, Decision 2). `ward-referral-
  * visibility.ts` (FD-23) states this as an ARCHITECTURE, not a rule a component could relax: the
@@ -65,8 +44,6 @@ const OFFICER_HREF = "/mockups/ward-flow/transport/officer";
 export function WardRoleSwitcher() {
   const { movements, units, focusMovementId } = useWardFlow();
   const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
   // Owner answer 38 (17 Sept 2026): other wards in the switcher are coordinators-only. `?? ""` is
   // the same fallback `ward-chrome-header.tsx`/`ward-standing-strip.tsx`/`ward-chrome-search.tsx`
   // already use — `wardChromeRole("")` reads as "coordinator", the widest default, rather than
@@ -74,25 +51,6 @@ export function WardRoleSwitcher() {
   // a test, for instance).
   const pathname = usePathname() ?? "";
   const isCoordinatorRoute = wardChromeRole(pathname) === "coordinator";
-
-  useEffect(() => {
-    if (!open) return;
-    function onPointerDown(event: MouseEvent) {
-      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
-    }
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-      }
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
 
   // The provider's own live `movements`, never a frozen fixture lookup — a movement referred or
   // accepted moments ago on the coordinator screen must resolve here too, on the very next
@@ -129,7 +87,7 @@ export function WardRoleSwitcher() {
    * ⚠️ AND THE TRIGGER IS ALWAYS RENDERED AND ALWAYS THE SAME SIZE. Only the words and the count
    * change. A control that appears only when it has something to offer reads, at every other
    * moment, as a control that is simply missing — which is exactly what the shortlist taught this
-   * project. The menu's own "No ward implied" empty state is untouched and still does its job.
+   * project.
    *
    * ⚠️ **"CHANGE VIEW", NOT "SWITCH ROLE" — OWNER RULING, 2026-09-03. NO LONGER A PLACEHOLDER.**
    * Two alternatives were put to him and both were rejected, for reasons worth keeping because they
@@ -163,8 +121,7 @@ export function WardRoleSwitcher() {
    * that input was ruled out in 2026-09-03 only because nothing yet needed it; item 38 is that need.
    *
    * Off the coordinator route, the trigger reverts to plain "Change view" — no count, no
-   * `data-referred-ward-count` — and the Ward group in the menu says "Open the coordinator view to
-   * see which wards this patient was referred to." instead of naming any of them. On the coordinator
+   * `data-referred-ward-count` — and the drawer's Patient in focus row names no ward. On the coordinator
    * route, nothing changes: the count and the named links from the 2026-09-03 ruling survive exactly
    * as they were. `tests/ward-role-switcher-signpost.dom.test.tsx` was rewritten to pin this route
    * split rather than the every-route behaviour it used to pin.
@@ -178,95 +135,20 @@ export function WardRoleSwitcher() {
       ? `Change view — ${referredWardCount} ${referredWardCount === 1 ? "ward" : "wards"} this patient was referred to`
       : "Change view";
 
-  const menuRef = useRef<HTMLDivElement>(null);
-  // ED is never ambiguous — a movement carries exactly one `originEdId` — so this is always a
-  // direct link once a patient is selected, never a picker.
-  const edCandidate = focusMovement ? edById(focusMovement.originEdId) : undefined;
-
-  const isCoordinatorActive = pathname === COORDINATOR_HREF || pathname === `${COORDINATOR_HREF}/`;
-  const isOfficerActive = pathname === OFFICER_HREF || pathname.startsWith("/mockups/ward-flow/transport/officer");
-  const isWardActive = (unitId: string) => pathname === `/mockups/ward-flow/ward/${unitId}`;
-  const isEdActive = Boolean(edCandidate && pathname === `/mockups/ward-flow/ed/${edCandidate.id}`);
-
-  function getFocusableMenuItems(): HTMLElement[] {
-    if (!menuRef.current) return [];
-    const elements = menuRef.current.querySelectorAll<HTMLElement>(
-      'a[role="menuitem"], button[role="menuitem"]:not([aria-disabled="true"])',
-    );
-    return Array.from(elements);
-  }
-
-  function handleMenuKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      const items = getFocusableMenuItems();
-      if (items.length === 0) return;
-      const currentIndex = items.indexOf(document.activeElement as HTMLElement);
-      const nextIndex = currentIndex >= 0 && currentIndex < items.length - 1 ? currentIndex + 1 : 0;
-      items[nextIndex]?.focus();
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      const items = getFocusableMenuItems();
-      if (items.length === 0) return;
-      const currentIndex = items.indexOf(document.activeElement as HTMLElement);
-      const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
-      items[prevIndex]?.focus();
-    } else if (event.key === "Home") {
-      event.preventDefault();
-      const items = getFocusableMenuItems();
-      items[0]?.focus();
-    } else if (event.key === "End") {
-      event.preventDefault();
-      const items = getFocusableMenuItems();
-      items[items.length - 1]?.focus();
-    } else if (event.key === "Tab") {
-      setOpen(false);
-    }
-  }
-
-  function handleTriggerKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
-    if (event.key === "ArrowDown") {
-      if (!open) {
-        event.preventDefault();
-        setOpen(true);
-        setTimeout(() => {
-          const items = getFocusableMenuItems();
-          items[0]?.focus();
-        }, 0);
-      }
-    } else if (event.key === "ArrowUp") {
-      if (!open) {
-        event.preventDefault();
-        setOpen(true);
-        setTimeout(() => {
-          const items = getFocusableMenuItems();
-          items[items.length - 1]?.focus();
-        }, 0);
-      }
-    }
-  }
-
-  function close() {
-    setOpen(false);
-  }
-
   return (
-    <div className={styles.switcher} ref={containerRef}>
+    <div className={styles.switcher}>
       <button
         type="button"
-        ref={triggerRef}
         className={styles.trigger}
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         aria-expanded={open}
-        aria-controls="ward-role-switcher-menu"
         aria-label={switcherLabel}
         title={switcherLabel}
         // Off the coordinator route the attribute is absent, not zero — owner answer 38 draws a
         // hard line ("coordinators only"), and a present-but-zero attribute would still be a signal
         // that something was being counted for this viewer.
         {...(isCoordinatorRoute ? { "data-referred-ward-count": referredWardCount } : {})}
-        onClick={() => setOpen((value) => !value)}
-        onKeyDown={handleTriggerKeyDown}
+        onClick={() => setOpen(true)}
       >
         <ArrowLeftRight aria-hidden="true" />
         {referredWardCount > 0 ? (
@@ -277,150 +159,7 @@ export function WardRoleSwitcher() {
           </span>
         ) : null}
       </button>
-      {open ? (
-        <div
-          id="ward-role-switcher-menu"
-          ref={menuRef}
-          className={styles.menu}
-          role="menu"
-          aria-label="Change view"
-          onKeyDown={handleMenuKeyDown}
-        >
-          <Link
-            href={COORDINATOR_HREF}
-            role="menuitem"
-            className={styles.menuItem}
-            data-active={isCoordinatorActive ? "true" : undefined}
-            aria-current={isCoordinatorActive ? "page" : undefined}
-            onClick={close}
-          >
-            <div className={styles.menuItemHeader}>
-              <span className={styles.menuItemLabel}>Coordinator</span>
-              {isCoordinatorActive ? (
-                <span className={styles.activeIndicator} aria-hidden="true">
-                  Active
-                </span>
-              ) : null}
-            </div>
-            <span className={styles.menuItemDetail}>Statewide — no ward or department</span>
-          </Link>
-
-          <div className={styles.menuGroup} role="group" aria-label="Ward">
-            <span className={styles.menuGroupLabel}>Ward</span>
-            {!isCoordinatorRoute ? (
-              // Owner answer 38: off the coordinator route, no ward name is named here — not the
-              // patient's accepted ward, not any of several live referrals. The sentence points at
-              // where that information does live rather than narrowing silently to zero, the same
-              // "say what is missing, don't just go quiet" discipline the disabled menu items below
-              // already use for "no ward implied".
-              <p className={styles.menuItemDetail}>
-                Open the coordinator view to see which wards this patient was referred to.
-              </p>
-            ) : wardCandidates.length > 0 ? (
-              wardCandidates.map((unit) => {
-                const isActive = isWardActive(unit.id);
-                return (
-                  <Link
-                    key={unit.id}
-                    href={`/mockups/ward-flow/ward/${unit.id}`}
-                    role="menuitem"
-                    className={styles.menuItem}
-                    data-active={isActive ? "true" : undefined}
-                    aria-current={isActive ? "page" : undefined}
-                    onClick={close}
-                  >
-                    <div className={styles.menuItemHeader}>
-                      <span className={styles.menuItemLabel}>{unit.name}</span>
-                      {isActive ? (
-                        <span className={styles.activeIndicator} aria-hidden="true">
-                          Active
-                        </span>
-                      ) : null}
-                    </div>
-                  </Link>
-                );
-              })
-            ) : (
-              <button
-                type="button"
-                role="menuitem"
-                aria-disabled="true"
-                aria-describedby="ward-role-switcher-ward-unavailable"
-                title="Select a patient on the coordinator screen to see their ward."
-                className={styles.menuItemDisabled}
-                onClick={ignoreUnavailableActivation}
-              >
-                <span className={styles.menuItemLabel}>No ward implied</span>
-              </button>
-            )}
-          </div>
-
-          <Link
-            href={OFFICER_HREF}
-            role="menuitem"
-            className={styles.menuItem}
-            data-active={isOfficerActive ? "true" : undefined}
-            aria-current={isOfficerActive ? "page" : undefined}
-            onClick={close}
-          >
-            <div className={styles.menuItemHeader}>
-              <span className={styles.menuItemLabel}>Officer</span>
-              {isOfficerActive ? (
-                <span className={styles.activeIndicator} aria-hidden="true">
-                  Active
-                </span>
-              ) : null}
-            </div>
-            <span className={styles.menuItemDetail}>Every transport job, statewide</span>
-          </Link>
-
-          <div className={styles.menuGroup} role="group" aria-label="Emergency department">
-            <span className={styles.menuGroupLabel}>Emergency department</span>
-            {edCandidate ? (
-              <Link
-                href={`/mockups/ward-flow/ed/${edCandidate.id}`}
-                role="menuitem"
-                className={styles.menuItem}
-                data-active={isEdActive ? "true" : undefined}
-                aria-current={isEdActive ? "page" : undefined}
-                onClick={close}
-              >
-                <div className={styles.menuItemHeader}>
-                  <span className={styles.menuItemLabel}>{edCandidate.name}</span>
-                  {isEdActive ? (
-                    <span className={styles.activeIndicator} aria-hidden="true">
-                      Active
-                    </span>
-                  ) : null}
-                </div>
-              </Link>
-            ) : (
-              <button
-                type="button"
-                role="menuitem"
-                aria-disabled="true"
-                aria-describedby="ward-role-switcher-ed-unavailable"
-                title="Select a patient on the coordinator screen to see their department."
-                className={styles.menuItemDisabled}
-                onClick={ignoreUnavailableActivation}
-              >
-                <span className={styles.menuItemLabel}>No department implied</span>
-              </button>
-            )}
-          </div>
-
-          {isCoordinatorRoute && wardCandidates.length === 0 ? (
-            <span id="ward-role-switcher-ward-unavailable" className="sr-only">
-              Select a patient on the coordinator screen to see their ward.
-            </span>
-          ) : null}
-          {!edCandidate ? (
-            <span id="ward-role-switcher-ed-unavailable" className="sr-only">
-              Select a patient on the coordinator screen to see their department.
-            </span>
-          ) : null}
-        </div>
-      ) : null}
+      {open ? <OperatorSwitcherModal isOpen onClose={() => setOpen(false)} /> : null}
     </div>
   );
 }

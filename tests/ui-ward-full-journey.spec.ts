@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
-import { wardSites } from "@/components/ward-management/ward-sites";
+import { unitById, wardSites } from "@/components/ward-management/ward-sites";
 
 /**
  * PR 130's Placement panel starts Candidates open; earlier versions started it closed.
@@ -140,15 +140,15 @@ async function ensureToolsClosed(page: Page) {
   }
 }
 
-/** Switches role via the real role-switcher `<Link>`s inside the Tools drawer's "Change view"
- *  menu, never a typed URL. `locator` narrows to the menu group ("Ward", "Emergency department")
- *  or the always-present item ("Coordinator", "Officer") the caller wants. */
-async function switchView(page: Page, pick: (menu: Locator) => Locator, screenTestId: string) {
+/** Switches role via the real `<Link>`s in the Switch workstation drawer that Change view opens
+ *  (10 October 2026; it used to open its own menu), never a typed URL. `pick` narrows to the
+ *  statewide tile, the Patient in focus chip or the searched desk the caller wants. */
+async function switchView(page: Page, pick: (drawer: Locator) => Locator | Promise<Locator>, screenTestId: string) {
   await ensureToolsOpen(page);
   await page.getByRole("button", { name: /^Change view/ }).click();
-  const menu = page.getByRole("menu", { name: "Change view" });
-  await expect(menu).toBeVisible();
-  const item = pick(menu);
+  const drawer = page.getByRole("dialog", { name: "Switch workstation" });
+  await expect(drawer).toBeVisible();
+  const item = await pick(drawer);
   const href = await item.getAttribute("href");
   await item.click();
   // Let the navigation commit before closing the drawer. Closing it calls history.back() while the
@@ -319,7 +319,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expectNoReloadSince(page, "raising the ED referral");
 
     // --- Step 3: the coordinator refers it to a ward. ---
-    await switchView(page, (menu) => menu.getByRole("menuitem", { name: "Coordinator" }), "ward-coordinator");
+    await switchView(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
     await expectNoReloadSince(page, "ED -> coordinator");
 
     await page.locator(`[data-testid="ward-queue-row-${movementId}"]`).click();
@@ -350,7 +350,8 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // `referredUnitIds`. ---
     await switchView(
       page,
-      (menu) => menu.locator(`a[role="menuitem"][href="/mockups/ward-flow/ward/${unitId}"]`),
+      (drawer) =>
+        drawer.getByRole("group", { name: "Patient in focus" }).locator(`a[href="/mockups/ward-flow/ward/${unitId}"]`),
       "ward-unit-screen",
     );
     await expectNoReloadSince(page, "coordinator -> ward");
@@ -394,7 +395,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // then the officer accepts, departs (en route) and arrives. ---
     await switchView(
       page,
-      (menu) => menu.getByRole("group", { name: "Emergency department" }).getByRole("menuitem"),
+      (drawer) => drawer.getByRole("group", { name: "Patient in focus" }).locator('a[href^="/mockups/ward-flow/ed/"]'),
       "ward-ed-screen",
     );
     await expectNoReloadSince(page, "ward -> ED for transport booking");
@@ -431,7 +432,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await handoverButton.click();
     await expectNoReloadSince(page, "booking transport and marking handover ready");
 
-    await switchView(page, (menu) => menu.getByRole("menuitem", { name: "Officer" }), "ward-officer-screen");
+    await switchView(page, (drawer) => drawer.getByTestId("workstation-open-officer"), "ward-officer-screen");
     await expectNoReloadSince(page, "ED -> officer");
 
     const officerScreen = page.getByTestId("ward-officer-screen");
@@ -463,24 +464,21 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // own comment on `accepted`) — so the proof is the ward's own Occupied figure moving, not a
     // card that (correctly) stops existing.
     //
-    // This cannot be one direct role-switcher hop from the officer screen. Owner answer 38
-    // (2026-09-17, `ward-role-switcher.tsx`): the switcher's "Ward" group only names a candidate
-    // ward — and only renders a real `<Link>` for one — while the CURRENT route is a coordinator
-    // route (`wardChromeRole(pathname) === "coordinator"`); everywhere else, including the
-    // officer's own screen, it shows a disabled placeholder pointing back at the coordinator view
-    // instead. Discovered by running this spec: the direct hop timed out waiting for a menu item
-    // that this same ruling means never renders off the coordinator route. So this step goes
-    // through the coordinator first — a real intermediate hop, not a shortcut around the ruling —
-    // then on to the ward from there, exactly like step 4 did. ---
-    await switchView(page, (menu) => menu.getByRole("menuitem", { name: "Coordinator" }), "ward-coordinator");
-    await expectNoReloadSince(page, "officer -> coordinator, on the way to the ward");
-
+    // One direct hop from the officer screen: the Switch workstation drawer lists every ward on
+    // every route, so the ward is found by name. The Patient in focus chip used in step 4 is gone by
+    // now, because it shows open movements only and arrival closed this one. ---
+    const unitName = unitById(unitId)?.name;
+    expect(unitName, `could not resolve the name of unit ${unitId}`).toBeTruthy();
     await switchView(
       page,
-      (menu) => menu.locator(`a[role="menuitem"][href="/mockups/ward-flow/ward/${unitId}"]`),
+      async (drawer) => {
+        await drawer.getByRole("textbox", { name: "Find a desk" }).fill(unitName!);
+        await drawer.getByTestId(`workstation-desk-${unitId}`).click();
+        return drawer.getByTestId(`workstation-open-${unitId}`);
+      },
       "ward-unit-screen",
     );
-    await expectNoReloadSince(page, "coordinator -> ward for admission");
+    await expectNoReloadSince(page, "officer -> ward for admission");
 
     const wardScreenAfterArrival = page.getByTestId("ward-unit-screen");
     await expect(wardScreenAfterArrival.getByTestId(`ward-pull-${movementId}`)).toHaveCount(0);

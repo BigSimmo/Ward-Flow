@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -20,10 +20,10 @@ import { describe, expect, it, vi } from "vitest";
  * `title` in both states; a ward or ED screen off the coordinator route gets a shorter, honest
  * answer ("Change view", nothing more) rather than a wrong or a withheld one.
  *
- * ⚠️ AND THE EMPTY-MENU AND EMERGENCY-DEPARTMENT STATES ARE UNTOUCHED BY ITEM 38. It names only
- * "other wards" — the Ward group in the menu. The "No ward implied" state (coordinator route, no
- * patient focused), the Emergency department group, and the "No department implied" state are
- * exactly as `ward-role-switcher.tsx`'s own comment describes and are proved unaffected below.
+ * ⚠️ AND THE EMERGENCY DEPARTMENT IS UNTOUCHED BY ITEM 38. It names only "other wards". Since
+ * 10 October 2026 the trigger opens the Switch workstation drawer instead of its own menu, so the
+ * split is pinned on that drawer's Patient in focus row: wards on the coordinator route only, the
+ * patient's department on every route.
  */
 
 const COORDINATOR_ROUTE = "/mockups/ward-flow";
@@ -32,6 +32,7 @@ const WARD_ROUTE = "/mockups/ward-flow/ward/rph-adult-secure";
 const route = { pathname: COORDINATOR_ROUTE };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -117,26 +118,23 @@ describe("ward role switcher — other wards are named to coordinators only (own
     expect(screen.queryByTestId("ward-role-switcher-ward-count")).not.toBeInTheDocument();
   });
 
-  it("off the coordinator route, names no ward in the menu and shows the exact sentence instead", () => {
+  it("off the coordinator route, the drawer's Patient in focus row names no ward, only the department", () => {
     renderThreeWardReferral(WARD_ROUTE);
 
     fireEvent.click(screen.getByRole("button", { name: "Change view" }));
 
-    // §3's exact wording (2026-09-17 build plan): "Open the coordinator view to see which wards
-    // this patient was referred to."
-    expect(
-      screen.getByText("Open the coordinator view to see which wards this patient was referred to."),
-    ).toBeInTheDocument();
-
+    const focus = within(screen.getByRole("dialog", { name: "Switch workstation" })).getByRole("group", {
+      name: "Patient in focus",
+    });
     for (const wardName of THREE_REFERRED_UNIT_NAMES) {
       expect(
-        screen.queryByText(wardName),
+        within(focus).queryByText(wardName),
         `${wardName} must not be named off the coordinator route`,
       ).not.toBeInTheDocument();
     }
-    // The disabled "No ward implied" state belongs to the coordinator route's own empty case
-    // (see the describe block below) — it must not appear here either, since this is not that case.
-    expect(screen.queryByText("No ward implied")).not.toBeInTheDocument();
+    const links = within(focus).getAllByRole("link");
+    expect(links).toHaveLength(1);
+    expect(links[0]?.getAttribute("href")).toMatch(/^\/mockups\/ward-flow\/ed\//);
   });
 
   it("on the coordinator route, the count and the named wards survive exactly as the 2026-09-03 ruling left them", () => {
@@ -149,12 +147,12 @@ describe("ward role switcher — other wards are named to coordinators only (own
     expect(screen.getByTestId("ward-role-switcher-ward-count")).toHaveTextContent("3");
 
     fireEvent.click(trigger);
+    const focus = within(screen.getByRole("dialog", { name: "Switch workstation" })).getByRole("group", {
+      name: "Patient in focus",
+    });
     for (const wardName of THREE_REFERRED_UNIT_NAMES) {
-      expect(screen.getByText(wardName)).toBeInTheDocument();
+      expect(within(focus).getByRole("link", { name: wardName })).toBeInTheDocument();
     }
-    expect(
-      screen.queryByText("Open the coordinator view to see which wards this patient was referred to."),
-    ).not.toBeInTheDocument();
   });
 });
 
@@ -175,27 +173,12 @@ describe("ward role switcher — the 'Change view' wording ruling (2026-09-03), 
     expect(trigger).not.toHaveAttribute("data-referred-ward-count");
   });
 
-  it("still offers 'No ward implied' in the menu when nothing is selected, on the coordinator route", () => {
+  it("opens the Switch workstation drawer, with no Patient in focus row when nothing is selected", () => {
     renderSwitcher(undefined, COORDINATOR_ROUTE);
 
     fireEvent.click(screen.getByRole("button", { name: /change view/i }));
-    // ⚠️ The honest empty state, untouched by item 38 and asserted so it stays that way. A control
-    // that offers nothing must SAY it offers nothing, rather than rendering an empty group that
-    // reads as a control which failed to load.
-    expect(screen.getByRole("menu", { name: "Change view" })).toBeInTheDocument();
-    expect(screen.getByText("No ward implied")).toBeInTheDocument();
-  });
-
-  it("off the coordinator route with nothing focused, points at the coordinator view rather than offering 'No ward implied'", () => {
-    // Owner answer 38 draws the line at the ROUTE, not at whether anything is currently referred —
-    // a ward screen never gets told about other wards, whether the answer would have been zero,
-    // one or three.
-    renderSwitcher(undefined, WARD_ROUTE);
-
-    fireEvent.click(screen.getByRole("button", { name: /change view/i }));
-    expect(
-      screen.getByText("Open the coordinator view to see which wards this patient was referred to."),
-    ).toBeInTheDocument();
-    expect(screen.queryByText("No ward implied")).not.toBeInTheDocument();
+    const drawer = screen.getByRole("dialog", { name: "Switch workstation" });
+    expect(within(drawer).getByRole("group", { name: "Statewide desks" })).toBeInTheDocument();
+    expect(within(drawer).queryByRole("group", { name: "Patient in focus" })).not.toBeInTheDocument();
   });
 });
