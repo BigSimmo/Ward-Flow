@@ -691,7 +691,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               onChange={setOrder}
             />
           </div>
-          <p className={styles.shownCount} role="status" data-testid="ward-index-count-note">
+          <p className={styles.shownCount} data-testid="ward-index-count-note">
             {isFiltered ? (
               <>
                 <span>

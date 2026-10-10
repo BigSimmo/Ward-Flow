@@ -407,11 +407,12 @@ describe("Ward Flow Master Search Hub — every flagged state carries a word, no
 describe("Ward Flow Master Search Hub — a search must not change what the screen says the network is", () => {
   it("the glance pane states one ward count, not one filtered and one not, while a query is narrowing the list", () => {
     renderHub();
-    // v6: the network sentence moved from the glance pane's subtitle to the hero title.
-    const networkSentence = () => screen.getByRole("heading", { level: 1 });
+    // v6: the network sentence moved from the glance pane's subtitle to the hero. v10: the title
+    // is the count plus noun ("96 places") and the kinds sit in the hero eyebrow.
+    const networkSentence = () => document.querySelector<HTMLElement>("[data-wf-hero]")!;
 
     const initialSubtitle = networkSentence().textContent ?? "";
-    expect(initialSubtitle).toMatch(/wards,.*EDs,.*community teams/i);
+    expect(initialSubtitle).toMatch(/wards,.*EDs,.*teams/i);
     const initialWards = Number(/(\d+)\s+wards/i.exec(initialSubtitle)?.[1]);
 
     // Before any query the two are trivially equal, so this is measured only after narrowing —
@@ -496,22 +497,24 @@ describe("Ward Flow Master Search Hub — the keyboard reaches everything the mo
     expect(categoryRadio("all").tabIndex).toBe(0);
   });
 
-  it("toggling the ready beds quick filter restricts the results to wards with available beds", () => {
+  it("toggling the ready beds quick filter highlights wards with available beds and dims the rest", () => {
     renderHub();
     const results = () => within(document.getElementById("hub-results") as HTMLElement);
+    const row = (name: string) => results().getByText(name).closest("li");
     const readyToggle = screen.getByRole("button", { name: /ready beds only/i });
     fireEvent.click(readyToggle);
 
-    // Mental Health Unit has 2 ready beds, so it must be visible in results
-    expect(results().getByText("Mental Health Unit")).toBeInTheDocument();
+    // Mental Health Unit has 2 ready beds, so it stays lit.
+    expect(row("Mental Health Unit")).not.toHaveAttribute("data-dim");
 
-    // Graylands Older Adult has 0 ready beds in fixture, so it must NOT be visible in results
-    expect(results().queryByText("Graylands Older Adult")).not.toBeInTheDocument();
+    // v10: Graylands Older Adult has 0 ready beds, so it is dimmed by colour, never hidden.
+    expect(row("Graylands Older Adult")).toHaveAttribute("data-dim", "true");
+    expect(screen.getByTestId("hub-highlight-note")).toHaveTextContent(/highlighted\. All rows stay/);
 
     // Reset button appears and resets the filter
     const resetBtn = screen.getByRole("button", { name: /reset all filters/i });
     fireEvent.click(resetBtn);
-    expect(results().getByText("Graylands Older Adult")).toBeInTheDocument();
+    expect(row("Graylands Older Adult")).not.toHaveAttribute("data-dim");
   });
 });
 

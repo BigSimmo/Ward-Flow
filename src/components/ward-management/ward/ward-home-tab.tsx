@@ -803,7 +803,7 @@ export function WardHomeTab({
             }
           />
           {highlighting && bedRows.length > 0 ? (
-            <p className={styles.highlightNote} role="status" data-testid="ward-bed-highlight-note">
+            <p className={styles.highlightNote} data-testid="ward-bed-highlight-note">
               <span>
                 <b>{litCount}</b> of <b>{bedRows.length}</b> beds highlighted. All beds stay on the board.
               </span>
