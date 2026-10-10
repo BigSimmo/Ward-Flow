@@ -411,7 +411,7 @@ const DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE: Record<string, string> = {
   // site, so the construction-site scan above still sees and counts each one.
   "src/components/ward-management/use-undoable-step.ts :: event":
     "useUndoableStep's run(): dispatches the step its caller built with a literal type",
-  "src/components/ward-management/use-undoable-step.ts :: build(nowRef.current)":
+  "src/components/ward-management/use-undoable-step.ts :: undoEvent":
     "useUndoableStep's toast Undo: dispatches the undo event its caller built with a literal type",
 };
 

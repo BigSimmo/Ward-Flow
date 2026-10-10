@@ -117,12 +117,12 @@ export function useUndoableStep({
                   prior: rejectionCountRef.current,
                   success: pending.undone ?? "Undone. Back as it was.",
                 };
-                const undoEvent = build(nowRef.current);
-                dispatch(
+                const built = build(nowRef.current);
+                const undoEvent =
                   pending.decidedAt === undefined
-                    ? undoEvent
-                    : ({ ...undoEvent, decidedAt: pending.decidedAt } as WardFlowEvent),
-                );
+                    ? built
+                    : ({ ...built, decidedAt: pending.decidedAt } as WardFlowEvent);
+                dispatch(undoEvent);
                 setToken((value) => value + 1);
               },
             },
