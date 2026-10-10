@@ -45,10 +45,6 @@ const DEFINITION_FILES = new Set([
 const KNOWN_UNREACHABLE: Readonly<Record<string, string>> = {
   // The 8 October lint cleanup removed private handlers that no rendered control called.
   // These gaps already existed; a dead dispatch must not count as a usable control.
-  RECORD_LEAVE_BED:
-    "The current Ward screen reads leave holds and can end them, but has no rendered control " +
-    "to record one. Its unused submission handler was removed on 8 October 2026. Remove this " +
-    "entry when a ward-scoped leave-recording control dispatches RECORD_LEAVE_BED.",
   RECORD_WARD_INTAKE_CONSTRAINTS:
     "The current Ward screen displays intake constraints, but has no rendered control to save " +
     "them. Its unused submission handler was removed on 8 October 2026. Remove this entry when " +

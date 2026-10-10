@@ -468,6 +468,8 @@ tabs, a peek sheet and a full-screen plan sheet.
 
 ## `patients/`
 
+**10 October 2026 ward changes:** `patient-mode.ts` adds At ED (an occupied stay with `awayAtEmergencyDepartmentSince`, after leave and absence). `patient-ward-change-card.tsx` (and CSS module) is the On ward card for Start leave (typed return time and day, off-ward or medical trip), Gone to ED and the expected discharge date; the status card's discharge cell opens it, and every time must be later than now. The At ED status card records the return. History lists the person's ward stays, which `patient-now-adapter.ts` returns as `stays` (D-14). The reducer now refuses leave or an absence while a stay is at ED, and ED while it is on leave or absent (`tests/ward-away-from-ward-exclusive.test.ts`). The coordinator route borrows the ward role for these through `CROSS_ROLE_ALLOWED`.
+
 **9 October 2026 gate board, second pass (D-38):** `patient-mode.ts` adds On leave (the stay has a
 leave bed), Absent without leave (that held bed records `absentWithoutLeave`) and On a CTO (the
 patient record holds `communityTreatmentOrder`). The status card gains a missing person checklist

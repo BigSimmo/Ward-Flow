@@ -13,7 +13,7 @@ import {
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { calendarDateOf } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { clock, dur } from "./patient-now-records";
 import type { PatientMode } from "./patient-mode";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
@@ -87,6 +87,12 @@ export interface PatientStatusContext {
   stayUnitName?: string;
   onRecordReturn: () => void;
   onMarkAbsent: () => void;
+  /** Opens the ward's change form at the discharge date, so the date is set where leave is. */
+  onDischargeDate?: () => void;
+  /** Records the return of a ward patient who went to an emergency department. */
+  onReturnFromEd?: () => void;
+  /** The engine's reason when it refused the last Record return from ED, shown on the At ED card. */
+  edReturnRefusal?: string;
   onAbsenceStep: (step: AbsenceStep) => void;
   onRecordCto: () => void;
   onEndCto: () => void;
@@ -375,6 +381,18 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
                 ? "Confirmed"
                 : "Not yet confirmed"
               : "Set on the ward",
+          action:
+            admission?.state === "occupied" && ctx.onDischargeDate
+              ? {
+                  kind: "button",
+                  label: admission.expectedDischargeAt != null ? "Change date" : "Set date",
+                  ariaLabel: admission.expectedDischargeAt != null ? "Change discharge date" : "Set discharge date",
+                  onClick: () => {
+                    ctx.onDischargeDate?.();
+                  },
+                  event: "UPDATE_EXPECTED_DISCHARGE",
+                }
+              : undefined,
         },
         {
           key: "leave",
@@ -425,7 +443,7 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
           label: "Due back",
           owner: "Nurse in charge",
           tone: overdue ? "warning" : "neutral",
-          value: clock(bed.expectedReturn),
+          value: formatInstantWithDay(bed.expectedReturn, now),
           sub: overdue
             ? `Overdue by ${dur(now - bed.expectedReturn)}, typed by the ward`
             : `In ${dur(bed.expectedReturn - now)}, typed by the ward`,
@@ -445,6 +463,54 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
           owner: "Treating team",
           value: legalValue(movement, patient),
           sub: "As recorded, no lapse time shown",
+        },
+      ],
+    };
+  }
+
+  if (mode === "ed" && admission?.awayAtEmergencyDepartmentSince != null) {
+    const since = admission.awayAtEmergencyDepartmentSince;
+    return {
+      tone: "warning",
+      verdict: "At ED, bed kept",
+      meta: ctx.stayUnitName ? `Bed held on ${ctx.stayUnitName}` : "Bed held",
+      cells: [
+        {
+          key: "ed",
+          icon: Stethoscope,
+          label: "At ED",
+          owner: "Ward",
+          tone: "warning",
+          value: `Since ${formatInstantWithDay(since, now)}`,
+          sub: `Away ${dur(Math.max(0, now - since))}, recorded by the ward`,
+        },
+        {
+          key: "bed",
+          icon: BedDouble,
+          label: "Bed",
+          owner: "Nurse in charge",
+          value: ctx.stayUnitName ? `Held on ${ctx.stayUnitName}` : "Held",
+          sub: "Not offered to anyone else while they are away",
+          clear: true,
+        },
+        {
+          key: "return",
+          icon: DoorOpen,
+          label: "Return",
+          owner: "Ward",
+          value: "Not back yet",
+          sub: ctx.edReturnRefusal
+            ? `Not recorded: ${ctx.edReturnRefusal}`
+            : "Record it when they are back on the ward",
+          action: {
+            kind: "button",
+            label: "Record return",
+            ariaLabel: "Record return from ED",
+            onClick: () => {
+              ctx.onReturnFromEd?.();
+            },
+            event: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
+          },
         },
       ],
     };

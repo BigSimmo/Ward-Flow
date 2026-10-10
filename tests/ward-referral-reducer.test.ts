@@ -141,11 +141,12 @@ describe("RECEIVE_REFERRAL", () => {
     expect(ids).toEqual(["RF-901", "RF-902", "RF-903"]);
   });
 
-  it("refuses (visibly) a role other than community, rather than silently doing nothing", () => {
+  it("refuses (visibly) a role that may not receive a referral, rather than silently doing nothing", () => {
+    // The coordinator may take every action (Josh, 10 Oct 2026), so the officer is the refused role.
     const before = seeded();
     const after = wardFlowReducer(before, {
       type: "RECEIVE_REFERRAL",
-      role: "coordinator",
+      role: "officer",
       now: NOW,
       ageBand: "Adult",
       destinations: [

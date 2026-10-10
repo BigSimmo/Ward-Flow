@@ -275,10 +275,10 @@ describe("BOOK_TRANSPORT", () => {
     ).toBeUndefined();
   });
 
-  it("⚠️ REFUSES THE COORDINATOR, which TR-D1 rejected by name and for a stated reason", () => {
-    // Not an oversight and not tidiness: the coordinator owns the bed search and does not know the
-    // patient's state, which is exactly the knowledge the booking needs.
-    const state = book({ role: "coordinator" });
+  it("refuses a role that is not a sender (the transport officer)", () => {
+    // TR-D1 once refused the coordinator by name. Josh superseded that on 10 Oct 2026: the
+    // coordinator may take every action. The transport officer still may not book.
+    const state = book({ role: "officer" });
     expect(state.rejections.length).toBe(1);
     expect(state.movements.some((movement) => movement.transport?.escortRequired === true)).toBe(
       seedWardFlowState().movements.some((movement) => movement.transport?.escortRequired === true),
