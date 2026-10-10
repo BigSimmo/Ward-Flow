@@ -682,8 +682,9 @@
   .rowActionSlot {
     display: none;
   }
-  /* Paper cannot scroll: every chip prints, wrapping if it must, with no edge fade. */
-  .scrollTrack {
+  /* Paper cannot scroll: every chip prints, wrapping if it must, with no edge fade either way. */
+  .scrollTrack,
+  .scrollRow:dir(rtl) .scrollTrack {
     flex-wrap: wrap;
     overflow: visible;
     -webkit-mask-image: none;
