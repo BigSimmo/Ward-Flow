@@ -243,7 +243,8 @@ test.describe("@mockup Ward Flow command view", () => {
       : page.getByTestId("ward-bar-phone-menu");
     if (await opener.isVisible()) {
       await opener.click();
-      await expect(page.getByTestId("ward-rail-more-pages")).toBeVisible();
+      // Phone (10 Oct 2026): the bar's Menu opens the phone menu rather than the rail's sheet.
+      await expect(page.getByTestId("ward-rail-more-pages").or(page.getByTestId("ward-phone-menu"))).toBeVisible();
     }
 
     // By `href`, not by counting every link this landmark now contains: the sheet also carries the
@@ -493,33 +494,20 @@ test.describe("@mockup Ward Flow command view", () => {
   // exactly one link now carries that name. The second assertion (`getByText`, matching rendered
   // text rather than accessible name) is unaffected — the rail's own `<b>Ward Flow</b>` still
   // renders that exact text once, open by default, so it still finds exactly one match.
-  test("uses its fixed bar as the sole Ward Flow brand on phone", async ({ page }) => {
+  // Rise phone navigation (10 Oct 2026): the owner locked a lean phone bar of Menu, page title,
+  // search and Tasks, with no brand. The brand link this test used to count is gone from phones on
+  // purpose, so it now checks the locked bar instead. Menu being visible is the positive anchor, so
+  // the "no brand link" count cannot pass on an empty page.
+  test("uses the lean bar on phone, with Menu first and no brand link", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 820 });
     await page.goto("/mockups/ward-flow/queue", { waitUntil: "domcontentloaded" });
 
-    await expect(page.getByRole("link", { name: "Ward Flow home", exact: true })).toBeVisible({ timeout: 15_000 });
-
-    /*
-     * 🔴 **THIS ASSERTION USED TO PASS ON NOTHING, AND ITS OWN COMMENT SAID SO WITHOUT TREATING IT AS
-     * A DEFECT.** It built `page.locator("header").filter({ has: heading "Priority queue" })` and
-     * asserted that locator was hidden. `/queue` redirects to `/delays`, which renders no such
-     * heading, so the filter matched ZERO elements — and `toBeHidden()` on an empty locator is
-     * satisfied by the emptiness. The test could not have failed for any reason on any page.
-     *
-     * ⚠️ **A vacuous pass is not the same defect as a wrong expectation.** A wrong expectation goes
-     * red when the code changes; this went green whatever the page did, including on a page that
-     * grew a second brand. Routed here by the redirect-stub guard, which correctly excluded it:
-     * navigating into a stub is a different class from an assertion that cannot fail.
-     *
-     * What the test's own NAME claims is a count — the fixed bar is the SOLE brand — so it is
-     * asserted as one, over every visible element carrying the exact words rather than over a
-     * header this page does not have. Anchored on a positive expectation, which cannot be satisfied
-     * by an empty match.
-     */
+    const menu = page.getByTestId("ward-bar-phone-menu");
+    await expect(menu).toBeVisible({ timeout: 15_000 });
     await expect(
-      page.getByText("Ward Flow", { exact: true }),
-      "the phone shell shows more than one Ward Flow brand, so the fixed bar is no longer the sole one",
-    ).toHaveCount(1);
+      page.getByRole("link", { name: "Ward Flow home", exact: true }).filter({ visible: true }),
+      "the locked phone bar carries no brand link",
+    ).toHaveCount(0);
   });
 
   test("retains its operating structure in dark, forced-colours, and print modes", async ({ page }) => {

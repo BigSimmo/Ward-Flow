@@ -3,7 +3,6 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
-  Activity as ActivityIcon,
   BarChart3,
   BookOpen,
   CalendarClock,
@@ -26,7 +25,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
@@ -98,8 +97,9 @@ const WardMhaCalculator = dynamic(
 );
 
 import { announceToWardShell } from "./ward-live-region";
+import { WardPhoneMenu } from "./ward-phone-menu";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
-import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
+import { openWardMenu, PHONE_QUERY, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import {
   digestHref,
   dischargeHref,
@@ -386,9 +386,6 @@ function useBarScrolled(enabled: boolean): boolean {
   return enabled && scrolled;
 }
 
-/** The phone layout's one breakpoint (8 Oct 2026). Everything phone-only in the bar keys off it. */
-const PHONE_QUERY = "(max-width: 48rem)";
-
 function subscribePhone(onChange: () => void) {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
   const query = window.matchMedia(PHONE_QUERY);
@@ -404,28 +401,66 @@ function usePhoneViewport(): boolean {
   );
 }
 
-/**
- * Phone bar, option A (Josh, 8 Oct 2026): the same bar on every page, so every page offers New
- * referral on the phone. The full-page form is retired (8 Oct 2026, option B), so the referral route
- * is no exception: it is the Referrals board with the slide-out open. Desktop keeps each page's own
- * action.
- */
+/** The desktop bar keeps each page's own primary action; phone actions live in the phone menu. */
 const NEW_REFERRAL_ACTION: WardPrimaryAction = {
   kind: "new-referral",
   label: "New referral",
   menu: WARD_NEW_REFERRAL_MENU,
 };
 
+/**
+ * The phone bar's Menu button and the phone menu it opens. The menu opens only on the phone; above
+ * 48rem the rail's own sheet answers Menu.
+ */
+function PhoneMenuEntry({
+  menuRef,
+  tasksCount,
+  activityUnread,
+  roleCategory,
+  onOpenDrawer,
+  onOpenReferral,
+}: {
+  menuRef: RefObject<HTMLButtonElement | null>;
+  tasksCount: number;
+  activityUnread: number;
+  roleCategory: ReferralSheetCategory;
+  onOpenDrawer: (id: "tasks" | "activity" | "tools") => void;
+  onOpenReferral: (request: ReferralSheetRequest, returnFocus: HTMLElement | null) => void;
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        ref={menuRef}
+        className={styles.phoneOnly}
+        aria-label="Menu"
+        aria-haspopup="dialog"
+        aria-controls="ward-phone-menu"
+        data-testid="ward-bar-phone-menu"
+        onClick={(event) => openWardMenu(event.currentTarget)}
+      >
+        <MenuIcon aria-hidden="true" strokeWidth={1.75} />
+      </button>
+      <WardPhoneMenu
+        returnFocusRef={menuRef}
+        tasksCount={tasksCount}
+        activityUnread={activityUnread}
+        onOpenDrawer={onOpenDrawer}
+        onNewReferral={() => onOpenReferral({ category: roleCategory }, menuRef.current)}
+      />
+    </>
+  );
+}
+
 export function phoneBarAction(action: WardPrimaryAction | undefined, phone: boolean): WardPrimaryAction | undefined {
-  if (!phone || action?.kind === "new-referral") return action;
-  return NEW_REFERRAL_ACTION;
+  return phone ? undefined : action;
 }
 
 /**
- * The universal header (Josh, 9 Oct 2026): "ensure that referral is on every single page". A route
- * with no action of its own, or a deliberate "none", now shows New referral on desktop too, as it
- * already did on the phone. A route with its own primary (Record a decision, Contact a team,
- * Export the figures) keeps it, so the bar still holds one primary button.
+ * The universal desktop header (Josh, 9 Oct 2026): "ensure that referral is on every single page".
+ * A route with no action of its own, or a deliberate "none", shows New referral. A route with its
+ * own primary (Record a decision, Contact a team, Export the figures) keeps it, so the bar still
+ * holds one primary button.
  */
 export function routeBarAction(pathname: string): WardPrimaryAction {
   const action = resolveWardPrimaryAction(pathname);
@@ -1071,9 +1106,15 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       data-long-title={routeTitle.length > 17 || undefined}
       data-scrolled={barScrolled || undefined}
     >
-      <Link href={WARD_HOME_HREF} className={`${styles.phoneOnly} ${styles.phoneBrand}`} aria-label="Ward Flow home">
-        <ActivityIcon aria-hidden="true" strokeWidth={2} />
-      </Link>
+      {/* Phone (Josh, 10 Oct 2026, locked lean bar): Menu, title over the service line, Search, Tasks. */}
+      <PhoneMenuEntry
+        menuRef={phoneMenuRef}
+        tasksCount={tasksActiveCount}
+        activityUnread={unreadNoticeCount}
+        roleCategory={roleCategory}
+        onOpenDrawer={openPopover}
+        onOpenReferral={openReferral}
+      />
       <div className={styles.title}>
         <div className={styles.titleGroup}>
           <span
@@ -1366,19 +1407,6 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           ) : null}
         </div>
       ) : null}
-
-      <button
-        type="button"
-        ref={phoneMenuRef}
-        className={styles.phoneOnly}
-        aria-label="Menu"
-        aria-haspopup="dialog"
-        aria-controls="ward-rail-more-pages"
-        data-testid="ward-bar-phone-menu"
-        onClick={(event) => openWardMenu(event.currentTarget)}
-      >
-        <MenuIcon aria-hidden="true" strokeWidth={1.75} />
-      </button>
 
       <Sheet
         id="ward-bar-activity-drawer"

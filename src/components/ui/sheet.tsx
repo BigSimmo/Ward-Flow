@@ -83,6 +83,8 @@ type SheetBaseProps = {
   placement?: "default" | "left" | "right" | "responsive-right";
   mobilePlacement?: "bottom" | "top" | "fullscreen";
   mobileSize?: SheetMobileSize;
+  /** Uses the phone bottom-sheet layout through the 48rem phone breakpoint. */
+  mobileBreakpoint?: "default" | "phone";
   /**
    * Keeps the Sheet-owned header controls below the phone top safe area.
    * Fullscreen sheets default to `padding`; near-full bottom sheets must opt in
@@ -151,6 +153,7 @@ export function Sheet({
   placement = "default",
   mobilePlacement = "bottom",
   mobileSize = "content",
+  mobileBreakpoint = "default",
   mobileHeaderSafeArea,
   portal = true,
   desktopBackdropClassName,
@@ -436,6 +439,7 @@ export function Sheet({
                 : defaultSheetIsTopAligned
                   ? "items-start justify-center px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:items-center sm:p-6"
                   : "items-end justify-center sm:items-center sm:p-6",
+        mobileBreakpoint === "phone" && styles.phoneBreakpointBackdrop,
       )}
       // Dismiss on click (not pointerdown) so the sheet stays mounted through
       // pointerup and the same gesture cannot click-through into content below.
@@ -500,6 +504,7 @@ export function Sheet({
                         ),
                   ),
           "motion-reduce:animate-none",
+          mobileBreakpoint === "phone" && styles.phoneBreakpointPanel,
           contentClassName,
         )}
       >

@@ -14,10 +14,8 @@ import {
   Menu,
   PanelLeftOpen,
   Plus,
-  RotateCcwClock,
   Settings,
   SunMoon,
-  Wrench,
 } from "lucide-react";
 
 import { Sheet } from "@/components/ui/sheet";
@@ -30,17 +28,7 @@ import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
 import { type HealthService } from "@/components/ward-management/ward-model";
-import {
-  WARD_HOME_HREF,
-  WARD_NAV,
-  WARD_VIEWS,
-  WARD_CAPACITY_HREF,
-  WARD_COMMAND_HREF,
-  WARD_ED_HREF,
-  type WardNavItem,
-  type WardViewItem,
-} from "@/components/ward-management/ward-nav";
-import { WARD_NAV_ICONS, WARD_VIEW_ICONS } from "@/components/ward-management/ward-nav-icons";
+import { WARD_HOME_HREF, WARD_VIEWS, WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 
 import {
@@ -52,7 +40,8 @@ import {
 
 import { announceToWardShell } from "./ward-live-region";
 import { applyAppearance, useAppearanceStore, useGlareStore } from "./ward-bar";
-import { edHref, handoverHref, patientHref, settingsHref } from "./ward-facade";
+import { handoverHref, settingsHref } from "./ward-facade";
+import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
   bedAlertSiteLabel,
@@ -62,7 +51,7 @@ import {
   type ServiceBedAlert,
 } from "./ward-service-bed-alerts";
 import { useServiceScope } from "./ward-service-store";
-import { openWardDrawer, closeWardDrawer, subscribeWardMenu } from "./ward-drawer-bus";
+import { openWardDrawer, closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import styles from "./ward-rail.module.css";
 
 export type { ServiceBedAlert } from "./ward-service-bed-alerts";
@@ -157,58 +146,6 @@ export function setRailOpenPreference(open: boolean) {
   window.dispatchEvent(new Event(railOpenChangeEvent));
 }
 
-type RailEntry = {
-  id: string;
-  href: string;
-  label: string;
-  icon: (typeof WARD_VIEW_ICONS)[keyof typeof WARD_VIEW_ICONS];
-};
-
-// Owner-requested navigation, 2026-09-13. Select presentation entries only;
-// the complete route registry and contextual links remain available to the product.
-const RAIL_GROUPS = [
-  {
-    label: "Today",
-    entries: [
-      ["command", "Home"],
-      ["movements", "Movements"],
-      ["capacity", "Capacity"],
-      ["delays", "Delays"],
-      ["network", "Network"],
-    ],
-  },
-  {
-    label: "Where",
-    entries: [
-      ["hub", "Places"],
-      ["ed", "Emergency"],
-      ["wards", "Wards"],
-      ["community", "Community"],
-      ["officer", "Transport"],
-    ],
-  },
-  {
-    label: "Work",
-    entries: [
-      ["search", "Patients"],
-      ["referral-intake", "New referral"],
-      ["referrals", "Referrals"],
-      ["handover", "Handover"],
-      ["discharges", "Discharges"],
-    ],
-  },
-  {
-    label: "Checks",
-    entries: [
-      ["governance", "Governance"],
-      ["statistics", "Statistics"],
-      ["legal-forms", "Legal"],
-      ["out-of-area", "Out of area"],
-      ["alerts", "Alerts"],
-      ["on-call", "On-call"],
-    ],
-  },
-] as const;
 const COMPACT_CORE_ENTRY_IDS = new Set<string>(RAIL_GROUPS.flatMap((group) => group.entries.map(([id]) => id)));
 const NARROW_CORE_ENTRY_IDS = new Set(["command", "movements", "capacity"]);
 
@@ -241,49 +178,6 @@ function getClosedRailCardsSnapshot() {
     typeof window.matchMedia === "function" &&
     window.matchMedia(CLOSED_RAIL_CARD_MEDIA_QUERY).matches
   );
-}
-
-function railEntries(): RailEntry[] {
-  const views: RailEntry[] = WARD_VIEWS.map((item: WardViewItem) => ({
-    id: item.id,
-    href: item.href,
-    label: item.label,
-    icon: WARD_VIEW_ICONS[item.id],
-  }));
-  const nav: RailEntry[] = WARD_NAV.map((item: WardNavItem) => ({
-    id: item.id,
-    href: item.href,
-    label: item.label,
-    icon: WARD_NAV_ICONS[item.id],
-  }));
-  const registry = new Map([...views, ...nav].map((entry) => [entry.id, entry]));
-  // The rail's Emergency entry opens the statewide ED index rather than the `ed` nav entry's one
-  // example department, the same way Wards opens All wards rather than one ward.
-  const hrefOverride: Record<string, string> = { ed: WARD_ED_HREF };
-  return RAIL_GROUPS.flatMap((group) =>
-    group.entries.map(([id, label]) => {
-      const entry = registry.get(id)!;
-      return { ...entry, label, href: hrefOverride[id] ?? entry.href };
-    }),
-  );
-}
-
-function normalizePath(p: string): string {
-  return p.length > 1 && p.endsWith("/") ? p.slice(0, -1) : p;
-}
-
-function isActiveRailEntry(pathname: string, entry: RailEntry): boolean {
-  const norm = normalizePath(pathname);
-  const entryHref = normalizePath(entry.href);
-  if (norm === entryHref) return true;
-  // Detail routes belong to their hub instead of restoring removed example links.
-  if (entry.id === "command") return norm === WARD_HOME_HREF || norm === WARD_COMMAND_HREF;
-  if (entry.id === "wards") return new RegExp(`^${WARD_HOME_HREF}/(ward|board)/`).test(norm);
-  if (entry.id === "ed") return norm === WARD_ED_HREF || norm.startsWith(edHref(""));
-  if (entry.id === "community") return norm.startsWith(`${entryHref}/`);
-  if (entry.id === "movements" || entry.id === "statistics") return norm.startsWith(`${entryHref}/`);
-  if (entry.id === "search") return norm.startsWith(patientHref(""));
-  return false;
 }
 
 /** "at a time limit…" → "At a time limit…", for the closed rail's hover card. */
@@ -421,6 +315,8 @@ export function WardRail() {
   useEffect(
     () =>
       subscribeWardMenu((trigger) => {
+        // Phone (Josh, 10 Oct 2026): the bar's own phone menu answers instead (`ward-phone-menu.tsx`).
+        if (isPhoneViewport()) return;
         moreTriggerRef.current = trigger;
         setMoreOpen(true);
       }),
@@ -1166,33 +1062,6 @@ export function WardRail() {
           ) : null;
         })}
         <div className={styles.sheetUtility}>
-          {/* Phone only: the bar drops Activity and Tools under 48rem, so they live here. */}
-          <button
-            type="button"
-            className={`${styles.sheetUtilityLink} ${styles.sheetPhoneOnly}`}
-            data-testid="ward-rail-sheet-activity"
-            onClick={() => {
-              setMoreOpen(false);
-              openWardDrawer("activity");
-            }}
-          >
-            <RotateCcwClock aria-hidden="true" strokeWidth={1.75} />
-            <span>Activity</span>
-            <ChevronRight aria-hidden="true" className={styles.sheetChevron} />
-          </button>
-          <button
-            type="button"
-            className={`${styles.sheetUtilityLink} ${styles.sheetPhoneOnly}`}
-            data-testid="ward-rail-sheet-tools"
-            onClick={() => {
-              setMoreOpen(false);
-              openWardDrawer("tools");
-            }}
-          >
-            <Wrench aria-hidden="true" strokeWidth={1.75} />
-            <span>Tools</span>
-            <ChevronRight aria-hidden="true" className={styles.sheetChevron} />
-          </button>
           <Link href={settingsHref()} className={styles.sheetUtilityLink} onClick={() => setMoreOpen(false)}>
             <Settings aria-hidden="true" strokeWidth={1.75} />
             <span>Settings</span>

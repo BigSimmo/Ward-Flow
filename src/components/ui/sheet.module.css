@@ -82,6 +82,22 @@
   }
 }
 
+/* Some phone surfaces stay mounted through 48rem, while the default utility layout switches at sm. */
+@media (min-width: 40rem) and (max-width: 48rem) {
+  .phoneBreakpointBackdrop {
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+
+  .phoneBreakpointPanel {
+    max-width: none !important;
+    max-height: calc(100dvh - 1rem) !important;
+    border-radius: 1rem 1rem 0 0 !important;
+    padding-bottom: var(--safe-area-bottom, env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
 @media (prefers-reduced-transparency: reduce) {
   :where(.panel) {
     background-color: var(--wf-overlay);
