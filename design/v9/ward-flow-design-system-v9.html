@@ -133,6 +133,11 @@
         padding: 0 8px 0 16px;
         animation: drift 7s var(--wf-ease-sheet) infinite alternate;
       }
+      @media (prefers-reduced-motion: reduce) {
+        .gstage .glass {
+          animation: none;
+        }
+      }
       @keyframes drift {
         to {
           transform: translateY(150px);
@@ -226,7 +231,7 @@
   </head>
   <body class="wf">
     <div class="frame">
-      <a class="b sec skip" href="#focal">Skip to the board</a>
+      <a class="b sec skip" href="#board">Skip to the board</a>
 
       <header class="topbar glass bar">
         <b class="t-14">Ward Flow design system v9</b>
@@ -246,7 +251,7 @@
         </div>
       </header>
 
-      <main class="page">
+      <main class="page" id="board" tabindex="-1">
         <section class="hero" aria-labelledby="h1">
           <span class="t-eyebrow" style="color: var(--wf-hero-ink-2)">Design system · v9 · 10 Oct 2026</span>
           <h1 id="h1" class="t-20">Calm, dense and live, with frosted chrome</h1>
@@ -537,7 +542,7 @@
                 >
                   <span class="g danger"></span><span class="ell"><b>Oakendell, Verity</b></span
                   ><span class="meta">waited <span class="num v">7d 1h</span></span
-                  ><button class="b sec sm ra" tabindex="-1">Refer</button>
+                  ><button class="b sec sm ra">Refer</button>
                 </div>
                 <div
                   class="row"
@@ -548,7 +553,7 @@
                 >
                   <span class="g warning"></span><span class="ell"><b>Hawthornby, Derek</b></span
                   ><span class="meta">waited <span class="num v">2d 14h</span></span
-                  ><button class="b sec sm ra" tabindex="-1">Refer</button>
+                  ><button class="b sec sm ra">Refer</button>
                 </div>
                 <div
                   class="row"
@@ -559,7 +564,7 @@
                 >
                   <span class="g neutral"></span><span class="ell"><b>Marrowbee, Devan</b></span
                   ><span class="meta">waited <span class="num v">2d 0h</span></span
-                  ><button class="b sec sm ra" tabindex="-1">Refer</button>
+                  ><button class="b sec sm ra">Refer</button>
                 </div>
               </div>
               <div class="card-f">
@@ -635,7 +640,7 @@
           <section class="hero">
             <div class="specrow">
               <h2 class="t-20">Mental Health Unit</h2>
-              <span class="lv onhero"><span class="pulse"></span>Live <span class="clk">10:42</span></span>
+              <span class="lv onhero"><span class="pulse"></span>Simulated <span class="clk">10:42</span></span>
               <span style="flex: 1"></span>
               <button class="b light">Record a decision</button>
             </div>
@@ -685,7 +690,7 @@
           <div class="phone">
             <div class="pbar">
               <b class="t-14">Mental Health Unit</b><span style="flex: 1"></span
-              ><span class="lv"><span class="pulse"></span><span class="clk">10:42</span></span>
+              ><span class="lv"><span class="pulse"></span>Simulated <span class="clk">10:42</span></span>
             </div>
             <div class="pbody">
               <div class="pt fill slide" role="tablist" aria-label="Phone views" data-demo>
@@ -819,6 +824,12 @@
             `<button class="bed ${b[4] || ""}"><span class="no">${b[0]}</span><span class="nm">${b[1]}</span><span class="st2"><span>${b[2]}</span></span><span class="g ${b[3]} gpos"></span></button>`,
         )
         .join("");
+      const bed05 = [...beds.querySelectorAll(".bed")].find((b) => b.querySelector(".no").textContent === "05");
+      let bed05Reviewed = false;
+      function setBed05Reviewed(reviewed) {
+        bed05Reviewed = reviewed;
+        bed05.querySelector(".st2 span").textContent = reviewed ? "Reviewed" : "Form 1A 13:42";
+      }
       beds.addEventListener("click", (e) => {
         const t = e.target.closest(".bed");
         if (!t) return;
@@ -838,13 +849,15 @@
       // busy after 300ms
       document.querySelectorAll(".busy-demo").forEach((b) =>
         b.addEventListener("click", () => {
-          if (b.getAttribute("aria-busy") === "true") return;
+          if (b.dataset.running) return;
+          b.dataset.running = "1";
           b.style.width = b.offsetWidth + "px";
           const t = setTimeout(() => b.setAttribute("aria-busy", "true"), 300);
           setTimeout(() => {
             clearTimeout(t);
             b.removeAttribute("aria-busy");
             b.style.width = "";
+            delete b.dataset.running;
           }, 1600);
         }),
       );
@@ -872,7 +885,7 @@
           });
         }
       });
-      let mins = 42;
+      let mins = 10 * 60 + 42;
       const extra = ["Quenfold, Gareth", "Uskarby, Owen", "Tremalow, Noor"];
       const restart = (el, cls) => {
         el.classList.remove(cls);
@@ -881,10 +894,11 @@
       };
       document.getElementById("tick").addEventListener("click", () => {
         mins++;
-        document.getElementById("age").textContent = "10:" + String(mins).padStart(2, "0");
+        document.getElementById("age").textContent =
+          String(Math.floor(mins / 60) % 24).padStart(2, "0") + ":" + String(mins % 60).padStart(2, "0");
         restart(document.getElementById("pulse"), "tick");
         const v = rows()[1].querySelector(".v");
-        v.textContent = ["2d 15h", "2d 16h", "2d 17h"][(mins - 43) % 3];
+        v.textContent = ["2d 15h", "2d 16h", "2d 17h"][(mins - (10 * 60 + 43)) % 3];
         restart(v, "chg");
         restart(rows()[1].querySelector(".g"), "bump");
         if (extra.length) {
@@ -894,7 +908,7 @@
           r.tabIndex = -1;
           r.setAttribute("aria-selected", "false");
           r.style.gridTemplateColumns = "14px minmax(0,1fr) auto auto";
-          r.innerHTML = `<span class="g neutral"></span><span class="ell"><b>${extra.shift()}</b></span><span class="meta">waited <span class="num v">0m</span></span><button class="b sec sm ra" tabindex="-1">Refer</button>`;
+          r.innerHTML = `<span class="g neutral"></span><span class="ell"><b>${extra.shift()}</b></span><span class="meta">waited <span class="num v">0m</span></span><button class="b sec sm ra">Refer</button>`;
           list.appendChild(r);
         }
       });
@@ -913,13 +927,16 @@
         open.setAttribute("aria-expanded", "false");
         open.focus();
       }
-      function toast(msg) {
+      function toast(msg, onUndo) {
         stage.querySelector(".toast")?.remove();
         const t = document.createElement("div");
         t.className = "toast enter";
         t.setAttribute("role", "status");
         t.innerHTML = `<span>${msg}</span><button class="b">Undo</button>`;
-        t.querySelector("button").addEventListener("click", () => dismiss(t));
+        t.querySelector("button").addEventListener("click", () => {
+          if (onUndo) onUndo();
+          dismiss(t);
+        });
         stage.appendChild(t);
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => dismiss(t), 4000);
@@ -941,8 +958,10 @@
         d.setAttribute("aria-modal", "true");
         d.innerHTML = `<b class="t-14">Bed 05</b><span class="meta"><span class="g danger"></span> Act now · Form 1A ends <span class="clk">13:42</span></span><span style="flex:1"></span><button class="b pri">Mark reviewed</button>`;
         d.querySelector(".b").addEventListener("click", () => {
+          const was = bed05Reviewed;
+          setBed05Reviewed(true);
           closeSheet();
-          toast("Bed 05 marked reviewed");
+          toast("Bed 05 marked reviewed", () => setBed05Reviewed(was));
         });
         d.addEventListener("keydown", (e) => {
           if (e.key !== "Tab") return;

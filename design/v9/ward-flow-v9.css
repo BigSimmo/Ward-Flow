@@ -1143,8 +1143,14 @@
   color: var(--wf-ink-1);
 }
 .pt button:focus-visible,
+.pt button.on:focus-visible,
+.pt button[aria-selected="true"]:focus-visible,
+.pt button[aria-checked="true"]:focus-visible,
 .trk button:focus-visible {
-  outline-offset: -2px;
+  outline: 0;
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-ring),
+    inset 0 0 0 4px var(--wf-focus-gap);
 }
 .pt button.on,
 .pt button[aria-selected="true"],
@@ -1173,6 +1179,10 @@
 .pt.slide button[aria-selected="true"],
 .pt.slide button[aria-checked="true"] {
   background: transparent;
+}
+.pt.slide button.on:not(:focus-visible),
+.pt.slide button[aria-selected="true"]:not(:focus-visible),
+.pt.slide button[aria-checked="true"]:not(:focus-visible) {
   box-shadow: none;
 }
 .pt.slide button {
@@ -1715,6 +1725,9 @@ svg.gl {
 }
 .row.compact {
   min-height: var(--wf-row-compact);
+}
+[data-density="touch"] .row.compact {
+  min-height: var(--wf-row-touch);
 }
 .row {
   transition: background-color var(--wf-t-micro) var(--wf-ease-out);
@@ -2566,6 +2579,7 @@ svg.gl {
   .choice-row button.on,
   .choice-row button[aria-checked="true"],
   .bed.sel,
+  .bed[aria-pressed="true"],
   .hs.pill[aria-pressed="true"] {
     border: 2px solid Highlight;
   }
@@ -2711,6 +2725,9 @@ svg.gl {
   :root:not([data-density]) {
     --wf-row: var(--wf-row-touch);
   }
+  :root:not([data-density]) .row.compact {
+    min-height: var(--wf-row-touch);
+  }
 }
 /* reflow: a 1280px desktop at 200% zoom is 640px wide. Every desktop layout collapses here without
    losing an action (WCAG 1.4.10). */
@@ -2766,7 +2783,7 @@ svg.gl {
   .edge-act {
     border-color: CanvasText;
   }
-  .row.edge-act {
+  .row.edge-act:not(:focus-visible) {
     box-shadow: inset 0 0 0 1px CanvasText;
   }
 }
