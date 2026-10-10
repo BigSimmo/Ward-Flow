@@ -153,9 +153,21 @@ export function ToastProvider({ children }: ToastProviderProps) {
 }
 
 export function useToast(): ToastApi {
+  const toast = useOptionalToast();
+  if (!toast) throw new Error("useToast must be used inside a <ToastProvider>");
+  return toast;
+}
+
+/**
+ * The toast API, or null where nothing provides one (a component test or preview that renders a
+ * screen alone). The Ward Flow layout wraps every route in `ToastProvider`, so in the app this is
+ * never null. Never throws, so a screen does not need its own provider or a try/catch probe.
+ */
+export function useOptionalToast(): ToastApi | null {
   const context = useContext(ToastContext);
-  if (!context) throw new Error("useToast must be used inside a <ToastProvider>");
-  return { push: context.push, dismiss: context.dismiss };
+  const push = context?.push;
+  const dismiss = context?.dismiss;
+  return useMemo(() => (push && dismiss ? { push, dismiss } : null), [push, dismiss]);
 }
 
 function ToastCard({

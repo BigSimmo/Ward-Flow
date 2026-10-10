@@ -21,7 +21,7 @@
   --wf-ink-1: #161a20;
   --wf-ink-2: #414953;
   --wf-ink-3: #5b646f;
-  --wf-ink-off: #828a94;
+  --wf-ink-off: #6b737d; /* v10 pass 4: 4.7:1 on the page, so "None" and "Closed" pass as text */
   --wf-line-ctl: #828a94;
   --wf-accent: #2f4c66;
   --wf-accent-strong: #2b4762;
@@ -115,7 +115,7 @@
   --wf-ink-1: #e9eef3;
   --wf-ink-2: #bcc8d4;
   --wf-ink-3: #93a4b5;
-  --wf-ink-off: #6e7d8d;
+  --wf-ink-off: #8291a1; /* v10 pass 4: 5.3:1 on the dark page */
   --wf-line-ctl: #6e7d8d;
   --wf-accent: #8fb0d4;
   --wf-accent-strong: #8fb0d4;
@@ -180,7 +180,7 @@
     --wf-ink-1: #e9eef3;
     --wf-ink-2: #bcc8d4;
     --wf-ink-3: #93a4b5;
-    --wf-ink-off: #6e7d8d;
+    --wf-ink-off: #8291a1;
     --wf-line-ctl: #6e7d8d;
     --wf-accent: #8fb0d4;
     --wf-accent-strong: #8fb0d4;

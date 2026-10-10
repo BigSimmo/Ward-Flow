@@ -22,6 +22,8 @@ import {
   tableClasses,
   type WfTone,
   useIsPhone,
+  useIsTabletPortrait,
+  DeltaTwin,
 } from "@/components/wf";
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -64,7 +66,6 @@ import {
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
 import { ReturnPlan, TravelIcon, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
 import { HomeBedsCard, ReadyCard, ShiftCard, type ReadyRow, type ShiftReturnRow } from "./out-of-area-side";
-import { useIsTabletPortrait } from "../governance/use-tablet-portrait";
 import styles from "./out-of-area-board.module.css";
 
 /**
@@ -503,7 +504,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             nextUpId={nextUp?.admission.id}
             since={
               <>
-                <DeltaTwin was={meeting.away} now={entries.length} at={meeting.at} /> since the{" "}
+                <MeetingTwin was={meeting.away} now={entries.length} at={meeting.at} /> since the{" "}
                 {formatInstant(meeting.at)} bed meeting · <b className={styles.mono}>{bedDays}</b> bed days
               </>
             }
@@ -621,11 +622,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               <span className={styles.since} data-testid="ward-out-of-area-since">
                 <span className={styles.sinceLabel}>Since the {formatInstant(meeting.at)} bed meeting</span>
                 <span className={styles.sinceTwin}>
-                  <DeltaTwin was={meeting.away} now={entries.length} at={meeting.at} />
+                  <MeetingTwin was={meeting.away} now={entries.length} at={meeting.at} />
                   <span>away</span>
                 </span>
                 <span className={styles.sinceTwin}>
-                  <DeltaTwin was={meeting.passed} now={countOf("due")} at={meeting.at} />
+                  <MeetingTwin was={meeting.passed} now={countOf("due")} at={meeting.at} />
                   <span>date passed</span>
                 </span>
               </span>
@@ -1129,30 +1130,15 @@ export function sinceArrivalLabel(entry: OutOfAreaEntry, now: Instant): string {
   return `${days} ${days === 1 ? "day" : "days"}`;
 }
 
-/**
- * A delta twin (v10): two small bars, then and now, and the change in words. Reads as
- * "4 at the 08:30 bed meeting, 5 now". Page-local until a shared twin exists.
- */
-export function DeltaTwin({ was, now, at }: { was: number; now: number; at: Instant }) {
-  const most = Math.max(was, now, 1);
-  const height = (value: number) => Math.max(2, (value / most) * 12);
-  const change = now - was;
+/** The shared DeltaTwin on the hero band, read against the morning bed meeting. */
+function MeetingTwin({ was, now, at }: { was: number; now: number; at: Instant }) {
   return (
-    <span
-      className={styles.twin}
-      role="img"
-      aria-label={`${was} at the ${formatInstant(at)} bed meeting, ${now} now`}
-      data-testid="ward-out-of-area-twin"
-    >
-      <svg viewBox="0 0 10 12" aria-hidden="true">
-        <rect x="0" y={12 - height(was)} width="4" height={height(was)} rx="1" />
-        <rect data-now="true" x="6" y={12 - height(now)} width="4" height={height(now)} rx="1" />
-      </svg>
-      {change === 0 ? (
-        <span className={styles.twinWord}>no change</span>
-      ) : (
-        `${change > 0 ? "+" : "\u2212"}${Math.abs(change)}`
-      )}
-    </span>
+    <DeltaTwin
+      was={was}
+      now={now}
+      label={`${was} at the ${formatInstant(at)} bed meeting, ${now} now`}
+      surface="hero"
+      testId="ward-out-of-area-twin"
+    />
   );
 }

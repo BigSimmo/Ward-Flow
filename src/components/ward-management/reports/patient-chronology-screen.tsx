@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   Check,
@@ -34,7 +34,8 @@ import {
   cx,
   tableClasses,
   useIsPhone,
-  useToast,
+  useOptionalToast,
+  useIsTabletPortrait,
 } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -54,22 +55,6 @@ import { reportDay, reportMoment } from "./report-parts";
 import styles from "./reports.module.css";
 
 const NOT_RECORDED = "Not recorded";
-
-/** Tablet portrait (769 to 1000 wide): the event opens in a drawer instead of the side panel. */
-const PORTRAIT_TABLET_QUERY = "(min-width: 48.0625rem) and (max-width: 62.5rem)";
-
-function usePortraitTablet(): boolean {
-  return useSyncExternalStore(
-    (notify) => {
-      if (typeof window.matchMedia !== "function") return () => undefined;
-      const query = window.matchMedia(PORTRAIT_TABLET_QUERY);
-      query.addEventListener?.("change", notify);
-      return () => query.removeEventListener?.("change", notify);
-    },
-    () => typeof window.matchMedia === "function" && window.matchMedia(PORTRAIT_TABLET_QUERY).matches,
-    () => false,
-  );
-}
 
 type SourceTab = "all" | "records" | "audit" | "session";
 type ViewRole = "coordinator" | "nurse";
@@ -137,7 +122,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   const now = useWardFlowClock();
   const baseId = useId();
   const isPhone = useIsPhone();
-  const toast = useToast();
+  const toast = useOptionalToast();
   // The role is the route (`ward-chrome-role.ts`); nothing else holds a current role.
   const coordinator = wardChromeRole(usePathname() ?? "") === "coordinator";
 
@@ -218,7 +203,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
 
   const openIndex = rows.findIndex((row) => row.key === openKey);
   const open = openIndex >= 0 ? rows[openIndex] : null;
-  const portraitTablet = usePortraitTablet();
+  const portraitTablet = useIsTabletPortrait();
   // The side panel opens the event, except on a portrait tablet, where a drawer does.
   const sideEvent = portraitTablet ? null : open;
 
@@ -253,8 +238,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   function copyRow(row: ChronologyRow) {
     const text = rowText(row, dayZero);
     // The shared wf toast (polite live region) confirms the copy; words stay neutral.
-    const copied = () => toast.push({ tone: "success", title: "Row copied", duration: 2600 });
-    const failed = () => toast.push({ tone: "warning", title: "Could not copy the row", duration: 4000 });
+    const copied = () => toast?.push({ tone: "success", title: "Row copied", duration: 2600 });
+    const failed = () => toast?.push({ tone: "warning", title: "Could not copy the row", duration: 4000 });
     try {
       if (!navigator.clipboard) throw new Error("no clipboard");
       void navigator.clipboard.writeText(text).then(copied, failed);

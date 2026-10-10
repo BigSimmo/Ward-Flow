@@ -39,7 +39,16 @@ import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
 import { wardTransferNeedsCoordinator } from "@/components/ward-management/ward-referrals";
-import { CheckingFoot, Hero, LiveChip, Menu, TextInput, buttonClass, useToast } from "@/components/wf";
+import {
+  CheckingFoot,
+  Hero,
+  LiveChip,
+  Menu,
+  TextInput,
+  buttonClass,
+  useOptionalToast,
+  durMinutes,
+} from "@/components/wf";
 import {
   currentShift,
   dayShiftEndInstant,
@@ -68,7 +77,6 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { WardAnswerView } from "./ward-answer-view";
 import styles from "./ward.module.css";
-import { plainAge } from "@/components/ward-management/wards/plain-age";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { WardDecisionsCockpit, openDecisionCount } from "./ward-decisions-cockpit";
 import { WardTelemetryRibbon, type WardBedFilter } from "./ward-telemetry-ribbon";
@@ -93,15 +101,6 @@ import {
   LEAVE_BED_OPEN_WARNING_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
-
-/** The page toast, or null where the screen renders without a `ToastProvider` (a test or preview). */
-function useOptionalToast(): ReturnType<typeof useToast> | null {
-  try {
-    return useToast();
-  } catch {
-    return null;
-  }
-}
 
 /** What the Bed board is waiting to hear back from the engine after a place or an undo. */
 type BoardCheck = {
@@ -1813,7 +1812,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   items={[
                     {
                       id: "stale",
-                      label: `Bed counts older than ${plainAge(unit.allocatable.staleAfterMinutes)}`,
+                      label: `Bed counts older than ${durMinutes(unit.allocatable.staleAfterMinutes)}`,
                       value: bedCountsStale ? 1 : 0,
                       tone: bedCountsStale ? "warning" : undefined,
                     },
@@ -1837,7 +1836,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               <span>
                 {unit.allocatable.source === "ward" ? "Confirmed" : "Last figure"}{" "}
                 {formatInstant(unit.allocatable.confirmedAt)} ·{" "}
-                {plainAge(Math.max(0, now - unit.allocatable.confirmedAt))} ago
+                {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
               </span>
             }
           />

@@ -113,10 +113,24 @@ describe("WardCapacityRow, GroupHead and SinceYouLooked", () => {
     );
     const row = screen.getByRole("button", { name: "Open Dabakarn" });
     expect(row).toHaveAttribute("data-dim", "true");
-    expect(row).toHaveAttribute("data-fit", "true");
+    // A dimmed row drops the fit tint (pass 4), so only the matching places stand out.
+    expect(row).not.toHaveAttribute("data-fit");
     expect(row).toHaveTextContent("90.0%");
     fireEvent.click(row);
     expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it("marks a fit place that is not dimmed", () => {
+    render(
+      <WardCapacityRow
+        name="Moodjar"
+        segments={[{ id: "occ", value: 10, fill: "data-1", label: "Occupied" }]}
+        percent={50}
+        alertAt={85}
+        fit
+      />,
+    );
+    expect(screen.getByTestId("wf-ward-capacity-row")).toHaveAttribute("data-fit", "true");
   });
 
   it("folds a group from its head and shows 0 rather than nothing", () => {

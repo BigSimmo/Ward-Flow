@@ -507,6 +507,43 @@
   color: var(--wf-hero-ink-2);
 }
 
+.heroEyebrow {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-hero-ink-2);
+}
+
+/* A pressable figure: the whole cell is a 44px touch target; it looks like the plain figure. */
+.heroFigureButton {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: var(--wf-touch, 44px);
+  margin: calc(-1 * var(--wf-s-1)) calc(-1 * var(--wf-s-2));
+  padding: var(--wf-s-1) var(--wf-s-2);
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.heroFigureButton[aria-pressed="true"] {
+  border-color: var(--wf-on-hero-line, var(--wf-hero-ink-3));
+}
+
+.heroFigureButton:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 1px;
+}
+
 /* One row, equal columns, hairlines between. Never wraps. */
 .heroFigures {
   display: grid;

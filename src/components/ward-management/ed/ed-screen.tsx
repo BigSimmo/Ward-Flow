@@ -1,6 +1,5 @@
 "use client";
 import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
-import type { ToastApi } from "@/components/ui/toast";
 
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
@@ -107,7 +106,15 @@ import {
 } from "@/components/ward-management/referrals/arrival-time-modal";
 
 import { ChevronDown } from "lucide-react";
-import { buttonClass, JourneyStrip, ScrollRow, Segmented, StatusGlyph, useIsPhone, useToast } from "@/components/wf";
+import {
+  buttonClass,
+  JourneyStrip,
+  ScrollRow,
+  Segmented,
+  StatusGlyph,
+  useIsPhone,
+  useOptionalToast,
+} from "@/components/wf";
 import { edJourneyStages } from "./ed-journey";
 import styles from "./ed.module.css";
 import { EdOverview } from "./ed-overview";
@@ -1232,19 +1239,6 @@ function AttentionToneIcon({ tone }: { tone: "danger" | "warn" | "good" | "quiet
   );
 }
 
-/**
- * The layout's `ToastProvider` wraps every ward route, so the Undo toast is always there in the app.
- * A test that renders this screen on its own has no provider; there the toast is skipped rather than
- * throwing. `useToast` always calls `useContext` before it throws, so hook order never changes.
- */
-function useToastWhenMounted(): ToastApi | null {
-  try {
-    return useToast();
-  } catch {
-    return null;
-  }
-}
-
 export function EdScreen({ edId }: EdScreenProps) {
   const {
     movements,
@@ -1452,7 +1446,7 @@ export function EdScreen({ edId }: EdScreenProps) {
    * declined until the rejection check says whether the reducer accepted it; `undoCheckRef` holds
    * the count before an Undo so a refused Undo can say why.
    */
-  const toast = useToastWhenMounted();
+  const toast = useOptionalToast();
   /** Phone: Board, Needs you and Lists are one tap apart (v10 ED page, phone). */
   const isPhone = useIsPhone();
   const [phonePane, setPhonePane] = useState<"board" | "needs" | "lists">("board");

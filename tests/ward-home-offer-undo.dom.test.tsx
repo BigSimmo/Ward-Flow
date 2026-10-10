@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
+import { ToastProvider } from "@/components/wf";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { fitKind } from "@/components/ward-management/coordinator/home-fit";
 import { isOpen, referralBlockedReason, shortlistCandidates } from "@/components/ward-management/ward-derivations";
@@ -35,7 +36,9 @@ const MOVEMENT_ID = "WF-030";
 function renderHome(movementId = MOVEMENT_ID) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <CoordinatorScreen />
+      <ToastProvider>
+        <CoordinatorScreen />
+      </ToastProvider>
     </WardFlowProvider>,
   );
   fireEvent.click(screen.getByTestId(`ward-queue-row-${movementId}`));

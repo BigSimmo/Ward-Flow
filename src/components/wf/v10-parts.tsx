@@ -220,7 +220,7 @@ export type WardCapacityRowProps = {
   alertAt: number;
   /** Glyph after the figure. Defaults to the amber circle at or over the alert line. */
   tone?: WfTone;
-  /** A free or fit place: the one allowed tint. */
+  /** A free or fit place: the one allowed tint. A dimmed row drops it, so only matches stand out. */
   fit?: boolean;
   /** Recede by colour when a highlight does not match it. The row stays. */
   dim?: boolean;
@@ -270,7 +270,7 @@ export function WardCapacityRow({
   );
   const shared = {
     className: cx(styles.capRow, className),
-    "data-fit": fit ? "true" : undefined,
+    "data-fit": fit && !dim ? "true" : undefined,
     "data-dim": dim ? "true" : undefined,
     "data-selected": selected ? "true" : undefined,
     "data-testid": "wf-ward-capacity-row",
@@ -378,6 +378,11 @@ export type SinceItem = {
   tone?: WfTone;
 };
 
+/** A short time stamp ("07:12", "Tue 07:12"), as opposed to words naming a window. */
+function isClockLike(since: string): boolean {
+  return since.length <= 14 && /\d{1,2}:\d{2}/.test(since);
+}
+
 /**
  * The shift change digest (Elevate, adopted 10 Oct 2026): what changed since the person last
  * looked, as up to five figures with one line each, and Copy as handover text.
@@ -389,7 +394,10 @@ export function SinceYouLooked({
   id,
   className,
 }: {
-  /** The clock time they last looked ("07:12"). */
+  /**
+   * When they last looked: a clock time ("07:12", "Tue 07:12"), drawn mono, or words for a named
+   * window ("the start of this shift"), drawn as plain text. Both read "Since you looked at …".
+   */
   since: string;
   items: SinceItem[];
   /** Copies the digest as handover text. Omit to hide the action. */
@@ -401,11 +409,7 @@ export function SinceYouLooked({
     <section id={id} className={cx(styles.since, className)} aria-label={`Since you looked at ${since}`}>
       <CardHead
         title="Since you looked"
-        meta={
-          <>
-            at <b className={styles.sinceClock}>{since}</b>
-          </>
-        }
+        meta={<>at {isClockLike(since) ? <b className={styles.sinceClock}>{since}</b> : since}</>}
         level={3}
         action={
           onCopy ? (

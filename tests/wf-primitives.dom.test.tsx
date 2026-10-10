@@ -36,7 +36,9 @@ describe("v6 time formats", () => {
     expect(dur(43_000)).toBe("43s");
     expect(dur(5 * MIN + 3_000)).toBe("5m 03s");
     expect(dur(52 * MIN)).toBe("52m");
-    expect(dur(7 * 60 * MIN)).toBe("7h 00m");
+    // A whole hour is the plain age (v10 wardanswer content rule): "7h", never "7h 00m".
+    expect(dur(7 * 60 * MIN)).toBe("7h");
+    expect(dur(7 * 60 * MIN + 5 * MIN)).toBe("7h 05m");
     expect(dur(26 * 60 * MIN)).toBe("1d 2h");
     expect(dur(-18 * MIN)).toBe("18m");
     expect(durMinutes(257)).toBe("4h 17m");
@@ -197,7 +199,8 @@ describe("Timer", () => {
     for (const timer of timers) expect(timer).not.toHaveAttribute("aria-live");
     expect(timers[0]).toHaveTextContent("1h 58mwaiting");
     expect(screen.getByText("Overdue")).toBeInTheDocument();
-    expect(timers[1]).toHaveTextContent("5h 00m");
+    expect(timers[1]).toHaveTextContent("5h");
+    expect(timers[1]).not.toHaveTextContent("00m");
     expect(timers[2]).toHaveTextContent("in4h 17m");
   });
 

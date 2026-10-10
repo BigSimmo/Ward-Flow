@@ -555,9 +555,17 @@ export type PhoneHeroFigure = {
   label: ReactNode;
   /** Glyph before the label. Red (danger) only when it needs action now. */
   tone?: WfTone;
+  /** Makes the figure a 44px button that jumps to what it counts or toggles a highlight. */
+  onPress?: () => void;
+  /** With `onPress`, a highlight the figure toggles (`aria-pressed`). Omit for a plain jump. */
+  pressed?: boolean;
+  /** With `onPress`, the button's accessible name when the figure and label alone are unclear. */
+  actionLabel?: string;
 };
 
 export type PhoneHeroProps = {
+  /** One quiet line above the title ("Statewide · Day shift"). */
+  eyebrow?: ReactNode;
   /** The answer, five words at most ("2 need you now"). */
   title: ReactNode;
   /** One quiet line under the title. */
@@ -581,6 +589,7 @@ export const PHONE_HERO_FIGURE_LIMIT = 3;
  * 844px screen. Inside it status glyphs take the on-hero tones and focus turns light.
  */
 export function PhoneHero({
+  eyebrow,
   title,
   sub,
   figures,
@@ -595,6 +604,11 @@ export function PhoneHero({
   return (
     <section className={cx(styles.hero, className)} aria-labelledby={titleId} data-testid={testId}>
       <div className={styles.heroTitleBlock}>
+        {present(eyebrow) ? (
+          <p className={styles.heroEyebrow} title={textOf(eyebrow)}>
+            {eyebrow}
+          </p>
+        ) : null}
         {/* One line each; a cut string keeps its full words in a hover title. */}
         <Heading id={titleId} className={styles.heroTitle} title={textOf(title)}>
           {title}
@@ -607,15 +621,35 @@ export function PhoneHero({
       </div>
       {shown.length ? (
         <ul className={styles.heroFigures} data-count={shown.length}>
-          {shown.map((figure) => (
-            <li key={figure.id} className={styles.heroFigure}>
-              <span className={styles.heroValue}>{figure.value}</span>
-              <span className={styles.heroLabel}>
-                {figure.tone ? <StatusGlyph tone={figure.tone} size={10} /> : null}
-                <span className={styles.heroLabelText}>{figure.label}</span>
-              </span>
-            </li>
-          ))}
+          {shown.map((figure) => {
+            const content = (
+              <>
+                <span className={styles.heroValue}>{figure.value}</span>
+                <span className={styles.heroLabel}>
+                  {figure.tone ? <StatusGlyph tone={figure.tone} size={10} /> : null}
+                  <span className={styles.heroLabelText}>{figure.label}</span>
+                </span>
+              </>
+            );
+            return (
+              <li key={figure.id} className={styles.heroFigure}>
+                {figure.onPress ? (
+                  <button
+                    type="button"
+                    className={styles.heroFigureButton}
+                    onClick={figure.onPress}
+                    aria-pressed={figure.pressed}
+                    aria-label={figure.actionLabel}
+                    data-testid={`wf-phone-hero-figure-${figure.id}`}
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  content
+                )}
+              </li>
+            );
+          })}
         </ul>
       ) : null}
       {present(actions) ? <div className={styles.heroActions}>{actions}</div> : null}

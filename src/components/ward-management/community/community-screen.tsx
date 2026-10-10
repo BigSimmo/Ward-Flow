@@ -10,7 +10,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type 
 
 import Link from "next/link";
 import { ChevronDown, FileText, Phone, Plus, Search, Users } from "lucide-react";
-import type { ToastApi } from "@/components/ui/toast";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import {
   Badge,
@@ -27,7 +26,7 @@ import {
   SrOnly,
   StatusGlyph,
   TextInput,
-  useToast,
+  useOptionalToast,
   type SinceItem,
   type WfTone,
 } from "@/components/wf";
@@ -473,19 +472,6 @@ const BLANK_INTAKE_DRAFT: IntakeDraft = {
  * with nothing beside it saying so.
  */
 /**
- * The layout's `ToastProvider` wraps every ward route, so the Undo toast is always there in the app.
- * A test that renders this screen on its own has no provider; there the toast is skipped rather than
- * throwing. `useToast` always calls `useContext` before it throws, so hook order never changes.
- */
-function useToastWhenMounted(): ToastApi | null {
-  try {
-    return useToast();
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Since you looked (v10, team page): what changed for this team since the current shift began, read
  * from the record. The prototype keeps no per-person "last looked" time, so the shift start stands
  * in for it, as Handover does. Referrals in counts referrals naming this team raised in the window;
@@ -588,7 +574,7 @@ export function CommunityScreen({
    * (`UNDO_REFERRAL_DECISION`, this team's own decision). `rejectionsRef` reads the newest count at
    * the moment Undo is pressed, and a refused Undo says why.
    */
-  const toast = useToastWhenMounted();
+  const toast = useOptionalToast();
   const rejectionsRef = useRef(rejections.length);
   useEffect(() => {
     rejectionsRef.current = rejections.length;

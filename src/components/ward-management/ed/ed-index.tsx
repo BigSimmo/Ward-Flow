@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -37,6 +37,9 @@ import {
   buttonClass,
   cx,
   useIsPhone,
+  BarList,
+  RowSpark,
+  RowTrend,
 } from "@/components/wf";
 import {
   ED_HOME_SERVICE_BAND_ORDER,
@@ -44,7 +47,6 @@ import {
   edWaitingSeries,
   type EdSummary,
 } from "@/components/ward-management/ed/ed-home-derivations";
-import { RowSpark, RowTrend } from "@/components/ward-management/ed/ed-row-spark";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement, MovementStage } from "@/components/ward-management/ward-model";
@@ -744,7 +746,7 @@ function EdCard({
         <p className={styles.meta} title={summary.siteName}>
           {summary.siteName}
         </p>
-        <RowTrend values={row.trend} name={row.short} />
+        <RowTrend values={row.trend} name={row.short} testId="ed-row-spark" />
       </div>
       <PeoplePips row={row} highlight={highlight} />
       <p className={styles.figures}>
@@ -823,7 +825,7 @@ function EdTable({
                 <PeoplePips row={row} highlight={highlight} />
               </span>
               <span role="cell">
-                <RowTrend values={row.trend} name={row.short} />
+                <RowTrend values={row.trend} name={row.short} testId="ed-row-spark" />
               </span>
               {[row.noBed, row.held, row.leaving, row.forms].map((value, index) => (
                 <span role="cell" key={index} className={cx(styles.end, styles.num, value === 0 && styles.zero)}>
@@ -987,8 +989,7 @@ function EdLanes({
 
 /**
  * Waiting by service (v10): the bars are the service filter. Pressing a bar keeps that service's
- * EDs solid and dims the rest (the same as the service tabs); pressing it again clears it. Page-local
- * until the shared `BarList` takes an `onPick`.
+ * EDs solid and dims the rest (the same as the service tabs); pressing it again clears it.
  */
 function ServicePicker({
   services,
@@ -1007,35 +1008,30 @@ function ServicePicker({
     name,
     waiting: rows.filter((row) => row.summary.service === name).reduce((sum, row) => sum + row.summary.waiting, 0),
   }));
-  const max = Math.max(1, ...bars.map((bar) => bar.waiting));
   const mean = bars.length ? bars.reduce((sum, bar) => sum + bar.waiting, 0) / bars.length : 0;
   return (
     <Card className={styles.serviceCard} as="section" aria-labelledby="ed-index-by-service">
       <h3 id="ed-index-by-service" className={styles.eyebrow}>
         Waiting by service
       </h3>
-      <div className={styles.serviceBars} role="group" aria-label="Highlight a health service">
-        <span className={styles.serviceMean} style={{ "--ed-mean": mean / max } as CSSProperties} aria-hidden="true" />
-        {bars.map((bar) => (
-          <button
-            key={bar.name}
-            type="button"
-            className={styles.serviceBar}
-            aria-pressed={value === bar.name}
-            data-dim={value !== "all" && value !== bar.name ? "true" : undefined}
-            onClick={() => onPick(bar.name)}
-            data-testid={`ed-index-service-bar-${bar.name}`}
-          >
-            <span className={styles.serviceName}>{bar.name}</span>
-            <span className={styles.serviceTrack} aria-hidden="true">
-              {bar.waiting > 0 ? (
-                <span className={styles.serviceFill} style={{ width: `${(bar.waiting / max) * 100}%` }} />
-              ) : null}
-            </span>
-            <span className={styles.num}>{bar.waiting}</span>
-          </button>
-        ))}
-      </div>
+      <BarList
+        label="Highlight a health service"
+        rows={bars.map((bar) => ({
+          id: bar.name,
+          label: bar.name,
+          value: bar.waiting,
+          display: bar.waiting,
+          testId: `ed-index-service-bar-${bar.name}`,
+        }))}
+        mean={mean}
+        track
+        labelWidth="88px"
+        picked={value === "all" ? null : value}
+        onPick={(id) => {
+          const service = services.find((name) => name === id);
+          if (service) onPick(service);
+        }}
+      />
       <p className={styles.serviceNote}>
         Dashed line is the mean, <b className={styles.num}>{Number(mean.toFixed(1))}</b>. Press a service to highlight
         it.
@@ -1138,7 +1134,7 @@ function EdPreview({
           Last 12 hours
         </h3>
         <div className={styles.previewTrend}>
-          <RowSpark values={row.trend} name={row.short} big />
+          <RowSpark values={row.trend} name={row.short} big testId="ed-row-spark" />
           <span className={styles.meta}>{row.trend.join(" · ")} now · every 2h</span>
         </div>
       </section>
