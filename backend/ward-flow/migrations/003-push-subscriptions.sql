@@ -22,4 +22,16 @@ CREATE TABLE ward_flow.push_baselines (
   evaluated_at timestamptz NOT NULL DEFAULT now(),
   FOREIGN KEY (workspace_id, data_mode) REFERENCES ward_flow.workspaces(id, data_mode)
 );
+-- The outbox: one row per device and newly announced act-now row, written in the same
+-- transaction that announces it, so an alert is never marked announced without a record of who
+-- still has to receive it. Only rows for items still red are kept.
+CREATE TABLE ward_flow.push_deliveries (
+  subscription_id bigint NOT NULL REFERENCES ward_flow.push_subscriptions(id) ON DELETE CASCADE,
+  item_id text NOT NULL CHECK (length(item_id) <= 200),
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed')),
+  attempts integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+  last_attempt_at timestamptz,
+  PRIMARY KEY (subscription_id, item_id)
+);
+CREATE INDEX push_deliveries_pending ON ward_flow.push_deliveries(subscription_id) WHERE status = 'pending';
 INSERT INTO ward_flow.migrations(version) VALUES(3);

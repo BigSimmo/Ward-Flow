@@ -161,7 +161,16 @@ test("delivery reports sent, expired (404 or 410) or failed, with the fixed topi
   const socket = Object.assign(new Error("socket hang up https://fcm.googleapis.com/fcm/send/abc"), {
     code: "ECONNRESET",
   });
-  const outcomes = [null, { statusCode: 410 }, { statusCode: 404 }, { statusCode: 429 }, socket];
+  const outcomes = [
+    null,
+    { statusCode: 410 },
+    { statusCode: 404 },
+    { statusCode: 429 },
+    socket,
+    { statusCode: 503 },
+    { statusCode: 403 },
+    { statusCode: 413 },
+  ];
   const webpush = {
     sendNotification: async (...args) => {
       calls.push(args);
@@ -179,8 +188,11 @@ test("delivery reports sent, expired (404 or 410) or failed, with the fixed topi
     { outcome: "sent" },
     { outcome: "expired" },
     { outcome: "expired" },
-    { outcome: "failed", category: "status 429" },
-    { outcome: "failed", category: "Error ECONNRESET" },
+    { outcome: "failed", category: "status 429", retry: true },
+    { outcome: "failed", category: "Error ECONNRESET", retry: true },
+    { outcome: "failed", category: "status 503", retry: true },
+    { outcome: "failed", category: "status 403", retry: false },
+    { outcome: "failed", category: "status 413", retry: false },
   ]);
   const [target, body, options] = calls[0];
   assert.deepEqual(target, { endpoint: subscription.endpoint, keys: browserKeys });

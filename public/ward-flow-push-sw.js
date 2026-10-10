@@ -53,6 +53,8 @@ self.addEventListener("push", (event) => {
       icon: "/icons/icon-192",
       badge: "/icons/monochrome-192",
       tag: "ward-flow-act-now",
+      // A new act-now item should buzz even when an earlier one is still showing. The server's
+      // outbox retries only the device whose send failed, so a retry never re-buzzes another one.
       renotify: true,
       data: { url: wardFlowPath(data.url) },
     }),

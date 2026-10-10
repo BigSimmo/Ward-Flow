@@ -142,8 +142,10 @@ function failureCategory(error) {
 
 /**
  * Sends one payload to one subscription. Resolves `{ outcome: "sent" }`, `{ outcome: "expired" }`
- * (the push service says the subscription is gone: 404 or 410) or `{ outcome: "failed", category }`.
- * Never throws and never logs the endpoint.
+ * (the push service says the subscription is gone: 404 or 410) or
+ * `{ outcome: "failed", category, retry }`. `retry` is true for a failure that may pass (408, 429,
+ * 5xx, a network error or timeout) and false for any other refusal (such as 400, 403 or 413), which
+ * would fail again. Never throws and never logs the endpoint.
  */
 export function createPushSender(config, webpush) {
   const vapidDetails = { subject: config.subject, publicKey: config.publicKey, privateKey: config.privateKey };
@@ -156,9 +158,10 @@ export function createPushSender(config, webpush) {
       );
       return { outcome: "sent" };
     } catch (error) {
-      return error?.statusCode === 404 || error?.statusCode === 410
-        ? { outcome: "expired" }
-        : { outcome: "failed", category: failureCategory(error) };
+      const status = error?.statusCode;
+      if (status === 404 || status === 410) return { outcome: "expired" };
+      const retry = !Number.isInteger(status) || status === 408 || status === 429 || status >= 500;
+      return { outcome: "failed", category: failureCategory(error), retry };
     }
   };
 }

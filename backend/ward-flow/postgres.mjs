@@ -4,6 +4,8 @@ import { DefaultAzureCredential } from "@azure/identity";
 import { errorFields, freshAlerts } from "./push.mjs";
 
 const SUBSCRIPTION_PAGE = 200;
+/** A device whose sends keep failing for a reason that may pass is tried this many times. */
+export const MAX_DELIVERY_ATTEMPTS = 5;
 
 export function createPostgresPool(config, credential = new DefaultAzureCredential()) {
   const pool = new Pool({
@@ -46,6 +48,8 @@ function canonical(value) {
  * @param log Structured diagnostics: closed event names and push.mjs `errorFields` only.
  * @param deliveryWaitMs How long a command response waits for phone delivery before returning;
  *   delivery carries on in the background after that.
+ * @param retryAfterMs How long a claimed delivery waits before another attempt may claim it: the
+ *   gap between retries, and how long an interrupted delivery waits for the sweep.
  */
 export function createWorkspaceStore(
   pool,
@@ -56,6 +60,7 @@ export function createWorkspaceStore(
     push = null,
     log = (event) => console.error(JSON.stringify(event)),
     deliveryWaitMs = 1500,
+    retryAfterMs = 60_000,
   },
 ) {
   const snapshot = (row, at) => ({
@@ -100,10 +105,12 @@ export function createWorkspaceStore(
    * Inside the workspace lock: the act-now rows not announced at the last evaluation. The first
    * evaluation compares with `before` (the state the command started from), so turning the feature
    * on never announces alerts that were already there. A reset world starts a new baseline, as
-   * the open-tab notifier does. Returns the batch to deliver after commit, or null.
+   * the open-tab notifier does. In the same transaction, queues a pending delivery for each
+   * new item on each active device of an account still named as coordinator, except the account
+   * that made the change. Returns whether anything was queued.
    */
   async function evaluatePush(client, world, before, at, excludeActorId) {
-    if (!push) return null;
+    if (!push) return false;
     const current = engine.actNowAlerts(world, at);
     const stored = await client.query(
       "SELECT item_ids FROM ward_flow.push_baselines WHERE workspace_id=$1 AND data_mode='prototype' FOR UPDATE",
@@ -120,57 +127,94 @@ export function createWorkspaceStore(
       [workspaceId, JSON.stringify(current.map((alert) => alert.id)), at],
     );
     const fresh = freshAlerts(previous, current);
-    if (!fresh.length) return null;
-    return { payload: push.payload(fresh), itemIds: fresh.map((alert) => alert.id), excludeActorId };
+    if (!fresh.length) return false;
+    // An item that left and came back red is announced again, as the open-tab notifier does.
+    const queued = await client.query(
+      "INSERT INTO ward_flow.push_deliveries(subscription_id, item_id) SELECT s.id, item FROM ward_flow.push_subscriptions s CROSS JOIN unnest($4::text[]) AS item WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL AND s.actor_id = ANY($2::uuid[]) AND ($3::uuid IS NULL OR s.actor_id <> $3::uuid) ON CONFLICT (subscription_id, item_id) DO UPDATE SET status='pending', attempts=0, last_attempt_at=NULL",
+      [workspaceId, push.coordinatorIds, excludeActorId, fresh.map((alert) => alert.id)],
+    );
+    return queued.rowCount > 0;
   }
   /**
-   * After commit: send to every active subscription of an account still named as coordinator,
-   * except the account that made the change, a page at a time so none is skipped. Subscriptions
-   * the push service reports gone are deleted; successes are noted.
+   * After commit, and from the sweep: send each device one notification for its due pending
+   * deliveries, a page of devices at a time. Rows are claimed (attempts + 1, last attempt now)
+   * before sending, so a concurrent sweep never sends them too, and a delivery cut off mid-way
+   * (an instance recycled after the command returned) is picked up once `retryAfterMs` passes.
    *
-   * If any send fails for another reason (rate limit, timeout, outage), the batch's items leave
-   * the announced list so the next command or the five-minute sweep tries again. Recipients that
-   * already succeeded may then get the alert twice; the fixed Topic and notification tag collapse
-   * the repeat on the device, so it shows as one notification.
+   * Sent rows are marked sent. A device the push service reports gone is deleted with its rows.
+   * A failure that may pass leaves that device's rows pending for a later sweep, up to
+   * MAX_DELIVERY_ATTEMPTS; any other refusal marks them failed. Retries only ever go to the device
+   * that failed, so the worker's `renotify` never re-buzzes a device that already has the alert.
    */
-  async function deliver(batch) {
-    if (!batch) return;
+  async function deliver() {
     const counts = { sent: 0, expired: 0, failed: 0 };
     const failures = {};
     try {
-      let after = 0;
+      const at = clock();
+      const { rows: worlds } = await pool.query(
+        "SELECT payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
+        [workspaceId],
+      );
+      if (!worlds[0] || !engine.validWorld(worlds[0].payload)) return;
+      const red = new Map(engine.actNowAlerts(worlds[0].payload, at).map((alert) => [alert.id, alert]));
+      // An item no longer red is never announced late; its rows go, so the table stays small.
+      await pool.query(
+        "DELETE FROM ward_flow.push_deliveries d USING ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND s.workspace_id=$1 AND NOT (d.item_id = ANY($2::text[]))",
+        [workspaceId, [...red.keys()]],
+      );
+      const due = "d.status='pending' AND d.attempts < $3 AND (d.last_attempt_at IS NULL OR d.last_attempt_at <= $4)";
+      let after = "0";
       for (;;) {
         const { rows } = await pool.query(
-          "SELECT id, endpoint, p256dh, auth FROM ward_flow.push_subscriptions WHERE workspace_id=$1 AND data_mode='prototype' AND revoked_at IS NULL AND actor_id = ANY($2::uuid[]) AND ($3::uuid IS NULL OR actor_id <> $3::uuid) AND id > $4 ORDER BY id LIMIT $5",
-          [workspaceId, push.coordinatorIds, batch.excludeActorId, after, SUBSCRIPTION_PAGE],
+          `UPDATE ward_flow.push_deliveries d SET attempts = d.attempts + 1, last_attempt_at = $5 FROM ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND ${due} AND d.subscription_id IN (SELECT DISTINCT d.subscription_id FROM ward_flow.push_deliveries d JOIN ward_flow.push_subscriptions s ON s.id = d.subscription_id WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL AND s.actor_id = ANY($2::uuid[]) AND ${due} AND d.subscription_id > $6 ORDER BY d.subscription_id LIMIT $7) RETURNING d.subscription_id AS id, d.item_id, s.endpoint, s.p256dh, s.auth`,
+          [
+            workspaceId,
+            push.coordinatorIds,
+            MAX_DELIVERY_ATTEMPTS,
+            new Date(at.getTime() - retryAfterMs),
+            at,
+            after,
+            SUBSCRIPTION_PAGE,
+          ],
         );
-        if (!rows.length) break;
-        after = rows[rows.length - 1].id;
-        const results = await Promise.all(rows.map((row) => push.send(row, batch.payload)));
-        const expired = [];
-        const sent = [];
+        const devices = new Map();
+        for (const row of rows) {
+          const device = devices.get(row.id) ?? { ...row, items: [] };
+          device.items.push(red.get(row.item_id));
+          devices.set(row.id, device);
+        }
+        if (!devices.size) break;
+        after = [...devices.keys()].reduce((a, b) => (BigInt(a) > BigInt(b) ? a : b));
+        const list = [...devices.values()];
+        const results = await Promise.all(list.map((device) => push.send(device, push.payload(device.items))));
+        const ids = { sent: [], expired: [], retry: [], rejected: [] };
         results.forEach((result, index) => {
           counts[result.outcome] += 1;
-          if (result.outcome === "expired") expired.push(rows[index].id);
-          if (result.outcome === "sent") sent.push(rows[index].id);
-          if (result.outcome === "failed") failures[result.category] = (failures[result.category] ?? 0) + 1;
+          if (result.outcome === "failed") {
+            failures[result.category] = (failures[result.category] ?? 0) + 1;
+            ids[result.retry ? "retry" : "rejected"].push(list[index].id);
+          } else ids[result.outcome].push(list[index].id);
         });
-        if (expired.length)
-          await pool.query("DELETE FROM ward_flow.push_subscriptions WHERE id = ANY($1::bigint[])", [expired]);
-        if (sent.length)
+        const claimed = "subscription_id = ANY($1::bigint[]) AND status='pending' AND last_attempt_at=$2";
+        if (ids.sent.length) {
+          await pool.query(`UPDATE ward_flow.push_deliveries SET status='sent' WHERE ${claimed}`, [ids.sent, at]);
           await pool.query("UPDATE ward_flow.push_subscriptions SET last_success_at=$2 WHERE id = ANY($1::bigint[])", [
-            sent,
-            clock(),
+            ids.sent,
+            at,
           ]);
-        if (rows.length < SUBSCRIPTION_PAGE) break;
+        }
+        if (ids.expired.length)
+          await pool.query("DELETE FROM ward_flow.push_subscriptions WHERE id = ANY($1::bigint[])", [ids.expired]);
+        if (ids.rejected.length)
+          await pool.query(`UPDATE ward_flow.push_deliveries SET status='failed' WHERE ${claimed}`, [ids.rejected, at]);
+        if (ids.retry.length)
+          await pool.query(
+            `UPDATE ward_flow.push_deliveries SET status = CASE WHEN attempts >= $3 THEN 'failed' ELSE 'pending' END WHERE ${claimed}`,
+            [ids.retry, at, MAX_DELIVERY_ATTEMPTS],
+          );
+        if (devices.size < SUBSCRIPTION_PAGE) break;
       }
-      if (counts.failed) {
-        await pool.query(
-          "UPDATE ward_flow.push_baselines SET item_ids = COALESCE((SELECT jsonb_agg(value) FROM jsonb_array_elements_text(item_ids) AS value WHERE value <> ALL($2::text[])), '[]'::jsonb) WHERE workspace_id=$1",
-          [workspaceId, batch.itemIds],
-        );
-        log({ event: "ward_backend_push_delivery_failures", ...counts, failures });
-      }
+      if (counts.failed) log({ event: "ward_backend_push_delivery_failures", ...counts, failures });
     } catch (error) {
       // A push is a courtesy after the committed change. Its failure never alters the command result.
       log({ event: "ward_backend_push_delivery_unavailable", ...counts, ...errorFields(error) });
@@ -217,18 +261,22 @@ export function createWorkspaceStore(
       );
       return rowCount > 0;
     },
-    /** Time alone can turn a row red (a wait passing its target). The timer trigger calls this. */
+    /**
+     * The timer trigger calls this. Time alone can turn a row red (a wait passing its target), so
+     * it re-evaluates; then it sends whatever is due, including retries and deliveries an earlier
+     * invocation did not finish.
+     */
     async sweepPush() {
       if (!push) return;
-      const batch = await transaction(async (client, at) => {
+      await transaction(async (client, at) => {
         const { rows } = await client.query(
           "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR UPDATE",
           [workspaceId],
         );
-        if (!rows[0] || !engine.validWorld(rows[0].payload)) return null;
-        return evaluatePush(client, rows[0].payload, rows[0].payload, at, null);
+        if (!rows[0] || !engine.validWorld(rows[0].payload)) return;
+        await evaluatePush(client, rows[0].payload, rows[0].payload, at, null);
       });
-      await deliver(batch);
+      await deliver();
     },
     async read(actorId) {
       const at = clock();
@@ -251,9 +299,9 @@ export function createWorkspaceStore(
       const fingerprint = createHash("sha256")
         .update(JSON.stringify(canonical({ expectedRevision, event })))
         .digest("hex");
-      let pushBatch = null;
+      let queued = false;
       const response = await transaction(async (client, at) => {
-        pushBatch = null;
+        queued = false;
         const row = await lock(client, actorId, at);
         const previous = await client.query(
           "SELECT fingerprint, status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
@@ -292,11 +340,11 @@ export function createWorkspaceStore(
               // back to here, is logged, and the command still commits.
               await client.query("SAVEPOINT push_evaluation");
               try {
-                pushBatch = await evaluatePush(client, row.payload, before, at, actorId);
+                queued = await evaluatePush(client, row.payload, before, at, actorId);
                 await client.query("RELEASE SAVEPOINT push_evaluation");
               } catch (error) {
                 await client.query("ROLLBACK TO SAVEPOINT push_evaluation");
-                pushBatch = null;
+                queued = false;
                 log({ event: "ward_backend_push_evaluation_failure", ...errorFields(error) });
               }
             }
@@ -313,12 +361,13 @@ export function createWorkspaceStore(
         );
         return { status, body: { ...result, snapshot: snapshot(row, at) } };
       });
-      if (pushBatch) {
+      if (queued) {
         // Wait briefly so a quick delivery finishes in this invocation, but never hold the save
-        // response on a slow push service; delivery continues and the sweep retries what is lost.
+        // response on a slow push service. Delivery continues; what it does not finish stays
+        // pending in the outbox and the sweep sends it.
         let timer;
         await Promise.race([
-          deliver(pushBatch),
+          deliver(),
           new Promise((resolve) => {
             timer = setTimeout(resolve, deliveryWaitMs);
           }),

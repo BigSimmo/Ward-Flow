@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { migrate } from "./migrate.mjs";
-import { createWorkspaceStore } from "./postgres.mjs";
+import { MAX_DELIVERY_ATTEMPTS, createWorkspaceStore } from "./postgres.mjs";
 import { pushPayload } from "./push.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
@@ -302,6 +302,8 @@ test(
         clock: () => at,
         log: (event) => logs.push(event),
         deliveryWaitMs: options.deliveryWaitMs ?? 10_000,
+        // No gap between retries here, so a sweep can retry at once on the fixed clock.
+        retryAfterMs: 0,
         push: {
           send: async (row, payload) => {
             sent.push(row.endpoint.split("/").pop());
@@ -327,11 +329,66 @@ test(
         assert.equal(new Set(sent).size, 205);
         assert.equal(sent.length, 205);
       });
+      const subscribeTwo = async (store) => {
+        await store.read(actorA);
+        await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/f1", ...keys });
+        await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/f2", ...keys });
+      };
+      const statuses = async (workspaceId) =>
+        (
+          await pool.query(
+            "SELECT DISTINCT split_part(s.endpoint, '/', 6) AS device, d.status, d.attempts FROM ward_flow.push_deliveries d JOIN ward_flow.push_subscriptions s ON s.id = d.subscription_id WHERE s.workspace_id=$1 ORDER BY 1",
+            [workspaceId],
+          )
+        ).rows.map((row) => `${row.device} ${row.status} ${row.attempts}`);
+      await t.test("one device that keeps refusing (403) is not retried, and no other device is resent", async () => {
+        const { workspaceId, sent, logs, store } = setup({
+          send: async (row) =>
+            row.endpoint.endsWith("/f1") ? { outcome: "failed", category: "status 403", retry: false } : undefined,
+        });
+        await subscribeTwo(store);
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"]);
+        await store.sweepPush();
+        await store.sweepPush();
+        assert.deepEqual(sent, [], "neither the refusing device nor the other is sent again");
+        assert.deepEqual(await statuses(workspaceId), ["f1 failed 1", "f2 sent 1"]);
+        assert.equal(logs.length, 1);
+      });
+      await t.test("an interrupted delivery left pending is sent by the next sweep", async () => {
+        let hang = true;
+        const { workspaceId, sent, store } = setup({
+          deliveryWaitMs: 50,
+          send: async () => (hang ? new Promise(() => {}) : undefined),
+        });
+        await subscribeTwo(store);
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"], "sends started, then the instance stopped");
+        assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 pending 1"]);
+        hang = false;
+        await store.sweepPush();
+        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"]);
+        assert.deepEqual(await statuses(workspaceId), ["f1 sent 2", "f2 sent 2"]);
+      });
+      await t.test("a device that keeps failing temporarily stops after the attempts cap", async () => {
+        const { workspaceId, sent, store } = setup({
+          send: async (row) =>
+            row.endpoint.endsWith("/f1") ? { outcome: "failed", category: "status 503", retry: true } : undefined,
+        });
+        await subscribeTwo(store);
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        for (let sweep = 0; sweep < MAX_DELIVERY_ATTEMPTS + 2; sweep += 1) await store.sweepPush();
+        assert.equal(sent.filter((name) => name === "f1").length, MAX_DELIVERY_ATTEMPTS);
+        assert.equal(sent.filter((name) => name === "f2").length, 1);
+        assert.deepEqual(await statuses(workspaceId), [`f1 failed ${MAX_DELIVERY_ATTEMPTS}`, "f2 sent 1"]);
+      });
       await t.test("a temporary failure is retried by the next sweep; the log names no device", async () => {
         let fail = true;
         const { sent, logs, store } = setup({
           send: async (row) =>
-            fail && row.endpoint.endsWith("/f1") ? { outcome: "failed", category: "status 429" } : undefined,
+            fail && row.endpoint.endsWith("/f1")
+              ? { outcome: "failed", category: "status 429", retry: true }
+              : undefined,
         });
         await store.read(actorA);
         await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/f1", ...keys });
@@ -350,7 +407,7 @@ test(
         assert.doesNotMatch(JSON.stringify(logs), /fcm|https?:|Ward Flow:/);
         fail = false;
         await store.sweepPush();
-        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"], "both retried; the device collapses the repeat");
+        assert.deepEqual(sent.splice(0), ["f1"], "only the device that failed is retried");
         await store.sweepPush();
         assert.deepEqual(sent, [], "announced once delivery succeeded");
       });

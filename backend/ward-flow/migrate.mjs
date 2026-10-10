@@ -45,6 +45,7 @@ export async function grantBackend(client, objectId) {
   await client.query("GRANT SELECT, INSERT ON ward_flow.commands, ward_flow.audit TO wardflow_backend");
   await client.query("GRANT SELECT, INSERT, UPDATE, DELETE ON ward_flow.push_subscriptions TO wardflow_backend");
   await client.query("GRANT SELECT, INSERT, UPDATE ON ward_flow.push_baselines TO wardflow_backend");
+  await client.query("GRANT SELECT, INSERT, UPDATE, DELETE ON ward_flow.push_deliveries TO wardflow_backend");
   await client.query("GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA ward_flow TO wardflow_backend");
 }
 
