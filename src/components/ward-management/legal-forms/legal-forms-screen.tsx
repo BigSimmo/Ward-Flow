@@ -683,7 +683,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
             ) : null}
           </Card>
 
-          <div className={styles.aside}>
+          <div className={styles.aside} data-wf-rail>
             {selected ? (
               <FocusPanel
                 key={selected.id}

@@ -1079,7 +1079,7 @@ function GovernanceSession({
               </CardBody>
             </Card>
           </div>
-          <Card className={thirdEdition.detailCard} aria-label={site ? site.name : "All sites"}>
+          <Card className={thirdEdition.detailCard} aria-label={site ? site.name : "All sites"} data-wf-rail>
             <CardHead
               title={site ? site.name : "All sites"}
               level={2}
@@ -1613,6 +1613,7 @@ function EventDetail({
     <Card
       id="governance-event-detail"
       className={thirdEdition.detailCard}
+      data-wf-rail
       data-testid="ward-governance-override-detail"
       aria-label="Selected event detail"
     >
