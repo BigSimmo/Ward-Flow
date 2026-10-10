@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
@@ -190,5 +190,29 @@ describe("the Alerts screen reports on every condition it watches, firing or not
     ).toBe(rows);
     const triage = within(checkingList()).getByRole("listitem", { name: "Triage waiting" });
     expect(triage).toHaveTextContent(/\d+ of \d+ referrals have never been triaged/u);
+  });
+});
+
+describe("Alerts v10 pass (10 Oct 2026)", () => {
+  it("highlights by dimming the other rows by colour, keeps every row, and edges act now rows", () => {
+    renderScreen();
+    const rows = () => document.querySelectorAll("[data-alert-id]");
+    const before = rows().length;
+    expect(before).toBeGreaterThan(0);
+    for (const row of document.querySelectorAll('[data-alert-id][data-act="true"]')) {
+      expect(row.getAttribute("data-tone")).not.toBeNull();
+    }
+    fireEvent.click(screen.getByRole("button", { name: /Act now/ }));
+    expect(rows().length).toBe(before);
+    const dimmed = document.querySelectorAll('[data-alert-id][data-dim="true"]').length;
+    const lit = document.querySelectorAll('[data-alert-id][data-highlighted="true"]').length;
+    expect(dimmed + lit).toBe(before);
+    expect(screen.getByText(new RegExp(`^${lit} of \\d+ highlighted, all rows stay$`))).toBeInTheDocument();
+  });
+
+  it("names the condition it does not check instead of a bare count, and never says All clear", () => {
+    renderScreen();
+    expect(screen.getByText("Not checked: handover sheets")).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/All clear/i);
   });
 });
