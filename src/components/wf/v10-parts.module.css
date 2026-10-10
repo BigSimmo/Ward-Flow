@@ -47,6 +47,16 @@
   color: var(--wf-hero-ink-3);
 }
 
+/* An item the page could not check now: label kept, "not checked" in place of a count. */
+.checkNot {
+  font-style: italic;
+  color: var(--wf-hero-ink-3);
+}
+
+.checkingPage .checkNot {
+  color: var(--wf-ink-3);
+}
+
 /* On a card or strip: page ink, a hairline above. */
 .checkingPage {
   padding-top: var(--wf-s-3);
@@ -117,14 +127,14 @@
   color: var(--wf-hero-ink);
 }
 
-.ring svg {
+.ring > svg {
   display: block;
   width: 148px;
   height: 82px;
   overflow: visible;
 }
 
-.ring path {
+.ring > svg path {
   fill: none;
   stroke-linecap: round;
 }

@@ -20,10 +20,15 @@ export type CheckingItem = {
   id: string;
   /** What was checked ("Overdue", "Bed counts older than 1h"). Neutral words. */
   label: ReactNode;
-  /** The count found. 0 shows 0, never blank. */
-  value: number | string;
+  /** The count found. 0 shows 0, never blank. Ignored when `unavailable`. */
+  value?: number | string;
   /** Glyph before the label. Red only when the finding needs action now. */
   tone?: WfTone;
+  /**
+   * The page watches this but could not check it now (no feed, a Preview source): the item keeps
+   * its place and label, shows the closed glyph and "not checked" instead of a count.
+   */
+  unavailable?: boolean;
 };
 
 export type CheckingFootProps = {
@@ -50,12 +55,21 @@ export function CheckingFoot({ items, notChecked = [], surface = "hero", classNa
     >
       <span className={styles.checkingEyebrow}>Checking</span>
       {items.map((item) => {
+        if (item.unavailable) {
+          return (
+            <span key={item.id} className={styles.check} data-unavailable="true">
+              <StatusGlyph tone="closed" />
+              <span className={styles.checkLabel}>{item.label}</span>
+              <span className={styles.checkNot}>not checked</span>
+            </span>
+          );
+        }
         const zero = item.value === 0 || item.value === "0";
         return (
           <span key={item.id} className={styles.check} data-zero={zero ? "true" : undefined}>
             {item.tone ? <StatusGlyph tone={item.tone} /> : null}
             <span className={styles.checkLabel}>{item.label}</span>
-            <b className={styles.checkValue}>{item.value}</b>
+            <b className={styles.checkValue}>{item.value ?? 0}</b>
           </span>
         );
       })}

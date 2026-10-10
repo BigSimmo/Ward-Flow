@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { ToastProvider } from "@/components/wf";
 import { WardAccessibility } from "@/components/ward-management/shell/ward-accessibility";
 import { WardActNowNotifier } from "@/components/ward-management/shell/ward-act-now-notifier";
 import { WardBarMount } from "@/components/ward-management/shell/ward-bar";
@@ -103,18 +104,22 @@ import styles from "./ward-flow-layout.module.css";
 export default function WardFlowMockupLayout({ children }: { children: ReactNode }) {
   return (
     <WardFlowProvider>
-      <WardAccessibility />
-      <WardLiveRegion />
-      <WardActNowNotifier />
-      <div className={styles.shellRow}>
-        <WardRail />
-        <div className={styles.shellContent} data-wf-scroller="">
-          <WardBarMount />
-          <WardBroadcastBanner />
-          <WardPhoneDesktopOnly />
-          <WardGround>{children}</WardGround>
+      {/* v10 pass 2: one ToastProvider for every ward route, so `useToast` (Undo toasts) works on
+          any page without each screen mounting its own region. */}
+      <ToastProvider>
+        <WardAccessibility />
+        <WardLiveRegion />
+        <WardActNowNotifier />
+        <div className={styles.shellRow}>
+          <WardRail />
+          <div className={styles.shellContent} data-wf-scroller="">
+            <WardBarMount />
+            <WardBroadcastBanner />
+            <WardPhoneDesktopOnly />
+            <WardGround>{children}</WardGround>
+          </div>
         </div>
-      </div>
+      </ToastProvider>
     </WardFlowProvider>
   );
 }

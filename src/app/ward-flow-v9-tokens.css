@@ -238,6 +238,14 @@
   --wf-neutral: var(--wf-glyph-dim);
 }
 
+/* Dim on a legacy <tr> (`rowDim` in @/components/wf): table modules set cell and inline ink on the
+   cells themselves, so the row's colour alone never reaches them. Reach the cells and their inline
+   text here, once, instead of a copy in every table stylesheet. */
+tr[data-dim="true"] > :is(td, th),
+tr[data-dim="true"] > :is(td, th) :is(a, b, strong, em, span, time, abbr, small, code) {
+  color: var(--wf-dim);
+}
+
 /* Glare mode: data-mode="glare" on the root, for ward PCs by bright windows. Solid surfaces, no
    glass, darker lines and 12px glyphs. Red still means act now. */
 :root[data-mode="glare"] {

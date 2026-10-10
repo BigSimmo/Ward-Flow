@@ -39,6 +39,14 @@
   min-width: 0;
 }
 
+/* Lead (v10): a ring or other visual before the title, left on desktop and tablet. */
+.lead {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
 .titleBlock {
   display: flex;
   flex-direction: column;
@@ -152,6 +160,13 @@
   color: var(--wf-hero-ink-2);
 }
 
+/* Slash form "2/7": the total sits a step quieter than the figure. */
+.slash {
+  margin: 0 1px;
+  color: var(--wf-hero-ink-3);
+  font-weight: 500;
+}
+
 /* Journey track: done shows a tick, the current step is solid white, future steps are numbered. */
 .steps {
   flex: 1 1 auto;
@@ -260,8 +275,21 @@
     gap: var(--wf-s-3);
   }
   .titleBlock {
+    order: 0;
     flex: 1 1 100%;
     padding: 0;
+  }
+  /* The eyebrow and title always come first on phone: the lead (ring) and every chip row follow. */
+  .lead {
+    order: 1;
+    flex: 1 1 100%;
+    justify-content: flex-start;
+  }
+  .firstRow {
+    order: 0;
+  }
+  .barRow {
+    order: 1;
   }
   /* The figure title keeps its line; a long meta drops below it rather than squeezing it. */
   .titleLine {

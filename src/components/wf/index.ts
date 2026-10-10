@@ -5,6 +5,7 @@
 export { cx } from "./cx";
 export { dur, durMinutes, clk, durParts } from "./format";
 export { useMinuteNow } from "./use-minute-now";
+export { useIsPhone, WF_PHONE_QUERY } from "./use-is-phone";
 export { StatusGlyph, Dot, type WfTone } from "./status-glyph";
 export { Icon, type IconProps, type IconSize } from "./icon";
 export { SrOnly, Kbd, Count, CountBubble, CountCircle, Divider, Inset, Spinner, IconTile } from "./primitives";
@@ -40,6 +41,20 @@ export {
   type SinceItem,
 } from "./v10-parts";
 export {
+  HeroChip,
+  HeroChips,
+  FactGrid,
+  StatusPill,
+  rowDim,
+  TimeRail,
+  JourneyStrip,
+  type HeroChipProps,
+  type Fact,
+  type TimeRailMark,
+  type TimeRailProps,
+  type JourneyStage,
+} from "./v10-pass2";
+export {
   Stat,
   StatGroup,
   Meter,
@@ -54,6 +69,7 @@ export {
 } from "./stat";
 export {
   Tabs,
+  PillTabs,
   TabPanel,
   Segmented,
   HeroTrack,
@@ -62,6 +78,7 @@ export {
   ChipGroup,
   type ChoiceItem,
   type TabsProps,
+  type PillTabsProps,
   type SegmentedProps,
   type FilterChipProps,
 } from "./choice";
