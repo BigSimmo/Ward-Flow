@@ -31,7 +31,6 @@ export type CrossRoleAllowance = {
   readonly reason: string;
 };
 
-const PATIENT_PAGE = "Patient page (coordinator route) acts for";
 const REFERRAL_SHEET =
   "New referral is on every page (Josh, 9 Oct 2026); the sheet dispatches as the referral's source (ED or community), chosen in the form";
 
@@ -41,47 +40,8 @@ const REFERRAL_SHEET =
  * here turns its buttons into disabled "… only" controls on that route; it needs no screen edit.
  */
 export const CROSS_ROLE_ALLOWED: readonly CrossRoleAllowance[] = [
-  // Patient page placement and transport panel (`patient-transit-operations.tsx`) and its status card.
-  { routeRole: "coordinator", event: "ACCEPT_IN_PRINCIPLE", reason: `${PATIENT_PAGE} the receiving ward: Accept bed` },
-  {
-    routeRole: "coordinator",
-    event: "BOOK_TRANSPORT",
-    reason: `${PATIENT_PAGE} the sending ED: log a transport booking`,
-  },
-  { routeRole: "coordinator", event: "HANDOVER_READY", reason: `${PATIENT_PAGE} the sending ED: Mark handover ready` },
-  { routeRole: "coordinator", event: "TRANSPORT_ACCEPTED", reason: `${PATIENT_PAGE} the transport officer` },
-  { routeRole: "coordinator", event: "TRANSPORT_EN_ROUTE", reason: `${PATIENT_PAGE} the transport officer` },
-  { routeRole: "coordinator", event: "PATIENT_COLLECTED", reason: `${PATIENT_PAGE} the transport officer` },
-  { routeRole: "coordinator", event: "PATIENT_ARRIVED", reason: `${PATIENT_PAGE} the receiving ward: Confirm arrival` },
-  // D-38 stay actions on the Patient page, recorded as the ward the stay is on.
-  { routeRole: "coordinator", event: "END_LEAVE_BED", reason: `${PATIENT_PAGE} the ward: Record return (D-38)` },
-  {
-    routeRole: "coordinator",
-    event: "RECORD_ABSENT_WITHOUT_LEAVE",
-    reason: `${PATIENT_PAGE} the ward: Mark absent (D-38)`,
-  },
-  {
-    routeRole: "coordinator",
-    event: "RECORD_ABSENCE_STEP",
-    reason: `${PATIENT_PAGE} the ward: missing person steps (D-38)`,
-  },
-  // D-38/D-40 community treatment order on the Patient page, recorded as the community team.
-  {
-    routeRole: "coordinator",
-    event: "RECORD_COMMUNITY_TREATMENT_ORDER",
-    reason: `${PATIENT_PAGE} the community team: Record CTO (D-38)`,
-  },
-  {
-    routeRole: "coordinator",
-    event: "END_COMMUNITY_TREATMENT_ORDER",
-    reason: `${PATIENT_PAGE} the community team: Record ended (D-38)`,
-  },
-  // Legal forms board (coordinator route): Mark received is recorded as the ED.
-  {
-    routeRole: "coordinator",
-    event: "RECORD_LEGAL_FORM_RECEIVED",
-    reason: "Legal forms (coordinator route) acts for the ED: Mark received",
-  },
+  // The coordinator may take every action (Josh, 10 Oct 2026), so it is in `EVENT_ROLE` itself and
+  // needs no pair here.
   // Ward screen Raise referral: a ward-to-ward referral is received as `community` with source
   // `psychiatric_ward`; `EVENT_ROLE.RECEIVE_REFERRAL` has no `ward`.
   {
@@ -90,7 +50,6 @@ export const CROSS_ROLE_ALLOWED: readonly CrossRoleAllowance[] = [
     reason: "Ward screen Raise referral and the New referral sheet dispatch as community",
   },
   // New referral sheet (`ward-referral-drawer.tsx`), on routes whose role `EVENT_ROLE` omits.
-  { routeRole: "coordinator", event: "RECEIVE_REFERRAL", reason: REFERRAL_SHEET },
   { routeRole: "officer", event: "RECEIVE_REFERRAL", reason: REFERRAL_SHEET },
   { routeRole: "ward", event: "ADD_PATIENT", reason: REFERRAL_SHEET },
   { routeRole: "officer", event: "ADD_PATIENT", reason: REFERRAL_SHEET },
