@@ -16,7 +16,9 @@ import {
   Hero,
   HeroStat,
   Icon,
+  GroupHead,
   Kbd,
+  ScrollRow,
   Segmented,
   Select,
   SrOnly,
@@ -24,6 +26,7 @@ import {
   TextInput,
   buttonClass,
   tableClasses,
+  useIsPhone,
   type BarListRow,
 } from "@/components/wf";
 import {
@@ -253,6 +256,9 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
   const [sharedSuburbOnly, setSharedSuburbOnly] = useState(false);
   const [familyIndex, setFamilyIndex] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  /** Phone (v10): A to Z, Suburb, Alike and Services are one tap apart. */
+  const isPhone = useIsPhone();
+  const [phonePane, setPhonePane] = useState<"az" | "suburb" | "alike" | "services">("az");
 
   // `useSyncExternalStore` through `createBrowserStore`: the recent list lives in localStorage, and
   // a server render (and `renderToStaticMarkup` in tests) sees the empty server snapshot.
@@ -544,9 +550,27 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           barAside={recentNames.length > 0 ? <span className={styles.heroNote}>Recorded names</span> : undefined}
         />
 
-        <div className={styles.layout}>
+        {isPhone ? (
+          <ScrollRow className={styles.phonePanes}>
+            <Segmented
+              label="Show"
+              size="md"
+              value={phonePane}
+              onChange={setPhonePane}
+              items={[
+                { id: "az" as const, label: "A to Z" },
+                { id: "suburb" as const, label: "Suburb" },
+                { id: "alike" as const, label: "Alike" },
+                { id: "services" as const, label: "Services" },
+              ]}
+            />
+          </ScrollRow>
+        ) : null}
+
+        <div className={styles.layout} data-phone-pane={isPhone ? phonePane : undefined}>
           <Card
             className={styles.directoryCard}
+            data-pane="az"
             aria-label="A–Z"
             data-testid="community-index-teams"
             data-ward-primitive="panel"
@@ -668,9 +692,21 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                   </div>
                   {[...grouped.keys()].sort().map((letter) => (
                     <section key={letter} className={styles.letterSection} aria-labelledby={letterHeadingId(letter)}>
-                      <h3 id={letterHeadingId(letter)} tabIndex={-1} className={styles.letterHeading}>
-                        {letter}
-                      </h3>
+                      {/* v10: the shared GroupHead letter row; the heading role and id keep the letter jump. */}
+                      <div
+                        id={letterHeadingId(letter)}
+                        role="heading"
+                        aria-level={3}
+                        tabIndex={-1}
+                        className={styles.letterHeading}
+                      >
+                        <GroupHead
+                          variant="letter"
+                          title={letter}
+                          count={isPhone ? (grouped.get(letter) ?? []).length : undefined}
+                          className={styles.letterRow}
+                        />
+                      </div>
                       <ul className={styles.teamList}>
                         {(grouped.get(letter) ?? []).map((team) => (
                           <TeamRow
@@ -692,13 +728,23 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
           </Card>
 
           <div className={styles.side} data-testid="community-index-side">
-            <SuburbLookup teamByKey={teamByKey} factsFor={factsFor} onShowInList={showInList} />
+            <div data-pane="suburb" className={styles.paneWrap}>
+              <SuburbLookup
+                teamByKey={teamByKey}
+                factsFor={factsFor}
+                onShowInList={(name) => {
+                  setPhonePane("az");
+                  showInList(name);
+                }}
+              />
+            </div>
 
             <Card
               id={FAMILY_CARD_ID}
               className={styles.sideCard}
               aria-labelledby="community-gateway-family-title"
               data-testid="community-gateway-family-panel"
+              data-pane="alike"
             >
               <CardHead
                 id="community-gateway-family-title"
@@ -747,7 +793,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               </CardBody>
             </Card>
 
-            <Card className={styles.sideCard} aria-labelledby="community-gateway-service-title">
+            <Card className={styles.sideCard} aria-labelledby="community-gateway-service-title" data-pane="services">
               <CardHead
                 id="community-gateway-service-title"
                 title="Teams by service"

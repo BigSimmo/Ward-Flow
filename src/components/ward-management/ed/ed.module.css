@@ -7345,17 +7345,15 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 
 /* v10 pass 3: the person opens as a side sheet over the board (desktop and tablet) and as a tall
  * bottom sheet on phone, not a centred dialog. One detail surface at a time. */
-@media (min-width: 48.0625rem) {
-  .pxDrawer .patientDialog {
-    inset: 0 0 0 auto;
-    width: min(520px, calc(100vw - 32px));
-    max-width: none;
-    height: 100dvh;
-    max-height: none;
-    margin: 0;
-    border-width: 0 0 0 1px;
-    border-radius: var(--wf-r-xl) 0 0 var(--wf-r-xl);
-  }
+.pxDrawer .patientDialog {
+  inset: 0 0 0 auto;
+  width: min(520px, calc(100vw - 32px));
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  border-width: 0 0 0 1px;
+  border-radius: var(--wf-r-xl) 0 0 var(--wf-r-xl);
 }
 
 @media (max-width: 48rem) {
