@@ -9,6 +9,7 @@ import {
   Card,
   CardFoot,
   CheckingFoot,
+  Drawer,
   EmptyState,
   Hero,
   LiveChip,
@@ -63,6 +64,7 @@ import {
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
 import { ReturnPlan, TravelIcon, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
 import { HomeBedsCard, ReadyCard, ShiftCard, type ReadyRow, type ShiftReturnRow } from "./out-of-area-side";
+import { useIsTabletPortrait } from "../governance/use-tablet-portrait";
 import styles from "./out-of-area-board.module.css";
 
 /**
@@ -128,6 +130,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   } = useWardFlow();
   const now = useWardFlowClock();
   const isPhone = useIsPhone();
+  const isTabletPortrait = useIsTabletPortrait();
   const repatriations: RepatriationRecord[] = liveRepatriations ?? [];
 
   const { entries, notBanded } = outOfAreaLedger(admissions ?? liveAdmissions, units, now);
@@ -242,12 +245,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   };
 
   useEffect(() => {
-    if (selectedId === null || isPhone) return;
+    if (selectedId === null || isPhone || isTabletPortrait) return;
     if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 1000px)").matches) return;
     window.requestAnimationFrame(() => {
       detailColumnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
-  }, [selectedId, isPhone]);
+  }, [selectedId, isPhone, isTabletPortrait]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -552,6 +555,59 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       {label}
     </button>
   );
+
+  const planCard = selected ? (
+    <Card
+      className={cx(styles.sideCard, styles.planCard)}
+      aria-labelledby="ward-out-of-area-plan-title"
+      data-testid="ward-out-of-area-subject"
+    >
+      {renderPlan(
+        selected,
+        <div className={styles.planHead}>
+          <span className={styles.planWho}>
+            <h2 id="ward-out-of-area-plan-title" className={styles.planName}>
+              <SrOnly>Return plan for </SrOnly>
+              {planPatient(selected).displayName}
+            </h2>
+            <span className={styles.mono}>{planPatient(selected).umrn}</span>
+          </span>
+          <span role="status" className={styles.planPosition}>
+            <SrOnly>Synthetic patient </SrOnly>
+            {selectedIndex + 1} of {sorted.length}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon={ChevronLeft}
+            aria-label="Inspect previous patient"
+            disabled={selectedIndex <= 0}
+            onClick={() => step(-1)}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon={ChevronRight}
+            aria-label="Inspect next patient"
+            disabled={selectedIndex < 0 || selectedIndex >= sorted.length - 1}
+            onClick={() => step(1)}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon={X}
+            aria-label="Return to cohort overview"
+            title="Close (Escape)"
+            onClick={returnToOverview}
+          />
+        </div>,
+        "ward-out-of-area-plan",
+      )}
+    </Card>
+  ) : null;
 
   return (
     <div className={styles.screen} data-testid="ward-out-of-area-board" data-ward-design="v8-a">
@@ -879,57 +935,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           {/* The shorter right column pins under the top bar on desktop (data-wf-rail, ward-shell.module.css).
               It holds a stack of cards rather than one long list, so the whole rail scrolls inside itself. */}
           <div ref={detailColumnRef} className={styles.side} data-wf-rail>
-            {selected ? (
-              <Card
-                className={cx(styles.sideCard, styles.planCard)}
-                aria-labelledby="ward-out-of-area-plan-title"
-                data-testid="ward-out-of-area-subject"
-              >
-                {renderPlan(
-                  selected,
-                  <div className={styles.planHead}>
-                    <span className={styles.planWho}>
-                      <h2 id="ward-out-of-area-plan-title" className={styles.planName}>
-                        <SrOnly>Return plan for </SrOnly>
-                        {planPatient(selected).displayName}
-                      </h2>
-                      <span className={styles.mono}>{planPatient(selected).umrn}</span>
-                    </span>
-                    <span role="status" className={styles.planPosition}>
-                      <SrOnly>Synthetic patient </SrOnly>
-                      {selectedIndex + 1} of {sorted.length}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      iconOnly
-                      icon={ChevronLeft}
-                      aria-label="Inspect previous patient"
-                      disabled={selectedIndex <= 0}
-                      onClick={() => step(-1)}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      iconOnly
-                      icon={ChevronRight}
-                      aria-label="Inspect next patient"
-                      disabled={selectedIndex < 0 || selectedIndex >= sorted.length - 1}
-                      onClick={() => step(1)}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      iconOnly
-                      icon={X}
-                      aria-label="Return to cohort overview"
-                      title="Close (Escape)"
-                      onClick={returnToOverview}
-                    />
-                  </div>,
-                  "ward-out-of-area-plan",
-                )}
-              </Card>
+            {selected && !isTabletPortrait ? (
+              planCard
             ) : (
               <>
                 <ShiftCard
@@ -958,6 +965,18 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               </>
             )}
           </div>
+          {isTabletPortrait && selected ? (
+            // Tablet portrait (v10): the register keeps the width and the plan slides over it.
+            <Drawer
+              open
+              onClose={returnToOverview}
+              title={planPatient(selected).displayName}
+              description="Return plan"
+              testId="ward-out-of-area-plan-sheet"
+            >
+              {planCard}
+            </Drawer>
+          ) : null}
         </div>
 
         <WardPrototypeFooter
@@ -1129,7 +1148,11 @@ export function DeltaTwin({ was, now, at }: { was: number; now: number; at: Inst
         <rect x="0" y={12 - height(was)} width="4" height={height(was)} rx="1" />
         <rect data-now="true" x="6" y={12 - height(now)} width="4" height={height(now)} rx="1" />
       </svg>
-      {change === 0 ? "no change" : `${change > 0 ? "+" : "\u2212"}${Math.abs(change)}`}
+      {change === 0 ? (
+        <span className={styles.twinWord}>no change</span>
+      ) : (
+        `${change > 0 ? "+" : "\u2212"}${Math.abs(change)}`
+      )}
     </span>
   );
 }

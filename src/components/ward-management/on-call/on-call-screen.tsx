@@ -21,6 +21,7 @@ import {
   Tabs,
   TextInput,
   cx,
+  Drawer,
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
@@ -53,6 +54,7 @@ import {
 } from "./on-call-parts";
 import { PhoneDirectory, PhoneFocal, PhoneSheet } from "./on-call-phone";
 
+import { useIsTabletPortrait } from "../governance/use-tablet-portrait";
 import styles from "./on-call.module.css";
 
 const FAVOURITES_KEY = "ward-flow:on-call:favourites";
@@ -144,6 +146,9 @@ export function OnCallScreen() {
   const boardNow = useWardFlowClock();
   const boardMinute = minuteOfDay(boardNow);
   const isPhone = useIsPhone();
+  // Tablet portrait (v10): the directory takes the width and a line opens as a slide-over card.
+  const isTabletPortrait = useIsTabletPortrait();
+  const [slideId, setSlideId] = useState<string | null>(null);
   // The EMHS demo and surge scenarios swap in their own wards, so the directory follows the scenario.
   const scenario = useContext(WardFlowContext)?.scenario;
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `scenario` re-points `wardSites`, which the build reads
@@ -255,6 +260,7 @@ export function OnCallScreen() {
       return next;
     });
     if (isPhone) setSheetId(id);
+    else if (isTabletPortrait) setSlideId(id);
   }
 
   const actions: ContactActions = {
@@ -303,6 +309,7 @@ export function OnCallScreen() {
     (highlight !== null && HIGHLIGHTS.find((item) => item.id === highlight)!.test(entry, minute));
 
   const selected = entries.find((entry) => entry.id === selectedId) ?? entries[0]!;
+  const slideEntry = slideId ? entries.find((entry) => entry.id === slideId) : undefined;
   const sheetEntry = sheetId ? entries.find((entry) => entry.id === sheetId) : undefined;
   const tabRows = rowsForTab(entries, tab, favourites);
   const tabCounts: Record<DirectoryTab, number> = {
@@ -327,6 +334,7 @@ export function OnCallScreen() {
   const heroStats = (
     <>
       <HeroStat
+        inline
         value={answering.length}
         label="answering"
         tone="success"
@@ -334,14 +342,16 @@ export function OnCallScreen() {
         onToggle={() => toggleHighlight("now")}
       />
       <HeroStat
+        inline
         value={endingSoon.length}
         label="end within the hour"
         tone="warning"
         pressed={highlight === "soon"}
         onToggle={() => toggleHighlight("soon")}
       />
-      <HeroStat value={closed.length} label="closed" tone="neutral" />
+      <HeroStat inline value={closed.length} label="closed" tone="neutral" />
       <HeroStat
+        inline
         value={checkDue.length}
         label="check due"
         tone="warning"
@@ -652,19 +662,26 @@ export function OnCallScreen() {
             </CardFoot>
           </Card>
 
-          <Card
-            className={styles.panel}
-            aria-labelledby={panelHeadingId}
-            data-testid="ward-on-call-role-panel"
-            data-wf-rail
-          >
-            {queryHits.length || query.trim() ? (
-              <MatchesPanel query={query} hits={queryHits} actions={actions} onClear={() => setQuery("")} />
-            ) : (
-              <ContactCard entry={selected} actions={actions} headingId={panelHeadingId} />
-            )}
-          </Card>
+          {isTabletPortrait && !(queryHits.length || query.trim()) ? null : (
+            <Card
+              className={styles.panel}
+              aria-labelledby={panelHeadingId}
+              data-testid="ward-on-call-role-panel"
+              data-wf-rail
+            >
+              {queryHits.length || query.trim() ? (
+                <MatchesPanel query={query} hits={queryHits} actions={actions} onClear={() => setQuery("")} />
+              ) : (
+                <ContactCard entry={selected} actions={actions} headingId={panelHeadingId} />
+              )}
+            </Card>
+          )}
         </div>
+        {isTabletPortrait && slideEntry ? (
+          <Drawer open onClose={() => setSlideId(null)} title={slideEntry.name} testId="ward-on-call-line-sheet">
+            <ContactCard entry={slideEntry} actions={actions} headingId={`${panelHeadingId}-slide`} />
+          </Drawer>
+        ) : null}
         {noticeLine}
         <WardPrototypeFooter
           testId="ward-on-call-governance"

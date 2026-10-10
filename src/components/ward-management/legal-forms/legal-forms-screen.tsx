@@ -8,6 +8,7 @@ import {
   CardBody,
   CardHead,
   DataRow,
+  Drawer,
   Hero,
   HeroStat,
   HeroTrack,
@@ -16,6 +17,7 @@ import {
   PhoneSheet,
   Segmented,
   StackBar,
+  SrOnly,
   StatusGlyph,
   cx,
   tableClasses,
@@ -76,6 +78,7 @@ import {
   standingWord,
   type RecordGap,
 } from "./legal-forms-view";
+import { useIsTabletPortrait } from "../governance/use-tablet-portrait";
 import styles from "./legal-forms.module.css";
 
 /**
@@ -108,6 +111,9 @@ const GAP_LABEL: Record<RecordGap, string> = {
   received: "Form received",
   examination: "Examination",
 };
+/** Form type chips shown before "+N" in Forms in force, so the chips stay on one line. */
+const CODE_CHIPS_SHOWN = 3;
+
 const GAP_ACTION: Record<RecordGap, string> = {
   written: "Add time",
   received: "Mark received",
@@ -147,6 +153,9 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const [copied, setCopied] = useState<string | null>(null);
   const [phoneTasks, setPhoneTasks] = useState(false);
   const isPhone = useIsPhone();
+  const isTabletPortrait = useIsTabletPortrait();
+  // Forms in force (v10): the three most common types as chips on one line, the rest behind "+N".
+  const [allCodes, setAllCodes] = useState(false);
 
   const openMovements = movements.filter(isOpen);
   const withDeadline = legalFormGroupRows(movements, now, "with-deadline");
@@ -406,7 +415,13 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
         <CardBody className={styles.stripBody}>
           <StackBar segments={codeSegments} label="Forms in force by type" thin />
           <div className={styles.codeChips} role="group" aria-label="Highlight a form type">
-            {codeCounts.map((entry) => (
+            {(allCodes
+              ? codeCounts
+              : codeCounts.filter(
+                  (entry, index) =>
+                    index < CODE_CHIPS_SHOWN || (highlight?.kind === "code" && highlight.code === entry.code),
+                )
+            ).map((entry) => (
               <button
                 key={entry.code}
                 type="button"
@@ -420,6 +435,17 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                 <span className={styles.codeChipCount}>{entry.count}</span>
               </button>
             ))}
+            {codeCounts.length > CODE_CHIPS_SHOWN ? (
+              <button
+                type="button"
+                className={styles.codeChip}
+                aria-expanded={allCodes}
+                onClick={() => setAllCodes((open) => !open)}
+              >
+                {allCodes ? "Fewer" : `+${codeCounts.length - CODE_CHIPS_SHOWN}`}
+                <SrOnly>{allCodes ? " form types" : " more form types"}</SrOnly>
+              </button>
+            ) : null}
             <span className={styles.stripTotal}>{rows.length} total</span>
           </div>
           <div className={styles.srOnly} data-testid="legal-form-breakdown">
@@ -885,7 +911,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
               </Card>
 
               <div className={styles.aside} data-wf-rail>
-                {selected ? (
+                {selected && !isTabletPortrait ? (
                   focusPanel
                 ) : (
                   <SummaryPanel
@@ -901,6 +927,18 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                   />
                 )}
               </div>
+              {isTabletPortrait && selected ? (
+                // Tablet portrait (v10): the form opens as a drawer over the list.
+                <Drawer
+                  open
+                  onClose={() => setSelectedId(null)}
+                  title={nameOf(selected)}
+                  description={selected.legalForm ? formTitle(selected.legalForm.code) : undefined}
+                  testId="ward-legal-form-sheet"
+                >
+                  {focusPanel}
+                </Drawer>
+              ) : null}
             </div>
           </>
         )}

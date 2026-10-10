@@ -52,6 +52,7 @@ import {
   CardFoot,
   CardHead,
   Count,
+  Drawer,
   EmptyState,
   Field,
   Frac,
@@ -75,6 +76,7 @@ import {
   useToast,
 } from "@/components/wf";
 
+import { useIsTabletPortrait } from "./governance/use-tablet-portrait";
 import thirdEdition from "./governance-third-edition.module.css";
 
 /**
@@ -282,17 +284,40 @@ const display = (value: string | number | boolean | null | undefined) =>
 const when = (at: Instant | null, now: Instant) => (at === null ? "Time unavailable" : formatInstantWithDay(at, now));
 const destination = (id: string | null) =>
   LEAVING_DESTINATIONS.find((entry) => entry.id === id)?.label ?? "Not recorded";
+/**
+ * The record's person and UMRN (v10: "No raw internal ids. Patients by UMRN."). A movement or a
+ * referral resolves through its own episode link; an admission through its record. A record with no
+ * linked person reads in words, never as an internal id.
+ */
+function subjectPerson(
+  event: AuditEvent,
+  patientOf: ReturnType<typeof usePatientOf>,
+): { name: string; umrn: string } | null {
+  const subject = event.subject;
+  const info =
+    subject.kind === "movement"
+      ? patientOf({ movementId: subject.movementId })
+      : subject.kind === "referral"
+        ? patientOf({ referralId: subject.referralId })
+        : subject.kind === "admission"
+          ? patientOf({ id: subject.admissionId })
+          : null;
+  if (!info) return null;
+  return info.patient ? { name: info.displayName, umrn: info.umrn } : null;
+}
 function subjectLabel(event: AuditEvent, patientOf: ReturnType<typeof usePatientOf>): string {
   const subject = event.subject;
+  const person = subjectPerson(event, patientOf);
+  if (person) return person.name;
   switch (subject.kind) {
     case "admission":
-      return subject.admissionId;
+      return "Bed record, UMRN not recorded";
     case "movement": {
       // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
       return patientOf({ movementId: subject.movementId }).displayName;
     }
     case "referral":
-      return subject.referralId;
+      return "Referral, UMRN not recorded";
     case "bed-release":
       return subject.releaseId;
     case "audit-event":
@@ -742,7 +767,14 @@ function GovernanceSession({
   setTab,
 }: WorkbenchProps & { tab: GovernanceTab; setTab: (tab: GovernanceTab) => void }) {
   const flow = useContext(WardFlowContext);
-  const patientOf = usePatientOf();
+  const resolvePatient = usePatientOf();
+  // An admission subject names only its id: resolve through the stay itself, so a bed record shows
+  // its person and UMRN rather than an internal id.
+  const patientOf: typeof resolvePatient = (subject) => {
+    const id = subject && "id" in subject && !("movementId" in subject) ? subject.id : undefined;
+    const stay = id ? flow?.admissions.find((admission) => admission.id === id) : undefined;
+    return resolvePatient(stay ?? subject);
+  };
   const [category, setCategory] = useState<"all" | AuditCategory>("all");
   const [outcome, setOutcome] = useState<"all" | AuditEvent["outcome"]>("all");
   const [reviewFilter, setReviewFilter] = useState<"all" | "unreviewed" | AuditReview["decision"]>("all");
@@ -766,6 +798,7 @@ function GovernanceSession({
   const [phoneDecision, setPhoneDecision] = useState<AuditReview["decision"]>("reviewed");
   const [phoneMore, setPhoneMore] = useState<"registers" | "reports" | null>(null);
   const isPhone = useIsPhone();
+  const isTabletPortrait = useIsTabletPortrait();
   const gate = useRoleGate();
   const reviewGate = gate("REVIEW_AUDIT_EVENT");
 
@@ -1022,8 +1055,58 @@ function GovernanceSession({
     ) : null;
   const reviewedOf = reviewable.length;
 
+  // The rail at rest (v10): the session summary, then the next events to review. No ring here: the
+  // ring stays in the hero. Pressing a next event opens it in the rail.
+  const restSummary = (
+    <div className={thirdEdition.restSummary} data-testid="ward-governance-rest-summary">
+      <div className={thirdEdition.restHead}>
+        <span className={thirdEdition.quietText}>Reviewed so far, captured since the session opened</span>
+        <Frac done={reviewedCount} total={reviewable.length} label="events reviewed" />
+      </div>
+      <dl className={thirdEdition.restCells}>
+        <div>
+          <dt>Overrides</dt>
+          <dd>{overrideCount}</dd>
+        </div>
+        <div>
+          <dt>Refused or stale</dt>
+          <dd>{refusedCount}</dd>
+        </div>
+        <div>
+          <dt>Record access</dt>
+          <dd>{accessCount}</dd>
+        </div>
+      </dl>
+      <h3 className={thirdEdition.eyebrow}>Next to review</h3>
+      {toReview.length === 0 ? (
+        <p className={thirdEdition.restClear}>
+          <StatusGlyph tone="success" size={9} />
+          Every captured event is reviewed.
+        </p>
+      ) : (
+        <ul className={thirdEdition.restNext}>
+          {toReview.slice(0, 4).map((event) => (
+            <li key={`${event.generation}-${event.id}`}>
+              <button type="button" className={thirdEdition.restNextRow} onClick={() => choose(event)}>
+                <StatusGlyph tone={OUTCOME_TONE[event.outcome]} size={9} />
+                <span className={thirdEdition.stack}>
+                  <strong className={thirdEdition.clip}>{actionLabels[event.action]}</strong>
+                  <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>
+                    {subjectLabel(event, patientOf)}
+                  </span>
+                </span>
+                <span className={thirdEdition.umrn}>{when(event.at, now)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+
   const detail = (
     <EventDetail
+      rest={restSummary}
       selected={selected}
       units={units}
       movements={movements}
@@ -1048,6 +1131,28 @@ function GovernanceSession({
       }
     />
   );
+
+  // Tablet portrait (v10): no rail beside the table, so the chosen event slides over from the
+  // right and the session summary stays in the page below the table.
+  const placedDetail =
+    isTabletPortrait && selected ? (
+      <>
+        <Card className={thirdEdition.detailCard} aria-label="This session">
+          <div className={thirdEdition.detailBody}>{restSummary}</div>
+        </Card>
+        <Drawer
+          open
+          onClose={() => choose(null)}
+          title={actionLabels[selected.action]}
+          description={categoryLabels[selected.category]}
+          testId="ward-governance-event-sheet"
+        >
+          {detail}
+        </Drawer>
+      </>
+    ) : (
+      detail
+    );
 
   // Phone (v10): its own tree at 390. A compact hero with three figures, Review, Gaps and Audit as a
   // 44px segmented control, events as list rows, and a bottom sheet that records the review with
@@ -1426,7 +1531,7 @@ function GovernanceSession({
               }
             />
           </Card>
-          {detail}
+          {placedDetail}
         </div>
       ) : null}
 
@@ -1681,7 +1786,7 @@ function GovernanceSession({
               System advice and bed state at decision time are not recorded
             </CardFoot>
           </Card>
-          {detail}
+          {placedDetail}
         </div>
       ) : null}
 
@@ -1970,7 +2075,14 @@ function EventTable({
                     {categoryLabels[event.category]}
                   </span>
                 </span>
-                <span className={thirdEdition.clip}>{subjectLabel(event, patientOf)}</span>
+                <span className={thirdEdition.stack}>
+                  <span className={thirdEdition.clip}>{subjectLabel(event, patientOf)}</span>
+                  {subjectPerson(event, patientOf) ? (
+                    <span className={cx(thirdEdition.quietText, thirdEdition.clip, thirdEdition.umrn)}>
+                      {subjectPerson(event, patientOf)!.umrn}
+                    </span>
+                  ) : null}
+                </span>
                 <span className={thirdEdition.clip}>
                   {event.actor.role ? WARD_FLOW_ROLE_LABELS[event.actor.role] : "Role unavailable"}
                 </span>
@@ -2014,8 +2126,11 @@ function EventDetail({
   onChoose,
   feedback,
   roleReason,
+  rest,
 }: {
   roleReason?: string;
+  /** What the rail shows with nothing selected: the session summary. */
+  rest?: ReactNode;
   selected: AuditEvent | null;
   units: Unit[];
   movements: Movement[];
@@ -2056,9 +2171,11 @@ function EventDetail({
       <span className={thirdEdition.srOnly}>Select an event from the register</span>
       <div className={thirdEdition.detailHead}>
         <div className={thirdEdition.stack}>
-          <span className={thirdEdition.eyebrow}>{selected ? categoryLabels[selected.category] : "Event detail"}</span>
+          <span className={thirdEdition.eyebrow}>
+            {selected ? categoryLabels[selected.category] : rest ? "At rest" : "Event detail"}
+          </span>
           <h3 className={thirdEdition.detailTitle} id="inspectorHeading">
-            {selected ? actionLabels[selected.action] : "Nothing selected"}
+            {selected ? actionLabels[selected.action] : rest ? "This session" : "Nothing selected"}
           </h3>
         </div>
         {state ? (
@@ -2107,7 +2224,7 @@ function EventDetail({
                 )}
                 {referenced && (
                   <Button size="sm" onClick={() => onChoose(referenced)}>
-                    Inspect {referenced.id}
+                    Open the reviewed event
                   </Button>
                 )}
               </div>
@@ -2118,7 +2235,7 @@ function EventDetail({
             </div>
           </>
         ) : (
-          <EmptyState icon={ClipboardList} title="Select an event from the register" />
+          (rest ?? <EmptyState icon={ClipboardList} title="Select an event from the register" />)
         )}
       </div>
 

@@ -90,6 +90,7 @@ import {
 import { AlertDetail, type AlertDetailHandlers } from "./alert-detail";
 import { TimeRing, TodayChart } from "./alerts-visuals";
 
+import { useIsTabletPortrait } from "../governance/use-tablet-portrait";
 import styles from "./alerts.module.css";
 import {
   Badge,
@@ -174,6 +175,9 @@ function AlertsWorkspace() {
   const now = live.now;
   // Phone layout: the selected alert opens in a sheet instead of the side panel.
   const isPhone = useIsPhone();
+  // Tablet portrait (v10): the queue takes the width and an alert opens as a slide-over.
+  const isTabletPortrait = useIsTabletPortrait();
+  const slideOver = isPhone || isTabletPortrait;
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
   const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const plannedAdmissions = state.plannedAdmissions;
@@ -464,18 +468,18 @@ function AlertsWorkspace() {
 
   const chosen = allEntries.find((entry) => entry.item.id === chosenId);
   // On the desktop the panel always shows an alert: the chosen one, else the first in line.
-  const selected = chosen ?? (isPhone ? undefined : (nextQueue[0] ?? allEntries[0]));
+  const selected = chosen ?? (slideOver ? undefined : (nextQueue[0] ?? allEntries[0]));
 
   const select = useCallback(
     (entry: QueueEntry, options: { release?: boolean } = {}) => {
       setChosenId(entry.item.id);
-      if (isPhone) setSheetOpen(true);
+      if (slideOver) setSheetOpen(true);
       if (options.release) {
         releasePending.current = true;
         setReleaseRequest((count) => count + 1);
       }
     },
-    [isPhone],
+    [slideOver],
   );
 
   useEffect(() => {
@@ -1645,7 +1649,7 @@ function AlertsWorkspace() {
             </Card>
           </div>
 
-          {isPhone ? null : (
+          {slideOver ? null : (
             <aside className={styles.panel} aria-label="Selected alert" data-wf-rail>
               <Card as="div" className={styles.panelCard}>
                 {selectedPanel ?? <EmptyState icon={Bell} title="Pick an alert to see it here" />}
@@ -1654,7 +1658,7 @@ function AlertsWorkspace() {
           )}
         </div>
 
-        {isPhone && selected ? (
+        {slideOver && selected ? (
           <Drawer
             open={sheetOpen}
             onClose={() => setSheetOpen(false)}
