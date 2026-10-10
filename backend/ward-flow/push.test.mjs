@@ -234,7 +234,7 @@ test("the real web-push library accepts the configuration and encrypts the paylo
 
 const coordinator = "22222222-2222-4222-8222-222222222222";
 const other = "33333333-3333-4333-8333-333333333333";
-function routes({ actor = coordinator, push = readPushConfig(env), limit = false } = {}) {
+function routes({ actor = coordinator, push = readPushConfig(env), limit = false, outcome = null } = {}) {
   const calls = [];
   const handler = createHandler({
     config: { coordinatorIds: [coordinator], origin: null, push },
@@ -243,7 +243,7 @@ function routes({ actor = coordinator, push = readPushConfig(env), limit = false
       read: async () => ({ revision: 1, dataMode: "prototype" }),
       subscribe: async (...args) => {
         calls.push(["subscribe", ...args]);
-        return limit ? "limit" : "subscribed";
+        return outcome ?? (limit ? "limit" : "subscribed");
       },
       unsubscribe: async (...args) => {
         calls.push(["unsubscribe", ...args]);
@@ -292,6 +292,13 @@ test("a signed-in coordinator subscribes and unsubscribes only their own device"
     ["unsubscribe", coordinator, subscription.endpoint],
     ["status", coordinator, subscription.endpoint],
   ]);
+});
+
+test("a device whose alerts belong to another account is refused, not taken over", async () => {
+  const { handler } = routes({ outcome: "in-use" });
+  const response = await handler(call("push-subscribe", { subscription }));
+  assert.equal(response.status, 409);
+  assert.match((await response.json()).error, /another account/);
 });
 
 test("push routes refuse other accounts, missing sign-in, bad subscriptions and the wrong method", async () => {

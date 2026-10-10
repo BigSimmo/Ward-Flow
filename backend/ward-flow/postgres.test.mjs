@@ -269,7 +269,12 @@ test(
       assert.equal(await store.pushStatus(actorB, device("e3").endpoint), true);
       assert.equal(await store.pushStatus(actorA, device("e3").endpoint), false, "ownership is per account");
       assert.equal(await store.unsubscribe(actorA, device("e3").endpoint), "not-found", "only the owner can revoke");
+      assert.equal(await store.subscribe(actorA, device("e3")), "in-use", "an active device is never taken over");
+      assert.equal(await store.pushStatus(actorB, device("e3").endpoint), true, "the owner's record is untouched");
       assert.equal(await store.unsubscribe(actorB, device("e3").endpoint), "unsubscribed");
+      assert.equal(await store.subscribe(actorA, device("e3")), "subscribed", "a revoked device can be taken over");
+      assert.equal(await store.pushStatus(actorA, device("e3").endpoint), true);
+      assert.equal(await store.unsubscribe(actorA, device("e3").endpoint), "unsubscribed");
       at = new Date(start + 90 * 60_000);
       await store.sweepPush();
       assert.deepEqual(delivered(), ["e1"]);
@@ -314,6 +319,17 @@ test(
           maxPerAccount: 10,
         },
       });
+      // Each case reuses the same device names in its own workspace. A device is only ever taken
+      // over once its earlier owner has turned alerts off, so the earlier cases' records are
+      // revoked first, as that owner's sign-out would.
+      const subscribe = store.subscribe;
+      store.subscribe = async (actorId, subscription) => {
+        await pool.query(
+          "UPDATE ward_flow.push_subscriptions SET revoked_at=now() WHERE endpoint=$1 AND workspace_id<>$2 AND revoked_at IS NULL",
+          [subscription.endpoint, workspaceId],
+        );
+        return subscribe(actorId, subscription);
+      };
       return { workspaceId, sent, logs, store };
     }
     try {
@@ -464,8 +480,13 @@ test(
         assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
         assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"]);
         assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"]);
-        // Another coordinator turns alerts on with the same device before the retry.
-        await store.subscribe(actorA, { endpoint: "https://fcm.googleapis.com/fcm/send/f1", ...keys });
+        // Another coordinator cannot take the device while its owner's alerts are still on.
+        const f1 = { endpoint: "https://fcm.googleapis.com/fcm/send/f1", ...keys };
+        assert.equal(await store.subscribe(actorA, f1), "in-use");
+        assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"], "the owner's rows are untouched");
+        // The owner signs out (revoking it), then the other coordinator turns alerts on before the retry.
+        assert.equal(await store.unsubscribe(actorB, f1.endpoint), "unsubscribed");
+        assert.equal(await store.subscribe(actorA, f1), "subscribed");
         await store.sweepPush();
         assert.deepEqual(sent, [], "an item queued before the device changed hands is not sent");
         assert.deepEqual(await statuses(workspaceId), ["f2 sent 1"]);

@@ -83,7 +83,11 @@ export function createSharedHandler({ config, store, authenticate, readBody, ver
           const outcome = await store.subscribe(actorId, subscription);
           return outcome === "limit"
             ? reply(409, { error: "This account already has phone alerts on 10 devices. Turn one off first." })
-            : reply(200, { subscribed: true });
+            : outcome === "in-use"
+              ? reply(409, {
+                  error: "Phone alerts on this device belong to another account. Turn them off there first.",
+                })
+              : reply(200, { subscribed: true });
         }
         let endpoint;
         try {

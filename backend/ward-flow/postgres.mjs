@@ -259,16 +259,32 @@ export function createWorkspaceStore(
           [workspaceId, actorId, subscription.endpoint],
         );
         if (owned.rows[0].count >= push.maxPerAccount) return "limit";
-        // One device endpoint belongs to whoever signed in on it most recently. Its old pending
-        // rows go first: turning alerts on never announces an item queued before, or for someone else.
+        // The endpoint is unique across every account and workspace. A device is taken over only
+        // once its previous owner's record is revoked (they turned alerts off or signed out); an
+        // active record of another account or workspace is never overwritten.
+        const existing = await client.query(
+          "SELECT workspace_id, actor_id, revoked_at FROM ward_flow.push_subscriptions WHERE endpoint=$1 FOR UPDATE",
+          [subscription.endpoint],
+        );
+        const holder = existing.rows[0];
+        if (
+          holder &&
+          holder.revoked_at === null &&
+          (holder.workspace_id !== workspaceId.toLowerCase() || holder.actor_id !== actorId.toLowerCase())
+        )
+          return "in-use";
+        // Its old pending rows go first: turning alerts on never announces an item queued before,
+        // or for someone else.
         await client.query(
           "DELETE FROM ward_flow.push_deliveries d USING ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND s.endpoint=$1",
           [subscription.endpoint],
         );
-        await client.query(
-          "INSERT INTO ward_flow.push_subscriptions(workspace_id, actor_id, endpoint, p256dh, auth, created_at) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (endpoint) DO UPDATE SET workspace_id=EXCLUDED.workspace_id, actor_id=EXCLUDED.actor_id, p256dh=EXCLUDED.p256dh, auth=EXCLUDED.auth, created_at=EXCLUDED.created_at, last_success_at=NULL, revoked_at=NULL",
+        const stored = await client.query(
+          "INSERT INTO ward_flow.push_subscriptions(workspace_id, actor_id, endpoint, p256dh, auth, created_at) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (endpoint) DO UPDATE SET workspace_id=EXCLUDED.workspace_id, actor_id=EXCLUDED.actor_id, p256dh=EXCLUDED.p256dh, auth=EXCLUDED.auth, created_at=EXCLUDED.created_at, last_success_at=NULL, revoked_at=NULL WHERE ward_flow.push_subscriptions.revoked_at IS NOT NULL OR (ward_flow.push_subscriptions.workspace_id=EXCLUDED.workspace_id AND ward_flow.push_subscriptions.actor_id=EXCLUDED.actor_id)",
           [workspaceId, actorId, subscription.endpoint, subscription.p256dh, subscription.auth, at],
         );
+        // A concurrent first claim by another account can win the insert; it is not overwritten.
+        if (!stored.rowCount) return "in-use";
         return "subscribed";
       });
     },
