@@ -25,6 +25,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import type { Referral } from "@/components/ward-management/ward-model";
 import { referralAddressingStateLabel } from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { ToastProvider } from "@/components/wf";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 /**
@@ -1353,6 +1354,38 @@ describe("confirming a community decline dispatches a real DECLINE_REFERRAL (eng
     expect(within(panel).queryByRole("button", { name: /decline referral/i })).toBeNull();
     expect(within(panel).getByTestId("ward-community-waiting-empty")).toBeTruthy();
     expect(screen.getByTestId("harness-declined-label").textContent).toBe("Accepted.");
+  });
+
+  it("v10 pass 3: Accept shows a toast with Undo, and Undo puts the referral back in the queue", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <LiveQueueTest />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("seed-referral-btn"));
+    const panel = screen.getByTestId("ward-community-waiting");
+    fireEvent.click(within(panel).getByRole("button", { name: /accept referral/i }));
+    expect(screen.getByTestId("harness-declined-label").textContent).toBe("Accepted.");
+    expect(screen.getByText("Referral accepted")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /^Undo/u }));
+    expect(screen.getByTestId("harness-declined-label").textContent).toBe("Queued.");
+    expect(within(panel).getByRole("button", { name: /accept referral/i })).toBeTruthy();
+  });
+});
+
+describe("v10 pass 3: Since you looked and Switch team", () => {
+  it("shows the digest from the record and a Switch team drawer listing every team", () => {
+    renderTeam(COMMUNITY_TEAM_PAGES[0].id, [], []);
+    expect(screen.getByRole("region", { name: "Since you looked at the start of this shift" })).toBeTruthy();
+    fireEvent.click(screen.getByTestId("ward-community-switch-team"));
+    const drawer = screen.getByTestId("ward-community-switch-drawer");
+    expect(within(drawer).getAllByRole("link")).toHaveLength(COMMUNITY_TEAM_PAGES.length);
+    fireEvent.change(within(drawer).getByRole("searchbox", { name: "Find a team" }), {
+      target: { value: COMMUNITY_TEAM_PAGES[1].name },
+    });
+    expect(within(drawer).getAllByRole("link")[0].textContent).toContain(COMMUNITY_TEAM_PAGES[1].name);
   });
 });
 
