@@ -15,8 +15,11 @@ import {
 import { StatCard } from "./statistics-hero";
 import {
   STATISTICS_COMMUNITY_CHOOSER_ID,
+  STATISTICS_EDS_HREF,
   STATISTICS_SERVICE_CHOOSER_ID,
-  STATISTICS_UNIT_CHOOSER_HREF,
+  STATISTICS_SERVICES_HREF,
+  STATISTICS_TEAMS_HREF,
+  STATISTICS_WARDS_HREF,
 } from "./statistics-sections";
 import styles from "./statistics-v6.module.css";
 
@@ -25,6 +28,13 @@ export type FinderKind = "ward" | "ed" | "service" | "team";
 export type FinderEntry = { id: string; name: string; code?: string; meta?: ReactNode };
 
 const NOUNS: Record<FinderKind, string> = { ward: "wards", ed: "departments", service: "services", team: "teams" };
+/** Each kind's index page: every one of them on one page (Statistics A, 9 Oct 2026). */
+const INDEX: Record<FinderKind, { href: string; label: string }> = {
+  ward: { href: STATISTICS_WARDS_HREF, label: "All wards" },
+  ed: { href: STATISTICS_EDS_HREF, label: "All EDs" },
+  service: { href: STATISTICS_SERVICES_HREF, label: "All services" },
+  team: { href: STATISTICS_TEAMS_HREF, label: "All teams" },
+};
 const PLACEHOLDER: Record<FinderKind, string> = {
   ward: "Find a ward",
   ed: "Find a department",
@@ -168,11 +178,9 @@ export function StatisticsUnitFinder({ lists }: { lists: Record<FinderKind, Find
           </>
         }
       >
-        {kind === "ward" || kind === "ed" ? (
-          <Link href={STATISTICS_UNIT_CHOOSER_HREF} className={styles.footLink}>
-            Compare all
-          </Link>
-        ) : null}
+        <Link href={INDEX[kind].href} className={styles.footLink} data-testid="ward-statistics-unit-finder-index">
+          {INDEX[kind].label}
+        </Link>
       </CardFoot>
     </StatCard>
   );
