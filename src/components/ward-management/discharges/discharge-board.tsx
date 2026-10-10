@@ -955,7 +955,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 size="sm"
                 variant="onHero"
                 icon={Printer}
-                className={pageStyles.desktopOnly}
                 onClick={() => window.print()}
                 data-testid="ward-discharge-print"
               >
