@@ -354,7 +354,9 @@ export function PatientHistoryTab({
           </p>
         </Card>
       </div>
-      {stays.length > 0 ? <WardStaysCard stays={stays} dayZero={dayZero} unitName={unitName} /> : null}
+      {stays.some((stay) => stay.state !== "waitlisted") ? (
+        <WardStaysCard stays={stays} dayZero={dayZero} unitName={unitName} />
+      ) : null}
     </section>
   );
 }
@@ -369,10 +371,11 @@ function WardStaysCard({
   dayZero: Date;
   unitName: (id: string) => string | undefined;
 }) {
-  const newestFirst = [...stays].sort((a, b) => (b.arrivedAt ?? b.leftAt ?? 0) - (a.arrivedAt ?? a.leftAt ?? 0));
+  const wardStays = stays.filter((stay) => stay.state !== "waitlisted");
+  const newestFirst = [...wardStays].sort((a, b) => (b.arrivedAt ?? b.leftAt ?? 0) - (a.arrivedAt ?? a.leftAt ?? 0));
   return (
     <Card aria-label="Ward stays" data-testid="ward-patient-ward-stays">
-      <CardHead level={3} icon={BedDouble} title="Ward stays" meta={`${stays.length}`} />
+      <CardHead level={3} icon={BedDouble} title="Ward stays" meta={`${wardStays.length}`} />
       <div className={styles.rows}>
         {newestFirst.map((stay) => {
           const from = stay.arrivedAt != null ? dayLabel(stay.arrivedAt, dayZero) : undefined;
