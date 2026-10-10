@@ -327,6 +327,12 @@
   scroll-margin-top: var(--wf-s-4);
 }
 
+/* The column is a shared sticky rail (data-wf-rail), capped at the window height. Its cards keep
+   their own height so the rail scrolls, rather than squashing each card and clipping its rows. */
+.side > * {
+  flex-shrink: 0;
+}
+
 .registerCard,
 .sideCard {
   min-width: 0;
