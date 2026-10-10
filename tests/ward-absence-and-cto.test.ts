@@ -367,6 +367,48 @@ describe("community treatment order (D-38)", () => {
     expect(refused.rejections.at(-1)?.reason).toMatch(/open placement or stay/);
   });
 
+  it("records an order for a patient whose only stay is waitlisted or pulled, as the page shows them Not active", () => {
+    const state = seedWardFlowStateAt(0);
+    const waiting = state.patients.find(
+      (p) =>
+        !p.communityTreatmentOrder &&
+        state.admissions.some((a) => a.patientId === p.id && (a.state === "waitlisted" || a.state === "pulled")) &&
+        !state.admissions.some((a) => a.patientId === p.id && a.state === "occupied") &&
+        !state.movements.some((m) => m.patientId === p.id && !m.closure && m.stage !== "arrived"),
+    );
+    expect(waiting, "the seed needs a waitlisted or pulled patient with nothing else open").toBeDefined();
+    const next = wardFlowReducer(state, {
+      type: "RECORD_COMMUNITY_TREATMENT_ORDER",
+      role: "coordinator",
+      now: NOW,
+      patientId: waiting!.id,
+    });
+    expect(next.rejections).toEqual(state.rejections);
+    expect(next.patients.find((p) => p.id === waiting!.id)!.communityTreatmentOrder).toBeDefined();
+  });
+
+  it("names the coordinator, not the ward, when the coordinator starts leave or marks an absence", () => {
+    const { state, stay } = occupiedStay();
+    const onLeave = wardFlowReducer(state, {
+      type: "RECORD_LEAVE_BED",
+      role: "coordinator",
+      now: NOW,
+      unitId: stay.unitId,
+      actingUnitId: stay.unitId,
+      admissionId: stay.id,
+      expectedReturn: NOW + 120,
+    });
+    expect(onLeave.leaveBeds.find((bed) => bed.admissionId === stay.id)?.confirmedBy).toBe("Flow coordinator");
+    const absent = wardFlowReducer(state, {
+      type: "RECORD_ABSENT_WITHOUT_LEAVE",
+      role: "coordinator",
+      now: NOW,
+      admissionId: stay.id,
+      actingUnitId: stay.unitId,
+    });
+    expect(absent.leaveBeds.find((bed) => bed.admissionId === stay.id)?.confirmedBy).toBe("Flow coordinator");
+  });
+
   it("is the community team's to record, not a ward's", () => {
     const state = seedWardFlowStateAt(0);
     const refused = wardFlowReducer(state, {

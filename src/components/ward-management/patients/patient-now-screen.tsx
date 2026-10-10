@@ -484,12 +484,13 @@ export function PatientNowScreen({
     );
   }
 
-  // D-38 ward actions on the stay. The ward records these, so they are raised as the ward the stay is on.
+  // D-38 ward actions on the stay, raised under the viewer's own role (the coordinator may take every
+  // action, Josh 10 Oct 2026) and scoped to the ward the stay is on.
   function recordReturn() {
     if (stayLeaveBed && gate("END_LEAVE_BED").allowed)
       dispatch({
         type: "END_LEAVE_BED",
-        role: "ward",
+        role: routeRole,
         now,
         leaveBedId: stayLeaveBed.id,
         actingUnitId: stayLeaveBed.unitId,
@@ -500,7 +501,7 @@ export function PatientNowScreen({
     if (stay && gate("RECORD_ABSENT_WITHOUT_LEAVE").allowed)
       dispatch({
         type: "RECORD_ABSENT_WITHOUT_LEAVE",
-        role: "ward",
+        role: routeRole,
         now,
         admissionId: stay.id,
         actingUnitId: stay.unitId,
@@ -518,7 +519,7 @@ export function PatientNowScreen({
     setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
     dispatch({
       type: "RECORD_LEAVE_BED",
-      role: "ward",
+      role: routeRole,
       now,
       unitId: stay.unitId,
       actingUnitId: stay.unitId,
@@ -534,7 +535,7 @@ export function PatientNowScreen({
     setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
     dispatch({
       type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
-      role: "ward",
+      role: routeRole,
       now,
       admissionId: stay.id,
       actingUnitId: stay.unitId,
@@ -547,7 +548,7 @@ export function PatientNowScreen({
     setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
     dispatch({
       type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
-      role: "ward",
+      role: routeRole,
       now,
       admissionId: stay.id,
       actingUnitId: stay.unitId,
@@ -559,7 +560,7 @@ export function PatientNowScreen({
     setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
     dispatch({
       type: "UPDATE_EXPECTED_DISCHARGE",
-      role: "ward",
+      role: routeRole,
       now,
       admissionId: stay.id,
       expectedDischargeAt,
@@ -622,7 +623,7 @@ export function PatientNowScreen({
       if (!stay || !gate("RECORD_ABSENCE_STEP").allowed) return;
       dispatch({
         type: "RECORD_ABSENCE_STEP",
-        role: "ward",
+        role: routeRole,
         now,
         admissionId: stay.id,
         actingUnitId: stay.unitId,
