@@ -252,6 +252,10 @@ describe("the breakpoint scale", () => {
     // v6 Home (7 Oct 2026): Home's own stylesheet keeps Command's existing 64rem three-column
     // boundary; it introduces no new number.
     "src/components/ward-management/coordinator/home.module.css: 64",
+    // Home direction A (10 Oct 2026): the overdue edge and neutral queue flag are desktop only.
+    // 48.0625rem is the exclusive complement of the phone's existing max-width 48rem, the same
+    // split Referrals registers, so the phone keeps its own queue styling.
+    "src/components/ward-management/coordinator/home.module.css: 48.0625",
     // The same drawing introduces the full three-column, viewport-bounded Command surface at
     // 1400px. This app rule carries that exact 87.5rem design boundary; the older 90rem rules in
     // the module remain separately pinned because they govern legacy layout.
