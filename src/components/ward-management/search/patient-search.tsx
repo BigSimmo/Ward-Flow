@@ -718,6 +718,20 @@ export function PatientSearchPage() {
   // and the drawer cannot reopen by itself if the row later returns.
   const drawerOpen = detailsOpen && requestedSelectedId !== null && selectedId === requestedSelectedId;
   if (detailsOpen && !drawerOpen) setDetailsOpen(false);
+
+  // If the page widens into two columns while the drawer is open (a tablet turned to landscape, a
+  // wider window), the side card now shows the same record, so the drawer closes. The phone layout
+  // unmounts the card, so the observer re-attaches to the new card when that layout changes.
+  useEffect(() => {
+    if (!drawerOpen || typeof ResizeObserver === "undefined") return;
+    const card = document.querySelector<HTMLElement>("[data-preview-card]");
+    if (card === null) return;
+    const observer = new ResizeObserver(() => {
+      if (!previewCardHidden()) setDetailsOpen(false);
+    });
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [drawerOpen, isPhone]);
   const preview: PreviewSelection | null =
     selectedRow === null
       ? requestedPreview?.kind === "person"
