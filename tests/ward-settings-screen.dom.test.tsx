@@ -17,6 +17,7 @@ vi.mock("next/link", () => ({
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 
 /**
  * 🔴 **THE SETTINGS SCREEN, AND ITS ONE RULE: A CONTROL THAT WRITES STATE NOTHING READS IS WORSE
@@ -32,9 +33,11 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 
 function renderSettings() {
   render(
-    <WardFlowProvider>
-      <SettingsScreen />
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider>
+        <SettingsScreen />
+      </WardFlowProvider>
+    </ToastProvider>,
   );
 }
 
@@ -72,9 +75,11 @@ describe("the settings screen", () => {
    */
   it("names exactly the sections the real handover sheet prints, read from that screen", () => {
     const handover = render(
-      <WardFlowProvider>
-        <HandoverPage />
-      </WardFlowProvider>,
+      <ToastProvider>
+        <WardFlowProvider>
+          <HandoverPage />
+        </WardFlowProvider>
+      </ToastProvider>,
     );
     // Refined Handover A (9 Oct 2026): the sheet's sections are its meeting-order groups. The due
     // group carries the handover time ("Due by 15:00"), so its time is dropped before comparing.

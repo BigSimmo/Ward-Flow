@@ -17,6 +17,7 @@ import {
   getActNowNotificationPreference,
 } from "@/components/ward-management/shell/ward-act-now-notifications";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 import { WARD_ANSWER_TARGET_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 /** Stream A, 9 Oct 2026: decision targets are labelled defaults set in Settings; notifications are opt-in. */
@@ -27,10 +28,12 @@ function Probe() {
 
 function renderSettings() {
   return render(
-    <WardFlowProvider>
-      <SettingsScreen />
-      <Probe />
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider>
+        <SettingsScreen />
+        <Probe />
+      </WardFlowProvider>
+    </ToastProvider>,
   );
 }
 

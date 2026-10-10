@@ -20,6 +20,7 @@ import { SettingsScreen } from "@/components/ward-management/settings/settings-s
 import { applyAppearance, applyGlare } from "@/components/ward-management/shell/ward-bar";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 import { APP_THEME_COLORS, GLARE_STORAGE_KEY } from "@/lib/theme";
 
 /**
@@ -45,9 +46,11 @@ import { APP_THEME_COLORS, GLARE_STORAGE_KEY } from "@/lib/theme";
 
 function renderSettings() {
   render(
-    <WardFlowProvider>
-      <SettingsScreen />
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider>
+        <SettingsScreen />
+      </WardFlowProvider>
+    </ToastProvider>,
   );
   fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
 }
@@ -121,9 +124,11 @@ describe("the settings screen's appearance control", () => {
    */
   it("keeps the one app-wide theme when the ward shell unmounts", () => {
     const { unmount } = render(
-      <WardFlowProvider>
-        <WardRail />
-      </WardFlowProvider>,
+      <ToastProvider>
+        <WardFlowProvider>
+          <WardRail />
+        </WardFlowProvider>
+      </ToastProvider>,
     );
     act(() => applyAppearance("dark"));
     expect(themeAttribute()).toBe("dark");

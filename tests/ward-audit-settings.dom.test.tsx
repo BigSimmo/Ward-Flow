@@ -11,15 +11,18 @@ vi.mock("next/link", () => ({
 }));
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 import { OPERATIONAL_DEFAULTS } from "@/components/ward-management/ward-operational-defaults";
 beforeEach(() => {
   localStorage.clear();
 });
 function settings() {
   return render(
-    <WardFlowProvider initialNow={642}>
-      <SettingsScreen />
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider initialNow={642}>
+        <SettingsScreen />
+      </WardFlowProvider>
+    </ToastProvider>,
   );
 }
 it("shows operational runtime defaults without editable display overrides", () => {

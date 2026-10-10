@@ -15,6 +15,7 @@ vi.mock("next/link", () => ({
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { SETTINGS_SEARCH_ENTRIES } from "@/components/ward-management/settings/settings-search-index";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 
 /**
  * Per owner decision D4 (docs/ward-flow/plans/2026-09-16-drawings-new-look-with-rules.md), a
@@ -44,9 +45,11 @@ const TABS = [/^Rules/, /^Alerts/, /^Display/, /^Profile and shift/, /^Data and 
 
 function renderSettings() {
   render(
-    <WardFlowProvider>
-      <SettingsScreen />
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider>
+        <SettingsScreen />
+      </WardFlowProvider>
+    </ToastProvider>,
   );
 }
 
@@ -128,10 +131,12 @@ describe("settings screen — the three controls Task 9 actually wired", () => {
       return <span data-testid="probe-ed-target">{configuration.edAccessTargetMinutes}</span>;
     }
     render(
-      <WardFlowProvider>
-        <SettingsScreen />
-        <Probe />
-      </WardFlowProvider>,
+      <ToastProvider>
+        <WardFlowProvider>
+          <SettingsScreen />
+          <Probe />
+        </WardFlowProvider>
+      </ToastProvider>,
     );
 
     const before = screen.getByTestId("probe-ed-target").textContent;

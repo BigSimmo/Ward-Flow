@@ -1,10 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import {
   Bell,
   Check,
+  ChevronRight,
   Clock,
   Database,
   Gavel,
@@ -76,17 +86,27 @@ import {
   Button,
   Card,
   CardHead,
+  CountCircle,
   Hero,
   HeroChip,
   HeroChips,
   HeroTrack,
   Kbd,
+  PhoneHero,
+  PhoneListRow,
+  PhoneSheet,
   Segmented,
+  SrOnly,
   StatusGlyph,
+  Switch,
   buttonClass,
   cx,
+  useIsPhone,
+  useToast,
+  type ToastInput,
   type WfTone,
 } from "@/components/wf";
+import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
@@ -137,6 +157,12 @@ function shortDuration(minutes: number): string {
   const rest = minutes % 60;
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
 }
+
+/** How long the toast offers Undo after a save or a discard (the wf toast's 8 second window). */
+const SETTINGS_UNDO_MS = 8000;
+
+/** The settings a phone shows on its first screen (Find a setting lands there, not in a sheet). */
+const PHONE_QUICK_SETTINGS: ReadonlySet<string> = new Set(["theme", "glare", "density", "buzz"]);
 
 function wardsText(count: number): string {
   return `${count} ${count === 1 ? "ward" : "wards"}`;
@@ -254,7 +280,9 @@ export function SettingsScreen() {
    */
   const [draft, setDraft] = useState<WardConfiguration>(configuration);
   const [tab, setTab] = useState<SettingsTab>("rules");
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  // Phone only: the area whose tall sheet is open. The desktop never reads it.
+  const isPhone = useIsPhone();
+  const [phoneSheet, setPhoneSheet] = useState<SettingsTab | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isOperatorModalOpen, setIsOperatorModalOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useWardAccessibilityPreference("reduced-motion");
@@ -276,18 +304,14 @@ export function SettingsScreen() {
     };
   }, [actNowNotifications]);
 
-  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const showToast = useCallback((message: string) => {
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setToastMessage(message);
-    toastTimeoutRef.current = setTimeout(() => setToastMessage(null), 3200);
-  }, []);
-  // A toast still showing when the screen closes must not set state after unmount.
-  useEffect(
-    () => () => {
-      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+  // v10 pass 3: every outcome on this page goes through the shared wf toast (one polite live
+  // region for the whole app, set up by the ward layout). Words stay neutral; the glyph carries tone.
+  const toast = useToast();
+  const showToast = useCallback(
+    (message: string, tone: ToastInput["tone"] = "info") => {
+      toast.push({ tone, title: message, duration: 3200 });
     },
-    [],
+    [toast],
   );
   const onPreview = useCallback((name: string) => showToast(`${name}: ${NOT_WIRED}`), [showToast]);
 
@@ -360,15 +384,52 @@ export function SettingsScreen() {
     }
   };
 
+  /**
+   * A save waits for the reducer: the toast with Undo shows only once the saved configuration has
+   * changed, and never when the save was refused (the refusal line says why instead).
+   */
+  const pendingSave = useRef<{ before: WardConfiguration; count: number; rejectionsAt: number } | null>(null);
+
   const handleSave = () => {
     if (!hasUnsavedRules) return;
+    pendingSave.current = { before: configuration, count: unsavedCount, rejectionsAt: rejections.length };
     dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: draft });
-    showToast(unsavedCount === 1 ? "Rule saved and recorded." : `${unsavedCount} rules saved and recorded.`);
+    setPhoneSheet(null);
   };
 
+  useEffect(() => {
+    const pending = pendingSave.current;
+    if (!pending) return;
+    if (rejections.length > pending.rejectionsAt) {
+      pendingSave.current = null;
+      return;
+    }
+    if (configuration === pending.before) return;
+    pendingSave.current = null;
+    const { before, count } = pending;
+    toast.push({
+      tone: "success",
+      title: count === 1 ? "Rule saved and recorded." : `${count} rules saved and recorded.`,
+      // Undo puts the rules back with a second recorded save, so the audit keeps both.
+      undo: {
+        durationMs: SETTINGS_UNDO_MS,
+        onUndo: () => {
+          dispatch({ type: "SET_CONFIGURATION", role: "coordinator", now, payload: before });
+          setDraft({ ...before });
+          showToast("Rules back as they were. Recorded in the audit.");
+        },
+      },
+    });
+  }, [configuration, rejections, toast, dispatch, now, showToast]);
+
   const handleDiscard = () => {
+    const kept = draft;
     setDraft({ ...configuration });
-    showToast("Draft discarded.");
+    toast.push({
+      tone: "info",
+      title: "Draft discarded.",
+      undo: { durationMs: SETTINGS_UNDO_MS, onUndo: () => setDraft(kept) },
+    });
   };
 
   const handleExport = () => {
@@ -497,6 +558,8 @@ export function SettingsScreen() {
     chooseTab(entry.tab);
     // Fixed defaults sits behind the reference card's second tab; show it before highlighting.
     if (entry.id === "fixed-defaults") setReference("defaults");
+    // Phone: the four quick settings sit on the screen itself; every other one opens its area.
+    if (isPhone) setPhoneSheet(PHONE_QUICK_SETTINGS.has(entry.id) ? null : entry.tab);
     setHighlight(entry.id);
     setQuery("");
     setFindOpen(false);
@@ -587,6 +650,763 @@ export function SettingsScreen() {
     </div>
   );
 
+  const rulesContent = (
+    <>
+      <ScopeLine kind="save" />
+      <div className={styles.columns}>
+        <div className={styles.column}>
+          <Card aria-labelledby="timings-title" data-setting="surge">
+            <CardHead
+              iconPlain
+              id="timings-title"
+              icon={Clock}
+              title="Busy-day timings"
+              action={
+                <Segmented
+                  className={styles.pillSeg}
+                  label="Timing set"
+                  items={[
+                    { id: "standard", label: "Standard" },
+                    { id: "surge", label: "Surge" },
+                  ]}
+                  value={isSurge ? "surge" : "standard"}
+                  onChange={handleSurge}
+                />
+              }
+            />
+            <RuleRow
+              setting="ed-target"
+              title="ED wait target"
+              sub="Access measure only"
+              value={rules.ed}
+              saved={saved.ed}
+              display={`${rules.ed / 60}h`}
+              noun="ED access target"
+              range={edRange}
+              onChange={(minutes) => setRule({ edAccessTargetMinutes: minutes })}
+              onReset={() => setRule({ edAccessTargetMinutes: saved.ed })}
+              effect={
+                <>
+                  <StatusGlyph tone={draftEdOver > 0 ? "warning" : "success"} size={9} />
+                  {draftEdOver > 0 ? `${draftEdOver} over now` : "None over now"}
+                  {edDelta !== 0 ? <span className={styles.delta}>{`${edDelta > 0 ? "+" : ""}${edDelta}`}</span> : null}
+                </>
+              }
+              usedBy="Home, ED, Movements"
+            />
+            <RuleRow
+              setting="wards-asked"
+              title="Wards asked at once"
+              sub="Per referral"
+              value={rules.cap}
+              saved={saved.cap}
+              display={wardsText(rules.cap)}
+              noun="parallel referral enquiry limit"
+              range={{
+                id: "setting-parallel-cap",
+                ...PARALLEL_REFERRAL_CAP_RANGE,
+                minLabel: wardsText(PARALLEL_REFERRAL_CAP_RANGE.min),
+                maxLabel: wardsText(PARALLEL_REFERRAL_CAP_RANGE.max),
+              }}
+              onChange={(units) => setRule({ parallelReferralCap: units })}
+              onReset={() => setRule({ parallelReferralCap: saved.cap })}
+              usedBy="Home, Referrals, Placement"
+            />
+            <RuleRow
+              setting="pull-hold"
+              title="Pull hold"
+              sub="Before a held bed returns"
+              value={rules.hold}
+              saved={saved.hold}
+              display={shortDuration(rules.hold)}
+              noun="pulled bed hold duration"
+              range={{
+                id: "setting-hold-duration",
+                ...PULL_HOLD_RANGE_MINUTES,
+                minLabel: shortDuration(PULL_HOLD_RANGE_MINUTES.min),
+                maxLabel: shortDuration(PULL_HOLD_RANGE_MINUTES.max),
+              }}
+              onChange={(minutes) => setRule({ pullHoldMinutes: minutes })}
+              onReset={() => setRule({ pullHoldMinutes: saved.hold })}
+              usedBy="Home, ED, Referrals"
+            />
+            <RuleRow
+              setting="morning-count"
+              testId="setting-morning-rollup-row"
+              title="Morning count"
+              sub="Not a legal limit"
+              subTestId="setting-morning-rollup-desc"
+              value={rules.morning}
+              saved={saved.morning}
+              display={clock24(rules.morning)}
+              displayTestId="morning-rollup-display"
+              noun="morning rollup deadline"
+              range={{
+                id: "setting-morning-rollup-slider",
+                ...MORNING_ROLLUP_TIME_RANGE_MINUTES,
+                minLabel: clock24(MORNING_ROLLUP_TIME_RANGE_MINUTES.min),
+                maxLabel: clock24(MORNING_ROLLUP_TIME_RANGE_MINUTES.max),
+              }}
+              onChange={(minutes) => setRule({ morningRollupDeadlineMinutes: minutes })}
+              onReset={() => setRule({ morningRollupDeadlineMinutes: saved.morning })}
+              usedBy="Wards, Ward alerts"
+            />
+            <SettingRow setting="surge-ends" title="Surge ends" sub="Back to Standard on its own" preview>
+              <Segmented
+                className={styles.pillSeg}
+                label="Surge ends"
+                items={["Manual", "8h", "12h", "Shift end"].map((item) => ({ id: item, label: item }))}
+                value="12h"
+                unavailable
+                onChange={() => onPreview("Surge ends")}
+              />
+            </SettingRow>
+          </Card>
+
+          <Card aria-labelledby="warnings-title">
+            <CardHead
+              iconPlain
+              id="warnings-title"
+              icon={Gavel}
+              title="Form warnings"
+              meta="Your defaults, not legal limits"
+            />
+            <RuleRow
+              setting="first-warning"
+              testId="setting-due-soon-urgent-row"
+              title="First warning"
+              sub="Before a legal due time"
+              subTestId="setting-due-soon-urgent-desc"
+              value={rules.urgent}
+              saved={saved.urgent}
+              display={shortDuration(rules.urgent)}
+              displayTestId="due-soon-urgent-display"
+              noun="first warning before a legal due time"
+              max={clampDueSoonUrgent(DUE_SOON_URGENT_RANGE_MINUTES.max, rules.soon)}
+              range={{
+                id: "setting-due-soon-urgent",
+                ...DUE_SOON_URGENT_RANGE_MINUTES,
+                minLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.min),
+                maxLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.max),
+              }}
+              onChange={(minutes) => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(minutes, rules.soon) })}
+              onReset={() => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(saved.urgent, rules.soon) })}
+              usedBy="Home, every legal due time"
+            />
+            <RuleRow
+              setting="second-warning"
+              testId="setting-due-soon-row"
+              title="Second warning"
+              sub="Shown as due soon"
+              subTestId="setting-due-soon-desc"
+              value={rules.soon}
+              saved={saved.soon}
+              display={shortDuration(rules.soon)}
+              displayTestId="due-soon-display"
+              noun="second warning before a legal due time"
+              range={{
+                id: "setting-due-soon",
+                ...DUE_SOON_RANGE_MINUTES,
+                minLabel: shortDuration(DUE_SOON_RANGE_MINUTES.min),
+                maxLabel: shortDuration(DUE_SOON_RANGE_MINUTES.max),
+              }}
+              onChange={(minutes) =>
+                setRule({
+                  dueSoonMinutes: minutes,
+                  dueSoonUrgentMinutes: clampDueSoonUrgent(rules.urgent, minutes),
+                })
+              }
+              onReset={() =>
+                setRule({
+                  dueSoonMinutes: saved.soon,
+                  dueSoonUrgentMinutes: clampDueSoonUrgent(rules.urgent, saved.soon),
+                })
+              }
+              usedBy="Home, every legal due time"
+            />
+            {/* The two warnings on one window, read from the draft: calm, due soon, first warning. */}
+            <div className={styles.cascade} aria-hidden="true">
+              <div className={styles.cascadeTrack}>
+                <span style={{ flexGrow: Math.max(0, DUE_SOON_RANGE_MINUTES.max - rules.soon) }} />
+                <span className={styles.cascadeSoon} style={{ flexGrow: Math.max(0, rules.soon - rules.urgent) }} />
+                <span className={styles.cascadeUrgent} style={{ flexGrow: rules.urgent }} />
+              </div>
+              <div className={styles.cascadeEnds}>
+                <span className={styles.cascadeStart}>Due in {shortDuration(DUE_SOON_RANGE_MINUTES.max)}</span>
+                <span style={{ flexGrow: Math.max(0, DUE_SOON_RANGE_MINUTES.max - rules.soon) }}>
+                  {shortDuration(rules.soon)}
+                </span>
+                <span style={{ flexGrow: Math.max(0, rules.soon - rules.urgent) }}>{shortDuration(rules.urgent)}</span>
+                <span style={{ flexGrow: rules.urgent }}>Due</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className={styles.column}>
+          <Card aria-labelledby="targets-title" data-setting="decision-targets">
+            <CardHead
+              iconPlain
+              id="targets-title"
+              icon={Timer}
+              title="Decision targets"
+              meta="Your defaults, not clinical standards"
+            />
+            {DECISION_TARGET_STEPS.map((step) => {
+              const ruleKey =
+                step.configKey === "referralDecisionTargetMinutes"
+                  ? "referralTarget"
+                  : step.configKey === "transferAcceptanceTargetMinutes"
+                    ? "transferTarget"
+                    : "transportTarget";
+              return (
+                <RuleRow
+                  key={step.step}
+                  setting={`target-${step.step}`}
+                  testId={`setting-target-${step.step}`}
+                  title={step.label}
+                  sub={
+                    step.step === "referral_decision"
+                      ? "Referral to ward answer"
+                      : step.step === "transfer_acceptance"
+                        ? "Acceptance to bed pulled"
+                        : "Bed pulled to transport booked"
+                  }
+                  value={rules[ruleKey]}
+                  saved={saved[ruleKey]}
+                  display={shortDuration(rules[ruleKey])}
+                  noun={`${step.label.toLowerCase()} target`}
+                  range={{
+                    id: `setting-target-${step.step}-range`,
+                    ...DECISION_TARGET_RANGE_MINUTES,
+                    minLabel: shortDuration(DECISION_TARGET_RANGE_MINUTES.min),
+                    maxLabel: shortDuration(DECISION_TARGET_RANGE_MINUTES.max),
+                  }}
+                  onChange={(minutes) => {
+                    setRule({ [step.configKey]: minutes });
+                  }}
+                  onReset={() => {
+                    setRule({ [step.configKey]: saved[ruleKey] });
+                  }}
+                  usedBy="Alerts, Tasks"
+                />
+              );
+            })}
+          </Card>
+
+          <Card aria-labelledby="more-title">
+            <CardHead
+              iconPlain
+              id="more-title"
+              icon={SlidersHorizontal}
+              title="More thresholds"
+              meta="Fixed in code today"
+              aside={<PreviewTag />}
+            />
+            <RuleRow
+              setting="occupancy"
+              title="Occupancy alert"
+              sub="Bed alerts dot from"
+              value={OCCUPANCY_ALERT_PERCENT}
+              saved={OCCUPANCY_ALERT_PERCENT}
+              display={`${OCCUPANCY_ALERT_PERCENT}%`}
+              noun="occupancy alert"
+              range={{
+                min: 80,
+                max: 95,
+                step: 1,
+                minLabel: "80%",
+                maxLabel: "95%",
+              }}
+              onChange={() => onPreview("Occupancy alert")}
+              preview
+              previewTag={false}
+            />
+            <RuleRow
+              setting="tier-one"
+              title="Tier 1 overdue after"
+              sub="Referral queue"
+              value={OVERDUE_AFTER_MINUTES_BY_TIER[1]}
+              saved={OVERDUE_AFTER_MINUTES_BY_TIER[1]}
+              display={shortDuration(OVERDUE_AFTER_MINUTES_BY_TIER[1])}
+              noun="tier 1 overdue time"
+              range={{
+                min: 30,
+                max: 240,
+                step: 30,
+                minLabel: "30m",
+                maxLabel: "4h",
+              }}
+              onChange={() => onPreview("Tier 1 overdue after")}
+              preview
+              previewTag={false}
+            />
+            <RuleRow
+              setting="ward-silent"
+              title="Ward not answering"
+              sub="First reminder after"
+              value={SILENT_WARD_FIRST_REMINDER_MINUTES}
+              saved={SILENT_WARD_FIRST_REMINDER_MINUTES}
+              display={shortDuration(SILENT_WARD_FIRST_REMINDER_MINUTES)}
+              noun="ward reminder time"
+              range={{
+                min: 30,
+                max: 240,
+                step: 30,
+                minLabel: "30m",
+                maxLabel: "4h",
+              }}
+              onChange={() => onPreview("Ward not answering")}
+              preview
+              previewTag={false}
+            />
+            <RuleRow
+              setting="bed-hold"
+              title="Bed hold expires"
+              sub="After a bed is held"
+              value={BED_HOLD_EXPIRY_MINUTES}
+              saved={BED_HOLD_EXPIRY_MINUTES}
+              display={shortDuration(BED_HOLD_EXPIRY_MINUTES)}
+              noun="bed hold expiry"
+              range={{ min: 60, max: 360, step: 30, minLabel: "1h", maxLabel: "6h" }}
+              onChange={() => onPreview("Bed hold expires")}
+              preview
+              previewTag={false}
+            />
+          </Card>
+
+          <Card
+            aria-labelledby="changes-title"
+            data-testid="ward-settings-recent-changes"
+            data-setting="recent-changes"
+          >
+            <CardHead
+              iconPlain
+              id="changes-title"
+              icon={History}
+              title="Recent changes"
+              action={
+                <Link
+                  className={buttonClass({ variant: "ghost", size: "sm", className: styles.pill })}
+                  href="/mockups/ward-flow/governance"
+                >
+                  Full audit
+                </Link>
+              }
+            />
+            {ruleChanges.length === 0 ? (
+              <p className={styles.cardEmpty}>No rule saves this session.</p>
+            ) : (
+              <ol className={styles.changeList}>
+                {ruleChanges.map((change) => (
+                  <li key={change.id} className={styles.changeRow}>
+                    <span className={styles.changeTime}>
+                      {change.at === null ? "No time" : formatInstantWithDay(change.at, now)}
+                    </span>
+                    <StatusGlyph tone={CHANGE_OUTCOME_TONE[change.outcome]} size={9} />
+                    <span className={styles.changeText}>
+                      {CHANGE_OUTCOME_PREFIX[change.outcome]}
+                      {configurationChangeText(
+                        change.details.before,
+                        change.outcome === "accepted" ? change.details.after : change.details.requested,
+                      )}
+                    </span>
+                    <span className={styles.changeActor}>
+                      {change.actor.role ? WARD_FLOW_ROLE_LABELS[change.actor.role] : "Role not recorded"}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Card>
+        </div>
+      </div>
+    </>
+  );
+
+  const alertsContent = (
+    <>
+      <AlertsPane
+        notifications={actNowNotifications}
+        notificationPermission={notificationPermission}
+        onNotificationsChange={(next) => {
+          if (!next) {
+            setActNowNotificationPreference(false);
+            showToast("Browser notifications off.");
+            return;
+          }
+          void enableActNowNotifications().then((answer) => {
+            setNotificationPermission(answer);
+            showToast(
+              answer === "granted"
+                ? "Browser notifications on for act-now alerts."
+                : answer === "unsupported"
+                  ? "This browser cannot show notifications."
+                  : "Notifications are blocked for this site in the browser.",
+            );
+          });
+        }}
+        phonePush={phonePush}
+        onPhonePushChange={(next) => {
+          void setPhonePush(next).then((answer) => {
+            showToast(
+              answer === "on"
+                ? "Phone alerts on for this device."
+                : answer === "off"
+                  ? "Phone alerts off for this device."
+                  : answer === "denied"
+                    ? "Notifications are blocked for this site in the browser."
+                    : answer === "server-off"
+                      ? "Phone alerts are not set up on the server yet."
+                      : "Phone alerts could not be changed. Try again.",
+            );
+          });
+        }}
+        buzz={audioBuzz}
+        onBuzzChange={(next) => {
+          setAudioBuzz(next);
+          setAudioBuzzPreference(next);
+          showToast(next ? "Buzz sound on." : "Buzz sound off.");
+        }}
+        onTestBuzz={() => {
+          playSyntheticUrgentChime();
+          showToast("Test buzz played.");
+        }}
+        onPreview={onPreview}
+      />
+    </>
+  );
+
+  const displayContent = (
+    <>
+      <DisplayPane
+        appearance={appearance}
+        onAppearanceChange={(next) => {
+          applyAppearance(next);
+          showToast(`Theme set to ${next === "auto" ? "Auto" : next === "dark" ? "Dark" : "Light"}.`);
+        }}
+        glare={glare}
+        onGlareChange={(next) => {
+          applyGlare(next);
+          showToast(`Glare mode ${next ? "on" : "off"}.`);
+        }}
+        railOpen={railOpen}
+        onRailChange={(open) => {
+          setRailOpenPreference(open);
+          showToast(open ? "Sidebar set to Full." : "Sidebar set to Compact.");
+        }}
+        reducedMotion={reducedMotion}
+        onReducedMotionChange={(next) => {
+          setReducedMotion(next);
+          showToast(`Reduce motion ${next ? "on" : "off"}.`);
+        }}
+        highContrast={highContrast}
+        onHighContrastChange={(next) => {
+          setHighContrast(next);
+          showToast(`High contrast ${next ? "on" : "off"}.`);
+        }}
+        onPreview={onPreview}
+      />
+    </>
+  );
+
+  const profileContent = (
+    <>
+      <ProfilePane onPreview={onPreview} />
+    </>
+  );
+
+  const dataContent = (
+    <>
+      <DataPane
+        reference={reference}
+        onReferenceChange={setReference}
+        movementCount={movements.length}
+        eventCount={eventLog.length}
+        thresholds={thresholds}
+        onExport={handleExport}
+        onImport={handleImport}
+        onClearSession={handleClearSession}
+        onRestore={() => {
+          // On a phone the Data sheet closes first, so the restore dialog is the only layer.
+          setPhoneSheet(null);
+          setIsResetModalOpen(true);
+        }}
+      />
+    </>
+  );
+
+  const saveBar = hasUnsavedRules ? (
+    <div
+      className={styles.saveBar}
+      role="region"
+      aria-label="Unsaved rule changes"
+      data-testid="unsaved-draft-inspector"
+    >
+      <StatusGlyph tone="info" size={9} />
+      <span className={styles.saveText} title={diffs.join(", ")}>
+        {diffs.join(", ")}
+      </span>
+      {tab !== "rules" ? (
+        <button type="button" className={styles.saveLink} onClick={() => chooseTab("rules")}>
+          Review
+        </button>
+      ) : null}
+      <Button variant="ghost" size="sm" className={styles.pill} onClick={handleDiscard} data-testid="btn-discard-draft">
+        Discard
+      </Button>
+      <Button
+        variant="pri"
+        size="sm"
+        icon={Check}
+        className={styles.pill}
+        onClick={handleSave}
+        data-testid="btn-save-draft"
+      >
+        {unsavedCount === 1 ? "Save 1 change" : `Save ${unsavedCount} changes`}
+      </Button>
+    </div>
+  ) : null;
+
+  const overlays = (
+    <>
+      <ResetBaselineModal
+        isOpen={isResetModalOpen}
+        onClose={() => setIsResetModalOpen(false)}
+        onConfirm={handleConfirmReset}
+      />
+      {isOperatorModalOpen ? (
+        <OperatorSwitcherModal
+          isOpen={isOperatorModalOpen}
+          onClose={() => setIsOperatorModalOpen(false)}
+          onPreview={onPreview}
+        />
+      ) : null}
+      <WardPrototypeFooter
+        testId="ward-settings-governance"
+        note="Synthetic records · Not a medical device · Changes remembered for this browser only"
+      />
+    </>
+  );
+
+  const refusedLine = configurationRejection ? (
+    <p className={styles.refused} role="alert" data-testid="ward-settings-configuration-refused">
+      <StatusGlyph tone="danger" size={10} />
+      <strong>Rule change refused.</strong> {configurationRejection.reason}
+    </p>
+  ) : null;
+
+  /* Phone (v10): its own design, never a reflow of the desktop. A compact profile hero, Find a
+     setting, the four settings people change on a phone, then the five areas as rows that open
+     tall sheets. Rules keep the stepper; unsaved rules pin a save bar and the sheet has Save in
+     its foot. */
+  if (isPhone) {
+    const areaSummary: Record<SettingsTab, string> = {
+      rules: "Timings, form warnings, decision targets",
+      alerts: `Browser ${actNowNotifications ? "on" : "off"} · buzz ${audioBuzz ? "on" : "off"}`,
+      display: `Motion ${reducedMotion ? "reduced" : "on"} · contrast ${highContrast ? "high" : "standard"}`,
+      profile: `${SETTINGS_DEMO_PROFILE.role} · ${SETTINGS_DEMO_PROFILE.location}`,
+      data: "Export, restore, about this prototype",
+    };
+    const sheetTab = phoneSheet;
+    const sheetContent: Record<SettingsTab, ReactNode> = {
+      rules: rulesContent,
+      alerts: alertsContent,
+      display: displayContent,
+      profile: profileContent,
+      data: dataContent,
+    };
+    return (
+      <div
+        className={cx(styles.screen, styles.phoneScreen)}
+        data-testid="ward-settings-screen"
+        data-ward-design="v10-phone"
+      >
+        <main id="main-content" className={styles.phoneMain}>
+          <PhoneHero
+            level={1}
+            data-testid="ward-settings-profile"
+            title={
+              <span className={styles.phoneWho}>
+                <Avatar
+                  name={SETTINGS_DEMO_PROFILE.name}
+                  initials={SETTINGS_DEMO_PROFILE.initials}
+                  online
+                  decorative
+                  className={styles.avatar}
+                />
+                {SETTINGS_DEMO_PROFILE.name}
+              </span>
+            }
+            sub={`${SETTINGS_DEMO_PROFILE.role} · Demo profile`}
+            figures={[
+              { id: "rules", value: savedSurge ? "Surge" : "Standard", label: "Rules" },
+              {
+                id: "unsaved",
+                value: hasUnsavedRules ? unsavedCount : "None",
+                label: "Unsaved",
+                tone: hasUnsavedRules ? "info" : undefined,
+              },
+              {
+                id: "last",
+                value: lastAccepted?.at != null ? formatInstantWithDay(lastAccepted.at, now) : "None",
+                label: "Last rule save",
+              },
+            ]}
+            actions={
+              <Button
+                variant="onHero"
+                icon={Layers}
+                className={styles.phoneGrow}
+                onClick={() => setIsOperatorModalOpen(true)}
+              >
+                Switch workstation
+              </Button>
+            }
+          />
+
+          <div className={styles.phoneFind}>{findSetting}</div>
+          {refusedLine}
+
+          <section className={styles.phoneSection} aria-labelledby="settings-phone-quick">
+            <h2 id="settings-phone-quick" className={styles.phoneHead}>
+              On this phone
+              <span className={styles.phoneHeadMeta}>Saves at once</span>
+            </h2>
+            <div className={styles.phoneCard}>
+              <SettingRow setting="theme" title="Theme" stacked testId="ward-settings-phone-theme">
+                <Segmented<WardAppearance>
+                  className={styles.phoneSeg}
+                  size="md"
+                  label="Theme"
+                  items={[
+                    { id: "auto", label: "Auto" },
+                    { id: "light", label: "Light" },
+                    { id: "dark", label: "Dark" },
+                  ]}
+                  value={appearance}
+                  onChange={(next) => {
+                    applyAppearance(next);
+                    showToast(`Theme set to ${next === "auto" ? "Auto" : next === "dark" ? "Dark" : "Light"}.`);
+                  }}
+                />
+              </SettingRow>
+              <SettingRow setting="glare" title="Glare mode" sub="For bright rooms and windows">
+                <Switch
+                  checked={glare}
+                  onCheckedChange={(next) => {
+                    applyGlare(next);
+                    showToast(`Glare mode ${next ? "on" : "off"}.`);
+                  }}
+                  label={<SrOnly>Glare mode</SrOnly>}
+                />
+              </SettingRow>
+              <SettingRow setting="density" title="Row density" stacked preview>
+                <Segmented
+                  className={styles.phoneSeg}
+                  size="md"
+                  label="Row density"
+                  items={["Comfortable", "Compact"].map((item) => ({ id: item, label: item }))}
+                  value="Comfortable"
+                  unavailable
+                  onChange={() => onPreview("Row density")}
+                />
+              </SettingRow>
+              <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz">
+                <Switch
+                  checked={audioBuzz}
+                  onCheckedChange={(next) => {
+                    setAudioBuzz(next);
+                    setAudioBuzzPreference(next);
+                    showToast(next ? "Buzz sound on." : "Buzz sound off.");
+                  }}
+                  label={<SrOnly>Buzz sound</SrOnly>}
+                />
+              </SettingRow>
+            </div>
+          </section>
+
+          <section className={styles.phoneSection} aria-labelledby="settings-phone-all">
+            <h2 id="settings-phone-all" className={styles.phoneHead}>
+              All settings
+            </h2>
+            <ul className={styles.phoneList}>
+              {SETTINGS_TABS.map((item) => {
+                const Icon = TAB_ICONS[item.id];
+                return (
+                  <PhoneListRow
+                    key={item.id}
+                    as="li"
+                    data-testid={`ward-settings-phone-area-${item.id}`}
+                    leading={<Icon size={18} aria-hidden="true" className={styles.phoneAreaIcon} />}
+                    name={item.label}
+                    meta={areaSummary[item.id]}
+                    value={
+                      item.id === "rules" && hasUnsavedRules ? (
+                        <CountCircle n={unsavedCount} label="unsaved" />
+                      ) : (
+                        <ChevronRight size={16} aria-hidden="true" className={styles.phoneChevron} />
+                      )
+                    }
+                    onSelect={() => setPhoneSheet(item.id)}
+                  />
+                );
+              })}
+            </ul>
+          </section>
+
+          {hasUnsavedRules && sheetTab === null ? (
+            <div
+              className={styles.phoneSaveBar}
+              role="region"
+              aria-label="Unsaved rule changes"
+              data-testid="unsaved-draft-inspector"
+            >
+              <span className={styles.phoneSaveText} title={diffs.join(", ")}>
+                <StatusGlyph tone="info" size={9} />
+                {diffs.join(", ")}
+              </span>
+              <Button variant="sec" onClick={handleDiscard} data-testid="btn-discard-draft">
+                Discard
+              </Button>
+              <Button variant="pri" icon={Check} onClick={handleSave} data-testid="btn-save-draft">
+                {unsavedCount === 1 ? "Save 1 change" : `Save ${unsavedCount} changes`}
+              </Button>
+            </div>
+          ) : null}
+
+          <PhoneSheet
+            open={sheetTab !== null}
+            onClose={() => setPhoneSheet(null)}
+            height="tall"
+            data-testid="ward-settings-phone-sheet"
+            title={sheetTab ? tabLabel(sheetTab) : "Settings"}
+            description={
+              sheetTab === "rules"
+                ? "Needs Save · each save is recorded in the audit"
+                : "Saves at once · this browser only"
+            }
+            primary={
+              sheetTab === "rules" && hasUnsavedRules
+                ? {
+                    label: unsavedCount === 1 ? "Save 1 change" : `Save ${unsavedCount} changes`,
+                    onAction: handleSave,
+                  }
+                : { label: "Done", onAction: () => setPhoneSheet(null) }
+            }
+            secondary={
+              sheetTab === "rules" && hasUnsavedRules ? { label: "Discard", onAction: handleDiscard } : undefined
+            }
+          >
+            {sheetTab ? <div className={styles.phoneSheetBody}>{sheetContent[sheetTab]}</div> : null}
+          </PhoneSheet>
+
+          {overlays}
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.screen} data-testid="ward-settings-screen" data-ward-design="workspaces">
       <main id="main-content" className={styles.main}>
@@ -661,543 +1481,31 @@ export function SettingsScreen() {
           }
         />
 
-        {configurationRejection ? (
-          <p className={styles.refused} role="alert" data-testid="ward-settings-configuration-refused">
-            <StatusGlyph tone="danger" size={10} />
-            <strong>Rule change refused.</strong> {configurationRejection.reason}
-          </p>
-        ) : null}
+        {refusedLine}
 
         <div className={styles.pane} hidden={tab !== "rules"} data-pane="rules">
-          <ScopeLine kind="save" />
-          <div className={styles.columns}>
-            <div className={styles.column}>
-              <Card aria-labelledby="timings-title" data-setting="surge">
-                <CardHead
-                  id="timings-title"
-                  icon={Clock}
-                  title="Busy-day timings"
-                  action={
-                    <Segmented
-                      className={styles.pillSeg}
-                      label="Timing set"
-                      items={[
-                        { id: "standard", label: "Standard" },
-                        { id: "surge", label: "Surge" },
-                      ]}
-                      value={isSurge ? "surge" : "standard"}
-                      onChange={handleSurge}
-                    />
-                  }
-                />
-                <RuleRow
-                  setting="ed-target"
-                  title="ED wait target"
-                  sub="Access measure only"
-                  value={rules.ed}
-                  saved={saved.ed}
-                  display={`${rules.ed / 60}h`}
-                  noun="ED access target"
-                  range={edRange}
-                  onChange={(minutes) => setRule({ edAccessTargetMinutes: minutes })}
-                  onReset={() => setRule({ edAccessTargetMinutes: saved.ed })}
-                  effect={
-                    <>
-                      <StatusGlyph tone={draftEdOver > 0 ? "warning" : "success"} size={9} />
-                      {draftEdOver > 0 ? `${draftEdOver} over now` : "None over now"}
-                      {edDelta !== 0 ? (
-                        <span className={styles.delta}>{`${edDelta > 0 ? "+" : ""}${edDelta}`}</span>
-                      ) : null}
-                    </>
-                  }
-                  usedBy="Home, ED, Movements"
-                />
-                <RuleRow
-                  setting="wards-asked"
-                  title="Wards asked at once"
-                  sub="Per referral"
-                  value={rules.cap}
-                  saved={saved.cap}
-                  display={wardsText(rules.cap)}
-                  noun="parallel referral enquiry limit"
-                  range={{
-                    id: "setting-parallel-cap",
-                    ...PARALLEL_REFERRAL_CAP_RANGE,
-                    minLabel: wardsText(PARALLEL_REFERRAL_CAP_RANGE.min),
-                    maxLabel: wardsText(PARALLEL_REFERRAL_CAP_RANGE.max),
-                  }}
-                  onChange={(units) => setRule({ parallelReferralCap: units })}
-                  onReset={() => setRule({ parallelReferralCap: saved.cap })}
-                  usedBy="Home, Referrals, Placement"
-                />
-                <RuleRow
-                  setting="pull-hold"
-                  title="Pull hold"
-                  sub="Before a held bed returns"
-                  value={rules.hold}
-                  saved={saved.hold}
-                  display={shortDuration(rules.hold)}
-                  noun="pulled bed hold duration"
-                  range={{
-                    id: "setting-hold-duration",
-                    ...PULL_HOLD_RANGE_MINUTES,
-                    minLabel: shortDuration(PULL_HOLD_RANGE_MINUTES.min),
-                    maxLabel: shortDuration(PULL_HOLD_RANGE_MINUTES.max),
-                  }}
-                  onChange={(minutes) => setRule({ pullHoldMinutes: minutes })}
-                  onReset={() => setRule({ pullHoldMinutes: saved.hold })}
-                  usedBy="Home, ED, Referrals"
-                />
-                <RuleRow
-                  setting="morning-count"
-                  testId="setting-morning-rollup-row"
-                  title="Morning count"
-                  sub="Not a legal limit"
-                  subTestId="setting-morning-rollup-desc"
-                  value={rules.morning}
-                  saved={saved.morning}
-                  display={clock24(rules.morning)}
-                  displayTestId="morning-rollup-display"
-                  noun="morning rollup deadline"
-                  range={{
-                    id: "setting-morning-rollup-slider",
-                    ...MORNING_ROLLUP_TIME_RANGE_MINUTES,
-                    minLabel: clock24(MORNING_ROLLUP_TIME_RANGE_MINUTES.min),
-                    maxLabel: clock24(MORNING_ROLLUP_TIME_RANGE_MINUTES.max),
-                  }}
-                  onChange={(minutes) => setRule({ morningRollupDeadlineMinutes: minutes })}
-                  onReset={() => setRule({ morningRollupDeadlineMinutes: saved.morning })}
-                  usedBy="Wards, Ward alerts"
-                />
-                <SettingRow setting="surge-ends" title="Surge ends" sub="Back to Standard on its own" preview>
-                  <Segmented
-                    className={styles.pillSeg}
-                    label="Surge ends"
-                    items={["Manual", "8h", "12h", "Shift end"].map((item) => ({ id: item, label: item }))}
-                    value="12h"
-                    unavailable
-                    onChange={() => onPreview("Surge ends")}
-                  />
-                </SettingRow>
-              </Card>
-
-              <Card aria-labelledby="warnings-title">
-                <CardHead
-                  id="warnings-title"
-                  icon={Gavel}
-                  title="Form warnings"
-                  meta="Your defaults, not legal limits"
-                />
-                <RuleRow
-                  setting="first-warning"
-                  testId="setting-due-soon-urgent-row"
-                  title="First warning"
-                  sub="Before a legal due time"
-                  subTestId="setting-due-soon-urgent-desc"
-                  value={rules.urgent}
-                  saved={saved.urgent}
-                  display={shortDuration(rules.urgent)}
-                  displayTestId="due-soon-urgent-display"
-                  noun="first warning before a legal due time"
-                  max={clampDueSoonUrgent(DUE_SOON_URGENT_RANGE_MINUTES.max, rules.soon)}
-                  range={{
-                    id: "setting-due-soon-urgent",
-                    ...DUE_SOON_URGENT_RANGE_MINUTES,
-                    minLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.min),
-                    maxLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.max),
-                  }}
-                  onChange={(minutes) => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(minutes, rules.soon) })}
-                  onReset={() => setRule({ dueSoonUrgentMinutes: clampDueSoonUrgent(saved.urgent, rules.soon) })}
-                  usedBy="Home, every legal due time"
-                />
-                <RuleRow
-                  setting="second-warning"
-                  testId="setting-due-soon-row"
-                  title="Second warning"
-                  sub="Shown as due soon"
-                  subTestId="setting-due-soon-desc"
-                  value={rules.soon}
-                  saved={saved.soon}
-                  display={shortDuration(rules.soon)}
-                  displayTestId="due-soon-display"
-                  noun="second warning before a legal due time"
-                  range={{
-                    id: "setting-due-soon",
-                    ...DUE_SOON_RANGE_MINUTES,
-                    minLabel: shortDuration(DUE_SOON_RANGE_MINUTES.min),
-                    maxLabel: shortDuration(DUE_SOON_RANGE_MINUTES.max),
-                  }}
-                  onChange={(minutes) =>
-                    setRule({
-                      dueSoonMinutes: minutes,
-                      dueSoonUrgentMinutes: clampDueSoonUrgent(rules.urgent, minutes),
-                    })
-                  }
-                  onReset={() =>
-                    setRule({
-                      dueSoonMinutes: saved.soon,
-                      dueSoonUrgentMinutes: clampDueSoonUrgent(rules.urgent, saved.soon),
-                    })
-                  }
-                  usedBy="Home, every legal due time"
-                />
-                {/* The two warnings on one window, read from the draft: calm, due soon, first warning. */}
-                <div className={styles.cascade} aria-hidden="true">
-                  <div className={styles.cascadeTrack}>
-                    <span style={{ flexGrow: Math.max(0, DUE_SOON_RANGE_MINUTES.max - rules.soon) }} />
-                    <span className={styles.cascadeSoon} style={{ flexGrow: Math.max(0, rules.soon - rules.urgent) }} />
-                    <span className={styles.cascadeUrgent} style={{ flexGrow: rules.urgent }} />
-                  </div>
-                  <div className={styles.cascadeEnds}>
-                    <span className={styles.cascadeStart}>Due in {shortDuration(DUE_SOON_RANGE_MINUTES.max)}</span>
-                    <span style={{ flexGrow: Math.max(0, DUE_SOON_RANGE_MINUTES.max - rules.soon) }}>
-                      {shortDuration(rules.soon)}
-                    </span>
-                    <span style={{ flexGrow: Math.max(0, rules.soon - rules.urgent) }}>
-                      {shortDuration(rules.urgent)}
-                    </span>
-                    <span style={{ flexGrow: rules.urgent }}>Due</span>
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            <div className={styles.column}>
-              <Card aria-labelledby="targets-title" data-setting="decision-targets">
-                <CardHead
-                  id="targets-title"
-                  icon={Timer}
-                  title="Decision targets"
-                  meta="Your defaults, not clinical standards"
-                />
-                {DECISION_TARGET_STEPS.map((step) => {
-                  const ruleKey =
-                    step.configKey === "referralDecisionTargetMinutes"
-                      ? "referralTarget"
-                      : step.configKey === "transferAcceptanceTargetMinutes"
-                        ? "transferTarget"
-                        : "transportTarget";
-                  return (
-                    <RuleRow
-                      key={step.step}
-                      setting={`target-${step.step}`}
-                      testId={`setting-target-${step.step}`}
-                      title={step.label}
-                      sub={
-                        step.step === "referral_decision"
-                          ? "Referral to ward answer"
-                          : step.step === "transfer_acceptance"
-                            ? "Acceptance to bed pulled"
-                            : "Bed pulled to transport booked"
-                      }
-                      value={rules[ruleKey]}
-                      saved={saved[ruleKey]}
-                      display={shortDuration(rules[ruleKey])}
-                      noun={`${step.label.toLowerCase()} target`}
-                      range={{
-                        id: `setting-target-${step.step}-range`,
-                        ...DECISION_TARGET_RANGE_MINUTES,
-                        minLabel: shortDuration(DECISION_TARGET_RANGE_MINUTES.min),
-                        maxLabel: shortDuration(DECISION_TARGET_RANGE_MINUTES.max),
-                      }}
-                      onChange={(minutes) => {
-                        setRule({ [step.configKey]: minutes });
-                      }}
-                      onReset={() => {
-                        setRule({ [step.configKey]: saved[ruleKey] });
-                      }}
-                      usedBy="Alerts, Tasks"
-                    />
-                  );
-                })}
-              </Card>
-
-              <Card aria-labelledby="more-title">
-                <CardHead
-                  id="more-title"
-                  icon={SlidersHorizontal}
-                  title="More thresholds"
-                  meta="Fixed in code today"
-                  aside={<PreviewTag />}
-                />
-                <RuleRow
-                  setting="occupancy"
-                  title="Occupancy alert"
-                  sub="Bed alerts dot from"
-                  value={OCCUPANCY_ALERT_PERCENT}
-                  saved={OCCUPANCY_ALERT_PERCENT}
-                  display={`${OCCUPANCY_ALERT_PERCENT}%`}
-                  noun="occupancy alert"
-                  range={{
-                    min: 80,
-                    max: 95,
-                    step: 1,
-                    minLabel: "80%",
-                    maxLabel: "95%",
-                  }}
-                  onChange={() => onPreview("Occupancy alert")}
-                  preview
-                  previewTag={false}
-                />
-                <RuleRow
-                  setting="tier-one"
-                  title="Tier 1 overdue after"
-                  sub="Referral queue"
-                  value={OVERDUE_AFTER_MINUTES_BY_TIER[1]}
-                  saved={OVERDUE_AFTER_MINUTES_BY_TIER[1]}
-                  display={shortDuration(OVERDUE_AFTER_MINUTES_BY_TIER[1])}
-                  noun="tier 1 overdue time"
-                  range={{
-                    min: 30,
-                    max: 240,
-                    step: 30,
-                    minLabel: "30m",
-                    maxLabel: "4h",
-                  }}
-                  onChange={() => onPreview("Tier 1 overdue after")}
-                  preview
-                  previewTag={false}
-                />
-                <RuleRow
-                  setting="ward-silent"
-                  title="Ward not answering"
-                  sub="First reminder after"
-                  value={SILENT_WARD_FIRST_REMINDER_MINUTES}
-                  saved={SILENT_WARD_FIRST_REMINDER_MINUTES}
-                  display={shortDuration(SILENT_WARD_FIRST_REMINDER_MINUTES)}
-                  noun="ward reminder time"
-                  range={{
-                    min: 30,
-                    max: 240,
-                    step: 30,
-                    minLabel: "30m",
-                    maxLabel: "4h",
-                  }}
-                  onChange={() => onPreview("Ward not answering")}
-                  preview
-                  previewTag={false}
-                />
-                <RuleRow
-                  setting="bed-hold"
-                  title="Bed hold expires"
-                  sub="After a bed is held"
-                  value={BED_HOLD_EXPIRY_MINUTES}
-                  saved={BED_HOLD_EXPIRY_MINUTES}
-                  display={shortDuration(BED_HOLD_EXPIRY_MINUTES)}
-                  noun="bed hold expiry"
-                  range={{ min: 60, max: 360, step: 30, minLabel: "1h", maxLabel: "6h" }}
-                  onChange={() => onPreview("Bed hold expires")}
-                  preview
-                  previewTag={false}
-                />
-              </Card>
-
-              <Card
-                aria-labelledby="changes-title"
-                data-testid="ward-settings-recent-changes"
-                data-setting="recent-changes"
-              >
-                <CardHead
-                  id="changes-title"
-                  icon={History}
-                  title="Recent changes"
-                  action={
-                    <Link
-                      className={buttonClass({ variant: "ghost", size: "sm", className: styles.pill })}
-                      href="/mockups/ward-flow/governance"
-                    >
-                      Full audit
-                    </Link>
-                  }
-                />
-                {ruleChanges.length === 0 ? (
-                  <p className={styles.cardEmpty}>No rule saves this session.</p>
-                ) : (
-                  <ol className={styles.changeList}>
-                    {ruleChanges.map((change) => (
-                      <li key={change.id} className={styles.changeRow}>
-                        <span className={styles.changeTime}>
-                          {change.at === null ? "No time" : formatInstantWithDay(change.at, now)}
-                        </span>
-                        <StatusGlyph tone={CHANGE_OUTCOME_TONE[change.outcome]} size={9} />
-                        <span className={styles.changeText}>
-                          {CHANGE_OUTCOME_PREFIX[change.outcome]}
-                          {configurationChangeText(
-                            change.details.before,
-                            change.outcome === "accepted" ? change.details.after : change.details.requested,
-                          )}
-                        </span>
-                        <span className={styles.changeActor}>
-                          {change.actor.role ? WARD_FLOW_ROLE_LABELS[change.actor.role] : "Role not recorded"}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </Card>
-            </div>
-          </div>
+          {rulesContent}
         </div>
 
         <div className={styles.pane} hidden={tab !== "alerts"} data-pane="alerts">
-          <AlertsPane
-            notifications={actNowNotifications}
-            notificationPermission={notificationPermission}
-            onNotificationsChange={(next) => {
-              if (!next) {
-                setActNowNotificationPreference(false);
-                showToast("Browser notifications off.");
-                return;
-              }
-              void enableActNowNotifications().then((answer) => {
-                setNotificationPermission(answer);
-                showToast(
-                  answer === "granted"
-                    ? "Browser notifications on for act-now alerts."
-                    : answer === "unsupported"
-                      ? "This browser cannot show notifications."
-                      : "Notifications are blocked for this site in the browser.",
-                );
-              });
-            }}
-            phonePush={phonePush}
-            onPhonePushChange={(next) => {
-              void setPhonePush(next).then((answer) => {
-                showToast(
-                  answer === "on"
-                    ? "Phone alerts on for this device."
-                    : answer === "off"
-                      ? "Phone alerts off for this device."
-                      : answer === "denied"
-                        ? "Notifications are blocked for this site in the browser."
-                        : answer === "server-off"
-                          ? "Phone alerts are not set up on the server yet."
-                          : "Phone alerts could not be changed. Try again.",
-                );
-              });
-            }}
-            buzz={audioBuzz}
-            onBuzzChange={(next) => {
-              setAudioBuzz(next);
-              setAudioBuzzPreference(next);
-              showToast(next ? "Buzz sound on." : "Buzz sound off.");
-            }}
-            onTestBuzz={() => {
-              playSyntheticUrgentChime();
-              showToast("Test buzz played.");
-            }}
-            onPreview={onPreview}
-          />
+          {alertsContent}
         </div>
 
         <div className={styles.pane} hidden={tab !== "display"} data-pane="display">
-          <DisplayPane
-            appearance={appearance}
-            onAppearanceChange={(next) => {
-              applyAppearance(next);
-              showToast(`Theme set to ${next === "auto" ? "Auto" : next === "dark" ? "Dark" : "Light"}.`);
-            }}
-            glare={glare}
-            onGlareChange={(next) => {
-              applyGlare(next);
-              showToast(`Glare mode ${next ? "on" : "off"}.`);
-            }}
-            railOpen={railOpen}
-            onRailChange={(open) => {
-              setRailOpenPreference(open);
-              showToast(open ? "Sidebar set to Full." : "Sidebar set to Compact.");
-            }}
-            reducedMotion={reducedMotion}
-            onReducedMotionChange={(next) => {
-              setReducedMotion(next);
-              showToast(`Reduce motion ${next ? "on" : "off"}.`);
-            }}
-            highContrast={highContrast}
-            onHighContrastChange={(next) => {
-              setHighContrast(next);
-              showToast(`High contrast ${next ? "on" : "off"}.`);
-            }}
-            onPreview={onPreview}
-          />
+          {displayContent}
         </div>
 
         <div className={styles.pane} hidden={tab !== "profile"} data-pane="profile">
-          <ProfilePane onPreview={onPreview} />
+          {profileContent}
         </div>
 
         <div className={styles.pane} hidden={tab !== "data"} data-pane="data">
-          <DataPane
-            reference={reference}
-            onReferenceChange={setReference}
-            movementCount={movements.length}
-            eventCount={eventLog.length}
-            thresholds={thresholds}
-            onExport={handleExport}
-            onImport={handleImport}
-            onClearSession={handleClearSession}
-            onRestore={() => setIsResetModalOpen(true)}
-          />
+          {dataContent}
         </div>
 
-        {hasUnsavedRules ? (
-          <div
-            className={styles.saveBar}
-            role="region"
-            aria-label="Unsaved rule changes"
-            data-testid="unsaved-draft-inspector"
-          >
-            <StatusGlyph tone="info" size={9} />
-            <span className={styles.saveText} title={diffs.join(", ")}>
-              {diffs.join(", ")}
-            </span>
-            {tab !== "rules" ? (
-              <button type="button" className={styles.saveLink} onClick={() => chooseTab("rules")}>
-                Review
-              </button>
-            ) : null}
-            <Button
-              variant="ghost"
-              size="sm"
-              className={styles.pill}
-              onClick={handleDiscard}
-              data-testid="btn-discard-draft"
-            >
-              Discard
-            </Button>
-            <Button
-              variant="pri"
-              size="sm"
-              icon={Check}
-              className={styles.pill}
-              onClick={handleSave}
-              data-testid="btn-save-draft"
-            >
-              {unsavedCount === 1 ? "Save 1 change" : `Save ${unsavedCount} changes`}
-            </Button>
-          </div>
-        ) : null}
+        {saveBar}
 
-        <ResetBaselineModal
-          isOpen={isResetModalOpen}
-          onClose={() => setIsResetModalOpen(false)}
-          onConfirm={handleConfirmReset}
-        />
-        {isOperatorModalOpen ? (
-          <OperatorSwitcherModal
-            isOpen={isOperatorModalOpen}
-            onClose={() => setIsOperatorModalOpen(false)}
-            onPreview={onPreview}
-          />
-        ) : null}
-        <WardPrototypeFooter
-          testId="ward-settings-governance"
-          note="Synthetic records · Not a medical device · Changes remembered for this browser only"
-        />
-        {toastMessage ? (
-          <div className={styles.toast} role="status">
-            {toastMessage}
-          </div>
-        ) : null}
+        {overlays}
       </main>
     </div>
   );

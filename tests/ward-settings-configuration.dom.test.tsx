@@ -16,6 +16,7 @@ vi.mock("next/link", () => ({
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 import { ED_ACCESS_TARGET_RANGE_MINUTES } from "@/components/ward-management/ward-model";
 
 /**
@@ -40,10 +41,12 @@ function Probe() {
 
 function renderSettings() {
   return render(
-    <WardFlowProvider>
-      <SettingsScreen />
-      <Probe />
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider>
+        <SettingsScreen />
+        <Probe />
+      </WardFlowProvider>
+    </ToastProvider>,
   );
 }
 

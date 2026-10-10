@@ -31,6 +31,7 @@ import {
   useWardFlow,
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -48,9 +49,11 @@ function Override({ children, value }: { children: ReactNode; value: Partial<War
 }
 function renderFlow(children: ReactNode, value: Partial<WardFlowContextValue> = {}) {
   return render(
-    <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <Override value={value}>{children}</Override>
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Override value={value}>{children}</Override>
+      </WardFlowProvider>
+    </ToastProvider>,
   );
 }
 const baseUnit = allUnits()[0];

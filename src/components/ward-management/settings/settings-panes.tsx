@@ -157,6 +157,7 @@ export function AlertsPane({
         <div className={styles.column}>
           <Card aria-labelledby="alerts-title">
             <CardHead
+              iconPlain
               id="alerts-title"
               icon={BellRing}
               title="Alerts"
@@ -236,7 +237,7 @@ export function AlertsPane({
           </Card>
 
           <Card aria-labelledby="live-title">
-            <CardHead id="live-title" icon={Monitor} title="Live data and boards" aside={<PreviewTag />} />
+            <CardHead iconPlain id="live-title" icon={Monitor} title="Live data and boards" aside={<PreviewTag />} />
             <SettingRow setting="live-lists" title="Live lists" sub="Update every minute" preview="quiet">
               <PreviewSegmented
                 name="Live lists"
@@ -272,7 +273,7 @@ export function AlertsPane({
 
         <div className={styles.column}>
           <Card aria-labelledby="notify-title" data-setting="notifications">
-            <CardHead id="notify-title" icon={BellRing} title="Notifications" aside={<PreviewTag />} />
+            <CardHead iconPlain id="notify-title" icon={BellRing} title="Notifications" aside={<PreviewTag />} />
             <div className={styles.notifyGrid} role="table" aria-label="Notifications">
               <div className={cx(styles.notifyRow, styles.notifyHead)} role="row">
                 <span role="columnheader">Tell me when</span>
@@ -372,7 +373,7 @@ export function DisplayPane({
       <div className={styles.columns}>
         <div className={styles.column}>
           <Card aria-labelledby="display-title">
-            <CardHead id="display-title" icon={Palette} title="Display" />
+            <CardHead iconPlain id="display-title" icon={Palette} title="Display" />
             <SettingRow setting="theme" title="Theme" testId="ward-settings-appearance">
               <Segmented<WardAppearance>
                 className={styles.pillSeg}
@@ -437,7 +438,7 @@ export function DisplayPane({
 
         <div className={styles.column}>
           <Card aria-labelledby="privacy-title">
-            <CardHead id="privacy-title" icon={EyeOff} title="Privacy" aside={<PreviewTag />} />
+            <CardHead iconPlain id="privacy-title" icon={EyeOff} title="Privacy" aside={<PreviewTag />} />
             <SettingRow
               setting="initials"
               title="Initials only on shared screens"
@@ -475,7 +476,7 @@ export function DisplayPane({
           </Card>
 
           <Card aria-labelledby="shortcuts-title" data-setting="shortcuts">
-            <CardHead id="shortcuts-title" icon={Keyboard} title="Shortcuts" />
+            <CardHead iconPlain id="shortcuts-title" icon={Keyboard} title="Shortcuts" />
             <ul className={styles.shortcuts} aria-label="Keyboard shortcuts">
               {SHORTCUTS.map((shortcut) => (
                 <li key={shortcut.label}>
@@ -517,7 +518,7 @@ export function ProfilePane({ onPreview }: { onPreview: OnPreview }) {
       <div className={styles.columns}>
         <div className={styles.column}>
           <Card aria-labelledby="profile-title">
-            <CardHead id="profile-title" icon={UserRound} title="Profile" />
+            <CardHead iconPlain id="profile-title" icon={UserRound} title="Profile" />
             <SettingRow setting="role" title="Role" sub="From sign-in once accounts exist">
               <span className={styles.readout}>{SETTINGS_DEMO_PROFILE.role}</span>
             </SettingRow>
@@ -561,6 +562,7 @@ export function ProfilePane({ onPreview }: { onPreview: OnPreview }) {
         <div className={styles.column}>
           <Card aria-labelledby="handover-title" data-testid="ward-settings-handover">
             <CardHead
+              iconPlain
               id="handover-title"
               icon={ClipboardList}
               title="Handover"
@@ -652,7 +654,7 @@ export function DataPane({
       <div className={styles.columns}>
         <div className={styles.column}>
           <Card aria-labelledby="data-title" data-testid="ward-settings-storage-telemetry">
-            <CardHead id="data-title" icon={Database} title="Data in this browser" />
+            <CardHead iconPlain id="data-title" icon={Database} title="Data in this browser" />
             <div className={styles.dataStats}>
               <div>
                 <strong className={styles.mono}>{movementCount}</strong>
@@ -722,7 +724,7 @@ export function DataPane({
         </div>
         <div className={styles.column}>
           <Card aria-labelledby="about-title" data-setting="about">
-            <CardHead id="about-title" icon={Info} title="About" />
+            <CardHead iconPlain id="about-title" icon={Info} title="About" />
             <dl className={styles.aboutGrid}>
               <div>
                 <dt>Records</dt>
@@ -754,6 +756,7 @@ export function DataPane({
 
       <Card aria-labelledby="reference-title" data-setting="thresholds">
         <CardHead
+          iconPlain
           id="reference-title"
           icon={Gauge}
           title="Reference"
