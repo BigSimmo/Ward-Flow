@@ -51,9 +51,14 @@ import {
   type BroadcastSeverity,
   type BroadcastTargetScope,
   type BroadcastCategory,
+  broadcastKind,
+  type BroadcastKind,
 } from "./ward-broadcast-model";
+import { isAlertLive } from "./global-alert-view";
+import { PullNowCard, ReplyBoardList } from "./global-alert-panels";
 
 import {
+  broadcastDraftBaseline,
   isBroadcastDraftDirty,
   parseBroadcastDraft,
   serialiseBroadcastDraft,
@@ -225,6 +230,7 @@ function AlertsWorkspace() {
   );
   const [broadcastScope, setBroadcastScope] = useState<BroadcastTargetScope>(defaultTmpl?.targetScope ?? "all");
   const [broadcastDurationMinutes, setBroadcastDurationMinutes] = useState(defaultTmpl?.defaultDurationMinutes ?? 240);
+  const [broadcastType, setBroadcastType] = useState<BroadcastKind>(defaultTmpl?.kind ?? "directive");
   const [broadcastSuccessNotice, setBroadcastSuccessNotice] = useState<string | null>(null);
   const [actionRequest, setActionRequest] = useState<ActionRequest | null>(null);
   const [broadcastRequest, setBroadcastRequest] = useState<{
@@ -258,6 +264,7 @@ function AlertsWorkspace() {
       category: broadcastCategory,
       scope: broadcastScope,
       durationMinutes: broadcastDurationMinutes,
+      kind: broadcastType === "bed_call" ? "bed_call" : "directive",
     }),
     [
       selectedTemplateId,
@@ -267,6 +274,7 @@ function AlertsWorkspace() {
       broadcastCategory,
       broadcastScope,
       broadcastDurationMinutes,
+      broadcastType,
     ],
   );
   const restoreBroadcastDraft = useCallback((raw: string) => {
@@ -279,6 +287,7 @@ function AlertsWorkspace() {
     setBroadcastCategory(draft.category);
     setBroadcastScope(draft.scope);
     setBroadcastDurationMinutes(draft.durationMinutes);
+    setBroadcastType(draft.kind ?? broadcastDraftBaseline(draft.templateId).kind ?? "directive");
     setBroadcastModalOpen(true);
   }, []);
   const { clearDraft: clearBroadcastDraft } = useDirtyStateGuard({
@@ -316,6 +325,9 @@ function AlertsWorkspace() {
     broadcastRefused || (actionResult !== undefined && !actionResult.accepted && !broadcastRequest);
 
   const activeBroadcast = getActiveBroadcastAlert(broadcastAlerts ?? [], now);
+  const livePullNows = (broadcastAlerts ?? []).filter(
+    (alert) => broadcastKind(alert) === "pull_now" && isAlertLive(alert, movements, now),
+  );
 
   const modalRef = useRef<HTMLDivElement | null>(null);
   const broadcastTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -752,6 +764,7 @@ function AlertsWorkspace() {
       setBroadcastCategory("capacity_gridlock");
       setBroadcastScope("all");
       setBroadcastDurationMinutes(240);
+      setBroadcastType("directive");
       return;
     }
     const tmpl = WA_BROADCAST_TEMPLATES.find((t) => t.id === tmplId);
@@ -762,6 +775,7 @@ function AlertsWorkspace() {
       setBroadcastCategory(tmpl.category);
       setBroadcastScope(tmpl.targetScope);
       setBroadcastDurationMinutes(tmpl.defaultDurationMinutes);
+      setBroadcastType(tmpl.kind ?? "directive");
     }
   };
 
@@ -806,6 +820,7 @@ function AlertsWorkspace() {
       targetScopeLabel,
       durationMinutes: broadcastDurationMinutes,
       dispatchedByName: "State Mental Health Bed Desk Coordinator",
+      kind: broadcastType === "bed_call" ? "bed_call" : "directive",
     });
   };
 
@@ -898,7 +913,9 @@ function AlertsWorkspace() {
     activeBroadcast?.severity === "critical" ? "danger" : activeBroadcast?.severity === "warning" ? "warning" : "info";
   const severityLabel = (severity: BroadcastSeverity) =>
     severity === "critical" ? "Critical" : severity === "warning" ? "Warning" : "Advisory";
-  const pastBroadcasts = (broadcastAlerts ?? []).filter((alert) => alert.id !== activeBroadcast?.id);
+  const pastBroadcasts = (broadcastAlerts ?? []).filter(
+    (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
+  );
 
   const heroTitle =
     needYouCount > 0
@@ -1018,7 +1035,7 @@ function AlertsWorkspace() {
 
   const tabs = [
     { id: "now" as const, label: "Now", count: activeEntries.length },
-    { id: "broadcast" as const, label: "Broadcast", count: activeBroadcast ? 1 : 0 },
+    { id: "broadcast" as const, label: "Broadcast", count: (activeBroadcast ? 1 : 0) + livePullNows.length },
     { id: "notices" as const, label: "Notices", count: feedNotices.length },
     { id: "history" as const, label: "History", count: history.length },
   ];
@@ -1288,6 +1305,14 @@ function AlertsWorkspace() {
 
               {tab === "broadcast" ? (
                 <TabPanel idPrefix="alerts" id="broadcast" className={styles.tabBody}>
+                  {livePullNows.length > 0 ? (
+                    <section className={styles.group} aria-label="Pull now">
+                      <GroupHead label="Pull now" count={livePullNows.length} />
+                      {livePullNows.map((alert) => (
+                        <PullNowCard key={alert.id} alert={alert} onStandDown={handleStandDown} />
+                      ))}
+                    </section>
+                  ) : null}
                   {activeBroadcast ? (
                     <div
                       className={styles.directive}
@@ -1342,6 +1367,9 @@ function AlertsWorkspace() {
                             </dd>
                           </div>
                         </dl>
+                        {broadcastKind(activeBroadcast) === "bed_call" ? (
+                          <ReplyBoardList alert={activeBroadcast} units={units} now={now} />
+                        ) : null}
                         <div className={styles.directiveActions}>
                           <Button
                             size="sm"
@@ -1398,7 +1426,12 @@ function AlertsWorkspace() {
                             <span className={styles.historyText}>
                               <span className={styles.historyTitle}>{alert.title}</span>
                               <span className={styles.quiet}>
-                                {alert.status === "stood_down" ? "Stood down" : "Ended"} · {alert.targetScopeLabel}
+                                {alert.status === "stood_down"
+                                  ? "Stood down"
+                                  : isAlertLive(alert, movements, now)
+                                    ? "Still live"
+                                    : "Ended"}{" "}
+                                · {alert.targetScopeLabel}
                               </span>
                             </span>
                           </li>
@@ -1596,6 +1629,13 @@ function AlertsWorkspace() {
                       </option>
                     ))}
                     <option value="custom">Custom directive</option>
+                  </Select>
+                </Field>
+
+                <Field label="Type" id="alerts-broadcast-type">
+                  <Select value={broadcastType} onChange={(e) => setBroadcastType(e.target.value as BroadcastKind)}>
+                    <option value="directive">Directive, wards and ED acknowledge</option>
+                    <option value="bed_call">Bed call, wards answer how many beds</option>
                   </Select>
                 </Field>
 
