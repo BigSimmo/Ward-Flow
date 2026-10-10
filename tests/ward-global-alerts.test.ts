@@ -138,6 +138,14 @@ describe("Pull now (global alerts, 10 Oct 2026)", () => {
     };
     expect(isValidStoredWardFlowState(withReply({ reason: "typed note" }))).toBe(false);
     expect(isValidStoredWardFlowState(withReply({ answer: "maybe" }))).toBe(false);
+    const withCount = (count: number) => {
+      const copy = JSON.parse(JSON.stringify(stored));
+      copy.broadcastAlerts[0].stageChangesAtDispatch = count;
+      return copy;
+    };
+    const history = stored.movements.find((m) => m.id === "WF-003")?.stageChanges.length ?? 0;
+    expect(isValidStoredWardFlowState(withCount(history))).toBe(true);
+    expect(isValidStoredWardFlowState(withCount(history + 1))).toBe(false);
   });
 
   it("stays out of the directive slot", () => {

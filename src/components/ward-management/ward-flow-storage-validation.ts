@@ -741,8 +741,14 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       (row.movementId !== undefined && !text(row.movementId)) ||
       (row.targetUnitIds !== undefined && !strings(row.targetUnitIds)) ||
       (row.answerBy !== undefined && !finite(row.answerBy)) ||
+      // A count past the movement's history would hide a later pull, so it is refused.
       (row.stageChangesAtDispatch !== undefined &&
-        !(Number.isInteger(row.stageChangesAtDispatch) && (row.stageChangesAtDispatch as number) >= 0))
+        !(
+          Number.isInteger(row.stageChangesAtDispatch) &&
+          (row.stageChangesAtDispatch as number) >= 0 &&
+          (row.stageChangesAtDispatch as number) <=
+            (state.movements.find((movement) => movement.id === row.movementId)?.stageChanges.length ?? Infinity)
+        ))
     )
       return false;
   }
