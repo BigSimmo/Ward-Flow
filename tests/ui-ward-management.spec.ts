@@ -243,7 +243,8 @@ test.describe("@mockup Ward Flow command view", () => {
       : page.getByTestId("ward-bar-phone-menu");
     if (await opener.isVisible()) {
       await opener.click();
-      await expect(page.getByTestId("ward-rail-more-pages")).toBeVisible();
+      // Phone (10 Oct 2026): the bar's Menu opens the phone menu rather than the rail's sheet.
+      await expect(page.getByTestId("ward-rail-more-pages").or(page.getByTestId("ward-phone-menu"))).toBeVisible();
     }
 
     // By `href`, not by counting every link this landmark now contains: the sheet also carries the

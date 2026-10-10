@@ -517,9 +517,8 @@ function queuedCardIds(page: Page): Promise<string[]> {
 }
 
 /**
- * Opens the referral slide-out over the board. Option A (9 Oct 2026) keeps the board's own New
- * referral for desktop and leaves the phone to the bar's New referral, whose "To a ward" entry opens
- * the same slide-out in place.
+ * Opens the referral slide-out over the board: the board's own New referral where it shows, else
+ * the phone menu's + (10 Oct 2026), whose New referral opens the same slide-out in place.
  */
 async function openNewReferralFromBoard(page: Page) {
   const boardNew = page.getByTestId("ward-referral-board-new");
@@ -527,8 +526,10 @@ async function openNewReferralFromBoard(page: Page) {
     await boardNew.click();
     return;
   }
-  await page.getByTestId("ward-bar-primary-action").click();
-  await page.getByTestId("ward-bar-primary-menu-ward").click();
+  // Phone (10 Oct 2026): New referral is behind the phone menu's raised +.
+  await page.getByTestId("ward-bar-phone-menu").click();
+  await page.getByTestId("ward-phone-create").click();
+  await page.getByTestId("ward-phone-create-referral").click();
 }
 
 /** Back to the board through the coordinator's own rail, as a phone user reaches it.
@@ -580,7 +581,8 @@ async function openRailSheetIfNeeded(page: Page, rail: Locator): Promise<boolean
         : undefined;
   if (!opener) return false;
   await opener.click();
-  await expect(page.getByTestId("ward-rail-more-pages")).toBeVisible();
+  // Phone (10 Oct 2026): the bar's Menu opens the phone menu rather than the rail's sheet.
+  await expect(page.getByTestId("ward-rail-more-pages").or(page.getByTestId("ward-phone-menu"))).toBeVisible();
   return true;
 }
 

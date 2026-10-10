@@ -202,15 +202,16 @@ const OPENERS: ReadonlyArray<readonly [string, string, string]> = [
 ];
 
 /**
- * Phone (8 Oct 2026): at 48rem (768px) and below the bar drops Activity and Tools, and its Menu
- * button opens the page sheet that carries them as rows. Everything else stays in the bar.
+ * Phone (8 Oct 2026, locked lean bar 10 Oct 2026): at 48rem (768px) and below the bar drops
+ * Activity and Tools, and its Menu button opens the phone menu, which carries Activity in its dock
+ * and Tools as a row. Everything else stays in the bar.
  */
 const PHONE_BAR_MAX_WIDTH = 768;
 const PHONE_MENU_ROWS: Readonly<Record<string, string>> = {
-  "ward-bar-activity-trigger": "ward-rail-sheet-activity",
-  "ward-bar-tools-trigger": "ward-rail-sheet-tools",
+  "ward-bar-activity-trigger": "ward-phone-menu-activity",
+  "ward-bar-tools-trigger": "ward-phone-menu-tools",
 };
-const PHONE_MENU: readonly [string, string, string] = ["ward-bar-phone-menu", "ward-rail-more-pages", "the phone Menu"];
+const PHONE_MENU: readonly [string, string, string] = ["ward-bar-phone-menu", "ward-phone-menu", "the phone Menu"];
 
 function barOpeners(width: number): ReadonlyArray<readonly [string, string, string]> {
   return width <= PHONE_BAR_MAX_WIDTH
@@ -353,11 +354,14 @@ test.describe("@mockup Ward shell bar", () => {
         await page.keyboard.press("Enter");
       } else if (width === 375) await menu.click();
       await expect(page.getByTestId("ward-reconciliation-line")).toHaveCount(0);
+      // The phone menu (375) carries no shift context; the tablet sheet (800) still does.
       if (width <= 1000) {
-        const sheet = page.getByTestId("ward-rail-more-pages");
-        await expect(sheet.getByText("Board time", { exact: true })).toBeVisible();
+        const sheetId = width === 375 ? "ward-phone-menu" : "ward-rail-more-pages";
+        const sheet = page.getByTestId(sheetId);
+        if (width === 375) await expect(sheet).toBeVisible();
+        else await expect(sheet.getByText("Board time", { exact: true })).toBeVisible();
         await page.keyboard.press("Escape");
-        await expect(page.getByTestId("ward-rail-more-pages")).toHaveCount(0);
+        await expect(page.getByTestId(sheetId)).toHaveCount(0);
         await expect(menu).toBeFocused();
         await expect(page.getByTestId("ward-reconciliation-line")).toHaveCount(0);
       }

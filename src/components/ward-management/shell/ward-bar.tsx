@@ -3,7 +3,6 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
-  Activity as ActivityIcon,
   BarChart3,
   BookOpen,
   CalendarClock,
@@ -98,6 +97,7 @@ const WardMhaCalculator = dynamic(
 );
 
 import { announceToWardShell } from "./ward-live-region";
+import { WardPhoneMenu } from "./ward-phone-menu";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
 import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import {
@@ -394,6 +394,13 @@ function subscribePhone(onChange: () => void) {
   const query = window.matchMedia(PHONE_QUERY);
   query.addEventListener("change", onChange);
   return () => query.removeEventListener("change", onChange);
+}
+
+/** Read once, outside React, by the rail's Menu listener so the phone menu alone answers there. */
+export function isPhoneViewport(): boolean {
+  return (
+    typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches
+  );
 }
 
 function usePhoneViewport(): boolean {
@@ -1071,9 +1078,28 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       data-long-title={routeTitle.length > 17 || undefined}
       data-scrolled={barScrolled || undefined}
     >
-      <Link href={WARD_HOME_HREF} className={`${styles.phoneOnly} ${styles.phoneBrand}`} aria-label="Ward Flow home">
-        <ActivityIcon aria-hidden="true" strokeWidth={2} />
-      </Link>
+      {/* Phone (Josh, 10 Oct 2026, locked lean bar): Menu, title over the service line, Search, Tasks. */}
+      <button
+        type="button"
+        ref={phoneMenuRef}
+        className={styles.phoneOnly}
+        aria-label="Menu"
+        aria-haspopup="dialog"
+        aria-controls="ward-phone-menu"
+        data-testid="ward-bar-phone-menu"
+        onClick={(event) => openWardMenu(event.currentTarget)}
+      >
+        <MenuIcon aria-hidden="true" strokeWidth={1.75} />
+      </button>
+      {isPhone ? (
+        <WardPhoneMenu
+          returnFocusRef={phoneMenuRef}
+          tasksCount={tasksActiveCount}
+          activityUnread={unreadNoticeCount}
+          onOpenDrawer={openPopover}
+          onNewReferral={() => openReferral({ category: roleCategory }, phoneMenuRef.current)}
+        />
+      ) : null}
       <div className={styles.title}>
         <div className={styles.titleGroup}>
           <span
@@ -1366,19 +1392,6 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
           ) : null}
         </div>
       ) : null}
-
-      <button
-        type="button"
-        ref={phoneMenuRef}
-        className={styles.phoneOnly}
-        aria-label="Menu"
-        aria-haspopup="dialog"
-        aria-controls="ward-rail-more-pages"
-        data-testid="ward-bar-phone-menu"
-        onClick={(event) => openWardMenu(event.currentTarget)}
-      >
-        <MenuIcon aria-hidden="true" strokeWidth={1.75} />
-      </button>
 
       <Sheet
         id="ward-bar-activity-drawer"

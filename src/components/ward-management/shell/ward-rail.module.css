@@ -1879,17 +1879,6 @@
   color: var(--wf-ink-off);
 }
 
-/* Activity and Tools rows in the Menu sheet exist for the phone bar only. */
-.sheetPhoneOnly {
-  display: none;
-  width: 100%;
-  border: 0;
-  background: none;
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
 .sheetUtilityLink:hover {
   background: var(--wf-hover);
 }
@@ -2315,15 +2304,11 @@
     display: flex;
   }
 
-  /* Phone bar (8 Oct 2026): the bar carries the brand and Menu, so the rail's own row goes. Its
-   * sheet is portalled, so it still opens from the bar's Menu button. */
+  /* Phone bar (8 Oct 2026): the bar carries Menu, so the rail's own row goes. Since 10 Oct 2026
+   * the bar's Menu opens the phone menu (`ward-phone-menu.tsx`), not this sheet. */
   .rail,
   .rail[data-rail="closed"] {
     display: none;
-  }
-
-  .sheetPhoneOnly {
-    display: flex;
   }
 }
 

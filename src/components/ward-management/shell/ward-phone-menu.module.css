@@ -1,0 +1,514 @@
+/*
+ * Phone menu and Create sheets (Josh, 10 Oct 2026). Rendered only by the phone bar, so nothing here
+ * reaches desktop. The sheets are portalled out of the shell, so they compose its tokens.
+ */
+.sheet {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  padding-bottom: 0;
+  border-color: var(--wf-line-2);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+}
+
+/* ── head: who you are working as, and close ───────────────────────────────────────────── */
+.head,
+.createHead {
+  gap: 8px;
+  padding: 2px 8px 8px 10px;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.createHead {
+  padding: 4px 8px 12px 16px;
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 4px 10px 4px 4px;
+  border-radius: var(--wf-r-md);
+  color: var(--wf-ink-1);
+  text-decoration: none;
+}
+
+.who:hover {
+  background: var(--wf-hover);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: 50%;
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+}
+
+.avatar svg {
+  width: 20px;
+  height: 20px;
+}
+
+.whoText {
+  display: grid;
+  min-width: 0;
+}
+
+.whoName {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.whoMeta {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--wf-ink-2);
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: var(--spacing-tap, 3rem);
+  height: var(--spacing-tap, 3rem);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--wf-hover);
+}
+
+.close svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ── body: search, then sections of rows ───────────────────────────────────────────────── */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 14px 16px 44px;
+}
+
+.search {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+}
+
+.search:focus-within {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+.search svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+/* 16px keeps iOS Safari from zooming the page when the field takes focus. */
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: 16px;
+  outline: none;
+}
+
+.search input::placeholder {
+  color: var(--wf-ink-3);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heading {
+  margin: 0 4px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  line-height: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.list > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 10px 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rich .row {
+  min-height: 58px;
+}
+
+.row:hover {
+  background: var(--wf-hover);
+}
+
+.row:focus-visible,
+.who:focus-visible,
+.close:focus-visible,
+.dockItem:focus-visible,
+.createPrimary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.row[aria-current="page"] .rowLabel,
+.row[aria-current="page"] .rowIcon {
+  color: var(--wf-accent);
+}
+
+.rowIcon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--wf-ink-2);
+}
+
+.rowText {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowLabel {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.rowMeta > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.count {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+
+.chevron {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--wf-ink-3);
+}
+
+.empty {
+  margin: 0;
+  padding: 12px 4px;
+  font-size: 14px;
+  color: var(--wf-ink-2);
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 4px 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+/* ── foot: the dock, with the + rising out of its own curved edge ("Rise", set 10) ──────────
+ * The dock's top edge lifts in one smooth curve round the +, so the bar and the button read as one
+ * piece. `::after` paints the dock (fill) and `::before` paints the same shape 1px higher in the
+ * line colour, so only a hairline shows along the edge. Both are masked: a flat run each side and
+ * the curved hump in the middle, 128px wide and 24px high. The extra foot padding keeps the dock
+ * clear of Safari's bottom toolbar and the home indicator. */
+.foot {
+  position: relative;
+  isolation: isolate;
+  padding: 2px 4px calc(18px + env(safe-area-inset-bottom, 0px));
+  border-top: 0;
+  background: transparent;
+}
+
+.foot::before,
+.foot::after {
+  --rise-run: linear-gradient(black, black);
+  --rise-hump: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='264' viewBox='0 0 128 264'%3E%3Cpath fill='black' d='M0 24H6C30 24 34 0 64 0S98 24 122 24H128V264H0Z'/%3E%3C/svg%3E");
+
+  content: "";
+  position: absolute;
+  inset: -24px 0 0;
+  z-index: -1;
+  -webkit-mask:
+    var(--rise-run) left 0 top 24px / calc(50% - 63.5px) 100% no-repeat,
+    var(--rise-hump) center top / 128px 264px no-repeat,
+    var(--rise-run) right 0 top 24px / calc(50% - 63.5px) 100% no-repeat;
+  mask:
+    var(--rise-run) left 0 top 24px / calc(50% - 63.5px) 100% no-repeat,
+    var(--rise-hump) center top / 128px 264px no-repeat,
+    var(--rise-run) right 0 top 24px / calc(50% - 63.5px) 100% no-repeat;
+  pointer-events: none;
+}
+
+.foot::before {
+  top: -25px;
+  background: var(--wf-line-2);
+}
+
+.foot::after {
+  background: var(--wf-surface);
+}
+
+.dock {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: end;
+}
+
+.dockItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-height: 54px;
+  padding: 6px 0 2px;
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dockIcon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 24px;
+  color: var(--wf-ink-2);
+}
+
+.dockIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.dockItem[aria-current="page"] .dockIcon,
+.dockItem[aria-current="page"] .dockLabel {
+  color: var(--wf-accent);
+}
+
+.dockItem:active .dockIcon {
+  transform: scale(0.94);
+}
+
+.dockLabel {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  line-height: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dockCount {
+  position: absolute;
+  top: -7px;
+  left: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 4px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--wf-ink-1);
+}
+
+.riseSlot {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  min-height: 54px;
+}
+
+.rise {
+  position: absolute;
+  top: -19px;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 24%, transparent),
+    0 3px 8px color-mix(in srgb, var(--wf-pri-edge) 34%, transparent);
+  color: var(--wf-on-accent);
+  cursor: pointer;
+  transition: transform var(--wf-m-fast, 120ms) var(--wf-ease, ease);
+}
+
+.rise svg {
+  width: 26px;
+  height: 26px;
+}
+
+.rise:active {
+  transform: scale(0.95);
+}
+
+.rise:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 3px;
+}
+
+/* ── Create ─────────────────────────────────────────────────────────────────────────────── */
+.createPrimary {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--spacing-tap, 3rem);
+  border: 1px solid var(--wf-pri-edge);
+  border-radius: var(--wf-r-pill);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent);
+  color: var(--wf-on-accent);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.createPrimary svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .dockItem:active .dockIcon {
+    transition: none;
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .foot::before,
+  .foot::after {
+    display: none;
+  }
+
+  .foot {
+    border-top: 1px solid CanvasText;
+  }
+
+  .rise {
+    border: 2px solid ButtonText;
+  }
+}
+
+@media print {
+  /* Both sheets portal outside the ward shell, so they need their own paper reset. */
+  .sheet,
+  .sheet * {
+    color: CanvasText !important;
+    background-color: Canvas !important;
+  }
+
+  .foot::before,
+  .foot::after {
+    display: none;
+  }
+}
