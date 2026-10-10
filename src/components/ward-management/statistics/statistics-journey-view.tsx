@@ -9,7 +9,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+
 import type { BedRelease, LeaveBed, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments, edShortName, siteByCode } from "@/components/ward-management/ward-sites";
@@ -312,9 +312,23 @@ type HospitalRow = {
   occupied: number;
 };
 
-export function StatisticsJourneyView({ onShowBoard }: { onShowBoard: () => void }) {
-  const { units, admissions, bedReleases, leaveBeds, movements } = useWardFlow();
-  const now = useWardFlowClock();
+export function StatisticsJourneyView({
+  onShowBoard,
+  units,
+  admissions,
+  bedReleases,
+  leaveBeds,
+  movements,
+  now,
+}: {
+  onShowBoard: () => void;
+  units: readonly Unit[];
+  admissions: readonly Admission[];
+  bedReleases: BedRelease[];
+  leaveBeds: readonly LeaveBed[];
+  movements: readonly Movement[];
+  now: Instant;
+}) {
   const [selected, setSelected] = useState<JourneyStageId | null>(null);
 
   const stages = useMemo(

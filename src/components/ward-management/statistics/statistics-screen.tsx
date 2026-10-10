@@ -1,7 +1,7 @@
 "use client";
 
 import { readDeclinesByReason } from "./statistics-decline-reporting";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, ChevronUp, Clock, Lock, Search, TrendingUp, Truck, X } from "lucide-react";
 
@@ -200,6 +200,21 @@ export function StatisticsScreen({
   const sourceReferrals = referrals ?? liveReferrals;
   const sourceBedReleases = bedReleases ?? liveBedReleases;
   const sourceMovements = movements ?? liveMovements;
+
+  useEffect(() => {
+    const scrollToHash = () => {
+      const id = window.location.hash.slice(1);
+      if (!id || id === "board" || id === "journey" || id === "map") return;
+      requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: "start" }));
+    };
+    scrollToHash();
+    window.addEventListener("hashchange", scrollToHash);
+    window.addEventListener("popstate", scrollToHash);
+    return () => {
+      window.removeEventListener("hashchange", scrollToHash);
+      window.removeEventListener("popstate", scrollToHash);
+    };
+  }, [view]);
 
   const refused = refusedAndNothingPending(sourceMovements, units, now);
   const preparingCount = bedsBeingPrepared(sourceBedReleases);
@@ -473,13 +488,21 @@ export function StatisticsScreen({
 
         <StatisticsViewBar view={view} onChoose={chooseView} />
 
+        {view === "journey" ? (
+          <StatisticsJourneyView
+            onShowBoard={() => chooseView("board")}
+            units={units}
+            admissions={sourceAdmissions}
+            bedReleases={sourceBedReleases}
+            leaveBeds={leaveBeds}
+            movements={sourceMovements}
+            now={now}
+          />
+        ) : null}
+
         {/* Each view's anchor exists whichever view shows, so its link always has a target. */}
         {view === "board" ? null : <div id="board" hidden />}
-        {view === "journey" ? (
-          <StatisticsJourneyView onShowBoard={() => chooseView("board")} />
-        ) : (
-          <div id="journey" hidden />
-        )}
+        {view !== "journey" ? <div id="journey" hidden /> : null}
         {view === "map" ? <StatisticsMapView live={{ state: live.state, now }} /> : <div id="map" hidden />}
         {view !== "board" ? null : (
           <div id="board" className={styles.stack}>
