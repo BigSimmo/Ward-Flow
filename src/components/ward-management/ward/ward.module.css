@@ -59,11 +59,18 @@
   min-width: 0;
   flex-direction: column;
   gap: var(--ward-space-16);
-  overflow-x: clip;
   overflow-y: visible;
   padding: var(--ward-space-16) var(--ward-space-20) var(--ward-space-20);
   min-height: 20rem;
   scroll-padding: 0.5rem;
+}
+
+/* v10 band: desktop and tablet keep no clip between the page and the hero, or the band's bleed to
+   the column edges is cut off. Phone never bands, so it keeps the sideways clip. */
+@media (max-width: 48rem) {
+  .main {
+    overflow-x: clip;
+  }
 }
 
 .notFoundHeading {
@@ -5909,6 +5916,13 @@
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
+  }
+
+  .heroFootStack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-2);
+    min-width: 0;
   }
 
   .heroMeta {

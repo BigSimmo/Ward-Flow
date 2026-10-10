@@ -127,7 +127,7 @@
   transition:
     background var(--wf-m-fast) var(--wf-ease),
     border-color var(--wf-m-fast) var(--wf-ease),
-    opacity var(--wf-m-fast) var(--wf-ease);
+    color var(--wf-m-fast) var(--wf-ease);
 }
 
 .bedTile:hover {
@@ -140,13 +140,65 @@
   outline-offset: 2px;
 }
 
+/* v10: a free bed is the one tinted tile (a fit place); an act now bed gets the thin red edge and
+   no fill; a highlight dims the beds it does not match by colour, never by opacity. */
 .bedTile[data-status="ready"] {
-  border-style: dashed;
-  border-color: var(--wf-line-ctl);
+  border-color: var(--wf-fit-edge);
+  background: var(--wf-fit-tint);
 }
 
-.bedTile[data-miss="true"] {
-  opacity: 0.32;
+.bedTile[data-act="true"] {
+  border-color: var(--wf-act-edge);
+}
+
+.bedTile[data-lit="true"] {
+  border-color: var(--wf-ink-2);
+}
+
+.bedTile[data-dim="true"] {
+  border-color: var(--wf-line);
+  background: var(--wf-surface);
+  color: var(--wf-dim);
+}
+
+.bedTile[data-dim="true"] .bedTileDays,
+.bedTile[data-dim="true"] .bedTileState,
+.bedTile[data-dim="true"] .bedTileNote {
+  color: var(--wf-dim);
+}
+
+.bedTable tr[data-dim="true"] td,
+.bedTable tr[data-dim="true"] .bedTableBed,
+.bedTable tr[data-dim="true"] .bedTableSub {
+  color: var(--wf-dim);
+}
+
+.highlightNote {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.highlightNote b {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.highlightNote > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.highlightNote .keyLink {
+  margin-left: auto;
 }
 
 .bedTileTop {
@@ -238,6 +290,7 @@
 .bedTable th:nth-child(3) {
   width: 4.5rem;
 }
+
 
 .bedTable th,
 .bedTable td {

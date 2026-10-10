@@ -37,7 +37,7 @@ import {
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
-import { Hero, LiveChip, Menu, TextInput, buttonClass, durMinutes } from "@/components/wf";
+import { CheckingFoot, Hero, LiveChip, Menu, TextInput, buttonClass, durMinutes } from "@/components/wf";
 import {
   currentShift,
   dayShiftEndInstant,
@@ -814,6 +814,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const leaveAdmissionIds = new Set(unitLeaveBeds.map((leaveBed) => leaveBed.admissionId));
   const unitOccupantAdmissions = admissions?.filter((a) => a.unitId === unit.id && a.state === "occupied") ?? [];
   const otherOccupants = unitOccupantAdmissions.filter((a) => !leaveAdmissionIds.has(a.id));
+  const unitPulledAdmissions = admissions?.filter((a) => a.unitId === unit.id && a.state === "pulled") ?? [];
   let otherOccupantCursor = 0;
 
   const bedsList = Array.from({ length: unit.beds }, (_, i) => {
@@ -823,14 +824,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const podLabel = isMixed ? `${unit.name} ${designation} Beds` : unit.name;
     const isHdu = false;
 
-    // Every leave record gets its own slot, right after the ready beds — never only the first one.
-    const leaveSlotIndex = i - capacity.available;
+    // v10 "counts agree": the tiles follow the ruled four bed states (`bedStates`), the same
+    // partition the hero, the key and the bed figures count. Ready first, then each leave record,
+    // then the pulled beds, the occupied beds, and the closed beds last.
+    const leaveSlotIndex = i - states.ready;
     const isLeaveSlot = leaveSlotIndex >= 0 && leaveSlotIndex < unitLeaveBeds.length;
-    const isIncomingSlot = accepted.length > 0 && i === capacity.available + unitLeaveBeds.length;
+    const pulledSlotIndex = i - states.ready - unitLeaveBeds.length;
+    const isIncomingSlot = !isLeaveSlot && pulledSlotIndex >= 0 && pulledSlotIndex < states.pulled;
+    const isClosedSlot = i >= unit.beds - states.closed && !isLeaveSlot && !isIncomingSlot && i >= states.ready;
 
-    let status: "ready" | "occupied" | "leave" | "incoming" = "occupied";
+    let status: "ready" | "occupied" | "leave" | "incoming" | "closed" = "occupied";
     let statusText = "Inpatient";
-    if (i < capacity.available) {
+    if (i < states.ready) {
       status = "ready";
       statusText = "Ready Vacant";
     } else if (isLeaveSlot) {
@@ -840,9 +845,17 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     } else if (isIncomingSlot) {
       status = "incoming";
       statusText = "Inbound";
+    } else if (isClosedSlot) {
+      status = "closed";
+      statusText = "Closed";
     }
 
-    const incomingMovement = isIncomingSlot ? accepted[0] : undefined;
+    const incomingMovement = isIncomingSlot ? accepted[pulledSlotIndex] : undefined;
+    // A pulled bed with no live movement is a seeded pull: name the pulled admission itself.
+    const pulledAdmission =
+      isIncomingSlot && incomingMovement === undefined
+        ? unitPulledAdmissions[pulledSlotIndex - accepted.length]
+        : undefined;
     // The person shown "On Leave" is whoever THIS leave record names, found by its own
     // `admissionId` — never by position. (Should the named admission ever not be among this
     // ward's occupied admissions, the slot is correctly left empty rather than borrowing someone
@@ -855,7 +868,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     // That borrowing used to hand an inbound person somebody else's length-of-stay and
     // specialling flag; each bed now shows only the facts that belong to the person shown in it.
     const admission: (typeof unitOccupantAdmissions)[number] | undefined =
-      status === "leave" ? leaveAdmission : status === "occupied" ? otherOccupants[otherOccupantCursor++] : undefined;
+      status === "leave"
+        ? leaveAdmission
+        : status === "occupied"
+          ? otherOccupants[otherOccupantCursor++]
+          : status === "incoming"
+            ? pulledAdmission
+            : undefined;
     const linkedMovement =
       incomingMovement ??
       (admission
@@ -867,9 +886,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         : undefined);
     const recordedSubject = linkedMovement ?? admission;
     const patientInfo =
-      status === "ready" || recordedSubject === undefined ? undefined : resolvePatientIdentity(recordedSubject);
-    const patientAlias = status === "ready" ? undefined : patientInfo?.displayName;
-    const stayDays = admission ? admissionStayDays(admission, now) : null;
+      status === "ready" || status === "closed" || recordedSubject === undefined
+        ? undefined
+        : resolvePatientIdentity(recordedSubject);
+    const patientAlias = status === "ready" || status === "closed" ? undefined : patientInfo?.displayName;
+    const stayDays = admission && status !== "incoming" ? admissionStayDays(admission, now) : null;
     const daysInBed = stayDays === null ? undefined : `${stayDays}d`;
     const isSpecialling = admission?.specialling === true;
 
@@ -1389,6 +1410,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     rollupOverdue: !isRollupConfirmedToday && morningRollupDeadlinePassed,
   });
   const readyByShiftEnd = releasesDueByShiftEnd(bedReleases, unit.id, now).length;
+  const bedCountsStale = now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes;
   // The ward switch lists the other wards on this site, or failing that in this health service.
   const siteUnits = units.filter((candidate) => candidate.id !== unit.id && candidate.siteCode === unit.siteCode);
   const switchUnits =
@@ -1476,7 +1498,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             bar={
               <WardTelemetryRibbon
                 unit={unit}
-                capacity={capacity}
+                capacity={{ available: states.ready, occupied: states.occupied }}
                 staffedSpecialling={staffedSpecialling}
                 now={now}
                 filter={activeTab === "attn" ? bedFilter : undefined}
@@ -1493,32 +1515,56 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               />
             }
             foot={
-              <span className={styles.heroMeta}>
-                <Clock size={14} aria-hidden="true" className={styles.heroMetaIcon} />
-                <span>{shiftLine(now)}</span>
-                {" · "}
-                {unit.cohort} · {designationSummary(unit).toLowerCase()} ·{" "}
-                <Link
-                  className={styles.heroBedListLink}
-                  href="#bed-capacity"
-                  data-testid="ward-hero-open-bed-list"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    setBedFilter("all");
-                    showHome("bed-capacity");
-                  }}
-                >
-                  {unit.beds} beds · {capacity.available} ready
-                </Link>
-                {" · "}
-                {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
-                <span>Roster not recorded</span> · {staffedSpecialling} on 1:1 specialling ·{" "}
-                {unit.authorised ? "authorised for involuntary" : "not set up for involuntary admissions (demo)"}
-                {(unit.intakeConstraints ?? []).length > 0
-                  ? ` · ${(unit.intakeConstraints ?? [])
-                      .map((constraint) => wardIntakeConstraintLabels[constraint] ?? constraint)
-                      .join(", ")}`
-                  : ""}
+              <span className={styles.heroFootStack}>
+                <span className={styles.heroMeta}>
+                  <Clock size={14} aria-hidden="true" className={styles.heroMetaIcon} />
+                  <span>{shiftLine(now)}</span>
+                  {" · "}
+                  {unit.cohort} · {designationSummary(unit).toLowerCase()} ·{" "}
+                  <Link
+                    className={styles.heroBedListLink}
+                    href="#bed-capacity"
+                    data-testid="ward-hero-open-bed-list"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setBedFilter("all");
+                      showHome("bed-capacity");
+                    }}
+                  >
+                    {unit.beds} beds · {capacity.available} ready
+                  </Link>
+                  {" · "}
+                  {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
+                  <span>Roster not recorded</span> · {staffedSpecialling} on 1:1 specialling ·{" "}
+                  {unit.authorised ? "authorised for involuntary" : "not set up for involuntary admissions (demo)"}
+                  {(unit.intakeConstraints ?? []).length > 0
+                    ? ` · ${(unit.intakeConstraints ?? [])
+                        .map((constraint) => wardIntakeConstraintLabels[constraint] ?? constraint)
+                        .join(", ")}`
+                    : ""}
+                </span>
+                <CheckingFoot
+                  items={[
+                    {
+                      id: "stale",
+                      label: `Bed counts older than ${durMinutes(unit.allocatable.staleAfterMinutes)}`,
+                      value: bedCountsStale ? 1 : 0,
+                      tone: bedCountsStale ? "warning" : undefined,
+                    },
+                    {
+                      id: "held",
+                      label: "Discharges held up",
+                      value: blockedReleases.length,
+                      tone: blockedReleases.length > 0 ? "danger" : undefined,
+                    },
+                    {
+                      id: "past",
+                      label: "Past expected date",
+                      value: bedsList.filter((bed) => bed.pastDate).length,
+                    },
+                  ]}
+                  notChecked={["roster, no feed"]}
+                />
               </span>
             }
             footAside={
@@ -1853,7 +1899,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                       data-testid="ward-unit-blocked-releases"
                     >
                       <span className={styles.statBoxLabel}>{BED_RELEASE_BLOCKED_FIGURE_LABEL}</span>{" "}
-                      <strong className={styles.statBoxVal}>{breakdown.blockedToday}</strong>
+                      <strong className={styles.statBoxVal}>{blockedReleases.length}</strong>
                     </span>
                     <span
                       className={`${styles.bedChip} ${styles.statBox}`}
@@ -1888,8 +1934,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     <p className={styles.bedNote}>
                       Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but not offered; pulled
                       means allocated to a patient who has not arrived yet. Beds being made ready are counted inside
-                      Ready, and beds held for a patient on leave inside Occupied. Confirmed, expected, held-up
-                      discharge and leave are flow counts and are not added to that total.
+                      Ready, and beds held for a patient on leave inside Occupied. Confirmed and expected count
+                      discharges due by the end of tomorrow; held up counts every open discharge with a blocker, on any
+                      day, as This shift and the Discharges tab do. They and leave are flow counts and are not added to
+                      that total.
                     </p>
                   </details>
                 </div>
