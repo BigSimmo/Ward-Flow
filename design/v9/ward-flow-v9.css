@@ -152,7 +152,7 @@
   --wf-hero-neutral: #8fa0b1;
   --wf-on-hero-fill: rgba(255, 255, 255, 0.08);
   --wf-on-hero-line: rgba(255, 255, 255, 0.2);
-  --wf-on-hero-hl: rgba(255, 255, 255, 0.1);
+  --wf-on-hero-hl: rgba(255, 255, 255, 0.14);
   --wf-on-hero-ink: #d5e0ea;
   --wf-on-hero-track: rgba(0, 0, 0, 0.2);
   --wf-on-hero-div: rgba(255, 255, 255, 0.14);
@@ -206,28 +206,29 @@
   --wf-ink-off: light-dark(#828a94, #6e7d8d);
   --wf-line-ctl: light-dark(#828a94, #6e7d8d);
 
-  --wf-accent: light-dark(#2f4c66, #8fb0d4);
-  --wf-accent-strong: light-dark(#2b4762, #8fb0d4);
-  --wf-accent-tint: light-dark(#e6edf4, #1f3042);
-  --wf-accent-ink: light-dark(#27405a, #b9cfe6);
+  /* v9 Elevate: one confident blue means you can act here. Data bars stay slate. */
+  --wf-accent: light-dark(#245a8c, #8cbcf0);
+  --wf-accent-strong: light-dark(#1f4f7d, #8cbcf0);
+  --wf-accent-tint: light-dark(#e3eef9, #1d3349);
+  --wf-accent-ink: light-dark(#1f4d7a, #b7d3f0);
   /* v8: ink on an accent fill. Night was white on #8fb0d4 at 2.25:1; it is now 8.2:1. */
   --wf-on-accent: light-dark(#fff, #0d141b);
   /* v8: ink on the primary gradient, white in both themes (7.1 and 5.3:1 at worst) */
   --wf-on-pri: #fff;
-  --wf-pri-1: light-dark(#3a5b7b, #4b6f93);
-  --wf-pri-2: light-dark(#2b4762, #3a5b7b);
-  --wf-pri-edge: light-dark(#223a51, #56799d);
+  --wf-pri-1: light-dark(#2f6aa3, #3a72a8);
+  --wf-pri-2: light-dark(#234f7a, #2c5c8c);
+  --wf-pri-edge: light-dark(#1d4569, #5a8fc4);
   /* v9: hover and press steps, so no control needs filter: brightness */
-  --wf-pri-1-hover: light-dark(#42658a, #507599);
-  --wf-pri-2-hover: light-dark(#31506d, #426586);
-  --wf-pri-1-press: light-dark(#2b4762, #3a5b7b);
-  --wf-pri-2-press: light-dark(#233c53, #30506d);
-  --wf-accent-hover: light-dark(#284159, #a3bfdd);
-  --wf-accent-press: light-dark(#223a51, #7f9fc4);
+  --wf-pri-1-hover: light-dark(#3874af, #3c74ab);
+  --wf-pri-2-hover: light-dark(#295a8a, #30639a);
+  --wf-pri-1-press: light-dark(#234f7a, #2f5f8f);
+  --wf-pri-2-press: light-dark(#1c4166, #27507a);
+  --wf-accent-hover: light-dark(#1f4f7d, #a6cbf3);
+  --wf-accent-press: light-dark(#1b4570, #76a9e0);
 
   --wf-hero-1: light-dark(#22384d, #22374d);
   --wf-hero-2: light-dark(#1c2f41, #1c2e41);
-  --wf-hero-edge: light-dark(#172736, rgba(143, 176, 212, 0.18));
+  --wf-hero-edge: light-dark(#172736, rgba(143, 176, 212, 0.1));
 
   /* tones colour glyphs, edges and marks (3:1 or better). Text always uses the -ink partner. */
   --wf-danger: light-dark(#c4513f, #e27a68);
@@ -256,7 +257,8 @@
   --wf-data-3: light-dark(#788ea4, #55728f);
   --wf-data-rest: light-dark(#c9d3dd, #2a3a4b);
   --wf-data-ready: light-dark(#2f8a5f, #4cb383);
-  --wf-data-closed: light-dark(#9c8450, #a88f55);
+  /* closed is dashed, never gold: a quiet slate under a dashed edge */
+  --wf-data-closed: light-dark(#b9c4cf, #3a4b5c);
 
   /* service colours: a dot or stripe beside the service name, never on its own (ruling B-7).
      Day values are the health services' own colours. Night values are lifted to read on slate. */
@@ -265,27 +267,28 @@
   --wf-svc-south: light-dark(#5a2476, #c084fc);
   --wf-svc-wachs: light-dark(#005b94, #38bdf8);
   --wf-svc-cahs: light-dark(#0076be, #8ab4ff);
-  --wf-svc-statewide: light-dark(#0071a5, #5fc9d6);
+  --wf-svc-statewide: light-dark(#005b38, #a3d9b8);
   --wf-svc-private: light-dark(#475569, #94a3b8);
 
   /* glass, about 80% opaque by owner choice (10 Oct): frosted and calm rather than see-through.
      Three tiers by role. Night glass is built on the raised and overlay steps. */
-  --wf-glass-bar: light-dark(rgba(253, 253, 254, 0.78), rgba(27, 39, 51, 0.78));
-  --wf-glass-pop: light-dark(rgba(255, 255, 255, 0.82), rgba(27, 39, 51, 0.82));
-  --wf-glass-sheet: light-dark(rgba(255, 255, 255, 0.86), rgba(32, 45, 58, 0.86));
+  /* cool, not white, so glass reads as glass by day */
+  --wf-glass-bar: light-dark(rgba(244, 247, 250, 0.8), rgba(27, 39, 51, 0.78));
+  --wf-glass-pop: light-dark(rgba(244, 247, 250, 0.84), rgba(27, 39, 51, 0.82));
+  --wf-glass-sheet: light-dark(rgba(246, 249, 252, 0.88), rgba(32, 45, 58, 0.86));
   --wf-glass-hl: light-dark(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.1));
   /* the sheen: a soft light fall across the top half of glass, for the Apple shine at 80% opacity */
   --wf-sheen: linear-gradient(
     180deg,
-    light-dark(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.07)),
-    transparent 46%
+    light-dark(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.12)),
+    transparent 50%
   );
   /* deprecated v8 names, kept until nothing reads them */
   --wf-glass-thin: var(--wf-glass-bar);
   --wf-glass: var(--wf-glass-pop);
   --wf-glass-thick: var(--wf-glass-sheet);
   --wf-scrim: light-dark(rgba(22, 30, 40, 0.14), rgba(0, 0, 0, 0.4));
-  --wf-glow-1: light-dark(rgba(143, 176, 212, 0.32), rgba(79, 115, 152, 0.28));
+  --wf-glow-1: light-dark(rgba(143, 176, 212, 0.45), rgba(79, 115, 152, 0.34));
   --wf-glow-2: light-dark(rgba(150, 196, 180, 0.2), rgba(76, 179, 131, 0.08));
   /* the glow sits behind the top 400px only, where the hero and bars are, so tables below sit on
      one even canvas */
@@ -599,7 +602,10 @@
   --wf-focus-ring: var(--wf-light-1);
 }
 .hero {
-  background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  /* Elevate: one fixed light source at the top right, so the band glows rather than outlines */
+  background:
+    radial-gradient(720px 240px at 88% -30%, rgba(122, 170, 220, 0.22), transparent 70%),
+    linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
   border: 1px solid var(--wf-hero-edge);
   border-radius: var(--wf-r-xl);
   color: var(--wf-hero-ink);
@@ -626,6 +632,7 @@
   border: 1px solid var(--wf-line-2);
   box-shadow:
     inset 0 1px 0 var(--wf-glass-hl),
+    inset 0 -1px 0 light-dark(rgba(16, 24, 40, 0.06), rgba(0, 0, 0, 0.25)),
     var(--wf-e2);
 }
 .glass.bar,
@@ -812,9 +819,8 @@
   border-color: var(--wf-light-edge);
   box-shadow: var(--wf-e-light);
 }
-/* rule 15: dashed means unavailable. Disabled, locked and Preview share it. */
-.b[disabled],
-.b[aria-disabled="true"] {
+/* rule 15: dashed means unavailable. Disabled, locked and Preview share it. It never reacts to hover or press. */
+.b:is([disabled], [aria-disabled="true"]):is(*, :hover, :active) {
   cursor: not-allowed;
   transform: none;
   color: var(--wf-ink-off);
@@ -1030,7 +1036,7 @@
 }
 .sw.on,
 .sw[aria-checked="true"] {
-  background: var(--wf-pri-2);
+  background: var(--wf-accent);
 }
 .sw.on::after,
 .sw[aria-checked="true"]::after {
@@ -1285,10 +1291,6 @@
   color: var(--wf-ink-1);
   font-weight: 600;
   box-shadow: inset 0 0 0 1px var(--wf-accent);
-}
-.fc .k {
-  height: 18px;
-  min-width: 18px;
 }
 .fc[disabled],
 .fc[aria-disabled="true"],
@@ -1700,7 +1702,7 @@ svg.gl {
   box-shadow: 0 0 0 2px var(--wf-surface);
 }
 .hatch {
-  background: repeating-linear-gradient(135deg, var(--wf-data-2) 0 2px, var(--wf-track) 2px 4px);
+  background: var(--wf-hatch), var(--wf-track);
 }
 /* stacked bar: segments sit 2px apart so neighbours never need contrast with each other */
 .mb {
@@ -1841,7 +1843,7 @@ svg.gl {
   background: var(--wf-data-2);
 }
 .row-tl .seg.quiet {
-  background: repeating-linear-gradient(135deg, var(--wf-data-2) 0 2px, transparent 2px 4px);
+  background: var(--wf-hatch);
 }
 .row-tl .pt-node {
   position: absolute;
@@ -2200,9 +2202,9 @@ svg.gl {
   stroke-width: 1;
 }
 .chart-ref {
-  stroke: var(--wf-ink-3);
-  stroke-width: 1;
-  stroke-dasharray: 4 3;
+  stroke: var(--wf-ref-stroke);
+  stroke-width: var(--wf-ref-w);
+  stroke-dasharray: var(--wf-ref-dash);
 }
 /* donut and ring arcs: butt caps, so 0 draws nothing and 96% never looks full */
 .chart-arc {
@@ -2341,6 +2343,2599 @@ svg.gl {
   box-shadow: var(--wf-e-bar);
 }
 
+/* ---------- parts from the page review (10 Oct 2026) ----------
+   The best version of each part the page review found built more than once. Spec sections 3, 7, 9 and 10.
+   The live board for these is the Parts tab of ward-flow-design-system-v9.html. ---------- */
+
+/* Dim, never hide. Rows a highlight does not match recede. Nothing leaves the list. */
+:root {
+  --wf-dim: light-dark(rgba(22, 26, 32, 0.45), rgba(233, 238, 243, 0.42));
+  --wf-glyph-dim: light-dark(rgba(110, 122, 135, 0.45), rgba(150, 164, 178, 0.45));
+  /* one reference line: a mean, a target or an alert line, in every chart */
+  --wf-ref-stroke: var(--wf-ink-3);
+  --wf-ref-w: 1px;
+  --wf-ref-dash: 4 3;
+  /* one hatch, one meaning: expected or pulled. The faint hatch marks quiet or unavailable time. */
+  --wf-hatch: repeating-linear-gradient(135deg, var(--wf-data-2) 0 2px, transparent 2px 4px);
+  --wf-hatch-faint: repeating-linear-gradient(135deg, var(--wf-line-2) 0 2px, transparent 2px 6px);
+  --wf-now: var(--wf-accent);
+  --wf-mark: var(--wf-accent-tint);
+  --wf-overdue-zone: light-dark(rgba(196, 81, 63, 0.06), rgba(226, 122, 104, 0.08));
+  --wf-scrim-strong: light-dark(rgba(22, 30, 40, 0.28), rgba(0, 0, 0, 0.56));
+}
+.row.dim,
+.li.dim {
+  color: var(--wf-dim);
+}
+.row.dim .g,
+.li.dim .g {
+  --wf-danger: var(--wf-glyph-dim);
+  --wf-warning: var(--wf-glyph-dim);
+  --wf-success: var(--wf-glyph-dim);
+  --wf-info: var(--wf-glyph-dim);
+  --wf-neutral: var(--wf-glyph-dim);
+}
+.row.dim b,
+.li.dim .a {
+  font-weight: 500;
+}
+.hp-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.fc .k {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pips: one progress family. Segments for one to five gates, 7px dots for legs, 8px people pips. */
+.pips {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+.pips i {
+  width: 18px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  border: 1px solid var(--wf-line-2);
+  transition: background-color var(--wf-t-sheet) var(--wf-ease-out);
+}
+.pips i.on {
+  background: var(--wf-success);
+  border-color: transparent;
+}
+.steps {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+}
+.steps i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid var(--wf-line-ctl);
+}
+.steps i.done {
+  background: var(--wf-success);
+  border-color: var(--wf-success);
+}
+.steps i.now {
+  background: var(--wf-info);
+  border-color: var(--wf-info);
+  box-shadow:
+    0 0 0 2px var(--wf-surface),
+    0 0 0 3.5px var(--wf-info);
+}
+.frac {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.people {
+  --wf-glyph: 8px;
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+.people .more {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-3);
+  margin-left: 2px;
+}
+
+/* GateStrip: verdict, pips, then flush gate cells. The first gate that is not clear holds the primary. */
+.gates {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+.gates {
+  display: flex;
+  flex-direction: column;
+}
+.gate-row {
+  flex: 1;
+}
+.gates.act {
+  border-color: var(--wf-act-edge);
+}
+.gates-v {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--wf-line);
+}
+.gates-v .verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 var(--wf-fs-15)/var(--wf-lh-15) var(--wf-font);
+  --wf-glyph: 12px;
+}
+.gates-v .sp {
+  flex: 1;
+}
+.gate-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.gate {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  min-width: 0;
+}
+.gate + .gate {
+  border-left: 1px solid var(--wf-line);
+}
+.gate .gh {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-weight: 600;
+}
+.gate .own {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.gate .gs {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+}
+.gate .gw {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+.gate .b {
+  align-self: flex-start;
+  margin-top: auto;
+}
+.lockline {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.lockline svg {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+}
+.lockline.alert {
+  color: var(--wf-ink-1);
+}
+@media (width <= 48rem) {
+  .gate-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gate + .gate {
+    border-left: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+}
+
+/* TimeAxis: one axis for waits and clocks. Piecewise stops, a hatched compressed tail, shape marks. */
+.tax {
+  position: relative;
+  padding: 34px 6px 34px;
+}
+.tax .rail {
+  position: relative;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+.tax .zone {
+  position: absolute;
+  top: -14px;
+  bottom: -14px;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-overdue-zone);
+  transition: opacity var(--wf-t-enter) var(--wf-ease-out);
+}
+.tax .tail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 0 var(--wf-r-pill) var(--wf-r-pill) 0;
+  background: var(--wf-hatch-faint);
+}
+.tax .stop {
+  position: absolute;
+  top: -16px;
+  bottom: -16px;
+  width: 0;
+  border-left: 1px dashed var(--wf-line-3);
+}
+.tax .stop span {
+  position: absolute;
+  top: -18px;
+  left: 0;
+  translate: -50% 0;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.tax .tick {
+  position: absolute;
+  top: 20px;
+  translate: -50% 0;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.tax .mk {
+  position: absolute;
+  top: 50%;
+  translate: -50% -50%;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e-raise);
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    transform var(--wf-t-release) var(--wf-ease-out),
+    box-shadow var(--wf-t-micro) var(--wf-ease-out);
+}
+.tax .mk:hover {
+  box-shadow: 0 0 0 2px var(--wf-line-3);
+}
+.tax .mk:active {
+  transform: scale(0.94);
+}
+.tax .mk[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--wf-surface),
+    0 0 0 4px var(--wf-accent);
+}
+.tax .mk.over {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  --wf-glyph: 16px;
+}
+.tax .mk.over[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--wf-surface),
+    0 0 0 4px var(--wf-accent);
+}
+
+/* Wait meter: fixed 24h scale, an 8h tick, quiet time hatched. */
+.wm {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  border-radius: var(--wf-r-pill);
+  overflow: hidden;
+  background: var(--wf-track);
+}
+.wm i {
+  display: block;
+  height: 100%;
+}
+.wm .act {
+  background: var(--wf-data-2);
+}
+.wm .quiet {
+  background: var(--wf-hatch);
+}
+.wm-wrap {
+  position: relative;
+}
+.wm-wrap::after {
+  content: "";
+  position: absolute;
+  left: 33.33%;
+  top: -3px;
+  width: 2px;
+  height: 14px;
+  border-radius: 1px;
+  background: var(--wf-ink-3);
+}
+
+/* Age at row level, and the two honest non-live states: Held and Frozen. */
+.age {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.age .num {
+  color: inherit;
+}
+.age.stale {
+  color: var(--wf-ink-1);
+}
+.lv.held {
+  border-color: var(--wf-warning);
+}
+.lv.frozen .pulse,
+.lv.held .pulse {
+  background: var(--wf-neutral);
+}
+
+/* Hero: answer title, chips in two modes, jumps, a drawer and a Checks foot. */
+.hj {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-on-hero-line);
+  background: var(--wf-on-hero-fill);
+  color: var(--wf-hero-ink);
+  box-shadow: var(--wf-e-on-hero);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hj .l {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-hero-ink-2);
+}
+.hj .v {
+  font: 600 var(--wf-fs-15)/1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.hj:active {
+  transform: scale(0.97);
+}
+.hs.pill .chev {
+  width: 12px;
+  height: 12px;
+  transition: transform var(--wf-t-enter) var(--wf-ease-out);
+}
+.hs.pill[aria-expanded="true"] .chev {
+  transform: rotate(180deg);
+}
+.hero-drawer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  border: 1px solid var(--wf-on-hero-div);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+  animation: wfRise var(--wf-t-enter) var(--wf-ease-out);
+}
+.hero-drawer > div {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.hero-drawer > div + div {
+  border-left: 1px solid var(--wf-on-hero-div);
+}
+.hero-drawer .l {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-hero-ink-2);
+}
+.hero-checks {
+  display: flex;
+  align-items: center;
+  gap: 6px 14px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--wf-on-hero-div);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-hero-ink-2);
+}
+.hero-checks .ck {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hero-checks .ck b {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-hero-ink);
+}
+.hero-checks .ck.zero b {
+  color: var(--wf-hero-ink-3);
+}
+.hero-checks .eb {
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-hero-ink-3);
+}
+
+/* BedStrip: one rounded cell per bed in a fixed order, with named states. */
+.bs {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.bs i {
+  width: 16px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--wf-track);
+  border: 1px solid var(--wf-line);
+}
+.bs i.ready {
+  background: var(--wf-fit-tint);
+  border-color: var(--wf-fit-edge);
+}
+.bs i.making {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 3px, var(--wf-success) 3px 4.5px, transparent 4.5px),
+    var(--wf-fit-tint);
+  border-color: var(--wf-fit-edge);
+}
+.bs i.pulled {
+  background: var(--wf-hatch), var(--wf-track);
+}
+.bs i.closed {
+  background: transparent;
+  border: 1px dashed var(--wf-line-3);
+}
+.tally {
+  display: flex;
+  gap: 6px 14px;
+  flex-wrap: wrap;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.tally b {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.key i {
+  display: inline-block;
+  width: 10px;
+  height: 13px;
+  border-radius: 4px;
+  vertical-align: -2px;
+  margin-right: 5px;
+}
+
+/* ReadyList: what is left, from tick and ring glyphs only. */
+.ready {
+  display: flex;
+  flex-direction: column;
+}
+.ready-h {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ready-h b {
+  font: 600 var(--wf-fs-15)/1 var(--wf-mono);
+}
+.ready-row {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 6px;
+  border-radius: var(--wf-r-sm);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+.ready-row[aria-disabled="true"] {
+  cursor: default;
+}
+.ready-row:hover {
+  background: var(--wf-hover);
+}
+.ready-row .v {
+  font-weight: 600;
+}
+.ready-row[data-state="todo"] .v {
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+
+/* PressureStrip: flush peer cells, select or navigate. */
+.ps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+.ps button {
+  all: unset;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  min-width: 0;
+  transition: background-color var(--wf-t-micro) var(--wf-ease-out);
+}
+.ps button + button {
+  border-left: 1px solid var(--wf-line);
+}
+.ps button:hover {
+  background: var(--wf-hover);
+}
+.ps button:focus-visible {
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+.ps button[aria-current="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 0 -2px 0 var(--wf-accent-strong);
+}
+.ps .n {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ps .f {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.ps .f b {
+  font: 600 var(--wf-fs-15)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+/* RuleRow: a value, its live effect, the pages that read it, and the saved point. */
+.rule {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  transition: border-color var(--wf-t-micro) var(--wf-ease-out);
+}
+.rule.changed {
+  border-color: var(--wf-accent);
+}
+.rule .eff {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+  text-align: right;
+}
+.rule .eff .e {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-weight: 600;
+}
+.rule .eff .e .num {
+  font-weight: 600;
+}
+.range {
+  position: relative;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  margin-top: 10px;
+}
+.range b {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-data-2);
+  transition: width var(--wf-t-enter) var(--wf-ease-out);
+}
+.range .saved {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 14px;
+  border-radius: 1px;
+  background: var(--wf-accent);
+}
+.range-ends {
+  display: flex;
+  justify-content: space-between;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-3);
+  margin-top: 6px;
+}
+@media (width <= 48rem) {
+  .rule {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rule .eff {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+/* TriageColumns: Act now, Later today, Done. Ticked work moves across. */
+.triage {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+  flex: 1;
+}
+.triage > div {
+  min-width: 0;
+}
+.triage > div + div {
+  border-left: 1px solid var(--wf-line);
+}
+.triage .li {
+  grid-template-columns: 18px minmax(0, 1fr);
+  padding: 6px 12px;
+}
+.triage .li-h {
+  padding: 10px 12px 6px;
+  font-weight: 600;
+}
+.triage .chk {
+  cursor: pointer;
+  padding: 0;
+}
+@media (width <= 48rem) {
+  .triage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .triage > div + div {
+    border-left: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+}
+
+/* Ladder: who next if no answer. */
+.ladder {
+  display: flex;
+  flex-direction: column;
+}
+.ladder button {
+  all: unset;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 8px;
+  border-radius: var(--wf-r-sm);
+  cursor: pointer;
+  position: relative;
+}
+.ladder button:hover {
+  background: var(--wf-hover);
+}
+.ladder button:focus-visible {
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+.ladder .n {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--wf-line-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  background: var(--wf-surface);
+  position: relative;
+  z-index: 1;
+}
+.ladder button + button::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: -10px;
+  height: 20px;
+  width: 1px;
+  background: var(--wf-line-2);
+}
+.ladder .w {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-3);
+}
+.ladder button[aria-pressed="true"] .n {
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  color: var(--wf-on-pri);
+  border-color: var(--wf-pri-edge);
+}
+
+/* Bar list as a filter, with one labelled reference line. */
+.bl {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bl button {
+  all: unset;
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) 34px;
+  gap: 10px;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 6px;
+  border-radius: var(--wf-r-sm);
+  cursor: pointer;
+}
+.bl button:hover {
+  background: var(--wf-hover);
+}
+.bl button:focus-visible {
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+.bl .bar {
+  position: relative;
+  height: 10px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+.bl .bar b {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-data-2);
+  transition: background-color var(--wf-t-micro) var(--wf-ease-out);
+}
+.bl button[aria-pressed="true"] .bar b {
+  background: var(--wf-data-1);
+}
+.bl.has-pick button[aria-pressed="false"] {
+  color: var(--wf-dim);
+}
+.bl.has-pick button[aria-pressed="false"] .bar b {
+  background: var(--wf-data-rest);
+}
+.bl .v {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  text-align: right;
+}
+.bl .ref {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed var(--wf-ink-3);
+  pointer-events: none;
+}
+.bl .ref span {
+  position: absolute;
+  top: -18px;
+  left: 0;
+  translate: -50% 0;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-drawer {
+    animation: wfFade var(--wf-t-enter) linear;
+  }
+}
+
+/* ---------- charts and diagrams from the page review (10 Oct 2026) ----------
+   Status shapes for marks, direct labels, at most four faint gridlines, one dashed reference line.
+   Spec section 9, Charts. ---------- */
+.ox {
+  overflow-x: auto;
+  min-width: 0;
+}
+.ox > * {
+  min-width: var(--ox-min, 560px);
+}
+.chart-grid {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px solid var(--wf-line);
+  pointer-events: none;
+}
+.chart-now {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 2px solid var(--wf-now);
+  pointer-events: none;
+}
+.chart-ref {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1.5px dashed var(--wf-line-3);
+  pointer-events: none;
+}
+.chart-tick {
+  position: absolute;
+  translate: -50% 0;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.chart-tick.first {
+  translate: 0 0;
+}
+.chart-tick.last {
+  translate: -100% 0;
+}
+
+/* TimeRail hero: the shift as one line on the hero. Marks are buttons that open their bed. */
+.hrun {
+  --wf-danger: var(--wf-hero-danger);
+  --wf-warning: var(--wf-hero-warning);
+  --wf-success: var(--wf-hero-success);
+  --wf-info: var(--wf-hero-info);
+  --wf-neutral: var(--wf-hero-neutral);
+  position: relative;
+  height: 76px;
+  padding-inline: 48px;
+}
+.hrun .ct {
+  position: relative;
+  height: 100%;
+}
+.hrun .axis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 35px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-on-hero-track);
+  overflow: hidden;
+}
+.hrun .past {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, transparent, var(--wf-on-hero-line));
+}
+.hrun .win {
+  position: absolute;
+  top: 27px;
+  height: 22px;
+  border: 1px dashed var(--wf-on-hero-line);
+  border-radius: var(--wf-r-pill);
+  pointer-events: none;
+}
+.hrun .now {
+  position: absolute;
+  top: 22px;
+  height: 32px;
+  width: 2px;
+  translate: -50% 0;
+  border-radius: 1px;
+  background: var(--wf-hero-ink);
+}
+.hrun .end {
+  position: absolute;
+  top: 31px;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-hero-ink-3);
+}
+.hrun .end.l {
+  left: 0;
+}
+.hrun .end.r {
+  right: 0;
+}
+.hrun .mk {
+  position: absolute;
+  top: 27px;
+  width: 22px;
+  height: 22px;
+  translate: -50% 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--wf-hero-1);
+  box-shadow: 0 0 0 1px var(--wf-on-hero-line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--wf-hero-ink-2);
+  --wf-glyph: 12px;
+  transition: transform var(--wf-t-release) var(--wf-ease-out);
+}
+.hrun .mk:hover,
+.hrun .mk:focus-visible {
+  color: var(--wf-hero-ink);
+}
+.hrun .mk:focus-visible {
+  outline: 0;
+  box-shadow:
+    0 0 0 2px var(--wf-hero-1),
+    0 0 0 4px var(--wf-hero-ink);
+}
+.hrun .mk .l {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+.hrun .mk.up .l {
+  bottom: calc(100% + 8px);
+}
+.hrun .mk.dn .l {
+  top: calc(100% + 8px);
+}
+.hrun .mk.lo .l {
+  left: -6px;
+  translate: 0 0;
+}
+.hrun .mk.hi .l {
+  left: auto;
+  right: -6px;
+  translate: 0 0;
+}
+@media (width <= 48rem) {
+  .hrun {
+    padding-inline: 0;
+  }
+  .hrun .mk {
+    top: 29px;
+    width: 18px;
+    height: 18px;
+    --wf-glyph: 10px;
+  }
+  .lanes .lh .chart-tick:nth-child(even) {
+    display: none;
+  }
+  .hrun .end {
+    display: none;
+  }
+}
+
+/* TimeRail card: expiries from Now, two label lanes, clusters as +n, a Passed bay at the start. */
+.crail {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+.crail .bay {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px dashed var(--wf-line-3);
+  border-radius: var(--wf-r-md);
+  min-width: 112px;
+}
+.crail .bay .t-eyebrow {
+  color: var(--wf-ink-3);
+}
+.crail .bay button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 6px;
+  margin: 0 -6px;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+  cursor: pointer;
+  text-align: left;
+}
+.crail .bay button:hover {
+  background: var(--wf-hover);
+}
+.crail .ct {
+  position: relative;
+  height: 92px;
+}
+.crail .rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 49px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+.crail .chart-tick {
+  top: 0;
+}
+.crail .chart-grid {
+  top: 18px;
+  bottom: 0;
+}
+.crail .mk {
+  position: absolute;
+  top: 41px;
+  height: 22px;
+  min-width: 22px;
+  padding: 0 4px;
+  translate: -50% 0;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e-raise);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+  cursor: pointer;
+  --wf-glyph: 10px;
+  transition: transform var(--wf-t-release) var(--wf-ease-out);
+}
+.crail .mk:hover {
+  box-shadow: 0 0 0 2px var(--wf-line-3);
+}
+.crail .mk[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--wf-surface),
+    0 0 0 4px var(--wf-accent);
+}
+.crail .mk .l {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.crail .mk .l b {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.crail .mk.up .l {
+  bottom: calc(100% + 6px);
+}
+.crail .mk.dn .l {
+  top: calc(100% + 6px);
+}
+.crail .mk.lo .l {
+  left: 0;
+  translate: 0 0;
+}
+.crail .mk.hi .l {
+  left: auto;
+  right: 0;
+  translate: 0 0;
+}
+@media (width <= 48rem) {
+  .crail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .crail .bay {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}
+
+/* Gantt with a scrubber: ward rows, capsules for expected arrivals, Now, and a slid time. */
+.gantt {
+  position: relative;
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+.gantt .gh {
+  height: 32px;
+  border-bottom: 1px solid var(--wf-line);
+}
+.gantt .gh.ct .chart-tick {
+  top: 10px;
+}
+.gantt .gl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--wf-row);
+  padding: 0 12px;
+  border-bottom: 1px solid var(--wf-line);
+  font-weight: 600;
+  min-width: 0;
+}
+.gantt .gl .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gantt .gl .fr {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+.gantt .gl:nth-last-child(3),
+.gantt .gt:nth-last-child(2) {
+  border-bottom: 0;
+}
+.gantt .gt {
+  position: relative;
+  min-height: var(--wf-row);
+  border-bottom: 1px solid var(--wf-line);
+  margin-right: 16px;
+}
+.gantt .gh.ct {
+  position: relative;
+  margin-right: 16px;
+}
+.gantt .ov {
+  position: absolute;
+  inset: 0 16px 0 148px;
+  pointer-events: none;
+}
+.gantt .cap {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  height: 22px;
+  min-width: 22px;
+  padding: 0 8px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-3);
+  background: var(--wf-surface);
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    background-color var(--wf-t-enter) var(--wf-ease-out),
+    color var(--wf-t-enter) var(--wf-ease-out);
+}
+.gantt .cl {
+  position: absolute;
+  top: 50%;
+  translate: 6px -50%;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+.gantt .cap.here {
+  background: var(--wf-data-2);
+  border-color: transparent;
+  color: var(--wf-on-accent);
+}
+.gantt .cap.due {
+  border-color: var(--wf-accent);
+  color: var(--wf-ink-1);
+}
+.gantt .ov .chart-ref {
+  transition: left var(--wf-t-enter) var(--wf-ease-out);
+}
+.scrub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.scrub input[type="range"] {
+  flex: 1 1 200px;
+  min-width: 160px;
+  accent-color: var(--wf-accent);
+}
+
+/* TimeLanes spread: one dot per person by severity, a dashed 8h mark, the tail past 24h folded and hatched. */
+.spread {
+  position: relative;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+.spread .sl {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--wf-line);
+  min-width: 0;
+}
+.spread .sl b {
+  font-weight: 600;
+}
+.spread .sl .meta b {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.spread .stk {
+  position: relative;
+  border-bottom: 1px solid var(--wf-line);
+  margin-right: 16px;
+}
+.spread .sh {
+  position: relative;
+  height: 30px;
+  border-bottom: 1px solid var(--wf-line);
+  margin-right: 16px;
+}
+.spread .sh .chart-tick {
+  top: 10px;
+}
+.spread > :nth-last-child(2),
+.spread > :nth-last-child(3) {
+  border-bottom: 0;
+}
+.spread .ov {
+  position: absolute;
+  inset: 0 16px 0 180px;
+  pointer-events: none;
+}
+.spread .fold {
+  position: absolute;
+  top: 30px;
+  bottom: 0;
+  right: 0;
+  background: var(--wf-hatch-faint);
+  border-left: 1px solid var(--wf-line-2);
+}
+.spread .dot {
+  position: absolute;
+  translate: -50% -50%;
+  --wf-glyph: 10px;
+  display: inline-flex;
+}
+.spread .ov .chart-ref span {
+  position: absolute;
+  top: 34px;
+  left: 4px;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-3);
+  background: var(--wf-surface);
+  padding: 0 2px;
+  white-space: nowrap;
+}
+
+/* FilterTile: the summary is the control. Ring, beds, over-threshold count and four small figures. */
+.ftiles {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+.ftiles button {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  gap: 4px 12px;
+  align-items: center;
+  padding: 14px;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+  min-width: 0;
+  transition: background-color var(--wf-t-micro) var(--wf-ease-out);
+}
+.ftiles button + button {
+  border-left: 1px solid var(--wf-line);
+}
+.ftiles button:hover {
+  background: var(--wf-hover);
+}
+.ftiles button[aria-pressed="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 0 -3px 0 var(--wf-accent);
+}
+.ftiles .ring {
+  grid-row: 1 / 4;
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+.ftiles .ring svg {
+  display: block;
+  rotate: -90deg;
+}
+.ftiles .ring b {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 600 var(--wf-fs-13)/1 var(--wf-mono);
+}
+.ftiles .nm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  min-width: 0;
+  white-space: nowrap;
+}
+.ftiles .nm i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--svc);
+  flex: none;
+}
+.ftiles .bd2 {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  --wf-glyph: 8px;
+}
+.ftiles .bd2 b {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.ftiles .mini {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 12px;
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--wf-line);
+}
+.ftiles .mini span {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+  font-size: var(--wf-fs-11);
+  color: var(--wf-ink-3);
+  min-width: 0;
+}
+.ftiles .mini b {
+  font: 600 var(--wf-fs-13)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+@media (width <= 64rem) {
+  .ftiles {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+  .ftiles button + button {
+    border-left: 0;
+  }
+  .ftiles button {
+    border-bottom: 1px solid var(--wf-line);
+  }
+}
+
+/* TimeLanes: one lane per kind of event on one axis, status shapes as marks, close marks stack. */
+.lanes {
+  position: relative;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+}
+.lanes .ll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+  border-bottom: 1px solid var(--wf-line);
+}
+.lanes .ll b {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+  margin-left: auto;
+  padding-right: 10px;
+}
+.lanes .lt {
+  position: relative;
+  border-bottom: 1px solid var(--wf-line);
+  margin-inline: 4px 8px;
+}
+.lanes .lh {
+  position: relative;
+  height: 22px;
+  margin-inline: 4px 8px;
+}
+.lanes .lh .chart-tick {
+  top: 6px;
+}
+.lanes .ov {
+  position: absolute;
+  inset: 0 8px 0 96px;
+  pointer-events: none;
+}
+.lanes .ov .after {
+  position: absolute;
+  top: 0;
+  bottom: 22px;
+  right: 0;
+  background: var(--wf-hatch-faint);
+}
+.lanes .lt .g {
+  position: absolute;
+  translate: -50% -50%;
+  --wf-glyph: 10px;
+}
+
+/* TimeRail day: 24 hours, who answers now and for how long. */
+.dayb {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dayb .who {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dayb .who b {
+  font-weight: 600;
+}
+.dayb .bar {
+  position: relative;
+  height: 10px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  overflow: hidden;
+}
+.dayb .bar i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.dayb .bar i.on {
+  background: var(--wf-data-2);
+}
+.dayb .bar i.alt {
+  background: var(--wf-data-rest);
+  box-shadow: inset 0 0 0 1px var(--wf-data-3);
+}
+.dayb .rr {
+  position: relative;
+}
+.dayb .rr .chart-now {
+  top: -4px;
+  bottom: -4px;
+  border-left-width: 2px;
+}
+.dayb .ticks {
+  position: relative;
+  height: 14px;
+}
+.dayb .ticks .chart-tick {
+  top: 2px;
+}
+
+/* CapacityBarRow: stacked bed states with a movable dashed alert line. Rows are buttons. */
+.caprows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+.caprows button {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) 44px 12px;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--wf-row);
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  text-align: left;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+  --wf-glyph: 8px;
+}
+.caprows button:last-child {
+  border-bottom: 0;
+}
+.caprows button:hover {
+  background: var(--wf-hover);
+}
+.caprows .nm {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.caprows .ct {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+.caprows .bar {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  height: 10px;
+  border-radius: var(--wf-r-pill);
+  overflow: hidden;
+  background: var(--wf-track);
+}
+.caprows .bar i {
+  display: block;
+  height: 100%;
+}
+.caprows .ct::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: -1px;
+  left: var(--al);
+  border-left: 1.5px dashed var(--wf-line-3);
+  transition: left var(--wf-t-enter) var(--wf-ease-out);
+}
+.caprows .pc {
+  font: 600 var(--wf-fs-13)/1 var(--wf-mono);
+  text-align: right;
+}
+
+/* PinCompare: up to three wards against the network. Worse than the network takes the amber circle. */
+.pinc table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.pinc th,
+.pinc td {
+  height: 40px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--wf-line);
+  text-align: right;
+  white-space: nowrap;
+}
+.pinc th:first-child,
+.pinc td:first-child {
+  text-align: left;
+  font-family: var(--wf-font);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+.pinc thead th {
+  height: 36px;
+  font-weight: 600;
+  font-size: var(--wf-fs-12);
+}
+.pinc thead th span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--wf-mono);
+}
+.pinc thead button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--wf-ink-3);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+.pinc thead button:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+.pinc td {
+  font: 600 var(--wf-fs-13)/1 var(--wf-mono);
+  --wf-glyph: 8px;
+}
+.pinc td .g {
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+.pinc .net {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+}
+.pinc tr:last-child > * {
+  border-bottom: 0;
+}
+
+/* RangeColumns: Now solid, then the likely figure with a whisker for its range. */
+.fc48 {
+  display: block;
+  width: 100%;
+}
+.fc48 .gl {
+  stroke: var(--wf-line);
+}
+.fc48 .now {
+  fill: var(--wf-data-1);
+}
+.fc48 .fc-est {
+  fill: var(--wf-data-rest);
+  stroke: var(--wf-data-3);
+  stroke-dasharray: 3 3;
+}
+.fc48 .wh {
+  stroke: var(--wf-ink-2);
+  stroke-width: 1.5;
+}
+.fc48 .ref {
+  stroke: var(--wf-ref-stroke);
+  stroke-width: var(--wf-ref-w);
+  stroke-dasharray: var(--wf-ref-dash);
+}
+.fc48 text {
+  fill: var(--wf-ink-3);
+  font: 500 12px var(--wf-mono);
+}
+.fc48 text.v {
+  fill: var(--wf-ink-1);
+  font: 600 15px var(--wf-mono);
+}
+.fc48 text.d {
+  fill: var(--wf-ink-2);
+  font: 600 12px var(--wf-mono);
+}
+.fc48 text.s {
+  font-family: var(--wf-font);
+}
+
+/* GapTiles: need, verdict, gap and a fit against waiting meter. A real table under flush tiles. */
+.gaps {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+.gaps th,
+.gaps td {
+  height: var(--wf-row);
+  padding: 0 12px;
+  border-bottom: 1px solid var(--wf-line);
+  text-align: left;
+  white-space: nowrap;
+}
+.gaps thead th {
+  height: 32px;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+  background: var(--wf-surface-2);
+}
+.gaps tbody th {
+  font-weight: 600;
+}
+.gaps .vd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  --wf-glyph: 10px;
+}
+.gaps .gp {
+  font: 600 var(--wf-fs-15)/1 var(--wf-mono);
+  text-align: right;
+}
+.gaps .ft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.gaps .ft .m {
+  flex: 1;
+  min-width: 56px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  overflow: hidden;
+}
+.gaps .ft .m i {
+  display: block;
+  height: 100%;
+  background: var(--wf-data-ready);
+  border-radius: inherit;
+}
+.gaps tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+/* ThresholdBar: two settings as one bar, so the setting shows what it does. */
+.thbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.thbar .bar {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  border-radius: var(--wf-r-pill);
+  overflow: hidden;
+}
+.thbar .bar i {
+  display: block;
+  height: 100%;
+  transition: flex-basis var(--wf-t-enter) var(--wf-ease-out);
+}
+.thbar .calm {
+  background: var(--wf-track);
+}
+.thbar .soon {
+  background: var(--wf-warning);
+}
+.thbar .urg {
+  background: var(--wf-danger);
+}
+.thbar .lb {
+  display: flex;
+  gap: 2px;
+}
+.thbar .lb span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  --wf-glyph: 9px;
+  transition: flex-basis var(--wf-t-enter) var(--wf-ease-out);
+}
+.thbar .ends {
+  display: flex;
+  justify-content: space-between;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+/* Frac matrix: sites by requirement in fraction pills. A dash is not applicable, never zero. */
+.gm {
+  width: 100%;
+  border-collapse: collapse;
+}
+.gm th,
+.gm td {
+  height: 40px;
+  padding: 0 6px;
+  border-bottom: 1px solid var(--wf-line);
+  text-align: center;
+  white-space: nowrap;
+}
+.gm thead th {
+  height: 32px;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.gm tbody th {
+  text-align: left;
+  padding-left: 0;
+}
+.gm tbody th button {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  font: 600 var(--wf-fs-13)/1 var(--wf-font);
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+.gm tbody th button:hover {
+  background: var(--wf-hover);
+}
+.gm tbody th button[aria-pressed="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+.gm .frac {
+  --wf-glyph: 7px;
+}
+.gm .frac.miss {
+  border-color: var(--wf-line-3);
+}
+.gm .frac.ok {
+  color: var(--wf-ink-3);
+  border-color: var(--wf-line);
+}
+.gm .na {
+  color: var(--wf-ink-3);
+}
+.gm tr.dim td,
+.gm tr.dim th button {
+  color: var(--wf-dim);
+}
+.gm tr.dim .g {
+  --wf-danger: var(--wf-glyph-dim);
+  --wf-warning: var(--wf-glyph-dim);
+  --wf-success: var(--wf-glyph-dim);
+  --wf-info: var(--wf-glyph-dim);
+  --wf-neutral: var(--wf-glyph-dim);
+}
+.gm tbody tr:last-child > * {
+  border-bottom: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gantt .cap,
+  .gantt .ov .chart-ref,
+  .caprows .ct::after,
+  .thbar .bar i,
+  .thbar .lb span,
+  .hrun .mk,
+  .crail .mk {
+    transition: opacity var(--wf-t-micro) linear;
+  }
+}
+
+/* ---------- Elevate parts (adopted 10 Oct 2026) ----------
+   Quiet units, the mixed-face answer, PressureArc, figure roll, AllClear, BedPlan with pick up to place,
+   RowSpark and delta twins, JourneyRibbon, SinceYouLooked, the command palette and the Undo hairline.
+   Spec section 12. Parked, not in the sheet: FlowMap, DeparturesBoard, hero fold, presence, Night shift
+   and Wall modes. ---------- */
+/* Quiet units and the mixed-face answer: figures in mono, units recede, the 12px floor holds */
+.qu {
+  font: 500 0.8em var(--wf-font);
+  color: var(--wf-ink-3);
+  margin-left: 1px;
+  letter-spacing: 0;
+}
+.hero .qu,
+.onhero .qu {
+  color: var(--wf-hero-ink-3);
+}
+.ans {
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+  letter-spacing: var(--wf-tr-20);
+  margin: 0;
+}
+.ans b {
+  font: 600 1em/1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fading hairline */
+.fade-hr {
+  height: 1px;
+  border: 0;
+  margin: 0;
+  background: linear-gradient(90deg, transparent, var(--wf-on-hero-div) 12%, var(--wf-on-hero-div) 88%, transparent);
+}
+
+/* PressureArc: one gauge in a hero. Neutral arc, the glyph and word carry tone. */
+.parc {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  width: 148px;
+  flex: none;
+}
+.parc svg {
+  display: block;
+  width: 148px;
+  height: 82px;
+  overflow: visible;
+}
+.parc path {
+  fill: none;
+  stroke-linecap: round;
+}
+.parc .trk {
+  stroke: var(--wf-on-hero-track);
+  stroke-width: 8;
+}
+.parc .val {
+  stroke: var(--wf-hero-ink-2);
+  stroke-width: 8;
+  transition: stroke-dashoffset var(--wf-t-sheet) var(--wf-ease-sheet);
+}
+.parc .ref {
+  stroke: var(--wf-hero-ink);
+  stroke-width: 2;
+  stroke-dasharray: var(--wf-ref-dash);
+}
+.parc .v {
+  position: absolute;
+  top: 40px;
+  font: 600 var(--wf-fs-20) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.parc .l {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-hero-ink-2);
+  --wf-glyph: 10px;
+}
+.parc .ends {
+  display: flex;
+  justify-content: space-between;
+  width: 132px;
+  margin-top: -4px;
+  font: 500 var(--wf-fs-11) / 1 var(--wf-mono);
+  font-size: 12px;
+  color: var(--wf-hero-ink-3);
+}
+
+/* Figure roll: only changed digits move. No fill mode, so glass above keeps its blur. */
+.roll {
+  display: inline-flex;
+}
+.roll i {
+  display: inline-block;
+  position: relative;
+  font-style: normal;
+}
+.roll i.in {
+  animation: rollIn var(--wf-t-enter) var(--wf-ease-out);
+}
+@keyframes rollIn {
+  from {
+    transform: translateY(0.45em);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .roll i.in {
+    animation: wfFade var(--wf-t-micro) linear;
+  }
+}
+
+/* AllClear: a calm state that still tells you what is next */
+.allclear {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.allclear .ans {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  --wf-glyph: 18px;
+}
+.allclear .ans .g {
+  animation: wfPopIn var(--wf-t-sheet) var(--wf-ease-sheet);
+}
+.allclear .nx {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-hero-ink-2);
+}
+.allclear .nx b {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  color: var(--wf-hero-ink);
+}
+.nextrail {
+  position: relative;
+  height: 46px;
+}
+.nextrail .ax {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 20px;
+  height: 4px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-on-hero-track);
+}
+.nextrail .m {
+  position: absolute;
+  top: 12px;
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  --wf-glyph: 10px;
+}
+.nextrail .m .d {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--wf-hero-1);
+  box-shadow: 0 0 0 1px var(--wf-on-hero-line);
+}
+.nextrail .m span:last-child {
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+}
+.nextrail .m.first {
+  translate: 0 0;
+  align-items: flex-start;
+}
+.nextrail .m.last {
+  translate: -100% 0;
+  align-items: flex-end;
+}
+
+/* BedPlan: the ward as it is walked. Pods, a corridor, one cell per bed. */
+.bplan {
+  display: grid;
+  grid-template:
+    "open corr ica" auto
+    "open corr sec" auto / minmax(0, 3fr) 14px minmax(0, 2fr);
+  gap: var(--wf-s-2);
+}
+.pod {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  min-width: 0;
+}
+.pod-h {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.pod-h .meta b {
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.pod .cells {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 4), minmax(0, 76px));
+  gap: 6px;
+}
+.corr {
+  border-radius: var(--wf-r-pill);
+  background: repeating-linear-gradient(180deg, var(--wf-track) 0 10px, transparent 10px 16px);
+  position: relative;
+}
+.bp {
+  position: relative;
+  height: 48px;
+  padding: 6px 7px;
+  border-radius: var(--wf-r-md);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-2);
+  cursor: pointer;
+  --wf-glyph: 10px;
+  transition:
+    border-color var(--wf-t-micro) var(--wf-ease-out),
+    box-shadow var(--wf-t-micro) var(--wf-ease-out),
+    color var(--wf-t-micro) var(--wf-ease-out),
+    transform var(--wf-t-release) var(--wf-ease-out);
+}
+.bp .st {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.bp .st .t {
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  color: var(--wf-ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bp:hover {
+  border-color: var(--wf-line-3);
+  box-shadow: var(--wf-e-raise);
+}
+.bp:active {
+  transform: scale(0.97);
+}
+.bp.free {
+  border-color: var(--wf-fit-edge);
+  background: linear-gradient(var(--wf-fit-tint), var(--wf-fit-tint)), var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+.bp.closed {
+  border-style: dashed;
+  background: transparent;
+  color: var(--wf-ink-3);
+}
+.bp.pulled {
+  background: var(--wf-hatch-faint), var(--wf-surface);
+}
+.bplan.picking .bp:not(.fits) {
+  color: var(--wf-dim);
+  border-color: var(--wf-line);
+  box-shadow: none;
+}
+.bplan.picking .bp:not(.fits) .g {
+  opacity: 0.4;
+}
+.bplan.picking .bp.fits {
+  border-color: var(--wf-fit-edge);
+  box-shadow:
+    0 0 0 1px var(--wf-fit-edge),
+    var(--wf-e-raise);
+}
+.bp.placed {
+  animation: wfPopIn var(--wf-t-sheet) var(--wf-ease-sheet);
+}
+.waitlist {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.chip-p {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px 0 8px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  color: var(--wf-ink-1);
+  cursor: grab;
+  --wf-glyph: 10px;
+  transition:
+    transform var(--wf-t-enter) var(--wf-ease-out),
+    box-shadow var(--wf-t-enter) var(--wf-ease-out);
+}
+.chip-p .a {
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-3);
+}
+.chip-p[aria-pressed="true"] {
+  transform: translateY(-3px);
+  background: var(--wf-glass-pop);
+  background-image: var(--wf-sheen);
+  box-shadow:
+    inset 0 1px 0 var(--wf-glass-hl),
+    0 0 0 1px var(--wf-accent),
+    var(--wf-e-tip);
+}
+@media (width <= 48rem) {
+  .bplan {
+    grid-template: "open" auto "ica" auto "sec" auto / minmax(0, 1fr);
+  }
+  .corr {
+    display: none;
+  }
+}
+
+/* RowSpark and delta twins in a live list. Ages sit in fixed slots so rows never jitter. */
+.wlist .row {
+  grid-template-columns: 8px minmax(0, 1fr) 84px 64px 72px 56px;
+}
+.spk {
+  display: block;
+  width: 84px;
+  height: 20px;
+  overflow: visible;
+}
+.spk polyline {
+  fill: none;
+  stroke: var(--wf-data-1);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.spk circle {
+  fill: var(--wf-data-1);
+}
+.spk .r {
+  stroke: var(--wf-ref-stroke);
+  stroke-width: var(--wf-ref-w);
+  stroke-dasharray: var(--wf-ref-dash);
+}
+.row.dim .spk polyline {
+  stroke: var(--wf-dim);
+}
+.row.dim .spk circle {
+  fill: var(--wf-dim);
+}
+.dtw {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-2);
+}
+.dtw svg {
+  width: 10px;
+  height: 12px;
+}
+.dtw svg rect {
+  fill: var(--wf-ink-3);
+}
+.dtw svg rect.now {
+  fill: var(--wf-ink-1);
+}
+.fig {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* JourneyRibbon: one person's path with real durations */
+.jrib {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.jrib .bar {
+  display: flex;
+  gap: 3px;
+  height: 28px;
+}
+.jrib .seg {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-2);
+  overflow: hidden;
+  white-space: nowrap;
+  min-width: 28px;
+}
+.jrib .seg:first-child {
+  border-radius: var(--wf-r-pill) var(--wf-r-sm) var(--wf-r-sm) var(--wf-r-pill);
+}
+.jrib .seg.quiet {
+  background: var(--wf-hatch-faint), var(--wf-surface);
+}
+.jrib .seg.now {
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-info);
+  border-radius: var(--wf-r-sm) var(--wf-r-pill) var(--wf-r-pill) var(--wf-r-sm);
+  color: var(--wf-ink-1);
+  gap: 6px;
+}
+.jrib .seg.now::before {
+  content: "";
+  width: 12px;
+  height: 7px;
+  border-radius: 3px;
+  background: var(--wf-info);
+  flex: none;
+}
+.jrib .lbl {
+  display: flex;
+  gap: 3px;
+}
+.jrib .lbl span {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-left: 2px;
+  min-width: 28px;
+}
+
+/* SinceYouLooked: the shift-change digest */
+.digest {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+.digest > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  min-width: 0;
+}
+.digest > div + div {
+  border-left: 1px solid var(--wf-line);
+}
+.digest .n {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 var(--wf-fs-20) / 1 var(--wf-mono);
+  --wf-glyph: 12px;
+}
+.digest .w {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.digest .x {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (width <= 48rem) {
+  .digest {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .digest > div {
+    border-top: 1px solid var(--wf-line);
+  }
+  .digest > div + div {
+    border-left: 0;
+  }
+}
+
+/* Command palette with verbs */
+.pal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--wf-z-modal, 90);
+  background: var(--wf-scrim);
+  display: grid;
+  justify-items: center;
+  align-items: start;
+  padding-top: 14vh;
+  animation: wfFade var(--wf-t-enter) var(--wf-ease-out) backwards;
+}
+.pal {
+  width: min(600px, calc(100vw - 32px));
+  border-radius: var(--wf-r-xl);
+  padding: 6px;
+  animation: wfPopIn var(--wf-t-enter) var(--wf-ease-out) backwards;
+}
+.pal-in {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--wf-line);
+}
+.pal-in input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: 500 var(--wf-fs-15) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+.pal-list {
+  max-height: 340px;
+  overflow: auto;
+  padding: 6px 0;
+}
+.pal-g {
+  padding: 8px 12px 4px;
+}
+.pal-i {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: none;
+  font: 500 var(--wf-fs-13) var(--wf-font);
+  color: var(--wf-ink-1);
+  cursor: pointer;
+  text-align: left;
+  --wf-glyph: 10px;
+}
+.pal-i .pal-k {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--wf-r-sm);
+  display: grid;
+  place-items: center;
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  flex: none;
+}
+.pal-i .sub {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.pal-i .sp {
+  flex: 1;
+}
+.pal-i[aria-selected="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
+}
+.pal-foot {
+  display: flex;
+  gap: 14px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Toast with an Undo hairline that shows how long Undo lasts */
+.toast.ud {
+  position: relative;
+  overflow: hidden;
+}
+.toast.ud::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--wf-tip-ink);
+  opacity: 0.5;
+  transform-origin: left;
+  animation: undoLine var(--undo, 8s) linear forwards;
+}
+@keyframes undoLine {
+  to {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast.ud::after {
+    display: none;
+  }
+}
+
+/* Glare mode: data-mode="glare" on the root, for ward PCs by windows. Solid surfaces, no glass,
+   darker lines, text one weight heavier and 12px glyphs. Red still means act now. */
+:root[data-mode="glare"] {
+  color-scheme: light;
+  --wf-canvas: #ffffff;
+  --wf-surface: #ffffff;
+  --wf-surface-2: #f3f5f7;
+  --wf-raised: #ffffff;
+  --wf-line: #9aa6b2;
+  --wf-line-2: #6f7c89;
+  --wf-line-3: #4a5562;
+  --wf-ink-1: #05080b;
+  --wf-ink-2: #1f2933;
+  --wf-ink-3: #3a4652;
+  --wf-glyph: 12px;
+  --wf-glass-bar: #ffffff;
+  --wf-glass-pop: #ffffff;
+  --wf-glass-sheet: #ffffff;
+  --wf-sheen: none;
+  --wf-glow-1: transparent;
+  --wf-glow-2: transparent;
+}
+:root[data-mode="glare"] body {
+  font-weight: 500;
+}
+:root[data-mode="glare"] b,
+:root[data-mode="glare"] .ttl {
+  font-weight: 700;
+}
+:root[data-mode="glare"] .glass {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Phone: a scrolling chip row fades at the edge instead of cutting a word mid-way */
+@media (width <= 48rem) {
+  .hs-row {
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    padding-right: 28px;
+  }
+  .wlist .row {
+    grid-template-columns: 8px minmax(0, 1fr) 84px 60px;
+  }
+  .wlist .row > :nth-child(4),
+  .wlist .row > :nth-child(6) {
+    display: none;
+  }
+}
+
 /* ---------- empty, loading, avatar ---------- */
 .empty {
   display: flex;
@@ -2475,6 +5070,226 @@ svg.gl {
   }
   100% {
     background-position: -100% 0;
+  }
+}
+
+/* ---------- Elevate fixes (10 Oct 2026). Spec sections 8 and 12. ---------- */
+
+/* Focus is never lost or clipped. The current PressureStrip cell keeps ring and under-line together.
+   Tiles and capacity rows sit in overflow-hidden frames, so their buttons draw the ring inside. */
+.ps button[aria-current="true"]:focus-visible {
+  box-shadow:
+    inset 0 -2px 0 var(--wf-accent-strong),
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+.ftiles button:focus-visible,
+.caprows button:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+/* The hero sets its own gap, so inset rings on the slate band never draw white on white */
+.hero:not(.quiet) {
+  --wf-focus-gap: var(--wf-hero-1);
+}
+/* The hero frame lives in the sheet, not in each page */
+.hero {
+  padding: 20px;
+}
+
+/* Live and honest: the dot says stale or offline as well as the edge */
+.lv.stale .pulse {
+  background: var(--wf-warning);
+  animation: none;
+}
+.lv.off .pulse {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--wf-neutral);
+  animation: none;
+}
+
+/* Hero chips: one 32px face, a 36px hit area. Passive badges and the live chip keep their size. */
+:root {
+  --wf-h-hero-chip: 32px;
+}
+.hs.pill,
+.hj {
+  position: relative;
+  height: var(--wf-h-hero-chip);
+}
+.hs.pill::after,
+.hj::after {
+  content: "";
+  position: absolute;
+  inset: -2px 0;
+}
+
+/* Inputs: the field draws the one ring, the control inside resets. States for invalid, off and hover. */
+.in input,
+.in select,
+.in textarea {
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+.in:hover:not(:focus-within, .is-off, :has(:disabled)) {
+  border-color: var(--wf-line-3);
+}
+.in[aria-invalid="true"],
+.in:has([aria-invalid="true"]) {
+  border-color: var(--wf-danger);
+}
+.in:has(:disabled) {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+/* Density binds every part, not just rail rows */
+.card-h {
+  min-height: var(--wf-row);
+}
+.bed {
+  min-height: calc(var(--wf-row) * 1.75);
+}
+[data-density="dense"] {
+  --wf-h-md: 28px;
+}
+[data-density="touch"] {
+  --wf-h-md: 40px;
+}
+
+/* Dialog: the overlay surface for confirmations. Head, body and foot slots, safe-area aware. */
+.scrim.strong {
+  background: var(--wf-scrim-strong);
+}
+.dialog {
+  position: fixed;
+  z-index: var(--wf-z-modal);
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--wf-r-xl);
+  background: var(--wf-raised);
+  border: 1px solid var(--wf-line-2);
+  box-shadow: var(--wf-e3);
+  overflow: hidden;
+}
+.dialog-h,
+.dialog-f {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 52px;
+  padding: 0 var(--wf-s-4);
+}
+.dialog-h {
+  border-bottom: 1px solid var(--wf-line);
+  font: 600 var(--wf-fs-15) / 1.3 var(--wf-font);
+}
+.dialog-b {
+  padding: var(--wf-s-4);
+  overflow: auto;
+}
+.dialog-f {
+  justify-content: flex-end;
+  border-top: 1px solid var(--wf-line);
+}
+
+/* Touch: every small mark and button reaches 44px through a hit area, never a bigger face */
+@media (pointer: coarse) {
+  .tax .mk,
+  .crail .mk,
+  .hrun .mk,
+  .pinc thead button,
+  .toast .b,
+  .bl button {
+    position: relative;
+  }
+  .tax .mk::after,
+  .crail .mk::after,
+  .hrun .mk::after,
+  .pinc thead button::after,
+  .toast .b::after,
+  .bl button::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    translate: -50% -50%;
+  }
+  .menu [role="menuitem"],
+  .ready-row {
+    min-height: var(--wf-touch);
+  }
+  .sw::before {
+    content: "";
+    position: absolute;
+    inset: -12px -6px;
+  }
+}
+
+/* Forced colours keep selection on parts that draw it with a shadow */
+@media (forced-colors: active) {
+  .ps button[aria-current="true"],
+  .ftiles button[aria-pressed="true"],
+  .gm tr[aria-selected="true"],
+  .bl button[aria-pressed="true"],
+  .ladder button[aria-pressed="true"],
+  .tax .mk[aria-pressed="true"],
+  .crail .mk[aria-pressed="true"],
+  .bp.fits,
+  .chip-p[aria-pressed="true"] {
+    border: 2px solid Highlight;
+  }
+  .pips i.on,
+  .bs i,
+  .bl .bar b,
+  .caprows .bar i,
+  .spk,
+  .dtw svg,
+  .parc svg {
+    forced-color-adjust: none;
+  }
+}
+
+/* Print: no row actions or floating chrome, headers repeat on every page */
+@media print {
+  .ra,
+  .toast,
+  .tip,
+  .menu,
+  .pop,
+  .drawer,
+  .dialog,
+  .pal-scrim,
+  .skip {
+    display: none !important;
+  }
+  thead {
+    display: table-header-group;
+  }
+  .hero {
+    background: none;
+    color: #000;
+    border-color: #999;
+    box-shadow: none;
   }
 }
 
@@ -2627,6 +5442,16 @@ svg.gl {
 /* Print is day, ink only, no glass, no shadow. The live hero prints as the quiet hero. Glyphs are
    drawn as backgrounds, so they are kept with print-color-adjust. ShiftBrief prints bed numbers only. */
 @media print {
+  [data-print-hide] {
+    display: none !important;
+  }
+  .card,
+  .row,
+  .li,
+  .gates,
+  .rule {
+    break-inside: avoid;
+  }
   :root,
   :root[data-theme],
   .day,
@@ -2713,7 +5538,6 @@ svg.gl {
   :root {
     --wf-h-sm: var(--wf-touch);
     --wf-h-md: var(--wf-touch);
-    --wf-h-chip: 32px;
   }
   /* tabs and chips keep a 36px face but take a 44px hit area. The track makes room for it and never
      scrolls vertically. */
