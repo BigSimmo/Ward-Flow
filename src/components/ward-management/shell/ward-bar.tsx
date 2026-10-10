@@ -25,7 +25,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
@@ -407,6 +407,50 @@ const NEW_REFERRAL_ACTION: WardPrimaryAction = {
   label: "New referral",
   menu: WARD_NEW_REFERRAL_MENU,
 };
+
+/**
+ * The phone bar's Menu button and the phone menu it opens. The menu opens only on the phone; above
+ * 48rem the rail's own sheet answers Menu.
+ */
+function PhoneMenuEntry({
+  menuRef,
+  tasksCount,
+  activityUnread,
+  roleCategory,
+  onOpenDrawer,
+  onOpenReferral,
+}: {
+  menuRef: RefObject<HTMLButtonElement | null>;
+  tasksCount: number;
+  activityUnread: number;
+  roleCategory: ReferralSheetCategory;
+  onOpenDrawer: (id: "tasks" | "activity" | "tools") => void;
+  onOpenReferral: (request: ReferralSheetRequest, returnFocus: HTMLElement | null) => void;
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        ref={menuRef}
+        className={styles.phoneOnly}
+        aria-label="Menu"
+        aria-haspopup="dialog"
+        aria-controls="ward-phone-menu"
+        data-testid="ward-bar-phone-menu"
+        onClick={(event) => openWardMenu(event.currentTarget)}
+      >
+        <MenuIcon aria-hidden="true" strokeWidth={1.75} />
+      </button>
+      <WardPhoneMenu
+        returnFocusRef={menuRef}
+        tasksCount={tasksCount}
+        activityUnread={activityUnread}
+        onOpenDrawer={onOpenDrawer}
+        onNewReferral={() => onOpenReferral({ category: roleCategory }, menuRef.current)}
+      />
+    </>
+  );
+}
 
 export function phoneBarAction(action: WardPrimaryAction | undefined, phone: boolean): WardPrimaryAction | undefined {
   return phone ? undefined : action;
@@ -1063,25 +1107,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       data-scrolled={barScrolled || undefined}
     >
       {/* Phone (Josh, 10 Oct 2026, locked lean bar): Menu, title over the service line, Search, Tasks. */}
-      <button
-        type="button"
-        ref={phoneMenuRef}
-        className={styles.phoneOnly}
-        aria-label="Menu"
-        aria-haspopup="dialog"
-        aria-controls="ward-phone-menu"
-        data-testid="ward-bar-phone-menu"
-        onClick={(event) => openWardMenu(event.currentTarget)}
-      >
-        <MenuIcon aria-hidden="true" strokeWidth={1.75} />
-      </button>
-      {/* Opens only on the phone; above 48rem the rail's own sheet answers Menu. */}
-      <WardPhoneMenu
-        returnFocusRef={phoneMenuRef}
+      <PhoneMenuEntry
+        menuRef={phoneMenuRef}
         tasksCount={tasksActiveCount}
         activityUnread={unreadNoticeCount}
+        roleCategory={roleCategory}
         onOpenDrawer={openPopover}
-        onNewReferral={() => openReferral({ category: roleCategory }, phoneMenuRef.current)}
+        onOpenReferral={openReferral}
       />
       <div className={styles.title}>
         <div className={styles.titleGroup}>

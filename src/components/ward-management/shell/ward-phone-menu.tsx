@@ -425,6 +425,68 @@ function CreateSheet({
   );
 }
 
+type PhoneMenuModel = ReturnType<typeof phoneMenuModel>;
+
+type PageRowRender = (entry: RailEntry, count?: WardNavCount, withMeta?: boolean) => ReactNode;
+
+function MenuSearch({ query, onQuery }: { query: string; onQuery: (value: string) => void }) {
+  return (
+    <label className={styles.search}>
+      <Search aria-hidden="true" strokeWidth={1.75} />
+      <span className="sr-only">Go to a page</span>
+      <input
+        type="search"
+        value={query}
+        placeholder="Go to a page"
+        autoComplete="off"
+        onChange={(event) => onQuery(event.target.value)}
+        data-testid="ward-phone-menu-search"
+      />
+    </label>
+  );
+}
+
+/** With a filter typed, the matching pages. Without one, Needs you, every page by group, then More. */
+function MenuPages({
+  query,
+  entries,
+  needs,
+  groups,
+  pageRow,
+  onDrawer,
+  onClose,
+}: {
+  query: string;
+  entries: RailEntry[];
+  needs: PhoneMenuModel["needs"];
+  groups: PhoneMenuModel["groups"];
+  pageRow: PageRowRender;
+  onDrawer: (id: DrawerId) => void;
+  onClose: () => void;
+}) {
+  const needle = query.trim().toLowerCase();
+  if (needle) {
+    const results = entries.filter((entry) => entry.label.toLowerCase().includes(needle));
+    if (results.length === 0) return <p className={styles.empty}>No page called “{query.trim()}”.</p>;
+    return <Section label="Pages found">{results.map((entry) => pageRow(entry))}</Section>;
+  }
+  return (
+    <>
+      {needs.length > 0 ? (
+        <Section label="Needs you" rich>
+          {needs.map(({ entry, count }) => pageRow(entry, count, true))}
+        </Section>
+      ) : null}
+      {groups.map((group) => (
+        <Section key={group.label} label={group.label}>
+          {group.entries.map((entry) => pageRow(entry))}
+        </Section>
+      ))}
+      <MoreSection onDrawer={onDrawer} onClose={onClose} />
+    </>
+  );
+}
+
 export function WardPhoneMenu({
   returnFocusRef,
   tasksCount,
@@ -451,10 +513,9 @@ export function WardPhoneMenu({
   );
 
   const { entries, byId, dock, needs, groups } = phoneMenuModel(role, counts);
-  const needle = query.trim().toLowerCase();
-  const results = entries.filter((entry) => entry.label.toLowerCase().includes(needle));
 
   const close = () => setOpen(false);
+  const closeCreate = () => setCreateOpen(false);
   const go = (entry: RailEntry) => {
     announceGo(pathname, entry);
     close();
@@ -468,7 +529,11 @@ export function WardPhoneMenu({
     setCreateOpen(true);
     announceToWardShell("Create opened.");
   };
-  const pageRow = (entry: RailEntry, count = countIn(counts, entry.id), withMeta = false) => (
+  const refer = () => {
+    close();
+    onNewReferral();
+  };
+  const pageRow: PageRowRender = (entry, count = countIn(counts, entry.id), withMeta = false) => (
     <PageRow
       key={entry.id}
       entry={entry}
@@ -476,10 +541,7 @@ export function WardPhoneMenu({
       withMeta={withMeta}
       pathname={pathname}
       onGo={go}
-      onNewReferral={() => {
-        close();
-        onNewReferral();
-      }}
+      onNewReferral={refer}
     />
   );
 
@@ -514,41 +576,21 @@ export function WardPhoneMenu({
           />
         }
       >
-        <label className={styles.search}>
-          <Search aria-hidden="true" strokeWidth={1.75} />
-          <span className="sr-only">Go to a page</span>
-          <input
-            type="search"
-            value={query}
-            placeholder="Go to a page"
-            autoComplete="off"
-            onChange={(event) => setQuery(event.target.value)}
-            data-testid="ward-phone-menu-search"
-          />
-        </label>
-
-        {needle && results.length === 0 ? <p className={styles.empty}>No page called “{query.trim()}”.</p> : null}
-        {needle && results.length > 0 ? (
-          <Section label="Pages found">{results.map((entry) => pageRow(entry))}</Section>
-        ) : null}
-        {!needle && needs.length > 0 ? (
-          <Section label="Needs you" rich>
-            {needs.map(({ entry, count }) => pageRow(entry, count, true))}
-          </Section>
-        ) : null}
-        {!needle
-          ? groups.map((group) => (
-              <Section key={group.label} label={group.label}>
-                {group.entries.map((entry) => pageRow(entry))}
-              </Section>
-            ))
-          : null}
-        {!needle ? <MoreSection onDrawer={drawer} onClose={close} /> : null}
+        <MenuSearch query={query} onQuery={setQuery} />
+        <MenuPages
+          query={query}
+          entries={entries}
+          needs={needs}
+          groups={groups}
+          pageRow={pageRow}
+          onDrawer={drawer}
+          onClose={close}
+        />
       </Sheet>
 
       <CreateSheet
         open={createOpen}
-        onClose={() => setCreateOpen(false)}
+        onClose={closeCreate}
         returnFocusRef={returnFocusRef}
         byId={byId}
         onNewReferral={onNewReferral}
