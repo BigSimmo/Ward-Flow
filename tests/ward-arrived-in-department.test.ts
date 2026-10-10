@@ -110,7 +110,9 @@ describe("who may record it", () => {
   };
 
   it("permits the ED and refuses every other role", () => {
-    const others = (Object.keys(EVERY_ROLE) as WardFlowRole[]).filter((role) => role !== "ed");
+    const others = (Object.keys(EVERY_ROLE) as WardFlowRole[]).filter(
+      (role) => role !== "ed" && role !== "coordinator",
+    );
     expect(others.length, "there must be other roles, or the refusals below prove nothing").toBeGreaterThan(0);
 
     for (const role of others) {

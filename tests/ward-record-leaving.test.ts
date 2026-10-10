@@ -113,8 +113,7 @@ describe("recording that a patient has left", () => {
     const state = seeded();
     const person = state.admissions.find(
       (a) =>
-        a.state === "occupied" &&
-        !state.bedReleases.some((r) => r.admissionId === a.id && r.state !== "discharged"),
+        a.state === "occupied" && !state.bedReleases.some((r) => r.admissionId === a.id && r.state !== "discharged"),
     );
     if (!person) throw new Error("the seed contains nobody occupying a bed with no live release");
     const unitId = person.unitId;
@@ -379,9 +378,10 @@ describe("recording that a patient has left", () => {
     it("refuses a role that is not the ward", () => {
       const state = seeded();
       const person = anOccupant(state);
+      // The coordinator may take every action (Josh, 10 Oct 2026), so the officer is the refused role.
       const next = wardFlowReducer(state, {
         type: "RECORD_LEAVING",
-        role: "coordinator",
+        role: "officer",
         now: NOW,
         admissionId: person.id,
         actingUnitId: person.unitId,

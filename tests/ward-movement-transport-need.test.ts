@@ -167,7 +167,8 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
     expect(after.movements.find((candidate) => candidate.id === closed!.id)!.transportNeed).toBeUndefined();
   });
 
-  it("refuses the coordinator, and accepts the three senders — the BOOK_TRANSPORT split", () => {
+  it("refuses the transport officer, and accepts the three senders and the coordinator", () => {
+    // Josh, 10 Oct 2026: the coordinator may take every action, superseding TR-D1 below.
     // `TR-D1` rejects the coordinator from BOOKING by name: it owns the bed search and does not
     // know whether this patient can travel. Whether transport is needed at all is that same
     // knowledge one step earlier. The three accepted roles are the control — a role gate that
@@ -175,7 +176,7 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
     const seeded = seedWardFlowState();
     const refused = wardFlowReducer(seeded, {
       type: "RECORD_TRANSPORT_NEED",
-      role: "coordinator",
+      role: "officer",
       now: NOW,
       movementId: openMovement().id,
       needed: true,
@@ -183,7 +184,7 @@ describe("RECORD_TRANSPORT_NEED is the producer, so the field is not one only a 
     expect(refused.rejections).toHaveLength(1);
     expect(refused.movements.find((candidate) => candidate.id === openMovement().id)!.transportNeed).toBeUndefined();
 
-    for (const role of ["ed", "ward", "community"] as const) {
+    for (const role of ["ed", "ward", "community", "coordinator"] as const) {
       const allowed = wardFlowReducer(seeded, {
         type: "RECORD_TRANSPORT_NEED",
         role,
