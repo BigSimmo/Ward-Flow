@@ -2518,7 +2518,7 @@ export const referrals: Referral[] = [
      * exactly why the two facts are stored separately and neither is derived from the other.
      */
     suburb: { kind: "unknown", reason: "not_known" },
-    source: "ed_medical",
+    source: "crisis_service",
     raisedAt: NOW_ANCHOR - 65,
     triagedAt: NOW_ANCHOR - 80,
     urgency: 1,
@@ -3135,7 +3135,7 @@ export const referrals: Referral[] = [
     ],
     homeRegion: "Mid West",
     suburb: { kind: "named", name: "Geraldton" },
-    source: "ed_medical",
+    source: "crisis_service",
     raisedAt: NOW_ANCHOR - 300,
     urgency: 2,
     originSiteCode: "GER",
