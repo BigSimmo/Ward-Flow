@@ -11,7 +11,21 @@ function handler() {
   handlerPromise ??= (async () => {
     const config = readConfig();
     const storage = await openStorage(config.storage);
-    return createHandler({ config, store: createStore(storage), authenticate: await createAuthenticator(config) });
+    let sharedStore;
+    if (config.shared) {
+      const { createPostgresPool, createWorkspaceStore } = await import("./postgres.mjs");
+      const engine = await import("./dist/engine.mjs");
+      sharedStore = createWorkspaceStore(createPostgresPool(config.postgres), {
+        workspaceId: config.workspaceId,
+        engine,
+      });
+    }
+    return createHandler({
+      config,
+      store: createStore(storage),
+      authenticate: await createAuthenticator(config),
+      sharedStore,
+    });
   })().catch((error) => {
     handlerPromise = undefined;
     throw error;
@@ -58,6 +72,18 @@ app.http("wardFlowReady", { route: "readyz", methods: ["GET"], authLevel: "anony
 app.http("wardFlowSession", {
   route: "v1/sessions/{id}",
   methods: ["GET", "PUT", "DELETE", "OPTIONS"],
+  authLevel: "anonymous",
+  handler: handleHttp,
+});
+app.http("wardFlowWorkspace", {
+  route: "v1/workspace",
+  methods: ["GET", "OPTIONS"],
+  authLevel: "anonymous",
+  handler: handleHttp,
+});
+app.http("wardFlowWorkspaceAction", {
+  route: "v1/workspace/{action}",
+  methods: ["GET", "POST", "OPTIONS"],
   authLevel: "anonymous",
   handler: handleHttp,
 });

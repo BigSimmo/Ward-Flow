@@ -9,11 +9,21 @@
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
-    "test": "node --test backend.test.mjs"
+    "test": "node --test backend.test.mjs shared-http.test.mjs postgres.test.mjs azure-setup.test.mjs",
+    "build:engine": "node build-engine.mjs",
+    "migrate": "node --env-file-if-exists=.env migrate.mjs",
+    "package:deployment": "node package-deployment.mjs",
+    "azure:inspect": "node azure-setup.mjs inspect",
+    "azure:provision": "node azure-setup.mjs provision",
+    "azure:configure": "node azure-setup.mjs configure"
   },
   "dependencies": {
     "@azure/functions": "^4.16.5",
     "@azure/identity": "^4.13.3",
-    "jose": "^6.2.12"
+    "jose": "^6.2.12",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
   }
 }
