@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { EventEmitter } from "node:events";
 import { APPROVED_STORAGE_ACCOUNTS, readConfig } from "./config.mjs";
-import { createHandler } from "./server.mjs";
+import { createHandler, registerShutdown } from "./server.mjs";
 import { createStore, validStoredSession } from "./database.mjs";
 import { handleHttp } from "./function.mjs";
 import { createAuthenticator } from "./auth.mjs";
@@ -309,6 +310,160 @@ test("readiness contacts storage on every probe", async () => {
   await assert.rejects(store.ready(), /container unavailable/);
 });
 
+test("nonshared readiness reports storage readiness", async () => {
+  const { handler } = setup();
+  const response = await handler(
+    new Request("http://localhost/readyz", { headers: { authorization: "Bearer accepted" } }),
+  );
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { storage: "ready" });
+});
+
+test("shared readiness probes both active stores on every authenticated request", async () => {
+  const testAccount = {
+    authorization: "Bearer synthetic-readiness-coordinator",
+    objectId: environment.WARD_ALLOWED_OBJECT_ID,
+  };
+  const probes = [];
+  let storageHealthy = true;
+  let databaseHealthy = true;
+  const handler = createHandler({
+    config,
+    authenticate: async (authorization) => {
+      assert.equal(authorization, testAccount.authorization);
+      return testAccount.objectId;
+    },
+    store: {
+      ready: async () => {
+        probes.push("storage");
+        if (!storageHealthy) throw new Error("synthetic Blob diagnostic");
+      },
+    },
+    sharedStore: {
+      ready: async () => {
+        probes.push("database");
+        if (!databaseHealthy) throw new Error("synthetic PostgreSQL diagnostic");
+      },
+    },
+  });
+  const probe = () =>
+    handler(new Request("http://localhost/readyz", { headers: { authorization: testAccount.authorization } }));
+  let response = await probe();
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { storage: "ready", database: "ready" });
+  assert.deepEqual(probes, ["storage", "database"]);
+
+  storageHealthy = false;
+  response = await probe();
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { error: "Storage unavailable; changes were not confirmed" });
+  assert.deepEqual(probes, ["storage", "database", "storage"]);
+
+  storageHealthy = true;
+  databaseHealthy = false;
+  response = await probe();
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { error: "Storage unavailable; changes were not confirmed" });
+  assert.deepEqual(probes, ["storage", "database", "storage", "storage", "database"]);
+
+  databaseHealthy = true;
+  response = await probe();
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { storage: "ready", database: "ready" });
+  assert.deepEqual(probes, ["storage", "database", "storage", "storage", "database", "storage", "database"]);
+});
+
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  test(`${signal} stops the listener before ending the pool exactly once`, async (t) => {
+    const signals = new EventEmitter();
+    const server = new EventEmitter();
+    const order = [];
+    let finishClose;
+    server.close = t.mock.fn((callback) => {
+      order.push("server");
+      finishClose = callback;
+    });
+    const pool = { end: t.mock.fn(async () => order.push("pool")) };
+    const close = registerShutdown(server, pool, signals);
+    signals.emit(signal);
+    const shutdown = close();
+    signals.emit(signal === "SIGINT" ? "SIGTERM" : "SIGINT");
+    assert.equal(close(), shutdown);
+    assert.deepEqual(order, ["server"]);
+    assert.equal(pool.end.mock.callCount(), 0);
+    finishClose();
+    await shutdown;
+    assert.deepEqual(order, ["server", "pool"]);
+    assert.equal(server.close.mock.callCount(), 1);
+    assert.equal(pool.end.mock.callCount(), 1);
+    assert.equal(signals.exitCode, undefined);
+  });
+}
+
+test("listener startup errors still end the pool when the server is not running", async (t) => {
+  const messages = [];
+  t.mock.method(console, "error", (...args) => messages.push(args));
+  const signals = new EventEmitter();
+  const server = new EventEmitter();
+  server.close = t.mock.fn((callback) =>
+    callback(Object.assign(new Error("synthetic close diagnostic"), { code: "ERR_SERVER_NOT_RUNNING" })),
+  );
+  const pool = { end: t.mock.fn(async () => {}) };
+  const close = registerShutdown(server, pool, signals);
+  server.emit("error", new Error("synthetic listener diagnostic"));
+  signals.emit("SIGTERM");
+  await close();
+  assert.equal(signals.exitCode, 1);
+  assert.equal(server.close.mock.callCount(), 1);
+  assert.equal(pool.end.mock.callCount(), 1);
+  assert.deepEqual(messages, [["Backend listener unavailable"]]);
+});
+
+test("pool shutdown rejection is caught and logged without raw diagnostics", async (t) => {
+  const messages = [];
+  t.mock.method(console, "error", (...args) => messages.push(args));
+  const signals = new EventEmitter();
+  const server = new EventEmitter();
+  server.close = t.mock.fn((callback) => callback());
+  const pool = {
+    end: t.mock.fn(async () => {
+      throw new Error("synthetic private pool diagnostic");
+    }),
+  };
+  const close = registerShutdown(server, pool, signals);
+  signals.emit("SIGINT");
+  await assert.doesNotReject(close());
+  await close();
+  assert.equal(signals.exitCode, 1);
+  assert.equal(pool.end.mock.callCount(), 1);
+  assert.deepEqual(messages, [["Backend shutdown unavailable"]]);
+});
+
+test("listener close errors still end the pool and produce sanitized shutdown failure", async (t) => {
+  const messages = [];
+  t.mock.method(console, "error", (...args) => messages.push(args));
+  const signals = new EventEmitter();
+  const server = new EventEmitter();
+  server.close = t.mock.fn((callback) => callback(new Error("synthetic listener close diagnostic")));
+  const pool = { end: t.mock.fn(async () => {}) };
+  const close = registerShutdown(server, pool, signals);
+  await close();
+  assert.equal(signals.exitCode, 1);
+  assert.equal(pool.end.mock.callCount(), 1);
+  assert.deepEqual(messages, [["Backend shutdown unavailable"]]);
+});
+
+test("nonshared shutdown closes the listener without a pool", async (t) => {
+  const signals = new EventEmitter();
+  const server = new EventEmitter();
+  server.close = t.mock.fn((callback) => callback());
+  const close = registerShutdown(server, undefined, signals);
+  signals.emit("SIGTERM");
+  await close();
+  assert.equal(server.close.mock.callCount(), 1);
+  assert.equal(signals.exitCode, undefined);
+});
+
 test("storage account must be on the fixed Ward Flow allowlist, not merely agree between the two variables", () => {
   assert.deepEqual([...APPROVED_STORAGE_ACCOUNTS], ["wflowdev7273a083aue"]);
   const approved = readConfig({
@@ -369,6 +524,44 @@ test("tenant users are accepted when WARD_ALLOW_TENANT_USERS is enabled", async 
     },
   });
   assert.equal(await authenticate("Bearer accepted"), otherUserOid);
+});
+
+test("comma-separated coordinators and the legacy account are accepted without enabling tenant users", async () => {
+  const coordinatorOids = ["33333333-3333-4333-8333-333333333333", "44444444-4444-4444-8444-444444444444"];
+  const unlistedOid = "55555555-5555-4555-8555-555555555555";
+  const coordinatorConfig = readConfig({
+    ...environment,
+    WARD_ALLOW_TENANT_USERS: "false",
+    WARD_COORDINATOR_OBJECT_IDS: coordinatorOids.join(","),
+  });
+  assert.equal(coordinatorConfig.allowTenantUsers, false);
+  assert.deepEqual(coordinatorConfig.coordinatorIds, coordinatorOids);
+  for (const oid of coordinatorOids) {
+    assert.notEqual(oid, coordinatorConfig.allowedObjectId);
+  }
+  const claims = {
+    tid: environment.AZURE_TENANT_ID,
+    oid: coordinatorOids[0],
+    scp: "WardFlow.Access",
+  };
+  let payload = claims;
+  const authenticate = await createAuthenticator(coordinatorConfig, {
+    keys: {},
+    jose: { jwtVerify: async () => ({ payload }) },
+  });
+  const authorization = request().headers.get("authorization");
+  for (const oid of [...coordinatorOids, environment.WARD_ALLOWED_OBJECT_ID]) {
+    payload = { ...claims, oid };
+    assert.equal(await authenticate(authorization), oid);
+  }
+  for (const invalid of [
+    { ...claims, oid: unlistedOid },
+    { ...claims, scp: "" },
+    { ...claims, tid: unlistedOid },
+  ]) {
+    payload = invalid;
+    await assert.rejects(authenticate(authorization), /Unauthorised/);
+  }
 });
 
 test("stored snapshots require a complete valid envelope and preserve corrupt data", async () => {

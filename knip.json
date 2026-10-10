@@ -1,15 +1,23 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": [
-    "scripts/**/*.{ts,mjs,cjs}",
-    "eslint-rules/**/*.mjs",
-    "tests/**/*.{test.ts,dom.test.tsx,spec.ts}",
-    "*.config.{ts,mts,mjs,cjs}"
-  ],
-  "project": ["src/**/*.{ts,tsx}", "scripts/**/*.{ts,mjs,cjs}", "eslint-rules/**/*.mjs"],
   "ignore": ["**/*mockup*", "docs/**"],
-  "vitest": {
-    "config": ["vitest.config.mts"]
-  },
-  "playwright": false
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/**/*.{ts,mjs,cjs}",
+        "eslint-rules/**/*.mjs",
+        "tests/**/*.{test.ts,dom.test.tsx,spec.ts}",
+        "*.config.{ts,mts,mjs,cjs}"
+      ],
+      "project": ["src/**/*.{ts,tsx}", "scripts/**/*.{ts,mjs,cjs}", "eslint-rules/**/*.mjs"],
+      "vitest": {
+        "config": ["vitest.config.mts"]
+      },
+      "playwright": false
+    },
+    "backend/ward-flow": {
+      "entry": ["*.test.mjs"],
+      "project": ["*.mjs", "*.ts"]
+    }
+  }
 }
