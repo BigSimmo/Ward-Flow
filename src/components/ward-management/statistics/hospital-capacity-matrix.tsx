@@ -56,7 +56,9 @@ const COLUMN_LABELS: Record<SortColumn, string> = {
 /**
  * "Beds by ward": every unit's ruled boxes from `bedStates` — Ready · Pulled · Closed · Occupied
  * add up to its beds. Without `admissions` no pull can be told apart, so Pulled is 0 and a pulled
- * patient stays inside Occupied. `service`, when given, narrows the rows to that health service.
+ * patient stays inside Occupied. `service`, when given, highlights that health service's wards and
+ * dims the rest by colour; the status choice does the same. Neither hides a row (v10 filter rule).
+ * Only the typed search narrows the list.
  */
 export function HospitalCapacityMatrix({
   units,
@@ -101,25 +103,27 @@ export function HospitalCapacityMatrix({
     });
   }, [units, bedReleases, admissions, leaveBeds]);
 
-  const scoped = useMemo(() => (service ? rows.filter((r) => r.service === service) : rows), [rows, service]);
+  const inService = (r: UnitCapacityRow) => !service || r.service === service;
   const counts = {
-    all: scoped.length,
-    near: scoped.filter((r) => r.status === "near").length,
-    none: scoped.filter((r) => r.status === "none").length,
+    all: rows.filter(inService).length,
+    near: rows.filter((r) => inService(r) && r.status === "near").length,
+    none: rows.filter((r) => inService(r) && r.status === "none").length,
   };
+  const highlighting = service !== null || statusFilter !== "all";
+  const isMatch = (r: UnitCapacityRow) => inService(r) && (statusFilter === "all" || r.status === statusFilter);
 
   const filteredRows = useMemo(() => {
     const q = filterText.trim().toLowerCase();
-    return scoped.filter(
+    return rows.filter(
       (r) =>
-        (statusFilter === "all" || r.status === statusFilter) &&
-        (!q ||
-          r.name.toLowerCase().includes(q) ||
-          r.siteName.toLowerCase().includes(q) ||
-          r.siteCode.toLowerCase().includes(q) ||
-          r.service.toLowerCase().includes(q)),
+        !q ||
+        r.name.toLowerCase().includes(q) ||
+        r.siteName.toLowerCase().includes(q) ||
+        r.siteCode.toLowerCase().includes(q) ||
+        r.service.toLowerCase().includes(q),
     );
-  }, [scoped, filterText, statusFilter]);
+  }, [rows, filterText]);
+  const matchedCount = filteredRows.filter(isMatch).length;
 
   const sortedRows = useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1;
@@ -201,9 +205,17 @@ export function HospitalCapacityMatrix({
             { id: "none", label: "None ready", count: counts.none },
           ]}
         />
-        <span className={styles.toolbarEnd}>
-          <b>{filteredRows.length}</b> of {scoped.length}
-          {service ? ` in ${service}` : null}
+        <span className={styles.toolbarEnd} role="status" data-testid="ward-statistics-capacity-matrix-count">
+          {highlighting ? (
+            <>
+              <b>{matchedCount}</b> of {filteredRows.length} highlighted{service ? ` in ${service}` : null}, all rows
+              stay
+            </>
+          ) : (
+            <>
+              <b>{filteredRows.length}</b> of {rows.length}
+            </>
+          )}
         </span>
       </div>
       <div className={styles.tableWrap}>
@@ -232,7 +244,7 @@ export function HospitalCapacityMatrix({
               </tr>
             ) : (
               sortedRows.map((r) => (
-                <tr key={r.id}>
+                <tr key={r.id} data-dim={highlighting && !isMatch(r) ? "true" : undefined}>
                   <th scope="row" className={styles.wardCell}>
                     <Link href={wardStatisticsHref(r.id)} className={styles.rowLink} title={r.name}>
                       {r.name}

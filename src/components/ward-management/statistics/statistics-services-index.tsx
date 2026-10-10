@@ -191,12 +191,12 @@ export function StatisticsServicesIndexScreen() {
                         {entry.over > 0 ? (
                           <>
                             <StatusGlyph tone="warning" size={9} />
-                            {`${entry.over} ${wardsWord(entry.over)} over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+                            {`${entry.over} ${wardsWord(entry.over)} at or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
                           </>
                         ) : (
                           <>
                             <StatusGlyph tone="success" size={9} />
-                            {`No ward over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+                            {`No ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
                           </>
                         )}
                       </span>

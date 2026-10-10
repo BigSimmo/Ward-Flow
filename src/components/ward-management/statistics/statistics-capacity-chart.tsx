@@ -8,6 +8,7 @@ import {
   Button,
   CardBody,
   CardFoot,
+  FilterChip,
   Icon,
   Legend,
   Menu,
@@ -40,6 +41,7 @@ type CapacityRow = {
   closed: number;
   onLeave: number;
   pending: number;
+  services: Set<string>;
   units: Unit[];
 };
 
@@ -83,6 +85,7 @@ export function StatisticsCapacityChart({
   const [groupBy, setGroupBy] = useState<"hospital" | "ward">(initialGroup);
   const [scale, setScale] = useState<"beds" | "share">("share");
   const [service, setService] = useState("all");
+  const [overOnly, setOverOnly] = useState(false);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("ready");
   const [alertLine, setAlertLine] = useState(BED_ALERT_THRESHOLD_PERCENT);
@@ -113,8 +116,10 @@ export function StatisticsCapacityChart({
           closed: 0,
           onLeave: 0,
           pending: 0,
+          services: new Set<string>(),
           units: [],
         };
+        if (site?.service) row.services.add(site.service);
         const states = bedStates(unit, admissions, bedReleases, leaveBeds);
         row.beds += unit.beds;
         row.occupied += states.occupied;
@@ -129,9 +134,9 @@ export function StatisticsCapacityChart({
       return [...grouped.values()];
     };
     const needle = query.trim().toLowerCase();
+    // The service choice highlights and dims (v10 filter rule); only the typed search narrows.
     const matched = units.filter((unit) => {
       const site = siteByCode(unit.siteCode);
-      if (service !== "all" && site?.service !== service) return false;
       const search = `${unit.name} ${site?.name ?? unit.siteCode} ${unit.siteCode}`.toLowerCase();
       return !needle || search.includes(needle);
     });
@@ -147,11 +152,16 @@ export function StatisticsCapacityChart({
       return difference || a.name.localeCompare(b.name);
     });
     return { rows: sorted, allCount: group(units).length };
-  }, [units, bedReleases, admissions, leaveBeds, service, query, groupBy, sort]);
+  }, [units, bedReleases, admissions, leaveBeds, query, groupBy, sort]);
 
-  // Resolve from current rows: hidden or removed selections never leave a stale inspector.
+  const occupancyOf = (row: CapacityRow) => (row.beds ? ((row.occupied + row.pulled) / row.beds) * 100 : 0);
+  const inService = (row: CapacityRow) => service === "all" || row.services.has(service);
+  const isLit = (row: CapacityRow) => inService(row) && (!overOnly || occupancyOf(row) >= alertLine);
+  const highlighting = service !== "all" || overOnly;
+  const litRows = rows.filter(isLit);
+  // Resolve from current rows: removed selections never leave a stale inspector.
   const selected = rows.find((row) => row.id === selectedId);
-  const total = rows.reduce(
+  const total = litRows.reduce(
     (sum, row) => ({
       beds: sum.beds + row.beds,
       ready: sum.ready + row.ready,
@@ -163,9 +173,8 @@ export function StatisticsCapacityChart({
     scale === "share"
       ? { maximum: 100, ticks: [0, 25, 50, 75, 100] }
       : statisticsChartScale(Math.max(0, ...rows.map((row) => row.beds)));
-  const occupancyOf = (row: CapacityRow) => (row.beds ? ((row.occupied + row.pulled) / row.beds) * 100 : 0);
-  const overLine = rows.filter((row) => occupancyOf(row) >= alertLine).length;
-  const hasFilters = service !== "all" || query !== "";
+  const overLine = rows.filter((row) => inService(row) && occupancyOf(row) >= alertLine).length;
+  const hasFilters = highlighting || query !== "";
   const changed = hasFilters || groupBy !== initialGroup || scale !== "share" || sort !== "ready";
   const noun = groupBy === "hospital" ? (allCount === 1 ? "hospital" : "hospitals") : allCount === 1 ? "ward" : "wards";
 
@@ -176,6 +185,7 @@ export function StatisticsCapacityChart({
 
   function reset() {
     setService("all");
+    setOverOnly(false);
     setQuery("");
     setGroupBy(initialGroup);
     setScale("share");
@@ -388,6 +398,7 @@ export function StatisticsCapacityChart({
                   }}
                   type="button"
                   className={styles.row}
+                  data-dim={highlighting && !isLit(row) ? "true" : undefined}
                   aria-pressed={selected?.id === row.id}
                   aria-label={`${row.name}: ${row.ready} ready, ${row.pulled} pulled, ${row.closed} closed, ${row.occupied} occupied of ${row.beds} beds. Show details.`}
                   onClick={() => setSelectedId(selected?.id === row.id ? null : row.id)}
@@ -491,13 +502,26 @@ export function StatisticsCapacityChart({
       <CardFoot
         meta={
           <span className={styles.showing} data-testid="ward-statistics-capacity-showing">
-            Showing <b>{rows.length}</b> of {allCount} {noun}
-            {hasFilters ? " matched" : ` ${scopeLabel}`}
+            {highlighting ? (
+              <>
+                <b>{litRows.length}</b> of {rows.length} {noun} highlighted, all rows stay
+              </>
+            ) : (
+              <>
+                Showing <b>{rows.length}</b> of {allCount} {noun}
+                {query !== "" ? " matched" : ` ${scopeLabel}`}
+              </>
+            )}
             {scale === "share" ? (
-              <span className={styles.footOver}>
-                <StatusGlyph tone="warning" size={9} />
-                <b>{overLine}</b> over the alert line
-              </span>
+              <FilterChip
+                className={styles.footOver}
+                pressed={overOnly}
+                onPressedChange={setOverOnly}
+                tone="warning"
+                count={overLine}
+              >
+                At or over the alert line
+              </FilterChip>
             ) : null}
           </span>
         }

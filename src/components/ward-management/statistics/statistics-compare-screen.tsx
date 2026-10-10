@@ -389,6 +389,7 @@ function WardComparison({ rows }: { rows: WardRow[] }) {
         ) : view === "chart" ? (
           <div className={compare.chart}>
             <BarList
+              className={styles.roomyAxis}
               rows={barRows}
               mean={networkMean ?? undefined}
               meanLabel="Mean"
@@ -519,6 +520,7 @@ function EdComparison({ rows }: { rows: EdCompareRow[] }) {
         ) : view === "chart" ? (
           <div className={compare.chart}>
             <BarList
+              className={styles.roomyAxis}
               rows={barRows}
               mean={mean(values)}
               meanLabel="Mean"
