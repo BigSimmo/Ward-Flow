@@ -26,13 +26,14 @@
   --ward-shadow-black-06: var(--wf-shadow-black-06);
   /* Page owners choose the appropriate size; short windows keep a readable minimum
      and let the document scroll rather than clipping controls or compressing records. */
-  --ward-workspace-height: clamp(36rem, calc(100dvh - 9rem), 64rem);
-  --ward-section-height: clamp(32rem, calc(100dvh - 10rem), 52rem);
-  --ward-compact-height: clamp(22rem, calc(100dvh - 18rem), 34rem);
+  --ward-workspace-height: clamp(36rem, calc(100dvh - var(--ward-frame-top, 0px) - 9rem), 64rem);
+  --ward-section-height: clamp(32rem, calc(100dvh - var(--ward-frame-top, 0px) - 10rem), 52rem);
+  --ward-compact-height: clamp(22rem, calc(100dvh - var(--ward-frame-top, 0px) - 18rem), 34rem);
   /* Just under the 3.75rem glass top bar, with one gap. A rail pinned higher hides behind it. */
   --ward-sticky-top: 4.5rem;
-  /* The most a pinned rail may be: the window below the bar, less a gap at the bottom. */
-  --ward-rail-height: calc(100dvh - var(--ward-sticky-top) - 0.75rem);
+  /* The most a pinned rail may be: the window below the data mode bar (--ward-frame-top, set by
+     ward-shared-access.tsx) and the top bar, less a gap at the bottom. */
+  --ward-rail-height: calc(100dvh - var(--ward-frame-top, 0px) - var(--ward-sticky-top) - 0.75rem);
   /* Fill the column below WardBar, not the column's full height plus the bar.
      A percentage minimum overflows its flex parent by the header height. */
   display: flex;
