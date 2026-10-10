@@ -430,11 +430,11 @@
 }
 
 .colRegion {
-  width: 18%;
+  width: 17%;
 }
 
 .colPlace {
-  width: 18%;
+  width: 19%;
 }
 
 .colDischarge {
@@ -1285,6 +1285,22 @@ fieldset.formRow {
   background: var(--wf-surface);
   box-shadow: var(--wf-e1);
   cursor: pointer;
+}
+
+.phoneCardOpen {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.phoneCardOpen[aria-pressed="true"] {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 .phoneCard[aria-selected="true"] {

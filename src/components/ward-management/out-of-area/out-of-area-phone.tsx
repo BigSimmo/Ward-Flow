@@ -1,6 +1,4 @@
 "use client";
-/* eslint-disable jsx-a11y/role-supports-aria-props -- the phone card keeps the earlier list's aria-selected */
-
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { BedDouble, ChevronLeft, ChevronRight, Copy, House, Phone, Route, Search } from "lucide-react";
@@ -73,20 +71,16 @@ function PersonCard({
     <li
       className={cx(styles.phoneCard, person.highlighted && styles.phoneCardLit, first && styles.phoneCardFirst)}
       data-testid={testId}
-      aria-selected={selected}
-      tabIndex={0}
-      role="button"
-      aria-label={`Open ${person.name} (${person.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
-      onClick={onOpen}
-      onKeyDown={(event) => {
-        if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
-          event.preventDefault();
-          onOpen();
-        }
-      }}
     >
-      <span className={styles.pcLine1}>
-        <b>{person.name}</b>
+      <button
+        type="button"
+        className={styles.phoneCardOpen}
+        aria-pressed={selected}
+        aria-label={`Open ${person.name} (${person.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
+        onClick={onOpen}
+      >
+        <span className={styles.pcLine1}>
+          <b>{person.name}</b>
         {overdue ? (
           <span className={styles.pcDue}>
             <StatusGlyph tone="warning" size={9} />
@@ -98,7 +92,8 @@ function PersonCard({
             <SrOnly> away</SrOnly>
           </span>
         )}
-      </span>
+        </span>
+      </button>
       <span className={styles.pcLine2}>
         {person.profileHref ? (
           <Link
@@ -198,13 +193,19 @@ export function OutOfAreaPhone({
     .filter((record) => byId.has(record.admissionId))
     .sort((a, b) => a.estimatedAt - b.estimatedAt);
   const leavingIds = new Set(leaving.map((record) => record.admissionId));
-  const ready = readyIds.filter((id) => !leavingIds.has(id)).map((id) => byId.get(id)!);
-  // Each person appears in one Needs you list only, and "more" counts everyone not shown above.
+  const readyIdsShown = readyIds.filter((id) => !leavingIds.has(id));
+  const ready = readyIdsShown.map((id) => byId.get(id)!).filter(Boolean);
+  const readySet = new Set(readyIdsShown);
   const soon = people.filter(
     (person) =>
-      !leavingIds.has(person.entry.admission.id) && person.offset !== null && person.offset >= 0 && person.offset <= 2,
+      !leavingIds.has(person.entry.admission.id) &&
+      !readySet.has(person.entry.admission.id) &&
+      person.offset !== null &&
+      person.offset >= 0 &&
+      person.offset <= 2,
   );
-  const more = Math.max(0, people.length - leavingIds.size - ready.length - soon.length);
+  const shownIds = new Set([...leavingIds, ...ready.map((person) => person.entry.admission.id), ...soon.map((person) => person.entry.admission.id)]);
+  const more = Math.max(0, people.length - shownIds.size);
   const selected = selectedId ? byId.get(selectedId) : undefined;
   const index = selected ? people.indexOf(selected) : -1;
   const nextUp = nextUpId ? byId.get(nextUpId) : undefined;
@@ -289,14 +290,14 @@ export function OutOfAreaPhone({
         value={tab}
         onChange={setTab}
         items={[
-          { id: "needs", label: "Needs you", count: ready.length + leaving.length },
+          { id: "needs", label: "Needs you", count: shownIds.size },
           { id: "all", label: "Everyone", count: people.length },
           { id: "beds", label: "Beds" },
         ]}
       />
 
       {tab === "needs" ? (
-        <div className={styles.phonePanel} role="tabpanel" aria-labelledby="ward-out-of-area-phone-tab-needs">
+        <div id="ward-out-of-area-phone-panel-needs" className={styles.phonePanel} role="tabpanel" aria-labelledby="ward-out-of-area-phone-tab-needs">
           {leaving.length ? (
             <section className={styles.phoneSection} aria-label="Leaving today">
               <h2 className={styles.phoneSectionTitle}>
@@ -374,7 +375,7 @@ export function OutOfAreaPhone({
       ) : null}
 
       <div hidden={tab !== "all"}>
-        <div className={styles.phonePanel} role="tabpanel" aria-labelledby="ward-out-of-area-phone-tab-all">
+        <div id="ward-out-of-area-phone-panel-all" className={styles.phonePanel} role="tabpanel" aria-labelledby="ward-out-of-area-phone-tab-all">
           <TextInput
             icon={Search}
             boxClassName={styles.phoneSearch}
@@ -409,7 +410,7 @@ export function OutOfAreaPhone({
       </div>
 
       {tab === "beds" ? (
-        <div className={styles.phonePanel} role="tabpanel" aria-labelledby="ward-out-of-area-phone-tab-beds">
+        <div id="ward-out-of-area-phone-panel-beds" className={styles.phonePanel} role="tabpanel" aria-labelledby="ward-out-of-area-phone-tab-beds">
           {shift}
           {beds}
         </div>
