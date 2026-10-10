@@ -11,7 +11,8 @@ import {
   CardFoot,
   FilterChip,
   Hero,
-  HeroStat,
+  HeroChip,
+  HeroChips,
   HeroTrack,
   Icon,
   Kbd,
@@ -332,33 +333,30 @@ export function OnCallScreen() {
     .filter((item) => item.count > 0);
 
   const heroStats = (
-    <>
-      <HeroStat
-        inline
+    <HeroChips label="Lines by state, press to highlight">
+      <HeroChip
         value={answering.length}
         label="answering"
         tone="success"
         pressed={highlight === "now"}
-        onToggle={() => toggleHighlight("now")}
+        onPress={() => toggleHighlight("now")}
       />
-      <HeroStat
-        inline
+      <HeroChip
         value={endingSoon.length}
         label="end within the hour"
         tone="warning"
         pressed={highlight === "soon"}
-        onToggle={() => toggleHighlight("soon")}
+        onPress={() => toggleHighlight("soon")}
       />
-      <HeroStat inline value={closed.length} label="closed" tone="neutral" />
-      <HeroStat
-        inline
+      <HeroChip value={closed.length} label="closed" tone="neutral" />
+      <HeroChip
         value={checkDue.length}
         label="check due"
         tone="warning"
         pressed={highlight === "due"}
-        onToggle={() => toggleHighlight("due")}
+        onPress={() => toggleHighlight("due")}
       />
-    </>
+    </HeroChips>
   );
 
   const clock = (
