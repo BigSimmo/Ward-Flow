@@ -284,23 +284,21 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(page.getByRole("region", { name: "Priority queue" })).toBeVisible();
     // Task A: the toggle only exists below 48rem now — restored exactly at the width the diagram
     // disappears (`@media (max-width: 48rem)`, the same query in both places).
-    const toggle = page.getByRole("button", { name: /Today’s answers/ });
-    await expect(toggle).toBeVisible();
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    // v10 phone Home (Josh, 10 Oct 2026, direction A queue first): the old "Today's answers"
+    // toggle is gone. The hero's Exceptions chip opens the registers as a sheet instead.
     await expect(page.getByRole("region", { name: "State Bedflow", exact: true })).toBeHidden();
-    await expect(page.getByRole("region", { name: "Emergency department pressure" })).toBeHidden();
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow).toBeLessThanOrEqual(2);
 
-    // Review Important 3: "one-tap confirm" means Confirm is actually reachable without a long
-    // scroll once a movement is selected on the phone — not merely present somewhere on a page
-    // that happens to be scrollable. Open the phone-only toggle, select via the panel again
-    // (dismissing it in the same tap — Task A preserves this, the property the task brief's own
-    // 🔴 ruling names as the one that must survive the move), and assert Confirm is in the
-    // viewport with no scrolling.
-    await toggle.click();
+    // Review Important 3: once a movement is selected from the phone's Exceptions sheet, Confirm
+    // is reachable without a long scroll.
+    await page
+      .getByRole("button", { name: /Exceptions/ })
+      .first()
+      .click();
+    await expect(page.getByTestId("ward-home-exceptions-sheet")).toBeVisible();
     const phoneDrawer = page.getByRole("tabpanel", { name: "Exceptions" });
     await expect(phoneDrawer).toBeVisible();
     await phoneDrawer.locator('[data-testid*="-WF-005"]').first().click();
@@ -1168,8 +1166,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const submitButton = shortlist.getByRole("button", { name: "Record override" });
     await expect(reasonField).toBeVisible();
 
-    // A reason is required — submitting empty must record nothing.
-    await submitButton.click();
+    // A reason is required: until then Record override is unavailable and says why.
+    await expect(submitButton).toHaveAttribute("aria-disabled", "true");
+    await expect(submitButton).toHaveAttribute("title", "Choose a reason first");
+    await submitButton.click({ force: true });
     await expect(shortlist).not.toContainText("Overridden by a human coordinator");
 
     // A real reason produces a real, human-attributed record, visible on screen.
@@ -1179,10 +1179,13 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // The value must be a real member of OVERRIDE_REASONS, because it is asserted back on screen.
     const reasonText = "Clinical urgency outweighs the mismatch";
     await reasonField.selectOption(reasonText);
-    // v10 pass 3: a reason alone records nothing; the second sign-off tick is also required.
-    await submitButton.click();
+    // v10 pass 3: a reason alone records nothing; the second sign-off tick and who gave it are
+    // also required.
+    await expect(submitButton).toHaveAttribute("aria-disabled", "true");
+    await submitButton.click({ force: true });
     await expect(shortlist).not.toContainText("Overridden by a human coordinator");
     await shortlist.getByTestId("ward-shortlist-override-second-sign-off").check();
+    await shortlist.getByTestId("ward-shortlist-override-sign-off-name").fill("JS");
     await submitButton.click();
     await expect(shortlist).toContainText("Overridden by a human coordinator");
     await expect(shortlist).toContainText(reasonText);
@@ -1318,6 +1321,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // is never rendered and any real option serves — but it must still be a real one.
     await shortlist.getByLabel(/Reason for overriding/).selectOption("The bed information is known to be out of date");
     await shortlist.getByTestId("ward-shortlist-override-second-sign-off").check();
+    await shortlist.getByTestId("ward-shortlist-override-sign-off-name").fill("JS");
     await shortlist.getByRole("button", { name: "Record override" }).click();
 
     // The override never claims success — it was refused, and nothing here may say otherwise.
@@ -1394,6 +1398,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await gotoCoordinator(page);
 
     const queue = page.getByRole("region", { name: "Priority queue" });
+    // v10 phone Home lists the first rows with "Show all"; WF-002 sits further down.
+    await queue.getByRole("button", { name: /^Show all/ }).click();
     await queue.locator('[data-testid="ward-queue-row-WF-002"]').click();
 
     // No longer pinned (see this test's own doc comment) — the control sits in normal document

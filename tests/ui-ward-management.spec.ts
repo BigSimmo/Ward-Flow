@@ -468,8 +468,10 @@ test.describe("@mockup Ward Flow command view", () => {
       "with the rail closed and the workspace header retired, nothing on screen names the application",
     ).toBeVisible();
     await brandOpen.click();
-    await expect(rail, "the closed emblem must open the full rail").toHaveAttribute("data-rail", "open");
-    await expect(rail.getByRole("link", { name: "Ward Flow home" })).toBeVisible();
+    // v10 shell (Josh, 10 Oct 2026): 1024px is tablet landscape, which always draws the icon rail;
+    // its emblem opens the full sidebar over the page (the More sheet) rather than widening the rail.
+    await expect(page.getByTestId("ward-rail-more-pages"), "the closed emblem must open the full menu").toBeVisible();
+    await expect(rail).toHaveAttribute("data-rail", "closed");
   });
 
   // MERGE 01 (2026-09-05): /queue now redirects to /delays. The fixed-bar link this checks lived in

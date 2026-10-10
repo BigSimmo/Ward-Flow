@@ -215,7 +215,14 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
       document.body.appendChild(anchor);
       anchor.click();
     }, UNIT_ID);
-    await page.locator(`#ward-board-tile-${release.admissionId}`).click();
+    // The board settles its layout just after it first paints, which can drop a click made in
+    // that moment; choose the tile until the board shows it chosen.
+    await expect(page.getByTestId("ward-board")).toBeVisible({ timeout: 15_000 });
+    const tile = page.locator(`#ward-board-tile-${release.admissionId}`);
+    await expect(async () => {
+      await tile.click();
+      await expect(tile).toHaveAttribute("aria-pressed", "true", { timeout: 1_000 });
+    }).toPass({ timeout: 15_000 });
     await page.getByTestId("ward-board-record-leaving-submit").click();
     const departureDialog = page.getByRole("dialog", { name: "Confirm patient departure" });
     await expect(departureDialog).toBeVisible();
