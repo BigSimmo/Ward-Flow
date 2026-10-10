@@ -21,7 +21,7 @@ import {
   type WfTone,
 } from "@/components/wf";
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
@@ -46,7 +46,6 @@ import {
   homeRegionBeds,
   inDaysAwayGroup,
   instantFromEstimatedTimeInputs,
-  departureDayLabel,
   leavesToday,
   missingAnswers,
   returnStatus,
@@ -204,6 +203,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       info.displayName,
       info.formalName,
       info.umrn,
+      entry.admission.id,
       entry.admission.homeRegion ?? "",
       entry.unit.name,
       site?.name ?? "",
@@ -388,10 +388,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
 
   function exportList() {
     const lines: (string | number)[][] = [
-      ["UMRN", "Home region", "Unit", "Site", "Travel time", "Discharge", "Return", "Since arrival"],
+      ["Admission", "UMRN", "Home region", "Unit", "Site", "Travel time", "Discharge", "Return", "Since arrival"],
     ];
     for (const entry of sorted) {
       lines.push([
+        entry.admission.id,
         patientOf(entry).umrn,
         entry.admission.homeRegion ?? "",
         entry.unit.name,
@@ -432,7 +433,14 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       to: shortSiteName(record.homeHospital),
       mode: record.mode === "road" ? "Road" : "Flight",
       time: formatInstant(record.estimatedAt),
-      day: departureDayLabel(record, now),
+      day:
+        record.estimatedAt < now
+          ? "Departed"
+          : dayOf(record.estimatedAt) < dayOf(now)
+            ? "Yesterday"
+            : dayOf(record.estimatedAt) === dayOf(now)
+              ? "Today"
+              : "Tomorrow",
     }));
   const leavingToday = repatriations.filter((record) => leavesToday(record, now) && record.estimatedAt >= now);
   const dueSoon = entries.filter((entry) => {
@@ -624,7 +632,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             <div className={styles.pills} role="group" aria-label="Highlight people">
               {pill("due", "Discharge date passed", "warning")}
               {pill("air", "Air only")}
-              {pill("road", TRAVEL_SHORT.three_hours_or_more)}
+              {pill("road", "Road 3h+")}
               {pill("noplan", "No return plan", "closed")}
               {pill("notagreed", "Ward not agreed", "neutral")}
               {pill("bed", "Awaiting home bed", "neutral")}
