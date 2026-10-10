@@ -3,14 +3,24 @@ import { enumValue, finiteInstant } from "../ward-audit";
 import type { Instant } from "../ward-clock";
 import type { WardFlowEvent, WardFlowRole } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
-import type { Unit } from "../ward-model";
+import { REFERRAL_DECLINE_REASONS, type Unit } from "../ward-model";
+import { edById } from "../ward-sites";
 import {
+  BED_CALL_ANSWERS,
+  BED_CALL_MAX_BEDS,
   BROADCAST_CATEGORIES,
+  DISPATCHABLE_BROADCAST_KINDS,
+  PULL_NOW_ANSWER_MINUTES,
+  PULL_NOW_ANSWERS,
+  PULL_NOW_DURATION_MINUTES,
+  broadcastKind,
   BROADCAST_SEVERITIES,
   BROADCAST_TARGET_SCOPES,
   COORDINATOR_DESK_ACKNOWLEDGER_ID,
   isAlertActive,
+  latestReplies,
   type BroadcastAlert,
+  type BroadcastReply,
 } from "./ward-broadcast-model";
 
 export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
@@ -19,11 +29,21 @@ function findUnit(state: WardFlowState, unitId: string): Unit | undefined {
   return state.units.find((candidate: Unit) => candidate.id === unitId);
 }
 
+/** A desk that may answer: a real ward, or (10 Oct 2026) a real ED, which has no `Unit` row. */
+function isRealDesk(state: WardFlowState, unitId: string): boolean {
+  return Boolean(findUnit(state, unitId) || edById(unitId));
+}
+
+/** The stages before a patient is pulled. Pull now means nothing once the bed is pulled. */
+const PULL_NOW_STAGES = ["placement_requested", "destination_review", "accepted_awaiting_bed"];
+const MAX_READY_AHEAD_MINUTES = 24 * 60;
+
 /**
  * Handles broadcast alert events:
  * - DISPATCH_BROADCAST_ALERT
  * - ACKNOWLEDGE_BROADCAST_ALERT
  * - STAND_DOWN_BROADCAST_ALERT
+ * - RAISE_PULL_NOW and REPLY_BROADCAST_ALERT (global alerts, 10 Oct 2026)
  */
 export function reduceBroadcastAlertEvent(
   state: WardFlowState,
@@ -57,11 +77,16 @@ export function reduceBroadcastAlertEvent(
       if (finiteInstant(event.durationMinutes) === null || event.durationMinutes <= 0) {
         return reject(state, event, "DISPATCH_BROADCAST_ALERT durationMinutes must be a finite positive number");
       }
+      const kind = event.kind === undefined ? "directive" : enumValue(DISPATCHABLE_BROADCAST_KINDS, event.kind);
+      if (kind === null) {
+        return reject(state, event, "DISPATCH_BROADCAST_ALERT kind must be a directive or a bed call");
+      }
       const nextSeq = (state.broadcastSequence ?? 0) + 1;
       const alertId = `BCAST-${nextSeq}`;
       const duration = event.durationMinutes;
       const newAlert: BroadcastAlert = {
         id: alertId,
+        ...(kind === "bed_call" ? { kind, replies: [] } : {}),
         title: event.title.trim(),
         message: event.message.trim(),
         severity,
@@ -102,7 +127,7 @@ export function reduceBroadcastAlertEvent(
       // (`src/app/mockups/ward-flow/layout.tsx`) passes no `currentUnitId`, so it always
       // acknowledges as `COORDINATOR_DESK_ACKNOWLEDGER_ID` — the one non-unit sender this
       // refusal exempts. Every other unrecognised unitId is still refused.
-      if (event.unitId !== COORDINATOR_DESK_ACKNOWLEDGER_ID && !findUnit(state, event.unitId)) {
+      if (event.unitId !== COORDINATOR_DESK_ACKNOWLEDGER_ID && !isRealDesk(state, event.unitId)) {
         return reject(state, event, `ACKNOWLEDGE_BROADCAST_ALERT unitId ${event.unitId} does not name a real unit`);
       }
       if (!isAlertActive(target, event.now)) {
@@ -154,6 +179,138 @@ export function reduceBroadcastAlertEvent(
         ...state,
         broadcastAlerts: updatedAlerts,
       };
+    }
+
+    case "RAISE_PULL_NOW": {
+      const movement = state.movements.find((candidate) => candidate.id === event.movementId);
+      if (!movement) {
+        return reject(state, event, `RAISE_PULL_NOW movementId ${event.movementId} not found`);
+      }
+      if (movement.closure || !PULL_NOW_STAGES.includes(movement.stage)) {
+        return reject(state, event, "RAISE_PULL_NOW needs a patient still waiting for a bed");
+      }
+      const existingAlerts = Array.isArray(state.broadcastAlerts) ? state.broadcastAlerts : [];
+      if (
+        existingAlerts.some(
+          (alert) =>
+            broadcastKind(alert) === "pull_now" && alert.movementId === movement.id && isAlertActive(alert, event.now),
+        )
+      ) {
+        return reject(state, event, "RAISE_PULL_NOW already live for this patient");
+      }
+      // The accepting ward, else every ward still considering the referral. D-30 is kept by the
+      // role table: only the coordinator raises this, for any hospital's patient.
+      const declined = new Set(movement.declines.map((decline) => decline.unitId));
+      const targetUnitIds = movement.acceptedUnitId
+        ? [movement.acceptedUnitId]
+        : movement.referredUnitIds.filter((unitId) => !declined.has(unitId) && findUnit(state, unitId));
+      if (targetUnitIds.length === 0) {
+        return reject(state, event, "RAISE_PULL_NOW has no ward to ask, refer the patient to wards first");
+      }
+      const names = targetUnitIds.map((unitId) => findUnit(state, unitId)?.name ?? unitId);
+      const nextSeq = (state.broadcastSequence ?? 0) + 1;
+      const newAlert: BroadcastAlert = {
+        id: `BCAST-${nextSeq}`,
+        kind: "pull_now",
+        title: "Pull now",
+        message: "Pull this patient into a bed as soon as possible.",
+        severity: "critical",
+        category: "capacity_gridlock",
+        targetScope: "all",
+        targetScopeLabel: names.length === 1 ? names[0] : `${names.length} wards`,
+        durationMinutes: PULL_NOW_DURATION_MINUTES,
+        dispatchedAt: event.now,
+        expiresAt: (event.now + PULL_NOW_DURATION_MINUTES) as Instant,
+        dispatchedByRole: event.role,
+        dispatchedByName: "Bed coordinator",
+        status: "active",
+        acknowledgedUnits: [],
+        replies: [],
+        movementId: movement.id,
+        targetUnitIds,
+        answerBy: (event.now + PULL_NOW_ANSWER_MINUTES) as Instant,
+      };
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      return { ...state, broadcastAlerts: [newAlert, ...existingAlerts], broadcastSequence: nextSeq };
+    }
+
+    case "REPLY_BROADCAST_ALERT": {
+      const existingAlerts = Array.isArray(state.broadcastAlerts) ? state.broadcastAlerts : [];
+      const target = existingAlerts.find((alert) => alert.id === event.alertId);
+      if (!target) {
+        return reject(state, event, `REPLY_BROADCAST_ALERT alertId ${event.alertId} not found`);
+      }
+      if (!isAlertActive(target, event.now)) {
+        return reject(state, event, `REPLY_BROADCAST_ALERT alertId ${event.alertId} is no longer active`);
+      }
+      const kind = broadcastKind(target);
+      if (kind === "directive") {
+        return reject(state, event, "REPLY_BROADCAST_ALERT a directive is acknowledged, not answered");
+      }
+      if (!isRealDesk(state, event.unitId)) {
+        return reject(state, event, `REPLY_BROADCAST_ALERT unitId ${event.unitId} does not name a real unit`);
+      }
+      if (kind === "pull_now" && !(target.targetUnitIds ?? []).includes(event.unitId)) {
+        return reject(state, event, "REPLY_BROADCAST_ALERT this Pull now did not ask that ward");
+      }
+      if (kind === "bed_call" && !findUnit(state, event.unitId)) {
+        return reject(state, event, "REPLY_BROADCAST_ALERT only a ward answers a bed call");
+      }
+      const answer = enumValue<string>(kind === "pull_now" ? PULL_NOW_ANSWERS : BED_CALL_ANSWERS, event.answer);
+      if (answer === null) {
+        return reject(state, event, "REPLY_BROADCAST_ALERT answer must be chosen from this alert's answers");
+      }
+      const reply: BroadcastReply = { unitId: event.unitId, answer: event.answer, at: event.now, role: event.role };
+      if (answer === "can_take") {
+        if (!Number.isInteger(event.beds) || (event.beds ?? 0) < 1 || (event.beds ?? 0) > BED_CALL_MAX_BEDS) {
+          return reject(
+            state,
+            event,
+            `REPLY_BROADCAST_ALERT beds must be a whole number from 1 to ${BED_CALL_MAX_BEDS}`,
+          );
+        }
+        reply.beds = event.beds;
+      }
+      if (answer === "after_discharge" || answer === "bed_ready_at") {
+        const readyAt = finiteInstant(event.readyAt);
+        if (readyAt === null || readyAt <= event.now || readyAt > event.now + MAX_READY_AHEAD_MINUTES) {
+          return reject(state, event, "REPLY_BROADCAST_ALERT readyAt must be later today or tomorrow");
+        }
+        reply.readyAt = readyAt as Instant;
+      }
+      if (answer === "cannot" && kind === "pull_now") {
+        const reason = enumValue(REFERRAL_DECLINE_REASONS, event.reason);
+        if (reason === null) {
+          return reject(state, event, "REPLY_BROADCAST_ALERT Can't needs a reason from the decline reasons");
+        }
+        reply.reason = reason;
+      }
+      const current = latestReplies(target).get(event.unitId);
+      if (
+        current &&
+        current.answer === reply.answer &&
+        current.beds === reply.beds &&
+        current.readyAt === reply.readyAt &&
+        current.reason === reply.reason
+      ) {
+        return reject(state, event, "REPLY_BROADCAST_ALERT that desk already gave this answer");
+      }
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      const updatedAlerts = existingAlerts.map((alert) =>
+        alert.id === target.id
+          ? {
+              ...alert,
+              replies: [...(alert.replies ?? []), reply],
+              // Answering is also receipt: the acknowledged count includes every desk that answered.
+              acknowledgedUnits: alert.acknowledgedUnits.includes(event.unitId)
+                ? alert.acknowledgedUnits
+                : [...alert.acknowledgedUnits, event.unitId],
+            }
+          : alert,
+      );
+      return { ...state, broadcastAlerts: updatedAlerts };
     }
 
     default:

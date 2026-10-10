@@ -15,6 +15,7 @@ import type {
   SupportNotificationParty,
 } from "@/components/ward-management/ward-support-notifications";
 import type {
+  BroadcastAnswer,
   BroadcastCategory,
   BroadcastSeverity,
   BroadcastTargetScope,
@@ -2082,6 +2083,8 @@ export type WardFlowEvent =
       targetScopeLabel: string;
       durationMinutes: number;
       dispatchedByName: string;
+      /** Absent means a directive. `bed_call` asks wards a set question (10 Oct 2026). */
+      kind?: "directive" | "bed_call";
     }
   | {
       /**
@@ -2102,6 +2105,31 @@ export type WardFlowEvent =
       now: Instant;
       alertId: string;
       stoodDownByRole?: WardFlowRole;
+    }
+  | {
+      /**
+       * Global alerts, 10 Oct 2026: the coordinator asks the accepting ward (or the wards still
+       * considering the referral) to pull one patient now. Ids only, no typed text.
+       */
+      type: "RAISE_PULL_NOW";
+      role: WardFlowRole;
+      now: Instant;
+      movementId: string;
+    }
+  | {
+      /**
+       * A ward or ED desk answers a bed call or a Pull now from a fixed list. Every field is an id,
+       * an enum, a whole number or an instant. Never typed text.
+       */
+      type: "REPLY_BROADCAST_ALERT";
+      role: WardFlowRole;
+      now: Instant;
+      alertId: string;
+      unitId: string;
+      answer: BroadcastAnswer;
+      beds?: number;
+      readyAt?: Instant;
+      reason?: ReferralDeclineReason;
     }
   | {
       /**
@@ -2707,6 +2735,11 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
   ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager", "executive"],
   STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
+  // Global alerts (10 Oct 2026): only the coordinator raises Pull now (D-30 keeps cross-hospital
+  // calls with the central coordinator). Wards answer for their own desk, and the coordinator may
+  // record a ward's answer taken by phone. ED acknowledges directives but answers neither kind.
+  RAISE_PULL_NOW: ["coordinator"],
+  REPLY_BROADCAST_ALERT: ["ward", "coordinator"],
   // Planned admissions (stream D): booked and managed by the coordinator, bed manager or the
   // receiving ward; the ward or coordinator records the arrival.
   BOOK_PLANNED_ADMISSION: ["coordinator", "bed_manager", "ward"],

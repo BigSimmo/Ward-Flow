@@ -720,7 +720,16 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       !finite(row.expiresAt) ||
       !finite(row.durationMinutes) ||
       row.durationMinutes <= 0 ||
-      !strings(row.acknowledgedUnits)
+      !strings(row.acknowledgedUnits) ||
+      // Global alerts, 10 Oct 2026: every new field is optional, so a version 7 save restores.
+      (row.kind !== undefined && !["directive", "bed_call", "pull_now"].includes(row.kind as string)) ||
+      (row.replies !== undefined &&
+        (!Array.isArray(row.replies) ||
+          !(row.replies as RecordValue[]).every(
+            (reply) => object(reply) && text(reply.unitId) && text(reply.answer) && finite(reply.at),
+          ))) ||
+      (row.targetUnitIds !== undefined && !strings(row.targetUnitIds)) ||
+      (row.answerBy !== undefined && !finite(row.answerBy))
     )
       return false;
   }
