@@ -156,10 +156,10 @@ export function UnitStepper({
   const next = items[(index + 1) % items.length];
   return (
     <span className={styles.stepper} data-testid="ward-statistics-unit-stepper">
-      <Link href={previous.href} className={styles.step} aria-label={`Previous ${noun}: ${previous.label}`}>
+      <Link href={previous.href} className={styles.stepLink} aria-label={`Previous ${noun}: ${previous.label}`}>
         <ChevronLeft size={14} aria-hidden="true" />
       </Link>
-      <Link href={next.href} className={styles.step} aria-label={`Next ${noun}: ${next.label}`}>
+      <Link href={next.href} className={styles.stepLink} aria-label={`Next ${noun}: ${next.label}`}>
         <ChevronRight size={14} aria-hidden="true" />
       </Link>
     </span>

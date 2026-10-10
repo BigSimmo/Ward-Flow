@@ -63,6 +63,12 @@ function median(values: readonly number[]): number | undefined {
   return sorted.length % 2 === 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
+/** Shortens a name to its label column (about 7px a character at 13px), so it never runs into the marks. */
+function fitName(name: string, width: number): string {
+  const most = Math.max(4, Math.floor((width - 8) / 7));
+  return name.length <= most ? name : `${name.slice(0, most - 1).trimEnd()}…`;
+}
+
 function hoursLabel(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const rest = Math.round(minutes % 60);
@@ -146,7 +152,8 @@ export function StatisticsEdSwarm({
             <g key={row.id}>
               {index > 0 ? <line x1={0} x2={width} y1={top} y2={top} className={styles.rowLine} /> : null}
               <text x={0} y={mid + 4} className={styles.name}>
-                {row.name}
+                {fitName(row.name, nameW)}
+                <title>{row.name}</title>
               </text>
               {middle !== undefined ? (
                 <line x1={toX(middle)} x2={toX(middle)} y1={mid - 12} y2={mid + 12} className={styles.median} />

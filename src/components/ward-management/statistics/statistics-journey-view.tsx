@@ -1,5 +1,6 @@
 "use client";
 
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { useMemo, useState, type CSSProperties } from "react";
 import { BedDouble, Clock, Columns3, Route } from "lucide-react";
 
@@ -366,6 +367,7 @@ export function StatisticsJourneyView({ onShowBoard }: { onShowBoard: () => void
   );
   const totalWaiting = waitingRows.reduce((sum, row) => sum + row.entries.length, 0);
   const totalReady = hospitals.reduce((sum, row) => sum + row.ready, 0);
+  const totalPreparing = units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0);
 
   function select(id: JourneyStageId) {
     const next = selected === id ? null : id;
@@ -436,7 +438,7 @@ export function StatisticsJourneyView({ onShowBoard }: { onShowBoard: () => void
           id="journey-beds"
           icon={BedDouble}
           title="Where is a bed"
-          meta={`${totalReady} ready`}
+          meta={totalPreparing > 0 ? `${totalReady} ready, ${totalPreparing} being made ready` : `${totalReady} ready`}
           action={
             <Button size="sm" variant="sec" onClick={onShowBoard} data-testid="ward-statistics-journey-open-board">
               Bed board

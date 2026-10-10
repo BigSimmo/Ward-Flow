@@ -1,5 +1,6 @@
 "use client";
 
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarClock, ChevronRight, Clock, Lock, ListOrdered, Map as MapIcon, Stethoscope, X } from "lucide-react";
@@ -325,6 +326,7 @@ export function StatisticsMapView({
       occupied,
       pct: beds > 0 ? Math.round((occupied / beds) * 100) : 0,
       ready: sites.reduce((sum, site) => sum + site.ready, 0),
+      preparing: units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
       wardsOverLine: sites.reduce((sum, site) => sum + site.wardsOverLine, 0),
       edWaiting: sites.reduce((sum, site) => sum + site.edWaiting, 0),
       edOver24: sites.reduce((sum, site) => sum + site.edOver24, 0),
@@ -336,7 +338,7 @@ export function StatisticsMapView({
       meanStay: stay.meanStay,
       longStays: stay.longStays,
     };
-  }, [sites, admissions, units, now]);
+  }, [sites, admissions, bedReleases, units, now]);
 
   const lensInfo = LENSES.find((item) => item.id === lens) ?? LENSES[0]!;
   const lensItems: ChoiceItem<MapLens>[] = [
@@ -349,7 +351,10 @@ export function StatisticsMapView({
   const headline: Headline[] =
     lens === "beds"
       ? [
-          { value: String(network.ready), label: "Ready beds" },
+          {
+            value: String(network.ready),
+            label: network.preparing > 0 ? `Ready beds, ${network.preparing} being made ready` : "Ready beds",
+          },
           { value: `${network.pct}%`, label: "Occupied" },
           {
             value: String(network.wardsOverLine),
