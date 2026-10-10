@@ -51,10 +51,12 @@ export function useTheme() {
   );
 
   // Keep the document in step when the OS changes while in "system", or another tab changes the pin.
+  // Apply the stored value, not the hook's: during hydration the hook still reports the server
+  // default, and applying that would briefly drop a pinned theme.
   useEffect(() => {
     const wasDark = document.documentElement.classList.contains("dark");
-    applyThemeToDocument(preference);
-    if (wasDark !== (theme === "dark")) markTransition();
+    const resolved = applyThemeToDocument(readStoredThemePreference());
+    if (wasDark !== (resolved === "dark")) markTransition();
   }, [theme, preference]);
 
   const setPreference = useCallback((next: ThemePreference) => {
