@@ -24,40 +24,6 @@
   font-size: 0.875rem;
 }
 
-/* Desktop: the data mode bar and the app share one window (10 Oct 2026). The app shell below is
-   100dvh tall, so with this bar above it the window itself scrolled about 72px and the bottom of
-   every page sat out of view. The frame is exactly one window tall, the bar keeps its own height
-   and the workspace, whose last child is the shell, takes the rest. Phone scrolls the document, so it is left
-   as it was. */
-@media screen and (min-width: 1001px) {
-  .frame {
-    display: flex;
-    flex-direction: column;
-    height: 100dvh;
-    overflow: hidden;
-  }
-
-  .frame > .toolbar,
-  .frame > .notice {
-    flex: none;
-  }
-
-  .frame > :last-child:not([hidden]) {
-    display: flex;
-    flex: 1 1 0;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  /* The shell sets its own 100dvh height; inside the frame it takes the space left instead. */
-  .frame > :last-child:not([hidden]) > :last-child {
-    flex: 1 1 0;
-    height: auto;
-    min-height: 0;
-    max-height: none;
-  }
-}
-
 .detail {
   display: block;
   margin-top: 0.2rem;

@@ -126,21 +126,24 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
 export function WardSharedAccess({ connection, children }: { connection: WardSharedConnection; children: ReactNode }) {
   const [showLiveInfo, setShowLiveInfo] = useState(false);
   const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
-  const frame = useRef<HTMLDivElement>(null);
   const toolbar = useRef<HTMLElement>(null);
-  // Pinned side columns size themselves against the window, so they need to know how much of it
-  // this bar takes (ward-shell.module.css, --ward-rail-height).
+  // Pinned side columns and panel heights size themselves against the window, so they need to
+  // know how much of it this bar takes (ward-shell.module.css, --ward-frame-top).
   useEffect(() => {
     const bar = toolbar.current;
     if (!bar || typeof ResizeObserver === "undefined") return;
-    const sync = () => frame.current?.style.setProperty("--ward-frame-top", `${bar.offsetHeight}px`);
+    const root = document.documentElement;
+    const sync = () => root.style.setProperty("--ward-frame-top", `${bar.offsetHeight}px`);
     sync();
     const observer = new ResizeObserver(sync);
     observer.observe(bar);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--ward-frame-top");
+    };
   }, []);
   return (
-    <div ref={frame} className={styles.frame}>
+    <>
       <section ref={toolbar} className={styles.toolbar} aria-label="Ward Flow data mode" data-data-mode="prototype">
         <div>
           <strong>Data mode: Prototype</strong>
@@ -198,7 +201,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
       <div hidden={showLiveInfo} inert={showLiveInfo}>
         <WardSharedWorkspaceContent connection={connection}>{children}</WardSharedWorkspaceContent>
       </div>
-    </div>
+    </>
   );
 }
 

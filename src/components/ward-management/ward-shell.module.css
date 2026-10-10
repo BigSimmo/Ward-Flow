@@ -31,7 +31,7 @@
   --ward-compact-height: clamp(22rem, calc(100dvh - var(--ward-frame-top, 0px) - 18rem), 34rem);
   /* Just under the 3.75rem glass top bar, with one gap. A rail pinned higher hides behind it. */
   --ward-sticky-top: 4.5rem;
-  /* The most a pinned rail may be: the window below the data mode bar (--ward-frame-top, set by
+  /* The most a pinned rail may be: the window below the Data mode bar (--ward-frame-top, set by
      ward-shared-access.tsx) and the top bar, less a gap at the bottom. */
   --ward-rail-height: calc(100dvh - var(--ward-frame-top, 0px) - var(--ward-sticky-top) - 0.75rem);
   /* Fill the column below WardBar, not the column's full height plus the bar.
