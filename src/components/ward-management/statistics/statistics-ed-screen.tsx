@@ -218,6 +218,18 @@ export function StatisticsEdScreen({
       now={now}
       paused={live.paused}
       onTogglePause={live.togglePause}
+      exportFigures={{
+        stem: department.id,
+        scope: department.name,
+        figures: () => [
+          ["Waiting", onTheList],
+          ["Longest wait", longestWait ? splitDuration(longestWait.waitMinutes) : "none"],
+          ["Median wait", median === null ? "none" : splitDuration(Math.round(median))],
+          ["Urgent", urgent],
+          [`Over ${longHours}h`, over24h],
+          ["No ward yet", unplaced],
+        ],
+      }}
       stats={
         <>
           <HeroStat value={<span data-testid="ward-stat-ed-on-the-list">{onTheList}</span>} label="Waiting" />

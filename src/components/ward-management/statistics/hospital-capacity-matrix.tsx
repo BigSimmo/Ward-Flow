@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { BedDouble, Check, ChevronDown, ChevronUp, Search } from "lucide-react";
 
-import { Icon, Segmented, StatusGlyph, TextInput, tableClasses } from "@/components/wf";
+import { Icon, Segmented, StatusGlyph, TextInput, rowDim, tableClasses } from "@/components/wf";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
@@ -244,7 +244,7 @@ export function HospitalCapacityMatrix({
               </tr>
             ) : (
               sortedRows.map((r) => (
-                <tr key={r.id} data-dim={highlighting && !isMatch(r) ? "true" : undefined}>
+                <tr key={r.id} {...rowDim(highlighting && !isMatch(r))}>
                   <th scope="row" className={styles.wardCell}>
                     <Link href={wardStatisticsHref(r.id)} className={styles.rowLink} title={r.name}>
                       {r.name}

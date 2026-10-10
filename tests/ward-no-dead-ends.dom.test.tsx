@@ -58,6 +58,7 @@ vi.mock("next/navigation", () => ({
 import { scanAppRoutes, scanWardFlowRoutes, hrefResolvesToRoute } from "./helpers/ward-dead-end-routes";
 
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardMovements } from "@/components/ward-management/ward-movements";
@@ -265,7 +266,12 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
 ]);
 
 function renderRoute(node: ReactElement) {
-  return render(<WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>);
+  // As the ward layout does: every route sits inside the shared wf ToastProvider.
+  return render(
+    <ToastProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>
+    </ToastProvider>,
+  );
 }
 
 /* --------------------------------------------------------------------------------------------- *

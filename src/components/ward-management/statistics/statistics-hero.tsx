@@ -1,9 +1,9 @@
 "use client";
 
 import { useId, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import { Download, type LucideIcon } from "lucide-react";
 
-import { Card, CardHead, Hero, LiveChip, cx } from "@/components/wf";
+import { Button, Card, CardHead, Hero, LiveChip, cx } from "@/components/wf";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -11,6 +11,7 @@ import type { StatisticsSection } from "./statistics-sections";
 
 import { StatisticsNav, StatisticsSamplesSwitch, type StatisticsNavSection } from "./statistics-nav";
 import { StatisticsRange } from "./statistics-hero-tools";
+import { downloadCsv, statisticsExportLines, type StatisticsExport } from "./statistics-csv";
 import styles from "./statistics-hero.module.css";
 
 /**
@@ -45,6 +46,7 @@ export function StatisticsHero({
   navTestId,
   tools,
   chips,
+  exportFigures,
 }: {
   section: StatisticsNavSection;
   /** The unit, service or team the page shows, so its own tab links back to it. */
@@ -61,8 +63,14 @@ export function StatisticsHero({
   tools?: ReactNode;
   /** v10 count chips (five at most) on their own line under the title, in place of `stats`. */
   chips?: ReactNode;
+  /**
+   * "Export the figures" in the hero's action slot (v10: the header's one primary is New referral,
+   * so Export lives here). Open to every role; it downloads the hero's figures as a CSV.
+   */
+  exportFigures?: StatisticsExport;
 }) {
   const wardCount = useWardFlow().units.length;
+  const now = useWardFlowClock();
   return (
     <Hero
       level={1}
@@ -72,6 +80,24 @@ export function StatisticsHero({
       titleMeta={titleAction ? <span className={styles.titleAction}>{titleAction}</span> : undefined}
       stats={chips ?? stats}
       statsAlign="end"
+      aside={
+        exportFigures ? (
+          <Button
+            variant="light"
+            size="sm"
+            icon={Download}
+            data-testid="ward-statistics-export"
+            onClick={() =>
+              downloadCsv(
+                `ward-flow-synthetic-${exportFigures.stem}-figures.csv`,
+                statisticsExportLines(exportFigures, formatInstant(now)),
+              )
+            }
+          >
+            Export the figures
+          </Button>
+        ) : undefined
+      }
       bar={
         <div className={styles.navSlot} data-testid={navTestId}>
           <StatisticsNav currentSection={section} activeSlug={slug} withSamples={false} wardCount={wardCount} />
@@ -139,6 +165,7 @@ export function StatisticsPage({
   eyebrowLabel,
   eyebrowDetail,
   tools,
+  exportFigures,
   children,
 }: {
   section: StatisticsSection;
@@ -156,6 +183,8 @@ export function StatisticsPage({
   /** What the page is about (a ward's hospital and kind), in place of the clock. */
   eyebrowDetail?: ReactNode;
   tools?: ReactNode;
+  /** "Export the figures" in the hero (see `StatisticsHero`). */
+  exportFigures?: StatisticsExport;
   children: ReactNode;
 }) {
   return (
@@ -176,6 +205,7 @@ export function StatisticsPage({
           paused={paused}
           onTogglePause={onTogglePause}
           tools={tools}
+          exportFigures={exportFigures}
         />
         {children}
         <WardPrototypeFooter testId="ward-statistics-section-footer" note="Synthetic data" />

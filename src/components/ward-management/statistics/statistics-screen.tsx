@@ -13,13 +13,17 @@ import {
   CardFoot,
   ColumnChart,
   FilterChip,
+  HeroChip,
+  HeroChips,
   Icon,
   StackBar,
   StatusGlyph,
-  durMinutes,
   TextInput,
   buttonClass,
+  durMinutes,
   tableClasses,
+  useIsPhone,
+  rowDim,
 } from "@/components/wf";
 import {
   blockedDischargesByReason,
@@ -64,7 +68,6 @@ import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { StatCard, StatisticsHero, useStatisticsLive } from "./statistics-hero";
-import { HeroChip, HeroChips, useIsPhone } from "../reports/report-parts";
 import { StatisticsSummaryPhone } from "./statistics-summary-phone";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
@@ -461,6 +464,19 @@ export function StatisticsScreen({
           title={`${availableNow} ${availableNow === 1 ? "bed" : "beds"} ready now`}
           paused={live.paused}
           onTogglePause={live.togglePause}
+          exportFigures={{
+            stem: "network",
+            scope: "Whole network",
+            figures: () => [
+              ["Beds ready now", availableNow],
+              ["Beds", totalBeds],
+              ["Occupied", occupiedCount],
+              ["Occupied percent", occupiedPct],
+              ["Being made ready", pendingPreparation],
+              ["Admissions ended today", dischargesCount],
+              ["Waiting in ED", waitingCount],
+            ],
+          }}
           chips={
             <HeroChips label="Network at a glance">
               <HeroChip value={totalBeds} label="Beds" />
@@ -705,7 +721,7 @@ export function StatisticsScreen({
                         const percent = Math.round(w.occupancyRate * 100);
                         const over = percent >= BED_ALERT_THRESHOLD_PERCENT;
                         return (
-                          <tr key={w.id} data-dim={wardOverLine && !over ? "true" : undefined}>
+                          <tr key={w.id} {...rowDim(wardOverLine && !over)}>
                             <th scope="row">
                               {w.name}
                               <span className={styles.code} title={w.hospital}>
@@ -894,7 +910,6 @@ export function StatisticsScreen({
                 <CardBody data-testid="ward-statistics-blocked-discharges-by-reason-list">
                   <BarList
                     label="Blocked discharges by blocker"
-                    className={styles.roomyAxis}
                     labelWidth="10.5rem"
                     axis
                     max={axisMax(blocked.tallies.map((tally) => tally.count))}
@@ -958,7 +973,6 @@ export function StatisticsScreen({
                     <div data-testid="ward-statistics-declines-by-reason-list">
                       <BarList
                         label="Declines by reason"
-                        className={styles.roomyAxis}
                         labelWidth="10.5rem"
                         axis
                         max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}

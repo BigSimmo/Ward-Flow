@@ -77,6 +77,8 @@ import {
   Card,
   CardHead,
   Hero,
+  HeroChip,
+  HeroChips,
   HeroTrack,
   Kbd,
   Segmented,
@@ -93,7 +95,6 @@ import { NOT_WIRED, PreviewTag, RuleRow, ScopeLine, SettingRow } from "./setting
 import { SETTINGS_TABS, findSettings, type SettingsSearchEntry, type SettingsTab } from "./settings-search-index";
 import { SETTINGS_DEMO_PROFILE } from "./settings-profile";
 import { publishedThresholds } from "./settings-thresholds";
-import { HeroChip, HeroChips } from "../reports/report-parts";
 
 import styles from "./settings.module.css";
 

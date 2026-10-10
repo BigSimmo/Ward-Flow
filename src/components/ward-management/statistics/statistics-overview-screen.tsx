@@ -426,7 +426,6 @@ export function StatisticsOverviewScreen() {
                     reason categories.
                   </p>
                   <BarList
-                    className={styles.roomyAxis}
                     label="Declines by reason across the network"
                     axis
                     max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}

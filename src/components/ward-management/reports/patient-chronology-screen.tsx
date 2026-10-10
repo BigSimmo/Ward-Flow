@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight, Copy, Download, ListOrdered, Printer, Search, X } from "lucide-react";
 
@@ -8,7 +8,10 @@ import {
   Button,
   Card,
   CardHead,
+  FactGrid,
   Hero,
+  HeroChip,
+  HeroChips,
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
@@ -18,6 +21,8 @@ import {
   TextInput,
   cx,
   tableClasses,
+  useIsPhone,
+  useToast,
 } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -33,7 +38,7 @@ import {
   type ChronologyRow,
   type ChronologySource,
 } from "./patient-chronology";
-import { FactGrid, HeroChip, HeroChips, reportDay, reportMoment, useIsPhone } from "./report-parts";
+import { reportDay, reportMoment } from "./report-parts";
 import styles from "./reports.module.css";
 
 const NOT_RECORDED = "Not recorded";
@@ -104,14 +109,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   const now = useWardFlowClock();
   const baseId = useId();
   const isPhone = useIsPhone();
-  const [copyNote, setCopyNote] = useState<string | null>(null);
-  const copyTimer = useRef<number | null>(null);
-  useEffect(
-    () => () => {
-      if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
-    },
-    [],
-  );
+  const toast = useToast();
   // The role is the route (`ward-chrome-role.ts`); nothing else holds a current role.
   const coordinator = wardChromeRole(usePathname() ?? "") === "coordinator";
 
@@ -221,19 +219,14 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
 
   function copyRow(row: ChronologyRow) {
     const text = rowText(row, dayZero);
-    const say = (message: string) => {
-      setCopyNote(message);
-      if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
-      copyTimer.current = window.setTimeout(() => setCopyNote(null), 2600);
-    };
+    // The shared wf toast (polite live region) confirms the copy; words stay neutral.
+    const copied = () => toast.push({ tone: "success", title: "Row copied", duration: 2600 });
+    const failed = () => toast.push({ tone: "warning", title: "Could not copy the row", duration: 4000 });
     try {
       if (!navigator.clipboard) throw new Error("no clipboard");
-      void navigator.clipboard.writeText(text).then(
-        () => say("Row copied"),
-        () => say("Could not copy the row"),
-      );
+      void navigator.clipboard.writeText(text).then(copied, failed);
     } catch {
-      say("Could not copy the row");
+      failed();
     }
   }
 
@@ -385,9 +378,6 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                 <Button size="sm" variant="sec" icon={Copy} onClick={() => copyRow(open)}>
                   Copy row
                 </Button>
-                <p className={styles.copyNote} role="status">
-                  {copyNote}
-                </p>
               </div>
             ) : null}
           </PhoneSheet>
@@ -654,9 +644,6 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                         Copy row
                       </Button>
                     </div>
-                    <p className={styles.copyNote} role="status">
-                      {copyNote}
-                    </p>
                   </div>
                 </Card>
               ) : (

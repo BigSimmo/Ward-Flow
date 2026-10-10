@@ -174,6 +174,14 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
       now={now}
       paused={live.paused}
       onTogglePause={live.togglePause}
+      exportFigures={{
+        stem: team.id,
+        scope: team.name,
+        figures: () => [
+          ...figureRows.map((row) => [HERO_LABELS[row.key], figureText(row.figure)] as const),
+          ["No follow-up yet", figures.discharged.kind === "measured" ? notArranged.length : "none"],
+        ],
+      }}
       stats={
         <>
           {figureRows.map((row) => (
@@ -548,7 +556,6 @@ function TeamComparison({
             <p className={styles.muted}>No team matches</p>
           ) : (
             <BarList
-              className={styles.roomyAxis}
               label={chart.chart}
               axis
               max={countAxisMax(shown.map(valueOf))}

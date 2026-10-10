@@ -200,74 +200,6 @@
 
 /* ---------- v10 report parts (downtime pack, patient chronology) ---------- */
 
-/* Hero count chips: an edged pill, mono figure then words. One line; the row scrolls, never wraps. */
-.chips {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.chips::-webkit-scrollbar {
-  display: none;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  flex: 0 0 auto;
-  min-height: 32px;
-  padding: 5px var(--wf-s-3);
-  box-sizing: border-box;
-  border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--radius-pill);
-  background: var(--wf-on-hero-fill);
-  color: var(--wf-hero-ink);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-}
-
-.chipButton {
-  cursor: pointer;
-}
-
-.chipButton:hover {
-  background: var(--wf-on-hero-hl);
-}
-
-.chipButton[aria-pressed="true"] {
-  background: var(--wf-hero-ink);
-  color: var(--wf-hero-2);
-}
-
-.chipButton:focus-visible {
-  outline: 2px solid var(--wf-hero-ink);
-  outline-offset: 2px;
-}
-
-.chipValue {
-  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.chipTwin {
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--wf-on-hero-ink);
-}
-
-.chipLabel {
-  color: var(--wf-on-hero-ink);
-}
-
-.chipButton[aria-pressed="true"] .chipLabel,
-.chipButton[aria-pressed="true"] .chipTwin {
-  color: inherit;
-}
-
 .heroActions {
   display: inline-flex;
   align-items: center;
@@ -400,39 +332,6 @@
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
-}
-
-.factGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--wf-s-3);
-  margin: 0;
-}
-
-.fact {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-sm);
-}
-
-.fact dt {
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
-.fact dd {
-  margin: 0;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  color: var(--wf-ink-1);
 }
 
 /* ---------- Patient chronology ---------- */
@@ -730,13 +629,6 @@
   align-items: center;
   gap: var(--wf-s-2);
   padding-right: var(--wf-s-4);
-}
-
-.copyNote {
-  min-height: var(--wf-lh-12);
-  margin: 0;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
 }
 
 .dayHead {

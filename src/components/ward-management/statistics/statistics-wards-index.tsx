@@ -16,6 +16,7 @@ import {
   StatusGlyph,
   cx,
   tableClasses,
+  rowDim,
 } from "@/components/wf";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -321,11 +322,7 @@ export function StatisticsWardsIndexScreen() {
                   {entry.rows.map((row) => {
                     const hit = matches(row);
                     return (
-                      <tr
-                        key={row.id}
-                        data-match={hit || undefined}
-                        data-dim={chips.size > 0 && !hit ? "true" : undefined}
-                      >
+                      <tr key={row.id} data-match={hit || undefined} {...rowDim(chips.size > 0 && !hit)}>
                         <th scope="row">
                           <span className={index.rowName}>
                             <Link href={wardStatisticsHref(row.id)} className={index.rowLink}>

@@ -239,6 +239,19 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
       now={now}
       paused={live.paused}
       onTogglePause={live.togglePause}
+      exportFigures={{
+        stem: service.toLowerCase().replaceAll(/[^a-z0-9]+/gu, "-"),
+        scope: service,
+        figures: () => [
+          ["Beds", totalBedBase],
+          ["Occupied percent", occupancyPct],
+          ["Ready", totalReady],
+          ["Being made ready", pendingPreparation],
+          ["Wards", serviceUnits.length],
+          ["EDs", serviceEds.length],
+          ["Out of area", outOfAreaEntries.length],
+        ],
+      }}
       stats={
         <>
           <HeroStat
