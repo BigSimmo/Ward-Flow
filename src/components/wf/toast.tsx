@@ -18,7 +18,10 @@ export type ToastUndo = {
   label?: string;
   durationMs: number;
   onUndo: () => void;
-  /** Called once when the window runs out without Undo being pressed. */
+  /**
+   * Called once when the window ends without Undo. Through `ToastProvider` that includes the X and
+   * the toast being pushed out by newer ones, so a deferred action can commit here.
+   */
   onExpire?: () => void;
 };
 

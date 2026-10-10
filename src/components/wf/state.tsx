@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Button } from "./button";
-import { cx } from "./cx";
+import { cx, present } from "./cx";
 import { SrOnly } from "./primitives";
 import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./state.module.css";
@@ -61,7 +61,7 @@ export function StateLine({ kind, title, reason, action, compact = false, classN
       <StatusGlyph tone={KIND_TONE[kind]} />
       <span className={styles.text}>
         <span className={cx(styles.title, (kind === "empty" || kind === "clear") && styles.calm)}>{resolvedTitle}</span>
-        {reason ? (
+        {present(reason) ? (
           <>
             <SrOnly>. </SrOnly>
             <span className={styles.reason}>{reason}</span>

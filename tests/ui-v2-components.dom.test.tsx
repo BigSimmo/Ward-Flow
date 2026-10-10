@@ -1217,6 +1217,38 @@ describe("Toast", () => {
     expect(within(region).queryByText("Bed 04 released")).not.toBeInTheDocument();
   });
 
+  it("ends an Undo window on close and keeps repeated Undo toasts apart", async () => {
+    const onUndo = vi.fn();
+    const onExpire = vi.fn();
+    function RepeatHarness() {
+      const { push } = useToast();
+      return (
+        <button
+          type="button"
+          onClick={() => push({ tone: "info", title: "Bed 05 released", undo: { durationMs: 8000, onUndo, onExpire } })}
+        >
+          Release
+        </button>
+      );
+    }
+    render(
+      <ToastProvider>
+        <RepeatHarness />
+      </ToastProvider>,
+    );
+    const region = screen.getByTestId("toast-region");
+    await userEvent.click(screen.getByRole("button", { name: "Release" }));
+    await userEvent.click(screen.getByRole("button", { name: "Release" }));
+    expect(within(region).getAllByText("Bed 05 released")).toHaveLength(2);
+    const closes = within(region).getAllByRole("button", { name: "Dismiss: Bed 05 released" });
+    await userEvent.click(closes[0]!);
+    expect(onExpire).toHaveBeenCalledTimes(1);
+    await userEvent.click(within(region).getByRole("button", { name: "Undo" }));
+    expect(onUndo).toHaveBeenCalledTimes(1);
+    expect(onExpire).toHaveBeenCalledTimes(1);
+    expect(within(region).queryByText("Bed 05 released")).not.toBeInTheDocument();
+  });
+
   it("deduplicates outcomes and caps the visible queue", async () => {
     function QueueHarness() {
       const { push } = useToast();

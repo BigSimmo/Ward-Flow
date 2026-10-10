@@ -13,7 +13,7 @@ import {
   type SheetFocusController,
 } from "@/components/ui/sheet-focus";
 import { Button } from "./button";
-import { cx } from "./cx";
+import { cx, present } from "./cx";
 import styles from "./dialog.module.css";
 
 export type DialogAction = {
@@ -220,9 +220,9 @@ export function Dialog({
               />
             ) : null}
           </div>
-          {description || children ? (
+          {present(description) || present(children) ? (
             <div className={styles.body}>
-              {description ? (
+              {present(description) ? (
                 <p id={descId} className={styles.description}>
                   {description}
                 </p>
