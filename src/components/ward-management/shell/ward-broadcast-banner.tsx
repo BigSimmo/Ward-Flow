@@ -12,6 +12,7 @@ import {
   COORDINATOR_DESK_ACKNOWLEDGER_ID,
   READY_IN_CHOICES,
   broadcastKind,
+  deskHasAnswered,
   formatTimeRemaining,
   latestReplies,
   type BroadcastAlert,
@@ -223,12 +224,12 @@ function BannerBody({
               <Button size="sm" icon={Check} onClick={acknowledge} title="Acknowledge this directive for your desk">
                 Acknowledge
               </Button>
-            ) : (
+            ) : deskHasAnswered(alert, desk.id) ? (
               <span className={styles.done}>
                 <StatusGlyph tone="success" size={10} />
                 Acknowledged
               </span>
-            )
+            ) : null
           ) : null}
 
           {myReply && !changing ? (

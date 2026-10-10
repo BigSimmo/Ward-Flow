@@ -58,4 +58,11 @@ describe("broadcast draft: round trip", () => {
   ])("rejects a malformed draft instead of restoring part of it: %s", (_name, raw) => {
     expect(parseBroadcastDraft(raw)).toBeUndefined();
   });
+
+  it("counts a changed alert type as unsaved and restores it (global alerts, 10 Oct 2026)", () => {
+    const bedCall = { ...broadcastDraftBaseline(TEMPLATE_ID), kind: "bed_call" as const };
+    expect(isBroadcastDraftDirty(bedCall)).toBe(true);
+    expect(parseBroadcastDraft(serialiseBroadcastDraft(bedCall))?.kind).toBe("bed_call");
+    expect(parseBroadcastDraft(JSON.stringify({ ...bedCall, kind: "pull_now" }))).toBeUndefined();
+  });
 });

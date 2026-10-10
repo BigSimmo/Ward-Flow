@@ -59,6 +59,7 @@ import { isAlertLive } from "./global-alert-view";
 import { PullNowCard, ReplyBoardList } from "./global-alert-panels";
 
 import {
+  broadcastDraftBaseline,
   isBroadcastDraftDirty,
   parseBroadcastDraft,
   serialiseBroadcastDraft,
@@ -264,6 +265,7 @@ function AlertsWorkspace() {
       category: broadcastCategory,
       scope: broadcastScope,
       durationMinutes: broadcastDurationMinutes,
+      kind: broadcastType === "bed_call" ? "bed_call" : "directive",
     }),
     [
       selectedTemplateId,
@@ -273,6 +275,7 @@ function AlertsWorkspace() {
       broadcastCategory,
       broadcastScope,
       broadcastDurationMinutes,
+      broadcastType,
     ],
   );
   const restoreBroadcastDraft = useCallback((raw: string) => {
@@ -285,6 +288,7 @@ function AlertsWorkspace() {
     setBroadcastCategory(draft.category);
     setBroadcastScope(draft.scope);
     setBroadcastDurationMinutes(draft.durationMinutes);
+    setBroadcastType(draft.kind ?? broadcastDraftBaseline(draft.templateId).kind ?? "directive");
     setBroadcastModalOpen(true);
   }, []);
   const { clearDraft: clearBroadcastDraft } = useDirtyStateGuard({

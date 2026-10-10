@@ -31,10 +31,10 @@
 
 .cardHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   min-width: 0;
-  white-space: nowrap;
 }
 
 .cardTitle {
