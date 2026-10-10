@@ -197,7 +197,13 @@ function PageRow({
   if (entry.id === "referral-intake" && onNewReferral) {
     return (
       <li>
-        <button type="button" className={styles.row} data-testid="ward-phone-new-referral" onClick={onNewReferral}>
+        <button
+          type="button"
+          className={styles.row}
+          aria-label={wardNavCountLabel(entry.label, count)}
+          data-testid="ward-phone-new-referral"
+          onClick={onNewReferral}
+        >
           {face}
         </button>
       </li>
