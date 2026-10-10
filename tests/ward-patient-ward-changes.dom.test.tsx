@@ -96,15 +96,15 @@ describe("ward changes from the Patient page", () => {
     expect(root).toHaveAttribute("data-patient-mode", "ward");
   });
 
-  it("sets the expected discharge date from the status card", () => {
+  it("sets an expected discharge date more than a week out from the status card", () => {
     renderPatient();
     const discharge = screen.getByTestId("ward-patient-gate-discharge");
     fireEvent.click(within(discharge).getByRole("button", { name: /discharge date$/ }));
-    fireEvent.change(within(changeCard()).getByLabelText("Day"), { target: { value: "2" } });
+    fireEvent.change(within(changeCard()).getByLabelText("Day"), { target: { value: "9" } });
     fireEvent.change(within(changeCard()).getByLabelText("Expected discharge time"), { target: { value: "11:00" } });
     fireEvent.click(within(changeCard()).getByRole("button", { name: "Save date" }));
     expect(screen.getByTestId("probe-discharge")).toHaveTextContent(
-      String(startOfToday + 2 * MINUTES_PER_DAY + 11 * 60),
+      String(startOfToday + 9 * MINUTES_PER_DAY + 11 * 60),
     );
   });
 

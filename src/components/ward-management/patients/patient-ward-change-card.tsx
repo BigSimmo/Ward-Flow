@@ -3,20 +3,29 @@
 import { useState } from "react";
 import { CalendarDays, DoorOpen, Stethoscope } from "lucide-react";
 import { Button, Card, CardHead } from "@/components/wf";
-import { MINUTES_PER_DAY, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  MINUTES_PER_DAY,
+  calendarDateOf,
+  formatInstantWithDay,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import styles from "./patient-ward-change-card.module.css";
 
 export type WardChangeForm = "none" | "leave" | "discharge";
 export type LeaveKind = "off_ward" | "medical_trip";
 
-const DAY_OPTIONS = [
-  { value: 0, label: "Today" },
-  { value: 1, label: "Tomorrow" },
-  { value: 2, label: "In 2 days" },
-  { value: 3, label: "In 3 days" },
-  { value: 7, label: "In 7 days" },
-] as const;
+const LEAVE_DAYS = [0, 1, 2, 3, 7] as const;
+/** A planned discharge can sit weeks out (seeded stays run 8 to 10 days ahead), so offer six weeks. */
+const DISCHARGE_DAYS = Array.from({ length: 43 }, (_, day) => day);
+
+/** "Today", "Tomorrow" or "In 9 days", with the calendar date for anything further out. */
+function dayOptionLabel(day: number, now: Instant, dayZero: Date): string {
+  if (day === 0) return "Today";
+  if (day === 1) return "Tomorrow";
+  const date = calendarDateOf(Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY + day * MINUTES_PER_DAY, dayZero);
+  return `In ${day} days, ${date.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}`;
+}
 
 const KIND_LABELS: Record<LeaveKind, string> = { off_ward: "Off-ward leave", medical_trip: "Medical trip" };
 
@@ -37,6 +46,7 @@ export function typedTimeToInstant(time: string, dayOffset: number, now: Instant
  */
 export function PatientWardChangeCard({
   now,
+  dayZero,
   form,
   onFormChange,
   onRecordLeave,
@@ -46,6 +56,7 @@ export function PatientWardChangeCard({
   roleLimit,
 }: {
   now: Instant;
+  dayZero: Date;
   form: WardChangeForm;
   onFormChange: (form: WardChangeForm) => void;
   onRecordLeave: (expectedReturn: Instant, kind: LeaveKind) => void;
@@ -68,6 +79,7 @@ export function PatientWardChangeCard({
   function toggle(next: Exclude<WardChangeForm, "none">) {
     onFormChange(form === next ? "none" : next);
     setTime("");
+    setDay(0);
   }
 
   return (
@@ -137,9 +149,9 @@ export function PatientWardChangeCard({
           <label className={styles.changeField}>
             <span>Day</span>
             <select value={day} onChange={(event) => setDay(Number(event.target.value))}>
-              {DAY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+              {(form === "leave" ? LEAVE_DAYS : DISCHARGE_DAYS).map((option) => (
+                <option key={option} value={option}>
+                  {dayOptionLabel(option, now, dayZero)}
                 </option>
               ))}
             </select>
