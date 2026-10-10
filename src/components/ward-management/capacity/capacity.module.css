@@ -46,22 +46,6 @@
   min-width: 0;
 }
 
-/* The ring leads the hero on desktop and tablet: Hero renders it in its stats slot, and this moves
-   that slot ahead of the title. */
-@media (min-width: 48.0625rem) {
-  .capacityHero > :first-child > :nth-child(2) {
-    flex: 0 0 auto;
-    order: -1;
-    overflow: visible;
-  }
-}
-
-/* Shared-part fix kept page-local: the ring's own "svg" rule also sizes the glyph under the figure. */
-.capacityHero [data-testid="wf-occupancy-ring"] > span svg {
-  width: 10px;
-  height: 10px;
-}
-
 /* Phone: three figures and the arc only (v10 Capacity, Phone). */
 @media (max-width: 48rem) {
   .heroStatGroup > :nth-child(n + 4) {

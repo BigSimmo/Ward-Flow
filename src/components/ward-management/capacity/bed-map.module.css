@@ -287,6 +287,23 @@
   background: var(--wf-selected);
 }
 
+/* A highlight that does not match: words and squares recede by colour, never opacity. */
+.wardBlock[data-dim="true"],
+.wardBlock[data-dim="true"] * {
+  color: var(--wf-dim);
+}
+
+.wardBlock[data-dim="true"] .square,
+.wardBlock[data-dim="true"] .ribbonSegment {
+  background-color: var(--wf-glyph-dim);
+  background-image: none;
+}
+
+/* Table: one shared WardCapacityRow per ward (v10 Capacity). */
+.capacityRows {
+  min-width: 0;
+}
+
 .wardBlockHeader {
   display: flex;
   flex-direction: column;

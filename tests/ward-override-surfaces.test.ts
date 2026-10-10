@@ -265,6 +265,11 @@ const ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON: Record<string, string> = {
   // no entry here because that FILE already builds an overrideReason on its separate
   // psychiatric_ward site (handleAccept) -- this file has no such site at all.
   "src/components/ward-management/community/community-screen.tsx": "ACCEPT_REFERRAL",
+  // v10 Home (pass 3, 10 Oct 2026): State bedflow's Offer, with Undo. It dispatches only for a
+  // ward that passes every gate with a bed ready (`fitKind` "bed", a referable stage, no gender
+  // placement outstanding). Any ward that would need a reason is chosen in Placement instead,
+  // where shortlist-panel.tsx's Override records one. So there is no override to record here.
+  "src/components/ward-management/coordinator/coordinator-screen.tsx": "REFER_TO_UNITS",
 };
 
 const derivedMembers = deriveWardFlowEventMembers();
@@ -564,9 +569,9 @@ describe("ward override-surface guard", () => {
     // call sites", "at least one construction site supplies an overrideReason field") and by the
     // compliance guard below actually passing against real, non-empty groups.
     // User-approved ward inbox offers normal acceptance only; coordinator review retains overrides.
-    // v10 pass 3: the ward page's Bed board placement joins the inbox (3).
-    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(3);
-    expect(stillInViolation.size).toBe(3);
+    // v10 pass 3: the ward page's Bed board placement (3) and Home's Offer, plain fits only (4).
+    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(4);
+    expect(stillInViolation.size).toBe(4);
   });
 
   // --- The compliance guard: every site the scan CAN see meets the rule. ---
@@ -656,6 +661,8 @@ describe("ward override-surface guard", () => {
       // RB5 (item 16, 2026-09-17): this team's own acceptance of its own referral -- see this
       // file's entry in ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON above for why it needs no reason.
       "src/components/ward-management/community/community-screen.tsx::ACCEPT_REFERRAL": 1,
+      // v10 Home pass 3: State bedflow's Offer with Undo, plain fits only (allowlisted above).
+      "src/components/ward-management/coordinator/coordinator-screen.tsx::REFER_TO_UNITS": 1,
       "src/components/ward-management/referrals/ward-referral-inbox.tsx::ACCEPT_REFERRAL": 1,
       // 2 -> 3, T12 (item 9, 2026-09-17): the non-binary placement form dispatches the same
       // REFER_TO_UNITS with genderPlacementReason and genderPlacementChecked. Verified by reading

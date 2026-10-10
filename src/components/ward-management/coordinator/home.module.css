@@ -122,6 +122,26 @@
   text-decoration: underline;
 }
 
+/* Phone queue cap: the rest of the queue is one tap away (v10 Home phone, direction A). */
+.queueMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 var(--wf-s-4);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  cursor: pointer;
+}
+
+.queueMore:hover {
+  text-decoration: underline;
+}
+
 .headCount {
   color: var(--wf-ink-3);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
@@ -257,14 +277,39 @@
   min-width: 0;
 }
 
-@media (min-width: 64rem) {
+@media (min-width: 62.5625rem) {
   /* Three equal columns at one height, a little under a window tall (the shell's rail height less
-     room for the hero), each scrolling inside itself, so the page itself barely scrolls. */
+     room for the hero), each scrolling inside itself, so the page itself barely scrolls. Tablet
+     landscape (1001 to 1200px) keeps the same height with two columns: the queue and one panel
+     that switches between Placement and State bedflow. */
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: minmax(0, 1fr);
     align-items: stretch;
     height: max(30rem, calc(var(--ward-rail-height, 46rem) - 10rem));
+  }
+
+  .grid[data-layout="tablet-landscape"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rightPanel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-2);
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .rightPanel > :not(.rightSwitch) {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .rightPanel > .flowCard,
+  .rightPanel > .side {
+    display: flex;
+    flex-direction: column;
   }
 
   .grid > * {
@@ -311,6 +356,7 @@
   .shortlistRegion.shortlistRegion > [data-testid^="ward-referral-placement"] {
     flex: 1 1 auto;
     min-height: 0;
+    padding-bottom: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
   }
@@ -596,9 +642,33 @@
 .forFits {
   display: inline-flex;
   align-items: center;
-  gap: var(--wf-s-1);
+  gap: var(--wf-s-3);
   margin-left: auto;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+}
+
+.forCount {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+}
+
+.forName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Offered (inside its Undo window, or a live referral): a word with its info glyph, no button. */
+.unitOffered {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .forBest {
@@ -1310,23 +1380,6 @@ button.registerRow:hover {
   font-variant-numeric: tabular-nums;
 }
 
-/* The occupancy ring leads the hero on desktop and tablet (v10 Home). Hero renders the ring in
-   its stats slot; this moves that slot ahead of the title. */
-@media (min-width: 48.0625rem) {
-  .homeHero > :first-child > :nth-child(2) {
-    flex: 0 0 auto;
-    order: -1;
-    overflow: visible;
-  }
-}
-
-/* Shared-part fix kept page-local: the ring's own "svg" rule also sizes the status glyph under the
-   figure. Hold that glyph at glyph size. (Reported for src/components/wf/v10-parts.module.css.) */
-.homeHero [data-testid="wf-occupancy-ring"] > span svg {
-  width: 10px;
-  height: 10px;
-}
-
 /* Tablet drops "due within 1h": the queue already shows it (v10 Home, Tablet). */
 @media (min-width: 48.0625rem) and (max-width: 80rem) {
   .heroDueChip {
@@ -1362,15 +1415,10 @@ button.registerRow:hover {
   min-width: 0;
 }
 
-@media (min-width: 64rem) {
-  /* Bedflow rows in a third of the width: the bar shortens so ward names fit. */
-  .unitMain {
-    grid-template-columns: minmax(0, 1fr) 2.75rem 2.5rem;
-    gap: var(--wf-s-2);
-  }
-
-  /* ED tiles: one row that stretches to fill the card on wide screens and scrolls sideways,
-     never wraps, when the screen is too narrow for every department. */
+/* ED tiles: one row that stretches to fill the card on wide screens and scrolls sideways, never
+   wraps, when the screen is too narrow for every department (desktop and both tablets). A fade at
+   the right edge says there is more. */
+@media (min-width: 48.0625rem) {
   .edGrid {
     grid-auto-flow: column;
     grid-template-columns: none;
@@ -1381,6 +1429,21 @@ button.registerRow:hover {
 
   .edCell:last-child {
     border-right: 0;
+  }
+}
+
+@media (min-width: 48.0625rem) and (max-width: 75rem) {
+  .edGrid {
+    grid-auto-columns: minmax(8.5rem, 1fr);
+    mask-image: linear-gradient(to right, var(--wf-ink-1) calc(100% - 2.5rem), transparent);
+  }
+}
+
+@media (min-width: 62.5625rem) {
+  /* Bedflow rows in a third of the width: the bar shortens so ward names fit. */
+  .grid:not([data-layout="tablet-landscape"]) .unitMain {
+    grid-template-columns: minmax(0, 1fr) 2.75rem 2.5rem;
+    gap: var(--wf-s-2);
   }
 
   /* The strip under the hero, opened from Exceptions, Declines or New events. Rows run two across
@@ -1497,4 +1560,229 @@ button.registerRow:hover {
     max-height: none;
     overflow: visible;
   }
+}
+
+/* ---------- tablets (v10 Home, Tablet) ---------- */
+
+/* Tablet landscape: the switch over the right panel. */
+.rightSwitch {
+  align-self: flex-start;
+}
+
+/* Tablet portrait: Priority queue or State bedflow, full width. */
+.portraitSwitch {
+  width: 100%;
+}
+
+.portraitSwitch > * {
+  flex: 1 1 0;
+  justify-content: center;
+}
+
+/* Tablet portrait: choosing a patient opens Placement as a side sheet over a scrim, with its action
+   bar pinned to the foot. Esc, the scrim and Close all shut it. */
+@media (min-width: 48.0625rem) and (max-width: 62.5rem) {
+  .grid[data-layout="tablet-portrait"] .shortlistBackdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 940;
+    background: var(--scrim);
+  }
+
+  .grid[data-layout="tablet-portrait"] .shortlistColumn {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 950;
+    width: min(28rem, 92vw);
+  }
+
+  .grid[data-layout="tablet-portrait"] .shortlistRegion {
+    height: 100%;
+    max-height: 100dvh;
+    border-radius: var(--wf-r-xl) 0 0 var(--wf-r-xl);
+    box-shadow: var(--wf-e3, var(--wf-e2));
+  }
+
+  .grid[data-layout="tablet-portrait"] .shortlistRegion > [data-testid^="ward-shortlist-"],
+  .grid[data-layout="tablet-portrait"] .shortlistRegion > [data-testid^="ward-referral-placement"] {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding-bottom: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* Touch targets on both tablets: rows about 52px, controls 44px. */
+@media (min-width: 48.0625rem) and (max-width: 75rem) {
+  .grid[data-layout^="tablet"] .queueRow {
+    min-height: 3.25rem;
+  }
+
+  .grid[data-layout^="tablet"] .unitMain {
+    min-height: var(--wf-touch);
+  }
+}
+
+/* ---------- phone sheets and the Beds ready card (direction A) ---------- */
+
+.phoneBedsCard {
+  min-width: 0;
+}
+
+.phoneWardList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phoneWardRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--wf-s-3);
+  width: 100%;
+  min-height: var(--wf-touch);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phoneWardRow:hover {
+  background: var(--wf-hover);
+}
+
+.phoneWardName {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneWardSub {
+  grid-row: 2;
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneWardReady {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.phoneWardReady .mono {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+}
+
+.sheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.sheetFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  margin: 0;
+}
+
+.sheetFacts > div {
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-sm);
+}
+
+.sheetFacts dt {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.sheetFacts dd {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  margin: 0;
+  font-weight: 600;
+}
+
+.sheetSection {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sheetPicks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+}
+
+.sheetPick {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--wf-s-2);
+  min-height: var(--wf-touch);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* A fit with a bed is a fit place: the one tinted fill. */
+.sheetPick[data-fit="bed"] {
+  border-color: var(--wf-fit-edge);
+  background: var(--wf-fit-tint);
+}
+
+.sheetPick[aria-checked="true"] {
+  border-color: var(--wf-pri-1);
+  box-shadow: inset 0 0 0 1px var(--wf-pri-1);
+}
+
+.sheetPickName {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sheetPickSub {
+  grid-row: 2;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.sheetPickFit {
+  display: inline-flex;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
 }

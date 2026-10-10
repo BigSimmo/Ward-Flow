@@ -3,13 +3,33 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { CheckingFoot, Hero, HeroStat, LiveChip, OccupancyRing, buttonClass } from "@/components/wf";
+import {
+  CheckingFoot,
+  Hero,
+  HeroStat,
+  LiveChip,
+  OccupancyRing,
+  Segmented,
+  Sheet,
+  ToastProvider,
+  buttonClass,
+  useToast,
+} from "@/components/wf";
+import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
+import { genderReviewNeeded } from "@/components/ward-management/ward-model";
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
 import { clockState, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
-import { allDeclines, allOverrides, buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
+import {
+  allDeclines,
+  allOverrides,
+  buildActionInbox,
+  isOpen,
+  referralBlockedReason,
+  shortlistCandidates,
+} from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
@@ -36,11 +56,19 @@ import { HomeEdPressure, dueWindowLabel } from "./home-ed-pressure";
 import { PriorityQueue, queueWaitThresholds, type QueueHighlight } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel";
 import { SinceLastLookPanel, sinceLastLookCount, useSinceLastLook } from "./since-last-look-panel";
+import { fitKind } from "./home-fit";
+import { useHomeLayout } from "./home-layout";
+import { HomeBedsReadyCard, HomeWardSheet } from "./home-phone-sheets";
 
 const HANDOVER_HREF = "/mockups/ward-flow/handover";
 /** Activity lines shown under "Since you looked". */
 const SINCE_TIMELINE_LINES = 8;
 const DELAYS_HREF = "/mockups/ward-flow/delays";
+
+/** The Offer toast's Undo window (PASS2 engine wiring: the toast shows for 8 s). */
+const OFFER_UNDO_MS = 8000;
+/** Phone renders the first 20 queue rows; the rest are one tap away (v10 Home phone mockup). */
+const PHONE_QUEUE_ROWS = 20;
 
 /** A bed count older than this is named in the hero's Checking foot (v10 Home chapter). */
 const BED_COUNT_FRESH_MINUTES = 60;
@@ -67,6 +95,27 @@ const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-c
  * queue and the ED card, never the bedflow or the shortlist.
  */
 export function CoordinatorScreen() {
+  // The app layout provides the toast region. A screen rendered on its own (a test, a preview)
+  // gets its own provider so Offer's Undo toast still works. (Requested for ui/toast: an
+  // optional-toast hook, so this probe can go.)
+  const toast = useToastIfProvided();
+  if (toast) return <CoordinatorScreenBody />;
+  return (
+    <ToastProvider>
+      <CoordinatorScreenBody />
+    </ToastProvider>
+  );
+}
+
+function useToastIfProvided() {
+  try {
+    return useToast();
+  } catch {
+    return undefined;
+  }
+}
+
+function CoordinatorScreenBody() {
   usePrintableDisclosures();
   const {
     movements,
@@ -128,16 +177,21 @@ export function CoordinatorScreen() {
     setRegisterTab(tab);
     setHeroPanel("registers");
   }
-  // Phone keeps the registers in the page flow under the queue, behind "Today's answers".
-  const [isPhone, setIsPhone] = useState(false);
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const query = window.matchMedia("(max-width: 48rem)");
-    const update = () => setIsPhone(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
+  // v10 Home layouts: desktop three columns, tablet landscape two (queue and a switching panel),
+  // tablet portrait one behind a segmented control with Placement as a side sheet, phone direction A.
+  const layout = useHomeLayout();
+  const isPhone = layout === "phone";
+  const isTabletPortrait = layout === "tablet-portrait";
+  const isTabletLandscape = layout === "tablet-landscape";
+  // Tablet landscape: the right panel shows Placement or State bedflow.
+  const [rightPanel, setRightPanel] = useState<"placement" | "bedflow">("placement");
+  // Tablet portrait: the one column shows the queue or State bedflow.
+  const [portraitView, setPortraitView] = useState<"queue" | "bedflow">("queue");
+  // Phone sheets (direction A): Since you looked, the registers, or one ward. The patient sheet is
+  // Placement itself, opened by picking a queue row.
+  const [phoneSheet, setPhoneSheet] = useState<
+    { kind: "since" } | { kind: "exceptions" } | { kind: "ward"; unitId: string } | undefined
+  >(undefined);
 
   // A ward choice belongs to the movement it was made for, so changing movement clears it.
   function selectMovement(movementId: string | undefined) {
@@ -145,10 +199,12 @@ export function CoordinatorScreen() {
     setSelectedUnitId(undefined);
     setSelectedReferralId(undefined);
     setFocusMovementId(movementId);
+    if (movementId) setRightPanel("placement");
   }
 
   function selectReferral(referralId: string) {
     setSelectedReferralId(referralId);
+    setRightPanel("placement");
   }
 
   // WF-22: gated on `isOpen`, so a movement that closes while selected stops being explained.
@@ -205,8 +261,9 @@ export function CoordinatorScreen() {
     : undefined;
   const hasPanelSubject = Boolean(selectedReferral || selectedMovement);
   // Desktop at rest: Placement shows the top of the queue without selecting it, so no queue row
-  // reads as pressed when nobody pressed it. A phone keeps its sheet for a real pick only.
-  const previewMovement = !hasPanelSubject && !isPhone ? queue[0] : undefined;
+  // reads as pressed when nobody pressed it. A phone, and a tablet in portrait, keep their sheet
+  // for a real pick only.
+  const previewMovement = !hasPanelSubject && !isPhone && !isTabletPortrait ? queue[0] : undefined;
   const panelMovement = selectedMovement ?? previewMovement;
 
   // A ward choice belongs to the movement it was made for, preview included: when the movement in
@@ -227,6 +284,102 @@ export function CoordinatorScreen() {
   function closeShortlist() {
     selectMovement(undefined);
     queueFocusRef.current?.querySelector<HTMLElement>(QUEUE_FOCUS_SELECTOR)?.focus();
+  }
+
+  // Placement as a sheet (phone, tablet portrait): Esc closes it, like the scrim.
+  const sheetPlacementOpen = hasPanelSubject && (isPhone || isTabletPortrait);
+  useEffect(() => {
+    if (!sheetPlacementOpen) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      setSelectedMovementId(undefined);
+      setSelectedReferralId(undefined);
+      setFocusMovementId(undefined);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sheetPlacementOpen, setFocusMovementId]);
+
+  /*
+   * Offer on a bedflow row (v10 Home): refers this patient to that ward, with Undo. The referral is
+   * held for the toast's Undo window and sent when the window ends (the toast's `onExpire`, which
+   * also runs if the toast is closed or pushed out), so Undo leaves no withdrawn referral, notice or
+   * audit row behind. The row reads Offered at once. A ward the engine would refuse a plain
+   * referral for (a stage that cannot be referred, a gender placement still to record) is chosen
+   * in Placement instead, which says why.
+   */
+  const toast = useToast();
+  const patientOf = usePatientOf();
+  const umrnText = useUmrnText();
+  const [pendingOffers, setPendingOffers] = useState<{ key: string; movementId: string; unitId: string }[]>([]);
+  // The refusal count when a held offer was sent; a later refusal says the offer was not sent.
+  const refusalWatchRef = useRef<number | undefined>(undefined);
+  const liveNowRef = useRef(liveNow);
+  const rejectionCountRef = useRef(rejections.length);
+  useEffect(() => {
+    liveNowRef.current = liveNow;
+    rejectionCountRef.current = rejections.length;
+  }, [liveNow, rejections.length]);
+  useEffect(() => {
+    const watch = refusalWatchRef.current;
+    if (watch === undefined || rejections.length <= watch) return;
+    const latest = rejections.at(-1);
+    refusalWatchRef.current = undefined;
+    toast.push({
+      tone: "warning",
+      title: "Offer not sent",
+      body: latest ? umrnText(latest.reason) : "The engine refused it.",
+    });
+  }, [rejections, toast, umrnText]);
+
+  function offer(movement: Movement, unitId: string) {
+    const unit = units.find((candidate) => candidate.id === unitId);
+    if (!unit) return;
+    const candidate = shortlistCandidates(movement, [unit], liveNow)[0];
+    const plain =
+      candidate !== undefined &&
+      fitKind(candidate) === "bed" &&
+      referralBlockedReason(movement) === undefined &&
+      !(
+        genderReviewNeeded(movement.gender, movement.sex) &&
+        !(movement.genderPlacements ?? []).some((record) => record.unitIds.includes(unitId))
+      ) &&
+      !movement.referredUnitIds.includes(unitId);
+    if (!plain) {
+      if (previewMovement?.id === movement.id) selectMovement(movement.id);
+      setSelectedUnitId(unitId);
+      setRightPanel("placement");
+      return;
+    }
+    const key = `${movement.id}:${unitId}:${liveNow}:${pendingOffers.length}`;
+    if (previewMovement?.id === movement.id) selectMovement(movement.id);
+    setSelectedUnitId(unitId);
+    setPendingOffers((current) => [...current, { key, movementId: movement.id, unitId }]);
+    const who = patientOf(movement);
+    const drop = () => setPendingOffers((current) => current.filter((pending) => pending.key !== key));
+    toast.push({
+      tone: "info",
+      title: `Offered ${unit.name} to ${who.umrn}`,
+      body: "Sent to the ward when Undo closes.",
+      undo: {
+        durationMs: OFFER_UNDO_MS,
+        onUndo: () => {
+          drop();
+          toast.push({ tone: "info", title: "Offer withdrawn", body: `${unit.name} was not asked.` });
+        },
+        onExpire: () => {
+          drop();
+          refusalWatchRef.current = rejectionCountRef.current;
+          dispatch({
+            type: "REFER_TO_UNITS",
+            role: "coordinator",
+            now: liveNowRef.current,
+            movementId: movement.id,
+            unitIds: [unitId],
+          });
+        },
+      },
+    });
   }
 
   // The work list is network-wide and open movements only, never scoped to the ED filter.
@@ -334,11 +487,6 @@ export function CoordinatorScreen() {
       {bedsReady === 1 ? "bed" : "beds"} ready
     </>
   );
-  // Phone: Exceptions and New since scroll to their cards under the queue and open them.
-  function revealOnPhone(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
   // The four registers: a strip under the hero on desktop (opened from its Exceptions count), and
   // the collapsible "Today's answers" card under the queue on a phone. Only one is ever mounted.
   function renderRegisters(placement: "band" | "column") {
@@ -368,6 +516,105 @@ export function CoordinatorScreen() {
       />
     );
   }
+
+  const pendingOfferUnitId = panelMovement
+    ? pendingOffers.find((pending) => pending.movementId === panelMovement.id)?.unitId
+    : undefined;
+
+  const bedflowNode = (
+    <HomeBedflow
+      movement={panelMovement}
+      units={units}
+      movements={movements}
+      bedReleases={bedReleases}
+      leaveBeds={leaveBeds}
+      admissions={admissions}
+      now={now}
+      selectedUnitId={selectedUnitId}
+      onSelectUnit={(unitId) => pickUnit(selectedUnitId === unitId ? undefined : unitId)}
+      onOffer={(unitId) => {
+        if (panelMovement) offer(panelMovement, unitId);
+      }}
+      pendingOfferUnitId={pendingOfferUnitId}
+      parallelReferralCap={configuration.parallelReferralCap}
+      dischargesHeldUp={counts.discharges?.value ?? 0}
+      service={service}
+    />
+  );
+
+  // Placement: the third column on desktop, the switched right panel on tablet landscape, a side
+  // sheet over a scrim on tablet portrait and the patient sheet on a phone (CSS by `data-layout`).
+  const placementNode =
+    hasPanelSubject || previewMovement ? (
+      <div className={styles.side} data-preview={previewMovement ? "true" : undefined}>
+        {hasPanelSubject ? (
+          <div
+            className={`${styles.shortlistBackdrop} ${shortlistStyles.shortlistBackdrop ?? ""}`}
+            onClick={closeShortlist}
+            aria-hidden="true"
+            data-testid="ward-coordinator-shortlist-backdrop"
+          />
+        ) : null}
+        <div className={`${styles.shortlistColumn} ${shortlistStyles.shortlistColumn ?? ""}`}>
+          <aside
+            className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
+            aria-label={selectedReferral ? "Referral placement" : "Placement"}
+            // Journeys prove which movement the panel is for by this attribute.
+            data-subject-movement={selectedReferral ? undefined : panelMovement?.id}
+            // Reaching into the top-of-queue preview selects that patient first, so every action
+            // acts on a chosen patient and a queue reorder cannot swap them mid-form.
+            onPointerDownCapture={previewMovement ? () => selectMovement(previewMovement.id) : undefined}
+            onFocusCapture={previewMovement ? () => selectMovement(previewMovement.id) : undefined}
+          >
+            <div className={`${styles.sheetHandle} ${shortlistStyles.sheetHandle ?? ""}`} aria-hidden="true" />
+            <header className={styles.shortlistHeader}>
+              <h2 className={isTabletLandscape ? "sr-only" : undefined}>
+                {selectedReferral ? "Referral placement" : "Placement"}
+              </h2>
+              {previewMovement ? (
+                <span className={styles.shortlistPreviewLabel} data-testid="ward-placement-top-of-queue">
+                  Top of queue
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "ghost", size: "sm" })}
+                  onClick={closeShortlist}
+                  aria-label="Close shortlist and clear selection"
+                >
+                  {isPhone || isTabletPortrait ? "Close" : "Back to top of queue"}
+                </button>
+              )}
+            </header>
+            {service ? (
+              <p className={styles.cardNote} data-testid="ward-shortlist-not-scoped">
+                Beds are never narrowed by service. Every ward in the network is considered.
+              </p>
+            ) : null}
+            {selectedReferral ? (
+              <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
+            ) : (
+              <ShortlistPanel
+                movement={panelMovement}
+                now={liveNow}
+                units={units}
+                bedReleases={bedReleases}
+                leaveBeds={leaveBeds}
+                admissions={admissions}
+                referrals={referrals}
+                selectedUnitId={selectedUnitId}
+                onSelectUnit={pickUnit}
+                dispatch={dispatch}
+                parallelReferralCap={configuration.parallelReferralCap}
+                pullHoldMinutes={configuration.pullHoldMinutes}
+              />
+            )}
+          </aside>
+        </div>
+      </div>
+    ) : isTabletLandscape ? (
+      <p className={styles.emptyLine}>No one waiting. Placement opens when a patient is chosen.</p>
+    ) : null;
 
   return (
     <div className={styles.screen} data-testid="ward-coordinator" data-ward-design="v6">
@@ -405,14 +652,18 @@ export function CoordinatorScreen() {
                     label="Exceptions"
                     tone={actionInbox.length > 0 ? "warning" : undefined}
                     command
+                    expanded={phoneSheet?.kind === "exceptions"}
                     onToggle={() => {
                       setExceptionsOpen(true);
-                      revealOnPhone("ward-home-phone-registers");
+                      setPhoneSheet({ kind: "exceptions" });
                     }}
                   />
                 </>
-              ) : (
-                // The one ring on the page. CSS moves it ahead of the title on desktop and tablet.
+              ) : undefined
+            }
+            // The one ring on the page leads the hero on desktop and tablet (shared Hero lead slot).
+            lead={
+              isPhone ? undefined : (
                 <OccupancyRing percent={statewideOccupancy} alertAt={BED_ALERT_THRESHOLD_PERCENT} scope="Statewide" />
               )
             }
@@ -424,7 +675,8 @@ export function CoordinatorScreen() {
                     value={newEvents}
                     label={sinceLabel}
                     command
-                    onToggle={() => revealOnPhone("ward-home-phone-since")}
+                    expanded={phoneSheet?.kind === "since"}
+                    onToggle={() => setPhoneSheet({ kind: "since" })}
                   />
                   <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
                 </div>
@@ -549,129 +801,151 @@ export function CoordinatorScreen() {
             service={service}
           />
 
+          {isTabletPortrait ? (
+            // Tablet portrait: one column behind a switch, so nothing is squeezed side by side.
+            <Segmented
+              className={styles.portraitSwitch}
+              label="Home view"
+              size="md"
+              value={portraitView}
+              onChange={setPortraitView}
+              items={[
+                { id: "queue", label: "Priority queue", count: queue.length + referralQueue.length },
+                { id: "bedflow", label: "State bedflow", count: units.length },
+              ]}
+            />
+          ) : null}
+
           <div
             className={styles.grid}
             data-testid="ward-coordinator-region-grid"
+            data-layout={layout}
             data-shortlist-open={hasPanelSubject}
             data-placement-preview={previewMovement ? "true" : undefined}
             ref={queueFocusRef}
           >
-            <div className={styles.side}>
-              <PriorityQueue
-                movements={queue}
-                referralQueue={referralQueue}
-                now={now}
-                selectedId={selectedMovementId}
-                onSelect={selectMovement}
-                selectedReferralId={selectedReferralId}
-                onSelectReferral={selectReferral}
-                filterEdId={activeEdId}
-                onClearFilter={() => setSelectedEdId(undefined)}
-                totalMovements={openMovements.length}
-                serviceScope={queueServiceScope}
-                pullHoldMinutes={configuration.pullHoldMinutes}
-                delaysHref={DELAYS_HREF}
-                highlight={highlight}
-                onClearHighlight={() => setHighlight(undefined)}
-              />
-              {isPhone ? <div id="ward-home-phone-registers">{renderRegisters("column")}</div> : null}
-              {isPhone ? (
-                <div id="ward-home-phone-since">
-                  <SinceLastLookPanel
-                    changes={lastLook.changes}
-                    now={now}
-                    activity={recentActivity}
-                    onMarkSeen={lastLook.markSeen}
-                  />
-                </div>
-              ) : null}
-            </div>
-
-            <div className={styles.flowCol}>
-              <HomeBedflow
-                movement={panelMovement}
-                units={units}
-                movements={movements}
-                bedReleases={bedReleases}
-                leaveBeds={leaveBeds}
-                admissions={admissions}
-                now={now}
-                selectedUnitId={selectedUnitId}
-                onSelectUnit={(unitId) => pickUnit(selectedUnitId === unitId ? undefined : unitId)}
-                onOffer={(unitId) => pickUnit(unitId)}
-                parallelReferralCap={configuration.parallelReferralCap}
-                dischargesHeldUp={counts.discharges?.value ?? 0}
-                service={service}
-              />
-            </div>
-
-            {hasPanelSubject || previewMovement ? (
-              <div className={styles.side} data-preview={previewMovement ? "true" : undefined}>
-                {hasPanelSubject ? (
-                  <div
-                    className={`${styles.shortlistBackdrop} ${shortlistStyles.shortlistBackdrop ?? ""}`}
-                    onClick={closeShortlist}
-                    aria-hidden="true"
-                    data-testid="ward-coordinator-shortlist-backdrop"
+            {isTabletPortrait && portraitView === "bedflow" ? null : (
+              <div className={styles.side}>
+                <PriorityQueue
+                  movements={queue}
+                  referralQueue={referralQueue}
+                  now={now}
+                  selectedId={selectedMovementId}
+                  onSelect={selectMovement}
+                  selectedReferralId={selectedReferralId}
+                  onSelectReferral={selectReferral}
+                  filterEdId={activeEdId}
+                  onClearFilter={() => setSelectedEdId(undefined)}
+                  totalMovements={openMovements.length}
+                  serviceScope={queueServiceScope}
+                  pullHoldMinutes={configuration.pullHoldMinutes}
+                  delaysHref={DELAYS_HREF}
+                  highlight={highlight}
+                  onClearHighlight={() => setHighlight(undefined)}
+                  rowCap={isPhone ? PHONE_QUEUE_ROWS : undefined}
+                />
+                {isPhone ? (
+                  <HomeBedsReadyCard
+                    units={units}
+                    admissions={admissions}
+                    bedReleases={bedReleases}
+                    leaveBeds={leaveBeds}
+                    onOpenWard={(unitId) => setPhoneSheet({ kind: "ward", unitId })}
                   />
                 ) : null}
-                <div className={`${styles.shortlistColumn} ${shortlistStyles.shortlistColumn ?? ""}`}>
-                  <aside
-                    className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
-                    aria-label={selectedReferral ? "Referral placement" : "Placement"}
-                    // Journeys prove which movement the panel is for by this attribute.
-                    data-subject-movement={selectedReferral ? undefined : panelMovement?.id}
-                    // Reaching into the top-of-queue preview selects that patient first, so every
-                    // action acts on a chosen patient and a queue reorder cannot swap them mid-form.
-                    onPointerDownCapture={previewMovement ? () => selectMovement(previewMovement.id) : undefined}
-                    onFocusCapture={previewMovement ? () => selectMovement(previewMovement.id) : undefined}
-                  >
-                    <div className={`${styles.sheetHandle} ${shortlistStyles.sheetHandle ?? ""}`} aria-hidden="true" />
-                    <header className={styles.shortlistHeader}>
-                      <h2>{selectedReferral ? "Referral placement" : "Placement"}</h2>
-                      {previewMovement ? (
-                        <span className={styles.shortlistPreviewLabel} data-testid="ward-placement-top-of-queue">
-                          Top of queue
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          className={buttonClass({ variant: "ghost", size: "sm" })}
-                          onClick={closeShortlist}
-                          aria-label="Close shortlist and clear selection"
-                        >
-                          Close
-                        </button>
-                      )}
-                    </header>
-                    {service ? (
-                      <p className={styles.cardNote} data-testid="ward-shortlist-not-scoped">
-                        Beds are never narrowed by service. Every ward in the network is considered.
-                      </p>
-                    ) : null}
-                    {selectedReferral ? (
-                      <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
-                    ) : (
-                      <ShortlistPanel
-                        movement={panelMovement}
-                        now={liveNow}
-                        units={units}
-                        bedReleases={bedReleases}
-                        leaveBeds={leaveBeds}
-                        admissions={admissions}
-                        referrals={referrals}
-                        selectedUnitId={selectedUnitId}
-                        onSelectUnit={pickUnit}
-                        dispatch={dispatch}
-                        parallelReferralCap={configuration.parallelReferralCap}
-                        pullHoldMinutes={configuration.pullHoldMinutes}
-                      />
-                    )}
-                  </aside>
-                </div>
               </div>
-            ) : null}
+            )}
+
+            {isTabletLandscape ? (
+              // Tablet landscape: the right panel switches between Placement and State bedflow.
+              <div className={styles.rightPanel}>
+                <Segmented
+                  className={styles.rightSwitch}
+                  label="Right panel"
+                  value={rightPanel}
+                  onChange={setRightPanel}
+                  items={[
+                    { id: "placement", label: "Placement" },
+                    { id: "bedflow", label: "State bedflow", count: units.length },
+                  ]}
+                />
+                {rightPanel === "bedflow" ? bedflowNode : placementNode}
+              </div>
+            ) : (
+              <>
+                {isTabletPortrait && portraitView === "queue" ? null : (
+                  <div className={styles.flowCol}>{bedflowNode}</div>
+                )}
+                {placementNode}
+              </>
+            )}
           </div>
+
+          {isPhone && phoneSheet?.kind === "since" ? (
+            <Sheet
+              open
+              onClose={() => setPhoneSheet(undefined)}
+              title="Since you looked"
+              mobilePlacement="bottom"
+              testId="ward-home-since-sheet"
+            >
+              <SinceLastLookPanel
+                changes={lastLook.changes}
+                now={now}
+                activity={recentActivity}
+                onMarkSeen={lastLook.markSeen}
+                placement="band"
+              />
+            </Sheet>
+          ) : null}
+          {isPhone && phoneSheet?.kind === "exceptions" ? (
+            <Sheet
+              open
+              onClose={() => setPhoneSheet(undefined)}
+              title="Exceptions"
+              description="Choose one to open its patient"
+              mobilePlacement="bottom"
+              testId="ward-home-exceptions-sheet"
+            >
+              <ExceptionDrawer
+                items={actionInbox}
+                silenceReminders={silenceReminders}
+                rejections={rejections}
+                overrides={overrideRegister}
+                declines={declineRegister}
+                units={units}
+                now={now}
+                open
+                placement="column"
+                onToggle={() => setPhoneSheet(undefined)}
+                onSelectMovement={(movementId) => {
+                  setPhoneSheet(undefined);
+                  selectMovement(movementId);
+                }}
+                onSelectDischarge={() => setPhoneSheet(undefined)}
+              />
+            </Sheet>
+          ) : null}
+          {isPhone && phoneSheet?.kind === "ward" ? (
+            <HomeWardSheet
+              unitId={phoneSheet.unitId}
+              units={units}
+              admissions={admissions}
+              bedReleases={bedReleases}
+              leaveBeds={leaveBeds}
+              queue={queue}
+              now={now}
+              onClose={() => setPhoneSheet(undefined)}
+              onOffer={(movement, unit) => {
+                setPhoneSheet(undefined);
+                offer(movement, unit.id);
+              }}
+              onOpenPatient={(movementId) => {
+                setPhoneSheet(undefined);
+                selectMovement(movementId);
+              }}
+            />
+          ) : null}
         </div>
         <WardPrototypeFooter
           testId="ward-coordinator-governance"

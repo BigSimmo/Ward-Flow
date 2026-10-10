@@ -482,3 +482,53 @@
     width: auto;
   }
 }
+
+/* v10 Network: a pressed hero figure marks the matching cells; other rows recede by colour, never
+ * opacity, and stay in place. The mark is an edge, not a tint (only free or fit places are tinted). */
+.unitGrid tbody tr[data-dim="true"] .unitName,
+.unitGrid tbody tr[data-dim="true"] .unitMeta,
+.unitGrid tbody tr[data-dim="true"] .num {
+  color: var(--wf-dim);
+}
+
+.unitGrid tbody tr[data-dim="true"] .barCell span {
+  background-color: var(--wf-glyph-dim);
+  background-image: none;
+}
+
+.unitGrid td[data-hl="true"],
+.serviceMeta[data-hl="true"] b {
+  color: var(--wf-ink-1);
+  box-shadow: inset 0 -2px 0 var(--wf-ink-1);
+}
+
+.highlightNote {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.highlightNote b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+}
+
+/* Phone scope chips: one scrolling row, 44px targets, none cut off (v10 Network, Phone). */
+.scopeChips {
+  display: flex;
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.scopeChip {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+}

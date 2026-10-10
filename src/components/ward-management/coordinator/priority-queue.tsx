@@ -104,6 +104,11 @@ type PriorityQueueProps = {
   /** Rows the hero asked to highlight. The others dim; none is hidden or reordered. */
   highlight?: QueueHighlight;
   onClearHighlight?: () => void;
+  /**
+   * Phone only: render the first `rowCap` patient rows with a "Show all" button for the rest, so
+   * nothing is lost and the cards below the queue stay reachable (v10 Home phone, direction A).
+   */
+  rowCap?: number;
 };
 
 /**
@@ -129,7 +134,9 @@ export function PriorityQueue({
   delaysHref = "/mockups/ward-flow/delays",
   highlight,
   onClearHighlight,
+  rowCap,
 }: PriorityQueueProps) {
+  const [showAllRows, setShowAllRows] = useState(false);
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   const [activeTab, setActiveTab] = useState<QueueTab>("patients");
   const [soonOnly, setSoonOnly] = useState(false);
@@ -146,6 +153,8 @@ export function PriorityQueue({
   const matchesHighlight = (movement: Movement) =>
     highlight === "overdue" ? isOverdue(movement) : highlight === "tier1" ? movement.urgency === 1 : true;
   const highlighted = highlight ? rows.filter(matchesHighlight).length : 0;
+  const capped = rowCap !== undefined && rows.length > rowCap;
+  const shownRows = capped && !showAllRows ? rows.slice(0, rowCap) : rows;
 
   const headCount =
     activeTab === "referrals"
@@ -208,7 +217,7 @@ export function PriorityQueue({
             {soonOnly ? "Nothing due soon" : "No open movements"}
           </p>
         ) : (
-          rows.map((movement) => {
+          shownRows.map((movement) => {
             const selected = movement.id === selectedId;
             const who = patientOf(movement);
             const originEd = edsById.get(movement.originEdId);
@@ -261,9 +270,18 @@ export function PriorityQueue({
                     <strong>{who.formalName}</strong>
                   </span>
                   <span className={styles.queueSub}>
+                    {/* v10 Home: "▲ Urgent · Adult open · RPH · UM827674". The word stays neutral and
+                        the red triangle carries the tone; "Flagged" stays for assistive technology. */}
+                    {movement.flaggedUrgent ? (
+                      <span className={styles.queueFlag} data-testid={`ward-queue-flag-${movement.id}`}>
+                        <StatusGlyph tone="danger" size={9} />
+                        <SrOnly>Flagged </SrOnly>Urgent
+                      </span>
+                    ) : null}
                     <span className={styles.queueSubText}>
+                      {movement.flaggedUrgent ? "· " : ""}
                       {movement.cohort} {movement.security.toLowerCase()} ·{" "}
-                      {originEd ? originEd.siteCode : "unknown ED"}
+                      {originEd ? originEd.siteCode : "unknown ED"} · {who.umrn}
                     </span>
                     {/* The operational score, painted small and labelled "Op" so it never reads as
                         clinical severity; the screen-reader line below says "Operational" in full. */}
@@ -278,15 +296,12 @@ export function PriorityQueue({
                   </span>
                   {/* Marks sit on their own line; each mark stays whole and the line wraps between them. */}
                   <span className={styles.queueMarks}>
-                    <span className={styles.queueMark}>
-                      {movement.atsCategory === undefined ? "ATS not recorded" : `ATS ${movement.atsCategory}`}
-                    </span>
-                    {movement.flaggedUrgent ? (
-                      <span className={styles.queueFlag} data-testid={`ward-queue-flag-${movement.id}`}>
-                        <StatusGlyph tone="danger" size={9} />
-                        Flagged urgent
-                      </span>
-                    ) : null}
+                    {/* The mockup drops the "ATS not recorded" filler from sight; a recorded ATS shows. */}
+                    {movement.atsCategory === undefined ? (
+                      <SrOnly>ATS not recorded</SrOnly>
+                    ) : (
+                      <span className={styles.queueMark}>{`ATS ${movement.atsCategory}`}</span>
+                    )}
                     {movement.declines.length > 0 ? (
                       <span className={styles.queueMark}>
                         <StatusGlyph tone="closed" size={9} />
@@ -356,6 +371,17 @@ export function PriorityQueue({
             );
           })
         )}
+        {capped ? (
+          <button
+            type="button"
+            className={styles.queueMore}
+            aria-expanded={showAllRows}
+            onClick={() => setShowAllRows((value) => !value)}
+            data-testid="ward-queue-show-all"
+          >
+            {showAllRows ? `Show top ${rowCap}` : `Show all ${rows.length}`}
+          </button>
+        ) : null}
       </div>
 
       <div

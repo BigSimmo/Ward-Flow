@@ -54,10 +54,12 @@ describe("State bedflow's fitting wards for the selected patient", () => {
 
     const bedflow = screen.getByRole("region", { name: "State Bedflow" });
     // Direction A (owner, 10 Oct 2026): one summary line in place of the list of ward names; the
-    // rows themselves carry the highlight.
-    expect(within(bedflow).getByTestId("ward-bedflow-subject")).toHaveTextContent(
-      `${bed.size === 1 ? "1 ward fits" : `${bed.size} wards fit`} · ${noBed.size} no bed`,
-    );
+    // rows themselves carry the highlight. v10 FitHighlight: "7 fit 0 no bed 5 review", each with
+    // its glyph, the same groups Placement lists.
+    const subject = within(bedflow).getByTestId("ward-bedflow-subject");
+    expect(subject).toHaveTextContent(`${bed.size} fit`);
+    expect(subject).toHaveTextContent(`${noBed.size} no bed`);
+    expect(subject).toHaveTextContent(/\d+ review/u);
     for (const unitId of bed) {
       const row = within(bedflow).getByTestId(`ward-diagram-unit-${unitId}`).closest("li")!;
       expect(["fit", "referred", "accepted"]).toContain(row.getAttribute("data-highlight"));
