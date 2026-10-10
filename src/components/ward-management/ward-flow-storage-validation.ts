@@ -21,12 +21,15 @@ import {
   ABSENCE_STEPS,
   REFERRAL_DECLINE_REASONS,
 } from "./ward-model";
-import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { WARD_SCENARIOS } from "./ward-scenarios";
 import { allEmergencyDepartments, siteByCode } from "./ward-sites";
 import { communityTeamById } from "./community/community-derivations";
+import {
+  BED_CALL_ANSWERS,
+  PULL_NOW_ANSWERS,
+} from "./alerts/ward-broadcast-model";
 
 type RecordValue = Record<string, unknown>;
 const object = (v: unknown): v is RecordValue => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -727,18 +730,17 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       (row.kind !== undefined && !["directive", "bed_call", "pull_now"].includes(row.kind as string)) ||
       (row.replies !== undefined &&
         (!Array.isArray(row.replies) ||
-          !(row.replies as RecordValue[]).every(
-            // The banner looks up each answer and reason label, so an unknown one is refused here.
-            (reply) =>
-              object(reply) &&
-              text(reply.unitId) &&
-              Object.hasOwn(BROADCAST_ANSWER_LABELS, reply.answer as string) &&
-              finite(reply.at) &&
-              (reply.reason === undefined || REFERRAL_DECLINE_REASONS.includes(reply.reason as never)) &&
-              (reply.beds === undefined || finite(reply.beds)) &&
-              (reply.readyAt === undefined || finite(reply.readyAt)),
-          ))) ||
-      (row.movementId !== undefined && !text(row.movementId)) ||
+          !(row.replies as RecordValue[]).every((reply) => {
+            if (!object(reply) || !text(reply.unitId) || !text(reply.answer) || !finite(reply.at) || !text(reply.role))
+              return false;
+            const answers = row.kind === "pull_now" ? PULL_NOW_ANSWERS : BED_CALL_ANSWERS;
+            if (!answers.includes(reply.answer as never)) return false;
+            if (reply.reason !== undefined && !REFERRAL_DECLINE_REASONS.includes(reply.reason as never))
+              return false;
+            if (reply.beds !== undefined && (!Number.isInteger(reply.beds) || (reply.beds as number) < 0)) return false;
+            if (reply.readyAt !== undefined && !finite(reply.readyAt)) return false;
+            return reply.movementId === undefined || text(reply.movementId);
+          }))) ||
       (row.targetUnitIds !== undefined && !strings(row.targetUnitIds)) ||
       (row.answerBy !== undefined && !finite(row.answerBy))
     )

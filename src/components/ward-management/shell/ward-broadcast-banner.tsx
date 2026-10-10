@@ -19,6 +19,7 @@ import {
   type BroadcastReply,
 } from "@/components/ward-management/alerts/ward-broadcast-model";
 import {
+  alertAsksDesk,
   bannerEntriesForDesk,
   deskName,
   replyBoard,
@@ -218,7 +219,7 @@ function BannerBody({
             </span>
           )}
 
-          {kind === "directive" && desk.id ? (
+          {kind === "directive" && desk.id && alertAsksDesk(alert, desk) ? (
             needsAnswer ? (
               <Button size="sm" icon={Check} onClick={acknowledge} title="Acknowledge this directive for your desk">
                 Acknowledge

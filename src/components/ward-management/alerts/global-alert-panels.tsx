@@ -24,8 +24,11 @@ function answerText(reply: BroadcastReply, now: Instant): string {
   const label = BROADCAST_ANSWER_LABELS[reply.answer];
   if (reply.beds !== undefined) return `${label} ${reply.beds}`;
   if (reply.readyAt !== undefined) return `${label} ${formatInstantWithDay(reply.readyAt, now)}`;
-  if (reply.reason) return `${label}, ${DECLINE_REASON_LABELS[reply.reason].toLowerCase()}`;
-  return label;
+  if (reply.reason) {
+    const reasonLabel = DECLINE_REASON_LABELS[reply.reason];
+    return reasonLabel ? `${label}, ${reasonLabel.toLowerCase()}` : label;
+  }
+  return label ?? "Unknown answer";
 }
 
 /** Who was asked and what each desk said, unanswered first. Chase is Preview until messaging exists. */
