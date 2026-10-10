@@ -74,11 +74,16 @@
   flex-direction: column;
 }
 
-.follow > [data-ward-primitive="panel"] > :not([data-ward-primitive="panel-header"]) {
+.follow > [data-ward-primitive="panel"] > [data-ward-primitive="panel-header"] + div {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+.follow > [data-ward-primitive="panel"] > [class*="foot"] {
+  flex: 0 0 auto;
+  overflow: visible;
 }
 
 /* A stack that follows scrolls as one column. */
