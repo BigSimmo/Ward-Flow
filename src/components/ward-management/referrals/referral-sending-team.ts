@@ -30,7 +30,7 @@ import type { Referral } from "@/components/ward-management/ward-model";
 /**
  * The sending team as a display fragment, or `undefined` where the record names none.
  *
- * ⚠️ **`undefined` RATHER THAN AN EMPTY STRING, AND RATHER THAN A PLACEHOLDER.** Police, an
+ * ⚠️ **`undefined` RATHER THAN AN EMPTY STRING, AND RATHER THAN A PLACEHOLDER.** An
  * ambulance service and an emergency department's own medical staff are legitimate sources with no
  * sending team; a caller must be able to render NOTHING for them. A `"Not recorded"` here would put
  * an absence on every one of those rows — an absence promoted to a headline, which is a design
