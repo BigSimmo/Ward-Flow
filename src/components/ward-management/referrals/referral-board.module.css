@@ -1570,3 +1570,10 @@
     height: calc(var(--wf-touch, 44px) - 6px);
   }
 }
+
+/* v10 tablet portrait: the waiting axis uses short labels so "24h" and "72h" never collide. */
+@media (max-width: 62.5rem) {
+  .tickTier {
+    display: none;
+  }
+}

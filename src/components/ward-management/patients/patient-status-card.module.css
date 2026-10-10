@@ -131,7 +131,7 @@
 
 .time {
   color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
 }
 
 .action {
@@ -207,4 +207,21 @@
 /* v10: act now is the thin red full edge, no fill. */
 .card[data-act="true"] {
   border-color: var(--wf-act-edge);
+}
+
+/* v10 phone: the gate board's one primary, pinned at the bottom of the screen. */
+.phBar {
+  position: sticky;
+  bottom: var(--wf-s-2);
+  z-index: 3;
+  display: flex;
+  padding: var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.phBar > * {
+  flex: 1 1 auto;
+  min-height: var(--wf-touch, 44px);
 }

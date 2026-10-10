@@ -4093,10 +4093,10 @@
   align-items: center;
   gap: 6px;
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.06em;
-  line-height: var(--wf-lh-11);
+  line-height: var(--wf-lh-12);
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -4263,7 +4263,7 @@
   height: 18px;
   border: 1px solid var(--wf-hero-ink-3);
   border-radius: var(--wf-r-pill);
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
 .v6StepLabel {
@@ -4337,7 +4337,7 @@
   padding: 0 5px;
   border-radius: var(--wf-r-xs);
   background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
-  font: 600 var(--wf-fs-11) / 18px var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 18px var(--wf-mono);
   text-align: center;
 }
 
@@ -4689,7 +4689,7 @@
 
 .v6RailFacts dt {
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -4843,10 +4843,9 @@
     margin-left: 0;
   }
 
+  /* The Live pill sits in the actions row; pinned top right it ran over a long eyebrow. */
   .v6HeroActions > :first-child {
-    position: absolute;
-    top: var(--wf-s-3);
-    right: var(--wf-s-4);
+    flex: 0 0 auto;
   }
 
   /* The two page actions share the row; a long label takes its own row rather than being cut. */
@@ -5022,7 +5021,7 @@
   border-radius: var(--wf-r-pill);
   background: color-mix(in srgb, var(--wf-hero-ink) 7%, transparent);
   color: var(--wf-hero-ink);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   white-space: nowrap;
   vertical-align: middle;
 }
@@ -5196,6 +5195,46 @@
   }
 
   .v6HeroTabsRow .v6Tab {
+    min-height: var(--wf-touch, 44px);
+  }
+}
+
+/* v10: the Journey strip under the stages, sized by real duration (bed wait hatched). */
+.v6Journey {
+  min-width: 0;
+}
+
+.v6PhoneMore {
+  display: none;
+}
+
+/* v10 phone: the record tabs become a 44px segmented control (Now, History, Forms). */
+@media (max-width: 48rem) {
+  .v6HeroTabsRow {
+    flex-wrap: wrap;
+  }
+
+  .v6Tabs {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .v6Tab {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    height: var(--wf-touch, 44px);
+  }
+
+  .v6PhoneMore {
+    display: flex;
+    gap: var(--wf-s-1);
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  .v6PhoneMore > * {
     min-height: var(--wf-touch, 44px);
   }
 }

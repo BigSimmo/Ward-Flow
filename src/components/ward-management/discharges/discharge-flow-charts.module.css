@@ -225,7 +225,7 @@
   padding-top: var(--wf-s-1);
   border-top: 1px solid var(--wf-line-ctl);
   color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -371,5 +371,21 @@
 @media print {
   .foot {
     display: none;
+  }
+}
+
+/* v10 phone: inside its sheet the day chart scrolls sideways with 48px tap columns. */
+@media (max-width: 48rem) {
+  .day {
+    flex: 0 0 3rem;
+    min-width: 3rem;
+  }
+
+  .plot {
+    min-width: max-content;
+  }
+
+  .barRow {
+    min-height: var(--wf-touch, 44px);
   }
 }
