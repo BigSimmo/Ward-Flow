@@ -1743,7 +1743,7 @@ button.registerRow:hover {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: var(--wf-s-2);
-  min-height: var(--wf-touch);
+  min-height: 48px;
   padding: var(--wf-s-2) var(--wf-s-3);
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-md);
