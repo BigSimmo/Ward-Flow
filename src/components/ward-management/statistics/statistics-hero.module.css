@@ -33,6 +33,15 @@
   margin-left: auto;
 }
 
+/* v10 chip line: the count chips leave the title row and take their own line under it. */
+.chipHero > div:first-child > div:nth-child(2) {
+  order: 3;
+  flex: 1 0 100%;
+  min-width: 0;
+  margin-left: 0;
+  justify-content: flex-start;
+}
+
 .divider {
   align-self: stretch;
   width: 1px;

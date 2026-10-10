@@ -9,6 +9,8 @@
   min-width: 0;
   padding: var(--wf-s-4);
   box-sizing: border-box;
+  /* The band's canvas lip matches the page ground (v10 band contract). */
+  background: var(--wf-canvas);
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
@@ -194,6 +196,630 @@
   .grid3 {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* ---------- v10 report parts (downtime pack, patient chronology) ---------- */
+
+/* Hero count chips: an edged pill, mono figure then words. One line; the row scrolls, never wraps. */
+.chips {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 5px var(--wf-s-3);
+  box-sizing: border-box;
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: 999px;
+  background: var(--wf-on-hero-fill);
+  color: var(--wf-hero-ink);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.chipButton {
+  cursor: pointer;
+}
+
+.chipButton:hover {
+  background: var(--wf-on-hero-hl);
+}
+
+.chipButton[aria-pressed="true"] {
+  background: var(--wf-hero-ink);
+  color: var(--wf-hero-2);
+}
+
+.chipButton:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+}
+
+.chipValue {
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.chipTwin {
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-on-hero-ink);
+}
+
+.chipLabel {
+  color: var(--wf-on-hero-ink);
+}
+
+.chipButton[aria-pressed="true"] .chipLabel,
+.chipButton[aria-pressed="true"] .chipTwin {
+  color: inherit;
+}
+
+.heroActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.heroLine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  color: var(--wf-on-hero-ink);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.staleLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* Frozen replaces Live: a quiet pill with a still grey dot and the frozen clock time. */
+.frozen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 2px var(--wf-s-2);
+  box-sizing: border-box;
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: 999px;
+  background: var(--wf-on-hero-fill);
+  color: var(--wf-hero-ink);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.frozen b {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.frozenDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wf-hero-neutral);
+}
+
+.gated {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.reasonOnHero {
+  color: var(--wf-on-hero-ink);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.packCard {
+  scroll-margin-top: var(--wf-s-4);
+}
+
+.headMeta {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.headMeta b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.page .packTable th,
+.page .packTable td {
+  vertical-align: middle;
+  padding-block: 8px;
+}
+
+.subtotal > th,
+.subtotal > td {
+  background: var(--wf-surface-2);
+  font-weight: 600;
+}
+
+.page .subtotal > th {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+  text-align: left;
+}
+
+.subtotalCount {
+  margin-left: var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-weight: 400;
+  font-size: var(--wf-fs-12);
+}
+
+.total > th,
+.total > td {
+  border-top: 1px solid var(--wf-line-2);
+  font-weight: 600;
+}
+
+/* A free place: the one tinted fill the design allows. */
+.fit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-fit-edge);
+  border-radius: 999px;
+  background: var(--wf-fit-tint);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.cardNote {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.factGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-sm);
+}
+
+.fact dt {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.fact dd {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+/* ---------- Patient chronology ---------- */
+
+.umrn {
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+  color: var(--wf-on-hero-ink);
+}
+
+.umrnQuiet {
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-2);
+}
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  min-width: 0;
+}
+
+.patientField {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.fieldWord {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.patientPick {
+  width: min(100%, 300px);
+}
+
+.findBox {
+  width: min(100%, 260px);
+}
+
+.kindPick {
+  width: 180px;
+}
+
+.roleSwitch {
+  margin-left: auto;
+}
+
+/* Table about two thirds, the side panel beside it; flush at equal heights. */
+.chronoSplit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 20rem);
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.chronoCard {
+  min-width: 0;
+}
+
+.countPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  margin-left: var(--wf-s-1);
+  padding: 0 6px;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: 999px;
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+  vertical-align: middle;
+}
+
+/* The table scrolls inside its card; its head and each day row stay in view while it does. */
+.chronoScroll {
+  max-height: min(72vh, 900px);
+  overflow: auto;
+  min-width: 0;
+}
+
+.chronoScroll:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.page .chronoTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--wf-surface);
+}
+
+.page .chronoTable td,
+.page .chronoTable tbody th {
+  vertical-align: middle;
+  padding-top: var(--wf-s-2);
+  padding-bottom: var(--wf-s-2);
+}
+
+.page .dayRow > th {
+  position: sticky;
+  top: 32px;
+  z-index: 1;
+  background: var(--wf-surface-2);
+  padding-top: var(--wf-s-1);
+  padding-bottom: var(--wf-s-1);
+  text-align: left;
+}
+
+.dayRowInner {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.dayRowInner span {
+  font-weight: 400;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+/* The open event keeps an accent edge on its first cell; no fill. */
+.eventSelected > :first-child {
+  box-shadow: inset 3px 0 0 var(--wf-accent);
+}
+
+.eventButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.eventButton:hover {
+  text-decoration: underline;
+}
+
+.eventButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+.cellMain {
+  display: block;
+  color: var(--wf-ink-1);
+}
+
+.cellSub {
+  display: block;
+  max-width: 34ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.sourceCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+/* Source glyphs: a ring for a record, a short bar for the audit, a cross for the session log. */
+.sourceMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  color: var(--wf-ink-2);
+}
+
+.sourceMark[data-source="Record"]::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
+.sourceMark[data-source="Audit"]::before {
+  content: "";
+  width: 11px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--wf-data-1);
+}
+
+.chronoSide {
+  min-width: 0;
+}
+
+.sideBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}
+
+.sideBody .cardNote {
+  padding: 0;
+}
+
+.sideList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  margin: 0;
+}
+
+.sideList > div {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.sideList dt {
+  color: var(--wf-ink-2);
+}
+
+.sideList dd {
+  margin: 0;
+  color: var(--wf-ink-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sideActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.sideHead {
+  margin: var(--wf-s-1) 0 0;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+
+.tally {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tally li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 32px;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.tally b {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.noMatch {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding-right: var(--wf-s-4);
+}
+
+.copyNote {
+  min-height: var(--wf-lh-12);
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.dayHead {
+  display: flex;
+  justify-content: space-between;
+  margin: var(--wf-s-1) 0 0;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.dayHead span {
+  font-weight: 400;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.sheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+/* Download CSV stays one tap away at the foot of the phone screen. */
+.phoneActionBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  margin: 0 calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-2) var(--wf-s-3);
+  background: var(--wf-surface);
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneActionBar :is(a, button) {
+  min-height: var(--wf-touch);
+}
+
+@media (max-width: 1180px) {
+  .chronoSplit {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .roleSwitch {
+    margin-left: 0;
+  }
+}
+
+/* Phone tree only (rendered under 48rem). */
+.phonePage .main {
+  gap: var(--wf-s-3);
+}
+
+.phoneSeg {
+  width: 100%;
+}
+
+.phoneSeg :is(a, button) {
+  flex: 1 1 0;
+  min-height: var(--wf-touch);
+}
+
+.phoneNote {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.phoneGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+}
+
+.phoneList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.phoneList > li + li {
+  border-top: 1px solid var(--wf-line);
 }
 
 @media (max-width: 48rem) {

@@ -15,6 +15,19 @@
   position: relative;
 }
 
+/* v10: card head icons are plain glyphs, never in a tile or circle. The shared CardHead draws its
+   icon as an aria-hidden tile before the title; on this page it keeps the glyph and drops the box.
+   (Shared request: a plain-icon option on CardHead.) */
+.screen div:has(> div > :is(h2, h3)) > span[aria-hidden="true"]:first-child:has(> svg) {
+  width: 20px;
+  flex-basis: 20px;
+  height: 20px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--wf-ink-2);
+}
+
 .main {
   min-width: 0;
   max-width: 104rem;
@@ -186,7 +199,7 @@
 
 .findTab {
   flex: 0 0 auto;
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
 
@@ -257,7 +270,7 @@
   border: 1px solid var(--wf-line-2);
   background: var(--wf-surface);
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-11) / 1 var(--wf-font);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
   white-space: nowrap;
 }
 
@@ -269,7 +282,7 @@
   border-radius: var(--wf-r-pill);
   border: 1px dashed var(--wf-line-3);
   color: var(--wf-ink-3);
-  font: 600 10px / 1 var(--wf-font);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
@@ -354,7 +367,7 @@
   gap: 6px;
 }
 
-/* Rule rows: words, reset, stepper over a slim range, effect and readers. */
+/* Rule rows: words and range, reset, one stepper, effect and readers. */
 .ruleRow {
   display: grid;
   grid-template-columns: minmax(8rem, 1fr) 28px 9.5rem minmax(10.5rem, 1fr);
@@ -367,7 +380,7 @@
 }
 
 .ruleChanged {
-  background: color-mix(in srgb, var(--wf-accent-tint) 45%, transparent);
+  box-shadow: inset 2px 0 0 var(--wf-accent);
 }
 
 .resetCell {
@@ -427,95 +440,18 @@
   border-inline: 0;
 }
 
-.rangeWrap {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 0 4px;
+/* The allowed range, in words, under the rule's own line. */
+.rangeWords {
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
 }
 
-.rangeTrack {
-  position: relative;
-  display: block;
-}
-
-.rangeInput {
-  --fill: 0%;
-  display: block;
-  width: 100%;
-  height: 14px;
-  margin: 0;
-  background: transparent;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.rangeInput::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: var(--wf-r-pill);
-  background: linear-gradient(90deg, var(--wf-ink-3) var(--fill), var(--wf-track) var(--fill));
-}
-
-.rangeInput::-webkit-slider-thumb {
-  width: 4px;
-  height: 12px;
-  margin-top: -4px;
-  border: 0;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-ink-1);
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.rangeInput::-moz-range-track {
-  height: 4px;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-track);
-}
-
-.rangeInput::-moz-range-progress {
-  height: 4px;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-ink-3);
-}
-
-.rangeInput::-moz-range-thumb {
-  width: 4px;
-  height: 12px;
-  border: 0;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-ink-1);
-}
-
-.rangeInput:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-  border-radius: var(--wf-r-xs);
-}
-
-.rangeInput[aria-disabled="true"] {
-  cursor: default;
-  opacity: 0.6;
-}
-
-/* Where the saved value sits, shown while the draft differs. */
-.savedTick {
-  position: absolute;
-  top: 3px;
-  width: 2px;
-  height: 8px;
-  margin-left: -1px;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-accent);
-  pointer-events: none;
-}
-
-.rangeEnds {
-  display: flex;
-  justify-content: space-between;
-  font: 400 10px / 12px var(--wf-mono);
-  color: var(--wf-ink-3);
+/* A rule whose draft differs from its saved value says so in a word, not a tint. */
+.changedTag {
+  align-self: center;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
 }
 
 .effectCell {
@@ -538,13 +474,13 @@
 }
 
 .delta {
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   color: var(--wf-ink-2);
 }
 
 .usedBy {
   max-width: 100%;
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -580,7 +516,7 @@
   display: flex;
   margin-top: var(--wf-s-2);
   color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   white-space: nowrap;
 }
 
@@ -659,7 +595,7 @@
 
 .notifyHead {
   min-height: 30px;
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--wf-ink-3);
@@ -672,7 +608,7 @@
 .notifyGroup {
   padding: 10px var(--wf-s-4) 4px;
   border-top: 1px solid var(--wf-line);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--wf-ink-3);
@@ -819,7 +755,7 @@
 }
 
 .aboutGrid dt {
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
 

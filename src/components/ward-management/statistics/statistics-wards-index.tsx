@@ -206,7 +206,7 @@ export function StatisticsWardsIndexScreen() {
   const blockedRows = rows.filter((row) => row.blocked > 0).sort((a, b) => b.blocked - a.blocked);
 
   const chipItems: Array<{ id: WardChip; label: string; count: number; tone?: "warning" }> = [
-    { id: "over", label: `Over ${BED_ALERT_THRESHOLD_PERCENT}%`, count: overLine, tone: "warning" },
+    { id: "over", label: `At or over ${BED_ALERT_THRESHOLD_PERCENT}%`, count: overLine, tone: "warning" },
     { id: "none-ready", label: "None ready", count: noneReady },
     { id: "pending", label: BED_STATE_LABELS.beingMadeReady, count: count((row) => row.pending > 0) },
     { id: "pulled", label: "Pulled, not arrived", count: count((row) => row.pulled > 0) },
@@ -236,7 +236,7 @@ export function StatisticsWardsIndexScreen() {
         <>
           <HeroStat
             value={overLine}
-            label={`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+            label={`At or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
             tone={overLine > 0 ? "warning" : undefined}
           />
           <HeroStat value={noneReady} label="None ready" />
@@ -321,7 +321,11 @@ export function StatisticsWardsIndexScreen() {
                   {entry.rows.map((row) => {
                     const hit = matches(row);
                     return (
-                      <tr key={row.id} className={hit ? index.match : undefined} data-match={hit || undefined}>
+                      <tr
+                        key={row.id}
+                        data-match={hit || undefined}
+                        data-dim={chips.size > 0 && !hit ? "true" : undefined}
+                      >
                         <th scope="row">
                           <span className={index.rowName}>
                             <Link href={wardStatisticsHref(row.id)} className={index.rowLink}>

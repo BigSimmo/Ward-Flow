@@ -152,7 +152,7 @@
 .axis {
   height: 32px;
   border-bottom: 1px solid var(--wf-line);
-  font: 500 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
   color: var(--wf-ink-3);
 }
 
@@ -506,4 +506,23 @@
   .row {
     min-height: var(--spacing-tap, 3rem);
   }
+}
+
+/* Dim (v10): a row the service choice or the alert-line chip does not match recedes by colour
+   only. Bars keep their segment order in paler mixes; nothing uses opacity or filter. */
+.row[data-dim="true"],
+.row[data-dim="true"] :is(.rowName strong, .rowName small, .readyCount) {
+  color: var(--wf-dim);
+}
+
+.row[data-dim="true"] .ready {
+  background: color-mix(in srgb, var(--wf-data-1) 30%, var(--wf-track));
+}
+
+.row[data-dim="true"] :is(.held, .occupied) {
+  background: color-mix(in srgb, var(--wf-glyph-dim) 45%, var(--wf-track));
+}
+
+.row[data-dim="true"] .pulled {
+  background: repeating-linear-gradient(135deg, var(--wf-glyph-dim) 0 2px, var(--wf-track) 2px 4px);
 }

@@ -44,6 +44,7 @@ export function StatisticsHero({
   onTogglePause,
   navTestId,
   tools,
+  chips,
 }: {
   section: StatisticsNavSection;
   /** The unit, service or team the page shows, so its own tab links back to it. */
@@ -58,16 +59,18 @@ export function StatisticsHero({
   navTestId?: string;
   /** Page tools on the band (print, the matching index), before the time range. */
   tools?: ReactNode;
+  /** v10 count chips (five at most) on their own line under the title, in place of `stats`. */
+  chips?: ReactNode;
 }) {
   const wardCount = useWardFlow().units.length;
   return (
     <Hero
       level={1}
-      className={styles.statsHero}
+      className={cx(styles.statsHero, chips ? styles.chipHero : undefined)}
       eyebrow={eyebrow}
       title={title}
       titleMeta={titleAction ? <span className={styles.titleAction}>{titleAction}</span> : undefined}
-      stats={stats}
+      stats={chips ?? stats}
       statsAlign="end"
       bar={
         <div className={styles.navSlot} data-testid={navTestId}>

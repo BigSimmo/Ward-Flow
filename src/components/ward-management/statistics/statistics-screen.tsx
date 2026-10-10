@@ -13,7 +13,6 @@ import {
   CardFoot,
   ColumnChart,
   FilterChip,
-  HeroStat,
   Icon,
   StackBar,
   StatusGlyph,
@@ -65,6 +64,8 @@ import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { StatCard, StatisticsHero, useStatisticsLive } from "./statistics-hero";
+import { HeroChip, HeroChips, useIsPhone } from "../reports/report-parts";
+import { StatisticsSummaryPhone } from "./statistics-summary-phone";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
@@ -305,7 +306,6 @@ export function StatisticsScreen({
     let list = allPressureWards.slice();
     const q = wardSearchQuery.trim().toLowerCase();
     if (q) list = list.filter((w) => `${w.name} ${w.hospital} ${w.site}`.toLowerCase().includes(q));
-    if (wardOverLine) list = list.filter((w) => Math.round(w.occupancyRate * 100) >= BED_ALERT_THRESHOLD_PERCENT);
     const value = (w: (typeof list)[number]): number | string =>
       wardSortCol === "name"
         ? w.name
@@ -324,7 +324,7 @@ export function StatisticsScreen({
       return a.name.localeCompare(b.name);
     });
     return list;
-  }, [allPressureWards, wardSearchQuery, wardOverLine, wardSortCol, wardSortAsc]);
+  }, [allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
 
   const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, PRESSURE_ROWS);
 
@@ -414,8 +414,42 @@ export function StatisticsScreen({
 
   usePrintableDisclosures();
   const { view, choose: chooseView } = useStatisticsView();
+  const isPhone = useIsPhone();
 
   const blockedMean = blocked.vocabularySize > 0 ? blocked.totalCount / blocked.vocabularySize : 0;
+
+  if (isPhone) {
+    return (
+      <StatisticsSummaryPhone
+        ready={availableNow}
+        beingMadeReady={pendingPreparation}
+        occupied={occupiedCount}
+        occupiedPct={occupiedPct}
+        waitingInEd={waitingCount}
+        endedToday={dischargesCount}
+        wards={allPressureWards.map((ward) => ({
+          id: ward.id,
+          name: ward.name,
+          hospital: ward.hospital,
+          service: siteByCode(ward.site)?.service ?? "Service not recorded",
+          beds: ward.beds,
+          ready: ward.ready,
+          percent: Math.round(ward.occupancyRate * 100),
+        }))}
+        eds={emergencyDepts.map((ed) => ({
+          id: ed.id,
+          name: ed.name,
+          site: ed.site,
+          waiting: ed.waiting,
+          longest: ed.longest,
+        }))}
+        referrals={{ raised: refRaised, accepted: refAccepted, declined: refDeclined, open: refOpen }}
+        wardCount={units.length}
+        paused={live.paused}
+        onTogglePause={live.togglePause}
+      />
+    );
+  }
 
   return (
     <div className={styles.page} data-testid="ward-statistics-screen" data-ward-design="v6">
@@ -423,42 +457,36 @@ export function StatisticsScreen({
         <StatisticsHero
           section="hub"
           navTestId="ward-statistics-index"
-          eyebrow={`Statistics · as at ${formatInstant(now)}`}
-          title="Whole network"
+          eyebrow={`Statistics · whole network · as at ${formatInstant(now)}`}
+          title={`${availableNow} ${availableNow === 1 ? "bed" : "beds"} ready now`}
           paused={live.paused}
           onTogglePause={live.togglePause}
-          stats={
-            <>
-              <HeroStat value={totalBeds} label="Beds" />
-              <HeroStat value={occupiedCount} label={`${occupiedPct}% occupied`} />
-              <HeroStat
-                value={availableNow}
-                label={pendingPreparation > 0 ? `Ready, ${pendingPreparation} being made ready` : "Ready"}
-              />
-              <HeroStat value={waitingCount} label="Waiting in ED" />
-              <HeroStat
-                value={<span data-testid="ward-statistics-admissions-today-count">{admissionsCount}</span>}
-                label={
-                  <>
-                    Admitted today
-                    <span className={styles.srOnly} data-testid="ward-statistics-admissions-today-caption">
-                      {reportDayCaption}
-                    </span>
-                  </>
-                }
-              />
-              <HeroStat
+          chips={
+            <HeroChips label="Network at a glance">
+              <HeroChip value={totalBeds} label="Beds" />
+              <HeroChip value={occupiedCount} label={`${occupiedPct}% occupied`} />
+              <HeroChip value={pendingPreparation} label="Being made ready" />
+              <HeroChip
                 value={<span data-testid="ward-statistics-discharges-today-count">{dischargesCount}</span>}
                 label={
                   <>
-                    Discharged today
+                    Admissions ended today
                     <span className={styles.srOnly} data-testid="ward-statistics-discharges-today-caption">
                       {reportDayCaption}
                     </span>
                   </>
                 }
               />
-            </>
+              <HeroChip
+                value={waitingCount}
+                label="Waiting in ED"
+                onPress={() =>
+                  document
+                    .querySelector('[data-testid="ward-statistics-emergency-departments"]')
+                    ?.scrollIntoView({ block: "start" })
+                }
+              />
+            </HeroChips>
           }
         />
 
@@ -570,6 +598,17 @@ export function StatisticsScreen({
                         </span>
                       </div>
                       <div className={styles.tile}>
+                        <p className={styles.tileLabel}>
+                          Admitted today
+                          <span className={styles.srOnly} data-testid="ward-statistics-admissions-today-caption">
+                            {reportDayCaption}
+                          </span>
+                        </p>
+                        <p className={styles.tileValue}>
+                          <span data-testid="ward-statistics-admissions-today-count">{admissionsCount}</span>
+                        </p>
+                      </div>
+                      <div className={styles.tile}>
                         <p className={styles.tileLabel}>Parallel cap</p>
                         <p className={styles.tileValue} data-testid="ward-statistics-refused-so-far-cap">
                           {configuration.parallelReferralCap}
@@ -605,10 +644,18 @@ export function StatisticsScreen({
                     tone="warning"
                     count={overLineCount}
                   >
-                    {`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+                    {`At or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
                   </FilterChip>
-                  <span className={styles.toolbarEnd} id="wardFilterCount">
-                    <b>{filteredAndSortedWards.length}</b> of {allPressureWards.length}
+                  <span className={styles.toolbarEnd} id="wardFilterCount" role="status">
+                    {wardOverLine ? (
+                      <>
+                        <b>{overLineCount}</b> of {filteredAndSortedWards.length} highlighted, all rows stay
+                      </>
+                    ) : (
+                      <>
+                        <b>{filteredAndSortedWards.length}</b> of {allPressureWards.length}
+                      </>
+                    )}
                   </span>
                 </div>
                 <div className={styles.tableWrap}>
@@ -656,7 +703,7 @@ export function StatisticsScreen({
                         const percent = Math.round(w.occupancyRate * 100);
                         const over = percent >= BED_ALERT_THRESHOLD_PERCENT;
                         return (
-                          <tr key={w.id}>
+                          <tr key={w.id} data-dim={wardOverLine && !over ? "true" : undefined}>
                             <th scope="row">
                               {w.name}
                               <span className={styles.code} title={w.hospital}>
@@ -845,6 +892,7 @@ export function StatisticsScreen({
                 <CardBody data-testid="ward-statistics-blocked-discharges-by-reason-list">
                   <BarList
                     label="Blocked discharges by blocker"
+                    className={styles.roomyAxis}
                     labelWidth="10.5rem"
                     axis
                     max={axisMax(blocked.tallies.map((tally) => tally.count))}
@@ -908,6 +956,7 @@ export function StatisticsScreen({
                     <div data-testid="ward-statistics-declines-by-reason-list">
                       <BarList
                         label="Declines by reason"
+                        className={styles.roomyAxis}
                         labelWidth="10.5rem"
                         axis
                         max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}

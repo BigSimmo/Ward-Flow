@@ -162,7 +162,7 @@ export function StatisticsOverviewScreen() {
             label={
               <span className={styles.flagged}>
                 {wardsOverLine > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                {`Wards over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+                {`Wards at or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
               </span>
             }
           />
@@ -185,7 +185,7 @@ export function StatisticsOverviewScreen() {
         title="Occupancy by health service"
         aside={
           <span className={styles.muted}>
-            {`${BED_ALERT_THRESHOLD_PERCENT}% line`} · Select one to filter the table
+            {`${BED_ALERT_THRESHOLD_PERCENT}% line`} · Select one to highlight its wards
           </span>
         }
       >
@@ -209,8 +209,8 @@ export function StatisticsOverviewScreen() {
                     </span>
                     <span className={styles.serviceOver}>
                       {entry.over === 0
-                        ? `No ward over ${BED_ALERT_THRESHOLD_PERCENT}%`
-                        : `${entry.over} ${wardsWord(entry.over)} over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+                        ? `No ward at or over ${BED_ALERT_THRESHOLD_PERCENT}%`
+                        : `${entry.over} ${wardsWord(entry.over)} at or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
                     </span>
                   </span>
                 </span>
@@ -426,6 +426,7 @@ export function StatisticsOverviewScreen() {
                     reason categories.
                   </p>
                   <BarList
+                    className={styles.roomyAxis}
                     label="Declines by reason across the network"
                     axis
                     max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}

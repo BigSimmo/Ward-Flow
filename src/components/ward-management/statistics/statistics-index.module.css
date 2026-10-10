@@ -131,8 +131,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: var(--wf-fs-11);
-  line-height: var(--wf-lh-11);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
   color: var(--wf-ink-3);
 }
 
@@ -200,14 +200,12 @@
   white-space: nowrap;
 }
 
-/* A row the pressed filter chips match: highlighted, never hidden. */
-.match > * {
-  background: var(--wf-selected);
-}
+/* A row the pressed filter chips match stays in full ink; the rest dim by colour (data-dim in
+   statistics-v6.module.css), never hidden and never tinted. */
 
 .groupRow th {
   padding-top: var(--wf-s-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--wf-ink-2);
@@ -306,7 +304,7 @@
   gap: var(--wf-s-2);
   margin: 0 0 var(--wf-s-2);
   break-after: avoid;
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--wf-ink-2);
@@ -404,4 +402,8 @@
   .figures {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+tr[data-dim="true"] .rowSub {
+  color: var(--wf-dim);
 }
