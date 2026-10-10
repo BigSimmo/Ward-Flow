@@ -29,7 +29,10 @@
   --ward-workspace-height: clamp(36rem, calc(100dvh - 9rem), 64rem);
   --ward-section-height: clamp(32rem, calc(100dvh - 10rem), 52rem);
   --ward-compact-height: clamp(22rem, calc(100dvh - 18rem), 34rem);
+  /* Just under the 3.75rem glass top bar, with one gap. A rail pinned higher hides behind it. */
   --ward-sticky-top: 4.5rem;
+  /* The most a pinned rail may be: the window below the bar, less a gap at the bottom. */
+  --ward-rail-height: calc(100dvh - var(--ward-sticky-top) - 0.75rem);
   /* Fill the column below WardBar, not the column's full height plus the bar.
      A percentage minimum overflows its flex parent by the header height. */
   display: flex;
@@ -57,6 +60,40 @@
   .shell {
     position: relative;
     overflow-y: clip;
+  }
+}
+
+/* Side columns stay in view (10 Oct 2026). When two columns sit side by side and one is much
+   shorter, the shorter one carries `data-wf-rail`. It pins just under the top bar while the longer
+   column scrolls past, so the page never shows a tall blank band beside it. A rail taller than the
+   window is capped at the window and scrolls inside itself. Desktop only: phone stacks columns.
+   The selector outranks a screen's own sticky, height or overflow rule on the same element.
+   A rail holding one long list marks that list `data-wf-rail-body`: the list fills the rail and
+   scrolls, so the card's own heading stays in place above it. */
+@media (min-width: 1001px) {
+  .shell [data-wf-rail]:not([hidden]) {
+    position: sticky;
+    top: var(--ward-sticky-top);
+    align-self: start;
+    height: auto;
+    max-height: var(--ward-rail-height);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  .shell [data-wf-rail]:has([data-wf-rail-body]):not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    overflow-y: hidden;
+  }
+
+  .shell [data-wf-rail] [data-wf-rail-body] {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }
 
