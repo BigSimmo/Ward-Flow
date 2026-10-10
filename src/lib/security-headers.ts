@@ -104,11 +104,12 @@ export function buildContentSecurityPolicy({
     // No external error-ingest origin: Ward Flow has no registered browser
     // monitoring SDK. logger.ts provides an optional server forwarding seam,
     // not a configured Sentry integration. Add an external origin only with
-    // an explicitly configured integration and its privacy review.
+    // an explicitly configured integration and its privacy review. The one
+    // exception is the shared Azure workspace (resolveSharedWorkspaceOrigins).
     `connect-src ${["'self'", ...sharedOrigins].join(" ")}; ` +
     // No frame-src for MSAL's hidden renewal frame: it returns to this site, which refuses
     // framing (frame-ancestors 'none', X-Frame-Options DENY), so once the refresh token lapses
-    // the coordinator signs in again rather than the site allowing itself to be framed.
+    // the coordinator signs out and in again rather than the site allowing itself to be framed.
     "worker-src 'self'; " +
     "manifest-src 'self'; " +
     scriptSrc +

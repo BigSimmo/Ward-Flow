@@ -171,12 +171,15 @@ describe("security headers", () => {
     });
 
     it("keeps connect-src same-origin when the Function is missing, invalid or not https", () => {
+      // undefined reads the build's own setting, so pin it for this test.
+      vi.stubEnv("NEXT_PUBLIC_WARD_API_BASE_URL", "");
       for (const value of [undefined, "", "not a url", "http://ward-api.example"]) {
         expect(resolveSharedWorkspaceOrigins(value)).toEqual([]);
       }
       const csp = buildContentSecurityPolicy({ isDevelopment: false, isLocalHttpRuntime: false, nonce: NONCE });
       expect(directive(csp, "connect-src")).toBe("connect-src 'self'");
       expect(directive(csp, "frame-src")).toBeUndefined();
+      vi.unstubAllEnvs();
     });
   });
 
