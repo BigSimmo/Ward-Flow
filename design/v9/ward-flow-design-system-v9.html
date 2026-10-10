@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Ward Flow v9 Board</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap"
+    />
+    <link rel="stylesheet" href="ward-flow-v9.css" />
+    <style>
+      /* Board scaffolding only. Every part below the page frame is drawn by ward-flow-v9.css. */
+      [hidden] {
+        display: none !important;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+      body.wf {
+        padding: 0 16px 48px;
+      }
+      .frame {
+        max-width: 1240px;
+        margin: 0 auto;
+      }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: var(--wf-z-bar);
+        display: flex;
+        align-items: center;
+        gap: var(--wf-s-3);
+        flex-wrap: wrap;
+        margin: 0 -16px var(--wf-s-4);
+        padding: 10px 16px;
+        border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
+        border-top: 0;
+      }
+      .topbar .sp {
+        flex: 1;
+      }
+      .hero {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .hero p {
+        margin: 0;
+        color: var(--wf-hero-ink-2);
+        max-width: 72ch;
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+      }
+      .sec-h {
+        display: flex;
+        align-items: baseline;
+        gap: var(--wf-s-3);
+      }
+      .swatches {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: var(--wf-s-2);
+      }
+      .sw-c {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 10px;
+        border-radius: var(--wf-r-md);
+        border: 1px solid var(--wf-line);
+        background: var(--wf-surface);
+      }
+      .sw-c i {
+        display: block;
+        height: 36px;
+        border-radius: var(--wf-r-sm);
+        border: 1px solid var(--wf-line);
+      }
+      .specrow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--wf-s-2);
+        align-items: center;
+      }
+      .tscale {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr);
+        gap: 8px 16px;
+        align-items: baseline;
+      }
+      .matrix {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 760px;
+      }
+      .matrix th,
+      .matrix td {
+        padding: 10px;
+        border-bottom: 1px solid var(--wf-line);
+        text-align: left;
+        vertical-align: middle;
+      }
+      .ox {
+        overflow-x: auto;
+      }
+      .gstage {
+        position: relative;
+        height: 220px;
+        overflow: hidden;
+        border-radius: var(--wf-r-md);
+        border: 1px solid var(--wf-line);
+        background: var(--wf-surface);
+      }
+      .gstage .glass {
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        top: 12px;
+        height: 44px;
+        border-radius: var(--wf-r-pill);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 8px 0 16px;
+        animation: drift 7s var(--wf-ease-sheet) infinite alternate;
+      }
+      @keyframes drift {
+        to {
+          transform: translateY(150px);
+        }
+      }
+      .stage {
+        position: relative;
+        height: 260px;
+        overflow: hidden;
+        border-radius: var(--wf-r-md);
+        border: 1px solid var(--wf-line);
+        background: var(--wf-surface-2);
+      }
+      .stage .scrim {
+        position: absolute;
+        inset: 0;
+      }
+      .stage .drawer {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        bottom: 8px;
+        width: min(280px, 72%);
+        border-radius: var(--wf-r-lg);
+        padding: 14px;
+        gap: 8px;
+      }
+      .stage .toast {
+        position: absolute;
+        left: 50%;
+        bottom: 12px;
+        translate: -50% 0;
+        white-space: nowrap;
+      }
+      .stage .lines {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .stage .lines i {
+        display: block;
+        height: 10px;
+        border-radius: 6px;
+        background: var(--wf-track);
+      }
+      .ward-cols {
+        min-height: 0;
+      }
+      .phone {
+        width: 390px;
+        max-width: 100%;
+        height: 844px;
+        margin: 0 auto;
+        border-radius: 36px;
+        border: 1px solid var(--wf-line-2);
+        background: var(--wf-backdrop);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--wf-e3);
+      }
+      .phone .pbar {
+        background: transparent;
+      }
+      .phone .pbody {
+        flex: 1;
+        overflow: auto;
+        padding: 0 12px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .phone .pbottom {
+        display: flex;
+        gap: 8px;
+        padding: 10px 12px 18px;
+        background: var(--wf-surface-2);
+        border-top: 1px solid var(--wf-line);
+      }
+      .phone .pbottom .b {
+        flex: 1;
+        height: var(--wf-touch);
+      }
+      @media (width <= 48rem) {
+        .phone {
+          height: 760px;
+        }
+      }
+    </style>
+  </head>
+  <body class="wf">
+    <div class="frame">
+      <a class="b sec skip" href="#focal">Skip to the board</a>
+
+      <header class="topbar glass bar">
+        <b class="t-14">Ward Flow design system v9</b>
+        <span class="meta">Synthetic prototype, not a medical device</span>
+        <span class="sp"></span>
+        <div class="pt sm slide" role="radiogroup" aria-label="Theme" id="theme">
+          <span class="cap" aria-hidden="true"></span>
+          <button role="radio" aria-checked="true" data-v="">System</button>
+          <button role="radio" aria-checked="false" data-v="light">Day</button>
+          <button role="radio" aria-checked="false" data-v="dark">Night</button>
+        </div>
+        <div class="pt sm slide" role="radiogroup" aria-label="Density" id="density">
+          <span class="cap" aria-hidden="true"></span>
+          <button role="radio" aria-checked="false" data-v="dense">Dense</button>
+          <button role="radio" aria-checked="true" data-v="">Default</button>
+          <button role="radio" aria-checked="false" data-v="touch">Touch</button>
+        </div>
+      </header>
+
+      <main class="page">
+        <section class="hero" aria-labelledby="h1">
+          <span class="t-eyebrow" style="color: var(--wf-hero-ink-2)">Design system · v9 · 10 Oct 2026</span>
+          <h1 id="h1" class="t-20">Calm, dense and live, with frosted chrome</h1>
+          <p>
+            One consolidated standard. Every part on this board is drawn by
+            <span class="id">ward-flow-v9.css</span>. Glass is about 80% opaque, quantities use tabular Geist, rows
+            default to 44px and every action reacts.
+          </p>
+          <div class="hs-row">
+            <span class="hs"><span class="v">8</span><span class="l">principles</span></span>
+            <span class="hs"><span class="v">5</span><span class="l">type sizes</span></span>
+            <span class="hs"><span class="v">3</span><span class="l">glass tiers</span></span>
+            <span class="hs"><span class="v">7</span><span class="l">motion roles</span></span>
+          </div>
+        </section>
+
+        <nav class="pt slide" role="tablist" aria-label="Board" id="tabs">
+          <span class="cap" aria-hidden="true"></span>
+          <button role="tab" aria-selected="true" data-t="found">Foundations</button>
+          <button role="tab" aria-selected="false" data-t="ctrl">Controls</button>
+          <button role="tab" aria-selected="false" data-t="motion">Motion</button>
+          <button role="tab" aria-selected="false" data-t="ward">Ward page</button>
+          <button role="tab" aria-selected="false" data-t="phone">Phone</button>
+        </nav>
+
+        <!-- FOUNDATIONS -->
+        <section data-p="found" class="page">
+          <div class="cols">
+            <div class="card lead">
+              <div class="card-h"><span class="ttl">Surfaces rise</span></div>
+              <div class="card-b">
+                <div class="swatches">
+                  <div class="sw-c"><i style="background: var(--wf-canvas)"></i><span class="meta">canvas</span></div>
+                  <div class="sw-c"><i style="background: var(--wf-surface)"></i><span class="meta">surface</span></div>
+                  <div class="sw-c"><i style="background: var(--wf-raised)"></i><span class="meta">raised</span></div>
+                  <div class="sw-c"><i style="background: var(--wf-overlay)"></i><span class="meta">overlay</span></div>
+                  <div class="sw-c"><i style="background: var(--wf-accent)"></i><span class="meta">accent</span></div>
+                  <div class="sw-c">
+                    <i style="background: linear-gradient(var(--wf-hero-1), var(--wf-hero-2))"></i
+                    ><span class="meta">hero</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card follow">
+              <div class="card-h"><span class="ttl">Status by shape</span></div>
+              <div class="card-b card-scroll">
+                <div class="tscale">
+                  <span class="g danger"></span><span>Act now</span> <span class="g warning"></span><span>At risk</span>
+                  <span class="g success"></span><span>Done</span> <span class="g info"></span><span>Moving</span>
+                  <span class="g neutral"></span><span>Waiting</span> <span class="g closed"></span><span>Closed</span>
+                  <span class="g inactive"></span><span>Not active</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cols">
+            <div class="card lead">
+              <div class="card-h"><span class="ttl">Type: five page sizes</span></div>
+              <div class="card-b">
+                <div class="tscale">
+                  <span class="meta">20 / 26</span><span class="t-20">Mental Health Unit</span>
+                  <span class="meta">15 / 20</span><span class="t-15">19 occupied</span>
+                  <span class="meta">14 / 20</span><span class="t-14">This shift</span> <span class="meta">13 / 18</span
+                  ><span>Awaiting a ward's answer since <span class="clk">09:42</span></span>
+                  <span class="meta">12 / 16</span><span class="meta">Confirmed 15m ago</span>
+                  <span class="meta">12 caps</span><span class="t-eyebrow">Placement requested</span>
+                </div>
+              </div>
+            </div>
+            <div class="card follow">
+              <div class="card-h"><span class="ttl">Figures and ids</span></div>
+              <div class="card-b card-scroll">
+                <div class="tscale">
+                  <span class="meta">Quantity</span><span class="num">86.2% · 7d 1h · 1,204</span>
+                  <span class="meta">Clock</span><span class="clk">10:42</span> <span class="meta">UMRN</span
+                  ><span class="id">UM100069</span> <span class="meta">Count</span
+                  ><span
+                    ><span class="k">0</span> <span class="k">12</span> <span class="tier t1">T1</span>
+                    <span class="tier">T2</span></span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h">
+              <span class="ttl">Glass tiers about 80% opaque</span><span class="sp"></span
+              ><span class="meta">Rows pass beneath. Red edges keep their colour.</span>
+            </div>
+            <div class="card-b">
+              <div class="grid12">
+                <div class="span-4">
+                  <span class="meta">Bar · 78%, blur 20</span>
+                  <div class="gstage" data-rows>
+                    <div class="glass bar">
+                      <b>Movements</b><span class="sp" style="flex: 1"></span><button class="b sec sm">Filter</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="span-4">
+                  <span class="meta">Popover · 82%, blur 24</span>
+                  <div class="gstage" data-rows>
+                    <div class="glass">
+                      <b>Menu</b><span class="sp" style="flex: 1"></span><span class="kbd">⌘K</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="span-4">
+                  <span class="meta">Sheet · 86%, blur 32</span>
+                  <div class="gstage" data-rows>
+                    <div class="glass sheet">
+                      <b>Bed 05</b><span class="sp" style="flex: 1"></span><button class="b pri sm">Review</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CONTROLS -->
+        <section data-p="ctrl" class="page" hidden>
+          <div class="card">
+            <div class="card-h">
+              <span class="ttl">State matrix</span><span class="sp"></span
+              ><span class="meta">Hover, press and Tab to try each one</span>
+            </div>
+            <div class="ox">
+              <table class="matrix">
+                <thead>
+                  <tr class="th">
+                    <th>Part</th>
+                    <th>Default</th>
+                    <th>Selected or on</th>
+                    <th>Busy</th>
+                    <th>Unavailable</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="meta">Primary</td>
+                    <td><button class="b pri busy-demo">Confirm numbers</button></td>
+                    <td class="meta">n/a</td>
+                    <td><button class="b pri" aria-busy="true">Confirm numbers</button></td>
+                    <td><button class="b pri" aria-disabled="true">Confirm numbers</button></td>
+                  </tr>
+                  <tr>
+                    <td class="meta">Secondary</td>
+                    <td><button class="b sec busy-demo">Copy summary</button></td>
+                    <td class="meta">n/a</td>
+                    <td><button class="b sec" aria-busy="true">Copy summary</button></td>
+                    <td><button class="b sec" aria-disabled="true">Copy summary</button></td>
+                  </tr>
+                  <tr>
+                    <td class="meta">Filter chip</td>
+                    <td>
+                      <button class="fc" aria-pressed="false">Waiting <span class="k">4</span></button>
+                    </td>
+                    <td>
+                      <button class="fc" aria-pressed="true">Act now <span class="k">3</span></button>
+                    </td>
+                    <td class="meta">n/a</td>
+                    <td><button class="fc" aria-disabled="true">Private</button></td>
+                  </tr>
+                  <tr>
+                    <td class="meta">Bed tile</td>
+                    <td>
+                      <button class="bed" style="width: 150px">
+                        <span class="no">03</span><span class="nm">Wren, Tobias</span
+                        ><span class="st2"><span>Day 4</span></span
+                        ><span class="g warning gpos"></span>
+                      </button>
+                    </td>
+                    <td>
+                      <button class="bed sel" aria-pressed="true" style="width: 150px">
+                        <span class="no">05</span><span class="nm">Oakendell, Verity</span
+                        ><span class="st2"><span>Form 1A 13:42</span></span
+                        ><span class="g danger gpos"></span>
+                      </button>
+                    </td>
+                    <td class="meta">n/a</td>
+                    <td>
+                      <button class="bed dim" style="width: 150px">
+                        <span class="no">08</span><span class="nm">Flint, Oona</span
+                        ><span class="st2"><span>Not a match</span></span>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="meta">Act now edge</td>
+                    <td>
+                      <button class="bed edge-act" style="width: 150px">
+                        <span class="no">11</span><span class="nm">Shalecroft, Ewan</span
+                        ><span class="st2"><span>Review overdue</span></span
+                        ><span class="g danger gpos"></span>
+                      </button>
+                    </td>
+                    <td class="meta">Selection wins over the edge</td>
+                    <td class="meta">n/a</td>
+                    <td>
+                      <button class="bed free" style="width: 150px">
+                        <span class="no">12</span><span class="nm">Free</span
+                        ><span class="st2"><span>Ready now</span></span
+                        ><span class="g success gpos"></span>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="meta">Switch</td>
+                    <td>
+                      <button class="sw" role="switch" aria-checked="false" aria-label="Show closed beds"></button>
+                    </td>
+                    <td><button class="sw" role="switch" aria-checked="true" aria-label="Show discharges"></button></td>
+                    <td class="meta">n/a</td>
+                    <td>
+                      <button
+                        class="sw"
+                        role="switch"
+                        aria-checked="false"
+                        aria-disabled="true"
+                        aria-label="Locked"
+                      ></button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="meta">Field</td>
+                    <td>
+                      <div class="in search" style="width: 200px"><span class="ph">Search beds</span></div>
+                    </td>
+                    <td><div class="in is-focus" style="width: 200px">Oakendell</div></td>
+                    <td class="meta">n/a</td>
+                    <td><div class="in is-off" style="width: 200px">Locked</div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="cols">
+            <div class="card lead">
+              <div class="card-h"><span class="ttl">Pill tabs with the sliding capsule</span></div>
+              <div class="card-b">
+                <div class="pt slide" role="tablist" aria-label="Example" data-demo>
+                  <span class="cap" aria-hidden="true"></span>
+                  <button role="tab" aria-selected="true">Now <span class="k">3</span></button>
+                  <button role="tab" aria-selected="false">Beds <span class="k">24</span></button>
+                  <button role="tab" aria-selected="false">Shift</button>
+                  <button role="tab" aria-selected="false">History</button>
+                </div>
+              </div>
+            </div>
+            <div class="card follow">
+              <div class="card-h"><span class="ttl">Focus with a gap</span></div>
+              <div class="card-b card-scroll">
+                <div
+                  class="specrow"
+                  style="padding: 10px; border-radius: var(--wf-r-md); background: var(--wf-fit-tint)"
+                >
+                  <button class="b sec">On a fit tint</button>
+                  <button class="b pri">Primary</button>
+                </div>
+                <p class="meta" style="margin: 8px 0 0">Tab to see the ring keep 2px clear of every fill and edge.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- MOTION -->
+        <section data-p="motion" class="page" hidden>
+          <div class="cols">
+            <div class="card lead">
+              <div class="card-h">
+                <span class="ttl">Live list</span><span class="sp"></span
+                ><span class="lv"
+                  ><span class="pulse" id="pulse"></span>Live <span class="clk" id="age">10:42</span></span
+                >
+              </div>
+              <div id="list" role="listbox" aria-label="Waiting">
+                <div
+                  class="row edge-act"
+                  role="option"
+                  tabindex="0"
+                  aria-selected="false"
+                  style="grid-template-columns: 14px minmax(0, 1fr) auto auto"
+                >
+                  <span class="g danger"></span><span class="ell"><b>Oakendell, Verity</b></span
+                  ><span class="meta">waited <span class="num v">7d 1h</span></span
+                  ><button class="b sec sm ra" tabindex="-1">Refer</button>
+                </div>
+                <div
+                  class="row"
+                  role="option"
+                  tabindex="-1"
+                  aria-selected="false"
+                  style="grid-template-columns: 14px minmax(0, 1fr) auto auto"
+                >
+                  <span class="g warning"></span><span class="ell"><b>Hawthornby, Derek</b></span
+                  ><span class="meta">waited <span class="num v">2d 14h</span></span
+                  ><button class="b sec sm ra" tabindex="-1">Refer</button>
+                </div>
+                <div
+                  class="row"
+                  role="option"
+                  tabindex="-1"
+                  aria-selected="false"
+                  style="grid-template-columns: 14px minmax(0, 1fr) auto auto"
+                >
+                  <span class="g neutral"></span><span class="ell"><b>Marrowbee, Devan</b></span
+                  ><span class="meta">waited <span class="num v">2d 0h</span></span
+                  ><button class="b sec sm ra" tabindex="-1">Refer</button>
+                </div>
+              </div>
+              <div class="card-f">
+                <button class="b sec sm" id="tick">Simulate a live update</button
+                ><span>Arrow keys move, Enter selects</span>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-h"><span class="ttl">Sheet and toast with Undo</span></div>
+              <div class="card-b">
+                <div class="stage" id="stage">
+                  <div class="lines">
+                    <i style="width: 60%"></i><i style="width: 85%"></i><i style="width: 70%"></i
+                    ><i style="width: 90%"></i><i style="width: 50%"></i>
+                  </div>
+                </div>
+                <div class="specrow" style="margin-top: 10px">
+                  <button class="b sec" id="open" aria-expanded="false">Open bed 05</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-h"><span class="ttl">Motion roles</span></div>
+            <div class="ox">
+              <table class="matrix">
+                <thead>
+                  <tr class="th">
+                    <th>Token</th>
+                    <th>Value</th>
+                    <th>Used for</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="id">--wf-t-micro</td>
+                    <td class="num">100ms</td>
+                    <td>Hover colour and edges</td>
+                  </tr>
+                  <tr>
+                    <td class="id">--wf-t-press</td>
+                    <td class="num">80ms, then 160ms release</td>
+                    <td>Press compresses to 0.97</td>
+                  </tr>
+                  <tr>
+                    <td class="id">--wf-t-enter</td>
+                    <td class="num">220ms</td>
+                    <td>Menus, popovers, toasts, new rows</td>
+                  </tr>
+                  <tr>
+                    <td class="id">--wf-t-exit</td>
+                    <td class="num">160ms</td>
+                    <td>Everything leaving</td>
+                  </tr>
+                  <tr>
+                    <td class="id">--wf-t-sheet</td>
+                    <td class="num">340ms</td>
+                    <td>Sheets, drawers, the tab capsule</td>
+                  </tr>
+                  <tr>
+                    <td class="id">--wf-t-live</td>
+                    <td class="num">1.4s</td>
+                    <td>A changed value stays marked</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- WARD PAGE -->
+        <section data-p="ward" class="page" hidden>
+          <section class="hero">
+            <div class="specrow">
+              <h2 class="t-20">Mental Health Unit</h2>
+              <span class="lv onhero"><span class="pulse"></span>Live <span class="clk">10:42</span></span>
+              <span style="flex: 1"></span>
+              <button class="b light">Record a decision</button>
+            </div>
+            <div class="hs-row">
+              <button class="hs pill" aria-pressed="false">
+                <span class="v">3</span><span class="l"><span class="g danger"></span>Act now</span>
+              </button>
+              <span class="hs"><span class="v">19</span><span class="l">Occupied</span></span>
+              <span class="hs"
+                ><span class="v">2</span
+                ><span class="l"><span class="g success"></span>Free by <span class="clk">15:00</span></span></span
+              >
+              <span class="hs"
+                ><span class="v">4</span><span class="l"><span class="g warning"></span>At risk</span></span
+              >
+            </div>
+          </section>
+          <div class="layout-core r21" id="focal" tabindex="-1">
+            <div class="card">
+              <div class="card-h">
+                <span class="ttl">Beds <span class="k">24</span></span
+                ><span class="sp"></span
+                ><button class="fc" aria-pressed="false">Act now <span class="k">3</span></button>
+              </div>
+              <div class="card-b"><div class="beds" id="beds"></div></div>
+            </div>
+            <aside class="card glass sp-panel">
+              <div class="card-h"><span class="ttl">Needs you now</span></div>
+              <div class="li">
+                <span class="g danger"></span><span class="a">Bed 05 · Form 1A ends <span class="clk">13:42</span></span
+                ><button class="b sec sm">Open</button>
+              </div>
+              <div class="li">
+                <span class="g danger"></span><span class="a">Bed 11 · Review overdue</span
+                ><button class="b sec sm">Open</button>
+              </div>
+              <div class="li">
+                <span class="g warning"></span><span class="a">Bed 03 · Leave ends <span class="clk">16:00</span></span
+                ><button class="b sec sm">Open</button>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- PHONE -->
+        <section data-p="phone" class="page" hidden>
+          <div class="phone">
+            <div class="pbar">
+              <b class="t-14">Mental Health Unit</b><span style="flex: 1"></span
+              ><span class="lv"><span class="pulse"></span><span class="clk">10:42</span></span>
+            </div>
+            <div class="pbody">
+              <div class="pt fill slide" role="tablist" aria-label="Phone views" data-demo>
+                <span class="cap" aria-hidden="true"></span>
+                <button role="tab" aria-selected="true">Now <span class="k">3</span></button>
+                <button role="tab" aria-selected="false">Beds</button>
+                <button role="tab" aria-selected="false">Shift</button>
+              </div>
+              <div class="card">
+                <div class="li">
+                  <span class="g danger"></span
+                  ><span class="a">Bed 05 · Form 1A ends <span class="clk">13:42</span></span
+                  ><button class="b sec">Review</button>
+                </div>
+                <div class="li">
+                  <span class="g danger"></span><span class="a">Bed 11 · Review overdue</span
+                  ><button class="b sec">Open</button>
+                </div>
+                <div class="li">
+                  <span class="g warning"></span
+                  ><span class="a">Bed 03 · Leave ends <span class="clk">16:00</span></span
+                  ><button class="b sec">Open</button>
+                </div>
+              </div>
+            </div>
+            <div class="pbottom"><button class="b pri">Raise referral</button></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      // Board behaviour only: tabs, theme, density, capsules and the motion demos.
+      const root = document.documentElement;
+      function placeCap(group) {
+        const cap = group.querySelector(".cap");
+        const on = group.querySelector('[aria-selected="true"],[aria-checked="true"]');
+        if (!cap || !on || !on.offsetWidth) return;
+        cap.style.width = on.offsetWidth + "px";
+        cap.style.transform = "translateX(" + on.offsetLeft + "px)";
+      }
+      function wireGroup(group, onPick) {
+        const items = [...group.querySelectorAll("button")];
+        const attr = items[0].getAttribute("role") === "tab" ? "aria-selected" : "aria-checked";
+        const pick = (b, focus) => {
+          items.forEach((x) => {
+            x.setAttribute(attr, String(x === b));
+            x.tabIndex = x === b ? 0 : -1;
+          });
+          if (focus) b.focus();
+          placeCap(group);
+          if (onPick) onPick(b);
+        };
+        items.forEach((b, i) => {
+          b.tabIndex = b.getAttribute(attr) === "true" ? 0 : -1;
+          b.addEventListener("click", () => pick(b));
+          b.addEventListener("keydown", (e) => {
+            if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+            e.preventDefault();
+            const j = (i + (e.key === "ArrowRight" ? 1 : -1) + items.length) % items.length;
+            pick(items[j], true);
+          });
+        });
+      }
+      const allCaps = () => document.querySelectorAll(".pt.slide").forEach(placeCap);
+      wireGroup(document.getElementById("tabs"), (b) => {
+        document.querySelectorAll("section[data-p]").forEach((s) => (s.hidden = s.dataset.p !== b.dataset.t));
+        requestAnimationFrame(allCaps);
+      });
+      wireGroup(document.getElementById("theme"), (b) => {
+        if (b.dataset.v) root.dataset.theme = b.dataset.v;
+        else delete root.dataset.theme;
+      });
+      wireGroup(document.getElementById("density"), (b) => {
+        if (b.dataset.v) root.dataset.density = b.dataset.v;
+        else delete root.dataset.density;
+      });
+      document.querySelectorAll("[data-demo]").forEach((g) => wireGroup(g));
+      addEventListener("resize", allCaps);
+      (document.fonts ? document.fonts.ready : Promise.resolve()).then(allCaps);
+      allCaps();
+
+      // rows under the glass specimens
+      const names = [
+        "Oakendell, Verity",
+        "Hawthornby, Derek",
+        "Marrowbee, Devan",
+        "Slateridge, Margery",
+        "Wren, Tobias",
+        "Shalecroft, Ewan",
+        "Flint, Oona",
+        "Winterthorn, Arthur",
+      ];
+      const tone = ["danger", "warning", "neutral", "warning", "danger", "neutral", "success", "neutral"];
+      document.querySelectorAll("[data-rows]").forEach((stage) => {
+        const wrap = document.createElement("div");
+        wrap.innerHTML = names
+          .map(
+            (n, i) =>
+              `<div class="row compact${tone[i] === "danger" ? " edge-act" : ""}" style="grid-template-columns:14px minmax(0,1fr) auto"><span class="g ${tone[i]}"></span><b class="ell">${n}</b><span class="id meta">UM1000${60 + i}</span></div>`,
+          )
+          .join("");
+        stage.prepend(wrap);
+      });
+
+      // bed board
+      const beds = document.getElementById("beds");
+      const bedData = [
+        ["01", "Pallowmere, Maren", "Day 2", "neutral"],
+        ["02", "Free", "Ready now", "success", "free"],
+        ["03", "Wren, Tobias", "Leave 16:00", "warning"],
+        ["04", "Finchgrove, Callum", "Day 9", "neutral"],
+        ["05", "Oakendell, Verity", "Form 1A 13:42", "danger", "edge-act"],
+        ["06", "Quenfold, Gareth", "Day 1", "neutral"],
+        ["07", "Uskarby, Owen", "Discharge 11:00", "success"],
+        ["08", "Flint, Oona", "Day 6", "neutral"],
+        ["09", "Tremalow, Noor", "Day 3", "warning"],
+        ["10", "Closed", "Maintenance", "closed", "closed"],
+      ];
+      beds.innerHTML = bedData
+        .map(
+          (b) =>
+            `<button class="bed ${b[4] || ""}"><span class="no">${b[0]}</span><span class="nm">${b[1]}</span><span class="st2"><span>${b[2]}</span></span><span class="g ${b[3]} gpos"></span></button>`,
+        )
+        .join("");
+      beds.addEventListener("click", (e) => {
+        const t = e.target.closest(".bed");
+        if (!t) return;
+        beds.querySelectorAll(".bed").forEach((x) => {
+          x.classList.toggle("sel", x === t);
+          x.setAttribute("aria-pressed", String(x === t));
+        });
+      });
+      document
+        .querySelectorAll(".hs.pill")
+        .forEach((p) =>
+          p.addEventListener("click", () =>
+            p.setAttribute("aria-pressed", String(p.getAttribute("aria-pressed") !== "true")),
+          ),
+        );
+
+      // busy after 300ms
+      document.querySelectorAll(".busy-demo").forEach((b) =>
+        b.addEventListener("click", () => {
+          if (b.getAttribute("aria-busy") === "true") return;
+          b.style.width = b.offsetWidth + "px";
+          const t = setTimeout(() => b.setAttribute("aria-busy", "true"), 300);
+          setTimeout(() => {
+            clearTimeout(t);
+            b.removeAttribute("aria-busy");
+            b.style.width = "";
+          }, 1600);
+        }),
+      );
+
+      // live list
+      const list = document.getElementById("list");
+      const rows = () => [...list.querySelectorAll(".row")];
+      list.addEventListener("keydown", (e) => {
+        const r = rows();
+        const i = r.indexOf(document.activeElement);
+        if (i < 0) return;
+        const move = { ArrowDown: 1, j: 1, ArrowUp: -1, k: -1 }[e.key];
+        if (move) {
+          e.preventDefault();
+          const n = r[Math.max(0, Math.min(r.length - 1, i + move))];
+          r.forEach((x) => (x.tabIndex = -1));
+          n.tabIndex = 0;
+          n.focus();
+        }
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          r.forEach((x) => {
+            x.setAttribute("aria-selected", String(x === r[i]));
+            x.classList.toggle("sel", x === r[i]);
+          });
+        }
+      });
+      let mins = 42;
+      const extra = ["Quenfold, Gareth", "Uskarby, Owen", "Tremalow, Noor"];
+      const restart = (el, cls) => {
+        el.classList.remove(cls);
+        void el.offsetWidth;
+        el.classList.add(cls);
+      };
+      document.getElementById("tick").addEventListener("click", () => {
+        mins++;
+        document.getElementById("age").textContent = "10:" + String(mins).padStart(2, "0");
+        restart(document.getElementById("pulse"), "tick");
+        const v = rows()[1].querySelector(".v");
+        v.textContent = ["2d 15h", "2d 16h", "2d 17h"][(mins - 43) % 3];
+        restart(v, "chg");
+        restart(rows()[1].querySelector(".g"), "bump");
+        if (extra.length) {
+          const r = document.createElement("div");
+          r.className = "row enter";
+          r.setAttribute("role", "option");
+          r.tabIndex = -1;
+          r.setAttribute("aria-selected", "false");
+          r.style.gridTemplateColumns = "14px minmax(0,1fr) auto auto";
+          r.innerHTML = `<span class="g neutral"></span><span class="ell"><b>${extra.shift()}</b></span><span class="meta">waited <span class="num v">0m</span></span><button class="b sec sm ra" tabindex="-1">Refer</button>`;
+          list.appendChild(r);
+        }
+      });
+
+      // sheet and toast
+      const stage = document.getElementById("stage");
+      const open = document.getElementById("open");
+      let toastTimer;
+      function closeSheet() {
+        const d = stage.querySelector(".drawer");
+        const s = stage.querySelector(".scrim");
+        if (!d) return;
+        d.classList.replace("enter", "leave");
+        s.classList.replace("enter", "leave");
+        d.addEventListener("animationend", () => (d.remove(), s.remove()), { once: true });
+        open.setAttribute("aria-expanded", "false");
+        open.focus();
+      }
+      function toast(msg) {
+        stage.querySelector(".toast")?.remove();
+        const t = document.createElement("div");
+        t.className = "toast enter";
+        t.setAttribute("role", "status");
+        t.innerHTML = `<span>${msg}</span><button class="b">Undo</button>`;
+        t.querySelector("button").addEventListener("click", () => dismiss(t));
+        stage.appendChild(t);
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => dismiss(t), 4000);
+      }
+      function dismiss(t) {
+        if (!t.isConnected) return;
+        t.classList.replace("enter", "leave");
+        t.addEventListener("animationend", () => t.remove(), { once: true });
+      }
+      open.addEventListener("click", () => {
+        if (stage.querySelector(".drawer")) return closeSheet();
+        const s = document.createElement("div");
+        s.className = "scrim enter";
+        s.addEventListener("click", closeSheet);
+        const d = document.createElement("div");
+        d.className = "drawer glass sheet enter";
+        d.setAttribute("role", "dialog");
+        d.setAttribute("aria-label", "Bed 05");
+        d.innerHTML = `<b class="t-14">Bed 05</b><span class="meta"><span class="g danger"></span> Act now · Form 1A ends <span class="clk">13:42</span></span><span style="flex:1"></span><button class="b pri">Mark reviewed</button>`;
+        d.querySelector(".b").addEventListener("click", () => {
+          closeSheet();
+          toast("Bed 05 marked reviewed");
+        });
+        stage.append(s, d);
+        open.setAttribute("aria-expanded", "true");
+        d.querySelector(".b").focus();
+      });
+      stage.addEventListener("keydown", (e) => e.key === "Escape" && closeSheet());
+    </script>
+  </body>
+</html>
