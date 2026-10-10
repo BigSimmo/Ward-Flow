@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable jsx-a11y/role-supports-aria-props -- the phone card keeps the earlier list's aria-selected */
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
@@ -73,18 +72,16 @@ function PersonCard({
     <li
       className={cx(styles.phoneCard, person.highlighted && styles.phoneCardLit, first && styles.phoneCardFirst)}
       data-testid={testId}
-      aria-selected={selected}
-      tabIndex={0}
-      role="button"
-      aria-label={`Open ${person.name} (${person.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
-      onClick={onOpen}
-      onKeyDown={(event) => {
-        if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
-          event.preventDefault();
-          onOpen();
-        }
-      }}
+      data-selected={selected || undefined}
     >
+      {/* One button covers the card, so the profile link beside it is never nested inside a button. */}
+      <button
+        type="button"
+        className={styles.phoneCardOpen}
+        aria-current={selected || undefined}
+        aria-label={`Open ${person.name} (${person.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
+        onClick={onOpen}
+      />
       <span className={styles.pcLine1}>
         <b>{person.name}</b>
         {overdue ? (
@@ -104,7 +101,6 @@ function PersonCard({
           <Link
             href={person.profileHref}
             className={styles.umrnLink}
-            onClick={(event) => event.stopPropagation()}
             title={`Open profile for ${person.name} (${person.umrn})`}
           >
             {person.umrn}
@@ -296,7 +292,12 @@ export function OutOfAreaPhone({
       />
 
       {tab === "needs" ? (
-        <div className={styles.phonePanel} role="tabpanel" aria-labelledby="ward-out-of-area-phone-tab-needs">
+        <div
+          className={styles.phonePanel}
+          role="tabpanel"
+          id="ward-out-of-area-phone-panel-needs"
+          aria-labelledby="ward-out-of-area-phone-tab-needs"
+        >
           {leaving.length ? (
             <section className={styles.phoneSection} aria-label="Leaving today">
               <h2 className={styles.phoneSectionTitle}>
@@ -374,7 +375,12 @@ export function OutOfAreaPhone({
       ) : null}
 
       <div hidden={tab !== "all"}>
-        <div className={styles.phonePanel} role="tabpanel" aria-labelledby="ward-out-of-area-phone-tab-all">
+        <div
+          className={styles.phonePanel}
+          role="tabpanel"
+          id="ward-out-of-area-phone-panel-all"
+          aria-labelledby="ward-out-of-area-phone-tab-all"
+        >
           <TextInput
             icon={Search}
             boxClassName={styles.phoneSearch}
@@ -409,7 +415,12 @@ export function OutOfAreaPhone({
       </div>
 
       {tab === "beds" ? (
-        <div className={styles.phonePanel} role="tabpanel" aria-labelledby="ward-out-of-area-phone-tab-beds">
+        <div
+          className={styles.phonePanel}
+          role="tabpanel"
+          id="ward-out-of-area-phone-panel-beds"
+          aria-labelledby="ward-out-of-area-phone-tab-beds"
+        >
           {shift}
           {beds}
         </div>

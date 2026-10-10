@@ -1,6 +1,6 @@
 import { daysInBed } from "@/components/ward-management/ward-admissions";
 import { dayOf, formatInstant, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
-import { travelBand, TRAVEL_BANDS, type TravelBand } from "@/components/ward-management/ward-distance";
+import { travelBand, type TravelBand } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import type {
   HomeRegion,
@@ -184,9 +184,15 @@ export const RETURN_STATUS_SHORT: Record<ReturnStatus, string> = {
  * Beds with shorter travel, read from each unit's own ward-confirmed capacity.
  * ------------------------------------------------------------------------------------------- */
 
-const BAND_RANK: Record<TravelBand, number> = Object.fromEntries(
-  TRAVEL_BANDS.map((band, index) => [band, index]),
-) as Record<TravelBand, number>;
+/**
+ * Only the road bands are ordered. Air only says how someone gets there, not how long it takes
+ * (`ward-distance.ts`), so it is never ranked against a drive in either direction.
+ */
+const ROAD_RANK: Partial<Record<TravelBand, number>> = {
+  under_an_hour: 0,
+  one_to_three_hours: 1,
+  three_hours_or_more: 2,
+};
 
 export type BedOption = {
   unit: Unit;
@@ -222,15 +228,17 @@ export function confirmedAgeText(minutes: number): string {
 export function closerBedOptions(entry: OutOfAreaEntry, units: Unit[], now: Instant): BedOption[] {
   const region = entry.admission.homeRegion;
   if (region === null) return [];
-  const current = BAND_RANK[entry.band];
+  const current = ROAD_RANK[entry.band];
+  if (current === undefined) return [];
   const options: BedOption[] = [];
   for (const unit of units) {
     if (unit.cohort !== entry.unit.cohort || unit.id === entry.unit.id) continue;
     const band = travelBand(region, unit.siteCode);
-    if (band === undefined || BAND_RANK[band] >= current) continue;
+    const rank = band === undefined ? undefined : ROAD_RANK[band];
+    if (band === undefined || rank === undefined || rank >= current) continue;
     options.push(bedOption(unit, band, now));
   }
-  return options.sort((a, b) => BAND_RANK[a.band] - BAND_RANK[b.band] || b.beds - a.beds);
+  return options.sort((a, b) => (ROAD_RANK[a.band] ?? 0) - (ROAD_RANK[b.band] ?? 0) || b.beds - a.beds);
 }
 
 export type HomeRegionBeds = {
@@ -256,9 +264,12 @@ export function homeRegionBeds(entries: OutOfAreaEntry[], units: Unit[], now: In
     .map(([region, away]) => {
       const table = SYNTHETIC_TRAVEL_BANDS[region] ?? {};
       const recorded = Object.entries(table).filter((pair): pair is [string, TravelBand] => pair[1] !== undefined);
-      const best = recorded.length ? Math.min(...recorded.map(([, band]) => BAND_RANK[band])) : undefined;
-      const sites = recorded.filter(([, band]) => BAND_RANK[band] === best).map(([code]) => code);
-      const band = recorded.find(([, candidate]) => BAND_RANK[candidate] === best)?.[1];
+      // The shortest road band recorded, or the air only sites when a region has no road band.
+      const road = recorded.filter(([, band]) => ROAD_RANK[band] !== undefined);
+      const best = road.length ? Math.min(...road.map(([, band]) => ROAD_RANK[band] as number)) : undefined;
+      const pool = road.length ? road.filter(([, band]) => ROAD_RANK[band] === best) : recorded;
+      const sites = pool.map(([code]) => code);
+      const band = pool[0]?.[1];
       const options = units
         .filter((unit) => sites.includes(unit.siteCode) && unit.cohort === "Adult")
         .map((unit) => bedOption(unit, travelBand(region, unit.siteCode)!, now));

@@ -317,7 +317,9 @@ export function ReturnPlan({
               ) : (
                 <p className={styles.planHint}>
                   <StatusGlyph tone="closed" size={9} />
-                  No shorter travel recorded for {entry.admission.homeRegion}
+                  {entry.band === "air_transport_only"
+                    ? "Air only placement, travel times are not compared"
+                    : `No shorter travel recorded for ${entry.admission.homeRegion}`}
                 </p>
               )}
               <Field label={options.length ? "Other" : "Hospital"} className={styles.formRow}>

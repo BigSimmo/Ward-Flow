@@ -155,8 +155,12 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
   it("selecting the phone card selects the same entry and plans its return", () => {
     renderPhoneBoard();
     const first = entries[0];
-    fireEvent.click(screen.getByTestId(`ward-out-of-area-card-${first.admission.id}`));
-    expect(screen.getByTestId(`ward-out-of-area-card-${first.admission.id}`)).toHaveAttribute("aria-selected", "true");
+    // One button covers each card, so the profile link inside it is never nested in a button.
+    fireEvent.click(screen.getByRole("tab", { name: /Everyone/ }));
+    const card = screen.getByTestId(`ward-out-of-area-card-${first.admission.id}`);
+    fireEvent.click(within(card).getByRole("button", { name: /^Open / }));
+    expect(card).toHaveAttribute("data-selected", "true");
+    expect(within(card).getByRole("button", { name: /^Open / })).toHaveAttribute("aria-current", "true");
 
     const peek = screen.getByTestId("ward-out-of-area-peek");
     fireEvent.click(within(peek).getByRole("button", { name: /Plan return/ }));
