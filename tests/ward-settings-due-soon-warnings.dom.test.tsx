@@ -16,6 +16,7 @@ vi.mock("next/link", () => ({
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { applyDueSoonThresholds } from "@/components/ward-management/ward-clock";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 /**
@@ -38,10 +39,12 @@ afterEach(() => applyDueSoonThresholds(DUE_SOON_URGENT_MINUTES, DUE_SOON_MINUTES
 
 function renderSettings() {
   return render(
-    <WardFlowProvider>
-      <SettingsScreen />
-      <Probe />
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider>
+        <SettingsScreen />
+        <Probe />
+      </WardFlowProvider>
+    </ToastProvider>,
   );
 }
 

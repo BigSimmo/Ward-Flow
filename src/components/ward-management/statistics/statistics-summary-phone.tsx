@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 
 import {
+  FactGrid,
   GroupHead,
   LiveChip,
   PhoneHero,
@@ -16,7 +17,6 @@ import { wardStatisticsHref } from "@/components/ward-management/shell/ward-faca
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 
 import { StatisticsNav } from "./statistics-nav";
-import { FactGrid } from "../reports/report-parts";
 import styles from "./statistics-phone.module.css";
 
 /** One ward on the phone Summary, from the same figures the desktop pressure table reads. */

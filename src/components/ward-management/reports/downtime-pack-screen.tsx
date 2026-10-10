@@ -7,8 +7,11 @@ import {
   Button,
   Card,
   CardHead,
+  FactGrid,
   GroupHead,
   Hero,
+  HeroChip,
+  HeroChips,
   PhoneHero,
   PhoneListRow,
   PhoneSheet,
@@ -18,6 +21,7 @@ import {
   cx,
   durMinutes,
   tableClasses,
+  useIsPhone,
 } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -35,7 +39,7 @@ import {
   type DowntimePack,
   type DowntimeWard,
 } from "./downtime-pack";
-import { FactGrid, HeroChip, HeroChips, reportDay, reportMoment, useIsPhone } from "./report-parts";
+import { reportDay, reportMoment } from "./report-parts";
 import styles from "./reports.module.css";
 
 const NOT_RECORDED = "Not recorded";

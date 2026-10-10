@@ -23,6 +23,7 @@ import { ShortlistPanel } from "@/components/ward-management/coordinator/shortli
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 
@@ -72,11 +73,13 @@ describe("coordinator/shortlist-panel.tsx reads the configured parallel referral
 
   it('shows "of 2 parallel" and refuses a third selection once the cap is configured to 2', () => {
     render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <ConfigureLoweredCap>
-          <ShortlistHarness movementId="WF-009" />
-        </ConfigureLoweredCap>
-      </WardFlowProvider>,
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <ConfigureLoweredCap>
+            <ShortlistHarness movementId="WF-009" />
+          </ConfigureLoweredCap>
+        </WardFlowProvider>
+      </ToastProvider>,
     );
 
     expect(screen.getByText(/of 2 parallel/)).toBeInTheDocument();
@@ -106,11 +109,13 @@ describe("coordinator/shortlist-panel.tsx reads the configured parallel referral
 describe("statistics-screen.tsx reads the configured parallel referral cap", () => {
   it('ward-statistics-refused-so-far-cap reads "2" once the cap is configured to 2', () => {
     render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <ConfigureLoweredCap>
-          <StatisticsScreen />
-        </ConfigureLoweredCap>
-      </WardFlowProvider>,
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <ConfigureLoweredCap>
+            <StatisticsScreen />
+          </ConfigureLoweredCap>
+        </WardFlowProvider>
+      </ToastProvider>,
     );
 
     expect(screen.getByTestId("ward-statistics-refused-so-far-cap")).toHaveTextContent("2");

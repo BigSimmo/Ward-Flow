@@ -200,74 +200,6 @@
 
 /* ---------- v10 report parts (downtime pack, patient chronology) ---------- */
 
-/* Hero count chips: an edged pill, mono figure then words. One line; the row scrolls, never wraps. */
-.chips {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.chips::-webkit-scrollbar {
-  display: none;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  flex: 0 0 auto;
-  min-height: 32px;
-  padding: 5px var(--wf-s-3);
-  box-sizing: border-box;
-  border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--radius-pill);
-  background: var(--wf-on-hero-fill);
-  color: var(--wf-hero-ink);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  white-space: nowrap;
-}
-
-.chipButton {
-  cursor: pointer;
-}
-
-.chipButton:hover {
-  background: var(--wf-on-hero-hl);
-}
-
-.chipButton[aria-pressed="true"] {
-  background: var(--wf-hero-ink);
-  color: var(--wf-hero-2);
-}
-
-.chipButton:focus-visible {
-  outline: 2px solid var(--wf-hero-ink);
-  outline-offset: 2px;
-}
-
-.chipValue {
-  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.chipTwin {
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--wf-on-hero-ink);
-}
-
-.chipLabel {
-  color: var(--wf-on-hero-ink);
-}
-
-.chipButton[aria-pressed="true"] .chipLabel,
-.chipButton[aria-pressed="true"] .chipTwin {
-  color: inherit;
-}
-
 .heroActions {
   display: inline-flex;
   align-items: center;
@@ -402,39 +334,6 @@
   line-height: var(--wf-lh-12);
 }
 
-.factGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--wf-s-3);
-  margin: 0;
-}
-
-.fact {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-sm);
-}
-
-.fact dt {
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
-.fact dd {
-  margin: 0;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  color: var(--wf-ink-1);
-}
-
 /* ---------- Patient chronology ---------- */
 
 .umrn {
@@ -447,9 +346,10 @@
   color: var(--wf-ink-2);
 }
 
+/* One line on a wide screen: the controls shrink, then a crowded tablet bar wraps whole controls. */
 .filterBar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--wf-s-2) var(--wf-s-3);
   min-width: 0;
@@ -467,16 +367,32 @@
   font-size: var(--wf-fs-12);
 }
 
+.patientField {
+  flex: 0 1 auto;
+}
+
 .patientPick {
   width: min(100%, 300px);
+  min-width: 11rem;
 }
 
 .findBox {
-  width: min(100%, 260px);
+  flex: 1 1 14rem;
+  width: auto;
+  min-width: 9rem;
+  max-width: 260px;
 }
 
 .kindPick {
-  width: 180px;
+  flex: 0 1 180px;
+  width: auto;
+  min-width: 9.5rem;
+}
+
+@media (max-width: 87.5rem) {
+  .filterBar {
+    flex-wrap: wrap;
+  }
 }
 
 .roleSwitch {
@@ -491,8 +407,10 @@
   align-items: start;
 }
 
+/* The table card runs the full row height, so it ends level with the side panel beside it. */
 .chronoCard {
   min-width: 0;
+  align-self: stretch;
 }
 
 .countPill {
@@ -732,13 +650,6 @@
   padding-right: var(--wf-s-4);
 }
 
-.copyNote {
-  min-height: var(--wf-lh-12);
-  margin: 0;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-}
-
 .dayHead {
   display: flex;
   justify-content: space-between;
@@ -777,7 +688,8 @@
   min-height: var(--wf-touch);
 }
 
-@media (max-width: 1180px) {
+/* Tablet landscape keeps the table beside the summary; portrait (and below) stacks them. */
+@media (max-width: 62.5rem) {
   .chronoSplit {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -797,7 +709,18 @@
 
 .phoneSeg :is(a, button) {
   flex: 1 1 0;
+  justify-content: center;
   min-height: var(--wf-touch);
+}
+
+.phonePage .patientPick {
+  width: 100%;
+}
+
+.phonePage .phoneNote {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .phoneNote {

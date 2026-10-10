@@ -10,6 +10,7 @@ vi.mock("next/link", () => ({
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -36,10 +37,12 @@ function importPayload(payload: unknown, container: HTMLElement) {
 
 it.each(["raw", "backup"])("loads a valid %s configuration into draft and applies it only after Save", (kind) => {
   const { container } = render(
-    <WardFlowProvider>
-      <SettingsScreen />
-      <ConfigurationProbe />
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider>
+        <SettingsScreen />
+        <ConfigurationProbe />
+      </WardFlowProvider>
+    </ToastProvider>,
   );
   const before = screen.getByTestId("import-saved-configuration").textContent;
   const configuration = { ...defaultWardConfiguration(), edAccessTargetMinutes: 720 };
@@ -58,10 +61,12 @@ it.each([
   { payload: { ...defaultWardConfiguration(), unexpected: 1 } },
 ])("refuses invalid imported configuration without replacing the edited draft ($payload)", ({ payload }) => {
   const { container } = render(
-    <WardFlowProvider>
-      <SettingsScreen />
-      <ConfigurationProbe />
-    </WardFlowProvider>,
+    <ToastProvider>
+      <WardFlowProvider>
+        <SettingsScreen />
+        <ConfigurationProbe />
+      </WardFlowProvider>
+    </ToastProvider>,
   );
   const before = screen.getByTestId("import-saved-configuration").textContent;
   // v10: the ED target is one stepper; Home sets its range minimum, 12h (720 minutes).

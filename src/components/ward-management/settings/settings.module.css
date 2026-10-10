@@ -15,19 +15,6 @@
   position: relative;
 }
 
-/* v10: card head icons are plain glyphs, never in a tile or circle. The shared CardHead draws its
-   icon as an aria-hidden tile before the title; on this page it keeps the glyph and drops the box.
-   (Shared request: a plain-icon option on CardHead.) */
-.screen div:has(> div > :is(h2, h3)) > span[aria-hidden="true"]:first-child:has(> svg) {
-  width: 20px;
-  flex-basis: 20px;
-  height: 20px;
-  border: 0;
-  background: none;
-  box-shadow: none;
-  color: var(--wf-ink-2);
-}
-
 .main {
   min-width: 0;
   max-width: 104rem;
@@ -208,18 +195,20 @@
   color: var(--wf-ink-3);
 }
 
-/* Found row: a short wash, then back to normal. */
+/* Found row (v10): outlined for a moment, then back to normal. An outline, never a tinted fill. */
 .hit {
+  outline: 2px solid transparent;
+  outline-offset: -2px;
   animation: settingsHit 1.6s var(--wf-ease);
 }
 
 @keyframes settingsHit {
   0%,
-  40% {
-    background: var(--wf-accent-tint);
+  50% {
+    outline-color: var(--wf-accent);
   }
   100% {
-    background: transparent;
+    outline-color: transparent;
   }
 }
 
@@ -858,22 +847,216 @@
   border-radius: var(--wf-r-xs);
 }
 
-.toast {
-  position: fixed;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  max-width: min(42rem, calc(100vw - 2rem));
-  padding: 10px 18px;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-glass-thick);
-  border: 1px solid var(--wf-glass-rim);
-  box-shadow: var(--wf-e3);
-  backdrop-filter: blur(18px) saturate(1.4);
+/* Phone (v10): its own tree, rendered under 48rem only (useIsPhone). ------------------------- */
+
+.phoneMain {
+  min-width: 0;
+  width: 100%;
+  padding: var(--wf-s-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  box-sizing: border-box;
+}
+
+.phoneWho {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.phoneGrow {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: var(--wf-touch);
+}
+
+/* Find a setting sits on the page here, not on the band: page ink and a 44px box. */
+.phoneFind .find {
+  width: 100%;
+}
+
+.phoneFind .findBox {
+  width: 100%;
+  height: var(--wf-touch);
+  padding: 0 var(--wf-s-3);
+  background: var(--wf-surface);
+  border-color: var(--wf-line-2);
+  color: var(--wf-ink-2);
+}
+
+.phoneFind .findBox:focus-within {
+  outline-color: var(--wf-focus-ring);
+  border-color: var(--wf-line-3);
+}
+
+.phoneFind .findBox input {
   color: var(--wf-ink-1);
-  font-weight: 600;
-  pointer-events: none;
+  font-size: var(--wf-fs-16);
+}
+
+.phoneFind .findBox input::placeholder {
+  color: var(--wf-ink-3);
+}
+
+.phoneFind .findKey {
+  display: none;
+}
+
+.phoneFind .findResults {
+  left: 0;
+  width: auto;
+}
+
+.phoneFind .findOption {
+  min-height: var(--wf-touch);
+}
+
+.phoneSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.phoneHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: 0 var(--wf-s-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.phoneHeadMeta {
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.phoneCard,
+.phoneList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.phoneCard > .row:first-child {
+  border-top: 0;
+}
+
+.phoneCard .row {
+  min-height: 56px;
+  padding-inline: var(--wf-s-3);
+}
+
+.phoneList > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneSeg {
+  width: 100%;
+}
+
+.phoneSeg :is(a, button) {
+  flex: 1 1 0;
+  justify-content: center;
+  min-height: var(--wf-touch);
+}
+
+/* Row icons are bare glyphs, never in a circle. */
+.phoneAreaIcon {
+  color: var(--wf-ink-2);
+}
+
+.phoneChevron {
+  color: var(--wf-ink-3);
+}
+
+/* Unsaved rules pin a save bar at the foot of the screen. */
+.phoneSaveBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--wf-s-2);
+  margin: 0 calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-2) var(--wf-s-3);
+  background: var(--wf-surface);
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneSaveText {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.phoneSaveBar > :is(a, button) {
+  min-height: var(--wf-touch);
+}
+
+/* Inside a tall sheet the area's own cards stack in one column. */
+.phoneSheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.phoneSheetBody .columns {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* The sheet's own description already says Needs Save or Saves at once. */
+.phoneSheetBody .scopeLine {
+  display: none;
+}
+
+/* A rule on a phone: its words across the top, then reset and the 44px stepper, then its effect. */
+.phoneSheetBody .ruleRow {
+  grid-template-columns: 28px minmax(0, 1fr);
+  row-gap: var(--wf-s-2);
+  padding-block: 10px;
+}
+
+.phoneSheetBody .ruleRow > .rowText {
+  grid-column: 1 / -1;
+}
+
+.phoneSheetBody .ruleRow .rowTitle {
+  white-space: normal;
+}
+
+.phoneSheetBody .ruleStepper > span:first-child {
+  height: var(--wf-touch);
+}
+
+.phoneSheetBody .ruleStepper > span:first-child > button {
+  width: var(--wf-touch);
+}
+
+/* A control too wide to sit beside its words drops to its own line; it never wraps inside. */
+.phoneSheetBody .row {
+  flex-wrap: wrap;
+}
+
+.phoneSheetBody .rowControl {
+  max-width: 100%;
 }
 
 @media (max-width: 1100px) {
@@ -923,10 +1106,21 @@
   }
 }
 
+/* Tablet (touch): rule steppers reach 44px. A mouse keeps the 32px desktop stepper. */
+@media (pointer: coarse) and (min-width: 48.0625rem) {
+  .ruleStepper > span:first-child {
+    height: var(--wf-touch);
+  }
+
+  .ruleStepper > span:first-child > button {
+    width: var(--wf-touch);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hit {
     animation: none;
-    background: var(--wf-accent-tint);
+    outline-color: var(--wf-accent);
   }
 
   .ruleRow {

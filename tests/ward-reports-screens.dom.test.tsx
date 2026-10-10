@@ -24,12 +24,19 @@ import {
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
+import { ToastProvider } from "@/components/wf";
 import { OperationalLinks } from "@/components/ward-management/tools/ward-tools-workspace";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-const inProvider = (node: ReactNode) => render(<WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>);
+// The ward layout wraps every route in the shared wf ToastProvider; the screens rely on it.
+const inProvider = (node: ReactNode) =>
+  render(
+    <ToastProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>
+    </ToastProvider>,
+  );
 
 afterEach(() => {
   forgetDowntimePack();
@@ -63,6 +70,54 @@ describe("read-only report screens", () => {
     expect(within(table).getAllByRole("row").length).toBeGreaterThan(1);
     expect(screen.getByTestId("ward-chronology-csv")).toBeTruthy();
     expect(screen.getByTestId("ward-chronology-print")).toBeTruthy();
+  });
+
+  it("confirms Copy row in the shared wf toast, and says so when the copy fails", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    try {
+      inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
+      const table = screen.getByTestId("ward-chronology-table");
+      fireEvent.click(within(table).getAllByRole("button", { expanded: false })[0]);
+      fireEvent.click(screen.getByRole("button", { name: "Copy row" }));
+      await act(async () => undefined);
+      expect(writeText).toHaveBeenCalledTimes(1);
+      expect(screen.getByTestId("toast-region")).toHaveTextContent("Row copied");
+
+      writeText.mockRejectedValueOnce(new Error("blocked"));
+      fireEvent.click(screen.getByRole("button", { name: "Copy row" }));
+      await act(async () => undefined);
+      expect(screen.getByTestId("toast-region")).toHaveTextContent("Could not copy the row");
+    } finally {
+      Reflect.deleteProperty(navigator, "clipboard");
+    }
+  });
+
+  it("on a phone keeps record kind and the role view one tap away, in a sheet", () => {
+    route.pathname = "/mockups/ward-flow/reports/chronology";
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    try {
+      inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
+      const filters = screen.getByTestId("ward-chronology-phone-filters");
+      expect(filters).toHaveTextContent("Every record kind · Bed coordinator");
+      fireEvent.click(within(filters).getByRole("button"));
+      const sheet = screen.getByRole("dialog", { name: "Record kind and view" });
+      expect(within(sheet).getByRole("radiogroup", { name: "View as" })).toBeTruthy();
+      fireEvent.click(within(sheet).getByRole("radio", { name: "Ward nurse" }));
+      fireEvent.click(within(sheet).getByRole("button", { name: "Done" }));
+      expect(screen.getByTestId("ward-chronology-phone-filters")).toHaveTextContent("Ward nurse");
+      expect(screen.getByTestId("ward-chronology-nurse-view")).toBeTruthy();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("asks for a patient before showing any chronology", () => {
