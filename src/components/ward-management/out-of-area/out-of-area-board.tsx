@@ -862,7 +862,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             )}
           </Card>
 
-          <div ref={detailColumnRef} className={styles.side}>
+          {/* The shorter right column pins under the top bar on desktop (data-wf-rail, ward-shell.module.css).
+              It holds a stack of cards rather than one long list, so the whole rail scrolls inside itself. */}
+          <div ref={detailColumnRef} className={styles.side} data-wf-rail>
             {selected ? (
               <Card
                 className={cx(styles.sideCard, styles.planCard)}
