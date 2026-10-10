@@ -87,19 +87,22 @@ export function SettingRow({
 }
 
 export type RuleRange = {
+  /** Names the written range line (`<id>-range`) for tests. */
   readonly id?: string;
   readonly min: number;
   readonly max: number;
   readonly step: number;
-  readonly ariaLabel: string;
   readonly minLabel: string;
   readonly maxLabel: string;
 };
 
 /**
- * One coordination rule: words, a reset to the saved value when changed, a stepper with a slim
- * range under it, and its effect and readers on the right. `saved` is where the tick sits on the
- * range so a changed draft shows how far it moved.
+ * One coordination rule: words, the allowed range in words ("Range 12h to 36h"), a reset to the
+ * saved value when changed, one stepper, and its effect and readers on the right.
+ *
+ * v10: one control per value. The stepper is the only control; the slider that once sat under it
+ * is gone, and the range is written out instead. A value at the end of its range stops the
+ * stepper there, which is the refusal and its reason in one.
  */
 export function RuleRow({
   setting,
@@ -115,7 +118,7 @@ export function RuleRow({
   max,
   range,
   onChange,
-  onRangeChange,
+  savedDisplay,
   onReset,
   effect,
   usedBy,
@@ -137,7 +140,8 @@ export function RuleRow({
   max?: number;
   range: RuleRange;
   onChange: (value: number) => void;
-  onRangeChange?: (value: number) => void;
+  /** The saved value in words ("24h"), read with the Changed tag. */
+  savedDisplay?: string;
   onReset?: () => void;
   effect?: ReactNode;
   usedBy?: string;
@@ -146,7 +150,6 @@ export function RuleRow({
   previewTag?: boolean;
 }) {
   const changed = !preview && value !== saved;
-  const pct = (n: number) => `${(((n - range.min) / (range.max - range.min)) * 100).toFixed(1)}%`;
   return (
     <div
       className={cx(styles.ruleRow, changed && styles.ruleChanged)}
@@ -162,6 +165,9 @@ export function RuleRow({
         </span>
         <span className={styles.rowSub} data-testid={subTestId}>
           {sub}
+        </span>
+        <span className={styles.rangeWords} data-testid={range.id ? `${range.id}-range` : undefined}>
+          Range {range.minLabel} to {range.maxLabel}
         </span>
       </span>
       <span className={styles.resetCell}>
@@ -191,34 +197,21 @@ export function RuleRow({
           valueTestId={displayTestId}
           unavailable={preview}
         />
-        <span className={styles.rangeWrap}>
-          <span className={styles.rangeTrack}>
-            {changed ? <span className={styles.savedTick} style={{ left: pct(saved) }} aria-hidden="true" /> : null}
-            <input
-              id={range.id}
-              type="range"
-              min={range.min}
-              max={range.max}
-              step={range.step}
-              value={value}
-              aria-label={range.ariaLabel}
-              aria-disabled={preview || undefined}
-              className={styles.rangeInput}
-              style={{ ["--fill" as string]: pct(value) }}
-              onChange={(event) => (onRangeChange ?? onChange)(Number(event.target.value))}
-            />
+        {changed ? (
+          <span className={styles.changedTag}>
+            Changed<SrOnly>, saved value {savedDisplay ?? saved}</SrOnly>
           </span>
-          <span className={styles.rangeEnds} aria-hidden="true">
-            <span>{range.minLabel}</span>
-            <span>{range.maxLabel}</span>
-          </span>
-        </span>
+        ) : null}
       </span>
       <span className={styles.effectCell}>
-        {effect ? <span className={styles.effectLine}>{effect}</span> : null}
+        {preview ? (
+          <span className={styles.effectLine}>Fixed in code today</span>
+        ) : effect ? (
+          <span className={styles.effectLine}>{effect}</span>
+        ) : null}
         {usedBy ? (
-          <span className={styles.usedBy} title={`Used by ${usedBy}`}>
-            {usedBy}
+          <span className={styles.usedBy} title={`Read by ${usedBy}`}>
+            Read by {usedBy}
           </span>
         ) : null}
       </span>

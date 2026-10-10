@@ -246,7 +246,7 @@ describe("settings screen elevations: touch envelopes, focus-visible, and the re
   });
 
   it("draws a 2px focus ring on every control this screen styles itself", () => {
-    for (const selector of ["resetButton", "rangeInput", "saveLink", "tableWrap"]) {
+    for (const selector of ["resetButton", "saveLink", "tableWrap"]) {
       expect(cssContent, `.${selector} has no focus ring`).toMatch(
         new RegExp(`\\.${selector}:focus-visible\\s*\\{[^}]*outline:\\s*2px solid var\\(--wf-focus-ring\\);`),
       );

@@ -45,13 +45,16 @@ function renderSettings() {
   );
 }
 
-function urgentSlider() {
-  return document.getElementById("setting-due-soon-urgent") as HTMLInputElement;
+/* v10: each warning is one stepper (a spinbutton between minus and plus); no slider. */
+function urgentStepper() {
+  return screen.getByRole("spinbutton", { name: "First warning before a legal due time" });
 }
 
-function soonSlider() {
-  return document.getElementById("setting-due-soon") as HTMLInputElement;
+function soonStepper() {
+  return screen.getByRole("spinbutton", { name: "Second warning before a legal due time" });
 }
+
+const valueOf = (stepper: HTMLElement) => Number(stepper.getAttribute("aria-valuenow"));
 
 describe("settings screen due-time warning rows", () => {
   it("shows both rows at their defaults, each labelled as a default rather than a legal limit", () => {
@@ -64,8 +67,8 @@ describe("settings screen due-time warning rows", () => {
 
     expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("1h");
     expect(screen.getByTestId("due-soon-display")).toHaveTextContent("3h");
-    expect(Number(urgentSlider().value)).toBe(DUE_SOON_URGENT_MINUTES);
-    expect(Number(soonSlider().value)).toBe(DUE_SOON_MINUTES);
+    expect(valueOf(urgentStepper())).toBe(DUE_SOON_URGENT_MINUTES);
+    expect(valueOf(soonStepper())).toBe(DUE_SOON_MINUTES);
 
     expect(screen.getByTestId("setting-due-soon-urgent-desc")).toHaveTextContent("Before a legal due time");
     expect(screen.getByTestId("setting-due-soon-desc")).toHaveTextContent("Shown as due soon");
@@ -77,7 +80,7 @@ describe("settings screen due-time warning rows", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Increase first warning before a legal due time" }));
     expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("1h 15m");
-    expect(urgentSlider().value).toBe(String(DUE_SOON_URGENT_MINUTES + 15));
+    expect(valueOf(urgentStepper())).toBe(DUE_SOON_URGENT_MINUTES + 15);
     // Not dispatched yet.
     expect(screen.getByTestId("probe-due-soon-urgent")).toHaveTextContent(String(DUE_SOON_URGENT_MINUTES));
 
@@ -97,19 +100,20 @@ describe("settings screen due-time warning rows", () => {
       fireEvent.click(increase);
     }
 
-    expect(Number(urgentSlider().value)).toBe(165);
+    expect(valueOf(urgentStepper())).toBe(165);
     expect(screen.getByTestId("due-soon-urgent-display")).toHaveTextContent("2h 45m");
-    expect(Number(urgentSlider().value)).toBeLessThan(Number(soonSlider().value));
+    expect(valueOf(urgentStepper())).toBeLessThan(valueOf(soonStepper()));
   });
 
-  it("dragging the first warning's slider past the second clamps it back below, not equal or over", () => {
+  it("jumping the first warning's stepper to its end stops it below the second, not equal or over", () => {
     renderSettings();
     // The urgent range's own maximum (180) equals the second warning's untouched default, so
-    // dragging straight to it is the sharpest boundary case: the clamp must still refuse it.
-    fireEvent.change(urgentSlider(), { target: { value: "180" } });
+    // jumping straight to the end (End key) is the sharpest boundary case: the clamp must still
+    // refuse it.
+    fireEvent.keyDown(urgentStepper(), { key: "End" });
 
-    expect(Number(urgentSlider().value)).toBeLessThan(DUE_SOON_MINUTES);
-    expect(Number(urgentSlider().value)).toBe(DUE_SOON_MINUTES - 15);
+    expect(valueOf(urgentStepper())).toBeLessThan(DUE_SOON_MINUTES);
+    expect(valueOf(urgentStepper())).toBe(DUE_SOON_MINUTES - 15);
   });
 
   it("decreasing the second warning down to the first pulls the first down with it, keeping it strictly lower", () => {
@@ -123,12 +127,12 @@ describe("settings screen due-time warning rows", () => {
     fireEvent.click(decreaseSoon);
     fireEvent.click(decreaseSoon);
     fireEvent.click(decreaseSoon);
-    expect(Number(soonSlider().value)).toBe(60);
-    expect(Number(urgentSlider().value)).toBeLessThan(60);
+    expect(valueOf(soonStepper())).toBe(60);
+    expect(valueOf(urgentStepper())).toBeLessThan(60);
 
     fireEvent.click(decreaseSoon);
-    expect(Number(soonSlider().value)).toBe(30);
-    expect(Number(urgentSlider().value)).toBeLessThan(30);
-    expect(Number(urgentSlider().value)).toBeGreaterThanOrEqual(15); // the first warning's own floor
+    expect(valueOf(soonStepper())).toBe(30);
+    expect(valueOf(urgentStepper())).toBeLessThan(30);
+    expect(valueOf(urgentStepper())).toBeGreaterThanOrEqual(15); // the first warning's own floor
   });
 });

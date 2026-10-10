@@ -77,7 +77,6 @@ import {
   Card,
   CardHead,
   Hero,
-  HeroStat,
   HeroTrack,
   Kbd,
   Segmented,
@@ -94,6 +93,7 @@ import { NOT_WIRED, PreviewTag, RuleRow, ScopeLine, SettingRow } from "./setting
 import { SETTINGS_TABS, findSettings, type SettingsSearchEntry, type SettingsTab } from "./settings-search-index";
 import { SETTINGS_DEMO_PROFILE } from "./settings-profile";
 import { publishedThresholds } from "./settings-thresholds";
+import { HeroChip, HeroChips } from "../reports/report-parts";
 
 import styles from "./settings.module.css";
 
@@ -524,11 +524,67 @@ export function SettingsScreen() {
   const edRange = {
     id: "setting-ed-threshold",
     ...ED_ACCESS_TARGET_RANGE_MINUTES,
-    ariaLabel: "ED access target in hours",
     minLabel: `${ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h`,
     maxLabel: `${ED_ACCESS_TARGET_RANGE_MINUTES.max / 60}h`,
   };
   const edDelta = draftEdOver - savedEdOver;
+
+  const findSetting = (
+    <div className={styles.find}>
+      <label className={styles.findBox}>
+        <Search size={14} aria-hidden="true" />
+        <input
+          ref={findRef}
+          type="search"
+          role="combobox"
+          aria-label="Find a setting"
+          aria-expanded={showResults}
+          aria-controls="settings-find-results"
+          aria-activedescendant={
+            showResults && results[activeIndex] ? `settings-find-${results[activeIndex].id}` : undefined
+          }
+          aria-autocomplete="list"
+          placeholder="Find a setting"
+          autoComplete="off"
+          spellCheck={false}
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setActiveIndex(0);
+            setFindOpen(true);
+          }}
+          onFocus={() => setFindOpen(true)}
+          onBlur={() => window.setTimeout(() => setFindOpen(false), 120)}
+          onKeyDown={onFindKeyDown}
+        />
+        <Kbd className={styles.findKey}>/</Kbd>
+      </label>
+      {showResults ? (
+        <ul id="settings-find-results" className={styles.findResults} role="listbox" aria-label="Settings found">
+          {results.length === 0 ? (
+            <li className={styles.findEmpty} role="presentation">
+              No setting matches
+            </li>
+          ) : (
+            results.map((entry, index) => (
+              <li
+                key={entry.id}
+                id={`settings-find-${entry.id}`}
+                role="option"
+                aria-selected={index === activeIndex}
+                className={cx(styles.findOption, index === activeIndex && styles.findActive)}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => jumpTo(entry)}
+              >
+                <span className={styles.findLabel}>{entry.label}</span>
+                <span className={styles.findTab}>{tabLabel(entry.tab)}</span>
+              </li>
+            ))
+          )}
+        </ul>
+      ) : null}
+    </div>
+  );
 
   return (
     <div className={styles.screen} data-testid="ward-settings-screen" data-ward-design="workspaces">
@@ -556,30 +612,9 @@ export function SettingsScreen() {
               Demo profile
             </Badge>
           }
-          stats={
-            <>
-              <HeroStat
-                className={styles.wordStat}
-                value={savedSurge ? "Surge" : "Standard"}
-                label="Rules"
-                tone={savedSurge ? "warning" : undefined}
-              />
-              <HeroStat
-                className={hasUnsavedRules ? undefined : styles.wordStat}
-                value={hasUnsavedRules ? `${unsavedCount} ${unsavedCount === 1 ? "rule" : "rules"}` : "None"}
-                label="Unsaved"
-                tone={hasUnsavedRules ? "warning" : undefined}
-              />
-              <HeroStat className={styles.wordStat} value={audioBuzz ? "On" : "Off"} label="Buzz sound" />
-              <HeroStat
-                className={lastAccepted ? undefined : styles.wordStat}
-                value={lastAccepted?.at != null ? formatInstantWithDay(lastAccepted.at, now) : "None"}
-                label="Last rule save"
-              />
-            </>
-          }
           aside={
             <>
+              {findSetting}
               <Button variant="onHero" size="sm" icon={Layers} onClick={() => setIsOperatorModalOpen(true)}>
                 Switch workstation
               </Button>
@@ -610,65 +645,18 @@ export function SettingsScreen() {
             />
           }
           barAside={
-            <div className={styles.find}>
-              <label className={styles.findBox}>
-                <Search size={14} aria-hidden="true" />
-                <input
-                  ref={findRef}
-                  type="search"
-                  role="combobox"
-                  aria-label="Find a setting"
-                  aria-expanded={showResults}
-                  aria-controls="settings-find-results"
-                  aria-activedescendant={
-                    showResults && results[activeIndex] ? `settings-find-${results[activeIndex].id}` : undefined
-                  }
-                  aria-autocomplete="list"
-                  placeholder="Find a setting"
-                  autoComplete="off"
-                  spellCheck={false}
-                  value={query}
-                  onChange={(event) => {
-                    setQuery(event.target.value);
-                    setActiveIndex(0);
-                    setFindOpen(true);
-                  }}
-                  onFocus={() => setFindOpen(true)}
-                  onBlur={() => window.setTimeout(() => setFindOpen(false), 120)}
-                  onKeyDown={onFindKeyDown}
-                />
-                <Kbd className={styles.findKey}>/</Kbd>
-              </label>
-              {showResults ? (
-                <ul
-                  id="settings-find-results"
-                  className={styles.findResults}
-                  role="listbox"
-                  aria-label="Settings found"
-                >
-                  {results.length === 0 ? (
-                    <li className={styles.findEmpty} role="presentation">
-                      No setting matches
-                    </li>
-                  ) : (
-                    results.map((entry, index) => (
-                      <li
-                        key={entry.id}
-                        id={`settings-find-${entry.id}`}
-                        role="option"
-                        aria-selected={index === activeIndex}
-                        className={cx(styles.findOption, index === activeIndex && styles.findActive)}
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => jumpTo(entry)}
-                      >
-                        <span className={styles.findLabel}>{entry.label}</span>
-                        <span className={styles.findTab}>{tabLabel(entry.tab)}</span>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              ) : null}
-            </div>
+            <HeroChips label="Settings at a glance">
+              <HeroChip value={savedSurge ? "Surge" : "Standard"} label="Rules" />
+              <HeroChip
+                value={hasUnsavedRules ? unsavedCount : "None"}
+                label={hasUnsavedRules ? (unsavedCount === 1 ? "Unsaved rule" : "Unsaved rules") : "Unsaved"}
+              />
+              <HeroChip value={audioBuzz ? "On" : "Off"} label="Buzz sound" />
+              <HeroChip
+                value={lastAccepted?.at != null ? formatInstantWithDay(lastAccepted.at, now) : "None"}
+                label="Last save"
+              />
+            </HeroChips>
           }
         />
 
@@ -715,7 +703,7 @@ export function SettingsScreen() {
                   effect={
                     <>
                       <StatusGlyph tone={draftEdOver > 0 ? "warning" : "success"} size={9} />
-                      {draftEdOver > 0 ? `${draftEdOver} over` : "None over"}
+                      {draftEdOver > 0 ? `${draftEdOver} over now` : "None over now"}
                       {edDelta !== 0 ? (
                         <span className={styles.delta}>{`${edDelta > 0 ? "+" : ""}${edDelta}`}</span>
                       ) : null}
@@ -734,7 +722,6 @@ export function SettingsScreen() {
                   range={{
                     id: "setting-parallel-cap",
                     ...PARALLEL_REFERRAL_CAP_RANGE,
-                    ariaLabel: "Parallel referral cap in units",
                     minLabel: wardsText(PARALLEL_REFERRAL_CAP_RANGE.min),
                     maxLabel: wardsText(PARALLEL_REFERRAL_CAP_RANGE.max),
                   }}
@@ -753,7 +740,6 @@ export function SettingsScreen() {
                   range={{
                     id: "setting-hold-duration",
                     ...PULL_HOLD_RANGE_MINUTES,
-                    ariaLabel: "Pulled bed reservation hold duration in minutes",
                     minLabel: shortDuration(PULL_HOLD_RANGE_MINUTES.min),
                     maxLabel: shortDuration(PULL_HOLD_RANGE_MINUTES.max),
                   }}
@@ -775,7 +761,6 @@ export function SettingsScreen() {
                   range={{
                     id: "setting-morning-rollup-slider",
                     ...MORNING_ROLLUP_TIME_RANGE_MINUTES,
-                    ariaLabel: "Morning rollup deadline in minutes from midnight",
                     minLabel: clock24(MORNING_ROLLUP_TIME_RANGE_MINUTES.min),
                     maxLabel: clock24(MORNING_ROLLUP_TIME_RANGE_MINUTES.max),
                   }}
@@ -817,7 +802,6 @@ export function SettingsScreen() {
                   range={{
                     id: "setting-due-soon-urgent",
                     ...DUE_SOON_URGENT_RANGE_MINUTES,
-                    ariaLabel: "First warning before a legal due time",
                     minLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.min),
                     maxLabel: shortDuration(DUE_SOON_URGENT_RANGE_MINUTES.max),
                   }}
@@ -839,7 +823,6 @@ export function SettingsScreen() {
                   range={{
                     id: "setting-due-soon",
                     ...DUE_SOON_RANGE_MINUTES,
-                    ariaLabel: "Second warning before a legal due time",
                     minLabel: shortDuration(DUE_SOON_RANGE_MINUTES.min),
                     maxLabel: shortDuration(DUE_SOON_RANGE_MINUTES.max),
                   }}
@@ -913,7 +896,6 @@ export function SettingsScreen() {
                       range={{
                         id: `setting-target-${step.step}-range`,
                         ...DECISION_TARGET_RANGE_MINUTES,
-                        ariaLabel: `${step.label} target in minutes`,
                         minLabel: shortDuration(DECISION_TARGET_RANGE_MINUTES.min),
                         maxLabel: shortDuration(DECISION_TARGET_RANGE_MINUTES.max),
                       }}
@@ -949,7 +931,6 @@ export function SettingsScreen() {
                     min: 80,
                     max: 95,
                     step: 1,
-                    ariaLabel: "Occupancy alert percent",
                     minLabel: "80%",
                     maxLabel: "95%",
                   }}
@@ -969,7 +950,6 @@ export function SettingsScreen() {
                     min: 30,
                     max: 240,
                     step: 30,
-                    ariaLabel: "Tier 1 overdue after",
                     minLabel: "30m",
                     maxLabel: "4h",
                   }}
@@ -989,7 +969,6 @@ export function SettingsScreen() {
                     min: 30,
                     max: 240,
                     step: 30,
-                    ariaLabel: "Ward not answering",
                     minLabel: "30m",
                     maxLabel: "4h",
                   }}
@@ -1005,7 +984,7 @@ export function SettingsScreen() {
                   saved={BED_HOLD_EXPIRY_MINUTES}
                   display={shortDuration(BED_HOLD_EXPIRY_MINUTES)}
                   noun="bed hold expiry"
-                  range={{ min: 60, max: 360, step: 30, ariaLabel: "Bed hold expires", minLabel: "1h", maxLabel: "6h" }}
+                  range={{ min: 60, max: 360, step: 30, minLabel: "1h", maxLabel: "6h" }}
                   onChange={() => onPreview("Bed hold expires")}
                   preview
                   previewTag={false}

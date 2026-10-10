@@ -109,18 +109,20 @@ describe("settings screen: every Preview control says it is not wired", () => {
  * controls must say they do nothing, these three must say — and prove — that they do.
  */
 describe("settings screen — the three controls Task 9 actually wired", () => {
-  const WIRED_ROW_IDS = ["setting-ed-threshold", "setting-hold-duration", "setting-parallel-cap"];
+  // v10: each wired rule is one stepper (no slider), named by what it sets.
+  const WIRED_STEPPERS = ["ED access target", "Pulled bed hold duration", "Parallel referral enquiry limit"];
 
   it("are not aria-disabled, unlike the Preview controls", () => {
     renderSettings();
-    for (const id of WIRED_ROW_IDS) {
-      const control = document.getElementById(id) as HTMLElement;
-      expect(control, `#${id} did not render`).not.toBeNull();
+    // An earlier case leaves another tab in the address; the rules live on Rules.
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    for (const name of WIRED_STEPPERS) {
+      const control = screen.getByRole("spinbutton", { name });
       expect(control).not.toHaveAttribute("aria-disabled");
     }
   });
 
-  it("moving the ED access target slider dispatches nothing until Save is pressed", () => {
+  it("changing the ED access target stepper dispatches nothing until Save is pressed", () => {
     function Probe() {
       const { configuration } = useWardFlow();
       return <span data-testid="probe-ed-target">{configuration.edAccessTargetMinutes}</span>;
@@ -133,9 +135,8 @@ describe("settings screen — the three controls Task 9 actually wired", () => {
     );
 
     const before = screen.getByTestId("probe-ed-target").textContent;
-    fireEvent.change(document.getElementById("setting-ed-threshold") as HTMLInputElement, {
-      target: { value: "720" },
-    });
+    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
+    fireEvent.keyDown(screen.getByRole("spinbutton", { name: "ED access target" }), { key: "Home" });
     expect(screen.getByTestId("probe-ed-target").textContent).toBe(before);
 
     fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));

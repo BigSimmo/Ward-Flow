@@ -44,7 +44,7 @@ it.each(["raw", "backup"])("loads a valid %s configuration into draft and applie
   const before = screen.getByTestId("import-saved-configuration").textContent;
   const configuration = { ...defaultWardConfiguration(), edAccessTargetMinutes: 720 };
   importPayload(kind === "backup" ? { configuration, exportedAt: "synthetic backup" } : configuration, container);
-  expect((document.getElementById("setting-ed-threshold") as HTMLInputElement).value).toBe("720");
+  expect(screen.getByRole("spinbutton", { name: "ED access target" })).toHaveAttribute("aria-valuenow", "720");
   expect(screen.getByTestId("import-saved-configuration").textContent).toBe(before);
   fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
   expect(JSON.parse(screen.getByTestId("import-saved-configuration").textContent!)).toEqual(configuration);
@@ -64,10 +64,11 @@ it.each([
     </WardFlowProvider>,
   );
   const before = screen.getByTestId("import-saved-configuration").textContent;
-  const slider = document.getElementById("setting-ed-threshold") as HTMLInputElement;
-  fireEvent.change(slider, { target: { value: "720" } });
+  // v10: the ED target is one stepper; Home sets its range minimum, 12h (720 minutes).
+  const stepper = screen.getByRole("spinbutton", { name: "ED access target" });
+  fireEvent.keyDown(stepper, { key: "Home" });
   importPayload(payload, container);
-  expect(slider.value).toBe("720");
+  expect(screen.getByRole("spinbutton", { name: "ED access target" })).toHaveAttribute("aria-valuenow", "720");
   expect(screen.getByTestId("import-saved-configuration").textContent).toBe(before);
   expect(screen.getByText("Invalid configuration file format.")).toBeVisible();
 });
