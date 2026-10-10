@@ -1016,7 +1016,7 @@ export function networkHasCohort(referral: Referral, units: Unit[]): boolean {
  * The one spelling of a decline reason, for every screen that offers or reports one.
  *
  * Display labels only — never a picker's own option set, which is always
- * `REFERRAL_DECLINE_REASONS` itself (same convention as `referral-intake.tsx`'s `SOURCE_LABELS`):
+ * `REFERRAL_DECLINE_REASONS` itself (same convention as `community-screen.tsx`'s `REFERRAL_SOURCE_LABELS`):
  * a reason missing from this map still renders, via each consumer's `??` fallback, just less
  * prettily. It lives here rather than in `referral-match.tsx` because the board now reports the
  * reason on a decided row as well (review finding I3), and two components spelling one label

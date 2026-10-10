@@ -580,9 +580,9 @@ describe("the shell facade agrees with the screens that own its figures", () => 
  * is the route's own honest not-found, and `communityTeamById`'s doc comment says as much.
  *
  * ⚠️ **AND ONE STATED ABSENCE, WRITTEN DOWN RATHER THAN PAPERED OVER.** `raiseReferralHref` builds a
- * querystring nothing reads yet: `referral-intake.tsx` consumes none of `patientId`, `source`,
- * `originEdId` or `teamId`. The ROUTE resolves, which is what this assertion is about; the form does
- * not arrive pre-filled, which is the intake lane's work and is recorded on the builder itself.
+ * querystring that the referral slide-out now reads (`referral-sheet-link.ts`): the patient and the
+ * referring site arrive filled in. The ROUTE resolves, which is what this assertion is about; the
+ * prefill itself is covered by `tests/ward-referral-drawer-sheet.dom.test.tsx`.
  */
 const BUILDER_ROUTES: readonly {
   readonly name: string;
