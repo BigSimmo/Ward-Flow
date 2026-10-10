@@ -478,3 +478,14 @@
     scrollbar-width: none;
   }
 }
+
+/* Phone: the sentence may take two lines rather than cut off the instruction. */
+@media (max-width: 48rem) {
+  .sayText {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+  }
+}

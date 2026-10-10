@@ -322,7 +322,7 @@ export function WardBedBoard({
         id="ward-bed-board-title"
         icon={LayoutGrid}
         title="Bed board"
-        meta={isMixed ? "Locked and open beds" : unit.name}
+        meta={isPhone ? undefined : isMixed ? "Locked and open beds" : unit.name}
         aside={
           <span className={styles.headCount}>
             <b>{free}</b> free of {beds.length}
@@ -331,7 +331,7 @@ export function WardBedBoard({
         action={
           <button type="button" className={buttonClass({ variant: "ghost", size: "sm" })} onClick={onOpenList}>
             <List size={14} aria-hidden="true" />
-            Every bed list
+            {isPhone ? "List" : "Every bed list"}
           </button>
         }
       />

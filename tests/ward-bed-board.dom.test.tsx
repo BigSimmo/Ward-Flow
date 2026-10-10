@@ -197,3 +197,39 @@ describe("Bed board layout and fit rules", () => {
     expect(bedFits({ bedNumber: 5, status: "ready" }, null, false)).toBe(false);
   });
 });
+
+describe("Ward page on a phone — every bed grouped by state", () => {
+  it("groups beds worst first, keeps settled beds behind Show all, and counts every bed once", () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === "(max-width: 48rem)",
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      onchange: null,
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    try {
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <WardScreen unitId={UNIT} />
+        </WardFlowProvider>,
+      );
+      const groups = within(screen.getByTestId("ward-phone-bed-groups"));
+      const heads = groups.getAllByRole("heading", { level: 3 }).map((head) => head.textContent ?? "");
+      // Each bed once: the group counts add up to the ward's 24 beds.
+      expect(heads.reduce((sum, head) => sum + Number(/(\d+)$/.exec(head)?.[1] ?? 0), 0)).toBe(24);
+      expect(heads.findIndex((head) => head.startsWith("Act now"))).toBeLessThan(
+        heads.findIndex((head) => head.startsWith("Settled")),
+      );
+      const before = groups.getAllByRole("button", { name: /^Bed / }).length;
+      expect(before).toBeLessThan(24);
+      fireEvent.click(groups.getByRole("button", { name: /^Show all \d+ settled beds$/ }));
+      expect(groups.getAllByRole("button", { name: /^Bed / })).toHaveLength(24);
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+});
