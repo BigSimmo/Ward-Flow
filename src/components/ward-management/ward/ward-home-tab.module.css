@@ -23,6 +23,21 @@
   min-width: 0;
 }
 
+/* Bed board tab: the board takes the bed card's column; Every bed and This shift step aside. */
+.boardArea {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.boardArea > * {
+  flex: 1;
+}
+
+.v6Card[hidden] {
+  display: none;
+}
+
 .v6Card {
   overflow: hidden;
   scroll-margin-top: 12rem;
@@ -1044,7 +1059,133 @@ label.todoMain:has(.todoTick:focus-visible) {
     order: -1;
   }
 
+  /* Phone Bed board: the board alone, as the mockup's segmented Bed board view. Ward flow stays one
+     tap away on Home. */
+  .homeTop[data-board="true"] > .flowWrap {
+    display: none;
+  }
+
   .flowWrap {
     min-height: 0;
+  }
+}
+
+/* Phone (v10 pass 3): every bed grouped by state, one row each at the touch height. */
+.phoneGroups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-3);
+}
+
+.phoneGroupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0 0 var(--wf-s-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.phoneGroupHead > :last-child {
+  margin-left: auto;
+}
+
+.phoneRows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+
+.phoneRows > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneRow {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 52px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: var(--wf-surface);
+  text-align: left;
+  color: var(--wf-ink-1);
+}
+
+.phoneRow[data-act="true"] {
+  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+}
+
+.phoneRowNo,
+.phoneRowDays {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-13);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.phoneRowDays {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.phoneRowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneRowName,
+.phoneRowNote span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneRowName {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.phoneRowNote {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.phoneRow[data-dim="true"] .phoneRowName,
+.phoneRow[data-dim="true"] .phoneRowNote,
+.phoneRow[data-dim="true"] .phoneRowNo,
+.phoneRow[data-dim="true"] .phoneRowDays {
+  color: var(--wf-dim);
+}
+
+.phoneMore {
+  width: 100%;
+  min-height: var(--wf-touch, 44px);
+  margin-top: var(--wf-s-1);
+  border: 1px dashed var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+@media (max-width: 48rem) {
+  .viewSwitch {
+    display: none;
   }
 }

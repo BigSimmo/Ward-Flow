@@ -1292,6 +1292,16 @@
     background: transparent;
   }
 
+  /* Nothing to answer: the one sentence keeps the card's inset and the card spans the row. */
+  .sbarCard > p:only-child {
+    margin: 0;
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .answerGrid > .panel[data-empty="true"] {
+    align-self: stretch;
+  }
+
   .patientDossierBanner {
     padding: var(--wf-s-3) var(--wf-s-4);
     border-bottom: 1px solid var(--wf-line);
@@ -1973,13 +1983,6 @@
   font-size: var(--wf-fs-13);
   color: var(--wf-hero-ink-2);
   text-overflow: ellipsis;
-}
-
-/* Page-local fix for the shared ring (report to foundation): its `.ring svg` size rule also
-   catches the status glyph under the figure. */
-.heroRing span svg {
-  width: auto;
-  height: auto;
 }
 
 @media (max-width: 48rem) {

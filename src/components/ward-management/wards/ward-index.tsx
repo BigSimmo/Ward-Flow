@@ -25,7 +25,6 @@ import {
   WardCapacityRows,
   buttonClass,
   cx,
-  dur,
 } from "@/components/wf";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
@@ -47,6 +46,7 @@ import { BedStrip, BedStripLegend } from "@/components/ward-management/wards/bed
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./ward-index.module.css";
+import { plainAge } from "./plain-age";
 
 /**
  * All wards (v10). One hero band with the ready-bed answer, the statewide occupancy ring and the
@@ -539,15 +539,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               {readyNow} {readyNow === 1 ? "bed" : "beds"} ready now
             </>
           }
-          stats={
-            <OccupancyRing
-              className={styles.heroRing}
-              percent={statewidePercent}
-              alertAt={SERVICE_LINE * 100}
-              scope="Statewide"
-            />
-          }
-          statsAlign="end"
+          lead={<OccupancyRing percent={statewidePercent} alertAt={SERVICE_LINE * 100} scope="Statewide" />}
           aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
           bar={
             <div className={styles.heroChips} role="group" aria-label="Statewide counts">
@@ -783,7 +775,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                         {row.unit.name}
                       </Link>
                       <span className={styles.checkAge}>
-                        <b className={styles.num}>{dur(Math.max(0, now - row.confirmedAt) * 60_000)}</b> stale
+                        <b className={styles.num}>{plainAge(Math.max(0, now - row.confirmedAt))}</b> stale
                       </span>
                     </li>
                   ))}
@@ -857,7 +849,7 @@ function OccupancyFigure({ row }: { row: WardRow }) {
 }
 
 function Confirmed({ row, now }: { row: WardRow; now: Instant }) {
-  const age = dur(Math.max(0, now - row.confirmedAt) * 60_000);
+  const age = plainAge(Math.max(0, now - row.confirmedAt));
   return row.stale ? (
     <span className={styles.confirmed}>
       <StatusGlyph tone="warning" size={8} />
@@ -1086,7 +1078,7 @@ function WardTable({ rows, now, isDim }: { rows: WardRow[]; now: Instant; isDim:
               </span>
               <span role="cell" className={styles.num}>
                 {row.stale ? <StatusGlyph tone="warning" size={8} /> : null}{" "}
-                {dur(Math.max(0, now - row.confirmedAt) * 60_000)}
+                {plainAge(Math.max(0, now - row.confirmedAt))}
               </span>
               <span role="cell" className={styles.end}>
                 <Link

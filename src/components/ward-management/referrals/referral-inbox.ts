@@ -14,6 +14,8 @@ export type WardReferralInboxEntry = {
   waitlistedAt?: number;
   destination: WardReferralDestination;
   declineReason?: ReferralAddressing["declineReason"];
+  /** The bed this ward placed the referral in on its Bed board (`ACCEPT_REFERRAL.bedNumber`). */
+  heldBedNumber?: number;
   source: Referral["source"];
   originUnitId?: Referral["originUnitId"];
 };
@@ -36,6 +38,7 @@ export function wardReferralInboxEntries(referrals: readonly Referral[], unitId:
         withdrawnAt: arm.withdrawnAt,
         waitlistedAt: arm.waitlistedAt,
         declineReason: arm.declineReason,
+        ...(arm.heldBedNumber === undefined ? {} : { heldBedNumber: arm.heldBedNumber }),
         source: referral.source,
         originUnitId: referral.originUnitId,
         destination: {

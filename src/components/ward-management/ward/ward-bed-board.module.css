@@ -1,0 +1,491 @@
+/* Ward page, Bed board tab (v10 pass 3): pods, a corridor and one cell per bed, with pick up and
+   place. Tone lives in the glyphs; the only tinted fill is a free or fitting bed. */
+
+.board {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  min-width: 0;
+}
+
+.headCount {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.headCount b,
+.podCount b,
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+/* Waiting: one chip per person the board can place. */
+.waitlist {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.waitLabel {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.chipWrap {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px 0 10px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+  cursor: grab;
+  transition:
+    transform var(--wf-t-micro) var(--wf-ease-out),
+    box-shadow var(--wf-t-micro) var(--wf-ease-out);
+}
+
+.chip:hover {
+  border-color: var(--wf-line-3);
+}
+
+.chip[aria-pressed="true"] {
+  transform: translateY(-2px);
+  border-color: var(--wf-accent);
+  box-shadow:
+    0 0 0 1px var(--wf-accent),
+    var(--wf-e2);
+}
+
+.chip[aria-disabled="true"] {
+  color: var(--wf-dim);
+  cursor: not-allowed;
+}
+
+.chipName {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chipMeta {
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+}
+
+.none {
+  flex: none;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.homeLink {
+  flex: none;
+}
+
+/* The plan: pods side by side across a corridor on a mixed ward. */
+.plan {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-2);
+}
+
+.planTwo {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.podSlot {
+  position: relative;
+  display: flex;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.corridor {
+  flex: none;
+  width: 14px;
+  border-radius: var(--wf-r-pill);
+  background: repeating-linear-gradient(180deg, var(--wf-track) 0 10px, transparent 10px 16px);
+}
+
+.pod {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.podHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.podName {
+  flex: none;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.podRule {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.podCount {
+  flex: none;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.cells {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
+  gap: 6px;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  min-width: 0;
+  height: 56px;
+  padding: 6px 7px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  color: var(--wf-ink-2);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--wf-t-micro) var(--wf-ease-out),
+    box-shadow var(--wf-t-micro) var(--wf-ease-out),
+    transform var(--wf-t-micro) var(--wf-ease-out);
+}
+
+.cell:hover {
+  border-color: var(--wf-line-3);
+  box-shadow: var(--wf-e1-hover);
+}
+
+.cell:active {
+  transform: scale(0.97);
+}
+
+.cellNo {
+  font-variant-numeric: tabular-nums;
+}
+
+.cellState {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.cellWord {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 500 var(--wf-fs-12) / 1.2 var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.swatch {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--wf-data-rest);
+}
+
+/* A free place is the one tinted fill. */
+.cell[data-state="ready"] {
+  border-color: var(--wf-fit-edge);
+  background: linear-gradient(var(--wf-fit-tint), var(--wf-fit-tint)), var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+
+.cell[data-state="held"] {
+  border-style: dashed;
+  border-color: var(--wf-fit-edge);
+  color: var(--wf-ink-1);
+}
+
+.cell[data-state="closed"] {
+  border-style: dashed;
+  background: transparent;
+  color: var(--wf-ink-3);
+}
+
+.cell[data-state="incoming"] {
+  background: var(--wf-hatch-faint), var(--wf-surface);
+}
+
+/* Act now: the thin 1px red edge, no fill. */
+.cell[data-act="true"] {
+  border-color: var(--wf-act-edge);
+}
+
+.cell[data-dim="true"] {
+  border-color: var(--wf-line);
+  background: var(--wf-surface-2);
+  box-shadow: none;
+  color: var(--wf-dim);
+}
+
+.cell[data-dim="true"] .cellWord {
+  color: var(--wf-dim);
+}
+
+.cell[data-dim="true"] .swatch {
+  background: var(--wf-glyph-dim);
+}
+
+.plan[data-picking="true"] .cell[data-fits="true"] {
+  border-color: var(--wf-fit-edge);
+  box-shadow:
+    0 0 0 1px var(--wf-fit-edge),
+    var(--wf-e2);
+}
+
+.cell[aria-pressed="true"] {
+  transform: translateY(-3px);
+  border-color: var(--wf-accent);
+  box-shadow:
+    0 0 0 1px var(--wf-accent),
+    var(--wf-e2);
+  color: var(--wf-ink-1);
+}
+
+.cell[data-placed="true"] {
+  animation: wardBoardPlaced var(--wf-t-sheet, 240ms) var(--wf-ease-sheet, ease-out);
+}
+
+@keyframes wardBoardPlaced {
+  from {
+    transform: scale(0.92);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell,
+  .chip {
+    transition: none;
+  }
+
+  .cell[data-placed="true"] {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .plan[data-picking="true"] .cell[data-fits="true"],
+  .chip[aria-pressed="true"],
+  .cell[aria-pressed="true"] {
+    border: 2px solid Highlight;
+  }
+}
+
+/* Coming free today and the live sentence. */
+.soon {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.soonLabel {
+  flex: none;
+  margin-right: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.soonChip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.say {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 40px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.sayText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  margin-top: auto;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.key {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--wf-s-3);
+  white-space: nowrap;
+}
+
+.key > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.footHint {
+  margin-left: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tablet portrait: the two pods stack, the corridor runs across between them. */
+@media (max-width: 62.5rem) {
+  .planTwo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .podSlot {
+    flex-direction: column;
+  }
+
+  .corridor {
+    width: auto;
+    height: 10px;
+    background: repeating-linear-gradient(90deg, var(--wf-track) 0 10px, transparent 10px 16px);
+  }
+
+  .footHint {
+    display: none;
+  }
+}
+
+/* Phone: stacked pods, 44px chips and Put down, four cells a row. */
+@media (max-width: 48rem) {
+  .body {
+    padding: var(--wf-s-3);
+  }
+
+  .chip {
+    height: var(--wf-touch, 44px);
+  }
+
+  .say {
+    min-height: var(--wf-touch, 44px);
+  }
+
+  .say button {
+    min-height: var(--wf-touch, 44px);
+  }
+
+  .corridor {
+    display: none;
+  }
+
+  .soonChip {
+    height: var(--wf-touch, 44px);
+  }
+
+  .foot {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}
+
+/* Phone: the sentence may take two lines rather than cut off the instruction. */
+@media (max-width: 48rem) {
+  .sayText {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+  }
+}

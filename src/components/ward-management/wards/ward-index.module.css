@@ -820,13 +820,6 @@
   }
 }
 
-/* Page-local fix for the shared ring (report to foundation): its `.ring svg` size rule also
-   catches the status glyph under the figure. Keep the glyph at its own size. */
-.heroRing span svg {
-  width: auto;
-  height: auto;
-}
-
 /* The rail is narrower than Capacity's panel: the service name column gives way to the bar. */
 .rail .serviceCapRow {
   grid-template-columns: minmax(4.5rem, 5.5rem) minmax(0, 1fr) 3.75rem 12px;

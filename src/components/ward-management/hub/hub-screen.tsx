@@ -39,7 +39,7 @@ import {
   TextInput,
   buttonClass,
   cx,
-  durMinutes,
+  useIsPhone,
 } from "@/components/wf";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -69,6 +69,7 @@ import {
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 
 import styles from "./hub.module.css";
+import { plainAge } from "@/components/ward-management/wards/plain-age";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 /**
@@ -143,11 +144,12 @@ export function HubScreen() {
   const { units, bedReleases, admissions, leaveBeds, refreshRequests, dispatch } = useWardFlow();
   const { now, paused, togglePause } = usePageLive();
   const router = useRouter();
+  const isPhone = useIsPhone();
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<HubKind | "all">("all");
   const [order, setOrder] = useState<Order>("service");
-  // v10: a hero chip or Ready beds only highlights matching places and dims the rest. No row is
-  // hidden by a highlight; only the search and the kind switch narrow the list.
+  // v10: the search, a hero chip and Ready beds only highlight matching places and dim the rest.
+  // No row is hidden by a highlight; only the kind switch (a view, not a filter) narrows the list.
   const [highlight, setHighlight] = useState<HubHighlight>("none");
   const readyOnly = highlight === "ready";
   const setReadyOnly = (on: boolean) => setHighlight(on ? "ready" : "none");
@@ -183,17 +185,23 @@ export function HubScreen() {
     [units, bedReleases, admissions, leaveBeds, now],
   );
   const results = useMemo(() => {
-    const base = searchHub(entries, query, kind);
+    const base = searchHub(entries, "", kind);
     if (order === "service") return base;
     // Most ready first, inside the same service groups. A stable sort keeps the service order for ties.
     return [...base].sort((a, b) => (b.ready ?? -1) - (a.ready ?? -1));
-  }, [entries, query, kind, order]);
-  // Category counts follow the search, so each count matches the rows pressing that category shows.
-  const counts = useMemo(() => hubCounts(entries, query), [entries, query]);
-  const isLit = (entry: HubEntry) => matchesHighlight(entry, highlight);
-  const litCount = results.filter(isLit).length;
-  // The list foot's "of" stays the search-matched total, so "Ready beds only" reads as a narrowing.
-  const searchMatched = useMemo(() => searchHub(entries, query, "all").length, [entries, query]);
+  }, [entries, kind, order]);
+  // The places the search matches. The search highlights them; it never removes a row.
+  const queryMatches = useMemo(
+    () => (query.trim() === "" ? undefined : new Set(searchHub(entries, query, "all").map((entry) => entry.id))),
+    [entries, query],
+  );
+  const highlighting = queryMatches !== undefined || highlight !== "none";
+  // Category counts are the rows pressing that category shows, so they do not follow the search.
+  const counts = useMemo(() => hubCounts(entries, ""), [entries]);
+  const isLit = (entry: HubEntry) =>
+    (queryMatches === undefined || queryMatches.has(entry.id)) && matchesHighlight(entry, highlight);
+  const litResults = results.filter(isLit);
+  const litCount = litResults.length;
   const readyBedsCount = useMemo(() => entries.reduce((sum, entry) => sum + (entry.ready ?? 0), 0), [entries]);
   const isFiltered = query !== "" || kind !== "all" || highlight !== "none";
 
@@ -271,13 +279,25 @@ export function HubScreen() {
       return;
     }
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
-    if (results.length === 0) return;
+    // The arrows walk the highlighted places only, so a search reads as a short list to step through.
+    const walk = highlighting ? litResults : results;
+    if (walk.length === 0) return;
     event.preventDefault();
-    const current = results.findIndex((entry) => entry.id === selectedId);
+    const current = walk.findIndex((entry) => entry.id === selectedId);
     const step = event.key === "ArrowDown" ? 1 : -1;
-    const next =
-      current === -1 ? (step === 1 ? 0 : results.length - 1) : (current + step + results.length) % results.length;
-    setSelectedId(results[next]?.id);
+    const next = current === -1 ? (step === 1 ? 0 : walk.length - 1) : (current + step + walk.length) % walk.length;
+    const nextId = walk[next]?.id;
+    setSelectedId(nextId);
+    if (nextId !== undefined) scrollRowIntoView(nextId);
+  }
+
+  function scrollRowIntoView(id: string) {
+    window.requestAnimationFrame(() => {
+      const row = Array.from(document.querySelectorAll<HTMLElement>("[data-hub-row]")).find(
+        (element) => element.dataset.hubRow === id,
+      );
+      row?.scrollIntoView?.({ block: "nearest" });
+    });
   }
 
   function reveal(id: string) {
@@ -303,7 +323,8 @@ export function HubScreen() {
       <li
         key={entry.id}
         className={cx(styles.resultRow, active && styles.resultRowActive)}
-        data-dim={highlight !== "none" && !isLit(entry) ? "true" : undefined}
+        data-dim={highlighting && !isLit(entry) ? "true" : undefined}
+        data-hub-row={entry.id}
       >
         <button
           type="button"
@@ -312,7 +333,7 @@ export function HubScreen() {
           onClick={() => {
             // Phone: the preview pane is not shown, so a tap opens the place itself, exactly as the
             // preview's own Open link does. Every wider screen keeps select-to-preview.
-            if (typeof window.matchMedia === "function" && window.matchMedia("(max-width: 48rem)").matches) {
+            if (isPhone) {
               recordHubVisit(entry.id);
               router.push(entry.href);
               return;
@@ -346,11 +367,11 @@ export function HubScreen() {
               <>
                 {/* The word, not only the colour — a stale reading must survive a reader who cannot see it. */}
                 <StatusGlyph tone="warning" size={8} />
-                {durMinutes(now - entry.confirmedAt)} <span className={styles.flagPill}>stale</span>
+                {plainAge(now - entry.confirmedAt)} <span className={styles.flagPill}>stale</span>
               </>
             ) : (
               <>
-                {durMinutes(now - entry.confirmedAt)} <span className={styles.resultAgo}>ago</span>
+                {plainAge(now - entry.confirmedAt)} <span className={styles.resultAgo}>ago</span>
               </>
             )}
           </span>
@@ -450,7 +471,7 @@ export function HubScreen() {
                 {
                   id: "oldest",
                   label: "Oldest bed count",
-                  value: oldestConfirmedAt === undefined ? "Not recorded" : durMinutes(now - oldestConfirmedAt),
+                  value: oldestConfirmedAt === undefined ? "Not recorded" : plainAge(now - oldestConfirmedAt),
                 },
               ]}
               notChecked={["ED and team capacity, no feed"]}
@@ -550,78 +571,87 @@ export function HubScreen() {
               a screen reader announcing "list, 16 items") counts places, not headings.
             */}
             <div className={styles.listScroll} id="hub-results" role="region" aria-label="Network results" tabIndex={0}>
-              {results.length === 0 ? (
-                <p className={styles.emptyState}>
+              {queryMatches !== undefined && litCount === 0 ? (
+                <p className={styles.emptyState} data-testid="hub-no-match">
                   {/* Names the ACTIVE FILTER: "nothing matches" differs from "nothing of this kind matches". */}
                   No{" "}
                   {kind === "all"
                     ? "ward, emergency department or community team"
                     : KIND_WORD_LONG[kind].toLowerCase()}{" "}
-                  matches “{query}”. Try a hospital name, a health service such as “WACHS”, or clear the search.
+                  matches “{query}”. Try a hospital name or a health service such as “WACHS”. Every place stays below.{" "}
+                  <button
+                    type="button"
+                    className={styles.clearHighlight}
+                    onClick={() => {
+                      setQuery("");
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    Clear search
+                  </button>
                 </p>
-              ) : (
-                sections.map((section) => {
-                  const sectionBeds = section.key === "ward" ? networkBeds(section.entries) : undefined;
-                  const sectionShare =
-                    sectionBeds === undefined ? undefined : occupiedShare(sectionBeds.occupied, sectionBeds.beds);
-                  return (
-                    <section key={section.key} aria-label={section.label} className={styles.group}>
-                      <div className={styles.groupHeadRow}>
-                        <h2 className={styles.groupHead}>
-                          {section.label} <Count n={section.entries.length} />
-                        </h2>
-                        {sectionBeds === undefined ? null : (
-                          <span className={styles.groupMeta}>
-                            {sectionBeds.ready} ready{sectionShare === undefined ? "" : ` · ${sectionShare} occupied`}
-                          </span>
-                        )}
-                      </div>
-                      {section.subgroups.length === 0 ? (
-                        <ul className={styles.groupList}>{section.entries.map(renderRow)}</ul>
-                      ) : (
-                        section.subgroups.map((group) => {
-                          const key = `${section.key}-${group.label}`;
-                          const open = !folded.has(key);
-                          const groupBeds = networkBeds(group.entries);
-                          const groupShare = occupiedShare(groupBeds.occupied, groupBeds.beds);
-                          return (
-                            <div key={key}>
-                              <h3 className={styles.subGroupHead}>
-                                <button
-                                  type="button"
-                                  className={styles.foldButton}
-                                  aria-expanded={open}
-                                  onClick={() => toggleFold(key)}
-                                >
-                                  <ChevronDown className={styles.foldIcon} size={14} aria-hidden="true" />
-                                  <span className={styles.subGroupName}>{group.label}</span>
-                                  <span className={styles.subGroupCount}>
-                                    {group.entries.length} {group.entries.length === 1 ? "ward" : "wards"}
-                                  </span>
-                                  <span className={styles.subGroupMeta}>
-                                    {groupBeds.ready} ready
-                                    {groupShare === undefined ? null : (
-                                      <span className={styles.subGroupShare}>{groupShare} occupied</span>
-                                    )}
-                                  </span>
-                                </button>
-                              </h3>
-                              {open ? <ul className={styles.groupList}>{group.entries.map(renderRow)}</ul> : null}
-                            </div>
-                          );
-                        })
+              ) : null}
+              {sections.map((section) => {
+                const sectionBeds = section.key === "ward" ? networkBeds(section.entries) : undefined;
+                const sectionShare =
+                  sectionBeds === undefined ? undefined : occupiedShare(sectionBeds.occupied, sectionBeds.beds);
+                return (
+                  <section key={section.key} aria-label={section.label} className={styles.group}>
+                    <div className={styles.groupHeadRow}>
+                      <h2 className={styles.groupHead}>
+                        {section.label} <Count n={section.entries.length} />
+                      </h2>
+                      {sectionBeds === undefined ? null : (
+                        <span className={styles.groupMeta}>
+                          {sectionBeds.ready} ready{sectionShare === undefined ? "" : ` · ${sectionShare} occupied`}
+                        </span>
                       )}
-                    </section>
-                  );
-                })
-              )}
+                    </div>
+                    {section.subgroups.length === 0 ? (
+                      <ul className={styles.groupList}>{section.entries.map(renderRow)}</ul>
+                    ) : (
+                      section.subgroups.map((group) => {
+                        const key = `${section.key}-${group.label}`;
+                        const open = !folded.has(key);
+                        const groupBeds = networkBeds(group.entries);
+                        const groupShare = occupiedShare(groupBeds.occupied, groupBeds.beds);
+                        return (
+                          <div key={key}>
+                            <h3 className={styles.subGroupHead}>
+                              <button
+                                type="button"
+                                className={styles.foldButton}
+                                aria-expanded={open}
+                                onClick={() => toggleFold(key)}
+                              >
+                                <ChevronDown className={styles.foldIcon} size={14} aria-hidden="true" />
+                                <span className={styles.subGroupName}>{group.label}</span>
+                                <span className={styles.subGroupCount}>
+                                  {group.entries.length} {group.entries.length === 1 ? "ward" : "wards"}
+                                </span>
+                                <span className={styles.subGroupMeta}>
+                                  {groupBeds.ready} ready
+                                  {groupShare === undefined ? null : (
+                                    <span className={styles.subGroupShare}>{groupShare} occupied</span>
+                                  )}
+                                </span>
+                              </button>
+                            </h3>
+                            {open ? <ul className={styles.groupList}>{group.entries.map(renderRow)}</ul> : null}
+                          </div>
+                        );
+                      })
+                    )}
+                  </section>
+                );
+              })}
             </div>
             <div className={styles.listFoot}>
               <BedStripLegend />
-              {highlight === "none" ? (
+              {!highlighting ? (
                 <span className={styles.shownCount}>
                   <b>
-                    {results.length} of {searchMatched}
+                    {results.length} of {totals.all}
                   </b>{" "}
                   shown
                 </span>
@@ -631,7 +661,14 @@ export function HubScreen() {
                     {litCount} of {results.length}
                   </b>{" "}
                   highlighted. All rows stay.
-                  <button type="button" className={styles.clearHighlight} onClick={() => setHighlight("none")}>
+                  <button
+                    type="button"
+                    className={styles.clearHighlight}
+                    onClick={() => {
+                      setHighlight("none");
+                      setQuery("");
+                    }}
+                  >
                     Clear highlight
                   </button>
                 </span>
@@ -727,7 +764,7 @@ export function HubScreen() {
                                 {formatInstantWithDay(selected.confirmedAt, now)}
                               </span>{" "}
                               <span className={styles.factMuted}>
-                                {durMinutes(now - selected.confirmedAt)} ago
+                                {plainAge(now - selected.confirmedAt)} ago
                                 {selected.stale === true ? ", stale, check with the ward before relying on it" : ""}
                               </span>
                             </dd>
