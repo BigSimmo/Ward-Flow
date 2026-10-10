@@ -68,6 +68,13 @@ const APPROVED_SHARED_MODULES = new Map([
   ["@/lib/form-register", "shared form registration"],
   ["@/lib/client-store-factory", "shared client-side store helper"],
   [
+    "@/lib/theme-client",
+    "the app's ONE theme switch, ported from the unmerged v8 branch on 10 October 2026. Before it the " +
+      "ward kept its own appearance key, so a ward pin could paint the shell in one theme and other " +
+      "pages in another. One owner is the fix, so the ward controls call it rather than keep a copy. " +
+      "It also owns the Glare mode preference for the same reason.",
+  ],
+  [
     "@/components/ui/missing-value",
     "the shared empty-value renderer, which distinguishes a field that CANNOT apply from one nobody filled in -- arrived with main and is a clinical-meaning distinction, not a convenience",
   ],
@@ -82,11 +89,6 @@ const APPROVED_SHARED_MODULES = new Map([
 const APPROVED_ROUTE_REFERENCES = new Map([
   ["src/lib/developer-area/headers.ts", "route list for the developer-area header"],
   ["src/proxy.ts", "the constellation-to-network redirect kept for historical deep links"],
-  [
-    "src/lib/theme.ts",
-    "the pre-paint theme script reads the ward appearance pin only on ward routes, so ward pages paint " +
-      "their chosen theme first time and every other page keeps the clinical pin",
-  ],
   /*
    * ⚠️ THESE TWO ARE NOT OUTSIDE WARD FLOW — THEY ARE WARD FLOW, SITED ELSEWHERE ON PURPOSE, and
    * they are here because the literal this guard matches (`mockups/ward-flow`) is a PREFIX of
@@ -269,7 +271,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // 9 → 10 on 2026-09-23: the same Sheet stack must coordinate custom Ward dialogs.
     // 10 -> 9 on 2026-09-28: the developer-key access gate was removed at Josh's request.
     // 9 -> 10 on 2026-10-07: the v6 design system kit, @/components/wf, approved by Josh.
-    expect(APPROVED_SHARED_MODULES.size).toBe(10);
+    // 10 -> 11 on 2026-10-10: @/lib/theme-client, the one theme switch. The ward's own appearance key
+    // was the defect, so the ward now calls the owner.
+    expect(APPROVED_SHARED_MODULES.size).toBe(11);
     // ⚠️ AND THE MEMBERSHIP, NOT ONLY THE COUNT. A size pin cannot tell a widening from a SWAP:
     // remove one approved module, add another, and the count stays unchanged while Ward Flow's seam
     // has changed — which is the thing this list exists to control. The argument is already made
@@ -288,6 +292,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/components/wf",
       "@/lib/client-store-factory",
       "@/lib/form-register",
+      "@/lib/theme-client",
     ]);
     // 4 -> 6 on 2026-09-12, when the sign-in screen arrived as a SIBLING route
     // (`/mockups/ward-flow-sign-in`) whose path contains this guard's literal as a prefix. Raised
@@ -305,9 +310,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // 7 -> 8 in the standalone app: its not-found fallback names the only product route.
     // 8 -> 7 on 2026-09-28: the developer-key gate went, and with it link-access-shared.ts's
     // default destination.
-    // 7 -> 8 on 2026-10-09: the pre-paint theme script reads the ward appearance pin on ward routes
-    // only, so ward pages paint their theme first time without overriding other pages.
-    expect(APPROVED_ROUTE_REFERENCES.size).toBe(8);
+    // 7 -> 8 on 2026-10-09: the pre-paint theme script read the ward appearance pin on ward routes.
+    // 8 -> 7 on 2026-10-10: one theme key for the whole app, so the script no longer names the route.
+    expect(APPROVED_ROUTE_REFERENCES.size).toBe(7);
     expect(wardFiles.length).toBeGreaterThan(50);
     expect(allSourceFiles.length).toBeGreaterThan(wardFiles.length);
   });

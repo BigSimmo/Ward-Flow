@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { OverlayPortal } from "@/components/ui/overlay-root";
-import { ToastView } from "@/components/wf/toast";
+import { ToastView, type ToastUndo } from "@/components/wf/toast";
 
 export type ToastTone = "success" | "info" | "warning" | "danger";
 
@@ -18,6 +18,11 @@ export type Toast = {
   duration?: number;
   /** One action, such as Undo. */
   action?: { label: string; onAction: () => void };
+  /**
+   * A timed Undo window with its shrinking bar. The toast stays until the window ends, then
+   * closes itself, so `duration` defaults to 0 here too.
+   */
+  undo?: ToastUndo;
   /** Mono meta on the right, such as "1s ago". */
   meta?: string;
   /**
@@ -38,6 +43,8 @@ type ToastContextValue = {
   toasts: Toast[];
   push: (toast: ToastInput) => string;
   dismiss: (id: string) => void;
+  /** Runs the caller's Undo then closes the toast, so its `onExpire` never runs. */
+  undoAndDismiss: (id: string, onUndo: () => void) => void;
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -55,40 +62,87 @@ export function ToastProvider({ children }: ToastProviderProps) {
   const toastsRef = useRef<Toast[]>([]);
   const counter = useRef(0);
 
-  const dismiss = useCallback((id: string) => {
-    const next = toastsRef.current.filter((toast) => toast.id !== id);
-    toastsRef.current = next;
-    setToasts(next);
+  // Visible Undo toasts whose window has already ended, so `onExpire` runs at most once each. An id
+  // leaves the set when its toast is removed.
+  const settled = useRef(new Set<string>());
+
+  // Ends an Undo window without Undo: the X, the visible cap and the timer all count, so a caller
+  // that commits on `onExpire` always commits.
+  const expire = useCallback((toast: Toast) => {
+    if (!toast.undo || settled.current.has(toast.id)) return;
+    settled.current.add(toast.id);
+    toast.undo.onExpire?.();
   }, []);
 
-  const push = useCallback((toast: ToastInput) => {
-    const duplicateIndex = toastsRef.current.findIndex(
-      (current) => current.tone === toast.tone && current.title === toast.title && current.body === toast.body,
-    );
-    if (duplicateIndex >= 0) {
-      const duplicate = toastsRef.current[duplicateIndex]!;
-      const refreshed: Toast = {
-        ...duplicate,
-        ...toast,
-        id: duplicate.id,
-        duration: toast.duration ?? duplicate.duration,
-        announceKey: (duplicate.announceKey ?? 0) + 1,
-      };
-      const next = toastsRef.current.slice();
-      next[duplicateIndex] = refreshed;
+  const dismiss = useCallback(
+    (id: string) => {
+      const gone = toastsRef.current.find((toast) => toast.id === id);
+      const next = toastsRef.current.filter((toast) => toast.id !== id);
       toastsRef.current = next;
       setToasts(next);
-      return duplicate.id;
-    }
-    counter.current += 1;
-    const id = `toast-${counter.current}`;
-    const next = [...toastsRef.current, { ...toast, id, announceKey: 0 }].slice(-MAX_VISIBLE_TOASTS);
-    toastsRef.current = next;
-    setToasts(next);
-    return id;
-  }, []);
+      if (gone) expire(gone);
+      settled.current.delete(id);
+    },
+    [expire],
+  );
 
-  const value = useMemo(() => ({ toasts, push, dismiss }), [toasts, push, dismiss]);
+  // Settles the toast before the caller's onUndo runs, so nothing that callback does (closing or
+  // pushing out its own toast) can also expire it, and the toast still closes if the callback throws.
+  const undoAndDismiss = useCallback(
+    (id: string, onUndo: () => void) => {
+      settled.current.add(id);
+      try {
+        onUndo();
+      } finally {
+        dismiss(id);
+      }
+    },
+    [dismiss],
+  );
+
+  const push = useCallback(
+    (toast: ToastInput) => {
+      // An Undo toast is never folded into another: each action keeps its own window and callbacks.
+      const duplicateIndex = toast.undo
+        ? -1
+        : toastsRef.current.findIndex(
+            (current) =>
+              !current.undo &&
+              current.tone === toast.tone &&
+              current.title === toast.title &&
+              current.body === toast.body,
+          );
+      if (duplicateIndex >= 0) {
+        const duplicate = toastsRef.current[duplicateIndex]!;
+        const refreshed: Toast = {
+          ...duplicate,
+          ...toast,
+          id: duplicate.id,
+          duration: toast.duration ?? duplicate.duration,
+          announceKey: (duplicate.announceKey ?? 0) + 1,
+        };
+        const next = toastsRef.current.slice();
+        next[duplicateIndex] = refreshed;
+        toastsRef.current = next;
+        setToasts(next);
+        return duplicate.id;
+      }
+      counter.current += 1;
+      const id = `toast-${counter.current}`;
+      const all = [...toastsRef.current, { ...toast, id, announceKey: 0 }];
+      const next = all.slice(-MAX_VISIBLE_TOASTS);
+      toastsRef.current = next;
+      setToasts(next);
+      for (const evicted of all.slice(0, all.length - next.length)) {
+        expire(evicted);
+        settled.current.delete(evicted.id);
+      }
+      return id;
+    },
+    [expire],
+  );
+
+  const value = useMemo(() => ({ toasts, push, dismiss, undoAndDismiss }), [toasts, push, dismiss, undoAndDismiss]);
 
   return (
     <ToastContext.Provider value={value}>
@@ -104,8 +158,17 @@ export function useToast(): ToastApi {
   return { push: context.push, dismiss: context.dismiss };
 }
 
-function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string) => void }) {
-  const duration = toast.duration ?? (toast.action ? 0 : DEFAULT_DURATION);
+function ToastCard({
+  toast,
+  onDismiss,
+  onUndone,
+}: {
+  toast: Toast;
+  onDismiss: (id: string) => void;
+  onUndone: (id: string, onUndo: () => void) => void;
+}) {
+  // An Undo toast runs on its own window alone: a shorter duration would close it and commit early.
+  const duration = toast.undo ? 0 : (toast.duration ?? (toast.action ? 0 : DEFAULT_DURATION));
 
   useEffect(() => {
     if (duration <= 0) return;
@@ -137,6 +200,16 @@ function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
             }
           : undefined
       }
+      undo={
+        toast.undo
+          ? {
+              ...toast.undo,
+              onUndo: () => onUndone(toast.id, () => toast.undo?.onUndo()),
+              // The provider's dismiss calls the caller's onExpire, once.
+              onExpire: () => onDismiss(toast.id),
+            }
+          : undefined
+      }
       onClose={() => onDismiss(toast.id)}
       closeLabel={`Dismiss: ${toast.title}`}
     />
@@ -152,7 +225,7 @@ function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
 export function ToastRegion() {
   const context = useContext(ToastContext);
   if (!context) return null;
-  const { toasts, dismiss } = context;
+  const { toasts, dismiss, undoAndDismiss } = context;
 
   const region = (
     <div
@@ -163,7 +236,7 @@ export function ToastRegion() {
       className="pointer-events-none fixed inset-x-0 bottom-0 flex flex-col items-center gap-2 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:right-0 sm:items-end"
     >
       {toasts.map((toast) => (
-        <ToastCard key={toast.id} toast={toast} onDismiss={dismiss} />
+        <ToastCard key={toast.id} toast={toast} onDismiss={dismiss} onUndone={undoAndDismiss} />
       ))}
     </div>
   );

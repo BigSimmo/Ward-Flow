@@ -344,6 +344,8 @@ const SHORTCUTS: readonly { readonly label: string; readonly keys: readonly stri
 export function DisplayPane({
   appearance,
   onAppearanceChange,
+  glare,
+  onGlareChange,
   railOpen,
   onRailChange,
   reducedMotion,
@@ -354,6 +356,8 @@ export function DisplayPane({
 }: {
   appearance: WardAppearance;
   onAppearanceChange: (next: WardAppearance) => void;
+  glare: boolean;
+  onGlareChange: (next: boolean) => void;
   railOpen: boolean;
   onRailChange: (open: boolean) => void;
   reducedMotion: boolean;
@@ -381,6 +385,14 @@ export function DisplayPane({
                 value={appearance}
                 onChange={onAppearanceChange}
               />
+            </SettingRow>
+            <SettingRow
+              setting="glare"
+              title="Glare mode"
+              sub="Stronger contrast for bright rooms"
+              testId="ward-settings-glare"
+            >
+              <RowSwitch name="Glare mode" checked={glare} onCheckedChange={onGlareChange} />
             </SettingRow>
             <SettingRow
               setting="sidebar"

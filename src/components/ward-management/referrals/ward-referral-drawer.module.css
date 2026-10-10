@@ -2165,7 +2165,8 @@ details.refCard > summary {
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-11);
   text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Wraps at the 12px floor instead of cutting a short note such as "Check before sending". */
+  white-space: normal;
 }
 
 .railHead {

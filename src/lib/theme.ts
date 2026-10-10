@@ -24,36 +24,58 @@ export const APP_THEME_COLORS = {
 export const THEME_STORAGE_KEY = "clinical-kb-theme";
 
 /**
- * The Ward Flow appearance pin, written only by `applyAppearance` in `shell/ward-bar.tsx`. On ward
- * routes the bootstrap reads it instead of the clinical pin, so the first paint matches what
- * `WardRail` applies after mounting: the pin, or the OS when none is set. Other routes never read it.
- */
-const WARD_APPEARANCE_STORAGE_KEY = "ward-flow-appearance";
-
-/** The route `src/app/mockups/ward-flow/layout.tsx` serves, where `WardRail` owns the theme. */
-const WARD_ROUTE = "/mockups/ward-flow";
-
-/**
  * Cookie mirror of an explicit light/dark pin so the server layout can paint
- * the correct `<html>` class before hydration. Cleared for "system".
+ * the correct `<html>` class and `data-theme` before hydration. Cleared for "system".
  */
 export const THEME_COOKIE_NAME = "clinical-theme";
 
 /**
- * Runs before paint. Storage is deliberately isolated so privacy modes that
- * throw on localStorage still receive their OS-selected theme. When localStorage
- * has no explicit pin, fall back to the `clinical-theme` cookie so a
- * cookie-only preference (matching RootLayout) is not immediately overwritten.
- *
- * Both catches swallow deliberately, and each says so inline. This runs before
- * React mounts, so there is no logger or toast to report to, and every failure
- * here means the same thing: no explicit pin was readable, so the next fallback
- * in the chain (cookie, then the OS preference) applies. Surfacing the error
- * instead would trade a correct default appearance for a broken first paint.
- * Keep the inline notes to one short clause — this string ships in every
- * page's `<head>`.
+ * Storage key the ward shell used before the two theme switches were joined. The pre-paint script
+ * moves a stored ward choice into `THEME_STORAGE_KEY` once, then deletes it, so nobody loses their
+ * pin. Nothing else may read or write it.
  */
-export const THEME_BOOTSTRAP_SCRIPT = `(function(){var w=false;try{var p=window.location.pathname;w=p==="${WARD_ROUTE}"||p.indexOf("${WARD_ROUTE}/")===0;}catch(e){/* no location - not a ward route */}var t=null;if(w){try{t=localStorage.getItem("${WARD_APPEARANCE_STORAGE_KEY}");}catch(e){/* storage blocked - follow the OS */}if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t);}else{t=null;}}else{try{t=localStorage.getItem("${THEME_STORAGE_KEY}");}catch(e){/* storage blocked (private/partitioned) - fall through to the cookie, then the OS preference */}if(t!=="light"&&t!=="dark"){try{var m=document.cookie.match(/(?:^|; )${THEME_COOKIE_NAME}=(light|dark)(?:;|$)/);if(m)t=m[1];}catch(e){/* cookie access blocked (sandboxed frame) - the OS preference below applies */}}}var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);var c=d?"${APP_THEME_COLORS.dark}":"${APP_THEME_COLORS.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",c);});})();`;
+export const LEGACY_WARD_APPEARANCE_KEY = "ward-flow-appearance";
+
+/**
+ * Runs before paint and is the first half of the one theme switch (`./theme-client` is the other).
+ * It resolves the pin (stored choice, else the legacy ward choice, else the cookie, else the OS) and
+ * applies all three outputs together: `data-theme` on <html> when pinned, the legacy `.dark` class
+ * for the older token layers, and the browser `theme-color`. In Auto it keeps `.dark` and
+ * `theme-color` in step when the OS changes, so no React hook needs to be mounted for that. An
+ * explicit `data-theme` means a pin, so the OS listener leaves it alone.
+ *
+ * Every catch swallows deliberately, and each says so inline. This runs before React mounts, so
+ * there is no logger or toast to report to, and every failure here means the same thing: no
+ * explicit pin was readable, so the next fallback applies. Keep the inline notes to one short
+ * clause — this string ships in every page's `<head>`.
+ */
+export const THEME_BOOTSTRAP_SCRIPT = `(function(){var K="${THEME_STORAGE_KEY}",L="${LEGACY_WARD_APPEARANCE_KEY}",t=null;try{t=localStorage.getItem(K);var w=localStorage.getItem(L);if(t!=="light"&&t!=="dark"&&(w==="light"||w==="dark")){t=w;localStorage.setItem(K,w);try{document.cookie="${THEME_COOKIE_NAME}="+w+"; path=/; max-age=31536000; SameSite=Lax";}catch(e){/* cookie blocked - storage still holds the pin */}}if(w!==null)localStorage.removeItem(L);}catch(e){/* storage blocked (private/partitioned) - fall through to the cookie, then the OS preference */}if(t!=="light"&&t!=="dark"){t=null;try{var m=document.cookie.match(/(?:^|; )${THEME_COOKIE_NAME}=(light|dark)(?:;|$)/);if(m)t=m[1];}catch(e){/* cookie access blocked (sandboxed frame) - the OS preference below applies */}}var r=document.documentElement,q=null;try{q=window.matchMedia("(prefers-color-scheme: dark)");}catch(e){/* no matchMedia - treat the OS as light */}function paint(d){r.classList.toggle("dark",d);var c=d?"${APP_THEME_COLORS.dark}":"${APP_THEME_COLORS.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(x){x.setAttribute("content",c);});}if(r.setAttribute){if(t)r.setAttribute("data-theme",t);else r.removeAttribute("data-theme");}paint(t?t==="dark":!!(q&&q.matches));try{q.addEventListener("change",function(){if(!r.getAttribute("data-theme"))paint(q.matches);});}catch(e){/* old browser - Auto follows the OS on the next load */}})();`;
+
+/**
+ * Glare mode: a separate on/off preference for ward PCs by bright windows. On sets
+ * `data-mode="glare"` on <html>, which the v9 token layer styles. Off is the absence of a stored
+ * value. It is independent of the light/dark choice.
+ */
+export const GLARE_STORAGE_KEY = "clinical-kb-glare";
+
+/** Cookie mirror of Glare mode so the server layout paints `data-mode` before hydration. */
+export const GLARE_COOKIE_NAME = "clinical-glare";
+
+/** The value stored (and mirrored to the cookie) while Glare mode is on. */
+export const GLARE_ON_VALUE = "on";
+
+/** Reads Glare mode from a raw `document.cookie` string. */
+export function readGlareCookie(cookieSource: string | null | undefined): boolean {
+  if (!cookieSource) return false;
+  return new RegExp(`(?:^|;\\s*)${GLARE_COOKIE_NAME}=${GLARE_ON_VALUE}(?:;|$)`).test(cookieSource);
+}
+
+/**
+ * Runs before paint, straight after `THEME_BOOTSTRAP_SCRIPT`, so a Glare choice never flashes in.
+ * Stored value first, then the cookie. Both catches swallow deliberately: a blocked read means Glare
+ * mode is off, which is the default.
+ */
+export const GLARE_BOOTSTRAP_SCRIPT = `(function(){var g=null;try{g=localStorage.getItem("${GLARE_STORAGE_KEY}");}catch(e){/* storage blocked - try the cookie */}if(g!=="${GLARE_ON_VALUE}"){try{if(/(?:^|; )${GLARE_COOKIE_NAME}=${GLARE_ON_VALUE}(?:;|$)/.test(document.cookie))g="${GLARE_ON_VALUE}";}catch(e){/* cookie blocked - Glare stays off */}}var r=document.documentElement;if(r.setAttribute){if(g==="${GLARE_ON_VALUE}"){r.setAttribute("data-mode","glare");r.setAttribute("data-theme","light");r.classList.remove("dark");document.querySelectorAll('meta[name="theme-color"]').forEach(function(x){x.setAttribute("content","${APP_THEME_COLORS.light}");});}else if(r.getAttribute&&r.getAttribute("data-mode")==="glare")r.removeAttribute("data-mode");}})();`;
 
 export function resolveThemePreference(storedTheme: string | null | undefined, prefersDark: boolean): ResolvedTheme {
   if (storedTheme === "light" || storedTheme === "dark") return storedTheme;

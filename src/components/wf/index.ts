@@ -60,7 +60,9 @@ export {
 } from "./table";
 export { Sheet, Drawer, type SheetProps } from "./sheet";
 export { Menu, Popover, type MenuItem, type MenuProps, type MenuTriggerProps, type PopoverProps } from "./menu";
-export { ToastView, type ToastViewProps } from "./toast";
+export { ToastView, type ToastViewProps, type ToastUndo } from "./toast";
+export { Dialog, type DialogProps, type DialogAction } from "./dialog";
+export { StateLine, type StateLineProps, type StateKind, type StateAction } from "./state";
 export { ToastProvider, useToast, type ToastInput } from "@/components/ui/toast";
 export { Tooltip, type TooltipProps } from "@/components/ui/tooltip";
 export { LiveChip, Timer, type LiveState, type LiveChipProps, type TimerProps, type TimerDirection } from "./live";
@@ -102,3 +104,20 @@ export {
   type ColumnDatum,
   type LinePoint,
 } from "./chart";
+export {
+  PhoneSheet,
+  PhoneTabBar,
+  PhoneListRow,
+  PhoneHero,
+  ScrollRow,
+  PHONE_TAB_LIMIT,
+  PHONE_HERO_FIGURE_LIMIT,
+  type PhoneSheetProps,
+  type PhoneTab,
+  type PhoneTabBarProps,
+  type PhoneListRowProps,
+  type PhoneRowAction,
+  type PhoneHeroProps,
+  type PhoneHeroFigure,
+  type ScrollRowProps,
+} from "./phone";

@@ -20,16 +20,25 @@ export type ChoiceItem<T extends string = string> = {
   href?: string;
 };
 
+/**
+ * The item that holds the tab stop: the selected one, or the first when nothing matches the value
+ * (a stale filter, an empty selection). Without this fallback every item gets tabIndex -1 and the
+ * whole group drops out of the keyboard order (v9 section 8: one item in every tab list holds it).
+ */
+function tabStopIndex<T extends string>(items: ChoiceItem<T>[], value: T): number {
+  return Math.max(
+    0,
+    items.findIndex((item) => item.id === value),
+  );
+}
+
 /** Arrow, Home and End keys move between items and select the one reached (automatic activation). */
 function useRoving<T extends string>(items: ChoiceItem<T>[], value: T, onChange: (id: T) => void) {
   const refs = useRef<Array<HTMLElement | null>>([]);
   const onKeyDown = (event: KeyboardEvent) => {
     const count = items.length;
     if (count === 0) return;
-    const current = Math.max(
-      0,
-      items.findIndex((item) => item.id === value),
-    );
+    const current = tabStopIndex(items, value);
     let next: number | null = null;
     if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (current + 1) % count;
     else if (event.key === "ArrowLeft" || event.key === "ArrowUp") next = (current - 1 + count) % count;
@@ -57,6 +66,7 @@ export type TabsProps<T extends string> = {
 /** Tabs with an ink underline. `tablist` with arrow keys, Home and End; counts sit in `.k`. */
 export function Tabs<T extends string>({ items, value, onChange, label, idPrefix, className }: TabsProps<T>) {
   const { refs, onKeyDown } = useRoving(items, value, onChange);
+  const stop = tabStopIndex(items, value);
   return (
     <div role="tablist" aria-label={label} className={cx(styles.tabs, className)} onKeyDown={onKeyDown}>
       {items.map((item, index) => {
@@ -72,13 +82,13 @@ export function Tabs<T extends string>({ items, value, onChange, label, idPrefix
             id={idPrefix ? `${idPrefix}-tab-${item.id}` : undefined}
             aria-controls={idPrefix ? `${idPrefix}-panel-${item.id}` : undefined}
             aria-selected={selected}
-            tabIndex={selected ? 0 : -1}
+            tabIndex={index === stop ? 0 : -1}
             className={styles.tab}
             onClick={() => onChange(item.id)}
           >
             {item.tone ? <StatusGlyph tone={item.tone} size={9} /> : null}
             {item.label}
-            {item.count != null ? <Count n={item.count} /> : null}
+            {item.count != null ? <Count n={item.count} className={styles.k} /> : null}
           </button>
         );
       })}
@@ -143,6 +153,7 @@ export function Segmented<T extends string>({
   className,
 }: SegmentedProps<T>) {
   const { refs, onKeyDown } = useRoving(items, value, (id) => onChange?.(id));
+  const stop = tabStopIndex(items, value);
   const groupClass = cx(
     variant === "hero" ? styles.trk : styles.seg,
     size === "md" && styles.md,
@@ -192,7 +203,7 @@ export function Segmented<T extends string>({
             role="radio"
             aria-checked={checked}
             aria-disabled={unavailable || undefined}
-            tabIndex={checked ? 0 : -1}
+            tabIndex={index === stop ? 0 : -1}
             className={cx(styles.segItem, checked && styles.segOn)}
             onClick={() => onChange?.(item.id)}
           >
@@ -241,7 +252,7 @@ export function FilterChip({
     >
       {tone ? <StatusGlyph tone={tone} size={9} /> : null}
       <span className={styles.chipLabel}>{children}</span>
-      {count != null ? <Count n={count} /> : null}
+      {count != null ? <Count n={count} className={styles.k} /> : null}
     </button>
   );
 }

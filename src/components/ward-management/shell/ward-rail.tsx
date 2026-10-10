@@ -43,8 +43,15 @@ import {
 import { WARD_NAV_ICONS, WARD_VIEW_ICONS } from "@/components/ward-management/ward-nav-icons";
 import { wardNavRoleRank } from "@/components/ward-management/ward-nav-role-order";
 
+import {
+  applyGlareToDocument,
+  applyThemeToDocument,
+  readStoredGlarePreference,
+  readStoredThemePreference,
+} from "@/lib/theme-client";
+
 import { announceToWardShell } from "./ward-live-region";
-import { applyAppearance, syncRootAppearance, useAppearanceStore } from "./ward-bar";
+import { applyAppearance, useAppearanceStore, useGlareStore } from "./ward-bar";
 import { edHref, handoverHref, patientHref, settingsHref } from "./ward-facade";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
@@ -366,6 +373,7 @@ export function WardRail() {
   const open = useRailOpenStore();
   const { counts, role } = useWardNavCounts();
   const appearance = useAppearanceStore();
+  const glare = useGlareStore();
   const service = useServiceScope();
   const toggleRef = useRef<HTMLButtonElement>(null);
   const moreTriggerRef = useRef<HTMLButtonElement>(null);
@@ -425,28 +433,30 @@ export function WardRail() {
     document.documentElement.setAttribute("data-rail", open ? "open" : "closed");
   }, [open]);
 
-  // Leaving Ward Flow hands the root back: other pages carry no ward theme, and their own theme
-  // hook resets `.dark` when it mounts.
-  useEffect(
-    () => () => {
-      document.documentElement.removeAttribute("data-theme");
-    },
-    [],
-  );
-
+  // The pre-paint script already applied the pin. Re-applying after hydration is idempotent and
+  // keeps data-theme, .dark and theme-color together if anything changed them in between. The theme
+  // is one app-wide preference, so leaving Ward Flow keeps it rather than handing the root back.
+  // The effect re-runs when `appearance` changes but applies the stored value: during hydration the
+  // store still reports its server default, and applying that would flash the wrong theme.
   useLayoutEffect(() => {
-    syncRootAppearance(appearance);
-    if (appearance !== "auto" || typeof window.matchMedia !== "function") return;
+    const preference = readStoredThemePreference();
+    applyThemeToDocument(preference);
+    if (preference !== "system" || typeof window.matchMedia !== "function") return;
     // Auto follows the OS live, so both theme layers move together when it changes.
     const query = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => {
-      syncRootAppearance("auto");
+      applyThemeToDocument("system");
     };
     query.addEventListener("change", onChange);
     return () => {
       query.removeEventListener("change", onChange);
     };
   }, [appearance]);
+
+  // Glare mode the same way: painted before first paint, re-applied when it changes in another tab.
+  useLayoutEffect(() => {
+    applyGlareToDocument(readStoredGlarePreference());
+  }, [glare]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {

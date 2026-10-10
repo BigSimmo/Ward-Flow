@@ -2274,7 +2274,8 @@ export type OverridableWardFlowEvent = Extract<
  * the same shape, so the table is widened here rather than special-cased per event.
  *
  * The coordinator may take every action except the demonstration controls (Josh, 10 Oct 2026), so
- * every non-demo entry lists `coordinator`. `tests/ward-role-permissions.test.ts` pins that.
+ * every non-demo entry lists `coordinator`. `tests/ward-role-permissions.test.ts` pins that. Older
+ * notes on single entries below that keep the coordinator out (TR-D1 and others) are superseded.
  */
 export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> = {
   RECORD_ADMISSION_CARE: ["ward", "coordinator", "community"],

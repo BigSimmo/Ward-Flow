@@ -24,6 +24,10 @@ export const tableClasses = {
   get th() {
     return styles.th;
   },
+  /** On a `tr`: the act-now row's thin red full edge, no fill. */
+  get actNow() {
+    return styles.actNow;
+  },
 };
 
 export type DataRowProps = Omit<ComponentPropsWithoutRef<"div">, "style"> & {
@@ -31,7 +35,9 @@ export type DataRowProps = Omit<ComponentPropsWithoutRef<"div">, "style"> & {
   columns: string;
   /** Selected: selected surface plus the 3px slate edge (the only stripe allowed). */
   selected?: boolean;
-  /** 44px instead of 52px. */
+  /** Act now: a thin red full edge and no fill (v9). The row's words still carry the meaning. */
+  actNow?: boolean;
+  /** Reads `--wf-row-compact` instead of the density row height. */
   compact?: boolean;
   /** Hover surface, for rows that open something. */
   interactive?: boolean;
@@ -48,6 +54,7 @@ export type DataRowProps = Omit<ComponentPropsWithoutRef<"div">, "style"> & {
 export function DataRow({
   columns,
   selected = false,
+  actNow = false,
   compact = false,
   interactive = false,
   head = false,
@@ -64,6 +71,7 @@ export function DataRow({
         compact && styles.compact,
         interactive && styles.interactive,
         selected && styles.selected,
+        actNow && !head && styles.actNow,
         head && styles.head,
         className,
       )}
@@ -136,8 +144,10 @@ export function SortHeader({
 export function TierTile({ tier, label = "Tier", className }: { tier: number; label?: string; className?: string }) {
   return (
     <span className={cx(styles.sq, tier === 1 && styles.t1, className)}>
-      <SrOnly>{label} </SrOnly>
-      {tier}
+      <SrOnly>
+        {label} {tier}
+      </SrOnly>
+      <span aria-hidden="true">T{tier}</span>
     </span>
   );
 }

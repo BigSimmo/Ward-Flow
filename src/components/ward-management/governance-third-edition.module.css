@@ -839,6 +839,19 @@
   }
 }
 
+/* Desktop: at the 12px floor the requirement headers grow and squeeze the site column until
+ * "Emergency department" cuts mid word; the rail tiles cut "Time written" by a pixel. */
+@media (min-width: 62.5625rem) {
+  .gapTable th:not(:first-child),
+  .gapTable td:not(:first-child) {
+    padding-left: var(--wf-s-2);
+  }
+
+  .tile {
+    padding-inline: var(--wf-s-2);
+  }
+}
+
 @media print {
   .heroActions,
   .reviewForm,

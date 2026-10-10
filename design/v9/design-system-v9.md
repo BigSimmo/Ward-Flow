@@ -2,7 +2,7 @@
 
 Synthetic prototype, not a medical device. This file is the written v9 standard. The reference CSS sheet (`ward-flow-v9.css`) and live HTML board (`ward-flow-design-system-v9.html`) are not in this branch; they remain on [`backup/claude/design-system-v7-4ygmui-pre-slim-20261010`](https://github.com/BigSimmo/Ward-Flow/tree/backup/claude/design-system-v7-4ygmui-pre-slim-20261010/design/v9). The app loads the v9 tokens from `src/app/ward-flow-v9-tokens.css`.
 
-**Status.** This is the standard. v9 replaces v8 to v8.2 as one document, so nobody has to apply a chain of amendments. v8 (`../v8/`) and v7 (`../v7/`) stay unchanged for provenance. The app loads the v9 tokens (phase 1 of the rollout). Moving the remaining shared parts onto them is the next step (section 15).
+**Status.** This is the standard. v9 replaces v8 to v8.2 as one document, so nobody has to apply a chain of amendments. v8 (`../v8/`) and v7 (`../v7/`) stay unchanged for provenance. The app loads the v9 tokens (phase 1 of the rollout) and the core shared parts follow them (phase 2). Screens move onto v9 one at a time next (section 15).
 
 **Why v9.** On 10 October 2026 Josh asked for the design system to be perfected. The review (artifact `66mvgLJYqmC6WqVGHNKftt`, source `design/appraisal-10oct/design-system-v9-proposal.html` in the project files) found 45 issues: the spec read as a changelog, the sheet contradicted its own rules, glass was heavy, motion barely existed, and layout and content had no rules. Josh approved every recommendation at 00:39Z, with one change: glass stays largely opaque, at about 80%.
 
@@ -299,7 +299,7 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 
 ## 15. Next steps
 
-1. **Load v9 in the app.** Done in phase 1: `src/app/ward-flow-v9-tokens.css` loads after the v6 tokens. Still to do: wire the one theme switch (v8 section 4) and a switch for Glare mode.
+1. **Load v9 in the app.** Done in phase 1: `src/app/ward-flow-v9-tokens.css` loads after the v6 tokens. Phase 2 added the one theme key (`clinical-kb-theme`, written only by `setThemePreference` in `src/lib/theme-client.ts`) and a Glare mode switch in Settings (`clinical-kb-glare`, painted before first render as `data-mode="glare"`).
 2. **Move the shared parts** onto it so every page lifts at once: hero chip, Badge, status words, tabs with the capsule, focus, live chip, toast and density.
 3. **Point the in-app Design showcase at the v9 tokens file**, so it can no longer teach v6.
 4. **Rebuild pages against v9**, weakest first, as the 10 October appraisal set out. Bring in each Elevate part with the first page that needs it.

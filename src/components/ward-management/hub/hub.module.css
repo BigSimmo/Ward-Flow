@@ -92,7 +92,8 @@
 .listHead,
 .resultMain {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 104px 104px 56px;
+  /* Beds is 112px so "1 being made ready" stays whole at the 12px floor. */
+  grid-template-columns: minmax(0, 1fr) 112px 104px 56px;
   align-items: center;
   column-gap: var(--wf-s-3);
 }

@@ -63,6 +63,7 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   { id: "timer-seconds", label: "Seconds on timers", tab: "alerts", keywords: "clock countdown" },
   { id: "wallboard", label: "Wallboard refresh", tab: "alerts", keywords: "board shared screen" },
   { id: "theme", label: "Theme", tab: "display", keywords: "appearance dark light night auto" },
+  { id: "glare", label: "Glare mode", tab: "display", keywords: "bright room sunlight contrast window" },
   { id: "sidebar", label: "Sidebar", tab: "display", keywords: "rail navigation icons" },
   { id: "text-size", label: "Text size", tab: "display", keywords: "font larger smaller" },
   { id: "density", label: "Row density", tab: "display", keywords: "compact comfortable" },

@@ -91,7 +91,8 @@
 
 .overviewGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 338px;
+  /* 348px keeps "Ready beds by road time" whole beside its 12px "from ARM ED" tag. */
+  grid-template-columns: minmax(0, 1fr) 348px;
   align-items: start;
   gap: var(--wf-s-3);
   min-width: 0;

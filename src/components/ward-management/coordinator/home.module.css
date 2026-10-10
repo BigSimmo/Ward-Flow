@@ -241,8 +241,9 @@
 }
 
 /* The word "longest" shows only where every tile has room for it, so no tile reads "longe…". The
-   button's spoken name always says "longest". A container query on .edCell, so all tiles agree. */
-@container (max-width: 8rem) {
+   button's spoken name always says "longest". A container query on .edCell, so all tiles agree.
+   The cutoff is in px like the label, since rem changes with the density setting. */
+@container (max-width: 128px) {
   .edLongest {
     display: none;
   }

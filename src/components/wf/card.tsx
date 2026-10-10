@@ -1,6 +1,6 @@
 import type { ComponentPropsWithRef, ElementType, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { cx } from "./cx";
+import { cx, present } from "./cx";
 import { IconTile } from "./primitives";
 import styles from "./card.module.css";
 
@@ -54,9 +54,9 @@ export function CardHead({
         <Heading id={id} className={cx(styles.title, eyebrow && styles.eyebrowTitle)}>
           {title}
         </Heading>
-        {meta ? <span className={styles.meta}>{meta}</span> : null}
+        {present(meta) ? <span className={styles.meta}>{meta}</span> : null}
       </div>
-      {aside || action ? (
+      {present(aside) || present(action) ? (
         <div className={styles.aside}>
           {aside}
           {action}
@@ -86,8 +86,8 @@ export function CardFoot({
 }) {
   return (
     <div className={cx(styles.foot, className)}>
-      {meta ? <span className={styles.footMeta}>{meta}</span> : null}
-      {children ? <div className={styles.footActions}>{children}</div> : null}
+      {present(meta) ? <span className={styles.footMeta}>{meta}</span> : null}
+      {present(children) ? <div className={styles.footActions}>{children}</div> : null}
     </div>
   );
 }

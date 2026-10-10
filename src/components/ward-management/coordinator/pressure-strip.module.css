@@ -40,7 +40,7 @@
   width: 100%;
   height: 100%;
   min-height: 108px;
-  padding: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-2);
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface);
@@ -48,6 +48,7 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  container-type: inline-size;
 }
 
 .tile:hover {
@@ -173,6 +174,22 @@
   font-family: var(--wf-font);
   font-weight: 500;
   color: var(--wf-ink-2);
+}
+
+/* At the 12px text floor ten tiles leave too little room, so the word "Longest" and then the
+   service go first rather than cut the site code or duration mid word. The button's spoken name
+   still says both. A container query on the tile, so every tile of the same width agrees. Cutoffs
+   are in px like the labels, since rem changes with the density setting. */
+@container (max-width: 112px) {
+  .longestLabel {
+    display: none;
+  }
+}
+
+@container (max-width: 80px) {
+  .service {
+    display: none;
+  }
 }
 
 @media (max-width: 40rem) {
