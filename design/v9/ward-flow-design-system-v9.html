@@ -532,39 +532,39 @@
                   ><span class="pulse" id="pulse"></span>Live <span class="clk" id="age">10:42</span></span
                 >
               </div>
-              <div id="list" role="listbox" aria-label="Waiting">
+              <div id="list" role="grid" aria-label="Waiting">
                 <div
                   class="row edge-act"
-                  role="option"
+                  role="row"
                   tabindex="0"
                   aria-selected="false"
                   style="grid-template-columns: 14px minmax(0, 1fr) auto auto"
                 >
                   <span class="g danger"></span><span class="ell"><b>Oakendell, Verity</b></span
                   ><span class="meta">waited <span class="num v">7d 1h</span></span
-                  ><button class="b sec sm ra">Refer</button>
+                  ><span role="gridcell"><button class="b sec sm ra">Refer</button></span>
                 </div>
                 <div
                   class="row"
-                  role="option"
+                  role="row"
                   tabindex="-1"
                   aria-selected="false"
                   style="grid-template-columns: 14px minmax(0, 1fr) auto auto"
                 >
                   <span class="g warning"></span><span class="ell"><b>Hawthornby, Derek</b></span
                   ><span class="meta">waited <span class="num v">2d 14h</span></span
-                  ><button class="b sec sm ra">Refer</button>
+                  ><span role="gridcell"><button class="b sec sm ra">Refer</button></span>
                 </div>
                 <div
                   class="row"
-                  role="option"
+                  role="row"
                   tabindex="-1"
                   aria-selected="false"
                   style="grid-template-columns: 14px minmax(0, 1fr) auto auto"
                 >
                   <span class="g neutral"></span><span class="ell"><b>Marrowbee, Devan</b></span
                   ><span class="meta">waited <span class="num v">2d 0h</span></span
-                  ><button class="b sec sm ra">Refer</button>
+                  ><span role="gridcell"><button class="b sec sm ra">Refer</button></span>
                 </div>
               </div>
               <div class="card-f">
@@ -865,6 +865,8 @@
       // live list
       const list = document.getElementById("list");
       const rows = () => [...list.querySelectorAll(".row")];
+      const cells = (r) => [...r.children].forEach((c) => c.hasAttribute("role") || c.setAttribute("role", "gridcell"));
+      rows().forEach(cells);
       list.addEventListener("keydown", (e) => {
         const r = rows();
         const i = r.indexOf(document.activeElement);
@@ -904,11 +906,12 @@
         if (extra.length) {
           const r = document.createElement("div");
           r.className = "row enter";
-          r.setAttribute("role", "option");
+          r.setAttribute("role", "row");
           r.tabIndex = -1;
           r.setAttribute("aria-selected", "false");
           r.style.gridTemplateColumns = "14px minmax(0,1fr) auto auto";
-          r.innerHTML = `<span class="g neutral"></span><span class="ell"><b>${extra.shift()}</b></span><span class="meta">waited <span class="num v">0m</span></span><button class="b sec sm ra">Refer</button>`;
+          r.innerHTML = `<span class="g neutral"></span><span class="ell"><b>${extra.shift()}</b></span><span class="meta">waited <span class="num v">0m</span></span><span role="gridcell"><button class="b sec sm ra">Refer</button></span>`;
+          cells(r);
           list.appendChild(r);
         }
       });

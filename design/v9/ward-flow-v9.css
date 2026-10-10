@@ -396,8 +396,8 @@
 .wf .li:focus-visible {
   outline: 0;
   box-shadow:
-    inset 0 0 0 2px var(--wf-focus-ring),
-    inset 0 0 0 4px var(--wf-focus-gap);
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
 }
 /* skip link to the page's focal element */
 .skip {
@@ -1157,8 +1157,8 @@
 .trk button:focus-visible {
   outline: 0;
   box-shadow:
-    inset 0 0 0 2px var(--wf-focus-ring),
-    inset 0 0 0 4px var(--wf-focus-gap);
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
 }
 .pt button.on,
 .pt button[aria-selected="true"],
@@ -2715,7 +2715,12 @@ svg.gl {
     --wf-h-md: var(--wf-touch);
     --wf-h-chip: 32px;
   }
-  /* tabs and chips keep a 36px face but take a 44px hit area */
+  /* tabs and chips keep a 36px face but take a 44px hit area. The track makes room for it and never
+     scrolls vertically. */
+  .pt {
+    padding-block: 4px;
+    overflow-y: hidden;
+  }
   .pt button,
   .pt.sm button {
     height: 36px;
