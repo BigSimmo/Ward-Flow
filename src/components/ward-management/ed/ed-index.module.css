@@ -41,6 +41,10 @@
   text-overflow: ellipsis;
 }
 
+.heroNote > :last-child {
+  flex: none;
+}
+
 .heroNum {
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;

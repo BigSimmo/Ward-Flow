@@ -2495,7 +2495,7 @@ tr.qRow:focus-visible {
 
 /* Badges */
 .seenBadge {
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -2670,7 +2670,7 @@ tr.qRow:focus-visible {
   border: 1px solid var(--line-strong);
   padding: 1px 6px;
   border-radius: var(--r2);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -5019,7 +5019,7 @@ tr.qRow:focus-visible {
 
 .edCardSiteCode {
   font-family: var(--mono);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--muted);
   letter-spacing: 0.04em;
@@ -5696,7 +5696,7 @@ tr.qRow:focus-visible {
 }
 .draftNote {
   margin-left: auto;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
 }
 .boardResult {
@@ -5776,7 +5776,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 }
 .boardTable .sub {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
   margin: 3px 0 0;
   color: var(--muted);
@@ -5806,13 +5806,13 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   line-height: 1.25;
 }
 .umrnBadge > span {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.035em;
   color: var(--muted);
 }
 .boardTable .umrnBadge > b {
-  font: 500 11px var(--mono);
+  font: 500 12px var(--mono);
   color: var(--ink-soft);
 }
 .boardTable .compactTime > b {
@@ -5864,14 +5864,14 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 .compactExpiry {
   display: block;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   padding-top: 4px;
   line-height: 1.3;
 }
 .accessWarning {
   display: block;
   margin-top: 5px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 550;
   line-height: 1.45;
   color: var(--warn);
@@ -5910,7 +5910,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 }
 .acceptedLabel {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 550;
   color: var(--good);
   margin-top: 4px;
@@ -6048,7 +6048,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   letter-spacing: 0;
 }
 .identityUrgency {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -6094,7 +6094,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 .patientIdentity .transitBadgeOverdue {
   display: block;
   white-space: normal;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
   border: 0;
   border-radius: 0;
@@ -6182,7 +6182,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   }
 
   .boardTable th {
-    font-size: var(--wf-fs-11);
+    font-size: var(--wf-fs-12);
     letter-spacing: 0.07em;
     color: var(--wf-ink-3);
   }
@@ -6228,7 +6228,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
     border-radius: var(--wf-r-xs);
     background: transparent;
     font-family: var(--wf-mono);
-    font-size: var(--wf-fs-11);
+    font-size: var(--wf-fs-12);
     color: var(--wf-ink-1);
   }
 
@@ -6259,7 +6259,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
     background: var(--wf-line);
     box-shadow: none;
     color: var(--wf-ink-2);
-    font-size: var(--wf-fs-11);
+    font-size: var(--wf-fs-12);
   }
 }
 
@@ -6519,7 +6519,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 
   .expandedHeading {
     margin: 0 0 var(--wf-s-2);
-    font: 600 var(--wf-fs-11) / 1.3 var(--wf-font);
+    font: 600 var(--wf-fs-12) / 1.3 var(--wf-font);
     letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--wf-ink-3);
@@ -6554,7 +6554,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   }
 
   .upToMark {
-    font-size: var(--wf-fs-11);
+    font-size: var(--wf-fs-12);
     text-align: center;
     color: var(--wf-ink-2);
   }
@@ -6842,7 +6842,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
     padding: 0;
     border: 0;
     background: transparent;
-    font: 500 var(--wf-fs-11) / 1.4 var(--wf-mono);
+    font: 500 var(--wf-fs-12) / 1.4 var(--wf-mono);
     color: var(--wf-ink-2);
   }
 
@@ -7259,4 +7259,68 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   .lowerPair > .capacitySection {
     display: none;
   }
+}
+
+/* ─── v10 pass (10 Oct 2026): words neutral, glyphs carry tone ───
+ * No red, amber or green words and no tinted fills on rows, pills or badges. An act-now item keeps a
+ * thin red edge all the way round (--wf-act-edge), never a fill or a side stripe. Placed last so it
+ * wins over the older tone rules above without touching them. */
+.reviewPill[data-tone],
+.presentationCell .reviewPill[data-tone] {
+  background: var(--wf-surface-2);
+  border-color: var(--wf-line);
+  color: var(--wf-ink-2);
+}
+
+.transitBadge,
+.transitBadgeHold,
+.transitBadgeOverdue {
+  background: none;
+  border-color: var(--wf-line-2);
+  color: var(--wf-ink-2);
+}
+
+.transitBadgeOverdue {
+  border-color: var(--wf-act-edge);
+}
+
+.acceptedLabel {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.attentionRow[data-tone],
+.lstRow[data-tone] {
+  border-left-color: var(--wf-line);
+  background: none;
+}
+
+.attentionRow[data-tone="danger"],
+.lstRow[data-tone="danger"] {
+  border-color: var(--wf-act-edge);
+  filter: none;
+}
+
+.attentionRow[data-tone="danger"]:hover,
+.lstRow[data-tone="danger"]:hover {
+  background: var(--wf-hover);
+  filter: none;
+}
+
+.attentionRow[data-tone="danger"] .attentionTitle {
+  color: var(--wf-ink-1);
+}
+
+.attentionBadge[data-tone] {
+  background: none;
+  border-color: var(--wf-line-2);
+}
+
+.attentionStamp[data-tone] {
+  border-color: var(--wf-line-2);
+  color: var(--wf-ink-2);
+}
+
+.attentionStamp[data-tone="danger"] {
+  border-color: var(--wf-act-edge);
 }

@@ -187,6 +187,10 @@
   text-overflow: ellipsis;
 }
 
+.note > :last-child {
+  flex: none;
+}
+
 @media (max-width: 48rem) {
   .chips :global(button) {
     min-height: var(--wf-touch);

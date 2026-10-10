@@ -3142,7 +3142,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             >
               Not reviewed{" "}
               <span className={styles.c} data-zero={notReviewedCount === 0 ? "true" : undefined}>
-                {notReviewedCount === 0 ? "none" : notReviewedCount}
+                {notReviewedCount}
               </span>
             </button>
             <button
@@ -3153,7 +3153,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             >
               Under a form{" "}
               <span className={styles.c} data-zero={underFormCount === 0 ? "true" : undefined}>
-                {underFormCount === 0 ? "none" : underFormCount}
+                {underFormCount}
               </span>
             </button>
             <button
@@ -3164,7 +3164,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             >
               No destination{" "}
               <span className={styles.c} data-zero={noDestCount === 0 ? "true" : undefined}>
-                {noDestCount === 0 ? "none" : noDestCount}
+                {noDestCount}
               </span>
             </button>
             <button
@@ -3175,7 +3175,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             >
               For discharge{" "}
               <span className={styles.c} data-zero={dischargeCount === 0 ? "true" : undefined}>
-                {dischargeCount === 0 ? "none" : dischargeCount}
+                {dischargeCount}
               </span>
             </button>
             <button
@@ -3186,7 +3186,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             >
               Withdrawn{" "}
               <span className={styles.c} data-zero={withdrawnCount === 0 ? "true" : undefined}>
-                {withdrawnCount === 0 ? "none" : withdrawnCount}
+                {withdrawnCount}
               </span>
             </button>
           </div>

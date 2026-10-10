@@ -60,7 +60,7 @@
   margin: 0;
   padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-2);
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -335,7 +335,7 @@ div.workspace > .side {
 .sideTitle {
   margin: 0;
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -421,7 +421,7 @@ div.workspace > .side {
   border-radius: var(--wf-r-pill);
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
 .rosterWho {
