@@ -3,6 +3,9 @@ const STORAGE_ACCOUNT = "wflowdev7273a083aue";
 // variables is not resource verification: a mistaken account set in both would otherwise be trusted.
 // Add an account here, in a reviewed change, only after verifying it is a Ward Flow resource.
 export const APPROVED_STORAGE_ACCOUNTS = Object.freeze([STORAGE_ACCOUNT]);
+/** The single approved shared database target (matches infra/azure-settings.example.json). */
+export const APPROVED_PG_SERVER = "wardflow-dev-aue";
+export const APPROVED_PG_DATABASE = "wardflow_dev";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PLACEHOLDER_IDS = new Set([
   "00000000-0000-0000-0000-000000000000",
@@ -56,16 +59,17 @@ export function readConfig(env = process.env) {
   let postgres = null;
   if (shared) {
     // Provisioning verifies this resource ID against Azure before writing application settings.
-    // Derive the hostname from the resource, rather than silently connecting a supplied host.
+    // Only the one approved server is accepted: rg-wardflow-dev-aue / wardflow-dev-aue, database
+    // wardflow_dev. Any other server, even in the same resource group, is refused. The host is
+    // derived from the resource rather than trusting a supplied hostname.
     const resource =
-      /^\/subscriptions\/[0-9a-f-]{36}\/resourceGroups\/rg-wardflow-dev-aue\/providers\/Microsoft.DBforPostgreSQL\/flexibleServers\/([a-z0-9-]+)$/i.exec(
+      /^\/subscriptions\/[0-9a-f-]{36}\/resourceGroups\/rg-wardflow-dev-aue\/providers\/Microsoft\.DBforPostgreSQL\/flexibleServers\/wardflow-dev-aue$/i.test(
         env.WARD_PG_RESOURCE_ID ?? "",
       );
-    const expectedDatabase = resource?.[1].toLowerCase() === "wardflow-dev-aue" ? "wardflow_dev" : "wardflow";
     if (
       !resource ||
-      env.WARD_PG_HOST !== `${resource[1].toLowerCase()}.postgres.database.azure.com` ||
-      env.WARD_PG_DATABASE !== expectedDatabase ||
+      env.WARD_PG_HOST !== `${APPROVED_PG_SERVER}.postgres.database.azure.com` ||
+      env.WARD_PG_DATABASE !== APPROVED_PG_DATABASE ||
       env.WARD_PG_USER !== "wardflow_backend"
     )
       throw new Error("Unapproved shared database target");
