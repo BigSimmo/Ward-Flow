@@ -178,14 +178,15 @@
 
 /* At the 12px text floor ten tiles leave too little room, so the word "Longest" and then the
    service go first rather than cut the site code or duration mid word. The button's spoken name
-   still says both. A container query on the tile, so every tile of the same width agrees. */
-@container (max-width: 7rem) {
+   still says both. A container query on the tile, so every tile of the same width agrees. Cutoffs
+   are in px like the labels, since rem changes with the density setting. */
+@container (max-width: 112px) {
   .longestLabel {
     display: none;
   }
 }
 
-@container (max-width: 5rem) {
+@container (max-width: 80px) {
   .service {
     display: none;
   }
