@@ -84,7 +84,7 @@ describe("read-only report screens", () => {
 
   it("takes a stamped downtime snapshot and keeps it in tab memory", () => {
     inProvider(<DowntimePackScreen />);
-    expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(/^Generated /u);
+    expect(screen.getByTestId("ward-downtime-generated").textContent).toMatch(/^Taken .* does not update while open$/u);
     expect(screen.getByTestId("ward-downtime-beds")).toBeTruthy();
     expect(lastDowntimePack()?.generatedAt).toBe(NOW_ANCHOR);
   });
@@ -204,6 +204,70 @@ describe("read-only report screens", () => {
       .map((cell) => cell.textContent);
     // Ward, service, beds, ready, being made ready, ...
     expect(cells.slice(1, 4)).toEqual(["4", "2", "1"]);
+  });
+
+  it("groups beds by service with subtotals that add up to the hero's ready count", () => {
+    inProvider(<DowntimePackScreen />);
+    const pack = lastDowntimePack()!;
+    const subtotals = screen.getAllByTestId("ward-downtime-subtotal");
+    expect(subtotals.length).toBe(new Set(pack.wards.map((ward) => ward.service)).size);
+    const readySum = subtotals.reduce((sum, row) => sum + Number(within(row).getAllByRole("cell")[1].textContent), 0);
+    expect(readySum).toBe(pack.totals.ready);
+    expect(screen.getByTestId("ward-downtime-total-ready").textContent).toBe(String(pack.totals.ready));
+    expect(screen.getByTestId("ward-downtime-frozen").textContent).toMatch(/^Frozen \d\d:\d\d$/u);
+  });
+
+  it("shows a delta twin on each hero figure after a new snapshot", () => {
+    vi.useFakeTimers();
+    try {
+      inProvider(<DowntimePackScreen />);
+      expect(screen.queryByText(/since the last pack/u)).toBeNull();
+      fireEvent.click(screen.getByTestId("ward-downtime-refresh"));
+      expect(screen.getByTestId("ward-downtime-refresh").textContent).toContain("Taking snapshot");
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(screen.getAllByText(/since the last pack/u)).toHaveLength(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("filters the chronology by source and keeps the count line equal to the rows shown", () => {
+    route.pathname = "/mockups/ward-flow/reports/chronology";
+    inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
+    const bodyRows = () =>
+      within(screen.getByTestId("ward-chronology-table"))
+        .getAllByRole("row")
+        .filter((row) => within(row).queryAllByRole("button").length > 0);
+    const all = bodyRows().length;
+    fireEvent.click(screen.getByRole("radio", { name: "Records" }));
+    const records = bodyRows().length;
+    expect(records).toBeLessThanOrEqual(all);
+    expect(screen.getByTestId("ward-chronology-count").textContent).toBe(`${records} of ${all} shown`);
+  });
+
+  it("opens a clicked event in the side panel and narrows the sources for the ward nurse view", () => {
+    route.pathname = "/mockups/ward-flow/reports/chronology";
+    inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
+    const table = within(screen.getByTestId("ward-chronology-table"));
+    fireEvent.click(table.getAllByRole("button")[0]);
+    expect(screen.getByRole("button", { name: "Copy row" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Next" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: "Ward nurse" }));
+    expect(screen.getByTestId("ward-chronology-nurse-view")).toBeTruthy();
+    expect(screen.queryByRole("radio", { name: "Audit" })).toBeNull();
+  });
+
+  it("offers Clear filters when nothing matches", () => {
+    route.pathname = "/mockups/ward-flow/reports/chronology";
+    inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find an action, person or reason" }), {
+      target: { value: "zzzz no such words" },
+    });
+    expect(screen.queryByTestId("ward-chronology-table")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByTestId("ward-chronology-table")).toBeTruthy();
   });
 
   it("is reachable from the Tools drawer's shortcuts", () => {
