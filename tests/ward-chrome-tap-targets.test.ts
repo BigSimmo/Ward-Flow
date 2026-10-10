@@ -53,11 +53,13 @@ function exactRuleBody(source: string, className: string): string {
 describe("Wave-2 chrome tap targets — rail Raise Referral and home link", () => {
   const css = read(RAIL_CSS);
 
-  it(".btnRailReferral pins min-height to --ward-tap / --spacing-tap (48px floor)", () => {
-    const body = exactRuleBody(css, "btnRailReferral");
-    expect(body).toMatch(/min-height:\s*var\(--ward-tap/);
-    expect(body).not.toMatch(/min-height:\s*(?:36px|2\.25rem|44px)\b/);
-    expect(body).not.toMatch(/(?:^|[^-])height:\s*(?:36px|2\.25rem)\b/m);
+  // v10 (Josh, 10 Oct 2026): the sidebar's outlined New referral is gone and the header holds the
+  // one primary. Its 48px pin is replaced by a pin that it stays gone, in the CSS and the markup.
+  it("the rail carries no New referral button; the header keeps the one primary", () => {
+    expect(css).not.toMatch(/\.btnRailReferral\b/);
+    const rail = read("src/components/ward-management/shell/ward-rail.tsx");
+    expect(rail).not.toMatch(/ward-rail-referral-trigger/);
+    expect(read("src/components/ward-management/shell/ward-bar.tsx")).toMatch(/data-testid="ward-bar-primary-action"/);
   });
 
   it(".brandLink (Ward Flow home) pins min-height to --ward-tap / --spacing-tap", () => {

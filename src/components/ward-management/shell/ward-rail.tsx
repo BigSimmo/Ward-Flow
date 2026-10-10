@@ -13,7 +13,6 @@ import {
   LayoutGrid,
   Menu,
   PanelLeftOpen,
-  Plus,
   Settings,
   SunMoon,
 } from "lucide-react";
@@ -66,7 +65,8 @@ export type { ServiceBedAlert } from "./ward-service-bed-alerts";
  *   from `deriveServiceBedAlerts`, never typed here.
  * - The "Reconciliation not published" line is removed from the rail. `ward-reconciliation-line.tsx`
  *   stays (the Search hub still imports its sentence composer) but is no longer mounted here.
- * - The rail's New referral is a secondary button; the header keeps the only primary.
+ * - The rail carries no New referral (v10, Josh 10 Oct 2026): the header holds the one primary,
+ *   and Shift+R still opens the referral slide-out from anywhere.
  * - Selection is a slate tint with a fine edge. No bar or stripe on any edge (owner ruling Q-11).
  * - Status markers are round: a filled amber circle at or over 85%, a neutral ring under it.
  *
@@ -807,22 +807,6 @@ export function WardRail() {
       ) : null}
 
       <div className={styles.railScroll}>
-        <div className={styles.railActionBox}>
-          <button
-            type="button"
-            data-testid="ward-rail-referral-trigger"
-            className={styles.btnRailReferral}
-            title="Start a new referral"
-            onClick={() => {
-              openWardDrawer("referral");
-              announceToWardShell("Opening the new referral drawer.");
-            }}
-          >
-            <Plus aria-hidden="true" className={styles.btnRailReferralIcon} strokeWidth={1.75} />
-            <span>New referral</span>
-          </button>
-        </div>
-
         <nav aria-label="Ward Flow views" className={styles.railNav}>
           {groups.map((group, groupIndex) => (
             <section key={group.label} aria-label={group.label} className={styles.railGroup}>

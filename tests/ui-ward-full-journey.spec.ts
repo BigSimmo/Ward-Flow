@@ -188,8 +188,9 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expect(page.getByText("Midland", { exact: false }).first()).toBeVisible();
     const communityUrl = page.url();
 
-    // The rail's "New referral" opens the slide-out over the team page; nothing navigates.
-    await page.getByTestId("ward-rail").getByTestId("ward-rail-referral-trigger").click();
+    // The sidebar's New referral was removed in v10 (Josh, 10 Oct 2026). Shift+R opens the same
+    // slide-out over the team page, exactly as that button did; nothing navigates.
+    await page.keyboard.press("Shift+R");
     const sheet = page.getByTestId("ward-bar-referral-sheet");
     await expect(sheet).toBeVisible({ timeout: 15_000 });
     expect(page.url(), "opening the referral slide-out must not leave the team page").toBe(communityUrl);

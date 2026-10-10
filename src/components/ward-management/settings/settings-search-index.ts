@@ -64,7 +64,7 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   { id: "wallboard", label: "Wallboard refresh", tab: "alerts", keywords: "board shared screen" },
   { id: "theme", label: "Theme", tab: "display", keywords: "appearance dark light night auto" },
   { id: "glare", label: "Glare mode", tab: "display", keywords: "bright room sunlight contrast window" },
-  { id: "sidebar", label: "Sidebar", tab: "display", keywords: "rail navigation icons" },
+  { id: "sidebar", label: "Sidebar", tab: "display", keywords: "rail navigation icons full compact" },
   { id: "text-size", label: "Text size", tab: "display", keywords: "font larger smaller" },
   { id: "density", label: "Row density", tab: "display", keywords: "compact comfortable" },
   { id: "touch", label: "Touch mode", tab: "display", keywords: "tablet larger targets" },

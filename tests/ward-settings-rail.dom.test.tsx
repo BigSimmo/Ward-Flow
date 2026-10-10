@@ -49,33 +49,33 @@ afterEach(() => {
 });
 
 describe("the settings screen's rail control", () => {
-  it("offers Open and Icons, with the current state checked", () => {
+  it("offers Full and Compact, with the current state checked", () => {
     setRailOpenPreference(true);
     renderSettings();
     const panel = screen.getByTestId("ward-settings-rail");
 
-    expect(within(panel).getByRole("radio", { name: "Open" }).getAttribute("aria-checked")).toBe("true");
-    expect(within(panel).getByRole("radio", { name: "Icons" }).getAttribute("aria-checked")).toBe("false");
+    expect(within(panel).getByRole("radio", { name: "Full" }).getAttribute("aria-checked")).toBe("true");
+    expect(within(panel).getByRole("radio", { name: "Compact" }).getAttribute("aria-checked")).toBe("false");
   });
 
   it("writes the real rail state, not a second one of its own", () => {
     setRailOpenPreference(true);
     renderSettings();
 
-    fireEvent.click(within(screen.getByTestId("ward-settings-rail")).getByRole("radio", { name: "Icons" }));
+    fireEvent.click(within(screen.getByTestId("ward-settings-rail")).getByRole("radio", { name: "Compact" }));
 
     expect(window.localStorage.getItem("ward-flow-rail"), "the real key was not written").toBe("closed");
     expect(window.localStorage.getItem("ward-flow-settings-rail"), "a second key was written").toBeNull();
   });
 
-  it("says the rail is closed once Icons is chosen", () => {
+  it("says the rail is compact once Compact is chosen", () => {
     setRailOpenPreference(true);
     renderSettings();
     const panel = screen.getByTestId("ward-settings-rail");
 
-    fireEvent.click(within(panel).getByRole("radio", { name: "Icons" }));
+    fireEvent.click(within(panel).getByRole("radio", { name: "Compact" }));
 
-    expect(screen.getByTestId("ward-settings-rail-now").textContent).toMatch(/closed/i);
+    expect(screen.getByTestId("ward-settings-rail-now").textContent).toMatch(/compact/i);
   });
 
   /**
@@ -86,7 +86,7 @@ describe("the settings screen's rail control", () => {
   it("follows a change made from anywhere else", () => {
     setRailOpenPreference(true);
     renderSettings();
-    expect(screen.getByTestId("ward-settings-rail-now").textContent).toMatch(/open/i);
+    expect(screen.getByTestId("ward-settings-rail-now").textContent).toMatch(/full/i);
 
     // ⚠️ `act` because this write originates OUTSIDE React, exactly as the rail's own control's
     // would from another component tree. It flushes the pending update; it does not weaken the
@@ -96,7 +96,7 @@ describe("the settings screen's rail control", () => {
     expect(
       screen.getByTestId("ward-settings-rail-now").textContent,
       "the readout did not follow a change made outside this screen",
-    ).toMatch(/closed/i);
+    ).toMatch(/compact/i);
   });
 
   /**

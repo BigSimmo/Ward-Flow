@@ -1125,7 +1125,7 @@ export function SettingsScreen() {
             railOpen={railOpen}
             onRailChange={(open) => {
               setRailOpenPreference(open);
-              showToast(open ? "Sidebar open." : "Sidebar shows icons only.");
+              showToast(open ? "Sidebar set to Full." : "Sidebar set to Compact.");
             }}
             reducedMotion={reducedMotion}
             onReducedMotionChange={(next) => {

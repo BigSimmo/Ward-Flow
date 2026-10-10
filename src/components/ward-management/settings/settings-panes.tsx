@@ -397,7 +397,7 @@ export function DisplayPane({
             <SettingRow
               setting="sidebar"
               title="Sidebar"
-              sub={railOpen ? "Open, full names" : "Closed, icons only"}
+              sub={railOpen ? "Full, names and counts. Opens this way" : "Compact, icons only. Opens this way"}
               subTestId="ward-settings-rail-now"
               testId="ward-settings-rail"
             >
@@ -405,11 +405,11 @@ export function DisplayPane({
                 className={styles.pillSeg}
                 label="Sidebar"
                 items={[
-                  { id: "open", label: "Open" },
-                  { id: "icons", label: "Icons" },
+                  { id: "full", label: "Full" },
+                  { id: "compact", label: "Compact" },
                 ]}
-                value={railOpen ? "open" : "icons"}
-                onChange={(choice) => onRailChange(choice === "open")}
+                value={railOpen ? "full" : "compact"}
+                onChange={(choice) => onRailChange(choice === "full")}
               />
             </SettingRow>
             <SettingRow setting="text-size" title="Text size" preview>
