@@ -2,10 +2,12 @@ import { app } from "@azure/functions";
 import { randomUUID } from "node:crypto";
 import { readConfig } from "./config.mjs";
 import { openStorage, createStore } from "./database.mjs";
+import { createPush } from "./push.mjs";
 import { createAuthenticator } from "./auth.mjs";
 import { createHandler } from "./server.mjs";
 
 let handlerPromise;
+let sharedStoreRef;
 
 function handler() {
   handlerPromise ??= (async () => {
@@ -18,8 +20,10 @@ function handler() {
       sharedStore = createWorkspaceStore(createPostgresPool(config.postgres), {
         workspaceId: config.workspaceId,
         engine,
+        push: await createPush(config),
       });
     }
+    sharedStoreRef = sharedStore;
     return createHandler({
       config,
       store: createStore(storage),
@@ -87,3 +91,22 @@ app.http("wardFlowWorkspaceAction", {
   authLevel: "anonymous",
   handler: handleHttp,
 });
+
+// Phone push: time alone can turn a row red (a wait passing its target), so a timer re-checks the
+// act-now list every five minutes. Registered only when shared mode and all three VAPID settings
+// are present, so an installation with the feature off pays for no extra invocations.
+export async function sweepPush(_timer, _context, getHandler = handler) {
+  try {
+    await getHandler();
+    await sharedStoreRef?.sweepPush();
+  } catch {
+    console.error(JSON.stringify({ event: "ward_backend_push_sweep_failure" }));
+  }
+}
+if (
+  process.env.WARD_SHARED_ENABLED === "true" &&
+  ["WARD_FLOW_VAPID_PUBLIC_KEY", "WARD_FLOW_VAPID_PRIVATE_KEY", "WARD_FLOW_VAPID_SUBJECT"].every((key) =>
+    process.env[key]?.trim(),
+  )
+)
+  app.timer("wardFlowPushSweep", { schedule: "0 */5 * * * *", handler: sweepPush });

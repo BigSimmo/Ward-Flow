@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { migrate } from "./migrate.mjs";
 import { createWorkspaceStore } from "./postgres.mjs";
+import { pushPayload } from "./push.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -28,7 +29,7 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
     const seed = await storeA.read(actorA);
     assert.equal(seed.revision, 1);
     assert.equal(seed.dataMode, "prototype");
-    assert.equal((await pool.query("SELECT max(version) AS version FROM ward_flow.migrations")).rows[0].version, 2);
+    assert.equal((await pool.query("SELECT max(version) AS version FROM ward_flow.migrations")).rows[0].version, 3);
     assert.ok(engine.validWorld(seed.payload));
     // Prepare two independent, valid movements targeting one allocatable secure bed.
     const world = structuredClone(seed.payload);
@@ -186,3 +187,89 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
     assert.equal(idleConnectionFailed, false, "PostgreSQL test pool reported an idle connection failure");
   }
 });
+
+test(
+  "real PostgreSQL: phone push announces each new act-now item once, to other coordinators",
+  { skip: !url },
+  async () => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 4 });
+    const actorA = "11111111-1111-4111-8111-111111111111";
+    const actorB = "22222222-2222-4222-8222-222222222222";
+    const formerCoordinator = "55555555-5555-4555-8555-555555555555";
+    const start = Date.parse("2026-10-07T10:00:00Z");
+    let at = new Date(start);
+    const workspaceId = randomUUID();
+    const sent = [];
+    const outcome = { e2: "expired" };
+    const store = createWorkspaceStore(pool, {
+      workspaceId,
+      engine,
+      clock: () => at,
+      push: {
+        send: async (row, payload) => {
+          const name = row.endpoint.split("/").pop();
+          sent.push({ name, payload });
+          return outcome[name] ?? "sent";
+        },
+        payload: pushPayload,
+        coordinatorIds: [actorA, actorB],
+        maxPerAccount: 2,
+      },
+    });
+    const device = (name) => ({
+      endpoint: `https://fcm.googleapis.com/fcm/send/${name}`,
+      p256dh: Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 1)]).toString("base64url"),
+      auth: Buffer.alloc(16, 2).toString("base64url"),
+    });
+    const delivered = () =>
+      sent
+        .splice(0)
+        .map((entry) => entry.name)
+        .sort();
+    try {
+      await migrate(pool);
+      await store.ready();
+      await store.read(actorA);
+      assert.equal(await store.subscribe(actorA, device("e1")), "subscribed");
+      assert.equal(await store.subscribe(actorB, device("e2")), "subscribed");
+      assert.equal(await store.subscribe(actorB, device("e3")), "subscribed");
+      assert.equal(await store.subscribe(actorB, device("e3")), "subscribed", "re-subscribing a device is idempotent");
+      assert.equal(await store.subscribe(actorB, device("e5")), "limit");
+      // An account removed from the coordinator list keeps no alerts, even with a stored device.
+      assert.equal(await store.subscribe(formerCoordinator, device("e4")), "subscribed");
+
+      const jump = { type: "ADVANCE_CLOCK", role: "demo", minutes: 30 };
+      const commandId = randomUUID();
+      assert.equal((await store.command(actorA, commandId, 1, jump)).status, 200);
+      assert.deepEqual(delivered(), ["e2", "e3"], "the acting account and a former coordinator are not sent");
+      const removed = await pool.query("SELECT endpoint FROM ward_flow.push_subscriptions WHERE endpoint LIKE '%/e2'");
+      assert.equal(removed.rowCount, 0, "a 410 subscription is removed");
+      const success = await pool.query(
+        "SELECT last_success_at FROM ward_flow.push_subscriptions WHERE endpoint LIKE '%/e3'",
+      );
+      assert.ok(success.rows[0].last_success_at);
+
+      assert.equal((await store.command(actorA, commandId, 1, jump)).body.replayed, true);
+      const refresh = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: "rph-adult-secure" };
+      assert.equal((await store.command(actorA, randomUUID(), 2, refresh)).status, 200);
+      assert.deepEqual(delivered(), [], "a retry or a change with no new red item sends nothing");
+
+      at = new Date(start + 30 * 60_000);
+      await store.sweepPush();
+      const swept = sent.slice();
+      assert.deepEqual(delivered(), ["e1", "e3"], "time alone can raise a red item; every coordinator is told");
+      await store.sweepPush();
+      assert.deepEqual(delivered(), [], "an item still red is not announced twice");
+      for (const { payload } of swept) assert.doesNotMatch(JSON.stringify(payload), /WF-|PT-|UM\d/);
+
+      assert.equal(await store.unsubscribe(actorA, device("e3").endpoint), "not-found", "only the owner can revoke");
+      assert.equal(await store.unsubscribe(actorB, device("e3").endpoint), "unsubscribed");
+      at = new Date(start + 90 * 60_000);
+      await store.sweepPush();
+      assert.deepEqual(delivered(), ["e1"]);
+    } finally {
+      await pool.end();
+    }
+  },
+);

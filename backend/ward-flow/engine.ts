@@ -1,5 +1,7 @@
+import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
 import { EVENT_ROLE, type WardFlowEvent } from "../../src/components/ward-management/ward-flow-events";
-import { NOW_ANCHOR } from "../../src/components/ward-management/ward-sites";
+import { scenarioNetwork } from "../../src/components/ward-management/ward-scenarios";
+import { NOW_ANCHOR, STANDARD_WARD_SITES } from "../../src/components/ward-management/ward-sites";
 import {
   seedWardFlowStateAt,
   wardFlowReducer,
@@ -101,4 +103,23 @@ export function applyCommand(world: SharedWorld, supplied: unknown, at: Date) {
     changes: { domainAudit, reset, facts: changedFacts(world.state, next) },
     reason: null,
   };
+}
+
+/**
+ * Phone push: the coordinator's active act-now (red) rows at `at`, reduced to what a lock screen
+ * may carry. Only the row's inbox id (for deduplication, never sent) and the hospital site the
+ * movement started at. No title, detail, movement id, name, UMRN or typed text leaves here.
+ */
+export function actNowAlerts(world: SharedWorld, at: Date): { id: string; site: string | null }[] {
+  if (!validWorld(world)) return [];
+  const state = world.state;
+  const sites = scenarioNetwork(state.scenario)?.sites ?? STANDARD_WARD_SITES;
+  const movements = new Map(state.movements.map((movement) => [movement.id, movement]));
+  return activeActNowItems(state, worldNow(world, at)).map((item) => {
+    const origin = movements.get(item.movementId)?.originEdId;
+    const site = origin
+      ? sites.find((candidate) => candidate.emergencyDepartment?.id === origin || candidate.code === origin)
+      : undefined;
+    return { id: item.id, site: site?.name ?? null };
+  });
 }

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { Pool } from "pg";
 import { DefaultAzureCredential } from "@azure/identity";
+import { freshAlerts } from "./push.mjs";
 
 export function createPostgresPool(config, credential = new DefaultAzureCredential()) {
   const pool = new Pool({
@@ -36,7 +37,12 @@ function canonical(value) {
   return value;
 }
 
-export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => new Date() }) {
+/**
+ * @param push Optional phone push from push.mjs `createPush`: `{ send, payload, coordinatorIds,
+ *   maxPerAccount }`. `send(subscription, payload)` resolves "sent" | "expired" | "failed".
+ *   Absent means the feature is off.
+ */
+export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => new Date(), push = null }) {
   const snapshot = (row, at) => ({
     dataMode: row.data_mode,
     revision: Number(row.revision),
@@ -75,10 +81,101 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
     if (!engine.validWorld(rows[0]?.payload)) throw new Error("Stored workspace is incompatible");
     return rows[0];
   }
+  /**
+   * Inside the workspace lock: the act-now rows not announced at the last evaluation. The first
+   * evaluation compares with `before` (the state the command started from), so turning the feature
+   * on never announces alerts that were already there. A reset world starts a new baseline, as
+   * the open-tab notifier does. Recipients are the active subscriptions of accounts still named as
+   * coordinators, except the account that made the change.
+   */
+  async function evaluatePush(client, world, before, at, excludeActorId) {
+    if (!push) return null;
+    const current = engine.actNowAlerts(world, at);
+    const stored = await client.query(
+      "SELECT item_ids FROM ward_flow.push_baselines WHERE workspace_id=$1 AND data_mode='prototype' FOR UPDATE",
+      [workspaceId],
+    );
+    const reset = before.state.worldGeneration !== world.state.worldGeneration;
+    const previous = reset
+      ? current.map((alert) => alert.id)
+      : stored.rowCount
+        ? stored.rows[0].item_ids
+        : engine.actNowAlerts(before, at).map((alert) => alert.id);
+    await client.query(
+      "INSERT INTO ward_flow.push_baselines(workspace_id, item_ids, evaluated_at) VALUES ($1, $2, $3) ON CONFLICT (workspace_id) DO UPDATE SET item_ids=EXCLUDED.item_ids, evaluated_at=EXCLUDED.evaluated_at",
+      [workspaceId, JSON.stringify(current.map((alert) => alert.id)), at],
+    );
+    const fresh = freshAlerts(previous, current);
+    if (!fresh.length) return null;
+    const { rows } = await client.query(
+      "SELECT id, endpoint, p256dh, auth FROM ward_flow.push_subscriptions WHERE workspace_id=$1 AND data_mode='prototype' AND revoked_at IS NULL AND actor_id = ANY($2::uuid[]) AND ($3::uuid IS NULL OR actor_id <> $3::uuid) ORDER BY id LIMIT 200",
+      [workspaceId, push.coordinatorIds, excludeActorId],
+    );
+    return rows.length ? { payload: push.payload(fresh), subscriptions: rows } : null;
+  }
+  /** After commit: deliver, drop subscriptions the push service reports gone, note successes. */
+  async function deliver(batch) {
+    if (!batch) return;
+    try {
+      const outcomes = await Promise.all(batch.subscriptions.map((row) => push.send(row, batch.payload)));
+      const expired = batch.subscriptions.filter((_, index) => outcomes[index] === "expired").map((row) => row.id);
+      const sent = batch.subscriptions.filter((_, index) => outcomes[index] === "sent").map((row) => row.id);
+      if (expired.length)
+        await pool.query("DELETE FROM ward_flow.push_subscriptions WHERE id = ANY($1::bigint[])", [expired]);
+      if (sent.length)
+        await pool.query("UPDATE ward_flow.push_subscriptions SET last_success_at=$2 WHERE id = ANY($1::bigint[])", [
+          sent,
+          clock(),
+        ]);
+    } catch {
+      // A push is a courtesy after the committed change. Its failure never alters the command result.
+      console.error("Ward Flow phone push unavailable");
+    }
+  }
   return {
+    pushEnabled: !!push,
     async ready() {
-      const { rows } = await pool.query("SELECT version FROM ward_flow.migrations WHERE version=2");
+      const version = push ? 3 : 2;
+      const { rows } = await pool.query("SELECT version FROM ward_flow.migrations WHERE version=$1", [version]);
       if (!rows.length) throw new Error("Shared schema unavailable");
+    },
+    async subscribe(actorId, subscription) {
+      if (!push) throw new Error("push-disabled");
+      return transaction(async (client, at) => {
+        await lock(client, actorId, at);
+        const owned = await client.query(
+          "SELECT count(*)::int AS count FROM ward_flow.push_subscriptions WHERE workspace_id=$1 AND actor_id=$2 AND revoked_at IS NULL AND endpoint <> $3",
+          [workspaceId, actorId, subscription.endpoint],
+        );
+        if (owned.rows[0].count >= push.maxPerAccount) return "limit";
+        // One device endpoint belongs to whoever signed in on it most recently.
+        await client.query(
+          "INSERT INTO ward_flow.push_subscriptions(workspace_id, actor_id, endpoint, p256dh, auth, created_at) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (endpoint) DO UPDATE SET workspace_id=EXCLUDED.workspace_id, actor_id=EXCLUDED.actor_id, p256dh=EXCLUDED.p256dh, auth=EXCLUDED.auth, created_at=EXCLUDED.created_at, last_success_at=NULL, revoked_at=NULL",
+          [workspaceId, actorId, subscription.endpoint, subscription.p256dh, subscription.auth, at],
+        );
+        return "subscribed";
+      });
+    },
+    async unsubscribe(actorId, endpoint) {
+      if (!push) throw new Error("push-disabled");
+      const { rowCount } = await pool.query(
+        "UPDATE ward_flow.push_subscriptions SET revoked_at=$4 WHERE workspace_id=$1 AND actor_id=$2 AND endpoint=$3 AND revoked_at IS NULL",
+        [workspaceId, actorId, endpoint, clock()],
+      );
+      return rowCount ? "unsubscribed" : "not-found";
+    },
+    /** Time alone can turn a row red (a wait passing its target). The timer trigger calls this. */
+    async sweepPush() {
+      if (!push) return;
+      const batch = await transaction(async (client, at) => {
+        const { rows } = await client.query(
+          "SELECT data_mode, revision, payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR UPDATE",
+          [workspaceId],
+        );
+        if (!rows[0] || !engine.validWorld(rows[0].payload)) return null;
+        return evaluatePush(client, rows[0].payload, rows[0].payload, at, null);
+      });
+      await deliver(batch);
     },
     async read(actorId) {
       const at = clock();
@@ -101,7 +198,9 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
       const fingerprint = createHash("sha256")
         .update(JSON.stringify(canonical({ expectedRevision, event })))
         .digest("hex");
-      return transaction(async (client, at) => {
+      let pushBatch = null;
+      const response = await transaction(async (client, at) => {
+        pushBatch = null;
         const row = await lock(client, actorId, at);
         const previous = await client.query(
           "SELECT fingerprint, status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
@@ -126,6 +225,7 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
           ({ outcome, changes, reason } = applied);
           status = outcome === "accepted" ? 200 : 422;
           if (outcome === "accepted") {
+            const before = row.payload;
             row.revision = priorRevision + 1;
             row.payload = applied.world;
             await client.query("UPDATE ward_flow.workspaces SET revision=$2, payload=$3, updated_at=$4 WHERE id=$1", [
@@ -134,6 +234,7 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
               row.payload,
               at,
             ]);
+            pushBatch = await evaluatePush(client, row.payload, before, at, actorId);
           }
         }
         const result = { outcome, commandRevision: Number(row.revision), ...(reason ? { error: reason } : {}) };
@@ -147,6 +248,8 @@ export function createWorkspaceStore(pool, { workspaceId, engine, clock = () => 
         );
         return { status, body: { ...result, snapshot: snapshot(row, at) } };
       });
+      await deliver(pushBatch);
+      return response;
     },
   };
 }

@@ -6,6 +6,7 @@ import { readConfig } from "./config.mjs";
 import { createStore, openStorage } from "./database.mjs";
 import { createAuthenticator, VerifierUnavailableError } from "./auth.mjs";
 import { createSharedHandler } from "./shared-http.mjs";
+import { createPush } from "./push.mjs";
 
 const BODY_LIMIT = 1_048_576;
 const SESSION_PATH = /^\/v1\/sessions\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
@@ -236,10 +237,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       sharedStore = createWorkspaceStore(pool, {
         workspaceId: config.workspaceId,
         engine,
+        push: await createPush(config),
       });
     }
     const server = listen(createHandler({ config, store: createStore(storage), authenticate, sharedStore }), config);
     registerShutdown(server, pool);
+    // Phone push: the same five-minute act-now re-check the Azure timer trigger runs.
+    if (sharedStore?.pushEnabled)
+      setInterval(() => {
+        void sharedStore.sweepPush().catch(() => console.error("Ward Flow phone push sweep unavailable"));
+      }, 300_000).unref();
     server.on("listening", () => console.log("Ward Flow backend listening; authenticated readiness check required"));
   } catch {
     console.error("Backend configuration or identity unavailable");

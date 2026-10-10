@@ -5,6 +5,7 @@
  * is open: no service worker, no server, no push. A notification carries the alert's title and
  * never a patient name, record number or typed text, because the operating system may show it on
  * a lock screen. When the browser has denied permission, nothing is sent and Settings says so.
+ * Phone alerts with the tab closed are separate: `ward-phone-push.ts` and the Azure backend.
  */
 import { useCallback } from "react";
 
@@ -88,10 +89,8 @@ export async function enableActNowNotifications(): Promise<NotificationSupport> 
   return permission;
 }
 
-/** Act-now rows in `current` that were not on the active list last time. Pure, so it is testable. */
-export function newActNowItems(previousIds: ReadonlySet<string>, current: readonly InboxItem[]): InboxItem[] {
-  return current.filter((item) => item.tone === "danger" && !previousIds.has(item.id));
-}
+/** Act-now rows in `current` that were not on the active list last time. Shared with phone push. */
+export { newActNowItems } from "@/components/ward-management/ward-act-now-items";
 
 /** The words a notification shows: the alert title only, never who it is about. */
 export function actNowNotificationText(items: readonly InboxItem[]): { title: string; body: string } {
