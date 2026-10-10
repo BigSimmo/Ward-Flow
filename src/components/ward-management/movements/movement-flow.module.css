@@ -225,6 +225,11 @@
   background: var(--wf-hover);
 }
 
+/* Act now: a thin red full edge, no fill (v10). */
+.needsItem[data-act-now="true"] {
+  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+}
+
 .needsItem:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
@@ -358,7 +363,7 @@
   padding: var(--wf-s-2) var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -463,11 +468,11 @@
 }
 
 .sub[data-tone="danger"] {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 .sub[data-tone="warn"] {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
 }
 
 .mono {
@@ -501,11 +506,11 @@
 }
 
 .waitWord[data-tone="danger"] {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 .waitWord[data-tone="warning"] {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
 }
 
 .meter {

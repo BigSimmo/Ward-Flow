@@ -345,7 +345,7 @@
 }
 
 .stepperStep[data-state="ahead"] {
-  opacity: 0.65;
+  color: var(--wf-dim);
 }
 
 .stepIndicatorRow {
@@ -901,7 +901,8 @@
 }
 
 .controlButtonPrimary:hover:not([disabled]):not([aria-disabled="true"]) {
-  filter: brightness(1.08);
+  background: var(--wf-pri-2);
+  border-color: var(--wf-pri-2);
 }
 
 .controlButtonDanger {
@@ -910,9 +911,12 @@
   border-color: var(--danger-border, var(--border));
 }
 
+/* Greyed for a role that cannot act (its reason shows beside it): by colour, never opacity. */
 .controlButton[disabled],
 .controlButton[aria-disabled="true"] {
-  opacity: 0.5;
+  border-color: var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-dim);
   cursor: not-allowed;
 }
 
