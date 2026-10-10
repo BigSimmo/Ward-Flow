@@ -128,18 +128,18 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
   const toolbar = useRef<HTMLElement>(null);
   // Pinned side columns and panel heights size themselves against the window, so they need to
-  // know how much of it this bar takes (ward-shell.module.css, --ward-frame-top).
+  // know how much of it this bar takes (globals.css, --wf-data-bar-height).
   useEffect(() => {
     const bar = toolbar.current;
     if (!bar || typeof ResizeObserver === "undefined") return;
     const root = document.documentElement;
-    const sync = () => root.style.setProperty("--ward-frame-top", `${bar.offsetHeight}px`);
+    const sync = () => root.style.setProperty("--wf-data-bar-height", `${bar.offsetHeight}px`);
     sync();
     const observer = new ResizeObserver(sync);
     observer.observe(bar);
     return () => {
       observer.disconnect();
-      root.style.removeProperty("--ward-frame-top");
+      root.style.removeProperty("--wf-data-bar-height");
     };
   }, []);
   return (

@@ -3121,7 +3121,7 @@ export function WardBoard({
           <section
             className={`${styles.workBand} ${styles.workZone}`}
             aria-labelledby="ward-board-work-band-heading"
-            data-wf-rail
+            data-wf-rail="1121"
           >
             <details className={styles.workBandFold} data-testid="ward-board-work-band" open>
               <summary className={styles.workBandSummary}>
