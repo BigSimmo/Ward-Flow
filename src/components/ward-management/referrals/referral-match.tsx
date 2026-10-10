@@ -195,6 +195,11 @@ type ReferralMatchViewProps = {
   rejections: Rejection[];
   patientInfo?: { displayName: string; umrn: string };
   hideDossierHeader?: boolean;
+  /**
+   * v10: called straight after an Accept or Decline is dispatched, with the toast title. The board
+   * checks the reducer took it and offers Undo (`useReferralDecisionUndo`).
+   */
+  onDecision?: (title: string) => void;
 };
 
 /**
@@ -348,6 +353,7 @@ export function ReferralMatchView({
   rejections,
   patientInfo,
   hideDossierHeader = false,
+  onDecision,
 }: ReferralMatchViewProps) {
   /*
    * EVERY HOOK THIS VIEW HAS IS CALLED HERE, above the not-a-bed-question return below, and none
@@ -873,6 +879,7 @@ export function ReferralMatchView({
       genderPlacementChecked,
     });
     setCheckToken((token) => token + 1);
+    onDecision?.(`Accepted at ${units.find((unit) => unit.id === unitId)?.name ?? "the ward"}`);
   }
 
   /**
@@ -927,6 +934,7 @@ export function ReferralMatchView({
       reason: declineReason,
     });
     setCheckToken((token) => token + 1);
+    onDecision?.("Referral declined");
   }
 
   /**
@@ -950,6 +958,7 @@ export function ReferralMatchView({
       reason: communityDeclineReason,
     });
     setCheckToken((token) => token + 1);
+    onDecision?.("Community referral declined");
   }
 
   /**
@@ -976,6 +985,7 @@ export function ReferralMatchView({
       destinationKind: "community_team",
     });
     setCheckToken((token) => token + 1);
+    onDecision?.("Accepted for community follow-up");
   }
 
   function handleEdAccept() {
@@ -989,6 +999,7 @@ export function ReferralMatchView({
     });
     setEdAcceptConfirmOpen(false);
     setCheckToken((token) => token + 1);
+    onDecision?.("Accepted by the emergency department");
   }
 
   /**

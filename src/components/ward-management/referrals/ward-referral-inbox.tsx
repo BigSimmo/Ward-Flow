@@ -5,6 +5,7 @@ import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import { REFERRAL_DECLINE_REASONS, type ReferralDeclineReason } from "../ward-model";
 import { DECLINE_REASON_LABELS, wardTransferNeedsCoordinator } from "../ward-referrals";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
+import { useReferralDecisionUndo } from "./use-referral-decision-undo";
 import styles from "./ward-referral-drawer.module.css";
 
 export function WardReferralInbox({ unitId }: { unitId: string }) {
@@ -15,6 +16,8 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
   const lastError = newestRejection?.movementId === attempt?.id ? newestRejection?.reason : null;
   const entries = wardReferralInbox?.(unitId) ?? [];
   const [reasons, setReasons] = useState<Record<string, ReferralDeclineReason | "">>({});
+  // A ward undoes its own decision by naming itself (UNDO_REFERRAL_DECISION, v10 pass 2).
+  const watchDecision = useReferralDecisionUndo("ward", unitId);
   if (!entries.length) return null;
   return (
     <section className={styles.refCard} aria-label="Ward referral inbox">
@@ -66,6 +69,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                         destinationKind: "psychiatric_ward",
                         unitId,
                       });
+                      watchDecision(entry.id, "Referral accepted");
                     }}
                   >
                     Accept referral
@@ -86,6 +90,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                       reason: "no_suitable_bed",
                       waitlist: true,
                     });
+                    watchDecision(entry.id, "Referral waitlisted");
                   }}
                 >
                   Waitlist
@@ -127,6 +132,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                         unitId,
                         reason,
                       });
+                      watchDecision(entry.id, "Referral declined");
                     }
                   }}
                 >
