@@ -8,6 +8,7 @@ import { bedsForecast } from "@/components/ward-management/capacity/beds-forecas
 import { plannedAdmissionsStillNeedingABed } from "@/components/ward-management/capacity/planned-admissions-reducer";
 import { plannedAdmissionAgenda, plannedAdmissionDays } from "@/components/ward-management/capacity/planned-admissions";
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
+import { derivedSexMix } from "@/components/ward-management/ward-board-derivations";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { buildActionInbox } from "@/components/ward-management/ward-derivations";
 import { eventLogEntryFor } from "@/components/ward-management/ward-event-log";
@@ -303,8 +304,9 @@ describe("CONVERT_PLANNED_ADMISSION", () => {
   });
 
   it("applies the placement eligibility gates: a single-sex ward refuses, with no override path", () => {
-    // fsh-adult-secure is Male only. A booking records sex, never gender, so the gender_designation
-    // gate cannot pass there, exactly as it refuses a movement with no gender recorded.
+    // fsh-adult-secure is Male only. This booking records no gender, so the gender_designation gate
+    // cannot pass there, exactly as it refuses a movement with no gender recorded. Recorded sex is
+    // never read in its place.
     const booked = book(seedWardFlowState(), { unitId: "fsh-adult-secure", sex: "Male", initials: "cd" });
     const refused = apply(booked, {
       type: "CONVERT_PLANNED_ADMISSION",
@@ -899,5 +901,153 @@ describe("review follow-up: callers beyond Alerts count the overdue booking", ()
     const planned = search.tasks.find((result) => result.task.id === "planned-arrival-PA-SEED-03")!;
     // A planned row opens Capacity, never a movement page.
     expect(planned.href).toBe("/mockups/ward-flow/capacity");
+  });
+});
+
+describe("bookings record gender, and a single-sex ward takes a matching one (Josh, 9 Oct 2026)", () => {
+  const MALE_ONLY = "fsh-adult-secure";
+
+  function convert(state: WardFlowState, plannedAdmissionId = "PA-01", unitId = MALE_ONLY): WardFlowState {
+    return apply(state, {
+      type: "CONVERT_PLANNED_ADMISSION",
+      role: "coordinator",
+      now: NOW,
+      plannedAdmissionId,
+      unitId,
+    });
+  }
+
+  function change(
+    state: WardFlowState,
+    overrides: Partial<Extract<WardFlowEvent, { type: "CHANGE_PLANNED_ADMISSION" }>> = {},
+  ): WardFlowState {
+    const planned = state.plannedAdmissions.find((candidate) => candidate.id === "PA-01")!;
+    return apply(state, {
+      type: "CHANGE_PLANNED_ADMISSION",
+      role: "coordinator",
+      now: NOW,
+      plannedAdmissionId: "PA-01",
+      reason: planned.reason,
+      unitId: planned.unitId,
+      expectedArrivalAt: planned.expectedArrivalAt,
+      expectedStayDays: planned.expectedStayDays,
+      legalStatus: planned.legalStatus,
+      calendarDate: CALENDAR_DATE,
+      ...overrides,
+    });
+  }
+
+  it("converts an initials-only booking whose picked gender matches the ward, and refuses one that does not", () => {
+    const male = book(seedWardFlowState(), { unitId: MALE_ONLY, sex: "Male", initials: "cd", gender: "Male" });
+    expect(newest(male).gender).toBe("Male");
+    const arrived = convert(male);
+    expect(arrived.rejections).toEqual([]);
+    expect(newest(arrived).state).toBe("arrived");
+
+    const female = book(seedWardFlowState(), { unitId: MALE_ONLY, sex: "Female", initials: "ef", gender: "Female" });
+    const refused = convert(female);
+    expect(lastRejection(refused)).toMatch(/failed gate gender_designation/);
+    expect(newest(refused).state).toBe("booked");
+  });
+
+  it("counts the arrival by gender, not recorded sex, and the departure takes it from the same bucket", () => {
+    // Recorded sex Female, gender Male: the Male-only ward takes the booking, so it must count a
+    // Male occupant, carry gender Male on the stay, and give the Male count back on departure.
+    const booked = book(seedWardFlowState(), { unitId: MALE_ONLY, sex: "Female", initials: "gh", gender: "Male" });
+    const before = booked.units.find((unit) => unit.id === MALE_ONLY)!.sexMix;
+    const arrived = convert(booked);
+    expect(arrived.rejections).toEqual([]);
+    const admissionId = newest(arrived).admissionId!;
+    const admission = arrived.admissions.find((entry) => entry.id === admissionId)!;
+    expect(admission).toMatchObject({ sex: "Female", gender: "Male" });
+    const during = arrived.units.find((unit) => unit.id === MALE_ONLY)!.sexMix;
+    expect(during.Male).toBe(before.Male + 1);
+    expect(during.Female).toBe(before.Female);
+    const derivedBefore = derivedSexMix(booked.admissions, MALE_ONLY);
+    expect(derivedSexMix(arrived.admissions, MALE_ONLY)).toEqual({ ...derivedBefore, Male: derivedBefore.Male + 1 });
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(arrived)))).toBe(true);
+
+    const left = apply(arrived, {
+      type: "RECORD_LEAVING",
+      role: "ward",
+      now: NOW + 60,
+      admissionId,
+      actingUnitId: MALE_ONLY,
+      leavingDestination: "discharged-to-the-community",
+    });
+    expect(left.rejections).toEqual([]);
+    const after = left.units.find((unit) => unit.id === MALE_ONLY)!.sexMix;
+    expect(after.Male).toBe(before.Male);
+    expect(after.Female).toBe(before.Female);
+  });
+
+  it("takes a linked patient's gender from the record, never from the event", () => {
+    // PT-002's record says Male; the event's Female is ignored.
+    const booked = book(seedWardFlowState(), {
+      unitId: MALE_ONLY,
+      initials: null,
+      patientId: "PT-002",
+      sex: "Male",
+      gender: "Female",
+    });
+    expect(booked.rejections).toEqual([]);
+    expect(newest(booked).gender).toBe("Male");
+    expect(convert(booked).rejections).toEqual([]);
+
+    // A change cannot rewrite it either.
+    const changed = change(booked, { gender: "Female" });
+    expect(changed.rejections).toEqual([]);
+    expect(newest(changed).gender).toBe("Male");
+  });
+
+  it("reads the record at conversion for a linked booking that holds no gender (a seed or an older save)", () => {
+    const booked = book(seedWardFlowState(), { unitId: MALE_ONLY, initials: null, patientId: "PT-002", sex: "Male" });
+    const withoutGender: WardFlowState = {
+      ...booked,
+      plannedAdmissions: booked.plannedAdmissions.map((planned) => {
+        const copy = { ...planned };
+        delete copy.gender;
+        return copy;
+      }),
+    };
+    expect(newest(withoutGender).gender).toBeUndefined();
+    expect(convert(withoutGender).rejections).toEqual([]);
+  });
+
+  it("changes an initials-only booking's gender, keeps it when a change names none, and refuses an unlisted one", () => {
+    const booked = book(seedWardFlowState(), { unitId: MALE_ONLY, sex: "Male", initials: "cd" });
+    expect(newest(booked).gender).toBeUndefined();
+    expect(lastRejection(convert(booked))).toMatch(/failed gate gender_designation/);
+
+    const recorded = change(booked, { gender: "Male" });
+    expect(recorded.rejections).toEqual([]);
+    expect(newest(recorded).gender).toBe("Male");
+    const kept = change(recorded);
+    expect(newest(kept).gender).toBe("Male");
+    expect(convert(kept).rejections).toEqual([]);
+
+    const unlisted = change(recorded, { gender: "Robot" as never });
+    expect(lastRejection(unlisted)).toMatch(/gender must be chosen from the listed genders/);
+    const badBooking = book(seedWardFlowState(), { gender: "Robot" as never });
+    expect(lastRejection(badBooking)).toMatch(/gender must be chosen from the listed genders/);
+  });
+
+  it("restores a booking with or without gender, and refuses an unlisted one", () => {
+    const state = book(seedWardFlowState(), { gender: "Non-binary" });
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(state)))).toBe(true);
+
+    const noGender = JSON.parse(JSON.stringify(state));
+    for (const planned of noGender.plannedAdmissions) delete planned.gender;
+    expect(isValidStoredWardFlowState(noGender)).toBe(true);
+
+    const unlisted = JSON.parse(JSON.stringify(state));
+    unlisted.plannedAdmissions.at(-1).gender = "Robot";
+    expect(isValidStoredWardFlowState(unlisted)).toBe(false);
+  });
+
+  it("keeps gender an enum on both booking events, never typed text", () => {
+    expect(WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has("CHANGE_PLANNED_ADMISSION")).toBe(true);
+    // Booking stays on the typed-text list for its initials, not for gender.
+    expect(WARD_FLOW_TYPED_TEXT_EVENT_TYPES.has("BOOK_PLANNED_ADMISSION")).toBe(true);
   });
 });

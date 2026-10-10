@@ -100,6 +100,8 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [hereOpen, setHereOpen] = useState(false);
+  // Change view opens this drawer without a page toast, so a Preview tile says so here instead.
+  const [previewNote, setPreviewNote] = useState<string | null>(null);
 
   const { statewide, sites, teams } = useMemo(
     () =>
@@ -152,17 +154,17 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
         .filter((desk): desk is Desk => desk !== undefined)
         .slice(0, 3);
 
-  // Owner answer 38: the patient-in-focus shortcut names other wards, so it is coordinators-only,
-  // exactly as on the rail's Change view.
-  const focusMovement =
-    isCoordinatorRoute && focusMovementId
-      ? movements.find((movement) => movement.id === focusMovementId && isOpenMovement(movement))
-      : undefined;
-  const focusWardIds = focusMovement
-    ? focusMovement.acceptedUnitId
-      ? [focusMovement.acceptedUnitId]
-      : focusMovement.referredUnitIds
-    : [];
+  // Owner answer 38: the wards a patient was referred to are named to coordinators only. Their
+  // emergency department is not another ward, so that shortcut shows on every route.
+  const focusMovement = focusMovementId
+    ? movements.find((movement) => movement.id === focusMovementId && isOpenMovement(movement))
+    : undefined;
+  const focusWardIds =
+    focusMovement && isCoordinatorRoute
+      ? focusMovement.acceptedUnitId
+        ? [focusMovement.acceptedUnitId]
+        : focusMovement.referredUnitIds
+      : [];
   const focusWards = focusWardIds
     .map((id) => units.find((unit) => unit.id === id))
     .filter((unit): unit is NonNullable<typeof unit> => unit !== undefined);
@@ -305,6 +307,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
               href={desk.href}
               className={styles.stateTile}
               aria-current={desk.id === hereId ? "page" : undefined}
+              data-testid={`workstation-open-${desk.id}`}
               onClick={(event) => {
                 if (atHome(desk)) event.preventDefault();
                 else open(desk);
@@ -330,7 +333,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
               className={cx(styles.stateTile, styles.preview)}
               aria-disabled="true"
               title="No screen for this role yet"
-              onClick={() => onPreview?.(name)}
+              onClick={() => (onPreview ? onPreview(name) : setPreviewNote(`${name}: Not wired in this prototype.`))}
             >
               <Icon icon={glyph} size={16} />
               <span className={styles.who}>
@@ -340,6 +343,11 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
             </button>
           ))}
         </div>
+      ) : null}
+      {previewNote && !searching ? (
+        <p className={styles.empty} role="status">
+          {previewNote}
+        </p>
       ) : null}
 
       <div className={styles.list}>
