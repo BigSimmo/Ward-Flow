@@ -126,6 +126,13 @@ export function createWorkspaceStore(
       "INSERT INTO ward_flow.push_baselines(workspace_id, item_ids, evaluated_at) VALUES ($1, $2, $3) ON CONFLICT (workspace_id) DO UPDATE SET item_ids=EXCLUDED.item_ids, evaluated_at=EXCLUDED.evaluated_at",
       [workspaceId, JSON.stringify(current.map((alert) => alert.id)), at],
     );
+    // An item no longer red is never announced late; its rows go, so the table stays small. Done
+    // here, under the workspace and baseline locks, so it can never race a commit that has just
+    // queued a new item (deliver() reads the world without a lock and could hold a stale red set).
+    await client.query(
+      "DELETE FROM ward_flow.push_deliveries d USING ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND s.workspace_id=$1 AND NOT (d.item_id = ANY($2::text[]))",
+      [workspaceId, current.map((alert) => alert.id)],
+    );
     const fresh = freshAlerts(previous, current);
     if (!fresh.length) return false;
     // An item that left and came back red is announced again, as the open-tab notifier does.
@@ -157,11 +164,6 @@ export function createWorkspaceStore(
       );
       if (!worlds[0] || !engine.validWorld(worlds[0].payload)) return;
       const red = new Map(engine.actNowAlerts(worlds[0].payload, at).map((alert) => [alert.id, alert]));
-      // An item no longer red is never announced late; its rows go, so the table stays small.
-      await pool.query(
-        "DELETE FROM ward_flow.push_deliveries d USING ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND s.workspace_id=$1 AND NOT (d.item_id = ANY($2::text[]))",
-        [workspaceId, [...red.keys()]],
-      );
       const due = "d.status='pending' AND d.attempts < $3 AND (d.last_attempt_at IS NULL OR d.last_attempt_at <= $4)";
       let after = "0";
       for (;;) {
@@ -177,14 +179,29 @@ export function createWorkspaceStore(
             SUBSCRIPTION_PAGE,
           ],
         );
+        if (!rows.length) break;
         const devices = new Map();
+        const unseen = { ids: [], items: [] };
         for (const row of rows) {
+          const item = red.get(row.item_id);
+          // A row queued by a commit after this unlocked read names an item this read has not
+          // seen. It is released unclaimed for the committing command's own delivery or the next
+          // sweep, never sent as an empty entry or marked sent with the device's other rows.
+          if (!item) {
+            unseen.ids.push(row.id);
+            unseen.items.push(row.item_id);
+            continue;
+          }
           const device = devices.get(row.id) ?? { ...row, items: [] };
-          device.items.push(red.get(row.item_id));
+          device.items.push(item);
           devices.set(row.id, device);
         }
-        if (!devices.size) break;
-        after = [...devices.keys()].reduce((a, b) => (BigInt(a) > BigInt(b) ? a : b));
+        after = rows.map((row) => row.id).reduce((a, b) => (BigInt(a) > BigInt(b) ? a : b));
+        if (unseen.ids.length)
+          await pool.query(
+            "UPDATE ward_flow.push_deliveries d SET attempts = d.attempts - 1, last_attempt_at = NULL FROM unnest($1::bigint[], $2::text[]) AS u(id, item) WHERE d.subscription_id = u.id AND d.item_id = u.item AND d.status='pending' AND d.last_attempt_at=$3",
+            [unseen.ids, unseen.items, at],
+          );
         const list = [...devices.values()];
         const results = await Promise.all(list.map((device) => push.send(device, push.payload(device.items))));
         const ids = { sent: [], expired: [], retry: [], rejected: [] };

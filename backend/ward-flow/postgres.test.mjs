@@ -411,6 +411,48 @@ test(
         await store.sweepPush();
         assert.deepEqual(sent, [], "announced once delivery succeeded");
       });
+      await t.test("a delivery holding a stale read never drops or empties a freshly queued alert", async () => {
+        // deliver() reads the world without a lock, so a commit can queue an item it has not seen.
+        // Simulate that read with an engine whose next alert list (the delivery's) comes back empty.
+        let stale = false;
+        let fail = true;
+        const lagging = {
+          ...engine,
+          actNowAlerts: (world, at) => {
+            if (stale) {
+              stale = false;
+              return [];
+            }
+            return engine.actNowAlerts(world, at);
+          },
+        };
+        const { workspaceId, sent, store } = setup({
+          engine: lagging,
+          send: async (row) =>
+            fail && row.endpoint.endsWith("/f1")
+              ? { outcome: "failed", category: "status 503", retry: true }
+              : undefined,
+        });
+        await subscribeTwo(store);
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"]);
+        assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"]);
+        fail = false;
+        // The sweep's evaluation (under the lock) sees the item; its delivery read is stale.
+        const realAlerts = engine.actNowAlerts;
+        let calls = 0;
+        lagging.actNowAlerts = (world, at) => {
+          calls += 1;
+          if (calls === 2) stale = true;
+          return stale ? ((stale = false), []) : realAlerts(world, at);
+        };
+        await store.sweepPush();
+        assert.deepEqual(sent.splice(0), [], "nothing is sent for an item the delivery has not seen");
+        assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"], "the row is kept, unclaimed");
+        await store.sweepPush();
+        assert.deepEqual(sent.splice(0), ["f1"], "the next delivery sends it");
+        assert.deepEqual(await statuses(workspaceId), ["f1 sent 2", "f2 sent 1"]);
+      });
       await t.test("an evaluation error is logged and the command still commits", async () => {
         const broken = {
           ...engine,
