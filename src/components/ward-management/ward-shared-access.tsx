@@ -128,20 +128,21 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
   const toolbar = useRef<HTMLElement>(null);
   // Pinned side columns and panel heights size themselves against the window, so they need to
-  // know how much of it this bar takes (globals.css, --wf-data-bar-height).
-  useEffect(() => {
+  // know how much of it this bar takes (globals.css, --wf-data-bar-height). The bar only changes
+  // height when its text changes (a render) or the window width wraps it (a resize), so those two
+  // re-measure it; no ResizeObserver, which screens' own overflow tests stub as a single instance.
+  const syncBarHeight = useCallback(() => {
     const bar = toolbar.current;
-    if (!bar || typeof ResizeObserver === "undefined") return;
-    const root = document.documentElement;
-    const sync = () => root.style.setProperty("--wf-data-bar-height", `${bar.offsetHeight}px`);
-    sync();
-    const observer = new ResizeObserver(sync);
-    observer.observe(bar);
-    return () => {
-      observer.disconnect();
-      root.style.removeProperty("--wf-data-bar-height");
-    };
+    if (bar) document.documentElement.style.setProperty("--wf-data-bar-height", `${bar.offsetHeight}px`);
   }, []);
+  useEffect(syncBarHeight);
+  useEffect(() => {
+    window.addEventListener("resize", syncBarHeight);
+    return () => {
+      window.removeEventListener("resize", syncBarHeight);
+      document.documentElement.style.removeProperty("--wf-data-bar-height");
+    };
+  }, [syncBarHeight]);
   return (
     <>
       <section ref={toolbar} className={styles.toolbar} aria-label="Ward Flow data mode" data-data-mode="prototype">
