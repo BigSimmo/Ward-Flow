@@ -27,29 +27,24 @@ function nextRecordedStep(movement: Movement, anchor: Instant): Instant {
 }
 
 /**
- * Returns a copy of `movements` in which each referred movement carries a synthetic `referredAt`,
- * and each accepted one a synthetic `acceptedAt`, between its arrival and its next recorded step.
+ * Returns a copy of `movements` in which each movement accepted and past "awaiting bed" carries a
+ * synthetic `referredAt` and `acceptedAt`, between its arrival and its next recorded step.
  * A time already recorded is kept, and a movement with no room between its steps is left alone.
  * Order and every other field are unchanged.
  */
 export function withDemoStageTimes(movements: readonly Movement[], anchor: Instant): Movement[] {
   return movements.map((movement) => {
-    const referred =
-      movement.referredUnitIds.length > 0 || movement.acceptedUnitId !== undefined || movement.declines.length > 0;
-    if (!referred) return movement;
+    // Only steps already decided are timed, so no decision target (`ward-decision-targets.ts`)
+    // starts running from a synthetic time: a referral once a ward has accepted, and an acceptance
+    // once the bed is past "accepted, awaiting bed". A pending step keeps saying it is not recorded.
+    if (movement.acceptedUnitId === undefined || movement.stage === "accepted_awaiting_bed") return movement;
     const limit = nextRecordedStep(movement, anchor);
     if (limit - movement.openedAt < 4) return movement;
     const referredAt =
       movement.referredAt ?? movement.openedAt + Math.max(1, Math.round((limit - movement.openedAt) * REFERRED_SHARE));
     if (referredAt >= limit) return movement;
     const acceptedAt =
-      movement.acceptedUnitId === undefined
-        ? movement.acceptedAt
-        : (movement.acceptedAt ?? referredAt + Math.max(1, Math.round((limit - referredAt) * ACCEPTED_SHARE)));
-    return {
-      ...movement,
-      referredAt,
-      ...(acceptedAt !== undefined ? { acceptedAt } : {}),
-    };
+      movement.acceptedAt ?? referredAt + Math.max(1, Math.round((limit - referredAt) * ACCEPTED_SHARE));
+    return { ...movement, referredAt, acceptedAt };
   });
 }

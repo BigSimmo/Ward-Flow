@@ -2379,6 +2379,21 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
     ).toEqual([]);
     accepted.add("PATIENT_ARRIVED");
     offenders.push(...offendingFormsIn(arrived, `PATIENT_ARRIVED(${code})`));
+    // v10 pass 3 (10 Oct 2026): the round-robin cannot reach the transport steps for every code,
+    // so their undo is driven here, on the arrival chain that does, and checked like the rest.
+    const arrivalUndone = undoOf(
+      {
+        type: "PATIENT_ARRIVED",
+        role: EVENT_ROLE.PATIENT_ARRIVED[0],
+        now: NOW_ANCHOR,
+        movementId: forArrival.movementId,
+      },
+      arrived,
+      NOW_ANCHOR,
+    );
+    expect(arrivalUndone, `UNDO_TRANSPORT_STEP after PATIENT_ARRIVED for Form ${code} was refused`).toBeDefined();
+    accepted.add("UNDO_TRANSPORT_STEP");
+    offenders.push(...offendingFormsIn(arrivalUndone!.state, `UNDO_TRANSPORT_STEP(${code})`));
   }
 
   // Non-vacuity 3: every movement-targeted event type was ACCEPTED against a movement carrying
