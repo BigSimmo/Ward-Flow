@@ -604,7 +604,11 @@ async function goToBoardViaPhoneRail(page: Page) {
   // content sits outside `rail`'s own DOM subtree once open — the target link is looked up from
   // `page`, unscoped, rather than from `rail`.
   if (await openRailSheetIfNeeded(page, rail)) {
-    await page.getByRole("link", { name: /^Referrals\b/iu }).click();
+    // The phone menu lists Referrals twice (Needs you and the dock); both open the same page.
+    await page
+      .getByRole("link", { name: /^Referrals\b/iu })
+      .first()
+      .click();
   } else {
     await rail.getByRole("link", { name: /^Referrals\b/iu }).click();
   }

@@ -506,6 +506,7 @@
   .sheet * {
     color: CanvasText !important;
     background-color: Canvas !important;
+    background-image: none !important;
   }
 
   .foot::before,

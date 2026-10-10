@@ -1246,7 +1246,9 @@
 
   .drawerTrigger[data-bar-mode="activity"],
   .drawerTrigger[data-bar-mode="tools"],
-  .vsep {
+  .vsep,
+  .primaryWrap {
+    /* .primaryWrap: the server render does not know it is a phone, so CSS hides it before hydration. */
     display: none;
   }
 
