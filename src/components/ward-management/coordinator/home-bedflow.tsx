@@ -337,8 +337,9 @@ export function HomeBedflow({
               {noBedCount > 0 ? <span className={styles.forNoBed}>{` · ${noBedCount} no bed`}</span> : null}
             </span>
           </div>
-          {/* Only once a destination or a referral is recorded: where this patient stands. */}
-          {movement.acceptedUnitId || movement.referredUnitIds.length > 0 ? (
+          {/* Where this patient stands, once a destination or referral is recorded, or when no
+              candidate is eligible (the line then names how many were excluded). */}
+          {movement.acceptedUnitId || movement.referredUnitIds.length > 0 || !bestFit ? (
             <p className={styles.forStatus}>{hubStatusText(movement, shortlist, units, now, who.displayName)}</p>
           ) : null}
         </div>
