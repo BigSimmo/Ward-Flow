@@ -658,3 +658,123 @@
     height: var(--wf-touch, 44px);
   }
 }
+
+.layout[hidden] {
+  display: none;
+}
+
+/* v10 phone: search first, then the short identity form with a sticky Add bar. */
+@media (max-width: 48rem) {
+  .phLanding {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+    min-width: 0;
+  }
+
+  .phBig.phBig {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-4);
+  }
+
+  .phBigBody {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--wf-s-1);
+    min-width: 0;
+  }
+
+  .phBigBody .muted {
+    white-space: normal;
+  }
+
+  .phBigIcon {
+    display: inline-grid;
+    place-items: center;
+    width: var(--wf-touch, 44px);
+    height: var(--wf-touch, 44px);
+    margin-bottom: var(--wf-s-1);
+    color: var(--wf-ink-2);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+  }
+
+  .phBigFoot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wf-s-2);
+  }
+
+  .phBtn.phBtn {
+    width: 100%;
+    min-height: var(--wf-touch, 44px);
+    justify-content: center;
+  }
+
+  .phHead {
+    margin: var(--wf-s-1) 0 0;
+    color: var(--wf-ink-1);
+    font: 600 var(--wf-fs-14) / 1.4 var(--wf-font);
+  }
+
+  .phList {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .phCard.phCard {
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+
+  .phNote {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    color: var(--wf-ink-3);
+    font-size: var(--wf-fs-12);
+  }
+
+  /* The short form: identity only. The page flows as one column so the Add bar can stick. */
+  .main[data-phone-form="true"] .phHide {
+    display: none;
+  }
+
+  .main[data-phone-form="true"] .layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .main[data-phone-form="true"] .form,
+  .main[data-phone-form="true"] .side {
+    display: contents;
+  }
+
+  .main[data-phone-form="true"] .submitBar.submitBar {
+    position: sticky;
+    bottom: var(--wf-s-2);
+    z-index: 2;
+    order: 10;
+    border-color: var(--wf-line-2);
+  }
+
+  .main[data-phone-form="true"] .submitActions {
+    flex: 1 1 100%;
+  }
+
+  .main[data-phone-form="true"] .submitActions > :last-child {
+    flex: 1 1 auto;
+  }
+}

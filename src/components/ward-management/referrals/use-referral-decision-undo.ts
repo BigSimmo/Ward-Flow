@@ -23,7 +23,7 @@ type Watch =
  * read unconditionally inside `useToast`, so the hook order never changes.
  * Shared request: a `useOptionalToast` in `@/components/ui/toast` would replace this.
  */
-function useOptionalToast(): ToastApi | null {
+export function useOptionalToast(): ToastApi | null {
   try {
     return useToast();
   } catch {
