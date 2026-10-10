@@ -1030,9 +1030,12 @@ button.registerRow:hover {
 
 @media (max-width: 48rem) {
   /* Phone form (Task 8): queue first. The ED card and State bedflow leave the page; the queue and
-     the registers stay, and the registers collapse behind "Today's answers". */
-  .edCard,
-  .flowCard {
+     the registers stay, and the registers collapse behind "Today's answers".
+     The doubled class outranks the shared Card's own `display: flex`: CSS-module chunk order is
+     not guaranteed, and once another module loaded wf/card.module.css later, the equal-specificity
+     Card rule won and the hidden cards came back (and overflowed a 320px phone by 57px). */
+  .edCard.edCard,
+  .flowCard.flowCard {
     display: none;
   }
 

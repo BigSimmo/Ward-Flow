@@ -1,0 +1,16 @@
+# GitGuardian configuration (ggshield, and the GitHub check where it honours this file).
+# The matches below are synthetic placeholders, never real credentials: the password parts of
+# fake remote-URL fixtures once in tests/ward-flow-remote-boundary.test.ts (commits 037cd9b2 and
+# 7daa142f). The fixtures are now built at runtime. Full URLs are deliberately not repeated here.
+version: 2
+secret:
+  # This security test builds fake credential-prefixed remotes on purpose (see the header above).
+  ignored_paths:
+    - tests/ward-flow-remote-boundary.test.ts
+  ignored_matches:
+    - name: synthetic remote-URL fixture password (x-access-token placeholder)
+      match: ghs_example
+    - name: synthetic remote-URL fixture password (user placeholder)
+      match: token
+    - name: synthetic remote-URL fixture password (cursor-cloud placeholder, commit 7daa142f)
+      match: cursor-cloud-example
