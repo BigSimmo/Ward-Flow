@@ -1,31 +1,50 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { GanttChart, LayoutGrid, List, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  GanttChart,
+  LayoutGrid,
+  List,
+  LogIn,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 
 import {
-  BarList,
   Button,
   Card,
   CheckingFoot,
+  Drawer,
   EmptyState,
+  FactGrid,
+  GroupHead,
   Hero,
   HeroStat,
   Icon,
   Kbd,
+  PhoneListRow,
+  PhoneSheet,
+  ScrollRow,
   Segmented,
   SrOnly,
   StatusGlyph,
   TextInput,
   buttonClass,
   cx,
+  useIsPhone,
 } from "@/components/wf";
 import {
   ED_HOME_SERVICE_BAND_ORDER,
   edHomeSummaries,
+  edWaitingSeries,
   type EdSummary,
 } from "@/components/ward-management/ed/ed-home-derivations";
+import { RowSpark, RowTrend } from "@/components/ward-management/ed/ed-row-spark";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement, MovementStage } from "@/components/ward-management/ward-model";
@@ -33,7 +52,7 @@ import { createPatientResolver } from "@/components/ward-management/ward-patient
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { edShortName } from "@/components/ward-management/ward-sites";
-import { edHref, patientHref } from "@/components/ward-management/shell/ward-facade";
+import { edHref, patientHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./ed-index.module.css";
@@ -51,6 +70,7 @@ type ServiceFilter = "all" | HealthService;
 type StatusFilter = "all" | "past-target" | "waiting" | "clear";
 type OrderBy = "longest" | "most" | "service";
 type ViewMode = "cards" | "table" | "lanes";
+type PhoneView = "list" | "lanes" | "service";
 type WaitClock = "past" | "severe" | "in";
 
 type EdPerson = {
@@ -74,6 +94,8 @@ type EdRow = {
   held: number;
   leaving: number;
   forms: number;
+  /** Waiting at each 2 hour point over the last 12 hours, the last point now (`edWaitingSeries`). */
+  trend: number[];
 };
 
 const STAGE_LABEL: Record<MovementStage, string> = {
@@ -149,7 +171,11 @@ export function EdIndex() {
   const [view, setView] = useState<ViewMode>("cards");
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState<Highlight | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [phoneView, setPhoneView] = useState<PhoneView>("list");
+  const [phoneFiltersOpen, setPhoneFiltersOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const isPhone = useIsPhone();
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -185,6 +211,9 @@ export function EdIndex() {
           };
         })
         .sort((a, b) => b.wait - a.wait);
+      const trend = edWaitingSeries(movements, summary.ed.id, now);
+      // The last point is now: it reads the same open count as the card, by construction.
+      trend[trend.length - 1] = summary.waiting;
       const inStages = (stages: readonly MovementStage[]) =>
         people.filter((person) => stages.includes(person.movement.stage)).length;
       return {
@@ -197,6 +226,7 @@ export function EdIndex() {
         held: inStages(HELD),
         leaving: inStages(LEAVING),
         forms: people.filter((person) => person.movement.legalForm).length,
+        trend,
       };
     });
   }, [movements, patients, referrals, units, now, accessTarget]);
@@ -253,11 +283,6 @@ export function EdIndex() {
     })),
   ];
 
-  const serviceBars = services.map((name) => {
-    const value = rows.filter((row) => row.summary.service === name).reduce((sum, row) => sum + row.summary.waiting, 0);
-    return { id: name, label: name, value, display: String(value), fill: "data-1" as const };
-  });
-
   const chips: { id: Highlight; value: number; label: string; tone?: "danger" | "warning"; word: string }[] = [
     {
       id: "past",
@@ -279,6 +304,49 @@ export function EdIndex() {
   ];
   const activeChip = chips.find((chip) => chip.id === highlight);
   const highlightedEds = highlight ? withWaiting.filter((row) => rowHighlighted(row, highlight)).length : 0;
+
+  // ED preview (v10): one side sheet on desktop and tablet, a bottom sheet on phone, with Enter pinned.
+  const previewRow = previewId ? (rows.find((row) => row.summary.ed.id === previewId) ?? null) : null;
+  const stepPreview = (delta: number) => {
+    const index = ordered.findIndex((row) => row.summary.ed.id === previewId);
+    const next = ordered[(index + delta + ordered.length) % ordered.length];
+    if (next) setPreviewId(next.summary.ed.id);
+  };
+  const pickService = (id: HealthService) => setService((value) => (value === id ? "all" : id));
+
+  const statusControl = (
+    <Segmented
+      label="Status"
+      items={[
+        { id: "all" as StatusFilter, label: "All" },
+        { id: "past-target" as StatusFilter, label: "Past target" },
+        { id: "waiting" as StatusFilter, label: "Has waiting" },
+        { id: "clear" as StatusFilter, label: "Clear" },
+      ]}
+      value={status}
+      onChange={setStatus}
+    />
+  );
+  const orderControl = (
+    <Segmented
+      label="Order"
+      items={[
+        { id: "longest" as OrderBy, label: "Longest wait" },
+        { id: "most" as OrderBy, label: "Most waiting" },
+        { id: "service" as OrderBy, label: "Service" },
+      ]}
+      value={order}
+      onChange={setOrder}
+    />
+  );
+  const matchCount = (
+    <span data-testid="ed-index-match-count" aria-live="polite">
+      <b className={styles.num}>{matching.length}</b> of {rows.length} <SrOnly>synthetic records</SrOnly> match
+    </span>
+  );
+  const servicePicker = (
+    <ServicePicker services={services} rows={rows} value={service} onPick={pickService} accessTarget={accessTarget} />
+  );
 
   return (
     <div className={styles.screen} data-testid="ward-ed-index" data-ward-design="v6">
@@ -340,7 +408,9 @@ export function EdIndex() {
 
         <section className={styles.filters} aria-label="Emergency department filters">
           <div className={styles.filterRow}>
-            <Segmented label="Health service" items={serviceItems} value={service} onChange={setService} size="md" />
+            {isPhone ? null : (
+              <Segmented label="Health service" items={serviceItems} value={service} onChange={setService} size="md" />
+            )}
             <TextInput
               ref={searchRef}
               type="search"
@@ -351,47 +421,68 @@ export function EdIndex() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onClear={() => setQuery("")}
-              trailing={query ? undefined : <Kbd>/</Kbd>}
+              trailing={query || isPhone ? undefined : <Kbd>/</Kbd>}
               autoComplete="off"
               spellCheck={false}
               boxClassName={styles.search}
             />
-            <Segmented
-              label="View"
-              items={[
-                { id: "cards" as ViewMode, label: <ViewLabel icon={LayoutGrid} text="Cards" /> },
-                { id: "table" as ViewMode, label: <ViewLabel icon={List} text="Table" /> },
-                { id: "lanes" as ViewMode, label: <ViewLabel icon={GanttChart} text="Lanes" /> },
-              ]}
-              value={view}
-              onChange={setView}
-              size="md"
-            />
+            {isPhone ? (
+              <ScrollRow className={styles.phoneServices}>
+                <Segmented
+                  label="Health service"
+                  items={serviceItems}
+                  value={service}
+                  onChange={setService}
+                  size="md"
+                />
+              </ScrollRow>
+            ) : null}
+            {isPhone ? (
+              <div className={styles.phoneViewRow}>
+                <Segmented
+                  label="Show"
+                  items={[
+                    { id: "list" as PhoneView, label: "EDs" },
+                    { id: "lanes" as PhoneView, label: "Wait lanes" },
+                    { id: "service" as PhoneView, label: "By service" },
+                  ]}
+                  value={phoneView}
+                  onChange={setPhoneView}
+                  size="md"
+                />
+                <Button
+                  variant="sec"
+                  iconOnly
+                  icon={SlidersHorizontal}
+                  aria-label={`Status and order${status !== "all" ? ", status filtered" : ""}`}
+                  aria-haspopup="dialog"
+                  onClick={() => setPhoneFiltersOpen(true)}
+                  data-testid="ed-index-phone-filters"
+                />
+              </div>
+            ) : (
+              <Segmented
+                label="View"
+                items={[
+                  { id: "cards" as ViewMode, label: <ViewLabel icon={LayoutGrid} text="Cards" /> },
+                  { id: "table" as ViewMode, label: <ViewLabel icon={List} text="Table" /> },
+                  { id: "lanes" as ViewMode, label: <ViewLabel icon={GanttChart} text="Lanes" /> },
+                ]}
+                value={view}
+                onChange={setView}
+                size="md"
+              />
+            )}
           </div>
           <div className={styles.filterRow}>
-            <span className={styles.filterLabel}>Status</span>
-            <Segmented
-              label="Status"
-              items={[
-                { id: "all" as StatusFilter, label: "All" },
-                { id: "past-target" as StatusFilter, label: "Past target" },
-                { id: "waiting" as StatusFilter, label: "Has waiting" },
-                { id: "clear" as StatusFilter, label: "Clear" },
-              ]}
-              value={status}
-              onChange={setStatus}
-            />
-            <span className={styles.filterLabel}>Order</span>
-            <Segmented
-              label="Order"
-              items={[
-                { id: "longest" as OrderBy, label: "Longest wait" },
-                { id: "most" as OrderBy, label: "Most waiting" },
-                { id: "service" as OrderBy, label: "Service" },
-              ]}
-              value={order}
-              onChange={setOrder}
-            />
+            {isPhone ? null : (
+              <>
+                <span className={styles.filterLabel}>Status</span>
+                {statusControl}
+                <span className={styles.filterLabel}>Order</span>
+                {orderControl}
+              </>
+            )}
             <span className={styles.shownCount}>
               <span className={styles.filterHint}>Filters and chips highlight, all EDs stay</span>
               {isFiltered ? (
@@ -399,10 +490,7 @@ export function EdIndex() {
                   Reset filters
                 </Button>
               ) : null}
-              <span data-testid="ed-index-match-count" aria-live="polite">
-                <b className={styles.num}>{matching.length}</b> of {rows.length} <SrOnly>synthetic records</SrOnly>{" "}
-                match
-              </span>
+              {matchCount}
             </span>
           </div>
         </section>
@@ -422,30 +510,110 @@ export function EdIndex() {
           </Card>
         ) : null}
 
-        {view === "table" ? (
-          <EdTable rows={ordered} isDim={isDim} highlight={highlight} />
+        {isPhone ? (
+          phoneView === "lanes" ? (
+            <EdLanes
+              rows={ordered}
+              services={services}
+              accessTarget={accessTarget}
+              isDim={isDim}
+              highlight={highlight}
+              phone
+            />
+          ) : phoneView === "service" ? (
+            servicePicker
+          ) : (
+            <PhoneEdList rows={ordered} isDim={isDim} highlight={highlight} onPreview={setPreviewId} />
+          )
+        ) : view === "table" ? (
+          <EdTable rows={ordered} isDim={isDim} highlight={highlight} onPreview={setPreviewId} />
         ) : view === "lanes" ? (
           <EdLanes rows={ordered} services={services} accessTarget={accessTarget} isDim={isDim} highlight={highlight} />
         ) : (
           <section className={styles.cardGrid} aria-label="Emergency department cards">
             {ordered.map((row) => (
-              <EdCard key={row.summary.ed.id} row={row} dim={isDim(row)} highlight={highlight} />
-            ))}
-            <Card className={styles.serviceCard} as="section" aria-labelledby="ed-index-by-service">
-              <h3 id="ed-index-by-service" className={styles.eyebrow}>
-                Waiting by service
-              </h3>
-              <BarList
-                label="Waiting by service"
-                rows={serviceBars}
-                max={Math.max(1, ...serviceBars.map((bar) => bar.value))}
-                track
-                labelWidth="88px"
+              <EdCard
+                key={row.summary.ed.id}
+                row={row}
+                dim={isDim(row)}
+                highlight={highlight}
+                onPreview={() => setPreviewId(row.summary.ed.id)}
               />
-              <Legend accessTarget={accessTarget} />
-            </Card>
+            ))}
+            {servicePicker}
           </section>
         )}
+
+        <Drawer
+          open={previewRow !== null}
+          onClose={() => setPreviewId(null)}
+          title={previewRow ? previewRow.short : "ED preview"}
+          description={previewRow ? `${previewRow.summary.siteName} · ${previewRow.summary.service}` : undefined}
+          headerActions={
+            isPhone || ordered.length < 2 ? undefined : (
+              <span className={styles.previewSteps}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  icon={ChevronLeft}
+                  aria-label="Previous ED"
+                  onClick={() => stepPreview(-1)}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  icon={ChevronRight}
+                  aria-label="Next ED"
+                  onClick={() => stepPreview(1)}
+                />
+              </span>
+            )
+          }
+          footer={
+            previewRow ? (
+              <div className={styles.previewFoot}>
+                <Link
+                  className={buttonClass({ variant: "sec" })}
+                  href={raiseReferralHref({ source: "ed_medical", originEdId: previewRow.summary.ed.id })}
+                >
+                  Raise referral
+                </Link>
+                <Link
+                  className={buttonClass({ variant: "pri" })}
+                  href={edHref(previewRow.summary.ed.id)}
+                  data-testid="ed-index-preview-enter"
+                >
+                  <Icon icon={LogIn} size={16} />
+                  Enter {previewRow.short}
+                </Link>
+              </div>
+            ) : null
+          }
+          testId="ed-index-preview"
+        >
+          {previewRow ? <EdPreview row={previewRow} highlight={highlight} accessTarget={accessTarget} /> : null}
+        </Drawer>
+
+        {isPhone ? (
+          <PhoneSheet
+            open={phoneFiltersOpen}
+            onClose={() => setPhoneFiltersOpen(false)}
+            title="Status and order"
+            description={matchCount}
+            primary={{ label: "Done", onAction: () => setPhoneFiltersOpen(false) }}
+            secondary={isFiltered ? { label: "Reset filters", onAction: resetFilters } : undefined}
+            data-testid="ed-index-phone-filter-sheet"
+          >
+            <div className={styles.sheetControls}>
+              <span className={styles.filterLabel}>Status</span>
+              <ScrollRow>{statusControl}</ScrollRow>
+              <span className={styles.filterLabel}>Order</span>
+              <ScrollRow>{orderControl}</ScrollRow>
+            </div>
+          </PhoneSheet>
+        ) : null}
 
         <WardPrototypeFooter
           testId="ed-index-governance"
@@ -530,7 +698,33 @@ function EnterLink({ row }: { row: EdRow }) {
   );
 }
 
-function EdCard({ row, dim, highlight }: { row: EdRow; dim: boolean; highlight: Highlight | null }) {
+function PreviewButton({ row, onPreview }: { row: EdRow; onPreview: () => void }) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      iconOnly
+      icon={Eye}
+      aria-label={`Preview ${row.short}`}
+      aria-haspopup="dialog"
+      title="Preview who is waiting"
+      onClick={onPreview}
+      data-testid={`ed-index-preview-${row.summary.ed.id}`}
+    />
+  );
+}
+
+function EdCard({
+  row,
+  dim,
+  highlight,
+  onPreview,
+}: {
+  row: EdRow;
+  dim: boolean;
+  highlight: Highlight | null;
+  onPreview: () => void;
+}) {
   const { summary } = row;
   return (
     <article
@@ -546,9 +740,12 @@ function EdCard({ row, dim, highlight }: { row: EdRow; dim: boolean; highlight: 
         </h3>
         <span className={styles.service}>{summary.service}</span>
       </div>
-      <p className={styles.meta} title={summary.siteName}>
-        {summary.siteName}
-      </p>
+      <div className={styles.siteRow}>
+        <p className={styles.meta} title={summary.siteName}>
+          {summary.siteName}
+        </p>
+        <RowTrend values={row.trend} name={row.short} />
+      </div>
       <PeoplePips row={row} highlight={highlight} />
       <p className={styles.figures}>
         <b className={styles.num}>{summary.waiting}</b> waiting <span aria-hidden="true">·</span>{" "}
@@ -559,22 +756,27 @@ function EdCard({ row, dim, highlight }: { row: EdRow; dim: boolean; highlight: 
       <div className={styles.cardFoot}>
         <Longest row={row} />
         {summary.waiting > 0 ? <span className={styles.footLabel}>longest</span> : null}
-        <EnterLink row={row} />
+        <span className={styles.footActions}>
+          <PreviewButton row={row} onPreview={onPreview} />
+          <EnterLink row={row} />
+        </span>
       </div>
     </article>
   );
 }
 
-const TABLE_COLUMNS = "minmax(170px, 1.4fr) minmax(200px, 2fr) 72px 60px 72px 60px 96px 76px";
+const TABLE_COLUMNS = "minmax(170px, 1.4fr) minmax(200px, 2fr) 96px 72px 60px 72px 60px 96px 112px";
 
 function EdTable({
   rows,
   isDim,
   highlight,
+  onPreview,
 }: {
   rows: EdRow[];
   isDim: (row: EdRow) => boolean;
   highlight: Highlight | null;
+  onPreview: (edId: string) => void;
 }) {
   return (
     <Card className={styles.tableCard} as="section" aria-label="Emergency department table">
@@ -583,6 +785,7 @@ function EdTable({
           <div role="row" className={cx(styles.tr, styles.th)} style={{ gridTemplateColumns: TABLE_COLUMNS }}>
             <span role="columnheader">Department</span>
             <span role="columnheader">Waiting, longest first</span>
+            <span role="columnheader">Last 12h</span>
             <span role="columnheader" className={styles.end}>
               No bed
             </span>
@@ -619,6 +822,9 @@ function EdTable({
               <span role="cell">
                 <PeoplePips row={row} highlight={highlight} />
               </span>
+              <span role="cell">
+                <RowTrend values={row.trend} name={row.short} />
+              </span>
               {[row.noBed, row.held, row.leaving, row.forms].map((value, index) => (
                 <span role="cell" key={index} className={cx(styles.end, styles.num, value === 0 && styles.zero)}>
                   {value}
@@ -627,7 +833,8 @@ function EdTable({
               <span role="cell" className={styles.end}>
                 <Longest row={row} />
               </span>
-              <span role="cell" className={styles.end}>
+              <span role="cell" className={cx(styles.end, styles.rowActions)}>
+                <PreviewButton row={row} onPreview={() => onPreview(row.summary.ed.id)} />
                 <EnterLink row={row} />
               </span>
             </div>
@@ -648,14 +855,17 @@ function EdLanes({
   accessTarget,
   isDim,
   highlight,
+  phone = false,
 }: {
   rows: EdRow[];
   services: readonly HealthService[];
   accessTarget: number;
   isDim: (row: EdRow) => boolean;
   highlight: Highlight | null;
+  phone?: boolean;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
+  const router = useRouter();
   const picked = rows
     .flatMap((row) => row.people.map((person) => ({ row, person })))
     .find(({ person }) => person.movement.id === selected);
@@ -712,7 +922,37 @@ function EdLanes({
           ))}
         </section>
       ))}
-      {picked ? (
+      {picked && phone ? (
+        <PhoneSheet
+          open
+          onClose={() => setSelected(null)}
+          title={picked.person.name}
+          description={`${picked.row.short} · ${picked.person.stage}`}
+          primary={{
+            label: `Enter ${picked.row.short}`,
+            onAction: () => router.push(edHref(picked.row.summary.ed.id)),
+          }}
+          secondary={{ label: "Open patient", onAction: () => router.push(picked.person.href) }}
+          data-testid="ed-index-lane-sheet"
+        >
+          <FactGrid
+            facts={[
+              {
+                id: "wait",
+                label: "Waiting",
+                value: <b className={styles.num}>{splitDuration(picked.person.wait)}</b>,
+              },
+              { id: "tier", label: "Tier", value: `T${picked.person.movement.urgency}` },
+              {
+                id: "form",
+                label: "Form",
+                value: picked.person.movement.legalForm ? picked.person.movement.legalForm.code : "None recorded",
+              },
+              { id: "dest", label: "Bed", value: picked.person.destination ?? "No bed yet" },
+            ]}
+          />
+        </PhoneSheet>
+      ) : picked ? (
         <div className={styles.picked} aria-live="polite">
           <span className={styles.tier} title={`Tier ${picked.person.movement.urgency}`}>
             {picked.person.movement.urgency}
@@ -742,5 +982,200 @@ function EdLanes({
         <span className={styles.meta}>Dashed line is the {waitLine(accessTarget)} access target</span>
       </div>
     </Card>
+  );
+}
+
+/**
+ * Waiting by service (v10): the bars are the service filter. Pressing a bar keeps that service's
+ * EDs solid and dims the rest (the same as the service tabs); pressing it again clears it. Page-local
+ * until the shared `BarList` takes an `onPick`.
+ */
+function ServicePicker({
+  services,
+  rows,
+  value,
+  onPick,
+  accessTarget,
+}: {
+  services: readonly HealthService[];
+  rows: EdRow[];
+  value: ServiceFilter;
+  onPick: (service: HealthService) => void;
+  accessTarget: number;
+}) {
+  const bars = services.map((name) => ({
+    name,
+    waiting: rows.filter((row) => row.summary.service === name).reduce((sum, row) => sum + row.summary.waiting, 0),
+  }));
+  const max = Math.max(1, ...bars.map((bar) => bar.waiting));
+  const mean = bars.length ? bars.reduce((sum, bar) => sum + bar.waiting, 0) / bars.length : 0;
+  return (
+    <Card className={styles.serviceCard} as="section" aria-labelledby="ed-index-by-service">
+      <h3 id="ed-index-by-service" className={styles.eyebrow}>
+        Waiting by service
+      </h3>
+      <div className={styles.serviceBars} role="group" aria-label="Highlight a health service">
+        <span className={styles.serviceMean} style={{ "--ed-mean": mean / max } as CSSProperties} aria-hidden="true" />
+        {bars.map((bar) => (
+          <button
+            key={bar.name}
+            type="button"
+            className={styles.serviceBar}
+            aria-pressed={value === bar.name}
+            data-dim={value !== "all" && value !== bar.name ? "true" : undefined}
+            onClick={() => onPick(bar.name)}
+            data-testid={`ed-index-service-bar-${bar.name}`}
+          >
+            <span className={styles.serviceName}>{bar.name}</span>
+            <span className={styles.serviceTrack} aria-hidden="true">
+              {bar.waiting > 0 ? (
+                <span className={styles.serviceFill} style={{ width: `${(bar.waiting / max) * 100}%` }} />
+              ) : null}
+            </span>
+            <span className={styles.num}>{bar.waiting}</span>
+          </button>
+        ))}
+      </div>
+      <p className={styles.serviceNote}>
+        Dashed line is the mean, <b className={styles.num}>{Number(mean.toFixed(1))}</b>. Press a service to highlight
+        it.
+      </p>
+      <Legend accessTarget={accessTarget} />
+    </Card>
+  );
+}
+
+/** Phone: EDs as a priority list, longest wait first, with clear EDs grouped last. A row opens the preview. */
+function PhoneEdList({
+  rows,
+  isDim,
+  highlight,
+  onPreview,
+}: {
+  rows: EdRow[];
+  isDim: (row: EdRow) => boolean;
+  highlight: Highlight | null;
+  onPreview: (edId: string) => void;
+}) {
+  const waitingRows = rows.filter((row) => row.summary.waiting > 0);
+  const clearRows = rows.filter((row) => row.summary.waiting === 0);
+  const row = (item: EdRow) => {
+    const clock = rowClock(item);
+    return (
+      <div key={item.summary.ed.id} data-dim={isDim(item) ? "true" : undefined}>
+        <PhoneListRow
+          name={item.short}
+          meta={
+            item.summary.waiting > 0 ? (
+              <span className={styles.phoneMeta}>
+                <PeoplePips row={item} highlight={highlight} />
+                <span>
+                  {item.noBed} no bed · {item.held} held · {item.forms} form
+                </span>
+              </span>
+            ) : (
+              item.summary.service
+            )
+          }
+          value={
+            item.summary.waiting > 0 ? (
+              <span className={styles.longest}>
+                {clock !== "in" ? <StatusGlyph tone={CLOCK_TONE[clock]} size={9} /> : null}
+                {splitDuration(item.summary.longestWaitMinutes)}
+              </span>
+            ) : (
+              "Clear"
+            )
+          }
+          time={item.summary.waiting > 0 ? `${item.summary.waiting} waiting` : undefined}
+          onSelect={() => onPreview(item.summary.ed.id)}
+          aria-label={`${item.short}, ${item.summary.waiting > 0 ? `${item.summary.waiting} waiting, longest ${splitDuration(item.summary.longestWaitMinutes)}` : "clear"}. Opens a preview.`}
+          data-testid={`ed-index-phone-row-${item.summary.ed.id}`}
+        />
+      </div>
+    );
+  };
+  return (
+    <Card className={styles.phoneList} as="section" aria-label="Emergency departments">
+      <GroupHead title="Waiting, longest first" count={waitingRows.length} />
+      {waitingRows.map(row)}
+      {clearRows.length > 0 ? (
+        <>
+          <GroupHead title="Clear" count={clearRows.length} />
+          {clearRows.map(row)}
+        </>
+      ) : null}
+    </Card>
+  );
+}
+
+/** The ED preview's body: facts, the 12 hour trend and who is waiting, longest first. */
+function EdPreview({
+  row,
+  highlight,
+  accessTarget,
+}: {
+  row: EdRow;
+  highlight: Highlight | null;
+  accessTarget: number;
+}) {
+  return (
+    <div className={styles.preview} data-testid="ed-index-preview-body">
+      <FactGrid
+        facts={[
+          { id: "waiting", label: "Waiting", value: <b className={styles.num}>{row.summary.waiting}</b> },
+          {
+            id: "past",
+            label: `Past ${waitLine(accessTarget)}`,
+            value: <b className={styles.num}>{row.pastTarget}</b>,
+          },
+          { id: "no-bed", label: "No bed yet", value: <b className={styles.num}>{row.noBed}</b> },
+          { id: "form", label: "Under a form", value: <b className={styles.num}>{row.forms}</b> },
+        ]}
+      />
+      <section className={styles.previewSection} aria-labelledby="ed-preview-trend">
+        <h3 id="ed-preview-trend" className={styles.eyebrow}>
+          Last 12 hours
+        </h3>
+        <div className={styles.previewTrend}>
+          <RowSpark values={row.trend} name={row.short} big />
+          <span className={styles.meta}>{row.trend.join(" · ")} now · every 2h</span>
+        </div>
+      </section>
+      <section className={styles.previewSection} aria-labelledby="ed-preview-people">
+        <h3 id="ed-preview-people" className={styles.eyebrow}>
+          Waiting, longest first
+        </h3>
+        {row.people.length === 0 ? (
+          <p className={styles.previewEmpty}>
+            <StatusGlyph tone="success" size={9} /> No one waiting at {row.short}
+          </p>
+        ) : (
+          <ul className={styles.previewList}>
+            {row.people.map((person) => (
+              <li
+                key={person.movement.id}
+                className={styles.previewPerson}
+                data-act-now={person.clock === "past" ? "true" : undefined}
+                data-dim={personDim(person, highlight) ? "true" : undefined}
+              >
+                <StatusGlyph tone={CLOCK_TONE[person.clock]} size={9} />
+                <span className={styles.previewText}>
+                  <Link href={person.href} className={styles.previewName}>
+                    {person.name}
+                  </Link>
+                  <span className={styles.meta}>
+                    {person.stage}
+                    {person.movement.legalForm ? ` · Form ${person.movement.legalForm.code}` : ""}
+                    {person.destination ? ` · ${person.destination}` : ""}
+                  </span>
+                </span>
+                <b className={styles.num}>{splitDuration(person.wait)}</b>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
   );
 }

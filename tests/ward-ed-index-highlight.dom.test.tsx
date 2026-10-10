@@ -71,3 +71,39 @@ describe("All EDs — filters highlight and dim, they never hide", () => {
     expect(solidCards()).toHaveLength(total);
   });
 });
+
+describe("All EDs — v10 pass 3: RowSpark, preview and service bars", () => {
+  it("draws a 12 hour trend on each card, ending at the card's own waiting count", () => {
+    renderIndex();
+    const card = screen.getByTestId("ed-index-card-arm-ed");
+    const label = within(card).getByTestId("ed-row-spark").getAttribute("aria-label") ?? "";
+    expect(label).toMatch(/waiting over 12 hours/u);
+    const points = label.split(": ")[1]?.split(", ") ?? [];
+    // Seven points (every 2 hours, the last now) and the change word.
+    expect(points).toHaveLength(8);
+    expect(within(card).getAllByText(/^\d+$/u, { selector: "b" })[0].textContent).toBe(points[6]);
+  });
+
+  it("opens a preview of who is waiting, with Enter pinned, and steps to the next ED", () => {
+    renderIndex();
+    fireEvent.click(screen.getByTestId("ed-index-preview-arm-ed"));
+    const body = screen.getByTestId("ed-index-preview-body");
+    expect(within(body).getByText("Waiting, longest first")).toBeInTheDocument();
+    expect(screen.getByTestId("ed-index-preview-enter")).toHaveAttribute("href", "/mockups/ward-flow/ed/arm-ed");
+    fireEvent.click(screen.getByRole("button", { name: "Next ED" }));
+    expect(screen.getByTestId("ed-index-preview-enter")).not.toHaveAttribute("href", "/mockups/ward-flow/ed/arm-ed");
+  });
+
+  it("uses the Waiting by service bars as the service filter, dimming other services", () => {
+    renderIndex();
+    const total = cards().length;
+    const bar = screen.getByTestId("ed-index-service-bar-South Metro");
+    fireEvent.click(bar);
+    expect(bar).toHaveAttribute("aria-pressed", "true");
+    expect(cards()).toHaveLength(total);
+    expect(solidCards().length).toBeGreaterThan(0);
+    for (const card of solidCards()) expect(card).toHaveAttribute("data-service", "South Metro");
+    fireEvent.click(bar);
+    expect(solidCards()).toHaveLength(total);
+  });
+});
