@@ -2,7 +2,6 @@ import type { AuditActor, AuditEvent } from "./ward-audit";
 import { OVERRIDE_REASONS } from "./ward-change-reasons";
 import type { WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowState } from "./ward-flow-reducer";
-import type { PatientId } from "./ward-patients";
 
 /**
  * **SYNTHETIC GOVERNANCE ENTRIES — v10 pass 2 (Josh, 10 Oct 2026).** The Governance page opened
@@ -17,6 +16,9 @@ import type { PatientId } from "./ward-patients";
  * screen can mistake one for something captured this session. A review of one is an ordinary
  * `REVIEW_AUDIT_EVENT`, stored like any other.
  *
+ * Subjects carry no patient link (`patientId: null`): D-14 keeps that link to its allowlisted
+ * readers, and a synthetic entry has no reason to join a record to a person.
+ *
  * Subjects are the first seeded records of each kind, so the same world always yields the same six
  * entries; an entry whose subject the scenario lacks is left out rather than invented.
  */
@@ -24,8 +26,6 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
   const start = state.auditCaptureStartedAt;
   if (typeof start !== "number" || !Number.isFinite(start)) return [];
   const [unitA, unitB] = state.units;
-  const patientOf = (id: unknown): PatientId | null =>
-    typeof id === "string" && state.patients.some((patient) => patient.id === id) ? (id as PatientId) : null;
   const movements = state.movements.slice(0, 3);
   const referral = state.referrals[0];
   const admission = state.admissions.find((candidate) => candidate.state === "occupied");
@@ -36,9 +36,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
   });
   const movementSubject = (index: number) => {
     const movement = movements[index];
-    return movement
-      ? { kind: "movement" as const, movementId: movement.id, patientId: patientOf(movement.patientId) }
-      : undefined;
+    return movement ? { kind: "movement" as const, movementId: movement.id, patientId: null } : undefined;
   };
   const entries: (AuditEvent | undefined)[] = [];
   let n = 0;
@@ -54,7 +52,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
   if (referral && unitA)
     entries.push({
       ...base(190, "coordinator"),
-      subject: { kind: "referral", referralId: referral.id, patientId: patientOf(referral.patientId) },
+      subject: { kind: "referral", referralId: referral.id, patientId: null },
       outcome: "accepted",
       reasonCode: "none",
       category: "override",
@@ -102,7 +100,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
         kind: "admission",
         admissionId: admission.id,
         unitId: admission.unitId,
-        patientId: patientOf(admission.patientId),
+        patientId: null,
       },
       outcome: "accepted",
       reasonCode: "none",

@@ -1787,6 +1787,79 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
     accepted.add("RECORD_SUPPORT_NOTIFICATION");
     offenders.push(...offendingFormsIn(supportRecorded, `RECORD_SUPPORT_NOTIFICATION(${code})`));
 
+    // v10 pass 2 (10 Oct 2026): Undo and the Bed board. Each undo needs its own decision first,
+    // which the round-robin cannot order, so all four are exercised here against a fresh seed —
+    // the same "traversal gap" shape as above. None writes or reads a legal form.
+    const undoSeed = seedWardFlowState();
+    const declined = undoSeed.referrals
+      .flatMap((candidate) =>
+        candidate.destinations
+          .filter((arm) => arm.state === "queued" && arm.destination.kind === "psychiatric_ward")
+          .map((arm) =>
+            wardFlowReducer(undoSeed, {
+              type: "DECLINE_REFERRAL",
+              role: "coordinator",
+              now: NOW_ANCHOR,
+              referralId: candidate.id,
+              destinationKind: "psychiatric_ward",
+              ...(arm.destination.kind === "psychiatric_ward" && arm.destination.unitId
+                ? { unitId: arm.destination.unitId }
+                : {}),
+              reason: REFERRAL_DECLINE_REASONS[0],
+            }),
+          ),
+      )
+      .find((next) => next.rejections.length === 0 && (next.undoRecords?.length ?? 0) > 0);
+    expect(declined, `no seeded referral could be declined for the Undo sweep (${code})`).toBeDefined();
+    const referralUndone = wardFlowReducer(declined!, {
+      type: "UNDO_REFERRAL_DECISION",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      referralId: declined!.undoRecords![0].kind === "referral-decision" ? declined!.undoRecords![0].referralId : "",
+    });
+    expect(referralUndone.rejections, `UNDO_REFERRAL_DECISION refused (${code})`).toEqual([]);
+    accepted.add("UNDO_REFERRAL_DECISION");
+    offenders.push(...offendingFormsIn(referralUndone, `UNDO_REFERRAL_DECISION(${code})`));
+
+    const stay = undoSeed.admissions.find((admission) => admission.state === "occupied")!;
+    const placed = wardFlowReducer(undoSeed, {
+      type: "PLACE_IN_BED",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      admissionId: stay.id,
+      bedNumber: 1,
+    });
+    const unplaced = wardFlowReducer(placed, {
+      type: "UNDO_PLACE_IN_BED",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      admissionId: stay.id,
+    });
+    expect([...placed.rejections, ...unplaced.rejections], `Bed board sweep refused (${code})`).toEqual([]);
+    accepted.add("PLACE_IN_BED");
+    accepted.add("UNDO_PLACE_IN_BED");
+    offenders.push(...offendingFormsIn(unplaced, `PLACE_IN_BED/UNDO_PLACE_IN_BED(${code})`));
+
+    const reviewed = wardFlowReducer(undoSeed, {
+      type: "REVIEW_AUDIT_EVENT",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      eventId: "audit-seed-1",
+      expectedGeneration: undoSeed.worldGeneration,
+      expectedReviewCount: 0,
+      decision: "reviewed",
+    });
+    const reviewUndone = wardFlowReducer(reviewed, {
+      type: "UNDO_AUDIT_REVIEW",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      reviewId: reviewed.auditReviews.at(-1)?.id ?? "",
+      expectedGeneration: reviewed.worldGeneration,
+    });
+    expect(reviewUndone.auditReviews, `UNDO_AUDIT_REVIEW did not apply (${code})`).toEqual([]);
+    accepted.add("UNDO_AUDIT_REVIEW");
+    offenders.push(...offendingFormsIn(reviewUndone, `UNDO_AUDIT_REVIEW(${code})`));
+
     // D-34 needs an accepted pre-collection ED referral. Build that real producer chain for
     // every legal code instead of treating a round-robin traversal gap as an exclusion.
     const forDeterioration = buildHeldMovementFor(code, NOW_ANCHOR);
