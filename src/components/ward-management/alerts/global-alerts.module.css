@@ -1,0 +1,112 @@
+/* Global alerts on the Alerts page (option A, 10 Oct 2026). White cards, edged, no tinted fill. */
+.quiet {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  margin: 0;
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.push {
+  margin-left: auto;
+}
+
+.card {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+/* Act now: a thin red edge all round, no fill. */
+.card[data-act-now="true"] {
+  border-color: var(--wf-danger);
+  box-shadow: 0 0 0 1px var(--wf-danger);
+}
+
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.cardTitle {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.board {
+  display: grid;
+  gap: var(--wf-s-1);
+}
+
+.boardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.boardTitle {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 14rem;
+  overflow-y: auto;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-row-compact);
+  padding: 0 var(--wf-s-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+}
+
+.row + .row {
+  border-top: 1px solid var(--wf-line);
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--wf-ink-1);
+}
+
+.answer {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.sent {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.list {
+  display: grid;
+  gap: var(--wf-s-2);
+}

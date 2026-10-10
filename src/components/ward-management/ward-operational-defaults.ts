@@ -266,3 +266,14 @@ export function clearCustomOperationalDefaults(): void {
     // Clearing is best-effort; a locked or unavailable store still leaves defaults restored in memory.
   }
 }
+
+/**
+ * Global alerts (Josh picked option A, 10 Oct 2026). Labelled defaults, never clinical or service
+ * standards. Josh accepted 15 minutes as the Pull now answer time on 10 Oct 2026.
+ * - `PULL_NOW_ANSWER_MINUTES`: an unanswered Pull now returns to the coordinator as act now.
+ * - `PULL_NOW_LIVE_MINUTES`: how long a Pull now stays live if nobody pulls or stands it down.
+ * - `READY_AT_AHEAD_LIMIT_MINUTES`: the latest "bed ready at" a ward may give.
+ */
+export const PULL_NOW_ANSWER_MINUTES = 15;
+export const PULL_NOW_LIVE_MINUTES = 4 * MINUTES_PER_HOUR;
+export const READY_AT_AHEAD_LIMIT_MINUTES = 24 * MINUTES_PER_HOUR;
