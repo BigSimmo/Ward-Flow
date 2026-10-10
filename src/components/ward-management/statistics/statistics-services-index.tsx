@@ -220,6 +220,7 @@ export function StatisticsServicesIndexScreen() {
                   <dt>
                     {entry.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
                     Waiting in ED
+                    {entry.over24 > 0 ? <span className={index.srOnly}>, including people waiting past 24 hours</span> : null}
                   </dt>
                   <dd>{entry.departments === 0 ? "No ED" : entry.waiting}</dd>
                 </div>
