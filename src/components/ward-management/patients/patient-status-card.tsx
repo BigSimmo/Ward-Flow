@@ -91,6 +91,8 @@ export interface PatientStatusContext {
   onDischargeDate?: () => void;
   /** Records the return of a ward patient who went to an emergency department. */
   onReturnFromEd?: () => void;
+  /** The engine's reason when it refused the last Record return from ED, shown on the At ED card. */
+  edReturnRefusal?: string;
   onAbsenceStep: (step: AbsenceStep) => void;
   onRecordCto: () => void;
   onEndCto: () => void;
@@ -497,7 +499,9 @@ function statusFor(mode: PatientMode, ctx: PatientStatusContext): PatientStatus 
           label: "Return",
           owner: "Ward",
           value: "Not back yet",
-          sub: "Record it when they are back on the ward",
+          sub: ctx.edReturnRefusal
+            ? `Not recorded: ${ctx.edReturnRefusal}`
+            : "Record it when they are back on the ward",
           action: {
             kind: "button",
             label: "Record return",

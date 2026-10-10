@@ -360,6 +360,14 @@ export function PatientHistoryTab({
 }
 
 /** Each ward stay the record links: where, when, and how it ended. Only recorded values. */
+/** One label per admission state: a waitlisted person has no bed yet, a pulled bed is held for them. */
+const STAY_CHIP: Record<Admission["state"], string> = {
+  waitlisted: "Waitlisted",
+  pulled: "Bed held",
+  occupied: "Current",
+  departed: "Closed",
+};
+
 function WardStaysCard({
   stays,
   dayZero,
@@ -385,19 +393,15 @@ function WardStaysCard({
               ? "follow-up arranged"
               : "follow-up not arranged"
             : undefined;
-          const current = stay.state !== "departed";
+          const closed = stay.state === "departed";
           return (
             <Row
               key={stay.id}
               k={from ? (to ? `${from} to ${to}` : `From ${from}`) : "Dates not recorded"}
-              action={
-                <span className={styles.chip}>
-                  {current ? (stay.state === "occupied" ? "Current" : "Bed held") : "Closed"}
-                </span>
-              }
+              action={<span className={styles.chip}>{STAY_CHIP[stay.state]}</span>}
             >
               {unitName(stay.unitId) ?? "Ward not recorded"}
-              {!current ? <small> · {[destination, followUp].filter(Boolean).join(", ") || "Left"}</small> : null}
+              {closed ? <small> · {[destination, followUp].filter(Boolean).join(", ") || "Left"}</small> : null}
             </Row>
           );
         })}

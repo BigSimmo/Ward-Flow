@@ -535,6 +535,7 @@ export function PatientNowScreen({
   function returnFromEd() {
     const stay = resolved?.liveAdmission;
     if (!stay || !gate("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT").allowed) return;
+    setWardAttemptStart(rejections.length);
     dispatch({
       type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
       role: "ward",
@@ -557,7 +558,7 @@ export function PatientNowScreen({
     });
     setWardForm("none");
   }
-  const wardRefusal =
+  const wardRejection =
     wardAttemptStart !== undefined
       ? rejections
           .slice(wardAttemptStart)
@@ -565,10 +566,14 @@ export function PatientNowScreen({
             (rejection) =>
               rejection.attempted === "RECORD_LEAVE_BED" ||
               rejection.attempted === "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT" ||
+              rejection.attempted === "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT" ||
               rejection.attempted === "UPDATE_EXPECTED_DISCHARGE",
           )
-          .at(-1)?.reason
+          .at(-1)
       : undefined;
+  const edReturnRefusal =
+    wardRejection?.attempted === "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT" ? wardRejection.reason : undefined;
+  const wardRefusal = edReturnRefusal ? undefined : wardRejection?.reason;
 
   const statusContext: PatientStatusContext = {
     movement: liveMovement,
@@ -600,6 +605,7 @@ export function PatientNowScreen({
       );
     },
     onReturnFromEd: returnFromEd,
+    edReturnRefusal,
     onAbsenceStep: (step) => {
       const stay = resolved.liveAdmission;
       if (!stay || !gate("RECORD_ABSENCE_STEP").allowed) return;
