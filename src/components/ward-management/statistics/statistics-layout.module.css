@@ -54,7 +54,7 @@
 }
 
 /* The last card of a stack takes the stack's spare height, so the stack ends flush too. */
-.stack > [data-ward-primitive="panel"]:last-child {
+.stack:not(.follow) > [data-ward-primitive="panel"]:last-child {
   flex: 1 1 auto;
 }
 
