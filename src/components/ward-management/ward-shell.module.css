@@ -33,8 +33,11 @@
   --ward-compact-height: clamp(22rem, calc(100dvh - var(--ward-frame-top) - 18rem), 34rem);
   /* Just under the 3.75rem glass top bar, with one gap. A rail pinned higher hides behind it. */
   --ward-sticky-top: 4.5rem;
-  /* The most a pinned rail may be: the window below the Data mode bar (--ward-frame-top) and the top bar, less a gap at the bottom. */
-  --ward-rail-height: calc(100dvh - var(--ward-frame-top) - var(--ward-sticky-top) - 0.75rem);
+  /* The most a pinned rail may be: the window below the Data mode bar (--ward-frame-top) and the
+     top bar, less the page's tail. A sticky rail cannot pass the bottom of its grid, and every page
+     ends with the shared prototype footer plus its gap and padding (65 to 83px at 1440 wide). A
+     rail any taller is pushed up under the top bar at the end of the scroll, hiding its heading. */
+  --ward-rail-height: calc(100dvh - var(--ward-frame-top) - var(--ward-sticky-top) - 5.25rem);
   /* Fill the column below WardBar, not the column's full height plus the bar.
      A percentage minimum overflows its flex parent by the header height. */
   display: flex;
