@@ -1975,13 +1975,6 @@
   text-overflow: ellipsis;
 }
 
-/* Page-local fix for the shared ring (report to foundation): its `.ring svg` size rule also
-   catches the status glyph under the figure. */
-.heroRing span svg {
-  width: auto;
-  height: auto;
-}
-
 @media (max-width: 48rem) {
   .heroChips {
     max-width: 100%;

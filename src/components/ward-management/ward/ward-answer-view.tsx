@@ -336,9 +336,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               ? "Nothing to answer"
               : `${incoming.length} ${incoming.length === 1 ? "request" : "requests"} to answer`
           }
-          stats={
+          lead={
             <OccupancyRing
-              className={styles.heroRing}
               percent={unit.beds > 0 ? (states.occupied / unit.beds) * 100 : null}
               alertAt={ANSWER_ALERT_LINE}
               scope={unit.name}
@@ -349,7 +348,6 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               }
             />
           }
-          statsAlign="end"
           aside={
             incoming.length > 0 ? (
               <span className={styles.heroNav} role="group" aria-label="Bed request position">

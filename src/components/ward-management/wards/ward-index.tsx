@@ -539,15 +539,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               {readyNow} {readyNow === 1 ? "bed" : "beds"} ready now
             </>
           }
-          stats={
-            <OccupancyRing
-              className={styles.heroRing}
-              percent={statewidePercent}
-              alertAt={SERVICE_LINE * 100}
-              scope="Statewide"
-            />
-          }
-          statsAlign="end"
+          lead={<OccupancyRing percent={statewidePercent} alertAt={SERVICE_LINE * 100} scope="Statewide" />}
           aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
           bar={
             <div className={styles.heroChips} role="group" aria-label="Statewide counts">
