@@ -378,9 +378,14 @@
   box-shadow: var(--wf-e1);
 }
 
+/* v10: highlight is an edge, never a tinted fill; act now is the thin red full edge. */
 .card.hl,
 .prow.hl {
-  background: var(--wf-accent-tint);
+  box-shadow: inset 0 0 0 1.5px var(--wf-accent);
+}
+
+.card[data-act="true"] {
+  border-color: var(--wf-act-edge);
 }
 
 .cardHead {
@@ -468,16 +473,15 @@
   font: 600 var(--wf-fs-13) / 18px var(--wf-font);
 }
 
+/* v10: words neutral beside the glyph, no tinted fill; act now takes the thin red edge. */
 .next_act {
-  color: var(--wf-danger-ink);
-  background: color-mix(in srgb, var(--wf-danger) 9%, var(--wf-surface));
-  border-color: color-mix(in srgb, var(--wf-danger) 32%, transparent);
+  color: var(--wf-ink-1);
+  background: var(--wf-surface);
+  border-color: var(--wf-act-edge);
 }
 
 .next_due {
-  color: var(--wf-warning-ink);
-  background: color-mix(in srgb, var(--wf-warning) 9%, var(--wf-surface));
-  border-color: color-mix(in srgb, var(--wf-warning) 32%, transparent);
+  color: var(--wf-ink-1);
 }
 
 .next_calm {

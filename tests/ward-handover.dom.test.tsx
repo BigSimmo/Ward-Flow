@@ -56,7 +56,8 @@ describe("Handover page", () => {
   it("opens on the next handover with the counts, the tabs and the table", () => {
     renderHandover();
     expect(screen.getByTestId("ward-handover-page")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1, name: "15:00 handover" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /to hand over/ })).toBeInTheDocument();
+    expect(screen.getByText(/^Handover · 15:00/)).toBeInTheDocument();
     expect(screen.getByTestId("ward-handover-kpi-strip")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Patients/ })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: /Beds/ })).toBeInTheDocument();
@@ -163,10 +164,12 @@ describe("Handover page", () => {
     const user = userEvent.setup();
     renderHandover();
     await user.click(screen.getByRole("radio", { name: /07:00/ }));
-    expect(screen.getByRole("heading", { level: 1, name: "07:00 handover" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /to hand over/ })).toBeInTheDocument();
+    expect(screen.getByText(/^Handover · 07:00/)).toBeInTheDocument();
     expect(screen.getByText(/The 07:00 handover has passed/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Go to 15:00 handover" }));
-    expect(screen.getByRole("heading", { level: 1, name: "15:00 handover" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /to hand over/ })).toBeInTheDocument();
+    expect(screen.getByText(/^Handover · 15:00/)).toBeInTheDocument();
   });
 
   it("opens the print sheet builder from Print handover and comes back", async () => {

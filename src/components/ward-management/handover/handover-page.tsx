@@ -58,9 +58,10 @@ import {
   Checkbox,
   Drawer,
   FilterChip,
-  HeroStat,
   HeroTrack,
   Hero,
+  SinceYouLooked,
+  type SinceItem,
   Icon,
   LiveChip,
   Popover,
@@ -490,6 +491,64 @@ export function HandoverPage() {
     [rows, now, cutoff, newSince],
   );
   const readyTotal = wards.reduce((sum, ward) => sum + ward.ready, 0);
+
+  /*
+   * Since you looked (v10, Elevate): what changed since the window opened, taken from the record.
+   * The prototype has no per-person "last looked" store, so the window start stands in for it and
+   * the strip says the time. Counts only; 0 shows 0.
+   */
+  const [sinceOpen, setSinceOpen] = useState(true);
+  const sinceItems = useMemo((): SinceItem[] => {
+    const inScopeUnit = (unitId: string) => wards.some((ward) => ward.id === unitId);
+    const within = (at: Instant | null | undefined) => at !== null && at !== undefined && at >= newSince && at <= now;
+    const unitWords = (list: Admission[]) => {
+      const byUnit = new Map<string, number>();
+      for (const admission of list) {
+        const name = units.find((unit) => unit.id === admission.unitId)?.name ?? "Ward not recorded";
+        byUnit.set(name, (byUnit.get(name) ?? 0) + 1);
+      }
+      return [...byUnit.entries()].map(([name, n]) => `${n} ${name}`).join(", ") || "None";
+    };
+    const admitted = admissions.filter((admission) => inScopeUnit(admission.unitId) && within(admission.arrivedAt));
+    const discharged = admissions.filter((admission) => inScopeUnit(admission.unitId) && within(admission.leftAt));
+    const opened = rows.filter((row) => row.openedAt >= newSince);
+    const newAct = opened.filter((row) => isActNow(row, now));
+    return [
+      { id: "admitted", value: admitted.length, word: "admitted", detail: unitWords(admitted), tone: "success" },
+      {
+        id: "discharged",
+        value: discharged.length,
+        word: "discharged",
+        detail: unitWords(discharged),
+        tone: "success",
+      },
+      {
+        id: "opened",
+        value: opened.length,
+        word: "new on the sheet",
+        detail: "Referrals and moves opened",
+        tone: "info",
+      },
+      {
+        id: "act",
+        value: newAct.length,
+        word: "new act now",
+        detail: newAct.length ? newAct.map((row) => row.umrn).join(", ") : "None",
+        tone: newAct.length ? "danger" : "neutral",
+      },
+    ];
+  }, [admissions, wards, units, rows, newSince, now]);
+  const sinceTotal = sinceItems.reduce((sum, item) => sum + item.value, 0);
+  const copySince = useCallback(() => {
+    const text = [
+      `Since ${formatInstantWithDay(newSince, now)} (${scopeLabel}):`,
+      ...sinceItems.map((item) => `${item.value} ${item.word}${item.detail ? ` (${item.detail})` : ""}`),
+    ].join("\n");
+    void navigator.clipboard?.writeText(text).then(
+      () => announceToWardShell("Changes copied as handover text."),
+      () => announceToWardShell("Copy was blocked by the browser."),
+    );
+  }, [sinceItems, newSince, now, scopeLabel]);
   const staleWards = wards.filter((ward) => wardIsStale(ward, now));
   const outsideAct = outside.filter((row) => isActNow(row, now));
 
@@ -848,60 +907,57 @@ export function HandoverPage() {
     />
   );
 
+  const shiftClock = formatInstantWithDay(shiftAt, now);
+  const signOffButton = (
+    <Button
+      variant="light"
+      size="sm"
+      icon={StatusCheckIcon(signedAt !== null)}
+      onClick={showSignOff}
+      data-testid="ward-handover-hero-sign-off"
+    >
+      {signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : "Sign off"}
+    </Button>
+  );
+  /*
+   * v10 (build guide Handover): the title is the answer, the count due by the shift time, and it
+   * equals the Due by chip. The eyebrow names the shift; five chips highlight rows; the foot holds
+   * the shift switch, the countdown and the bed meter. Sign off is the one light primary.
+   */
   const hero = (
     <Hero
       level={1}
       testId="ward-handover-hero"
-      title={`${formatInstantWithDay(shiftAt, now)} handover`}
+      eyebrow={`Handover · ${shiftClock} ${shiftInfo.label}`}
+      title={`${counts.due} to hand over`}
       titleMeta={scopeLabel}
-      foot={
-        <span className={styles.gap} aria-label={`${readyTotal} beds ready for ${counts.bed} waiting`}>
-          <span>
-            <b>{readyTotal}</b> beds ready for <b>{counts.bed}</b> waiting
-          </span>
-          <span className={styles.gapBar} aria-hidden="true">
-            {readyTotal > 0 ? <i className={styles.gapReady} style={{ flex: readyTotal }} /> : null}
-            {counts.bed > readyTotal ? (
-              <i className={styles.gapWaiting} style={{ flex: counts.bed - readyTotal }} />
-            ) : null}
-          </span>
-        </span>
-      }
-      stats={
-        <div className={styles.heroTools} data-testid="ward-handover-kpi-strip" aria-label="Handover counts">
-          {(["act", "due", "bed", "mov"] as const).map((id) => (
-            <HeroStat
-              key={id}
-              value={counts[id]}
-              tone={PILL_TONE[id]}
-              label={
-                id === "act"
-                  ? "Act now"
-                  : id === "due"
-                    ? `Due by ${formatInstantWithDay(cutoff, now)}`
-                    : id === "bed"
-                      ? "Waiting for a bed"
-                      : "Moving"
-              }
-              pressed={pill === id}
-              onToggle={() => togglePill(id)}
-            />
-          ))}
-        </div>
-      }
       aside={
         <>
+          <LiveChip state="live" onHero />
           <Button
             variant="onHero"
             size="sm"
-            icon={StatusCheckIcon(signedAt !== null)}
-            onClick={showSignOff}
-            data-testid="ward-handover-hero-sign-off"
+            icon={TimerIcon}
+            aria-pressed={meetingStartedAt !== null}
+            onClick={toggleMeeting}
           >
-            {signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : "Sign off"}
+            {meetingStartedAt !== null ? (
+              <span className={styles.meeting}>Stop {mmss(meetingTick - meetingStartedAt)}</span>
+            ) : (
+              "Start meeting"
+            )}
           </Button>
           <Button
-            variant="light"
+            variant="onHero"
+            size="sm"
+            icon={MonitorPlay}
+            aria-pressed={present}
+            onClick={() => setPresent((on) => !on)}
+          >
+            {present ? "Exit present" : "Present"}
+          </Button>
+          <Button
+            variant="onHero"
             size="sm"
             icon={Printer}
             aria-pressed={sheetOpen}
@@ -910,9 +966,47 @@ export function HandoverPage() {
           >
             Print handover
           </Button>
+          {signOffButton}
         </>
       }
       bar={
+        <div className={styles.heroTools} data-testid="ward-handover-kpi-strip" aria-label="Handover counts">
+          {(["act", "due", "bed", "mov"] as const).map((id) => (
+            <button
+              key={id}
+              type="button"
+              className={styles.heroPill}
+              aria-pressed={pill === id}
+              onClick={() => togglePill(id)}
+            >
+              <span className={styles.heroPillCount}>{counts[id]}</span>
+              <StatusGlyph tone={PILL_TONE[id]} size={9} />
+              {id === "act"
+                ? "Act now"
+                : id === "due"
+                  ? `Due by ${formatInstantWithDay(cutoff, now)}`
+                  : id === "bed"
+                    ? "Waiting for a bed"
+                    : "Moving"}
+            </button>
+          ))}
+        </div>
+      }
+      barAside={
+        <button
+          type="button"
+          className={styles.heroChip}
+          aria-expanded={sinceOpen}
+          aria-controls="ward-handover-since"
+          onClick={() => setSinceOpen((open) => !open)}
+          data-testid="ward-handover-since-chip"
+        >
+          <Icon icon={Sparkles} size={14} />
+          Changed since you looked
+          <span className={styles.heroCount}>{sinceTotal}</span>
+        </button>
+      }
+      foot={
         <div className={styles.heroTools}>
           <HeroTrack
             label="Which handover"
@@ -941,44 +1035,20 @@ export function HandoverPage() {
               </>
             )}
           </span>
-          <button
-            type="button"
-            className={styles.heroChip}
-            aria-pressed={pill === "new"}
-            onClick={() => togglePill("new")}
-          >
-            <Icon icon={Sparkles} size={14} />
-            New since {formatInstantWithDay(newSince, now)}
-            <span className={styles.heroCount}>{counts.new}</span>
-          </button>
         </div>
       }
-      barAside={
-        <>
-          <Button
-            variant="onHero"
-            size="sm"
-            icon={TimerIcon}
-            aria-pressed={meetingStartedAt !== null}
-            onClick={toggleMeeting}
-          >
-            {meetingStartedAt !== null ? (
-              <span className={styles.meeting}>Stop {mmss(meetingTick - meetingStartedAt)}</span>
-            ) : (
-              "Start meeting"
-            )}
-          </Button>
-          <Button
-            variant="onHero"
-            size="sm"
-            icon={MonitorPlay}
-            aria-pressed={present}
-            onClick={() => setPresent((on) => !on)}
-          >
-            {present ? "Exit present" : "Present"}
-          </Button>
-          <LiveChip state="live" onHero />
-        </>
+      footAside={
+        <span className={styles.gap} aria-label={`${readyTotal} beds ready for ${counts.bed} waiting`}>
+          <span>
+            <b>{readyTotal}</b> beds ready for <b>{counts.bed}</b> waiting
+          </span>
+          <span className={styles.gapBar} aria-hidden="true">
+            {readyTotal > 0 ? <i className={styles.gapReady} style={{ flex: readyTotal }} /> : null}
+            {counts.bed > readyTotal ? (
+              <i className={styles.gapWaiting} style={{ flex: counts.bed - readyTotal }} />
+            ) : null}
+          </span>
+        </span>
       }
     />
   );
@@ -1149,9 +1219,10 @@ export function HandoverPage() {
                           data-row-id={row.id}
                           tabIndex={0}
                           aria-selected={isSelected}
-                          className={`${styles.row} ${isHighlighted(row) ? styles.rowHighlighted : ""} ${
-                            isSelected ? styles.rowSelected : ""
-                          }`}
+                          className={`${styles.row} ${isSelected ? styles.rowSelected : ""}`}
+                          data-highlighted={isHighlighted(row) ? "true" : undefined}
+                          data-dim={anyHighlight && !isHighlighted(row) ? "true" : undefined}
+                          data-act={isActNow(row, now) ? "true" : undefined}
                           onClick={() => pick(row.id)}
                           onKeyDown={(event: ReactKeyboardEvent<HTMLTableRowElement>) => {
                             if (event.key === "Enter" || event.key === " ") {
@@ -1265,10 +1336,22 @@ export function HandoverPage() {
     );
   }
 
+  const sinceStrip = sinceOpen ? (
+    <div data-testid="ward-handover-since">
+      <SinceYouLooked
+        id="ward-handover-since"
+        since={formatInstantWithDay(newSince, now)}
+        items={sinceTotal === 0 ? [] : sinceItems}
+        onCopy={copySince}
+      />
+    </div>
+  ) : null;
+
   return (
     <main id="main-content" className={styles.page} data-testid="ward-handover-page" data-ward-design="v6">
       {hero}
       {pastBanner}
+      {sheetOpen ? null : sinceStrip}
       {sheetOpen ? null : toolbar}
       {body}
       {wide ? (
