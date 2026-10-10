@@ -1,234 +1,105 @@
 "use client";
-/* eslint-disable jsx-a11y/role-supports-aria-props */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
-import { Car, ChevronLeft, ChevronRight, Clock, Download, Map as MapIcon, Plane, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Printer, Route, Search, X } from "lucide-react";
 
 import {
   Button,
   Card,
-  CardBody,
   CardFoot,
-  CardHead,
   EmptyState,
-  Field,
   Hero,
-  HeroStat,
-  HeroTrack,
-  Icon,
-  Radio,
+  LiveChip,
   Segmented,
-  Select,
   SrOnly,
   StatusGlyph,
-  StatusLine,
+  Tabs,
   TextInput,
-  buttonClass,
+  cx,
   tableClasses,
+  type WfTone,
 } from "@/components/wf";
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
-import { REPATRIATION_MODES } from "@/components/ward-management/ward-flow-events";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import {
-  TRANSPORT_LEGAL_STATUSES,
-  TRANSPORT_PROVIDERS,
-  type TransportLegalStatus,
-  type TransportProvider,
-} from "@/components/ward-management/ward-model";
+import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
-import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
+import { dateOf } from "@/components/ward-management/statistics/statistics-dates";
 
-import styles from "./out-of-area-v6.module.css";
+import {
+  BLANK_REPAT_DRAFT,
+  DAYS_AWAY_GROUPS,
+  RETURN_STATUS_SHORT,
+  TRAVEL_SHORT,
+  closerBedOptions,
+  daysAway,
+  dischargeOffsetDays,
+  dischargeShort,
+  dischargeText,
+  homeRegionBeds,
+  inDaysAwayGroup,
+  instantFromEstimatedTimeInputs,
+  leavesToday,
+  missingAnswers,
+  returnStatus,
+  shiftLabel,
+  shortSiteName,
+  currentShiftStart,
+  type DaysAwayGroupId,
+  type RepatDraft,
+  type ReturnStatus,
+} from "./out-of-area-model";
+import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
+import { ReturnPlan, TravelIcon, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
+import { HomeBedsCard, ReadyCard, ShiftCard, type ReadyRow, type ShiftReturnRow } from "./out-of-area-side";
+import styles from "./out-of-area-board.module.css";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
- * long way from where they live, and for how long.
+ * long way from where they live, and for how long. Rebuilt as option A, 9 October 2026.
  *
- * The operational threshold and invented, unvalidated travel bands stay visible above the entries.
- * Full provenance appears once in a disclosure, shared by all placements.
+ * **It calls `outOfAreaLedger` and recomputes nothing.** Neither number is derived here, and the
+ * register defaults to the order the ledger returns. Sorting by days away or by name is an
+ * explicit view choice the coordinator makes; the default never ranks anybody, because a sort by
+ * elapsed time would read as a repatriation priority nobody has decided.
  *
- * **It calls `outOfAreaLedger` and recomputes nothing.** Neither number is derived here, the
- * entries default to the order the ledger returns them. Optional alphabetical sorting changes
- * only the displayed register. The default is the admission fixture's own order: a sort by elapsed time
- * would be a ranking of people by how recently they were sent away, which reads as a repatriation
- * priority nobody has decided. `ward-referrals.ts` holds a sibling derivation that does sort
- * most-recent-first (`recentlyDecidedReferrals`); it answers a different question and must never
- * be reached for here.
+ * **In whole days, via `daysInBed`.** Counted from `arrivedAt`, floored at zero, and `null` rather
+ * than a substituted fallback when there is no arrival. The length of stay carries no target and no
+ * countdown. The discharge column is a different fact: the date the WARD recorded
+ * (`expectedDischargeAt`) and the ward's own delay reason (`blockReason`), shown as they are.
  *
- * **Elapsed time and nothing else.** No countdown, no target, no deadline, and no colour that
- * changes at a threshold. `formatElapsed` is deliberately not reused — it appends "waiting", and
- * somebody in a bed far from home is not waiting for anything this prototype has recorded.
+ * **The admissions come from the provider.** The optional `admissions` parameter survives so a
+ * test can render the states the seed cannot produce (nobody away, or only an unclassified count);
+ * omitting it, which is what the route does, reads live state on the same clock as `now`.
  *
- * **In whole days, via `daysInBed`.** The first version of this screen rendered minutes through
- * `splitDuration`, and on the seeded records that produced everything from `25h 30m` to
- * `5041h 30m`. Every assertion passed, because every number was correct — the FORMAT was
- * unreadable, and this screen's second headline fact is one nobody could read. Days are what a
- * length of stay is spoken in, and `daysInBed` (`ward-admissions.ts`) is the one place this
- * project computes them: counted from `arrivedAt` and never from `pulledAt`, floored at zero, and
- * `null` rather than a substituted fallback when there is no arrival. Reimplementing the division
- * here would be the second local copy this phase exists to prevent. It is still elapsed time and
- * nothing else — just readable.
+ * **Highlights, never hides.** The hero counts, the days away strip, the home region rows and the
+ * search all mark matching rows; every person stays in the register.
  *
- * **THE ADMISSIONS COME FROM THE PROVIDER, AND UNTIL 2026-08-30 THEY CAME FROM THE SEED.** The
- * paragraph that used to sit here said `Admission` was not in the reducer's state and that no
- * event created one. Both had stopped being true: `seedWardFlowState` carries `admissions`, and the
- * reducer appends one (`ward-flow-reducer.ts`, `AD-ARR-…`). The comment was accurate when it was
- * written and nothing failed when it stopped being — which is how it went on justifying a read that
- * had become wrong.
- *
- * **WHICH EVENT APPENDS IT HAS MOVED TWICE, and this line has been wrong once already.** It said
- * `PATIENT_ARRIVED` after the record's creation had moved to `PULL_PATIENT`. Today `PULL_PATIENT`
- * creates it `pulled` with a null `arrivedAt`, and `PATIENT_ARRIVED` is what marks it `occupied` and
- * stamps the arrival. That matters HERE specifically: `daysInBed` reads `arrivedAt`, so a pulled
- * person correctly contributes no length of stay to this board until they actually get there.
- *
- * ⚠️ **TWO DEFECTS CAME OUT OF THAT ONE STALE PARAGRAPH, AND THE SMALLER-LOOKING ONE IS WORSE.**
- *
- *  1. **A length of stay counted across two clocks.** `now` is re-anchored to the hour the demo
- *     opens; the seed is not. One side of the subtraction moved, so every figure on a screen whose
- *     headline fact is DAYS IN A BED was inflated by the anchor offset. Ward Board found this exact
- *     shape on `edPressure` the same night: *a wrong clock looks wrong; a wrong length of stay
- *     looks PLAUSIBLE.* Out-of-area duration is a figure people escalate on.
- *  2. **The screen contradicted itself.** Its own provenance line says a patient who arrives during
- *     the session is added, and blames their absence on a missing home region. Reading the seed
- *     made that impossible for a different reason entirely — an arrival appends to state, and this
- *     screen was not looking at state. The stated reason was not the operative one, which is worse
- *     than no explanation: it sends the next reader to the wrong place.
- *
- * The override parameter SURVIVES, and that is deliberate. Board's lesson from `edPressure` is that
- * the injection point was never the problem — its OPTIONALITY pointing at a frozen fixture was. It
- * now falls back to live state, so omitting it (which is what the route does) is safe, and a test
- * can still render the two states the seeded records cannot produce: nobody out of area at all, and
- * an unclassified count standing alone as the only non-zero number.
- *
- * `units` and `now` come from the provider for the same reason they always did.
- *
- * **The "At a glance" panel (added from the third-edition drawing) is a SELECTION, never a second
- * derivation.** Clicking a row or a card only changes which already-computed `OutOfAreaEntry` this
- * component reads its facts from — `selectedId` never feeds back into `outOfAreaLedger`, and
- * nothing in the panel recomputes a band, a region or an elapsed time. The drawing's fuller
- * "five groups" summary asks for far / near / no-home / no-band / no-arrival. The existing ledger
- * exposes only the far entries and one combined `notBanded` count. This page renders all five
- * headings, gives a number only to the group the ledger actually returns, and keeps the combined
- * figure in its original sentence. The remaining headings state that the ledger does not expose
- * that population or separation. Reimplementing the admission branches here would be exactly the
- * second classifier this file's own header warns against.
+ * **Return status** reads the coordinator's recorded `RECORD_REPATRIATION` first, then the page's own
+ * unsaved draft. Drafts live in React state only and are never written to browser storage.
  */
-const WA_SERVICE_ORDER = ["North Metro", "South Metro", "East Metro", "WACHS", "CAHS", "Private"] as const;
 
-const SERVICE_DISPLAY_NAMES: Record<string, string> = {
-  "North Metro": "North Metropolitan Health Service (NMHS)",
-  "South Metro": "South Metropolitan Health Service (SMHS)",
-  "East Metro": "East Metropolitan Health Service (EMHS)",
-  WACHS: "WA Country Health Service (WACHS)",
-  CAHS: "Child and Adolescent Health Service (CAHS)",
-  Private: "Authorised Private Services",
-};
+const PHONE_QUERY = "(max-width: 48rem)";
 
-const NO_HOME_HOSPITAL_VALUE = "";
-const NO_REPAT_MODE_VALUE = "";
-const NO_TRANSPORT_PROVIDER_VALUE = "";
-
-const TRANSPORT_LEGAL_STATUS_LABELS: Record<TransportLegalStatus, string> = {
-  voluntary: "Voluntary",
-  involuntary: "Involuntary",
-};
-
-const LOCAL_REPATRIATION_MODES = ["road", "flight"] as const;
-const REPAT_MODES =
-  typeof REPATRIATION_MODES !== "undefined" && Array.isArray(REPATRIATION_MODES)
-    ? REPATRIATION_MODES
-    : LOCAL_REPATRIATION_MODES;
-
-type RepatMode = "road" | "flight";
-
-type RepatDraft = {
-  homeHospital: string;
-  receivingWardAgreed: boolean | undefined;
-  mode: "" | RepatMode;
-  provider: TransportProvider | undefined;
-  cadNumber: string;
-  transportLegalStatus: TransportLegalStatus | undefined;
-  estimatedTime: string;
-  estimatedDay: "today" | "tomorrow";
-};
-
-const BLANK_REPAT_DRAFT: RepatDraft = {
-  homeHospital: NO_HOME_HOSPITAL_VALUE,
-  receivingWardAgreed: undefined,
-  mode: NO_REPAT_MODE_VALUE,
-  provider: undefined,
-  cadNumber: "",
-  transportLegalStatus: undefined,
-  estimatedTime: "",
-  estimatedDay: "today",
-};
-
-const HOME_HOSPITAL_GROUPS = (() => {
-  const serviceGroups = new Map<string, { service: string; sites: { code: string; name: string }[] }>();
-  for (const service of WA_SERVICE_ORDER) {
-    serviceGroups.set(service, { service, sites: [] });
-  }
-  for (const site of wardSites) {
-    if (!serviceGroups.has(site.service)) {
-      serviceGroups.set(site.service, { service: site.service, sites: [] });
-    }
-    serviceGroups.get(site.service)!.sites.push({ code: site.code, name: site.name });
-  }
-  return Array.from(serviceGroups.values()).filter((group) => group.sites.length > 0);
-})();
-
-/** Same HH:MM parser the ED booking popup uses — local copy so this screen does not import from ed-screen. */
-function minutesFromTimeInput(value: string): number | undefined {
-  const parts = value.split(":");
-  if (parts.length !== 2) return undefined;
-  const [rawHours, rawMinutes] = parts;
-  if (rawHours?.length !== 2 || rawMinutes?.length !== 2) return undefined;
-  const hours = Number(rawHours);
-  const minutes = Number(rawMinutes);
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return undefined;
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return undefined;
-  return hours * 60 + minutes;
-}
-
-function instantFromEstimatedTimeInputs(
-  timeValue: string,
-  day: "today" | "tomorrow",
-  now: Instant,
-): number | undefined {
-  const minuteOfDay = minutesFromTimeInput(timeValue);
-  if (minuteOfDay === undefined) return undefined;
-  const startOfToday = Math.floor(now / 1440) * 1440;
-  return startOfToday + (day === "tomorrow" ? 1440 : 0) + minuteOfDay;
-}
-
-function repatriationBlockedReason(
-  draft: RepatDraft,
-  admissionId: string | undefined,
-  now: Instant,
-): string | undefined {
-  const missing: string[] = [];
-  if (!admissionId) missing.push("choose a person on the ledger");
-  if (!wardSites.some((site) => site.code === draft.homeHospital)) missing.push("choose the home hospital");
-  if (draft.receivingWardAgreed === undefined) missing.push("say whether the receiving ward has agreed");
-  if (draft.mode !== "road" && draft.mode !== "flight") missing.push("choose road or flight");
-  if (draft.provider === undefined) missing.push("choose the transport provider");
-  if (draft.cadNumber.trim().length === 0) missing.push("enter the CAD (dispatch) number");
-  if (draft.transportLegalStatus === undefined) {
-    missing.push("state whether the transport is voluntary or involuntary");
-  }
-  if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) {
-    missing.push("enter the estimated time");
-  }
-  if (missing.length === 0) return undefined;
-  return `Before recording, ${missing.join(", ")}. None is filled in for you.`;
+/** Phone is its own layout, not a reflow: the screen renders a different tree under 48rem. */
+function useIsPhone(): boolean {
+  return useSyncExternalStore(
+    (notify) => {
+      if (typeof window.matchMedia !== "function") return () => undefined;
+      const query = window.matchMedia(PHONE_QUERY);
+      query.addEventListener?.("change", notify);
+      return () => query.removeEventListener?.("change", notify);
+    },
+    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
+    () => false,
+  );
 }
 
 function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
@@ -241,170 +112,204 @@ function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
   return null;
 }
 
-type TransportFilter = "all" | "air_transport_only" | "three_hours_or_more";
-type SortOrder = "ledger" | "patient" | "catchment";
+type SortOrder = "ledger" | "days" | "patient";
+type HighlightKey = "due" | "air" | "road" | "noplan" | "notagreed" | "bed" | `age:${DaysAwayGroupId}`;
 
-/** The short travel word for the hero, the plan's figures and the phone card. */
-function travelWord(entry: OutOfAreaEntry): string {
-  return entry.band === "air_transport_only" ? "Air" : "Road";
+const STATUS_TONE: Record<ReturnStatus, WfTone> = {
+  none: "closed",
+  started: "neutral",
+  not_agreed: "neutral",
+  agreed: "neutral",
+};
+
+function isTyping(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName);
 }
 
-/**
- * THE V6 REBUILD, 7 October 2026 — `design/pages-v6/OutOfArea.png`. One hero band counts the people
- * away from home and switches the travel band; the "Away from home" card is the ledger with search,
- * sort and the home-catchment filter; the "Return plan" card holds the selected person's facts and
- * the repatriation form inline, so the form is a step of the plan rather than a separate dialog; the
- * "Home catchments" card counts people by home region and filters the ledger.
- *
- * **Left out, because the record cannot support it:** a return status per person (the reducer keeps
- * `repatriations` but the provider does not expose them to screens), whether a home bed is ready,
- * the next transport slot, how many can return now or declined home, and the time-away bands (any
- * band edge would be a threshold nobody has set, and this screen keeps "no colour that changes at a
- * threshold").
- */
 export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
-  const { units, admissions: liveAdmissions, patients, referrals, movements, dispatch } = useWardFlow();
+  const {
+    units,
+    admissions: liveAdmissions,
+    patients,
+    referrals,
+    movements,
+    dispatch,
+    dayZero,
+    repatriations: liveRepatriations,
+  } = useWardFlow();
   const now = useWardFlowClock();
-
-  const resolvePatient = (admission: Admission): ResolvedPatientInfo => {
-    return resolveSubjectPatient(admission, { patients, referrals, movements });
-  };
+  const isPhone = useIsPhone();
+  const repatriations: RepatriationRecord[] = liveRepatriations ?? [];
 
   const { entries, notBanded } = outOfAreaLedger(admissions ?? liveAdmissions, units, now);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = selectedId ? entries.find((entry) => entry.admission.id === selectedId) : undefined;
 
-  const [repatDraft, setRepatDraft] = useState<RepatDraft>(BLANK_REPAT_DRAFT);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, RepatDraft>>({});
   const [repatNotice, setRepatNotice] = useState<string | null>(null);
-  const [repatFormNotice, setRepatFormNotice] = useState<string | null>(null);
+  const [toolNote, setToolNote] = useState<string | null>(null);
+  const [highlight, setHighlight] = useState<HighlightKey | null>(null);
+  const [region, setRegion] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("ledger");
+  const [tab, setTab] = useState<"now" | "history">("now");
 
   const selectionOriginRef = useRef<HTMLElement | null>(null);
   const detailColumnRef = useRef<HTMLDivElement | null>(null);
+  const searchRef = useRef<HTMLInputElement | null>(null);
 
+  const people = new Map<string, ResolvedPatientInfo>(
+    entries.map((entry) => [
+      entry.admission.id,
+      resolveSubjectPatient(entry.admission, { patients, referrals, movements }),
+    ]),
+  );
+  const patientOf = (entry: OutOfAreaEntry): ResolvedPatientInfo =>
+    people.get(entry.admission.id) ?? resolveSubjectPatient(entry.admission, { patients, referrals, movements });
+  const recordOf = (id: string) => repatriations.find((record) => record.admissionId === id);
+  const statusOf = (entry: OutOfAreaEntry) =>
+    returnStatus(recordOf(entry.admission.id), drafts[entry.admission.id], now);
+  const offsetOf = (entry: OutOfAreaEntry) => dischargeOffsetDays(entry, now);
+  const returnMovementOf = (id: string) => movements.find((movement) => movement.sourceAdmissionId === id)?.id;
+
+  const sorted = [...entries];
+  if (sortOrder === "days") sorted.sort((a, b) => daysAway(b, now) - daysAway(a, now));
+  if (sortOrder === "patient") {
+    sorted.sort((a, b) => patientOf(a).displayName.localeCompare(patientOf(b).displayName, "en-AU"));
+  }
+
+  const selected = selectedId ? entries.find((entry) => entry.admission.id === selectedId) : undefined;
+  const selectedIndex = sorted.findIndex((entry) => entry.admission.id === selectedId);
+
+  /* ---- highlight ---- */
+  const matchesHighlight = (entry: OutOfAreaEntry, key: HighlightKey | null): boolean => {
+    if (!key) return false;
+    const offset = offsetOf(entry);
+    const status = statusOf(entry);
+    if (key === "due") return offset !== null && offset < 0;
+    if (key === "air") return entry.band === "air_transport_only";
+    if (key === "road") return entry.band === "three_hours_or_more";
+    if (key === "noplan") return status === "none";
+    if (key === "notagreed") return status === "not_agreed";
+    if (key === "bed") return status === "agreed";
+    return inDaysAwayGroup(entry, now, key.slice(4) as DaysAwayGroupId);
+  };
+  const query = searchQuery.trim().toLowerCase();
+  const matchesQuery = (entry: OutOfAreaEntry): boolean => {
+    if (!query) return false;
+    const info = patientOf(entry);
+    const site = siteByCode(entry.unit.siteCode);
+    return [
+      info.displayName,
+      info.formalName,
+      info.umrn,
+      entry.admission.homeRegion ?? "",
+      entry.unit.name,
+      site?.name ?? "",
+      site?.service ?? "",
+    ].some((value) => value.toLowerCase().includes(query));
+  };
+  const anyHighlight = highlight !== null || region !== null || query.length > 0;
+  const isHighlighted = (entry: OutOfAreaEntry) =>
+    matchesHighlight(entry, highlight) ||
+    (region !== null && entry.admission.homeRegion === region) ||
+    matchesQuery(entry);
+  const highlightedCount = sorted.filter(isHighlighted).length;
+  const clearHighlights = () => {
+    setHighlight(null);
+    setRegion(null);
+    setSearchQuery("");
+  };
+  const toggleHighlight = (key: HighlightKey) => setHighlight((current) => (current === key ? null : key));
+  const toggleRegion = (next: string) => setRegion((current) => (current === next ? null : next));
+
+  /* ---- counts ---- */
+  const countOf = (key: HighlightKey) => entries.filter((entry) => matchesHighlight(entry, key)).length;
+  const bedDays = entries.reduce((sum, entry) => sum + daysAway(entry, now), 0);
+  const longest = entries.reduce((max, entry) => Math.max(max, daysAway(entry, now)), 0);
+
+  const readyEntries = entries
+    .filter((entry) => {
+      const offset = offsetOf(entry);
+      return offset !== null && offset < 0;
+    })
+    .sort((a, b) => (offsetOf(a) ?? 0) - (offsetOf(b) ?? 0));
+  const nextUp =
+    readyEntries.find((entry) => statusOf(entry) === "none") ?? sorted.find((entry) => statusOf(entry) === "none");
+
+  /* ---- selection ---- */
   const selectPlacement = (id: string, origin?: HTMLElement) => {
     if (origin) selectionOriginRef.current = origin;
-    if (id !== selectedId) {
-      setRepatDraft(BLANK_REPAT_DRAFT);
-      setRepatFormNotice(null);
-    }
     setSelectedId(id);
   };
-
   const returnToOverview = () => {
     setSelectedId(null);
     selectionOriginRef.current?.focus();
   };
+  const step = (delta: number) => {
+    const next = sorted[selectedIndex + delta];
+    if (next) setSelectedId(next.admission.id);
+  };
 
   useEffect(() => {
-    if (selectedId === null) return;
-    if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 1000px)").matches) {
-      return;
-    }
+    if (selectedId === null || isPhone) return;
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 1000px)").matches) return;
     window.requestAnimationFrame(() => {
       detailColumnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
-  }, [selectedId]);
+  }, [selectedId, isPhone]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && selectedId !== null) {
         setSelectedId(null);
         selectionOriginRef.current?.focus();
+        return;
+      }
+      if (isPhone || isTyping(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key === "/") {
+        event.preventDefault();
+        searchRef.current?.focus();
+        return;
+      }
+      if (event.key === "j" || event.key === "k") {
+        const index = sorted.findIndex((entry) => entry.admission.id === selectedId);
+        const next = sorted[index < 0 ? 0 : index + (event.key === "j" ? 1 : -1)];
+        if (next) setSelectedId(next.admission.id);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedId]);
+  });
 
   useEffect(() => {
     if (!repatNotice) return;
-    const timer = setTimeout(() => {
-      setRepatNotice(null);
-    }, 4000);
+    const timer = setTimeout(() => setRepatNotice(null), 4000);
     return () => clearTimeout(timer);
   }, [repatNotice]);
 
-  const maxDaysEntry = entries.reduce<OutOfAreaEntry | undefined>((max, current) => {
-    const currentDays = daysInBed(current.admission, now) ?? 0;
-    const maxDays = max ? (daysInBed(max.admission, now) ?? 0) : -1;
-    return currentDays > maxDays ? current : max;
-  }, undefined);
+  useEffect(() => {
+    if (!toolNote) return;
+    const timer = setTimeout(() => setToolNote(null), 4000);
+    return () => clearTimeout(timer);
+  }, [toolNote]);
 
-  const airCount = entries.filter((e) => e.band === "air_transport_only").length;
-  const roadCount = entries.filter((e) => e.band === "three_hours_or_more").length;
+  /* ---- the return plan ---- */
+  const draftFor = (id: string) => drafts[id] ?? BLANK_REPAT_DRAFT;
+  const updateDraft = (id: string, update: Partial<RepatDraft>) =>
+    setDrafts((current) => ({ ...current, [id]: { ...(current[id] ?? BLANK_REPAT_DRAFT), ...update } }));
 
-  const [transportFilter, setTransportFilter] = useState<TransportFilter>("all");
-  const [catchmentFilter, setCatchmentFilter] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("ledger");
-
-  const homeRegionCounts = entries.reduce<Record<string, number>>((acc, entry) => {
-    const region = entry.admission.homeRegion ?? "Not recorded";
-    acc[region] = (acc[region] ?? 0) + 1;
-    return acc;
-  }, {});
-  const homeRegionSummary = Object.entries(homeRegionCounts).sort((a, b) => b[1] - a[1]);
-  const largestRegion = homeRegionSummary[0]?.[1] ?? 0;
-
-  const filteredEntries = entries.filter((entry) => {
-    if (transportFilter !== "all" && entry.band !== transportFilter) {
-      return false;
-    }
-    if (catchmentFilter !== "all" && (entry.admission.homeRegion ?? "Not recorded") !== catchmentFilter) {
-      return false;
-    }
-    if (searchQuery.trim().length > 0) {
-      const q = searchQuery.toLowerCase().trim();
-      const site = siteByCode(entry.unit.siteCode);
-      const patientInfo = resolvePatient(entry.admission);
-      const matchesId = entry.admission.id.toLowerCase().includes(q);
-      const matchesName =
-        patientInfo.displayName.toLowerCase().includes(q) || patientInfo.formalName.toLowerCase().includes(q);
-      const matchesUmrn = patientInfo.umrn.toLowerCase().includes(q);
-      const matchesRegion = (entry.admission.homeRegion ?? "").toLowerCase().includes(q);
-      const matchesUnit = entry.unit.name.toLowerCase().includes(q);
-      const matchesSite = (site?.name ?? "").toLowerCase().includes(q);
-      const matchesService = (site?.service ?? "").toLowerCase().includes(q);
-      return matchesId || matchesName || matchesUmrn || matchesRegion || matchesUnit || matchesSite || matchesService;
-    }
-    return true;
-  });
-  if (sortOrder !== "ledger") {
-    filteredEntries.sort((a, b) => {
-      const left = sortOrder === "patient" ? resolvePatient(a.admission).displayName : (a.admission.homeRegion ?? "");
-      const right = sortOrder === "patient" ? resolvePatient(b.admission).displayName : (b.admission.homeRegion ?? "");
-      return left.localeCompare(right, "en-AU");
-    });
-  }
-
-  const selectedIndex = filteredEntries.findIndex((entry) => entry.admission.id === selectedId);
-  const hasFilters = transportFilter !== "all" || catchmentFilter !== "all" || searchQuery.trim().length > 0;
-  const resetFilters = () => {
-    setSearchQuery("");
-    setTransportFilter("all");
-    setCatchmentFilter("all");
-  };
-
-  const patientInfo = selected ? resolvePatient(selected.admission) : undefined;
-  const profileHref = patientInfo ? getPatientProfileHref(patientInfo) : null;
-  const site = selected ? siteByCode(selected.unit.siteCode) : undefined;
-  const longestPatientInfo = maxDaysEntry ? resolvePatient(maxDaysEntry.admission) : undefined;
-
-  function recordReturn() {
-    const admissionId = selected?.admission.id;
-    const blocked = repatriationBlockedReason(repatDraft, admissionId, now);
-    if (blocked !== undefined) {
-      setRepatFormNotice(blocked);
-      return;
-    }
-    const estimatedAt = instantFromEstimatedTimeInputs(repatDraft.estimatedTime, repatDraft.estimatedDay, now);
+  function recordReturn(entry: OutOfAreaEntry) {
+    const admissionId = entry.admission.id;
+    const draft = draftFor(admissionId);
+    if (missingAnswers(draft, now).length > 0) return;
+    const estimatedAt = instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now);
     if (
-      admissionId === undefined ||
       estimatedAt === undefined ||
-      repatDraft.receivingWardAgreed === undefined ||
-      (repatDraft.mode !== "road" && repatDraft.mode !== "flight") ||
-      repatDraft.provider === undefined ||
-      repatDraft.transportLegalStatus === undefined
+      draft.receivingWardAgreed === undefined ||
+      (draft.mode !== "road" && draft.mode !== "flight") ||
+      draft.provider === undefined ||
+      draft.transportLegalStatus === undefined
     ) {
       return;
     }
@@ -413,656 +318,626 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       role: "coordinator",
       now,
       admissionId,
-      homeHospital: repatDraft.homeHospital,
-      receivingWardAgreed: repatDraft.receivingWardAgreed,
-      mode: repatDraft.mode,
-      provider: repatDraft.provider,
-      cadNumber: repatDraft.cadNumber.trim(),
-      transportLegalStatus: repatDraft.transportLegalStatus,
+      homeHospital: draft.homeHospital,
+      receivingWardAgreed: draft.receivingWardAgreed,
+      mode: draft.mode,
+      provider: draft.provider,
+      cadNumber: draft.cadNumber.trim(),
+      transportLegalStatus: draft.transportLegalStatus,
       estimatedAt,
     });
-    setRepatFormNotice(null);
-    setRepatDraft(BLANK_REPAT_DRAFT);
-    const targetHospitalName = siteByCode(repatDraft.homeHospital)?.name ?? repatDraft.homeHospital;
-    const movementFeedback = repatDraft.receivingWardAgreed
+    setDrafts((current) => {
+      const next = { ...current };
+      delete next[admissionId];
+      return next;
+    });
+    const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
+    const movementFeedback = draft.receivingWardAgreed
       ? " Return transfer movement queued for bed placement at home health service."
       : " Return movement pending receiving ward agreement.";
-    setRepatNotice(
-      `Repatriation transfer order recorded for ${admissionId} to ${targetHospitalName}.${movementFeedback}`,
-    );
+    setRepatNotice(`Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}.${movementFeedback}`);
+  }
+
+  const planPatient = (entry: OutOfAreaEntry): PlanPatient => {
+    const info = patientOf(entry);
+    return { displayName: info.displayName, umrn: info.umrn, profileHref: getPatientProfileHref(info) };
+  };
+
+  const renderPlan = (entry: OutOfAreaEntry, header: ReactNode | undefined, idPrefix: string) => (
+    <ReturnPlan
+      entry={entry}
+      patient={planPatient(entry)}
+      daysLabel={sinceArrivalLabel(entry, now)}
+      dischargeOffset={offsetOf(entry)}
+      now={now}
+      draft={draftFor(entry.admission.id)}
+      onDraft={(update) => updateDraft(entry.admission.id, update)}
+      record={recordOf(entry.admission.id)}
+      returnMovementId={returnMovementOf(entry.admission.id)}
+      options={closerBedOptions(entry, units, now)}
+      notice={repatNotice}
+      onDismissNotice={() => setRepatNotice(null)}
+      onRecord={() => recordReturn(entry)}
+      header={header}
+      idPrefix={idPrefix}
+    />
+  );
+
+  /* ---- tools ---- */
+  const summaryText = () => {
+    const lines = [
+      `Out of area: ${entries.length} away from home, ${bedDays} bed days, longest ${longest} days.`,
+      `${countOf("due")} past their discharge date, ${countOf("noplan")} with no return plan.`,
+      ...sorted.map((entry) => {
+        const info = patientOf(entry);
+        return `${info.displayName} (${info.umrn}), ${entry.admission.homeRegion}, ${sinceArrivalLabel(entry, now)}, ${dischargeText(offsetOf(entry))}, ${RETURN_STATUS_SHORT[statusOf(entry)]}`;
+      }),
+      "Synthetic demonstration figures. Not a medical device.",
+    ];
+    return lines.join("\n");
+  };
+  async function copySummary() {
+    try {
+      await navigator.clipboard.writeText(summaryText());
+      setToolNote("Bed meeting summary copied");
+    } catch {
+      setToolNote("Copy is not available in this browser");
+    }
   }
 
   function exportList() {
-    const lines: (string | number)[][] = [["Admission", "Home region", "Unit", "Site", "Travel time", "Since arrival"]];
-    for (const entry of filteredEntries) {
+    const lines: (string | number)[][] = [
+      ["UMRN", "Home region", "Unit", "Site", "Travel time", "Discharge", "Return", "Since arrival"],
+    ];
+    for (const entry of sorted) {
       lines.push([
-        entry.admission.id,
+        patientOf(entry).umrn,
         entry.admission.homeRegion ?? "",
         entry.unit.name,
         siteByCode(entry.unit.siteCode)?.name ?? "",
         TRAVEL_BAND_LABELS[entry.band],
+        dischargeText(offsetOf(entry)),
+        RETURN_STATUS_SHORT[statusOf(entry)],
         sinceArrivalLabel(entry, now),
       ]);
     }
-    const url = URL.createObjectURL(
-      new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
-    );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "ward-flow-synthetic-out-of-area.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+    try {
+      const url = URL.createObjectURL(
+        new Blob([lines.map((line) => line.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "ward-flow-synthetic-out-of-area.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setToolNote("Export is not available in this browser");
+    }
   }
 
-  const regionItems = [
-    { id: "all", label: "All", count: entries.length },
-    ...homeRegionSummary.map(([region, count]) => ({ id: region, label: region, count })),
-  ];
+  /* ---- right column rows ---- */
+  const shiftStart = currentShiftStart(now);
+  const shiftReturns: ShiftReturnRow[] = repatriations
+    .filter((record) => record.at >= shiftStart)
+    .map((record) => {
+      const entry = entries.find((candidate) => candidate.admission.id === record.admissionId);
+      return { record, entry };
+    })
+    .filter((row): row is { record: RepatriationRecord; entry: OutOfAreaEntry } => row.entry !== undefined)
+    .sort((a, b) => a.record.estimatedAt - b.record.estimatedAt)
+    .map(({ record, entry }) => ({
+      id: entry.admission.id,
+      name: patientOf(entry).displayName,
+      to: shortSiteName(record.homeHospital),
+      mode: record.mode === "road" ? "Road" : "Flight",
+      time: formatInstant(record.estimatedAt),
+      day: leavesToday(record, now) ? "Today" : "Tomorrow",
+    }));
+  const leavingToday = repatriations.filter((record) => leavesToday(record, now) && record.estimatedAt >= now);
+  const dueSoon = entries.filter((entry) => {
+    const offset = offsetOf(entry);
+    return offset === 0 || offset === 1;
+  }).length;
+  const regionRows = homeRegionBeds(entries, units, now);
+  const readyRows: ReadyRow[] = readyEntries.map((entry) => ({
+    id: entry.admission.id,
+    name: patientOf(entry).displayName,
+    detail: entry.admission.blockReason ?? `${entry.admission.homeRegion} · ${TRAVEL_SHORT[entry.band]}`,
+    detailIsReason: entry.admission.blockReason !== null,
+    overdue: dischargeShort(offsetOf(entry)),
+    returnShort: RETURN_STATUS_SHORT[statusOf(entry)],
+  }));
+  const startedRows = entries
+    .filter((entry) => statusOf(entry) === "started")
+    .map((entry) => ({
+      id: entry.admission.id,
+      name: patientOf(entry).displayName,
+      left: missingAnswers(draftFor(entry.admission.id), now).length,
+    }));
+
+  const counts = (
+    <p className="sr-only" data-testid="ward-out-of-area-counts">
+      <span data-testid="ward-out-of-area-count-people">
+        {entries.length} {entries.length === 1 ? "person is" : "people are"} recorded as being in a bed far from home.
+      </span>{" "}
+      <span data-testid="ward-out-of-area-count-not-banded">
+        {notBanded} more could not be placed in a band because the combined count does not separate a missing home area
+        from a missing travel-time pair.
+      </span>
+    </p>
+  );
+
+  /* ---- phone ---- */
+  if (isPhone) {
+    const phonePeople: PhonePerson[] = sorted.map((entry) => {
+      const info = patientOf(entry);
+      const record = recordOf(entry.admission.id);
+      return {
+        entry,
+        name: info.displayName,
+        umrn: info.umrn,
+        profileHref: getPatientProfileHref(info),
+        daysLabel: sinceArrivalLabel(entry, now),
+        offset: offsetOf(entry),
+        status: statusOf(entry),
+        record,
+        highlighted: isHighlighted(entry),
+        who: whoseMove(draftFor(entry.admission.id), record),
+      };
+    });
+    return (
+      <div className={styles.screen} data-testid="ward-out-of-area-board" data-ward-design="v8-a">
+        <main id="main-content" className={cx(styles.main, styles.phoneMain)}>
+          <OutOfAreaPhone
+            people={phonePeople}
+            totalAway={entries.length}
+            dueCount={countOf("due")}
+            noPlanCount={countOf("noplan")}
+            highlight={highlight}
+            onHighlight={(key) => toggleHighlight(key)}
+            query={searchQuery}
+            onQuery={setSearchQuery}
+            anyHighlight={anyHighlight}
+            highlightedCount={highlightedCount}
+            onClear={clearHighlights}
+            readyIds={readyEntries.map((entry) => entry.admission.id)}
+            leavingToday={leavingToday}
+            now={now}
+            selectedId={selectedId}
+            onSelect={(id) => setSelectedId(id)}
+            onClose={() => setSelectedId(null)}
+            nextUpId={nextUp?.admission.id}
+            onCopy={copySummary}
+            toolNote={toolNote}
+            renderPlan={(entry) => renderPlan(entry, undefined, "ward-out-of-area-phone-plan")}
+            shift={
+              <ShiftCard
+                idPrefix="ward-out-of-area-phone"
+                label={shiftLabel(now)}
+                returns={shiftReturns}
+                leaving={leavingToday.length}
+                dueSoon={dueSoon}
+                onPick={(id) => setSelectedId(id)}
+              />
+            }
+            beds={
+              <HomeBedsCard
+                idPrefix="ward-out-of-area-phone"
+                rows={regionRows}
+                region={region}
+                onRegion={toggleRegion}
+                notBanded={notBanded}
+              />
+            }
+          />
+          {counts}
+          <WardPrototypeFooter
+            testId="ward-out-of-area-governance"
+            note="People in a bed away from home · Synthetic demonstration figures · Not a medical device"
+          />
+        </main>
+      </div>
+    );
+  }
+
+  /* ---- desktop ---- */
+  const pill = (key: HighlightKey, label: string, tone?: WfTone) => (
+    <button
+      key={key}
+      type="button"
+      className={styles.pill}
+      aria-pressed={highlight === key}
+      data-testid={`ward-out-of-area-highlight-${key}`}
+      onClick={() => toggleHighlight(key)}
+    >
+      <span className={styles.pillCount}>{countOf(key)}</span>
+      {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+      {label}
+    </button>
+  );
 
   return (
-    <div className={styles.screen} data-testid="ward-out-of-area-board" data-ward-design="v6">
+    <div className={styles.screen} data-testid="ward-out-of-area-board" data-ward-design="v8-a">
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
           eyebrow="Out of area"
           title={`${entries.length} away from home`}
-          stats={
-            <>
-              <HeroStat value={airCount} label="Air only" />
-              <HeroStat value={roadCount} label="Road" />
-              <HeroStat
-                className={styles.heroLongest}
-                value={maxDaysEntry ? sinceArrivalLabel(maxDaysEntry, now) : "None"}
-                label="Longest away"
-              />
-            </>
+          titleMeta={
+            <span className={styles.heroMeta}>
+              <span>
+                <b>{bedDays}</b> bed days
+              </span>
+              <span>
+                Longest <b>{longest} days</b>
+              </span>
+            </span>
           }
+          stats={<DaysAwayStrip entries={entries} now={now} highlight={highlight} onToggle={toggleHighlight} />}
           aside={
-            <HeroTrack
-              label="Travel band"
-              value={transportFilter}
-              onChange={setTransportFilter}
-              items={[
-                { id: "all", label: "All", count: entries.length },
-                { id: "air_transport_only", label: "Air", count: airCount },
-                { id: "three_hours_or_more", label: "Road", count: roadCount },
-              ]}
-            />
+            <span className={styles.heroActs}>
+              <LiveChip state="live" onHero />
+              <Button
+                variant="light"
+                size="sm"
+                icon={Route}
+                disabledReason={nextUp ? undefined : "Everyone has a return plan."}
+                reasonDisplay="tooltip"
+                title={
+                  nextUp ? `Opens ${patientOf(nextUp).displayName}, the longest past discharge with no plan` : undefined
+                }
+                onClick={() => nextUp && selectPlacement(nextUp.admission.id)}
+              >
+                Plan next return
+              </Button>
+              <Button
+                variant="onHero"
+                size="sm"
+                iconOnly
+                icon={Copy}
+                aria-label="Copy bed meeting summary"
+                title="Copy bed meeting summary"
+                onClick={copySummary}
+              />
+              <Button
+                variant="onHero"
+                size="sm"
+                iconOnly
+                icon={Download}
+                aria-label="Export list as CSV"
+                title="Export list as CSV"
+                onClick={exportList}
+              />
+              <Button
+                variant="onHero"
+                size="sm"
+                iconOnly
+                icon={Printer}
+                aria-label="Print handover list"
+                disabledReason="Not wired in this prototype."
+                reasonDisplay="tooltip"
+              />
+            </span>
+          }
+          bar={
+            <div className={styles.pills} role="group" aria-label="Highlight people">
+              {pill("due", "Discharge date passed", "warning")}
+              {pill("air", "Air only")}
+              {pill("road", "Road 3h+")}
+              {pill("noplan", "No return plan", "closed")}
+              {pill("notagreed", "Ward not agreed", "neutral")}
+              {pill("bed", "Awaiting home bed", "neutral")}
+            </div>
+          }
+          barAside={
+            <span className={styles.heroNote} role="status">
+              {toolNote}
+            </span>
           }
         />
 
         <div className={styles.layout}>
           <Card
-            className={styles.ledgerCard}
+            className={styles.registerCard}
             aria-labelledby="ward-out-of-area-entries-title"
             data-testid="ward-out-of-area-entries"
           >
-            <div className={styles.ledgerHead}>
-              <CardHead id="ward-out-of-area-entries-title" icon={MapIcon} title="Away from home" />
-              <div className={styles.headControls}>
-                <TextInput
-                  icon={Search}
-                  boxClassName={styles.searchBox}
-                  placeholder="Patient or UMRN"
-                  aria-label="Filter out-of-area placements"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  onClear={() => setSearchQuery("")}
-                />
-                <Segmented
-                  label="Sort placements"
-                  value={sortOrder}
-                  onChange={setSortOrder}
-                  items={[
-                    { id: "ledger", label: "Ledger" },
-                    { id: "patient", label: "Name" },
-                    { id: "catchment", label: "Region" },
-                  ]}
-                />
-              </div>
-            </div>
+            <h2 id="ward-out-of-area-entries-title" className="sr-only">
+              Away from home register
+            </h2>
             <div className={styles.toolbar}>
-              <div className={styles.segScroll}>
-                <Segmented
-                  label="Filter by home catchment"
-                  value={catchmentFilter}
-                  onChange={setCatchmentFilter}
-                  items={regionItems}
-                />
-              </div>
-              <span className={styles.resultLine}>
-                <span aria-live="polite">
-                  <b>{filteredEntries.length}</b> synthetic records shown
-                </span>
-                {hasFilters ? (
-                  <Button variant="ghost" size="sm" onClick={resetFilters}>
-                    Clear filters
-                  </Button>
-                ) : null}
-              </span>
-            </div>
-
-            <p className="sr-only" data-testid="ward-out-of-area-counts">
-              <span data-testid="ward-out-of-area-count-people">
-                {entries.length} {entries.length === 1 ? "person is" : "people are"} recorded as being in a bed far from
-                home.
-              </span>{" "}
-              <span data-testid="ward-out-of-area-count-not-banded">
-                {notBanded} more could not be placed in a band because the combined count does not separate a missing
-                home area from a missing travel-time pair.
-              </span>
-            </p>
-            <div className={styles.registerBody}>
-              {entries.length === 0 ? (
-                <p className={styles.emptyNote} data-testid="ward-out-of-area-empty">
-                  Nobody on these records is in a bed far from home.
-                </p>
-              ) : filteredEntries.length === 0 ? (
-                <div className={styles.noMatches}>
-                  <EmptyState
+              <Tabs
+                label="Out of area view"
+                idPrefix="ward-out-of-area-view"
+                value={tab}
+                onChange={setTab}
+                items={[
+                  { id: "now", label: "Away now", count: entries.length },
+                  { id: "history", label: "History", count: repatriations.length },
+                ]}
+              />
+              {tab === "now" ? (
+                <span className={styles.toolbarTools}>
+                  <TextInput
+                    ref={searchRef}
                     icon={Search}
-                    title="No placements match the current search or filters."
-                    action={
-                      <Button variant="sec" size="sm" onClick={resetFilters}>
-                        Reset filters
-                      </Button>
-                    }
+                    boxClassName={styles.searchBox}
+                    placeholder="Name, UMRN or ward"
+                    aria-label="Highlight people by name, UMRN or ward"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    onClear={() => setSearchQuery("")}
                   />
-                </div>
-              ) : (
-                <>
-                  <div className={styles.tableWrap}>
-                    <WardTable
-                      className={`${tableClasses.table} ${styles.table}`}
-                      wrapperClassName={styles.tableScroll}
-                      testId="ward-out-of-area-table"
-                      ariaLabel="Out-of-area placement register"
-                    >
-                      <thead>
-                        <tr>
-                          <th scope="col">Patient</th>
-                          <th scope="col">Home region</th>
-                          <th scope="col">Unit</th>
-                          <th scope="col">Travel time</th>
-                          <th scope="col" className={tableClasses.num}>
-                            Since arrival
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {/* All matching entries; sorting by name or region is an explicit view choice. */}
-                        {filteredEntries.map((entry) => {
-                          const entrySite = siteByCode(entry.unit.siteCode);
-                          const entryPatient = resolvePatient(entry.admission);
-                          const entryProfileHref = getPatientProfileHref(entryPatient);
-                          const isSelected = entry.admission.id === selectedId;
-                          return (
-                            <tr
-                              key={entry.admission.id}
-                              data-testid={`ward-out-of-area-row-${entry.admission.id}`}
-                              className={isSelected ? `${tableClasses.selected} ${styles.row}` : styles.row}
-                              aria-selected={isSelected}
-                              tabIndex={0}
-                              aria-label={`View placement detail for ${entryPatient.displayName} (${entryPatient.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
-                              onClick={(event) => selectPlacement(entry.admission.id, event.currentTarget)}
-                              onKeyDown={(event) => {
-                                if (
-                                  event.target === event.currentTarget &&
-                                  (event.key === "Enter" || event.key === " ")
-                                ) {
-                                  event.preventDefault();
-                                  selectPlacement(entry.admission.id, event.currentTarget);
-                                }
-                              }}
-                            >
-                              <td>
-                                <span className={styles.primary}>{entryPatient.displayName}</span>
-                                <span className={styles.secondary}>
-                                  {entryProfileHref ? (
-                                    <Link
-                                      href={entryProfileHref}
-                                      className={styles.umrnLink}
-                                      onClick={(event) => event.stopPropagation()}
-                                      title={`Open profile for ${entryPatient.displayName} (${entryPatient.umrn})`}
-                                    >
-                                      {entryPatient.umrn}
-                                    </Link>
-                                  ) : (
-                                    <span>{entryPatient.umrn}</span>
-                                  )}
-                                  <span aria-hidden="true"> · </span>
-                                  <span className={styles.mono}>{entry.admission.id}</span>
-                                </span>
-                              </td>
-                              <td>
-                                <span className={styles.primaryPlain}>{entry.admission.homeRegion}</span>
-                              </td>
-                              <td>
-                                <span className={styles.primaryPlain}>{entry.unit.name}</span>
-                                <span className={styles.secondary}>{entrySite?.name ?? "Site not recorded"}</span>
-                              </td>
-                              <td>
-                                <span className={styles.travel} title={TRAVEL_BAND_LABELS[entry.band]}>
-                                  <Icon icon={entry.band === "air_transport_only" ? Plane : Car} size={14} />
-                                  {TRAVEL_BAND_LABELS[entry.band]}
-                                </span>
-                              </td>
-                              <td className={`${tableClasses.num} ${styles.away}`}>{sinceArrivalLabel(entry, now)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </WardTable>
-                  </div>
-
-                  {/* Phone card list: a second, independently keyed rendering of every entry. */}
-                  <ul className={styles.cardList} data-testid="ward-out-of-area-cards">
-                    {filteredEntries.map((entry) => {
-                      const entrySite = siteByCode(entry.unit.siteCode);
-                      const entryPatient = resolvePatient(entry.admission);
-                      const entryProfileHref = getPatientProfileHref(entryPatient);
-                      const isSelected = entry.admission.id === selectedId;
-                      return (
-                        <li
-                          key={entry.admission.id}
-                          className={isSelected ? `${styles.card} ${styles.cardSelected}` : styles.card}
-                          data-testid={`ward-out-of-area-card-${entry.admission.id}`}
-                          aria-selected={isSelected}
-                          tabIndex={0}
-                          role="button"
-                          aria-label={`View placement detail for ${entryPatient.displayName} (${entryPatient.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
-                          onClick={(event) => selectPlacement(entry.admission.id, event.currentTarget)}
-                          onKeyDown={(event) => {
-                            if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
-                              event.preventDefault();
-                              selectPlacement(entry.admission.id, event.currentTarget);
-                            }
-                          }}
-                        >
-                          <span className={styles.cardTop}>
-                            <span className={styles.primary}>{entryPatient.displayName}</span>
-                            <span className={styles.cardAway}>{sinceArrivalLabel(entry, now)} since arrival</span>
-                          </span>
-                          <span className={styles.secondary}>
-                            {entryProfileHref ? (
-                              <Link
-                                href={entryProfileHref}
-                                className={styles.umrnLink}
-                                onClick={(event) => event.stopPropagation()}
-                                title={`Open profile for ${entryPatient.displayName} (${entryPatient.umrn})`}
-                              >
-                                {entryPatient.umrn}
-                              </Link>
-                            ) : (
-                              <span>{entryPatient.umrn}</span>
-                            )}
-                            <span aria-hidden="true"> · </span>
-                            {entry.admission.homeRegion}
-                          </span>
-                          <span className={styles.secondary}>
-                            {entry.unit.name} · {entrySite?.name ?? "Site not recorded"}
-                          </span>
-                          <span className={styles.travel}>
-                            <Icon icon={entry.band === "air_transport_only" ? Plane : Car} size={14} />
-                            {TRAVEL_BAND_LABELS[entry.band]}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </>
-              )}
-            </div>
-            <CardFoot
-              meta={
-                <span className={styles.footNote}>
-                  <StatusGlyph tone="neutral" size={9} />
-                  <b>{notBanded}</b> records lack a home area or travel time
+                  <Segmented
+                    label="Sort placements"
+                    value={sortOrder}
+                    onChange={setSortOrder}
+                    items={[
+                      { id: "ledger", label: "Ledger" },
+                      { id: "days", label: "Days away" },
+                      { id: "patient", label: "Name" },
+                    ]}
+                  />
                 </span>
-              }
-            >
-              <Button
-                variant="sec"
-                size="sm"
-                icon={Download}
-                onClick={exportList}
-                disabled={filteredEntries.length === 0}
+              ) : null}
+            </div>
+            {counts}
+
+            {tab === "history" ? (
+              <div
+                role="tabpanel"
+                id="ward-out-of-area-view-panel-history"
+                aria-labelledby="ward-out-of-area-view-tab-history"
               >
-                Export list
-              </Button>
-            </CardFoot>
+                <HistoryList records={repatriations} entries={entries} patientOf={patientOf} now={now} />
+              </div>
+            ) : (
+              <div role="tabpanel" id="ward-out-of-area-view-panel-now" aria-labelledby="ward-out-of-area-view-tab-now">
+                <div className={styles.hlLine}>
+                  <span aria-live="polite">
+                    {anyHighlight ? (
+                      <>
+                        <b className={styles.mono}>{highlightedCount}</b> highlighted
+                      </>
+                    ) : (
+                      <>{entries.length} people</>
+                    )}
+                  </span>
+                  {anyHighlight ? (
+                    <Button variant="ghost" size="sm" onClick={clearHighlights}>
+                      Clear
+                    </Button>
+                  ) : null}
+                  <span className={styles.keys} aria-hidden="true">
+                    Press <kbd>/</kbd> to search, <kbd>J</kbd> <kbd>K</kbd> to move
+                  </span>
+                </div>
+                {entries.length === 0 ? (
+                  <p className={styles.emptyNote} data-testid="ward-out-of-area-empty">
+                    Nobody on these records is in a bed far from home.
+                  </p>
+                ) : (
+                  <WardTable
+                    className={cx(tableClasses.table, styles.table)}
+                    wrapperClassName={styles.tableScroll}
+                    testId="ward-out-of-area-table"
+                    ariaLabel="Out-of-area placement register"
+                  >
+                    <colgroup>
+                      <col className={styles.colPatient} />
+                      <col className={styles.colRegion} />
+                      <col className={styles.colPlace} />
+                      <col className={styles.colDischarge} />
+                      <col className={styles.colReturn} />
+                      <col className={styles.colDays} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th scope="col">Patient</th>
+                        <th scope="col">Home region</th>
+                        <th scope="col">Placement</th>
+                        <th scope="col">Discharge</th>
+                        <th scope="col">Return</th>
+                        <th scope="col" className={tableClasses.num}>
+                          Days away
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sorted.map((entry) => {
+                        const info = patientOf(entry);
+                        const href = getPatientProfileHref(info);
+                        const site = siteByCode(entry.unit.siteCode);
+                        const isSelected = entry.admission.id === selectedId;
+                        const lit = isHighlighted(entry);
+                        const offset = offsetOf(entry);
+                        const status = statusOf(entry);
+                        const record = recordOf(entry.admission.id);
+                        return (
+                          <tr
+                            key={entry.admission.id}
+                            data-testid={`ward-out-of-area-row-${entry.admission.id}`}
+                            data-highlighted={lit || undefined}
+                            className={cx(styles.row, isSelected && tableClasses.selected, lit && styles.rowLit)}
+                            aria-selected={isSelected}
+                            tabIndex={0}
+                            aria-label={`View placement detail for ${info.displayName} (${info.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
+                            onClick={(event) => selectPlacement(entry.admission.id, event.currentTarget)}
+                            onKeyDown={(event) => {
+                              if (
+                                event.target === event.currentTarget &&
+                                (event.key === "Enter" || event.key === " ")
+                              ) {
+                                event.preventDefault();
+                                selectPlacement(entry.admission.id, event.currentTarget);
+                              }
+                            }}
+                          >
+                            <td>
+                              <span className={styles.two}>
+                                <b title={info.displayName}>{info.displayName}</b>
+                                {href ? (
+                                  <Link
+                                    href={href}
+                                    className={styles.umrnLink}
+                                    onClick={(event) => event.stopPropagation()}
+                                    title={`Open profile for ${info.displayName} (${info.umrn})`}
+                                  >
+                                    {info.umrn}
+                                  </Link>
+                                ) : (
+                                  <span className={styles.mono}>{info.umrn}</span>
+                                )}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={styles.two}>
+                                <span className={styles.cellText}>{entry.admission.homeRegion}</span>
+                                <span className={styles.travel} title={TRAVEL_BAND_LABELS[entry.band]}>
+                                  <TravelIcon entry={entry} />
+                                  <span aria-hidden="true">{TRAVEL_SHORT[entry.band]}</span>
+                                  <SrOnly>{TRAVEL_BAND_LABELS[entry.band]}</SrOnly>
+                                </span>
+                              </span>
+                            </td>
+                            <td>
+                              <span className={styles.two}>
+                                <span className={styles.cellText} title={entry.unit.name}>
+                                  {entry.unit.name}
+                                </span>
+                                <span title={site?.name}>{site ? shortSiteName(site.code) : "Site not recorded"}</span>
+                              </span>
+                            </td>
+                            <td>
+                              <span className={styles.two}>
+                                <span className={cx(styles.status, offset !== null && offset < 0 && styles.inkWarning)}>
+                                  {offset === null ? (
+                                    <StatusGlyph tone="closed" size={9} />
+                                  ) : offset < 0 ? (
+                                    <StatusGlyph tone="warning" size={9} />
+                                  ) : null}
+                                  {dischargeText(offset)}
+                                </span>
+                                <span title={entry.admission.blockReason ?? undefined}>
+                                  {entry.admission.blockReason ??
+                                    (entry.admission.expectedDischargeAt === null
+                                      ? "Not set"
+                                      : dateOf(entry.admission.expectedDischargeAt, dayZero))}
+                                </span>
+                              </span>
+                            </td>
+                            <td>
+                              <ReturnCell
+                                status={status}
+                                record={record}
+                                left={missingAnswers(draftFor(entry.admission.id), now).length}
+                              />
+                            </td>
+                            <td className={cx(tableClasses.num, styles.away)}>{sinceArrivalLabel(entry, now)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </WardTable>
+                )}
+                <CardFoot
+                  meta={
+                    <span className={styles.footNote}>
+                      <StatusGlyph tone="closed" size={9} />
+                      <span>
+                        <b>{bedDays}</b> bed days across {entries.length} people · <b>{notBanded}</b> records lack a
+                        home area or travel time
+                      </span>
+                    </span>
+                  }
+                >
+                  <Button variant="sec" size="sm" icon={Download} onClick={exportList} disabled={entries.length === 0}>
+                    Export list
+                  </Button>
+                </CardFoot>
+              </div>
+            )}
           </Card>
 
           <div ref={detailColumnRef} className={styles.side}>
-            <Card
-              className={styles.planCard}
-              aria-labelledby="ward-out-of-area-plan-title"
-              data-testid="ward-out-of-area-subject"
-            >
-              <CardHead
-                id="ward-out-of-area-plan-title"
-                title="Return plan"
-                eyebrow
-                aside={
-                  selected ? (
-                    <span className={styles.planNav}>
-                      <span role="status" className={styles.planPosition}>
-                        {selectedIndex >= 0 ? (
-                          <>
-                            <SrOnly>Synthetic patient </SrOnly>
-                            {selectedIndex + 1} of {filteredEntries.length}
-                          </>
-                        ) : (
-                          "Outside current filters"
-                        )}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        iconOnly
-                        icon={ChevronLeft}
-                        aria-label="Inspect previous patient"
-                        disabled={selectedIndex <= 0}
-                        onClick={() => selectPlacement(filteredEntries[selectedIndex - 1].admission.id)}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        iconOnly
-                        icon={ChevronRight}
-                        aria-label="Inspect next patient"
-                        disabled={selectedIndex < 0 || selectedIndex >= filteredEntries.length - 1}
-                        onClick={() => selectPlacement(filteredEntries[selectedIndex + 1].admission.id)}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        iconOnly
-                        icon={X}
-                        aria-label="Return to cohort overview"
-                        title="Return to overview (Escape)"
-                        onClick={returnToOverview}
-                      />
+            {selected ? (
+              <Card
+                className={cx(styles.sideCard, styles.planCard)}
+                aria-labelledby="ward-out-of-area-plan-title"
+                data-testid="ward-out-of-area-subject"
+              >
+                {renderPlan(
+                  selected,
+                  <div className={styles.planHead}>
+                    <span className={styles.planWho}>
+                      <h2 id="ward-out-of-area-plan-title" className={styles.planName}>
+                        <SrOnly>Return plan for </SrOnly>
+                        {planPatient(selected).displayName}
+                      </h2>
+                      <span className={styles.mono}>{planPatient(selected).umrn}</span>
                     </span>
-                  ) : undefined
-                }
-              />
-              {repatNotice ? (
-                <div className={styles.notice} data-testid="ward-out-of-area-repat-notice">
-                  <StatusLine
-                    tone="success"
-                    title={repatNotice}
-                    actions={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setRepatNotice(null)}
-                        aria-label="Dismiss notice"
-                      >
-                        Dismiss
-                      </Button>
-                    }
-                  />
-                </div>
-              ) : null}
-              {!selected || !patientInfo ? (
-                <CardBody data-testid="ward-out-of-area-subject-empty" className={styles.planEmpty}>
-                  <EmptyState icon={MapIcon} title="Select a person to plan their return" />
-                  {maxDaysEntry && longestPatientInfo ? (
-                    <button
-                      type="button"
-                      className={styles.longest}
-                      onClick={(event) => selectPlacement(maxDaysEntry.admission.id, event.currentTarget)}
-                      aria-label={`Inspect longest case: ${longestPatientInfo.displayName}`}
-                    >
-                      <span className={styles.longestText}>
-                        <span className={styles.secondary}>Longest away</span>
-                        <span className={styles.primary}>{longestPatientInfo.displayName}</span>
-                        <span className={styles.secondary}>
-                          {maxDaysEntry.admission.homeRegion} ·{" "}
-                          {siteByCode(maxDaysEntry.unit.siteCode)?.name ?? maxDaysEntry.unit.name}
-                        </span>
-                      </span>
-                      <span className={styles.longestFigure}>{sinceArrivalLabel(maxDaysEntry, now)}</span>
-                    </button>
-                  ) : null}
-                </CardBody>
-              ) : (
-                <>
-                  <div data-testid="ward-out-of-area-subject-facts" className={styles.planFacts}>
-                    <div className={styles.planIdentity}>
-                      <h3 className={styles.planName}>{patientInfo.displayName}</h3>
-                      <span className={styles.secondary}>
-                        {profileHref ? (
-                          <Link href={profileHref} className={styles.umrnLink}>
-                            {patientInfo.umrn}
-                          </Link>
-                        ) : (
-                          <span>{patientInfo.umrn}</span>
-                        )}
-                        <span aria-hidden="true"> · </span>
-                        <span className={styles.mono}>{selected.admission.id}</span>
-                      </span>
-                    </div>
-                    <dl className={styles.planFigures}>
-                      <div>
-                        <dt>Away</dt>
-                        <dd>{sinceArrivalLabel(selected, now)}</dd>
-                      </div>
-                      <div>
-                        <dt>Travel</dt>
-                        <dd>{travelWord(selected)}</dd>
-                      </div>
-                      <div>
-                        <dt>Home catchment</dt>
-                        <dd>{selected.admission.homeRegion}</dd>
-                      </div>
-                    </dl>
-                    <dl className={styles.planFacts2}>
-                      <div>
-                        <dt>Current placement</dt>
-                        <dd>
-                          {selected.unit.name} · {site?.name ?? "Site not recorded"}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Travel band</dt>
-                        <dd>{TRAVEL_BAND_LABELS[selected.band]}</dd>
-                      </div>
-                    </dl>
-                  </div>
-                  <p data-testid="ward-out-of-area-subject-caveat" className={styles.caveat}>
-                    Choose a receiving hospital and confirm ward agreement.
-                  </p>
-                  <CardBody className={styles.planForm}>
-                    <Field label="Home hospital" className={styles.formRow}>
-                      <Select
-                        data-testid="ward-out-of-area-repat-home-hospital"
-                        value={repatDraft.homeHospital}
-                        onChange={(event) =>
-                          setRepatDraft((current) => ({ ...current, homeHospital: event.target.value }))
-                        }
-                      >
-                        <option value={NO_HOME_HOSPITAL_VALUE}>Choose the home hospital</option>
-                        {HOME_HOSPITAL_GROUPS.map((group) => (
-                          <optgroup key={group.service} label={SERVICE_DISPLAY_NAMES[group.service] ?? group.service}>
-                            {group.sites.map((hospital) => (
-                              <option key={hospital.code} value={hospital.code}>
-                                {hospital.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                        ))}
-                      </Select>
-                    </Field>
-                    <fieldset className={styles.choiceRow} data-testid="ward-out-of-area-repat-mode">
-                      <legend>Travel by</legend>
-                      <span className={styles.choices}>
-                        {REPAT_MODES.map((mode) => (
-                          <Radio
-                            key={mode}
-                            name="repat-mode"
-                            value={mode}
-                            label={mode === "road" ? "Road" : "Flight"}
-                            checked={repatDraft.mode === mode}
-                            onChange={() => setRepatDraft((current) => ({ ...current, mode }))}
-                          />
-                        ))}
-                      </span>
-                    </fieldset>
-                    <Field label="Provider" className={styles.formRow}>
-                      <Select
-                        data-testid="ward-out-of-area-repat-provider"
-                        value={repatDraft.provider ?? NO_TRANSPORT_PROVIDER_VALUE}
-                        onChange={(event) => {
-                          const next = event.target.value;
-                          setRepatDraft((current) => ({
-                            ...current,
-                            provider: TRANSPORT_PROVIDERS.includes(next as TransportProvider)
-                              ? (next as TransportProvider)
-                              : undefined,
-                          }));
-                        }}
-                      >
-                        <option value={NO_TRANSPORT_PROVIDER_VALUE}>Choose the provider</option>
-                        {TRANSPORT_PROVIDERS.map((provider) => (
-                          <option key={provider} value={provider}>
-                            {provider}
-                          </option>
-                        ))}
-                      </Select>
-                    </Field>
-                    <fieldset className={styles.choiceRow} data-testid="ward-out-of-area-repat-ward-agreed">
-                      <legend>Ward agreed</legend>
-                      <span className={styles.choices}>
-                        {(
-                          [
-                            { value: true, label: "Agreed" },
-                            { value: false, label: "Not yet" },
-                          ] as const
-                        ).map((answer) => (
-                          <Radio
-                            key={answer.label}
-                            name="repat-ward-agreed"
-                            label={answer.label}
-                            checked={repatDraft.receivingWardAgreed === answer.value}
-                            onChange={() =>
-                              setRepatDraft((current) => ({ ...current, receivingWardAgreed: answer.value }))
-                            }
-                          />
-                        ))}
-                      </span>
-                    </fieldset>
-                    <fieldset className={styles.choiceRow} data-testid="ward-out-of-area-repat-legal">
-                      <legend>Legal status</legend>
-                      <span className={styles.choices}>
-                        {TRANSPORT_LEGAL_STATUSES.map((status) => (
-                          <Radio
-                            key={status}
-                            name="repat-legal"
-                            value={status}
-                            label={TRANSPORT_LEGAL_STATUS_LABELS[status]}
-                            checked={repatDraft.transportLegalStatus === status}
-                            onChange={() => setRepatDraft((current) => ({ ...current, transportLegalStatus: status }))}
-                          />
-                        ))}
-                      </span>
-                    </fieldset>
-                    <Field label="CAD number" className={styles.formRow}>
-                      <TextInput
-                        data-testid="ward-out-of-area-repat-cad"
-                        placeholder="CAD number"
-                        autoComplete="off"
-                        value={repatDraft.cadNumber}
-                        onChange={(event) =>
-                          setRepatDraft((current) => ({ ...current, cadNumber: event.target.value }))
-                        }
-                      />
-                    </Field>
-                    <Field label="Depart" className={styles.formRow}>
-                      <TextInput
-                        icon={Clock}
-                        inputMode="numeric"
-                        placeholder="HH:MM"
-                        data-testid="ward-out-of-area-repat-estimated-time"
-                        value={repatDraft.estimatedTime}
-                        onChange={(event) =>
-                          setRepatDraft((current) => ({ ...current, estimatedTime: event.target.value }))
-                        }
-                      />
-                    </Field>
-                    <fieldset className={styles.choiceRow} data-testid="ward-out-of-area-repat-estimated-day">
-                      <legend>Depart day</legend>
-                      <span className={styles.choices}>
-                        {(["today", "tomorrow"] as const).map((day) => (
-                          <Radio
-                            key={day}
-                            name="repat-estimated-day"
-                            value={day}
-                            label={day === "today" ? "Today" : "Tomorrow"}
-                            checked={repatDraft.estimatedDay === day}
-                            onChange={() => setRepatDraft((current) => ({ ...current, estimatedDay: day }))}
-                          />
-                        ))}
-                      </span>
-                    </fieldset>
-                    {repatFormNotice ? (
-                      <p className={styles.blocked} role="alert" data-testid="ward-out-of-area-repat-blocked">
-                        <StatusGlyph tone="warning" size={9} />
-                        {repatFormNotice}
-                      </p>
-                    ) : null}
-                  </CardBody>
-                  <CardFoot>
-                    {profileHref ? (
-                      <Link
-                        className={buttonClass({ variant: "ghost" })}
-                        href={profileHref}
-                        aria-label="Open patient profile"
-                      >
-                        Profile
-                      </Link>
-                    ) : null}
-                    <Button variant="pri" data-testid="ward-out-of-area-repat-submit" onClick={recordReturn}>
-                      Record return
-                    </Button>
-                  </CardFoot>
-                </>
-              )}
-            </Card>
-
-            <Card className={styles.sideCard} aria-labelledby="ward-out-of-area-catchments-title">
-              <CardHead
-                id="ward-out-of-area-catchments-title"
-                title="Home catchments"
-                aside={<span className={styles.headNote}>People away</span>}
-              />
-              <CardBody>
-                {homeRegionSummary.length === 0 ? (
-                  <p className={styles.emptyNote}>Nobody is away from a recorded home catchment.</p>
-                ) : (
-                  <ul className={styles.regionList}>
-                    {homeRegionSummary.map(([region, count]) => (
-                      <li key={region}>
-                        <button
-                          type="button"
-                          className={styles.regionRow}
-                          onClick={() => setCatchmentFilter(catchmentFilter === region ? "all" : region)}
-                          aria-pressed={catchmentFilter === region}
-                          aria-label={`Filter by ${region}: ${count} placements`}
-                        >
-                          <span className={styles.regionName}>{region}</span>
-                          <span className={styles.regionBar} aria-hidden="true">
-                            <span style={{ width: `${largestRegion ? (count / largestRegion) * 100 : 0}%` }} />
-                          </span>
-                          <b className={styles.regionCount}>{count}</b>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                    <span role="status" className={styles.planPosition}>
+                      <SrOnly>Synthetic patient </SrOnly>
+                      {selectedIndex + 1} of {sorted.length}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      icon={ChevronLeft}
+                      aria-label="Inspect previous patient"
+                      disabled={selectedIndex <= 0}
+                      onClick={() => step(-1)}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      icon={ChevronRight}
+                      aria-label="Inspect next patient"
+                      disabled={selectedIndex < 0 || selectedIndex >= sorted.length - 1}
+                      onClick={() => step(1)}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      icon={X}
+                      aria-label="Return to cohort overview"
+                      title="Close (Escape)"
+                      onClick={returnToOverview}
+                    />
+                  </div>,
+                  "ward-out-of-area-plan",
                 )}
-              </CardBody>
-            </Card>
+              </Card>
+            ) : (
+              <>
+                <ShiftCard
+                  idPrefix="ward-out-of-area"
+                  label={shiftLabel(now)}
+                  returns={shiftReturns}
+                  leaving={leavingToday.length}
+                  dueSoon={dueSoon}
+                  onPick={(id) => selectPlacement(id)}
+                />
+                <HomeBedsCard
+                  idPrefix="ward-out-of-area"
+                  rows={regionRows}
+                  region={region}
+                  onRegion={toggleRegion}
+                  notBanded={notBanded}
+                />
+                <ReadyCard
+                  idPrefix="ward-out-of-area"
+                  testId="ward-out-of-area-subject"
+                  bodyTestId="ward-out-of-area-subject-empty"
+                  rows={readyRows}
+                  started={startedRows}
+                  onPick={(id) => selectPlacement(id)}
+                />
+              </>
+            )}
           </div>
         </div>
 
@@ -1072,6 +947,137 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         />
       </main>
     </div>
+  );
+}
+
+function ReturnCell({
+  status,
+  record,
+  left,
+}: {
+  status: ReturnStatus;
+  record: RepatriationRecord | undefined;
+  left: number;
+}) {
+  if (status === "none") {
+    return (
+      <span className={cx(styles.status, styles.quiet)}>
+        <StatusGlyph tone={STATUS_TONE.none} size={9} />
+        No plan
+      </span>
+    );
+  }
+  const head = status === "started" ? "Started" : status === "not_agreed" ? "Not agreed" : "Agreed";
+  const sub =
+    status === "started"
+      ? left
+        ? `${left} to answer`
+        : "Ready to record"
+      : status === "agreed"
+        ? `${shortSiteName(record!.homeHospital)}, bed to place`
+        : shortSiteName(record!.homeHospital);
+  return (
+    <span className={styles.two}>
+      <span className={styles.status}>
+        <StatusGlyph tone={STATUS_TONE[status]} size={9} />
+        {head}
+      </span>
+      <span>{sub}</span>
+    </span>
+  );
+}
+
+/** Days away, in the four display groups, on the hero. Each segment and label highlights its rows. */
+function DaysAwayStrip({
+  entries,
+  now,
+  highlight,
+  onToggle,
+}: {
+  entries: OutOfAreaEntry[];
+  now: Instant;
+  highlight: HighlightKey | null;
+  onToggle: (key: HighlightKey) => void;
+}) {
+  const groups = DAYS_AWAY_GROUPS.map((group) => ({
+    ...group,
+    key: `age:${group.id}` as HighlightKey,
+    n: entries.filter((entry) => inDaysAwayGroup(entry, now, group.id)).length,
+  }));
+  return (
+    <div className={styles.ageStrip} role="group" aria-label="Days away, highlights rows">
+      <span className={styles.ageEyebrow}>Days away</span>
+      <span className={styles.ageBar} aria-hidden="true">
+        {groups.map((group) =>
+          group.n ? (
+            <span
+              key={group.id}
+              className={cx(styles.ageSeg, styles[`age_${group.id}`], highlight === group.key && styles.ageSegOn)}
+              style={{ flexGrow: group.n }}
+            />
+          ) : null,
+        )}
+      </span>
+      <span className={styles.ageLabels}>
+        {groups.map((group) => (
+          <button
+            key={group.id}
+            type="button"
+            aria-pressed={highlight === group.key}
+            aria-label={`${group.label} days away: ${group.n}`}
+            onClick={() => onToggle(group.key)}
+          >
+            <i className={styles[`age_${group.id}`]} aria-hidden="true" />
+            {group.label}
+            <b>{group.n}</b>
+          </button>
+        ))}
+      </span>
+    </div>
+  );
+}
+
+function HistoryList({
+  records,
+  entries,
+  patientOf,
+  now,
+}: {
+  records: RepatriationRecord[];
+  entries: OutOfAreaEntry[];
+  patientOf: (entry: OutOfAreaEntry) => ResolvedPatientInfo;
+  now: Instant;
+}) {
+  if (records.length === 0) {
+    return (
+      <div className={styles.noMatches}>
+        <EmptyState icon={MapIcon} title="No returns recorded this session" />
+      </div>
+    );
+  }
+  return (
+    <ul className={styles.rowList}>
+      {[...records]
+        .sort((a, b) => b.at - a.at)
+        .map((record) => {
+          const entry = entries.find((candidate) => candidate.admission.id === record.admissionId);
+          const name = entry ? patientOf(entry).displayName : "Left the ledger";
+          return (
+            <li key={record.admissionId} className={styles.historyRow}>
+              <span className={styles.mono}>{formatInstantWithDay(record.at, now)}</span>
+              <StatusGlyph tone="success" size={10} />
+              <span className={styles.two}>
+                <b>{name}</b>
+                <span>
+                  {siteByCode(record.homeHospital)?.name ?? record.homeHospital} ·{" "}
+                  {record.receivingWardAgreed ? "ward agreed" : "ward not yet agreed"}
+                </span>
+              </span>
+              <span className={styles.sub}>Coordinator</span>
+            </li>
+          );
+        })}
+    </ul>
   );
 }
 
