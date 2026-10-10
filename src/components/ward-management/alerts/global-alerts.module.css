@@ -37,6 +37,17 @@
   white-space: nowrap;
 }
 
+@media (max-width: 640px) {
+  .cardHead {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  .cardHead .push {
+    margin-left: auto;
+  }
+}
+
 .cardTitle {
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
   color: var(--wf-ink-1);
