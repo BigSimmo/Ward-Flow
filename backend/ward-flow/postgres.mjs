@@ -166,8 +166,6 @@ export function createWorkspaceStore(
         if (!worlds[0] || !engine.validWorld(worlds[0].payload)) return null;
         return new Map(engine.actNowAlerts(worlds[0].payload, at).map((alert) => [alert.id, alert]));
       };
-      let red = await readRed();
-      if (!red) return;
       const due = "d.status='pending' AND d.attempts < $3 AND (d.last_attempt_at IS NULL OR d.last_attempt_at <= $4)";
       let after = "0";
       for (;;) {
@@ -184,14 +182,16 @@ export function createWorkspaceStore(
           ],
         );
         if (!rows.length) break;
-        // A claimed row can name an item committed after the read above. The claim has seen that
-        // commit, so one fresh read here holds it, and the alert goes now rather than next sweep.
-        if (rows.some((row) => !red.has(row.item_id))) red = (await readRed()) ?? red;
+        // Read the world after each claim. The claim has seen every commit that queued or cleared
+        // its rows, so this read neither misses a new item nor sends one already cleared. A world
+        // that cannot be read leaves the claimed rows to come due again for a later delivery.
+        const red = await readRed();
+        if (!red) return;
         const devices = new Map();
         const unseen = { ids: [], items: [] };
         for (const row of rows) {
           const item = red.get(row.item_id);
-          // An item not red even in the fresh read is released unclaimed for the next evaluation,
+          // An item no longer red is released unclaimed for the next evaluation to clear,
           // never sent as an empty entry or marked sent with the device's other rows.
           if (!item) {
             unseen.ids.push(row.id);
@@ -259,7 +259,12 @@ export function createWorkspaceStore(
           [workspaceId, actorId, subscription.endpoint],
         );
         if (owned.rows[0].count >= push.maxPerAccount) return "limit";
-        // One device endpoint belongs to whoever signed in on it most recently.
+        // One device endpoint belongs to whoever signed in on it most recently. Its old pending
+        // rows go first: turning alerts on never announces an item queued before, or for someone else.
+        await client.query(
+          "DELETE FROM ward_flow.push_deliveries d USING ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND s.endpoint=$1",
+          [subscription.endpoint],
+        );
         await client.query(
           "INSERT INTO ward_flow.push_subscriptions(workspace_id, actor_id, endpoint, p256dh, auth, created_at) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (endpoint) DO UPDATE SET workspace_id=EXCLUDED.workspace_id, actor_id=EXCLUDED.actor_id, p256dh=EXCLUDED.p256dh, auth=EXCLUDED.auth, created_at=EXCLUDED.created_at, last_success_at=NULL, revoked_at=NULL",
           [workspaceId, actorId, subscription.endpoint, subscription.p256dh, subscription.auth, at],

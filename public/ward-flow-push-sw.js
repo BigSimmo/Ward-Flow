@@ -69,7 +69,8 @@ self.addEventListener("notificationclick", (event) => {
       const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
       for (const client of windows) {
         const open = new URL(client.url);
-        if (open.origin !== self.location.origin || !insideWardFlow(open.pathname)) continue;
+        // Only a window this worker controls can be navigated; any other gets a new window below.
+        if (!client.url.startsWith(self.registration.scope) || !insideWardFlow(open.pathname)) continue;
         try {
           const focused = await client.focus();
           if ("navigate" in focused) await focused.navigate(target);

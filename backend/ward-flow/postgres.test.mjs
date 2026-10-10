@@ -441,20 +441,34 @@ test(
         // The sweep's evaluation (under the lock) sees the item; its delivery reads are stale.
         const realAlerts = engine.actNowAlerts;
         let calls = 0;
-        let staleReads = [2, 3];
+        let staleReads = [2];
         lagging.actNowAlerts = (world, at) => {
           calls += 1;
           return staleReads.includes(calls) ? [] : realAlerts(world, at);
         };
         await store.sweepPush();
-        assert.deepEqual(sent.splice(0), [], "nothing is sent for an item no read has seen");
+        assert.deepEqual(sent.splice(0), [], "nothing is sent for an item the delivery read has not seen");
         assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"], "the row is kept, unclaimed");
-        // Only the first delivery read is stale: the claim prompts a fresh read and it goes now.
         calls = 0;
-        staleReads = [2];
+        staleReads = [];
         await store.sweepPush();
-        assert.deepEqual(sent.splice(0), ["f1"], "a fresh read after the claim sends it in the same delivery");
+        assert.deepEqual(sent.splice(0), ["f1"], "the next delivery sends it");
         assert.deepEqual(await statuses(workspaceId), ["f1 sent 2", "f2 sent 1"]);
+      });
+      await t.test("a device signed in again drops its earlier pending alerts", async () => {
+        const { workspaceId, sent, store } = setup({
+          send: async (row) =>
+            row.endpoint.endsWith("/f1") ? { outcome: "failed", category: "status 503", retry: true } : undefined,
+        });
+        await subscribeTwo(store);
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"]);
+        assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"]);
+        // Another coordinator turns alerts on with the same device before the retry.
+        await store.subscribe(actorA, { endpoint: "https://fcm.googleapis.com/fcm/send/f1", ...keys });
+        await store.sweepPush();
+        assert.deepEqual(sent, [], "an item queued before the device changed hands is not sent");
+        assert.deepEqual(await statuses(workspaceId), ["f2 sent 1"]);
       });
       await t.test("an evaluation error is logged and the command still commits", async () => {
         const broken = {
