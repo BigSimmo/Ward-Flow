@@ -23,9 +23,9 @@ const settings = {
   workspaceId: "44444444-4444-4444-8444-444444444444",
 };
 const server = {
-  name: "already-existing-ward-db",
-  fullyQualifiedDomainName: "already-existing-ward-db.postgres.database.azure.com",
-  id: `/subscriptions/${subscriptionId}/resourceGroups/rg-wardflow-dev-aue/providers/Microsoft.DBforPostgreSQL/flexibleServers/already-existing-ward-db`,
+  name: "wardflow-dev-aue",
+  fullyQualifiedDomainName: "wardflow-dev-aue.postgres.database.azure.com",
+  id: `/subscriptions/${subscriptionId}/resourceGroups/rg-wardflow-dev-aue/providers/Microsoft.DBforPostgreSQL/flexibleServers/wardflow-dev-aue`,
   location: "Australia East",
   network: { publicNetworkAccess: "Disabled" },
   authConfig: { activeDirectoryAuth: "Enabled", passwordAuth: "Disabled" },
@@ -36,7 +36,7 @@ async function run(
   {
     config = {},
     servers = [server],
-    databases = [{ name: "wardflow" }],
+    databases = [{ name: "wardflow_dev" }],
     account = {},
     app = {},
     extraResponses = {},
@@ -108,7 +108,7 @@ test("Azure inspection accepts unset role placeholders and makes only inventory 
     config: { coordinatorObjectIds: ["REPLACE"], administratorObjectId: "REPLACE" },
   });
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /already-existing-ward-db/);
+  assert.match(result.stdout, /wardflow-dev-aue/);
   assert.equal(result.calls.length, 5);
 });
 test("setup refuses live mode before contacting Azure", async () => {
@@ -204,7 +204,7 @@ test("setup targets the existing wardflow_dev database without creating a duplic
     ...server,
     name: "wardflow-dev-aue",
     fullyQualifiedDomainName: "wardflow-dev-aue.postgres.database.azure.com",
-    id: server.id.replace("already-existing-ward-db", "wardflow-dev-aue"),
+    id: server.id.replace("wardflow-dev-aue", "wardflow-dev-aue"),
   };
   const result = await run("provision", {
     config: { serverName: existing.name, databaseName: "wardflow_dev" },
