@@ -476,7 +476,7 @@ export function StatisticsScreen({
         {/* Each view's anchor exists whichever view shows, so its link always has a target. */}
         {view === "board" ? null : <div id="board" hidden />}
         {view === "journey" ? (
-          <StatisticsJourneyView onShowBoard={() => chooseView("board")} />
+          <StatisticsJourneyView onShowBoard={() => chooseView("board")} live={{ state: live.state, now }} />
         ) : (
           <div id="journey" hidden />
         )}

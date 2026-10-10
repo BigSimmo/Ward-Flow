@@ -182,7 +182,7 @@ export function StatisticsBedMap({ map, wardName }: { map: BedMap; wardName: str
         {`${wardName} has ${cells.length} ${cells.length === 1 ? "bed" : "beds"}: ${said || "none recorded"}.`}
         {blocked > 0 ? ` ${blocked} of the people in a bed ${blocked === 1 ? "has" : "have"} a discharge blocker.` : ""}
       </SrOnly>
-      <ol className={styles.grid} aria-hidden="true">
+      <ol className={styles.grid} aria-label={`${wardName} beds, one item per bed`}>
         {cells.map((entry, index) => (
           <li
             key={index}
@@ -191,16 +191,22 @@ export function StatisticsBedMap({ map, wardName }: { map: BedMap; wardName: str
             data-bed-kind={entry.kind}
             data-admission-id={entry.admissionId ?? undefined}
           >
-            <span className={styles.glyph}>
+            {/* The cell is drawn for the eye; a screen reader hears the same detail as the hover title. */}
+            <SrOnly>{cellTitle(entry)}</SrOnly>
+            <span className={styles.glyph} aria-hidden="true">
               <CellGlyph kind={entry.kind} />
             </span>
             {entry.stayDays !== null ? (
-              <span className={cx(styles.days, entry.longStay && styles.long)}>{entry.stayDays}d</span>
+              <span className={cx(styles.days, entry.longStay && styles.long)} aria-hidden="true">
+                {entry.stayDays}d
+              </span>
             ) : (
-              <span className={styles.state}>{CELL_WORDS[entry.kind]}</span>
+              <span className={styles.state} aria-hidden="true">
+                {CELL_WORDS[entry.kind]}
+              </span>
             )}
             {entry.blocked ? (
-              <span className={styles.blocked}>
+              <span className={styles.blocked} aria-hidden="true">
                 <StatusGlyph tone="warning" size={9} />
               </span>
             ) : null}
@@ -208,7 +214,8 @@ export function StatisticsBedMap({ map, wardName }: { map: BedMap; wardName: str
         ))}
       </ol>
       <p className={styles.note}>
-        Grouped by state. Bed numbers are not recorded; hover a bed for its admission number.
+        Grouped by state. Bed numbers are not recorded; hover a bed for its admission number, or see the admission
+        roster.
         {unplacedRecords > 0
           ? ` ${unplacedRecords} recorded ${unplacedRecords === 1 ? "admission is" : "admissions are"} not shown because the ward's bed count has no bed for ${unplacedRecords === 1 ? "it" : "them"}.`
           : ""}

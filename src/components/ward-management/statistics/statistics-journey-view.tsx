@@ -9,7 +9,6 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import type { BedRelease, LeaveBed, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { allEmergencyDepartments, edShortName, siteByCode } from "@/components/ward-management/ward-sites";
@@ -20,7 +19,7 @@ import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 
 import { StatisticsEdSwarm, type EdSwarmRow } from "./statistics-ed-swarm";
 import { LONG_WAIT_HOURS, edWaitFigures } from "./statistics-ed-waits";
-import { StatCard } from "./statistics-hero";
+import { StatCard, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, Follow } from "./statistics-layout";
 import styles from "./statistics-journey-view.module.css";
 
@@ -312,9 +311,18 @@ type HospitalRow = {
   occupied: number;
 };
 
-export function StatisticsJourneyView({ onShowBoard }: { onShowBoard: () => void }) {
-  const { units, admissions, bedReleases, leaveBeds, movements } = useWardFlow();
-  const now = useWardFlowClock();
+export function StatisticsJourneyView({
+  onShowBoard,
+  live: liveProp,
+}: {
+  onShowBoard: () => void;
+  /** The page's own live state, so pausing the hero holds the journey too. Read here when absent. */
+  live?: { state: ReturnType<typeof useStatisticsLive>["state"]; now: Instant };
+}) {
+  const ownLive = useStatisticsLive();
+  const live = liveProp ?? ownLive;
+  const { units, admissions, bedReleases, leaveBeds, movements } = live.state;
+  const now = live.now;
   const [selected, setSelected] = useState<JourneyStageId | null>(null);
 
   const stages = useMemo(

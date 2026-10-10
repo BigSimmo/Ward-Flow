@@ -9,6 +9,7 @@
 .box {
   position: relative;
   min-width: 0;
+  overflow: hidden;
 }
 
 .box svg {

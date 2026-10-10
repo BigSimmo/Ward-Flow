@@ -3,7 +3,18 @@
 import Link from "next/link";
 import { ArrowLeftRight, Clock, Send } from "lucide-react";
 
-import { BarList, CardBody, CardFoot, Donut, HeroStat, StackBar, StatusGlyph, cx, tableClasses } from "@/components/wf";
+import {
+  BarList,
+  CardBody,
+  CardFoot,
+  Donut,
+  HeroStat,
+  StackBar,
+  SrOnly,
+  StatusGlyph,
+  cx,
+  tableClasses,
+} from "@/components/wf";
 import { serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
@@ -11,7 +22,7 @@ import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-b
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 
-import { edWaitFigures } from "./statistics-ed-waits";
+import { LONG_WAIT_HOURS, edWaitFigures } from "./statistics-ed-waits";
 import { HeroTool } from "./statistics-hero-tools";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { FlushRow } from "./statistics-layout";
@@ -221,7 +232,10 @@ export function StatisticsServicesIndexScreen() {
                     {entry.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
                     Waiting in ED
                   </dt>
-                  <dd>{entry.departments === 0 ? "No ED" : entry.waiting}</dd>
+                  <dd>
+                    {entry.departments === 0 ? "No ED" : entry.waiting}
+                    {entry.over24 > 0 ? <SrOnly>{`, ${entry.over24} past ${LONG_WAIT_HOURS} hours`}</SrOnly> : null}
+                  </dd>
                 </div>
               </dl>
               <p className={index.sites}>{entry.sites.length > 0 ? entry.sites.join(", ") : "No inpatient sites"}</p>

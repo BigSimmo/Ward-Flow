@@ -74,7 +74,13 @@
   flex-direction: column;
 }
 
-.follow > [data-ward-primitive="panel"] > :not([data-ward-primitive="panel-header"]) {
+/* Only the body (the part after the header) scrolls; a card's foot stays put at the bottom. */
+.follow > [data-ward-primitive="panel"] > * {
+  flex: none;
+}
+
+.follow > [data-ward-primitive="panel"] > [data-ward-primitive="panel-header"] + *,
+.follow > [data-ward-primitive="panel"] > :first-child:not([data-ward-primitive="panel-header"]) {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -127,7 +133,8 @@
     overflow: visible;
   }
 
-  .follow > [data-ward-primitive="panel"] > :not([data-ward-primitive="panel-header"]),
+  .follow > [data-ward-primitive="panel"] > [data-ward-primitive="panel-header"] + *,
+  .follow > [data-ward-primitive="panel"] > :first-child:not([data-ward-primitive="panel-header"]),
   .follow.stack {
     overflow: visible;
   }
@@ -146,7 +153,8 @@
     overflow: visible;
   }
 
-  .follow > [data-ward-primitive="panel"] > :not([data-ward-primitive="panel-header"]),
+  .follow > [data-ward-primitive="panel"] > [data-ward-primitive="panel-header"] + *,
+  .follow > [data-ward-primitive="panel"] > :first-child:not([data-ward-primitive="panel-header"]),
   .follow.stack {
     overflow: visible;
   }

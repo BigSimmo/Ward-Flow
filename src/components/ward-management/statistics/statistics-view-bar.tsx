@@ -42,6 +42,14 @@ export function useStatisticsView() {
     };
   }, []);
 
+  // A link to a card inside a view (#journey-stages) lands on that card once the view has drawn it.
+  useEffect(() => {
+    const id = window.location.hash.replace(/^#/, "");
+    if (!id || id === view || viewFromHash(`#${id}`) !== view) return;
+    const frame = window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: "start" }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [view]);
+
   const choose = useCallback((next: StatisticsView) => {
     setView(next);
     const { pathname, search } = window.location;

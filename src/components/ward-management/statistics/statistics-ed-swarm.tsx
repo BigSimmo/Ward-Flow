@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 import { StatusGlyph } from "@/components/wf";
@@ -21,6 +21,7 @@ const MIN_ROW = 44;
 const MAX_LANES = 7;
 const ROW_PAD = 10;
 const AXIS_H = 24;
+const MIN_WIDTH = 280;
 
 export type EdSwarmRow = {
   id: string;
@@ -94,10 +95,16 @@ export function StatisticsEdSwarm({
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(720);
-  useEffect(() => {
+  // Measured before paint, so the first frame on a phone is already its own width.
+  useLayoutEffect(() => {
     const box = boxRef.current;
-    if (!box || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(320, Math.round(entry.contentRect.width))));
+    if (!box) return;
+    const first = Math.round(box.getBoundingClientRect().width);
+    if (first > 0) setWidth(Math.max(MIN_WIDTH, first));
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) =>
+      setWidth(Math.max(MIN_WIDTH, Math.round(entry.contentRect.width))),
+    );
     observer.observe(box);
     return () => observer.disconnect();
   }, []);
@@ -116,7 +123,9 @@ export function StatisticsEdSwarm({
       const reach = marks.reduce((most, mark) => Math.max(most, Math.abs(mark.lane)), 0);
       const lanes = reach * 2 + 1;
       const step = lanes > MAX_LANES ? (MAX_LANES * LANE) / lanes : LANE;
-      return { row, marks, step, height: Math.max(MIN_ROW, Math.min(lanes, MAX_LANES) * LANE + ROW_PAD * 2) };
+      // A packed row shrinks its marks with its lanes, so they still never touch.
+      const radius = step < LANE ? Math.max(2, step / 2 - 0.5) : RADIUS;
+      return { row, marks, step, radius, height: Math.max(MIN_ROW, Math.min(lanes, MAX_LANES) * LANE + ROW_PAD * 2) };
     });
     return sized.map((item, index) => {
       const top = sized.slice(0, index).reduce((sum, above) => sum + above.height, 0);
@@ -148,7 +157,7 @@ export function StatisticsEdSwarm({
               </g>
             );
           })}
-          {laid.map(({ row, marks, step, top, mid, median: middle }, index) => (
+          {laid.map(({ row, marks, step, radius, top, mid, median: middle }, index) => (
             <g key={row.id}>
               {index > 0 ? <line x1={0} x2={width} y1={top} y2={top} className={styles.rowLine} /> : null}
               <text x={0} y={mid + 4} className={styles.name}>
@@ -166,7 +175,7 @@ export function StatisticsEdSwarm({
                 return over48 ? (
                   <path
                     key={entry.movement.id}
-                    d={`M${x} ${cy - RADIUS - 1} L${x + RADIUS + 1} ${cy + RADIUS} L${x - RADIUS - 1} ${cy + RADIUS} Z`}
+                    d={`M${x} ${cy - radius - 1} L${x + radius + 1} ${cy + radius} L${x - radius - 1} ${cy + radius} Z`}
                     className={styles.over48}
                   />
                 ) : (
@@ -174,7 +183,7 @@ export function StatisticsEdSwarm({
                     key={entry.movement.id}
                     cx={x}
                     cy={cy}
-                    r={RADIUS}
+                    r={radius}
                     className={over24 ? styles.over24 : placed ? styles.placed : styles.unplaced}
                   />
                 );
@@ -188,9 +197,12 @@ export function StatisticsEdSwarm({
         {/* The figures as text, for a screen reader and for the links. */}
         <ul className={styles.rowLinks}>
           {laid.map(({ row, top, height, median: middle }) => {
+            const noWard = row.entries.filter((e) => e.movement.acceptedUnitId === undefined).length;
+            const past24 = row.entries.filter((e) => e.waitMinutes >= LONG_WAIT_MINUTES).length;
+            const past48 = row.entries.filter((e) => e.waitMinutes >= VERY_LONG_WAIT_MINUTES).length;
             const summary = `${row.name}: ${row.entries.length} waiting${
               middle !== undefined ? `, median ${hoursLabel(middle)}` : ""
-            }, ${row.entries.filter((e) => e.waitMinutes >= LONG_WAIT_MINUTES).length} past ${LONG_WAIT_HOURS} hours`;
+            }, ${noWard} with no ward yet, ${past24} past ${LONG_WAIT_HOURS} hours, ${past48} past ${VERY_LONG_WAIT_HOURS} hours`;
             return (
               <li key={row.id} style={{ top, height }}>
                 {row.href ? (
@@ -203,15 +215,15 @@ export function StatisticsEdSwarm({
           })}
         </ul>
       </div>
-      <p className={styles.legend} aria-hidden="true">
+      <p className={styles.legend}>
         <span>
-          <svg width="10" height="10" viewBox="0 0 10 10">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
             <circle cx="5" cy="5" r="4" className={styles.placed} />
           </svg>
           Ward accepted
         </span>
         <span>
-          <svg width="10" height="10" viewBox="0 0 10 10">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
             <circle cx="5" cy="5" r="3.4" className={styles.unplaced} />
           </svg>
           No ward yet
@@ -224,7 +236,7 @@ export function StatisticsEdSwarm({
           <StatusGlyph tone="danger" size={10} />
           Past {VERY_LONG_WAIT_HOURS}h
         </span>
-        <span className={styles.medianKey}>Median</span>
+        <span className={styles.medianKey}>Median line</span>
       </p>
     </div>
   );
