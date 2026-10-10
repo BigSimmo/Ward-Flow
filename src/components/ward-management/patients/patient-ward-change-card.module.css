@@ -1,0 +1,95 @@
+/* The ward's changes to a stay on the Patient page: leave, gone to ED and the discharge date. */
+
+.changeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+/* Every control here is a tap target on the ward's tablets. */
+.tap,
+.kindChoice,
+.changeField select,
+.changeField input {
+  min-height: var(--ward-tap);
+}
+
+.changeForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.kindRow {
+  display: flex;
+  flex-basis: 100%;
+  gap: var(--wf-s-2);
+}
+
+.kindChoice {
+  padding: 0 var(--wf-s-4);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 550 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.kindChoice[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent-tint);
+  color: var(--wf-ink-1);
+}
+
+.kindChoice:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+.changeField {
+  display: grid;
+  gap: var(--wf-s-1);
+  min-width: 9rem;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.changeField select,
+.changeField input {
+  box-sizing: border-box;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-14) / 1 var(--wf-font);
+}
+
+.changeHint {
+  flex: 1 1 10rem;
+  align-self: center;
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+}
+
+.refusal {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  color: var(--wf-danger);
+  font-size: var(--wf-fs-12);
+}
+
+@media (max-width: 760px) {
+  .changeRow > *,
+  .changeField {
+    flex: 1 1 100%;
+  }
+}

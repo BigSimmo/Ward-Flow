@@ -1170,39 +1170,30 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
      * cards below it — a coordinator on a phone sees only the second, so a floor that reached only
      * the table would leave half the assertion unfloored).
      */
-    const ledgerRows = page.locator('[data-testid^="ward-out-of-area-row-"]');
+    // Option A (10 Oct 2026): below 48rem the board renders only its phone card list, and from
+    // 48rem up only the table, so each layout is floored and pinned at a width that shows it. This
+    // journey is at phone width here; the table half runs at 769px further down.
     const ledgerCards = page.locator('[data-testid^="ward-out-of-area-card-"]');
-    const ledgerRowCount = await ledgerRows.count();
+    const ledgerCardCount = await ledgerCards.count();
     expect(
-      ledgerRowCount,
-      "the ledger renders no row under `ward-out-of-area-row-`, so the absence assertions below would pass against a testid scheme that no longer exists",
+      ledgerCardCount,
+      "the ledger renders no card under `ward-out-of-area-card-`, so the absence assertions below would pass against a testid scheme that no longer exists",
     ).toBeGreaterThan(0);
-    await expect(ledgerCards, "the ledger's phone cards and its table are not showing the same people").toHaveCount(
-      ledgerRowCount,
-    );
 
     /*
-     * And what the ledger renders is what the ledger promises. Every row's travel-time cell must
-     * carry the label of one of `OUT_OF_AREA_BANDS` — the board is headed "People in a bed far
-     * from home", and the constant is this prototype's whole definition of far. Two sources: the
-     * board's own filter decides which people are listed, the exported list decides which bands
-     * count as far. This is where `OUT_OF_AREA_BANDS` earns its place in this spec, replacing the
-     * tautology removed above.
+     * And what the ledger renders is what the ledger promises. Every card must carry the label of
+     * one of `OUT_OF_AREA_BANDS` — the constant is this prototype's whole definition of far. Two
+     * sources: the board's own filter decides which people are listed, the exported list decides
+     * which bands count as far. Each card names its band in full for screen readers, so the full
+     * label is in its text.
      */
     const outOfAreaLabels = OUT_OF_AREA_BANDS.map((b) => TRAVEL_BAND_LABELS[b]);
-    const ledgerHeaderTexts = await page.getByTestId("ward-out-of-area-table").locator("thead th").allTextContents();
-    const travelTimeColumn = ledgerHeaderTexts.findIndex((heading) => heading.trim() === "Travel time");
-    expect(travelTimeColumn, "the ledger must label its travel-time column").toBeGreaterThanOrEqual(0);
-    const renderedBands = await ledgerRows.evaluateAll(
-      (rows, column) => rows.map((row) => (row.children[column]?.textContent ?? "").trim()),
-      travelTimeColumn,
-    );
+    const cardTexts = await ledgerCards.allTextContents();
     expect(
-      [...new Set(renderedBands)].filter((b) => !outOfAreaLabels.includes(b)),
+      cardTexts.filter((text) => !outOfAreaLabels.some((label) => text.includes(label))),
       "the out-of-area ledger is listing somebody whose travel band is not one this prototype calls out of area",
     ).toEqual([]);
 
-    await expect(page.getByTestId(`ward-out-of-area-row-${raisedId}`)).toHaveCount(0);
     await expect(page.getByTestId(`ward-out-of-area-card-${raisedId}`)).toHaveCount(0);
     /*
      * ⚠️ THE SENTENCE CHANGED BECAUSE THE BEHAVIOUR DID, AND CHOOSING THE REPLACEMENT IS THE WHOLE
@@ -1253,9 +1244,26 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
      * containment rather than as a stylesheet value, so it goes on holding whatever the table's
      * widths, the shell's padding or the icon rail become.
      */
-    await page.setViewportSize({ width: 641, height: 900 });
+    // Option A (10 Oct 2026): 769px is the narrowest width that shows the table rather than the
+    // phone card list (the swap is at 48rem), so that is now the narrowest width it is used at.
+    await page.setViewportSize({ width: 769, height: 900 });
     const tableScroll = page.getByTestId("ward-out-of-area-table");
-    await expect(tableScroll, "the ledger is not showing its table at 641px").toBeVisible();
+    await expect(tableScroll, "the ledger is not showing its table at 769px").toBeVisible();
+
+    // The table half of the floor and pins above: the same people as the cards, every travel band
+    // one this prototype calls far (the full label is the travel line's title), and not our referral.
+    const ledgerRows = page.locator('[data-testid^="ward-out-of-area-row-"]');
+    await expect(ledgerRows, "the ledger's phone cards and its table are not showing the same people").toHaveCount(
+      ledgerCardCount,
+    );
+    const renderedBands = await ledgerRows.evaluateAll((rows) =>
+      rows.map((row) => row.children[1]?.querySelector("[title]")?.getAttribute("title") ?? ""),
+    );
+    expect(
+      [...new Set(renderedBands)].filter((b) => !outOfAreaLabels.includes(b)),
+      "the out-of-area ledger is listing somebody whose travel band is not one this prototype calls out of area",
+    ).toEqual([]);
+    await expect(page.getByTestId(`ward-out-of-area-row-${raisedId}`)).toHaveCount(0);
 
     /*
      * PRESENCE BEFORE CONTAINMENT — whole-branch review, W1.
@@ -1282,11 +1290,11 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
      * Nothing below is relaxed to make room for these — together they close deletion, reordering,
      * renaming and hiding, and neither adds a matcher that could later be loosened.
      */
-    const LEDGER_COLUMNS = ["Patient", "Home region", "Unit", "Travel time", "Since arrival"];
+    const LEDGER_COLUMNS = ["Patient", "Home region", "Placement", "Discharge", "Return", "Days away"];
     const ledgerHeaders = tableScroll.locator("thead th");
     await expect(
       ledgerHeaders,
-      "the out-of-area ledger's table no longer carries exactly these five columns, in this order",
+      "the out-of-area ledger's table no longer carries exactly these six columns, in this order",
     ).toHaveText(LEDGER_COLUMNS);
     for (const [index, column] of LEDGER_COLUMNS.entries()) {
       await expect(
@@ -1306,7 +1314,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     });
     expect(
       clipped,
-      "column(s) of the out-of-area table are off the screen at 641px, reachable only by scrolling sideways inside the table",
+      "column(s) of the out-of-area table are off the screen at 769px, reachable only by scrolling sideways inside the table",
     ).toEqual([]);
   });
 

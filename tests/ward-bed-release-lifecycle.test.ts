@@ -615,7 +615,8 @@ describe("ward bed release lifecycle", () => {
 
   /** Spec D2, extended by the 2026-08-28 rework to the three events it added: only the ward moves
    *  a bed between stages, flags it stuck or unstuck, or says it is being made ready. */
-  it("5. a coordinator may not confirm, revert, block, unblock, prepare or release a bed — six rejections, no state change (spec D2)", () => {
+  it("5. a role that is not the ward (the transport officer) may not confirm, revert, block, unblock, prepare or release a bed — six rejections, no state change (spec D2)", () => {
+    // The coordinator may take every action (Josh, 10 Oct 2026), so the officer is the refused role.
     // CHANGED 25 September 2026: WR-002/WR-001 no longer exist; picks two fresh releases at
     // runtime instead (an expected-unblocked one and a confirmed-unblocked one). Their exact shape
     // does not matter here, since every one of these six events is refused on ROLE alone, before
@@ -626,14 +627,14 @@ describe("ward bed release lifecycle", () => {
 
     const afterConfirm = wardFlowReducer(state, {
       type: "CONFIRM_BED_RELEASE",
-      role: "coordinator",
+      role: "officer",
       now: NOW,
       releaseId: targetA.id,
       actingUnitId: targetA.unitId,
     });
     const afterBlock = wardFlowReducer(afterConfirm, {
       type: "BLOCK_BED_RELEASE",
-      role: "coordinator",
+      role: "officer",
       now: NOW,
       releaseId: targetA.id,
       actingUnitId: targetA.unitId,
@@ -641,7 +642,7 @@ describe("ward bed release lifecycle", () => {
     });
     const afterRevert = wardFlowReducer(afterBlock, {
       type: "REVERT_BED_RELEASE",
-      role: "coordinator",
+      role: "officer",
       now: NOW,
       releaseId: targetB.id,
       actingUnitId: targetB.unitId,
@@ -649,14 +650,14 @@ describe("ward bed release lifecycle", () => {
     });
     const afterUnblock = wardFlowReducer(afterRevert, {
       type: "CLEAR_BED_RELEASE_BLOCK",
-      role: "coordinator",
+      role: "officer",
       now: NOW,
       releaseId: targetA.id,
       actingUnitId: targetA.unitId,
     });
     const afterPrepare = wardFlowReducer(afterUnblock, {
       type: "SET_BED_PREPARATION",
-      role: "coordinator",
+      role: "officer",
       now: NOW,
       releaseId: targetB.id,
       actingUnitId: targetB.unitId,
@@ -664,7 +665,7 @@ describe("ward bed release lifecycle", () => {
     });
     const afterRelease = wardFlowReducer(afterPrepare, {
       type: "RELEASE_BED",
-      role: "coordinator",
+      role: "officer",
       now: NOW,
       releaseId: targetB.id,
       actingUnitId: targetB.unitId,
@@ -973,7 +974,9 @@ describe("ward bed release lifecycle", () => {
     // exist. Interpolating the stage as well produced "from discharged to discharged", a tautology
     // in the one message somebody reads when something has gone wrong — so it names the state once
     // and says what is actually refused. The transition being refused is unchanged.
-    expect(next.rejections[0]?.reason).toBe(`release ${target.id} is already discharged and cannot be discharged again`);
+    expect(next.rejections[0]?.reason).toBe(
+      `release ${target.id} is already discharged and cannot be discharged again`,
+    );
     expect(release(next, target.id)).toEqual(before);
   });
 
