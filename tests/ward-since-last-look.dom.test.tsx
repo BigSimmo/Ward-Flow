@@ -62,8 +62,8 @@ describe("the Command screen's 'Since you last looked' list", () => {
     );
 
     renderCommand();
-    // Owner, 8 Oct 2026: the list opens from the hero's "New events" count, which counts it.
-    const toggle = screen.getByRole("button", { name: /New events/, expanded: false });
+    // Owner, 10 Oct 2026: the list opens from the hero's "N new since HH:MM" count, which counts it.
+    const toggle = screen.getByRole("button", { name: /new since \d\d:\d\d/, expanded: false });
     expect(toggle).toHaveTextContent("2");
     fireEvent.click(toggle);
     const panel = screen.getByRole("region", { name: "Since you last looked" });
@@ -73,6 +73,6 @@ describe("the Command screen's 'Since you last looked' list", () => {
     fireEvent.click(screen.getByRole("button", { name: "Mark as seen" }));
     expect(screen.queryByRole("region", { name: "Since you last looked" })).toBeNull();
     expect(screen.getByTestId("ward-since-last-look")).toHaveTextContent("Nothing new since you last looked");
-    expect(screen.getByRole("button", { name: /New events/, expanded: true })).toHaveTextContent("0");
+    expect(screen.getByRole("button", { name: /new since \d\d:\d\d/, expanded: true })).toHaveTextContent("0");
   });
 });

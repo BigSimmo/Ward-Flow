@@ -101,7 +101,7 @@
 
 .fact small {
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 500;
 }
 
@@ -115,7 +115,7 @@
 }
 
 .fact[data-urgent="true"] strong {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
   font-weight: 650;
 }
 
@@ -243,7 +243,7 @@
   border-radius: var(--wf-r-pill);
   padding: 0.0625rem 0.4375rem;
   color: var(--wf-ink-2);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 500;
   line-height: var(--wf-lh-16);
   font-variant-numeric: tabular-nums;
@@ -252,12 +252,12 @@
 
 .detailDisclosure > summary[data-badge-tone="good"]::before {
   border-color: color-mix(in srgb, var(--wf-success) 55%, var(--wf-line-3));
-  color: var(--wf-success-ink);
+  color: var(--wf-ink-1);
 }
 
 .detailDisclosure > summary[data-badge-tone="warn"]::before {
   border-color: color-mix(in srgb, var(--wf-warning) 55%, var(--wf-line-3));
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
 }
 
 .recordActions > summary::after,
@@ -272,7 +272,6 @@
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  opacity: 0.6;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -490,7 +489,7 @@
 }
 
 .candidatesSection .candidateRow[data-showing="true"][data-eligible="false"] {
-  background: color-mix(in srgb, var(--wf-warning) 6%, var(--wf-surface));
+  background: var(--wf-surface-2);
 }
 
 .tick {
@@ -540,7 +539,7 @@
   align-items: center;
   gap: 0.3125rem;
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -614,7 +613,7 @@
 }
 
 .candidatesSection .candidateRow[data-eligible="false"] .candidateReason {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-2);
 }
 
 .candidatesSection .candidateNotice,
@@ -787,15 +786,15 @@
 .tierBadge[data-tier="1"],
 .queueTier[data-tier="1"] {
   border-color: var(--danger);
-  background: var(--danger-soft);
-  color: var(--danger);
+  background: transparent;
+  color: var(--ink);
 }
 
 .tierBadge[data-tier="2"],
 .queueTier[data-tier="2"] {
   border-color: var(--warn);
-  background: var(--warn-soft);
-  color: var(--warn);
+  background: transparent;
+  color: var(--ink);
 }
 
 .tierBadge[data-tier="3"],
@@ -808,15 +807,15 @@
 :global([data-theme="dark"]) .tierBadge[data-tier="1"],
 :global([data-theme="dark"]) .queueTier[data-tier="1"] {
   border-color: var(--danger);
-  background: var(--danger-soft);
-  color: var(--danger);
+  background: transparent;
+  color: var(--ink);
 }
 
 :global([data-theme="dark"]) .tierBadge[data-tier="2"],
 :global([data-theme="dark"]) .queueTier[data-tier="2"] {
   border-color: var(--warn);
-  background: var(--warn-soft);
-  color: var(--warn);
+  background: transparent;
+  color: var(--ink);
 }
 
 :global([data-theme="dark"]) .tierBadge[data-tier="3"],
@@ -828,14 +827,14 @@
 
 .queueFlagHighContrast {
   border: 0.0625rem solid var(--danger);
-  background: var(--danger-soft);
-  color: var(--danger);
+  background: transparent;
+  color: var(--ink);
 }
 
 :global([data-theme="dark"]) .queueFlagHighContrast {
   border-color: var(--danger);
-  background: var(--danger-soft);
-  color: var(--danger);
+  background: transparent;
+  color: var(--ink);
 }
 
 /* Touch targets: 44px minimum on touch devices; compact and polished on desktop */
@@ -893,15 +892,15 @@
 
 .toneBadge[data-tone="danger"] {
   border-color: var(--danger);
-  background: var(--danger-soft);
-  color: var(--danger);
+  background: transparent;
+  color: var(--ink);
 }
 
 .toneBadge[data-tone="warning"],
 .toneBadge[data-tone="warn"] {
   border-color: var(--warn);
-  background: var(--warn-soft);
-  color: var(--warn);
+  background: transparent;
+  color: var(--ink);
 }
 
 .toneBadge[data-tone="accent"] {
@@ -912,21 +911,21 @@
 
 .toneBadge[data-tone="good"] {
   border-color: var(--good);
-  background: var(--good-soft);
-  color: var(--good);
+  background: transparent;
+  color: var(--ink);
 }
 
 :global([data-theme="dark"]) .toneBadge[data-tone="danger"] {
   border-color: var(--danger);
-  background: var(--danger-soft);
-  color: var(--danger);
+  background: transparent;
+  color: var(--ink);
 }
 
 :global([data-theme="dark"]) .toneBadge[data-tone="warning"],
 :global([data-theme="dark"]) .toneBadge[data-tone="warn"] {
   border-color: var(--warn);
-  background: var(--warn-soft);
-  color: var(--warn);
+  background: transparent;
+  color: var(--ink);
 }
 
 :global([data-theme="dark"]) .toneBadge[data-tone="accent"] {

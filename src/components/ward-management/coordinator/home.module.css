@@ -48,7 +48,7 @@
 
 .eyebrow {
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -200,7 +200,7 @@
 .edService {
   overflow: hidden;
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   letter-spacing: 0.04em;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -235,16 +235,14 @@
 }
 
 .edWord {
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* The word "longest" shows only where every tile has room for it, so no tile reads "longe…". The
-   button's spoken name always says "longest". A container query on .edCell, so all tiles agree.
-   The cutoff is in px like the label, since rem changes with the density setting. */
-@container (max-width: 128px) {
-  .edLongest {
+/* Narrow tiles drop the service name next to the code (v10 Home content rules). */
+@container (max-width: 112px) {
+  .edService {
     display: none;
   }
 }
@@ -396,32 +394,23 @@
       inset 3px 0 0 var(--wf-pri-1),
       inset 0 0 0 1px color-mix(in srgb, var(--wf-danger) 55%, transparent);
   }
-
-  /* Words neutral, the glyph carries the tone (v9). */
-  .queueFlag {
-    color: var(--wf-ink-1);
-  }
 }
 
-/* Highlight from the hero: the other rows dim, never hide. They lose their colour and the name
-   steps down to secondary ink, but text keeps full opacity so it still meets 4.5:1 in both themes. */
-.queueRow[data-dim="true"] {
-  filter: grayscale(1);
+/* Highlight from the hero: the other rows dim, never hide (v10 dim convention). Words take
+   --wf-dim and the global data-dim rule turns every glyph, the T pill edge and the act-now edge to
+   --wf-glyph-dim. Colour only: no opacity, no filter. Hover or focus brings the name back. */
+.queueRow[data-dim="true"] :where(*) {
+  color: var(--wf-dim);
+  border-color: var(--wf-glyph-dim);
 }
 
 .queueRow[data-dim="true"] .queueName strong {
-  color: var(--wf-ink-3);
   font-weight: 500;
-}
-
-.queueRow[data-dim="true"]:hover,
-.queueRow[data-dim="true"]:focus-visible {
-  filter: none;
 }
 
 .queueRow[data-dim="true"]:hover .queueName strong,
 .queueRow[data-dim="true"]:focus-visible .queueName strong {
-  color: inherit;
+  color: var(--wf-ink-1);
   font-weight: 600;
 }
 
@@ -468,7 +457,7 @@
   flex: 0 0 auto;
   align-items: center;
   gap: var(--wf-s-1);
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
   white-space: nowrap;
 }
@@ -565,7 +554,7 @@
 .flowLegend {
   flex-wrap: nowrap;
   gap: var(--wf-s-1) var(--wf-s-2);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   white-space: nowrap;
 }
 
@@ -630,7 +619,7 @@
 }
 
 .forNoBed {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
   font-weight: 500;
 }
 
@@ -651,9 +640,9 @@
   gap: 0.375rem;
   height: var(--wf-h-chip);
   padding: 0 var(--wf-s-2);
-  border: 1px solid color-mix(in srgb, var(--wf-success) 45%, var(--wf-line-2));
+  border: 1px solid var(--wf-fit-edge);
   border-radius: var(--wf-r-pill);
-  background: color-mix(in srgb, var(--wf-success) 8%, var(--wf-surface));
+  background: var(--wf-fit-tint);
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
   white-space: nowrap;
@@ -671,8 +660,8 @@
 }
 
 .forOption[data-fit="no-bed"] {
-  border-color: color-mix(in srgb, var(--wf-warning) 55%, var(--wf-line-2));
-  background: color-mix(in srgb, var(--wf-warning) 10%, var(--wf-surface));
+  border-color: var(--wf-hold-edge);
+  background: var(--wf-hold-tint);
 }
 
 .forOption[data-fit="no-bed"]::before {
@@ -681,7 +670,7 @@
 }
 
 .forOption:hover {
-  filter: brightness(0.97);
+  border-color: var(--wf-pri-1);
 }
 
 .forOption[aria-pressed="true"] {
@@ -768,20 +757,18 @@
 
 /* Where the selected patient can go: a soft tint, never a stripe. Green fits with a bed ready,
    amber fits with no bed now. Selection keeps its own look. */
-.unitRow[data-highlight="fit"]:not(.unitRowSelected) {
-  background: color-mix(in srgb, var(--wf-success) 8%, var(--wf-surface));
+.unitRow[data-highlight="fit"]:not(.unitRowSelected),
+.unitRow[data-highlight="accepted"]:not(.unitRowSelected) {
+  background: var(--wf-fit-tint);
 }
 
 .unitRow[data-highlight="fit-no-bed"]:not(.unitRowSelected) {
-  background: color-mix(in srgb, var(--wf-warning) 9%, var(--wf-surface));
+  background: var(--wf-hold-tint);
 }
 
-.unitRow[data-highlight="accepted"]:not(.unitRowSelected) {
-  background: color-mix(in srgb, var(--wf-success) 12%, var(--wf-surface));
-}
-
+/* v10: only a free or fit place takes a tint. A referred ward keeps a thin edge instead. */
 .unitRow[data-highlight="referred"]:not(.unitRowSelected) {
-  background: color-mix(in srgb, var(--wf-info) 9%, var(--wf-surface));
+  box-shadow: inset 0 0 0 1px var(--wf-line-3);
 }
 
 .unitNameLine {
@@ -798,24 +785,24 @@
 .unitBestTag {
   flex: 0 0 auto;
   padding: 0 var(--wf-s-2);
-  border: 1px solid color-mix(in srgb, var(--wf-success) 45%, transparent);
+  border: 1px solid var(--wf-fit-edge);
   border-radius: var(--wf-r-pill);
-  color: var(--wf-success-ink);
-  font-size: var(--wf-fs-11);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
 }
 
 .groupFit {
-  color: var(--wf-success-ink);
+  color: var(--wf-ink-1);
   font-size: var(--wf-fs-12);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .groupNoBed {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-2);
 }
 
 .groupFit[data-none="true"] {
@@ -875,7 +862,7 @@
 }
 
 .unitPending {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
 }
@@ -897,7 +884,7 @@
 
 .unitReadyWord {
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   text-transform: lowercase;
 }
 
@@ -1148,7 +1135,8 @@ button.registerRow:hover {
 }
 
 .refusalMarker[data-alert="true"] {
-  color: var(--wf-danger-ink);
+  border-color: var(--wf-act-edge);
+  color: var(--wf-ink-1);
 }
 
 /* ---------- phone ---------- */
@@ -1159,9 +1147,57 @@ button.registerRow:hover {
      The doubled class outranks the shared Card's own `display: flex`: CSS-module chunk order is
      not guaranteed, and once another module loaded wf/card.module.css later, the equal-specificity
      Card rule won and the hidden cards came back (and overflowed a 320px phone by 57px). */
-  .edCard.edCard,
   .flowCard.flowCard {
     display: none;
+  }
+
+  /* Direction A (Josh, 10 Oct 2026): the ED strip becomes one row of 44px chips that scrolls
+     sideways above the queue: code, waiting count and the longest wait with its glyph. */
+  .edCard.edCard {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .edGrid {
+    display: flex;
+    gap: var(--wf-s-2);
+    overflow-x: auto;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+
+  .edCell {
+    flex: 0 0 auto;
+    border: 0;
+    /* Size containment would give a sideways chip no width of its own. */
+    container-type: normal;
+  }
+
+  .edButton {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--wf-s-2);
+    min-height: var(--wf-touch);
+    padding: 0 var(--wf-s-3);
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    white-space: nowrap;
+  }
+
+  .edButton[data-selected="true"] {
+    border-color: var(--wf-pri-1);
+    box-shadow: inset 0 0 0 1px var(--wf-pri-1);
+  }
+
+  .edService,
+  .edDeadline {
+    display: none;
+  }
+
+  .edWaitingValue {
+    font-size: var(--wf-fs-13);
   }
 
   /* The desktop's top-of-queue Placement never opens as a phone sheet. */
@@ -1268,6 +1304,46 @@ button.registerRow:hover {
 
 /* The hero's second row: the three counts that open the strip under it. Desktop only; the phone
    keeps its registers and "Since you looked" under the queue. */
+/* Hero title figures: mono tabular, like every count. */
+.heroNum {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The occupancy ring leads the hero on desktop and tablet (v10 Home). Hero renders the ring in
+   its stats slot; this moves that slot ahead of the title. */
+@media (min-width: 48.0625rem) {
+  .homeHero > :first-child > :nth-child(2) {
+    flex: 0 0 auto;
+    order: -1;
+    overflow: visible;
+  }
+}
+
+/* Shared-part fix kept page-local: the ring's own "svg" rule also sizes the status glyph under the
+   figure. Hold that glyph at glyph size. (Reported for src/components/wf/v10-parts.module.css.) */
+.homeHero [data-testid="wf-occupancy-ring"] > span svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Tablet drops "due within 1h": the queue already shows it (v10 Home, Tablet). */
+@media (min-width: 48.0625rem) and (max-width: 80rem) {
+  .heroDueChip {
+    display: none;
+  }
+}
+
+/* Phone hero foot: New since on the left, Live and Pause on the right, one line. */
+.phoneHeroActs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-width: 0;
+}
+
 .heroToggles {
   display: flex;
   align-items: center;

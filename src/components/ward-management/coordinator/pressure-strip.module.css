@@ -14,7 +14,7 @@
   border: 1px solid var(--wf-line-ctl);
   border-radius: var(--wf-r-xs);
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   color: var(--wf-ink-2);
   vertical-align: middle;
@@ -86,7 +86,7 @@
 
 .service {
   flex: none;
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
   white-space: nowrap;
 }

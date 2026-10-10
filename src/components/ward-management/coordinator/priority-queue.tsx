@@ -50,12 +50,18 @@ const HIGHLIGHT_LABEL: Record<QueueHighlight, string> = { overdue: "overdue", ti
 const MS_PER_MINUTE = 60_000;
 
 /**
- * Wait thresholds for the queue (design system v6 §5): Tier 1 is due soon at 2h and overdue at 4h,
- * other tiers at 8h and 24h. Synthetic thresholds; they need clinical sign-off.
+ * Tier targets for the queue (v10 Home): Tier 1 8h, Tier 2 24h, Tier 3 72h. A row is overdue past
+ * its target and "due in" within the hour before it. Invented values, pending clinical sign-off.
  */
+const TIER_TARGET_HOURS: Record<number, number> = { 1: 8, 2: 24, 3: 72 };
+
 export function queueWaitThresholds(urgency: number): { dueSoon: number; overdue: number } {
-  return urgency === 1 ? { dueSoon: 2 * 60, overdue: 4 * 60 } : { dueSoon: 8 * 60, overdue: 24 * 60 };
+  const overdue = (TIER_TARGET_HOURS[urgency] ?? TIER_TARGET_HOURS[3]) * 60;
+  return { dueSoon: overdue - 60, overdue };
 }
+
+/** Shown wherever the tier targets drive a figure. */
+export const TIER_TARGETS_NOTE = "Targets T1 8h, T2 24h, T3 72h, pending clinical sign-off";
 
 /** "Soon": a recorded legal form due within the due-soon window, or already past it. */
 function isSoon(movement: Movement, now: Instant) {
@@ -212,17 +218,11 @@ export function PriorityQueue({
             const legalFactor = factors.find((factor) => factor.label === FORM_TIMING_FACTOR_LABEL);
             const waitedMinutes = Math.max(0, now - movement.openedAt);
             const thresholds = queueWaitThresholds(movement.urgency);
-            const toDueSoon = thresholds.dueSoon - waitedMinutes;
             const level =
               waitedMinutes >= thresholds.overdue ? "over" : waitedMinutes >= thresholds.dueSoon ? "soon" : null;
-            const word =
-              level === "over"
-                ? "Overdue"
-                : level === "soon"
-                  ? "Due soon"
-                  : toDueSoon <= 60
-                    ? `due in ${durMinutes(toDueSoon)}`
-                    : "waiting";
+            // Neutral words (v10): the glyph on the timer carries the tone.
+            const toTarget = thresholds.overdue - waitedMinutes;
+            const word = level === "over" ? "overdue" : toTarget <= 60 ? `due in ${durMinutes(toTarget)}` : "waiting";
             const arrival = movement.arrivalDetails;
             const arrivalMode = arrival
               ? (arrival.modeOfArrival ??
@@ -425,11 +425,11 @@ export function PriorityQueue({
         {activeTab === "patients" && highlight ? (
           <span className={styles.footMeta} data-testid="ward-queue-highlight-foot">
             <span className={styles.mono}>{highlighted}</span> of <span className={styles.mono}>{rows.length}</span>{" "}
-            {HIGHLIGHT_LABEL[highlight]} highlighted
+            {HIGHLIGHT_LABEL[highlight]} highlighted, all rows stay
           </span>
         ) : (
-          <span className={styles.footMeta}>
-            {activeTab === "referrals" ? "Longest wait first" : "Tier first, then longest wait"}
+          <span className={styles.footMeta} title={activeTab === "referrals" ? undefined : TIER_TARGETS_NOTE}>
+            {activeTab === "referrals" ? "Longest wait first" : "Urgent first, then tier, then longest wait"}
           </span>
         )}
         {activeTab === "patients" && highlight && onClearHighlight ? (
