@@ -355,6 +355,7 @@ export function resolvePatientNowRecord(
       stays: admissions.filter(
         (admission) =>
           admission.id === movement.admissionId ||
+          admission.id === movement.sourceAdmissionId ||
           admission.movementId === movement.id ||
           (livePatient !== undefined && admission.patientId === livePatient.id),
       ),
