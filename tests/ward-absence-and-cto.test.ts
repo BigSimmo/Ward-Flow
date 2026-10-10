@@ -10,6 +10,18 @@ import { shiftInstants } from "@/components/ward-management/ward-reanchor";
  */
 const NOW = 10 * 60 + 42;
 
+type SeedState = ReturnType<typeof seedWardFlowStateAt>;
+
+/** A patient with no order and nothing open: a CTO is refused during an open placement or stay. */
+function quietPatient(state: SeedState) {
+  return state.patients.find(
+    (p) =>
+      !p.communityTreatmentOrder &&
+      !state.admissions.some((a) => a.patientId === p.id && a.state !== "departed") &&
+      !state.movements.some((m) => m.patientId === p.id && !m.closure && m.stage !== "arrived"),
+  )!;
+}
+
 function occupiedStay() {
   const state = seedWardFlowStateAt(0);
   const stay = state.admissions.find(
@@ -232,24 +244,25 @@ describe("re-anchoring the demo clock (D-38)", () => {
       actingUnitId: stay.unitId,
       step: "searched",
     });
+    const quiet = quietPatient(next);
     next = wardFlowReducer(next, {
       type: "RECORD_COMMUNITY_TREATMENT_ORDER",
       role: "community",
       now: NOW,
-      patientId: next.patients[0]!.id,
+      patientId: quiet.id,
     });
     const shifted = shiftInstants(next, 60);
     const absence = shifted.leaveBeds.find((b) => b.admissionId === stay.id)!.absentWithoutLeave!;
     expect(absence.since).toBe(NOW + 60);
     expect(absence.steps[0]).toEqual({ step: "searched", at: NOW + 65 });
-    expect(shifted.patients[0]!.communityTreatmentOrder!.recordedAt).toBe(NOW + 60);
+    expect(shifted.patients.find((p) => p.id === quiet.id)!.communityTreatmentOrder!.recordedAt).toBe(NOW + 60);
   });
 });
 
 describe("community treatment order (D-38)", () => {
   it("keeps an ended order when a second is recorded, so the first is never erased (D-40)", () => {
     const state = seedWardFlowStateAt(0);
-    const patient = state.patients.find((p) => !p.communityTreatmentOrder)!;
+    const patient = quietPatient(state);
     const step = (
       s: typeof state,
       type: "RECORD_COMMUNITY_TREATMENT_ORDER" | "END_COMMUNITY_TREATMENT_ORDER",
@@ -284,7 +297,7 @@ describe("community treatment order (D-38)", () => {
 
   it("records Form 5A with time and role only, refuses a second, and ends on request", () => {
     const state = seedWardFlowStateAt(0);
-    const patient = state.patients.find((p) => !p.communityTreatmentOrder)!;
+    const patient = quietPatient(state);
     const recorded = wardFlowReducer(state, {
       type: "RECORD_COMMUNITY_TREATMENT_ORDER",
       role: "community",
@@ -330,7 +343,7 @@ describe("community treatment order (D-38)", () => {
 
   it("refuses a saved order with a lapse time or any field beyond form, time and role", () => {
     const state = seedWardFlowStateAt(0);
-    const patient = state.patients[0]!;
+    const patient = quietPatient(state);
     const recorded = wardFlowReducer(state, {
       type: "RECORD_COMMUNITY_TREATMENT_ORDER",
       role: "community",
@@ -340,6 +353,18 @@ describe("community treatment order (D-38)", () => {
     const bad = JSON.parse(JSON.stringify(recorded));
     bad.patients.find((p: { id: string }) => p.id === patient.id).communityTreatmentOrder.lapsesAt = NOW + 100;
     expect(isValidStoredWardFlowState(bad)).toBe(false);
+  });
+
+  it("refuses an order while the patient has an open stay, which the page would otherwise hide", () => {
+    const { state, stay } = occupiedStay();
+    const refused = wardFlowReducer(state, {
+      type: "RECORD_COMMUNITY_TREATMENT_ORDER",
+      role: "community",
+      now: NOW,
+      patientId: stay.patientId!,
+    });
+    expect(refused.patients.find((p) => p.id === stay.patientId)!.communityTreatmentOrder).toBeUndefined();
+    expect(refused.rejections.at(-1)?.reason).toMatch(/open placement or stay/);
   });
 
   it("is the community team's to record, not a ward's", () => {

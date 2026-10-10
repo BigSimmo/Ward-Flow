@@ -2244,11 +2244,14 @@ export type OverridableWardFlowEvent = Extract<
  * `CHANGE_URGENCY` and `CHANGE_LEGAL_STATUS` are the first events with more than one — both a
  * coordinator and the referring ED clinician may record either change — and Task 3's events need
  * the same shape, so the table is widened here rather than special-cased per event.
+ *
+ * The coordinator may take every action except the demonstration controls (Josh, 10 Oct 2026), so
+ * every non-demo entry lists `coordinator`. `tests/ward-role-permissions.test.ts` pins that.
  */
 export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> = {
   RECORD_ADMISSION_CARE: ["ward", "coordinator", "community"],
   RECORD_ADMISSION_FOLLOW_UP: ["ward", "coordinator"],
-  RECORD_PATIENT_DISCHARGE: ["ward"],
+  RECORD_PATIENT_DISCHARGE: ["ward", "coordinator"],
   UPDATE_EXPECTED_DISCHARGE: ["ward", "coordinator"],
   OPEN_DISCHARGE_RECORD: ["coordinator", "ward", "community"],
   REVIEW_AUDIT_EVENT: ["coordinator"],
@@ -2262,13 +2265,13 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    * is worse than an accurate comment. Recorded here so the next reader does not take the name as
    * a constraint.
    */
-  RAISE_REFERRAL: ["ed", "community", "ward"],
-  RECORD_EXAMINATION: ["ed"],
-  RECORD_MEDICAL_CLEARANCE: ["ed"],
+  RAISE_REFERRAL: ["ed", "community", "ward", "coordinator"],
+  RECORD_EXAMINATION: ["ed", "coordinator"],
+  RECORD_MEDICAL_CLEARANCE: ["ed", "coordinator"],
   /* The ED psychiatry team is the only party that can see whether somebody is standing in their
      department, and the owner named them specifically (2026-09-07): "the ED psychiatry doctors
      notice the patient has arrived in ED". Not the coordinator, who is not in the building. */
-  RECORD_ARRIVED_IN_DEPARTMENT: ["ed"],
+  RECORD_ARRIVED_IN_DEPARTMENT: ["ed", "coordinator"],
   /*
    * MIRRORS `BOOK_TRANSPORT` BELOW, INCLUDING ITS EXCLUSION — the sending team, and not the
    * coordinator. `TR-D1` rejects the coordinator from booking BY NAME because "it owns the bed
@@ -2277,18 +2280,18 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
    * senders may answer it and the same role may not. A coordinator who could record "no transport
    * needed" would be answering a question about a patient it has never seen.
    */
-  RECORD_TRANSPORT_NEED: ["ed", "ward", "community"],
+  RECORD_TRANSPORT_NEED: ["ed", "ward", "community", "coordinator"],
   /*
    * `ed` ALONE: the department physically holding the form is who can mark it received. Widened
    * codes (1A, 3A, 3C, 3D, 6A, 6B, 6C, 5A, 5B) do not widen the role.
    */
-  RECORD_LEGAL_FORM_RECEIVED: ["ed"],
+  RECORD_LEGAL_FORM_RECEIVED: ["ed", "coordinator"],
   /*
    * T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`). `ed` alone, on
    * `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning immediately above: the department physically
    * holding the form is who can say a receipt was recorded in error.
    */
-  CORRECT_LEGAL_FORM_RECEIPT: ["ed"],
+  CORRECT_LEGAL_FORM_RECEIPT: ["ed", "coordinator"],
   /*
    * T2 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`). `ed`, on
    * `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning: the department physically holding the form is
@@ -2302,26 +2305,26 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // ED intake screen and the coordinator's movement drawer), and both are roles that already
   // record gender elsewhere on this file (`RAISE_REFERRAL`'s `draft.gender`).
   RECORD_MOVEMENT_GENDER: ["ed", "coordinator"],
-  RECORD_NO_REFERRAL: ["ed"],
+  RECORD_NO_REFERRAL: ["ed", "coordinator"],
   // RB3, item 19: the department that holds the patient records the outcome — the same "who
   // physically holds the patient" reasoning RECORD_LEFT_DEPARTMENT's own entry uses below.
-  RECORD_ED_OUTCOME: ["ed"],
+  RECORD_ED_OUTCOME: ["ed", "coordinator"],
   REFER_TO_UNITS: ["coordinator"],
-  ACCEPT_IN_PRINCIPLE: ["ward"],
+  ACCEPT_IN_PRINCIPLE: ["ward", "coordinator"],
   /* Owner ruling 2026-09-01: a pull is always a person's act — *"only a person can do this who is
    * interacting from the ward menu or the coordinator"*. Widened from ward-only deliberately, and the
    * reducer refuses it against a bed that is not ready whichever role raises it. */
   PULL_PATIENT: ["ward", "coordinator"],
-  DECLINE: ["ward"],
-  HANDOVER_READY: ["ed"],
-  TRANSPORT_ACCEPTED: ["officer"],
-  TRANSPORT_EN_ROUTE: ["officer"],
-  PATIENT_COLLECTED: ["officer"],
-  PATIENT_ARRIVED: ["officer", "ward"],
-  CONFIRM_CAPACITY: ["ward"],
+  DECLINE: ["ward", "coordinator"],
+  HANDOVER_READY: ["ed", "coordinator"],
+  TRANSPORT_ACCEPTED: ["officer", "coordinator"],
+  TRANSPORT_EN_ROUTE: ["officer", "coordinator"],
+  PATIENT_COLLECTED: ["officer", "coordinator"],
+  PATIENT_ARRIVED: ["officer", "ward", "coordinator"],
+  CONFIRM_CAPACITY: ["ward", "coordinator"],
   // Owner Answer 18, second round, 2026-09-17: the ward's own answer to what is currently
   // limiting its intake, same role as CONFIRM_CAPACITY above.
-  RECORD_WARD_INTAKE_CONSTRAINTS: ["ward"],
+  RECORD_WARD_INTAKE_CONSTRAINTS: ["ward", "coordinator"],
   RECORD_ESCALATION: ["coordinator"],
   ADVANCE_CLOCK: ["demo"],
   RESET_SCENARIO: ["demo"],
@@ -2367,7 +2370,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // own `actingUnitId` claim) — because `CANCEL_TRANSPORT` below needs to tell the booker from
   // anyone else. `ed` and `community` bookings are no longer byte-identical to each other; see the
   // superseded assertion in `tests/ward-book-transport.test.ts`.
-  BOOK_TRANSPORT: ["ed", "ward", "community"],
+  BOOK_TRANSPORT: ["ed", "ward", "community", "coordinator"],
   // 🔴 CHANGED AGAIN 2026-09-15 under WLQ-11 (owner): *"whoever booked transport may cancel it;
   // the receiving ward still may not."* `ward` is back in this list. The comment block above (the
   // one still headed "THIS CHECK USED TO BE TR-D6 INVERTED") explained why `ward` was removed
@@ -2406,30 +2409,31 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_DIVERSION: ["officer", "coordinator"],
   // Build plan item 29 (T4a) / OA-29: the coordinator, the accepting ward, or the original referrer.
   RELEASE_DIVERTED_BED: ["coordinator", "ward", "ed"],
-  REFER_TO_COMMUNITY_TEAM: ["ed"],
-  RECORD_LEFT_DEPARTMENT: ["ed"],
-  FLAG_BED_RELEASE: ["ward"],
-  CONFIRM_BED_RELEASE: ["ward"],
+  REFER_TO_COMMUNITY_TEAM: ["ed", "coordinator"],
+  RECORD_LEFT_DEPARTMENT: ["ed", "coordinator"],
+  FLAG_BED_RELEASE: ["ward", "coordinator"],
+  CONFIRM_BED_RELEASE: ["ward", "coordinator"],
   // Bed-model rework (2026-08-28). All three are `ward`-only for the same reason the four above
   // are: only the ward moves a bed between stages, flags it stuck or unstuck, or says it is being
   // made ready. A coordinator sees every one of them and changes none of them.
-  REVERT_BED_RELEASE: ["ward"],
-  BLOCK_BED_RELEASE: ["ward"],
-  CLEAR_BED_RELEASE_BLOCK: ["ward"],
-  SET_BED_PREPARATION: ["ward"],
-  RELEASE_BED: ["ward"],
-  RECORD_LEAVE_BED: ["ward"],
-  END_LEAVE_BED: ["ward"],
+  REVERT_BED_RELEASE: ["ward", "coordinator"],
+  BLOCK_BED_RELEASE: ["ward", "coordinator"],
+  CLEAR_BED_RELEASE_BLOCK: ["ward", "coordinator"],
+  SET_BED_PREPARATION: ["ward", "coordinator"],
+  RELEASE_BED: ["ward", "coordinator"],
+  RECORD_LEAVE_BED: ["ward", "coordinator"],
+  END_LEAVE_BED: ["ward", "coordinator"],
   // Owner approval 9 Oct 2026 (Patient page gate board). An absence is the ward's to record, like
-  // leave. A community treatment order is the community team's.
-  RECORD_ABSENT_WITHOUT_LEAVE: ["ward"],
-  RECORD_ABSENCE_STEP: ["ward"],
-  RECORD_COMMUNITY_TREATMENT_ORDER: ["community"],
-  END_COMMUNITY_TREATMENT_ORDER: ["community"],
+  // leave. A community treatment order is the community team's, and the coordinator may record it
+  // from the Patient page (10 Oct 2026), logged under the coordinator's own role.
+  RECORD_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
+  RECORD_ABSENCE_STEP: ["ward", "coordinator"],
+  RECORD_COMMUNITY_TREATMENT_ORDER: ["community", "coordinator"],
+  END_COMMUNITY_TREATMENT_ORDER: ["community", "coordinator"],
   // The ward the patient is leaving records it. Not the coordinator: a statewide view does not
   // know that somebody walked out of a building, and a coordinator recording a discharge it
   // cannot observe is the shape this project refuses everywhere else.
-  RECORD_LEAVING: ["ward"],
+  RECORD_LEAVING: ["ward", "coordinator"],
   // The ward that holds the bed, and nobody else. A ward is the only party that observes one of
   // its own occupants leaving the building for an emergency department and coming back, and it is
   // the party still holding the bed while they are gone. The coordinator is excluded on exactly
@@ -2441,8 +2445,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // acting unit other than the one holding the admission, and an emergency department holds no
   // ward bed to act as. Neither event writes a role name onto any record, so no false attribution
   // can enter with either.
-  RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: ["ward"],
-  RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: ["ward"],
+  RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
+  RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
   /*
    * Mirrors `WITHDRAW_REFERRAL` below exactly, and for the same reason: whoever may raise a
    * movement may say what is holding it up, plus the coordinator. The four are not
@@ -2543,7 +2547,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // including GP, stays `community`." `ed` widens the table here; the reducer's own
   // `case "RECEIVE_REFERRAL"` couples it back to `source` — this list alone cannot express "only
   // when the source is ed_medical".
-  RECEIVE_REFERRAL: ["community", "ed"],
+  RECEIVE_REFERRAL: ["community", "ed", "coordinator"],
   // Anyone at the front door may add a patient who is not yet known - that IS the front door.
   ADD_PATIENT: ["ed", "community", "coordinator"],
   /**
@@ -2683,7 +2687,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
   SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
   SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
-  RECORD_ED_MEDICAL_DETERIORATION: ["ed"],
+  RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
   RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator", "ward", "community"],
   UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
   RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward", "community"],

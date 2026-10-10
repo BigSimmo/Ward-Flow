@@ -260,7 +260,7 @@ describe("roles", () => {
   it("refuses an event raised by the wrong role", () => {
     const next = wardFlowReducer(seeded(), {
       type: "ACCEPT_IN_PRINCIPLE",
-      role: "coordinator",
+      role: "officer",
       now: NOW,
       movementId: "WF-009",
       unitId: "rph-adult-secure",
@@ -1988,13 +1988,14 @@ describe("bed release flagging", () => {
     expect(after.bedReleases).toEqual(seeded.bedReleases);
   });
 
-  it("refuses a coordinator caller", () => {
+  it("refuses a caller that is not the ward (the transport officer)", () => {
+    // The coordinator may take every action (Josh, 10 Oct 2026), so it is no longer the refused role.
     const seeded = seedWardFlowState();
     const unit = seeded.units[0];
 
     const after = wardFlowReducer(seeded, {
       type: "FLAG_BED_RELEASE",
-      role: "coordinator",
+      role: "officer",
       now: NOW,
       unitId: unit.id,
       actingUnitId: unit.id,
