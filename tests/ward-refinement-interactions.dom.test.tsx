@@ -86,16 +86,21 @@ describe("Q004 refinement interaction regressions", () => {
     const row = within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!;
     const before = screen.getByTestId("ward-refinement-domain-state").textContent;
 
-    expect(screen.queryByLabelText("Placement")).toBeNull();
+    // Direction A (owner, 10 Oct 2026): at rest Placement shows the top of the queue, labelled so,
+    // with no Close and no queue row pressed. Nothing is selected until a coordinator picks a row.
+    const atRest = screen.getByLabelText("Placement");
+    expect(within(atRest).getByTestId("ward-placement-top-of-queue")).toHaveTextContent("Top of queue");
+    expect(within(atRest).queryByRole("button", { name: "Close shortlist and clear selection" })).toBeNull();
     expect(screen.queryByLabelText("Referral placement")).toBeNull();
     expect(row).toHaveAttribute("aria-pressed", "false");
 
     fireEvent.click(row);
     expect(row).toHaveAttribute("aria-pressed", "true");
     const shortlist = screen.getByLabelText("Placement");
+    expect(within(shortlist).queryByTestId("ward-placement-top-of-queue")).toBeNull();
     fireEvent.click(within(shortlist).getByRole("button", { name: "Close shortlist and clear selection" }));
 
-    expect(screen.queryByLabelText("Placement")).toBeNull();
+    expect(within(screen.getByLabelText("Placement")).getByTestId("ward-placement-top-of-queue")).toBeInTheDocument();
     expect(row).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
   });

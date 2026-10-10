@@ -1,9 +1,8 @@
 "use client";
 
-import { Activity } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { Card, CardHead, Segmented, StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
+import { Card, StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
 import { clockState, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -15,8 +14,6 @@ import { edShortName, siteByCode } from "@/components/ward-management/ward-sites
 
 import styles from "./home.module.css";
 
-type Order = "longest" | "most";
-
 /**
  * A due-soon window as it is said on screen: "1h" for whole hours, else "1h 30m". Read from the
  * saved configuration, because `clockState` classifies against those same saved values.
@@ -24,11 +21,6 @@ type Order = "longest" | "most";
 export function dueWindowLabel(minutes: number): string {
   return minutes % 60 === 0 ? `${minutes / 60}h` : durMinutes(minutes);
 }
-
-const ORDER_ITEMS: { id: Order; label: string }[] = [
-  { id: "longest", label: "Longest wait" },
-  { id: "most", label: "Most waiting" },
-];
 
 type HomeEdPressureProps = {
   now: Instant;
@@ -40,17 +32,17 @@ type HomeEdPressureProps = {
 };
 
 /**
- * Home's ED pressure card (v6 Home mockup). One column per emergency department: code, service,
- * how many wait, a bar for the longest wait against the worst department, the longest wait with its
- * glyph, and the recorded legal deadlines. Pressing a department filters the priority queue to it,
- * the same toggle the old strip carried (`aria-pressed`, `ward-ed-<id>`).
+ * Home's ED strip (direction A, owner 10 Oct 2026). One compact tile per emergency department,
+ * longest wait first: code, service, how many wait, the longest wait with its glyph, and the
+ * recorded legal deadlines. The heading is for screen readers only; the hero already says what the
+ * strip is. Pressing a department filters the priority queue to it, the same toggle the old strip
+ * carried (`aria-pressed`, `ward-ed-<id>`).
  *
  * The Network screen keeps its own `PressureStrip`; this card is Home's own layout.
  */
 export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, service }: HomeEdPressureProps) {
   // A longest wait past the configured ED access target is red; past the severe line it is amber.
   const { configuration } = useWardFlow();
-  const [order, setOrder] = useState<Order>("longest");
   const urgentWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
   const soonWindow = dueWindowLabel(configuration.dueSoonMinutes);
   const pressure = useMemo(() => edPressure(now, movements), [now, movements]);
@@ -63,21 +55,11 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
       })
     : pressure;
   const hiddenByService = pressure.length - scoped.length;
-  const rows = [...scoped].sort((a, b) =>
-    order === "longest"
-      ? b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting
-      : b.waiting - a.waiting || b.longestWaitMinutes - a.longestWaitMinutes,
-  );
-  const longestOfAll = Math.max(1, ...scoped.map((row) => row.longestWaitMinutes));
+  const rows = [...scoped].sort((a, b) => b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting);
 
   return (
     <Card className={styles.edCard} aria-label="Emergency department pressure">
-      <CardHead
-        icon={Activity}
-        title="ED pressure"
-        meta={`${scoped.length} departments`}
-        action={<Segmented label="Order departments by" items={ORDER_ITEMS} value={order} onChange={setOrder} />}
-      />
+      <h2 className="sr-only">ED pressure</h2>
       <ul className={styles.edGrid}>
         {rows.map((row) => {
           const selected = row.ed.id === selectedEdId;
@@ -150,9 +132,6 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
                 <span className={styles.edWaiting} aria-hidden="true">
                   <span className={styles.edWaitingValue}>{row.waiting}</span> waiting
                 </span>
-                <span className={styles.edTrack} aria-hidden="true">
-                  <span style={{ width: `${(row.longestWaitMinutes / longestOfAll) * 100}%` }} />
-                </span>
                 <span className={styles.edLine} aria-hidden="true">
                   {row.waiting > 0 ? (
                     <>
@@ -160,6 +139,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
                       {/* The longest wait, as a figure alone: the word "longest" was cut off on narrow
                           tiles. The button's spoken name still says "longest". */}
                       <span className={styles.edMono}>{durMinutes(row.longestWaitMinutes)}</span>
+                      <span className={styles.edWord}>longest</span>
                     </>
                   ) : (
                     <span className={styles.edWord}>No wait</span>

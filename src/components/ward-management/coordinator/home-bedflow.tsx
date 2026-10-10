@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   CardHead,
+  FilterChip,
   Icon,
   Legend,
   StackBar,
@@ -32,8 +33,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, HealthService, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { edHealthService } from "@/components/ward-management/ward-service-scope";
-import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
   deriveServiceBedAlerts,
   formatOccupancyPercent,
@@ -89,9 +89,10 @@ function unitKind(unit: Unit) {
 }
 
 /**
- * Home's State bedflow card (v6 Home mockup): every inpatient ward, grouped by health service,
- * with its ready, pulled, closed and occupied beds. When a movement is selected the card names it,
- * says how many wards fit and which fits best, and puts Offer on each ward that fits. Wards that
+ * Home's State bedflow card (direction A, owner 10 Oct 2026): every inpatient ward, grouped by
+ * health service, with its ready, pulled, closed and occupied beds. With a patient in Placement the
+ * card names them on one line with how many wards fit, marks the best fit on its row, and puts
+ * Offer on each ward that fits. "Fits first" lifts those wards to the top of each group. Wards that
  * do not fit are dimmed, never hidden: the whole network stays on screen.
  *
  * Every ward row keeps the old diagram's hooks (`ward-diagram-unit-<id>`, `aria-pressed`,
@@ -121,6 +122,7 @@ export function HomeBedflow({
   const byUnitId = useMemo(() => new Map(shortlist.map((candidate) => [candidate.unit.id, candidate])), [shortlist]);
   const fits = shortlist.filter((candidate) => candidate.verdict.eligible);
   const bestFit: Candidate | undefined = fits[0];
+  const [fitsFirst, setFitsFirst] = useState(false);
 
   // Every ward in the network that fits this patient, not only the three the routed shortlist
   // keeps: green where a bed is ready, amber where the ward fits but has no bed now.
@@ -186,17 +188,12 @@ export function HomeBedflow({
   }, 0);
 
   const who = movement ? patientOf(movement) : undefined;
-  const originEd = movement ? allEmergencyDepartments().find((ed) => ed.id === movement.originEdId) : undefined;
-  const recorded = movement && (movement.acceptedUnitId || movement.referredUnitIds.length > 0);
-
-  function bestFitReason(candidate: Candidate) {
-    const parts: string[] = [];
-    const unitService = siteByCode(candidate.unit.siteCode)?.service;
-    if (movement && unitService && unitService === edHealthService(movement.originEdId)) parts.push("same service");
-    const ready = bedStates(candidate.unit, admissions, bedReleases, leaveBeds).ready;
-    parts.push(`${ready} ready now`);
-    return parts.join(", ");
-  }
+  const fitRank = (unit: Unit) => {
+    const fit = fitByUnitId.get(unit.id);
+    return fit === "bed" ? 0 : fit === "no-bed" ? 1 : 2;
+  };
+  const orderUnits = (groupUnits: Unit[]) =>
+    movement && fitsFirst ? [...groupUnits].sort((a, b) => fitRank(a) - fitRank(b)) : groupUnits;
 
   function renderUnit(unit: Unit) {
     const states = bedStates(unit, admissions, bedReleases, leaveBeds);
@@ -274,7 +271,7 @@ export function HomeBedflow({
             </span>
             {pendingPreparation > 0 ? (
               <span className={styles.unitPending} data-testid={`ward-flow-pending-${unit.id}`}>
-                {pendingPreparation} of the ready beds {pendingPreparation === 1 ? "is" : "are"} still being made ready
+                {pendingPreparation} being made ready
               </span>
             ) : null}
           </span>
@@ -321,50 +318,29 @@ export function HomeBedflow({
         className={styles.flowHead}
         title="State bedflow"
         meta={`${units.length} wards`}
-        aside={<Legend items={LEGEND} className={styles.flowLegend} />}
+        aside={
+          movement ? (
+            <FilterChip pressed={fitsFirst} onPressedChange={setFitsFirst} className={styles.noShrink}>
+              Fits first
+            </FilterChip>
+          ) : undefined
+        }
       />
       {movement && who ? (
         <div className={styles.forStrip} data-testid="ward-bedflow-subject">
           <div className={styles.forLine}>
             <span className={styles.forLabel}>For</span>
             <strong className={styles.forName}>{who.formalName}</strong>
-            <span className={styles.forMeta}>
-              {movement.cohort} {movement.security.toLowerCase()} · Tier {movement.urgency}
-              {originEd ? ` · ${originEd.siteCode}` : ""}
-            </span>
             <span className={styles.forFits}>
               <StatusGlyph tone={bedFitCount > 0 ? "success" : noBedCount > 0 ? "warning" : "danger"} size={9} />
               {bedFitCount === 1 ? "1 ward fits" : `${bedFitCount} wards fit`}
               {noBedCount > 0 ? <span className={styles.forNoBed}>{` · ${noBedCount} no bed`}</span> : null}
             </span>
           </div>
-          {options.length > 0 ? (
-            <ul className={styles.forOptions} aria-label="Wards that fit" data-testid="ward-bedflow-options">
-              {options.map((option) => (
-                <li key={option.unit.id}>
-                  <button
-                    type="button"
-                    className={styles.forOption}
-                    data-fit={option.fit}
-                    aria-pressed={selectedUnitId === option.unit.id}
-                    onClick={() => onSelectUnit(option.unit.id)}
-                  >
-                    {option.unit.name}
-                    {option.fit === "no-bed" ? <span className="sr-only">, fits but no bed now</span> : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {recorded || !bestFit ? (
+          {/* Only once a destination or a referral is recorded: where this patient stands. */}
+          {movement.acceptedUnitId || movement.referredUnitIds.length > 0 ? (
             <p className={styles.forStatus}>{hubStatusText(movement, shortlist, units, now, who.displayName)}</p>
-          ) : (
-            <p className={styles.forBest}>
-              <span className={styles.eyebrow}>Best fit</span>
-              <strong>{bestFit.unit.name}</strong>
-              <span className={styles.forMeta}>{bestFitReason(bestFit)}</span>
-            </p>
-          )}
+          ) : null}
         </div>
       ) : null}
       <div className={styles.flowBody}>
@@ -409,7 +385,7 @@ export function HomeBedflow({
                 </span>
               </button>
               <ul id={bodyId} className={styles.unitList} hidden={!open}>
-                {group.units.map(renderUnit)}
+                {orderUnits(group.units).map(renderUnit)}
               </ul>
             </section>
           );
@@ -438,14 +414,13 @@ export function HomeBedflow({
         </p>
       ) : null}
       <div className={styles.cardFoot}>
+        <Legend items={LEGEND} className={styles.flowLegend} />
         <span className={styles.footMeta}>
-          <span className={styles.eyebrow}>Today</span>
-          <span className={styles.mono}>+{today}</span> expected
+          <span className={styles.mono}>+{today}</span> today
           {dischargesHeldUp > 0 ? (
             <>
               <StatusGlyph tone="warning" size={9} />
-              <span className={styles.mono}>{dischargesHeldUp}</span>{" "}
-              {dischargesHeldUp === 1 ? "discharge held up" : "discharges held up"}
+              <span className={styles.mono}>{dischargesHeldUp}</span> held up
             </>
           ) : null}
         </span>
