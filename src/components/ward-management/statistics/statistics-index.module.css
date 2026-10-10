@@ -1,0 +1,407 @@
+/*
+ * The four statistics index pages (Statistics A, 9 Oct 2026): every service, ward, ED and team on
+ * one page. Tokens only. Status is carried by StatusGlyph shape and colour, never by a stripe.
+ */
+
+/* Service colours, one class per health service. The dot reads `--svc`. */
+.svcNorth {
+  --svc: var(--wf-svc-north);
+}
+
+.svcSouth {
+  --svc: var(--wf-svc-south);
+}
+
+.svcEast {
+  --svc: var(--wf-svc-east);
+}
+
+.svcWachs {
+  --svc: var(--wf-svc-wachs);
+}
+
+.svcCahs {
+  --svc: var(--wf-svc-cahs);
+}
+
+.svcPrivate {
+  --svc: var(--wf-svc-private);
+}
+
+.svcDot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--wf-r-pill);
+  background: var(--svc, var(--wf-svc-statewide));
+}
+
+.anchorTarget {
+  scroll-margin-top: var(--wf-s-4);
+}
+
+/* ── Services: one card per health service ─────────────────────────────────────────────────── */
+
+.svcCard {
+  position: relative;
+}
+
+.svcCard:hover {
+  background: var(--wf-hover);
+}
+
+.svcCard:focus-within {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.svcTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  color: inherit;
+  text-decoration: none;
+}
+
+.svcTitle:focus-visible {
+  outline: none;
+}
+
+/* The whole card is the service's link: the title's own link stretches over it. */
+.svcTitle::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.svcBody {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.svcTop {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.svcText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.svcBeds {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+.svcLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+
+.figures > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.figures dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--wf-fs-11);
+  line-height: var(--wf-lh-11);
+  color: var(--wf-ink-3);
+}
+
+.figures dd {
+  margin: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+.sites {
+  margin: auto 0 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+/* ── Tables ────────────────────────────────────────────────────────────────────────────────── */
+
+/* The table scrolls inside its card, so its header stays in view (sticky) as it scrolls. */
+.tableScroll {
+  max-height: min(72vh, 46rem);
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.tableScroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--wf-surface);
+  box-shadow: inset 0 -1px 0 var(--wf-line);
+}
+
+.tableScroll:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.rowName {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.rowLink {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.rowLink:hover {
+  text-decoration: underline;
+}
+
+.rowSub {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+/* A row the pressed filter chips match: highlighted, never hidden. */
+.match > * {
+  background: var(--wf-selected);
+}
+
+.groupRow th {
+  padding-top: var(--wf-s-3);
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+  background: var(--wf-surface-2);
+}
+
+.groupLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.matchCount {
+  margin-left: auto;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.cardNote {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+/* ── Referral matrix (services) ────────────────────────────────────────────────────────────── */
+
+.matrix td,
+.matrix th {
+  padding-inline: 6px;
+  text-align: center;
+}
+
+.matrix tbody th {
+  text-align: left;
+}
+
+.matrixHead {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.bubble {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.own {
+  background: var(--wf-selected);
+}
+
+/* ── EDs ───────────────────────────────────────────────────────────────────────────────────── */
+
+.swarmBody {
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}
+
+/* ── Teams ─────────────────────────────────────────────────────────────────────────────────── */
+
+.teamColumns {
+  columns: 5 13rem;
+  column-gap: var(--wf-s-4);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}
+
+/* A long group flows on into the next column; a head never sits alone at a column's foot. */
+.teamGroup {
+  margin: 0 0 var(--wf-s-3);
+}
+
+.teamList > li {
+  break-inside: avoid;
+}
+
+.teamGroupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0 0 var(--wf-s-2);
+  break-after: avoid;
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+
+.teamList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.teamChip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: 32px;
+  padding: 4px 6px 4px 12px;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  text-decoration: none;
+}
+
+.teamChip:hover {
+  background: var(--wf-hover);
+}
+
+.teamChip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.teamName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teamCount {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.teamCountZero {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+/* ── Phone ─────────────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 48rem) {
+  /* The card's hint gives the title its room on a phone. */
+  .phoneHide {
+    display: none;
+  }
+
+  .chips {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .tableScroll {
+    max-height: none;
+  }
+
+  .tableScroll thead th {
+    position: static;
+  }
+
+  .teamColumns {
+    columns: 1;
+  }
+
+  .teamChip {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

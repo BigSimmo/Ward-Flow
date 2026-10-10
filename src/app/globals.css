@@ -343,6 +343,9 @@
   --content-max-width: 1440px;
   --rail-width: 480px;
   --content-width-catalogue: 76rem;
+  /* Height of Ward Flow's Data mode bar above the shell. ward-shared-access.tsx overwrites it on
+     the html element with the measured height; 0px wherever that bar is absent. */
+  --wf-data-bar-height: 0px;
 
   /* The Figures feature keeps its navy surface in either theme. */
   --surface-feature-start: #203b55;

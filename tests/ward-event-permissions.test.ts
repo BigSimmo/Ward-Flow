@@ -23,8 +23,11 @@ import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
  * is right, change both and say which ruling permitted it.
  */
 describe("who may raise which event", () => {
+  // Josh, 10 Oct 2026: "The coordinator role can do everything", confirmed as widening the engine.
+  // `coordinator` was added to every entry except the demonstration controls. Older notes below
+  // that say the coordinator may not take an action are superseded by that ruling.
   const PERMISSIONS: Record<string, string[]> = {
-    ACCEPT_IN_PRINCIPLE: ["ward"],
+    ACCEPT_IN_PRINCIPLE: ["ward", "coordinator"],
     // `ed` added 2026-08-30 under FD-3 AS SUPERSEDED BY THE OWNER: "every referral is
     // declinable, and NO CODE PATH MAY RENDER A REFERRAL WITH NO DECLINE AFFORDANCE". The ED
     // hub acts as `ed`, so without it an emergency department could not answer a referral
@@ -57,7 +60,7 @@ describe("who may raise which event", () => {
     // ward — see EVENT_ROLE's own comment on this entry.
     ADD_REFERRAL_CORRECTION: ["community", "ed", "coordinator"],
     ADVANCE_CLOCK: ["demo"],
-    BLOCK_BED_RELEASE: ["ward"],
+    BLOCK_BED_RELEASE: ["ward", "coordinator"],
     // CHANGED 2026-08-30 under TR-D6 (owner), and this row is a NARROWING plus a widening, not
     // a tidy-up. Was ["coordinator", "ward"]. The ruling: the team that BOOKED it and the
     // coordinator may cancel; the RECEIVING ward may not, because a booking cancelled by the
@@ -102,7 +105,7 @@ describe("who may raise which event", () => {
     // 2026-09-17, answer 9) — `ed` has no equivalent identity in this model, so `CANCEL_TRANSPORT`
     // still cannot check IT against who booked, and does not try to — see that row's own comment
     // below.
-    BOOK_TRANSPORT: ["ed", "ward", "community"],
+    BOOK_TRANSPORT: ["ed", "ward", "community", "coordinator"],
     // CHANGED AGAIN 2026-09-15 under WLQ-11 (owner): "whoever booked transport may cancel it; the
     // receiving ward still may not." `ward` returns to this list — see the long comment at
     // `tests/ward-transport-cancel-permission.test.ts` for why its 2026-08-30 removal was the right
@@ -127,14 +130,14 @@ describe("who may raise which event", () => {
     CANCEL_TRANSPORT: ["coordinator", "ed", "ward", "community"],
     CHANGE_LEGAL_STATUS: ["coordinator", "ed"],
     CHANGE_URGENCY: ["coordinator", "ed"],
-    CLEAR_BED_RELEASE_BLOCK: ["ward"],
-    CONFIRM_BED_RELEASE: ["ward"],
-    CONFIRM_CAPACITY: ["ward"],
+    CLEAR_BED_RELEASE_BLOCK: ["ward", "coordinator"],
+    CONFIRM_BED_RELEASE: ["ward", "coordinator"],
+    CONFIRM_CAPACITY: ["ward", "coordinator"],
     // T4 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`), `ed` alone, on
     // `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning: the department physically holding the form is
     // who can say a receipt was recorded in error.
-    CORRECT_LEGAL_FORM_RECEIPT: ["ed"],
-    DECLINE: ["ward"],
+    CORRECT_LEGAL_FORM_RECEIPT: ["ed", "coordinator"],
+    DECLINE: ["ward", "coordinator"],
     // `ed` added 2026-08-30 under FD-3 AS SUPERSEDED BY THE OWNER: "every referral is
     // declinable, and NO CODE PATH MAY RENDER A REFERRAL WITH NO DECLINE AFFORDANCE". The ED
     // hub acts as `ed`, so without it an emergency department could not answer a referral
@@ -156,27 +159,27 @@ describe("who may raise which event", () => {
     // Both shipped together; scoped in the reducer and pinned in
     // `tests/ward-referral-decision-scope.test.ts`.
     DECLINE_REFERRAL: ["ward", "coordinator", "ed", "community"],
-    END_LEAVE_BED: ["ward"],
-    FLAG_BED_RELEASE: ["ward"],
-    HANDOVER_READY: ["ed"],
+    END_LEAVE_BED: ["ward", "coordinator"],
+    FLAG_BED_RELEASE: ["ward", "coordinator"],
+    HANDOVER_READY: ["ed", "coordinator"],
     /* Widened from ["ward"] on 2026-09-01 by owner ruling: a pull is a person's act, from the ward
      * menu OR the coordinator. Named here deliberately rather than widened by accident, per this
      * file's own instruction. */
     PULL_PATIENT: ["ward", "coordinator"],
     /* Widened to ["officer", "ward"] by Ruling 6 / Invariant I-05: ward staff can confirm physical arrival. */
-    PATIENT_ARRIVED: ["officer", "ward"],
-    PATIENT_COLLECTED: ["officer"],
-    RAISE_REFERRAL: ["ed", "community", "ward"],
+    PATIENT_ARRIVED: ["officer", "ward", "coordinator"],
+    PATIENT_COLLECTED: ["officer", "coordinator"],
+    RAISE_REFERRAL: ["ed", "community", "ward", "coordinator"],
     /* Widened to ["community", "ed"] by R9 (owner item 23, 2026-09-17): only `ed_medical` is
      * raised as `ed`, and the reducer's own `RECEIVE_REFERRAL` case refuses role `ed` paired with
      * any other source — a pairing this table cannot itself express. */
-    RECEIVE_REFERRAL: ["community", "ed"],
+    RECEIVE_REFERRAL: ["community", "ed", "coordinator"],
     RECORD_ESCALATION: ["coordinator"],
-    RECORD_EXAMINATION: ["ed"],
+    RECORD_EXAMINATION: ["ed", "coordinator"],
     /* Ruling 1: ED marks Form 1A as received. CORRECTED 2026-09-17, T2r fix round, finding 10:
      * "starting the 24h statutory clock" is now false — that computed clock was deleted by T2 on
      * owner answer 1, and this event still records only the receipt instant. */
-    RECORD_LEGAL_FORM_RECEIVED: ["ed"],
+    RECORD_LEGAL_FORM_RECEIVED: ["ed", "coordinator"],
     // T2 (2026-09-17 build plan), owner answer 1 and item 5 (regional extensions). `ed` on
     // `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning: the department holding the form reads the
     // expiry off it. `coordinator` joins it here for extensions specifically — item 5 names "the
@@ -187,7 +190,7 @@ describe("who may raise which event", () => {
     // movement drawer), on the same reasoning `RECORD_LEGAL_FORM_EXPIRY` above already carries for
     // `coordinator` joining `ed`.
     RECORD_MOVEMENT_GENDER: ["ed", "coordinator"],
-    RECORD_MEDICAL_CLEARANCE: ["ed"],
+    RECORD_MEDICAL_CLEARANCE: ["ed", "coordinator"],
     /* ADDED 2026-09-04, owner rulings R-2026-09-04-C and -D.
      *
      * `RECORD_TRANSPORT_NEED` mirrors `BOOK_TRANSPORT`'s three senders INCLUDING its exclusion:
@@ -199,25 +202,25 @@ describe("who may raise which event", () => {
      * physically holding the patient is the only party that can say nobody referred them. A
      * coordinator would be inferring it from its own empty search, which is the inference the
      * ruling exists to replace. */
-    RECORD_TRANSPORT_NEED: ["ed", "ward", "community"],
+    RECORD_TRANSPORT_NEED: ["ed", "ward", "community", "coordinator"],
     // Owner Answer 18 (second round, 2026-09-17): the ward's own answer to what is currently
     // limiting its intake, same role as CONFIRM_CAPACITY above.
-    RECORD_WARD_INTAKE_CONSTRAINTS: ["ward"],
-    RECORD_NO_REFERRAL: ["ed"],
-    RECORD_LEAVE_BED: ["ward"],
+    RECORD_WARD_INTAKE_CONSTRAINTS: ["ward", "coordinator"],
+    RECORD_NO_REFERRAL: ["ed", "coordinator"],
+    RECORD_LEAVE_BED: ["ward", "coordinator"],
     // D-38 (9 Oct 2026): the ward records an absence and its steps; the community team a CTO.
-    RECORD_ABSENT_WITHOUT_LEAVE: ["ward"],
-    RECORD_ABSENCE_STEP: ["ward"],
-    RECORD_COMMUNITY_TREATMENT_ORDER: ["community"],
-    END_COMMUNITY_TREATMENT_ORDER: ["community"],
+    RECORD_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
+    RECORD_ABSENCE_STEP: ["ward", "coordinator"],
+    RECORD_COMMUNITY_TREATMENT_ORDER: ["community", "coordinator"],
+    END_COMMUNITY_TREATMENT_ORDER: ["community", "coordinator"],
     RECORD_LOCAL_BED_SOUGHT: ["coordinator"],
     /* Ruling 16: Direct ED-to-CMHT referral pathway. */
-    REFER_TO_COMMUNITY_TEAM: ["ed"],
+    REFER_TO_COMMUNITY_TEAM: ["ed", "coordinator"],
     REFER_TO_UNITS: ["coordinator"],
     /* A ward records that one of its own patients has left. Ward-only because it is a statement
      * about that ward's own beds - see `RECORD_LEAVING` in the reducer, which refuses any acting
      * unit other than the one holding the admission. */
-    RECORD_LEAVING: ["ward"],
+    RECORD_LEAVING: ["ward", "coordinator"],
     /* ADDED 2026-09-01. Two new events, one fact: a ward records that one of its own occupants has
      * gone out to an emergency department, and that they are back. Ward-only for the reason
      * `RECORD_LEAVING` directly above is — it is a statement about that ward's own bed, and the
@@ -288,9 +291,9 @@ describe("who may raise which event", () => {
      * `BLOCKERS_MEANING_NOTHING_IS_BLOCKING` and NOTHING else — no role, team or person — so none of
      * the five can introduce a false attribution. Asserted in `tests/ward-movement-blocker.test.ts`. */
     CLEAR_MOVEMENT_BLOCKER: ["ed", "community", "ward", "coordinator", "officer"],
-    RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: ["ward"],
-    RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: ["ward"],
-    RELEASE_BED: ["ward"],
+    RECORD_AWAY_AT_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
+    RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT: ["ward", "coordinator"],
+    RELEASE_BED: ["ward", "coordinator"],
     // Owner answer 8 (second round, 2026-09-17): the coordinator, the ward, or the referrer.
     RELEASE_HELD_BED: ["coordinator", "ward", "ed"],
     // Build plan item 29 (T4a) / OA-29: the coordinator, the accepting ward, or the original referrer.
@@ -298,11 +301,11 @@ describe("who may raise which event", () => {
     RELEASE_PULL: ["coordinator", "ward"],
     REQUEST_CAPACITY_REFRESH: ["coordinator"],
     RESET_SCENARIO: ["demo"],
-    REVERT_BED_RELEASE: ["ward"],
-    SET_BED_PREPARATION: ["ward"],
+    REVERT_BED_RELEASE: ["ward", "coordinator"],
+    SET_BED_PREPARATION: ["ward", "coordinator"],
     SET_SCENARIO: ["demo"],
-    TRANSPORT_ACCEPTED: ["officer"],
-    TRANSPORT_EN_ROUTE: ["officer"],
+    TRANSPORT_ACCEPTED: ["officer", "coordinator"],
+    TRANSPORT_EN_ROUTE: ["officer", "coordinator"],
     /* Every role that can RAISE a referral can take it back, plus the coordinator. Deliberately
      * wider than `RAISE_REFERRAL`: withdrawal is refused by the reducer unless the referral is
      * still live and unaccepted — OR (WLQ-38, owner, 2026-09-15) unless the caller is `ed` or
@@ -383,7 +386,7 @@ describe("who may raise which event", () => {
     // narrowly: the owner named the party ("the ED psychiatry doctors notice the patient has
     // arrived in ED"), and no other role can see who is standing in that department. The
     // coordinator is not in the building.
-    RECORD_ARRIVED_IN_DEPARTMENT: ["ed"],
+    RECORD_ARRIVED_IN_DEPARTMENT: ["ed", "coordinator"],
     /**
      * FD-5 (O-17.11, 2026-09-12). The referrer rings to take a referral back and somebody writes it
      * down. `coordinator` alone, and this is a PLAN JUDGEMENT flagged rather than a ruling: who
@@ -405,7 +408,7 @@ describe("who may raise which event", () => {
     // Keep this independent of EVENT_ROLE so widening any domain role still fails here.
     RECORD_ADMISSION_CARE: ["ward", "coordinator", "community"],
     RECORD_ADMISSION_FOLLOW_UP: ["ward", "coordinator"],
-    RECORD_PATIENT_DISCHARGE: ["ward"],
+    RECORD_PATIENT_DISCHARGE: ["ward", "coordinator"],
     OPEN_DISCHARGE_RECORD: ["coordinator", "ward", "community"],
     REVIEW_AUDIT_EVENT: ["coordinator"],
     // Settings wiring (2026-09-16, the owner's "wire some up for real"): the ED access target, the
@@ -413,14 +416,14 @@ describe("who may raise which event", () => {
     // every other role (`tests/ward-configuration-reducer.test.ts`).
     SET_CONFIGURATION: ["coordinator"],
     // Item 19 (owner, 2026-09-17): ED staff records that a patient has physically left the department.
-    RECORD_LEFT_DEPARTMENT: ["ed"],
+    RECORD_LEFT_DEPARTMENT: ["ed", "coordinator"],
     // RB3, item 19: the department holding the patient records the outcome — same reasoning as
     // RECORD_LEFT_DEPARTMENT above.
-    RECORD_ED_OUTCOME: ["ed"],
+    RECORD_ED_OUTCOME: ["ed", "coordinator"],
     SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
     SET_STEP_DOWN_CANDIDATE: ["ward", "coordinator"],
     SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
-    RECORD_ED_MEDICAL_DETERIORATION: ["ed"],
+    RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
     RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator", "ward", "community"],
     UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
     RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward", "community"],

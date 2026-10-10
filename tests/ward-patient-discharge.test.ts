@@ -27,7 +27,7 @@ function fixture() {
 describe("patient-linked discharge transition", () => {
   it.each([
     { patch: { now: NaN }, reason: "invalid-payload" },
-    { patch: { role: "coordinator" }, reason: "role" },
+    { patch: { role: "officer" }, reason: "role" },
   ])("never attaches a reset subject when an earlier refusal wins: $reason", ({ patch, reason }) => {
     const { state, event } = fixture();
     const reset = wardFlowReducer(state, { type: "RESET_SCENARIO", role: "demo", now: NOW_ANCHOR });

@@ -2073,15 +2073,23 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     setToastMessage(`Discharge blocker recorded: ${blocker}`);
                   }}
                   onMarkAtEd={(bedNum) => {
-                    if (selectedBedItem?.admissionId) {
-                      dispatch({
-                        type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
-                        role: "ward",
-                        now,
-                        admissionId: selectedBedItem.admissionId,
-                        actingUnitId: unitId,
-                      });
+                    if (!selectedBedItem?.admissionId) return;
+                    // The engine refuses ED while the stay is on leave or absent, so say so here
+                    // rather than report a change that did not happen.
+                    const heldBed = leaveBeds.find((bed) => bed.admissionId === selectedBedItem.admissionId);
+                    if (heldBed) {
+                      setToastMessage(
+                        `Not recorded: bed ${bedNum} patient is ${heldBed.absentWithoutLeave ? "absent without leave" : "on leave"}. Record their return first.`,
+                      );
+                      return;
                     }
+                    dispatch({
+                      type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
+                      role: "ward",
+                      now,
+                      admissionId: selectedBedItem.admissionId,
+                      actingUnitId: unitId,
+                    });
                     setToastMessage(`Bed ${bedNum} patient marked away at ED.`);
                   }}
                   onMarkBack={(bedNum) => {

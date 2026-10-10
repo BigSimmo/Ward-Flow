@@ -1,0 +1,240 @@
+/* The WA map on the Summary page's Map view. Tokens only. */
+.map {
+  position: relative;
+  min-width: 0;
+  background: radial-gradient(60% 70% at 66% 44%, var(--wf-accent-tint), transparent 70%), var(--wf-surface-2);
+  border-radius: var(--wf-r-lg);
+  overflow: hidden;
+}
+
+.wide {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.phone {
+  display: none;
+}
+
+.land {
+  fill: var(--wf-surface);
+  stroke: var(--wf-line-3);
+  stroke-width: 1.2;
+}
+
+.region {
+  font: 600 14px var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  fill: var(--wf-ink-3);
+}
+
+.regionSm {
+  font: 500 14px var(--wf-font);
+  fill: var(--wf-ink-3);
+}
+
+.perth {
+  fill: var(--wf-accent-tint);
+  stroke: var(--wf-accent);
+  stroke-width: 1.5;
+}
+
+.lead {
+  fill: none;
+  stroke: var(--wf-ink-3);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 4;
+}
+
+.inset {
+  fill: var(--wf-surface);
+  stroke: var(--wf-line-2);
+  stroke-width: 1;
+}
+
+.sea {
+  fill: color-mix(in srgb, var(--wf-info) 9%, var(--wf-surface-2));
+}
+
+.river,
+.riverSm {
+  fill: none;
+  stroke: color-mix(in srgb, var(--wf-info) 35%, var(--wf-surface));
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.riverSm {
+  stroke-width: 5;
+}
+
+.ghost circle {
+  fill: var(--wf-line-3);
+}
+
+.node {
+  cursor: pointer;
+  outline: none;
+}
+
+.hit {
+  fill: transparent;
+}
+
+.track {
+  fill: none;
+  stroke: var(--wf-track);
+  stroke-width: 5;
+}
+
+.arc {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.core {
+  stroke: var(--wf-line-3);
+  stroke-width: 1;
+  transition: stroke var(--wf-m-fast) var(--wf-ease);
+}
+
+.node:hover .core {
+  stroke: var(--wf-ink-3);
+}
+
+.node:focus-visible .core {
+  stroke: var(--wf-accent);
+  stroke-width: 3;
+}
+
+.halo {
+  fill: color-mix(in srgb, var(--wf-accent) 14%, transparent);
+  stroke: var(--wf-accent);
+  stroke-width: 2;
+}
+
+.hl .halo {
+  fill: color-mix(in srgb, var(--wf-accent) 8%, transparent);
+  stroke-dasharray: 4 3;
+}
+
+.on .halo {
+  fill: color-mix(in srgb, var(--wf-accent) 14%, transparent);
+  stroke-dasharray: none;
+}
+
+.fig,
+.figSm {
+  font: 700 18px var(--wf-mono);
+  fill: var(--wf-ink-1);
+  pointer-events: none;
+}
+
+.figSm {
+  font-size: 13px;
+}
+
+.label,
+.sub,
+.code {
+  paint-order: stroke;
+  stroke: var(--wf-surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.label {
+  font: 600 16px var(--wf-font);
+  fill: var(--wf-ink-1);
+}
+
+.sub {
+  font: 500 14px var(--wf-mono);
+  fill: var(--wf-ink-2);
+}
+
+.code {
+  font: 600 11px var(--wf-mono);
+  fill: var(--wf-ink-2);
+}
+
+.statusBack {
+  fill: var(--wf-surface);
+}
+
+.warning {
+  fill: var(--wf-warning);
+}
+
+.danger {
+  fill: var(--wf-danger);
+}
+
+.country {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-3);
+  background: var(--wf-surface);
+  border-top: 1px solid var(--wf-line);
+}
+
+.countryLabel {
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+  flex-basis: 100%;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.chipOn {
+  border-color: var(--wf-accent);
+  background: var(--wf-selected);
+}
+
+.chipDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--wf-r-pill);
+}
+
+.chipValue {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  color: var(--wf-ink-2);
+}
+
+/* Phone: the metro area alone, at a readable size, with the country sites as chips under it. */
+@media (max-width: 48rem) {
+  .wide {
+    display: none;
+  }
+
+  .phone {
+    display: block;
+  }
+
+  .phone svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}

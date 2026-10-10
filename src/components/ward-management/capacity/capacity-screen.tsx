@@ -541,7 +541,7 @@ export function CapacityScreen() {
               </div>
             </WardPanel>
 
-            <aside className={styles.secondary} aria-label="Network summary and ward detail">
+            <aside className={styles.secondary} aria-label="Network summary and ward detail" data-wf-rail>
               {selectedRow ? (
                 <CapacityWardSidebar
                   key={`${worldGeneration}:coordinator:${selectedRow.unit.id}`}

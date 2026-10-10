@@ -23,8 +23,10 @@
   composes: wardShellTokens from "../../ward-flow-shell-tokens.module.css";
   display: flex;
   align-items: stretch;
-  height: 100dvh;
-  max-height: 100dvh;
+  /* The window less the Data mode bar above the shell (--wf-data-bar-height, published by
+     ward-shared-access.tsx), so the window itself never scrolls past the page (10 Oct 2026). */
+  height: calc(100dvh - var(--wf-data-bar-height, 0px));
+  max-height: calc(100dvh - var(--wf-data-bar-height, 0px));
   overflow: hidden;
   background: var(--ground);
 }
