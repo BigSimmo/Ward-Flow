@@ -167,7 +167,8 @@ function ToastCard({
   onDismiss: (id: string) => void;
   onUndone: (id: string, onUndo: () => void) => void;
 }) {
-  const duration = toast.duration ?? (toast.action || toast.undo ? 0 : DEFAULT_DURATION);
+  // An Undo toast runs on its own window alone: a shorter duration would close it and commit early.
+  const duration = toast.undo ? 0 : (toast.duration ?? (toast.action ? 0 : DEFAULT_DURATION));
 
   useEffect(() => {
     if (duration <= 0) return;

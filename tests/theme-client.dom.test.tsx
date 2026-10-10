@@ -116,15 +116,23 @@ describe("the Glare mode preference", () => {
     expect(readStoredGlarePreference()).toBe(false);
   });
 
-  it("leaves the theme choice alone, and the theme leaves Glare alone", () => {
+  it("paints light while on, keeps the stored theme, and brings it back when off", () => {
+    const root = document.documentElement;
     setThemePreference("dark");
     setGlarePreference(true);
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(root.getAttribute("data-theme")).toBe("light");
+    expect(root.classList.contains("dark")).toBe(false);
 
-    setThemePreference("light");
-    expect(document.documentElement.getAttribute("data-mode")).toBe("glare");
+    // A theme change while Glare is on is stored but still paints light.
+    setThemePreference("dark");
+    expect(root.getAttribute("data-theme")).toBe("light");
+    expect(root.getAttribute("data-mode")).toBe("glare");
     expect(window.localStorage.getItem(GLARE_STORAGE_KEY)).toBe("on");
+
+    setGlarePreference(false);
+    expect(root.getAttribute("data-theme")).toBe("dark");
+    expect(root.classList.contains("dark")).toBe(true);
   });
 
   it("notifies subscribers on a change", () => {

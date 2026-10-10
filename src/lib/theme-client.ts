@@ -71,11 +71,17 @@ export function readResolvedTheme(): ResolvedTheme {
   return resolveThemePreference(preference === "system" ? null : preference, prefersDark());
 }
 
-/** Apply a choice to <html> and the browser chrome. Idempotent, so any caller may re-run it. */
+/**
+ * Apply a choice to <html> and the browser chrome. Idempotent, so any caller may re-run it. Glare mode
+ * is a light canvas only, so while it is on the page paints light whatever the stored choice; the
+ * choice itself is kept and comes back when Glare goes off.
+ */
 export function applyThemeToDocument(preference: ThemePreference): ResolvedTheme {
   const root = document.documentElement;
-  const resolved = resolveThemePreference(preference === "system" ? null : preference, prefersDark());
-  if (preference === "system") root.removeAttribute("data-theme");
+  const glare = root.getAttribute("data-mode") === "glare";
+  const resolved = glare ? "light" : resolveThemePreference(preference === "system" ? null : preference, prefersDark());
+  if (glare) root.setAttribute("data-theme", "light");
+  else if (preference === "system") root.removeAttribute("data-theme");
   else root.setAttribute("data-theme", preference);
   root.classList.toggle("dark", resolved === "dark");
   for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
@@ -156,6 +162,8 @@ export function applyGlareToDocument(on: boolean) {
   const root = document.documentElement;
   if (on) root.setAttribute("data-mode", "glare");
   else if (root.getAttribute("data-mode") === "glare") root.removeAttribute("data-mode");
+  // Glare forces a light canvas, and turning it off brings the stored theme back.
+  applyThemeToDocument(readStoredThemePreference());
 }
 
 /** The only writer of the Glare preference. Persists, applies and tells every listener. */

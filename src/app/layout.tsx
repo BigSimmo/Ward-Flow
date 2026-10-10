@@ -99,12 +99,17 @@ export default async function RootLayout({
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
   const cookieStore = await cookies();
   const clinicalTheme = cookieStore.get(THEME_COOKIE_NAME)?.value;
-  const isDark = clinicalTheme === "dark";
-  const themeClass = isDark ? "dark" : "";
   // A pinned theme is painted on the server too, so the tokens that follow data-theme and the legacy
-  // .dark layers agree from the first byte. Glare mode is painted the same way.
-  const pinnedTheme = clinicalTheme === "light" || clinicalTheme === "dark" ? clinicalTheme : undefined;
+  // .dark layers agree from the first byte. Glare mode is painted the same way, and is a light
+  // canvas only, so it paints light whatever the stored theme.
   const glareMode = cookieStore.get(GLARE_COOKIE_NAME)?.value === GLARE_ON_VALUE ? "glare" : undefined;
+  const isDark = !glareMode && clinicalTheme === "dark";
+  const themeClass = isDark ? "dark" : "";
+  const pinnedTheme = glareMode
+    ? "light"
+    : clinicalTheme === "light" || clinicalTheme === "dark"
+      ? clinicalTheme
+      : undefined;
 
   return (
     <html

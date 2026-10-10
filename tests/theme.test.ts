@@ -208,8 +208,11 @@ describe("theme helpers", () => {
   });
 
   describe("the Glare mode pre-paint script", () => {
+    let attributes = new Map<string, string>();
+    let classes = new Set<string>();
     function bootGlare({ stored = null as string | null, cookie = "", throws = false } = {}) {
-      const attributes = new Map<string, string>();
+      attributes = new Map<string, string>([["data-theme", "dark"]]);
+      classes = new Set(["dark"]);
       new Function("localStorage", "document", GLARE_BOOTSTRAP_SCRIPT)(
         {
           getItem: (key: string) => {
@@ -223,7 +226,9 @@ describe("theme helpers", () => {
             setAttribute: (name: string, value: string) => attributes.set(name, value),
             removeAttribute: (name: string) => attributes.delete(name),
             getAttribute: (name: string) => attributes.get(name) ?? null,
+            classList: { remove: (name: string) => classes.delete(name) },
           },
+          querySelectorAll: () => [],
         },
       );
       return attributes.get("data-mode") ?? null;
@@ -235,6 +240,13 @@ describe("theme helpers", () => {
 
     it("leaves data-mode off when nothing is stored", () => {
       expect(bootGlare()).toBeNull();
+      expect(attributes.get("data-theme")).toBe("dark");
+    });
+
+    it("paints a light canvas while on, whatever the stored theme", () => {
+      bootGlare({ stored: GLARE_ON_VALUE });
+      expect(attributes.get("data-theme")).toBe("light");
+      expect(classes.has("dark")).toBe(false);
     });
 
     it("falls back to the cookie when storage is empty or blocked", () => {

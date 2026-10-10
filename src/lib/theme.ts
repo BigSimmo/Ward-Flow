@@ -75,7 +75,7 @@ export function readGlareCookie(cookieSource: string | null | undefined): boolea
  * Stored value first, then the cookie. Both catches swallow deliberately: a blocked read means Glare
  * mode is off, which is the default.
  */
-export const GLARE_BOOTSTRAP_SCRIPT = `(function(){var g=null;try{g=localStorage.getItem("${GLARE_STORAGE_KEY}");}catch(e){/* storage blocked - try the cookie */}if(g!=="${GLARE_ON_VALUE}"){try{if(/(?:^|; )${GLARE_COOKIE_NAME}=${GLARE_ON_VALUE}(?:;|$)/.test(document.cookie))g="${GLARE_ON_VALUE}";}catch(e){/* cookie blocked - Glare stays off */}}var r=document.documentElement;if(r.setAttribute){if(g==="${GLARE_ON_VALUE}")r.setAttribute("data-mode","glare");else if(r.getAttribute&&r.getAttribute("data-mode")==="glare")r.removeAttribute("data-mode");}})();`;
+export const GLARE_BOOTSTRAP_SCRIPT = `(function(){var g=null;try{g=localStorage.getItem("${GLARE_STORAGE_KEY}");}catch(e){/* storage blocked - try the cookie */}if(g!=="${GLARE_ON_VALUE}"){try{if(/(?:^|; )${GLARE_COOKIE_NAME}=${GLARE_ON_VALUE}(?:;|$)/.test(document.cookie))g="${GLARE_ON_VALUE}";}catch(e){/* cookie blocked - Glare stays off */}}var r=document.documentElement;if(r.setAttribute){if(g==="${GLARE_ON_VALUE}"){r.setAttribute("data-mode","glare");r.setAttribute("data-theme","light");r.classList.remove("dark");document.querySelectorAll('meta[name="theme-color"]').forEach(function(x){x.setAttribute("content","${APP_THEME_COLORS.light}");});}else if(r.getAttribute&&r.getAttribute("data-mode")==="glare")r.removeAttribute("data-mode");}})();`;
 
 export function resolveThemePreference(storedTheme: string | null | undefined, prefersDark: boolean): ResolvedTheme {
   if (storedTheme === "light" || storedTheme === "dark") return storedTheme;
