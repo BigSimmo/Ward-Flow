@@ -20,7 +20,7 @@
  * it belongs to nobody's clinical role, which is exactly why it needs its own gate rather than
  * being nodded through as "coordinator". `community` is Task 3 (Phase 7, "The front door"): one
  * role covering every `ReferralSource` the front door has no seat for on its own (community,
- * crisis_service, police, ambulance, inter_hospital, and — owner answer 25, 2026-09-17 — `gp`) —
+ * crisis_service, ambulance, inter_hospital, and — owner answer 25, 2026-09-17 — `gp`) —
  * the source itself is recorded on the `Referral`, so a separate role per source would be six
  * things to maintain before anything is known to actually need them apart. `ed_medical` is the one
  * source with its own seat: R9 (owner item 23, 2026-09-17) has intake record role `ed` for it, and

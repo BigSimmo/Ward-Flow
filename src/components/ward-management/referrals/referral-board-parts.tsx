@@ -47,7 +47,6 @@ export const NOT_WIRED = "Not wired in this prototype.";
 export const REFERRAL_SOURCE_WORDS: Record<Referral["source"], string> = {
   community: "Community team",
   crisis_service: "Crisis service",
-  police: "Police",
   ambulance: "Ambulance",
   inter_hospital: "Inter-hospital",
   ed_medical: "ED medical staff",

@@ -26,7 +26,7 @@ import {
   type ReferralSource,
 } from "../src/components/ward-management/ward-model";
 import { referralState } from "../src/components/ward-management/ward-referrals";
-import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
+import { NOW_ANCHOR, siteByCode } from "../src/components/ward-management/ward-sites";
 
 /** The team a `community_team` addressing on `referral` names, or `undefined` if none does. */
 function communityAddressingFor(referral: Referral, teamName: string) {
@@ -52,7 +52,6 @@ describe("K1 — seedWardFlowState() referral census (2026-09-17 pin)", () => {
     const bySource: Record<ReferralSource, number> = {
       community: 0,
       crisis_service: 0,
-      police: 0,
       ambulance: 0,
       inter_hospital: 0,
       ed_medical: 0,
@@ -67,19 +66,34 @@ describe("K1 — seedWardFlowState() referral census (2026-09-17 pin)", () => {
     // 2026, and nothing here had used it until now). ed_medical stays 0.
     // 2026-09-25: psychiatric_ward 0->1 (RF-RD06, this fixture's first psychiatric_ward-sourced
     // referral).
+    // 10 Oct 2026 (Josh: "Remove police"): police is no longer a referral source. RF-004, RF-006,
+    // RF-013 and RF-018 moved to crisis_service (3->7). Not ed_medical: Broome and Geraldton hold no
+    // ED, and RF-004 is declined, which would owe Peel ED a notice this seed does not raise.
     expect(bySource).toEqual<Record<ReferralSource, number>>({
       community: 12, // includes all nine Midland demonstration rows, whose `source` is "community"
-      crisis_service: 3,
-      police: 4,
+      crisis_service: 7,
       ambulance: 6,
       inter_hospital: 4, // includes RF-010 (the Inner City Clinic referral)
-      ed_medical: 0, // no seeded referral currently reports this source
+      ed_medical: 0,
       gp: 1, // RF-016, this fixture's first
       psychiatric_ward: 1, // RF-RD06, this fixture's first
     });
     // Anti-vacuity: every referral was bucketed exactly once, none dropped and none double-counted.
     expect(Object.values(bySource).reduce((sum, count) => sum + count, 0)).toBe(referrals.length);
-    expect(REFERRAL_SOURCES.length).toBe(8); // the source list this breakdown must stay exhaustive over
+    expect(REFERRAL_SOURCES.length).toBe(7); // the source list this breakdown must stay exhaustive over
+  });
+
+  it("every ed_medical referral is one the reducer could have produced", () => {
+    // The seed skips the reducer, so this holds it to the reducer's rules: RECEIVE_REFERRAL refuses
+    // ed_medical from a site with no ED, and DECLINE_REFERRAL tells that ED with a notice, which the
+    // seed never raises. Guards future seed rows; none are ed_medical today.
+    for (const referral of referrals.filter((candidate) => candidate.source === "ed_medical")) {
+      expect(siteByCode(referral.originSiteCode)?.emergencyDepartment, referral.id).toBeDefined();
+      expect(
+        referral.destinations.some((addressing) => addressing.state === "declined"),
+        referral.id,
+      ).toBe(false);
+    }
   });
 
   it("counts referrals by referralState (queued/accepted/declined, derived from destinations)", () => {

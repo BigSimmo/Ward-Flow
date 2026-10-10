@@ -19,7 +19,7 @@ import { REFERRAL_SOURCES, type Referral, type ReferralSource } from "../src/com
 
 /**
  * Display labels a REAL implementation might be tempted to fall back on — copied from
- * `referral-intake.tsx`'s own `SOURCE_LABELS` and `community-screen.tsx`'s own
+ * the retired intake form's own `SOURCE_LABELS` and `community-screen.tsx`'s own
  * `REFERRAL_SOURCE_LABELS` (both read-only lookups this test does not import, because importing an
  * unexported map is not possible and re-typing it here is exactly what proves the point: this is
  * the vocabulary a caller would reach for if it inferred a person from a source type, and the
@@ -67,11 +67,10 @@ describe("referralReferrerName (D-12 — the referrer is the recorded source, ne
     expect(referralReferrerName(referral)).toBe(REFERRER_NOT_RECORDED);
   });
 
-  it("REFERRAL_SOURCES is exactly the eight kinds this catcher must cover — a ninth is not silently skipped", () => {
+  it("REFERRAL_SOURCES is exactly the seven kinds this catcher must cover — an eighth is not silently skipped", () => {
     expect(REFERRAL_SOURCES).toEqual([
       "community",
       "crisis_service",
-      "police",
       "ambulance",
       "inter_hospital",
       "ed_medical",

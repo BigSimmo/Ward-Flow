@@ -87,7 +87,7 @@ export type Security = "Open" | "Secure";
  * 3+-value union here (`SEX_DESIGNATIONS`, `REFERRAL_SOURCES`, `REFERRAL_STATES`,
  * `REFERRAL_DECLINE_REASONS`, `MOVEMENT_STAGES`, `DECLINE_REASONS`, `BED_RELEASE_STATES`) already
  * carries one. `SEXES` and `URGENCY_LEVELS` below are what every Sex/urgency `<select>` in this
- * codebase (`referral-intake.tsx`, `ed-screen.tsx`, `shortlist-panel.tsx`) must now derive its
+ * codebase (`ward-referral-drawer.tsx`, `ed-screen.tsx`, `shortlist-panel.tsx`) must now derive its
  * option list from, never a hand-written array — and so must any picker added later. (M11:
  * `referral-match.tsx` was listed here too and has no Sex or urgency picker at all; its only
  * `<select>` is the decline reason, correctly derived from `REFERRAL_DECLINE_REASONS`.) This is
@@ -2017,13 +2017,12 @@ export const ABSENCE_STEP_LABELS: Record<AbsenceStep, string> = {
  * `docs/ward-flow/owner-answers-2026-09-17.md` item 25 and `shell/ward-facade.ts`'s own comment on
  * the answer it replaces. Recorded so a GP referral can be attributed honestly; the app itself
  * still contacts nobody on its behalf. `referralReferrer` (`ward-flow-reducer.ts`) resolves no
- * addressee for `gp`, exactly like `community`/`crisis_service`/`police`/`ambulance`/
+ * addressee for `gp`, exactly like `community`/`crisis_service`/`ambulance`/
  * `inter_hospital` — see that function's own doc comment, which this addition does not change.
  */
 export const REFERRAL_SOURCES = [
   "community",
   "crisis_service",
-  "police",
   "ambulance",
   "inter_hospital",
   "ed_medical",

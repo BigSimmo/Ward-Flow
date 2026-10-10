@@ -46,9 +46,9 @@ import styles from "./ward-chrome-header.module.css";
  * type dispatched from the chrome.
  *
  * 🔴 **A LINK IN ALL THREE ROLES, NEVER A DISPATCH.** `ward-flow-events.ts`'s `EVENT_ROLE` table
- * permits `RAISE_REFERRAL` for `ed`/`community`/`ward` and `RECEIVE_REFERRAL` for `community`
- * alone — a coordinator is in neither list, and `referral-intake.tsx` hard-codes `role:
- * "community"` on its own `RECEIVE_REFERRAL` dispatch. A header button that dispatched an event
+ * permits `RAISE_REFERRAL` for `ed`/`community`/`ward` and `RECEIVE_REFERRAL` for
+ * `community`/`ed` — a coordinator is in neither list, and the referral slide-out dispatches
+ * `RECEIVE_REFERRAL` as `ed` or `community`, never as a coordinator. A header button that dispatched an event
  * here would either attribute the act to a role that never performed it, or need `EVENT_ROLE`
  * widened — an owner decision, not this component's to make. So every role gets a destination,
  * never an event.
