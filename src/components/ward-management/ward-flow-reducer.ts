@@ -1543,7 +1543,7 @@ export function appendNotices(state: WardFlowState, notices: readonly Notice[]):
 
 /**
  * WHO REFERRED THIS FRONT-DOOR REQUEST INTO THE NETWORK, RESOLVED TO A ROLE AT A PLACE — or
- * `undefined`, which is the ordinary answer for five of `REFERRAL_SOURCES`' six members.
+ * `undefined`, which is the ordinary answer for six of `REFERRAL_SOURCES`' seven members.
  *
  * `Referral.source` names the CHANNEL a request came through (`ward-model.ts`, that field's own doc
  * comment) and carries no further identity; `Referral.originSiteCode` names the HOSPITAL it came
@@ -1552,8 +1552,8 @@ export function appendNotices(state: WardFlowState, notices: readonly Notice[]):
  * `ed_medical` referral whose origin site holds no emergency department, so every `ed_medical`
  * referral this function ever sees is guaranteed to resolve.
  *
- * ⚠️ **THE OTHER FIVE SOURCES ARE LEFT UNRESOLVED ON PURPOSE, NOT AN OVERSIGHT.**
- * `community`/`crisis_service`/`police`/`ambulance`/`inter_hospital` each name a channel this
+ * ⚠️ **THE OTHER SIX SOURCES ARE LEFT UNRESOLVED ON PURPOSE, NOT AN OVERSIGHT.**
+ * `community`/`crisis_service`/`ambulance`/`inter_hospital`/`gp`/`psychiatric_ward` each name a channel this
  * application has no seat for, or — `community` — a channel with no SPECIFIC team recorded on the
  * referral's own origin (only a DESTINATION arm carries a `teamName`, and that names where THIS
  * referral is going, never where it came from). Guessing a `placeId` here would either address a
@@ -6729,7 +6729,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         source: event.source,
         originUnitId: event.source === "psychiatric_ward" ? event.originUnitId : undefined,
         // Copied through, never defaulted: `undefined` means no sending team was recorded, which
-        // is a real answer for a police or ambulance referral and not a gap to be filled.
+        // is a real answer for a crisis service or ambulance referral and not a gap to be filled.
         sendingTeamName: event.sendingTeamName,
         raisedAt: event.now,
         // Absent for a community expect, which is a real state and not a missing value.
@@ -7157,7 +7157,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
        * `(subject, kind, count)` id rule even though both share `about.referralId`):
        *
        *   - the referrer, ONLY when `referralReferrer` can resolve one safely (see that function's
-       *     own doc comment for why four of `REFERRAL_SOURCES`' five other members never do);
+       *     own doc comment for why `REFERRAL_SOURCES`' six other members never do);
        *   - the receiving ward, ONLY when this acceptance is a psychiatric-ward one — the only
        *     destination kind that names a unit at all. An ED or community-team acceptance commits
        *     a team, not a ward, and the addendum's own words name "the receiving WARD" specifically.
@@ -7397,7 +7397,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // Communication addendum §1.3 ("DECLINE_REFERRAL / DECLINE — the referrer") and FD-23: the
       // decline reason reaches THAT referral's referrer and no other team. `referralReferrer`
       // returns `undefined` for every source but `ed_medical` (see its own doc comment), so no
-      // notice is raised at all for the other five — no notice is safer than a wrongly-addressed
+      // notice is raised at all for the other six — no notice is safer than a wrongly-addressed
       // one. Shares `NoticeKind` "referral_declined" with the movement-level `DECLINE` above.
       const referrer = referralReferrer(referral);
       if (referrer === undefined) return next;

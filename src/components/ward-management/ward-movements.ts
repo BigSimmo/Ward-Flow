@@ -2424,7 +2424,10 @@ export const referrals: Referral[] = [
     // winner, and the front door still accepts the referral. Seeded so a screen has to
     // face that case rather than only the tidy one.
     suburb: { kind: "named", name: "Mandurah" },
-    source: "ed_medical",
+    // Police found him; the crisis service referred him on (10 Oct 2026, police removed as a
+    // source). Not ed_medical: a declined ed_medical referral needs a referral_declined notice to
+    // the ED, which this reducer-free seed does not raise.
+    source: "crisis_service",
     raisedAt: NOW_ANCHOR - 70,
     triagedAt: NOW_ANCHOR - 100,
     urgency: 3,
