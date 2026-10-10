@@ -1,0 +1,18 @@
+{
+  "dataMode": "prototype",
+  "subscriptionId": "REPLACE_WITH_WARD_FLOW_SUBSCRIPTION_ID",
+  "tenantId": "REPLACE_WITH_WARD_FLOW_TENANT_ID",
+  "coordinatorObjectIds": ["REPLACE_WITH_YOUR_ENTRA_USER_OBJECT_ID"],
+  "workspaceId": "REPLACE_WITH_ONE_NEW_UUID_AND_KEEP_IT_STABLE",
+  "resourceGroup": "rg-wardflow-dev-aue",
+  "functionName": "wardflow-dev-api-aue",
+  "serverName": "wardflow-dev-aue",
+  "databaseName": "wardflow_dev",
+  "requireExistingDatabase": true,
+  "functionSubnetId": "",
+  "frontendClientId": "9b7b160d-9bc7-4712-b748-17ff3e70b706",
+  "frontendOrigin": "https://ward-flow-production.up.railway.app",
+  "administratorObjectId": "REPLACE_WITH_DATABASE_MIGRATION_ADMIN_OBJECT_ID",
+  "administratorName": "REPLACE_WITH_DATABASE_MIGRATION_ADMIN_NAME",
+  "administratorType": "User"
+}
