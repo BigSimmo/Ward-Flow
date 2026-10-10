@@ -179,7 +179,9 @@ export function PatientNowScreen({
   // refusal from the engine shows beside the form that caused it.
   // The open change form belongs to one stay, so moving to another patient never carries it over.
   const [wardFormFor, setWardFormFor] = useState<{ admissionId?: string; form: WardChangeForm }>({ form: "none" });
-  const [wardAttemptStart, setWardAttemptStart] = useState<number>();
+  // Where the rejection list stood at the last change, and for which stay, so a refusal never
+  // follows the user to another patient.
+  const [wardAttemptFor, setWardAttemptFor] = useState<{ admissionId: string; start: number }>();
   const operationsRef = useRef<HTMLDivElement | null>(null);
   // The placement work sits on Now in every placement mode, so opening it only moves focus there.
   function openOperations() {
@@ -511,7 +513,7 @@ export function PatientNowScreen({
   function recordLeave(expectedReturn: number, kind: LeaveKind) {
     const stay = resolved?.liveAdmission;
     if (!stay || !gate("RECORD_LEAVE_BED").allowed) return;
-    setWardAttemptStart(rejections.length);
+    setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
     dispatch({
       type: "RECORD_LEAVE_BED",
       role: "ward",
@@ -527,7 +529,7 @@ export function PatientNowScreen({
   function goneToEd() {
     const stay = resolved?.liveAdmission;
     if (!stay || !gate("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT").allowed) return;
-    setWardAttemptStart(rejections.length);
+    setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
     dispatch({
       type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
       role: "ward",
@@ -540,7 +542,7 @@ export function PatientNowScreen({
   function returnFromEd() {
     const stay = resolved?.liveAdmission;
     if (!stay || !gate("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT").allowed) return;
-    setWardAttemptStart(rejections.length);
+    setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
     dispatch({
       type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
       role: "ward",
@@ -552,7 +554,7 @@ export function PatientNowScreen({
   function saveDischarge(expectedDischargeAt: number) {
     const stay = resolved?.liveAdmission;
     if (!stay || !gate("UPDATE_EXPECTED_DISCHARGE").allowed) return;
-    setWardAttemptStart(rejections.length);
+    setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
     dispatch({
       type: "UPDATE_EXPECTED_DISCHARGE",
       role: "ward",
@@ -563,6 +565,8 @@ export function PatientNowScreen({
     });
     setWardForm("none");
   }
+  const wardAttemptStart =
+    wardAttemptFor && wardAttemptFor.admissionId === resolved?.liveAdmission?.id ? wardAttemptFor.start : undefined;
   const wardRejection =
     wardAttemptStart !== undefined
       ? rejections
