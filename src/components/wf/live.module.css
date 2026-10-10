@@ -41,7 +41,8 @@
 }
 
 .u {
-  font: 500 var(--wf-fs-11) / 1 var(--wf-font);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-3);
 }
 
@@ -62,7 +63,8 @@
   flex: 0 0 7px;
   border-radius: 50%;
   background: var(--wf-success);
-  animation: wfLivePulse 2s ease-out infinite;
+  /* v9: the pulse fires once when the chip turns live, never loops */
+  animation: wfLivePulse var(--wf-t-live) var(--wf-ease-out) 1;
 }
 
 .ring {

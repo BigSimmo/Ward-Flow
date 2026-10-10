@@ -173,9 +173,7 @@
 .num {
   font-family: var(--wf-mono);
   font-weight: 600;
-  font-feature-settings:
-    "zero" 1,
-    "tnum" 1;
+  font-variant-numeric: tabular-nums;
   text-align: right;
 }
 

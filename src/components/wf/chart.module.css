@@ -36,22 +36,23 @@
   position: absolute;
   top: 0;
   transform: translateX(-50%);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-ink-3);
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .meanLabel {
   position: absolute;
   bottom: 0;
   transform: translateX(-50%);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-ink-2);
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .meanLabel b {
-  font-family: var(--wf-mono);
   font-weight: 600;
 }
 
@@ -132,9 +133,7 @@
   justify-content: flex-end;
   gap: 5px;
   font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
-  font-feature-settings:
-    "zero" 1,
-    "tnum" 1;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
   text-align: right;
 }
@@ -170,9 +169,7 @@
 
 .colValue {
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-  font-feature-settings:
-    "zero" 1,
-    "tnum" 1;
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-1);
   white-space: nowrap;
 }
@@ -238,13 +235,15 @@
 }
 
 .svgText {
-  font: 500 var(--wf-fs-11) var(--wf-mono);
+  font: 500 var(--wf-fs-12) var(--wf-font);
   fill: var(--wf-ink-3);
+  font-variant-numeric: tabular-nums;
 }
 
 .svgValue {
   font: 600 var(--wf-fs-12) var(--wf-mono);
   fill: var(--wf-ink-1);
+  font-variant-numeric: tabular-nums;
 }
 
 .svgGrid {
@@ -274,9 +273,7 @@
 .donutValue {
   position: absolute;
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-  font-feature-settings:
-    "zero" 1,
-    "tnum" 1;
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-1);
 }
 
