@@ -58,7 +58,13 @@ export async function proxy(request: NextRequest) {
   // A fresh, unguessable nonce per request (see Next.js CSP guide). Buffer+base64
   // matches the documented pattern and keeps the value header-safe.
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const csp = buildContentSecurityPolicy({ isDevelopment, isLocalHttpRuntime, nonce, sharedOrigins });
+  const csp = buildContentSecurityPolicy({
+    isDevelopment,
+    isLocalHttpRuntime,
+    nonce,
+    sharedOrigins,
+    frameAncestors: pathname === "/auth/silent-renew" ? "'self'" : "'none'",
+  });
 
   // Fetch Metadata plus an Origin/Referer host check (see `@/lib/api-csrf` for why
   // `Sec-Fetch-Site: cross-site` alone is not enough).

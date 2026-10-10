@@ -81,7 +81,13 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
+        // The MSAL silent-renewal callback is the sole same-origin page that
+        // must be embeddable by the shared workspace's hidden iframe.
+        source: "/auth/silent-renew",
+        headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
+      },
+      {
+        source: "/((?!auth/silent-renew(?:/|$)).*)",
         headers: securityHeaders,
       },
       {
