@@ -302,6 +302,9 @@
   min-height: 0;
 }
 
+/* `isolation` keeps the sticky ward column and time header (z-index 30 and 40) inside this
+   scroller's own stack, so they never paint over the glass top bar (also z-index 30) when the page
+   scrolls (10 Oct 2026). */
 .diagWrap {
   flex: 1 1 0%;
   min-width: 0;
@@ -309,6 +312,7 @@
   overflow: auto;
   background: var(--wf-surface);
   position: relative;
+  isolation: isolate;
 }
 
 .diagSplit.enlarged .diagWrap {

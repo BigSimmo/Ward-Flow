@@ -490,6 +490,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
             aria-label="A–Z"
             data-testid="community-index-teams"
             data-ward-primitive="panel"
+            data-wf-rail
           >
             <div data-ward-primitive="panel-header">
               <CardHead
@@ -544,7 +545,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 </Button>
               ) : null}
             </div>
-            <div className={styles.directoryBody}>
+            <div className={styles.directoryBody} data-wf-rail-body>
               <nav className={styles.azRail} aria-label="Jump to letter">
                 {/*
                  * ⚠️ `aria-disabled`, NOT native `disabled`: an empty letter is unavailable for a

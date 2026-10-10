@@ -15,6 +15,26 @@ Entra managed-identity grants, Azure resource discovery and private PostgreSQL t
 in [the shared setup guide](../../../backend/ward-flow/SETUP-SHARED-AZURE.md). Shared mode defaults off.
 Source and local tests do not establish hosted identity, database or deployment readiness.
 
+## Phone alerts (Web Push) — 10 October 2026
+
+Feature 4, off by default. `ward-act-now-items.ts` is now the one pure definition of the active
+act-now (red) rows; `shell/ward-act-now-notifier.tsx` (open-tab alerts) and the backend's
+`engine.ts` `actNowAlerts` both read it. `backend/ward-flow/push.mjs` holds the VAPID settings
+check, subscription validation, the identifier-free payload and the sender; `postgres.mjs`
+compares the act-now list with the last announced one after each committed command and from the
+five-minute `wardFlowPushSweep` timer (inside a savepoint, so an error never costs the command)
+and queues pending rows in the `push_deliveries` outbox in the same transaction. Delivery claims
+due rows, sends each device one notification, waits at most `deliveryWaitMs` (1.5 s) on the
+command path, and retries only a device's temporary failures, up to `MAX_DELIVERY_ATTEMPTS`; the
+sweep picks up anything left pending. Migration 3 adds `push_subscriptions`, `push_baselines` and
+`push_deliveries`. On the client, `ward-shared-client.ts` gains the four
+push calls (key, status, subscribe, unsubscribe), `ward-shared-access.tsx` provides
+`PhonePushAccessContext` and releases the device's alerts before sign-out, `shell/ward-phone-push.ts`
+holds the per-device switch, and Settings > Alerts shows **Phone alerts** (greyed with a reason
+when unavailable). `public/ward-flow-push-sw.js` shows the notification and opens Alerts; it has
+no fetch handler. Tests: `backend/ward-flow/push.test.mjs`, the push case in `postgres.test.mjs`
+and `tests/ward-phone-push.dom.test.tsx`. Setup is in the shared setup guide's phone alerts section.
+
 ## Current remediation seams — 8 October 2026
 
 The original map below is historical; its line numbers and earlier counts are not current.

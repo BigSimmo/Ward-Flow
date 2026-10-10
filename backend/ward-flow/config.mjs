@@ -1,3 +1,5 @@
+import { readPushConfig } from "./push.mjs";
+
 const STORAGE_ACCOUNT = "wflowdev7273a083aue";
 // Fixed allowlist of approved Ward Flow storage accounts. Agreement between the two environment
 // variables is not resource verification: a mistaken account set in both would otherwise be trusted.
@@ -87,6 +89,8 @@ export function readConfig(env = process.env) {
     coordinatorIds,
     workspaceId: env.WARD_WORKSPACE_ID?.toLowerCase(),
     postgres,
+    // Phone push needs the shared workspace (subscriptions and act-now state live in PostgreSQL).
+    push: shared ? readPushConfig(env) : null,
     origin,
     host: env.HOST || "127.0.0.1",
     port,

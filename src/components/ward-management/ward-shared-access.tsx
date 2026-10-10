@@ -1,8 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { PublicClientApplication, type AccountInfo } from "@azure/msal-browser";
 import { SharedWorkspaceClient, type SharedView } from "./ward-shared-client";
+import {
+  PhonePushAccessContext,
+  releasePhonePush,
+  type PhonePushAccess,
+  type PhonePushApi,
+} from "./shell/ward-phone-push";
 import type { WardFlowEvent } from "./ward-flow-events";
 import styles from "./ward-shared-access.module.css";
 
@@ -13,7 +19,12 @@ export type WardSharedConnection = SharedView & {
   signOut: () => void;
   retry: () => void;
   dispatch: (event: WardFlowEvent) => void;
+  /** Phone alerts (feature 4) through the signed-in connection. Rejects when not connected. */
+  pushApi: PhonePushApi;
 };
+
+/** How long sign-out waits for this device's phone alerts to be released. */
+const PHONE_RELEASE_WAIT_MS = 2000;
 
 export function useWardShared(enabled: boolean): WardSharedConnection {
   const [view, setView] = useState<SharedView>({ snapshot: null, receivedAt: 0, status: "loading", error: null });
@@ -24,6 +35,18 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
   const scope = process.env.NEXT_PUBLIC_WARD_API_SCOPE ?? "";
   const dispatch = useCallback((event: WardFlowEvent) => {
     client.current?.dispatch(event);
+  }, []);
+  const pushApi = useMemo<PhonePushApi>(() => {
+    const connected = () => {
+      if (!client.current) throw new Error("Shared workspace not connected");
+      return client.current;
+    };
+    return {
+      pushKey: async () => connected().pushKey(),
+      pushStatus: async (endpoint) => connected().pushStatus(endpoint),
+      pushSubscribe: async (subscription) => connected().pushSubscribe(subscription),
+      pushUnsubscribe: async (endpoint) => connected().pushUnsubscribe(endpoint),
+    };
   }, []);
 
   useEffect(() => {
@@ -108,27 +131,66 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       void auth.current?.loginRedirect({ scopes: [scope], prompt: "select_account" });
     },
     signOut: () => {
-      client.current?.dispose();
-      setView({ snapshot: null, receivedAt: 0, status: "loading", error: null });
-      setSignedIn(false);
-      void auth.current?.logoutRedirect({
-        account: account.current,
-        postLogoutRedirectUri: `${window.location.origin}/mockups/ward-flow`,
+      // Release this account's phone alerts for this device first, so the next account on a
+      // shared device does not receive them. Best effort and bounded: it never blocks sign-out.
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      void Promise.race([
+        releasePhonePush(pushApi),
+        new Promise<void>((resolve) => {
+          timer = setTimeout(resolve, PHONE_RELEASE_WAIT_MS);
+        }),
+      ]).then(() => {
+        clearTimeout(timer);
+        client.current?.dispose();
+        setView({ snapshot: null, receivedAt: 0, status: "loading", error: null });
+        setSignedIn(false);
+        void auth.current?.logoutRedirect({
+          account: account.current,
+          postLogoutRedirectUri: `${window.location.origin}/mockups/ward-flow`,
+        });
       });
     },
     retry: () => {
       void client.current?.retry();
     },
     dispatch,
+    pushApi,
   };
 }
 
 export function WardSharedAccess({ connection, children }: { connection: WardSharedConnection; children: ReactNode }) {
   const [showLiveInfo, setShowLiveInfo] = useState(false);
   const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
+  const pushKind = !connection.enabled
+    ? "local"
+    : connection.signedIn && connection.snapshot && connection.status !== "not-authorised"
+      ? "connected"
+      : "signed-out";
+  const { pushApi } = connection;
+  const pushAccess = useMemo<PhonePushAccess>(
+    () => (pushKind === "connected" ? { kind: "connected", api: pushApi } : { kind: pushKind }),
+    [pushKind, pushApi],
+  );
+  const toolbar = useRef<HTMLElement>(null);
+  // Pinned side columns and panel heights size themselves against the window, so they need to
+  // know how much of it this bar takes (globals.css, --wf-data-bar-height). The bar only changes
+  // height when its text changes (a render) or the window width wraps it (a resize), so those two
+  // re-measure it; no ResizeObserver, which screens' own overflow tests stub as a single instance.
+  const syncBarHeight = useCallback(() => {
+    const bar = toolbar.current;
+    if (bar) document.documentElement.style.setProperty("--wf-data-bar-height", `${bar.offsetHeight}px`);
+  }, []);
+  useEffect(syncBarHeight);
+  useEffect(() => {
+    window.addEventListener("resize", syncBarHeight);
+    return () => {
+      window.removeEventListener("resize", syncBarHeight);
+      document.documentElement.style.removeProperty("--wf-data-bar-height");
+    };
+  }, [syncBarHeight]);
   return (
-    <>
-      <section className={styles.toolbar} aria-label="Ward Flow data mode" data-data-mode="prototype">
+    <PhonePushAccessContext.Provider value={pushAccess}>
+      <section ref={toolbar} className={styles.toolbar} aria-label="Ward Flow data mode" data-data-mode="prototype">
         <div>
           <strong>Data mode: Prototype</strong>
           <span className={styles.detail}>
@@ -185,7 +247,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
       <div hidden={showLiveInfo} inert={showLiveInfo}>
         <WardSharedWorkspaceContent connection={connection}>{children}</WardSharedWorkspaceContent>
       </div>
-    </>
+    </PhonePushAccessContext.Provider>
   );
 }
 
