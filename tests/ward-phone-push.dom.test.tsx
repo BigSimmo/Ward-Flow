@@ -27,7 +27,16 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 
 /** Feature 4, 10 Oct 2026: phone alerts are off by default, per device, and never hidden. */
 
-const UNAVAILABLE: PhonePushState[] = ["local", "signed-out", "checking", "unsupported", "server-off", "denied"];
+const UNAVAILABLE: PhonePushState[] = [
+  "local",
+  "signed-out",
+  "checking",
+  "unsupported",
+  "install",
+  "server-off",
+  "denied",
+  "busy",
+];
 
 function alertsPane(state: PhonePushState, onPhonePushChange = vi.fn()) {
   render(
@@ -65,7 +74,7 @@ describe("phone alerts row", () => {
     const { row, toggle, onPhonePushChange } = alertsPane("off");
     expect(toggle).not.toHaveAttribute("aria-disabled");
     expect(toggle).not.toBeChecked();
-    expect(row).toHaveTextContent("even with Ward Flow closed");
+    expect(row).toHaveTextContent("with Ward Flow closed");
     fireEvent.click(toggle);
     expect(onPhonePushChange).toHaveBeenCalledWith(true);
   });
@@ -90,8 +99,11 @@ describe("phone alerts row", () => {
   });
 
   it("never shows a Ward Flow id, record number or the word for a patient in any state", () => {
-    for (const state of [...UNAVAILABLE, "off", "on", "busy", "error"] as PhonePushState[])
+    for (const state of [...UNAVAILABLE, "off", "on", "error"] as PhonePushState[]) {
       expect(phonePushRow(state).sub).not.toMatch(/WF-|UMRN|patient/i);
+      // One line at 390px wide: the row truncates a longer reason.
+      expect(phonePushRow(state).sub.length).toBeLessThanOrEqual(41);
+    }
   });
 });
 
@@ -160,6 +172,13 @@ describe("usePhonePush", () => {
 
   it("says when the browser cannot receive push", () => {
     expect(hook({ kind: "connected", api: fakeApi() }).result.current[0]).toBe("unsupported");
+  });
+
+  it("on an iPhone browser tab, says to add Ward Flow to the Home Screen", () => {
+    vi.spyOn(navigator, "userAgent", "get").mockReturnValue(
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+    );
+    expect(hook({ kind: "connected", api: fakeApi() }).result.current[0]).toBe("install");
   });
 
   it("says when the server is not set up for phone alerts", async () => {

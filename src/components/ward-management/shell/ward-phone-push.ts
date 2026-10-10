@@ -28,44 +28,58 @@ export type PhonePushAccess = { kind: "local" } | { kind: "signed-out" } | { kin
 export const PhonePushAccessContext = createContext<PhonePushAccess>({ kind: "local" });
 
 export type PhonePushState =
-  "local" | "signed-out" | "checking" | "unsupported" | "server-off" | "denied" | "off" | "on" | "busy" | "error";
+  | "local"
+  | "signed-out"
+  | "checking"
+  | "unsupported"
+  | "install"
+  | "server-off"
+  | "denied"
+  | "off"
+  | "on"
+  | "busy"
+  | "error";
 
-/** What the Settings row shows for a state. Never hidden: unavailable states grey out with a reason. */
+const ON_OFF = "New act-now alerts, with Ward Flow closed";
+
+/**
+ * What the Settings row shows for a state. Never hidden: unavailable states grey out with a reason.
+ * Each line fits one row at 390px wide, where the row truncates its second line.
+ */
 export function phonePushRow(state: PhonePushState): { checked: boolean; unavailable: boolean; sub: string } {
+  const unavailable = (sub: string) => ({ checked: false, unavailable: true, sub });
   switch (state) {
     case "local":
-      return {
-        checked: false,
-        unavailable: true,
-        sub: "Needs the shared Azure workspace. This demonstration runs on this device only.",
-      };
+      return unavailable("Needs the shared Azure workspace");
     case "signed-out":
-      return { checked: false, unavailable: true, sub: "Sign in to the shared workspace first" };
+      return unavailable("Sign in to the shared workspace first");
     case "checking":
-      return { checked: false, unavailable: true, sub: "Checking this device…" };
+      return unavailable("Checking this device…");
     case "unsupported":
-      return {
-        checked: false,
-        unavailable: true,
-        sub: "Not available in this browser. On iPhone, add Ward Flow to the Home Screen first.",
-      };
+      return unavailable("Not available in this browser");
+    case "install":
+      return unavailable("Add to Home Screen, then open it there");
     case "server-off":
-      return { checked: false, unavailable: true, sub: "Not set up on the server yet" };
+      return unavailable("Not set up on the server yet");
     case "denied":
-      return { checked: false, unavailable: true, sub: "Notifications are blocked for this site in the browser" };
-    case "error":
-      return { checked: false, unavailable: false, sub: "Could not reach the server. Try again." };
+      return unavailable("Blocked for this site in the browser");
     case "busy":
-      return { checked: false, unavailable: true, sub: "Updating this device…" };
+      return unavailable("Updating this device…");
+    case "error":
+      return { checked: false, unavailable: false, sub: "Server not reached. Try again." };
     case "on":
-      return { checked: true, unavailable: false, sub: "New act-now items on this device, even with Ward Flow closed" };
+      return { checked: true, unavailable: false, sub: ON_OFF };
     case "off":
-      return {
-        checked: false,
-        unavailable: false,
-        sub: "New act-now items on this device, even with Ward Flow closed",
-      };
+      return { checked: false, unavailable: false, sub: ON_OFF };
   }
+}
+
+/** An iPhone or iPad browser tab: web push works only from a Home Screen web app there. */
+function iosTab(): boolean {
+  if (typeof navigator === "undefined" || typeof window === "undefined") return false;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const standalone = window.matchMedia?.("(display-mode: standalone)").matches === true;
+  return ios && !standalone;
 }
 
 /** Whether this browser can receive web push at all. */
@@ -127,7 +141,7 @@ export function usePhonePush(): [PhonePushState, (enabled: boolean) => Promise<P
   // the server key and this device's subscription need the asynchronous check above.
   let state: PhonePushState;
   if (access.kind !== "connected") state = access.kind;
-  else if (!phonePushSupported()) state = "unsupported";
+  else if (!phonePushSupported()) state = iosTab() ? "install" : "unsupported";
   else state = checked?.api === api ? checked.state : "checking";
 
   const setEnabled = useCallback(
