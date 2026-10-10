@@ -57,6 +57,10 @@ import {
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
 
+import { FlushRow, Follow } from "./statistics-layout";
+import { StatisticsJourneyView } from "./statistics-journey-view";
+import { StatisticsMapView } from "./statistics-map-view";
+import { StatisticsViewBar, useStatisticsView } from "./statistics-view-bar";
 import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
@@ -409,6 +413,7 @@ export function StatisticsScreen({
   );
 
   usePrintableDisclosures();
+  const { view, choose: chooseView } = useStatisticsView();
 
   const blockedMean = blocked.vocabularySize > 0 ? blocked.totalCount / blocked.vocabularySize : 0;
 
@@ -466,498 +471,542 @@ export function StatisticsScreen({
           </p>
         )}
 
-        <div className={styles.gridMain}>
-          <div className={styles.stack} data-testid="ward-statistics-patients">
-            <StatisticsCapacityChart
-              units={units}
-              bedReleases={sourceBedReleases}
-              admissions={sourceAdmissions}
-              leaveBeds={leaveBeds}
-            />
-          </div>
+        <StatisticsViewBar view={view} onChoose={chooseView} />
 
-          <div className={styles.stack}>
-            <StatisticsUnitFinder lists={finderLists} />
-
-            <StatCard
-              icon={ArrowRight}
-              title="Referrals today"
-              data-testid="ward-statistics-referrals-for-bed"
-              action={
-                <Link href="/mockups/ward-flow/referrals" className={buttonClass({ variant: "sec", size: "sm" })}>
-                  Open referrals
-                </Link>
-              }
-            >
-              <CardBody className={styles.bodyStack}>
-                <dl className={styles.figures} id="refBand" aria-label="Referrals for a bed today">
-                  <div className={styles.figure}>
-                    <dt className={styles.figureLabel}>Raised</dt>
-                    <dd className={styles.figureValue}>{refRaised}</dd>
-                  </div>
-                  <div className={styles.figure}>
-                    <dt className={styles.figureLabel}>
-                      <StatusGlyph tone="success" size={9} />
-                      Accepted
-                    </dt>
-                    <dd className={styles.figureValue}>{refAccepted}</dd>
-                  </div>
-                  <div className={styles.figure}>
-                    <dt className={styles.figureLabel}>
-                      <StatusGlyph tone="closed" size={9} />
-                      Declined
-                    </dt>
-                    <dd className={styles.figureValue}>{refDeclined}</dd>
-                  </div>
-                  <div className={styles.figure}>
-                    <dt className={styles.figureLabel}>
-                      <StatusGlyph tone="neutral" size={9} />
-                      Still open
-                    </dt>
-                    <dd className={styles.figureValue}>{refOpen}</dd>
-                  </div>
-                </dl>
-                <StackBar
-                  label="Referrals raised today"
-                  segments={[
-                    { id: "accepted", label: "Accepted", value: refAccepted, fill: "data-1" },
-                    { id: "declined", label: "Declined", value: refDeclined, fill: "data-2" },
-                    { id: "open", label: "Still open", value: refOpen, fill: "data-3" },
-                  ]}
+        {/* Each view's anchor exists whichever view shows, so its link always has a target. */}
+        {view === "board" ? null : <div id="board" hidden />}
+        {view === "journey" ? (
+          <StatisticsJourneyView onShowBoard={() => chooseView("board")} live={{ state: live.state, now }} />
+        ) : (
+          <div id="journey" hidden />
+        )}
+        {view === "map" ? <StatisticsMapView live={{ state: live.state, now }} /> : <div id="map" hidden />}
+        {view !== "board" ? null : (
+          <div id="board" className={styles.stack}>
+            <FlushRow layout="lead2" id="beds">
+              <div className={styles.stack} data-testid="ward-statistics-patients">
+                <StatisticsCapacityChart
+                  units={units}
+                  bedReleases={sourceBedReleases}
+                  admissions={sourceAdmissions}
+                  leaveBeds={leaveBeds}
                 />
-                <div className={styles.tiles} data-testid="ward-statistics-refused-so-far">
-                  <div className={styles.tile}>
-                    <h3 className={styles.srOnly}>Referrals where every ward asked so far has refused</h3>
-                    <p className={styles.tileLabel} aria-hidden="true">
-                      Refused so far
-                    </p>
-                    <p className={styles.tileValue} data-testid="ward-statistics-refused-so-far-count">
-                      <span data-testid="ward-statistics-refused-so-far-value">{refused.count}</span>
-                      <small>
-                        of{" "}
-                        <span data-testid="ward-statistics-refused-so-far-open-count">{refused.openMovementCount}</span>
-                      </small>
-                    </p>
-                  </div>
-                  <div className={styles.tile} data-testid="ward-statistics-refused-so-far-escalated">
-                    <p className={styles.tileLabel} aria-hidden="true">
-                      Escalated
-                    </p>
-                    <p className={styles.tileValue} aria-hidden="true">
-                      {refused.escalatedCount}
-                    </p>
-                    <span className={styles.srOnly}>
-                      {` ${refused.escalatedCount} open ${refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation.`}
-                    </span>
-                  </div>
-                  <div className={styles.tile}>
-                    <p className={styles.tileLabel}>Parallel cap</p>
-                    <p className={styles.tileValue} data-testid="ward-statistics-refused-so-far-cap">
-                      {configuration.parallelReferralCap}
-                    </p>
-                  </div>
-                </div>
-              </CardBody>
-            </StatCard>
-          </div>
-        </div>
+              </div>
 
-        <div className={styles.grid2}>
-          <StatCard
-            icon={TrendingUp}
-            title="Where the pressure is"
-            meta="Occupancy, awaiting answer"
-            data-testid="ward-statistics-pressure"
-          >
-            <div className={styles.toolbar}>
-              <TextInput
-                type="search"
-                icon={Search}
-                boxClassName={styles.search}
-                id="wardSearchInput"
-                placeholder="Filter wards"
-                value={wardSearchQuery}
-                onChange={(e) => setWardSearchQuery(e.target.value)}
-                aria-label="Filter wards or hospitals"
-              />
-              <FilterChip pressed={wardOverLine} onPressedChange={setWardOverLine} tone="warning" count={overLineCount}>
-                {`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
-              </FilterChip>
-              <span className={styles.toolbarEnd} id="wardFilterCount">
-                <b>{filteredAndSortedWards.length}</b> of {allPressureWards.length}
-              </span>
-            </div>
-            <div className={styles.tableWrap}>
-              <table className={`${tableClasses.table} ${styles.table}`} id="wardPressureTable">
-                <caption className={styles.srOnly}>Inpatient mental health ward capacity and demand</caption>
-                <thead>
-                  <tr>
-                    <SortTh id="name" label="Ward" sort={wardSortCol} asc={wardSortAsc} onSort={handleWardSort} />
-                    <SortTh
-                      id="beds"
-                      label="Beds"
-                      sort={wardSortCol}
-                      asc={wardSortAsc}
-                      onSort={handleWardSort}
-                      numeric
-                    />
-                    <SortTh
-                      id="ready"
-                      label="Ready"
-                      sort={wardSortCol}
-                      asc={wardSortAsc}
-                      onSort={handleWardSort}
-                      numeric
-                    />
-                    <SortTh
-                      id="occ"
-                      label="Occupancy"
-                      sort={wardSortCol}
-                      asc={wardSortAsc}
-                      onSort={handleWardSort}
-                      numeric
-                    />
-                    <SortTh
-                      id="ref"
-                      label="Awaiting"
-                      sort={wardSortCol}
-                      asc={wardSortAsc}
-                      onSort={handleWardSort}
-                      numeric
-                    />
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleWards.map((w) => {
-                    const percent = Math.round(w.occupancyRate * 100);
-                    const over = percent >= BED_ALERT_THRESHOLD_PERCENT;
-                    return (
-                      <tr key={w.id}>
-                        <th scope="row">
-                          {w.name}
-                          <span className={styles.code} title={w.hospital}>
-                            {w.site}
-                          </span>
-                          {w.ready === 0 && w.occupancyRate === 1 ? (
-                            <Badge variant="plain" tone="neutral" size="sm">
-                              Full
-                            </Badge>
-                          ) : null}
-                        </th>
-                        <td className={styles.num}>{w.beds}</td>
-                        <td className={`${styles.num} ${w.ready === 0 ? styles.zero : ""}`}>{w.ready}</td>
-                        <td className={styles.num}>
-                          <span className={styles.occBar}>
-                            <span className={styles.occTrack} aria-hidden="true">
-                              <span className={styles.occFill} style={{ width: `${Math.min(100, percent)}%` }} />
-                              <span className={styles.occTick} style={{ left: `${BED_ALERT_THRESHOLD_PERCENT}%` }} />
-                            </span>
-                            <span className={styles.occValue}>
-                              {over ? <StatusGlyph tone="warning" size={9} /> : null}
-                              {percent}%
-                            </span>
-                          </span>
-                        </td>
-                        <td className={`${styles.num} ${w.referred === 0 ? styles.zero : ""}`}>{w.referred}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <CardFoot
-              meta={
-                filteredAndSortedWards.length > PRESSURE_ROWS ? (
-                  <Button size="sm" variant="ghost" onClick={() => setWardShowAll((value) => !value)}>
-                    {wardShowAll ? `Show top ${PRESSURE_ROWS}` : `Show all ${filteredAndSortedWards.length}`}
-                  </Button>
-                ) : undefined
-              }
-            >
-              <Link href="/mockups/ward-flow/statistics/compare#choose-a-unit" className={styles.footLink}>
-                Compare wards
-              </Link>
-            </CardFoot>
-          </StatCard>
+              <Follow stack>
+                <StatisticsUnitFinder lists={finderLists} />
 
-          <StatCard
-            icon={Clock}
-            title="ED waits for a bed"
-            data-testid="ward-statistics-emergency-departments"
-            aside={
-              longestEd && longestEd.longest !== null ? (
-                <Badge
-                  tone={
-                    longestEd.longest >= ED_SEVERE_PRESSURE_WAIT_MINUTES
-                      ? "danger"
-                      : longestEd.longest >= ED_ELEVATED_PRESSURE_WAIT_MINUTES
-                        ? "warning"
-                        : undefined
+                <StatCard
+                  icon={ArrowRight}
+                  title="Referrals today"
+                  data-testid="ward-statistics-referrals-for-bed"
+                  action={
+                    <Link href="/mockups/ward-flow/referrals" className={buttonClass({ variant: "sec", size: "sm" })}>
+                      Open referrals
+                    </Link>
                   }
                 >
-                  {`${durMinutes(Math.round(longestEd.longest))} longest, ${longestEd.site}`}
-                </Badge>
-              ) : undefined
-            }
-          >
-            <div className={styles.toolbar}>
-              <TextInput
-                type="search"
-                icon={Search}
-                boxClassName={styles.search}
-                id="edSearchInput"
-                placeholder="Filter departments"
-                value={edSearchQuery}
-                onChange={(e) => setEdSearchQuery(e.target.value)}
-                aria-label="Filter emergency departments"
-              />
-              <span className={styles.toolbarEnd} id="edFilterCount">
-                {`Marked from ${hoursLabel(ED_ELEVATED_PRESSURE_WAIT_MINUTES)} and ${hoursLabel(ED_SEVERE_PRESSURE_WAIT_MINUTES)}, as the side rail`}
-              </span>
-            </div>
-            <div className={styles.tableWrap}>
-              <table className={`${tableClasses.table} ${styles.table}`} id="edPressureTable">
-                <caption className={styles.srOnly}>Emergency department waits for a mental health bed</caption>
-                <thead>
-                  <tr>
-                    <SortTh id="name" label="Site" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} />
-                    <SortTh
-                      id="waiting"
-                      label="Waiting"
-                      sort={edSortCol}
-                      asc={edSortAsc}
-                      onSort={handleEdSort}
-                      numeric
+                  <CardBody className={styles.bodyStack}>
+                    <dl className={styles.figures} id="refBand" aria-label="Referrals for a bed today">
+                      <div className={styles.figure}>
+                        <dt className={styles.figureLabel}>Raised</dt>
+                        <dd className={styles.figureValue}>{refRaised}</dd>
+                      </div>
+                      <div className={styles.figure}>
+                        <dt className={styles.figureLabel}>
+                          <StatusGlyph tone="success" size={9} />
+                          Accepted
+                        </dt>
+                        <dd className={styles.figureValue}>{refAccepted}</dd>
+                      </div>
+                      <div className={styles.figure}>
+                        <dt className={styles.figureLabel}>
+                          <StatusGlyph tone="closed" size={9} />
+                          Declined
+                        </dt>
+                        <dd className={styles.figureValue}>{refDeclined}</dd>
+                      </div>
+                      <div className={styles.figure}>
+                        <dt className={styles.figureLabel}>
+                          <StatusGlyph tone="neutral" size={9} />
+                          Still open
+                        </dt>
+                        <dd className={styles.figureValue}>{refOpen}</dd>
+                      </div>
+                    </dl>
+                    <StackBar
+                      label="Referrals raised today"
+                      segments={[
+                        { id: "accepted", label: "Accepted", value: refAccepted, fill: "data-1" },
+                        { id: "declined", label: "Declined", value: refDeclined, fill: "data-2" },
+                        { id: "open", label: "Still open", value: refOpen, fill: "data-3" },
+                      ]}
                     />
-                    <SortTh
-                      id="longest"
-                      label="Longest"
-                      sort={edSortCol}
-                      asc={edSortAsc}
-                      onSort={handleEdSort}
-                      numeric
-                    />
-                    <SortTh id="median" label="Median" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
-                    <SortTh id="over8" label="8h+" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
-                    <SortTh id="over24" label="24h+" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAndSortedEds.map((d) => (
-                    <tr key={d.id}>
-                      <th scope="row" className={styles.siteCell}>
-                        <b className={styles.codeLead}>{d.site}</b>
-                        <span className={styles.siteName} title={d.name}>
-                          {d.name}
+                    <div className={styles.tiles} data-testid="ward-statistics-refused-so-far">
+                      <div className={styles.tile}>
+                        <h3 className={styles.srOnly}>Referrals where every ward asked so far has refused</h3>
+                        <p className={styles.tileLabel} aria-hidden="true">
+                          Refused so far
+                        </p>
+                        <p className={styles.tileValue} data-testid="ward-statistics-refused-so-far-count">
+                          <span data-testid="ward-statistics-refused-so-far-value">{refused.count}</span>
+                          <small>
+                            of{" "}
+                            <span data-testid="ward-statistics-refused-so-far-open-count">
+                              {refused.openMovementCount}
+                            </span>
+                          </small>
+                        </p>
+                      </div>
+                      <div className={styles.tile} data-testid="ward-statistics-refused-so-far-escalated">
+                        <p className={styles.tileLabel} aria-hidden="true">
+                          Escalated
+                        </p>
+                        <p className={styles.tileValue} aria-hidden="true">
+                          {refused.escalatedCount}
+                        </p>
+                        <span className={styles.srOnly}>
+                          {` ${refused.escalatedCount} open ${refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation.`}
                         </span>
-                      </th>
-                      <td className={`${styles.num} ${d.waiting === 0 ? styles.zero : ""}`}>{d.waiting}</td>
-                      <td className={`${styles.num} ${d.longest === null ? styles.zero : ""}`}>
-                        <span className={styles.flagged}>
-                          {d.longest !== null && d.longest >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? (
-                            <StatusGlyph tone="danger" size={9} />
-                          ) : d.longest !== null && d.longest >= ED_ELEVATED_PRESSURE_WAIT_MINUTES ? (
-                            <StatusGlyph tone="warning" size={9} />
-                          ) : null}
-                          {waitText(d.longest)}
-                        </span>
-                      </td>
-                      <td className={`${styles.num} ${d.median === null ? styles.zero : ""}`}>
-                        {medianText(d.median)}
-                      </td>
-                      <td className={`${styles.num} ${d.over8 === 0 ? styles.zero : ""}`}>{d.over8}</td>
-                      <td className={`${styles.num} ${d.over24 === 0 ? styles.zero : ""}`}>{d.over24}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <th scope="row">All {emergencyDepts.length} departments</th>
-                    <td className={styles.num}>{totalEdWaiting}</td>
-                    <td className={styles.num}>{waitText(longestEd?.longest ?? null)}</td>
-                    <td className={styles.num}>{medianText(networkMedianWait)}</td>
-                    <td className={styles.num}>{totalEdOver8}</td>
-                    <td className={styles.num}>{totalEdOver24}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </StatCard>
-        </div>
+                      </div>
+                      <div className={styles.tile}>
+                        <p className={styles.tileLabel}>Parallel cap</p>
+                        <p className={styles.tileValue} data-testid="ward-statistics-refused-so-far-cap">
+                          {configuration.parallelReferralCap}
+                        </p>
+                      </div>
+                    </div>
+                  </CardBody>
+                </StatCard>
+              </Follow>
+            </FlushRow>
 
-        <div className={styles.grid3}>
-          <StatCard
-            icon={Lock}
-            title="Blocked discharges"
-            data-testid="ward-statistics-blocked-discharges-by-reason"
-            aside={
-              <span className={styles.muted} data-testid="ward-statistics-blocked-discharges-by-reason-population">
-                <span data-testid="ward-statistics-blocked-discharges-by-reason-total">{blocked.totalCount}</span> of{" "}
-                <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
-                  {blocked.admissionCount}
-                </span>{" "}
-                not departed
-              </span>
-            }
-          >
-            <CardBody data-testid="ward-statistics-blocked-discharges-by-reason-list">
-              <BarList
-                label="Blocked discharges by blocker"
-                labelWidth="10.5rem"
-                axis
-                max={axisMax(blocked.tallies.map((tally) => tally.count))}
-                mean={blockedMean}
-                rows={blocked.tallies.map((tally) => ({
-                  id: tally.reason,
-                  label: <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}>{tally.reason}</span>,
-                  labelText: tally.reason,
-                  value: tally.count,
-                  display: (
-                    <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}>
-                      {tally.count === 0 ? "none" : tally.count}
-                    </span>
-                  ),
-                }))}
-              />
-              <span className={styles.srOnly} data-testid="ward-statistics-blocked-discharges-by-reason-generated">
-                All{" "}
-                <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
-                  {blocked.vocabularySize}
-                </span>{" "}
-                blocker categories.
-              </span>
-            </CardBody>
-          </StatCard>
-
-          <StatCard
-            icon={X}
-            title="Declines by reason"
-            data-testid="ward-statistics-declines-by-reason"
-            aside={
-              declinesReadout.ok ? (
-                <span className={styles.muted} data-testid="ward-statistics-declines-by-reason-population">
-                  <span data-testid="ward-statistics-declines-by-reason-total">{declinesReadout.value.totalCount}</span>{" "}
-                  {declinesReadout.value.totalCount === 1 ? "decline" : "declines"},{" "}
-                  <span data-testid="ward-statistics-declines-by-reason-movements-with">
-                    {declinesReadout.value.movementsWithDeclinesCount}
+            <div className={styles.grid2}>
+              <StatCard
+                icon={TrendingUp}
+                title="Where the pressure is"
+                meta="Occupancy, awaiting answer"
+                data-testid="ward-statistics-pressure"
+              >
+                <div className={styles.toolbar}>
+                  <TextInput
+                    type="search"
+                    icon={Search}
+                    boxClassName={styles.search}
+                    id="wardSearchInput"
+                    placeholder="Filter wards"
+                    value={wardSearchQuery}
+                    onChange={(e) => setWardSearchQuery(e.target.value)}
+                    aria-label="Filter wards or hospitals"
+                  />
+                  <FilterChip
+                    pressed={wardOverLine}
+                    onPressedChange={setWardOverLine}
+                    tone="warning"
+                    count={overLineCount}
+                  >
+                    {`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+                  </FilterChip>
+                  <span className={styles.toolbarEnd} id="wardFilterCount">
+                    <b>{filteredAndSortedWards.length}</b> of {allPressureWards.length}
                   </span>
-                  <span className={styles.srOnly}>
-                    {" "}
+                </div>
+                <div className={styles.tableWrap}>
+                  <table className={`${tableClasses.table} ${styles.table}`} id="wardPressureTable">
+                    <caption className={styles.srOnly}>Inpatient mental health ward capacity and demand</caption>
+                    <thead>
+                      <tr>
+                        <SortTh id="name" label="Ward" sort={wardSortCol} asc={wardSortAsc} onSort={handleWardSort} />
+                        <SortTh
+                          id="beds"
+                          label="Beds"
+                          sort={wardSortCol}
+                          asc={wardSortAsc}
+                          onSort={handleWardSort}
+                          numeric
+                        />
+                        <SortTh
+                          id="ready"
+                          label="Ready"
+                          sort={wardSortCol}
+                          asc={wardSortAsc}
+                          onSort={handleWardSort}
+                          numeric
+                        />
+                        <SortTh
+                          id="occ"
+                          label="Occupancy"
+                          sort={wardSortCol}
+                          asc={wardSortAsc}
+                          onSort={handleWardSort}
+                          numeric
+                        />
+                        <SortTh
+                          id="ref"
+                          label="Awaiting"
+                          sort={wardSortCol}
+                          asc={wardSortAsc}
+                          onSort={handleWardSort}
+                          numeric
+                        />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleWards.map((w) => {
+                        const percent = Math.round(w.occupancyRate * 100);
+                        const over = percent >= BED_ALERT_THRESHOLD_PERCENT;
+                        return (
+                          <tr key={w.id}>
+                            <th scope="row">
+                              {w.name}
+                              <span className={styles.code} title={w.hospital}>
+                                {w.site}
+                              </span>
+                              {w.ready === 0 && w.occupancyRate === 1 ? (
+                                <Badge variant="plain" tone="neutral" size="sm">
+                                  Full
+                                </Badge>
+                              ) : null}
+                            </th>
+                            <td className={styles.num}>{w.beds}</td>
+                            <td className={`${styles.num} ${w.ready === 0 ? styles.zero : ""}`}>{w.ready}</td>
+                            <td className={styles.num}>
+                              <span className={styles.occBar}>
+                                <span className={styles.occTrack} aria-hidden="true">
+                                  <span className={styles.occFill} style={{ width: `${Math.min(100, percent)}%` }} />
+                                  <span
+                                    className={styles.occTick}
+                                    style={{ left: `${BED_ALERT_THRESHOLD_PERCENT}%` }}
+                                  />
+                                </span>
+                                <span className={styles.occValue}>
+                                  {over ? <StatusGlyph tone="warning" size={9} /> : null}
+                                  {percent}%
+                                </span>
+                              </span>
+                            </td>
+                            <td className={`${styles.num} ${w.referred === 0 ? styles.zero : ""}`}>{w.referred}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <CardFoot
+                  meta={
+                    filteredAndSortedWards.length > PRESSURE_ROWS ? (
+                      <Button size="sm" variant="ghost" onClick={() => setWardShowAll((value) => !value)}>
+                        {wardShowAll ? `Show top ${PRESSURE_ROWS}` : `Show all ${filteredAndSortedWards.length}`}
+                      </Button>
+                    ) : undefined
+                  }
+                >
+                  <Link href="/mockups/ward-flow/statistics/compare#choose-a-unit" className={styles.footLink}>
+                    Compare wards
+                  </Link>
+                </CardFoot>
+              </StatCard>
+
+              <StatCard
+                icon={Clock}
+                title="ED waits for a bed"
+                data-testid="ward-statistics-emergency-departments"
+                aside={
+                  longestEd && longestEd.longest !== null ? (
+                    <Badge
+                      tone={
+                        longestEd.longest >= ED_SEVERE_PRESSURE_WAIT_MINUTES
+                          ? "danger"
+                          : longestEd.longest >= ED_ELEVATED_PRESSURE_WAIT_MINUTES
+                            ? "warning"
+                            : undefined
+                      }
+                    >
+                      {`${durMinutes(Math.round(longestEd.longest))} longest, ${longestEd.site}`}
+                    </Badge>
+                  ) : undefined
+                }
+              >
+                <div className={styles.toolbar}>
+                  <TextInput
+                    type="search"
+                    icon={Search}
+                    boxClassName={styles.search}
+                    id="edSearchInput"
+                    placeholder="Filter departments"
+                    value={edSearchQuery}
+                    onChange={(e) => setEdSearchQuery(e.target.value)}
+                    aria-label="Filter emergency departments"
+                  />
+                  <span className={styles.toolbarEnd} id="edFilterCount">
+                    {`Marked from ${hoursLabel(ED_ELEVATED_PRESSURE_WAIT_MINUTES)} and ${hoursLabel(ED_SEVERE_PRESSURE_WAIT_MINUTES)}, as the side rail`}
+                  </span>
+                </div>
+                <div className={styles.tableWrap}>
+                  <table className={`${tableClasses.table} ${styles.table}`} id="edPressureTable">
+                    <caption className={styles.srOnly}>Emergency department waits for a mental health bed</caption>
+                    <thead>
+                      <tr>
+                        <SortTh id="name" label="Site" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} />
+                        <SortTh
+                          id="waiting"
+                          label="Waiting"
+                          sort={edSortCol}
+                          asc={edSortAsc}
+                          onSort={handleEdSort}
+                          numeric
+                        />
+                        <SortTh
+                          id="longest"
+                          label="Longest"
+                          sort={edSortCol}
+                          asc={edSortAsc}
+                          onSort={handleEdSort}
+                          numeric
+                        />
+                        <SortTh
+                          id="median"
+                          label="Median"
+                          sort={edSortCol}
+                          asc={edSortAsc}
+                          onSort={handleEdSort}
+                          numeric
+                        />
+                        <SortTh id="over8" label="8h+" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
+                        <SortTh
+                          id="over24"
+                          label="24h+"
+                          sort={edSortCol}
+                          asc={edSortAsc}
+                          onSort={handleEdSort}
+                          numeric
+                        />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredAndSortedEds.map((d) => (
+                        <tr key={d.id}>
+                          <th scope="row" className={styles.siteCell}>
+                            <b className={styles.codeLead}>{d.site}</b>
+                            <span className={styles.siteName} title={d.name}>
+                              {d.name}
+                            </span>
+                          </th>
+                          <td className={`${styles.num} ${d.waiting === 0 ? styles.zero : ""}`}>{d.waiting}</td>
+                          <td className={`${styles.num} ${d.longest === null ? styles.zero : ""}`}>
+                            <span className={styles.flagged}>
+                              {d.longest !== null && d.longest >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? (
+                                <StatusGlyph tone="danger" size={9} />
+                              ) : d.longest !== null && d.longest >= ED_ELEVATED_PRESSURE_WAIT_MINUTES ? (
+                                <StatusGlyph tone="warning" size={9} />
+                              ) : null}
+                              {waitText(d.longest)}
+                            </span>
+                          </td>
+                          <td className={`${styles.num} ${d.median === null ? styles.zero : ""}`}>
+                            {medianText(d.median)}
+                          </td>
+                          <td className={`${styles.num} ${d.over8 === 0 ? styles.zero : ""}`}>{d.over8}</td>
+                          <td className={`${styles.num} ${d.over24 === 0 ? styles.zero : ""}`}>{d.over24}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <th scope="row">All {emergencyDepts.length} departments</th>
+                        <td className={styles.num}>{totalEdWaiting}</td>
+                        <td className={styles.num}>{waitText(longestEd?.longest ?? null)}</td>
+                        <td className={styles.num}>{medianText(networkMedianWait)}</td>
+                        <td className={styles.num}>{totalEdOver8}</td>
+                        <td className={styles.num}>{totalEdOver24}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </StatCard>
+            </div>
+
+            <div className={styles.grid3}>
+              <StatCard
+                icon={Lock}
+                title="Blocked discharges"
+                data-testid="ward-statistics-blocked-discharges-by-reason"
+                aside={
+                  <span className={styles.muted} data-testid="ward-statistics-blocked-discharges-by-reason-population">
+                    <span data-testid="ward-statistics-blocked-discharges-by-reason-total">{blocked.totalCount}</span>{" "}
                     of{" "}
-                    <span data-testid="ward-statistics-declines-by-reason-movements">
-                      {declinesReadout.value.movementCount}
-                    </span>
-                  </span>{" "}
-                  {declinesReadout.value.movementsWithDeclinesCount === 1 ? "movement" : "movements"}
-                </span>
-              ) : undefined
-            }
-          >
-            <CardBody>
-              {!declinesReadout.ok ? (
-                <p className={styles.notice} data-testid="ward-statistics-declines-by-reason-unavailable">
-                  {declinesReadout.statement}
-                </p>
-              ) : (
-                <div data-testid="ward-statistics-declines-by-reason-list">
+                    <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
+                      {blocked.admissionCount}
+                    </span>{" "}
+                    not departed
+                  </span>
+                }
+              >
+                <CardBody data-testid="ward-statistics-blocked-discharges-by-reason-list">
                   <BarList
-                    label="Declines by reason"
+                    label="Blocked discharges by blocker"
                     labelWidth="10.5rem"
                     axis
-                    max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}
-                    mean={
-                      declinesReadout.value.vocabularySize > 0
-                        ? declinesReadout.value.totalCount / declinesReadout.value.vocabularySize
-                        : 0
-                    }
-                    rows={declinesReadout.value.tallies.map((tally) => ({
+                    max={axisMax(blocked.tallies.map((tally) => tally.count))}
+                    mean={blockedMean}
+                    rows={blocked.tallies.map((tally) => ({
                       id: tally.reason,
                       label: (
-                        <span data-testid={`ward-statistics-decline-${tally.reason}`}>
-                          {sentenceCase(tally.reason)}
-                        </span>
+                        <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}>{tally.reason}</span>
                       ),
-                      labelText: sentenceCase(tally.reason),
+                      labelText: tally.reason,
                       value: tally.count,
                       display: (
-                        <span data-testid={`ward-statistics-decline-${tally.reason}-count`}>
+                        <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}>
                           {tally.count === 0 ? "none" : tally.count}
                         </span>
                       ),
                     }))}
                   />
-                  <span className={styles.srOnly}>
-                    <span data-testid="ward-statistics-declines-by-reason-vocabulary-size">
-                      {declinesReadout.value.vocabularySize}
+                  <span className={styles.srOnly} data-testid="ward-statistics-blocked-discharges-by-reason-generated">
+                    All{" "}
+                    <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
+                      {blocked.vocabularySize}
                     </span>{" "}
-                    reason categories
+                    blocker categories.
                   </span>
-                </div>
-              )}
-            </CardBody>
-          </StatCard>
+                </CardBody>
+              </StatCard>
 
-          <StatCard
-            icon={Truck}
-            title="Pull to arrival"
-            data-testid="ward-statistics-pull-to-arrival"
-            aside={
-              <span className={styles.muted}>
-                <span data-testid="ward-statistics-arrival-measured-count">{arrivals.measuredCount}</span> admissions
-              </span>
-            }
-          >
-            <CardBody className={styles.bodyStack}>
-              <dl className={styles.figures} aria-label="Admission timing">
-                <div className={styles.figure}>
-                  <dd className={styles.figureValue} data-testid="ward-statistics-arrival-average">
-                    {arrivals.averageMinutes === null ? "Not recorded" : splitDuration(arrivals.averageMinutes)}
-                  </dd>
-                  <dt className={styles.figureLabel}>Average</dt>
-                </div>
-                <div className={styles.figure}>
-                  <dd className={styles.figureValue} data-testid="ward-statistics-arrival-shortest">
-                    {arrivals.shortestMinutes === null ? "Not recorded" : splitDuration(arrivals.shortestMinutes)}
-                  </dd>
-                  <dt className={styles.figureLabel}>Shortest</dt>
-                </div>
-                <div className={styles.figure}>
-                  <dd className={styles.figureValue} data-testid="ward-statistics-arrival-longest">
-                    {arrivals.longestMinutes === null ? "Not recorded" : splitDuration(arrivals.longestMinutes)}
-                  </dd>
-                  <dt className={styles.figureLabel}>Longest</dt>
-                </div>
-              </dl>
-              <ColumnChart label="Pull to arrival, admissions by band" height={110} columns={arrivalBands} />
-              <dl className={styles.tiles}>
-                <div className={styles.tile}>
-                  <dt className={styles.tileLabel}>Awaiting</dt>
-                  <dd className={styles.tileValue} data-testid="ward-statistics-arrival-awaiting-count">
-                    {arrivals.awaitingArrivalCount}
-                  </dd>
-                </div>
-                <div className={styles.tile}>
-                  <dt className={styles.tileLabel}>Ended</dt>
-                  <dd className={styles.tileValue} data-testid="ward-statistics-arrival-ended-count">
-                    {arrivals.endedCount}
-                  </dd>
-                </div>
-                <div className={styles.tile}>
-                  <dt className={styles.tileLabel}>Excluded</dt>
-                  <dd className={styles.tileValue} data-testid="ward-statistics-arrival-incoherent">
-                    {arrivals.incoherentCount}
-                  </dd>
-                </div>
-                <div className={styles.tile}>
-                  <dt className={styles.tileLabel}>Pending</dt>
-                  <dd className={styles.tileValue} data-testid="ward-statistics-preparing-count">
-                    {preparingCount}
-                  </dd>
-                </div>
-              </dl>
-            </CardBody>
-          </StatCard>
-        </div>
+              <StatCard
+                icon={X}
+                title="Declines by reason"
+                data-testid="ward-statistics-declines-by-reason"
+                aside={
+                  declinesReadout.ok ? (
+                    <span className={styles.muted} data-testid="ward-statistics-declines-by-reason-population">
+                      <span data-testid="ward-statistics-declines-by-reason-total">
+                        {declinesReadout.value.totalCount}
+                      </span>{" "}
+                      {declinesReadout.value.totalCount === 1 ? "decline" : "declines"},{" "}
+                      <span data-testid="ward-statistics-declines-by-reason-movements-with">
+                        {declinesReadout.value.movementsWithDeclinesCount}
+                      </span>
+                      <span className={styles.srOnly}>
+                        {" "}
+                        of{" "}
+                        <span data-testid="ward-statistics-declines-by-reason-movements">
+                          {declinesReadout.value.movementCount}
+                        </span>
+                      </span>{" "}
+                      {declinesReadout.value.movementsWithDeclinesCount === 1 ? "movement" : "movements"}
+                    </span>
+                  ) : undefined
+                }
+              >
+                <CardBody>
+                  {!declinesReadout.ok ? (
+                    <p className={styles.notice} data-testid="ward-statistics-declines-by-reason-unavailable">
+                      {declinesReadout.statement}
+                    </p>
+                  ) : (
+                    <div data-testid="ward-statistics-declines-by-reason-list">
+                      <BarList
+                        label="Declines by reason"
+                        labelWidth="10.5rem"
+                        axis
+                        max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}
+                        mean={
+                          declinesReadout.value.vocabularySize > 0
+                            ? declinesReadout.value.totalCount / declinesReadout.value.vocabularySize
+                            : 0
+                        }
+                        rows={declinesReadout.value.tallies.map((tally) => ({
+                          id: tally.reason,
+                          label: (
+                            <span data-testid={`ward-statistics-decline-${tally.reason}`}>
+                              {sentenceCase(tally.reason)}
+                            </span>
+                          ),
+                          labelText: sentenceCase(tally.reason),
+                          value: tally.count,
+                          display: (
+                            <span data-testid={`ward-statistics-decline-${tally.reason}-count`}>
+                              {tally.count === 0 ? "none" : tally.count}
+                            </span>
+                          ),
+                        }))}
+                      />
+                      <span className={styles.srOnly}>
+                        <span data-testid="ward-statistics-declines-by-reason-vocabulary-size">
+                          {declinesReadout.value.vocabularySize}
+                        </span>{" "}
+                        reason categories
+                      </span>
+                    </div>
+                  )}
+                </CardBody>
+              </StatCard>
+
+              <StatCard
+                icon={Truck}
+                title="Pull to arrival"
+                data-testid="ward-statistics-pull-to-arrival"
+                aside={
+                  <span className={styles.muted}>
+                    <span data-testid="ward-statistics-arrival-measured-count">{arrivals.measuredCount}</span>{" "}
+                    admissions
+                  </span>
+                }
+              >
+                <CardBody className={styles.bodyStack}>
+                  <dl className={styles.figures} aria-label="Admission timing">
+                    <div className={styles.figure}>
+                      <dd className={styles.figureValue} data-testid="ward-statistics-arrival-average">
+                        {arrivals.averageMinutes === null ? "Not recorded" : splitDuration(arrivals.averageMinutes)}
+                      </dd>
+                      <dt className={styles.figureLabel}>Average</dt>
+                    </div>
+                    <div className={styles.figure}>
+                      <dd className={styles.figureValue} data-testid="ward-statistics-arrival-shortest">
+                        {arrivals.shortestMinutes === null ? "Not recorded" : splitDuration(arrivals.shortestMinutes)}
+                      </dd>
+                      <dt className={styles.figureLabel}>Shortest</dt>
+                    </div>
+                    <div className={styles.figure}>
+                      <dd className={styles.figureValue} data-testid="ward-statistics-arrival-longest">
+                        {arrivals.longestMinutes === null ? "Not recorded" : splitDuration(arrivals.longestMinutes)}
+                      </dd>
+                      <dt className={styles.figureLabel}>Longest</dt>
+                    </div>
+                  </dl>
+                  <ColumnChart label="Pull to arrival, admissions by band" height={110} columns={arrivalBands} />
+                  <dl className={styles.tiles}>
+                    <div className={styles.tile}>
+                      <dt className={styles.tileLabel}>Awaiting</dt>
+                      <dd className={styles.tileValue} data-testid="ward-statistics-arrival-awaiting-count">
+                        {arrivals.awaitingArrivalCount}
+                      </dd>
+                    </div>
+                    <div className={styles.tile}>
+                      <dt className={styles.tileLabel}>Ended</dt>
+                      <dd className={styles.tileValue} data-testid="ward-statistics-arrival-ended-count">
+                        {arrivals.endedCount}
+                      </dd>
+                    </div>
+                    <div className={styles.tile}>
+                      <dt className={styles.tileLabel}>Excluded</dt>
+                      <dd className={styles.tileValue} data-testid="ward-statistics-arrival-incoherent">
+                        {arrivals.incoherentCount}
+                      </dd>
+                    </div>
+                    <div className={styles.tile}>
+                      <dt className={styles.tileLabel}>Pending</dt>
+                      <dd className={styles.tileValue} data-testid="ward-statistics-preparing-count">
+                        {preparingCount}
+                      </dd>
+                    </div>
+                  </dl>
+                </CardBody>
+              </StatCard>
+            </div>
+          </div>
+        )}
 
         <WardPrototypeFooter testId="ward-statistics-footer" note="Synthetic prototype. Every figure is invented." />
       </main>

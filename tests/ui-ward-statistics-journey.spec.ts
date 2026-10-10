@@ -59,9 +59,10 @@ const DESTINATIONS = [
     figure: "ward-statistics-overview-declines-population",
   },
   {
-    name: "One health service in detail",
-    linkText: "One health service in detail",
-    marker: "ward-statistics-service-chooser",
+    // Statistics A (10 Oct 2026): Services opens its own index page, not the hub's chooser.
+    name: "Every health service",
+    linkText: "Services",
+    marker: "ward-statistics-services-index",
     navValue: "service",
     figure: undefined,
   },
@@ -118,7 +119,12 @@ test.describe("@mockup the statistics screens are reachable and readable on a ph
       await page.waitForLoadState("networkidle");
       await waitForStreamToSettle(page);
 
-      await page.getByLabel("Statistics section", { exact: true }).selectOption(destination.navValue);
+      // A choice made before React hydrates the select changes nothing, and once it hydrates the
+      // controlled select snaps back to Summary, so choose again until the page actually leaves.
+      await expect(async () => {
+        await page.getByLabel("Statistics section", { exact: true }).selectOption(destination.navValue);
+        await expect(page).not.toHaveURL(/\/statistics$/, { timeout: 3_000 });
+      }, `choosing "${destination.linkText}" never left the hub`).toPass({ timeout: 20_000 });
       await page.waitForLoadState("networkidle");
       await waitForStreamToSettle(page);
 

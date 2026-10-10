@@ -137,6 +137,11 @@ const PINNED: Record<string, string | null> = {
   "statistics/community/[teamId]": "StatisticsCommunityScreen",
   "statistics/ward/[unitId]": "StatisticsWardScreen",
   "statistics/weekly": "WeeklyReportScreen",
+  // The four statistics index pages, 9 Oct 2026 (Statistics A).
+  "statistics/services": "StatisticsServicesIndexScreen",
+  "statistics/wards": "StatisticsWardsIndexScreen",
+  "statistics/eds": "StatisticsEdsIndexScreen",
+  "statistics/teams": "StatisticsTeamsIndexScreen",
   transport: "redirect:/mockups/ward-flow/movements",
   "transport/officer": "OfficerScreen",
   "ward/[unitId]": "WardScreen",

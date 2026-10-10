@@ -14,9 +14,13 @@ describe("one shared statistics navigation", () => {
     ["", "Summary"],
     ["/overview", "Overview"],
     ["/compare", "Compare"],
+    ["/services", "Services"],
     ["/service/North%20Metro", "Services"],
+    ["/wards", "Wards"],
     ["/ward/scgh-adult-open", "Wards"],
+    ["/eds", "EDs"],
     ["/ed/scgh", "EDs"],
+    ["/teams", "Teams"],
     ["/community/bentley", "Teams"],
     ["/weekly", "Weekly"],
   ])("keeps the same destinations and exactly one current page on %s", (suffix, label) => {
@@ -38,7 +42,8 @@ describe("one shared statistics navigation", () => {
     expect(links.filter((link) => link.getAttribute("aria-current") === "page")).toHaveLength(1);
     const current = nav.getByRole("link", { name: new RegExp(`^${label}(\\s*\\d+)?$`) });
     expect(current).toHaveAttribute("aria-current", "page");
-    if (suffix.includes("/ward/")) expect(current).toHaveAttribute("href", routing.pathname);
+    // Each unit kind's tab opens its index page (Statistics A, 9 Oct 2026), from a detail page too.
+    if (suffix.includes("/ward")) expect(current).toHaveAttribute("href", "/mockups/ward-flow/statistics/wards");
   });
 
   it("uses the same destinations from the compact mobile selector", () => {
@@ -47,6 +52,6 @@ describe("one shared statistics navigation", () => {
     fireEvent.change(screen.getByLabelText("Statistics section"), { target: { value: "overview" } });
     expect(routing.push).toHaveBeenCalledWith("/mockups/ward-flow/statistics/overview");
     fireEvent.change(screen.getByLabelText("Statistics section"), { target: { value: "service" } });
-    expect(routing.push).toHaveBeenCalledWith("/mockups/ward-flow/statistics#choose-a-health-service");
+    expect(routing.push).toHaveBeenCalledWith("/mockups/ward-flow/statistics/services");
   });
 });
