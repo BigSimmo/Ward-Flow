@@ -169,33 +169,53 @@ export function WardPhoneMenu({
   function row(entry: RailEntry, count?: WardNavCount, meta?: boolean) {
     const Icon = entry.icon;
     const active = isActiveRailEntry(pathname, entry);
-    return (
-      <li key={entry.id}>
-        <Link
-          href={entry.href}
-          className={styles.row}
-          aria-current={active ? "page" : undefined}
-          aria-label={wardNavCountLabel(entry.label, count)}
-          data-testid="ward-rail-link"
-          onClick={() => go(entry)}
-        >
-          <Icon aria-hidden="true" className={styles.rowIcon} strokeWidth={1.75} />
-          <span className={styles.rowText}>
-            <span className={styles.rowLabel}>{entry.label}</span>
-            {meta && count ? (
-              <span className={styles.rowMeta}>
-                <Dot tone={count.urgent ? "warning" : "neutral"} />
-                <span>{count.noun}</span>
-              </span>
-            ) : null}
-          </span>
-          {count && count.value > 0 ? (
-            <span className={styles.count} aria-hidden="true">
-              {count.value}
+    const rowContent = (
+      <>
+        <Icon aria-hidden="true" className={styles.rowIcon} strokeWidth={1.75} />
+        <span className={styles.rowText}>
+          <span className={styles.rowLabel}>{entry.label}</span>
+          {meta && count ? (
+            <span className={styles.rowMeta}>
+              <Dot tone={count.urgent ? "warning" : "neutral"} />
+              <span>{count.noun}</span>
             </span>
           ) : null}
-          <ChevronRight aria-hidden="true" className={styles.chevron} strokeWidth={1.75} />
-        </Link>
+        </span>
+        {count && count.value > 0 ? (
+          <span className={styles.count} aria-hidden="true">
+            {count.value}
+          </span>
+        ) : null}
+        <ChevronRight aria-hidden="true" className={styles.chevron} strokeWidth={1.75} />
+      </>
+    );
+    return (
+      <li key={entry.id}>
+        {entry.id === "referral-intake" ? (
+          <button
+            type="button"
+            className={styles.row}
+            aria-label={wardNavCountLabel(entry.label, count)}
+            data-testid="ward-phone-new-referral"
+            onClick={() => {
+              close();
+              onNewReferral();
+            }}
+          >
+            {rowContent}
+          </button>
+        ) : (
+          <Link
+            href={entry.href}
+            className={styles.row}
+            aria-current={active ? "page" : undefined}
+            aria-label={wardNavCountLabel(entry.label, count)}
+            data-testid="ward-rail-link"
+            onClick={() => go(entry)}
+          >
+            {rowContent}
+          </Link>
+        )}
       </li>
     );
   }
@@ -286,6 +306,7 @@ export function WardPhoneMenu({
         onClose={close}
         title="Menu"
         mobileSize="viewport"
+        mobileBreakpoint="phone"
         returnFocusRef={returnFocusRef}
         headerLeading={
           <Link
