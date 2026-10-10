@@ -12,9 +12,11 @@ export async function migrate(pool) {
     if (!rows[0].relation)
       await client.query(await readFile(new URL("./migrations/001-shared-workspace.sql", import.meta.url), "utf8"));
     const version = await client.query("SELECT max(version) AS version FROM ward_flow.migrations");
-    if (![1, 2].includes(version.rows[0].version)) throw new Error("Unsupported database migration version");
+    if (![1, 2, 3].includes(version.rows[0].version)) throw new Error("Unsupported database migration version");
     if (version.rows[0].version === 1)
       await client.query(await readFile(new URL("./migrations/002-workspace-data-mode.sql", import.meta.url), "utf8"));
+    if (version.rows[0].version <= 2)
+      await client.query(await readFile(new URL("./migrations/003-push-subscriptions.sql", import.meta.url), "utf8"));
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -41,6 +43,9 @@ export async function grantBackend(client, objectId) {
   await client.query("GRANT SELECT ON ward_flow.migrations TO wardflow_backend");
   await client.query("GRANT SELECT, INSERT, UPDATE ON ward_flow.workspaces TO wardflow_backend");
   await client.query("GRANT SELECT, INSERT ON ward_flow.commands, ward_flow.audit TO wardflow_backend");
+  await client.query("GRANT SELECT, INSERT, UPDATE, DELETE ON ward_flow.push_subscriptions TO wardflow_backend");
+  await client.query("GRANT SELECT, INSERT, UPDATE ON ward_flow.push_baselines TO wardflow_backend");
+  await client.query("GRANT SELECT, INSERT, UPDATE, DELETE ON ward_flow.push_deliveries TO wardflow_backend");
   await client.query("GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA ward_flow TO wardflow_backend");
 }
 

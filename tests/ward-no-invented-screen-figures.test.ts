@@ -135,6 +135,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^referrals\/referral-draft-store\.ts$/,
     name: /^REFERRAL_DRAFT_AUTOSAVE_MS$/,
   },
+  {
+    id: "phone-alert-release",
+    why: "How long sign-out waits for the server to release this device's phone alerts (10 Oct 2026); never shown, not a limit.",
+    file: /^ward-shared-access\.tsx$/,
+    name: /^PHONE_RELEASE_WAIT_MS$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;

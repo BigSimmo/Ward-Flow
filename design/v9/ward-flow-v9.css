@@ -1,0 +1,5638 @@
+/* Ward Flow design system v9. Calm, dense, live, with frosted glass for chrome. Synthetic prototype,
+   not a medical device. design-system-v9.md is the spec; this sheet is the single source of values.
+
+   v9 (10 Oct 2026) consolidates v8 to v8.2 and adds what the 10 October review found missing:
+   1. Type: five page sizes 12, 13, 14, 15 and 20. 15 is for hero chip and key figures. 16 retires and
+      28 is for sign-in and print only. Figures (counts, key values, clocks, ids) stay in mono with
+      tabular digits (owner, 10 Oct); chart axes use Geist. Tracking is set per size, meta is 500.
+   2. Glass about 80% opaque in three tiers by role (bar 78, popover 82, sheet 86), blur 20 to 32,
+      saturate 1.4. One hairline, a bright top edge and a soft sheen (owner, 10 Oct); no masked rim.
+   3. Night surfaces step lighter as they rise (surface, raised, overlay). Light parts on the hero dim
+      at night. Accent and primary have hover and press steps, so no control uses filter.
+   4. Motion with roles: micro, press, enter, exit, sheet and live. Exits are quicker than entries.
+      The live pulse fires once per update. Reduced motion fades for 120ms and never sets 0ms.
+   5. Focus keeps a 2px gap between the ring and the item, so it reads on tints and edges.
+   6. Density: rows 44 by default, 36 dense, 52 touch. Layout spacing adds 24 and 32.
+   7. Layout parts: equal columns where one scrolls, row actions that show on hover, focus or
+      selection, and a sliding capsule for pill tabs.
+
+   v8 history, kept for provenance in ../v8/:
+
+   v8 in short:
+   1. One theme switch. Every colour token holds its day and night value in one light-dark() pair,
+      resolved by color-scheme. data-theme on <html>, the OS setting, .day/.night subtrees and print
+      all work from that one mechanism, so no theme block can miss a token.
+   2. The 12px floor holds with no uppercase exception (owner ruling O-15.1). The 11px size is retired.
+   3. Contrast fixes measured on the v7.1 values: night ink on accent, the data ramp, faded beds,
+      tone colours as text, and selection that survives Windows high contrast.
+   4. New token groups the app already needs: service colours, z-index ladder, breakpoints,
+      named control shadows, print.
+   5. next/font variables lead the font stacks again, so the app keeps its self-hosted Geist.
+
+   v8.1 (9 Oct 2026, expression rules, spec section 14): a focal element and a part of its own per page.
+   v8.2 (9 Oct 2026, balanced rules, spec section 15): the v8.1 key figure, act now tint, .keyfig and
+   .tinted are retired. Colour lives in glyphs, the hero and a thin act now edge (.edge-act), and
+   counts sit in compact hero chips.
+
+   Never paste a hex from this file into app code. Read the role through var(--wf-*). */
+
+/* ================= 1. Tokens that never change with the theme ================= */
+:root {
+  color-scheme: light dark;
+
+  /* type: five page sizes, 12px floor. Uppercase is a treatment at 12, never a licence to go smaller.
+     15 is for figures (hero chips, key values). 28 is for sign-in and print only, never a page. */
+  --wf-fs-12: 12px;
+  --wf-fs-13: 13px;
+  --wf-fs-14: 14px;
+  --wf-fs-15: 15px;
+  --wf-fs-20: 20px;
+  --wf-fs-28: 28px;
+  --wf-lh-12: 16px;
+  --wf-lh-13: 18px;
+  --wf-lh-14: 20px;
+  --wf-lh-15: 20px;
+  --wf-lh-20: 26px;
+  --wf-lh-28: 32px;
+  /* tracking per size */
+  --wf-tr-20: -0.015em;
+  --wf-tr-15: -0.01em;
+  --wf-tr-caps: 0.06em;
+  --wf-font: var(--font-geist-sans, Geist), Geist, "Segoe UI", system-ui, sans-serif;
+  --wf-mono: var(--font-geist-mono, "Geist Mono"), "Geist Mono", ui-monospace, Consolas, monospace;
+
+  /* radius: softer in v7, unchanged in v8. Controls are pills. */
+  --wf-r-xs: 6px;
+  --wf-r-sm: 10px;
+  --wf-r-md: 12px;
+  --wf-r-lg: 16px;
+  --wf-r-xl: 22px;
+  --wf-r-pill: 999px;
+
+  /* space: 4, 8, 12, 16 between parts. Insets inside a control may step by 2.
+     24 and 32 are for layout only: 24 between page sections, 32 as the wide page gutter. */
+  --wf-s-1: 4px;
+  --wf-s-2: 8px;
+  --wf-s-3: 12px;
+  --wf-s-4: 16px;
+  --wf-s-6: 24px;
+  --wf-s-8: 32px;
+
+  /* sizes */
+  --wf-h-chip: 22px;
+  --wf-h-sm: 30px;
+  --wf-h-md: 36px;
+  --wf-h-lg: 44px;
+  --wf-touch: 44px;
+  /* the smallest pointer target on desktop. 24 is allowed only inline in running text. */
+  --wf-target: 28px;
+  /* rows: one density setting drives every list. Default 44, dense 36, touch 52. */
+  --wf-row-dense: 36px;
+  --wf-row-default: 44px;
+  --wf-row-touch: 52px;
+  --wf-row: var(--wf-row-default);
+  --wf-row-compact: var(--wf-row-default);
+  --wf-row-group: 40px;
+  --wf-count: 20px;
+  /* status glyphs: 10 beside text, 12 in hero chips. The triangle is drawn a little wider. */
+  --wf-glyph: 10px;
+  --wf-glyph-hero: 12px;
+
+  /* layout */
+  --wf-panel: clamp(300px, 27%, 400px);
+  --wf-panel-wide: clamp(340px, 33.333%, 480px);
+  --wf-drawer: 480px;
+  --wf-drawer-wide: 760px;
+  --wf-bar-phone-top: 56px;
+  --wf-bar-phone: 52px;
+  /* a column that follows its neighbour's height scrolls inside; this caps it when it stands alone */
+  --wf-col-max: 36rem;
+
+  /* breakpoints. Media queries cannot read custom properties, so these record the only three
+     values a stylesheet may use, written with range syntax: (width <= 40rem), (width <= 48rem),
+     (width >= 64rem). Scripts read them for matchMedia. 48rem is the phone rule for components. */
+  --wf-bp-phone: 40rem;
+  --wf-bp-narrow: 48rem;
+  --wf-bp-wide: 64rem;
+
+  /* z-index ladder. Pick a rung, never a number. 110 is the top. */
+  --wf-z-raised: 1;
+  --wf-z-sticky: 20;
+  --wf-z-bar: 60;
+  --wf-z-overlay: 80;
+  --wf-z-popover: 95;
+  --wf-z-modal: 100;
+  --wf-z-toast: 105;
+  --wf-z-tip: 110;
+
+  /* motion, by role. Quick in, quicker out. Nothing moves without a reason.
+     micro: hover colour and edges. press: in on pointer down, release on up. enter and exit: menus,
+     popovers, toasts and rows. sheet: sheets, drawers, the tab capsule and hero chip selection.
+     live: how long a changed value stays marked. */
+  --wf-t-micro: 100ms;
+  --wf-t-press: 80ms;
+  --wf-t-release: 160ms;
+  --wf-t-enter: 220ms;
+  --wf-t-exit: 160ms;
+  --wf-t-sheet: 340ms;
+  --wf-t-live: 1400ms;
+  --wf-ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --wf-ease-in: cubic-bezier(0.3, 0, 1, 1);
+  --wf-ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --wf-ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* the hero band is deep slate in both themes */
+  --wf-hero-ink: #fff;
+  --wf-hero-ink-2: #c3d1de;
+  --wf-hero-ink-3: #a3b8cc;
+  --wf-hero-danger: #e27a68;
+  --wf-hero-warning: #d9a441;
+  --wf-hero-success: #4cb383;
+  --wf-hero-info: #7fa3c8;
+  --wf-hero-neutral: #8fa0b1;
+  --wf-on-hero-fill: rgba(255, 255, 255, 0.08);
+  --wf-on-hero-line: rgba(255, 255, 255, 0.2);
+  --wf-on-hero-hl: rgba(255, 255, 255, 0.14);
+  --wf-on-hero-ink: #d5e0ea;
+  --wf-on-hero-track: rgba(0, 0, 0, 0.2);
+  --wf-on-hero-div: rgba(255, 255, 255, 0.14);
+  /* light parts on the hero (pressed pills, light button). v9: --wf-light-1 and -2 are themed, in
+     section 2, so they dim at night instead of glaring. */
+  --wf-light-edge: rgba(255, 255, 255, 0.6);
+  --wf-light-ink: #1f3346;
+  --wf-light-danger: #c4513f;
+  --wf-light-warning: #ac720a;
+  --wf-light-success: #2f8a5f;
+  --wf-light-info: #4f7398;
+  --wf-light-neutral: #6b7f93;
+
+  /* named control shadows (v7 left 13 raw shadows in rules; v8 names every one) */
+  --wf-e-pri:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(16, 30, 44, 0.22), 0 4px 10px -6px rgba(16, 30, 44, 0.45);
+  --wf-e-pri-press: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  --wf-e-hero: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 18px 36px -26px rgba(16, 30, 44, 0.7);
+  --wf-e-on-hero: inset 0 1px 0 var(--wf-on-hero-hl), 0 2px 6px -3px rgba(0, 0, 0, 0.4);
+  --wf-e-on-hero-press: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --wf-e-light: inset 0 1px 0 var(--wf-light-1), 0 2px 6px -2px rgba(0, 0, 0, 0.35);
+  --wf-e-well: inset 0 1px 2px rgba(16, 24, 40, 0.06);
+  --wf-e-knob: 0 1px 2px rgba(16, 24, 40, 0.3);
+  --wf-e-tip: 0 6px 16px -6px rgba(16, 24, 40, 0.45);
+  --wf-e-bar: 0 6px 16px -12px rgba(16, 24, 40, 0.35);
+}
+
+/* ================= 2. Colour tokens: light-dark(day, night) ================= */
+:root {
+  --wf-canvas: light-dark(#e8ecf0, #0d141b);
+  --wf-surface: light-dark(#fdfdfe, #141d26);
+  --wf-surface-2: light-dark(#f6f8fa, #18232e);
+  --wf-track: light-dark(#eceff3, #223040);
+  --wf-hover: light-dark(#f2f5f8, #1b2733);
+  --wf-selected: light-dark(#eef3f8, #1f2e3c);
+  /* v9: night surfaces step lighter as they rise, because shadows do not show on a dark canvas.
+     canvas, surface, raised (menus, popovers, the selected tab), overlay (sheets, dialogs). */
+  --wf-raised: light-dark(#ffffff, #1b2733);
+  --wf-overlay: light-dark(#ffffff, #202d3a);
+  --wf-light-1: light-dark(#ffffff, #e9eef3);
+  --wf-light-2: light-dark(#eef2f6, #d6dfe8);
+
+  --wf-line: light-dark(rgba(22, 30, 40, 0.08), rgba(255, 255, 255, 0.07));
+  --wf-line-2: light-dark(rgba(22, 30, 40, 0.15), rgba(255, 255, 255, 0.13));
+  --wf-line-3: light-dark(rgba(22, 30, 40, 0.26), rgba(255, 255, 255, 0.24));
+  --wf-hl: light-dark(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.06));
+
+  --wf-ink-1: light-dark(#161a20, #e9eef3);
+  --wf-ink-2: light-dark(#414953, #bcc8d4);
+  --wf-ink-3: light-dark(#5b646f, #93a4b5);
+  --wf-ink-off: light-dark(#828a94, #6e7d8d);
+  --wf-line-ctl: light-dark(#828a94, #6e7d8d);
+
+  /* v9 Elevate: one confident blue means you can act here. Data bars stay slate. */
+  --wf-accent: light-dark(#245a8c, #8cbcf0);
+  --wf-accent-strong: light-dark(#1f4f7d, #8cbcf0);
+  --wf-accent-tint: light-dark(#e3eef9, #1d3349);
+  --wf-accent-ink: light-dark(#1f4d7a, #b7d3f0);
+  /* v8: ink on an accent fill. Night was white on #8fb0d4 at 2.25:1; it is now 8.2:1. */
+  --wf-on-accent: light-dark(#fff, #0d141b);
+  /* v8: ink on the primary gradient, white in both themes (7.1 and 5.3:1 at worst) */
+  --wf-on-pri: #fff;
+  --wf-pri-1: light-dark(#2f6aa3, #3a72a8);
+  --wf-pri-2: light-dark(#234f7a, #2c5c8c);
+  --wf-pri-edge: light-dark(#1d4569, #5a8fc4);
+  /* v9: hover and press steps, so no control needs filter: brightness */
+  --wf-pri-1-hover: light-dark(#3874af, #3c74ab);
+  --wf-pri-2-hover: light-dark(#295a8a, #30639a);
+  --wf-pri-1-press: light-dark(#234f7a, #2f5f8f);
+  --wf-pri-2-press: light-dark(#1c4166, #27507a);
+  --wf-accent-hover: light-dark(#1f4f7d, #a6cbf3);
+  --wf-accent-press: light-dark(#1b4570, #76a9e0);
+
+  --wf-hero-1: light-dark(#22384d, #22374d);
+  --wf-hero-2: light-dark(#1c2f41, #1c2e41);
+  --wf-hero-edge: light-dark(#172736, rgba(143, 176, 212, 0.1));
+
+  /* tones colour glyphs, edges and marks (3:1 or better). Text always uses the -ink partner. */
+  --wf-danger: light-dark(#c4513f, #e27a68);
+  --wf-danger-ink: light-dark(#9a3424, #f2a495);
+  --wf-warning: light-dark(#ac720a, #d9a441);
+  --wf-warning-ink: light-dark(#7a5208, #f0cc85);
+  --wf-success: light-dark(#2f8a5f, #4cb383);
+  --wf-success-ink: light-dark(#1c6343, #8fd6b3);
+  --wf-info: light-dark(#4f7398, #7fa3c8);
+  --wf-info-ink: light-dark(#27405a, #b9cfe6);
+  --wf-neutral: light-dark(#6b7f93, #8fa0b1);
+  --wf-neutral-ink: light-dark(#414953, #bcc8d4);
+
+  /* soft highlight tints inside data only, never a card fill */
+  --wf-fit-tint: light-dark(rgba(47, 138, 95, 0.07), rgba(76, 179, 131, 0.09));
+  --wf-fit-edge: light-dark(rgba(47, 138, 95, 0.32), rgba(76, 179, 131, 0.36));
+  --wf-hold-tint: light-dark(rgba(172, 114, 10, 0.07), rgba(217, 164, 65, 0.09));
+  --wf-hold-edge: light-dark(rgba(172, 114, 10, 0.34), rgba(217, 164, 65, 0.36));
+  /* v8.2: the act now edge. A thin border, never a fill (rule 6). The triangle carries the state. */
+  --wf-act-edge: light-dark(rgba(196, 81, 63, 0.6), rgba(226, 122, 104, 0.62));
+
+  /* data ramp. v8: every series step clears 3:1 on surface and surface-2 in both themes.
+     --wf-data-rest is the old light step, for a remainder that is never the only mark of a value. */
+  --wf-data-1: light-dark(#2f4c66, #8fb0d4);
+  --wf-data-2: light-dark(#557089, #6a8bad);
+  --wf-data-3: light-dark(#788ea4, #55728f);
+  --wf-data-rest: light-dark(#c9d3dd, #2a3a4b);
+  --wf-data-ready: light-dark(#2f8a5f, #4cb383);
+  /* closed is dashed, never gold: a quiet slate under a dashed edge */
+  --wf-data-closed: light-dark(#b9c4cf, #3a4b5c);
+
+  /* service colours: a dot or stripe beside the service name, never on its own (ruling B-7).
+     Day values are the health services' own colours. Night values are lifted to read on slate. */
+  --wf-svc-east: light-dark(#00825e, #34d399);
+  --wf-svc-north: light-dark(#990057, #f472b6);
+  --wf-svc-south: light-dark(#5a2476, #c084fc);
+  --wf-svc-wachs: light-dark(#005b94, #38bdf8);
+  --wf-svc-cahs: light-dark(#0076be, #8ab4ff);
+  --wf-svc-statewide: light-dark(#005b38, #a3d9b8);
+  --wf-svc-private: light-dark(#475569, #94a3b8);
+
+  /* glass, about 80% opaque by owner choice (10 Oct): frosted and calm rather than see-through.
+     Three tiers by role. Night glass is built on the raised and overlay steps. */
+  /* cool, not white, so glass reads as glass by day */
+  --wf-glass-bar: light-dark(rgba(244, 247, 250, 0.8), rgba(27, 39, 51, 0.78));
+  --wf-glass-pop: light-dark(rgba(244, 247, 250, 0.84), rgba(27, 39, 51, 0.82));
+  --wf-glass-sheet: light-dark(rgba(246, 249, 252, 0.88), rgba(32, 45, 58, 0.86));
+  --wf-glass-hl: light-dark(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.1));
+  /* the sheen: a soft light fall across the top half of glass, for the Apple shine at 80% opacity */
+  --wf-sheen: linear-gradient(
+    180deg,
+    light-dark(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.12)),
+    transparent 50%
+  );
+  /* deprecated v8 names, kept until nothing reads them */
+  --wf-glass-thin: var(--wf-glass-bar);
+  --wf-glass: var(--wf-glass-pop);
+  --wf-glass-thick: var(--wf-glass-sheet);
+  --wf-scrim: light-dark(rgba(22, 30, 40, 0.14), rgba(0, 0, 0, 0.4));
+  --wf-glow-1: light-dark(rgba(143, 176, 212, 0.45), rgba(79, 115, 152, 0.34));
+  --wf-glow-2: light-dark(rgba(150, 196, 180, 0.2), rgba(76, 179, 131, 0.08));
+  /* the glow sits behind the top 400px only, where the hero and bars are, so tables below sit on
+     one even canvas */
+  --wf-backdrop:
+    radial-gradient(1200px 400px at 8% -12%, var(--wf-glow-1), transparent 70%),
+    radial-gradient(900px 360px at 100% -8%, var(--wf-glow-2), transparent 70%), var(--wf-canvas);
+
+  --wf-tip-bg: light-dark(rgba(22, 30, 40, 0.92), rgba(36, 48, 62, 0.97));
+  --wf-tip-ink: light-dark(#fff, #e9eef3);
+  --wf-tip-ring: light-dark(transparent, rgba(255, 255, 255, 0.13));
+  --wf-focus-ring: var(--wf-accent);
+  /* the gap between ring and item. Inset rings draw it inside, so they read on any fill. */
+  --wf-focus-gap: var(--wf-surface);
+  /* a value that just changed is marked with this line for --wf-t-live */
+  --wf-live-mark: var(--wf-accent);
+
+  /* elevation. Day lifts with soft tint, night with a dark ring. Each layer the other theme does not
+     use is transparent, so every value is exactly the v7 value and no night block is needed. */
+  --wf-sh-a: light-dark(rgba(16, 24, 40, 0.03), transparent);
+  --wf-sh-b: light-dark(rgba(16, 24, 40, 0.05), transparent);
+  --wf-sh-c: light-dark(rgba(16, 24, 40, 0.06), transparent);
+  --wf-sh-d: light-dark(rgba(16, 24, 40, 0.22), transparent);
+  --wf-sh-e: light-dark(rgba(16, 24, 40, 0.24), rgba(0, 0, 0, 0.6));
+  --wf-sh-f: light-dark(rgba(16, 24, 40, 0.14), transparent);
+  --wf-sh-g: light-dark(rgba(16, 24, 40, 0.3), transparent);
+  --wf-sh-n1: light-dark(transparent, rgba(0, 0, 0, 0.6));
+  --wf-sh-n2: light-dark(transparent, rgba(0, 0, 0, 0.7));
+  --wf-ring-1: light-dark(transparent, rgba(0, 0, 0, 0.2));
+  --wf-ring-2: light-dark(transparent, rgba(0, 0, 0, 0.35));
+  --wf-ring-3: light-dark(transparent, rgba(0, 0, 0, 0.18));
+  --wf-press: light-dark(rgba(16, 24, 40, 0.08), rgba(0, 0, 0, 0.35));
+  --wf-sh-sel: light-dark(rgba(16, 24, 40, 0.12), rgba(0, 0, 0, 0.4));
+  --wf-e1:
+    inset 0 1px 0 var(--wf-hl), 0 0 0 1px var(--wf-ring-1), 0 1px 1px var(--wf-sh-a), 0 2px 6px -2px var(--wf-sh-b),
+    0 12px 28px -20px var(--wf-sh-d), 0 12px 28px -18px var(--wf-sh-n1);
+  --wf-e2:
+    inset 0 1px 0 var(--wf-hl), 0 0 0 1px var(--wf-ring-2), 0 1px 2px var(--wf-sh-c), 0 10px 24px -10px var(--wf-sh-e);
+  --wf-e3:
+    inset 0 1px 0 var(--wf-hl), 0 0 0 0.5px var(--wf-sh-f), 0 0 0 1px var(--wf-ring-2), 0 2px 4px var(--wf-sh-c),
+    0 24px 48px -12px var(--wf-sh-g), 0 28px 60px -18px var(--wf-sh-n2);
+  --wf-e-raise: inset 0 1px 0 var(--wf-hl), 0 0 0 1px var(--wf-ring-3), 0 1px 2px var(--wf-sh-c);
+  --wf-e-press: inset 0 1px 2px var(--wf-press);
+  /* v9: the selected tab, segment and pressed chip (was a raw rgba in v8) */
+  --wf-e-sel: inset 0 1px 0 var(--wf-hl), 0 1px 2px var(--wf-sh-sel), 0 0 0 1px var(--wf-line-ctl);
+  /* a clickable card on hover: the edge and shadow step up, nothing moves */
+  --wf-e1-hover:
+    inset 0 1px 0 var(--wf-hl), 0 0 0 1px var(--wf-ring-2), 0 1px 2px var(--wf-sh-c), 0 8px 20px -12px var(--wf-sh-e);
+}
+
+/* ================= 3. The one theme switch ================= */
+/* <html data-theme="light|dark"> pins the theme; no attribute follows the OS. .day and .night force
+   a subtree. The app sets data-theme before first paint and mirrors it to the legacy .dark class
+   until the legacy layers are retired (spec section 4). */
+:root[data-theme="light"],
+.day {
+  color-scheme: light;
+}
+:root[data-theme="dark"],
+.night {
+  color-scheme: dark;
+}
+
+/* Deprecated aliases. Remove when nothing reads them (spec section 10). */
+:root {
+  --wf-fs-11: var(--wf-fs-12);
+  --wf-lh-11: var(--wf-lh-12);
+  --wf-fs-16: var(--wf-fs-15);
+  --wf-lh-16: var(--wf-lh-15);
+  --wf-m-fast: var(--wf-t-micro);
+  --wf-m-base: var(--wf-t-enter);
+  --wf-m-slow: var(--wf-t-sheet);
+  --wf-ease: var(--wf-ease-out);
+}
+
+/* Density. Set once on the shell from Settings. Every row reads --wf-row. */
+[data-density="dense"] {
+  --wf-row: var(--wf-row-dense);
+}
+[data-density="touch"] {
+  --wf-row: var(--wf-row-touch);
+}
+
+/* ================= 4. Base ================= */
+.wf {
+  font-family: var(--wf-font);
+  color: var(--wf-ink-1);
+  background: var(--wf-backdrop);
+  -webkit-font-smoothing: antialiased;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+.wf *,
+.wf *::before,
+.wf *::after {
+  box-sizing: border-box;
+}
+/* Focus: a 2px ring with a 2px gap, so the ring never touches a red edge, a tint or a selection.
+   Controls whose ring must sit inside (tabs, menu items, rows) use .ring-in, which draws the gap too. */
+.wf :focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.wf .ring-in:focus-visible,
+.wf .menu [role="menuitem"]:focus-visible,
+.wf .row:focus-visible,
+.wf .li:focus-visible {
+  outline: 0;
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+/* skip link to the page's focal element */
+.skip {
+  position: absolute;
+  left: var(--wf-s-3);
+  top: var(--wf-s-3);
+  z-index: var(--wf-z-tip);
+  transform: translateY(-200%);
+}
+.skip:focus-visible {
+  transform: none;
+}
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- type ---------- */
+.t-eyebrow {
+  font: 600 var(--wf-fs-12)/var(--wf-lh-12) var(--wf-font);
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.t-12 {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+.t-13 {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+.t-14 {
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+}
+/* 15 is for figures: hero chips and key values, in mono with tabular digits */
+.t-15 {
+  font-size: var(--wf-fs-15);
+  line-height: var(--wf-lh-15);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-15);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--wf-mono);
+}
+.t-20 {
+  font-size: var(--wf-fs-20);
+  line-height: var(--wf-lh-20);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-20);
+  text-wrap: balance;
+}
+/* sign-in and print only, never on a page */
+.t-28 {
+  font-size: var(--wf-fs-28);
+  line-height: var(--wf-lh-28);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.mute {
+  color: var(--wf-ink-3);
+}
+/* meta text: 12px at 500, which holds up on Windows ClearType where 400 looks thin */
+.meta {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.ink2 {
+  color: var(--wf-ink-2);
+}
+/* Figures (counts, percentages, durations) are mono with tabular digits for the control room feel
+   (owner, 10 Oct). Chart axes stay in Geist so charts read quietly. */
+.num {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+.clk,
+.id {
+  font-family: var(--wf-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  letter-spacing: -0.01em;
+}
+/* a value that just changed: a 2px accent line fades under it. Re-add the class on each change. */
+.chg {
+  position: relative;
+}
+.chg::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  bottom: -3px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--wf-live-mark);
+  opacity: 0;
+  pointer-events: none;
+  animation: wfMark var(--wf-t-live) var(--wf-ease-out);
+}
+/* a glyph that just changed pops once */
+.bump {
+  animation: wfPop 360ms var(--wf-ease-sheet);
+}
+.nw {
+  white-space: nowrap;
+}
+.ell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* ---------- surfaces ---------- */
+.card {
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  box-shadow: var(--wf-e1);
+  min-width: 0;
+}
+/* a card that opens something: the edge and shadow step up on hover, nothing moves */
+.card.click {
+  cursor: pointer;
+  transition:
+    box-shadow var(--wf-t-micro) var(--wf-ease-out),
+    border-color var(--wf-t-micro) var(--wf-ease-out);
+}
+.card.click:hover {
+  border-color: var(--wf-line-2);
+  box-shadow: var(--wf-e1-hover);
+}
+.card-h {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 48px;
+  padding: 0 var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+.card-h .ttl {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font: 600 var(--wf-fs-14)/var(--wf-lh-14) var(--wf-font);
+  white-space: nowrap;
+}
+.card-h .sp {
+  flex: 1;
+}
+.card-b {
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+.card-f {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 40px;
+  padding: 0 var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+/* the body of a card in .cols that scrolls inside instead of leaving blank space */
+.card-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.inset {
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+.hero:not(.quiet) {
+  --wf-danger: var(--wf-hero-danger);
+  --wf-warning: var(--wf-hero-warning);
+  --wf-success: var(--wf-hero-success);
+  --wf-info: var(--wf-hero-info);
+  --wf-neutral: var(--wf-hero-neutral);
+  --wf-focus-ring: var(--wf-light-1);
+}
+.hero {
+  /* Elevate: one fixed light source at the top right, so the band glows rather than outlines */
+  background:
+    radial-gradient(720px 240px at 88% -30%, rgba(122, 170, 220, 0.22), transparent 70%),
+    linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  border: 1px solid var(--wf-hero-edge);
+  border-radius: var(--wf-r-xl);
+  color: var(--wf-hero-ink);
+  box-shadow: var(--wf-e-hero);
+}
+/* the quiet hero: nothing on the page is live (an inactive patient, a closed bed, history) */
+.hero.quiet {
+  background: var(--wf-surface);
+  border-color: var(--wf-line-2);
+  color: var(--wf-ink-1);
+  box-shadow: var(--wf-e1);
+}
+/* Glass, three tiers by role. One hairline, a bright top edge, a soft sheen, one soft shadow. Only ink-1 and ink-2
+   sit on glass. Saturate stays at 1.4 so red edges and service dots keep their colour beneath it.
+   .glass is the popover tier (menus, popovers, the one glass panel in the page body).
+   .glass.bar is for top bars and toolbars. .glass.sheet is for sheets, drawers and dialogs.
+   Never put an animation with fill-mode forwards or both on an ancestor of glass: it stops the blur. */
+.glass {
+  position: relative;
+  background-color: var(--wf-glass-pop);
+  background-image: var(--wf-sheen);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid var(--wf-line-2);
+  box-shadow:
+    inset 0 1px 0 var(--wf-glass-hl),
+    inset 0 -1px 0 light-dark(rgba(16, 24, 40, 0.06), rgba(0, 0, 0, 0.25)),
+    var(--wf-e2);
+}
+.glass.bar,
+.glass.thin {
+  background-color: var(--wf-glass-bar);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+}
+.glass.sheet,
+.glass.thick {
+  background-color: var(--wf-glass-sheet);
+  -webkit-backdrop-filter: blur(32px) saturate(1.4);
+  backdrop-filter: blur(32px) saturate(1.4);
+  box-shadow:
+    inset 0 1px 0 var(--wf-glass-hl),
+    var(--wf-e3);
+}
+/* v8: was .glass.dark, which collided in name with the legacy .dark theme class */
+.glass.onhero {
+  background: var(--wf-on-hero-fill);
+  border-color: var(--wf-on-hero-line);
+  box-shadow: inset 0 1px 0 var(--wf-on-hero-hl);
+}
+.scrim {
+  background: var(--wf-scrim);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass.bar,
+  .glass.sheet {
+    background: var(--wf-raised);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass.bar,
+  .glass.sheet {
+    background: var(--wf-raised);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+.divider {
+  height: 1px;
+  background: var(--wf-line);
+}
+
+/* ---------- icons ---------- */
+.ic {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ic.s14 {
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
+}
+.ic.s20 {
+  width: 20px;
+  height: 20px;
+  flex-basis: 20px;
+}
+/* icon tiles are neutral circles only */
+.tile {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wf-ink-2);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line-2);
+}
+
+/* ---------- buttons: pills ---------- */
+.b {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--wf-h-md);
+  padding: 0 14px;
+  border-radius: var(--wf-r-pill);
+  font: 600 var(--wf-fs-13)/1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  user-select: none;
+  /* release: the press springs back over 160ms */
+  transition:
+    transform var(--wf-t-release) var(--wf-ease-out),
+    box-shadow var(--wf-t-micro) var(--wf-ease-out),
+    background-color var(--wf-t-micro) var(--wf-ease-out),
+    border-color var(--wf-t-micro) var(--wf-ease-out);
+}
+/* press: compress over 80ms */
+.b:active {
+  transform: scale(0.97);
+  transition-duration: var(--wf-t-press);
+}
+.b.sm {
+  height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  font-size: var(--wf-fs-12);
+}
+.b.lg {
+  height: var(--wf-h-lg);
+  padding: 0 18px;
+  font-size: var(--wf-fs-14);
+}
+.b.icon {
+  width: var(--wf-h-md);
+  padding: 0;
+}
+.b.sm.icon {
+  width: var(--wf-h-sm);
+}
+.b.pri {
+  color: var(--wf-on-pri);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  border-color: var(--wf-pri-edge);
+  box-shadow: var(--wf-e-pri);
+}
+.b.pri:hover {
+  background: linear-gradient(180deg, var(--wf-pri-1-hover), var(--wf-pri-2-hover));
+}
+.b.pri:active {
+  background: linear-gradient(180deg, var(--wf-pri-1-press), var(--wf-pri-2-press));
+  box-shadow: var(--wf-e-pri-press);
+}
+.b.sec {
+  color: var(--wf-ink-1);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  border-color: var(--wf-line-2);
+  box-shadow: var(--wf-e-raise);
+}
+.b.sec:hover {
+  border-color: var(--wf-line-3);
+}
+.b.sec:active,
+.b.danger:active {
+  background: var(--wf-track);
+  box-shadow: var(--wf-e-press);
+}
+.b.tint {
+  color: var(--wf-accent-ink);
+  background: var(--wf-accent-tint);
+  border-color: color-mix(in srgb, var(--wf-accent) 20%, transparent);
+}
+.b.tint:hover {
+  border-color: color-mix(in srgb, var(--wf-accent) 40%, transparent);
+}
+.b.ghost {
+  color: var(--wf-accent-ink);
+  background: transparent;
+}
+.b.ghost:hover {
+  background: var(--wf-hover);
+}
+.b.danger {
+  color: var(--wf-danger-ink);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  border-color: var(--wf-line-2);
+  box-shadow: inset 0 1px 0 var(--wf-hl);
+}
+.b.onhero {
+  color: var(--wf-hero-ink);
+  background: var(--wf-on-hero-fill);
+  border-color: var(--wf-on-hero-line);
+  box-shadow: inset 0 1px 0 var(--wf-on-hero-hl);
+}
+.b.light {
+  color: var(--wf-light-ink);
+  background: linear-gradient(180deg, var(--wf-light-1), var(--wf-light-2));
+  border-color: var(--wf-light-edge);
+  box-shadow: var(--wf-e-light);
+}
+/* rule 15: dashed means unavailable. Disabled, locked and Preview share it. It never reacts to hover or press. */
+.b:is([disabled], [aria-disabled="true"]):is(*, :hover, :active) {
+  cursor: not-allowed;
+  transform: none;
+  color: var(--wf-ink-off);
+  background: var(--wf-surface-2);
+  border: 1px dashed var(--wf-line-3);
+  box-shadow: none;
+}
+.b.split {
+  padding-right: 0;
+  gap: 0;
+}
+.b.split .main {
+  padding-right: var(--wf-s-3);
+}
+.b.split .more {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 10px 0 8px;
+  border-left: 1px solid color-mix(in srgb, var(--wf-on-pri) 22%, transparent);
+}
+/* busy: after 300ms with no answer the label hides and a spinner shows in place. The button keeps
+   its width and its focus, and carries aria-busy="true". */
+.b[aria-busy="true"] {
+  color: transparent;
+  pointer-events: none;
+}
+.b[aria-busy="true"]::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--wf-ink-2);
+  border-right-color: transparent;
+  animation: wfSpin 0.8s linear infinite;
+}
+.b.pri[aria-busy="true"]::after {
+  border-color: var(--wf-on-pri);
+  border-right-color: transparent;
+}
+.spin {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: wfSpin 0.8s linear infinite;
+}
+.kbd {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  padding: 2px 6px;
+  border-radius: var(--wf-r-xs);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+}
+
+/* ---------- counts: circles. Always neutral, never a status by colour. 0 shows as 0. ---------- */
+.k {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  min-width: var(--wf-count);
+  height: var(--wf-count);
+  padding: 0 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-2);
+  color: var(--wf-ink-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* tier is a T-digit pill so it never reads as a count, and it is never red. T1 stays neutral
+   (owner ruling 10 Oct): the triangle on the item carries act now, not the tier. */
+.tier {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--wf-count);
+  min-width: 28px;
+  padding: 0 6px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-3);
+  background: var(--wf-surface);
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+  letter-spacing: 0.02em;
+}
+.tier.t1 {
+  color: var(--wf-ink-1);
+  border: 1.5px solid var(--wf-ink-2);
+}
+
+/* ---------- inputs ---------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.field label {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+.in {
+  height: var(--wf-h-md);
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-ctl);
+  box-shadow: var(--wf-e-well);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+  min-width: 0;
+}
+.in.search {
+  border-radius: var(--wf-r-pill);
+  padding: 0 14px;
+}
+.in .ph {
+  color: var(--wf-ink-3);
+}
+.in:focus-within,
+.in.is-focus {
+  border-color: var(--wf-accent);
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.in.is-error {
+  border-color: var(--wf-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-danger) 12%, transparent);
+}
+.in.is-off {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  border-style: dashed;
+}
+.in.area {
+  height: auto;
+  min-height: 64px;
+  align-items: flex-start;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-radius: var(--wf-r-lg);
+}
+.help {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.help.err {
+  color: var(--wf-danger-ink);
+}
+.chk {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: var(--wf-r-xs);
+  border: 1.5px solid var(--wf-line-ctl);
+  background: var(--wf-surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wf-on-pri);
+}
+.chk.on {
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  border-color: var(--wf-pri-edge);
+}
+.rad {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--wf-line-ctl);
+  background: var(--wf-surface);
+  display: inline-flex;
+}
+.rad.on {
+  border: 5px solid var(--wf-accent-strong);
+}
+.sw {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  flex: 0 0 32px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-line-ctl);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: background-color var(--wf-t-exit) var(--wf-ease-out);
+}
+.sw::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--wf-light-1);
+  box-shadow: var(--wf-e-knob);
+  transition: left var(--wf-t-exit) var(--wf-ease-sheet);
+}
+.sw.on,
+.sw[aria-checked="true"] {
+  background: var(--wf-accent);
+}
+.sw.on::after,
+.sw[aria-checked="true"]::after {
+  left: 14px;
+}
+.sw[disabled],
+.sw[aria-disabled="true"] {
+  cursor: not-allowed;
+  background: transparent;
+  outline: 1px dashed var(--wf-line-3);
+  outline-offset: -1px;
+}
+.sw[disabled]::after,
+.sw[aria-disabled="true"]::after {
+  background: var(--wf-ink-off);
+  box-shadow: none;
+}
+/* v8: a stepper's value is the spinbutton. The buttons are tabindex -1 helpers. */
+.stp {
+  display: inline-flex;
+  align-items: stretch;
+  height: var(--wf-h-md);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+.stp button {
+  all: unset;
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+.stp button:hover {
+  background: var(--wf-hover);
+}
+.stp button:focus-visible,
+.stp .v:focus-visible {
+  outline: 0;
+  box-shadow: inset 0 0 0 2px var(--wf-focus-ring);
+}
+.stp .v {
+  min-width: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 var(--wf-fs-13) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  border-left: 1px solid var(--wf-line);
+  border-right: 1px solid var(--wf-line);
+}
+/* one row of equal soft buttons for short exclusive choices (never wrapping pills) */
+.choice-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 6px;
+}
+.choice-row button {
+  height: var(--wf-h-md);
+  border-radius: var(--wf-r-md);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  font: 500 var(--wf-fs-13) var(--wf-font);
+  color: var(--wf-ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.choice-row button.on,
+.choice-row button[aria-checked="true"] {
+  border-color: var(--wf-accent);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+
+/* ---------- pill tabs and segmented: one control, three jobs ----------
+   Page tabs, panel tabs and view toggles are all .pt. role=tablist for tabs, radiogroup for toggles.
+   One item always holds the tab stop, even when no item matches the current value. */
+.pt {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  gap: 2px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  border: 1px solid var(--wf-line);
+  box-shadow: var(--wf-e-well);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pt::-webkit-scrollbar {
+  display: none;
+}
+.pt button {
+  position: relative;
+  height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) var(--wf-font);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  transition: color var(--wf-t-micro) var(--wf-ease-out);
+}
+.pt button:hover {
+  color: var(--wf-ink-1);
+}
+.pt button:focus-visible,
+.pt button.on:focus-visible,
+.pt button[aria-selected="true"]:focus-visible,
+.pt button[aria-checked="true"]:focus-visible,
+.trk button:focus-visible {
+  outline: 0;
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+.pt button.on,
+.pt button[aria-selected="true"],
+.pt button[aria-checked="true"] {
+  background: var(--wf-raised);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow: var(--wf-e-sel);
+}
+/* the sliding capsule: .pt.slide draws the selection as one .cap element that the component moves
+   under the selected item (translateX and width), so selection slides instead of jumping */
+.pt.slide .cap {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-raised);
+  box-shadow: var(--wf-e-sel);
+  transition:
+    transform var(--wf-t-sheet) var(--wf-ease-sheet),
+    width var(--wf-t-sheet) var(--wf-ease-sheet);
+  pointer-events: none;
+}
+.pt.slide button.on,
+.pt.slide button[aria-selected="true"],
+.pt.slide button[aria-checked="true"] {
+  background: transparent;
+}
+.pt.slide button.on:not(:focus-visible),
+.pt.slide button[aria-selected="true"]:not(:focus-visible),
+.pt.slide button[aria-checked="true"]:not(:focus-visible) {
+  box-shadow: none;
+}
+.pt.slide button {
+  z-index: var(--wf-z-raised);
+}
+.pt button .k {
+  height: 18px;
+  min-width: 18px;
+  background: transparent;
+}
+.pt.sm button {
+  height: var(--wf-target);
+  padding: 0 10px;
+  font-size: var(--wf-fs-12);
+}
+.pt.fill {
+  display: flex;
+}
+.pt.fill button {
+  flex: 1;
+  justify-content: center;
+}
+.pt.icons button {
+  width: var(--wf-h-sm);
+  padding: 0;
+  justify-content: center;
+}
+/* on the hero */
+.trk {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-on-hero-track);
+  border: 1px solid var(--wf-on-hero-fill);
+}
+.trk button {
+  height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-pill);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--wf-on-hero-ink);
+  font: 500 var(--wf-fs-13) var(--wf-font);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.trk button {
+  transition: background-color var(--wf-t-micro) var(--wf-ease-out);
+}
+.trk button:hover {
+  background: var(--wf-on-hero-fill);
+}
+.trk button.on,
+.trk button[aria-current="page"] {
+  background: var(--wf-light-1);
+  color: var(--wf-hero-2);
+  font-weight: 600;
+}
+/* filter chips: raised pills, count inside. On is an accent edge and a heavier label. */
+.fc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px 0 12px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  box-shadow: var(--wf-e-raise);
+  font: 500 var(--wf-fs-12) var(--wf-font);
+  color: var(--wf-ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color var(--wf-t-micro) var(--wf-ease-out),
+    transform var(--wf-t-release) var(--wf-ease-out);
+}
+.fc:hover {
+  border-color: var(--wf-line-3);
+}
+.fc:active {
+  transform: scale(0.97);
+  transition-duration: var(--wf-t-press);
+}
+.fc.on,
+.fc[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+.fc[disabled],
+.fc[aria-disabled="true"],
+.pt button[disabled],
+.pt button[aria-disabled="true"] {
+  cursor: not-allowed;
+  color: var(--wf-ink-off);
+  background: transparent;
+  border: 1px dashed var(--wf-line-3);
+  box-shadow: none;
+}
+
+/* ---------- badges: flat pills label ---------- */
+.bd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--wf-h-chip);
+  padding: 0 10px 0 8px;
+  border-radius: var(--wf-r-pill);
+  font: 600 var(--wf-fs-12)/1 var(--wf-font);
+  white-space: nowrap;
+  color: var(--wf-ink-1);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-2);
+}
+.bd.plain,
+.row .bd {
+  background: none;
+  border-color: transparent;
+  padding: 0;
+}
+.bd.sm {
+  height: 20px;
+  padding: 0 var(--wf-s-2);
+}
+.bd.id {
+  font-family: var(--wf-mono);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+.bd.solid {
+  color: var(--wf-on-pri);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  border-color: var(--wf-pri-edge);
+}
+.bd.onhero {
+  color: var(--wf-hero-ink);
+  background: var(--wf-on-hero-fill);
+  border-color: var(--wf-on-hero-line);
+}
+.bd.preview {
+  height: 20px;
+  padding: 0 var(--wf-s-2);
+  font: 600 var(--wf-fs-12)/1 var(--wf-font);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+  background: transparent;
+  border: 1px dashed var(--wf-line-3);
+}
+/* service: a coloured dot and the service name. Colour never stands alone. */
+.svc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+}
+.svc::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--svc, var(--wf-svc-private));
+  flex: 0 0 8px;
+}
+.svc.east {
+  --svc: var(--wf-svc-east);
+}
+.svc.north {
+  --svc: var(--wf-svc-north);
+}
+.svc.south {
+  --svc: var(--wf-svc-south);
+}
+.svc.wachs {
+  --svc: var(--wf-svc-wachs);
+}
+.svc.cahs {
+  --svc: var(--wf-svc-cahs);
+}
+.svc.statewide {
+  --svc: var(--wf-svc-statewide);
+}
+
+/* ---------- status glyphs: one shape per tone (rule 7) ----------
+   danger triangle, warning filled circle, success tick, info capsule, neutral ring, closed cross.
+   Use the inline SVGs in the spec. .g is the CSS fallback. */
+.g {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: var(--wf-glyph);
+  height: var(--wf-glyph);
+}
+/* the triangle is drawn about 10% wider so it weighs the same as the circle beside it */
+.g.danger {
+  width: calc(var(--wf-glyph) * 1.1);
+  background: var(--wf-danger);
+  clip-path: polygon(50% 4%, 100% 96%, 0 96%);
+}
+.g.warning {
+  background: var(--wf-warning);
+  border-radius: 50%;
+}
+.g.info {
+  width: calc(var(--wf-glyph) * 1.2);
+  height: calc(var(--wf-glyph) * 0.6);
+  border-radius: 3px;
+  background: var(--wf-info);
+}
+.g.neutral {
+  border: 1.5px solid var(--wf-neutral);
+  border-radius: 50%;
+}
+.g.success {
+  background: var(--wf-success);
+  clip-path: polygon(12% 52%, 26% 38%, 42% 54%, 76% 18%, 90% 32%, 42% 82%);
+}
+.g.closed {
+  background: var(--wf-neutral);
+  clip-path: polygon(
+    18% 4%,
+    50% 36%,
+    82% 4%,
+    96% 18%,
+    64% 50%,
+    96% 82%,
+    82% 96%,
+    50% 64%,
+    18% 96%,
+    4% 82%,
+    36% 50%,
+    4% 18%
+  );
+}
+/* record state, not a tone: not active */
+.g.inactive {
+  width: 10px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--wf-ink-3);
+}
+svg.gl {
+  width: var(--wf-glyph);
+  height: var(--wf-glyph);
+  flex: 0 0 var(--wf-glyph);
+}
+/* .tone-* colours a glyph or mark. .ink-* colours words. Never set text in a .tone colour:
+   day danger, warning and success are 4.0 to 4.5:1 on surface, enough for a glyph, not for words. */
+.tone-danger {
+  color: var(--wf-danger);
+}
+.tone-warning {
+  color: var(--wf-warning);
+}
+.tone-success {
+  color: var(--wf-success);
+}
+.tone-info {
+  color: var(--wf-info);
+}
+.tone-neutral {
+  color: var(--wf-neutral);
+}
+.ink-danger {
+  color: var(--wf-danger-ink);
+}
+.ink-warning {
+  color: var(--wf-warning-ink);
+}
+.ink-success {
+  color: var(--wf-success-ink);
+}
+.ink-info {
+  color: var(--wf-info-ink);
+}
+
+/* ---------- live ---------- */
+.lv {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--wf-h-chip);
+  padding: 0 10px;
+  border-radius: var(--wf-r-pill);
+  font: 600 var(--wf-fs-12)/1 var(--wf-font);
+  white-space: nowrap;
+  color: var(--wf-ink-1);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+}
+.lv .u {
+  font: 500 var(--wf-fs-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+.lv .clk {
+  font-weight: 600;
+}
+.lv.onhero {
+  color: var(--wf-hero-ink);
+  background: var(--wf-on-hero-fill);
+  border-color: var(--wf-on-hero-line);
+}
+.lv.onhero .u {
+  color: var(--wf-hero-ink-2);
+}
+.lv.stale {
+  border-color: var(--wf-warning);
+}
+.lv.off {
+  border-color: var(--wf-danger);
+}
+/* v9: the live dot is still. It pulses once when new data arrives: re-add .tick on each refresh.
+   A dot that pulses all shift is constant movement on a screen people watch for hours. */
+.pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wf-success);
+  flex: 0 0 7px;
+}
+.pulse.tick {
+  animation: wfPulse var(--wf-t-live) var(--wf-ease-out);
+}
+.est {
+  font: 500 var(--wf-fs-12) var(--wf-font);
+  color: var(--wf-ink-3);
+  margin-left: 4px;
+}
+.asat {
+  font: 500 var(--wf-fs-12) var(--wf-font);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.nr {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+/* ---------- hero chips ----------
+   Every headline count is a compact chip in the hero: the figure at 15 in tabular Geist, then its
+   glyph and a short label. Rule 13: a chip that filters or opens something is a raised .hs.pill
+   button with aria-pressed. A chip that only reports is flat. There are no standalone big numbers. */
+.hs-row {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.hs {
+  --wf-glyph: var(--wf-glyph-hero);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 14px;
+  white-space: nowrap;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-on-hero-div);
+  background: transparent;
+  color: var(--wf-hero-ink);
+}
+.hs .v {
+  font: 600 var(--wf-fs-15)/1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--wf-tr-15);
+}
+.hs .l {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-hero-ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hs.pill {
+  border: 1px solid var(--wf-on-hero-line);
+  background: var(--wf-on-hero-fill);
+  box-shadow: var(--wf-e-on-hero);
+  height: var(--wf-h-md);
+  cursor: pointer;
+  font: inherit;
+  transition:
+    background-color var(--wf-t-sheet) var(--wf-ease-sheet),
+    color var(--wf-t-sheet) var(--wf-ease-sheet),
+    transform var(--wf-t-release) var(--wf-ease-out);
+}
+.hs.pill:hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+}
+.hs.pill:active {
+  transform: scale(0.97);
+  transition-duration: var(--wf-t-press);
+}
+/* pressed: white pill, so tones return to their day values to keep glyphs at 3:1 or better */
+.hs.pill[aria-pressed="true"] {
+  --wf-danger: var(--wf-light-danger);
+  --wf-warning: var(--wf-light-warning);
+  --wf-success: var(--wf-light-success);
+  --wf-info: var(--wf-light-info);
+  --wf-neutral: var(--wf-light-neutral);
+  background: var(--wf-light-1);
+  color: var(--wf-hero-2);
+  border-color: var(--wf-light-1);
+  box-shadow: var(--wf-e-on-hero-press);
+}
+.hs.pill[aria-pressed="true"] .l {
+  color: var(--wf-hero-2);
+}
+.hero.quiet .hs {
+  border-color: var(--wf-line-2);
+  color: var(--wf-ink-1);
+}
+.hero.quiet .hs .l {
+  color: var(--wf-ink-3);
+}
+.state-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  font: 600 var(--wf-fs-12)/1 var(--wf-font);
+  white-space: nowrap;
+  color: var(--wf-ink-1);
+}
+.hero:not(.quiet) .state-pill {
+  color: var(--wf-hero-ink);
+  background: var(--wf-on-hero-fill);
+  border-color: var(--wf-on-hero-line);
+}
+.banner-closed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  border: 1px dashed var(--wf-line-3);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+/* ---------- stat, meter, bar ---------- */
+.st {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.st + .st {
+  border-left: 1px solid var(--wf-line);
+  padding-left: var(--wf-s-3);
+  margin-left: var(--wf-s-3);
+}
+.st .v {
+  font: 600 var(--wf-fs-15)/var(--wf-lh-15) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--wf-tr-15);
+  white-space: nowrap;
+}
+.st .l {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.meter {
+  position: relative;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+.meter b {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-neutral);
+}
+.meter i {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+  background: var(--wf-ink-1);
+  box-shadow: 0 0 0 2px var(--wf-surface);
+}
+.hatch {
+  background: var(--wf-hatch), var(--wf-track);
+}
+/* stacked bar: segments sit 2px apart so neighbours never need contrast with each other */
+.mb {
+  display: flex;
+  gap: 2px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  overflow: hidden;
+  background: transparent;
+}
+.mb i {
+  display: block;
+  height: 100%;
+}
+
+/* ---------- tables ---------- */
+.th {
+  font: 600 var(--wf-fs-12)/var(--wf-lh-12) var(--wf-font);
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.row {
+  display: grid;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: var(--wf-row);
+  padding: 0 var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+.row.compact {
+  min-height: var(--wf-row-compact);
+}
+[data-density="touch"] .row.compact {
+  min-height: var(--wf-row-touch);
+}
+.row {
+  transition: background-color var(--wf-t-micro) var(--wf-ease-out);
+}
+.row:hover {
+  background: var(--wf-hover);
+}
+/* row actions are quiet: shown on hover, focus inside the row, or selection, and always on touch */
+.row .ra {
+  opacity: 0;
+  transition: opacity var(--wf-t-micro) var(--wf-ease-out);
+}
+.row:hover .ra,
+.row:focus-within .ra,
+.row.sel .ra,
+.row[aria-selected="true"] .ra {
+  opacity: 1;
+}
+@media (hover: none) {
+  .row .ra {
+    opacity: 1;
+  }
+}
+/* a new row rises 4px into place. A leaving row fades and collapses, then the component removes it. */
+.row.enter,
+.li.enter {
+  animation: wfRise var(--wf-t-enter) var(--wf-ease-out);
+}
+.row.leave,
+.li.leave {
+  overflow: hidden;
+  animation: wfLeave var(--wf-t-exit) var(--wf-ease-in) forwards;
+}
+/* only the head row of a table sticks. Tables grow with the page and never sit in a fixed box. */
+.thead {
+  position: sticky;
+  top: 0;
+  z-index: var(--wf-z-sticky);
+  background: var(--wf-surface);
+}
+.row.sel,
+.row[aria-selected="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+}
+/* grouped table: group header, then members */
+.grp {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto 120px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--wf-row-group);
+  padding: 0 var(--wf-s-4);
+  background: var(--wf-surface-2);
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.grp .nm {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font-weight: 600;
+  min-width: 0;
+  white-space: nowrap;
+}
+.grp .own {
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+/* row timeline: opens under a selected row. At most five labelled points. */
+.row-tl {
+  padding: 12px 16px 14px 19px;
+  background: var(--wf-selected);
+  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+  border-bottom: 1px solid var(--wf-line);
+}
+.row-tl .track {
+  position: relative;
+  height: 14px;
+  margin: 0 6px;
+}
+.row-tl .track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--wf-line-2);
+}
+.row-tl .seg {
+  position: absolute;
+  top: 5px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--wf-data-2);
+}
+.row-tl .seg.quiet {
+  background: var(--wf-hatch);
+}
+.row-tl .pt-node {
+  position: absolute;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: var(--wf-surface);
+  border: 2px solid var(--wf-data-1);
+}
+.row-tl .pt-node.now {
+  border-radius: 1px;
+  width: 2px;
+  margin-left: -1px;
+  height: 16px;
+  top: -1px;
+  border: 0;
+  background: var(--wf-ink-1);
+}
+.row-tl .lbls {
+  display: grid;
+  margin-top: 6px;
+  font-size: var(--wf-fs-12);
+}
+.row-tl .lbls b {
+  display: block;
+  font: 600 var(--wf-fs-12) var(--wf-mono);
+}
+.row-tl .lbls span {
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+/* ---------- layout ----------
+   A 12 column desktop grid with 16px gutters. Page sections sit 24px apart. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-6);
+}
+.grid12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--wf-s-4);
+}
+.span-3 {
+  grid-column: span 3;
+}
+.span-4 {
+  grid-column: span 4;
+}
+.span-6 {
+  grid-column: span 6;
+}
+.span-8 {
+  grid-column: span 8;
+}
+.span-9 {
+  grid-column: span 9;
+}
+.span-12 {
+  grid-column: 1 / -1;
+}
+/* equal columns, flush and the same height. The .lead column sets the height. A .follow column takes
+   that height and scrolls inside its .card-scroll, so nothing ends early and nothing leaves a gap. */
+.cols {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--wf-s-4);
+  align-items: stretch;
+}
+.cols > .card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.cols > .follow .card-scroll {
+  contain: size;
+  min-height: 8rem;
+}
+
+/* ---------- side panel: rests on a summary, swaps to the clicked item ---------- */
+.layout-core {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--wf-panel);
+  gap: var(--wf-s-4);
+  align-items: start;
+}
+/* main and rail at 2:1 or 3:1 when the rail carries as much as the main */
+.layout-core.r21 {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+.layout-core.r31 {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+}
+.layout-core.wide {
+  grid-template-columns: minmax(0, 1fr) var(--wf-panel-wide);
+}
+.sp-panel {
+  position: sticky;
+  top: var(--wf-s-4);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.sp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  height: 28px;
+  padding: 0 10px 0 6px;
+  margin-left: -6px;
+  border-radius: var(--wf-r-pill);
+  border: 0;
+  background: none;
+  font: 600 var(--wf-fs-12) var(--wf-font);
+  color: var(--wf-accent-ink);
+  cursor: pointer;
+}
+.sp-back:hover {
+  background: var(--wf-hover);
+}
+.sp-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-3);
+}
+.sp-who .nm {
+  font: 600 var(--wf-fs-15)/var(--wf-lh-15) var(--wf-font);
+  letter-spacing: var(--wf-tr-15);
+}
+/* the side panel swaps content with a short crossfade, never a remount flash */
+.sp-swap {
+  animation: wfFade var(--wf-t-exit) var(--wf-ease-out);
+}
+/* quick facts strip: three or four equal cells */
+.facts {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+.facts > div {
+  padding: 8px 10px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.facts > div + div {
+  border-left: 1px solid var(--wf-line);
+}
+.facts .l {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.facts .v {
+  font-weight: 600;
+  font-size: var(--wf-fs-13);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kv {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--wf-s-4);
+  row-gap: 6px;
+  font-size: var(--wf-fs-13);
+}
+.kv dt {
+  color: var(--wf-ink-3);
+}
+.kv dd {
+  margin: 0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--wf-row);
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--wf-line);
+}
+.li:last-child {
+  border-bottom: 0;
+}
+.li .a {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.li .s {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.li-h {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: 10px 16px 4px;
+}
+
+/* ---------- bed board and bed tile ---------- */
+.beds {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+.bed {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 76px;
+  padding: 8px 10px;
+  border-radius: var(--wf-r-md);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  min-width: 0;
+  transition:
+    border-color var(--wf-t-micro) var(--wf-ease-out),
+    background-color var(--wf-t-micro) var(--wf-ease-out),
+    box-shadow var(--wf-t-micro) var(--wf-ease-out);
+}
+.bed:hover {
+  border-color: var(--wf-line-3);
+  box-shadow: var(--wf-e-raise);
+}
+.bed .no {
+  font: 600 var(--wf-fs-13) var(--wf-mono);
+  letter-spacing: -0.01em;
+}
+.bed .nm {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bed .st2 {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.bed .st2 span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bed .gpos {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.bed.free {
+  border-color: var(--wf-fit-edge);
+  background: linear-gradient(var(--wf-fit-tint), var(--wf-fit-tint)), var(--wf-surface);
+}
+.bed.closed {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+}
+.bed.sel,
+.bed[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+/* v8: Find dims, it does not fade. Opacity 0.5 put the bed name at 3.3:1 and the state line at
+   2.1:1. A dim bed keeps every word at 4.5:1 or better on surface-2. */
+.bed.dim,
+.bed.fade {
+  background: var(--wf-surface-2);
+  border-color: var(--wf-line);
+  color: var(--wf-ink-3);
+}
+.bed.dim .nm,
+.bed.fade .nm {
+  font-weight: 500;
+}
+.keyrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  overflow-x: auto;
+}
+.keyrow span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------- fit list (placement) ---------- */
+.fit {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-sm);
+  border: 1px solid transparent;
+}
+.fit.yes {
+  background: var(--wf-fit-tint);
+  border-color: var(--wf-fit-edge);
+}
+.fit.nobed {
+  background: var(--wf-hold-tint);
+  border-color: var(--wf-hold-edge);
+}
+.fit + .fit {
+  margin-top: 4px;
+}
+
+/* ---------- charts ---------- */
+.chart-axis {
+  font: 500 var(--wf-fs-12) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+  fill: var(--wf-ink-3);
+}
+/* the third series step also takes a hatch, so series never differ by shade alone */
+.chart-s3 {
+  fill: url(#wf-hatch);
+}
+.chart-grid {
+  stroke: var(--wf-line);
+  stroke-width: 1;
+}
+.chart-ref {
+  stroke: var(--wf-ref-stroke);
+  stroke-width: var(--wf-ref-w);
+  stroke-dasharray: var(--wf-ref-dash);
+}
+/* donut and ring arcs: butt caps, so 0 draws nothing and 96% never looks full */
+.chart-arc {
+  fill: none;
+  stroke-linecap: butt;
+}
+
+/* ---------- overlays ---------- */
+.drawer {
+  width: var(--wf-drawer);
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--wf-r-xl) 0 0 var(--wf-r-xl);
+}
+.drawer.wide {
+  width: var(--wf-drawer-wide);
+}
+/* overlay motion. Enter on open; the component adds the leave class and removes the element on
+   animationend. Entries never use fill-mode forwards or both (it stops the blur on glass). */
+.drawer.enter {
+  animation: wfSheetIn var(--wf-t-sheet) var(--wf-ease-sheet);
+}
+.drawer.leave {
+  animation: wfSheetOut var(--wf-t-exit) var(--wf-ease-in) forwards;
+}
+.sheet-phone.enter {
+  animation: wfSheetUp var(--wf-t-sheet) var(--wf-ease-sheet);
+}
+.sheet-phone.leave {
+  animation: wfSheetDown var(--wf-t-exit) var(--wf-ease-in) forwards;
+}
+.menu.enter,
+.pop.enter,
+.toast.enter {
+  animation: wfPopIn var(--wf-t-enter) var(--wf-ease-out);
+}
+.menu.leave,
+.pop.leave,
+.toast.leave {
+  animation: wfFadeOut var(--wf-t-exit) var(--wf-ease-in) forwards;
+}
+.scrim.enter {
+  animation: wfFade var(--wf-t-enter) var(--wf-ease-out) backwards;
+}
+.scrim.leave {
+  animation: wfFadeOut var(--wf-t-exit) var(--wf-ease-in) forwards;
+}
+.sheet-phone {
+  border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+}
+.grab {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--wf-line-3);
+  margin: 8px auto 4px;
+}
+.menu,
+.pop {
+  z-index: var(--wf-z-popover);
+  padding: 6px;
+  border-radius: var(--wf-r-lg);
+  min-width: 200px;
+}
+.menu [role="menuitem"] {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  font: 500 var(--wf-fs-13) var(--wf-font);
+  color: var(--wf-ink-1);
+  text-align: left;
+  cursor: pointer;
+}
+.menu [role="menuitem"]:hover,
+.menu [role="menuitem"]:focus-visible {
+  background: var(--wf-hover);
+}
+/* a toast reports what happened and offers Undo when the step can be undone */
+.toast {
+  z-index: var(--wf-z-toast);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 6px 0 14px;
+  border-radius: var(--wf-r-pill);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-tip-ink);
+  background: var(--wf-tip-bg);
+  box-shadow:
+    0 0 0 1px var(--wf-tip-ring),
+    var(--wf-e2);
+}
+.toast .b {
+  height: var(--wf-target);
+  color: var(--wf-tip-ink);
+  background: color-mix(in srgb, var(--wf-tip-ink) 14%, transparent);
+  border-color: transparent;
+  box-shadow: none;
+}
+.tip {
+  z-index: var(--wf-z-tip);
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: var(--wf-r-sm);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-tip-ink);
+  background: var(--wf-tip-bg);
+  box-shadow:
+    0 0 0 1px var(--wf-tip-ring),
+    var(--wf-e-tip);
+  max-width: 220px;
+}
+
+/* ---------- phone bar: 56px with no fill at the top, 52px solid on scroll, never hides ---------- */
+.pbar {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  height: var(--wf-bar-phone-top);
+  padding: 0 var(--wf-s-3);
+}
+.pbar.scrolled {
+  height: var(--wf-bar-phone);
+  background: var(--wf-surface-2);
+  border-bottom: 1px solid var(--wf-line);
+  box-shadow: var(--wf-e-bar);
+}
+
+/* ---------- parts from the page review (10 Oct 2026) ----------
+   The best version of each part the page review found built more than once. Spec sections 3, 7, 9 and 10.
+   The live board for these is the Parts tab of ward-flow-design-system-v9.html. ---------- */
+
+/* Dim, never hide. Rows a highlight does not match recede. Nothing leaves the list. */
+:root {
+  --wf-dim: light-dark(rgba(22, 26, 32, 0.45), rgba(233, 238, 243, 0.42));
+  --wf-glyph-dim: light-dark(rgba(110, 122, 135, 0.45), rgba(150, 164, 178, 0.45));
+  /* one reference line: a mean, a target or an alert line, in every chart */
+  --wf-ref-stroke: var(--wf-ink-3);
+  --wf-ref-w: 1px;
+  --wf-ref-dash: 4 3;
+  /* one hatch, one meaning: expected or pulled. The faint hatch marks quiet or unavailable time. */
+  --wf-hatch: repeating-linear-gradient(135deg, var(--wf-data-2) 0 2px, transparent 2px 4px);
+  --wf-hatch-faint: repeating-linear-gradient(135deg, var(--wf-line-2) 0 2px, transparent 2px 6px);
+  --wf-now: var(--wf-accent);
+  --wf-mark: var(--wf-accent-tint);
+  --wf-overdue-zone: light-dark(rgba(196, 81, 63, 0.06), rgba(226, 122, 104, 0.08));
+  --wf-scrim-strong: light-dark(rgba(22, 30, 40, 0.28), rgba(0, 0, 0, 0.56));
+}
+.row.dim,
+.li.dim {
+  color: var(--wf-dim);
+}
+.row.dim .g,
+.li.dim .g {
+  --wf-danger: var(--wf-glyph-dim);
+  --wf-warning: var(--wf-glyph-dim);
+  --wf-success: var(--wf-glyph-dim);
+  --wf-info: var(--wf-glyph-dim);
+  --wf-neutral: var(--wf-glyph-dim);
+}
+.row.dim b,
+.li.dim .a {
+  font-weight: 500;
+}
+.hp-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.fc .k {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pips: one progress family. Segments for one to five gates, 7px dots for legs, 8px people pips. */
+.pips {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+.pips i {
+  width: 18px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  border: 1px solid var(--wf-line-2);
+  transition: background-color var(--wf-t-sheet) var(--wf-ease-out);
+}
+.pips i.on {
+  background: var(--wf-success);
+  border-color: transparent;
+}
+.steps {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+}
+.steps i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid var(--wf-line-ctl);
+}
+.steps i.done {
+  background: var(--wf-success);
+  border-color: var(--wf-success);
+}
+.steps i.now {
+  background: var(--wf-info);
+  border-color: var(--wf-info);
+  box-shadow:
+    0 0 0 2px var(--wf-surface),
+    0 0 0 3.5px var(--wf-info);
+}
+.frac {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.people {
+  --wf-glyph: 8px;
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+.people .more {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-3);
+  margin-left: 2px;
+}
+
+/* GateStrip: verdict, pips, then flush gate cells. The first gate that is not clear holds the primary. */
+.gates {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+.gates {
+  display: flex;
+  flex-direction: column;
+}
+.gate-row {
+  flex: 1;
+}
+.gates.act {
+  border-color: var(--wf-act-edge);
+}
+.gates-v {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--wf-line);
+}
+.gates-v .verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 var(--wf-fs-15)/var(--wf-lh-15) var(--wf-font);
+  --wf-glyph: 12px;
+}
+.gates-v .sp {
+  flex: 1;
+}
+.gate-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.gate {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  min-width: 0;
+}
+.gate + .gate {
+  border-left: 1px solid var(--wf-line);
+}
+.gate .gh {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-weight: 600;
+}
+.gate .own {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.gate .gs {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+}
+.gate .gw {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+.gate .b {
+  align-self: flex-start;
+  margin-top: auto;
+}
+.lockline {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.lockline svg {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+}
+.lockline.alert {
+  color: var(--wf-ink-1);
+}
+@media (width <= 48rem) {
+  .gate-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gate + .gate {
+    border-left: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+}
+
+/* TimeAxis: one axis for waits and clocks. Piecewise stops, a hatched compressed tail, shape marks. */
+.tax {
+  position: relative;
+  padding: 34px 6px 34px;
+}
+.tax .rail {
+  position: relative;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+.tax .zone {
+  position: absolute;
+  top: -14px;
+  bottom: -14px;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-overdue-zone);
+  transition: opacity var(--wf-t-enter) var(--wf-ease-out);
+}
+.tax .tail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 0 var(--wf-r-pill) var(--wf-r-pill) 0;
+  background: var(--wf-hatch-faint);
+}
+.tax .stop {
+  position: absolute;
+  top: -16px;
+  bottom: -16px;
+  width: 0;
+  border-left: 1px dashed var(--wf-line-3);
+}
+.tax .stop span {
+  position: absolute;
+  top: -18px;
+  left: 0;
+  translate: -50% 0;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.tax .tick {
+  position: absolute;
+  top: 20px;
+  translate: -50% 0;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.tax .mk {
+  position: absolute;
+  top: 50%;
+  translate: -50% -50%;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e-raise);
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    transform var(--wf-t-release) var(--wf-ease-out),
+    box-shadow var(--wf-t-micro) var(--wf-ease-out);
+}
+.tax .mk:hover {
+  box-shadow: 0 0 0 2px var(--wf-line-3);
+}
+.tax .mk:active {
+  transform: scale(0.94);
+}
+.tax .mk[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--wf-surface),
+    0 0 0 4px var(--wf-accent);
+}
+.tax .mk.over {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  --wf-glyph: 16px;
+}
+.tax .mk.over[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--wf-surface),
+    0 0 0 4px var(--wf-accent);
+}
+
+/* Wait meter: fixed 24h scale, an 8h tick, quiet time hatched. */
+.wm {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  border-radius: var(--wf-r-pill);
+  overflow: hidden;
+  background: var(--wf-track);
+}
+.wm i {
+  display: block;
+  height: 100%;
+}
+.wm .act {
+  background: var(--wf-data-2);
+}
+.wm .quiet {
+  background: var(--wf-hatch);
+}
+.wm-wrap {
+  position: relative;
+}
+.wm-wrap::after {
+  content: "";
+  position: absolute;
+  left: 33.33%;
+  top: -3px;
+  width: 2px;
+  height: 14px;
+  border-radius: 1px;
+  background: var(--wf-ink-3);
+}
+
+/* Age at row level, and the two honest non-live states: Held and Frozen. */
+.age {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.age .num {
+  color: inherit;
+}
+.age.stale {
+  color: var(--wf-ink-1);
+}
+.lv.held {
+  border-color: var(--wf-warning);
+}
+.lv.frozen .pulse,
+.lv.held .pulse {
+  background: var(--wf-neutral);
+}
+
+/* Hero: answer title, chips in two modes, jumps, a drawer and a Checks foot. */
+.hj {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-on-hero-line);
+  background: var(--wf-on-hero-fill);
+  color: var(--wf-hero-ink);
+  box-shadow: var(--wf-e-on-hero);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hj .l {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-hero-ink-2);
+}
+.hj .v {
+  font: 600 var(--wf-fs-15)/1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.hj:active {
+  transform: scale(0.97);
+}
+.hs.pill .chev {
+  width: 12px;
+  height: 12px;
+  transition: transform var(--wf-t-enter) var(--wf-ease-out);
+}
+.hs.pill[aria-expanded="true"] .chev {
+  transform: rotate(180deg);
+}
+.hero-drawer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  border: 1px solid var(--wf-on-hero-div);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+  animation: wfRise var(--wf-t-enter) var(--wf-ease-out);
+}
+.hero-drawer > div {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.hero-drawer > div + div {
+  border-left: 1px solid var(--wf-on-hero-div);
+}
+.hero-drawer .l {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-hero-ink-2);
+}
+.hero-checks {
+  display: flex;
+  align-items: center;
+  gap: 6px 14px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--wf-on-hero-div);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-hero-ink-2);
+}
+.hero-checks .ck {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hero-checks .ck b {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-hero-ink);
+}
+.hero-checks .ck.zero b {
+  color: var(--wf-hero-ink-3);
+}
+.hero-checks .eb {
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-hero-ink-3);
+}
+
+/* BedStrip: one rounded cell per bed in a fixed order, with named states. */
+.bs {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.bs i {
+  width: 16px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--wf-track);
+  border: 1px solid var(--wf-line);
+}
+.bs i.ready {
+  background: var(--wf-fit-tint);
+  border-color: var(--wf-fit-edge);
+}
+.bs i.making {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 3px, var(--wf-success) 3px 4.5px, transparent 4.5px),
+    var(--wf-fit-tint);
+  border-color: var(--wf-fit-edge);
+}
+.bs i.pulled {
+  background: var(--wf-hatch), var(--wf-track);
+}
+.bs i.closed {
+  background: transparent;
+  border: 1px dashed var(--wf-line-3);
+}
+.tally {
+  display: flex;
+  gap: 6px 14px;
+  flex-wrap: wrap;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.tally b {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.key i {
+  display: inline-block;
+  width: 10px;
+  height: 13px;
+  border-radius: 4px;
+  vertical-align: -2px;
+  margin-right: 5px;
+}
+
+/* ReadyList: what is left, from tick and ring glyphs only. */
+.ready {
+  display: flex;
+  flex-direction: column;
+}
+.ready-h {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ready-h b {
+  font: 600 var(--wf-fs-15)/1 var(--wf-mono);
+}
+.ready-row {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 6px;
+  border-radius: var(--wf-r-sm);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+.ready-row[aria-disabled="true"] {
+  cursor: default;
+}
+.ready-row:hover {
+  background: var(--wf-hover);
+}
+.ready-row .v {
+  font-weight: 600;
+}
+.ready-row[data-state="todo"] .v {
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+
+/* PressureStrip: flush peer cells, select or navigate. */
+.ps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+.ps button {
+  all: unset;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  min-width: 0;
+  transition: background-color var(--wf-t-micro) var(--wf-ease-out);
+}
+.ps button + button {
+  border-left: 1px solid var(--wf-line);
+}
+.ps button:hover {
+  background: var(--wf-hover);
+}
+.ps button:focus-visible {
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+.ps button[aria-current="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 0 -2px 0 var(--wf-accent-strong);
+}
+.ps .n {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ps .f {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.ps .f b {
+  font: 600 var(--wf-fs-15)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+/* RuleRow: a value, its live effect, the pages that read it, and the saved point. */
+.rule {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  transition: border-color var(--wf-t-micro) var(--wf-ease-out);
+}
+.rule.changed {
+  border-color: var(--wf-accent);
+}
+.rule .eff {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+  text-align: right;
+}
+.rule .eff .e {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-weight: 600;
+}
+.rule .eff .e .num {
+  font-weight: 600;
+}
+.range {
+  position: relative;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  margin-top: 10px;
+}
+.range b {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-data-2);
+  transition: width var(--wf-t-enter) var(--wf-ease-out);
+}
+.range .saved {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 14px;
+  border-radius: 1px;
+  background: var(--wf-accent);
+}
+.range-ends {
+  display: flex;
+  justify-content: space-between;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-3);
+  margin-top: 6px;
+}
+@media (width <= 48rem) {
+  .rule {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rule .eff {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+/* TriageColumns: Act now, Later today, Done. Ticked work moves across. */
+.triage {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+  flex: 1;
+}
+.triage > div {
+  min-width: 0;
+}
+.triage > div + div {
+  border-left: 1px solid var(--wf-line);
+}
+.triage .li {
+  grid-template-columns: 18px minmax(0, 1fr);
+  padding: 6px 12px;
+}
+.triage .li-h {
+  padding: 10px 12px 6px;
+  font-weight: 600;
+}
+.triage .chk {
+  cursor: pointer;
+  padding: 0;
+}
+@media (width <= 48rem) {
+  .triage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .triage > div + div {
+    border-left: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+}
+
+/* Ladder: who next if no answer. */
+.ladder {
+  display: flex;
+  flex-direction: column;
+}
+.ladder button {
+  all: unset;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 8px;
+  border-radius: var(--wf-r-sm);
+  cursor: pointer;
+  position: relative;
+}
+.ladder button:hover {
+  background: var(--wf-hover);
+}
+.ladder button:focus-visible {
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+.ladder .n {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--wf-line-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  background: var(--wf-surface);
+  position: relative;
+  z-index: 1;
+}
+.ladder button + button::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: -10px;
+  height: 20px;
+  width: 1px;
+  background: var(--wf-line-2);
+}
+.ladder .w {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-3);
+}
+.ladder button[aria-pressed="true"] .n {
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  color: var(--wf-on-pri);
+  border-color: var(--wf-pri-edge);
+}
+
+/* Bar list as a filter, with one labelled reference line. */
+.bl {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bl button {
+  all: unset;
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) 34px;
+  gap: 10px;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 6px;
+  border-radius: var(--wf-r-sm);
+  cursor: pointer;
+}
+.bl button:hover {
+  background: var(--wf-hover);
+}
+.bl button:focus-visible {
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+.bl .bar {
+  position: relative;
+  height: 10px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+.bl .bar b {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-data-2);
+  transition: background-color var(--wf-t-micro) var(--wf-ease-out);
+}
+.bl button[aria-pressed="true"] .bar b {
+  background: var(--wf-data-1);
+}
+.bl.has-pick button[aria-pressed="false"] {
+  color: var(--wf-dim);
+}
+.bl.has-pick button[aria-pressed="false"] .bar b {
+  background: var(--wf-data-rest);
+}
+.bl .v {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  text-align: right;
+}
+.bl .ref {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed var(--wf-ink-3);
+  pointer-events: none;
+}
+.bl .ref span {
+  position: absolute;
+  top: -18px;
+  left: 0;
+  translate: -50% 0;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-drawer {
+    animation: wfFade var(--wf-t-enter) linear;
+  }
+}
+
+/* ---------- charts and diagrams from the page review (10 Oct 2026) ----------
+   Status shapes for marks, direct labels, at most four faint gridlines, one dashed reference line.
+   Spec section 9, Charts. ---------- */
+.ox {
+  overflow-x: auto;
+  min-width: 0;
+}
+.ox > * {
+  min-width: var(--ox-min, 560px);
+}
+.chart-grid {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px solid var(--wf-line);
+  pointer-events: none;
+}
+.chart-now {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 2px solid var(--wf-now);
+  pointer-events: none;
+}
+.chart-ref {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1.5px dashed var(--wf-line-3);
+  pointer-events: none;
+}
+.chart-tick {
+  position: absolute;
+  translate: -50% 0;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.chart-tick.first {
+  translate: 0 0;
+}
+.chart-tick.last {
+  translate: -100% 0;
+}
+
+/* TimeRail hero: the shift as one line on the hero. Marks are buttons that open their bed. */
+.hrun {
+  --wf-danger: var(--wf-hero-danger);
+  --wf-warning: var(--wf-hero-warning);
+  --wf-success: var(--wf-hero-success);
+  --wf-info: var(--wf-hero-info);
+  --wf-neutral: var(--wf-hero-neutral);
+  position: relative;
+  height: 76px;
+  padding-inline: 48px;
+}
+.hrun .ct {
+  position: relative;
+  height: 100%;
+}
+.hrun .axis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 35px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-on-hero-track);
+  overflow: hidden;
+}
+.hrun .past {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, transparent, var(--wf-on-hero-line));
+}
+.hrun .win {
+  position: absolute;
+  top: 27px;
+  height: 22px;
+  border: 1px dashed var(--wf-on-hero-line);
+  border-radius: var(--wf-r-pill);
+  pointer-events: none;
+}
+.hrun .now {
+  position: absolute;
+  top: 22px;
+  height: 32px;
+  width: 2px;
+  translate: -50% 0;
+  border-radius: 1px;
+  background: var(--wf-hero-ink);
+}
+.hrun .end {
+  position: absolute;
+  top: 31px;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-hero-ink-3);
+}
+.hrun .end.l {
+  left: 0;
+}
+.hrun .end.r {
+  right: 0;
+}
+.hrun .mk {
+  position: absolute;
+  top: 27px;
+  width: 22px;
+  height: 22px;
+  translate: -50% 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--wf-hero-1);
+  box-shadow: 0 0 0 1px var(--wf-on-hero-line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--wf-hero-ink-2);
+  --wf-glyph: 12px;
+  transition: transform var(--wf-t-release) var(--wf-ease-out);
+}
+.hrun .mk:hover,
+.hrun .mk:focus-visible {
+  color: var(--wf-hero-ink);
+}
+.hrun .mk:focus-visible {
+  outline: 0;
+  box-shadow:
+    0 0 0 2px var(--wf-hero-1),
+    0 0 0 4px var(--wf-hero-ink);
+}
+.hrun .mk .l {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+.hrun .mk.up .l {
+  bottom: calc(100% + 8px);
+}
+.hrun .mk.dn .l {
+  top: calc(100% + 8px);
+}
+.hrun .mk.lo .l {
+  left: -6px;
+  translate: 0 0;
+}
+.hrun .mk.hi .l {
+  left: auto;
+  right: -6px;
+  translate: 0 0;
+}
+@media (width <= 48rem) {
+  .hrun {
+    padding-inline: 0;
+  }
+  .hrun .mk {
+    top: 29px;
+    width: 18px;
+    height: 18px;
+    --wf-glyph: 10px;
+  }
+  .lanes .lh .chart-tick:nth-child(even) {
+    display: none;
+  }
+  .hrun .end {
+    display: none;
+  }
+}
+
+/* TimeRail card: expiries from Now, two label lanes, clusters as +n, a Passed bay at the start. */
+.crail {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+.crail .bay {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px dashed var(--wf-line-3);
+  border-radius: var(--wf-r-md);
+  min-width: 112px;
+}
+.crail .bay .t-eyebrow {
+  color: var(--wf-ink-3);
+}
+.crail .bay button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 6px;
+  margin: 0 -6px;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+  cursor: pointer;
+  text-align: left;
+}
+.crail .bay button:hover {
+  background: var(--wf-hover);
+}
+.crail .ct {
+  position: relative;
+  height: 92px;
+}
+.crail .rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 49px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+.crail .chart-tick {
+  top: 0;
+}
+.crail .chart-grid {
+  top: 18px;
+  bottom: 0;
+}
+.crail .mk {
+  position: absolute;
+  top: 41px;
+  height: 22px;
+  min-width: 22px;
+  padding: 0 4px;
+  translate: -50% 0;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e-raise);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+  cursor: pointer;
+  --wf-glyph: 10px;
+  transition: transform var(--wf-t-release) var(--wf-ease-out);
+}
+.crail .mk:hover {
+  box-shadow: 0 0 0 2px var(--wf-line-3);
+}
+.crail .mk[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--wf-surface),
+    0 0 0 4px var(--wf-accent);
+}
+.crail .mk .l {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.crail .mk .l b {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.crail .mk.up .l {
+  bottom: calc(100% + 6px);
+}
+.crail .mk.dn .l {
+  top: calc(100% + 6px);
+}
+.crail .mk.lo .l {
+  left: 0;
+  translate: 0 0;
+}
+.crail .mk.hi .l {
+  left: auto;
+  right: 0;
+  translate: 0 0;
+}
+@media (width <= 48rem) {
+  .crail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .crail .bay {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}
+
+/* Gantt with a scrubber: ward rows, capsules for expected arrivals, Now, and a slid time. */
+.gantt {
+  position: relative;
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+.gantt .gh {
+  height: 32px;
+  border-bottom: 1px solid var(--wf-line);
+}
+.gantt .gh.ct .chart-tick {
+  top: 10px;
+}
+.gantt .gl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--wf-row);
+  padding: 0 12px;
+  border-bottom: 1px solid var(--wf-line);
+  font-weight: 600;
+  min-width: 0;
+}
+.gantt .gl .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gantt .gl .fr {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+.gantt .gl:nth-last-child(3),
+.gantt .gt:nth-last-child(2) {
+  border-bottom: 0;
+}
+.gantt .gt {
+  position: relative;
+  min-height: var(--wf-row);
+  border-bottom: 1px solid var(--wf-line);
+  margin-right: 16px;
+}
+.gantt .gh.ct {
+  position: relative;
+  margin-right: 16px;
+}
+.gantt .ov {
+  position: absolute;
+  inset: 0 16px 0 148px;
+  pointer-events: none;
+}
+.gantt .cap {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  height: 22px;
+  min-width: 22px;
+  padding: 0 8px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-3);
+  background: var(--wf-surface);
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    background-color var(--wf-t-enter) var(--wf-ease-out),
+    color var(--wf-t-enter) var(--wf-ease-out);
+}
+.gantt .cl {
+  position: absolute;
+  top: 50%;
+  translate: 6px -50%;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+.gantt .cap.here {
+  background: var(--wf-data-2);
+  border-color: transparent;
+  color: var(--wf-on-accent);
+}
+.gantt .cap.due {
+  border-color: var(--wf-accent);
+  color: var(--wf-ink-1);
+}
+.gantt .ov .chart-ref {
+  transition: left var(--wf-t-enter) var(--wf-ease-out);
+}
+.scrub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.scrub input[type="range"] {
+  flex: 1 1 200px;
+  min-width: 160px;
+  accent-color: var(--wf-accent);
+}
+
+/* TimeLanes spread: one dot per person by severity, a dashed 8h mark, the tail past 24h folded and hatched. */
+.spread {
+  position: relative;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+.spread .sl {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--wf-line);
+  min-width: 0;
+}
+.spread .sl b {
+  font-weight: 600;
+}
+.spread .sl .meta b {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.spread .stk {
+  position: relative;
+  border-bottom: 1px solid var(--wf-line);
+  margin-right: 16px;
+}
+.spread .sh {
+  position: relative;
+  height: 30px;
+  border-bottom: 1px solid var(--wf-line);
+  margin-right: 16px;
+}
+.spread .sh .chart-tick {
+  top: 10px;
+}
+.spread > :nth-last-child(2),
+.spread > :nth-last-child(3) {
+  border-bottom: 0;
+}
+.spread .ov {
+  position: absolute;
+  inset: 0 16px 0 180px;
+  pointer-events: none;
+}
+.spread .fold {
+  position: absolute;
+  top: 30px;
+  bottom: 0;
+  right: 0;
+  background: var(--wf-hatch-faint);
+  border-left: 1px solid var(--wf-line-2);
+}
+.spread .dot {
+  position: absolute;
+  translate: -50% -50%;
+  --wf-glyph: 10px;
+  display: inline-flex;
+}
+.spread .ov .chart-ref span {
+  position: absolute;
+  top: 34px;
+  left: 4px;
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-3);
+  background: var(--wf-surface);
+  padding: 0 2px;
+  white-space: nowrap;
+}
+
+/* FilterTile: the summary is the control. Ring, beds, over-threshold count and four small figures. */
+.ftiles {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+.ftiles button {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  gap: 4px 12px;
+  align-items: center;
+  padding: 14px;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+  min-width: 0;
+  transition: background-color var(--wf-t-micro) var(--wf-ease-out);
+}
+.ftiles button + button {
+  border-left: 1px solid var(--wf-line);
+}
+.ftiles button:hover {
+  background: var(--wf-hover);
+}
+.ftiles button[aria-pressed="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 0 -3px 0 var(--wf-accent);
+}
+.ftiles .ring {
+  grid-row: 1 / 4;
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+.ftiles .ring svg {
+  display: block;
+  rotate: -90deg;
+}
+.ftiles .ring b {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 600 var(--wf-fs-13)/1 var(--wf-mono);
+}
+.ftiles .nm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  min-width: 0;
+  white-space: nowrap;
+}
+.ftiles .nm i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--svc);
+  flex: none;
+}
+.ftiles .bd2 {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  --wf-glyph: 8px;
+}
+.ftiles .bd2 b {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.ftiles .mini {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 12px;
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--wf-line);
+}
+.ftiles .mini span {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+  font-size: var(--wf-fs-11);
+  color: var(--wf-ink-3);
+  min-width: 0;
+}
+.ftiles .mini b {
+  font: 600 var(--wf-fs-13)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+@media (width <= 64rem) {
+  .ftiles {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+  .ftiles button + button {
+    border-left: 0;
+  }
+  .ftiles button {
+    border-bottom: 1px solid var(--wf-line);
+  }
+}
+
+/* TimeLanes: one lane per kind of event on one axis, status shapes as marks, close marks stack. */
+.lanes {
+  position: relative;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+}
+.lanes .ll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+  border-bottom: 1px solid var(--wf-line);
+}
+.lanes .ll b {
+  font: 600 var(--wf-fs-12)/1 var(--wf-mono);
+  color: var(--wf-ink-1);
+  margin-left: auto;
+  padding-right: 10px;
+}
+.lanes .lt {
+  position: relative;
+  border-bottom: 1px solid var(--wf-line);
+  margin-inline: 4px 8px;
+}
+.lanes .lh {
+  position: relative;
+  height: 22px;
+  margin-inline: 4px 8px;
+}
+.lanes .lh .chart-tick {
+  top: 6px;
+}
+.lanes .ov {
+  position: absolute;
+  inset: 0 8px 0 96px;
+  pointer-events: none;
+}
+.lanes .ov .after {
+  position: absolute;
+  top: 0;
+  bottom: 22px;
+  right: 0;
+  background: var(--wf-hatch-faint);
+}
+.lanes .lt .g {
+  position: absolute;
+  translate: -50% -50%;
+  --wf-glyph: 10px;
+}
+
+/* TimeRail day: 24 hours, who answers now and for how long. */
+.dayb {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dayb .who {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dayb .who b {
+  font-weight: 600;
+}
+.dayb .bar {
+  position: relative;
+  height: 10px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  overflow: hidden;
+}
+.dayb .bar i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.dayb .bar i.on {
+  background: var(--wf-data-2);
+}
+.dayb .bar i.alt {
+  background: var(--wf-data-rest);
+  box-shadow: inset 0 0 0 1px var(--wf-data-3);
+}
+.dayb .rr {
+  position: relative;
+}
+.dayb .rr .chart-now {
+  top: -4px;
+  bottom: -4px;
+  border-left-width: 2px;
+}
+.dayb .ticks {
+  position: relative;
+  height: 14px;
+}
+.dayb .ticks .chart-tick {
+  top: 2px;
+}
+
+/* CapacityBarRow: stacked bed states with a movable dashed alert line. Rows are buttons. */
+.caprows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+.caprows button {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) 44px 12px;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--wf-row);
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  text-align: left;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+  --wf-glyph: 8px;
+}
+.caprows button:last-child {
+  border-bottom: 0;
+}
+.caprows button:hover {
+  background: var(--wf-hover);
+}
+.caprows .nm {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.caprows .ct {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+.caprows .bar {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  height: 10px;
+  border-radius: var(--wf-r-pill);
+  overflow: hidden;
+  background: var(--wf-track);
+}
+.caprows .bar i {
+  display: block;
+  height: 100%;
+}
+.caprows .ct::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: -1px;
+  left: var(--al);
+  border-left: 1.5px dashed var(--wf-line-3);
+  transition: left var(--wf-t-enter) var(--wf-ease-out);
+}
+.caprows .pc {
+  font: 600 var(--wf-fs-13)/1 var(--wf-mono);
+  text-align: right;
+}
+
+/* PinCompare: up to three wards against the network. Worse than the network takes the amber circle. */
+.pinc table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.pinc th,
+.pinc td {
+  height: 40px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--wf-line);
+  text-align: right;
+  white-space: nowrap;
+}
+.pinc th:first-child,
+.pinc td:first-child {
+  text-align: left;
+  font-family: var(--wf-font);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+.pinc thead th {
+  height: 36px;
+  font-weight: 600;
+  font-size: var(--wf-fs-12);
+}
+.pinc thead th span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--wf-mono);
+}
+.pinc thead button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--wf-ink-3);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+.pinc thead button:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+.pinc td {
+  font: 600 var(--wf-fs-13)/1 var(--wf-mono);
+  --wf-glyph: 8px;
+}
+.pinc td .g {
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+.pinc .net {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+}
+.pinc tr:last-child > * {
+  border-bottom: 0;
+}
+
+/* RangeColumns: Now solid, then the likely figure with a whisker for its range. */
+.fc48 {
+  display: block;
+  width: 100%;
+}
+.fc48 .gl {
+  stroke: var(--wf-line);
+}
+.fc48 .now {
+  fill: var(--wf-data-1);
+}
+.fc48 .fc-est {
+  fill: var(--wf-data-rest);
+  stroke: var(--wf-data-3);
+  stroke-dasharray: 3 3;
+}
+.fc48 .wh {
+  stroke: var(--wf-ink-2);
+  stroke-width: 1.5;
+}
+.fc48 .ref {
+  stroke: var(--wf-ref-stroke);
+  stroke-width: var(--wf-ref-w);
+  stroke-dasharray: var(--wf-ref-dash);
+}
+.fc48 text {
+  fill: var(--wf-ink-3);
+  font: 500 12px var(--wf-mono);
+}
+.fc48 text.v {
+  fill: var(--wf-ink-1);
+  font: 600 15px var(--wf-mono);
+}
+.fc48 text.d {
+  fill: var(--wf-ink-2);
+  font: 600 12px var(--wf-mono);
+}
+.fc48 text.s {
+  font-family: var(--wf-font);
+}
+
+/* GapTiles: need, verdict, gap and a fit against waiting meter. A real table under flush tiles. */
+.gaps {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+.gaps th,
+.gaps td {
+  height: var(--wf-row);
+  padding: 0 12px;
+  border-bottom: 1px solid var(--wf-line);
+  text-align: left;
+  white-space: nowrap;
+}
+.gaps thead th {
+  height: 32px;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+  background: var(--wf-surface-2);
+}
+.gaps tbody th {
+  font-weight: 600;
+}
+.gaps .vd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  --wf-glyph: 10px;
+}
+.gaps .gp {
+  font: 600 var(--wf-fs-15)/1 var(--wf-mono);
+  text-align: right;
+}
+.gaps .ft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.gaps .ft .m {
+  flex: 1;
+  min-width: 56px;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  overflow: hidden;
+}
+.gaps .ft .m i {
+  display: block;
+  height: 100%;
+  background: var(--wf-data-ready);
+  border-radius: inherit;
+}
+.gaps tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+/* ThresholdBar: two settings as one bar, so the setting shows what it does. */
+.thbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.thbar .bar {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  border-radius: var(--wf-r-pill);
+  overflow: hidden;
+}
+.thbar .bar i {
+  display: block;
+  height: 100%;
+  transition: flex-basis var(--wf-t-enter) var(--wf-ease-out);
+}
+.thbar .calm {
+  background: var(--wf-track);
+}
+.thbar .soon {
+  background: var(--wf-warning);
+}
+.thbar .urg {
+  background: var(--wf-danger);
+}
+.thbar .lb {
+  display: flex;
+  gap: 2px;
+}
+.thbar .lb span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  --wf-glyph: 9px;
+  transition: flex-basis var(--wf-t-enter) var(--wf-ease-out);
+}
+.thbar .ends {
+  display: flex;
+  justify-content: space-between;
+  font: 500 var(--wf-fs-12)/1 var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+/* Frac matrix: sites by requirement in fraction pills. A dash is not applicable, never zero. */
+.gm {
+  width: 100%;
+  border-collapse: collapse;
+}
+.gm th,
+.gm td {
+  height: 40px;
+  padding: 0 6px;
+  border-bottom: 1px solid var(--wf-line);
+  text-align: center;
+  white-space: nowrap;
+}
+.gm thead th {
+  height: 32px;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.gm tbody th {
+  text-align: left;
+  padding-left: 0;
+}
+.gm tbody th button {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  font: 600 var(--wf-fs-13)/1 var(--wf-font);
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+.gm tbody th button:hover {
+  background: var(--wf-hover);
+}
+.gm tbody th button[aria-pressed="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+.gm .frac {
+  --wf-glyph: 7px;
+}
+.gm .frac.miss {
+  border-color: var(--wf-line-3);
+}
+.gm .frac.ok {
+  color: var(--wf-ink-3);
+  border-color: var(--wf-line);
+}
+.gm .na {
+  color: var(--wf-ink-3);
+}
+.gm tr.dim td,
+.gm tr.dim th button {
+  color: var(--wf-dim);
+}
+.gm tr.dim .g {
+  --wf-danger: var(--wf-glyph-dim);
+  --wf-warning: var(--wf-glyph-dim);
+  --wf-success: var(--wf-glyph-dim);
+  --wf-info: var(--wf-glyph-dim);
+  --wf-neutral: var(--wf-glyph-dim);
+}
+.gm tbody tr:last-child > * {
+  border-bottom: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gantt .cap,
+  .gantt .ov .chart-ref,
+  .caprows .ct::after,
+  .thbar .bar i,
+  .thbar .lb span,
+  .hrun .mk,
+  .crail .mk {
+    transition: opacity var(--wf-t-micro) linear;
+  }
+}
+
+/* ---------- Elevate parts (adopted 10 Oct 2026) ----------
+   Quiet units, the mixed-face answer, PressureArc, figure roll, AllClear, BedPlan with pick up to place,
+   RowSpark and delta twins, JourneyRibbon, SinceYouLooked, the command palette and the Undo hairline.
+   Spec section 12. Parked, not in the sheet: FlowMap, DeparturesBoard, hero fold, presence, Night shift
+   and Wall modes. ---------- */
+/* Quiet units and the mixed-face answer: figures in mono, units recede, the 12px floor holds */
+.qu {
+  font: 500 0.8em var(--wf-font);
+  color: var(--wf-ink-3);
+  margin-left: 1px;
+  letter-spacing: 0;
+}
+.hero .qu,
+.onhero .qu {
+  color: var(--wf-hero-ink-3);
+}
+.ans {
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+  letter-spacing: var(--wf-tr-20);
+  margin: 0;
+}
+.ans b {
+  font: 600 1em/1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fading hairline */
+.fade-hr {
+  height: 1px;
+  border: 0;
+  margin: 0;
+  background: linear-gradient(90deg, transparent, var(--wf-on-hero-div) 12%, var(--wf-on-hero-div) 88%, transparent);
+}
+
+/* PressureArc: one gauge in a hero. Neutral arc, the glyph and word carry tone. */
+.parc {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  width: 148px;
+  flex: none;
+}
+.parc svg {
+  display: block;
+  width: 148px;
+  height: 82px;
+  overflow: visible;
+}
+.parc path {
+  fill: none;
+  stroke-linecap: round;
+}
+.parc .trk {
+  stroke: var(--wf-on-hero-track);
+  stroke-width: 8;
+}
+.parc .val {
+  stroke: var(--wf-hero-ink-2);
+  stroke-width: 8;
+  transition: stroke-dashoffset var(--wf-t-sheet) var(--wf-ease-sheet);
+}
+.parc .ref {
+  stroke: var(--wf-hero-ink);
+  stroke-width: 2;
+  stroke-dasharray: var(--wf-ref-dash);
+}
+.parc .v {
+  position: absolute;
+  top: 40px;
+  font: 600 var(--wf-fs-20) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.parc .l {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-hero-ink-2);
+  --wf-glyph: 10px;
+}
+.parc .ends {
+  display: flex;
+  justify-content: space-between;
+  width: 132px;
+  margin-top: -4px;
+  font: 500 var(--wf-fs-11) / 1 var(--wf-mono);
+  font-size: 12px;
+  color: var(--wf-hero-ink-3);
+}
+
+/* Figure roll: only changed digits move. No fill mode, so glass above keeps its blur. */
+.roll {
+  display: inline-flex;
+}
+.roll i {
+  display: inline-block;
+  position: relative;
+  font-style: normal;
+}
+.roll i.in {
+  animation: rollIn var(--wf-t-enter) var(--wf-ease-out);
+}
+@keyframes rollIn {
+  from {
+    transform: translateY(0.45em);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .roll i.in {
+    animation: wfFade var(--wf-t-micro) linear;
+  }
+}
+
+/* AllClear: a calm state that still tells you what is next */
+.allclear {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.allclear .ans {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  --wf-glyph: 18px;
+}
+.allclear .ans .g {
+  animation: wfPopIn var(--wf-t-sheet) var(--wf-ease-sheet);
+}
+.allclear .nx {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-hero-ink-2);
+}
+.allclear .nx b {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  color: var(--wf-hero-ink);
+}
+.nextrail {
+  position: relative;
+  height: 46px;
+}
+.nextrail .ax {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 20px;
+  height: 4px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-on-hero-track);
+}
+.nextrail .m {
+  position: absolute;
+  top: 12px;
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  --wf-glyph: 10px;
+}
+.nextrail .m .d {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--wf-hero-1);
+  box-shadow: 0 0 0 1px var(--wf-on-hero-line);
+}
+.nextrail .m span:last-child {
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+}
+.nextrail .m.first {
+  translate: 0 0;
+  align-items: flex-start;
+}
+.nextrail .m.last {
+  translate: -100% 0;
+  align-items: flex-end;
+}
+
+/* BedPlan: the ward as it is walked. Pods, a corridor, one cell per bed. */
+.bplan {
+  display: grid;
+  grid-template:
+    "open corr ica" auto
+    "open corr sec" auto / minmax(0, 3fr) 14px minmax(0, 2fr);
+  gap: var(--wf-s-2);
+}
+.pod {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  min-width: 0;
+}
+.pod-h {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.pod-h .meta b {
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.pod .cells {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 4), minmax(0, 76px));
+  gap: 6px;
+}
+.corr {
+  border-radius: var(--wf-r-pill);
+  background: repeating-linear-gradient(180deg, var(--wf-track) 0 10px, transparent 10px 16px);
+  position: relative;
+}
+.bp {
+  position: relative;
+  height: 48px;
+  padding: 6px 7px;
+  border-radius: var(--wf-r-md);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-2);
+  cursor: pointer;
+  --wf-glyph: 10px;
+  transition:
+    border-color var(--wf-t-micro) var(--wf-ease-out),
+    box-shadow var(--wf-t-micro) var(--wf-ease-out),
+    color var(--wf-t-micro) var(--wf-ease-out),
+    transform var(--wf-t-release) var(--wf-ease-out);
+}
+.bp .st {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.bp .st .t {
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  color: var(--wf-ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bp:hover {
+  border-color: var(--wf-line-3);
+  box-shadow: var(--wf-e-raise);
+}
+.bp:active {
+  transform: scale(0.97);
+}
+.bp.free {
+  border-color: var(--wf-fit-edge);
+  background: linear-gradient(var(--wf-fit-tint), var(--wf-fit-tint)), var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+.bp.closed {
+  border-style: dashed;
+  background: transparent;
+  color: var(--wf-ink-3);
+}
+.bp.pulled {
+  background: var(--wf-hatch-faint), var(--wf-surface);
+}
+.bplan.picking .bp:not(.fits) {
+  color: var(--wf-dim);
+  border-color: var(--wf-line);
+  box-shadow: none;
+}
+.bplan.picking .bp:not(.fits) .g {
+  opacity: 0.4;
+}
+.bplan.picking .bp.fits {
+  border-color: var(--wf-fit-edge);
+  box-shadow:
+    0 0 0 1px var(--wf-fit-edge),
+    var(--wf-e-raise);
+}
+.bp.placed {
+  animation: wfPopIn var(--wf-t-sheet) var(--wf-ease-sheet);
+}
+.waitlist {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.chip-p {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px 0 8px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  color: var(--wf-ink-1);
+  cursor: grab;
+  --wf-glyph: 10px;
+  transition:
+    transform var(--wf-t-enter) var(--wf-ease-out),
+    box-shadow var(--wf-t-enter) var(--wf-ease-out);
+}
+.chip-p .a {
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-3);
+}
+.chip-p[aria-pressed="true"] {
+  transform: translateY(-3px);
+  background: var(--wf-glass-pop);
+  background-image: var(--wf-sheen);
+  box-shadow:
+    inset 0 1px 0 var(--wf-glass-hl),
+    0 0 0 1px var(--wf-accent),
+    var(--wf-e-tip);
+}
+@media (width <= 48rem) {
+  .bplan {
+    grid-template: "open" auto "ica" auto "sec" auto / minmax(0, 1fr);
+  }
+  .corr {
+    display: none;
+  }
+}
+
+/* RowSpark and delta twins in a live list. Ages sit in fixed slots so rows never jitter. */
+.wlist .row {
+  grid-template-columns: 8px minmax(0, 1fr) 84px 64px 72px 56px;
+}
+.spk {
+  display: block;
+  width: 84px;
+  height: 20px;
+  overflow: visible;
+}
+.spk polyline {
+  fill: none;
+  stroke: var(--wf-data-1);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.spk circle {
+  fill: var(--wf-data-1);
+}
+.spk .r {
+  stroke: var(--wf-ref-stroke);
+  stroke-width: var(--wf-ref-w);
+  stroke-dasharray: var(--wf-ref-dash);
+}
+.row.dim .spk polyline {
+  stroke: var(--wf-dim);
+}
+.row.dim .spk circle {
+  fill: var(--wf-dim);
+}
+.dtw {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-2);
+}
+.dtw svg {
+  width: 10px;
+  height: 12px;
+}
+.dtw svg rect {
+  fill: var(--wf-ink-3);
+}
+.dtw svg rect.now {
+  fill: var(--wf-ink-1);
+}
+.fig {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* JourneyRibbon: one person's path with real durations */
+.jrib {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.jrib .bar {
+  display: flex;
+  gap: 3px;
+  height: 28px;
+}
+.jrib .seg {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-2);
+  overflow: hidden;
+  white-space: nowrap;
+  min-width: 28px;
+}
+.jrib .seg:first-child {
+  border-radius: var(--wf-r-pill) var(--wf-r-sm) var(--wf-r-sm) var(--wf-r-pill);
+}
+.jrib .seg.quiet {
+  background: var(--wf-hatch-faint), var(--wf-surface);
+}
+.jrib .seg.now {
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-info);
+  border-radius: var(--wf-r-sm) var(--wf-r-pill) var(--wf-r-pill) var(--wf-r-sm);
+  color: var(--wf-ink-1);
+  gap: 6px;
+}
+.jrib .seg.now::before {
+  content: "";
+  width: 12px;
+  height: 7px;
+  border-radius: 3px;
+  background: var(--wf-info);
+  flex: none;
+}
+.jrib .lbl {
+  display: flex;
+  gap: 3px;
+}
+.jrib .lbl span {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-left: 2px;
+  min-width: 28px;
+}
+
+/* SinceYouLooked: the shift-change digest */
+.digest {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+.digest > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  min-width: 0;
+}
+.digest > div + div {
+  border-left: 1px solid var(--wf-line);
+}
+.digest .n {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 var(--wf-fs-20) / 1 var(--wf-mono);
+  --wf-glyph: 12px;
+}
+.digest .w {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.digest .x {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (width <= 48rem) {
+  .digest {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .digest > div {
+    border-top: 1px solid var(--wf-line);
+  }
+  .digest > div + div {
+    border-left: 0;
+  }
+}
+
+/* Command palette with verbs */
+.pal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--wf-z-modal, 90);
+  background: var(--wf-scrim);
+  display: grid;
+  justify-items: center;
+  align-items: start;
+  padding-top: 14vh;
+  animation: wfFade var(--wf-t-enter) var(--wf-ease-out) backwards;
+}
+.pal {
+  width: min(600px, calc(100vw - 32px));
+  border-radius: var(--wf-r-xl);
+  padding: 6px;
+  animation: wfPopIn var(--wf-t-enter) var(--wf-ease-out) backwards;
+}
+.pal-in {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--wf-line);
+}
+.pal-in input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: 500 var(--wf-fs-15) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+.pal-list {
+  max-height: 340px;
+  overflow: auto;
+  padding: 6px 0;
+}
+.pal-g {
+  padding: 8px 12px 4px;
+}
+.pal-i {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: none;
+  font: 500 var(--wf-fs-13) var(--wf-font);
+  color: var(--wf-ink-1);
+  cursor: pointer;
+  text-align: left;
+  --wf-glyph: 10px;
+}
+.pal-i .pal-k {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--wf-r-sm);
+  display: grid;
+  place-items: center;
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  flex: none;
+}
+.pal-i .sub {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.pal-i .sp {
+  flex: 1;
+}
+.pal-i[aria-selected="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
+}
+.pal-foot {
+  display: flex;
+  gap: 14px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Toast with an Undo hairline that shows how long Undo lasts */
+.toast.ud {
+  position: relative;
+  overflow: hidden;
+}
+.toast.ud::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--wf-tip-ink);
+  opacity: 0.5;
+  transform-origin: left;
+  animation: undoLine var(--undo, 8s) linear forwards;
+}
+@keyframes undoLine {
+  to {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast.ud::after {
+    display: none;
+  }
+}
+
+/* Glare mode: data-mode="glare" on the root, for ward PCs by windows. Solid surfaces, no glass,
+   darker lines, text one weight heavier and 12px glyphs. Red still means act now. */
+:root[data-mode="glare"] {
+  color-scheme: light;
+  --wf-canvas: #ffffff;
+  --wf-surface: #ffffff;
+  --wf-surface-2: #f3f5f7;
+  --wf-raised: #ffffff;
+  --wf-line: #9aa6b2;
+  --wf-line-2: #6f7c89;
+  --wf-line-3: #4a5562;
+  --wf-ink-1: #05080b;
+  --wf-ink-2: #1f2933;
+  --wf-ink-3: #3a4652;
+  --wf-glyph: 12px;
+  --wf-glass-bar: #ffffff;
+  --wf-glass-pop: #ffffff;
+  --wf-glass-sheet: #ffffff;
+  --wf-sheen: none;
+  --wf-glow-1: transparent;
+  --wf-glow-2: transparent;
+}
+:root[data-mode="glare"] body {
+  font-weight: 500;
+}
+:root[data-mode="glare"] b,
+:root[data-mode="glare"] .ttl {
+  font-weight: 700;
+}
+:root[data-mode="glare"] .glass {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Phone: a scrolling chip row fades at the edge instead of cutting a word mid-way */
+@media (width <= 48rem) {
+  .hs-row {
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    padding-right: 28px;
+  }
+  .wlist .row {
+    grid-template-columns: 8px minmax(0, 1fr) 84px 60px;
+  }
+  .wlist .row > :nth-child(4),
+  .wlist .row > :nth-child(6) {
+    display: none;
+  }
+}
+
+/* ---------- empty, loading, avatar ---------- */
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wf-s-2);
+  min-height: 48px;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.empty b,
+.empty .ttl {
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+/* content that replaces a skeleton fades in over 160ms */
+.loaded {
+  animation: wfFade var(--wf-t-exit) var(--wf-ease-out);
+}
+.sk {
+  border-radius: var(--wf-r-xs);
+  background: linear-gradient(90deg, var(--wf-track) 0%, var(--wf-surface-2) 50%, var(--wf-track) 100%);
+  background-size: 200% 100%;
+  animation: wfShimmer 1.4s var(--wf-ease-io) infinite;
+}
+.av {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 var(--wf-fs-12) var(--wf-font);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+@keyframes wfPulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--wf-success) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@keyframes wfMark {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.4);
+  }
+  12% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
+}
+@keyframes wfPop {
+  40% {
+    transform: scale(1.25);
+  }
+}
+@keyframes wfRise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes wfLeave {
+  to {
+    opacity: 0;
+    min-height: 0;
+    height: 0;
+    padding-block: 0;
+    border-bottom-width: 0;
+  }
+}
+@keyframes wfFade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes wfFadeOut {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes wfPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+@keyframes wfSheetIn {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes wfSheetOut {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes wfSheetUp {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes wfSheetDown {
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes wfSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes wfShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+/* ---------- Elevate fixes (10 Oct 2026). Spec sections 8 and 12. ---------- */
+
+/* Focus is never lost or clipped. The current PressureStrip cell keeps ring and under-line together.
+   Tiles and capacity rows sit in overflow-hidden frames, so their buttons draw the ring inside. */
+.ps button[aria-current="true"]:focus-visible {
+  box-shadow:
+    inset 0 -2px 0 var(--wf-accent-strong),
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+.ftiles button:focus-visible,
+.caprows button:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+/* The hero sets its own gap, so inset rings on the slate band never draw white on white */
+.hero:not(.quiet) {
+  --wf-focus-gap: var(--wf-hero-1);
+}
+/* The hero frame lives in the sheet, not in each page */
+.hero {
+  padding: 20px;
+}
+
+/* Live and honest: the dot says stale or offline as well as the edge */
+.lv.stale .pulse {
+  background: var(--wf-warning);
+  animation: none;
+}
+.lv.off .pulse {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--wf-neutral);
+  animation: none;
+}
+
+/* Hero chips: one 32px face, a 36px hit area. Passive badges and the live chip keep their size. */
+:root {
+  --wf-h-hero-chip: 32px;
+}
+.hs.pill,
+.hj {
+  position: relative;
+  height: var(--wf-h-hero-chip);
+}
+.hs.pill::after,
+.hj::after {
+  content: "";
+  position: absolute;
+  inset: -2px 0;
+}
+
+/* Inputs: the field draws the one ring, the control inside resets. States for invalid, off and hover. */
+.in input,
+.in select,
+.in textarea {
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+.in:hover:not(:focus-within, .is-off, :has(:disabled)) {
+  border-color: var(--wf-line-3);
+}
+.in[aria-invalid="true"],
+.in:has([aria-invalid="true"]) {
+  border-color: var(--wf-danger);
+}
+.in:has(:disabled) {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+/* Density binds every part, not just rail rows */
+.card-h {
+  min-height: var(--wf-row);
+}
+.bed {
+  min-height: calc(var(--wf-row) * 1.75);
+}
+[data-density="dense"] {
+  --wf-h-md: 28px;
+}
+[data-density="touch"] {
+  --wf-h-md: 40px;
+}
+
+/* Dialog: the overlay surface for confirmations. Head, body and foot slots, safe-area aware. */
+.scrim.strong {
+  background: var(--wf-scrim-strong);
+}
+.dialog {
+  position: fixed;
+  z-index: var(--wf-z-modal);
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--wf-r-xl);
+  background: var(--wf-raised);
+  border: 1px solid var(--wf-line-2);
+  box-shadow: var(--wf-e3);
+  overflow: hidden;
+}
+.dialog-h,
+.dialog-f {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 52px;
+  padding: 0 var(--wf-s-4);
+}
+.dialog-h {
+  border-bottom: 1px solid var(--wf-line);
+  font: 600 var(--wf-fs-15) / 1.3 var(--wf-font);
+}
+.dialog-b {
+  padding: var(--wf-s-4);
+  overflow: auto;
+}
+.dialog-f {
+  justify-content: flex-end;
+  border-top: 1px solid var(--wf-line);
+}
+
+/* Timeline marks keep their small face but take a 28px hit area with a mouse (44px on touch, below) */
+.tax .mk::after,
+.crail .mk::after,
+.hrun .mk::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 28px);
+  height: max(100%, 28px);
+  translate: -50% -50%;
+}
+
+/* Touch: every small mark and button reaches 44px through a hit area, never a bigger face */
+@media (pointer: coarse) {
+  .pinc thead button,
+  .toast .b,
+  .bl button {
+    position: relative;
+  }
+  .tax .mk::after,
+  .crail .mk::after,
+  .hrun .mk::after,
+  .pinc thead button::after,
+  .toast .b::after,
+  .bl button::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    translate: -50% -50%;
+  }
+  .menu [role="menuitem"],
+  .ready-row,
+  .ladder button,
+  .gm tbody th button {
+    min-height: var(--wf-touch);
+  }
+  .sw::before {
+    content: "";
+    position: absolute;
+    inset: -12px -6px;
+  }
+}
+
+/* Forced colours keep selection on parts that draw it with a shadow */
+@media (forced-colors: active) {
+  .ps button[aria-current="true"],
+  .ftiles button[aria-pressed="true"],
+  .gm tbody th button[aria-pressed="true"],
+  .bl button[aria-pressed="true"],
+  .ladder button[aria-pressed="true"],
+  .tax .mk[aria-pressed="true"],
+  .crail .mk[aria-pressed="true"],
+  .bp.fits,
+  .chip-p[aria-pressed="true"] {
+    border: 2px solid Highlight;
+  }
+  .pips i.on,
+  .bs i,
+  .bl .bar b,
+  .caprows .bar i,
+  .spk,
+  .dtw svg,
+  .parc svg {
+    forced-color-adjust: none;
+  }
+}
+
+/* Print: no row actions or floating chrome, headers repeat on every page */
+@media print {
+  .ra,
+  .toast,
+  .tip,
+  .menu,
+  .pop,
+  .drawer,
+  .dialog,
+  .pal-scrim,
+  .skip {
+    display: none !important;
+  }
+  thead {
+    display: table-header-group;
+  }
+  .hero {
+    background: none;
+    color: #000;
+    border-color: #999;
+    box-shadow: none;
+  }
+}
+
+/* ================= 5. Preferences ================= */
+/* Reduced motion keeps every state change and its feedback, and swaps movement for a short fade.
+   Durations never reach 0ms, because transitionend and animationend do not fire at zero. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --wf-t-press: 1ms;
+    --wf-t-release: 1ms;
+    --wf-t-enter: 120ms;
+    --wf-t-exit: 120ms;
+    --wf-t-sheet: 120ms;
+  }
+  .pulse.tick,
+  .sk,
+  .bump {
+    animation: none;
+  }
+  .spin,
+  .b[aria-busy="true"]::after {
+    animation-duration: 1.6s;
+  }
+  .b:active,
+  .fc:active,
+  .hs.pill:active {
+    transform: none;
+  }
+  .row.enter,
+  .li.enter,
+  .menu.enter,
+  .pop.enter,
+  .toast.enter,
+  .drawer.enter,
+  .sheet-phone.enter {
+    animation-name: wfFade;
+  }
+  .drawer.leave,
+  .sheet-phone.leave,
+  .row.leave,
+  .li.leave {
+    animation-name: wfFadeOut;
+  }
+  .pt.slide .cap {
+    transition-property: none;
+  }
+}
+@media (prefers-contrast: more) {
+  :root {
+    --wf-line: var(--wf-line-ctl);
+    --wf-line-2: var(--wf-line-ctl);
+    --wf-line-3: var(--wf-ink-2);
+  }
+  .glass,
+  .glass.bar,
+  .glass.sheet {
+    background: var(--wf-raised);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+/* Windows high contrast (ward PCs). Shapes, data marks and selection must survive. Box shadows are
+   removed in this mode, so every state v7 drew with an inset shadow gets a real border here. */
+@media (forced-colors: active) {
+  .g,
+  .pulse,
+  .meter i,
+  .mb i,
+  .sw::after,
+  .chk,
+  .rad {
+    forced-color-adjust: none;
+  }
+  .g.danger,
+  .g.closed,
+  .g.success,
+  .g.warning,
+  .g.info,
+  .g.inactive {
+    background: CanvasText;
+  }
+  .g.neutral {
+    border-color: CanvasText;
+  }
+  .svc::before {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+  :focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px;
+  }
+  .b[disabled],
+  .b[aria-disabled="true"],
+  .fc[disabled],
+  .fc[aria-disabled="true"],
+  .pt button[disabled] {
+    border-style: dashed;
+    color: GrayText;
+  }
+  .pt button.on,
+  .pt button[aria-selected="true"],
+  .pt button[aria-checked="true"],
+  .trk button.on,
+  .trk [aria-current="page"] {
+    border: 2px solid Highlight;
+  }
+  .fc.on,
+  .fc[aria-pressed="true"],
+  .choice-row button.on,
+  .choice-row button[aria-checked="true"],
+  .bed.sel,
+  .bed[aria-pressed="true"],
+  .hs.pill[aria-pressed="true"] {
+    border: 2px solid Highlight;
+  }
+  .row.sel,
+  .row[aria-selected="true"],
+  .row-tl {
+    border-left: 3px solid Highlight;
+  }
+  .pt.slide .cap {
+    border: 2px solid Highlight;
+  }
+  .chg::after {
+    background: Highlight;
+  }
+  .ring-in:focus-visible,
+  .menu [role="menuitem"]:focus-visible,
+  .row:focus-visible,
+  .li:focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: -2px;
+  }
+  .sw {
+    border: 1px solid CanvasText;
+  }
+  .sw.on,
+  .sw[aria-checked="true"] {
+    background: Highlight;
+  }
+  .chk.on,
+  .rad.on {
+    background: Highlight;
+    border-color: Highlight;
+  }
+}
+
+/* ================= 6. Print ================= */
+/* Print is day, ink only, no glass, no shadow. The live hero prints as the quiet hero. Glyphs are
+   drawn as backgrounds, so they are kept with print-color-adjust. ShiftBrief prints bed numbers only. */
+@media print {
+  [data-print-hide] {
+    display: none !important;
+  }
+  .card,
+  .row,
+  .li,
+  .gates,
+  .rule {
+    break-inside: avoid;
+  }
+  :root,
+  :root[data-theme],
+  .day,
+  .night {
+    color-scheme: light !important;
+  }
+  .wf {
+    background: var(--wf-light-1);
+  }
+  .card,
+  .glass,
+  .glass.bar,
+  .glass.sheet,
+  .hero,
+  .b,
+  .fc,
+  .pt,
+  .bd {
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass,
+  .glass.bar,
+  .glass.sheet {
+    background: var(--wf-surface);
+  }
+  .hero,
+  .hero:not(.quiet) {
+    --wf-danger: var(--wf-light-danger);
+    --wf-warning: var(--wf-light-warning);
+    --wf-success: var(--wf-light-success);
+    --wf-info: var(--wf-light-info);
+    --wf-neutral: var(--wf-light-neutral);
+    --wf-focus-ring: var(--wf-accent);
+    --wf-hero-ink: var(--wf-ink-1);
+    --wf-hero-ink-2: var(--wf-ink-2);
+    --wf-hero-ink-3: var(--wf-ink-3);
+    --wf-on-hero-fill: transparent;
+    --wf-on-hero-line: var(--wf-line-3);
+    background: none;
+    color: var(--wf-ink-1);
+    border-color: var(--wf-line-3);
+  }
+  .hero .hs .l,
+  .hero .lv {
+    color: var(--wf-ink-2);
+  }
+  .hs {
+    border-color: var(--wf-line-2);
+  }
+  .row .ra {
+    opacity: 1;
+  }
+  .pulse,
+  .spin,
+  .sk {
+    animation: none;
+  }
+  .g,
+  .k,
+  .tier,
+  .bed.free,
+  .fit,
+  .mb i,
+  .svc::before,
+  .meter b {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .sp-panel {
+    position: static;
+  }
+  .no-print,
+  .scrim,
+  .grab {
+    display: none !important;
+  }
+}
+
+/* RESPONSIVE: phone and touch. Phone rules never change desktop. The board embeds the sheet above
+   this line and draws phone mode with classes instead. */
+@media (pointer: coarse) {
+  :root {
+    --wf-h-sm: var(--wf-touch);
+    --wf-h-md: var(--wf-touch);
+  }
+  /* tabs and chips keep a 36px face but take a 44px hit area. The track makes room for it and never
+     scrolls vertically. */
+  .pt {
+    padding-block: 4px;
+    overflow-y: hidden;
+  }
+  .pt button,
+  .pt.sm button {
+    height: 36px;
+  }
+  .fc {
+    position: relative;
+    height: 36px;
+  }
+  .pt button::after,
+  .fc::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+  :root:not([data-density]) {
+    --wf-row: var(--wf-row-touch);
+  }
+  :root:not([data-density]) .row.compact {
+    min-height: var(--wf-row-touch);
+  }
+}
+/* reflow: a 1280px desktop at 200% zoom is 640px wide. Every desktop layout collapses here without
+   losing an action (WCAG 1.4.10). */
+@media (width <= 48rem) {
+  .layout-core,
+  .layout-core.wide,
+  .layout-core.r21,
+  .layout-core.r31 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .grid12 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .grid12 > * {
+    grid-column: 1 / -1;
+  }
+  .cols {
+    grid-auto-flow: row;
+  }
+  .cols > .follow .card-scroll {
+    contain: none;
+    max-height: var(--wf-col-max);
+  }
+  .sp-panel {
+    position: static;
+  }
+  .beds {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .drawer,
+  .drawer.wide {
+    width: 100%;
+    border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+  }
+  .hs-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}
+
+/* ================= Act now edge (v8.2, carried into v9) ================= */
+/* Act now items take a thin red edge and no fill (rule 6). Selection and focus rings still win. */
+/* Hover keeps the edge. A row has only a divider, so it takes a 1px inset ring instead. */
+.edge-act,
+.bed.edge-act:not(.sel, [aria-pressed="true"]):hover {
+  border-color: var(--wf-act-edge);
+}
+.row.edge-act:not(.sel, [aria-selected="true"], :focus-visible) {
+  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+}
+@media (forced-colors: active) {
+  .edge-act {
+    border-color: CanvasText;
+  }
+  .row.edge-act:not(:focus-visible) {
+    box-shadow: inset 0 0 0 1px CanvasText;
+  }
+}

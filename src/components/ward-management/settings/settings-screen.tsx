@@ -64,6 +64,7 @@ import {
   useActNowNotificationPreference,
   type NotificationSupport,
 } from "@/components/ward-management/shell/ward-act-now-notifications";
+import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push";
 import {
   Avatar,
   Badge,
@@ -254,6 +255,7 @@ export function SettingsScreen() {
   const [audioBuzz, setAudioBuzz] = useAudioBuzzPreference();
   const [actNowNotifications] = useActNowNotificationPreference();
   const [notificationPermission, setNotificationPermission] = useState<NotificationSupport>("default");
+  const [phonePush, setPhonePush] = usePhonePush();
   useEffect(() => {
     const refresh = () => {
       setNotificationPermission(notificationSupport());
@@ -1068,6 +1070,22 @@ export function SettingsScreen() {
                     : answer === "unsupported"
                       ? "This browser cannot show notifications."
                       : "Notifications are blocked for this site in the browser.",
+                );
+              });
+            }}
+            phonePush={phonePush}
+            onPhonePushChange={(next) => {
+              void setPhonePush(next).then((answer) => {
+                showToast(
+                  answer === "on"
+                    ? "Phone alerts on for this device."
+                    : answer === "off"
+                      ? "Phone alerts off for this device."
+                      : answer === "denied"
+                        ? "Notifications are blocked for this site in the browser."
+                        : answer === "server-off"
+                          ? "Phone alerts are not set up on the server yet."
+                          : "Phone alerts could not be changed. Try again.",
                 );
               });
             }}
