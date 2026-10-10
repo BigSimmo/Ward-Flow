@@ -104,9 +104,10 @@
  * ruling, 10 Oct): bolder ink and a darker edge, never red, because red means act now. */
 .sq {
   height: 24px;
-  min-width: 28px;
+  /* "T1" fits the old 24px tile, so rows sized around it (Home's phone queue at 320px) keep fitting. */
+  min-width: 24px;
   flex: 0 0 auto;
-  padding: 0 6px;
+  padding: 0 3px;
   box-sizing: border-box;
   border-radius: var(--wf-r-pill);
   display: inline-flex;

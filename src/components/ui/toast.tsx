@@ -43,8 +43,8 @@ type ToastContextValue = {
   toasts: Toast[];
   push: (toast: ToastInput) => string;
   dismiss: (id: string) => void;
-  /** Closes an Undo toast after Undo was pressed, so its `onExpire` never runs. */
-  undoAndDismiss: (id: string) => void;
+  /** Runs the caller's Undo then closes the toast, so its `onExpire` never runs. */
+  undoAndDismiss: (id: string, onUndo: () => void) => void;
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -62,7 +62,8 @@ export function ToastProvider({ children }: ToastProviderProps) {
   const toastsRef = useRef<Toast[]>([]);
   const counter = useRef(0);
 
-  // Undo toasts whose window has already ended, so `onExpire` runs at most once each.
+  // Visible Undo toasts whose window has already ended, so `onExpire` runs at most once each. An id
+  // leaves the set when its toast is removed.
   const settled = useRef(new Set<string>());
 
   // Ends an Undo window without Undo: the X, the visible cap and the timer all count, so a caller
@@ -80,14 +81,21 @@ export function ToastProvider({ children }: ToastProviderProps) {
       toastsRef.current = next;
       setToasts(next);
       if (gone) expire(gone);
+      settled.current.delete(id);
     },
     [expire],
   );
 
+  // Settles the toast before the caller's onUndo runs, so nothing that callback does (closing or
+  // pushing out its own toast) can also expire it, and the toast still closes if the callback throws.
   const undoAndDismiss = useCallback(
-    (id: string) => {
+    (id: string, onUndo: () => void) => {
       settled.current.add(id);
-      dismiss(id);
+      try {
+        onUndo();
+      } finally {
+        dismiss(id);
+      }
     },
     [dismiss],
   );
@@ -125,7 +133,10 @@ export function ToastProvider({ children }: ToastProviderProps) {
       const next = all.slice(-MAX_VISIBLE_TOASTS);
       toastsRef.current = next;
       setToasts(next);
-      for (const evicted of all.slice(0, all.length - next.length)) expire(evicted);
+      for (const evicted of all.slice(0, all.length - next.length)) {
+        expire(evicted);
+        settled.current.delete(evicted.id);
+      }
       return id;
     },
     [expire],
@@ -154,7 +165,7 @@ function ToastCard({
 }: {
   toast: Toast;
   onDismiss: (id: string) => void;
-  onUndone: (id: string) => void;
+  onUndone: (id: string, onUndo: () => void) => void;
 }) {
   const duration = toast.duration ?? (toast.action || toast.undo ? 0 : DEFAULT_DURATION);
 
@@ -192,10 +203,7 @@ function ToastCard({
         toast.undo
           ? {
               ...toast.undo,
-              onUndo: () => {
-                toast.undo?.onUndo();
-                onUndone(toast.id);
-              },
+              onUndo: () => onUndone(toast.id, () => toast.undo?.onUndo()),
               // The provider's dismiss calls the caller's onExpire, once.
               onExpire: () => onDismiss(toast.id),
             }

@@ -1249,6 +1249,37 @@ describe("Toast", () => {
     expect(within(region).queryByText("Bed 05 released")).not.toBeInTheDocument();
   });
 
+  it("never expires an Undo toast whose own onUndo closes it", async () => {
+    const onExpire = vi.fn();
+    function SelfCloseHarness() {
+      const { push, dismiss } = useToast();
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            const id = push({
+              tone: "info",
+              title: "Bed 06 released",
+              undo: { durationMs: 8000, onUndo: () => dismiss(id), onExpire },
+            });
+          }}
+        >
+          Release
+        </button>
+      );
+    }
+    render(
+      <ToastProvider>
+        <SelfCloseHarness />
+      </ToastProvider>,
+    );
+    const region = screen.getByTestId("toast-region");
+    await userEvent.click(screen.getByRole("button", { name: "Release" }));
+    await userEvent.click(within(region).getByRole("button", { name: "Undo" }));
+    expect(onExpire).not.toHaveBeenCalled();
+    expect(within(region).queryByText("Bed 06 released")).not.toBeInTheDocument();
+  });
+
   it("deduplicates outcomes and caps the visible queue", async () => {
     function QueueHarness() {
       const { push } = useToast();
