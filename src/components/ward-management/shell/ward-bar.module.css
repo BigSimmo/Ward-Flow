@@ -2726,3 +2726,37 @@
     box-shadow: none;
   }
 }
+
+/* Tablet portrait (v10 shell, 10 Oct 2026, 769px to 1000px): no sidebar, so the Menu button shows
+ * at the left of the header and opens the full sidebar as a 280px sheet over a scrim (the rail's
+ * own sheet answers above 48rem). 44px target. Desktop above 1000px and the phone are unchanged. */
+@media (min-width: 48.0625rem) and (max-width: 1000px) {
+  .phoneOnly {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--wf-touch);
+    height: var(--wf-touch);
+    margin-right: var(--wf-s-1);
+    border: 0;
+    border-radius: var(--wf-r-md);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .phoneOnly:hover {
+    background: var(--wf-hover);
+  }
+
+  .phoneOnly svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .phoneOnly:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+}
