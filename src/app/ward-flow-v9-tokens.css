@@ -214,9 +214,10 @@
   --wf-sheen: none;
 }
 
-/* Touch: coarse pointers get touch rows unless a density was chosen */
+/* Touch: coarse pointers get touch rows unless dense rows were chosen. The app's compact and
+   spacious preferences only change the text size, so they keep touch rows. */
 @media (pointer: coarse) {
-  :root {
+  :root:not([data-density="dense"]) {
     --wf-row: var(--wf-row-touch);
   }
 }
