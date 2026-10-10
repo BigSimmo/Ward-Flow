@@ -49,6 +49,10 @@ const MAY_ASSERT_TODAY = new Map([
     "Out of area This shift: the clock sits above departureDayLabel, which names the departure's day (Yesterday, Today, Tomorrow or a day count), so the row still names the day.",
   ],
   [
+    "instant",
+    'Reports: reportMoment prefixes reportDay ("Sat 10 Oct 10:42"), and the chronology\'s clockOrMissing sits under a day-group heading (reportDay) on desktop and phone, so the row still names the day.',
+  ],
+  [
     "selectedPatient.openedAtInstant",
     "Patient search Latest timeline: the clock sits in the time column and withDay adds the day from formatInstantWithDay to the event text beside it, so the row still names the day.",
   ],

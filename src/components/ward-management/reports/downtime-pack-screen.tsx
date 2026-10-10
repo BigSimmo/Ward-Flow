@@ -21,7 +21,7 @@ import {
 } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import { formatInstant, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -207,7 +207,7 @@ export function DowntimePackScreen() {
 
   const ageMinutes = Math.max(0, now - pack.generatedAt);
   const stale = ageMinutes >= STALE_AFTER_MINUTES;
-  const frozenAt = formatInstant(pack.generatedAt);
+  const frozenAt = formatInstantWithDay(pack.generatedAt, now);
   const groups = serviceGroups(pack.wards);
 
   const totals = packTotals(pack);
@@ -359,7 +359,7 @@ export function DowntimePackScreen() {
                   as="li"
                   name={line.person}
                   meta={`${line.from} to ${line.to}`}
-                  value={line.plannedAt === null ? "None" : formatInstant(line.plannedAt)}
+                  value={line.plannedAt === null ? "None" : formatInstantWithDay(line.plannedAt, now)}
                   time="planned"
                   onSelect={() =>
                     setSheet({
@@ -383,7 +383,7 @@ export function DowntimePackScreen() {
                   as="li"
                   name={line.person}
                   meta={`${line.form || NOT_RECORDED} · ${line.legalStatus}`}
-                  value={line.madeAt === null ? "None" : formatInstant(line.madeAt)}
+                  value={line.madeAt === null ? "None" : formatInstantWithDay(line.madeAt, now)}
                   time="made"
                   onSelect={() =>
                     setSheet({

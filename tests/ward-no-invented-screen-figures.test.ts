@@ -32,8 +32,13 @@ import todo from "./ward-invented-figures-todo.json";
 
 const WARD_DIR = resolve(process.cwd(), "src/components/ward-management");
 
-/** The list can never grow past this. Lower it when entries go; never raise it. */
-const MAX_TODO = 9;
+/**
+ * The list can never grow past this. Lower it when entries go; never raise it.
+ * Raised once, 9 to 12 (v10 build pass 2, 10 Oct 2026, at the build coordinator's instruction): the
+ * v10 mockups introduced three invented windows (tier targets, bed-count freshness, stale downtime
+ * pack) that are listed as to-do, the tier targets marked pending clinical sign-off.
+ */
+const MAX_TODO = 12;
 
 /** Files Josh ruled on (rule 4 only), relative to WARD_DIR, and the ruling. */
 const RULED_ON: ReadonlyArray<{ file: string; name: RegExp; ruling: string }> = [
@@ -134,6 +139,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     why: "The referral draft's autosave pause (9 Oct 2026): how long typing rests before tab memory is updated; never shown, not a limit.",
     file: /^referrals\/referral-draft-store\.ts$/,
     name: /^REFERRAL_DRAFT_AUTOSAVE_MS$/,
+  },
+  {
+    id: "snapshot-feedback-pause",
+    why: 'How long the downtime pack shows "Taking snapshot" before the new time (v10, 10 Oct 2026); a UI pause, not a limit.',
+    file: /^reports\/downtime-pack-screen\.tsx$/,
+    name: /^TAKING_MS$/,
   },
   {
     id: "phone-alert-release",

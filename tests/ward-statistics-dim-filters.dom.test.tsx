@@ -87,7 +87,7 @@ describe("Statistics Beds by ward highlights and dims", () => {
     expect(lit.length).toBeGreaterThan(0);
     expect(lit.length).toBeLessThan(rows.length);
     expect(screen.getByTestId("ward-statistics-capacity-matrix-count")).toHaveTextContent(
-      `${lit.length} of ${rows.length} highlighted in ${service}, all rows stay`,
+      `${lit.length} of ${rows.length} synthetic rows highlighted in ${service}, all rows stay`,
     );
   });
 });

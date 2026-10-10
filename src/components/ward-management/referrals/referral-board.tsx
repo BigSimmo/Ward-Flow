@@ -732,7 +732,7 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
             {queued.length > 0 ? (
               <ReferralPhoneCard
                 title="Waiting time against due times"
-                meta="Due T1 1h · T2 4h · T3 24h · tap a mark to open"
+                meta={`Due T1 ${OVERDUE_AFTER_MINUTES_BY_TIER[1] / 60}h · T2 ${OVERDUE_AFTER_MINUTES_BY_TIER[2] / 60}h · T3 ${OVERDUE_AFTER_MINUTES_BY_TIER[3] / 60}h · tap a mark to open`}
                 expanded={phoneSheet === "axis"}
                 onOpen={() => setPhoneSheet("axis")}
               />

@@ -51,7 +51,7 @@ export function ReadyToLeave({
     ? READY_TO_LEAVE_ITEMS.find((item) => item.id === lastChange.itemId)?.label
     : undefined;
   return (
-    <section className={styles.ready} aria-labelledby={headingId} data-testid="ward-discharge-ready-to-leave">
+    <section className={styles.readyPanel} aria-labelledby={headingId} data-testid="ward-discharge-ready-to-leave">
       <header className={styles.head}>
         <h3 id={headingId} className={styles.title}>
           Ready to leave

@@ -312,8 +312,8 @@ export function EdIndex() {
             activeChip ? (
               <span className={styles.heroNote} aria-live="polite" data-testid="ed-index-highlight-note">
                 <span>
-                  <b className={styles.heroNum}>{highlightedEds}</b> of {withWaiting.length} EDs have someone{" "}
-                  {activeChip.word}, all EDs stay
+                  <b className={styles.heroNum}>{highlightedEds}</b> of {withWaiting.length} EDs
+                  <SrOnly> (synthetic records)</SrOnly> have someone {activeChip.word}, all EDs stay
                 </span>
                 <Button variant="onHero" size="sm" onClick={() => setHighlight(null)}>
                   Clear
@@ -400,7 +400,8 @@ export function EdIndex() {
                 </Button>
               ) : null}
               <span data-testid="ed-index-match-count" aria-live="polite">
-                <b className={styles.num}>{matching.length}</b> of {rows.length} match
+                <b className={styles.num}>{matching.length}</b> of {rows.length} <SrOnly>synthetic records</SrOnly>{" "}
+                match
               </span>
             </span>
           </div>

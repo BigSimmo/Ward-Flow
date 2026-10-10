@@ -649,11 +649,13 @@ export function StatisticsScreen({
                   <span className={styles.toolbarEnd} id="wardFilterCount" role="status">
                     {wardOverLine ? (
                       <>
-                        <b>{overLineCount}</b> of {filteredAndSortedWards.length} highlighted, all rows stay
+                        <b>{overLineCount}</b> of {filteredAndSortedWards.length}{" "}
+                        <span className={styles.srOnly}>synthetic rows</span> highlighted, all rows stay
                       </>
                     ) : (
                       <>
-                        <b>{filteredAndSortedWards.length}</b> of {allPressureWards.length}
+                        <b>{filteredAndSortedWards.length}</b> of {allPressureWards.length}{" "}
+                        <span className={styles.srOnly}>synthetic rows</span>
                       </>
                     )}
                   </span>

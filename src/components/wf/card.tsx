@@ -1,6 +1,7 @@
 import type { ComponentPropsWithRef, ElementType, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cx, present } from "./cx";
+import { Icon } from "./icon";
 import { IconTile } from "./primitives";
 import styles from "./card.module.css";
 
@@ -23,6 +24,8 @@ export type CardHeadProps = {
   meta?: ReactNode;
   /** Neutral line-icon tile on the left. */
   icon?: LucideIcon;
+  /** Draw `icon` as a plain line icon in ink-3, with no tile behind it (v10 quiet card heads). */
+  iconPlain?: boolean;
   /** One badge or one live value. */
   aside?: ReactNode;
   /** One action slot (a ghost button, a segmented control or an overflow menu). */
@@ -39,6 +42,7 @@ export function CardHead({
   title,
   meta,
   icon,
+  iconPlain = false,
   aside,
   action,
   level = 2,
@@ -49,7 +53,7 @@ export function CardHead({
   const Heading = `h${level}` as ElementType;
   return (
     <div className={cx(styles.head, className)}>
-      {icon ? <IconTile icon={icon} /> : null}
+      {icon ? iconPlain ? <Icon icon={icon} size={16} className={styles.plainIcon} /> : <IconTile icon={icon} /> : null}
       <div className={styles.titleWrap}>
         <Heading id={id} className={cx(styles.title, eyebrow && styles.eyebrowTitle)}>
           {title}

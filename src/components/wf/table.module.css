@@ -155,7 +155,8 @@
 
 .table th {
   height: 36px;
-  padding: 0 var(--wf-s-3);
+  /* --wf-cell-pad-y: set on a table whose cells wrap (reports) instead of redeclaring cell padding. */
+  padding: var(--wf-cell-pad-y, 0) var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
@@ -167,7 +168,7 @@
 
 .table td {
   height: var(--wf-row);
-  padding: 0 var(--wf-s-3);
+  padding: var(--wf-cell-pad-y, 0) var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line);
   white-space: nowrap;
   overflow: hidden;

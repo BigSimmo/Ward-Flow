@@ -2314,3 +2314,64 @@
     order: 1;
   }
 }
+
+/* ── Tablet (v10 shell, 10 Oct 2026) ───────────────────────────────────────────────────────────
+ * Landscape 1180 (1001px to 1200px): the 64px icon rail whatever is stored (`data-tablet`, set by
+ * `TABLET_LANDSCAPE_RAIL_QUERY`), Today and Where only, then More, which opens the full sidebar
+ * over the page. 44px targets. The expand toggle goes: the mark and More open the sheet instead.
+ * Portrait 820 (769px to 1000px): no sidebar at all. The bar's Menu, at the left of the header,
+ * opens the same full sidebar as a 280px sheet over a scrim. Desktop above 1200px and the phone
+ * are unchanged. These blocks sit last so they win over the 1000px wrapping-row block above. */
+.stripMore {
+  display: none;
+}
+
+@media (min-width: 1001px) and (max-width: 1200px) {
+  .rail[data-tablet="landscape"] .railToggle {
+    display: none;
+  }
+
+  .rail[data-tablet="landscape"] {
+    padding-bottom: 0.75rem;
+  }
+
+  .rail[data-tablet="landscape"] .railLink,
+  .rail[data-tablet="landscape"] .railLink[data-two-line="true"] {
+    min-height: 2.75rem;
+  }
+
+  .rail[data-tablet="landscape"] .stripMore {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 2.75rem;
+    min-height: 2.75rem;
+    margin: 0.25rem auto 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--wf-r-sm);
+    background: transparent;
+    color: var(--wf-ink-2);
+    font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+    cursor: pointer;
+  }
+
+  .rail[data-tablet="landscape"] .stripMore:hover {
+    background: var(--wf-hover);
+    color: var(--wf-ink-1);
+  }
+
+  .rail[data-tablet="landscape"] .stripMore:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: -2px;
+  }
+}
+
+@media (min-width: 48.0625rem) and (max-width: 1000px) {
+  .rail,
+  .rail[data-rail="closed"] {
+    display: none;
+  }
+}

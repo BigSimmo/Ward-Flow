@@ -32,6 +32,11 @@
   height: 28px;
 }
 
+/* Tick numbers and the mean label each get their own line, so two 12px lines never touch. */
+.axisRow[data-two-lines="true"] {
+  height: calc(2 * var(--wf-lh-12) + 6px);
+}
+
 .tickLabel {
   position: absolute;
   top: 0;

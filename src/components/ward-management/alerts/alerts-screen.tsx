@@ -1375,7 +1375,8 @@ function AlertsWorkspace() {
                     </div>
                     {anyHighlight ? (
                       <span className={styles.highlightNote} role="status">
-                        {highlightedCount} of {allEntries.length} highlighted, all rows stay
+                        {highlightedCount} of {allEntries.length} <SrOnly>synthetic rows</SrOnly> highlighted, all rows
+                        stay
                       </span>
                     ) : null}
                     {anyHighlight ? (

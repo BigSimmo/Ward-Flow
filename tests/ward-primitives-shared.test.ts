@@ -421,6 +421,11 @@ describe("the breakpoint scale", () => {
     "src/components/ward-management/capacity/bed-map.module.css: 85",
     "src/components/ward-management/capacity/capacity.module.css: 68",
     "src/components/ward-management/capacity/capacity.module.css: 45",
+    // v10 Capacity: desktop/tablet band rules sit above the phone range (FOUNDATION contract).
+    "src/components/ward-management/capacity/capacity.module.css: 48.0625",
+    // v10 tablet portrait (10 Oct 2026): 769px to 1000px drops the rail; the bar's Menu opens the
+    // full sidebar sheet. The exclusive complement of the phone's 48rem, as in ward-bar.module.css.
+    "src/components/ward-management/shell/ward-rail.module.css: 48.0625",
   ];
 
   it("introduces no breakpoint outside the known set", () => {

@@ -96,6 +96,62 @@ export function Tabs<T extends string>({ items, value, onChange, label, idPrefix
   );
 }
 
+export type PillTabsProps<T extends string> = TabsProps<T> & {
+  /** `fill` stretches the items across the width (phone page tabs). */
+  fill?: boolean;
+};
+
+/**
+ * Pill tabs (v10 `.pt`): page and panel tabs as a rounded track with the selected item raised.
+ * Same `tablist` contract as `Tabs` (arrow keys, Home and End, one tab stop, `TabPanel` ids).
+ * Choice pills never wrap: the track scrolls sideways instead. Use `Segmented` for a view toggle.
+ */
+export function PillTabs<T extends string>({
+  items,
+  value,
+  onChange,
+  label,
+  idPrefix,
+  fill = false,
+  className,
+}: PillTabsProps<T>) {
+  const { refs, onKeyDown } = useRoving(items, value, onChange);
+  const stop = tabStopIndex(items, value);
+  return (
+    <div
+      role="tablist"
+      aria-label={label}
+      className={cx(styles.pt, fill && styles.ptFill, className)}
+      onKeyDown={onKeyDown}
+      data-testid="wf-pill-tabs"
+    >
+      {items.map((item, index) => {
+        const selected = item.id === value;
+        return (
+          <button
+            key={item.id}
+            ref={(node) => {
+              refs.current[index] = node;
+            }}
+            type="button"
+            role="tab"
+            id={idPrefix ? `${idPrefix}-tab-${item.id}` : undefined}
+            aria-controls={idPrefix ? `${idPrefix}-panel-${item.id}` : undefined}
+            aria-selected={selected}
+            tabIndex={index === stop ? 0 : -1}
+            className={styles.ptItem}
+            onClick={() => onChange(item.id)}
+          >
+            {item.tone ? <StatusGlyph tone={item.tone} size={9} /> : null}
+            {item.label}
+            {item.count != null ? <Count n={item.count} className={styles.k} /> : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Panel for `Tabs` with an `idPrefix`. Render only the selected one, or all with `hidden`. */
 export function TabPanel({
   idPrefix,

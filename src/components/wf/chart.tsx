@@ -97,7 +97,11 @@ export function BarList({
     <figure className={cx(styles.chart, className)} style={{ margin: 0 }}>
       <div className={styles.barGrid} style={style} aria-hidden="true">
         {showTop ? (
-          <div className={styles.axisRow} style={{ gridRow: 1 }}>
+          <div
+            className={styles.axisRow}
+            style={{ gridRow: 1 }}
+            data-two-lines={ticks.length > 0 && mean != null ? "true" : undefined}
+          >
             {ticks.map((t) => (
               <span key={t} className={styles.tickLabel} style={{ left: `${pct(t, max)}%` }}>
                 {t}

@@ -3,7 +3,7 @@
  * phone. No tinted fills: a tick is an ink box, an open item an outline.
  */
 
-.ready {
+.readyPanel {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-2);

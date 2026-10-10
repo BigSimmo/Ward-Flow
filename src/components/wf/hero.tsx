@@ -9,6 +9,12 @@ import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./hero.module.css";
 
 export type HeroProps = {
+  /**
+   * A leading visual before the title, such as an `OccupancyRing` (v10 Home, Capacity, Wards).
+   * Left of the title on desktop and tablet; under the title on phone, so the eyebrow and title
+   * always come first. Use this instead of putting the ring in `stats` and reordering it in CSS.
+   */
+  lead?: ReactNode;
   /** Uppercase eyebrow ("STATE BEDFLOW", "STATISTICS · AS AT 10:42"). */
   eyebrow?: ReactNode;
   /** Five words at most. */
@@ -55,6 +61,7 @@ export type HeroProps = {
  * `band.ts`). Put a `CheckingFoot` in `foot` to say what the page checked and what it could not.
  */
 export function Hero({
+  lead,
   eyebrow,
   title,
   titleMeta,
@@ -83,7 +90,12 @@ export function Hero({
       data-testid={testId}
       data-wf-hero={quiet ? "quiet" : "band"}
     >
-      <div className={styles.row}>
+      <div className={cx(styles.row, styles.firstRow)}>
+        {lead ? (
+          <div className={styles.lead} data-wf-hero-lead="">
+            {lead}
+          </div>
+        ) : null}
         <div className={styles.titleBlock}>
           {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}
           <div className={styles.titleLine}>
@@ -97,7 +109,7 @@ export function Hero({
         {aside ? <div className={styles.aside}>{aside}</div> : null}
       </div>
       {bar || barAside ? (
-        <div className={styles.row}>
+        <div className={cx(styles.row, styles.barRow)}>
           {bar ? <div className={styles.bar}>{bar}</div> : null}
           {barAside ? <div className={styles.aside}>{barAside}</div> : null}
         </div>
@@ -114,6 +126,11 @@ export function Hero({
 
 export type HeroStatProps = {
   value: ReactNode;
+  /**
+   * Slash form (v10): with `total` the value reads "2/7" on screen and "2 of 7" to a screen
+   * reader. Use for progress past a set ("2/7 steps"), not for a rate.
+   */
+  total?: ReactNode;
   label: ReactNode;
   /** Glyph before the label. Red (danger) only when it needs action now. */
   tone?: WfTone;
@@ -141,6 +158,7 @@ export type HeroStatProps = {
 /** A count on the hero band: mono value over a label, hairline separators between items. */
 export function HeroStat({
   value,
+  total,
   label,
   tone,
   trend,
@@ -157,7 +175,20 @@ export function HeroStat({
   const body = (
     <>
       <span className={styles.valueLine}>
-        <span className={styles.value}>{value}</span>
+        {total !== undefined ? (
+          <span className={styles.value}>
+            <span aria-hidden="true">
+              {value}
+              <span className={styles.slash}>/</span>
+              {total}
+            </span>
+            <SrOnly>
+              {value} of {total}
+            </SrOnly>
+          </span>
+        ) : (
+          <span className={styles.value}>{value}</span>
+        )}
         {trend ? <span className={styles.trend}>{trend}</span> : null}
       </span>
       <span className={styles.label}>
