@@ -40,6 +40,7 @@ import {
   buttonClass,
   cx,
   useIsPhone,
+  durMinutes,
 } from "@/components/wf";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -69,7 +70,6 @@ import {
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 
 import styles from "./hub.module.css";
-import { plainAge } from "@/components/ward-management/wards/plain-age";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 /**
@@ -367,11 +367,11 @@ export function HubScreen() {
               <>
                 {/* The word, not only the colour — a stale reading must survive a reader who cannot see it. */}
                 <StatusGlyph tone="warning" size={8} />
-                {plainAge(now - entry.confirmedAt)} <span className={styles.flagPill}>stale</span>
+                {durMinutes(now - entry.confirmedAt)} <span className={styles.flagPill}>stale</span>
               </>
             ) : (
               <>
-                {plainAge(now - entry.confirmedAt)} <span className={styles.resultAgo}>ago</span>
+                {durMinutes(now - entry.confirmedAt)} <span className={styles.resultAgo}>ago</span>
               </>
             )}
           </span>
@@ -471,7 +471,7 @@ export function HubScreen() {
                 {
                   id: "oldest",
                   label: "Oldest bed count",
-                  value: oldestConfirmedAt === undefined ? "Not recorded" : plainAge(now - oldestConfirmedAt),
+                  value: oldestConfirmedAt === undefined ? "Not recorded" : durMinutes(now - oldestConfirmedAt),
                 },
               ]}
               notChecked={["ED and team capacity, no feed"]}
@@ -764,7 +764,7 @@ export function HubScreen() {
                                 {formatInstantWithDay(selected.confirmedAt, now)}
                               </span>{" "}
                               <span className={styles.factMuted}>
-                                {plainAge(now - selected.confirmedAt)} ago
+                                {durMinutes(now - selected.confirmedAt)} ago
                                 {selected.stale === true ? ", stale, check with the ward before relying on it" : ""}
                               </span>
                             </dd>

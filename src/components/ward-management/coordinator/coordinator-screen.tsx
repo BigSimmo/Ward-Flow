@@ -11,9 +11,8 @@ import {
   OccupancyRing,
   Segmented,
   Sheet,
-  ToastProvider,
   buttonClass,
-  useToast,
+  useOptionalToast,
 } from "@/components/wf";
 import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";
 import { genderReviewNeeded } from "@/components/ward-management/ward-model";
@@ -95,27 +94,6 @@ const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-c
  * queue and the ED card, never the bedflow or the shortlist.
  */
 export function CoordinatorScreen() {
-  // The app layout provides the toast region. A screen rendered on its own (a test, a preview)
-  // gets its own provider so Offer's Undo toast still works. (Requested for ui/toast: an
-  // optional-toast hook, so this probe can go.)
-  const toast = useToastIfProvided();
-  if (toast) return <CoordinatorScreenBody />;
-  return (
-    <ToastProvider>
-      <CoordinatorScreenBody />
-    </ToastProvider>
-  );
-}
-
-function useToastIfProvided() {
-  try {
-    return useToast();
-  } catch {
-    return undefined;
-  }
-}
-
-function CoordinatorScreenBody() {
   usePrintableDisclosures();
   const {
     movements,
@@ -308,7 +286,9 @@ function CoordinatorScreenBody() {
    * referral for (a stage that cannot be referred, a gender placement still to record) is chosen
    * in Placement instead, which says why.
    */
-  const toast = useToast();
+  // Null only where the screen renders without the layout (a test or preview): Offer then sends
+  // at once, with no Undo window.
+  const toast = useOptionalToast();
   const patientOf = usePatientOf();
   const umrnText = useUmrnText();
   const [pendingOffers, setPendingOffers] = useState<{ key: string; movementId: string; unitId: string }[]>([]);
@@ -325,7 +305,7 @@ function CoordinatorScreenBody() {
     if (watch === undefined || rejections.length <= watch) return;
     const latest = rejections.at(-1);
     refusalWatchRef.current = undefined;
-    toast.push({
+    toast?.push({
       tone: "warning",
       title: "Offer not sent",
       body: latest ? umrnText(latest.reason) : "The engine refused it.",
@@ -351,6 +331,21 @@ function CoordinatorScreenBody() {
       setRightPanel("placement");
       return;
     }
+    const send = () => {
+      refusalWatchRef.current = rejectionCountRef.current;
+      dispatch({
+        type: "REFER_TO_UNITS",
+        role: "coordinator",
+        now: liveNowRef.current,
+        movementId: movement.id,
+        unitIds: [unitId],
+      });
+    };
+    // Without the layout's toast (a test or preview) there is no Undo window: send at once.
+    if (!toast) {
+      send();
+      return;
+    }
     const key = `${movement.id}:${unitId}:${liveNow}:${pendingOffers.length}`;
     if (previewMovement?.id === movement.id) selectMovement(movement.id);
     setSelectedUnitId(unitId);
@@ -369,14 +364,7 @@ function CoordinatorScreenBody() {
         },
         onExpire: () => {
           drop();
-          refusalWatchRef.current = rejectionCountRef.current;
-          dispatch({
-            type: "REFER_TO_UNITS",
-            role: "coordinator",
-            now: liveNowRef.current,
-            movementId: movement.id,
-            unitIds: [unitId],
-          });
+          send();
         },
       },
     });

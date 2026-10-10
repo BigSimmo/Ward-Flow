@@ -73,10 +73,10 @@ import {
   tableClasses,
   type WfTone,
   useIsPhone,
-  useToast,
+  useOptionalToast,
+  useIsTabletPortrait,
 } from "@/components/wf";
 
-import { useIsTabletPortrait } from "./governance/use-tablet-portrait";
 import thirdEdition from "./governance-third-edition.module.css";
 
 /**
@@ -186,15 +186,6 @@ type GovernanceApi = Pick<
 
 /** Governance reads the captured log plus the synthetic seeded entries (pass 2 engine), so the
  *  Review tab has something to review on a fresh seed. Older hand-built contexts fall back. */
-/** The toast lives in the route layout; a screen rendered alone (tests, previews) has none. */
-function useOptionalToast(): ReturnType<typeof useToast> | null {
-  try {
-    return useToast();
-  } catch {
-    return null;
-  }
-}
-
 function readGovernanceEvents(api: GovernanceApi | undefined) {
   return api?.readGovernanceAuditEvents?.(actor) ?? api?.readAuditEvents(actor);
 }

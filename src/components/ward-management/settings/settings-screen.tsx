@@ -102,7 +102,7 @@ import {
   buttonClass,
   cx,
   useIsPhone,
-  useToast,
+  useOptionalToast,
   type ToastInput,
   type WfTone,
 } from "@/components/wf";
@@ -306,10 +306,10 @@ export function SettingsScreen() {
 
   // v10 pass 3: every outcome on this page goes through the shared wf toast (one polite live
   // region for the whole app, set up by the ward layout). Words stay neutral; the glyph carries tone.
-  const toast = useToast();
+  const toast = useOptionalToast();
   const showToast = useCallback(
     (message: string, tone: ToastInput["tone"] = "info") => {
-      toast.push({ tone, title: message, duration: 3200 });
+      toast?.push({ tone, title: message, duration: 3200 });
     },
     [toast],
   );
@@ -407,7 +407,7 @@ export function SettingsScreen() {
     if (configuration === pending.before) return;
     pendingSave.current = null;
     const { before, count } = pending;
-    toast.push({
+    toast?.push({
       tone: "success",
       title: count === 1 ? "Rule saved and recorded." : `${count} rules saved and recorded.`,
       // Undo puts the rules back with a second recorded save, so the audit keeps both.
@@ -425,7 +425,7 @@ export function SettingsScreen() {
   const handleDiscard = () => {
     const kept = draft;
     setDraft({ ...configuration });
-    toast.push({
+    toast?.push({
       tone: "info",
       title: "Draft discarded.",
       undo: { durationMs: SETTINGS_UNDO_MS, onUndo: () => setDraft(kept) },
@@ -1246,6 +1246,8 @@ export function SettingsScreen() {
                 value: hasUnsavedRules ? unsavedCount : "None",
                 label: "Unsaved",
                 tone: hasUnsavedRules ? "info" : undefined,
+                onPress: hasUnsavedRules ? () => setPhoneSheet("rules") : undefined,
+                actionLabel: hasUnsavedRules ? `Open Rules, ${unsavedCount} unsaved` : undefined,
               },
               {
                 id: "last",

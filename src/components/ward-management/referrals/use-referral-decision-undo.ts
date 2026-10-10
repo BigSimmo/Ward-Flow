@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { useToast, type ToastApi } from "@/components/ui/toast";
+import { useOptionalToast } from "@/components/wf";
 
 import { useWardFlow, useWardFlowClock } from "../ward-flow-provider";
 import type { WardFlowRole } from "../ward-flow-roles";
@@ -16,20 +16,6 @@ export type ReferralDecisionAction = "ACCEPT_REFERRAL" | "DECLINE_REFERRAL";
 type Watch =
   | { kind: "decision"; referralId: string; title: string; priorRejections: number }
   | { kind: "undo"; referralId: string; priorRejections: number };
-
-/**
- * `useToast` throws outside a `ToastProvider`. The Ward Flow layout always has one; a component
- * test that renders a board alone does not, and the board must still render there. The context is
- * read unconditionally inside `useToast`, so the hook order never changes.
- * Shared request: a `useOptionalToast` in `@/components/ui/toast` would replace this.
- */
-export function useOptionalToast(): ToastApi | null {
-  try {
-    return useToast();
-  } catch {
-    return null;
-  }
-}
 
 /**
  * v10 Referrals: "Accept presentation records the decision, toasts with Undo that puts the

@@ -54,7 +54,7 @@ import {
   type Gender,
   type Patient,
 } from "@/components/ward-management/ward-patients";
-import { useOptionalToast } from "@/components/ward-management/referrals/use-referral-decision-undo";
+import { useOptionalToast } from "@/components/wf";
 import { takeHandedOffPatientQuery } from "@/components/ward-management/search/patient-query-handoff";
 
 import styles from "./add-patient.module.css";

@@ -24,6 +24,7 @@ import {
   type StackSegment,
   type WfFill,
   useIsPhone,
+  useIsTabletPortrait,
 } from "@/components/wf";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -78,7 +79,6 @@ import {
   standingWord,
   type RecordGap,
 } from "./legal-forms-view";
-import { useIsTabletPortrait } from "../governance/use-tablet-portrait";
 import styles from "./legal-forms.module.css";
 
 /**

@@ -90,7 +90,6 @@ import {
 import { AlertDetail, type AlertDetailHandlers } from "./alert-detail";
 import { TimeRing, TodayChart } from "./alerts-visuals";
 
-import { useIsTabletPortrait } from "../governance/use-tablet-portrait";
 import styles from "./alerts.module.css";
 import {
   Badge,
@@ -118,6 +117,7 @@ import {
   TextInput,
   Textarea,
   type WfTone,
+  useIsTabletPortrait,
 } from "@/components/wf";
 
 /**

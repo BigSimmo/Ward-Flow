@@ -25,6 +25,7 @@ import {
   Drawer,
   tableClasses,
   useIsPhone,
+  useIsTabletPortrait,
 } from "@/components/wf";
 import {
   CHECK_DUE_DAYS,
@@ -55,7 +56,6 @@ import {
 } from "./on-call-parts";
 import { PhoneDirectory, PhoneFocal, PhoneSheet } from "./on-call-phone";
 
-import { useIsTabletPortrait } from "../governance/use-tablet-portrait";
 import styles from "./on-call.module.css";
 
 const FAVOURITES_KEY = "ward-flow:on-call:favourites";

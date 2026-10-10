@@ -728,8 +728,8 @@
 }
 
 .referralChevron > .triggerCaret {
+  /* Full on-accent ink: v10 never dims by opacity. */
   color: var(--wf-on-accent);
-  opacity: 0.85;
   transition: transform var(--wf-m-fast) var(--wf-ease);
 }
 
