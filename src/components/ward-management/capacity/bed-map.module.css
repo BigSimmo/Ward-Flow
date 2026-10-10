@@ -53,6 +53,13 @@
   cursor: pointer;
 }
 
+@media (max-width: 48rem) {
+  .layoutSwitch button {
+    min-height: 48px;
+    height: 48px;
+  }
+}
+
 .layoutSwitch button:hover,
 .serviceNav button:hover {
   color: var(--wf-ink-1);
