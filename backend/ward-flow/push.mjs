@@ -1,3 +1,5 @@
+import { createECDH } from "node:crypto";
+
 // Phone push for new act-now (red) items. Off unless all three VAPID settings are present.
 //
 // Lock screens are visible to anyone nearby, so a push carries a count, the hospital site and a
@@ -35,6 +37,17 @@ export function readPushConfig(env = process.env) {
     !/^(mailto:[^\s@]+@[^\s@]+|https:\/\/[^\s]+)$/.test(subject)
   )
     throw new Error("Invalid phone push configuration");
+  // Lengths alone pass a public key from one pair with a private key from another; push services
+  // would then reject every notification. Derive the public key and require it to match.
+  let derived;
+  try {
+    const ecdh = createECDH("prime256v1");
+    ecdh.setPrivateKey(Buffer.from(privateKey, "base64url"));
+    derived = ecdh.getPublicKey();
+  } catch {
+    throw new Error("Invalid phone push configuration");
+  }
+  if (!derived.equals(Buffer.from(publicKey, "base64url"))) throw new Error("Invalid phone push configuration");
   return { publicKey, privateKey, subject };
 }
 

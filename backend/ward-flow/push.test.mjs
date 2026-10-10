@@ -44,6 +44,12 @@ test("malformed VAPID settings are refused rather than silently used", () => {
   assert.throws(() => readPushConfig({ ...env, WARD_FLOW_VAPID_SUBJECT: "http://example.org" }), /phone push/);
 });
 
+test("a public and private VAPID key from different pairs are refused", () => {
+  const other = vapidKeys();
+  assert.throws(() => readPushConfig({ ...env, WARD_FLOW_VAPID_PRIVATE_KEY: other.privateKey }), /phone push/);
+  assert.throws(() => readPushConfig({ ...env, WARD_FLOW_VAPID_PUBLIC_KEY: other.publicKey }), /phone push/);
+});
+
 test("only a browser push service endpoint with valid keys is accepted", () => {
   const ok = parseSubscription({ endpoint: "https://fcm.googleapis.com/fcm/send/abc", keys: browserKeys });
   assert.deepEqual(ok, { endpoint: "https://fcm.googleapis.com/fcm/send/abc", ...browserKeys });
