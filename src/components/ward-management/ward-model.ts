@@ -1508,7 +1508,12 @@ export type Movement = {
    * When this movement was referred to units — written by `REFER_TO_UNITS` beside
    * `referredUnitIds`, which is the one place a movement becomes referred.
    *
-   * ⚠️ **OPTIONAL, AND ABSENT ON EVERY SEEDED MOVEMENT ON PURPOSE.** Same discipline as
+   * v10 pass 3 (Josh, 10 Oct 2026): the demo seed now gives referred movements a synthetic
+   * `referredAt`, and accepted ones `acceptedAt`, through `withDemoStageTimes`
+   * (`ward-demo-stage-times.ts`), so the Journey strip shows real stages. The hand-authored fixture
+   * itself still carries neither, and a movement without one still says so, as below.
+   *
+   * ⚠️ **OPTIONAL, AND ABSENT ON EVERY HAND-AUTHORED MOVEMENT.** Same discipline as
    * `acceptedAt` below: a hand-authored fixture carries no referral time, so a row that has none
    * says so rather than falling back to `openedAt`. Substituting arrival time under a "referred"
    * label answers a different question while reading as plausible — the ED outbox's own comment

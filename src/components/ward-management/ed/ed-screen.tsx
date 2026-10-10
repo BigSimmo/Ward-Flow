@@ -5958,10 +5958,10 @@ export function EdScreen({ edId }: EdScreenProps) {
                            * ⚠️ **NOT A REFERRAL CLOCK, AND `referralClocks` MUST NEVER BE REACHED FOR
                            * HERE.** This row is a `Movement`; `triagedAt` lives on a `Referral` and
                            * nothing joins the two. What a move being owed is counted from is
-                           * `acceptedAt`, which `ACCEPT_IN_PRINCIPLE` writes and which is deliberately
-                           * absent from every hand-authored movement in the seed — so a seeded row
-                           * still states the absence, and only the absence, in the same register the
-                           * rest of the board uses for a fact it does not hold. Substituting
+                           * `acceptedAt`, which `ACCEPT_IN_PRINCIPLE` writes (and, since v10 pass 3,
+                           * the seed's synthetic `withDemoStageTimes`); a row without one still states
+                           * the absence, and only the absence, in the same register the rest of the
+                           * board uses for a fact it does not hold. Substituting
                            * `openedAt` here would answer a different question (how long they have been
                            * in the department) under this label, and read as plausible while doing it.
                            */}

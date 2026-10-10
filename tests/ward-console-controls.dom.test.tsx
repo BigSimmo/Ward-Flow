@@ -621,7 +621,10 @@ describe("D3 — the audit timeline must not promise ten kinds of event and deli
     const bedRow = within(timeline)
       .getAllByRole("listitem")
       .map((row) => row.textContent ?? "")
-      .find((text) => text.includes("BTY Adult Secure"));
+      // v10 pass 3 (10 Oct 2026): the seed now carries a synthetic acceptance time, so a dated
+      // "Accepted by BTY Adult Secure" row sits beside this one; the reservation row is the one
+      // naming the destination together with the bed reservation.
+      .find((text) => text.includes("BTY Adult Secure") && /bed|pull|reservation/i.test(text));
     expect(
       bedRow,
       "the timeline no longer carries a dated row naming BTY Adult Secure. The bed reservation " +
@@ -649,7 +652,12 @@ describe("D3 — the audit timeline must not promise ten kinds of event and deli
     renderWorkspace("WF-004");
     const untimed = screen.getByTestId("ward-console-untimed");
     expect(within(untimed).getByText(/reached step 4 of 7/)).toBeInTheDocument();
-    expect(within(untimed).getByText(/BTY Adult Secure accepted this patient/)).toBeInTheDocument();
+    // v10 pass 3 (10 Oct 2026): the acceptance now has a synthetic seed time (`withDemoStageTimes`),
+    // so it moves from the untimed list to a dated timeline row rather than vanishing.
+    expect(within(untimed).queryByText(/BTY Adult Secure accepted this patient/)).toBeNull();
+    expect(
+      within(screen.getByTestId("ward-console-timeline")).getByText(/Accepted by BTY Adult Secure/),
+    ).toBeInTheDocument();
     const timelinePanel = screen.getByTestId("ward-console-timeline").closest("section")!;
     expect(within(timelinePanel).queryByText(/stage transitions, legal-status and urgency changes/)).toBeNull();
   });

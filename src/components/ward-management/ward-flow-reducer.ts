@@ -219,6 +219,7 @@ const wardPatients: Patient[] = [
 ];
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { withDemoPlannedMoveTimes } from "@/components/ward-management/ward-demo-planned-moves";
+import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage-times";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
@@ -666,7 +667,10 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     auditSequence: 0,
     auditReviewSequence: 0,
     auditCaptureStartedAt: NOW_ANCHOR,
-    movements: withDemoPlannedMoveTimes(structuredClone(network?.movements ?? wardMovements), NOW_ANCHOR),
+    movements: withDemoStageTimes(
+      withDemoPlannedMoveTimes(structuredClone(network?.movements ?? wardMovements), NOW_ANCHOR),
+      NOW_ANCHOR,
+    ),
     units: scenarioUnits(scenario),
     rejections: [],
     clockOffsetMinutes: 0,
