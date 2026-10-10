@@ -177,7 +177,8 @@ export function PatientNowScreen({
   const [activeTab, setActiveTab] = useState<TabKey>(initialTaskAction === "contact" ? "community" : "now");
   // The ward's change form on Now (leave, discharge date) and where its last attempt started, so a
   // refusal from the engine shows beside the form that caused it.
-  const [wardForm, setWardForm] = useState<WardChangeForm>("none");
+  // The open change form belongs to one stay, so moving to another patient never carries it over.
+  const [wardFormFor, setWardFormFor] = useState<{ admissionId?: string; form: WardChangeForm }>({ form: "none" });
   const [wardAttemptStart, setWardAttemptStart] = useState<number>();
   const operationsRef = useRef<HTMLDivElement | null>(null);
   // The placement work sits on Now in every placement mode, so opening it only moves focus there.
@@ -500,6 +501,10 @@ export function PatientNowScreen({
         admissionId: stay.id,
         actingUnitId: stay.unitId,
       });
+  }
+  const wardForm: WardChangeForm = wardFormFor.admissionId === resolved?.liveAdmission?.id ? wardFormFor.form : "none";
+  function setWardForm(form: WardChangeForm) {
+    setWardFormFor({ admissionId: resolved?.liveAdmission?.id, form });
   }
   // Leave, gone to ED and the discharge date, from the change card. Each remembers where the
   // rejection list stood, so the card can say when the engine refused.
@@ -1300,6 +1305,7 @@ export function PatientNowScreen({
                   ) : null}
                   {mode === "ward" ? (
                     <PatientWardChangeCard
+                      key={resolved.liveAdmission?.id}
                       now={now}
                       dayZero={dayZero}
                       form={wardForm}
