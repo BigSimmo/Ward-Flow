@@ -395,7 +395,7 @@
 
 /* Highlight from the hero: the other rows dim, never hide. */
 .queueRow[data-dim="true"] {
-  opacity: 0.45;
+  opacity: 0.6;
 }
 
 .queueRow[data-dim="true"]:hover,
@@ -527,6 +527,12 @@
 
 .flowCard {
   min-width: 0;
+}
+
+/* The legend, today's count and Open Capacity share the foot; in a narrow column they wrap. */
+.flowCard .cardFoot {
+  flex-wrap: wrap;
+  row-gap: var(--wf-s-1);
 }
 
 .flowHead {
@@ -1142,8 +1148,9 @@ button.registerRow:hover {
     padding: var(--wf-s-3);
   }
 
-  /* "Open in Delays" gains an invisible 16px above and below: a 48px tap area, same layout. */
-  .footLink {
+  /* "Open in Delays" and Clear gain an invisible 16px above and below: a 48px tap area, same layout. */
+  .footLink,
+  .footButton {
     display: inline-block;
     margin-block: calc(-1 * var(--wf-s-4));
     padding-block: var(--wf-s-4);
@@ -1372,5 +1379,21 @@ button.registerRow:hover {
 
   .sinceCard[data-placement="band"] .cardFoot {
     grid-column: 1;
+  }
+}
+
+/* Print: release the fixed-height columns so every row prints. */
+@media print {
+  .grid {
+    height: auto;
+    grid-template-rows: none;
+  }
+
+  .queueList,
+  .flowBody,
+  .shortlistRegion.shortlistRegion > [data-testid^="ward-shortlist-"],
+  .shortlistRegion.shortlistRegion > [data-testid^="ward-referral-placement"] {
+    max-height: none;
+    overflow: visible;
   }
 }

@@ -123,6 +123,35 @@ describe("Q004 refinement interaction regressions", () => {
     expect(within(placement).queryByTestId("ward-placement-top-of-queue")).toBeNull();
   });
 
+  it("selects the top-of-queue patient as soon as the coordinator reaches into the preview", () => {
+    renderCoordinator();
+    const queue = screen.getByRole("region", { name: "Priority queue" });
+    const top = within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!;
+    const placement = screen.getByLabelText("Placement");
+    expect(within(placement).getByTestId("ward-placement-top-of-queue")).toBeInTheDocument();
+
+    fireEvent.pointerDown(within(placement).getAllByRole("button")[0]!);
+
+    expect(top).toHaveAttribute("aria-pressed", "true");
+    expect(within(screen.getByLabelText("Placement")).queryByTestId("ward-placement-top-of-queue")).toBeNull();
+  });
+
+  it("highlights exactly as many queue rows as the hero's Overdue count says", () => {
+    renderCoordinator();
+    const hero = screen.getByRole("region", { name: /waiting for \d+ ready bed/u });
+    const chip = within(hero).getByRole("button", { name: /Overdue/u });
+    const count = Number(chip.textContent!.match(/\d+/u)![0]);
+    expect(count, "the seed has no overdue movement, so this test proves nothing").toBeGreaterThan(0);
+
+    fireEvent.click(chip);
+
+    expect(chip).toHaveAttribute("aria-pressed", "true");
+    const queue = screen.getByRole("region", { name: "Priority queue" });
+    const rows = within(queue).getAllByTestId(/^ward-queue-row-/u);
+    expect(rows.filter((row) => row.getAttribute("data-dim") !== "true")).toHaveLength(count);
+    expect(screen.getByTestId("ward-queue-highlight-foot")).toHaveTextContent(`${count} of ${rows.length}`);
+  });
+
   it("retains an explicitly selected referral as the shortlist subject across queue-tab switches", () => {
     renderCoordinator();
     const referralsTab = screen.getByRole("radio", { name: /Referrals/u });

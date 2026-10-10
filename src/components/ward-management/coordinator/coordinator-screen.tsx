@@ -297,9 +297,11 @@ export function CoordinatorScreen() {
     (movement) => movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now) === "critical",
   ).length;
   const bedsReady = counts.capacity?.value ?? 0;
-  const overdueOpen = openMovements.filter(
+  // The two highlight chips count the queue they highlight (after the ED and service filters).
+  const overdueInQueue = queue.filter(
     (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
   ).length;
+  const tierOneInQueue = queue.filter((movement) => movement.urgency === 1).length;
   const dueWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
 
   // The four registers: a strip under the hero on desktop (opened from its Exceptions count), and
@@ -340,7 +342,7 @@ export function CoordinatorScreen() {
         <div className={styles.body} data-testid="ward-coordinator-body">
           <Hero
             // The phone keeps its own hero; direction A is the desktop's.
-            eyebrow={isPhone ? "State bedflow" : `${service ?? "Statewide"} · mental health beds`}
+            eyebrow={isPhone ? "State bedflow" : "Statewide · mental health beds"}
             title={
               isPhone
                 ? `${openMovements.length} open movements`
@@ -365,15 +367,15 @@ export function CoordinatorScreen() {
                 <div className={styles.heroToggles}>
                   <HeroStat
                     inline
-                    value={overdueOpen}
+                    value={overdueInQueue}
                     label="Overdue"
-                    tone={overdueOpen > 0 ? "danger" : undefined}
+                    tone={overdueInQueue > 0 ? "danger" : undefined}
                     pressed={highlight === "overdue"}
                     onToggle={() => toggleHighlight("overdue")}
                   />
                   <HeroStat
                     inline
-                    value={tierOneOpen}
+                    value={tierOneInQueue}
                     label="Tier 1"
                     pressed={highlight === "tier1"}
                     onToggle={() => toggleHighlight("tier1")}
@@ -522,6 +524,10 @@ export function CoordinatorScreen() {
                     aria-label={selectedReferral ? "Referral placement" : "Placement"}
                     // Journeys prove which movement the panel is for by this attribute.
                     data-subject-movement={selectedReferral ? undefined : panelMovement?.id}
+                    // Reaching into the top-of-queue preview selects that patient first, so every
+                    // action acts on a chosen patient and a queue reorder cannot swap them mid-form.
+                    onPointerDownCapture={previewMovement ? () => selectMovement(previewMovement.id) : undefined}
+                    onFocusCapture={previewMovement ? () => selectMovement(previewMovement.id) : undefined}
                   >
                     <div className={`${styles.sheetHandle} ${shortlistStyles.sheetHandle ?? ""}`} aria-hidden="true" />
                     <header className={styles.shortlistHeader}>
