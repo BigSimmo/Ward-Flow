@@ -1,6 +1,6 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import type { Movement, ReferralDeclineReason } from "@/components/ward-management/ward-model";
+import type { ReferralDeclineReason } from "@/components/ward-management/ward-model";
 
 export type BroadcastSeverity = "critical" | "warning" | "advisory";
 
@@ -256,6 +256,21 @@ export function broadcastKind(alert: BroadcastAlert): BroadcastKind {
   return alert.kind ?? "directive";
 }
 
+/** Ward recipients for a broadcast scope. ED desks are intentionally not in this ward set. */
+export function unitsInScope(scope: BroadcastTargetScope, units: readonly Unit[]): string[] {
+  return units
+    .filter((unit) => {
+      if (scope === "all") return true;
+      if (scope === "metro_adult") return unit.cohort === "Adult" && unit.siteCode !== "RGH";
+      if (scope === "older_adult") return unit.cohort === "Older adult";
+      if (scope === "adolescent") return unit.cohort === "Youth";
+      if (scope === "regional_wachs") return unit.siteCode === "RGH" || unit.siteCode === "WACHS";
+      if (scope === "forensic") return unit.authorised && unit.siteCode === "FSH";
+      return false;
+    })
+    .map((unit) => unit.id);
+}
+
 /** Each desk's current answer: its latest reply. */
 export function latestReplies(alert: BroadcastAlert): Map<string, BroadcastReply> {
   const byUnit = new Map<string, BroadcastReply>();
@@ -267,23 +282,6 @@ export function latestReplies(alert: BroadcastAlert): Map<string, BroadcastReply
  * A Pull now nobody asked has answered by its answer time. It goes back to the coordinator as act
  * now. Derived, never stored, so it cannot disagree with the replies.
  */
-/** The stages before a patient is pulled. Pull now means nothing once the bed is pulled. */
-export const PULL_NOW_LIVE_STAGES: readonly Movement["stage"][] = [
-  "placement_requested",
-  "destination_review",
-  "accepted_awaiting_bed",
-];
-
-/**
- * The patient is still waiting for the bed this Pull now asked for. A pull recorded since the alert
- * was sent ends it for good, so a later RELEASE_PULL back to `accepted_awaiting_bed` does not
- * revive an answered, overdue alert; the coordinator sends a fresh one if it is still needed.
- */
-export function pullNowStillWaiting(alert: BroadcastAlert, movement: Movement | undefined): boolean {
-  if (!movement || movement.closure || !PULL_NOW_LIVE_STAGES.includes(movement.stage)) return false;
-  return !movement.stageChanges.some((change) => change.to === "pulled" && change.at >= alert.dispatchedAt);
-}
-
 export function isPullNowOverdue(alert: BroadcastAlert, now: Instant): boolean {
   if (broadcastKind(alert) !== "pull_now" || !isAlertActive(alert, now) || alert.answerBy === undefined) return false;
   if (now < alert.answerBy) return false;
@@ -299,7 +297,7 @@ export function alertAsksDesk(alert: BroadcastAlert, desk: { role: string; id: s
   if (!desk.id) return false;
   const kind = broadcastKind(alert);
   if (kind === "pull_now") return desk.role === "ward" && (alert.targetUnitIds ?? []).includes(desk.id);
-  if (kind === "bed_call") return desk.role === "ward";
+  if (kind === "bed_call") return desk.role === "ward" && (alert.targetUnitIds ?? []).includes(desk.id);
   // The coordinator desk acknowledges as COORDINATOR_DESK_ACKNOWLEDGER_ID (owner ruling 2026-09-25).
   return desk.role === "ward" || desk.role === "ed" || desk.role === "coordinator";
 }

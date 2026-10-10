@@ -38,6 +38,7 @@ export function broadcastDraftBaseline(templateId: string): BroadcastDraft {
       category: "capacity_gridlock",
       scope: "all",
       durationMinutes: 240,
+      kind: "directive",
     };
   }
   return {
@@ -48,6 +49,7 @@ export function broadcastDraftBaseline(templateId: string): BroadcastDraft {
     category: template.category,
     scope: template.targetScope,
     durationMinutes: template.defaultDurationMinutes,
+    kind: template.kind === "bed_call" ? "bed_call" : "directive",
   };
 }
 
@@ -60,7 +62,8 @@ export function isBroadcastDraftDirty(draft: BroadcastDraft): boolean {
     draft.severity !== baseline.severity ||
     draft.category !== baseline.category ||
     draft.scope !== baseline.scope ||
-    draft.durationMinutes !== baseline.durationMinutes
+    draft.durationMinutes !== baseline.durationMinutes ||
+    draft.kind !== baseline.kind
   );
 }
 
@@ -78,7 +81,7 @@ export function parseBroadcastDraft(raw: string): BroadcastDraft | undefined {
   }
   if (typeof value !== "object" || value === null) return undefined;
   const record = value as Record<string, unknown>;
-  const { templateId, title, message, severity, category, scope, durationMinutes } = record;
+  const { templateId, title, message, severity, category, scope, durationMinutes, kind } = record;
   if (
     typeof templateId !== "string" ||
     typeof title !== "string" ||
@@ -86,7 +89,8 @@ export function parseBroadcastDraft(raw: string): BroadcastDraft | undefined {
     typeof severity !== "string" ||
     typeof category !== "string" ||
     typeof scope !== "string" ||
-    typeof durationMinutes !== "number"
+    typeof durationMinutes !== "number" ||
+    (kind !== undefined && kind !== "directive" && kind !== "bed_call")
   )
     return undefined;
   if (

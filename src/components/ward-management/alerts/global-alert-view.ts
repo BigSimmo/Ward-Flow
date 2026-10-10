@@ -14,21 +14,25 @@ import {
   isAlertActive,
   isPullNowOverdue,
   latestReplies,
-  pullNowStillWaiting,
   type BroadcastAlert,
   type BroadcastReply,
 } from "./ward-broadcast-model";
 
 export type AlertDesk = { role: string; id: string | null };
 
+/** The stages a Pull now still means something in. Once pulled, the alert has done its job. */
+const PULL_NOW_LIVE_STAGES: readonly Movement["stage"][] = [
+  "placement_requested",
+  "destination_review",
+  "accepted_awaiting_bed",
+];
+
 /** Active, and for a Pull now, the patient is still waiting for the bed. */
 export function isAlertLive(alert: BroadcastAlert, movements: readonly Movement[], now: Instant): boolean {
   if (!isAlertActive(alert, now)) return false;
   if (broadcastKind(alert) !== "pull_now") return true;
-  return pullNowStillWaiting(
-    alert,
-    movements.find((candidate) => candidate.id === alert.movementId),
-  );
+  const movement = movements.find((candidate) => candidate.id === alert.movementId);
+  return Boolean(movement && !movement.closure && PULL_NOW_LIVE_STAGES.includes(movement.stage));
 }
 
 /** `act_now` is the only red: a Pull now waiting on this desk, or one nobody answered in time. */
@@ -89,7 +93,7 @@ export type ReplyBoard = {
 export function replyBoard(alert: BroadcastAlert, units: readonly { id: string; name: string }[]): ReplyBoard {
   const kind = broadcastKind(alert);
   const askedIds =
-    kind === "pull_now" ? (alert.targetUnitIds ?? []) : kind === "bed_call" ? units.map((u) => u.id) : [];
+    kind === "pull_now" || kind === "bed_call" ? (alert.targetUnitIds ?? units.map((u) => u.id)) : [];
   const latest = latestReplies(alert);
   const rows = askedIds.map((unitId) => ({
     unitId,

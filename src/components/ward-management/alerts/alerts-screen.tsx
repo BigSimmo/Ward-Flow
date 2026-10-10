@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   AlarmClock,
   Bell,
@@ -37,6 +38,8 @@ import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { ReleasePullReason } from "@/components/ward-management/ward-change-reasons";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
+import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import {
@@ -52,6 +55,7 @@ import {
   type BroadcastTargetScope,
   type BroadcastCategory,
   broadcastKind,
+  unitsInScope,
   type BroadcastKind,
 } from "./ward-broadcast-model";
 import { isAlertLive } from "./global-alert-view";
@@ -263,6 +267,7 @@ function AlertsWorkspace() {
       category: broadcastCategory,
       scope: broadcastScope,
       durationMinutes: broadcastDurationMinutes,
+      kind: broadcastType === "bed_call" ? "bed_call" : "directive",
     }),
     [
       selectedTemplateId,
@@ -321,9 +326,17 @@ function AlertsWorkspace() {
     broadcastRefused || (actionResult !== undefined && !actionResult.accepted && !broadcastRequest);
 
   const activeBroadcast = getActiveBroadcastAlert(broadcastAlerts ?? [], now);
-  const livePullNows = (broadcastAlerts ?? []).filter(
+  const pathname = usePathname() ?? "";
+  const deskRole = wardChromeRole(pathname);
+  const deskId = currentDeskId(pathname);
+  const allLivePullNows = (broadcastAlerts ?? []).filter(
     (alert) => broadcastKind(alert) === "pull_now" && isAlertLive(alert, movements, now),
   );
+  const livePullNows = allLivePullNows.filter((alert) => {
+    if (broadcastKind(alert) !== "pull_now" || !isAlertLive(alert, movements, now)) return false;
+    if (deskRole === "coordinator") return true;
+    return deskRole === "ward" && deskId !== null && (alert.targetUnitIds ?? []).includes(deskId);
+  });
 
   const modalRef = useRef<HTMLDivElement | null>(null);
   const broadcastTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -817,6 +830,7 @@ function AlertsWorkspace() {
       durationMinutes: broadcastDurationMinutes,
       dispatchedByName: "State Mental Health Bed Desk Coordinator",
       kind: broadcastType === "bed_call" ? "bed_call" : "directive",
+      targetUnitIds: broadcastType === "bed_call" ? unitsInScope(broadcastScope, units) : undefined,
     });
   };
 
@@ -910,7 +924,9 @@ function AlertsWorkspace() {
   const severityLabel = (severity: BroadcastSeverity) =>
     severity === "critical" ? "Critical" : severity === "warning" ? "Warning" : "Advisory";
   const pastBroadcasts = (broadcastAlerts ?? []).filter(
-    (alert) => alert.id !== activeBroadcast?.id && !livePullNows.includes(alert),
+    (alert) =>
+      alert.id !== activeBroadcast?.id &&
+      !allLivePullNows.includes(alert),
   );
 
   const heroTitle =
@@ -1422,7 +1438,7 @@ function AlertsWorkspace() {
                             <span className={styles.historyText}>
                               <span className={styles.historyTitle}>{alert.title}</span>
                               <span className={styles.quiet}>
-                                {alert.status === "stood_down" ? "Stood down" : "Ended"} · {alert.targetScopeLabel}
+                                {alert.status === "stood_down" ? "Stood down" : alert.status === "active" ? "Live" : "Ended"} · {alert.targetScopeLabel}
                               </span>
                             </span>
                           </li>

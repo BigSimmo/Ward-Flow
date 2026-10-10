@@ -2085,6 +2085,7 @@ export type WardFlowEvent =
       dispatchedByName: string;
       /** Absent means a directive. `bed_call` asks wards a set question (10 Oct 2026). */
       kind?: "directive" | "bed_call";
+      targetUnitIds?: string[];
     }
   | {
       /**
