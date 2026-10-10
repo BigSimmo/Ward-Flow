@@ -856,7 +856,7 @@ const REFERRALS: readonly ReferralSpec[] = [
     history: "Crisis team referral after an overnight home visit.",
   },
   {
-    source: "police",
+    source: "ed_medical",
     cohort: "Adult",
     sex: "Female",
     suburb: "Cannington",
