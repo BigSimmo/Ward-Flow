@@ -6,6 +6,18 @@ Never enter or upload real patient information.
 
 ## Status note (3 October 2026)
 
+### Shared coordinator implementation, 7 October 2026
+
+An opt-in PostgreSQL shared workspace and Microsoft coordinator sign-in are now implemented in
+this branch. The app default remains the local synthetic demo until the reviewed Azure setup is
+applied and shared mode is enabled. Use [the shared Azure setup guide](SETUP-SHARED-AZURE.md).
+It discovers/reuses existing Ward Flow databases before creating anything. No live Azure inventory,
+migration, connection or deployment was verified in this implementation session.
+
+The older notes below describe the owner-specific Blob backend, which remains separate. Its
+unapplied `schema.sql` is historical scaffolding; the new shared adapter uses `migrations/` and
+`migrate.mjs`. It does not apply that old schema automatically.
+
 - Demo refresh persistence already exists in the browser: the app saves the
   synthetic ward state to `sessionStorage` in
   `src/components/ward-management/ward-flow-provider.tsx`. Saving stops for the
@@ -24,10 +36,10 @@ Never enter or upload real patient information.
 - The Function's existing managed identity accesses a private blob container in
   its existing storage account. Sessions are stored under owner-specific paths.
   No storage key or password is stored in the backend.
-- The PostgreSQL `schema.sql` is retained for a later private-network rollout.
-  It has not been applied and is not used by this API. There is no migration
-  runner yet; add one together with a PostgreSQL store adapter. The unused `pg`
-  dependency was removed on 3 October 2026; add it back with that adapter.
+- The PostgreSQL `schema.sql` remains unapplied historical Blob-era scaffolding
+  and is not used by the Blob API. The opt-in shared backend already includes
+  the `pg` dependency, the `postgres.mjs` adapter, versioned `migrations/` and
+  the `migrate.mjs` runner.
 - Each session has an owner UUID and a revision. `PUT` uses an expected revision;
   a stale save returns `409` and does not replace the current blob.
 - The API accepts only the `synthetic` classification. This label and basic

@@ -35,14 +35,17 @@
   align-items: center;
   gap: var(--ward-space-8);
   min-height: var(--ward-tap);
-  padding: 0 var(--ward-space-10);
-  border: 1px solid var(--ward-border-strong);
-  border-radius: var(--ward-radius-pixel);
-  background: var(--surface);
+  padding: 0 0 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  transition:
+    border-color var(--wf-m-fast) var(--wf-ease),
+    box-shadow var(--wf-m-fast) var(--wf-ease);
 }
 
 .controlBox:focus-within {
-  border-color: var(--clinical-accent);
+  border-color: var(--wf-accent);
   box-shadow: 0 0 0 3px var(--clinical-accent-soft);
 }
 
@@ -108,17 +111,23 @@
    */
   align-self: stretch;
   min-height: var(--ward-tap);
-  padding: 0 var(--ward-space-8);
-  border: 1px solid var(--ward-border);
-  border-radius: var(--ward-radius-pixel);
-  background: var(--surface-inset);
-  color: var(--ward-muted);
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  /* Flush with the field's right end, so its corners follow the field's own curve. */
+  border-radius: 0 calc(var(--wf-r-md) - 1px) calc(var(--wf-r-md) - 1px) 0;
+  background: transparent;
+  color: var(--wf-ink-3);
   cursor: pointer;
 }
 
 .clear:hover {
-  color: var(--ward-text);
-  border-color: var(--ward-border-strong);
+  color: var(--wf-ink-1);
+  background: var(--wf-hover);
+}
+
+.clear:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
 }
 
 /*
@@ -139,10 +148,12 @@
   max-height: 24rem;
   overflow-x: hidden;
   overflow-y: auto;
-  border: 1px solid var(--ward-border-strong);
-  border-radius: var(--ward-radius-pixel);
-  background: var(--surface);
-  box-shadow: 0 12px 32px -12px var(--ward-divider);
+  overscroll-behavior: contain;
+  padding: var(--wf-s-1);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
 }
 
 .group {
@@ -152,9 +163,7 @@
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--ward-muted);
-  background: var(--surface-subtle);
-  border-bottom: 1px solid var(--ward-border);
+  color: var(--wf-ink-3);
 }
 
 .groupNote {
@@ -162,9 +171,7 @@
   padding: var(--ward-space-6) var(--ward-space-10) var(--ward-space-8);
   font-size: 0.75rem;
   line-height: var(--ward-leading-prose);
-  color: var(--ward-muted);
-  background: var(--surface-subtle);
-  border-bottom: 1px solid var(--ward-border);
+  color: var(--wf-ink-3);
   text-transform: none;
   letter-spacing: normal;
   font-weight: 400;
@@ -176,17 +183,17 @@
   min-height: 44px;
   min-height: var(--spacing-tap, 44px);
   align-content: center;
-  padding: var(--ward-space-8) var(--ward-space-10);
-  border-bottom: 1px solid var(--ward-border);
+  padding: var(--wf-s-2) var(--wf-s-3);
   border-left: 3px solid transparent;
+  border-radius: var(--wf-r-sm);
   cursor: pointer;
   min-width: 0;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
 
-.option:last-child {
-  border-bottom: 0;
+.option + .option {
+  margin-top: 2px;
 }
 
 /*
@@ -204,26 +211,19 @@
  * the row the pointer happens to be resting on.
  */
 .option:hover {
-  background: var(--surface-subtle);
-}
-
-:global([data-theme="dark"]) .option:hover {
-  background: var(--surface-2);
-  color: var(--ink);
+  background: var(--wf-hover);
 }
 
 .option:focus,
 .option:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
 }
 
 .option.optionActive {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  background: var(--clinical-accent-soft);
-  border-left-color: var(--clinical-accent);
-  box-shadow: inset 0 0 0 var(--ward-space-1) var(--ward-blue-border);
+  background: var(--wf-accent-tint);
+  border-left-color: var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
 }
 
 /*
@@ -245,19 +245,6 @@
   }
 }
 
-:global([data-theme="dark"]) .popup {
-  border-color: var(--ward-border-strong);
-}
-
-:global([data-theme="dark"]) .option {
-  border-bottom-color: var(--ward-divider);
-}
-
-:global([data-theme="dark"]) .group,
-:global([data-theme="dark"]) .groupNote {
-  border-bottom-color: var(--ward-divider);
-}
-
 .name {
   font-size: 0.9375rem;
   font-weight: 600;
@@ -265,8 +252,8 @@
 }
 
 .mark {
-  background: var(--clinical-accent-soft);
-  border-radius: var(--ward-radius-pixel);
+  background: var(--wf-accent-tint);
+  border-radius: var(--wf-r-xs);
   /*
    * ⚠️ `em` HERE IS DELIBERATE AND NO TOKEN IS CORRECT FOR IT — the one raw unit left in this file,
    * with its reason at the site rather than in a review thread.
@@ -277,8 +264,8 @@
    * this at one would replace a correct value with a token-shaped incorrect one. **A raw value with
    * a reason beats a token that answers a different question.**
    *
-   * The radius above DID have a token and was a bare `2px`; `--ward-radius-pixel` is 1px, which on a
-   * text highlight is indistinguishable and removes the literal.
+   * The radius above is the smallest step on the v6 scale, so the highlight takes the same curve
+   * as every other control on this page.
    */
   padding: 0 0.1em;
   font-weight: 700;
@@ -316,10 +303,10 @@
   justify-self: start;
   font-size: var(--t-0, 0.75rem);
   font-weight: 600;
-  padding: var(--ward-space-1) var(--ward-space-6);
-  border-radius: var(--ward-radius-pixel);
-  border: 1px solid var(--ward-border);
-  color: var(--ward-muted);
+  padding: var(--ward-space-1) var(--wf-s-2);
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  color: var(--wf-ink-3);
 }
 
 .attachedMovement {
@@ -356,9 +343,9 @@
  * `.popup` this rule closes off.
  */
 .resultsFooter {
-  padding: var(--ward-space-8) var(--ward-space-10);
-  border-top: 1px solid var(--ward-border);
-  background: var(--surface-subtle);
+  margin-top: var(--wf-s-1);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
   font-size: var(--t-0, 0.75rem);
   line-height: var(--ward-leading-prose);
   color: var(--ward-muted);
@@ -370,7 +357,7 @@
   align-items: center;
   min-height: var(--ward-tap);
   padding: 0 var(--ward-space-12);
-  border-radius: var(--ward-radius-pixel);
+  border-radius: var(--wf-r-md);
   background: var(--clinical-accent);
   color: var(--surface);
   font-size: 0.8125rem;
@@ -425,7 +412,7 @@
   font-size: var(--t-0, 0.75rem);
   font-weight: 700;
   padding: 0 var(--ward-space-3);
-  border: 1px solid var(--ward-border);
-  border-radius: 3px;
-  background: var(--surface-inset);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface-2);
 }

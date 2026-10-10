@@ -45,11 +45,44 @@ export function readConfig(env = process.env) {
   const port = Number(env.PORT || 8787);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid port configuration");
   const allowTenantUsers = env.WARD_ALLOW_TENANT_USERS === "true";
+  const shared = env.WARD_SHARED_ENABLED === "true";
+  const dataMode = env.WARD_DATA_MODE || "prototype";
+  if (dataMode !== "prototype") throw new Error("Live data mode is not commissioned in this release");
+  const coordinatorIds = (env.WARD_COORDINATOR_OBJECT_IDS || allowedObjectId)
+    .split(",")
+    .map((id) => id.trim().toLowerCase());
+  if (coordinatorIds.some((id) => !UUID.test(id) || PLACEHOLDER_IDS.has(id)))
+    throw new Error("Invalid coordinator configuration");
+  let postgres = null;
+  if (shared) {
+    // Provisioning verifies this resource ID against Azure before writing application settings.
+    // Derive the hostname from the resource, rather than silently connecting a supplied host.
+    const resource =
+      /^\/subscriptions\/[0-9a-f-]{36}\/resourceGroups\/rg-wardflow-dev-aue\/providers\/Microsoft.DBforPostgreSQL\/flexibleServers\/([a-z0-9-]+)$/i.exec(
+        env.WARD_PG_RESOURCE_ID ?? "",
+      );
+    const expectedDatabase = resource?.[1].toLowerCase() === "wardflow-dev-aue" ? "wardflow_dev" : "wardflow";
+    if (
+      !resource ||
+      env.WARD_PG_HOST !== `${resource[1].toLowerCase()}.postgres.database.azure.com` ||
+      env.WARD_PG_DATABASE !== expectedDatabase ||
+      env.WARD_PG_USER !== "wardflow_backend"
+    )
+      throw new Error("Unapproved shared database target");
+    if (!UUID.test(env.WARD_WORKSPACE_ID ?? "") || PLACEHOLDER_IDS.has(env.WARD_WORKSPACE_ID.toLowerCase()))
+      throw new Error("Invalid workspace configuration");
+    postgres = { host: env.WARD_PG_HOST, database: env.WARD_PG_DATABASE, user: env.WARD_PG_USER };
+  }
   return {
     tenant,
     audience: env.WARD_API_AUDIENCE,
     allowedObjectId,
     allowTenantUsers,
+    shared,
+    dataMode,
+    coordinatorIds,
+    workspaceId: env.WARD_WORKSPACE_ID?.toLowerCase(),
+    postgres,
     origin,
     host: env.HOST || "127.0.0.1",
     port,

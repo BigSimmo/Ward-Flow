@@ -382,39 +382,38 @@ test.skip("@mockup does re-pointing --ward-border do anything under forced colou
  * a defect rather than a cosmetic issue, and why it needs a guard rather than a one-time fix.
  *
  * ⚠️ RETARGETED TO THE VISIBLE CASELOAD. On 22 Sept (`f93703edee`) the results table stopped being
- * what this screen shows: the visible results became a caseload of cards, or dense two-line rows,
- * and the table moved into a hidden `sr-only` block that is never painted. This test used to pin
- * the table's print mechanism — `.tableScroll` overflow-x, the 44rem min-width, header nowrap. Those
- * checks were retired ONLY because that table is no longer on screen; measured on the hidden copy
- * they passed while measuring nothing (a 1px clipped box, client width 0). The question is unchanged:
+ * what this screen shows and moved into a hidden `sr-only` block that is never painted; on 9 Oct
+ * the Patients census (PR #194) replaced the cards and dense rows with one census table grouped by
+ * where each person is now. The rows keep the `ward-patient-search-case-*` (movement or referral)
+ * and `ward-patient-search-row-*` (ward bed or no open episode) testids. The question is unchanged:
  * does anything a coordinator can see fall off the printed sheet?
  */
-test("@mockup printing the patient search keeps every caseload item on the sheet", async ({ page }) => {
+test("@mockup printing the patient search keeps every census row on the sheet", async ({ page }) => {
   await page.setViewportSize({ width: 794, height: 1123 }); // A4 portrait at 96dpi
   await page.goto("/mockups/ward-flow/search", { waitUntil: "load" });
   await page.waitForLoadState("networkidle");
   await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
 
-  // A broad query, so the caseload actually fills. An empty caseload would make every assertion
-  // below vacuous, which is why its presence is asserted rather than assumed.
-  // Scoped to this screen's own filter — see the probe in the test above. Unscoped, this typed into
-  // the page-level search box and the results never populated, making every measurement below a
-  // measurement of nothing.
+  // A broad query, so the census rows are a search result rather than the idle board. Scoped to
+  // this screen's own field: unscoped, this typed into the page-level search box instead.
   await page.getByTestId("ward-patient-search").locator("input[type=text]").first().fill("a");
-  // Close the typeahead the query opens: its option list otherwise sits over the view switch.
   await page.keyboard.press("Escape");
 
   /*
-   * ⚠️ AN ITEM INSIDE THE SHEET CAN STILL BE CUT. The table was lost inside its own scroll box, not
-   * off the edge of the paper, and the caseload sits in boxes that clip too (`.resultsPanel` is
-   * `overflow: hidden`; `.patientList` and `.denseContainer` scroll). So the limit for each item is
-   * the narrowest of the sheet and every clipping ancestor, and every painted piece of the item —
-   * not just its outer box — must sit inside it. A long name that spills past a card whose own box
-   * fits would otherwise pass.
+   * ⚠️ A ROW INSIDE THE SHEET CAN STILL BE CUT. The old table was lost inside its own scroll box,
+   * not off the edge of the paper, and the census sits in boxes that clip too (its `.scroll`
+   * wrapper scrolls sideways). So the limit for each row is the narrowest of the sheet and every
+   * clipping ancestor, and every painted piece of the row, not just its outer box, must sit inside
+   * it. Rows are read from the painted results console only, never the hidden legacy block.
    */
   const measure = () =>
     page.evaluate(() => {
-      const items = [...document.querySelectorAll<HTMLElement>('[data-testid^="ward-patient-search-case-"]')];
+      const items = [
+        ...document.querySelectorAll<HTMLElement>(
+          '[data-testid="ward-patient-search-results-console"] [data-testid^="ward-patient-search-case-"], ' +
+            '[data-testid="ward-patient-search-results-console"] [data-testid^="ward-patient-search-row-"]',
+        ),
+      ];
       const sheetRight = document.documentElement.clientWidth;
       const offenders: string[] = [];
       let painted = 0;
@@ -445,35 +444,19 @@ test("@mockup printing the patient search keeps every caseload item on the sheet
       return { found: items.length, painted, sheetRight, offenders };
     });
 
-  // Both visible presentations: the cards the screen opens on, then the dense rows.
-  for (const mode of ["cards", "dense"] as const) {
-    // The view switch is hidden on paper (print styles set it to display: none; measured on the
-    // review server, 26 Sept 2026), so a coordinator chooses the view on screen and then prints.
-    // Switch in screen media, then measure in print media.
-    if (mode === "dense") {
-      await page.emulateMedia({ media: "screen" });
-      // v6 (7 Oct 2026): the view switch is the "Row density" segmented control, not #viewDenseBtn.
-      const dense = page.getByRole("radiogroup", { name: "Row density" }).getByRole("radio", { name: "Dense" });
-      await dense.click();
-      await expect(dense).toHaveAttribute("aria-checked", "true");
-    }
-    await page.emulateMedia({ media: "print" });
-    await expect(page.locator('[data-testid^="ward-patient-search-case-"]').first()).toBeVisible({
-      timeout: 15_000,
-    });
-    const measured = await measure();
+  await page.emulateMedia({ media: "print" });
+  await expect(
+    page.getByTestId("ward-patient-search-results-console").locator('[data-testid^="ward-patient-search-"]').first(),
+  ).toBeVisible({ timeout: 15_000 });
+  const measured = await measure();
 
-    // ⚠️ ANTI-VACUITY: a caseload with nothing painted proves nothing about what prints.
-    expect(
-      measured.painted,
-      `${mode}: no caseload item painted — the assertion below would be vacuous`,
-    ).toBeGreaterThan(2);
-    expect(
-      measured.offenders,
-      `${mode}: caseload items extend past the printed sheet (${measured.sheetRight}px) or a box that ` +
-        `clips them — on paper that content is simply gone, with no ellipsis and no rule`,
-    ).toEqual([]);
-  }
+  // ⚠️ ANTI-VACUITY: a census with nothing painted proves nothing about what prints.
+  expect(measured.painted, "no census row painted — the assertion below would be vacuous").toBeGreaterThan(2);
+  expect(
+    measured.offenders,
+    `census rows extend past the printed sheet (${measured.sheetRight}px) or a box that clips them — ` +
+      `on paper that content is simply gone, with no ellipsis and no rule`,
+  ).toEqual([]);
 });
 
 test("@mockup a figure's value is readable under forced colours", async ({ page }) => {
