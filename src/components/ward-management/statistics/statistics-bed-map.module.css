@@ -1,0 +1,185 @@
+/*
+ * The ward bed map (direction A): one cell per bed, shape and colour per state. Tokens only. The
+ * cell styles match the legend swatches, so each state is told apart by shape as well as colour:
+ * filled (occupied), dashed with a ring (on leave), hatched with a pill (pulled), outlined with a
+ * tick (ready), dashed with a dashed circle (being made ready), muted with a cross (closed).
+ */
+.map {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(4.5rem, 100%), 1fr));
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 0;
+  height: 4.25rem;
+  padding: var(--wf-s-2) 0.625rem;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+
+.glyph {
+  position: absolute;
+  top: var(--wf-s-2);
+  right: var(--wf-s-2);
+  display: flex;
+  color: var(--wf-ink-3);
+}
+
+.days {
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-mono);
+}
+
+.long {
+  color: var(--wf-warning-ink);
+}
+
+.state {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.blocked {
+  position: absolute;
+  right: var(--wf-s-2);
+  bottom: var(--wf-s-2);
+  display: flex;
+  color: var(--wf-warning);
+}
+
+.occupied {
+  border-color: color-mix(in srgb, var(--wf-data-1) 30%, var(--wf-line-2));
+  background: color-mix(in srgb, var(--wf-data-1) 16%, var(--wf-surface));
+}
+
+.leave {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--wf-data-1) 45%, var(--wf-line-2));
+  background: color-mix(in srgb, var(--wf-data-1) 7%, var(--wf-surface));
+}
+
+.pulled {
+  border-color: color-mix(in srgb, var(--wf-info) 40%, var(--wf-line-2));
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--wf-info) 16%, var(--wf-surface)) 0 4px,
+    var(--wf-surface) 4px 8px
+  );
+}
+
+.pulled .glyph {
+  color: var(--wf-info);
+}
+
+.ready {
+  border-color: color-mix(in srgb, var(--wf-success) 60%, var(--wf-line-2));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-success) 40%, transparent);
+}
+
+.ready .glyph,
+.ready .state {
+  color: var(--wf-success-ink);
+}
+
+.prep {
+  border-style: dashed;
+  background: var(--wf-surface-2);
+}
+
+.closed {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-off);
+}
+
+.closed .state {
+  color: var(--wf-ink-off);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.legendCount {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+}
+
+.swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.375rem;
+  height: 0.875rem;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-3);
+}
+
+.swatch svg {
+  width: 9px;
+  height: 9px;
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+@media (max-width: 48rem) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(3.75rem, 100%), 1fr));
+  }
+
+  .cell {
+    height: 3.5rem;
+    padding: 6px var(--wf-s-2);
+  }
+
+  .days {
+    font-size: var(--wf-fs-14);
+    line-height: var(--wf-lh-14);
+  }
+
+  .legend {
+    justify-content: flex-start;
+  }
+}
