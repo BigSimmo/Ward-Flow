@@ -208,12 +208,12 @@ export function HospitalCapacityMatrix({
         <span className={styles.toolbarEnd} role="status" data-testid="ward-statistics-capacity-matrix-count">
           {highlighting ? (
             <>
-              <b>{matchedCount}</b> of {filteredRows.length} highlighted{service ? ` in ${service}` : null}, all rows
-              stay
+              <b>{matchedCount}</b> of {filteredRows.length} <span className={styles.srOnly}>synthetic rows</span>{" "}
+              highlighted{service ? ` in ${service}` : null}, all rows stay
             </>
           ) : (
             <>
-              <b>{filteredRows.length}</b> of {rows.length}
+              <b>{filteredRows.length}</b> of {rows.length} <span className={styles.srOnly}>synthetic rows</span>
             </>
           )}
         </span>

@@ -708,7 +708,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   <span aria-live="polite">
                     {anyHighlight ? (
                       <>
-                        <b className={styles.mono}>{highlightedCount}</b> of {entries.length} highlighted, all rows stay
+                        <b className={styles.mono}>{highlightedCount}</b> of {entries.length}{" "}
+                        <SrOnly>synthetic records</SrOnly> highlighted, all rows stay
                       </>
                     ) : (
                       <>{entries.length} synthetic records</>

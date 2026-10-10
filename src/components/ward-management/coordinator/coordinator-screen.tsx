@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CheckingFoot, Hero, HeroStat, LiveChip, OccupancyRing, buttonClass } from "@/components/wf";
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
-import { clockState, formatInstant } from "@/components/ward-management/ward-clock";
+import { clockState, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
@@ -323,7 +323,7 @@ export function CoordinatorScreen() {
     (unit) => now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes,
   ).length;
   // "N new since 07:12": the last look, or the start of this shift when there is none yet.
-  const sinceClock = formatInstant(lastLook.changes?.since ?? currentShiftStartInstant(now));
+  const sinceClock = formatInstantWithDay(lastLook.changes?.since ?? currentShiftStartInstant(now), now);
   const sinceLabel = `new since ${sinceClock}`;
   const shiftWord = currentShift(now)
     .name.replace(/ Shift$/u, " shift")
@@ -508,7 +508,7 @@ export function CoordinatorScreen() {
                     },
                     {
                       id: "stale-counts",
-                      label: "Bed counts older than 1h",
+                      label: `Bed counts older than ${BED_COUNT_FRESH_MINUTES / 60}h`,
                       value: staleBedCounts,
                       tone: staleBedCounts > 0 ? "warning" : "neutral",
                     },

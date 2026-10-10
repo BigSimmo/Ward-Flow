@@ -147,9 +147,10 @@ describe("GovernanceView", () => {
       "No review recorded for this event.",
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Mark reviewed" }));
-
+    // v10 (governance mockup): the review choice reads "Reviewed" / "Follow-up".
     const reviewPanel = screen.getByTestId("ward-governance-decision-record");
+    fireEvent.click(within(reviewPanel).getByRole("button", { name: "Reviewed" }));
+
     expect(within(reviewPanel).getByRole("status")).toHaveTextContent("Reviewed recorded.");
     expect(reviewPanel).toHaveTextContent("1 recorded review · role recorded");
     expect(overrideEvent).toHaveTextContent("Reviewed");
@@ -166,8 +167,8 @@ describe("GovernanceView", () => {
     expect(screen.getByRole("region", { name: "Review history" })).toHaveTextContent(
       "Review attempts cannot be reviewed.",
     );
-    expect(screen.getByRole("button", { name: "Mark reviewed" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Follow-up required" })).toBeDisabled();
+    expect(within(reviewPanel).getByRole("button", { name: "Reviewed" })).toBeDisabled();
+    expect(within(reviewPanel).getByRole("button", { name: "Follow-up" })).toBeDisabled();
   });
 
   it("clears the captured-event selection and review controls when the demo resets", () => {
@@ -188,8 +189,8 @@ describe("GovernanceView", () => {
     expect(screen.getAllByText("Select an event from the register").length).toBeGreaterThan(0);
     const reviewPanel = screen.getByTestId("ward-governance-decision-record");
     expect(reviewPanel).toHaveTextContent("No event selected");
-    expect(within(reviewPanel).getByRole("button", { name: "Mark reviewed" })).toBeDisabled();
-    expect(within(reviewPanel).getByRole("button", { name: "Follow-up required" })).toBeDisabled();
+    expect(within(reviewPanel).getByRole("button", { name: "Reviewed" })).toBeDisabled();
+    expect(within(reviewPanel).getByRole("button", { name: "Follow-up" })).toBeDisabled();
   });
 
   it("does not offer a legacy facts tab or a change-audit panel", () => {

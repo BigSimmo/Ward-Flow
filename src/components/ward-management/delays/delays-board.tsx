@@ -1455,7 +1455,7 @@ export function DelaysBoard({
               { id: "over24", label: `Over ${H24}`, value: over24, tone: over24 > 0 ? "danger" : "neutral" },
               {
                 id: "silent",
-                label: "Silent 2h and over",
+                label: `Silent ${SILENT_MINUTES / 60}h and over`,
                 value: silentCount,
                 tone: silentCount > 0 ? "warning" : "neutral",
               },
