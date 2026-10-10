@@ -338,8 +338,8 @@ export function CapacityScreen() {
             </>
           }
           titleMeta={netTotals.pendingPreparation ? `${netTotals.pendingPreparation} being made ready` : undefined}
-          stats={
-            // v10 Capacity: the one ring on the page, ahead of the title (see .capacityHero).
+          lead={
+            // v10 Capacity: the one ring on the page, ahead of the title.
             <OccupancyRing
               percent={netTotals.beds > 0 ? (totalOccupied / netTotals.beds) * 100 : null}
               alertAt={BED_ALERT_THRESHOLD_PERCENT}
@@ -546,6 +546,9 @@ export function CapacityScreen() {
                   selectedUnitId={selectedUnitId}
                   onSelectWard={selectWard}
                   service={service}
+                  highlightUnitIds={
+                    networkFilterId === "all" ? undefined : new Set(matchingNetworkRows.map((row) => row.unit.id))
+                  }
                 />
               </div>
               <div className={styles.highlightRow} role="group" aria-label="Ward table shortcuts">

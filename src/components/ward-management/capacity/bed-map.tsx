@@ -23,7 +23,8 @@
 // GUARANTEED to sum to `unit.beds` — which this map depends on, because every bed must land in
 // exactly one square. A map built on `NetworkWardRow.ready` could one day draw more squares than a
 // ward has beds, or fewer, the moment a future feed lets `allocatable` exceed `empty`.
-import { StatusGlyph } from "@/components/wf";
+import { StatusGlyph, WardCapacityRow, WardCapacityRows } from "@/components/wf";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
@@ -38,6 +39,12 @@ import styles from "./bed-map.module.css";
 /** The four ruled states a bed is drawn in. A `ready` square additionally carries `preparing` — see
  *  `BedSquare` below — never a fifth state of its own. */
 export type BedSquareState = "ready" | "pulled" | "closed" | "occupied";
+
+/**
+ * Grid: ward cards wrapping. Rows: one carousel of ward cards per service. Table: one shared
+ * `WardCapacityRow` per ward (v10 Capacity).
+ */
+export type BedMapLayout = "grid" | "row" | "table";
 
 export type BedMapWard = {
   unit: Unit;
@@ -273,10 +280,13 @@ function WardBlock({
   ward,
   selectedUnitId,
   onSelectWard,
+  dim = false,
 }: {
   ward: BedMapWard;
   selectedUnitId?: string;
   onSelectWard?: (unitId: string) => void;
+  /** A highlight that does not match this ward: it recedes by colour and stays. */
+  dim?: boolean;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -332,6 +342,7 @@ function WardBlock({
       ref={cardRef}
       className={styles.wardBlock}
       data-selected={selectedUnitId === ward.unit.id || undefined}
+      data-dim={dim ? "true" : undefined}
       data-interactive={Boolean(onSelectWard) || undefined}
       data-testid={`ward-bed-map-ward-${ward.unit.id}`}
       onClick={onSelectWard ? () => onSelectWard(ward.unit.id) : undefined}
@@ -582,12 +593,15 @@ function ServiceGroup({
   selectedUnitId,
   onSelectWard,
   layout,
+  highlightUnitIds,
 }: {
   group: BedMapServiceGroup;
-  layout: "grid" | "row";
+  layout: BedMapLayout;
   selectedUnitId?: string;
   onSelectWard?: (unitId: string) => void;
+  highlightUnitIds?: ReadonlySet<string>;
 }) {
+  const dimmed = (unitId: string) => highlightUnitIds !== undefined && !highlightUnitIds.has(unitId);
   const trackRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -802,72 +816,105 @@ function ServiceGroup({
         )}
       </div>
 
-      {/* Single-line horizontal ward track container with non-overlapping flanking navigation buttons */}
-      <div className={styles.trackContainer}>
-        {layout === "row" && hasOverflow && (
-          <button
-            type="button"
-            className={`${styles.flankingArrow} ${styles.flankingArrowPrev}`}
-            onClick={handlePrev}
-            disabled={!canScrollLeft}
-            style={{ visibility: canScrollLeft ? "visible" : "hidden" }}
-            aria-label={`Previous wards in ${group.service}`}
-            title="Previous wards"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-        )}
-
-        <div
-          ref={attachTrack}
-          onScroll={handleScroll}
-          className={styles.serviceWardTrack}
-          role="region"
-          aria-label={`${group.service} wards track`}
-        >
+      {layout === "table" ? (
+        // v10 Capacity, Table view: one shared `WardCapacityRow` per ward (the Places pattern). The
+        // one tint is a ward with a ready bed; a highlight dims the others by colour and hides none.
+        <WardCapacityRows label={`${group.service} wards`} className={styles.capacityRows}>
           {group.wards.map((ward) => (
-            <WardBlock key={ward.unit.id} ward={ward} selectedUnitId={selectedUnitId} onSelectWard={onSelectWard} />
+            <WardCapacityRow
+              key={ward.unit.id}
+              name={ward.unit.name}
+              meta={`${ward.unit.siteCode} · ${ward.ready} ready of ${ward.unit.beds}`}
+              segments={[
+                { id: "occupied", value: ward.occupied, fill: "data-1", label: "Occupied" },
+                { id: "ready", value: ward.ready, fill: "ready", label: "Ready" },
+                { id: "pulled", value: ward.pulled, fill: "data-2", hatch: true, label: "Pulled" },
+                { id: "closed", value: ward.closed, fill: "closed", label: "Closed" },
+              ]}
+              percent={ward.unit.beds > 0 ? (ward.occupied / ward.unit.beds) * 100 : null}
+              alertAt={BED_ALERT_THRESHOLD_PERCENT}
+              fit={ward.ready > 0}
+              dim={dimmed(ward.unit.id)}
+              selected={selectedUnitId === ward.unit.id}
+              onSelect={onSelectWard ? () => onSelectWard(ward.unit.id) : undefined}
+              actionLabel={onSelectWard ? `Open ${ward.unit.name}` : undefined}
+            />
           ))}
-        </div>
-
-        {layout === "row" && hasOverflow && (
-          <button
-            type="button"
-            className={`${styles.flankingArrow} ${styles.flankingArrowNext}`}
-            onClick={handleNext}
-            disabled={!canScrollRight}
-            style={{ visibility: canScrollRight ? "visible" : "hidden" }}
-            aria-label={`Next wards in ${group.service}`}
-            title="Next wards"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+        </WardCapacityRows>
+      ) : (
+        /* Single-line horizontal ward track container with non-overlapping flanking navigation buttons */
+        <div className={styles.trackContainer}>
+          {layout === "row" && hasOverflow && (
+            <button
+              type="button"
+              className={`${styles.flankingArrow} ${styles.flankingArrowPrev}`}
+              onClick={handlePrev}
+              disabled={!canScrollLeft}
+              style={{ visibility: canScrollLeft ? "visible" : "hidden" }}
+              aria-label={`Previous wards in ${group.service}`}
+              title="Previous wards"
             >
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-        )}
-      </div>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          )}
+
+          <div
+            ref={attachTrack}
+            onScroll={handleScroll}
+            className={styles.serviceWardTrack}
+            role="region"
+            aria-label={`${group.service} wards track`}
+          >
+            {group.wards.map((ward) => (
+              <WardBlock
+                key={ward.unit.id}
+                ward={ward}
+                selectedUnitId={selectedUnitId}
+                onSelectWard={onSelectWard}
+                dim={dimmed(ward.unit.id)}
+              />
+            ))}
+          </div>
+
+          {layout === "row" && hasOverflow && (
+            <button
+              type="button"
+              className={`${styles.flankingArrow} ${styles.flankingArrowNext}`}
+              onClick={handleNext}
+              disabled={!canScrollRight}
+              style={{ visibility: canScrollRight ? "visible" : "hidden" }}
+              aria-label={`Next wards in ${group.service}`}
+              title="Next wards"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -899,10 +946,11 @@ export function BedMap({
   selectedUnitId,
   onSelectWard,
   service,
+  highlightUnitIds,
   initialLayout = "row",
   initialBedDetail = true,
 }: {
-  initialLayout?: "grid" | "row";
+  initialLayout?: BedMapLayout;
   initialBedDetail?: boolean;
   units: Unit[];
   bedReleases: BedRelease[];
@@ -912,8 +960,13 @@ export function BedMap({
   selectedUnitId?: string;
   onSelectWard?: (unitId: string) => void;
   service?: HealthService | null;
+  /**
+   * The wards a hero or highlight chip picked out. Every other ward dims by colour in every layout
+   * and none is hidden (v10 Capacity). Undefined means no highlight.
+   */
+  highlightUnitIds?: ReadonlySet<string>;
 }) {
-  const [layout, setLayout] = useState<"grid" | "row">(initialLayout);
+  const [layout, setLayout] = useState<BedMapLayout>(initialLayout);
   const [bedDetail, setBedDetail] = useState(initialBedDetail);
   const [activeService, setActiveService] = useState<string>();
   const mapRef = useRef<HTMLDivElement>(null);
@@ -956,6 +1009,9 @@ export function BedMap({
           <button type="button" aria-pressed={layout === "row"} onClick={() => setLayout("row")}>
             Rows
           </button>
+          <button type="button" aria-pressed={layout === "table"} onClick={() => setLayout("table")}>
+            Table
+          </button>
         </div>
         <nav className={styles.serviceNav} aria-label="Bed map service shortcuts">
           {renderedGroups
@@ -992,6 +1048,7 @@ export function BedMap({
             layout={layout}
             selectedUnitId={selectedUnitId}
             onSelectWard={onSelectWard}
+            highlightUnitIds={highlightUnitIds}
           />
         ))}
       </div>
