@@ -99,7 +99,7 @@ const WardMhaCalculator = dynamic(
 import { announceToWardShell } from "./ward-live-region";
 import { WardPhoneMenu } from "./ward-phone-menu";
 import { WARD_BAR_PAGE_TOOLS_ID } from "./ward-bar-page-tools";
-import { openWardMenu, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
+import { openWardMenu, PHONE_QUERY, subscribeWardDrawer, subscribeWardDrawerClose } from "./ward-drawer-bus";
 import {
   digestHref,
   dischargeHref,
@@ -386,21 +386,11 @@ function useBarScrolled(enabled: boolean): boolean {
   return enabled && scrolled;
 }
 
-/** The phone layout's one breakpoint (8 Oct 2026). Everything phone-only in the bar keys off it. */
-const PHONE_QUERY = "(max-width: 48rem)";
-
 function subscribePhone(onChange: () => void) {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
   const query = window.matchMedia(PHONE_QUERY);
   query.addEventListener("change", onChange);
   return () => query.removeEventListener("change", onChange);
-}
-
-/** Read once, outside React, by the rail's Menu listener so the phone menu alone answers there. */
-export function isPhoneViewport(): boolean {
-  return (
-    typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches
-  );
 }
 
 function usePhoneViewport(): boolean {
@@ -1085,15 +1075,14 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       >
         <MenuIcon aria-hidden="true" strokeWidth={1.75} />
       </button>
-      {isPhone ? (
-        <WardPhoneMenu
-          returnFocusRef={phoneMenuRef}
-          tasksCount={tasksActiveCount}
-          activityUnread={unreadNoticeCount}
-          onOpenDrawer={openPopover}
-          onNewReferral={() => openReferral({ category: roleCategory }, phoneMenuRef.current)}
-        />
-      ) : null}
+      {/* Opens only on the phone; above 48rem the rail's own sheet answers Menu. */}
+      <WardPhoneMenu
+        returnFocusRef={phoneMenuRef}
+        tasksCount={tasksActiveCount}
+        activityUnread={unreadNoticeCount}
+        onOpenDrawer={openPopover}
+        onNewReferral={() => openReferral({ category: roleCategory }, phoneMenuRef.current)}
+      />
       <div className={styles.title}>
         <div className={styles.titleGroup}>
           <span

@@ -39,7 +39,7 @@ import {
 } from "@/lib/theme-client";
 
 import { announceToWardShell } from "./ward-live-region";
-import { applyAppearance, isPhoneViewport, useAppearanceStore, useGlareStore } from "./ward-bar";
+import { applyAppearance, useAppearanceStore, useGlareStore } from "./ward-bar";
 import { handoverHref, settingsHref } from "./ward-facade";
 import { isActiveRailEntry, RAIL_GROUPS, railEntries, type RailEntry } from "./ward-rail-entries";
 import {
@@ -51,7 +51,7 @@ import {
   type ServiceBedAlert,
 } from "./ward-service-bed-alerts";
 import { useServiceScope } from "./ward-service-store";
-import { openWardDrawer, closeWardDrawer, subscribeWardMenu } from "./ward-drawer-bus";
+import { openWardDrawer, closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import styles from "./ward-rail.module.css";
 
 export type { ServiceBedAlert } from "./ward-service-bed-alerts";

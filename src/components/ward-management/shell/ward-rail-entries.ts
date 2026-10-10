@@ -97,16 +97,19 @@ function normalizePath(p: string): string {
   return p.length > 1 && p.endsWith("/") ? p.slice(0, -1) : p;
 }
 
+/** Detail routes belong to their hub instead of restoring removed example links. */
+const ACTIVE_BEYOND_HREF: Record<string, (norm: string, entryHref: string) => boolean> = {
+  command: (norm) => norm === WARD_HOME_HREF || norm === WARD_COMMAND_HREF,
+  wards: (norm) => new RegExp(`^${WARD_HOME_HREF}/(ward|board)/`).test(norm),
+  ed: (norm) => norm === WARD_ED_HREF || norm.startsWith(edHref("")),
+  community: (norm, entryHref) => norm.startsWith(`${entryHref}/`),
+  movements: (norm, entryHref) => norm.startsWith(`${entryHref}/`),
+  statistics: (norm, entryHref) => norm.startsWith(`${entryHref}/`),
+  search: (norm) => norm.startsWith(patientHref("")),
+};
+
 export function isActiveRailEntry(pathname: string, entry: RailEntry): boolean {
   const norm = normalizePath(pathname);
   const entryHref = normalizePath(entry.href);
-  if (norm === entryHref) return true;
-  // Detail routes belong to their hub instead of restoring removed example links.
-  if (entry.id === "command") return norm === WARD_HOME_HREF || norm === WARD_COMMAND_HREF;
-  if (entry.id === "wards") return new RegExp(`^${WARD_HOME_HREF}/(ward|board)/`).test(norm);
-  if (entry.id === "ed") return norm === WARD_ED_HREF || norm.startsWith(edHref(""));
-  if (entry.id === "community") return norm.startsWith(`${entryHref}/`);
-  if (entry.id === "movements" || entry.id === "statistics") return norm.startsWith(`${entryHref}/`);
-  if (entry.id === "search") return norm.startsWith(patientHref(""));
-  return false;
+  return norm === entryHref || (ACTIVE_BEYOND_HREF[entry.id]?.(norm, entryHref) ?? false);
 }

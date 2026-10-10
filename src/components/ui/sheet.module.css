@@ -92,7 +92,6 @@
 
   .phoneBreakpointPanel {
     max-width: none !important;
-    min-height: calc(100dvh - 2rem) !important;
     max-height: calc(100dvh - 1rem) !important;
     border-radius: 1rem 1rem 0 0 !important;
     padding-bottom: var(--wf-safe-bottom, 0px) !important;
