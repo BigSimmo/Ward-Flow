@@ -604,7 +604,7 @@ export function WardHomeTab({
       key: "departures",
       title: "Discharges to sign off",
       // Same population as the Discharges tab: every open release, held up ones counted apart.
-      detail: `${pendingBedReleases.length} open · ${heldUp.length} held up · ${confirmedOut} confirmed`,
+      detail: `${pendingBedReleases.length} open · ${heldUp.length} held up`,
       meta: String(signOff),
       tone: "neutral",
       action: { label: "Open", run: () => onOpenDecisions?.() },
