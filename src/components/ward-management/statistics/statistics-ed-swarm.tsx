@@ -17,8 +17,6 @@ const RADIUS = 5;
 const SPACING = RADIUS * 2 + 3;
 const LANE = RADIUS * 2 + 2;
 const MIN_ROW = 44;
-/** A row never grows past seven lanes: a crowded row packs its lanes closer instead. */
-const MAX_LANES = 7;
 const ROW_PAD = 10;
 const AXIS_H = 24;
 
@@ -97,16 +95,16 @@ export function StatisticsEdSwarm({
   useEffect(() => {
     const box = boxRef.current;
     if (!box || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(320, Math.round(entry.contentRect.width))));
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(1, Math.round(entry.contentRect.width))));
     observer.observe(box);
     return () => observer.disconnect();
   }, []);
 
   const compact = width < 560;
-  const nameW = compact ? Math.min(labelWidth, 112) : labelWidth;
+  const nameW = compact ? Math.min(labelWidth, Math.max(56, width - 88)) : labelWidth;
   const countW = 40;
   const plotLeft = nameW + RADIUS + 4;
-  const plotW = Math.max(120, width - plotLeft - countW - RADIUS);
+  const plotW = Math.max(40, width - plotLeft - countW - RADIUS);
   const toX = (minutes: number) => plotLeft + (Math.min(minutes, AXIS_MAX_MINUTES) / AXIS_MAX_MINUTES) * plotW;
 
   const laid = useMemo(() => {
@@ -115,8 +113,8 @@ export function StatisticsEdSwarm({
       const marks = pack(row.entries, toX);
       const reach = marks.reduce((most, mark) => Math.max(most, Math.abs(mark.lane)), 0);
       const lanes = reach * 2 + 1;
-      const step = lanes > MAX_LANES ? (MAX_LANES * LANE) / lanes : LANE;
-      return { row, marks, step, height: Math.max(MIN_ROW, Math.min(lanes, MAX_LANES) * LANE + ROW_PAD * 2) };
+      const step = LANE;
+      return { row, marks, step, height: Math.max(MIN_ROW, lanes * LANE + ROW_PAD * 2) };
     });
     return sized.map((item, index) => {
       const top = sized.slice(0, index).reduce((sum, above) => sum + above.height, 0);
@@ -188,9 +186,12 @@ export function StatisticsEdSwarm({
         {/* The figures as text, for a screen reader and for the links. */}
         <ul className={styles.rowLinks}>
           {laid.map(({ row, top, height, median: middle }) => {
+            const accepted = row.entries.filter((e) => e.movement.acceptedUnitId !== undefined).length;
+            const over24 = row.entries.filter((e) => e.waitMinutes >= LONG_WAIT_MINUTES).length;
+            const over48 = row.entries.filter((e) => e.waitMinutes >= VERY_LONG_WAIT_MINUTES).length;
             const summary = `${row.name}: ${row.entries.length} waiting${
               middle !== undefined ? `, median ${hoursLabel(middle)}` : ""
-            }, ${row.entries.filter((e) => e.waitMinutes >= LONG_WAIT_MINUTES).length} past ${LONG_WAIT_HOURS} hours`;
+            }, ${accepted} ward accepted, ${row.entries.length - accepted} with no ward yet, ${over24} past ${LONG_WAIT_HOURS} hours, including ${over48} past ${VERY_LONG_WAIT_HOURS} hours`;
             return (
               <li key={row.id} style={{ top, height }}>
                 {row.href ? (
@@ -203,7 +204,7 @@ export function StatisticsEdSwarm({
           })}
         </ul>
       </div>
-      <p className={styles.legend} aria-hidden="true">
+      <p className={styles.legend}>
         <span>
           <svg width="10" height="10" viewBox="0 0 10 10">
             <circle cx="5" cy="5" r="4" className={styles.placed} />
