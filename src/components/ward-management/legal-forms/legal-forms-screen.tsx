@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { BookOpen, ClipboardCopy, Plus, UserRound } from "lucide-react";
+import { useState, useSyncExternalStore } from "react";
+import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus, UserRound } from "lucide-react";
 import {
   Button,
   Card,
@@ -11,6 +11,10 @@ import {
   Hero,
   HeroStat,
   HeroTrack,
+  PhoneHero,
+  PhoneListRow,
+  PhoneSheet,
+  Segmented,
   StackBar,
   StatusGlyph,
   cx,
@@ -19,7 +23,7 @@ import {
   type WfFill,
 } from "@/components/wf";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
-import { formatInstantWithDay, minutesUntil, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
@@ -75,19 +79,17 @@ import styles from "./legal-forms.module.css";
 
 /**
  * FORMS (renamed from Legal forms, owner 9 Oct 2026; built from the approved v4 mockup). Live work
- * for each patient on a Mental Health Act form. The hero puts every typed expiry on one twelve
- * hour rail; three cards under it count what is still to record on the form and who is still to
- * be told; the table lists everyone on a form in two groups that are never ordered against each
- * other; the side panel is the board summary until a patient is chosen, then that patient's form.
+ * for each patient on a Mental Health Act form. The hero answers and carries the highlight chips;
+ * three cards under it count what is still to record on the form and who is still to be told; the
+ * table lists everyone on a form in two groups that are never ordered against each other; the side
+ * panel is Board now (v10: the clock rail with its Passed bay, no ring) until a patient is chosen,
+ * then that patient's form.
  * Desktop has no drawer. Review, rates, audit, registers and reports live on Governance.
  *
  * Owner rules kept: no invented deadlines or section numbers (D5), an unconnected action says
  * "Not wired in this prototype." (D4), and a highlight never hides a row.
  */
 
-const CHART_RAIL_MINUTES = 12 * 60;
-const CHART_CLUSTER_MINUTES = 150;
-const CHART_TICK_MINUTES = 3 * 60;
 const CHART_WINDOW_MINUTES = 8 * 60;
 
 type View = "clocks" | "checklist" | "history";
@@ -110,6 +112,22 @@ const GAP_ACTION: Record<RecordGap, string> = {
   received: "Mark received",
   examination: "Record exam",
 };
+
+const PHONE_QUERY = "(max-width: 48rem)";
+
+/** Phone is its own layout (v10): under 48rem the screen renders a different tree. */
+function useIsPhone(): boolean {
+  return useSyncExternalStore(
+    (notify) => {
+      if (typeof window.matchMedia !== "function") return () => undefined;
+      const query = window.matchMedia(PHONE_QUERY);
+      query.addEventListener?.("change", notify);
+      return () => query.removeEventListener?.("change", notify);
+    },
+    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
+    () => false,
+  );
+}
 
 function sameHighlight(a: Highlight, b: Highlight): boolean {
   if (a === null || b === null) return a === b;
@@ -142,6 +160,8 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const [extendId, setExtendId] = useState<string | null>(null);
   const [tell, setTell] = useState<{ party: SupportNotificationParty | null; key: string | null } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [phoneTasks, setPhoneTasks] = useState(false);
+  const isPhone = useIsPhone();
 
   const openMovements = movements.filter(isOpen);
   const withDeadline = legalFormGroupRows(movements, now, "with-deadline");
@@ -189,12 +209,6 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     if (movement.id !== selectedId) setTab("now");
     setSelectedId(movement.id);
     setFocusGap(null);
-    // Phone: the panel sits below the list, so bring it into view.
-    if (typeof window.matchMedia === "function" && window.matchMedia("(max-width: 48rem)").matches) {
-      window.requestAnimationFrame(() =>
-        document.querySelector('[data-testid="ward-legal-selected"]')?.scrollIntoView?.({ block: "start" }),
-      );
-    }
   };
 
   const gapCount = (gap: RecordGap) => rows.filter((movement) => offersGap(movement, gap)).length;
@@ -237,6 +251,8 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   // Feature 11: Mark received is the ED's event; this coordinator route keeps it through the
   // listed cross-role pair in `ward-role-permissions.ts`.
   const receivedGate = gate("RECORD_LEGAL_FORM_RECEIVED");
+  // Record a form: the coordinator always may; another route sees it greyed with the reason.
+  const recordGate = gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form");
   const markReceived = (movement: Movement) => {
     if (!receivedGate.allowed) return;
     if (!receiptEventAccepts(movement.legalForm?.code) || movement.legalFormReceivedAt !== undefined) return;
@@ -282,6 +298,230 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
       setFocusGap((previous) => ({ gap: "written", nonce: (previous?.nonce ?? 0) + 1 }));
     },
   });
+
+  const historyList =
+    closedWithForms.length > 0 ? (
+      <ul className={styles.historyList} aria-label="Closed moves with a form">
+        {closedWithForms.map((movement) => (
+          <li key={movement.id} className={styles.historyRow}>
+            <span className={styles.cellStack}>
+              <span className={styles.name}>{nameOf(movement)}</span>
+              <span className={cx(styles.sub, styles.mono)}>{umrnOf(movement)}</span>
+            </span>
+            <span className={styles.formCell}>
+              <span className={styles.code}>{movement.legalForm?.code}</span>
+              <span className={styles.formTitle}>{formTitle(movement.legalForm!.code)}</span>
+            </span>
+            <span className={styles.cellStack}>
+              <span className={styles.truncate}>{edNameOf(movement)}</span>
+              <span className={cx(styles.sub, styles.truncate)}>{wardNameOf(movement) ?? "No receiving ward"}</span>
+            </span>
+            <span className={styles.cellStack}>
+              <span>
+                {movement.closure?.outcome === "arrived"
+                  ? "Arrived"
+                  : movement.closure?.outcome === "did_not_proceed"
+                    ? "Did not proceed"
+                    : "Closed"}
+              </span>
+              <span className={cx(styles.sub, styles.mono)}>
+                {movement.closure ? formatInstantWithDay(movement.closure.at, now) : ""}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p className={styles.absent}>No closed move carries a form yet.</p>
+    );
+
+  const focusPanel = selected ? (
+    <FocusPanel
+      key={selected.id}
+      movement={selected}
+      name={nameOf(selected)}
+      umrn={umrnOf(selected)}
+      edName={edNameOf(selected)}
+      wardName={wardNameOf(selected)}
+      now={now}
+      dayZero={dayZero}
+      tab={tab}
+      onTab={setTab}
+      onClose={() => setSelectedId(null)}
+      focusGap={focusGap}
+      refusal={lastWrittenRefusal?.reason}
+      onSaveWritten={({ writtenAt, region, ageBand }) => {
+        const formCode = selected.legalForm?.code;
+        if (!isOwnedLegalFormCode(formCode)) return;
+        dispatch({
+          type: "RECORD_LEGAL_FORM_WRITTEN",
+          role: "coordinator",
+          now,
+          movementId: selected.id,
+          formCode,
+          writtenAt,
+          region,
+          ageBand,
+        });
+      }}
+      onMarkReceived={() => markReceived(selected)}
+      markReceivedUnavailable={receivedGate.reason}
+      onExtend={() => setExtendId(selected.id)}
+      onRecordNext={() => openRecord(selected.id)}
+      onRequirements={(code) => setRequirementsCode(code)}
+      onCopy={() =>
+        copyText(
+          "summary",
+          `${nameOf(selected)} (${umrnOf(selected)})\n${
+            selected.legalForm ? legalFormName(selected.legalForm) : "Voluntary"
+          }\n${legalDeadlineText(selected, now)}`,
+        )
+      }
+      copied={copied === "summary"}
+    />
+  ) : null;
+
+  // Phone: the record-and-tell tasks sit one tap away; the sheet foot pins the next one to record.
+  const phoneTaskCount =
+    (["written", "received", "examination"] as const).reduce((sum, gap) => sum + gapCount(gap), 0) +
+    SUPPORT_NOTIFICATION_PARTIES.reduce((sum, party) => sum + partyCount(party), 0);
+  const phoneTaskForms = rows.filter((movement) =>
+    (["written", "received", "examination"] as const).some((gap) => offersGap(movement, gap)),
+  ).length;
+  const nextGap = selected
+    ? (["written", "received", "examination"] as const).find((gap) => offersGap(selected, gap))
+    : undefined;
+  const phonePrimary =
+    selected && nextGap
+      ? {
+          label: GAP_ACTION[nextGap],
+          disabledReason: nextGap === "received" && !receivedGate.allowed ? receivedGate.reason : undefined,
+          onAction: () => {
+            if (nextGap === "received") markReceived(selected);
+            else {
+              setTab("now");
+              setFocusGap((previous) => ({ gap: nextGap, nonce: (previous?.nonce ?? 0) + 1 }));
+            }
+          },
+        }
+      : undefined;
+
+  const taskStrip = (
+    <div className={styles.strip}>
+      <Card aria-label="Forms in force">
+        <CardHead
+          title="Forms in force"
+          level={2}
+          action={
+            <button type="button" className={styles.textLink} onClick={() => setRequirementsCode(CATALOGUE[0]!.code)}>
+              <BookOpen size={14} aria-hidden="true" /> Requirements
+            </button>
+          }
+        />
+        <CardBody className={styles.stripBody}>
+          <StackBar segments={codeSegments} label="Forms in force by type" thin />
+          <div className={styles.codeChips} role="group" aria-label="Highlight a form type">
+            {codeCounts.map((entry) => (
+              <button
+                key={entry.code}
+                type="button"
+                className={styles.codeChip}
+                aria-pressed={highlight?.kind === "code" && highlight.code === entry.code}
+                title={formTitle(entry.code)}
+                onClick={() => toggleHighlight({ kind: "code", code: entry.code })}
+              >
+                <span className={styles.codeChipKey} data-fill={entry.fill} aria-hidden="true" />
+                <span className={styles.codeChipCode}>{entry.code}</span>
+                <span className={styles.codeChipCount}>{entry.count}</span>
+              </button>
+            ))}
+            <span className={styles.stripTotal}>{rows.length} total</span>
+          </div>
+          <div className={styles.srOnly} data-testid="legal-form-breakdown">
+            {breakdown.map((form) => {
+              const openWord = form.openCount === 1 ? "open movement" : "open movements";
+              const breachClause =
+                form.breachedCount > 0
+                  ? `, ${form.breachedCount} passed ${form.breachedCount === 1 ? "its deadline" : "their deadlines"}`
+                  : "";
+              return <span key={form.name}>{`${form.name}, ${form.openCount} ${openWord}${breachClause}. `}</span>;
+            })}
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card aria-label="Record on the form">
+        <CardHead title="Record on the form" level={2} aside={<span className={styles.meta}>Open moves</span>} />
+        <CardBody className={styles.stripBody}>
+          <ul className={styles.taskList}>
+            {(["written", "received", "examination"] as const).map((gap) => {
+              const count = gapCount(gap);
+              return (
+                <li key={gap} className={styles.taskRow}>
+                  <button
+                    type="button"
+                    className={styles.taskLabel}
+                    aria-pressed={highlight?.kind === "gap" && highlight.gap === gap}
+                    onClick={() => toggleHighlight({ kind: "gap", gap })}
+                  >
+                    <StatusGlyph tone={count > 0 ? "neutral" : "success"} size={9} />
+                    {GAP_LABEL[gap]}
+                  </button>
+                  <span className={styles.taskCount}>
+                    <strong>{count}</strong> to do
+                  </span>
+                  <Button
+                    variant="sec"
+                    size="sm"
+                    disabledReason={count === 0 ? "Nothing to record" : undefined}
+                    reasonDisplay="tooltip"
+                    onClick={() => startGap(gap)}
+                  >
+                    {GAP_ACTION[gap]}
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        </CardBody>
+      </Card>
+
+      <Card aria-label="Tell people">
+        <CardHead
+          title="Tell people"
+          level={2}
+          aside={<span className={styles.meta}>Recent moves, oldest first</span>}
+        />
+        <CardBody className={styles.stripBody}>
+          <ul className={styles.taskList}>
+            {SUPPORT_NOTIFICATION_PARTIES.map((party) => {
+              const count = partyCount(party);
+              return (
+                <li key={party} className={styles.taskRow}>
+                  <span className={styles.taskLabel}>
+                    <StatusGlyph tone={count > 0 ? "neutral" : "success"} size={9} />
+                    {SUPPORT_NOTIFICATION_PARTY_SHORT[party]}
+                  </span>
+                  <span className={styles.taskCount}>
+                    <strong>{count}</strong> to do
+                  </span>
+                  <Button
+                    variant="sec"
+                    size="sm"
+                    disabledReason={count === 0 ? "Everyone is recorded" : undefined}
+                    reasonDisplay="tooltip"
+                    onClick={() => tellNext(party)}
+                  >
+                    Tell next
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        </CardBody>
+      </Card>
+    </div>
+  );
 
   return (
     <div className={styles.screen} data-testid="ward-legal-forms-page" data-ward-design="v8">
@@ -343,406 +583,342 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
           </button>
         </WardBarPageTools>
 
-        <div data-testid="ward-legal-hud-island">
-          <Hero
-            className={styles.heroBand}
-            eyebrow="Mental Health Act forms"
-            title={`${rows.length} forms on open moves`}
-            titleMeta={
-              voluntary > 0 ? <span className={styles.heroMeta}>{voluntary} voluntary, no form</span> : undefined
-            }
-            stats={<ClockRail movements={withDeadline} now={now} passed={passed} onSelect={select} />}
-            aside={
-              <div className={styles.heroAside}>
-                {next ? (
-                  <button type="button" className={styles.nextCard} onClick={() => select(next)}>
-                    <span className={styles.nextEyebrow}>
-                      <StatusGlyph tone={STANDING_TONE[nextStanding]} size={9} />
-                      {nextStanding === "passed" ? "Passed" : "Next to end"}
-                    </span>
-                    <span className={styles.nextName}>
-                      {nameOf(next)} <span className={styles.heroCode}>{next.legalForm?.code}</span>
-                    </span>
-                    <span className={styles.nextTime}>{leftText(next, now)}</span>
-                  </button>
-                ) : null}
-                <Button variant="light" icon={Plus} onClick={() => openRecord()}>
-                  Record a form
-                </Button>
-                {/* Phone keeps the header's handover copy here, since the header tools hide. */}
-                {handover.length > 0 ? (
+        {isPhone ? (
+          <>
+            <PhoneHero
+              data-testid="ward-legal-hud-island"
+              title={`${rows.length} forms on open moves`}
+              sub={`${voluntary} voluntary, no form · warnings at ${reminders.soonHours}h and ${reminders.urgentHours}h`}
+              figures={[
+                { id: "act", value: actNow, label: "Act now", tone: "danger" },
+                { id: "soon", value: reminders.withinSoon, label: `Within ${reminders.soonHours}h`, tone: "warning" },
+                { id: "none", value: noDeadline.length, label: "No expiry", tone: "closed" },
+              ]}
+              actions={
+                <>
                   <Button
                     variant="light"
+                    icon={Plus}
+                    disabledReason={recordGate.allowed ? undefined : recordGate.reason}
+                    reasonDisplay="tooltip"
+                    onClick={() => openRecord()}
+                  >
+                    Record a form
+                  </Button>
+                  <Button
+                    variant="onHero"
                     icon={ClipboardCopy}
-                    className={styles.phoneHandover}
+                    disabledReason={handover.length === 0 ? "No typed expiry is coming up" : undefined}
+                    reasonDisplay="tooltip"
                     onClick={() => copyText("handover", handover.join("\n"))}
                   >
-                    {copied === "handover" ? "Copied" : `Handover (${handover.length})`}
+                    {copied === "handover" ? "Copied" : `Handover ${handover.length}`}
                   </Button>
-                ) : null}
-              </div>
-            }
-            bar={
-              <div className={styles.heroFilters}>
-                <HeroStat
-                  inline
-                  value={actNow}
-                  label="Act now"
-                  tone="danger"
-                  pressed={highlight?.kind === "act"}
-                  onToggle={() => toggleHighlight({ kind: "act" })}
-                />
-                <HeroStat
-                  inline
-                  value={reminders.withinSoon}
-                  label={`Within ${reminders.soonHours}h`}
-                  tone="warning"
-                  pressed={highlight?.kind === "soon"}
-                  onToggle={() => toggleHighlight({ kind: "soon" })}
-                />
-                <HeroStat
-                  inline
-                  value={noDeadline.length}
-                  label="No expiry typed"
-                  tone="neutral"
-                  pressed={highlight?.kind === "none"}
-                  onToggle={() => toggleHighlight({ kind: "none" })}
-                />
-              </div>
-            }
-            barAside={
-              <HeroTrack<View>
-                label="View"
-                value={view}
-                onChange={setView}
-                items={[
-                  { id: "clocks", label: "Clocks", count: rows.length },
-                  { id: "checklist", label: "Checklist" },
-                  { id: "history", label: "History", count: closedWithForms.length },
-                ]}
-              />
-            }
-          />
-        </div>
-
-        <div className={styles.strip}>
-          <Card aria-label="Forms in force">
-            <CardHead
-              title="Forms in force"
-              level={2}
-              action={
-                <button
-                  type="button"
-                  className={styles.textLink}
-                  onClick={() => setRequirementsCode(CATALOGUE[0]!.code)}
-                >
-                  <BookOpen size={14} aria-hidden="true" /> Requirements
-                </button>
+                </>
               }
             />
-            <CardBody className={styles.stripBody}>
-              <StackBar segments={codeSegments} label="Forms in force by type" thin />
-              <div className={styles.codeChips} role="group" aria-label="Highlight a form type">
-                {codeCounts.map((entry) => (
-                  <button
-                    key={entry.code}
-                    type="button"
-                    className={styles.codeChip}
-                    aria-pressed={highlight?.kind === "code" && highlight.code === entry.code}
-                    title={formTitle(entry.code)}
-                    onClick={() => toggleHighlight({ kind: "code", code: entry.code })}
-                  >
-                    <span className={styles.codeChipKey} data-fill={entry.fill} aria-hidden="true" />
-                    <span className={styles.codeChipCode}>{entry.code}</span>
-                    <span className={styles.codeChipCount}>{entry.count}</span>
-                  </button>
-                ))}
-                <span className={styles.stripTotal}>{rows.length} total</span>
-              </div>
-              <div className={styles.srOnly} data-testid="legal-form-breakdown">
-                {breakdown.map((form) => {
-                  const openWord = form.openCount === 1 ? "open movement" : "open movements";
-                  const breachClause =
-                    form.breachedCount > 0
-                      ? `, ${form.breachedCount} passed ${form.breachedCount === 1 ? "its deadline" : "their deadlines"}`
-                      : "";
-                  return <span key={form.name}>{`${form.name}, ${form.openCount} ${openWord}${breachClause}. `}</span>;
-                })}
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card aria-label="Record on the form">
-            <CardHead title="Record on the form" level={2} aside={<span className={styles.meta}>Open moves</span>} />
-            <CardBody className={styles.stripBody}>
-              <ul className={styles.taskList}>
-                {(["written", "received", "examination"] as const).map((gap) => {
-                  const count = gapCount(gap);
-                  return (
-                    <li key={gap} className={styles.taskRow}>
-                      <button
-                        type="button"
-                        className={styles.taskLabel}
-                        aria-pressed={highlight?.kind === "gap" && highlight.gap === gap}
-                        onClick={() => toggleHighlight({ kind: "gap", gap })}
-                      >
-                        <StatusGlyph tone={count > 0 ? "neutral" : "success"} size={9} />
-                        {GAP_LABEL[gap]}
-                      </button>
-                      <span className={styles.taskCount}>
-                        <strong>{count}</strong> to do
-                      </span>
-                      <Button
-                        variant="sec"
-                        size="sm"
-                        disabledReason={count === 0 ? "Nothing to record" : undefined}
-                        reasonDisplay="tooltip"
-                        onClick={() => startGap(gap)}
-                      >
-                        {GAP_ACTION[gap]}
-                      </Button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </CardBody>
-          </Card>
-
-          <Card aria-label="Tell people">
-            <CardHead
-              title="Tell people"
-              level={2}
-              aside={<span className={styles.meta}>Recent moves, oldest first</span>}
-            />
-            <CardBody className={styles.stripBody}>
-              <ul className={styles.taskList}>
-                {SUPPORT_NOTIFICATION_PARTIES.map((party) => {
-                  const count = partyCount(party);
-                  return (
-                    <li key={party} className={styles.taskRow}>
-                      <span className={styles.taskLabel}>
-                        <StatusGlyph tone={count > 0 ? "neutral" : "success"} size={9} />
-                        {SUPPORT_NOTIFICATION_PARTY_SHORT[party]}
-                      </span>
-                      <span className={styles.taskCount}>
-                        <strong>{count}</strong> to do
-                      </span>
-                      <Button
-                        variant="sec"
-                        size="sm"
-                        disabledReason={count === 0 ? "Everyone is recorded" : undefined}
-                        reasonDisplay="tooltip"
-                        onClick={() => tellNext(party)}
-                      >
-                        Tell next
-                      </Button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </CardBody>
-          </Card>
-        </div>
-
-        <div className={styles.work}>
-          <Card className={styles.listCard} aria-label="Everyone on a form">
-            <CardHead
-              title={view === "history" ? "Closed moves with a form" : "Everyone on a form"}
-              level={2}
-              aside={
-                <span className={styles.meta}>
-                  {highlight
-                    ? `${highlightCount} highlighted`
-                    : view === "clocks"
-                      ? "Act now first, then least time left"
-                      : null}
+            <button type="button" className={styles.phoneTasks} onClick={() => setPhoneTasks(true)}>
+              <ClipboardList size={16} aria-hidden="true" />
+              <span className={styles.cellStack}>
+                <span className={styles.name}>Record and tell</span>
+                <span className={styles.sub}>
+                  <strong className={styles.mono}>{phoneTaskCount}</strong> items to record across {phoneTaskForms}{" "}
+                  forms
                 </span>
-              }
-              action={
-                highlight ? (
-                  <Button variant="ghost" size="sm" onClick={() => setHighlight(null)}>
-                    Clear highlight
-                  </Button>
-                ) : undefined
-              }
+              </span>
+              <ChevronRight size={16} aria-hidden="true" />
+            </button>
+            <Segmented<View>
+              className={styles.phoneViews}
+              label="View"
+              value={view}
+              onChange={setView}
+              items={[
+                { id: "clocks", label: "Clocks" },
+                { id: "checklist", label: "Checklist" },
+                { id: "history", label: "History", count: closedWithForms.length },
+              ]}
             />
-
-            {view === "clocks" ? (
-              <section
-                className={styles.groups}
-                role="region"
-                aria-label="Legal forms and deadlines"
-                data-testid="ward-legal-forms-groups"
-              >
-                <p className={styles.srOnly}>
-                  {rows.length} of {openMovements.length} open{" "}
-                  {openMovements.length === 1 ? "movement carries" : "movements carry"} a legal form
+            <Card className={styles.listCard} aria-label="Everyone on a form">
+              {highlight ? (
+                <p className={styles.phoneNote}>
+                  {highlightCount} of {rows.length} highlighted, all rows stay
                 </p>
-                <div role="region" aria-label="Legal forms list" className={styles.table}>
+              ) : null}
+              {view === "clocks" ? (
+                <section aria-label="Legal forms and deadlines" data-testid="ward-legal-forms-groups">
                   {rows.length === 0 ? (
                     <p className={styles.absent}>No open movement carries a legal form.</p>
                   ) : (
                     <>
-                      <DataRow head columns={ROW_COLUMNS} aria-hidden="true" className={styles.headRow}>
-                        <span className={tableClasses.th}>Patient</span>
-                        <span className={tableClasses.th}>Form</span>
-                        <span className={tableClasses.th}>Where</span>
-                        <span className={tableClasses.th}>Time left</span>
-                        <span className={tableClasses.th}>Recorded</span>
-                      </DataRow>
                       <div className={styles.groupHead}>
                         <span>Expiry typed</span>
                         <span className={styles.groupCount}>{withDeadline.length}</span>
-                        <span className={styles.groupOrder}>least time left first</span>
-                        <span className={styles.srOnly}>Forms with a deadline recorded</span>
+                        <span className={styles.groupOrder}>least time left</span>
                       </div>
-                      {withDeadline.length > 0 ? (
-                        <ul className={styles.rowList}>
-                          {withDeadline.map((movement) => (
-                            <FormRow key={movement.id} {...rowProps(movement)} />
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className={styles.absent} data-testid="ward-legal-forms-none-with-deadline">
-                          No open movement carries a form with a deadline recorded on it.
-                        </p>
-                      )}
+                      <ul className={styles.phoneList}>
+                        {withDeadline.map((movement) => (
+                          <PhoneFormRow key={movement.id} {...rowProps(movement)} />
+                        ))}
+                      </ul>
                       <div className={styles.groupHead}>
                         <span>No expiry typed</span>
                         <span className={styles.groupCount}>{noDeadline.length}</span>
-                        <span className={styles.groupOrder}>longest in ED first</span>
-                        <span className={styles.srOnly}>Forms with no deadline recorded</span>
+                        <span className={styles.groupOrder}>longest in ED</span>
                       </div>
-                      {noDeadline.length > 0 ? (
-                        <ul className={styles.rowList}>
-                          {noDeadline.map((movement) => (
-                            <FormRow key={movement.id} {...rowProps(movement)} />
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className={styles.absent} data-testid="ward-legal-forms-none-without-deadline">
-                          Every open movement carrying a form has a deadline recorded on it.
-                        </p>
-                      )}
+                      <ul className={styles.phoneList}>
+                        {noDeadline.map((movement) => (
+                          <PhoneFormRow key={movement.id} {...rowProps(movement)} />
+                        ))}
+                      </ul>
                     </>
                   )}
-                </div>
-              </section>
-            ) : null}
-
-            {view === "checklist" ? (
-              <ChecklistView
-                rows={rows}
-                now={now}
-                nameOf={nameOf}
-                umrnOf={umrnOf}
-                selectedId={selectedId}
-                isHighlighted={matches}
-                highlightOn={highlight !== null}
-                onSelect={select}
-              />
-            ) : null}
-
-            {view === "history" ? (
-              closedWithForms.length > 0 ? (
-                <ul className={styles.historyList} aria-label="Closed moves with a form">
-                  {closedWithForms.map((movement) => (
-                    <li key={movement.id} className={styles.historyRow}>
-                      <span className={styles.cellStack}>
-                        <span className={styles.name}>{nameOf(movement)}</span>
-                        <span className={cx(styles.sub, styles.mono)}>{umrnOf(movement)}</span>
-                      </span>
-                      <span className={styles.formCell}>
-                        <span className={styles.code}>{movement.legalForm?.code}</span>
-                        <span className={styles.formTitle}>{formTitle(movement.legalForm!.code)}</span>
-                      </span>
-                      <span className={styles.cellStack}>
-                        <span className={styles.truncate}>{edNameOf(movement)}</span>
-                        <span className={cx(styles.sub, styles.truncate)}>
-                          {wardNameOf(movement) ?? "No receiving ward"}
-                        </span>
-                      </span>
-                      <span className={styles.cellStack}>
-                        <span>
-                          {movement.closure?.outcome === "arrived"
-                            ? "Arrived"
-                            : movement.closure?.outcome === "did_not_proceed"
-                              ? "Did not proceed"
-                              : "Closed"}
-                        </span>
-                        <span className={cx(styles.sub, styles.mono)}>
-                          {movement.closure ? formatInstantWithDay(movement.closure.at, now) : ""}
-                        </span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className={styles.absent}>No closed move carries a form yet.</p>
-              )
-            ) : null}
-          </Card>
-
-          <div className={styles.aside} data-wf-rail>
-            {selected ? (
-              <FocusPanel
-                key={selected.id}
-                movement={selected}
-                name={nameOf(selected)}
-                umrn={umrnOf(selected)}
-                edName={edNameOf(selected)}
-                wardName={wardNameOf(selected)}
-                now={now}
-                dayZero={dayZero}
-                tab={tab}
-                onTab={setTab}
-                onClose={() => setSelectedId(null)}
-                focusGap={focusGap}
-                refusal={lastWrittenRefusal?.reason}
-                onSaveWritten={({ writtenAt, region, ageBand }) => {
-                  const formCode = selected.legalForm?.code;
-                  if (!isOwnedLegalFormCode(formCode)) return;
-                  dispatch({
-                    type: "RECORD_LEGAL_FORM_WRITTEN",
-                    role: "coordinator",
-                    now,
-                    movementId: selected.id,
-                    formCode,
-                    writtenAt,
-                    region,
-                    ageBand,
-                  });
-                }}
-                onMarkReceived={() => markReceived(selected)}
-                markReceivedUnavailable={receivedGate.reason}
-                onExtend={() => setExtendId(selected.id)}
-                onRecordNext={() => openRecord(selected.id)}
-                onRequirements={(code) => setRequirementsCode(code)}
-                onCopy={() =>
-                  copyText(
-                    "summary",
-                    `${nameOf(selected)} (${umrnOf(selected)})\n${
-                      selected.legalForm ? legalFormName(selected.legalForm) : "Voluntary"
-                    }\n${legalDeadlineText(selected, now)}`,
-                  )
+                </section>
+              ) : null}
+              {view === "checklist" ? (
+                <ChecklistView
+                  rows={rows}
+                  now={now}
+                  nameOf={nameOf}
+                  umrnOf={umrnOf}
+                  selectedId={selectedId}
+                  isHighlighted={matches}
+                  highlightOn={highlight !== null}
+                  onSelect={select}
+                />
+              ) : null}
+              {view === "history" ? historyList : null}
+            </Card>
+            <PhoneSheet open={phoneTasks} onClose={() => setPhoneTasks(false)} title="Record and tell" height="tall">
+              {taskStrip}
+            </PhoneSheet>
+            <PhoneSheet
+              open={selected !== null}
+              onClose={() => setSelectedId(null)}
+              title={selected ? nameOf(selected) : "Form"}
+              height="tall"
+              primary={phonePrimary}
+            >
+              {focusPanel}
+            </PhoneSheet>
+          </>
+        ) : (
+          <>
+            <div data-testid="ward-legal-hud-island">
+              <Hero
+                className={styles.heroBand}
+                eyebrow="Mental Health Act forms"
+                title={`${rows.length} forms on open moves`}
+                titleMeta={
+                  voluntary > 0 ? <span className={styles.heroMeta}>{voluntary} voluntary, no form</span> : undefined
                 }
-                copied={copied === "summary"}
+                aside={
+                  <div className={styles.heroAside}>
+                    {next ? (
+                      <button type="button" className={styles.nextCard} onClick={() => select(next)}>
+                        <span className={styles.nextEyebrow}>
+                          <StatusGlyph tone={STANDING_TONE[nextStanding]} size={9} />
+                          {nextStanding === "passed" ? "Passed" : "Next to end"}
+                        </span>
+                        <span className={styles.nextName}>
+                          {nameOf(next)} <span className={styles.heroCode}>{next.legalForm?.code}</span>
+                        </span>
+                        <span className={styles.nextTime}>{leftText(next, now)}</span>
+                      </button>
+                    ) : null}
+                    <Button
+                      variant="light"
+                      icon={Plus}
+                      disabledReason={recordGate.allowed ? undefined : recordGate.reason}
+                      reasonDisplay="tooltip"
+                      onClick={() => openRecord()}
+                    >
+                      Record a form
+                    </Button>
+                  </div>
+                }
+                bar={
+                  <div className={styles.heroFilters}>
+                    <HeroStat
+                      inline
+                      value={actNow}
+                      label="Act now"
+                      tone="danger"
+                      pressed={highlight?.kind === "act"}
+                      onToggle={() => toggleHighlight({ kind: "act" })}
+                    />
+                    <HeroStat
+                      inline
+                      value={reminders.withinSoon}
+                      label={`Within ${reminders.soonHours}h`}
+                      tone="warning"
+                      pressed={highlight?.kind === "soon"}
+                      onToggle={() => toggleHighlight({ kind: "soon" })}
+                    />
+                    <HeroStat
+                      inline
+                      value={noDeadline.length}
+                      label="No expiry typed"
+                      tone="neutral"
+                      pressed={highlight?.kind === "none"}
+                      onToggle={() => toggleHighlight({ kind: "none" })}
+                    />
+                    <button
+                      type="button"
+                      className={styles.heroCopy}
+                      aria-disabled={handover.length === 0 ? "true" : undefined}
+                      title={
+                        handover.length === 0 ? "No typed expiry is coming up" : "Copy upcoming expiries for handover"
+                      }
+                      onClick={() => {
+                        if (handover.length > 0) copyText("handover", handover.join("\n"));
+                      }}
+                    >
+                      <ClipboardCopy size={14} aria-hidden="true" />
+                      <span>{copied === "handover" ? "Copied" : "Copy for handover"}</span>
+                      <span className={styles.heroCopyCount}>{handover.length}</span>
+                    </button>
+                  </div>
+                }
+                barAside={
+                  <HeroTrack<View>
+                    label="View"
+                    value={view}
+                    onChange={setView}
+                    items={[
+                      { id: "clocks", label: "Clocks", count: rows.length },
+                      { id: "checklist", label: "Checklist" },
+                      { id: "history", label: "History", count: closedWithForms.length },
+                    ]}
+                  />
+                }
               />
-            ) : (
-              <SummaryPanel
-                rows={rows}
-                now={now}
-                dayZero={dayZero}
-                soonHours={reminders.soonHours}
-                urgentHours={reminders.urgentHours}
-                nameOf={nameOf}
-                umrnOf={umrnOf}
-                edNameOf={edNameOf}
-                onSelect={select}
-              />
-            )}
-          </div>
-        </div>
+            </div>
+
+            {taskStrip}
+
+            <div className={styles.work}>
+              <Card className={styles.listCard} aria-label="Everyone on a form">
+                <CardHead
+                  title={view === "history" ? "Closed moves with a form" : "Everyone on a form"}
+                  level={2}
+                  aside={
+                    <span className={styles.meta}>
+                      {highlight
+                        ? `${highlightCount} of ${rows.length} highlighted, all rows stay`
+                        : view === "clocks"
+                          ? "Act now first, then least time left"
+                          : null}
+                    </span>
+                  }
+                  action={
+                    highlight ? (
+                      <Button variant="ghost" size="sm" onClick={() => setHighlight(null)}>
+                        Clear highlight
+                      </Button>
+                    ) : undefined
+                  }
+                />
+
+                {view === "clocks" ? (
+                  <section
+                    className={styles.groups}
+                    role="region"
+                    aria-label="Legal forms and deadlines"
+                    data-testid="ward-legal-forms-groups"
+                  >
+                    <p className={styles.srOnly}>
+                      {rows.length} of {openMovements.length} open{" "}
+                      {openMovements.length === 1 ? "movement carries" : "movements carry"} a legal form
+                    </p>
+                    <div role="region" aria-label="Legal forms list" className={styles.table}>
+                      {rows.length === 0 ? (
+                        <p className={styles.absent}>No open movement carries a legal form.</p>
+                      ) : (
+                        <>
+                          <DataRow head columns={ROW_COLUMNS} aria-hidden="true" className={styles.headRow}>
+                            <span className={tableClasses.th}>Patient</span>
+                            <span className={tableClasses.th}>Form</span>
+                            <span className={tableClasses.th}>Where</span>
+                            <span className={tableClasses.th}>Time left</span>
+                            <span className={tableClasses.th}>To record</span>
+                          </DataRow>
+                          <div className={styles.groupHead}>
+                            <span>Expiry typed</span>
+                            <span className={styles.groupCount}>{withDeadline.length}</span>
+                            <span className={styles.groupOrder}>least time left first</span>
+                            <span className={styles.srOnly}>Forms with a deadline recorded</span>
+                          </div>
+                          {withDeadline.length > 0 ? (
+                            <ul className={styles.rowList}>
+                              {withDeadline.map((movement) => (
+                                <FormRow key={movement.id} {...rowProps(movement)} />
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className={styles.absent} data-testid="ward-legal-forms-none-with-deadline">
+                              No open movement carries a form with a deadline recorded on it.
+                            </p>
+                          )}
+                          <div className={styles.groupHead}>
+                            <span>No expiry typed</span>
+                            <span className={styles.groupCount}>{noDeadline.length}</span>
+                            <span className={styles.groupOrder}>longest in ED first</span>
+                            <span className={styles.srOnly}>Forms with no deadline recorded</span>
+                          </div>
+                          {noDeadline.length > 0 ? (
+                            <ul className={styles.rowList}>
+                              {noDeadline.map((movement) => (
+                                <FormRow key={movement.id} {...rowProps(movement)} />
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className={styles.absent} data-testid="ward-legal-forms-none-without-deadline">
+                              Every open movement carrying a form has a deadline recorded on it.
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </section>
+                ) : null}
+
+                {view === "checklist" ? (
+                  <ChecklistView
+                    rows={rows}
+                    now={now}
+                    nameOf={nameOf}
+                    umrnOf={umrnOf}
+                    selectedId={selectedId}
+                    isHighlighted={matches}
+                    highlightOn={highlight !== null}
+                    onSelect={select}
+                  />
+                ) : null}
+
+                {view === "history" ? historyList : null}
+              </Card>
+
+              <div className={styles.aside} data-wf-rail>
+                {selected ? (
+                  focusPanel
+                ) : (
+                  <SummaryPanel
+                    rows={rows}
+                    now={now}
+                    dayZero={dayZero}
+                    soonHours={reminders.soonHours}
+                    urgentHours={reminders.urgentHours}
+                    nameOf={nameOf}
+                    umrnOf={umrnOf}
+                    edNameOf={edNameOf}
+                    onSelect={select}
+                  />
+                )}
+              </div>
+            </div>
+          </>
+        )}
 
         <RequirementsSheet
           code={requirementsCode}
@@ -781,89 +957,14 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   );
 }
 
-const ROW_COLUMNS = "minmax(0,1.25fr) minmax(0,1.3fr) minmax(0,1.15fr) minmax(0,1.25fr) 96px";
+const ROW_COLUMNS = "minmax(0,1.25fr) minmax(0,1.3fr) minmax(0,1.15fr) minmax(0,1.1fr) minmax(0,0.95fr)";
+/** The short word for a fact still to record, as the To record column names it. */
+const TO_RECORD_WORD: Record<RecordGap, string> = {
+  written: "Time written",
+  received: "Received",
+  examination: "Examined",
+};
 const CHECK_COLUMNS = "minmax(0,1.4fr) 56px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)";
-
-/**
- * Every typed expiry in the next twelve hours on one rail, with the passed ones gathered in a bay
- * at its start. A marker selects its patient. Drawn page-locally; no shared chart draws a rail.
- */
-function ClockRail({
-  movements,
-  now,
-  passed,
-  onSelect,
-}: {
-  movements: Movement[];
-  now: Instant;
-  passed: number;
-  onSelect: (movement: Movement) => void;
-}) {
-  const upcoming = movements.filter((movement) => {
-    const left = minutesUntil(movement.legalForm!.dueAt!, now);
-    return left > 0 && left <= CHART_RAIL_MINUTES;
-  });
-  // Expiries close together share one marker so their labels never overlap; it opens the first.
-  const clusters: Movement[][] = [];
-  for (const movement of [...upcoming].sort((a, b) => a.legalForm!.dueAt! - b.legalForm!.dueAt!)) {
-    const last = clusters.at(-1);
-    if (last && movement.legalForm!.dueAt! - last[0].legalForm!.dueAt! < CHART_CLUSTER_MINUTES) last.push(movement);
-    else clusters.push([movement]);
-  }
-  const ticks: Instant[] = [];
-  for (let minutes = 0; minutes <= CHART_RAIL_MINUTES; minutes += CHART_TICK_MINUTES) ticks.push(now + minutes);
-  const x = (instant: Instant) => `${((instant - now) / CHART_RAIL_MINUTES) * 100}%`;
-  return (
-    <div className={styles.rail}>
-      <div className={styles.railBay} data-on={passed > 0 ? "true" : undefined}>
-        <span className={styles.railBayValue}>
-          <StatusGlyph tone={passed > 0 ? "danger" : "closed"} size={9} />
-          {passed}
-        </span>
-        <span>Passed</span>
-      </div>
-      <div className={styles.railPlot}>
-        <span className={styles.railLine} aria-hidden="true" />
-        {clusters.map((cluster, index) => {
-          const [movement] = cluster;
-          const standing = clockStanding(movement, now);
-          const code = movement.legalForm!.code;
-          const at = formatInstantWithDay(movement.legalForm!.dueAt!, now);
-          const more = cluster.length - 1;
-          return (
-            <button
-              key={movement.id}
-              type="button"
-              className={styles.railMark}
-              data-lane={index % 2}
-              style={{ left: x(movement.legalForm!.dueAt!) }}
-              onClick={() => onSelect(movement)}
-              aria-label={`${code} expires ${at}${more > 0 ? ` and ${more} more close after` : ""}, select`}
-            >
-              <span className={styles.railLabel}>
-                <span className={styles.railCode}>{code}</span>
-                {at}
-                {more > 0 ? <span className={styles.railMore}>+{more}</span> : null}
-              </span>
-              <span className={styles.railDot} data-tone={STANDING_TONE[standing]} />
-            </button>
-          );
-        })}
-        {ticks.map((tick, index) => (
-          <span
-            key={tick}
-            className={styles.railTick}
-            data-first={index === 0 ? "true" : undefined}
-            style={{ left: x(tick) }}
-            aria-hidden="true"
-          >
-            {index === 0 ? "Now" : formatInstantWithDay(tick, now)}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 type FormRowProps = {
   movement: Movement;
@@ -906,6 +1007,7 @@ function FormRow({
   const reason = legalDeadlineText(movement, now);
   const facts = recordedFacts(movement);
   const done = facts.filter((fact) => fact.at !== undefined).length;
+  const missing = facts.filter((fact) => fact.at === undefined).map((fact) => TO_RECORD_WORD[fact.gap]);
   const canAddTime = movement.formedAt === undefined && isOwnedLegalFormCode(legalForm.code);
 
   return (
@@ -913,8 +1015,11 @@ function FormRow({
       as="li"
       columns={ROW_COLUMNS}
       selected={selected}
+      actNow={isActNow(standing)}
+      dim={dimmed}
       interactive
-      className={cx(styles.row, highlighted && styles.rowHl, dimmed && styles.rowDim)}
+      className={styles.row}
+      data-highlighted={highlighted ? "true" : undefined}
       data-ward-primitive="record-row"
       data-record-key={movement.id}
       data-tone={classification.tone}
@@ -977,23 +1082,72 @@ function FormRow({
         <span className={styles.srOnly}>{reason}</span>
       </span>
       <span className={styles.recorded}>
-        <span className={styles.dots} aria-hidden="true">
-          {facts.map((fact) => (
-            <span key={fact.gap} className={styles.dot} data-done={fact.at !== undefined ? "true" : undefined} />
-          ))}
-        </span>
-        <span className={styles.sub}>
-          {facts.length === 0 ? (
-            "Not recorded here"
-          ) : (
-            <>
-              {done} of {facts.length}
-              <span className={styles.srOnly}> recorded</span>
-            </>
-          )}
+        {facts.length === 0 ? (
+          <span className={styles.sub}>Not tracked</span>
+        ) : missing.length === 0 ? (
+          <>
+            <StatusGlyph tone="success" size={9} />
+            <span className={styles.recordedText}>All recorded</span>
+          </>
+        ) : (
+          <>
+            <StatusGlyph tone="neutral" size={9} />
+            <span className={styles.recordedText} title={missing.join(", ")}>
+              {missing.join(", ")}
+            </span>
+          </>
+        )}
+        <span className={styles.srOnly}>
+          {done} of {facts.length} recorded
         </span>
       </span>
     </DataRow>
+  );
+}
+
+/**
+ * Phone row (v10): the code chip, the name, the form and where, with the time left at the end.
+ * The whole row opens the form sheet; an act now row takes the thin red edge, a dimmed row recedes
+ * by colour only.
+ */
+function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimmed, onSelect }: FormRowProps) {
+  const legalForm = movement.legalForm!;
+  const standing = clockStanding(movement, now);
+  const facts = recordedFacts(movement);
+  const missing = facts.filter((fact) => fact.at === undefined).length;
+  const where = wardName ? `${edName} to ${wardName}` : edName;
+  return (
+    <PhoneListRow
+      as="li"
+      className={styles.phoneRow}
+      data-testid={`ward-legal-phone-row-${movement.id}`}
+      {...(dimmed ? { "data-dim": "true" } : {})}
+      actNow={isActNow(standing)}
+      leading={<span className={styles.code}>{legalForm.code}</span>}
+      name={name}
+      meta={
+        <>
+          {formTitle(legalForm.code)} · {where}
+          {missing > 0 ? ` · ${missing} to record` : ""}
+        </>
+      }
+      value={
+        legalForm.dueAt !== undefined ? (
+          <span className={styles.leftLine}>
+            <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
+            {leftText(movement, now)}
+          </span>
+        ) : (
+          <span className={styles.leftLine}>
+            <StatusGlyph tone="closed" size={9} />
+            None
+          </span>
+        )
+      }
+      time={legalForm.dueAt !== undefined ? (standing === "passed" ? "passed" : "left") : "typed"}
+      aria-label={`${name}, ${umrn}, ${legalFormName(legalForm)}, ${legalDeadlineText(movement, now)}`}
+      onSelect={() => onSelect(movement)}
+    />
   );
 }
 
@@ -1040,7 +1194,9 @@ function ChecklistView({
               columns={CHECK_COLUMNS}
               selected={movement.id === selectedId}
               interactive
-              className={cx(styles.row, styles.checkRow, on && styles.rowHl, highlightOn && !on && styles.rowDim)}
+              dim={highlightOn && !on}
+              className={cx(styles.row, styles.checkRow)}
+              data-highlighted={on ? "true" : undefined}
             >
               <button
                 type="button"

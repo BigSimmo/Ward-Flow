@@ -25,7 +25,7 @@
 }
 
 .prototypeBadge {
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
 }
 
 .main {
@@ -84,7 +84,7 @@
 
 .eyebrow {
   margin: 0;
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--wf-ink-3);
@@ -92,7 +92,7 @@
 
 .sectionHead {
   margin: 0;
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--wf-ink-3);
@@ -140,7 +140,7 @@
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-pill);
   background: var(--wf-surface);
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   color: var(--wf-ink-1);
   white-space: nowrap;
 }
@@ -189,7 +189,7 @@
   align-items: center;
   gap: 6px;
   grid-column: 1;
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--wf-hero-ink-2);
@@ -212,7 +212,7 @@
   padding: 0 7px;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 30%, transparent);
   border-radius: var(--wf-r-pill);
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
 .nextTime {
@@ -246,117 +246,169 @@
   border-color: color-mix(in srgb, var(--wf-hero-ink) 55%, transparent);
 }
 
-/* Clock rail: the passed bay, then twelve hours with a marker at each typed expiry. */
+/* ---------- Hero copy chip ---------- */
+
+.heroCopy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--wf-h-sm);
+  padding: 0 12px;
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-on-hero-fill);
+  color: var(--wf-hero-ink);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.heroCopy:hover {
+  border-color: color-mix(in srgb, var(--wf-hero-ink) 45%, transparent);
+}
+
+.heroCopy:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.heroCopy[aria-disabled="true"] {
+  color: var(--wf-hero-ink-3);
+  cursor: default;
+}
+
+.heroCopyCount {
+  font: 600 var(--wf-fs-15) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Clock rail (TimeRail): page surface, in the Board now rail ---------- */
+
 .rail {
   display: flex;
-  align-items: stretch;
-  gap: var(--wf-s-3);
-  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
   min-width: 0;
-  min-height: 74px;
 }
 
 .railBay {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
-  flex: none;
-  min-width: 60px;
+  gap: 6px 12px;
+  min-height: 36px;
   padding: 6px 10px;
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
-  border-radius: var(--wf-r-lg);
-  color: var(--wf-hero-ink-2);
+  border: 1px dashed var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
 }
 
 .railBay[data-on="true"] {
-  border-color: color-mix(in srgb, var(--wf-danger) 60%, transparent);
-  background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
-  color: var(--wf-hero-ink);
+  border-color: var(--wf-act-edge);
 }
 
 .railBayValue {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-mono);
-  color: var(--wf-hero-ink);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.railBayMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.railBayMark:hover {
+  background: var(--wf-hover);
+}
+
+.railBayMark:focus-visible,
+.railMark:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 .railPlot {
   position: relative;
-  flex: 1 1 auto;
-  min-width: 200px;
-  margin: 0 var(--wf-s-3) 0 var(--wf-s-1);
+  min-height: 82px;
+  margin: 0 18px;
 }
 
 .railLine {
   position: absolute;
   left: 0;
   right: 0;
-  top: 46px;
+  top: 50px;
   height: 2px;
   border-radius: var(--wf-r-pill);
-  background: color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
+  background: var(--wf-track);
 }
 
 .railMark {
   position: absolute;
-  top: 0;
+  top: 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  min-width: 28px;
+  min-height: 56px;
   padding: 0;
   border: 0;
+  border-radius: var(--wf-r-sm);
   background: none;
-  color: var(--wf-hero-ink);
+  color: var(--wf-ink-1);
   transform: translateX(-50%);
   cursor: pointer;
 }
 
 .railMark[data-lane="1"] {
-  top: 15px;
-}
-
-.railMark:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-  border-radius: var(--wf-r-sm);
+  top: 20px;
 }
 
 .railLabel {
   display: inline-flex;
   gap: 4px;
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
-  color: var(--wf-hero-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-2);
   white-space: nowrap;
 }
 
 .railCode {
   font-weight: 700;
-  color: var(--wf-hero-ink);
+  color: var(--wf-ink-1);
 }
 
 .railMore {
-  color: var(--wf-hero-ink-3);
+  color: var(--wf-ink-3);
 }
 
 .railDot {
   position: absolute;
   top: 40px;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   box-sizing: border-box;
   border-radius: 50%;
-  border: 2px solid var(--wf-hero-ink-2);
-  background: var(--wf-hero-2);
+  border: 2px solid var(--wf-ink-3);
+  background: var(--wf-surface);
 }
 
 .railMark[data-lane="1"] .railDot {
-  top: 25px;
+  top: 24px;
 }
 
 .railDot[data-tone="danger"] {
@@ -371,21 +423,63 @@
 
 .railTick {
   position: absolute;
-  top: 56px;
+  top: 62px;
   transform: translateX(-50%);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
-  color: var(--wf-hero-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-3);
   white-space: nowrap;
 }
 
 .railTick[data-first="true"] {
   transform: none;
-  font-weight: 700;
-  color: var(--wf-hero-ink);
+  font-family: var(--wf-font);
+  font-weight: 600;
+  color: var(--wf-ink-2);
 }
 
 .railTick:last-child {
   transform: translateX(-100%);
+}
+
+.railFoot {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.panelHeadTitle {
+  margin: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+/* Warning windows as one threshold bar. */
+.threshold {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.thresholdBar {
+  display: flex;
+  gap: 2px;
+  height: 6px;
+}
+
+.thresholdBar > span {
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+
+.thresholdBar > [data-tone="danger"] {
+  background: var(--wf-danger);
+}
+
+.thresholdBar > [data-tone="warning"] {
+  background: var(--wf-warning);
+}
+
+.thresholdBar > [data-tone="rest"] {
+  flex: 1 1 auto;
 }
 
 /* ---------- Task strip ---------- */
@@ -466,12 +560,12 @@
 }
 
 .codeChipCode {
-  font: 700 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 700 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
 .codeChipCount {
   color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
 .stripTotal {
@@ -577,7 +671,7 @@ button.taskLabel[aria-pressed="true"] {
   border-bottom: 1px solid var(--wf-line);
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -591,7 +685,7 @@ button.taskLabel[aria-pressed="true"] {
   box-sizing: border-box;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-pill);
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   letter-spacing: 0;
 }
 
@@ -616,15 +710,21 @@ button.taskLabel[aria-pressed="true"] {
 .row {
   position: relative;
   min-height: 56px;
-  transition: opacity var(--wf-m-fast) var(--wf-ease);
 }
 
-.rowHl {
-  background: var(--wf-accent-tint);
+/* v10 dim: a row a highlight does not match recedes by colour only (DataRow dim). Children
+ * that set their own ink follow it here. */
+.row[data-dim="true"] .name,
+.row[data-dim="true"] .formTitle,
+.row[data-dim="true"] .code,
+.row[data-dim="true"] .leftValue,
+.row[data-dim="true"] .recordedText {
+  color: var(--wf-dim);
+  border-color: var(--wf-line);
 }
 
-.rowDim {
-  opacity: 0.55;
+.row[data-dim="true"] .progress > span {
+  background: var(--wf-glyph-dim);
 }
 
 .rowButton {
@@ -745,22 +845,13 @@ button.taskLabel[aria-pressed="true"] {
   pointer-events: none;
 }
 
-.dots {
-  display: inline-flex;
-  gap: 3px;
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  box-sizing: border-box;
-  border-radius: 50%;
-  border: 1.5px solid var(--wf-ink-3);
-}
-
-.dot[data-done="true"] {
-  border-color: var(--wf-success);
-  background: var(--wf-success);
+.recordedText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
 }
 
 .historyList {
@@ -823,123 +914,29 @@ button.taskLabel[aria-pressed="true"] {
   white-space: nowrap;
 }
 
-.ringRow {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-4);
-}
-
-.ring {
-  position: relative;
-  flex: none;
-  width: 92px;
-  height: 92px;
-}
-
-.ring > svg {
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-
-.ringTrack,
-.ringArc {
-  fill: none;
-  stroke-width: 8;
-}
-
-.ringTrack {
-  stroke: var(--wf-track);
-}
-
-.ringArc {
-  stroke: var(--wf-ink-3);
-  stroke-linecap: round;
-}
-
-.ringArc[data-state="act"] {
-  stroke: var(--wf-danger);
-}
-
-.ringArc[data-state="soon"] {
-  stroke: var(--wf-warning);
-}
-
-.ringArc[data-state="running"] {
-  stroke: var(--wf-ink-2);
-}
-
-.ringArc[data-state="demo"] {
-  stroke: var(--wf-data-closed);
-}
-
-.ringArc[data-state="unwritten"] {
-  stroke: var(--wf-line-3);
-}
-
-.ringValue {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
-}
-
-.ringValue strong {
-  color: var(--wf-ink-1);
-  font: 700 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
-}
-
 .legend {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 4px 14px;
   min-width: 0;
   margin: 0;
   padding: 0;
   list-style: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
 }
 
 .legend li {
-  display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-}
-
-.legendKey {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--wf-ink-3);
-}
-
-.legendKey[data-state="act"] {
-  background: var(--wf-danger);
-}
-
-.legendKey[data-state="soon"] {
-  background: var(--wf-warning);
-}
-
-.legendKey[data-state="running"] {
-  background: var(--wf-ink-2);
-}
-
-.legendKey[data-state="demo"] {
-  background: var(--wf-data-closed);
-}
-
-.legendKey[data-state="unwritten"] {
-  background: var(--wf-line-3);
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .legendValue {
-  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .nextList {
@@ -1025,51 +1022,49 @@ button.taskLabel[aria-pressed="true"] {
 
 .focusClock {
   display: flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-3) var(--wf-s-4);
+  flex-direction: column;
+  gap: 8px;
+  margin: var(--wf-s-3) var(--wf-s-4) 0;
+  padding: 10px 12px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
 }
 
-.focusClock > .cellStack {
-  pointer-events: auto;
+.focusClock[data-tone="danger"] {
+  border-color: var(--wf-act-edge);
 }
 
-.clockDial {
-  --dial: var(--wf-ink-2);
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  --done: 0deg;
-  background: conic-gradient(var(--dial) var(--done), var(--wf-track) 0);
-  -webkit-mask: radial-gradient(circle at center, transparent 23px, var(--wf-ink-1) 24px);
-  mask: radial-gradient(circle at center, transparent 23px, var(--wf-ink-1) 24px);
-  position: relative;
+.focusClockLine {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
 }
 
-.clockDial[data-tone="danger"] {
-  --dial: var(--wf-danger);
+.focusClockLine > :first-child {
+  align-self: center;
 }
 
-.clockDial[data-tone="warning"] {
-  --dial: var(--wf-warning);
+.focusClock .progress {
+  width: 100%;
 }
 
-.clockDial > * {
-  -webkit-mask: none;
-  mask: none;
+.clockAt {
+  margin-left: auto;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
 }
 
 .clockBig {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  font: 700 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
+  font: 700 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .clockWord {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--wf-ink-3);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
 }
@@ -1374,36 +1369,9 @@ button.taskLabel[aria-pressed="true"] {
  * The expiring list comes first. The hero keeps its title, the three filter pills and the one
  * action; the rail becomes a single "passed" line. Each row is a card line: name and form, then
  * the time left. The panel sits below the list and the page scrolls to it on select. */
-.heroAside .phoneHandover {
-  display: none;
-}
-
 @media (max-width: 48rem) {
   .main {
     padding: var(--wf-s-3);
-  }
-
-  .heroAside .phoneHandover {
-    display: inline-flex;
-  }
-
-  .rail {
-    min-height: 0;
-  }
-
-  .railPlot {
-    display: none;
-  }
-
-  .railBay {
-    flex-direction: row;
-    gap: 6px;
-    min-width: 0;
-    padding: 4px 10px;
-  }
-
-  .railBayValue {
-    font-size: var(--wf-fs-14);
   }
 
   .heroAside {
@@ -1575,4 +1543,69 @@ button.taskLabel[aria-pressed="true"] {
   .reqTitle {
     display: none;
   }
+}
+
+/* ---------- Phone tree (v10): its own design at 390 ----------
+ * Only the phone branch renders these, so desktop never sees them. */
+.phoneTasks {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: var(--wf-touch);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phoneTasks > .cellStack {
+  flex: 1 1 auto;
+}
+
+.phoneTasks:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phoneViews {
+  width: 100%;
+}
+
+.phoneViews button,
+.phoneViews [role="radio"] {
+  flex: 1 1 0;
+  min-height: var(--wf-touch);
+}
+
+.phoneNote {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.phoneList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phoneRow {
+  min-height: 64px;
+}
+
+.phoneRow .leftLine {
+  gap: 6px;
+}
+
+.phoneRow[data-dim="true"],
+.phoneRow[data-dim="true"] * {
+  color: var(--wf-dim);
 }

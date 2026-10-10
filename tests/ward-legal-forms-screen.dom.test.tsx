@@ -233,3 +233,25 @@ describe("LegalFormsScreen Act period demo (owner ruling D-29)", () => {
     for (const line of lines) expect(line).toHaveTextContent(/^Synthetic demo, not legally checked: /);
   });
 });
+
+describe("Forms v10 pass (10 Oct 2026)", () => {
+  it("draws the clock rail in the Board now rail, not the hero, with each mark a button named by form and time", () => {
+    renderScreen();
+    const hero = screen.getByTestId("ward-legal-hud-island");
+    expect(within(hero).queryByTestId("ward-legal-clock-rail")).toBeNull();
+    const rail = within(screen.getByTestId("ward-legal-summary")).getByTestId("ward-legal-clock-rail");
+    for (const mark of within(rail).queryAllByRole("button")) {
+      expect(mark.getAttribute("aria-label")).toMatch(/^Form \w+ (expires|expired) .+, open$/);
+    }
+  });
+
+  it("highlights by dimming the other rows by colour, keeps every row and counts the highlighted rows", () => {
+    renderScreen();
+    const before = document.querySelectorAll("[data-record-key]").length;
+    fireEvent.click(screen.getByRole("button", { name: /No expiry typed/ }));
+    expect(document.querySelectorAll("[data-record-key]").length).toBe(before);
+    const dimmed = document.querySelectorAll('[data-record-key][data-dim="true"]').length;
+    expect(dimmed).toBe(before - noDeadline.length);
+    expect(screen.getByText(`${noDeadline.length} of ${rows.length} highlighted, all rows stay`)).toBeInTheDocument();
+  });
+});
