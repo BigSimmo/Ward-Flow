@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   CardFoot,
+  CheckingFoot,
   EmptyState,
   Hero,
   LiveChip,
@@ -564,22 +565,21 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          eyebrow="Out of area"
+          eyebrow={`Out of area · Statewide · ${bedDays} bed days · longest ${longest} days`}
           title={`${entries.length} away from home`}
-          titleMeta={
-            <span className={styles.heroMeta}>
-              <span>
-                <b>{bedDays}</b> bed days
-              </span>
-              <span>
-                Longest <b>{longest} days</b>
-              </span>
-            </span>
-          }
-          stats={<DaysAwayStrip entries={entries} now={now} highlight={highlight} onToggle={toggleHighlight} />}
           aside={
             <span className={styles.heroActs}>
               <LiveChip state="live" onHero />
+            </span>
+          }
+          bar={<DaysAwayStrip entries={entries} now={now} highlight={highlight} onToggle={toggleHighlight} />}
+          barAside={
+            <span className={styles.heroActs}>
+              {toolNote ? (
+                <span className={styles.heroNote} role="status">
+                  {toolNote}
+                </span>
+              ) : null}
               <Button
                 variant="light"
                 size="sm"
@@ -617,25 +617,25 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 iconOnly
                 icon={Printer}
                 aria-label="Print handover list"
+                className={styles.previewIcon}
                 disabledReason="Not wired in this prototype."
                 reasonDisplay="tooltip"
               />
             </span>
           }
-          bar={
-            <div className={styles.pills} role="group" aria-label="Highlight people">
-              {pill("due", "Discharge date passed", "warning")}
-              {pill("air", "Air only")}
-              {pill("road", TRAVEL_SHORT.three_hours_or_more)}
-              {pill("noplan", "No return plan", "closed")}
-              {pill("notagreed", "Ward not agreed", "neutral")}
-              {pill("bed", "Awaiting home bed", "neutral")}
-            </div>
-          }
-          barAside={
-            <span className={styles.heroNote} role="status">
-              {toolNote}
-            </span>
+          foot={
+            <CheckingFoot
+              items={[
+                { id: "due", label: "Discharge date passed", value: countOf("due"), tone: "warning" },
+                { id: "noplan", label: "No return plan", value: countOf("noplan"), tone: "closed" },
+                {
+                  id: "noband",
+                  label: "Other records without home area or travel time",
+                  value: notBanded,
+                  tone: "neutral",
+                },
+              ]}
+            />
           }
         />
 
@@ -696,11 +696,19 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               </div>
             ) : (
               <div role="tabpanel" id="ward-out-of-area-view-panel-now" aria-labelledby="ward-out-of-area-view-tab-now">
+                <div className={styles.pills} role="group" aria-label="Highlight people">
+                  {pill("due", "Date passed", "warning")}
+                  {pill("air", "Air only")}
+                  {pill("road", TRAVEL_SHORT.three_hours_or_more)}
+                  {pill("noplan", "No plan", "closed")}
+                  {pill("notagreed", "Not agreed", "neutral")}
+                  {pill("bed", "Awaiting home bed", "neutral")}
+                </div>
                 <div className={styles.hlLine}>
                   <span aria-live="polite">
                     {anyHighlight ? (
                       <>
-                        <b className={styles.mono}>{highlightedCount}</b> synthetic records highlighted
+                        <b className={styles.mono}>{highlightedCount}</b> of {entries.length} highlighted, all rows stay
                       </>
                     ) : (
                       <>{entries.length} synthetic records</>
@@ -761,7 +769,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                             key={entry.admission.id}
                             data-testid={`ward-out-of-area-row-${entry.admission.id}`}
                             data-highlighted={lit || undefined}
-                            className={cx(styles.row, isSelected && tableClasses.selected, lit && styles.rowLit)}
+                            data-dim={anyHighlight && !lit ? "true" : undefined}
+                            className={cx(styles.row, isSelected && tableClasses.selected)}
                             aria-selected={isSelected}
                             tabIndex={0}
                             aria-label={`View placement detail for ${info.displayName} (${info.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
