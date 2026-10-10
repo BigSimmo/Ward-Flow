@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { isOpen as isOpenMovement } from "@/components/ward-management/ward-derivations";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
 
 import styles from "./ward-role-switcher.module.css";
@@ -55,7 +56,9 @@ export function WardRoleSwitcher() {
   // The provider's own live `movements`, never a frozen fixture lookup — a movement referred or
   // accepted moments ago on the coordinator screen must resolve here too, on the very next
   // render, exactly like `coordinator-screen.tsx`'s own `selectedMovement` derivation.
-  const focusMovement = focusMovementId ? movements.find((movement) => movement.id === focusMovementId) : undefined;
+  const focusMovement = focusMovementId
+    ? movements.find((movement) => movement.id === focusMovementId && isOpenMovement(movement))
+    : undefined;
 
   // Ward candidates: an accepted destination is the definitive single answer (ACCEPT_IN_PRINCIPLE's
   // own reducer case empties `referredUnitIds` the moment one unit accepts — see

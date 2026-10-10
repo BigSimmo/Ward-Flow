@@ -100,6 +100,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [hereOpen, setHereOpen] = useState(false);
+  const [previewMessage, setPreviewMessage] = useState<string | null>(null);
 
   const { statewide, sites, teams } = useMemo(
     () =>
@@ -154,9 +155,8 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
 
   // Owner answer 38: the wards a patient was referred to are named to coordinators only. Their
   // emergency department is not another ward, so that shortcut shows on every route.
-  const focusMovement = focusMovementId
-    ? movements.find((movement) => movement.id === focusMovementId && isOpenMovement(movement))
-    : undefined;
+  const focusedMovement = focusMovementId ? movements.find((movement) => movement.id === focusMovementId) : undefined;
+  const focusMovement = focusedMovement && isOpenMovement(focusedMovement) ? focusedMovement : undefined;
   const focusWardIds =
     focusMovement && isCoordinatorRoute
       ? focusMovement.acceptedUnitId
@@ -166,7 +166,9 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
   const focusWards = focusWardIds
     .map((id) => units.find((unit) => unit.id === id))
     .filter((unit): unit is NonNullable<typeof unit> => unit !== undefined);
-  const focusEd = focusMovement ? edById(focusMovement.originEdId) : undefined;
+  // Keep the focused department shortcut even after the movement closes; closed movements only
+  // lose their ward referrals from this row, matching the drawer's visibility rules.
+  const focusEd = focusedMovement ? edById(focusedMovement.originEdId) : undefined;
 
   const visibleSites = sites
     .map((site) => ({ ...site, desks: site.desks.filter((desk) => deskMatches(desk, query)) }))
@@ -219,12 +221,12 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
           ))}
         </div>
       ) : null}
-      {focusMovement && !searching ? (
+      {focusedMovement && !searching ? (
         <div className={styles.chipRow} role="group" aria-label="Patient in focus" data-testid="workstation-focus">
           <span className={styles.chipLead}>
             <Icon icon={Crosshair} size={14} />
             Patient in focus
-            <span className={styles.mono}>{movementUmrn(focusMovement, { patients, referrals, movements })}</span>
+            <span className={styles.mono}>{movementUmrn(focusedMovement, { patients, referrals, movements })}</span>
           </span>
           {focusWards.map((unit) => (
             <Link
@@ -269,6 +271,11 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
       footerClassName={styles.foot}
     >
       {top}
+      {previewMessage ? (
+        <p className={styles.empty} role="status">
+          {previewMessage}
+        </p>
+      ) : null}
       {here && !searching ? (
         <section className={styles.here} aria-label="Your desk">
           <button
@@ -331,7 +338,10 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
               className={cx(styles.stateTile, styles.preview)}
               aria-disabled="true"
               title="No screen for this role yet"
-              onClick={() => onPreview?.(name)}
+              onClick={() => {
+                if (onPreview) onPreview(name);
+                else setPreviewMessage(`${name}: Not wired in this prototype.`);
+              }}
             >
               <Icon icon={glyph} size={16} />
               <span className={styles.who}>
