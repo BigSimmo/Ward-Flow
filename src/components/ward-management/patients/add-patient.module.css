@@ -481,3 +481,180 @@
     display: none !important;
   }
 }
+
+/* ── v10 Add a patient ──────────────────────────────────────────────────────────────────────
+ * One hero band (eyebrow, title with the Draft pill, a line, three fact chips), choice rows as
+ * equal soft-cornered buttons that never wrap, and an unavailable Add patient drawn dashed rather
+ * than faded. Words stay neutral; glyphs carry tone. */
+.apHero {
+  min-width: 0;
+}
+
+.draftPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 var(--wf-s-2);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 24%, transparent);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+}
+
+.heroActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  white-space: nowrap;
+}
+
+.heroActions .d4Notice {
+  color: var(--wf-hero-ink-2);
+}
+
+.heroBar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.heroLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-hero-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.heroChips {
+  display: flex;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.heroChip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  height: var(--wf-h-sm, 28px);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+  color: var(--wf-hero-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+.heroChip b,
+.heroChip [data-testid="wf-frac"] {
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-15) / 1 var(--wf-mono);
+}
+
+.segmented.segmented {
+  display: flex;
+  align-self: stretch;
+  gap: var(--wf-s-1);
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.segmented.segmented > button {
+  flex: 1 1 auto;
+  justify-content: center;
+  min-width: 0;
+  height: 36px;
+  padding: 0 var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  overflow: hidden;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: none;
+  color: var(--wf-ink-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.segmented.segmented > button[aria-checked="true"] {
+  border-color: var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.submitOff.submitOff {
+  border: 1px dashed var(--wf-line-3);
+  background: var(--wf-surface-2);
+  box-shadow: none;
+  color: var(--wf-ink-3);
+  opacity: 1;
+}
+
+.rejection.rejection {
+  color: var(--wf-ink-1);
+}
+
+@media (max-width: 48rem) {
+  .desktopOnly {
+    display: none;
+  }
+
+  .heroActions {
+    flex-wrap: nowrap;
+  }
+
+  .heroLine {
+    display: none;
+  }
+
+  .heroChips {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--wf-s-1);
+  }
+
+  .heroChip {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    height: auto;
+    min-height: var(--wf-touch, 44px);
+    padding: 0 var(--wf-s-2);
+    overflow: hidden;
+    border: 0;
+    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+    border-radius: 0;
+    background: none;
+  }
+
+  .heroChip:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .segmented.segmented {
+    overflow-x: auto;
+  }
+
+  .segmented.segmented > button {
+    flex: 0 0 auto;
+    height: var(--wf-touch, 44px);
+  }
+}

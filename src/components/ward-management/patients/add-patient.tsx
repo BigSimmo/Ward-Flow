@@ -26,6 +26,8 @@ import {
   CardFoot,
   CardHead,
   Field,
+  Frac,
+  Hero,
   Icon,
   Segmented,
   Select,
@@ -359,39 +361,72 @@ export function AddPatientForm() {
       data-ward-rebuilt-screen="add-patient"
     >
       <main id="main-content" className={styles.main}>
-        <h1 className={styles.srOnly} id="pageTitle">
-          Add a patient
-        </h1>
-
-        <Card className={styles.topBar}>
-          <nav className={styles.topLead} aria-label="Breadcrumb navigation">
-            <Link
-              className={buttonClass({ variant: "ghost", size: "sm", className: styles.backLink })}
-              href="/mockups/ward-flow/search"
-              aria-label="Back to patient search"
-            >
-              <Icon icon={ChevronLeft} size={14} />
-              Patient search
-            </Link>
-          </nav>
-          <span className={styles.topMarker}>
-            <Icon icon={ShieldCheck} size={14} />
-            Synthetic records only
-          </span>
-          <span className={styles.topActions}>
-            {d4Notice ? (
-              <span className={styles.d4Notice} role="status" data-testid="ward-add-patient-d4-notice">
-                {d4Notice}
-              </span>
-            ) : null}
-            <Button variant="ghost" size="sm" icon={Printer} onClick={() => setD4Notice(NOT_WIRED)}>
-              Print
-            </Button>
-            <Button size="sm" onClick={() => setD4Notice(NOT_WIRED)}>
-              Save draft
-            </Button>
-          </span>
-        </Card>
+        <Hero
+          level={1}
+          className={styles.apHero}
+          eyebrow="Patients · new record"
+          title="Add a patient"
+          titleMeta={
+            <span className={styles.draftPill} data-testid="ward-add-patient-draft-pill">
+              <StatusGlyph tone="neutral" size={9} />
+              Draft
+            </span>
+          }
+          aside={
+            <span className={styles.heroActions}>
+              {d4Notice ? (
+                <span className={styles.d4Notice} role="status" data-testid="ward-add-patient-d4-notice">
+                  {d4Notice}
+                </span>
+              ) : null}
+              <Link
+                className={buttonClass({ variant: "onHero", size: "sm" })}
+                href="/mockups/ward-flow/search"
+                aria-label="Back to patient search"
+              >
+                <Icon icon={ChevronLeft} size={14} />
+                Patient search
+              </Link>
+              <Button
+                variant="onHero"
+                size="sm"
+                icon={Printer}
+                className={styles.desktopOnly}
+                onClick={() => setD4Notice(NOT_WIRED)}
+              >
+                Print
+              </Button>
+              <Button variant="light" size="sm" onClick={() => setD4Notice(NOT_WIRED)}>
+                Save draft
+              </Button>
+            </span>
+          }
+          bar={
+            <div className={styles.heroBar}>
+              <p className={styles.heroLine}>
+                <Icon icon={ShieldCheck} size={14} />
+                Identity is saved to the record. Check for an existing record before adding. Synthetic records only.
+              </p>
+              <div className={styles.heroChips} data-testid="ward-add-patient-hero-chips">
+                <span className={styles.heroChip}>
+                  <Frac
+                    done={answeredCount}
+                    total={REQUIRED_FIELDS.length}
+                    label="required fields"
+                    tone={answeredCount === REQUIRED_FIELDS.length ? "success" : undefined}
+                  />
+                  <span aria-hidden="true">required fields</span>
+                </span>
+                <span className={styles.heroChip}>
+                  <b>{matches.length}</b> possible {matches.length === 1 ? "duplicate" : "duplicates"}
+                </span>
+                <span className={styles.heroChip}>
+                  <b>{patients.length}</b> records checked
+                </span>
+              </div>
+            </div>
+          }
+        />
 
         <div className={styles.layout}>
           <form className={styles.form} onSubmit={handleSubmit} data-testid="ward-add-patient-form">
