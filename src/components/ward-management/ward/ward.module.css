@@ -4613,7 +4613,7 @@
 }
 
 .morningRollupPill {
-  font-size: 10.5px;
+  font-size: var(--wf-fs-12);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -5780,7 +5780,7 @@
   border: 1px solid var(--line);
   padding: 2px 8px;
   border-radius: var(--pill, 999px);
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   color: var(--muted);
 }
@@ -5804,7 +5804,7 @@
   border: 1px solid var(--line);
   border-radius: var(--pill, 999px);
   padding: 2px 8px;
-  font-size: 11.5px;
+  font-size: var(--wf-fs-12);
   font-weight: 500;
   color: var(--ink-soft);
 }
@@ -5835,7 +5835,7 @@
 }
 
 .factDt {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
