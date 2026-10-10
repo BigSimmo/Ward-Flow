@@ -231,16 +231,16 @@ describe("recording that a patient is away at an emergency department, and back"
     expect(next.rejections[0]?.reason).toContain("only somebody occupying a bed");
   });
 
-  it("refuses every role but the ward that holds the bed", () => {
+  it("refuses every role but the ward that holds the bed and the coordinator", () => {
     const state = seeded();
     const person = anOccupantOnTheWard(state);
 
     // Read from the table so this cannot pass by naming a role list of its own; the table itself is
     // pinned by hand in `tests/ward-event-permissions.test.ts`.
-    expect([...EVENT_ROLE.RECORD_AWAY_AT_EMERGENCY_DEPARTMENT]).toEqual(["ward"]);
-    expect([...EVENT_ROLE.RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT]).toEqual(["ward"]);
+    expect([...EVENT_ROLE.RECORD_AWAY_AT_EMERGENCY_DEPARTMENT]).toEqual(["ward", "coordinator"]);
+    expect([...EVENT_ROLE.RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT]).toEqual(["ward", "coordinator"]);
 
-    for (const role of ["coordinator", "ed", "officer", "community", "demo"] as const) {
+    for (const role of ["ed", "officer", "community", "demo"] as const) {
       const next = wardFlowReducer(state, {
         type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
         role,

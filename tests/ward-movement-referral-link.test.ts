@@ -493,11 +493,12 @@ describe("RECORD_NO_REFERRAL records that nobody referred this patient", () => {
     expect(after.rejections[0].reason).toContain("closed movement");
   });
 
-  it("refuses a coordinator, which cannot observe the front door", () => {
+  it("refuses a transport officer, which cannot observe the front door", () => {
+    // The coordinator may take every action (Josh, 10 Oct 2026), so it is no longer the refused role.
     const { state, movement } = runtimeMovement();
     const after = wardFlowReducer(state, {
       type: "RECORD_NO_REFERRAL",
-      role: "coordinator",
+      role: "officer",
       now: NOW + 10,
       movementId: movement.id,
     });
