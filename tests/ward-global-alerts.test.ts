@@ -8,7 +8,9 @@ import {
   isPullNowOverdue,
 } from "../src/components/ward-management/alerts/ward-broadcast-model";
 import type { Instant } from "../src/components/ward-management/ward-clock";
+import { RELEASE_PULL_REASONS } from "../src/components/ward-management/ward-change-reasons";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
+import { isValidStoredWardFlowState } from "../src/components/ward-management/ward-flow-storage-validation";
 import { seedWardFlowState, wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
@@ -90,6 +92,45 @@ describe("Pull now (global alerts, 10 Oct 2026)", () => {
     );
     const answered = reply(raised, {});
     expect(bannerEntriesForDesk(answered.broadcastAlerts, answered.movements, asked, NOW)[0].tone).toBe("waiting");
+  });
+
+  it("ends for good once the patient is pulled, even if the pull is then released", () => {
+    const raised = raise(seedWardFlowState(), "WF-003");
+    const pulled = wardFlowReducer(raised, {
+      type: "PULL_PATIENT",
+      role: "ward",
+      now: NOW,
+      movementId: "WF-003",
+      unitId: "rph-adult-secure",
+    });
+    expect(pulled.movements.find((m) => m.id === "WF-003")?.stage).toBe("pulled");
+    const released = wardFlowReducer(pulled, {
+      type: "RELEASE_PULL",
+      role: "ward",
+      now: NOW,
+      movementId: "WF-003",
+      reason: RELEASE_PULL_REASONS[0],
+      actingUnitId: "rph-adult-secure",
+    } as WardFlowEvent);
+    expect(released.movements.find((m) => m.id === "WF-003")?.stage).toBe("accepted_awaiting_bed");
+    const later = (NOW + PULL_NOW_ANSWER_MINUTES) as Instant;
+    const coordinator = { role: "coordinator", id: COORDINATOR_DESK_ACKNOWLEDGER_ID };
+    expect(bannerEntriesForDesk(released.broadcastAlerts, released.movements, coordinator, later)).toEqual([]);
+    expect(reply(released, {}).broadcastAlerts[0].replies).toHaveLength(0);
+    expect(raise(released, "WF-003").broadcastAlerts).toHaveLength(2);
+  });
+
+  it("refuses to restore a save whose reply carries an unknown answer or reason", () => {
+    const answered = reply(raise(seedWardFlowState(), "WF-003"), { answer: "cannot", reason: "no_suitable_bed" });
+    const stored = JSON.parse(JSON.stringify(answered)) as State;
+    expect(isValidStoredWardFlowState(stored)).toBe(true);
+    const withReply = (fields: Record<string, unknown>) => {
+      const copy = JSON.parse(JSON.stringify(stored));
+      Object.assign(copy.broadcastAlerts[0].replies[0], fields);
+      return copy;
+    };
+    expect(isValidStoredWardFlowState(withReply({ reason: "typed note" }))).toBe(false);
+    expect(isValidStoredWardFlowState(withReply({ answer: "maybe" }))).toBe(false);
   });
 
   it("stays out of the directive slot", () => {

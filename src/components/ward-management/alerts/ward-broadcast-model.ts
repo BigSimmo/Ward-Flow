@@ -1,6 +1,6 @@
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
-import type { ReferralDeclineReason } from "@/components/ward-management/ward-model";
+import type { Movement, ReferralDeclineReason } from "@/components/ward-management/ward-model";
 
 export type BroadcastSeverity = "critical" | "warning" | "advisory";
 
@@ -267,6 +267,23 @@ export function latestReplies(alert: BroadcastAlert): Map<string, BroadcastReply
  * A Pull now nobody asked has answered by its answer time. It goes back to the coordinator as act
  * now. Derived, never stored, so it cannot disagree with the replies.
  */
+/** The stages before a patient is pulled. Pull now means nothing once the bed is pulled. */
+export const PULL_NOW_LIVE_STAGES: readonly Movement["stage"][] = [
+  "placement_requested",
+  "destination_review",
+  "accepted_awaiting_bed",
+];
+
+/**
+ * The patient is still waiting for the bed this Pull now asked for. A pull recorded since the alert
+ * was sent ends it for good, so a later RELEASE_PULL back to `accepted_awaiting_bed` does not
+ * revive an answered, overdue alert; the coordinator sends a fresh one if it is still needed.
+ */
+export function pullNowStillWaiting(alert: BroadcastAlert, movement: Movement | undefined): boolean {
+  if (!movement || movement.closure || !PULL_NOW_LIVE_STAGES.includes(movement.stage)) return false;
+  return !movement.stageChanges.some((change) => change.to === "pulled" && change.at >= alert.dispatchedAt);
+}
+
 export function isPullNowOverdue(alert: BroadcastAlert, now: Instant): boolean {
   if (broadcastKind(alert) !== "pull_now" || !isAlertActive(alert, now) || alert.answerBy === undefined) return false;
   if (now < alert.answerBy) return false;

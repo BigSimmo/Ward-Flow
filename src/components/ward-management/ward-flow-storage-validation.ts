@@ -19,7 +19,9 @@ import {
   BED_RELEASE_STATES,
   REFERRAL_ADDRESSING_STATES,
   ABSENCE_STEPS,
+  REFERRAL_DECLINE_REASONS,
 } from "./ward-model";
+import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { WARD_SCENARIOS } from "./ward-scenarios";
@@ -726,8 +728,17 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       (row.replies !== undefined &&
         (!Array.isArray(row.replies) ||
           !(row.replies as RecordValue[]).every(
-            (reply) => object(reply) && text(reply.unitId) && text(reply.answer) && finite(reply.at),
+            // The banner looks up each answer and reason label, so an unknown one is refused here.
+            (reply) =>
+              object(reply) &&
+              text(reply.unitId) &&
+              Object.hasOwn(BROADCAST_ANSWER_LABELS, reply.answer as string) &&
+              finite(reply.at) &&
+              (reply.reason === undefined || REFERRAL_DECLINE_REASONS.includes(reply.reason as never)) &&
+              (reply.beds === undefined || finite(reply.beds)) &&
+              (reply.readyAt === undefined || finite(reply.readyAt)),
           ))) ||
+      (row.movementId !== undefined && !text(row.movementId)) ||
       (row.targetUnitIds !== undefined && !strings(row.targetUnitIds)) ||
       (row.answerBy !== undefined && !finite(row.answerBy))
     )

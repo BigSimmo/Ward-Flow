@@ -22,6 +22,8 @@ import {
   COORDINATOR_DESK_ACKNOWLEDGER_ID,
   isAlertActive,
   latestReplies,
+  PULL_NOW_LIVE_STAGES,
+  pullNowStillWaiting,
   type BroadcastAlert,
   type BroadcastReply,
 } from "./ward-broadcast-model";
@@ -36,9 +38,6 @@ function findUnit(state: WardFlowState, unitId: string): Unit | undefined {
 function isRealDesk(state: WardFlowState, unitId: string): boolean {
   return Boolean(findUnit(state, unitId) || edById(unitId));
 }
-
-/** The stages before a patient is pulled. Pull now means nothing once the bed is pulled. */
-const PULL_NOW_STAGES = ["placement_requested", "destination_review", "accepted_awaiting_bed"];
 
 /**
  * Handles broadcast alert events:
@@ -188,14 +187,17 @@ export function reduceBroadcastAlertEvent(
       if (!movement) {
         return reject(state, event, `RAISE_PULL_NOW movementId ${event.movementId} not found`);
       }
-      if (movement.closure || !PULL_NOW_STAGES.includes(movement.stage)) {
+      if (movement.closure || !PULL_NOW_LIVE_STAGES.includes(movement.stage)) {
         return reject(state, event, "RAISE_PULL_NOW needs a patient still waiting for a bed");
       }
       const existingAlerts = Array.isArray(state.broadcastAlerts) ? state.broadcastAlerts : [];
       if (
         existingAlerts.some(
           (alert) =>
-            broadcastKind(alert) === "pull_now" && alert.movementId === movement.id && isAlertActive(alert, event.now),
+            broadcastKind(alert) === "pull_now" &&
+            alert.movementId === movement.id &&
+            isAlertActive(alert, event.now) &&
+            pullNowStillWaiting(alert, movement),
         )
       ) {
         return reject(state, event, "RAISE_PULL_NOW already live for this patient");
@@ -243,7 +245,11 @@ export function reduceBroadcastAlertEvent(
       if (!target) {
         return reject(state, event, `REPLY_BROADCAST_ALERT alertId ${event.alertId} not found`);
       }
-      if (!isAlertActive(target, event.now)) {
+      const pullNowMovement = state.movements.find((candidate) => candidate.id === target.movementId);
+      if (
+        !isAlertActive(target, event.now) ||
+        (broadcastKind(target) === "pull_now" && !pullNowStillWaiting(target, pullNowMovement))
+      ) {
         return reject(state, event, `REPLY_BROADCAST_ALERT alertId ${event.alertId} is no longer active`);
       }
       const kind = broadcastKind(target);

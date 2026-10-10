@@ -14,25 +14,21 @@ import {
   isAlertActive,
   isPullNowOverdue,
   latestReplies,
+  pullNowStillWaiting,
   type BroadcastAlert,
   type BroadcastReply,
 } from "./ward-broadcast-model";
 
 export type AlertDesk = { role: string; id: string | null };
 
-/** The stages a Pull now still means something in. Once pulled, the alert has done its job. */
-const PULL_NOW_LIVE_STAGES: readonly Movement["stage"][] = [
-  "placement_requested",
-  "destination_review",
-  "accepted_awaiting_bed",
-];
-
 /** Active, and for a Pull now, the patient is still waiting for the bed. */
 export function isAlertLive(alert: BroadcastAlert, movements: readonly Movement[], now: Instant): boolean {
   if (!isAlertActive(alert, now)) return false;
   if (broadcastKind(alert) !== "pull_now") return true;
-  const movement = movements.find((candidate) => candidate.id === alert.movementId);
-  return Boolean(movement && !movement.closure && PULL_NOW_LIVE_STAGES.includes(movement.stage));
+  return pullNowStillWaiting(
+    alert,
+    movements.find((candidate) => candidate.id === alert.movementId),
+  );
 }
 
 /** `act_now` is the only red: a Pull now waiting on this desk, or one nobody answered in time. */
