@@ -1179,6 +1179,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // The value must be a real member of OVERRIDE_REASONS, because it is asserted back on screen.
     const reasonText = "Clinical urgency outweighs the mismatch";
     await reasonField.selectOption(reasonText);
+    // v10 pass 3: a reason alone records nothing; the second sign-off tick is also required.
+    await submitButton.click();
+    await expect(shortlist).not.toContainText("Overridden by a human coordinator");
+    await shortlist.getByTestId("ward-shortlist-override-second-sign-off").check();
     await submitButton.click();
     await expect(shortlist).toContainText("Overridden by a human coordinator");
     await expect(shortlist).toContainText(reasonText);
@@ -1313,6 +1317,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // OD-3: a fixed picker, not free text. This override is REFUSED by the reducer, so the reason
     // is never rendered and any real option serves — but it must still be a real one.
     await shortlist.getByLabel(/Reason for overriding/).selectOption("The bed information is known to be out of date");
+    await shortlist.getByTestId("ward-shortlist-override-second-sign-off").check();
     await shortlist.getByRole("button", { name: "Record override" }).click();
 
     // The override never claims success — it was refused, and nothing here may say otherwise.

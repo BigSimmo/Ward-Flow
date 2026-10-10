@@ -23,13 +23,11 @@ import { wardCategory } from "@/components/ward-management/ward-bed-designation"
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
-  INFORMATIONAL_GATES,
   candidateReason,
   eligibleCandidatesAmong,
   restrictionNotice,
   shortlistCandidates,
   wardServiceOrder,
-  type ShortlistCandidate,
 } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, HealthService, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -41,6 +39,7 @@ import {
 import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 
 import { hubStatusText } from "./flow-diagram";
+import { fitGroups } from "./home-fit";
 import styles from "./home.module.css";
 
 const LEGEND: LegendItem[] = [
@@ -60,8 +59,10 @@ type HomeBedflowProps = {
   now: Instant;
   selectedUnitId: string | undefined;
   onSelectUnit: (unitId: string) => void;
-  /** Offer: chooses this ward in the open shortlist for the selected movement. */
+  /** Offer: refers this patient to this ward, with an Undo window on the toast. */
   onOffer: (unitId: string) => void;
+  /** A ward offered inside its Undo window: the row already reads Offered. */
+  pendingOfferUnitId?: string;
   parallelReferralCap: number;
   /** Discharges held up today (`wardNavCounts().discharges`), for the foot. */
   dischargesHeldUp: number;
@@ -69,19 +70,6 @@ type HomeBedflowProps = {
 };
 
 type Candidate = ReturnType<typeof eligibleCandidatesAmong>[number];
-
-/** Where this patient could go, across the whole network: a ward that fits with a bed now, or one
- *  that fits in every way except that it has no allocatable bed. */
-type FitKind = "bed" | "no-bed";
-
-function fitKind(candidate: ShortlistCandidate): FitKind | undefined {
-  // Only a ward the eligibility rules pass counts as a fit, so the count, the chips and the status
-  // line below agree. A ward that declined this patient before fails `prior_decline` and stays out.
-  if (candidate.availability === "eligible") return "bed";
-  if (candidate.availability !== "unavailable") return undefined;
-  const failing = candidate.verdict.gates.filter((gate) => !gate.pass && !INFORMATIONAL_GATES.includes(gate.gate));
-  return failing.length > 0 && failing.every((gate) => gate.gate === "allocatable_bed") ? "no-bed" : undefined;
-}
 
 function unitKind(unit: Unit) {
   const category = wardCategory(unit);
@@ -110,6 +98,7 @@ export function HomeBedflow({
   selectedUnitId,
   onSelectUnit,
   onOffer,
+  pendingOfferUnitId,
   parallelReferralCap,
   dischargesHeldUp,
   service,
@@ -124,18 +113,22 @@ export function HomeBedflow({
   const bestFit: Candidate | undefined = fits[0];
   const [fitsFirst, setFitsFirst] = useState(false);
 
-  // Every ward in the network that fits this patient, not only the three the routed shortlist
-  // keeps: green where a bed is ready, amber where the ward fits but has no bed now.
-  const options = useMemo(() => {
-    if (!movement) return [];
-    return shortlistCandidates(movement, units, now)
-      .map((candidate) => ({ unit: candidate.unit, fit: fitKind(candidate) }))
-      .filter((option): option is { unit: Unit; fit: FitKind } => option.fit !== undefined)
-      .sort((a, b) => Number(a.fit === "no-bed") - Number(b.fit === "no-bed"));
-  }, [movement, units, now]);
-  const fitByUnitId = useMemo(() => new Map(options.map((option) => [option.unit.id, option.fit])), [options]);
-  const bedFitCount = options.filter((option) => option.fit === "bed").length;
-  const noBedCount = options.length - bedFitCount;
+  // FitHighlight (`home-fit.ts`): every ward in the network that fits this patient, not only the
+  // three the routed shortlist keeps. Green where a bed is ready, amber where the ward fits but has
+  // no bed now. Placement counts the same groups, so the two columns agree.
+  const fitGroupsForMovement = useMemo(
+    () => (movement ? fitGroups(shortlistCandidates(movement, units, now)) : undefined),
+    [movement, units, now],
+  );
+  const fitByUnitId = useMemo(() => {
+    const map = new Map<string, "bed" | "no-bed">();
+    for (const candidate of fitGroupsForMovement?.bed ?? []) map.set(candidate.unit.id, "bed");
+    for (const candidate of fitGroupsForMovement?.["no-bed"] ?? []) map.set(candidate.unit.id, "no-bed");
+    return map;
+  }, [fitGroupsForMovement]);
+  const bedFitCount = fitGroupsForMovement?.bed.length ?? 0;
+  const noBedCount = fitGroupsForMovement?.["no-bed"].length ?? 0;
+  const reviewCount = fitGroupsForMovement?.review.length ?? 0;
 
   const occupancy = useMemo(
     () => deriveServiceBedAlerts(units, bedReleases, undefined, movements, now),
@@ -298,7 +291,12 @@ export function HomeBedflow({
           ) : null}
         </button>
         <span className={styles.unitAction}>
-          {fit || optionFit === "bed" ? (
+          {isReferred || pendingOfferUnitId === unit.id ? (
+            <span className={styles.unitOffered} data-testid={`ward-bedflow-offered-${unit.id}`}>
+              <StatusGlyph tone="info" size={9} />
+              Offered
+            </span>
+          ) : fit || optionFit === "bed" ? (
             <Button size="sm" variant="tint" onClick={() => onOffer(unit.id)} aria-label={`Offer ${unit.name}`}>
               Offer
             </Button>
@@ -328,13 +326,24 @@ export function HomeBedflow({
       />
       {movement && who ? (
         <div className={styles.forStrip} data-testid="ward-bedflow-subject">
+          {/* FitHighlight summary (v10 Home): "Jasper Embleton ✓ 7 fit ● 0 no bed ○ 5 review", the
+              same three groups Placement lists. Words neutral; the glyphs carry the tone. */}
           <div className={styles.forLine}>
-            <span className={styles.forLabel}>For</span>
-            <strong className={styles.forName}>{who.formalName}</strong>
+            <span className="sr-only">For</span>
+            <strong className={styles.forName}>{who.displayName}</strong>
             <span className={styles.forFits}>
-              <StatusGlyph tone={bedFitCount > 0 ? "success" : noBedCount > 0 ? "warning" : "danger"} size={9} />
-              {bedFitCount === 1 ? "1 ward fits" : `${bedFitCount} wards fit`}
-              {noBedCount > 0 ? <span className={styles.forNoBed}>{` · ${noBedCount} no bed`}</span> : null}
+              <span className={styles.forCount}>
+                <StatusGlyph tone="success" size={9} />
+                <span className={styles.mono}>{bedFitCount}</span> fit
+              </span>
+              <span className={styles.forCount}>
+                <StatusGlyph tone="warning" size={9} />
+                <span className={styles.mono}>{noBedCount}</span> no bed
+              </span>
+              <span className={styles.forCount}>
+                <StatusGlyph tone="neutral" size={9} />
+                <span className={styles.mono}>{reviewCount}</span> review
+              </span>
             </span>
           </div>
           {/* Where this patient stands, once a destination or referral is recorded, or when no
