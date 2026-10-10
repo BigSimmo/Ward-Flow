@@ -4,8 +4,9 @@ import { ChevronRight, ClipboardList, Download, FileText, Fingerprint, History, 
 import Link from "next/link";
 import {
   useContext,
+  useEffect,
+  useRef,
   useState,
-  useSyncExternalStore,
   type ReactNode,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
@@ -30,6 +31,7 @@ import { LEAVING_DESTINATIONS } from "./ward-admissions";
 import { legalFormReceiptCorrectionReasonLabels } from "./ward-change-reasons";
 import { snoozeReasonLabel } from "./ward-inbox-snooze";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
+import { UNDO_TOAST_MS } from "./ward-operational-defaults";
 import { movementHref, unitHref } from "./shell/ward-facade";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF, WEEKLY_REPORT_HREF } from "./reports/report-routes";
 import { isOpen } from "./ward-derivations";
@@ -69,6 +71,8 @@ import {
   cx,
   tableClasses,
   type WfTone,
+  useIsPhone,
+  useToast,
 } from "@/components/wf";
 
 import thirdEdition from "./governance-third-edition.module.css";
@@ -175,7 +179,23 @@ export function GovernanceAccessRecordPanel() {
 type GovernanceApi = Pick<
   ReturnType<typeof useWardFlow>,
   "worldGeneration" | "readAuditEvents" | "readAuditReviews" | "dispatch" | "admissions" | "bedReleases"
->;
+> &
+  Partial<Pick<ReturnType<typeof useWardFlow>, "readGovernanceAuditEvents" | "rejections">>;
+
+/** Governance reads the captured log plus the synthetic seeded entries (pass 2 engine), so the
+ *  Review tab has something to review on a fresh seed. Older hand-built contexts fall back. */
+/** The toast lives in the route layout; a screen rendered alone (tests, previews) has none. */
+function useOptionalToast(): ReturnType<typeof useToast> | null {
+  try {
+    return useToast();
+  } catch {
+    return null;
+  }
+}
+
+function readGovernanceEvents(api: GovernanceApi | undefined) {
+  return api?.readGovernanceAuditEvents?.(actor) ?? api?.readAuditEvents(actor);
+}
 type WorkbenchProps = {
   movements: Movement[];
   units: Unit[];
@@ -702,27 +722,11 @@ function GapPill({ cell, label }: { cell: GapCell; label: string }) {
   return <Frac done={cell.done} total={cell.total} label={`${label} recorded`} tone={tone} />;
 }
 
-const PHONE_QUERY = "(max-width: 48rem)";
-
-/** Phone is its own layout (v10): under 48rem the screen renders a different tree. */
-function useIsPhone(): boolean {
-  return useSyncExternalStore(
-    (notify) => {
-      if (typeof window.matchMedia !== "function") return () => undefined;
-      const query = window.matchMedia(PHONE_QUERY);
-      query.addEventListener?.("change", notify);
-      return () => query.removeEventListener?.("change", notify);
-    },
-    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
-    () => false,
-  );
-}
-
 export function GovernanceWorkbench(props: WorkbenchProps) {
   // The open tab survives a demo reset; everything else in the session starts again. It opens on
   // Review when something waits (v10 mockup), and on Gaps by site when the session holds nothing.
   const [tab, setTab] = useState<GovernanceTab>(() => {
-    const read = props.api?.readAuditEvents(actor);
+    const read = readGovernanceEvents(props.api);
     const waiting = read?.status === "allowed" && read.value.some((event) => event.category !== "review");
     return waiting ? "review" : "gaps";
   });
@@ -765,7 +769,7 @@ function GovernanceSession({
   const gate = useRoleGate();
   const reviewGate = gate("REVIEW_AUDIT_EVENT");
 
-  const eventRead = api?.readAuditEvents(actor);
+  const eventRead = readGovernanceEvents(api);
   const reviewRead = api?.readAuditReviews(actor);
   const allowed = eventRead?.status === "allowed" && reviewRead?.status === "allowed";
   const events = eventRead?.status === "allowed" ? eventRead.value : [];
@@ -814,6 +818,58 @@ function GovernanceSession({
     savedReview?.at === pending?.at;
   const reviewPending = pending !== null && reviewAttempt === undefined;
   const canReview = allowed && selected !== null && selected.category !== "review" && !reviewPending;
+
+  // Undo (pass 2 engine): once a review is confirmed, a toast offers Undo for a few seconds.
+  // Undo dispatches `UNDO_AUDIT_REVIEW` with the new review's id; a refusal shows its reason.
+  const toast = useOptionalToast();
+  const toastedReviewRef = useRef<string | null>(null);
+  const undoWatchRef = useRef<{ rejections: number; reviewId: string } | null>(null);
+  const undoGate = gate("UNDO_AUDIT_REVIEW");
+  const undoGateReason = undoGate.allowed ? undefined : undoGate.reason;
+  const rejectionCount = api?.rejections?.length ?? 0;
+  const newestRejection = api?.rejections?.at(-1);
+  const reviewIds = reviews.map((review) => review.id).join(" ");
+  const savedReviewId = confirmed ? (savedReview?.id ?? null) : null;
+  const savedDecision = pending?.decision;
+  useEffect(() => {
+    if (!toast || !api || savedReviewId === null || toastedReviewRef.current === savedReviewId) return;
+    toastedReviewRef.current = savedReviewId;
+    const generation = api.worldGeneration;
+    toast.push({
+      tone: "success",
+      title: `${savedDecision ? reviewLabels[savedDecision] : "Review"} recorded`,
+      body: undoGateReason,
+      undo: undoGateReason
+        ? undefined
+        : {
+            durationMs: UNDO_TOAST_MS,
+            onUndo: () => {
+              undoWatchRef.current = { rejections: rejectionCount, reviewId: savedReviewId };
+              api.dispatch({
+                type: "UNDO_AUDIT_REVIEW",
+                role: "coordinator",
+                now,
+                reviewId: savedReviewId,
+                expectedGeneration: generation,
+              });
+              setPending(null);
+            },
+          },
+    });
+  }, [api, now, rejectionCount, savedDecision, savedReviewId, toast, undoGateReason]);
+  useEffect(() => {
+    const watch = undoWatchRef.current;
+    if (!watch) return;
+    if (rejectionCount > watch.rejections) {
+      undoWatchRef.current = null;
+      const reason = newestRejection?.reason ?? "The record changed.";
+      setAnnouncement(`Review not undone. ${reason}`);
+      toast?.push({ tone: "warning", title: "Review not undone", body: reason });
+    } else if (!reviewIds.split(" ").includes(watch.reviewId)) {
+      undoWatchRef.current = null;
+      setAnnouncement("Review undone.");
+    }
+  }, [newestRejection, rejectionCount, reviewIds, toast]);
 
   // The supplied snapshot, so every tab reads the same movements and units.
   const sites = siteGaps(flow ? { ...flow, movements, units } : null, now);

@@ -1,17 +1,6 @@
 "use client";
 
-import {
-  Fragment,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { Fragment, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Clock, Copy, Mail, MapPin, Printer, Search, Star, Users } from "lucide-react";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
 import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -33,6 +22,7 @@ import {
   TextInput,
   cx,
   tableClasses,
+  useIsPhone,
 } from "@/components/wf";
 import {
   CHECK_DUE_DAYS,
@@ -93,8 +83,6 @@ const COVER_AT: { id: string; label: string }[] = [
   { id: "720", label: "12:00" },
 ];
 
-const PHONE_QUERY = "(max-width: 48rem)";
-
 const JUMP_LABEL: Record<string, string> = {
   "North Metro": "NM",
   "East Metro": "EM",
@@ -103,20 +91,6 @@ const JUMP_LABEL: Record<string, string> = {
   WACHS: "WA",
   Private: "Pvt",
 };
-
-/** Phone is its own layout, not a reflow: the screen renders a different tree under 48rem. */
-function useIsPhone(): boolean {
-  return useSyncExternalStore(
-    (notify) => {
-      if (typeof window.matchMedia !== "function") return () => undefined;
-      const query = window.matchMedia(PHONE_QUERY);
-      query.addEventListener?.("change", notify);
-      return () => query.removeEventListener?.("change", notify);
-    },
-    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
-    () => false,
-  );
-}
 
 /** My list saved by the earlier roster page held its role ids; each maps to the same directory line. */
 const LEGACY_FAVOURITE_IDS: Record<string, string> = {

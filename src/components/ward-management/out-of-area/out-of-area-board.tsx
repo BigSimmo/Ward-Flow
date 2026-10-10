@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Printer, Route, Search, X } from "lucide-react";
 
@@ -20,6 +20,7 @@ import {
   cx,
   tableClasses,
   type WfTone,
+  useIsPhone,
 } from "@/components/wf";
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -57,6 +58,7 @@ import {
   type DaysAwayGroupId,
   type RepatDraft,
   type ReturnStatus,
+  bedMeetingComparison,
 } from "./out-of-area-model";
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
 import { ReturnPlan, TravelIcon, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
@@ -87,22 +89,6 @@ import styles from "./out-of-area-board.module.css";
  * **Return status** reads the coordinator's recorded `RECORD_REPATRIATION` first, then the page's own
  * unsaved draft. Drafts live in React state only and are never written to browser storage.
  */
-
-const PHONE_QUERY = "(max-width: 48rem)";
-
-/** Phone is its own layout, not a reflow: the screen renders a different tree under 48rem. */
-function useIsPhone(): boolean {
-  return useSyncExternalStore(
-    (notify) => {
-      if (typeof window.matchMedia !== "function") return () => undefined;
-      const query = window.matchMedia(PHONE_QUERY);
-      query.addEventListener?.("change", notify);
-      return () => query.removeEventListener?.("change", notify);
-    },
-    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
-    () => false,
-  );
-}
 
 function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
   if (info.patient?.id) {
@@ -145,6 +131,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const repatriations: RepatriationRecord[] = liveRepatriations ?? [];
 
   const { entries, notBanded } = outOfAreaLedger(admissions ?? liveAdmissions, units, now);
+  const meeting = bedMeetingComparison(admissions ?? liveAdmissions, units, now);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, RepatDraft>>({});
@@ -511,6 +498,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             onSelect={(id) => setSelectedId(id)}
             onClose={() => setSelectedId(null)}
             nextUpId={nextUp?.admission.id}
+            since={
+              <>
+                <DeltaTwin was={meeting.away} now={entries.length} at={meeting.at} /> since the{" "}
+                {formatInstant(meeting.at)} bed meeting · <b className={styles.mono}>{bedDays}</b> bed days
+              </>
+            }
             onCopy={copySummary}
             toolNote={toolNote}
             renderPlan={(entry) => renderPlan(entry, undefined, "ward-out-of-area-phone-plan")}
@@ -569,6 +562,17 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           title={`${entries.length} away from home`}
           aside={
             <span className={styles.heroActs}>
+              <span className={styles.since} data-testid="ward-out-of-area-since">
+                <span className={styles.sinceLabel}>Since the {formatInstant(meeting.at)} bed meeting</span>
+                <span className={styles.sinceTwin}>
+                  <DeltaTwin was={meeting.away} now={entries.length} at={meeting.at} />
+                  <span>away</span>
+                </span>
+                <span className={styles.sinceTwin}>
+                  <DeltaTwin was={meeting.passed} now={countOf("due")} at={meeting.at} />
+                  <span>date passed</span>
+                </span>
+              </span>
               <LiveChip state="live" onHero />
             </span>
           }
@@ -1104,4 +1108,28 @@ export function sinceArrivalLabel(entry: OutOfAreaEntry, now: Instant): string {
   if (days === null) return "Arrival not recorded";
   if (days === 0) return "Under a day";
   return `${days} ${days === 1 ? "day" : "days"}`;
+}
+
+/**
+ * A delta twin (v10): two small bars, then and now, and the change in words. Reads as
+ * "4 at the 08:30 bed meeting, 5 now". Page-local until a shared twin exists.
+ */
+export function DeltaTwin({ was, now, at }: { was: number; now: number; at: Instant }) {
+  const most = Math.max(was, now, 1);
+  const height = (value: number) => Math.max(2, (value / most) * 12);
+  const change = now - was;
+  return (
+    <span
+      className={styles.twin}
+      role="img"
+      aria-label={`${was} at the ${formatInstant(at)} bed meeting, ${now} now`}
+      data-testid="ward-out-of-area-twin"
+    >
+      <svg viewBox="0 0 10 12" aria-hidden="true">
+        <rect x="0" y={12 - height(was)} width="4" height={height(was)} rx="1" />
+        <rect data-now="true" x="6" y={12 - height(now)} width="4" height={height(now)} rx="1" />
+      </svg>
+      {change === 0 ? "no change" : `${change > 0 ? "+" : "\u2212"}${Math.abs(change)}`}
+    </span>
+  );
 }

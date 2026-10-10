@@ -1444,3 +1444,14 @@ button.check[aria-pressed="true"] {
     outline: 2px solid Highlight;
   }
 }
+
+/* Phone (v10): the views as a full-width segmented control with 44px touch targets. */
+.phoneTabs {
+  width: 100%;
+}
+
+.phoneTabs [role="radio"] {
+  flex: 1 1 0;
+  justify-content: center;
+  min-height: var(--wf-touch);
+}

@@ -18,6 +18,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { OVERRIDE_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardModeWorkspace } from "@/components/ward-management/ward-management-modes";
+import { ToastProvider } from "@/components/wf";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const REFERABLE_MOVEMENT = (() => {
@@ -86,15 +87,28 @@ function DemoResetter() {
   );
 }
 
-function renderGovernance(includeOverrideRecorder = false) {
-  return render(
+function renderGovernance(includeOverrideRecorder = false, withToasts = false) {
+  const tree = (
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardModeWorkspace mode="governance" />
       <UrgencyChanger movementId="WF-002" />
       {includeOverrideRecorder ? <OverrideRecorder /> : null}
       <DemoResetter />
-    </WardFlowProvider>,
+    </WardFlowProvider>
   );
+  return render(withToasts ? <ToastProvider>{tree}</ToastProvider> : tree);
+}
+
+/**
+ * Pass 2 engine: Governance reads `readGovernanceAuditEvents`, so six synthetic seeded entries
+ * (`audit-seed-N`) sit beside this session's captured log. This picks the captured row.
+ */
+function capturedRow(register: HTMLElement, name: RegExp): HTMLElement {
+  const row = within(register)
+    .getAllByRole("button", { name })
+    .find((button) => !button.getAttribute("data-audit-row")?.startsWith("audit-seed"));
+  if (!row) throw new Error(`No captured row named ${name}`);
+  return row;
 }
 
 /** The captured-event register sits on the Audit trail tab since the Tabs build (9 Oct 2026). */
@@ -119,7 +133,7 @@ describe("GovernanceView", () => {
     );
     openAuditTrail();
     const register = screen.getByRole("region", { name: "Captured events" });
-    fireEvent.click(within(register).getByRole("button", { name: /Refer to wards/i }));
+    fireEvent.click(capturedRow(register, /Refer to wards/i));
     const detail = screen.getByTestId("ward-governance-override-detail");
     expect(detail).toHaveTextContent(OVERRIDE_REASONS[1]);
     expect(detail).toHaveTextContent(/Override fact recorded\s*Yes/);
@@ -134,7 +148,7 @@ describe("GovernanceView", () => {
 
     openAuditTrail();
     const register = screen.getByRole("region", { name: "Captured events" });
-    const overrideEvent = within(register).getByRole("button", { name: /Refer to wards/i });
+    const overrideEvent = capturedRow(register, /Refer to wards/i);
     expect(overrideEvent).toHaveTextContent("Accepted");
     expect(overrideEvent).toHaveTextContent("Flow coordinator");
     expect(overrideEvent).toHaveTextContent("Unreviewed");
@@ -159,7 +173,7 @@ describe("GovernanceView", () => {
     expect(recordedReview).toHaveTextContent("Reviewed");
     expect(recordedReview).toHaveTextContent("10:42 · Flow coordinator");
 
-    const reviewEvent = within(register).getByRole("button", { name: /Review event/i });
+    const reviewEvent = capturedRow(register, /Review event/i);
     expect(reviewEvent).toHaveTextContent("Accepted");
     expect(reviewEvent).toHaveTextContent("Review attempt");
     fireEvent.click(reviewEvent);
@@ -171,18 +185,52 @@ describe("GovernanceView", () => {
     expect(within(reviewPanel).getByRole("button", { name: "Follow-up" })).toBeDisabled();
   });
 
+  it("seeds synthetic review events on a fresh session so Review has work (pass 2 engine)", () => {
+    renderGovernance();
+    openAuditTrail();
+    const register = screen.getByRole("region", { name: "Captured events" });
+    expect(register.querySelectorAll('[data-audit-row^="audit-seed"]').length).toBeGreaterThan(0);
+  });
+
+  it("offers Undo on the review toast and takes the review back with UNDO_AUDIT_REVIEW", () => {
+    renderGovernance(true, true);
+    fireEvent.click(screen.getByRole("button", { name: "record governance override" }));
+    openAuditTrail();
+    const register = screen.getByRole("region", { name: "Captured events" });
+    const overrideEvent = capturedRow(register, /Refer to wards/i);
+    fireEvent.click(overrideEvent);
+    const reviewPanel = screen.getByTestId("ward-governance-decision-record");
+    fireEvent.click(within(reviewPanel).getByRole("button", { name: "Reviewed" }));
+    expect(overrideEvent).toHaveTextContent("Reviewed");
+
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+
+    expect(overrideEvent).toHaveTextContent("Unreviewed");
+    expect(screen.getByRole("region", { name: "Review history" })).toHaveTextContent(
+      "No review recorded for this event.",
+    );
+    expect(screen.getByTestId("governance-override-rejections")).toHaveTextContent("0");
+  });
+
   it("clears the captured-event selection and review controls when the demo resets", () => {
     renderGovernance(true);
     fireEvent.click(screen.getByRole("button", { name: "record governance override" }));
 
     openAuditTrail();
     const register = screen.getByRole("region", { name: "Captured events" });
-    fireEvent.click(within(register).getByRole("button", { name: /Refer to wards/i }));
+    fireEvent.click(capturedRow(register, /Refer to wards/i));
     expect(screen.getByRole("heading", { name: "Refer to wards" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "reset governance demo" }));
 
-    expect(screen.getByRole("heading", { name: "No events captured yet" })).toBeInTheDocument();
+    // The captured override is gone; the synthetic seeded entries come back with the reset.
+    const resetRegister = screen.getByRole("region", { name: "Captured events" });
+    expect(
+      within(resetRegister)
+        .queryAllByRole("button")
+        .filter((button) => button.getAttribute("data-audit-row") === "audit-1"),
+    ).toHaveLength(0);
+    expect(resetRegister.querySelectorAll('[data-audit-row^="audit-seed"]').length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: "Event detail" })).toBeInTheDocument();
     // Since 26 Sept 2026 the override list starts empty (no typed example is pre-selected), so the
     // inspector's own empty state carries the same instruction beside the header's screen-reader copy.

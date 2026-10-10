@@ -33,6 +33,9 @@ export interface OperationalDefault {
 /** How long a recorded decision or bed move can be undone (v10 Undo toasts). A software safety
  *  window, not a clinical or legal limit. */
 export const UNDO_WINDOW_MINUTES = 5;
+/** How long an Undo toast stays on screen (pass 2 engine: 8 seconds). The engine's
+ *  `UNDO_WINDOW_MINUTES` still decides whether an undo is accepted. */
+export const UNDO_TOAST_MS = 8000;
 
 /** Minutes past the estimated arrival before a screen names a person as late. */
 export const LATE_ARRIVAL_GRACE_MINUTES = 60;
@@ -164,6 +167,12 @@ export const EXPECT_RECONSIDER_AFTER_MINUTES = 72 * MINUTES_PER_HOUR;
 
 /** 08:00, the morning handover time the roll-up counts "today" from. */
 export const MORNING_HANDOVER_MINUTES = 8 * MINUTES_PER_HOUR;
+
+/**
+ * 08:30, the morning bed meeting the Out of area hero compares with ("since the 08:30 bed
+ * meeting", v10 mockup). A service default for where the comparison starts, not a clinical figure.
+ */
+export const BED_MEETING_MINUTES = 8 * MINUTES_PER_HOUR + 30;
 
 /**
  * The end of the evening shift, 23:00. The discharge board's Tonight group does NOT stop here: since

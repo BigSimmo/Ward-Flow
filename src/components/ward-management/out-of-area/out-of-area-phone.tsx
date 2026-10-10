@@ -164,6 +164,7 @@ export function OutOfAreaPhone({
   renderPlan,
   shift,
   beds,
+  since,
 }: {
   people: PhonePerson[];
   totalAway: number;
@@ -188,6 +189,8 @@ export function OutOfAreaPhone({
   renderPlan: (entry: OutOfAreaEntry) => ReactNode;
   shift: ReactNode;
   beds: ReactNode;
+  /** "+1 since the 08:30 bed meeting · 42 bed days", under the three figures. */
+  since?: ReactNode;
 }) {
   const [tab, setTab] = useState<PhoneTab>("needs");
   const [mode, setMode] = useState<"peek" | "plan">("peek");
@@ -278,6 +281,7 @@ export function OutOfAreaPhone({
             No plan
           </span>
         </button>
+        {since ? <p className={styles.phoneSince}>{since}</p> : null}
       </section>
 
       <Tabs

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus, UserRound } from "lucide-react";
 import {
   Button,
@@ -21,6 +21,7 @@ import {
   tableClasses,
   type StackSegment,
   type WfFill,
+  useIsPhone,
 } from "@/components/wf";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -112,22 +113,6 @@ const GAP_ACTION: Record<RecordGap, string> = {
   received: "Mark received",
   examination: "Record exam",
 };
-
-const PHONE_QUERY = "(max-width: 48rem)";
-
-/** Phone is its own layout (v10): under 48rem the screen renders a different tree. */
-function useIsPhone(): boolean {
-  return useSyncExternalStore(
-    (notify) => {
-      if (typeof window.matchMedia !== "function") return () => undefined;
-      const query = window.matchMedia(PHONE_QUERY);
-      query.addEventListener?.("change", notify);
-      return () => query.removeEventListener?.("change", notify);
-    },
-    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
-    () => false,
-  );
-}
 
 function sameHighlight(a: Highlight, b: Highlight): boolean {
   if (a === null || b === null) return a === b;

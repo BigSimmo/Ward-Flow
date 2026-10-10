@@ -44,7 +44,6 @@ import {
   setActNowNotificationPreference,
   useActNowNotificationPreference,
 } from "@/components/ward-management/shell/ward-act-now-notifications";
-import { createBrowserStore } from "@/lib/client-store-factory";
 import {
   WA_BROADCAST_TEMPLATES,
   getActiveBroadcastAlert,
@@ -114,6 +113,7 @@ import {
   StatusGlyph,
   TabPanel,
   Tabs,
+  useIsPhone,
   TextInput,
   Textarea,
   type WfTone,
@@ -136,19 +136,6 @@ import {
 export { extractOverdue } from "./alerts-model";
 
 const COORDINATOR = WARD_FLOW_ROLE_LABELS.coordinator;
-
-/** Phone layout: the selected alert opens in a sheet instead of the side panel. */
-const PHONE_MEDIA_QUERY = "(max-width: 48rem)";
-const usePhoneLayout = createBrowserStore<boolean>(
-  (onStoreChange) => {
-    if (typeof window.matchMedia !== "function") return () => {};
-    const media = window.matchMedia(PHONE_MEDIA_QUERY);
-    media.addEventListener("change", onStoreChange);
-    return () => media.removeEventListener("change", onStoreChange);
-  },
-  () => (typeof window.matchMedia === "function" ? window.matchMedia(PHONE_MEDIA_QUERY).matches : false),
-  false,
-);
 
 type AlertsTab = "now" | "broadcast" | "notices" | "history";
 type ArrangeBy = "urgency" | "lanes" | "owner";
@@ -185,7 +172,8 @@ function AlertsWorkspace() {
   const clockNow = useWardFlowClock();
   const live = usePageLive();
   const now = live.now;
-  const isPhone = usePhoneLayout();
+  // Phone layout: the selected alert opens in a sheet instead of the side panel.
+  const isPhone = useIsPhone();
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
   const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const plannedAdmissions = state.plannedAdmissions;
@@ -1318,7 +1306,19 @@ function AlertsWorkspace() {
           <div className={styles.column}>
             <Card as="section" className={styles.queueCard} aria-label="Alerts">
               <div className={styles.tabsBar}>
-                <Tabs items={tabs} value={tab} onChange={setTab} label="Alerts views" idPrefix="alerts" />
+                {isPhone ? (
+                  // Phone (v10): the four views as one 44px segmented control, not a tab strip.
+                  <Segmented<AlertsTab>
+                    className={styles.phoneTabs}
+                    items={tabs}
+                    value={tab}
+                    onChange={setTab}
+                    label="Alerts views"
+                    size="md"
+                  />
+                ) : (
+                  <Tabs items={tabs} value={tab} onChange={setTab} label="Alerts views" idPrefix="alerts" />
+                )}
               </div>
 
               {tab === "now" ? (
