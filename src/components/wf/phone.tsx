@@ -670,13 +670,26 @@ export function ScrollRow({ children, className, rowClassName, ...rest }: Scroll
     row.addEventListener("scroll", measure, { passive: true });
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
     observer?.observe(row);
-    // Chips arriving or leaving change the content width without resizing the row itself.
-    for (const child of Array.from(row.children)) observer?.observe(child);
+    // Chips arriving or leaving change the content width without resizing the row itself, so each
+    // chip is watched too, and the list is refreshed only when chips actually change.
+    const watch = () => {
+      for (const child of Array.from(row.children)) observer?.observe(child);
+    };
+    watch();
+    const chips =
+      typeof MutationObserver === "undefined"
+        ? null
+        : new MutationObserver(() => {
+            watch();
+            measure();
+          });
+    chips?.observe(row, { childList: true });
     return () => {
       row.removeEventListener("scroll", measure);
       observer?.disconnect();
+      chips?.disconnect();
     };
-  }, [measure, children]);
+  }, [measure]);
 
   return (
     <div ref={frameRef} className={cx(styles.scrollRow, className)}>
