@@ -65,6 +65,7 @@
 
 .cardFoot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-3);
@@ -535,10 +536,11 @@
 }
 
 .flowLegend {
-  flex-wrap: nowrap;
+  flex: 0 0 100%;
+  flex-wrap: wrap;
   gap: var(--wf-s-1) var(--wf-s-2);
   font-size: var(--wf-fs-11);
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .flowLegend > li {
@@ -1120,6 +1122,32 @@ button.registerRow:hover {
   color: var(--wf-danger-ink);
 }
 
+@media print {
+  .grid {
+    height: auto;
+    grid-template-rows: auto;
+  }
+
+  .grid .side,
+  .flowCol,
+  .shortlistColumn,
+  .queueCard,
+  .flowCard {
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+  }
+
+  .queueList,
+  .flowBody,
+  .shortlistRegion.shortlistRegion > [data-testid^="ward-shortlist-"],
+  .shortlistRegion.shortlistRegion > [data-testid^="ward-referral-placement"] {
+    max-height: none;
+    height: auto;
+    overflow: visible;
+  }
+}
+
 /* ---------- phone ---------- */
 
 @media (max-width: 48rem) {
@@ -1147,6 +1175,10 @@ button.registerRow:hover {
     display: inline-block;
     margin-block: calc(-1 * var(--wf-s-4));
     padding-block: var(--wf-s-4);
+  }
+
+  .footButton {
+    min-height: 48px;
   }
 
   .registersToggle {
