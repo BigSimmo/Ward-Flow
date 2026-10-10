@@ -1714,7 +1714,7 @@ function RaiseAndReviewForensicHarness() {
             ],
             homeRegion: "Kimberley",
             suburb: { kind: "named", name: "Broome" },
-            source: "police",
+            source: "ambulance",
             urgency: 2,
             originSiteCode: "BRM",
             transportNeeded: false,

@@ -67,11 +67,10 @@ describe("referralReferrerName (D-12 — the referrer is the recorded source, ne
     expect(referralReferrerName(referral)).toBe(REFERRER_NOT_RECORDED);
   });
 
-  it("REFERRAL_SOURCES is exactly the eight kinds this catcher must cover — a ninth is not silently skipped", () => {
+  it("REFERRAL_SOURCES is exactly the seven kinds this catcher must cover — an eighth is not silently skipped", () => {
     expect(REFERRAL_SOURCES).toEqual([
       "community",
       "crisis_service",
-      "police",
       "ambulance",
       "inter_hospital",
       "ed_medical",

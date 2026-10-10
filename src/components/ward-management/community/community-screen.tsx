@@ -5245,7 +5245,6 @@ function otherDepartureDestinations(departures: readonly Admission[]): string {
 const REFERRAL_SOURCE_LABELS: Record<Referral["source"], string> = {
   community: "Community",
   crisis_service: "Crisis service",
-  police: "Police",
   ambulance: "Ambulance",
   inter_hospital: "Inter-hospital",
   // The owner's own words, 2026-09-06, quoted rather than paraphrased: "ED medical staff will

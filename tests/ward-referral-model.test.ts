@@ -238,7 +238,6 @@ describe("front-door contract — fixed lists", () => {
     expect(REFERRAL_SOURCES).toEqual([
       "community",
       "crisis_service",
-      "police",
       "ambulance",
       "inter_hospital",
       "ed_medical",

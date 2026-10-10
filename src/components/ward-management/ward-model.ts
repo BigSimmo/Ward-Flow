@@ -2017,13 +2017,12 @@ export const ABSENCE_STEP_LABELS: Record<AbsenceStep, string> = {
  * `docs/ward-flow/owner-answers-2026-09-17.md` item 25 and `shell/ward-facade.ts`'s own comment on
  * the answer it replaces. Recorded so a GP referral can be attributed honestly; the app itself
  * still contacts nobody on its behalf. `referralReferrer` (`ward-flow-reducer.ts`) resolves no
- * addressee for `gp`, exactly like `community`/`crisis_service`/`police`/`ambulance`/
+ * addressee for `gp`, exactly like `community`/`crisis_service`/`ambulance`/
  * `inter_hospital` — see that function's own doc comment, which this addition does not change.
  */
 export const REFERRAL_SOURCES = [
   "community",
   "crisis_service",
-  "police",
   "ambulance",
   "inter_hospital",
   "ed_medical",

@@ -52,7 +52,6 @@ describe("K1 — seedWardFlowState() referral census (2026-09-17 pin)", () => {
     const bySource: Record<ReferralSource, number> = {
       community: 0,
       crisis_service: 0,
-      police: 0,
       ambulance: 0,
       inter_hospital: 0,
       ed_medical: 0,
@@ -67,19 +66,21 @@ describe("K1 — seedWardFlowState() referral census (2026-09-17 pin)", () => {
     // 2026, and nothing here had used it until now). ed_medical stays 0.
     // 2026-09-25: psychiatric_ward 0->1 (RF-RD06, this fixture's first psychiatric_ward-sourced
     // referral).
+    // 10 Oct 2026 (Josh: "Remove police"): police is no longer a referral source. RF-013, raised
+    // before the ED, moved to crisis_service (3->4); RF-004, RF-006 and RF-018, raised from an ED
+    // after a police presentation, moved to ed_medical (0->3).
     expect(bySource).toEqual<Record<ReferralSource, number>>({
       community: 12, // includes all nine Midland demonstration rows, whose `source` is "community"
-      crisis_service: 3,
-      police: 4,
+      crisis_service: 4,
       ambulance: 6,
       inter_hospital: 4, // includes RF-010 (the Inner City Clinic referral)
-      ed_medical: 0, // no seeded referral currently reports this source
+      ed_medical: 3, // RF-004, RF-006, RF-018: police presentations referred on by the ED
       gp: 1, // RF-016, this fixture's first
       psychiatric_ward: 1, // RF-RD06, this fixture's first
     });
     // Anti-vacuity: every referral was bucketed exactly once, none dropped and none double-counted.
     expect(Object.values(bySource).reduce((sum, count) => sum + count, 0)).toBe(referrals.length);
-    expect(REFERRAL_SOURCES.length).toBe(8); // the source list this breakdown must stay exhaustive over
+    expect(REFERRAL_SOURCES.length).toBe(7); // the source list this breakdown must stay exhaustive over
   });
 
   it("counts referrals by referralState (queued/accepted/declined, derived from destinations)", () => {

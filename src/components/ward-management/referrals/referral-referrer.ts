@@ -12,7 +12,7 @@ export const REFERRER_NOT_RECORDED = "Not recorded";
  * WHO the referrer is, for a field labelled as a PERSON — never inferred from the source type.
  *
  * **THE RULE (D-12): show the recorded source; show a named person only where the record actually
- * holds one.** "Police" is not a referrer's name, and rendering a source type — an organisation —
+ * holds one.** "Ambulance" is not a referrer's name, and rendering a source type — an organisation —
  * in a field labelled as a person is a fabricated attribution on a clinical record, not a
  * formatting choice. Same family as spec §8.3: never invent a person's name that could be mistaken
  * for real.

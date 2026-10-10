@@ -2424,7 +2424,7 @@ export const referrals: Referral[] = [
     // winner, and the front door still accepts the referral. Seeded so a screen has to
     // face that case rather than only the tidy one.
     suburb: { kind: "named", name: "Mandurah" },
-    source: "police",
+    source: "ed_medical",
     raisedAt: NOW_ANCHOR - 70,
     triagedAt: NOW_ANCHOR - 100,
     urgency: 3,
@@ -2518,7 +2518,7 @@ export const referrals: Referral[] = [
      * exactly why the two facts are stored separately and neither is derived from the other.
      */
     suburb: { kind: "unknown", reason: "not_known" },
-    source: "police",
+    source: "ed_medical",
     raisedAt: NOW_ANCHOR - 65,
     triagedAt: NOW_ANCHOR - 80,
     urgency: 1,
@@ -2924,8 +2924,9 @@ export const referrals: Referral[] = [
   },
   {
     // The origin of `WF-009` — Adult, Male, at `peel-ed`, `arrivalMode: "police"`, journey opened
-    // 420 minutes before the anchor. `source: "police"` matches that arrival rather than being
-    // picked for variety, and `Mandurah` is the Peel suburb `RF-004` already uses.
+    // 420 minutes before the anchor. Police is not a referral source (Josh, 10 Oct 2026), so the
+    // referral comes from the crisis service that met the police, and `Mandurah` is the Peel
+    // suburb `RF-004` already uses.
     //
     // ⚠️ Urgency 1 here and urgency 1 on `WF-009` are two separate records of the same judgement,
     // not one derived from the other: nothing in this model copies a referral's tier onto the
@@ -2950,7 +2951,7 @@ export const referrals: Referral[] = [
     ],
     homeRegion: "Peel",
     suburb: { kind: "named", name: "Mandurah" },
-    source: "police",
+    source: "crisis_service",
     raisedAt: NOW_ANCHOR - 470,
     triagedAt: NOW_ANCHOR - 440,
     urgency: 1,
@@ -3134,7 +3135,7 @@ export const referrals: Referral[] = [
     ],
     homeRegion: "Mid West",
     suburb: { kind: "named", name: "Geraldton" },
-    source: "police",
+    source: "ed_medical",
     raisedAt: NOW_ANCHOR - 300,
     urgency: 2,
     originSiteCode: "GER",
