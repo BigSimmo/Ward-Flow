@@ -153,6 +153,11 @@ interface WardHomeTabProps {
   onOpenBeds?: () => void;
   /** Lets the screen return focus to a bed's tile when its drawer closes. */
   registerBedTrigger?: (bedNumber: number, element: HTMLButtonElement | null) => void;
+  /**
+   * Bed board tab (v10 pass 3): replaces Every bed and This shift with the board, so Ward flow
+   * stays beside it in the rail exactly as on Home.
+   */
+  bedArea?: React.ReactNode;
 }
 
 export function WardHomeTab({
@@ -199,6 +204,7 @@ export function WardHomeTab({
   onOpenArrivals,
   onOpenBeds,
   registerBedTrigger,
+  bedArea,
 }: WardHomeTabProps) {
   const { bedReleases, leaveBeds = [] } = useWardFlow();
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
@@ -738,8 +744,10 @@ export function WardHomeTab({
     <div className={styles.homeWrap}>
       <span className="sr-only">{pendingPreparation} being made ready</span>
 
-      <div className={styles.homeTop}>
+      <div className={styles.homeTop} data-board={bedArea ? "true" : undefined}>
+        {bedArea ? <div className={styles.boardArea}>{bedArea}</div> : null}
         <Card
+          hidden={bedArea ? true : undefined}
           className={`${styles.areaBeds} ${styles.v6Card}`}
           id="bed-capacity"
           tabIndex={-1}
@@ -1284,7 +1292,12 @@ export function WardHomeTab({
         </div>
       </div>
 
-      <Card className={`${styles.shiftCard} ${styles.v6Card}`} id="ward-this-shift" aria-labelledby="ward-home-shift">
+      <Card
+        hidden={bedArea ? true : undefined}
+        className={`${styles.shiftCard} ${styles.v6Card}`}
+        id="ward-this-shift"
+        aria-labelledby="ward-home-shift"
+      >
         <CardHead
           id="ward-home-shift"
           icon={ListChecks}

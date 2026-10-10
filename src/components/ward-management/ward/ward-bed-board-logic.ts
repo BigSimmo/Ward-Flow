@@ -1,0 +1,48 @@
+import type { BedItem } from "./ward-beds-matrix";
+
+/**
+ * The Bed board's pick up and place helper (v10 pass 3, ward page). Pure: which beds a picked up
+ * person fits, why a bed does not, and the sentence the board says. The engine still decides:
+ * `PLACE_IN_BED` and `ACCEPT_REFERRAL` refuse anything these rules let through by mistake.
+ */
+export type BoardPick =
+  /** A referral waiting for this ward's answer, placed with `ACCEPT_REFERRAL` and a bed number. */
+  | { kind: "referral"; referralId: string; name: string; secureBedNeeded: boolean }
+  /** A current stay moved to another bed with `PLACE_IN_BED`. */
+  | { kind: "stay"; admissionId: string; fromBed: number; name: string };
+
+export type BoardBed = Pick<BedItem, "bedNumber" | "status" | "designation" | "heldFor">;
+
+/** A free bed, not held for anyone, and locked when the referral needs a secure bed on a mixed ward. */
+export function bedFits(bed: BoardBed, pick: BoardPick | null, isMixed: boolean): boolean {
+  if (pick === null || bed.status !== "ready" || bed.heldFor !== undefined) return false;
+  if (pick.kind === "referral" && pick.secureBedNeeded && isMixed && bed.designation !== "Locked") return false;
+  return true;
+}
+
+/** Why `bed` does not fit, as the end of "Bed 07 does not fit, …". */
+export function whyBedDoesNotFit(bed: BoardBed, pick: BoardPick, isMixed: boolean): string {
+  if (bed.status === "closed") return "it is closed";
+  if (bed.heldFor !== undefined) return `it is held for ${bed.heldFor}`;
+  if (bed.status !== "ready") return "it is taken";
+  if (pick.kind === "referral" && pick.secureBedNeeded && isMixed && bed.designation !== "Locked")
+    return `${pick.name} needs a locked bed`;
+  return "it is not free";
+}
+
+export function fitCount(beds: readonly BoardBed[], pick: BoardPick | null, isMixed: boolean): number {
+  return beds.filter((bed) => bedFits(bed, pick, isMixed)).length;
+}
+
+export function bedNumberLabel(bed: number | string): string {
+  return String(bed).padStart(2, "0");
+}
+
+/** What the board says after a pick up. */
+export function pickedUpSay(pick: BoardPick, fits: number): string {
+  const who = pick.kind === "stay" ? `${pick.name} from bed ${bedNumberLabel(pick.fromBed)}` : pick.name;
+  if (fits === 0) return `Picked up ${who}. No free bed fits. Put down and answer from Ward flow.`;
+  return `Picked up ${who}. ${fits} ${fits === 1 ? "bed fits" : "beds fit"}. Press a bright bed to place, or Put down.`;
+}
+
+export const BOARD_RESTING_SAY = "Pick up a waiting person, then press a bright bed. To move someone, open their bed.";

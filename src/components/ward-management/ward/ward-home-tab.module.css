@@ -23,6 +23,21 @@
   min-width: 0;
 }
 
+/* Bed board tab: the board takes the bed card's column; Every bed and This shift step aside. */
+.boardArea {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.boardArea > * {
+  flex: 1;
+}
+
+.v6Card[hidden] {
+  display: none;
+}
+
 .v6Card {
   overflow: hidden;
   scroll-margin-top: 12rem;
@@ -1042,6 +1057,12 @@ label.todoMain:has(.todoTick:focus-visible) {
 @media (max-width: 48rem) {
   .homeTop > .flowWrap {
     order: -1;
+  }
+
+  /* Phone Bed board: the board alone, as the mockup's segmented Bed board view. Ward flow stays one
+     tap away on Home. */
+  .homeTop[data-board="true"] > .flowWrap {
+    display: none;
   }
 
   .flowWrap {

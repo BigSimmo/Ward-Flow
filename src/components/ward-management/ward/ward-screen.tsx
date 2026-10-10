@@ -36,8 +36,10 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { useRoleGate } from "@/components/ward-management/ward-role-gate";
-import { CheckingFoot, Hero, LiveChip, Menu, TextInput, buttonClass, durMinutes } from "@/components/wf";
+import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
+import { wardTransferNeedsCoordinator } from "@/components/ward-management/ward-referrals";
+import { CheckingFoot, Hero, LiveChip, Menu, TextInput, buttonClass, durMinutes, useToast } from "@/components/wf";
 import {
   currentShift,
   dayShiftEndInstant,
@@ -74,11 +76,44 @@ import { WardArrivalsCorridor } from "./ward-arrivals-corridor";
 import { WardDischargesMatrix } from "./ward-discharges-matrix";
 import { WardBedsMatrix } from "./ward-beds-matrix";
 import { WardBedDossierDrawer } from "./ward-bed-dossier-drawer";
+import { WardBedBoard, type WaitingReferral } from "./ward-bed-board";
+import {
+  bedFits,
+  bedNumberLabel,
+  fitCount,
+  pickedUpSay,
+  whyBedDoesNotFit,
+  type BoardPick,
+} from "./ward-bed-board-logic";
+import { layoutBedNumbers } from "./ward-bed-layout";
+import type { BedItem } from "./ward-beds-matrix";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   LEAVE_BED_OPEN_WARNING_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
+
+/** The page toast, or null where the screen renders without a `ToastProvider` (a test or preview). */
+function useOptionalToast(): ReturnType<typeof useToast> | null {
+  try {
+    return useToast();
+  } catch {
+    return null;
+  }
+}
+
+/** What the Bed board is waiting to hear back from the engine after a place or an undo. */
+type BoardCheck = {
+  prior: number;
+  bed: number;
+  success: string;
+  /** What Undo reverses; absent for an undo itself. */
+  undo?:
+    { kind: "stay"; admissionId: string; unitId: string } | { kind: "referral"; referralId: string; unitId: string };
+};
+
+/** Undo lasts 8 seconds on screen (v10 Toast with Undo); the engine allows `UNDO_WINDOW_MINUTES`. */
+const BOARD_UNDO_MS = 8000;
 
 /** The router, or null where the screen renders outside the app router (a test or preview). */
 function useOptionalRouter(): ReturnType<typeof useRouter> | null {
@@ -171,6 +206,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     morningRollupConfirmations,
     configuration,
     dayZero,
+    wardReferralInbox,
   } = useWardFlow();
   const now = useWardFlowClock();
   // Feature 11: Raise referral dispatches as `community`; this ward route keeps it through the
@@ -223,7 +259,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const dischargeCheckRef = useRef<{ prior: number; success: string; who: string; codes: string[] } | null>(null);
   const [dischargeToken, setDischargeToken] = useState(0);
   const [answerIndex, setAnswerIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<"attn" | "coming" | "out" | "beds" | "return">(
+  const [activeTab, setActiveTab] = useState<"attn" | "board" | "coming" | "out" | "beds" | "return">(
     departurePlanning ? "return" : "attn",
   );
   const [selectedPod, setSelectedPod] = useState<string>("all");
@@ -234,6 +270,21 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [shiftView, setShiftView] = useState<WardShiftView>("todo");
   const router = useOptionalRouter();
   const [selectedBed, setSelectedBed] = useState<number | null>(null);
+  // v10 pass 3, Bed board: who is picked up, what the board says and the bed placed last.
+  const [boardPick, setBoardPick] = useState<BoardPick | null>(null);
+  const [boardSay, setBoardSay] = useState("");
+  const [placedBed, setPlacedBed] = useState<number | null>(null);
+  const boardCheckRef = useRef<BoardCheck | null>(null);
+  const [boardToken, setBoardToken] = useState(0);
+  const toast = useOptionalToast();
+  const routeRole = useRouteRole();
+  // An Undo pressed seconds later sends the clock as it is then, not as it was at the placement.
+  const nowRef = useRef(now);
+  const rejectionCountRef = useRef(rejections.length);
+  useEffect(() => {
+    nowRef.current = now;
+    rejectionCountRef.current = rejections.length;
+  }, [now, rejections.length]);
   const [confirmNumbersOpen, setConfirmNumbersOpen] = useState(false);
   const [dailySheetOpen, setDailySheetOpen] = useState(false);
   const [drawerLeavingDestination, setDrawerLeavingDestination] =
@@ -272,6 +323,70 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         : reason;
     setToastMessage(namedReason !== undefined ? `Not recorded: ${namedReason}. Nothing was changed.` : check.success);
   }, [dischargeToken, rejections]);
+
+  // The outcome of a Bed board place or undo: a refusal says why on the board; a placement offers
+  // Undo on the toast, gated by the route's role like any other control.
+  useEffect(() => {
+    const check = boardCheckRef.current;
+    if (boardToken === 0 || check === null) return;
+    boardCheckRef.current = null;
+    const refused = rejections.length > check.prior ? rejections[rejections.length - 1] : undefined;
+    if (refused) {
+      const said = `Not recorded: ${refused.reason}. Nothing was changed.`;
+      setBoardSay(said);
+      if (toast) toast.push({ tone: "warning", title: said });
+      return;
+    }
+    setBoardSay(check.success);
+    setPlacedBed(check.undo ? check.bed : null);
+    if (!toast) {
+      setToastMessage(check.success);
+      return;
+    }
+    const undo = check.undo;
+    if (!undo) {
+      toast.push({ tone: "info", title: check.success });
+      return;
+    }
+    const undoLimit = roleLimitReason(routeRole, undo.kind === "stay" ? "UNDO_PLACE_IN_BED" : "UNDO_REFERRAL_DECISION");
+    toast.push({
+      tone: "success",
+      title: check.success,
+      ...(undoLimit
+        ? { body: `Undo: ${undoLimit}` }
+        : {
+            undo: {
+              durationMs: BOARD_UNDO_MS,
+              onUndo: () => {
+                boardCheckRef.current = {
+                  prior: rejectionCountRef.current,
+                  bed: check.bed,
+                  success: "Undone. The bed and the person are back where they were.",
+                };
+                if (undo.kind === "stay")
+                  dispatch({
+                    type: "UNDO_PLACE_IN_BED",
+                    role: "ward",
+                    now: nowRef.current,
+                    admissionId: undo.admissionId,
+                    actingUnitId: undo.unitId,
+                  });
+                else
+                  dispatch({
+                    type: "UNDO_REFERRAL_DECISION",
+                    role: "ward",
+                    now: nowRef.current,
+                    referralId: undo.referralId,
+                    actingUnitId: undo.unitId,
+                  });
+                setBoardToken((token) => token + 1);
+              },
+            },
+          }),
+    });
+    // `toast`, `routeRole` and `dispatch` are stable for the screen's life; the token drives this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boardToken, rejections]);
 
   useEffect(() => {
     function syncTabWithHash() {
@@ -342,6 +457,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       if (e.key === "Escape") {
         if (selectedBed !== null) {
           closeBedDrawer();
+        } else if (boardPick !== null) {
+          setBoardPick(null);
+          setBoardSay("Put down. Nothing changed.");
         } else if (dailySheetOpen) {
           setDailySheetOpen(false);
         } else if (confirmNumbersOpen) {
@@ -355,7 +473,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [selectedBed, dailySheetOpen, confirmNumbersOpen, notificationCenterOpen, closeBedDrawer, closeCapacityModal]);
+  }, [
+    selectedBed,
+    boardPick,
+    dailySheetOpen,
+    confirmNumbersOpen,
+    notificationCenterOpen,
+    closeBedDrawer,
+    closeCapacityModal,
+  ]);
 
   // Click-outside listener for floating notification center
   useEffect(() => {
@@ -817,7 +943,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const unitPulledAdmissions = admissions?.filter((a) => a.unitId === unit.id && a.state === "pulled") ?? [];
   let otherOccupantCursor = 0;
 
-  const bedsList = Array.from({ length: unit.beds }, (_, i) => {
+  const rawBeds = Array.from({ length: unit.beds }, (_, i) => {
     const bedNumber = i + 1;
     const designation: "Locked" | "Open" | undefined = isMixed ? (i < lockedBeds ? "Locked" : "Open") : undefined;
     const podId = isMixed ? (i < lockedBeds ? "locked" : "open") : "all";
@@ -955,6 +1081,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       legalForm: patientLegalForm,
       legalStatusLabel,
       admissionId: admission?.id,
+      stayAdmissionId:
+        admission?.id ??
+        (incomingMovement ? unitPulledAdmissions.find((a) => a.movementId === incomingMovement.id)?.id : undefined),
+      heldFor: undefined as string | undefined,
       age: patientAge,
       sex: patientSex,
       homeRegion: patientHomeRegion,
@@ -970,6 +1100,141 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       expectedDischargeLabel,
     };
   });
+
+  // v10 pass 3, Bed board: a bed held for an accepted referral (`heldBedNumber`) and a stay placed
+  // in a numbered bed (`PLACE_IN_BED`) sit in that bed; every other tile keeps its place.
+  // Read from this ward's own inbox projection (FD-23), never the full referrals array.
+  const inboxEntries = wardReferralInbox?.(unit.id) ?? [];
+  const heldBeds = inboxEntries.flatMap((entry) =>
+    entry.state === "accepted" && entry.heldBedNumber !== undefined
+      ? [{ bed: entry.heldBedNumber, name: resolvePatientIdentity({ patientId: entry.patientId }).displayName }]
+      : [],
+  );
+  const recordedBeds = new Map(
+    (admissions ?? []).flatMap((admission) =>
+      admission.unitId === unit.id && admission.bedNumber !== undefined ? [[admission.id, admission.bedNumber]] : [],
+    ) as [string, number][],
+  );
+  const bedNumbers = layoutBedNumbers(
+    rawBeds.map((bed) => ({ stayAdmissionId: bed.stayAdmissionId, free: bed.status === "ready" })),
+    (admissionId) => recordedBeds.get(admissionId),
+    heldBeds.map((held) => held.bed),
+  );
+  const bedsList = rawBeds
+    .map((bed, index) => {
+      const bedNumber = bedNumbers[index];
+      const designation: "Locked" | "Open" | undefined = isMixed
+        ? bedNumber <= lockedBeds
+          ? "Locked"
+          : "Open"
+        : undefined;
+      return {
+        ...bed,
+        bedNumber,
+        bedLabel: `Bed ${String(bedNumber).padStart(2, "0")}`,
+        designation,
+        podId: isMixed ? (bedNumber <= lockedBeds ? "locked" : "open") : "all",
+        podLabel: isMixed ? `${unit.name} ${designation} Beds` : unit.name,
+        heldFor: bed.status === "ready" ? heldBeds.find((held) => held.bed === bedNumber)?.name : undefined,
+      };
+    })
+    .sort((left, right) => left.bedNumber - right.bedNumber);
+
+  // Bed board: the referrals waiting for this ward that it can place, straight from the inbox.
+  const boardWaiting: WaitingReferral[] = inboxEntries
+    .filter((entry) => entry.state === "queued" && entry.withdrawnAt === undefined)
+    .map((entry) => ({
+      id: entry.id,
+      name: resolvePatientIdentity({ patientId: entry.patientId }).displayName,
+      sex: entry.destination.sex === "Female" ? "F" : entry.destination.sex === "Male" ? "M" : entry.destination.sex,
+      waitedMinutes: Math.max(0, now - entry.raisedAt),
+      secureBedNeeded: entry.destination.secureBedNeeded === true,
+      blockedReason: wardTransferNeedsCoordinator(entry, unit.id, units)
+        ? "Coordinator accepts transfers from another hospital"
+        : undefined,
+    }));
+
+  const boardUnitId = unit.id;
+
+  function pickOnBoard(pick: BoardPick | null) {
+    if (pick === null) {
+      if (boardPick !== null) setBoardSay("Put down. Nothing changed.");
+      setBoardPick(null);
+      return;
+    }
+    setBoardPick(pick);
+    setPlacedBed(null);
+    setBoardSay(pickedUpSay(pick, fitCount(bedsList, pick, isMixed)));
+  }
+
+  /** The bed panel's "Move to another bed": picks the stay up on the board. */
+  function moveStayOnBoard(bedNumber: number) {
+    const bed = bedsList.find((item) => item.bedNumber === bedNumber);
+    if (!bed) return;
+    const stayId = bed.stayAdmissionId;
+    if (!stayId) return;
+    const fromBed = Number(bed.bedNumber);
+    closeBedDrawer();
+    setActiveTab("board");
+    pickOnBoard({
+      kind: "stay",
+      admissionId: stayId,
+      fromBed,
+      name: bed.patientAlias ?? `the person in bed ${bedNumberLabel(fromBed)}`,
+    });
+  }
+
+  /** A bed pressed on the board: place what is picked up, or open the bed when nothing is. */
+  function pressBoardBed(bed: BedItem) {
+    const bedNumber = Number(bed.bedNumber);
+    if (boardPick === null) {
+      setSelectedBed(bedNumber);
+      return;
+    }
+    if (boardPick.kind === "stay" && boardPick.fromBed === bedNumber) {
+      pickOnBoard(null);
+      return;
+    }
+    if (!bedFits(bed, boardPick, isMixed)) {
+      setBoardSay(`Bed ${bedNumberLabel(bedNumber)} does not fit, ${whyBedDoesNotFit(bed, boardPick, isMixed)}.`);
+      return;
+    }
+    const pick = boardPick;
+    setBoardPick(null);
+    if (pick.kind === "stay") {
+      boardCheckRef.current = {
+        prior: rejections.length,
+        bed: bedNumber,
+        success: `Moved ${pick.name} from bed ${bedNumberLabel(pick.fromBed)} to bed ${bedNumberLabel(bedNumber)}.`,
+        undo: { kind: "stay", admissionId: pick.admissionId, unitId: boardUnitId },
+      };
+      dispatch({
+        type: "PLACE_IN_BED",
+        role: "ward",
+        now,
+        admissionId: pick.admissionId,
+        bedNumber,
+        actingUnitId: boardUnitId,
+      });
+    } else {
+      boardCheckRef.current = {
+        prior: rejections.length,
+        bed: bedNumber,
+        success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Referral accepted.`,
+        undo: { kind: "referral", referralId: pick.referralId, unitId: boardUnitId },
+      };
+      dispatch({
+        type: "ACCEPT_REFERRAL",
+        role: "ward",
+        now,
+        referralId: pick.referralId,
+        destinationKind: "psychiatric_ward",
+        unitId: boardUnitId,
+        bedNumber,
+      });
+    }
+    setBoardToken((token) => token + 1);
+  }
 
   /**
    * OD-3's read side, ward-scoped. **`overridesAgainstUnit`, never `allOverrides`** — the register
@@ -1584,7 +1849,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   className={styles.tabBtn}
                   role="tab"
                   id="tabBtn-attn"
-                  aria-selected={activeTab !== "return"}
+                  aria-selected={activeTab !== "return" && activeTab !== "board"}
                   aria-controls={
                     activeTab === "coming"
                       ? "tab-coming"
@@ -1600,6 +1865,28 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   }}
                 >
                   <span>Home</span>
+                </button>
+              </li>
+              <li role="presentation">
+                <button
+                  type="button"
+                  className={styles.tabBtn}
+                  role="tab"
+                  id="tabBtn-board"
+                  aria-selected={activeTab === "board"}
+                  aria-controls="tab-attn"
+                  aria-label="Bed board (pick up and place)"
+                  data-testid="ward-tab-board"
+                  onClick={() => {
+                    setActiveTab("board");
+                  }}
+                >
+                  <span>Bed board</span>
+                  {boardWaiting.length > 0 ? (
+                    <span className={styles.tabBadge} aria-label={`${boardWaiting.length} waiting to be placed`}>
+                      {boardWaiting.length}
+                    </span>
+                  ) : null}
                 </button>
               </li>
               <li role="presentation">
@@ -1637,7 +1924,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 value={bedQuery}
                 onChange={(event) => {
                   setBedQuery(event.target.value);
-                  if (activeTab !== "attn") setActiveTab("attn");
+                  if (activeTab !== "attn" && activeTab !== "board") setActiveTab("attn");
                 }}
                 onClear={() => {
                   setBedQuery("");
@@ -1729,8 +2016,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           className={styles.tabPanel}
           id="tab-attn"
           role="tabpanel"
-          aria-labelledby="tabBtn-attn"
-          data-active={activeTab === "attn"}
+          aria-labelledby={activeTab === "board" ? "tabBtn-board" : "tabBtn-attn"}
+          data-active={activeTab === "attn" || activeTab === "board"}
         >
           <WardHomeTab
             unit={unit}
@@ -1796,6 +2083,30 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               if (element) bedTriggerRefs.current.set(bedNumber, element);
               else bedTriggerRefs.current.delete(bedNumber);
             }}
+            bedArea={
+              activeTab === "board" ? (
+                <WardBedBoard
+                  unit={unit}
+                  beds={bedsList}
+                  isMixed={isMixed}
+                  waiting={boardWaiting}
+                  coordinatorReferrals={incoming.length}
+                  onAnswerOnHome={() => {
+                    setFlowTab("referrals");
+                    showHome("ward-awaiting-answer");
+                  }}
+                  picked={boardPick}
+                  onPick={pickOnBoard}
+                  say={boardSay}
+                  onBedPress={pressBoardBed}
+                  placedBed={placedBed}
+                  query={bedQuery}
+                  onOpenList={() => {
+                    setActiveTab("attn");
+                  }}
+                />
+              ) : undefined
+            }
             figures={
               <section aria-label="Ward figures, right now" className={styles.figuresFoot} data-ward-primitive="panel">
                 <div className={styles.commandHeader} data-ward-primitive="panel-header">
@@ -2154,6 +2465,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   }}
                   bedDrawerRef={bedDrawerRef}
                   onKeyDown={handleBedDrawerKeyDown}
+                  onMove={selectedBedItem?.stayAdmissionId ? () => moveStayOnBoard(selectedBed) : undefined}
+                  onOpenBoard={() => {
+                    closeBedDrawer();
+                    setActiveTab("board");
+                  }}
                 />
               );
             })()

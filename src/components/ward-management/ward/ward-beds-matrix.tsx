@@ -40,6 +40,13 @@ export interface BedItem {
   expectedDays?: number | null;
   legalStatusLabel?: string;
   admissionId?: string;
+  /**
+   * The admission whose stay this bed shows, including a live pull (which `admissionId` leaves
+   * out). The Bed board moves this stay with `PLACE_IN_BED`.
+   */
+  stayAdmissionId?: string;
+  /** On a free bed held for an accepted referral (`heldBedNumber`): the person it is held for. */
+  heldFor?: string;
   age?: number | null;
   sex?: string | null;
   homeRegion?: string | null;
