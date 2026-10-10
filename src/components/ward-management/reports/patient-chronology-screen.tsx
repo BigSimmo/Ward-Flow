@@ -426,8 +426,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
           bar={
             chronology ? (
               <HeroChips label="Counts of the events shown">
-                <HeroChip value={rows.length} label="events" />
-                <HeroChip value={recordCount} label="records" />
+                <HeroChip value={rows.length} label={rows.length === 1 ? "event" : "events"} />
+                <HeroChip value={recordCount} label={recordCount === 1 ? "record" : "records"} />
                 <HeroChip value={count("Record")} label="from records" />
                 {auditShown ? <HeroChip value={count("Audit")} label="audit" /> : null}
                 <HeroChip value={count("Session log")} label="session log" />
