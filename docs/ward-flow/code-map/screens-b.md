@@ -444,14 +444,31 @@ where they live, and for how long." **Dispatches:** `RECORD_REPATRIATION`. **Rea
 `ward-out-of-area-live-state.dom.test.tsx`, `ward-out-of-area-upgrade.dom.test.tsx`,
 `ward-print-ink-specificity.test.ts`, `ward-referral-screens.dom.test.tsx`, plus repo-wide guards.
 
-- **`src/components/ward-management/out-of-area/out-of-area-board.tsx`** (950 lines) — the ledger
-  screen itself.
-- **`src/components/ward-management/out-of-area/out-of-area-third-edition.module.css`** (1018
-  lines) — third-edition styles.
-- **`src/components/ward-management/out-of-area/out-of-area.module.css`** (546 lines) — base
-  styles; both CSS modules are imported together.
+**10 October 2026, option A (two columns):** the register runs on the left; a right column holds
+This shift, Home regions and beds and Ready to go home until a person is picked, then swaps them
+for that person's return plan. Hero counts, days away groups, regions and search highlight rows
+and never hide them. The phone is its own tree (`useIsPhone`), with Needs you, Everyone and Beds
+tabs, a peek sheet and a full-screen plan sheet.
+
+- **`src/components/ward-management/out-of-area/out-of-area-board.tsx`** — the ledger screen,
+  `OutOfAreaBoard` and `sinceArrivalLabel`; owns selection, highlights, drafts and the
+  `RECORD_REPATRIATION` dispatch.
+- **`src/components/ward-management/out-of-area/out-of-area-model.ts`** — pure helpers: discharge
+  offsets and wording, days away groups, plan answers and return status, closer bed options, home
+  region beds, shift window.
+- **`src/components/ward-management/out-of-area/out-of-area-return-plan.tsx`** — `ReturnPlan`, the
+  three step plan shared by the desktop column and the phone plan sheet.
+- **`src/components/ward-management/out-of-area/out-of-area-side.tsx`** — `ShiftCard`,
+  `HomeBedsCard`, `ReadyCard`, the right column at rest.
+- **`src/components/ward-management/out-of-area/out-of-area-phone.tsx`** — `OutOfAreaPhone`.
+- **`src/components/ward-management/out-of-area/out-of-area-board.module.css`** — styles for all of
+  the above.
+- **`src/components/ward-management/out-of-area/out-of-area-third-edition.module.css`** and
+  **`out-of-area.module.css`** — older styles still read by repo-wide guards.
 
 ## `patients/`
+
+**10 October 2026 ward changes:** `patient-mode.ts` adds At ED (an occupied stay with `awayAtEmergencyDepartmentSince`, after leave and absence). `patient-ward-change-card.tsx` (and CSS module) is the On ward card for Start leave (typed return time and day, off-ward or medical trip), Gone to ED and the expected discharge date; the status card's discharge cell opens it, and every time must be later than now. The At ED status card records the return. History lists the person's ward stays, which `patient-now-adapter.ts` returns as `stays` (D-14). The reducer now refuses leave or an absence while a stay is at ED, and ED while it is on leave or absent (`tests/ward-away-from-ward-exclusive.test.ts`). The coordinator route borrows the ward role for these through `CROSS_ROLE_ALLOWED`.
 
 **9 October 2026 gate board, second pass (D-38):** `patient-mode.ts` adds On leave (the stay has a
 leave bed), Absent without leave (that held bed records `absentWithoutLeave`) and On a CTO (the

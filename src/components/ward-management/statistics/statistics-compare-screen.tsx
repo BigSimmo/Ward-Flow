@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { BedDouble, ChevronRight, Clock, Download, MapPin, Pin, Search, X } from "lucide-react";
+import { BedDouble, ChevronRight, Clock, Download, MapPin, Pin, Search, SquareArrowDown, X } from "lucide-react";
 
 import {
   BarList,
@@ -22,6 +22,7 @@ import {
 } from "@/components/wf";
 import {
   statisticsSectionById,
+  STATISTICS_UNIT_CHOOSER_HREF,
   STATISTICS_UNIT_CHOOSER_ID,
 } from "@/components/ward-management/statistics/statistics-sections";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
@@ -37,8 +38,11 @@ import { axisMax } from "./statistics-axis";
 import { csvCell } from "./statistics-csv";
 import { edWaitFigures } from "./statistics-ed-waits";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
+import { HeroTool } from "./statistics-hero-tools";
+import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { wardReferralTally } from "./statistics-ward-referrals";
 import compare from "./statistics-compare.module.css";
+import detail from "./statistics-detail.module.css";
 import styles from "./statistics-v6.module.css";
 
 /**
@@ -137,6 +141,15 @@ export function StatisticsCompareScreen({
       now={now}
       paused={live.paused}
       onTogglePause={live.togglePause}
+      tools={
+        <HeroTool
+          href={STATISTICS_UNIT_CHOOSER_HREF}
+          icon={<SquareArrowDown size={14} aria-hidden="true" />}
+          testId="ward-statistics-compare-tool-open-unit"
+        >
+          Open a unit
+        </HeroTool>
+      }
       stats={
         <>
           <HeroStat value={units.length} label="Wards" />
@@ -159,13 +172,16 @@ export function StatisticsCompareScreen({
         </>
       }
     >
-      <div className={compare.grid}>
-        <WardComparison rows={wardRows} />
-        <div className={styles.stack}>
+      {/* The ward chart is the long column: it scrolls inside at the height the ED cards set. */}
+      <FlushRow layout="lead2" className={compare.grid}>
+        <Follow className={detail.followBody}>
+          <WardComparison rows={wardRows} />
+        </Follow>
+        <FlushStack>
           <EdComparison rows={edRows} />
           <PinnedWards rows={wardRows} />
-        </div>
-      </div>
+        </FlushStack>
+      </FlushRow>
       <UnitChooser units={units} emergencyDepartments={emergencyDepartments} />
     </StatisticsPage>
   );
@@ -314,6 +330,7 @@ function WardComparison({ rows }: { rows: WardRow[] }) {
 
   return (
     <StatCard
+      id="wards"
       icon={BedDouble}
       title="Ward comparison"
       data-testid="statistics-compare-ward-chart"
@@ -362,7 +379,7 @@ function WardComparison({ rows }: { rows: WardRow[] }) {
           ]}
         />
       </div>
-      <CardBody flush className={compare.chartBody}>
+      <CardBody flush className={`${compare.chartBody} ${detail.scrolls}`}>
         {rows.length === 0 ? (
           <p className={styles.empty} data-testid="ward-statistics-compare-ward-chart-empty">
             No wards recorded.
@@ -472,6 +489,7 @@ function EdComparison({ rows }: { rows: EdCompareRow[] }) {
 
   return (
     <StatCard
+      id="eds"
       icon={Clock}
       title="ED comparison"
       data-testid="statistics-compare-ed-chart"
@@ -596,6 +614,7 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
 
   return (
     <StatCard
+      id="pinned"
       icon={MapPin}
       title="Pinned wards"
       data-testid="ward-statistics-compare-pinned"
