@@ -316,9 +316,13 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     // pinned to the old single-release fixture's 0.
     const breakdown = capacityBreakdown(unitById("rph-adult-secure")!, bedReleases, leaveBeds, NOW_ANCHOR);
     expect(chipRow).toHaveTextContent(`Confirmed ${breakdown.confirmedToday}`);
-    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(
-      `Discharges held up ${breakdown.blockedToday}`,
-    );
+    // v10 (10 Oct 2026): "counts agree across a page". Held up counts every open release with a
+    // blocker, on any day, the same population This shift and the Discharges tab list.
+    const heldUp = bedReleases.filter(
+      (release) => release.unitId === "rph-adult-secure" && release.state !== "discharged" && release.blocker !== null,
+    ).length;
+    expect(heldUp).toBeGreaterThanOrEqual(breakdown.blockedToday);
+    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(`Discharges held up ${heldUp}`);
     // ...and no chip reads "Blocked" as a bed state beside it: the out-of-service box is gone and
     // the empty bed the ward is not offering is the separately worded Closed chip.
     expect(chipRow).not.toHaveTextContent(/\bBlocked\b/u);
@@ -352,9 +356,10 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
 
     const chipRow = screen.getByTestId("ward-unit-beds");
     expect(chipRow).toHaveTextContent(`Confirmed ${before.confirmedToday}`);
-    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(
-      `Discharges held up ${before.blockedToday + 1}`,
-    );
+    const heldBefore = bedReleases.filter(
+      (release) => release.unitId === unit.id && release.state !== "discharged" && release.blocker !== null,
+    ).length;
+    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(`Discharges held up ${heldBefore + 1}`);
     const row = screen.getByTestId(`ward-barrier-${CONFIRMED_RELEASE!.id}`);
     expect(row).toHaveTextContent("Confirmed");
     expect(row).toHaveTextContent("Blocked");

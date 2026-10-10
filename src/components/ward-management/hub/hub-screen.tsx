@@ -25,6 +25,7 @@ import {
 
 import {
   Card,
+  CheckingFoot,
   CardHead,
   Count,
   FilterChip,
@@ -85,6 +86,24 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 
 type Order = "service" | "ready";
 
+/** What a hero chip or Ready beds only is highlighting. */
+type HubHighlight = "none" | "ready" | "pulled" | "closed" | "stale";
+
+function matchesHighlight(entry: HubEntry, highlight: HubHighlight): boolean {
+  switch (highlight) {
+    case "ready":
+      return (entry.ready ?? 0) > 0;
+    case "pulled":
+      return (entry.pulled ?? 0) > 0;
+    case "closed":
+      return (entry.closed ?? 0) > 0;
+    case "stale":
+      return entry.stale === true;
+    default:
+      return true;
+  }
+}
+
 /**
  * ⚠️ **READY AND NOT-YET-CLEARED ARE TWO NUMBERS.** Owner ruling, 2026-09-05: a bed can be free
  * per the feed and still be being made ready, and the reducer refuses `PULL_PATIENT` into one.
@@ -127,7 +146,11 @@ export function HubScreen() {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<HubKind | "all">("all");
   const [order, setOrder] = useState<Order>("service");
-  const [readyOnly, setReadyOnly] = useState(false);
+  // v10: a hero chip or Ready beds only highlights matching places and dims the rest. No row is
+  // hidden by a highlight; only the search and the kind switch narrow the list.
+  const [highlight, setHighlight] = useState<HubHighlight>("none");
+  const readyOnly = highlight === "ready";
+  const setReadyOnly = (on: boolean) => setHighlight(on ? "ready" : "none");
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const [folded, setFolded] = useState<ReadonlySet<string>>(() => new Set());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -142,10 +165,10 @@ export function HubScreen() {
           inputRef.current?.focus();
         }
       } else if (event.key === "Escape" && document.activeElement !== inputRef.current) {
-        if (selectedId !== undefined || query !== "" || readyOnly) {
+        if (selectedId !== undefined || query !== "" || highlight !== "none") {
           event.preventDefault();
           setQuery("");
-          setReadyOnly(false);
+          setHighlight("none");
           setSelectedId(undefined);
           inputRef.current?.focus();
         }
@@ -153,7 +176,7 @@ export function HubScreen() {
     }
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [selectedId, query, readyOnly]);
+  }, [selectedId, query, highlight]);
 
   const entries = useMemo(
     () => hubEntries({ units, bedReleases, admissions, leaveBeds, now }),
@@ -161,26 +184,23 @@ export function HubScreen() {
   );
   const results = useMemo(() => {
     const base = searchHub(entries, query, kind);
-    const filtered = readyOnly ? base.filter((entry) => (entry.ready ?? 0) > 0) : base;
-    if (order === "service") return filtered;
+    if (order === "service") return base;
     // Most ready first, inside the same service groups. A stable sort keeps the service order for ties.
-    return [...filtered].sort((a, b) => (b.ready ?? -1) - (a.ready ?? -1));
-  }, [entries, query, kind, readyOnly, order]);
-  // Category counts follow "Ready beds only" as well as the search, so each count matches what
-  // pressing that category shows.
-  const counts = useMemo(
-    () => hubCounts(readyOnly ? entries.filter((entry) => (entry.ready ?? 0) > 0) : entries, query),
-    [entries, query, readyOnly],
-  );
+    return [...base].sort((a, b) => (b.ready ?? -1) - (a.ready ?? -1));
+  }, [entries, query, kind, order]);
+  // Category counts follow the search, so each count matches the rows pressing that category shows.
+  const counts = useMemo(() => hubCounts(entries, query), [entries, query]);
+  const isLit = (entry: HubEntry) => matchesHighlight(entry, highlight);
+  const litCount = results.filter(isLit).length;
   // The list foot's "of" stays the search-matched total, so "Ready beds only" reads as a narrowing.
   const searchMatched = useMemo(() => searchHub(entries, query, "all").length, [entries, query]);
   const readyBedsCount = useMemo(() => entries.reduce((sum, entry) => sum + (entry.ready ?? 0), 0), [entries]);
-  const isFiltered = query !== "" || kind !== "all" || readyOnly;
+  const isFiltered = query !== "" || kind !== "all" || highlight !== "none";
 
   function resetAllFilters() {
     setQuery("");
     setKind("all");
-    setReadyOnly(false);
+    setHighlight("none");
     setSelectedId(undefined);
     inputRef.current?.focus();
   }
@@ -197,6 +217,16 @@ export function HubScreen() {
   const unauthorised = useMemo(() => unauthorisedWards(entries), [entries]);
   const sections = useMemo(() => groupedResults(results), [results]);
   const staleCount = useMemo(() => entries.filter((entry) => entry.stale === true).length, [entries]);
+  const oldestConfirmedAt = useMemo(() => {
+    const times = entries.flatMap((entry) =>
+      entry.kind === "ward" && entry.confirmedAt !== undefined ? [entry.confirmedAt] : [],
+    );
+    return times.length === 0 ? undefined : Math.min(...times);
+  }, [entries]);
+
+  function toggleHighlight(next: HubHighlight) {
+    setHighlight((current) => (current === next ? "none" : next));
+  }
   const maxServiceReady = Math.max(1, ...byService.map((row) => row.ready));
 
   const pinnedIds = usePinnedHubIds();
@@ -253,7 +283,7 @@ export function HubScreen() {
   function reveal(id: string) {
     setQuery("");
     setKind("all");
-    setReadyOnly(false);
+    setHighlight("none");
     setSelectedId(id);
   }
 
@@ -270,7 +300,11 @@ export function HubScreen() {
           }
         : undefined;
     return (
-      <li key={entry.id} className={cx(styles.resultRow, active && styles.resultRowActive)}>
+      <li
+        key={entry.id}
+        className={cx(styles.resultRow, active && styles.resultRowActive)}
+        data-dim={highlight !== "none" && !isLit(entry) ? "true" : undefined}
+      >
         <button
           type="button"
           className={styles.resultMain}
@@ -357,22 +391,71 @@ export function HubScreen() {
         <Hero
           level={1}
           className={styles.hubHero}
-          eyebrow="Places · Statewide"
+          eyebrow={`Places · Statewide · ${totals.ward} wards, ${totals.ed} EDs, ${totals.community} teams`}
           title={
             <>
               <SrOnly>Places, </SrOnly>
-              {totals.ward} wards, {totals.ed} EDs, {totals.community} community teams
-            </>
-          }
-          stats={
-            <>
-              <HeroStat value={network.ready} label="Beds ready" tone="success" />
-              <HeroStat value={network.pulled} label={BED_STATE_LABELS.pulled} />
-              <HeroStat value={network.closed} label={BED_STATE_LABELS.closed} />
-              <HeroStat value={staleCount} label="Stale counts" tone={staleCount > 0 ? "warning" : undefined} />
+              {totals.all} places
             </>
           }
           aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
+          bar={
+            <div className={styles.heroChips} role="group" aria-label="Network counts">
+              <HeroStat
+                inline
+                value={network.ready}
+                label="Beds ready"
+                tone="success"
+                pressed={highlight === "ready"}
+                onToggle={() => toggleHighlight("ready")}
+              />
+              <HeroStat
+                inline
+                value={network.pulled}
+                label={BED_STATE_LABELS.pulled}
+                pressed={highlight === "pulled"}
+                onToggle={() => toggleHighlight("pulled")}
+              />
+              <HeroStat
+                inline
+                value={network.closed}
+                label={BED_STATE_LABELS.closed}
+                pressed={highlight === "closed"}
+                onToggle={() => toggleHighlight("closed")}
+              />
+              <HeroStat
+                inline
+                value={occupiedShare(network.occupied, network.beds) ?? "Not recorded"}
+                label={BED_STATE_LABELS.occupied}
+              />
+              <HeroStat
+                inline
+                value={staleCount}
+                label="Stale counts"
+                tone={staleCount > 0 ? "warning" : undefined}
+                pressed={highlight === "stale"}
+                onToggle={() => toggleHighlight("stale")}
+              />
+            </div>
+          }
+          foot={
+            <CheckingFoot
+              items={[
+                {
+                  id: "stale",
+                  label: "Stale bed counts",
+                  value: staleCount,
+                  tone: staleCount > 0 ? "warning" : undefined,
+                },
+                {
+                  id: "oldest",
+                  label: "Oldest bed count",
+                  value: oldestConfirmedAt === undefined ? "Not recorded" : durMinutes(now - oldestConfirmedAt),
+                },
+              ]}
+              notChecked={["ED and team capacity, no feed"]}
+            />
+          }
         />
 
         <div className={styles.hubShell}>
@@ -535,12 +618,24 @@ export function HubScreen() {
             </div>
             <div className={styles.listFoot}>
               <BedStripLegend />
-              <span className={styles.shownCount}>
-                <b>
-                  {results.length} of {searchMatched}
-                </b>{" "}
-                shown
-              </span>
+              {highlight === "none" ? (
+                <span className={styles.shownCount}>
+                  <b>
+                    {results.length} of {searchMatched}
+                  </b>{" "}
+                  shown
+                </span>
+              ) : (
+                <span className={styles.shownCount} data-testid="hub-highlight-note">
+                  <b>
+                    {litCount} of {results.length}
+                  </b>{" "}
+                  highlighted. All rows stay.
+                  <button type="button" className={styles.clearHighlight} onClick={() => setHighlight("none")}>
+                    Clear highlight
+                  </button>
+                </span>
+              )}
             </div>
           </Card>
 

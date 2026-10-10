@@ -414,6 +414,63 @@
   color: var(--wf-ink-1);
 }
 
+.clearHighlight {
+  min-height: var(--wf-h-sm);
+  margin-left: var(--wf-s-2);
+  padding: 0 var(--wf-s-2);
+  border: 0;
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  color: var(--wf-accent-ink, var(--wf-ink-1));
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clearHighlight:hover {
+  background: var(--wf-hover);
+}
+
+.clearHighlight:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+/* A highlight that does not match a place dims its row by colour (v10 data-dim). The row stays. */
+.resultRow[data-dim="true"]
+  :is(
+    .resultName,
+    .resultSub,
+    .resultFigures,
+    .resultPrep,
+    .resultConfirmed,
+    .resultAgo,
+    .resultReadyNum,
+    .resultReadyWord
+  ) {
+  color: var(--wf-dim);
+}
+
+/* Hero chips: one row, never wrapping; phone scrolls them sideways. */
+.heroChips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+@media (max-width: 48rem) {
+  .heroChips {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .heroChips > * {
+    flex: none;
+  }
+}
+
 /* Pills on the preview */
 .detailBadges {
   display: flex;

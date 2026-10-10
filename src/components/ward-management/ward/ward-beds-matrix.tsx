@@ -142,6 +142,7 @@ type ShiftGroup = "all" | "due-out" | "off-ward" | "in-transit";
  */
 export function bedGlyphTone(bed: BedItem): WfTone | null {
   if (bed.status === "ready") return "success";
+  if (bed.status === "closed") return "closed";
   if (bed.blockReason) return "danger";
   if (bed.awayAtEdHours != null || bed.pastDate || bed.dischargeBarrier) return "warning";
   const leaving = bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0);

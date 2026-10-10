@@ -53,25 +53,190 @@
 }
 
 .shownCount {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--wf-s-2);
-  margin-left: auto;
+  min-height: var(--wf-h-sm);
+  margin: 0;
   font-size: var(--wf-fs-13);
   color: var(--wf-ink-2);
   white-space: nowrap;
+}
+
+.shownCount > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Filters on phone sit behind one button; on the larger screen the button is not shown. */
+.filtersToggle {
+  display: none;
 }
 
 .serviceAnchors {
   display: none;
 }
 
-/* Cards */
-.cardGrid {
+/* Cards beside the rail. Cards sit three across, flush and of equal height. */
+.layout {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) 20rem;
   align-items: start;
   gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.wardsColumn {
+  min-width: 0;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: var(--wf-s-3);
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.railCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+}
+
+.railTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+}
+
+.railNote {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.checkList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checkList li {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  min-height: 2rem;
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+
+.checkList li:first-child {
+  border-top: 0;
+}
+
+.checkName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.checkName:hover {
+  text-decoration: underline;
+}
+
+.checkAge {
+  flex: none;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Hero chips and the Most ready jump. */
+.heroChips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.heroJump {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  max-width: 22rem;
+  min-height: 32px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-on-hero-fill);
+  color: var(--wf-on-hero-ink);
+  font-size: var(--wf-fs-13);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.heroJump:hover {
+  background: var(--wf-on-hero-hl);
+}
+
+.heroJump:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.heroJumpLabel {
+  color: var(--wf-hero-ink-2);
+}
+
+.heroJumpName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.heroJumpValue {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-15, 15px);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A filter that does not match a ward dims it by colour; the card stays in place. */
+.wardCard[data-dim="true"] .wardTitle,
+.wardCard[data-dim="true"] .num,
+.wardCard[data-dim="true"] .figures,
+.wardCard[data-dim="true"] .meta,
+.wardCard[data-dim="true"] .confirmed,
+.wardCard[data-dim="true"] .acuityBadge,
+.tr[data-dim="true"],
+.tr[data-dim="true"] .wardTitle,
+.tr[data-dim="true"] .num,
+.tr[data-dim="true"] .meta {
+  color: var(--wf-dim);
+}
+
+.wardCard[data-dim="true"] {
+  box-shadow: none;
 }
 
 .wardCard {
@@ -215,6 +380,8 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-width: 0;
 }
 
 .eyebrow {
@@ -455,7 +622,20 @@
 
 @media (max-width: 80rem) {
   .cardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Below 1121px the rail moves under the cards as three equal columns. */
+@media (max-width: 70rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rail {
+    display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
   }
 }
 
@@ -511,16 +691,74 @@
   }
 
   .filterRow:first-child > :nth-child(3),
-  .filterRow + .filterRow {
+  .filterRow + .filterRow:not([data-open="true"]) {
     display: none;
   }
 
-  .search {
+  /* The service chips scroll sideways rather than wrap. */
+  .filterRow:first-child {
+    flex-wrap: wrap;
+  }
+
+  .filterRow:first-child > :first-child {
     flex: 1 1 100%;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .filterRow + .filterRow[data-open="true"] {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterRow + .filterRow[data-open="true"] > div {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .filtersToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    min-height: var(--wf-touch, 44px);
+    padding: 0 var(--wf-s-3);
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: inherit;
+    font-size: var(--wf-fs-13);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .filtersToggle[aria-expanded="true"] {
+    border-color: var(--wf-ink-2);
+  }
+
+  .search {
+    flex: 1 1 0;
+  }
+
+  .shownCount {
+    justify-content: flex-start;
+  }
+
+  .layout {
+    gap: var(--wf-s-2);
+  }
+
+  .rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .search {
     min-width: 0;
   }
 
   .cardGrid {
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--wf-s-2);
   }
 
@@ -579,5 +817,42 @@
   .cardFoot > .confirmed {
     grid-column: 1 / -1;
     grid-row: 5;
+  }
+}
+
+/* Page-local fix for the shared ring (report to foundation): its `.ring svg` size rule also
+   catches the status glyph under the figure. Keep the glyph at its own size. */
+.heroRing span svg {
+  width: auto;
+  height: auto;
+}
+
+/* The rail is narrower than Capacity's panel: the service name column gives way to the bar. */
+.rail .serviceCapRow {
+  grid-template-columns: minmax(4.5rem, 5.5rem) minmax(0, 1fr) 3.75rem 12px;
+}
+
+.serviceMeta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Phone: the hero chips scroll sideways at the touch height rather than wrap or clip. */
+@media (max-width: 48rem) {
+  .heroChips {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .heroChips > * {
+    flex: none;
+  }
+
+  .heroJump {
+    min-height: var(--wf-touch, 44px);
+    max-width: 100%;
   }
 }
