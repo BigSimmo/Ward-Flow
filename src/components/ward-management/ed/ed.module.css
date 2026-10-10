@@ -1221,7 +1221,6 @@
 
 .ctl[aria-disabled="true"] {
   cursor: not-allowed;
-  opacity: 0.6;
   background: var(--surface-2);
   color: var(--muted);
   border-color: var(--line);
@@ -3208,7 +3207,9 @@ tr.qRow:focus-visible {
 
 .acceptButton[aria-disabled="true"] {
   cursor: not-allowed;
-  opacity: 0.6;
+  color: var(--wf-dim);
+  background: var(--wf-surface-2);
+  border-color: var(--wf-line);
 }
 
 .declineButton {
@@ -3218,7 +3219,9 @@ tr.qRow:focus-visible {
 
 .declineButton[aria-disabled="true"] {
   cursor: not-allowed;
-  opacity: 0.6;
+  color: var(--wf-dim);
+  background: var(--wf-surface-2);
+  border-color: var(--wf-line);
 }
 
 .arrivedButton {
@@ -3443,7 +3446,7 @@ tr.qRow:focus-visible {
 }
 
 .departmentListTabs .tabNum[data-zero="true"] {
-  opacity: 0.55;
+  color: var(--wf-dim);
 }
 
 .boardTable .outstandingItem {
@@ -3522,7 +3525,6 @@ tr.qRow:focus-visible {
 }
 
 .actionDropdownMenu button[aria-disabled="true"] {
-  opacity: 0.5;
   cursor: not-allowed;
   color: var(--muted);
   border-color: transparent;
@@ -3612,7 +3614,6 @@ tr.qRow:focus-visible {
 .tableActionGroup button[aria-disabled="true"],
 .tableActionGroup .acceptButton[aria-disabled="true"],
 .tableActionGroup .declineButton[aria-disabled="true"] {
-  opacity: 0.45;
   background: transparent;
   border-color: var(--line);
   color: var(--muted);

@@ -547,3 +547,41 @@ div.workspace > .side {
     display: none;
   }
 }
+
+/* v10 hero (10 Oct 2026): the caseload answer beside the team name, and four list chips. */
+.heroAnswer {
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-14);
+  white-space: nowrap;
+}
+
+.heroAnswer b {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--wf-hero-ink);
+}
+
+.heroStats[role="group"] {
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+@media (max-width: 48rem) {
+  .heroStats[role="group"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--wf-s-2);
+  }
+
+  .heroStats[role="group"] > * {
+    min-width: 0;
+    padding: 0;
+    border-left: 0;
+  }
+
+  .heroStats[role="group"] button {
+    min-height: var(--wf-touch);
+    width: 100%;
+  }
+}

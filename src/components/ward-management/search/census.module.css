@@ -282,7 +282,7 @@
 }
 
 .mapPillZero {
-  opacity: 0.45;
+  color: var(--wf-hero-ink-3);
 }
 
 .of {
@@ -858,7 +858,7 @@ table.censusTable {
 }
 
 .avatarQuiet {
-  opacity: 0.6;
+  color: var(--wf-dim);
 }
 
 .statusCard {

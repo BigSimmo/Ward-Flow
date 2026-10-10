@@ -31,14 +31,12 @@ const SOVEREIGN_TABS = ["Waiting answer", "In a bed", "Expected back", "Caseload
 
 const SOVEREIGN_ACTIONS = ["Intake referral", "Record contact", "CTO register", "Catchment MDT"] as const;
 
-const SOVEREIGN_TELEMETRY = [
-  "Caseload",
-  "Waiting answer",
-  "In a bed",
-  "Expected back",
-  "On a CTO",
-  "Crisis open",
-] as const;
+/*
+ * v10 (10 Oct 2026): at most five hero chips. The four list chips stay in the hero; the caseload
+ * moves to the answer beside the title and the Checking foot, and Crisis open is named in the foot
+ * (as a count in the demonstration, as not checked otherwise).
+ */
+const SOVEREIGN_TELEMETRY = ["Caseload", "Waiting answer", "In a bed", "Expected back", "On a CTO"] as const;
 
 /** The wordings the third edition and sovereign console replaced. */
 const RETIRED_HEADINGS = [
@@ -134,7 +132,7 @@ describe("the community team screen's Sovereign action bar and telemetry capsule
     }
   });
 
-  it("renders the 6 telemetry capsule labels", () => {
+  it("renders the hero's list chips and the caseload in the Checking foot", () => {
     renderTeam(team.id);
 
     for (const label of SOVEREIGN_TELEMETRY) {

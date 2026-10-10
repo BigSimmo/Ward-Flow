@@ -811,10 +811,18 @@
 
   .heroChips {
     display: grid;
+    grid-column: 1 / -1;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .heroChips > * {
+    min-width: 0;
+    padding: 0;
+    border-left: 0;
+  }
+
   .heroChips :global(button) {
+    width: 100%;
     min-height: var(--wf-touch);
     min-width: 0;
   }

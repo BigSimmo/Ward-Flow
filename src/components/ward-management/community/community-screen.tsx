@@ -13,6 +13,7 @@ import { ChevronDown, FileText, Phone, Plus, Search, Users } from "lucide-react"
 import {
   Badge,
   Button,
+  CheckingFoot,
   Count,
   Hero,
   HeroStat,
@@ -1150,50 +1151,60 @@ export function CommunityScreen({
             eyebrow="Community team"
             title={team.name}
             titleMeta={
-              <Popover
-                label="WA community mental health teams"
-                panelClassName={v6.teamPanel}
-                trigger={(props) => (
-                  <button
-                    {...props}
-                    type="button"
-                    className={v6.heroMenuButton}
-                    aria-label="Change team"
-                    title="Switch community team"
-                  >
-                    <Icon icon={ChevronDown} size={14} />
-                  </button>
-                )}
-              >
-                {(close) => (
-                  <div className={v6.teamMenu}>
-                    <p className={v6.teamMenuHead}>
-                      <span>WA community mental health teams</span>
-                      <span>{COMMUNITY_TEAM_PAGES.length} teams</span>
-                    </p>
-                    <ul className={v6.teamMenuList}>
-                      {COMMUNITY_TEAM_PAGES.map((other) => (
-                        <li key={other.id}>
-                          <Link
-                            className={v6.teamMenuItem}
-                            href={communityTeamHref(other)}
-                            aria-current={other.id === team.id ? "page" : undefined}
-                            onClick={close}
-                          >
-                            <span>{other.name}</span>
-                            {other.id === team.id ? <Badge size="sm">Active</Badge> : null}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </Popover>
+              <>
+                <span className={v6.heroAnswer} data-testid="ward-community-hero-answer">
+                  <b>{isDemoMode ? teamConfig.caseload : caseloadRows.length}</b> on the caseload
+                </span>
+                <Popover
+                  label="WA community mental health teams"
+                  panelClassName={v6.teamPanel}
+                  trigger={(props) => (
+                    <button
+                      {...props}
+                      type="button"
+                      className={v6.heroMenuButton}
+                      aria-label="Change team"
+                      title="Switch community team"
+                    >
+                      <Icon icon={ChevronDown} size={14} />
+                    </button>
+                  )}
+                >
+                  {(close) => (
+                    <div className={v6.teamMenu}>
+                      <p className={v6.teamMenuHead}>
+                        <span>WA community mental health teams</span>
+                        <span>{COMMUNITY_TEAM_PAGES.length} teams</span>
+                      </p>
+                      <ul className={v6.teamMenuList}>
+                        {COMMUNITY_TEAM_PAGES.map((other) => (
+                          <li key={other.id}>
+                            <Link
+                              className={v6.teamMenuItem}
+                              href={communityTeamHref(other)}
+                              aria-current={other.id === team.id ? "page" : undefined}
+                              onClick={close}
+                            >
+                              <span>{other.name}</span>
+                              {other.id === team.id ? <Badge size="sm">Active</Badge> : null}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </Popover>
+              </>
             }
             stats={
-              <div className={v6.heroStats}>
-                <HeroStat value={isDemoMode ? teamConfig.caseload : caseloadRows.length} label="Caseload" />
+              /*
+               * v10 (10 Oct 2026): four list chips at most five. Each one switches the list below,
+               * like its tab. The caseload is the answer beside the title; crisis episodes are not
+               * recorded anywhere in the model, so they sit in the Checking foot as not checked.
+               */
+              <div className={v6.heroStats} role="group" aria-label="Show a list">
                 <HeroStat
+                  inline
                   value={isDemoMode && !hasAnyReferralsForTeam ? teamConfig.triage : waitingReferrals.length}
                   trend={
                     isDemoMode && !hasAnyReferralsForTeam
@@ -1203,31 +1214,65 @@ export function CommunityScreen({
                         : undefined
                   }
                   label="Waiting answer"
+                  pressed={activeTab === "tab-triage"}
+                  onToggle={() => {
+                    setActiveTab("tab-triage");
+                    scrollToSection("ward-community-waiting");
+                  }}
                 />
                 <HeroStat
+                  inline
                   // One figure with the tab: everyone in a bed or holding one, and how many of
                   // those hold a pulled bed they have not yet reached.
                   value={isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length}
-                  trend={
-                    isDemoMode
-                      ? `of ${teamConfig.inpatientsTotal}`
-                      : bedPulledCount > 0
-                        ? `${bedPulledCount} bed pulled`
-                        : undefined
-                  }
                   label="In a bed"
+                  pressed={activeTab === "tab-inpatients"}
+                  onToggle={() => {
+                    setActiveTab("tab-inpatients");
+                    scrollToSection("ward-community-admitted");
+                  }}
                 />
-                <HeroStat value={isDemoMode ? teamConfig.egress : lists.expectedBack.length} label="Expected back" />
-                <HeroStat value={isDemoMode ? teamConfig.cto : form5ACount} label="On a CTO" />
-                {/* No record in the model holds a team's open crisis episodes, so outside the
-                    demonstration the count is not shown rather than invented. */}
                 <HeroStat
-                  value={isDemoMode ? teamConfig.crisis : <span aria-hidden="true">–</span>}
-                  trend={isDemoMode ? undefined : "Not recorded"}
-                  label="Crisis open"
-                  tone="info"
+                  inline
+                  value={isDemoMode ? teamConfig.egress : lists.expectedBack.length}
+                  label="Expected back"
+                  pressed={activeTab === "tab-egress"}
+                  onToggle={() => {
+                    setActiveTab("tab-egress");
+                    scrollToSection("ward-community-expected-back");
+                  }}
+                />
+                <HeroStat
+                  inline
+                  value={isDemoMode ? teamConfig.cto : form5ACount}
+                  label="On a CTO"
+                  pressed={activeTab === "tab-caseload"}
+                  onToggle={() => {
+                    setActiveTab("tab-caseload");
+                    scrollToSection("section-caseload");
+                  }}
                 />
               </div>
+            }
+            foot={
+              <CheckingFoot
+                items={[
+                  { id: "caseload", label: "Caseload", value: isDemoMode ? teamConfig.caseload : caseloadRows.length },
+                  {
+                    id: "urgent",
+                    label: "Urgent answers",
+                    value: isDemoMode && !hasAnyReferralsForTeam ? teamConfig.urgentTriage : urgentWaitingCount,
+                    tone:
+                      (isDemoMode && !hasAnyReferralsForTeam ? teamConfig.urgentTriage : urgentWaitingCount) > 0
+                        ? "danger"
+                        : undefined,
+                  },
+                  ...(isDemoMode
+                    ? [{ id: "crisis", label: "Crisis open", value: teamConfig.crisis }]
+                    : [{ id: "pulled", label: "Bed pulled", value: bedPulledCount }]),
+                ]}
+                notChecked={isDemoMode ? [] : ["Crisis open, no record holds a team's crisis episodes"]}
+              />
             }
             aside={
               <>
