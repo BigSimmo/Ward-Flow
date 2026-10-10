@@ -156,6 +156,7 @@
   display: flex;
   min-width: 0;
   border-right: 1px solid var(--wf-line);
+  container-type: inline-size;
 }
 
 .edButton {
@@ -237,6 +238,14 @@
   font-size: var(--wf-fs-11);
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* The word "longest" shows only where every tile has room for it, so no tile reads "longe…". The
+   button's spoken name always says "longest". A container query on .edCell, so all tiles agree. */
+@container (max-width: 8rem) {
+  .edLongest {
+    display: none;
+  }
 }
 
 /* ---------- three columns ---------- */
@@ -711,8 +720,11 @@
 }
 
 .groupFigures {
+  min-width: 0;
   margin-left: auto;
+  overflow: hidden;
   color: var(--wf-ink-2);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
