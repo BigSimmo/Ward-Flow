@@ -3,7 +3,8 @@ import { test } from "node:test";
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { migrate } from "./migrate.mjs";
-import { createWorkspaceStore } from "./postgres.mjs";
+import { MAX_DELIVERY_ATTEMPTS, createWorkspaceStore } from "./postgres.mjs";
+import { pushPayload } from "./push.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -28,7 +29,7 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
     const seed = await storeA.read(actorA);
     assert.equal(seed.revision, 1);
     assert.equal(seed.dataMode, "prototype");
-    assert.equal((await pool.query("SELECT max(version) AS version FROM ward_flow.migrations")).rows[0].version, 2);
+    assert.equal((await pool.query("SELECT max(version) AS version FROM ward_flow.migrations")).rows[0].version, 3);
     assert.ok(engine.validWorld(seed.payload));
     // Prepare two independent, valid movements targeting one allocatable secure bed.
     const world = structuredClone(seed.payload);
@@ -186,3 +187,356 @@ test("real PostgreSQL: shared commands, last-bed contention, retry, audit and re
     assert.equal(idleConnectionFailed, false, "PostgreSQL test pool reported an idle connection failure");
   }
 });
+
+test(
+  "real PostgreSQL: phone push announces each new act-now item once, to other coordinators",
+  { skip: !url },
+  async () => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 4 });
+    const actorA = "11111111-1111-4111-8111-111111111111";
+    const actorB = "22222222-2222-4222-8222-222222222222";
+    const formerCoordinator = "55555555-5555-4555-8555-555555555555";
+    const start = Date.parse("2026-10-07T10:00:00Z");
+    let at = new Date(start);
+    const workspaceId = randomUUID();
+    const sent = [];
+    const outcome = { e2: "expired" };
+    const logs = [];
+    const store = createWorkspaceStore(pool, {
+      workspaceId,
+      engine,
+      clock: () => at,
+      log: (event) => logs.push(event),
+      deliveryWaitMs: 10_000,
+      push: {
+        send: async (row, payload) => {
+          const name = row.endpoint.split("/").pop();
+          sent.push({ name, payload });
+          return { outcome: outcome[name] ?? "sent" };
+        },
+        payload: pushPayload,
+        coordinatorIds: [actorA, actorB],
+        maxPerAccount: 2,
+      },
+    });
+    const device = (name) => ({
+      endpoint: `https://fcm.googleapis.com/fcm/send/${name}`,
+      p256dh: Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 1)]).toString("base64url"),
+      auth: Buffer.alloc(16, 2).toString("base64url"),
+    });
+    const delivered = () =>
+      sent
+        .splice(0)
+        .map((entry) => entry.name)
+        .sort();
+    try {
+      await migrate(pool);
+      await store.ready();
+      await store.read(actorA);
+      assert.equal(await store.subscribe(actorA, device("e1")), "subscribed");
+      assert.equal(await store.subscribe(actorB, device("e2")), "subscribed");
+      assert.equal(await store.subscribe(actorB, device("e3")), "subscribed");
+      assert.equal(await store.subscribe(actorB, device("e3")), "subscribed", "re-subscribing a device is idempotent");
+      assert.equal(await store.subscribe(actorB, device("e5")), "limit");
+      // An account removed from the coordinator list keeps no alerts, even with a stored device.
+      assert.equal(await store.subscribe(formerCoordinator, device("e4")), "subscribed");
+
+      const jump = { type: "ADVANCE_CLOCK", role: "demo", minutes: 30 };
+      const commandId = randomUUID();
+      assert.equal((await store.command(actorA, commandId, 1, jump)).status, 200);
+      assert.deepEqual(delivered(), ["e2", "e3"], "the acting account and a former coordinator are not sent");
+      const removed = await pool.query("SELECT endpoint FROM ward_flow.push_subscriptions WHERE endpoint LIKE '%/e2'");
+      assert.equal(removed.rowCount, 0, "a 410 subscription is removed");
+      const success = await pool.query(
+        "SELECT last_success_at FROM ward_flow.push_subscriptions WHERE endpoint LIKE '%/e3'",
+      );
+      assert.ok(success.rows[0].last_success_at);
+
+      assert.equal((await store.command(actorA, commandId, 1, jump)).body.replayed, true);
+      const refresh = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: "rph-adult-secure" };
+      assert.equal((await store.command(actorA, randomUUID(), 2, refresh)).status, 200);
+      assert.deepEqual(delivered(), [], "a retry or a change with no new red item sends nothing");
+
+      at = new Date(start + 30 * 60_000);
+      await store.sweepPush();
+      const swept = sent.slice();
+      assert.deepEqual(delivered(), ["e1", "e3"], "time alone can raise a red item; every coordinator is told");
+      await store.sweepPush();
+      assert.deepEqual(delivered(), [], "an item still red is not announced twice");
+      for (const { payload } of swept) assert.doesNotMatch(JSON.stringify(payload), /WF-|PT-|UM\d/);
+
+      assert.equal(await store.pushStatus(actorB, device("e3").endpoint), true);
+      assert.equal(await store.pushStatus(actorA, device("e3").endpoint), false, "ownership is per account");
+      assert.equal(await store.unsubscribe(actorA, device("e3").endpoint), "not-found", "only the owner can revoke");
+      assert.equal(
+        await store.subscribe(actorA, { ...device("e3"), auth: "someone-elses-secret" }),
+        "in-use",
+        "a clashing endpoint without the device's own keys is refused",
+      );
+      assert.equal(await store.pushStatus(actorB, device("e3").endpoint), true, "the owner's record is untouched");
+      assert.equal(await store.unsubscribe(actorB, device("e3").endpoint), "unsubscribed");
+      assert.equal(await store.subscribe(actorA, device("e3")), "subscribed", "a revoked device can be taken over");
+      assert.equal(await store.pushStatus(actorA, device("e3").endpoint), true);
+      assert.equal(await store.unsubscribe(actorA, device("e3").endpoint), "unsubscribed");
+      at = new Date(start + 90 * 60_000);
+      await store.sweepPush();
+      assert.deepEqual(delivered(), ["e1"]);
+      assert.equal(await store.pushStatus(actorB, device("e3").endpoint), false, "a revoked record is not owned");
+      assert.deepEqual(logs, [], "nothing failed, so nothing is logged");
+    } finally {
+      await pool.end();
+    }
+  },
+);
+
+test(
+  "real PostgreSQL: phone push reaches every device, retries failures and never costs a change",
+  { skip: !url },
+  async (t) => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 4 });
+    const actorA = "11111111-1111-4111-8111-111111111111";
+    const actorB = "22222222-2222-4222-8222-222222222222";
+    const at = new Date("2026-10-07T10:00:00Z");
+    const jump = { type: "ADVANCE_CLOCK", role: "demo", minutes: 30 };
+    const keys = { p256dh: "p", auth: "a" };
+    function setup(options = {}) {
+      const workspaceId = randomUUID();
+      const sent = [];
+      const logs = [];
+      const store = createWorkspaceStore(pool, {
+        workspaceId,
+        engine: options.engine ?? engine,
+        clock: () => at,
+        log: (event) => logs.push(event),
+        deliveryWaitMs: options.deliveryWaitMs ?? 10_000,
+        // No gap between retries here, so a sweep can retry at once on the fixed clock.
+        retryAfterMs: 0,
+        push: {
+          send: async (row, payload) => {
+            sent.push(row.endpoint.split("/").pop());
+            return (await options.send?.(row, payload)) ?? { outcome: "sent" };
+          },
+          payload: pushPayload,
+          coordinatorIds: [actorA, actorB],
+          maxPerAccount: 10,
+        },
+      });
+      // Each case reuses the same device names in its own workspace. A device is only ever taken
+      // over once its earlier owner has turned alerts off, so the earlier cases' records are
+      // revoked first, as that owner's sign-out would.
+      const subscribe = store.subscribe;
+      store.subscribe = async (actorId, subscription) => {
+        await pool.query(
+          "UPDATE ward_flow.push_subscriptions SET revoked_at=now() WHERE endpoint=$1 AND workspace_id<>$2 AND revoked_at IS NULL",
+          [subscription.endpoint, workspaceId],
+        );
+        return subscribe(actorId, subscription);
+      };
+      return { workspaceId, sent, logs, store };
+    }
+    try {
+      await migrate(pool);
+      await t.test("more than one page of subscriptions: every device is sent", async () => {
+        const { workspaceId, sent, store } = setup();
+        await store.read(actorA);
+        await pool.query(
+          "INSERT INTO ward_flow.push_subscriptions(workspace_id, actor_id, endpoint, p256dh, auth) SELECT $1::uuid, $2::uuid, 'https://fcm.googleapis.com/fcm/send/' || $1::text || '-' || n, 'p', 'a' FROM generate_series(1, 205) AS n",
+          [workspaceId, actorB],
+        );
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.equal(new Set(sent).size, 205);
+        assert.equal(sent.length, 205);
+      });
+      const subscribeTwo = async (store) => {
+        await store.read(actorA);
+        await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/f1", ...keys });
+        await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/f2", ...keys });
+      };
+      const statuses = async (workspaceId) =>
+        (
+          await pool.query(
+            "SELECT DISTINCT split_part(s.endpoint, '/', 6) AS device, d.status, d.attempts FROM ward_flow.push_deliveries d JOIN ward_flow.push_subscriptions s ON s.id = d.subscription_id WHERE s.workspace_id=$1 ORDER BY 1",
+            [workspaceId],
+          )
+        ).rows.map((row) => `${row.device} ${row.status} ${row.attempts}`);
+      await t.test("one device that keeps refusing (403) is not retried, and no other device is resent", async () => {
+        const { workspaceId, sent, logs, store } = setup({
+          send: async (row) =>
+            row.endpoint.endsWith("/f1") ? { outcome: "failed", category: "status 403", retry: false } : undefined,
+        });
+        await subscribeTwo(store);
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"]);
+        await store.sweepPush();
+        await store.sweepPush();
+        assert.deepEqual(sent, [], "neither the refusing device nor the other is sent again");
+        assert.deepEqual(await statuses(workspaceId), ["f1 failed 1", "f2 sent 1"]);
+        assert.equal(logs.length, 1);
+      });
+      await t.test("an interrupted delivery left pending is sent by the next sweep", async () => {
+        let hang = true;
+        const { workspaceId, sent, store } = setup({
+          deliveryWaitMs: 50,
+          send: async () => (hang ? new Promise(() => {}) : undefined),
+        });
+        await subscribeTwo(store);
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"], "sends started, then the instance stopped");
+        assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 pending 1"]);
+        hang = false;
+        await store.sweepPush();
+        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"]);
+        assert.deepEqual(await statuses(workspaceId), ["f1 sent 2", "f2 sent 2"]);
+      });
+      await t.test("a device that keeps failing temporarily stops after the attempts cap", async () => {
+        const { workspaceId, sent, store } = setup({
+          send: async (row) =>
+            row.endpoint.endsWith("/f1") ? { outcome: "failed", category: "status 503", retry: true } : undefined,
+        });
+        await subscribeTwo(store);
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        for (let sweep = 0; sweep < MAX_DELIVERY_ATTEMPTS + 2; sweep += 1) await store.sweepPush();
+        assert.equal(sent.filter((name) => name === "f1").length, MAX_DELIVERY_ATTEMPTS);
+        assert.equal(sent.filter((name) => name === "f2").length, 1);
+        assert.deepEqual(await statuses(workspaceId), [`f1 failed ${MAX_DELIVERY_ATTEMPTS}`, "f2 sent 1"]);
+      });
+      await t.test("a temporary failure is retried by the next sweep; the log names no device", async () => {
+        let fail = true;
+        const { sent, logs, store } = setup({
+          send: async (row) =>
+            fail && row.endpoint.endsWith("/f1")
+              ? { outcome: "failed", category: "status 429", retry: true }
+              : undefined,
+        });
+        await store.read(actorA);
+        await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/f1", ...keys });
+        await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/f2", ...keys });
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"]);
+        assert.deepEqual(logs, [
+          {
+            event: "ward_backend_push_delivery_failures",
+            sent: 1,
+            expired: 0,
+            failed: 1,
+            failures: { "status 429": 1 },
+          },
+        ]);
+        assert.doesNotMatch(JSON.stringify(logs), /fcm|https?:|Ward Flow:/);
+        fail = false;
+        await store.sweepPush();
+        assert.deepEqual(sent.splice(0), ["f1"], "only the device that failed is retried");
+        await store.sweepPush();
+        assert.deepEqual(sent, [], "announced once delivery succeeded");
+      });
+      await t.test("a delivery holding a stale read never drops or empties a freshly queued alert", async () => {
+        // deliver() reads the world without a lock, so a commit can queue an item it has not seen.
+        // Simulate that read with an engine whose next alert list (the delivery's) comes back empty.
+        let stale = false;
+        let fail = true;
+        const lagging = {
+          ...engine,
+          actNowAlerts: (world, at) => {
+            if (stale) {
+              stale = false;
+              return [];
+            }
+            return engine.actNowAlerts(world, at);
+          },
+        };
+        const { workspaceId, sent, store } = setup({
+          engine: lagging,
+          send: async (row) =>
+            fail && row.endpoint.endsWith("/f1")
+              ? { outcome: "failed", category: "status 503", retry: true }
+              : undefined,
+        });
+        await subscribeTwo(store);
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"]);
+        assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"]);
+        fail = false;
+        // The sweep's evaluation (under the lock) sees the item; its delivery reads are stale.
+        const realAlerts = engine.actNowAlerts;
+        let calls = 0;
+        let staleReads = [2];
+        lagging.actNowAlerts = (world, at) => {
+          calls += 1;
+          return staleReads.includes(calls) ? [] : realAlerts(world, at);
+        };
+        await store.sweepPush();
+        assert.deepEqual(sent.splice(0), [], "nothing is sent for an item the delivery read has not seen");
+        assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"], "the row is kept, unclaimed");
+        calls = 0;
+        staleReads = [];
+        await store.sweepPush();
+        assert.deepEqual(sent.splice(0), ["f1"], "the next delivery sends it");
+        assert.deepEqual(await statuses(workspaceId), ["f1 sent 2", "f2 sent 1"]);
+      });
+      await t.test("a device signed in again drops its earlier pending alerts", async () => {
+        const { workspaceId, sent, store } = setup({
+          send: async (row) =>
+            row.endpoint.endsWith("/f1") ? { outcome: "failed", category: "status 503", retry: true } : undefined,
+        });
+        await subscribeTwo(store);
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"]);
+        assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"]);
+        // Another coordinator cannot take the device while its owner's alerts are still on.
+        const f1 = { endpoint: "https://fcm.googleapis.com/fcm/send/f1", ...keys };
+        assert.equal(await store.subscribe(actorA, { ...f1, auth: "not-this-device" }), "in-use");
+        assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"], "the owner's rows are untouched");
+        // The owner's sign-out never reached the server; the device itself, holding its own keys,
+        // can still be taken over before the retry.
+        assert.equal(await store.subscribe(actorA, f1), "subscribed");
+        assert.equal(await store.pushStatus(actorB, f1.endpoint), false, "the old owner no longer holds it");
+        await store.sweepPush();
+        assert.deepEqual(sent, [], "an item queued before the device changed hands is not sent");
+        assert.deepEqual(await statuses(workspaceId), ["f2 sent 1"]);
+      });
+      await t.test("an evaluation error is logged and the command still commits", async () => {
+        const broken = {
+          ...engine,
+          actNowAlerts: () => {
+            throw Object.assign(new TypeError("unexpected state"), { code: "ENGINE" });
+          },
+        };
+        const { sent, logs, store } = setup({ engine: broken });
+        await store.read(actorA);
+        await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/b1", ...keys });
+        const result = await store.command(actorA, randomUUID(), 1, jump);
+        assert.equal(result.status, 200);
+        assert.equal(result.body.snapshot.revision, 2);
+        assert.equal((await store.read(actorA)).revision, 2);
+        assert.deepEqual(sent, []);
+        assert.deepEqual(logs, [
+          {
+            event: "ward_backend_push_evaluation_failure",
+            errorName: "TypeError",
+            errorCode: "ENGINE",
+            message: "unexpected state",
+          },
+        ]);
+      });
+      await t.test("a slow push service does not hold the save response", async () => {
+        let release;
+        const held = new Promise((resolve) => {
+          release = resolve;
+        });
+        const { sent, store } = setup({ deliveryWaitMs: 50, send: async () => held });
+        await store.read(actorA);
+        await store.subscribe(actorB, { endpoint: "https://fcm.googleapis.com/fcm/send/s1", ...keys });
+        const started = performance.now();
+        assert.equal((await store.command(actorA, randomUUID(), 1, jump)).status, 200);
+        assert.ok(performance.now() - started < 1000, "returned before delivery finished");
+        assert.deepEqual(sent, ["s1"], "delivery had started");
+        release({ outcome: "sent" });
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      });
+    } finally {
+      await pool.end();
+    }
+  },
+);

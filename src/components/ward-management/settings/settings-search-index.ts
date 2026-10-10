@@ -46,6 +46,12 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     tab: "alerts",
     keywords: "act now red alert desktop notify",
   },
+  {
+    id: "phone-alerts",
+    label: "Phone alerts",
+    tab: "alerts",
+    keywords: "push mobile lock screen after hours act now red alert notify",
+  },
   { id: "buzz", label: "Buzz sound", tab: "alerts", keywords: "chime urgent audio sound test" },
   { id: "flash", label: "Flash on urgent", tab: "alerts", keywords: "visual pulse screen edge" },
   { id: "buzz-again", label: "Buzz again if not seen", tab: "alerts", keywords: "repeat acknowledge" },

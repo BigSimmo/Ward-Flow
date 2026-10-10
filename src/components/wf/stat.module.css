@@ -20,23 +20,23 @@
 }
 
 .value {
-  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
-  font-feature-settings:
-    "zero" 1,
-    "tnum" 1;
-  letter-spacing: -0.02em;
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--wf-tr-15);
   white-space: nowrap;
   color: var(--wf-ink-1);
 }
 
 .sm .value {
-  font-size: var(--wf-fs-16);
-  line-height: var(--wf-lh-16);
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
 }
 
+/* v9: nothing on a page is larger than 20 outside charts. */
 .lg .value {
-  font-size: var(--wf-fs-28);
-  line-height: var(--wf-lh-28);
+  font-size: var(--wf-fs-20);
+  line-height: var(--wf-lh-20);
+  letter-spacing: var(--wf-tr-20);
 }
 
 .label {
@@ -91,9 +91,7 @@
 .meterValue {
   flex: 0 0 auto;
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-  font-feature-settings:
-    "zero" 1,
-    "tnum" 1;
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-1);
   white-space: nowrap;
 }
@@ -206,9 +204,7 @@
 
 .legendValue {
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-  font-feature-settings:
-    "zero" 1,
-    "tnum" 1;
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-1);
 }
 

@@ -17,6 +17,7 @@ const files = [
   "server.mjs",
   "shared-http.mjs",
   "postgres.mjs",
+  "push.mjs",
   "dist/engine.mjs",
   "package.json",
   "package-lock.json",
