@@ -16,7 +16,10 @@
   min-width: 0;
   padding: var(--wf-s-3) var(--wf-s-4);
   box-sizing: border-box;
-  background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  /* v9 Elevate: a fixed soft light from the top right of the band */
+  background:
+    radial-gradient(720px 240px at 88% -30%, rgba(122, 170, 220, 0.22), transparent 70%),
+    linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
   border: 1px solid var(--wf-hero-edge);
   border-radius: var(--wf-r-xl);
   color: var(--wf-hero-ink);
@@ -43,8 +46,8 @@
 }
 
 .eyebrow {
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
-  letter-spacing: 0.07em;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: var(--wf-tr-caps);
   text-transform: uppercase;
   color: var(--wf-hero-ink-3);
   white-space: nowrap;
@@ -105,7 +108,7 @@
   color: var(--wf-hero-ink-2);
 }
 
-/* Hero stat: mono value over a label, hairline separators between. */
+/* Hero stat: a 15px tabular figure over a label, hairline separators between (v9). */
 .stat {
   display: flex;
   flex-direction: column;
@@ -123,11 +126,9 @@
 }
 
 .value {
-  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
-  font-feature-settings:
-    "zero" 1,
-    "tnum" 1;
-  letter-spacing: -0.02em;
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--wf-tr-15);
   white-space: nowrap;
   color: var(--wf-hero-ink);
 }
@@ -193,7 +194,8 @@
   box-sizing: border-box;
   border-radius: 50%;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 40%, transparent);
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .done .stepMark {
