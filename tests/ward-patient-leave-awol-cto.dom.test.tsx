@@ -100,6 +100,8 @@ describe("leave, absent without leave and CTO modes (D-38)", () => {
   it("records and ends a community treatment order on a record with nothing open", () => {
     const root = renderPatient("PT-005");
     expect(root).toHaveAttribute("data-patient-mode", "idle");
+    // Not active still names the recorded GP under Who to call.
+    expect(within(screen.getByTestId("ward-patient-who-to-call")).getByText("GP")).toBeVisible();
     fireEvent.click(within(screen.getByTestId("ward-patient-gate-legal")).getByRole("button", { name: "Record CTO" }));
     expect(root).toHaveAttribute("data-patient-mode", "cto");
     expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Not active, on a CTO");
