@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { Button } from "./button";
 import { cx } from "./cx";
@@ -87,6 +87,42 @@ function useUndoWindow(undo: ToastUndo | undefined, paused: boolean) {
   return { phase, secondsLeft, finish: () => setPhase("undone") };
 }
 
+/** Pauses the Undo window while the toast is hovered or holds focus. No handlers without Undo. */
+function useUndoPause(enabled: boolean) {
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const handlers: HTMLAttributes<HTMLDivElement> = enabled
+    ? {
+        onPointerEnter: () => setHovered(true),
+        onPointerLeave: () => setHovered(false),
+        onFocus: () => setFocused(true),
+        onBlur: (event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
+        },
+      }
+    : {};
+  return { paused: hovered || focused, handlers };
+}
+
+function UndoButton({ undo, phase, finish }: { undo: ToastUndo; phase: UndoPhase; finish: () => void }) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className={styles.toastAction}
+      // Stays in place once used or run out, so focus is never dropped, but no longer acts.
+      aria-disabled={phase !== "running" || undefined}
+      onClick={() => {
+        if (phase !== "running") return;
+        finish();
+        undo.onUndo();
+      }}
+    >
+      {undo.label ?? "Undo"}
+    </Button>
+  );
+}
+
 /**
  * The v6 toast card: regular glass, glyph first, one line, optional Undo and close. Presentational
  * only. `ToastProvider` in `@/components/ui/toast` renders it inside its polite live region; a
@@ -105,9 +141,7 @@ export function ToastView({
   style,
   ...data
 }: ToastViewProps) {
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
-  const paused = hovered || focused;
+  const { paused, handlers } = useUndoPause(Boolean(undo));
   const { phase, secondsLeft, finish } = useUndoWindow(undo, paused);
 
   return (
@@ -116,16 +150,7 @@ export function ToastView({
       style={undo ? ({ ...style, "--wf-undo-ms": `${Math.max(0, undo.durationMs)}ms` } as CSSProperties) : style}
       data-undo={undo ? phase : undefined}
       data-paused={undo && paused ? "true" : undefined}
-      onPointerEnter={undo ? () => setHovered(true) : undefined}
-      onPointerLeave={undo ? () => setHovered(false) : undefined}
-      onFocus={undo ? () => setFocused(true) : undefined}
-      onBlur={
-        undo
-          ? (event) => {
-              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
-            }
-          : undefined
-      }
+      {...handlers}
       {...data}
     >
       {tone ? <StatusGlyph tone={tone} /> : null}
@@ -145,22 +170,7 @@ export function ToastView({
           {action.label}
         </Button>
       ) : null}
-      {undo ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          className={styles.toastAction}
-          // Stays in place once used or run out, so focus is never dropped, but no longer acts.
-          aria-disabled={phase !== "running" || undefined}
-          onClick={() => {
-            if (phase !== "running") return;
-            finish();
-            undo.onUndo();
-          }}
-        >
-          {undo.label ?? "Undo"}
-        </Button>
-      ) : null}
+      {undo ? <UndoButton undo={undo} phase={phase} finish={finish} /> : null}
       {onClose ? (
         <Button
           variant="ghost"
