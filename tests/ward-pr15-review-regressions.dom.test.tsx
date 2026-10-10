@@ -266,7 +266,7 @@ describe("PR15 discharge and referral provenance", () => {
       readDischargeRecords: () => ({ status: "allowed", value: [record] }),
       readDischargeRecord: () => ({ status: "allowed", value: record }),
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Admission records/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
     const worklist = screen.getByRole("region", { name: "Discharge worklist" });
     fireEvent.click(
       within(worklist)

@@ -123,8 +123,7 @@
   position: absolute;
   right: 0;
   left: 0;
-  border-top: 1px solid var(--wf-line);
-  opacity: 0.6;
+  border-top: 1px solid color-mix(in srgb, var(--wf-line) 60%, transparent);
 }
 
 .gridValue {
@@ -133,7 +132,7 @@
   left: -2rem;
   width: 1.5rem;
   color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
   text-align: right;
 }
 
@@ -234,7 +233,7 @@
 }
 
 .day[data-past] .dayLabel {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 .day[aria-pressed="true"] .dayLabel {

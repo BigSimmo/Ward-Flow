@@ -44,7 +44,7 @@ function ResetScenario() {
   );
 }
 function openFirstRecord() {
-  fireEvent.click(screen.getByRole("button", { name: /^Admission records/ }));
+  fireEvent.click(screen.getByRole("button", { name: /^History/ }));
   const rows = within(screen.getByRole("region", { name: "Discharge worklist" })).getAllByRole("row");
   const opener = rows.flatMap((row) => within(row).queryAllByRole("button"))[0];
   expect(opener).toBeDefined();

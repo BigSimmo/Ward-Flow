@@ -28,27 +28,26 @@ function renderBoard() {
   );
 }
 
-describe("departure planning connects to the ward form", () => {
-  it("opens a ward selector and links to the Decisions tab", () => {
+// v10 (10 Oct 2026): the build guide replaced the hero's Plan departure with the Ready to leave
+// checklist in the release panel. Departure planning stays on the ward's own Decisions tab.
+describe("departure readiness lives in the release panel", () => {
+  it("has no Plan departure in the hero, and a release opens with Ready to leave and Undo", () => {
     renderBoard();
-    const trigger = screen.getByTestId("ward-discharge-plan-departure");
-    expect(trigger).not.toHaveAttribute("aria-disabled", "true");
-    fireEvent.click(trigger);
-    const select = screen.getByRole("combobox", { name: "Ward for departure planning" });
-    const option = within(select).getAllByRole("option")[1] as HTMLOptionElement;
-    fireEvent.change(select, { target: { value: option.value } });
-    expect(screen.getByRole("link", { name: "Open ward departure planning" })).toHaveAttribute(
-      "href",
-      `/mockups/ward-flow/ward/${option.value}?tab=departure-planning`,
-    );
-    fireEvent.click(trigger);
-    expect(screen.queryByRole("combobox", { name: "Ward for departure planning" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-discharge-plan-departure")).toBeNull();
+    const blockedRow = document.querySelector<HTMLElement>('tr[data-act="true"]');
+    expect(blockedRow).not.toBeNull();
+    fireEvent.click(blockedRow!);
+    const ready = screen.getByTestId("ward-discharge-ready-to-leave");
+    const item = within(ready).getByTestId("ward-discharge-ready-medicines");
+    const before = item.getAttribute("aria-pressed");
+    fireEvent.click(item);
+    expect(item.getAttribute("aria-pressed")).not.toBe(before);
+    fireEvent.click(within(screen.getByTestId("ward-discharge-ready-toast")).getByRole("button", { name: "Undo" }));
+    expect(item.getAttribute("aria-pressed")).toBe(before);
   });
 
   it("never renders the excluded barrier option or the false census/invariant claim", () => {
     renderBoard();
-
-    fireEvent.click(screen.getByTestId("ward-discharge-plan-departure"));
 
     // BED_RELEASE_BLOCKERS (ward-change-reasons.ts) does not accept this reason — the removed
     // dialog offered it anyway. Assert on the whole document, not a dialog root, because the
@@ -100,7 +99,7 @@ describe("the discharge board's KPI captions no longer assert what the count doe
   it("retitles the KPI cards to the records population once the population switch is used", () => {
     renderBoard();
 
-    fireEvent.click(screen.getByRole("button", { name: /Admission records/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
 
     // Before this fix these two cards still read "Blocked releases" / "Discharged · 24h"
     // while counting admission records, not releases.

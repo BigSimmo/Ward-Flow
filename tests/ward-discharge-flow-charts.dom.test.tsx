@@ -39,7 +39,7 @@ describe("Discharges charts under the table (direction A)", () => {
     const expected = Number(/: (\d+) due/u.exec(day!.getAttribute("aria-label") ?? "")?.[1]);
     fireEvent.click(day!);
     // A click on a chart moves to the people view.
-    expect(screen.getByRole("button", { name: /^Admission records/u })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^History/u })).toHaveAttribute("aria-pressed", "true");
     const rows = worklistRows();
     const lit = rows.filter((row) => row.getAttribute("data-highlighted") === "true");
     expect(lit).toHaveLength(expected);
@@ -65,15 +65,17 @@ describe("Discharges charts under the table (direction A)", () => {
 
   it("clears a hiding status filter on a chart click, and drops the highlight on a population switch", () => {
     renderBoard();
-    fireEvent.click(screen.getByRole("button", { name: /^Admission records/u }));
-    fireEvent.click(screen.getByTestId("ward-discharge-kpi-confirmed"));
+    fireEvent.click(screen.getByRole("button", { name: /^History/u }));
+    const confirmedTab = () =>
+      within(screen.getByLabelText("Filter by discharge status")).getByRole("button", { name: /^Confirmed/ });
+    fireEvent.click(confirmedTab());
     const first = within(screen.getByTestId("ward-discharge-barrier-bars")).getAllByRole("button")[0]!;
     const count = Number(/: (\d+) blocked/u.exec(first.getAttribute("aria-label") ?? "")?.[1]);
     expect(count).toBeGreaterThan(0);
     fireEvent.click(first);
-    expect(screen.getByTestId("ward-discharge-kpi-confirmed")).toHaveAttribute("aria-pressed", "false");
+    expect(confirmedTab()).toHaveAttribute("aria-pressed", "false");
     expect(worklistRows().filter((row) => row.getAttribute("data-highlighted") === "true")).toHaveLength(count);
-    fireEvent.click(screen.getByRole("button", { name: /^Anonymous releases/u }));
+    fireEvent.click(screen.getByRole("button", { name: /^Now,/u }));
     expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
   });
 

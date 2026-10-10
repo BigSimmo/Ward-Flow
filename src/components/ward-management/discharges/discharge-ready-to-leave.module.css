@@ -1,0 +1,109 @@
+/*
+ * Ready to leave checklist (v10 Discharges, Milestones tab). 28px rows on desktop, 44px on the
+ * phone. No tinted fills: a tick is an ink box, an open item an outline.
+ */
+
+.ready {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin-top: var(--wf-s-4);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  padding: 2px var(--wf-s-1);
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: var(--wf-surface-2);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+.box {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--wf-line-2);
+  border-radius: 4px;
+  color: var(--wf-surface);
+}
+
+.item[aria-pressed="true"] .box {
+  border-color: var(--wf-ink-1);
+  background: var(--wf-ink-1);
+}
+
+.label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note {
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toast {
+  max-width: 100%;
+}
+
+@media (max-width: 48rem) {
+  .item {
+    min-height: var(--wf-touch, 44px);
+  }
+}
