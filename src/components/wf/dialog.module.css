@@ -1,0 +1,181 @@
+/* v9 dialog: sheet glass (88% day, 86% night, blur 32px) over the strong scrim, for steps that
+   block the page. One hairline, a bright top edge, the sheen and e3. Without blur or transparency
+   the panel falls back to the solid overlay surface. No fill-mode on the entry: it stops the blur. */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wf-s-4);
+  box-sizing: border-box;
+  background: var(--wf-scrim-strong, var(--wf-scrim));
+  pointer-events: auto;
+  animation: wfScrimIn var(--wf-t-enter) var(--wf-ease-out);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: min(480px, 100%);
+  max-height: calc(100dvh - 2 * var(--wf-s-4));
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background-color: var(--wf-glass-sheet, var(--wf-glass-thick));
+  background-image: var(--wf-sheen);
+  -webkit-backdrop-filter: blur(32px) saturate(1.4);
+  backdrop-filter: blur(32px) saturate(1.4);
+  box-shadow:
+    inset 0 1px 0 var(--wf-glass-hl),
+    var(--wf-e3);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  animation: wfDialogIn var(--wf-t-sheet) var(--wf-ease-sheet);
+}
+
+.panel:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.sm {
+  width: min(400px, 100%);
+}
+
+.lg {
+  width: min(640px, 100%);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 56px;
+  padding: var(--wf-s-3) var(--wf-s-2) var(--wf-s-3) var(--wf-s-4);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.title {
+  min-width: 0;
+  flex: 1 1 auto;
+  margin: 0;
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
+  letter-spacing: var(--wf-tr-15);
+  color: var(--wf-ink-1);
+}
+
+.close {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--wf-ink-2);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--wf-s-4);
+}
+
+/* Only ink-1 and ink-2 sit on glass. */
+.description {
+  margin: 0;
+  color: var(--wf-ink-2);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+/* The scrim fades its colour, not its opacity: opacity on an ancestor of glass would cut the
+   panel's blur off from the page while it runs. */
+@keyframes wfScrimIn {
+  from {
+    background-color: transparent;
+  }
+}
+
+@keyframes wfDialogFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes wfDialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Reduced motion keeps the entry as a short fade (the token is 120ms there), with no rise. */
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation-name: wfDialogFade;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .panel {
+    background-color: var(--wf-overlay);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .panel {
+    background-color: var(--wf-overlay);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Phone: the dialog rises from the bottom edge so its actions sit under the thumb. */
+@media (max-width: 48rem) {
+  .scrim {
+    align-items: flex-end;
+    padding: var(--wf-s-2);
+    padding-bottom: max(var(--wf-s-2), env(safe-area-inset-bottom));
+  }
+  .panel,
+  .sm,
+  .lg {
+    width: 100%;
+  }
+}
+
+@media (forced-colors: active) {
+  .panel {
+    border: 1px solid CanvasText;
+  }
+  .panel:focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+@media print {
+  .scrim {
+    display: none;
+  }
+}
