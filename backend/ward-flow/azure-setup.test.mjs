@@ -136,7 +136,7 @@ test("Azure provisioning deploys a new private Entra-only Australian database se
     ...server,
     name: serverName,
     fullyQualifiedDomainName: `${serverName}.postgres.database.azure.com`,
-    id: server.id.replace(server.name, serverName),
+    id: server.id.replace(`/flexibleServers/${server.name}`, `/flexibleServers/${serverName}`),
   };
   const result = await run("provision", {
     config: { requireExistingDatabase: false, serverName, databaseName: "wardflow" },
@@ -204,7 +204,7 @@ test("setup targets the existing wardflow_dev database without creating a duplic
     ...server,
     name: "wardflow-dev-aue",
     fullyQualifiedDomainName: "wardflow-dev-aue.postgres.database.azure.com",
-    id: server.id.replace("wardflow-dev-aue", "wardflow-dev-aue"),
+    id: server.id,
   };
   const result = await run("provision", {
     config: { serverName: existing.name, databaseName: "wardflow_dev" },
