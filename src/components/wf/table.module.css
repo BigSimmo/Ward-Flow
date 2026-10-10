@@ -1,4 +1,5 @@
-/* v6 rows and tables: 52px rows, hairlines, the selected row's 3px slate edge is the only stripe. */
+/* v6 rows and tables, v9 heights: rows read `--wf-row` (density), hairlines, the selected row's 3px
+ * edge is the only stripe. An act-now row has a thin red full edge and no fill. */
 
 .row {
   display: grid;
@@ -26,6 +27,25 @@
   box-shadow: inset 3px 0 0 var(--wf-accent-strong);
 }
 
+/* Act now: a thin red edge all round, never a fill (v9 section 5 and 9). */
+.actNow {
+  box-shadow: inset 0 0 0 1px var(--wf-danger);
+}
+
+.selected.actNow {
+  box-shadow:
+    inset 3px 0 0 var(--wf-accent-strong),
+    inset 0 0 0 1px var(--wf-danger);
+}
+
+/* v9 section 8: a row's ring sits inside with a 2px gap, so it never touches the red edge or the
+ * selection stripe, and it paints over both: focus wins over selection. */
+.row:focus-visible,
+.table tr:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -4px;
+}
+
 .head {
   min-height: 36px;
   background: var(--wf-surface-2);
@@ -45,7 +65,7 @@
 
 /* Header cell (`.th`). */
 .th {
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--wf-ink-3);
@@ -80,13 +100,15 @@
   border-radius: 2px;
 }
 
-/* Tier digit tile (`.sq`). Tier 1 has danger ink and a stronger edge, never a fill. */
+/* Tier (`.sq`): a mono "T1" rank pill, so it never reads as a count. Tier 1 is neutral (owner
+ * ruling, 10 Oct): bolder ink and a darker edge, never red, because red means act now. */
 .sq {
-  width: 24px;
   height: 24px;
-  flex: 0 0 24px;
+  min-width: 28px;
+  flex: 0 0 auto;
+  padding: 0 6px;
   box-sizing: border-box;
-  border-radius: var(--wf-r-xs);
+  border-radius: var(--wf-r-pill);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -97,7 +119,7 @@
 }
 
 .t1 {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
   border-color: var(--wf-line-3);
 }
 
@@ -134,7 +156,7 @@
   height: 36px;
   padding: 0 var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--wf-ink-3);
@@ -170,6 +192,11 @@
   box-shadow: inset 3px 0 0 var(--wf-accent-strong);
 }
 
+.table tr.actNow {
+  outline: 1px solid var(--wf-danger);
+  outline-offset: -1px;
+}
+
 .num {
   font-family: var(--wf-mono);
   font-weight: 600;
@@ -178,6 +205,15 @@
 }
 
 @media (forced-colors: active) {
+  .actNow,
+  .table tr.actNow {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+  .row:focus-visible,
+  .table tr:focus-visible {
+    outline-color: Highlight;
+  }
   .selected,
   .table tr.selected > td:first-child {
     box-shadow: none;

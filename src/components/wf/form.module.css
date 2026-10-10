@@ -27,7 +27,7 @@
 }
 
 .hint {
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   color: var(--wf-ink-3);
   white-space: nowrap;
 }

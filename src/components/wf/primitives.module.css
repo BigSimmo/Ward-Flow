@@ -21,7 +21,7 @@
 .kbd {
   display: inline-flex;
   align-items: center;
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
   font-feature-settings:
     "zero" 1,
     "tnum" 1;

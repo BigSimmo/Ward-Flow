@@ -78,7 +78,7 @@ export function Meter({
         aria-label={label}
         aria-valuemin={0}
         aria-valuemax={max}
-        aria-valuenow={value}
+        aria-valuenow={Math.min(max, Math.max(0, value))}
         aria-valuetext={typeof text === "string" ? text : pct}
       >
         <span className={cx(styles.fill, fillClass(fill))} style={{ width: `${ratio * 100}%` }} />

@@ -90,11 +90,24 @@
   }
 }
 
+/* Last-resort focus: the dialog itself takes focus when it holds nothing focusable (a sheet with its
+ * header hidden). From the keyboard it shows the v9 ring inset, with a 2px gap, so the viewport edge
+ * never clips it. A pointer-driven focus draws no ring: the dialog role already announces it. */
+.panel:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -4px;
+}
+
+.panel:focus:not(:focus-visible) {
+  outline: none;
+}
+
 @media (forced-colors: active) {
   :where(.panel) {
     border-color: CanvasText;
   }
-  :where(.close):focus-visible {
+  :where(.close):focus-visible,
+  .panel:focus-visible {
     outline-color: CanvasText;
   }
 }

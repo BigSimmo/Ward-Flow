@@ -1,6 +1,6 @@
-/* v6 tooltip (`.tip`): small ink bubble. Dark on day, raised slate on night. Tokens only. */
+/* v6 tooltip (`.tip`): small ink bubble. Dark on day, raised slate on night. Tokens only.
+   v9 section 8: hoverable (WCAG 1.4.13), so no `pointer-events: none`; the pointer may move onto it. */
 .tip {
-  pointer-events: none;
   width: max-content;
   max-width: 220px;
   box-sizing: border-box;

@@ -41,7 +41,7 @@
 }
 
 .eyebrowTitle {
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--wf-ink-3);
