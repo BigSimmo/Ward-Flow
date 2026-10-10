@@ -162,6 +162,21 @@
   overflow: auto;
 }
 
+/* Desktop: the A to Z card is a rail (ward-shell.module.css, data-wf-rail, from 1025px). The body
+   under its heading fills the card, and only the list scrolls inside it, so the letter rail and
+   the column heading stay in view instead of the list stopping at a fixed 46rem. */
+@media (min-width: 1025px) {
+  .directoryBody {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .listWrap {
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+  }
+}
+
 .listWrap:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
