@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 import type { NotificationSupport } from "@/components/ward-management/shell/ward-act-now-notifications";
+import { phonePushRow, type PhonePushState } from "@/components/ward-management/shell/ward-phone-push";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
@@ -95,6 +96,26 @@ function PreviewSegmented({
 
 /* Alerts ------------------------------------------------------------------------------------ */
 
+/**
+ * Phone alerts for this device. Always shown: when unavailable it greys out and says why (local
+ * demonstration, not signed in, browser or server not set up, or notifications blocked).
+ */
+function PhonePushRow({ state, onChange }: { state: PhonePushState; onChange: (next: boolean) => void }) {
+  const row = phonePushRow(state);
+  return (
+    <SettingRow setting="phone-alerts" title="Phone alerts" sub={row.sub} testId="setting-phone-alerts-row">
+      <Switch
+        checked={row.checked}
+        unavailable={row.unavailable}
+        onCheckedChange={(next) => {
+          if (!row.unavailable) onChange(next);
+        }}
+        label={<SrOnly>Phone alerts</SrOnly>}
+      />
+    </SettingRow>
+  );
+}
+
 const ACT_NOW_EVENTS = ["Legal due time in first warning", "Urgent buzz from a ward"] as const;
 
 const OTHER_EVENTS: readonly { readonly name: string; readonly inApp: boolean; readonly sound: boolean }[] = [
@@ -110,6 +131,8 @@ export function AlertsPane({
   notifications = false,
   notificationPermission = "default",
   onNotificationsChange = () => {},
+  phonePush = "local",
+  onPhonePushChange = () => {},
   buzz,
   onBuzzChange,
   onTestBuzz,
@@ -119,6 +142,9 @@ export function AlertsPane({
   notifications?: boolean;
   notificationPermission?: NotificationSupport;
   onNotificationsChange?: (next: boolean) => void;
+  /** Feature 4, 10 Oct 2026: phone alerts through the shared Azure workspace, per device. */
+  phonePush?: PhonePushState;
+  onPhonePushChange?: (next: boolean) => void;
   buzz: boolean;
   onBuzzChange: (next: boolean) => void;
   onTestBuzz: () => void;
@@ -167,6 +193,7 @@ export function AlertsPane({
                 label={<SrOnly>Browser notifications</SrOnly>}
               />
             </SettingRow>
+            <PhonePushRow state={phonePush} onChange={onPhonePushChange} />
             <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz" testId="setting-buzz-alert-row">
               <button
                 type="button"
