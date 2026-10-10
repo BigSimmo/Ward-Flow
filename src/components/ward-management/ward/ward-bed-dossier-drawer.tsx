@@ -568,6 +568,7 @@ export function WardBedDossierDrawer({
                     variant="sec"
                     size="lg"
                     className={styles.pill}
+                    disabledReason={!isAwayAtEd && bedItem.status === "leave" ? "Record their return from leave first" : undefined}
                     onClick={() => {
                       if (isAwayAtEd) onMarkBack?.(selectedBed);
                       else onMarkAtEd?.(selectedBed);

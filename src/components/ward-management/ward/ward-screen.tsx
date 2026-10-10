@@ -2074,6 +2074,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   }}
                   onMarkAtEd={(bedNum) => {
                     if (selectedBedItem?.admissionId) {
+                      const heldBed = leaveBeds.find((bed) => bed.admissionId === selectedBedItem.admissionId);
+                      if (heldBed) {
+                        setToastMessage(
+                          `Not recorded: patient is ${heldBed.absentWithoutLeave ? "absent without leave" : "on leave"}; record their return first.`,
+                        );
+                        return;
+                      }
                       dispatch({
                         type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
                         role: "ward",
@@ -2081,8 +2088,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                         admissionId: selectedBedItem.admissionId,
                         actingUnitId: unitId,
                       });
+                      setToastMessage(`Bed ${bedNum} patient marked away at ED.`);
                     }
-                    setToastMessage(`Bed ${bedNum} patient marked away at ED.`);
                   }}
                   onMarkBack={(bedNum) => {
                     if (selectedBedItem?.admissionId) {
