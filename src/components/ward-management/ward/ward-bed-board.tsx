@@ -3,11 +3,12 @@
 import { Hand, LayoutGrid, List } from "lucide-react";
 
 import type { Unit } from "@/components/ward-management/ward-model";
-import { Card, CardHead, DisabledReason, StatusGlyph, buttonClass, cx, durMinutes, useIsPhone } from "@/components/wf";
+import { Card, CardHead, DisabledReason, StatusGlyph, buttonClass, cx, useIsPhone } from "@/components/wf";
 
 import { bedFits, bedNumberLabel, BOARD_RESTING_SAY, type BoardPick } from "./ward-bed-board-logic";
 import { bedGlyphTone, type BedItem } from "./ward-beds-matrix";
 import styles from "./ward-bed-board.module.css";
+import { plainAge } from "@/components/ward-management/wards/plain-age";
 
 /** One referral waiting for this ward's answer that the board can place in a bed. */
 export type WaitingReferral = {
@@ -147,7 +148,7 @@ export function WardBedBoard({
               <StatusGlyph tone={referral.waitedMinutes >= 240 ? "warning" : "neutral"} size={10} />
               <span className={styles.chipName}>{referral.name}</span>
               <span className={styles.chipMeta}>
-                {referral.sex} · {durMinutes(referral.waitedMinutes)}
+                {referral.sex} · {plainAge(referral.waitedMinutes)}
               </span>
             </button>
             {referral.blockedReason ? <DisabledReason id={reasonId}>{referral.blockedReason}</DisabledReason> : null}

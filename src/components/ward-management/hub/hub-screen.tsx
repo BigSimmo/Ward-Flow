@@ -39,7 +39,6 @@ import {
   TextInput,
   buttonClass,
   cx,
-  durMinutes,
   useIsPhone,
 } from "@/components/wf";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -70,6 +69,7 @@ import {
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 
 import styles from "./hub.module.css";
+import { plainAge } from "@/components/ward-management/wards/plain-age";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 /**
@@ -367,11 +367,11 @@ export function HubScreen() {
               <>
                 {/* The word, not only the colour — a stale reading must survive a reader who cannot see it. */}
                 <StatusGlyph tone="warning" size={8} />
-                {durMinutes(now - entry.confirmedAt)} <span className={styles.flagPill}>stale</span>
+                {plainAge(now - entry.confirmedAt)} <span className={styles.flagPill}>stale</span>
               </>
             ) : (
               <>
-                {durMinutes(now - entry.confirmedAt)} <span className={styles.resultAgo}>ago</span>
+                {plainAge(now - entry.confirmedAt)} <span className={styles.resultAgo}>ago</span>
               </>
             )}
           </span>
@@ -471,7 +471,7 @@ export function HubScreen() {
                 {
                   id: "oldest",
                   label: "Oldest bed count",
-                  value: oldestConfirmedAt === undefined ? "Not recorded" : durMinutes(now - oldestConfirmedAt),
+                  value: oldestConfirmedAt === undefined ? "Not recorded" : plainAge(now - oldestConfirmedAt),
                 },
               ]}
               notChecked={["ED and team capacity, no feed"]}
@@ -764,7 +764,7 @@ export function HubScreen() {
                                 {formatInstantWithDay(selected.confirmedAt, now)}
                               </span>{" "}
                               <span className={styles.factMuted}>
-                                {durMinutes(now - selected.confirmedAt)} ago
+                                {plainAge(now - selected.confirmedAt)} ago
                                 {selected.stale === true ? ", stale, check with the ward before relying on it" : ""}
                               </span>
                             </dd>
