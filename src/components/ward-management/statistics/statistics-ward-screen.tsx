@@ -245,7 +245,8 @@ export function StatisticsWardScreen({
       }}
       stats={
         <>
-          <HeroStat value={unit.beds} label="Beds" />
+          {/* Five figures at most (v10). Beds is on both bed cards' heads, so the hero leaves it
+              out; the export still carries it. */}
           <HeroStat value={wardOccupancy.occupied} label={`${occupancyPct}% occupied`} />
           <HeroStat
             value={wardOccupancy.pulled}

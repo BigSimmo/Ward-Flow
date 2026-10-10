@@ -95,14 +95,14 @@ export function NetworkBedflow({
     { id: "all" as const, label: "All" },
     ...groups.map((group) => ({ id: group.service, label: serviceShort(group.service) })),
   ];
-  const shown = groups
-    .filter((group) => scope === "all" || group.service === scope)
-    .map((group) => ({ ...group, rows: readyOnly ? group.rows.filter((row) => row.states.ready > 0) : group.rows }));
+  // Ready only highlights and dims, it never hides (v10: filters highlight and dim).
+  const shown = groups.filter((group) => scope === "all" || group.service === scope);
   const unitCount = groups.reduce((sum, group) => sum + group.rows.length, 0);
   const shownCount = shown.reduce((sum, group) => sum + group.rows.length, 0);
   const highlightedCount = highlight
     ? shown.reduce((sum, group) => sum + group.rows.filter((row) => matchesHighlight(highlight, row, group)).length, 0)
     : 0;
+  const readyCount = shown.reduce((sum, group) => sum + group.rows.filter((row) => row.states.ready > 0).length, 0);
 
   return (
     <Card as="section" className={styles.bedflow} aria-labelledby="ward-network-flow-heading">
@@ -150,6 +150,13 @@ export function NetworkBedflow({
               Clear
             </Button>
           ) : null}
+        </p>
+      ) : null}
+      {readyOnly && !highlight ? (
+        <p className={styles.highlightNote} data-testid="ward-network-ready-only-note">
+          <span>
+            <b>{readyCount}</b> of {shownCount} units with a ready bed, all rows stay
+          </span>
         </p>
       ) : null}
       <div className={styles.serviceGrid}>
@@ -200,12 +207,17 @@ export function NetworkBedflow({
                     {group.rows.map((row) => {
                       const selected = row.unit.id === selectedUnitId;
                       const match = highlight ? matchesHighlight(highlight, row, group) : false;
-                      const mark = (kind: NetworkHighlight) => (highlight === kind && match ? "true" : undefined);
+                      const readyMatch = row.states.ready > 0;
+                      const mark = (kind: NetworkHighlight) =>
+                        (highlight === kind && match) || (kind === "ready" && readyOnly && !highlight && readyMatch)
+                          ? "true"
+                          : undefined;
+                      const dim = highlight ? !match : readyOnly && !readyMatch;
                       return (
                         <tr
                           key={row.unit.id}
                           className={cx(selected && styles.rowSelected)}
-                          data-dim={highlight && !match ? "true" : undefined}
+                          data-dim={dim ? "true" : undefined}
                         >
                           <td>
                             <button

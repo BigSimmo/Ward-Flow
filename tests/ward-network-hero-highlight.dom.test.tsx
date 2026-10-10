@@ -69,4 +69,20 @@ describe("Network hero figures highlight the bed flow", () => {
     expect(pulled).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByTestId("ward-network-highlight-note")).not.toBeInTheDocument();
   });
+
+  it("Ready only highlights and dims instead of hiding (Josh, v10 pending decision)", () => {
+    renderNetwork();
+    const before = unitRows().length;
+    fireEvent.click(screen.getByRole("switch", { name: "Ready only" }));
+
+    const rows = unitRows();
+    expect(rows).toHaveLength(before);
+    const dimmed = rows.filter((row) => row.getAttribute("data-dim") === "true");
+    const marked = rows.filter((row) => row.querySelector("td[data-hl='true']") !== null);
+    expect(dimmed.length).toBeGreaterThan(0);
+    expect(marked.length + dimmed.length).toBe(before);
+    expect(screen.getByTestId("ward-network-ready-only-note")).toHaveTextContent(
+      `${marked.length} of ${before} units with a ready bed, all rows stay`,
+    );
+  });
 });

@@ -249,7 +249,8 @@ export function StatisticsEdScreen({
           <HeroStat value={median === null ? "none" : splitDuration(Math.round(median))} label="Median" />
           <HeroStat value={urgent} label="Urgent" />
           <HeroStat value={over24h} label={`Over ${longHours}h`} />
-          <HeroStat value={unplaced} label="No ward yet" />
+          {/* Five figures at most (v10). No ward yet is the wait list's own No ward filter count,
+              so the hero leaves it out; the export still carries it. */}
         </>
       }
     >
