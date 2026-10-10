@@ -44,6 +44,7 @@ function connection(): WardSharedConnection {
     signIn: vi.fn(),
     signOut: vi.fn(),
     retry: vi.fn(),
+    pushApi: { pushKey: vi.fn(), pushSubscribe: vi.fn(), pushUnsubscribe: vi.fn() },
   };
 }
 beforeEach(() => {

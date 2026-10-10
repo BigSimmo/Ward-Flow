@@ -97,6 +97,39 @@ node backend/ward-flow/azure-setup.mjs verify /absolute/path/to/azure-settings.l
 
 This authenticates with the coordinator API scope and checks database readiness, effective role, exact workspace ID and audit access. The first authorised workspace GET creates the invented baseline and its audit entry. A health response alone does not establish this integration. Then verify two independent coordinator sessions: shared save/reload, last-bed contention, conflict presentation, explicit lost-response retry and access revocation. Confirm the actual deployed frontend/backend revisions, not only the branch's test result.
 
+## Phone alerts (optional, off by default)
+
+Implementation checkpoint, 10 October 2026 (feature 4). Standard Web Push (VAPID) tells a signed-in coordinator's phone or browser when a new act-now (red) item appears, with Ward Flow closed. No live resource was read, changed or deployed for it.
+
+- **Off unless configured.** The backend sends nothing and registers no timer unless `WARD_SHARED_ENABLED=true` and all three of `WARD_FLOW_VAPID_PUBLIC_KEY`, `WARD_FLOW_VAPID_PRIVATE_KEY` and `WARD_FLOW_VAPID_SUBJECT` are set. Malformed values stop the backend rather than half-working.
+- **What triggers a push.** After a command commits, the server engine's act-now list (the same rows the coordinator's Alerts and Tasks show) is compared with the last announced list; only new rows are sent, once each while they stay red. A five-minute timer trigger (`wardFlowPushSweep`) re-checks rows that turn red with time alone, such as a wait passing its target. The account that made the change is not sent its own alert; accounts removed from `WARD_COORDINATOR_OBJECT_IDS` receive nothing.
+- **What the phone shows.** "Ward Flow: 2 new act now items", the hospital site (or "2 sites") and "Open Alerts to review. Synthetic demo data." Tapping opens `/mockups/ward-flow/alerts`. No patient name, UMRN, Ward Flow id, diagnosis, alert detail or typed text is sent (D-18).
+- **Storage.** Migration 3 adds `ward_flow.push_subscriptions` (browser endpoint and its public encryption keys, owning Entra object ID, created, last success, revoked) and `ward_flow.push_baselines` (the act-now row ids last announced). Endpoints the push service reports gone (404 or 410) are deleted. Only known browser push service hosts are accepted as endpoints.
+- **Routes.** `GET /v1/workspace/push-key`, `POST /v1/workspace/push-subscribe` and `POST /v1/workspace/push-unsubscribe`, with the same Microsoft sign-in and coordinator check as the workspace. The existing `v1/workspace/{action}` Function route already covers them.
+
+To turn it on, after separate approval for each provider step:
+
+1. Generate a key pair on a trusted machine, from the repository root: `npm exec --prefix backend/ward-flow --offline -- web-push generate-vapid-keys --json`. Do not paste the private key into chat, the repository or a ticket.
+2. Apply migration 3 with the same authorised `azure:configure` (or `migrate.mjs`) run described above; it also grants the backend identity the two new tables. `/readyz` reports the schema unavailable until migration 3 is applied when push is configured.
+3. Rebuild the engine and redeploy the backend package (`build:engine`, `package:deployment`, then the `config-zip` deployment above). The package now includes `push.mjs` and the `web-push` dependency.
+4. Add the three Function app settings. Prefer a Key Vault reference for the private key:
+
+   ```sh
+   az functionapp config appsettings set \
+     --subscription YOUR_VERIFIED_WARD_FLOW_SUBSCRIPTION \
+     --resource-group rg-wardflow-dev-aue \
+     --name wardflow-dev-api-aue \
+     --settings WARD_FLOW_VAPID_PUBLIC_KEY=<public key> \
+       "WARD_FLOW_VAPID_PRIVATE_KEY=@Microsoft.KeyVault(SecretUri=<secret URI>)" \
+       WARD_FLOW_VAPID_SUBJECT=mailto:<monitored address>
+   ```
+
+5. On each phone: open the HTTPS frontend, sign in, then Settings, Alerts, **Phone alerts**. On iPhone (iOS 16.4 or later) add Ward Flow to the Home Screen and open it from there first; Safari tabs cannot receive web push.
+
+The frontend's Content-Security-Policy currently sets `connect-src 'self'`. A browser enforcing it refuses the cross-origin calls to the Function (and Microsoft sign-in), for the shared workspace and phone alerts alike, until the Function origin and `https://login.microsoftonline.com` are added through a reviewed `src/lib/security-headers.ts` change. Push delivery itself is between the browser and its push service and does not need a CSP entry.
+
+Removing any one of the three settings turns phone alerts off. Stored subscriptions stay until a person turns the switch off, the push service reports them gone, or they are deleted.
+
 ## Local evidence and remaining verification
 
 The focused PostgreSQL test uses an actual local PostgreSQL server and refuses remote database URLs. The backend suite must be run with the compiled engine and a disposable local database. CI supplies PostgreSQL 16 and runs the same integration test inside the blocking static job. The local implementation session used PostgreSQL 18; a hosted CI result has not been observed.

@@ -114,9 +114,9 @@ export function actNowAlerts(world: SharedWorld, at: Date): { id: string; site: 
   if (!validWorld(world)) return [];
   const state = world.state;
   const sites = scenarioNetwork(state.scenario)?.sites ?? STANDARD_WARD_SITES;
-  const movements = new Map(state.movements.map((movement) => [movement.id, movement]));
+  const origins = new Map<string, string>(state.movements.map((movement) => [movement.id, movement.originEdId]));
   return activeActNowItems(state, worldNow(world, at)).map((item) => {
-    const origin = movements.get(item.movementId)?.originEdId;
+    const origin = origins.get(item.movementId);
     const site = origin
       ? sites.find((candidate) => candidate.emergencyDepartment?.id === origin || candidate.code === origin)
       : undefined;

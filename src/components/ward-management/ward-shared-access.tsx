@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { PublicClientApplication, type AccountInfo } from "@azure/msal-browser";
 import { SharedWorkspaceClient, type SharedView } from "./ward-shared-client";
+import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from "./shell/ward-phone-push";
 import type { WardFlowEvent } from "./ward-flow-events";
 import styles from "./ward-shared-access.module.css";
 
@@ -13,6 +14,8 @@ export type WardSharedConnection = SharedView & {
   signOut: () => void;
   retry: () => void;
   dispatch: (event: WardFlowEvent) => void;
+  /** Phone alerts (feature 4) through the signed-in connection. Rejects when not connected. */
+  pushApi: PhonePushApi;
 };
 
 export function useWardShared(enabled: boolean): WardSharedConnection {
@@ -24,6 +27,17 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
   const scope = process.env.NEXT_PUBLIC_WARD_API_SCOPE ?? "";
   const dispatch = useCallback((event: WardFlowEvent) => {
     client.current?.dispatch(event);
+  }, []);
+  const pushApi = useMemo<PhonePushApi>(() => {
+    const connected = () => {
+      if (!client.current) throw new Error("Shared workspace not connected");
+      return client.current;
+    };
+    return {
+      pushKey: async () => connected().pushKey(),
+      pushSubscribe: async (subscription) => connected().pushSubscribe(subscription),
+      pushUnsubscribe: async (endpoint) => connected().pushUnsubscribe(endpoint),
+    };
   }, []);
 
   useEffect(() => {
@@ -120,14 +134,25 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       void client.current?.retry();
     },
     dispatch,
+    pushApi,
   };
 }
 
 export function WardSharedAccess({ connection, children }: { connection: WardSharedConnection; children: ReactNode }) {
   const [showLiveInfo, setShowLiveInfo] = useState(false);
   const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
+  const pushKind = !connection.enabled
+    ? "local"
+    : connection.signedIn && connection.snapshot && connection.status !== "not-authorised"
+      ? "connected"
+      : "signed-out";
+  const { pushApi } = connection;
+  const pushAccess = useMemo<PhonePushAccess>(
+    () => (pushKind === "connected" ? { kind: "connected", api: pushApi } : { kind: pushKind }),
+    [pushKind, pushApi],
+  );
   return (
-    <>
+    <PhonePushAccessContext.Provider value={pushAccess}>
       <section className={styles.toolbar} aria-label="Ward Flow data mode" data-data-mode="prototype">
         <div>
           <strong>Data mode: Prototype</strong>
@@ -185,7 +210,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
       <div hidden={showLiveInfo} inert={showLiveInfo}>
         <WardSharedWorkspaceContent connection={connection}>{children}</WardSharedWorkspaceContent>
       </div>
-    </>
+    </PhonePushAccessContext.Provider>
   );
 }
 

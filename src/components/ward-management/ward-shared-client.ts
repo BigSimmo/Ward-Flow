@@ -63,7 +63,7 @@ export class SharedWorkspaceClient {
       throw new Error("Incompatible workspace data");
     if (snapshot.revision >= (this.view.snapshot?.revision ?? 0)) this.publish({ snapshot, receivedAt: Date.now() });
   }
-  private async request(path: string, body?: PendingCommand) {
+  private async request(path: string, body?: PendingCommand | Record<string, unknown>) {
     const token = await this.options.token();
     if (this.disposed) throw new Error("Connection closed");
     const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
@@ -163,6 +163,28 @@ export class SharedWorkspaceClient {
     } finally {
       this.busy = false;
     }
+  }
+  /**
+   * Phone push (feature 4). The server's public VAPID key, or `enabled: false` when the server is
+   * not set up for phone alerts. The private key never leaves the server.
+   */
+  async pushKey(): Promise<{ enabled: true; publicKey: string } | { enabled: false }> {
+    const { response, value } = await this.request("/v1/workspace/push-key");
+    if (!response.ok) throw new Error("Phone alerts unavailable");
+    return value?.enabled === true && typeof value.publicKey === "string"
+      ? { enabled: true, publicKey: value.publicKey }
+      : { enabled: false };
+  }
+  /** Registers this device's browser push subscription for the signed-in coordinator. */
+  async pushSubscribe(subscription: { endpoint?: string; keys?: Record<string, string> }) {
+    const { endpoint, keys } = subscription;
+    const { response } = await this.request("/v1/workspace/push-subscribe", { subscription: { endpoint, keys } });
+    if (!response.ok) throw new Error("Phone alerts were not turned on");
+  }
+  /** Stops phone alerts for this device. */
+  async pushUnsubscribe(endpoint: string) {
+    const { response } = await this.request("/v1/workspace/push-unsubscribe", { endpoint });
+    if (!response.ok) throw new Error("Phone alerts were not turned off");
   }
   retry = async () => {
     if (this.pending) await this.drain();
