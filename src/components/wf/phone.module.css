@@ -1,0 +1,683 @@
+/*
+ * v9 phone parts (design system v9 section 7). Phone is its own design at 390 by 844 and these
+ * parts carry no desktop layout of their own: a screen renders them on the phone. Tokens only.
+ * Names 14, meta 12, rows tap as a whole, row actions at least 36px, the bottom bar 44px.
+ * Phone bars are solid, never glass. Red means act now only, as a thin edge, never a fill.
+ */
+
+/* ---------- PhoneSheet ---------- */
+
+/* Sheets take the sheet scrim, not the strong one (v9 section 3: one scrim per overlay tier). */
+.sheetScrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 100);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: max(var(--wf-s-6), env(safe-area-inset-top)) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  box-sizing: border-box;
+  background: var(--wf-scrim);
+  pointer-events: auto;
+  animation: wfPhoneScrimIn var(--wf-t-sheet) var(--wf-ease-sheet);
+}
+
+/* Sheet glass (88% day, 86% night, blur 32px). The panel is a column: the handle, the header, the
+   body that scrolls and the footer. The footer is in the flow, so the body ends above it and its
+   content never sits under the primary. No fill-mode on the entry: it would stop the blur. */
+.sheet {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-bottom: 0;
+  border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+  background-color: var(--wf-glass-sheet, var(--wf-glass-thick));
+  background-image: var(--wf-sheen);
+  -webkit-backdrop-filter: blur(32px) saturate(1.4);
+  backdrop-filter: blur(32px) saturate(1.4);
+  box-shadow:
+    inset 0 1px 0 var(--wf-glass-hl),
+    var(--wf-e3);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  overscroll-behavior: contain;
+  transition: transform var(--wf-t-release) var(--wf-ease-out);
+  animation: wfPhoneSheetIn var(--wf-t-sheet) var(--wf-ease-sheet);
+}
+
+.sheet[data-height="tall"] {
+  height: 100%;
+}
+
+.sheet:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -4px;
+}
+
+/* The handle is a visual grip for drag to dismiss. Keyboard users close with Escape or the close
+   button, so it stays out of the accessibility tree. */
+.handle {
+  display: flex;
+  flex: none;
+  justify-content: center;
+  padding: var(--wf-s-2) 0 var(--wf-s-1);
+  cursor: grab;
+  touch-action: none;
+}
+
+.handle:active {
+  cursor: grabbing;
+}
+
+.grip {
+  width: 36px;
+  height: 4px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-line-3);
+}
+
+.sheetHeader {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-1) var(--wf-s-2) var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.sheetTitleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding-top: var(--wf-s-1);
+}
+
+.sheetTitle {
+  margin: 0;
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
+  letter-spacing: var(--wf-tr-15);
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+/* Only ink-1 and ink-2 sit on glass. */
+.sheetDescription {
+  margin: 0;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+/* The close button keeps a 36px face; on touch a hit area takes it to 44px. */
+.sheetClose.sheetClose {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  color: var(--wf-ink-2);
+}
+
+.sheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--wf-s-4);
+}
+
+.sheetNoFooter .sheetBody {
+  padding-bottom: max(var(--wf-s-4), env(safe-area-inset-bottom));
+}
+
+/* The footer pins the one primary under the thumb and pads clear of the home indicator. */
+.sheetFooter {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4) max(var(--wf-s-3), env(safe-area-inset-bottom));
+  border-top: 1px solid var(--wf-line);
+}
+
+.sheetPrimary {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+@keyframes wfPhoneScrimIn {
+  from {
+    background-color: transparent;
+  }
+}
+
+@keyframes wfPhoneSheetIn {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes wfPhoneSheetFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Reduced motion: no slide, a short fade (the sheet token is 120ms there). */
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    animation-name: wfPhoneSheetFade;
+    transition: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .sheet {
+    background-color: var(--wf-overlay);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .sheet {
+    background-color: var(--wf-overlay);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ---------- PhoneTabBar ---------- */
+
+/* Solid, never glass. Sticky at the bottom of its scroller, padded clear of the home indicator. */
+.tabBar {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-chrome, 60);
+  box-sizing: border-box;
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  border-top: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+}
+
+.tabList {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tabItem {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.tabLink {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--wf-s-1) 2px;
+  box-sizing: border-box;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  text-decoration: none;
+  transition: color var(--wf-t-micro) var(--wf-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tabLink:hover {
+  color: var(--wf-ink-1);
+}
+
+.tabLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -4px;
+  border-radius: var(--wf-r-md);
+}
+
+/* The current page: ink-1 words at 600 and the accent on the icon. No fill, no stripe. */
+.tabCurrent {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.tabCurrent .tabIcon {
+  color: var(--wf-accent);
+}
+
+.tabIcon {
+  display: inline-flex;
+  color: inherit;
+}
+
+.tabLabel {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The count sits on the icon's top corner. Neutral: the glyphs elsewhere carry tone. */
+.tabCount {
+  position: absolute;
+  top: 2px;
+  left: calc(50% + 6px);
+}
+
+/* ---------- PhoneListRow ---------- */
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  min-height: var(--wf-row);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  list-style: none;
+}
+
+/* Act now: a thin red edge all round, never a fill (v9 sections 3 and 5, as the table's actNow).
+   Drawn on its own layer above the hover fill, so hover and press never hide it. */
+.rowActNow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  box-shadow: inset 0 0 0 1px var(--wf-danger);
+  pointer-events: none;
+}
+
+/* The row target fills the row. Its ::after stretches over the whole row (behind the action), so a
+   tap anywhere on the row opens it and the focus ring outlines the whole row. */
+.rowTarget {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  min-height: var(--wf-row);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+
+.rowInteractive {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rowInteractive::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transition: background-color var(--wf-t-micro) var(--wf-ease-out);
+}
+
+.rowInteractive:hover::after {
+  background: var(--wf-hover);
+}
+
+.rowInteractive:active::after {
+  background: var(--wf-selected);
+}
+
+.rowInteractive:focus-visible {
+  outline: none;
+}
+
+/* The ring sits inside with a 2px gap, so it never touches the act now edge (v9 section 8). */
+.rowInteractive:focus-visible::after {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -4px;
+}
+
+/* The row's content paints over its own hover layer. */
+.rowLeading,
+.rowText,
+.rowTrail {
+  position: relative;
+  z-index: 1;
+}
+
+.rowLeading {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+}
+
+.rowText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rowName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.rowMeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+/* Truncated words show in full on focus as well as hover (v9 section 8). */
+.rowInteractive:focus-visible .rowName,
+.rowInteractive:focus-visible .rowMeta {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.rowTrail {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.rowValue {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+}
+
+.rowTime {
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+/* The action sits above the stretched target, beside it, never inside it. */
+.rowActionSlot {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  flex: none;
+  padding-right: var(--wf-s-3);
+}
+
+/* A 36px face at every width (doubled class beats the kit's phone tap floor). On touch it reaches
+   44px through a hit area, not a bigger face (v9 section 5). */
+.rowAction.rowAction {
+  position: relative;
+  height: 36px;
+  min-height: 36px;
+}
+
+.rowActionIcon.rowActionIcon {
+  width: 36px;
+  min-width: 36px;
+}
+
+/* ---------- PhoneHero ---------- */
+
+/* The deep slate band, compact: title, sub line, one row of at most three figures, actions below.
+   Under about 25% of an 844px screen. Inside it the status tokens take their on-hero values. */
+.hero {
+  --wf-danger: var(--wf-hero-danger);
+  --wf-warning: var(--wf-hero-warning);
+  --wf-success: var(--wf-hero-success);
+  --wf-info: var(--wf-hero-info);
+  --wf-neutral: var(--wf-hero-neutral);
+  --wf-focus-ring: var(--wf-hero-ink);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-3);
+  box-sizing: border-box;
+  background:
+    radial-gradient(120% 90% at 100% -20%, color-mix(in srgb, var(--wf-hero-info) 22%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  border: 1px solid var(--wf-hero-edge);
+  border-radius: var(--wf-r-xl);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+  color: var(--wf-hero-ink);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.heroTitleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.heroTitle {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+  letter-spacing: var(--wf-tr-20);
+  color: var(--wf-hero-ink);
+}
+
+.heroSub {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-hero-ink-2);
+}
+
+/* One row, equal columns, hairlines between. Never wraps. */
+.heroFigures {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.heroFigure {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 0 var(--wf-s-3);
+  border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+}
+
+.heroFigure:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.heroValue {
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--wf-tr-15);
+  color: var(--wf-hero-ink);
+  white-space: nowrap;
+}
+
+.heroLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-hero-ink-2);
+}
+
+.heroLabelText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+/* ---------- ScrollRow ---------- */
+
+/* The row scrolls sideways and never wraps. Each edge fades only while there is more that way: a
+   mask, so it works on any surface, and never a hard cut. */
+.scrollRow {
+  --phone-fade: 24px;
+  --phone-fade-start: 0px;
+  --phone-fade-end: 0px;
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.scrollRow[data-fade-start="true"] {
+  --phone-fade-start: var(--phone-fade);
+}
+
+.scrollRow[data-fade-end="true"] {
+  --phone-fade-end: var(--phone-fade);
+}
+
+.scrollTrack {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  /* Room for the children's focus rings, which would otherwise be clipped by the scroller. */
+  padding: 4px 2px;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black var(--phone-fade-start),
+    black calc(100% - var(--phone-fade-end)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black var(--phone-fade-start),
+    black calc(100% - var(--phone-fade-end)),
+    transparent 100%
+  );
+}
+
+.scrollTrack::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollTrack > * {
+  flex: none;
+}
+
+.scrollRow:dir(rtl) .scrollTrack {
+  -webkit-mask-image: linear-gradient(
+    to left,
+    transparent 0,
+    black var(--phone-fade-start),
+    black calc(100% - var(--phone-fade-end)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to left,
+    transparent 0,
+    black var(--phone-fade-start),
+    black calc(100% - var(--phone-fade-end)),
+    transparent 100%
+  );
+}
+
+/* ---------- touch ---------- */
+
+/* 44px targets on touch through a hit area, not a bigger face (v9 section 5). */
+@media (pointer: coarse) {
+  .rowAction::after,
+  .sheetClose::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+  }
+}
+
+/* ---------- preferences ---------- */
+
+@media (forced-colors: active) {
+  .sheet,
+  .tabBar {
+    border-color: CanvasText;
+  }
+  .rowActNow::before {
+    box-shadow: none;
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+  .tabCurrent {
+    text-decoration: underline;
+  }
+  .tabLink:focus-visible,
+  .rowInteractive:focus-visible::after,
+  .sheet:focus-visible {
+    outline-color: Highlight;
+  }
+  .scrollTrack {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+@media print {
+  .sheetScrim,
+  .tabBar,
+  .rowActionSlot {
+    display: none;
+  }
+}
