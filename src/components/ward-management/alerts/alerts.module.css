@@ -864,7 +864,7 @@ button.check[aria-pressed="true"] {
 
 .axisText,
 .axisNow {
-  font: 500 11px var(--wf-mono);
+  font: 500 12px var(--wf-mono);
   fill: var(--wf-ink-3);
 }
 
@@ -884,7 +884,7 @@ button.check[aria-pressed="true"] {
 }
 
 .pointLabel {
-  font: 500 11px var(--wf-font);
+  font: 500 12px var(--wf-font);
   fill: var(--wf-ink-2);
 }
 

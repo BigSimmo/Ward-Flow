@@ -305,8 +305,7 @@
   width: 10px;
   height: 2px;
   border-radius: 1px;
-  background: currentColor;
-  opacity: 0.55;
+  background: var(--wf-glyph-dim);
 }
 
 .tier {

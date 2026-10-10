@@ -2383,8 +2383,8 @@ tr.qRow:focus-visible {
 }
 
 .nodeWarn {
-  background: var(--warn-soft);
-  color: var(--warn);
+  background: var(--surface);
+  color: var(--wf-ink-1);
   border: 1.5px solid var(--warn);
 }
 
@@ -2504,8 +2504,8 @@ tr.qRow:focus-visible {
 }
 
 .badgeWarn {
-  background: var(--warn-soft);
-  color: var(--warn);
+  background: transparent;
+  color: var(--wf-ink-1);
   border: 1px solid var(--line-strong);
 }
 
@@ -2597,7 +2597,7 @@ tr.qRow:focus-visible {
 
 .seenQuoteLabel {
   font-weight: 700;
-  color: var(--warn);
+  color: var(--wf-ink-1);
   font-size: 12px; /* 12px floor */
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -4017,7 +4017,7 @@ tr.qRow:focus-visible {
   display: block;
   font-family: var(--body);
   font-size: var(--t-0);
-  color: var(--warn);
+  color: var(--wf-ink-1);
   font-weight: 600;
   margin-top: 2px;
   line-height: 1.2;
@@ -4065,9 +4065,9 @@ tr.qRow:focus-visible {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: var(--warn-soft);
+  background: transparent;
   border: 1px solid var(--warn);
-  color: var(--warn-ink, var(--warn));
+  color: var(--wf-ink-1);
   border-radius: var(--r2);
   font-size: var(--t-0);
   font-weight: 500;
@@ -5582,7 +5582,7 @@ tr.qRow:focus-visible {
   gap: 4px;
 }
 .inboxClocks dt {
-  font: 11px var(--body);
+  font: 12px var(--body);
 }
 .inboxClocks dd {
   font: 12px var(--mono);
@@ -6054,10 +6054,10 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   white-space: nowrap;
 }
 .identityUrgency[data-urgency="1"] {
-  color: var(--danger);
+  color: var(--wf-ink-1);
 }
 .identityUrgency[data-urgency="2"] {
-  color: var(--warn);
+  color: var(--wf-ink-1);
 }
 .boardTable td .sub {
   white-space: normal;
@@ -6318,7 +6318,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 
   .tierCell .identityUrgency[data-urgency="1"] {
     border-color: var(--wf-danger);
-    color: var(--wf-danger-ink);
+    color: var(--wf-ink-1);
   }
 
   .patientIdentity .patientName {

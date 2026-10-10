@@ -76,7 +76,7 @@
 }
 
 .reason {
-  color: var(--warn);
+  color: var(--wf-ink-1);
   font-size: var(--t-1);
 }
 

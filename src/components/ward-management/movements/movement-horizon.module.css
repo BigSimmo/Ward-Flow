@@ -579,15 +579,17 @@
   z-index: 20;
 }
 
-/* Bar tones: the data ramp, never a status fill. A passed bed hold is an amber dot, not a red bar. */
+/* Bar tones: the data ramp, never a status fill. A passed bed hold is an amber dot, not a red bar.
+   Label ink follows the fill's lightness so it passes 4.5:1 in both themes: data-1 is dark by day
+   and light by night, data-2 the reverse (white on light data-2 was 3.1:1, on dark data-1 2.3:1). */
 .barAdmit {
   background: var(--wf-data-1);
-  color: var(--wf-on-accent);
+  color: light-dark(var(--wf-on-accent), var(--wf-surface));
 }
 
 .barTransit {
   background: var(--wf-data-2);
-  color: var(--wf-on-accent);
+  color: light-dark(var(--wf-ink-1), var(--wf-on-accent));
 }
 
 .barLeave {
@@ -616,7 +618,7 @@
 
 .barDelay {
   background: var(--wf-data-1);
-  color: var(--wf-on-accent);
+  color: light-dark(var(--wf-on-accent), var(--wf-surface));
 }
 
 .barDelay::before {

@@ -204,7 +204,8 @@
   border-inline-start: 0.1875rem solid var(--warn);
   border-radius: 0;
   padding: var(--ward-space-2) 0 var(--ward-space-2) var(--ward-space-12);
-  color: var(--warn);
+  /* v10: the amber edge carries the tone; the words stay neutral ink. */
+  color: var(--wf-ink-1);
   font-size: var(--t-1);
   line-height: var(--ward-leading-relaxed);
 }
@@ -1175,7 +1176,8 @@
 }
 .notice,
 .absenceNotice {
-  color: var(--warn);
+  border-inline-start: 0.1875rem solid var(--warn);
+  color: var(--wf-ink-1);
 }
 .ratifiedNotice {
   color: var(--accent-ink);

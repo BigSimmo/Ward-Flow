@@ -2910,8 +2910,7 @@
 
 .topDailySheetIcon {
   flex-shrink: 0;
-  color: inherit;
-  opacity: 0.85;
+  color: var(--wf-ink-2);
 }
 
 .topDailySheetChevron {
@@ -3065,7 +3064,8 @@
 }
 
 .wardSwitchList small {
-  color: var(--gilt);
+  /* Neutral ink: --gilt read 1.65:1 on the dark theme's current-row tint. */
+  color: var(--wf-ink-2);
   font-size: var(--t-0);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -3355,8 +3355,8 @@
 }
 
 .shiftTile[data-tone="warn"] .shiftTag {
-  color: var(--warn);
-  background: color-mix(in oklab, var(--warn) 10%, var(--surface));
+  color: var(--wf-ink-1);
+  background: transparent;
   border-color: color-mix(in oklab, var(--warn) 30%, transparent);
 }
 
@@ -3365,8 +3365,8 @@
 }
 
 .shiftTile[data-tone="danger"] .shiftTag {
-  color: var(--danger);
-  background: color-mix(in oklab, var(--danger) 10%, var(--surface));
+  color: var(--wf-ink-1);
+  background: transparent;
   border-color: color-mix(in oklab, var(--danger) 30%, transparent);
 }
 
@@ -3466,12 +3466,12 @@
 }
 
 .shiftCtl[data-tone="warn"] {
-  color: var(--warn);
+  color: var(--wf-ink-1);
   border-color: color-mix(in oklab, var(--warn) 40%, var(--line));
 }
 
 .shiftCtl[data-tone="danger"] {
-  color: var(--danger);
+  color: var(--wf-ink-1);
   border-color: color-mix(in oklab, var(--danger) 40%, var(--line));
 }
 
@@ -5457,7 +5457,7 @@
 
   .bandGlyph {
     color: var(--wf-hero-danger);
-    font-size: var(--wf-fs-11);
+    font-size: var(--wf-fs-12);
   }
 
   /* The headline was visually hidden; on the v6 band it is the first figure, "Ready now". */
@@ -5748,11 +5748,11 @@
   }
 
   .screen .shiftTile[data-tone="warn"] .shiftTag {
-    color: var(--wf-warning-ink);
+    color: var(--wf-ink-1);
   }
 
   .screen .shiftTile[data-tone="danger"] .shiftTag {
-    color: var(--wf-danger-ink);
+    color: var(--wf-ink-1);
   }
 
   .screen .shiftWhen {

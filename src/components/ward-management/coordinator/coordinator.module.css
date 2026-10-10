@@ -1442,8 +1442,8 @@
 
 .diagramBedChip[data-state="closed"] {
   border-color: var(--warn);
-  background: var(--warn-soft);
-  color: var(--warn);
+  background: var(--surface);
+  color: var(--wf-ink-1);
 }
 
 .diagramBedChip[data-state="pulled"] {

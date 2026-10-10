@@ -4648,6 +4648,7 @@ export function CommunityScreen({
                         <div
                           key={task.id}
                           id={task.id}
+                          data-dim={isDismissed ? "true" : undefined}
                           style={{
                             display: "flex",
                             alignItems: "center",
@@ -4656,7 +4657,6 @@ export function CommunityScreen({
                             background: isDismissed ? "var(--surface-2)" : "var(--surface)",
                             border: "1px solid var(--line)",
                             borderRadius: "var(--r2)",
-                            opacity: isDismissed ? 0.5 : 1,
                           }}
                         >
                           <div>

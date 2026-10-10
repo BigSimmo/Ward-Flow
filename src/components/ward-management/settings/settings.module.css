@@ -491,13 +491,11 @@
 }
 
 .cascadeSoon {
-  background: var(--wf-warning);
-  opacity: 0.55;
+  background: color-mix(in srgb, var(--wf-warning) 55%, var(--wf-track));
 }
 
 .cascadeUrgent {
-  background: var(--wf-danger);
-  opacity: 0.6;
+  background: color-mix(in srgb, var(--wf-danger) 60%, var(--wf-track));
 }
 
 .cascadeEnds {
