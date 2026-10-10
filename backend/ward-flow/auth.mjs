@@ -38,7 +38,8 @@ export async function createAuthenticator(config, dependencies = {}) {
       if (CREDENTIAL_FAILURES.has(error?.code)) throw new Error("Unauthorised");
       throw new VerifierUnavailableError("Token verifier unavailable");
     }
-    const isUserAllowed = config.allowTenantUsers || payload.oid === config.allowedObjectId;
+    const isUserAllowed =
+      config.allowTenantUsers || payload.oid === config.allowedObjectId || config.coordinatorIds?.includes(payload.oid);
     if (
       payload.tid !== config.tenant ||
       !isUserAllowed ||

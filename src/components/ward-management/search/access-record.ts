@@ -39,7 +39,8 @@
  * then the panel says what it can — what was searched, and when — and that is a true and useful
  * thing for a coordinator to see. Nothing here is apologising for it.
  */
-export type AccessEntry = { words: string; at: number };
+/** `text` and `dob` keep the name and birth date apart so Search again restores both fields. */
+export type AccessEntry = { words: string; at: number; text?: string; dob?: string };
 
 /**
  * Adds one entry to the front of the list — newest first, so the most recent search is always the

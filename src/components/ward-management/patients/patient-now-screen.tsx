@@ -31,6 +31,7 @@ import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode } from "./patient-mode";
 import { PatientStatusCard, type PatientStatusContext } from "./patient-status-card";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import {
   PatientContactsCard,
   PatientLastSeenCard,
@@ -150,6 +151,9 @@ export function PatientNowScreen({
 }: PatientNowScreenProps) {
   const { patients, movements, referrals, admissions, units, leaveBeds, dispatch, dayZero, rejections } = useWardFlow();
   const now = useWardFlowClock();
+  // Feature 11: actions follow the route's role (`ward-role-permissions.ts`, cross-role pairs listed there).
+  const gate = useRoleGate();
+  const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
 
   // `now` is a demo-clock `Instant` (minutes from `dayZero`), not a wall-clock millisecond
   // timestamp, so the calendar date used to derive a patient's age must be rebuilt from `dayZero`.
@@ -397,7 +401,7 @@ export function PatientNowScreen({
     const estimatedAt = parseEtaToInstant(cleanEta, now);
     if (!cleanCad || estimatedAt === undefined) return;
 
-    if (!liveMovement) return;
+    if (!liveMovement || !gate("BOOK_TRANSPORT").allowed) return;
     setBookingRejectionStart(rejections.length);
     {
       dispatch({
@@ -469,7 +473,7 @@ export function PatientNowScreen({
 
   // D-38 ward actions on the stay. The ward records these, so they are raised as the ward the stay is on.
   function recordReturn() {
-    if (stayLeaveBed)
+    if (stayLeaveBed && gate("END_LEAVE_BED").allowed)
       dispatch({
         type: "END_LEAVE_BED",
         role: "ward",
@@ -480,7 +484,7 @@ export function PatientNowScreen({
   }
   function markAbsent() {
     const stay = resolved?.liveAdmission;
-    if (stay)
+    if (stay && gate("RECORD_ABSENT_WITHOUT_LEAVE").allowed)
       dispatch({
         type: "RECORD_ABSENT_WITHOUT_LEAVE",
         role: "ward",
@@ -515,7 +519,7 @@ export function PatientNowScreen({
     onMarkAbsent: markAbsent,
     onAbsenceStep: (step) => {
       const stay = resolved.liveAdmission;
-      if (!stay) return;
+      if (!stay || !gate("RECORD_ABSENCE_STEP").allowed) return;
       dispatch({
         type: "RECORD_ABSENCE_STEP",
         role: "ward",
@@ -526,13 +530,14 @@ export function PatientNowScreen({
       });
     },
     onRecordCto: () => {
-      if (livePatient)
+      if (livePatient && gate("RECORD_COMMUNITY_TREATMENT_ORDER").allowed)
         dispatch({ type: "RECORD_COMMUNITY_TREATMENT_ORDER", role: "community", now, patientId: livePatient.id });
     },
     onEndCto: () => {
-      if (livePatient)
+      if (livePatient && gate("END_COMMUNITY_TREATMENT_ORDER").allowed)
         dispatch({ type: "END_COMMUNITY_TREATMENT_ORDER", role: "community", now, patientId: livePatient.id });
     },
+    roleLimit: (eventType) => gate(eventType).reason,
     handoverRefusal:
       mode === "held" && liveMovement ? (heldUnitGenderRefusal({ units }, liveMovement, now) ?? undefined) : undefined,
   };
@@ -1011,9 +1016,11 @@ export function PatientNowScreen({
                               type="submit"
                               className={styles.transportActionBtn}
                               data-testid="ward-patient-confirm-transport-btn"
+                              {...gate("BOOK_TRANSPORT").buttonProps}
                             >
                               Save Transport Booking
                             </button>
+                            {gate("BOOK_TRANSPORT").note}
                           </div>
                         </form>
                       )}
@@ -1295,6 +1302,8 @@ export function PatientNowScreen({
                 stayOpen={!modeMeta.quiet}
                 onRecordCto={statusContext.onRecordCto}
                 onEndCto={statusContext.onEndCto}
+                recordCtoUnavailable={gate("RECORD_COMMUNITY_TREATMENT_ORDER").reason}
+                endCtoUnavailable={gate("END_COMMUNITY_TREATMENT_ORDER").reason}
               />
             </div>
 
@@ -1408,9 +1417,10 @@ export function PatientNowScreen({
               <button
                 type="button"
                 className={`${styles.ctl} ${styles.ctlPrimary}`}
-                disabled={!clearanceDraft || !clearanceAttested || !liveMovement}
+                disabled={!clearanceDraft || !clearanceAttested || !liveMovement || !clearanceGate.allowed}
+                aria-describedby={clearanceGate.buttonProps["aria-describedby"]}
                 onClick={() => {
-                  if (!liveMovement || !clearanceDraft || !clearanceAttested) return;
+                  if (!liveMovement || !clearanceDraft || !clearanceAttested || !clearanceGate.allowed) return;
                   dispatch({
                     type: "RECORD_MOVEMENT_MEDICAL_CLEARANCE",
                     role: "ed",
@@ -1423,6 +1433,7 @@ export function PatientNowScreen({
               >
                 Save clearance outcome
               </button>
+              {clearanceGate.note}
             </div>
           </div>
         </div>

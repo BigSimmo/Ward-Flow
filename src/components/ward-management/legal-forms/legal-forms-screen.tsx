@@ -22,6 +22,7 @@ import { departmentLabel } from "@/components/ward-management/ward-absence-label
 import { formatInstantWithDay, minutesUntil, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -124,6 +125,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
   const { movements, referrals, patients, admissions, units, supportNotifications, dispatch, dayZero, rejections } =
     useWardFlow();
   const now = useWardFlowClock();
+  const gate = useRoleGate();
 
   const [view, setView] = useState<View>("clocks");
   const [highlight, setHighlight] = useState<Highlight>(null);
@@ -232,7 +234,11 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
     setRecordOpen(true);
   };
 
+  // Feature 11: Mark received is the ED's event; this coordinator route keeps it through the
+  // listed cross-role pair in `ward-role-permissions.ts`.
+  const receivedGate = gate("RECORD_LEGAL_FORM_RECEIVED");
   const markReceived = (movement: Movement) => {
+    if (!receivedGate.allowed) return;
     if (!receiptEventAccepts(movement.legalForm?.code) || movement.legalFormReceivedAt !== undefined) return;
     dispatch({ type: "RECORD_LEGAL_FORM_RECEIVED", role: "ed", now, movementId: movement.id });
   };
@@ -708,6 +714,7 @@ export function LegalFormsScreen({ initialMovementId }: { initialMovementId?: st
                   });
                 }}
                 onMarkReceived={() => markReceived(selected)}
+                markReceivedUnavailable={receivedGate.reason}
                 onExtend={() => setExtendId(selected.id)}
                 onRecordNext={() => openRecord(selected.id)}
                 onRequirements={(code) => setRequirementsCode(code)}

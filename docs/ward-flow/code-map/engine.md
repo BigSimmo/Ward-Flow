@@ -1,5 +1,20 @@
 # Engine: reducer, events, state and persistence
 
+## Shared coordinator implementation — 7 October 2026
+
+The opt-in shared provider connects `ward-shared-access.tsx` (Microsoft sign-in and access gate)
+through `ward-shared-client.ts` (polling, pending commands, conflict and retry state). Shared mode
+adopts committed server snapshots without reading/writing demo browser storage; only local view
+drafts remain browser-owned. `ward-shared-state-validation.ts` adds an explicit shared repatriation
+schema without changing the browser persistence fence. Existing reducer workflow roles describe
+the action's operational perspective; the authenticated shared role is coordinator.
+
+`backend/ward-flow/engine.ts` bundles the domain engine for the Azure Function. `postgres.mjs`
+executes versioned shared commands, receipts and audit in one transaction. The new migration runner,
+Entra managed-identity grants, Azure resource discovery and private PostgreSQL template are described
+in [the shared setup guide](../../../backend/ward-flow/SETUP-SHARED-AZURE.md). Shared mode defaults off.
+Source and local tests do not establish hosted identity, database or deployment readiness.
+
 ## Current remediation seams — 8 October 2026
 
 The original map below is historical; its line numbers and earlier counts are not current.
@@ -690,7 +705,9 @@ patientId?, unitId?}`, `kind: NoticeKind`, `sentence: string`, `readAt?`/`readBy
   and started validating `state.configuration` on restore.
 - **Discard rules** (`tryReadDemoState`, `:306`) — a saved payload is discarded (never repaired,
   never partially trusted) on: failed JSON parse; failed `isValidStoredWardFlowState` (structural
-  validator, `ward-flow-storage-validation.ts`); version mismatch; `dayZero` mismatch (a
+  validator, `ward-flow-storage-validation.ts`); version mismatch (except a v6 save, which
+  `migrateStoredWardFlowState` brings to v7 with empty planned admissions before validation, Josh,
+  9 Oct 2026; scenario files use the same migration); `dayZero` mismatch (a
   different calendar day); `worldGeneration` mismatch between the payload's own field and
   `state.worldGeneration`; `savedAtAbsolute` after the current mount (a save from the future);
   `now` before `NOW_ANCHOR + clockOffsetMinutes`; or any audit event timestamped after the saved
@@ -813,3 +830,5 @@ admissions on arrival, mismatched secure-bed rules between referral and movement
 `ward-movements.ts` (seed fixtures), `ward-derivations.ts` (the 53 pure selectors), and the
 smaller domain-rule files (`ward-eligibility.ts`, `ward-referrals.ts`, `ward-legal-clock.ts`, etc.)
 are out of scope for this document and are covered elsewhere in the code map.
+
+Shared data-mode update, 8 October 2026: the PostgreSQL migration runner now applies version 2, recording immutable workspace provenance and matching command/audit modes. `ward-shared-client.ts` rejects snapshots without prototype provenance; `ward-shared-access.tsx` and its CSS module show the persistent mode and an unavailable-live explanation without changing the connection or discarding drafts. A separately commissioned live adapter remains required; the current server and setup reject live configuration.

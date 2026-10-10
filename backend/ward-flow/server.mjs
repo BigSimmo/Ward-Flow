@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import { readConfig } from "./config.mjs";
 import { createStore, openStorage } from "./database.mjs";
 import { createAuthenticator, VerifierUnavailableError } from "./auth.mjs";
+import { createSharedHandler } from "./shared-http.mjs";
 
 const BODY_LIMIT = 1_048_576;
 const SESSION_PATH = /^\/v1\/sessions\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
@@ -34,11 +35,33 @@ async function readBody(request) {
   }
 }
 
-export function createHandler({ config, store, authenticate, log = (event) => console.info(JSON.stringify(event)) }) {
+export function createHandler({
+  config,
+  store,
+  authenticate,
+  sharedStore,
+  log = (event) => console.info(JSON.stringify(event)),
+}) {
+  const sharedHandler = sharedStore
+    ? createSharedHandler({
+        config,
+        store: sharedStore,
+        authenticate,
+        readBody,
+        verifierUnavailable: VerifierUnavailableError,
+      })
+    : null;
   return async (request) => {
+    const path = new URL(request.url).pathname;
+    if (path.startsWith("/v1/workspace"))
+      return sharedHandler
+        ? sharedHandler(request)
+        : Response.json(
+            { error: "Shared workspace is not configured" },
+            { status: 503, headers: { "cache-control": "no-store" } },
+          );
     const requestId = randomUUID();
     const startedAt = performance.now();
-    const path = new URL(request.url).pathname;
     const match = SESSION_PATH.exec(path);
     const route = match ? "session" : path === "/readyz" ? "readiness" : path === "/healthz" ? "liveness" : "unknown";
     const origin = request.headers.get("origin");
@@ -90,7 +113,8 @@ export function createHandler({ config, store, authenticate, log = (event) => co
     try {
       if (path === "/readyz" && request.method === "GET") {
         await store.ready();
-        return respond(200, { storage: "ready" });
+        if (sharedStore) await sharedStore.ready();
+        return respond(200, sharedStore ? { storage: "ready", database: "ready" } : { storage: "ready" });
       }
       if (!match) return respond(405, { error: "Method not allowed" });
       if (request.method === "GET") {
@@ -168,25 +192,62 @@ export function listen(handler, config) {
   return server.listen(config.port, config.host);
 }
 
+export function registerShutdown(server, pool, signals = process) {
+  let shutdown;
+  const close = () => {
+    shutdown ??= (async () => {
+      try {
+        await new Promise((resolve, reject) => {
+          server.close((error) => {
+            if (error && error.code !== "ERR_SERVER_NOT_RUNNING") reject(error);
+            else resolve();
+          });
+        });
+      } finally {
+        await pool?.end();
+      }
+    })().catch(() => {
+      console.error("Backend shutdown unavailable");
+      signals.exitCode = 1;
+    });
+    return shutdown;
+  };
+  signals.once("SIGINT", close);
+  signals.once("SIGTERM", close);
+  server.on("error", () => {
+    console.error("Backend listener unavailable");
+    signals.exitCode = 1;
+    void close();
+  });
+  return close;
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  let pool;
   try {
     const config = readConfig();
     const storage = await openStorage(config.storage);
     const authenticate = await createAuthenticator(config);
-    const server = listen(createHandler({ config, store: createStore(storage), authenticate }), config);
-    const close = () => {
-      server.close();
-    };
-    process.once("SIGINT", close);
-    process.once("SIGTERM", close);
-    server.on("error", () => {
-      console.error("Backend listener unavailable");
-      close();
-      process.exitCode = 1;
-    });
+    let sharedStore;
+    if (config.shared) {
+      const { createPostgresPool, createWorkspaceStore } = await import("./postgres.mjs");
+      const engine = await import("./dist/engine.mjs");
+      pool = createPostgresPool(config.postgres);
+      sharedStore = createWorkspaceStore(pool, {
+        workspaceId: config.workspaceId,
+        engine,
+      });
+    }
+    const server = listen(createHandler({ config, store: createStore(storage), authenticate, sharedStore }), config);
+    registerShutdown(server, pool);
     server.on("listening", () => console.log("Ward Flow backend listening; authenticated readiness check required"));
   } catch {
     console.error("Backend configuration or identity unavailable");
     process.exitCode = 1;
+    try {
+      await pool?.end();
+    } catch {
+      console.error("Backend shutdown unavailable");
+    }
   }
 }

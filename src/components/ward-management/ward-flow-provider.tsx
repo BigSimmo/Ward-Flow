@@ -36,7 +36,12 @@ import { forgetDowntimePack } from "./reports/downtime-pack";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { absoluteWallClockMinutes, applyDueSoonThresholds, demoDayZero } from "@/components/ward-management/ward-clock";
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { isValidStoredWardFlowState, withInboxStreamADefaults } from "./ward-flow-storage-validation";
+import {
+  isValidStoredWardFlowState,
+  migrateStoredWardFlowState,
+  WARD_FLOW_STORED_STATE_VERSION,
+  withInboxStreamADefaults,
+} from "./ward-flow-storage-validation";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -71,6 +76,7 @@ import {
   readScenarioFile,
   type ScenarioFileBuild,
 } from "@/components/ward-management/ward-flow-scenario-file";
+import { useWardShared, WardSharedAccess, type WardSharedConnection } from "./ward-shared-access";
 
 /**
  * The screens never see the raw reducer state or the clock's internal offsets — they see the
@@ -228,7 +234,9 @@ export const WARD_FLOW_DEMO_STORAGE_KEY = "ward-flow-demo-state-v1";
 // arrival/capacity conflicts; reciprocal runtime admission links are validated.
 // Old automatic saves are refused rather than silently migrating clinical facts.
 // v7 (2026-10-09, stream D): planned admissions and their id sequence are part of the state.
-const WARD_FLOW_DEMO_STORAGE_VERSION = 7;
+// A v6 save is the one exception to refusal (Josh, 9 Oct 2026): it gains an empty booking list
+// (`migrateStoredWardFlowState`) and is then validated exactly as a v7 save.
+const WARD_FLOW_DEMO_STORAGE_VERSION = WARD_FLOW_STORED_STATE_VERSION;
 
 /**
  * What actually goes to `sessionStorage`. Carries the world's calendar day ALONGSIDE the state, not
@@ -269,6 +277,7 @@ export type { AssertNever, UnreviewedStringOrUnknownKeys };
  * reducer case ever reads and only `trackWardFlowTypedTextDispatch` below ever writes.
  */
 type WardFlowContainer = {
+  sharedRevision?: number;
   world: WardFlowState;
   typedTextSeen: boolean;
   restoredElapsed: number;
@@ -401,6 +410,14 @@ const SAVE_REJECTED =
 
 type DemoRead = { saved?: WardFlowDemoPayload; recoveryNotice?: string };
 
+/** A parsed save brought to this build's version when a migration exists (v6 only); any other
+ *  version is returned unchanged, so the version check below still refuses it. */
+function upgradeDemoPayload(value: unknown): unknown {
+  if (!isPlainObject(value) || value.version === WARD_FLOW_DEMO_STORAGE_VERSION) return value;
+  const state = migrateStoredWardFlowState(value.state, value.version);
+  return state === null ? value : { ...value, version: WARD_FLOW_DEMO_STORAGE_VERSION, state };
+}
+
 /** Same-day reload includes time away. A different day or backward clock starts a fresh demo;
  * no saved event or entered time is shifted or reconstructed. Storage access is entirely guarded. */
 function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number): DemoRead {
@@ -409,12 +426,13 @@ function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number): DemoRead {
     const storage = window.sessionStorage;
     const raw = storage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
     if (!raw) return {};
-    let parsed: unknown;
+    let stored: unknown;
     try {
-      parsed = JSON.parse(raw);
+      stored = JSON.parse(raw);
     } catch {
       return { recoveryNotice: SAVE_REJECTED };
     }
+    const parsed = upgradeDemoPayload(stored);
     if (
       !isValidDemoPayload(parsed) ||
       parsed.version !== WARD_FLOW_DEMO_STORAGE_VERSION ||
@@ -552,6 +570,7 @@ function nextOpenRequestSequence(auditEvents: WardFlowState["auditEvents"]): num
  * **A visibly wrong clinical figure for one frame is worse than a rare console error.**
  */
 export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps) {
+  const shared = useWardShared(initialNow === undefined && process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true");
   useEffect(() => {
     clearWardFlowDraftCaches();
   }, []);
@@ -617,6 +636,7 @@ export function WardFlowProvider({ children, initialNow }: WardFlowProviderProps
       anchorOffsetMinutes={anchorOffsetMinutes}
       mountedAtAbsolute={adopted?.mountedAtAbsolute ?? null}
       initialNow={initialNow}
+      shared={shared}
     >
       {children}
     </WardFlowWorld>
@@ -628,7 +648,12 @@ function WardFlowWorld({
   initialNow,
   anchorOffsetMinutes,
   mountedAtAbsolute,
-}: WardFlowProviderProps & { anchorOffsetMinutes: number; mountedAtAbsolute: number | null }) {
+  shared,
+}: WardFlowProviderProps & {
+  anchorOffsetMinutes: number;
+  mountedAtAbsolute: number | null;
+  shared: WardSharedConnection;
+}) {
   /**
    * How far the demo's day sits from the day the fixture was authored on. Read ONCE, at mount, so
    * every instant the app shows moves together; re-reading it per render would let the seed and the
@@ -662,7 +687,15 @@ function WardFlowWorld({
    * same "computed exactly once per mount, then stable for the life of the mount" guarantee,
    * without ever touching a ref.
    */
-  const [dayZero] = useState<Date>(() => demoDayZero(new Date()));
+  const [localDayZero] = useState<Date>(() => demoDayZero(new Date()));
+  // Key on the primitive dayZero string, not the snapshot object: SharedWorkspaceClient.adopt
+  // publishes a fresh snapshot every 3s even when the revision is unchanged, and dayZero feeds
+  // the context value memo — so object identity would re-render every consumer every poll.
+  const sharedDayZero = shared.snapshot?.payload.dayZero;
+  const dayZero = useMemo(
+    () => (sharedDayZero ? new Date(sharedDayZero) : localDayZero),
+    [sharedDayZero, localDayZero],
+  );
 
   // `trackWardFlowTypedTextDispatch` is a plain top-level function — pure, no closure over any
   // per-mount ref — so it can be passed directly; its own identity being stable or not is
@@ -682,9 +715,14 @@ function WardFlowWorld({
     }),
   );
   const state = container.world;
+  const { enabled: sharedEnabled, dispatch: dispatchShared } = shared;
   // Screens dispatch only `WardFlowEvent`s; the file-load action stays internal to this provider.
   const dispatch = useCallback<Dispatch<WardFlowEvent>>(
     (event: WardFlowEvent) => {
+      if (sharedEnabled) {
+        dispatchShared(event);
+        return;
+      }
       dispatchContainer(event);
       if (typeof window !== "undefined" && typeof window.BroadcastChannel !== "undefined") {
         try {
@@ -696,7 +734,7 @@ function WardFlowWorld({
         }
       }
     },
-    [dispatchContainer],
+    [dispatchContainer, sharedEnabled, dispatchShared],
   );
   // Every ward lookup follows the scenario on screen: the EMHS demo and surge scenarios carry their
   // own wards (`ward-scenarios.ts`). Idempotent, and done before any child renders.
@@ -735,10 +773,56 @@ function WardFlowWorld({
     initialNow !== undefined || mountedAtAbsolute === null ? 0 : absoluteWallClockMinutes() - mountedAtAbsolute;
 
   const now =
-    NOW_ANCHOR + anchorOffsetMinutes + container.restoredElapsed + Math.max(0, elapsed) + state.clockOffsetMinutes;
+    shared.enabled && shared.snapshot
+      ? shared.snapshot.now
+      : NOW_ANCHOR + anchorOffsetMinutes + container.restoredElapsed + Math.max(0, elapsed) + state.clockOffsetMinutes;
 
   const [, setTick] = useState(0);
   useEffect(() => {
+    if (!shared.enabled) return;
+    if (!shared.snapshot) {
+      dispatchContainer({
+        type: "ADOPT_SAVED_SESSION",
+        [ADOPT_SESSION]: (current) =>
+          current.sharedRevision === undefined
+            ? current
+            : {
+                ...current,
+                world: seedWardFlowStateAt(anchorOffsetMinutes),
+                sharedRevision: undefined,
+                eventLog: [],
+                sessionAdopted: true,
+                sessionRestored: false,
+                preAdoptionEvents: undefined,
+              },
+      });
+      return;
+    }
+    const snapshot = shared.snapshot;
+    openRequestSequence.current = Math.max(
+      openRequestSequence.current,
+      nextOpenRequestSequence(snapshot.payload.state.auditEvents),
+    );
+    dispatchContainer({
+      type: "ADOPT_SAVED_SESSION",
+      [ADOPT_SESSION]: (current) =>
+        current.sharedRevision === snapshot.revision
+          ? current
+          : {
+              ...current,
+              world: snapshot.payload.state,
+              sharedRevision: snapshot.revision,
+              sessionAdopted: true,
+              sessionRestored: true,
+              typedTextSeen: true,
+              preAdoptionEvents: undefined,
+              recoveryNotice: undefined,
+            },
+    });
+  }, [shared.enabled, shared.snapshot, anchorOffsetMinutes]);
+
+  useEffect(() => {
+    if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null) return;
     let timeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -768,7 +852,7 @@ function WardFlowWorld({
       if (timeoutTimer) clearTimeout(timeoutTimer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [initialNow, mountedAtAbsolute]);
+  }, [initialNow, mountedAtAbsolute, shared.enabled]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.BroadcastChannel === "undefined") return;
@@ -796,6 +880,7 @@ function WardFlowWorld({
    * `sessionAdopted` gates the storage write below until it has run.
    */
   useEffect(() => {
+    if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null) return;
     const { saved, recoveryNotice } = tryReadDemoState(dayZero, mountedAtAbsolute);
     // Never move the allocator backwards: a record opened before adoption already used its number.
@@ -841,11 +926,12 @@ function WardFlowWorld({
     // downtime screen is told and takes a fresh pack from the restored world, whether or not the
     // tree is re-keyed below. A saved day identical to the seed only costs a retaken snapshot.
     if (saved) forgetDowntimePack();
-  }, [initialNow, mountedAtAbsolute, dayZero]);
+  }, [initialNow, mountedAtAbsolute, dayZero, shared.enabled]);
 
   const [focusMovementId, setFocusMovementId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null || !container.sessionAdopted) return;
     // Default deny, locked on dispatch (see `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`'s own comment): once
     // this session has DISPATCHED one typed-text-carrying event — accepted or refused — storage is
@@ -871,15 +957,16 @@ function WardFlowWorld({
     now,
     elapsed,
     storageUnavailable,
+    shared.enabled,
   ]);
 
   // Audit finding ISSUE-P1-83, defect 3e: `useCallback`, not a fresh function every render — this
   // sits in the `value` useMemo's own dependency array below, so an unstable reference defeated that
   // memo on every render regardless of whether anything the memo actually reads had changed.
   const resetDemoState = useCallback(() => {
-    clearWardFlowDemoState();
+    if (!shared.enabled) clearWardFlowDemoState();
     dispatch({ type: "RESET_SCENARIO", role: "demo", now });
-  }, [dispatch, now]);
+  }, [dispatch, now, shared.enabled]);
 
   const saveScenarioFile = useCallback(
     () => buildScenarioFile(state, now, WARD_FLOW_DEMO_STORAGE_VERSION, new Date()),
@@ -888,6 +975,12 @@ function WardFlowWorld({
 
   const loadScenarioFile = useCallback(
     (text: string): { ok: true } | { ok: false; reason: string } => {
+      if (shared.enabled)
+        return {
+          ok: false,
+          reason:
+            "Scenario file replacement is available only in the local demonstration. Shared changes must use audited commands.",
+        };
       const read = readScenarioFile(text, WARD_FLOW_DEMO_STORAGE_VERSION);
       if (!read.ok) return read;
       if (read.now < NOW_ANCHOR + read.state.clockOffsetMinutes)
@@ -912,7 +1005,7 @@ function WardFlowWorld({
       });
       return { ok: true };
     },
-    [state.worldGeneration, initialNow, mountedAtAbsolute, anchorOffsetMinutes],
+    [state.worldGeneration, initialNow, mountedAtAbsolute, anchorOffsetMinutes, shared.enabled],
   );
 
   const value = useMemo<WardFlowContextValue>(
@@ -991,7 +1084,7 @@ function WardFlowWorld({
       broadcastAlerts: state.broadcastAlerts ?? [],
       plannedAdmissions: state.plannedAdmissions ?? [],
       supportNotifications: state.supportNotifications ?? [],
-      eventLog: container.eventLog ?? [],
+      eventLog: shared.enabled ? (shared.eventLog ?? []) : (container.eventLog ?? []),
       dispatch,
       focusMovementId,
       setFocusMovementId,
@@ -1013,6 +1106,8 @@ function WardFlowWorld({
       container.sessionAdopted,
       // The log grows even when an event leaves `state` untouched (a no-op), so it is its own dep.
       container.eventLog,
+      shared.enabled,
+      shared.eventLog,
       now,
       dayZero,
       dispatch,
@@ -1036,7 +1131,17 @@ function WardFlowWorld({
          * must start again from the restored world rather than keep the seed's. A first visit, or a
          * reload with nothing changed, never takes this path, so its tree is never rebuilt.
          */}
-        <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+        <WardSharedAccess
+          connection={
+            shared.enabled && container.sharedRevision === undefined
+              ? { ...shared, snapshot: null }
+              : shared.enabled && container.sharedRevision !== shared.snapshot?.revision
+                ? { ...shared, status: "saving" }
+                : shared
+          }
+        >
+          <Fragment key={container.sessionRestored ? "restored" : "seed"}>{children}</Fragment>
+        </WardSharedAccess>
       </WardFlowClockContext.Provider>
     </WardFlowContext.Provider>
   );

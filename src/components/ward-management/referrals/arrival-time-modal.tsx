@@ -9,6 +9,7 @@ import {
   type Movement,
 } from "@/components/ward-management/ward-model";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
@@ -64,6 +65,8 @@ export function ArrivalTimeModal(props: ArrivalTimeModalProps) {
 function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinator" }: ArrivalTimeModalProps) {
   const { dispatch, configuration } = useWardFlow();
   const now = useWardFlowClock();
+  // Feature 11: the route's role must be one that may set arrival details (`ward-role-permissions.ts`).
+  const saveGate = useRoleGate()("SET_ARRIVAL_DETAILS");
   const pullHoldMinutes = configuration.pullHoldMinutes;
   const pullHoldLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}-hour` : `${pullHoldMinutes}-minute`;
 
@@ -82,6 +85,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!saveGate.allowed) return;
     dispatch({
       type: "SET_ARRIVAL_DETAILS",
       role,
@@ -208,9 +212,15 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
             <button type="button" onClick={onClose} className={styles.cancelBtn}>
               Cancel
             </button>
-            <button type="submit" data-testid="save-arrival-plan-button" className={styles.saveBtn}>
+            <button
+              type="submit"
+              data-testid="save-arrival-plan-button"
+              className={styles.saveBtn}
+              {...saveGate.buttonProps}
+            >
               Save Arrival Plan
             </button>
+            {saveGate.note}
           </div>
         </form>
       </div>

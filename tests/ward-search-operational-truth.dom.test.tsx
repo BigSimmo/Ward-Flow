@@ -49,7 +49,8 @@ describe("search operational facts on visible cards", () => {
     expect(movement).toBeDefined();
     const rows = search(movement.id);
     expect(rows).toHaveLength(1);
-    expect(rows[0]).not.toHaveTextContent("In-Transit");
+    // The census says "In transit" in words (9 Oct 2026 rebuild); the record's own label was "In-Transit".
+    expect(rows[0]).not.toHaveTextContent("In transit");
     expect(screen.getByRole("region", { name: "Patient details" })).not.toHaveTextContent("Vehicle dispatched");
     fireEvent.change(screen.getByLabelText("Setting"), { target: { value: "ed" } });
     expect(screen.getByTestId(`ward-patient-search-case-${movement.id}`)).toBeInTheDocument();
@@ -65,7 +66,7 @@ it("a collected movement is visible in the transit filter and excluded from ED",
   expect(movement).toBeDefined();
   search(movement.id);
   fireEvent.change(screen.getByLabelText("Setting"), { target: { value: "transit" } });
-  expect(screen.getByTestId(`ward-patient-search-case-${movement.id}`)).toHaveTextContent("In-Transit");
+  expect(screen.getByTestId(`ward-patient-search-case-${movement.id}`)).toHaveTextContent("In transit");
   expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Collected");
   fireEvent.change(screen.getByLabelText("Setting"), { target: { value: "ed" } });
   expect(screen.queryByTestId(`ward-patient-search-case-${movement.id}`)).not.toBeInTheDocument();
