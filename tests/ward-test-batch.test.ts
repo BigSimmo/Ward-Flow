@@ -24,7 +24,8 @@ function fixture() {
   return root;
 }
 afterEach(() => {
-  for (const folder of folders.splice(0)) rmSync(folder, { recursive: true, force: true });
+  for (const folder of folders.splice(0))
+    rmSync(folder, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 const plan = { schemaVersion: 1, tests: ["tests/one.test.ts", "tests/one.test.ts", "tests/two.test.ts"] };
 const hash = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");

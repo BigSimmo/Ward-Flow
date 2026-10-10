@@ -1,5 +1,6 @@
 import type { WardFlowEvent } from "./ward-flow-events";
-import { STAGE_TRANSITION_BLOCKERS, type WardFlowState } from "./ward-flow-reducer";
+import type { WardFlowState } from "./ward-flow-reducer";
+import { STAGE_TRANSITION_BLOCKERS } from "./ward-stage-transition-blockers";
 import { TRANSPORT_PROVIDERS, TRANSPORT_LEGAL_STATUSES, type Movement, type Unit } from "./ward-model";
 import { stageCopy } from "./ward-stage-copy";
 import { communityTeamById } from "./community/community-derivations";

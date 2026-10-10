@@ -1,5 +1,6 @@
 import type { WardFlowEvent } from "./ward-flow-events";
-import { STAGE_TRANSITION_BLOCKERS, type WardFlowState } from "./ward-flow-reducer";
+import type { WardFlowState } from "./ward-flow-reducer";
+import { STAGE_TRANSITION_BLOCKERS } from "./ward-stage-transition-blockers";
 import type { Movement, Notice } from "./ward-model";
 import { STOP_TRANSPORT_REASONS, TRANSPORT_WHEREABOUTS } from "./ward-change-reasons";
 type TransportStopEvent = Extract<WardFlowEvent, { type: "STOP_TRANSPORT" }>;
