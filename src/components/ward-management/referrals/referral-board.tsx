@@ -966,7 +966,9 @@ export function ReferralBoard({ defaultSelectFirst = false }: { defaultSelectFir
                 <button type="button" className={a.keyLink} onClick={() => setSheet("keys")}>
                   <Kbd>?</Kbd> all shortcuts
                 </button>
-                <span className={a.footNote}>Highlights dim rows. Every referral stays in the list.</span>
+                <span className={a.footNote}>
+                  Highlights dim rows and keep every referral. Search narrows the list.
+                </span>
               </div>
             </Card>
           </div>

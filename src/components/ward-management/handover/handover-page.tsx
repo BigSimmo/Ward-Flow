@@ -1327,7 +1327,7 @@ export function HandoverPage() {
         <div className={`${styles.split} ${wide ? styles.splitFull : ""}`}>
           {table}
           {wide ? null : (
-            <aside className={styles.side} aria-label={selected ? "Patient flow" : "Sign off"}>
+            <aside className={styles.side} aria-label={selected ? "Patient flow" : "Sign off"} data-wf-rail="1201">
               {flowPanel ?? signOffPanel}
             </aside>
           )}

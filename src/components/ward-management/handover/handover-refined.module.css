@@ -491,9 +491,8 @@
 
 /* ---------------------------------------------------------------- side panels */
 
+/* The rail pins through the shared `data-wf-rail="1201"` contract, never its own sticky top. */
 .side {
-  position: sticky;
-  top: 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1007,9 +1006,25 @@
   .split {
     grid-template-columns: minmax(0, 1fr);
   }
+}
 
-  .side {
-    position: static;
+/* v10 tablet portrait: the tab row and the table controls wrap instead of running off the card. */
+@media (max-width: 62.5rem) {
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
+  .toolbar > :first-child {
+    flex: 1 1 100%;
+  }
+
+  .toolbarNote {
+    margin-left: 0;
+    flex: 1 1 auto;
+  }
+
+  .bar {
+    flex-wrap: wrap;
   }
 }
 

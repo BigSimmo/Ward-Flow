@@ -924,7 +924,7 @@
 [data-ward-design="v6"] .eyebrow,
 [data-ward-design="v6"] .cardHeader .eyebrow {
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   white-space: nowrap;
 }
@@ -937,7 +937,7 @@
   border-radius: var(--wf-r-sm);
   background: var(--wf-surface);
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-11) / var(--wf-h-chip) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-h-chip) var(--wf-font);
   white-space: nowrap;
 }
 

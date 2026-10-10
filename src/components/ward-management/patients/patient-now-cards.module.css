@@ -8,7 +8,7 @@
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-pill);
   color: var(--wf-ink-2);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   white-space: nowrap;
 }
