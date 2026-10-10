@@ -46,6 +46,7 @@ import {
   homeRegionBeds,
   inDaysAwayGroup,
   instantFromEstimatedTimeInputs,
+  departureDayLabel,
   leavesToday,
   missingAnswers,
   returnStatus,
@@ -431,7 +432,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       to: shortSiteName(record.homeHospital),
       mode: record.mode === "road" ? "Road" : "Flight",
       time: formatInstant(record.estimatedAt),
-      day: leavesToday(record, now) ? "Today" : "Tomorrow",
+      day: departureDayLabel(record, now),
     }));
   const leavingToday = repatriations.filter((record) => leavesToday(record, now) && record.estimatedAt >= now);
   const dueSoon = entries.filter((entry) => {

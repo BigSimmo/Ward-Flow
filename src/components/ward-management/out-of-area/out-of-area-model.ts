@@ -291,3 +291,12 @@ export function shiftLabel(now: Instant): string {
 export function leavesToday(record: RepatriationRecord, now: Instant): boolean {
   return dayOf(record.estimatedAt) === dayOf(now);
 }
+
+/** A night shift runs past midnight, so a departure can fall yesterday as well as today or tomorrow. */
+export function departureDayLabel(record: RepatriationRecord, now: Instant): string {
+  const offset = dayOf(record.estimatedAt) - dayOf(now);
+  if (offset === 0) return "Today";
+  if (offset === 1) return "Tomorrow";
+  if (offset === -1) return "Yesterday";
+  return offset < 0 ? `${-offset} days ago` : `In ${offset} days`;
+}

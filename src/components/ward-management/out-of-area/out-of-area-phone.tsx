@@ -199,8 +199,12 @@ export function OutOfAreaPhone({
     .sort((a, b) => a.estimatedAt - b.estimatedAt);
   const leavingIds = new Set(leaving.map((record) => record.admissionId));
   const ready = readyIds.filter((id) => !leavingIds.has(id)).map((id) => byId.get(id)!);
-  const soon = people.filter((person) => person.offset !== null && person.offset >= 0 && person.offset <= 2);
-  const more = Math.max(0, people.length - ready.length - soon.length);
+  // Each person appears in one Needs you list only, and "more" counts everyone not shown above.
+  const soon = people.filter(
+    (person) =>
+      !leavingIds.has(person.entry.admission.id) && person.offset !== null && person.offset >= 0 && person.offset <= 2,
+  );
+  const more = Math.max(0, people.length - leavingIds.size - ready.length - soon.length);
   const selected = selectedId ? byId.get(selectedId) : undefined;
   const index = selected ? people.indexOf(selected) : -1;
   const nextUp = nextUpId ? byId.get(nextUpId) : undefined;
