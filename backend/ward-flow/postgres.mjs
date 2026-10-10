@@ -158,12 +158,16 @@ export function createWorkspaceStore(
     const failures = {};
     try {
       const at = clock();
-      const { rows: worlds } = await pool.query(
-        "SELECT payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
-        [workspaceId],
-      );
-      if (!worlds[0] || !engine.validWorld(worlds[0].payload)) return;
-      const red = new Map(engine.actNowAlerts(worlds[0].payload, at).map((alert) => [alert.id, alert]));
+      const readRed = async () => {
+        const { rows: worlds } = await pool.query(
+          "SELECT payload FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype'",
+          [workspaceId],
+        );
+        if (!worlds[0] || !engine.validWorld(worlds[0].payload)) return null;
+        return new Map(engine.actNowAlerts(worlds[0].payload, at).map((alert) => [alert.id, alert]));
+      };
+      let red = await readRed();
+      if (!red) return;
       const due = "d.status='pending' AND d.attempts < $3 AND (d.last_attempt_at IS NULL OR d.last_attempt_at <= $4)";
       let after = "0";
       for (;;) {
@@ -180,13 +184,15 @@ export function createWorkspaceStore(
           ],
         );
         if (!rows.length) break;
+        // A claimed row can name an item committed after the read above. The claim has seen that
+        // commit, so one fresh read here holds it, and the alert goes now rather than next sweep.
+        if (rows.some((row) => !red.has(row.item_id))) red = (await readRed()) ?? red;
         const devices = new Map();
         const unseen = { ids: [], items: [] };
         for (const row of rows) {
           const item = red.get(row.item_id);
-          // A row queued by a commit after this unlocked read names an item this read has not
-          // seen. It is released unclaimed for the committing command's own delivery or the next
-          // sweep, never sent as an empty entry or marked sent with the device's other rows.
+          // An item not red even in the fresh read is released unclaimed for the next evaluation,
+          // never sent as an empty entry or marked sent with the device's other rows.
           if (!item) {
             unseen.ids.push(row.id);
             unseen.items.push(row.item_id);
@@ -229,7 +235,7 @@ export function createWorkspaceStore(
             `UPDATE ward_flow.push_deliveries SET status = CASE WHEN attempts >= $3 THEN 'failed' ELSE 'pending' END WHERE ${claimed}`,
             [ids.retry, at, MAX_DELIVERY_ATTEMPTS],
           );
-        if (devices.size < SUBSCRIPTION_PAGE) break;
+        if (new Set(rows.map((row) => row.id)).size < SUBSCRIPTION_PAGE) break;
       }
       if (counts.failed) log({ event: "ward_backend_push_delivery_failures", ...counts, failures });
     } catch (error) {

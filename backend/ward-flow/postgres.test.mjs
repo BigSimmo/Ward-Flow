@@ -438,19 +438,22 @@ test(
         assert.deepEqual(sent.splice(0).sort(), ["f1", "f2"]);
         assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"]);
         fail = false;
-        // The sweep's evaluation (under the lock) sees the item; its delivery read is stale.
+        // The sweep's evaluation (under the lock) sees the item; its delivery reads are stale.
         const realAlerts = engine.actNowAlerts;
         let calls = 0;
+        let staleReads = [2, 3];
         lagging.actNowAlerts = (world, at) => {
           calls += 1;
-          if (calls === 2) stale = true;
-          return stale ? ((stale = false), []) : realAlerts(world, at);
+          return staleReads.includes(calls) ? [] : realAlerts(world, at);
         };
         await store.sweepPush();
-        assert.deepEqual(sent.splice(0), [], "nothing is sent for an item the delivery has not seen");
+        assert.deepEqual(sent.splice(0), [], "nothing is sent for an item no read has seen");
         assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"], "the row is kept, unclaimed");
+        // Only the first delivery read is stale: the claim prompts a fresh read and it goes now.
+        calls = 0;
+        staleReads = [2];
         await store.sweepPush();
-        assert.deepEqual(sent.splice(0), ["f1"], "the next delivery sends it");
+        assert.deepEqual(sent.splice(0), ["f1"], "a fresh read after the claim sends it in the same delivery");
         assert.deepEqual(await statuses(workspaceId), ["f1 sent 2", "f2 sent 1"]);
       });
       await t.test("an evaluation error is logged and the command still commits", async () => {
