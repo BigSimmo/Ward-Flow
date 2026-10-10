@@ -92,8 +92,8 @@ export function createSharedHandler({ config, store, authenticate, readBody, ver
           endpoint = null;
         }
         if (!endpoint) return reply(400, { error: "A push endpoint is required" });
-        await store.unsubscribe(actorId, endpoint);
-        return reply(200, { subscribed: false });
+        const outcome = await store.unsubscribe(actorId, endpoint);
+        return reply(200, { subscribed: outcome === "unsubscribed" ? false : true });
       }
       if (path !== "/v1/workspace/commands" || request.method !== "POST")
         return reply(405, { error: "Method not allowed" });

@@ -182,9 +182,10 @@ export class SharedWorkspaceClient {
     if (!response.ok) throw new Error("Phone alerts were not turned on");
   }
   /** Stops phone alerts for this device. */
-  async pushUnsubscribe(endpoint: string) {
-    const { response } = await this.request("/v1/workspace/push-unsubscribe", { endpoint });
+  async pushUnsubscribe(endpoint: string): Promise<boolean> {
+    const { response, value } = await this.request("/v1/workspace/push-unsubscribe", { endpoint });
     if (!response.ok) throw new Error("Phone alerts were not turned off");
+    return value?.subscribed === false;
   }
   retry = async () => {
     if (this.pending) await this.drain();

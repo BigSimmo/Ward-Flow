@@ -19,7 +19,7 @@ export const PHONE_PUSH_SCOPE = "/mockups/ward-flow/";
 export type PhonePushApi = {
   pushKey(): Promise<{ enabled: true; publicKey: string } | { enabled: false }>;
   pushSubscribe(subscription: { endpoint?: string; keys?: Record<string, string> }): Promise<void>;
-  pushUnsubscribe(endpoint: string): Promise<void>;
+  pushUnsubscribe(endpoint: string): Promise<boolean>;
 };
 
 /** Whether this screen is on the shared Azure workspace, and signed in. */
@@ -126,7 +126,9 @@ export function usePhonePush(): [PhonePushState, (enabled: boolean) => Promise<P
         const key = await api.pushKey();
         if (!key.enabled) state = "server-off";
         else if (window.Notification.permission === "denied") state = "denied";
-        else state = (await currentSubscription()) ? "on" : "off";
+        // A browser subscription can belong to a different signed-in coordinator. Do not infer
+        // ownership from the local browser state; signing in is an explicit opt-in.
+        else state = "off";
       } catch {
         state = "error";
       }
@@ -152,7 +154,9 @@ export function usePhonePush(): [PhonePushState, (enabled: boolean) => Promise<P
       try {
         next = enabled ? await turnOn(api) : await turnOff(api);
       } catch {
-        next = "error";
+        // If disabling failed, the confirmed state is still on. Keep the switch checked so
+        // the next tap retries revocation rather than accidentally subscribing again.
+        next = enabled ? "error" : "on";
       }
       setChecked({ api, state: next });
       return next;
@@ -214,8 +218,9 @@ async function turnOn(api: PhonePushApi): Promise<PhonePushState> {
 async function turnOff(api: PhonePushApi): Promise<PhonePushState> {
   const subscription = await currentSubscription();
   if (subscription) {
-    await api.pushUnsubscribe(subscription.endpoint);
-    await subscription.unsubscribe();
+    const revoked = await api.pushUnsubscribe(subscription.endpoint);
+    // Never remove a browser subscription owned by another signed-in coordinator.
+    if (revoked) await subscription.unsubscribe();
   }
   return "off";
 }
