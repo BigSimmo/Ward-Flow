@@ -60,8 +60,12 @@ describe("settings screen: every Preview control says it is not wired", () => {
       expect(pane, "the chosen tab's pane did not show").not.toBeNull();
 
       // A wired stepper's button at its bound is aria-disabled too; that is a limit, not Preview.
+      // Phone alerts (feature 4) is wired but needs the shared Azure workspace: its row says why
+      // it is unavailable instead (tests/ward-phone-push.dom.test.tsx holds it to that).
       const unavailable = Array.from(pane!.querySelectorAll<HTMLElement>('[aria-disabled="true"]')).filter(
-        (control) => !/^(Increase|Decrease) /.test(control.getAttribute("aria-label") ?? ""),
+        (control) =>
+          !/^(Increase|Decrease) /.test(control.getAttribute("aria-label") ?? "") &&
+          !control.closest("[data-setting='phone-alerts']"),
       );
       for (const control of unavailable) {
         const setting = control.closest<HTMLElement>("[data-setting]");
