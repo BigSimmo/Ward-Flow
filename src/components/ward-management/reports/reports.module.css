@@ -685,7 +685,7 @@
 }
 
 .phoneActionBar :is(a, button) {
-  min-height: var(--wf-touch);
+  min-height: 48px;
 }
 
 /* Tablet landscape keeps the table beside the summary; portrait (and below) stacks them. */
@@ -783,6 +783,10 @@
   }
 
   .page [data-print-hide] {
+    display: none !important;
+  }
+}
+ {
     display: none !important;
   }
 }
