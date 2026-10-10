@@ -44,7 +44,6 @@ import {
   setActNowNotificationPreference,
   useActNowNotificationPreference,
 } from "@/components/ward-management/shell/ward-act-now-notifications";
-import { createBrowserStore } from "@/lib/client-store-factory";
 import {
   WA_BROADCAST_TEMPLATES,
   getActiveBroadcastAlert,
@@ -91,6 +90,7 @@ import {
 import { AlertDetail, type AlertDetailHandlers } from "./alert-detail";
 import { TimeRing, TodayChart } from "./alerts-visuals";
 
+import { useIsTabletPortrait } from "../governance/use-tablet-portrait";
 import styles from "./alerts.module.css";
 import {
   Badge,
@@ -114,6 +114,7 @@ import {
   StatusGlyph,
   TabPanel,
   Tabs,
+  useIsPhone,
   TextInput,
   Textarea,
   type WfTone,
@@ -136,19 +137,6 @@ import {
 export { extractOverdue } from "./alerts-model";
 
 const COORDINATOR = WARD_FLOW_ROLE_LABELS.coordinator;
-
-/** Phone layout: the selected alert opens in a sheet instead of the side panel. */
-const PHONE_MEDIA_QUERY = "(max-width: 48rem)";
-const usePhoneLayout = createBrowserStore<boolean>(
-  (onStoreChange) => {
-    if (typeof window.matchMedia !== "function") return () => {};
-    const media = window.matchMedia(PHONE_MEDIA_QUERY);
-    media.addEventListener("change", onStoreChange);
-    return () => media.removeEventListener("change", onStoreChange);
-  },
-  () => (typeof window.matchMedia === "function" ? window.matchMedia(PHONE_MEDIA_QUERY).matches : false),
-  false,
-);
 
 type AlertsTab = "now" | "broadcast" | "notices" | "history";
 type ArrangeBy = "urgency" | "lanes" | "owner";
@@ -185,7 +173,11 @@ function AlertsWorkspace() {
   const clockNow = useWardFlowClock();
   const live = usePageLive();
   const now = live.now;
-  const isPhone = usePhoneLayout();
+  // Phone layout: the selected alert opens in a sheet instead of the side panel.
+  const isPhone = useIsPhone();
+  // Tablet portrait (v10): the queue takes the width and an alert opens as a slide-over.
+  const isTabletPortrait = useIsTabletPortrait();
+  const slideOver = isPhone || isTabletPortrait;
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
   const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const plannedAdmissions = state.plannedAdmissions;
@@ -476,18 +468,18 @@ function AlertsWorkspace() {
 
   const chosen = allEntries.find((entry) => entry.item.id === chosenId);
   // On the desktop the panel always shows an alert: the chosen one, else the first in line.
-  const selected = chosen ?? (isPhone ? undefined : (nextQueue[0] ?? allEntries[0]));
+  const selected = chosen ?? (slideOver ? undefined : (nextQueue[0] ?? allEntries[0]));
 
   const select = useCallback(
     (entry: QueueEntry, options: { release?: boolean } = {}) => {
       setChosenId(entry.item.id);
-      if (isPhone) setSheetOpen(true);
+      if (slideOver) setSheetOpen(true);
       if (options.release) {
         releasePending.current = true;
         setReleaseRequest((count) => count + 1);
       }
     },
-    [isPhone],
+    [slideOver],
   );
 
   useEffect(() => {
@@ -1318,7 +1310,19 @@ function AlertsWorkspace() {
           <div className={styles.column}>
             <Card as="section" className={styles.queueCard} aria-label="Alerts">
               <div className={styles.tabsBar}>
-                <Tabs items={tabs} value={tab} onChange={setTab} label="Alerts views" idPrefix="alerts" />
+                {isPhone ? (
+                  // Phone (v10): the four views as one 44px segmented control, not a tab strip.
+                  <Segmented<AlertsTab>
+                    className={styles.phoneTabs}
+                    items={tabs}
+                    value={tab}
+                    onChange={setTab}
+                    label="Alerts views"
+                    size="md"
+                  />
+                ) : (
+                  <Tabs items={tabs} value={tab} onChange={setTab} label="Alerts views" idPrefix="alerts" />
+                )}
               </div>
 
               {tab === "now" ? (
@@ -1645,7 +1649,7 @@ function AlertsWorkspace() {
             </Card>
           </div>
 
-          {isPhone ? null : (
+          {slideOver ? null : (
             <aside className={styles.panel} aria-label="Selected alert" data-wf-rail>
               <Card as="div" className={styles.panelCard}>
                 {selectedPanel ?? <EmptyState icon={Bell} title="Pick an alert to see it here" />}
@@ -1654,7 +1658,7 @@ function AlertsWorkspace() {
           )}
         </div>
 
-        {isPhone && selected ? (
+        {slideOver && selected ? (
           <Drawer
             open={sheetOpen}
             onClose={() => setSheetOpen(false)}

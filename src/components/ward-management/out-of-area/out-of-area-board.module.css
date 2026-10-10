@@ -167,6 +167,8 @@
   padding: var(--wf-s-2) var(--wf-s-4) 0;
   overflow-x: auto;
   scrollbar-width: none;
+  /* The chips scroll sideways; the fade says there is more. */
+  mask-image: linear-gradient(90deg, black calc(100% - 1.5rem), transparent);
 }
 
 .pill {
@@ -1264,7 +1266,13 @@ fieldset.formRow {
 }
 
 .phoneTabs {
-  min-height: var(--ward-tap, 3rem);
+  width: 100%;
+}
+
+.phoneTabs [role="radio"] {
+  flex: 1 1 0;
+  justify-content: center;
+  min-height: var(--wf-touch);
 }
 
 .phonePanel {
@@ -1649,4 +1657,81 @@ fieldset.formRow {
 
 .planSheet .whoStrip span {
   white-space: normal;
+}
+
+/* ---------- Since the bed meeting: delta twins (v10) ---------- */
+
+.since {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding-right: var(--wf-s-4);
+  border-right: 1px solid var(--wf-on-hero-div);
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.sinceLabel {
+  overflow: hidden;
+  color: var(--wf-hero-ink-3);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.sinceTwin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.twin {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-15) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.twinWord {
+  color: var(--wf-hero-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+}
+
+.twin svg {
+  width: 12px;
+  height: 15px;
+}
+
+.twin rect {
+  fill: var(--wf-hero-ink-3);
+}
+
+.twin rect[data-now="true"] {
+  fill: var(--wf-hero-ink);
+}
+
+@media (max-width: 75rem) {
+  .sinceLabel {
+    display: none;
+  }
+}
+
+.phoneSince {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0 var(--wf-s-3) var(--wf-s-1);
+  overflow: hidden;
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneSince .twin {
+  font-size: var(--wf-fs-12);
 }

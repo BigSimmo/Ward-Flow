@@ -38,6 +38,12 @@
   min-width: 0;
 }
 
+/* Side by side cards sit flush at equal heights (v10): the register stretches to the rail. */
+.govLayout > .registerCard,
+.govLayout > .capturedCard {
+  align-self: stretch;
+}
+
 .tableScroll {
   overflow-x: auto;
 }
@@ -958,4 +964,106 @@
 
 .phoneNotice {
   margin: 0;
+}
+
+/* The record's UMRN under the person (v10: patients by UMRN). */
+.umrn {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The rail at rest: this session, then the next events to review (v10). */
+.restSummary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.restHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.restCells {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.restCells > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.restCells > div + div {
+  border-left: 1px solid var(--wf-line);
+}
+
+.restCells dt {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.restCells dd {
+  margin: 0;
+  font: 600 var(--wf-fs-15) / 1.2 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.restNext {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  list-style: none;
+}
+
+.restNext > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.restNextRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  text-align: left;
+  cursor: pointer;
+}
+
+.restNextRow:hover {
+  background: var(--wf-hover);
+}
+
+.restNextRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.restClear {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
 }

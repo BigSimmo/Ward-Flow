@@ -1,17 +1,6 @@
 "use client";
 
-import {
-  Fragment,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { Fragment, type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Clock, Copy, Mail, MapPin, Printer, Search, Star, Users } from "lucide-react";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
 import { WardFlowContext, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
@@ -22,7 +11,8 @@ import {
   CardFoot,
   FilterChip,
   Hero,
-  HeroStat,
+  HeroChip,
+  HeroChips,
   HeroTrack,
   Icon,
   Kbd,
@@ -32,7 +22,9 @@ import {
   Tabs,
   TextInput,
   cx,
+  Drawer,
   tableClasses,
+  useIsPhone,
 } from "@/components/wf";
 import {
   CHECK_DUE_DAYS,
@@ -63,6 +55,7 @@ import {
 } from "./on-call-parts";
 import { PhoneDirectory, PhoneFocal, PhoneSheet } from "./on-call-phone";
 
+import { useIsTabletPortrait } from "../governance/use-tablet-portrait";
 import styles from "./on-call.module.css";
 
 const FAVOURITES_KEY = "ward-flow:on-call:favourites";
@@ -93,8 +86,6 @@ const COVER_AT: { id: string; label: string }[] = [
   { id: "720", label: "12:00" },
 ];
 
-const PHONE_QUERY = "(max-width: 48rem)";
-
 const JUMP_LABEL: Record<string, string> = {
   "North Metro": "NM",
   "East Metro": "EM",
@@ -103,20 +94,6 @@ const JUMP_LABEL: Record<string, string> = {
   WACHS: "WA",
   Private: "Pvt",
 };
-
-/** Phone is its own layout, not a reflow: the screen renders a different tree under 48rem. */
-function useIsPhone(): boolean {
-  return useSyncExternalStore(
-    (notify) => {
-      if (typeof window.matchMedia !== "function") return () => undefined;
-      const query = window.matchMedia(PHONE_QUERY);
-      query.addEventListener?.("change", notify);
-      return () => query.removeEventListener?.("change", notify);
-    },
-    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
-    () => false,
-  );
-}
 
 /** My list saved by the earlier roster page held its role ids; each maps to the same directory line. */
 const LEGACY_FAVOURITE_IDS: Record<string, string> = {
@@ -170,6 +147,9 @@ export function OnCallScreen() {
   const boardNow = useWardFlowClock();
   const boardMinute = minuteOfDay(boardNow);
   const isPhone = useIsPhone();
+  // Tablet portrait (v10): the directory takes the width and a line opens as a slide-over card.
+  const isTabletPortrait = useIsTabletPortrait();
+  const [slideId, setSlideId] = useState<string | null>(null);
   // The EMHS demo and surge scenarios swap in their own wards, so the directory follows the scenario.
   const scenario = useContext(WardFlowContext)?.scenario;
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `scenario` re-points `wardSites`, which the build reads
@@ -281,6 +261,7 @@ export function OnCallScreen() {
       return next;
     });
     if (isPhone) setSheetId(id);
+    else if (isTabletPortrait) setSlideId(id);
   }
 
   const actions: ContactActions = {
@@ -329,6 +310,7 @@ export function OnCallScreen() {
     (highlight !== null && HIGHLIGHTS.find((item) => item.id === highlight)!.test(entry, minute));
 
   const selected = entries.find((entry) => entry.id === selectedId) ?? entries[0]!;
+  const slideEntry = slideId ? entries.find((entry) => entry.id === slideId) : undefined;
   const sheetEntry = sheetId ? entries.find((entry) => entry.id === sheetId) : undefined;
   const tabRows = rowsForTab(entries, tab, favourites);
   const tabCounts: Record<DirectoryTab, number> = {
@@ -351,30 +333,30 @@ export function OnCallScreen() {
     .filter((item) => item.count > 0);
 
   const heroStats = (
-    <>
-      <HeroStat
+    <HeroChips label="Lines by state, press to highlight">
+      <HeroChip
         value={answering.length}
         label="answering"
         tone="success"
         pressed={highlight === "now"}
-        onToggle={() => toggleHighlight("now")}
+        onPress={() => toggleHighlight("now")}
       />
-      <HeroStat
+      <HeroChip
         value={endingSoon.length}
         label="end within the hour"
         tone="warning"
         pressed={highlight === "soon"}
-        onToggle={() => toggleHighlight("soon")}
+        onPress={() => toggleHighlight("soon")}
       />
-      <HeroStat value={closed.length} label="closed" tone="neutral" />
-      <HeroStat
+      <HeroChip value={closed.length} label="closed" tone="neutral" />
+      <HeroChip
         value={checkDue.length}
         label="check due"
         tone="warning"
         pressed={highlight === "due"}
-        onToggle={() => toggleHighlight("due")}
+        onPress={() => toggleHighlight("due")}
       />
-    </>
+    </HeroChips>
   );
 
   const clock = (
@@ -678,19 +660,26 @@ export function OnCallScreen() {
             </CardFoot>
           </Card>
 
-          <Card
-            className={styles.panel}
-            aria-labelledby={panelHeadingId}
-            data-testid="ward-on-call-role-panel"
-            data-wf-rail
-          >
-            {queryHits.length || query.trim() ? (
-              <MatchesPanel query={query} hits={queryHits} actions={actions} onClear={() => setQuery("")} />
-            ) : (
-              <ContactCard entry={selected} actions={actions} headingId={panelHeadingId} />
-            )}
-          </Card>
+          {isTabletPortrait && !(queryHits.length || query.trim()) ? null : (
+            <Card
+              className={styles.panel}
+              aria-labelledby={panelHeadingId}
+              data-testid="ward-on-call-role-panel"
+              data-wf-rail
+            >
+              {queryHits.length || query.trim() ? (
+                <MatchesPanel query={query} hits={queryHits} actions={actions} onClear={() => setQuery("")} />
+              ) : (
+                <ContactCard entry={selected} actions={actions} headingId={panelHeadingId} />
+              )}
+            </Card>
+          )}
         </div>
+        {isTabletPortrait && slideEntry ? (
+          <Drawer open onClose={() => setSlideId(null)} title={slideEntry.name} testId="ward-on-call-line-sheet">
+            <ContactCard entry={slideEntry} actions={actions} headingId={`${panelHeadingId}-slide`} />
+          </Drawer>
+        ) : null}
         {noticeLine}
         <WardPrototypeFooter
           testId="ward-on-call-governance"

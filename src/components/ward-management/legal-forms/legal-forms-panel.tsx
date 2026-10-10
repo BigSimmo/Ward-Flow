@@ -10,9 +10,11 @@ import {
   Segmented,
   StatusGlyph,
   TextInput,
+  TimeRail,
   Timeline,
   buttonClass,
   cx,
+  type TimeRailMark,
   type TimelineItem,
 } from "@/components/wf";
 import { formatInstantWithDay, minutesUntil, type Instant } from "@/components/ward-management/ward-clock";
@@ -70,14 +72,10 @@ export const RING_LABEL: Record<RingState, string> = {
   unwritten: "No expiry typed",
 };
 
-const CHART_RAIL_MINUTES = 12 * 60;
-const CHART_RAIL_CLUSTER_MINUTES = 150;
-const CHART_RAIL_TICK_MINUTES = 4 * 60;
-
 /**
- * The clock rail (v10 TimeRail): a Passed bay above, then every typed expiry in the next twelve
- * hours on one line. Marks close together share one button so labels never overlap; each mark is a
- * button named by its form and time, and opens the first form it holds. Page surface, not hero.
+ * The clock rail, on the shared v10 TimeRail: a Passed bay above, then every typed expiry in the
+ * next twelve hours on one line. D5: only an expiry a person typed (`legalForm.dueAt`) is a mark;
+ * demo Act periods never reach the rail. Each mark opens the first form it holds.
  */
 export function ClockRail({
   movements,
@@ -88,94 +86,29 @@ export function ClockRail({
   now: Instant;
   onSelect: (movement: Movement) => void;
 }) {
-  const typed = movements.filter((movement) => movement.legalForm?.dueAt !== undefined);
-  const passed = typed.filter((movement) => minutesUntil(movement.legalForm!.dueAt!, now) <= 0);
-  const upcoming = typed.filter((movement) => {
-    const left = minutesUntil(movement.legalForm!.dueAt!, now);
-    return left > 0 && left <= CHART_RAIL_MINUTES;
-  });
-  const later = typed.length - passed.length - upcoming.length;
-  const clusters: Movement[][] = [];
-  for (const movement of [...upcoming].sort((a, b) => a.legalForm!.dueAt! - b.legalForm!.dueAt!)) {
-    const last = clusters.at(-1);
-    if (last && movement.legalForm!.dueAt! - last[0]!.legalForm!.dueAt! < CHART_RAIL_CLUSTER_MINUTES)
-      last.push(movement);
-    else clusters.push([movement]);
-  }
-  const ticks: Instant[] = [];
-  for (let minutes = 0; minutes <= CHART_RAIL_MINUTES; minutes += CHART_RAIL_TICK_MINUTES) ticks.push(now + minutes);
-  const x = (instant: Instant) => `${((instant - now) / CHART_RAIL_MINUTES) * 100}%`;
+  const marks: TimeRailMark[] = movements
+    .filter((movement) => movement.legalForm?.dueAt !== undefined)
+    .map((movement) => ({
+      id: movement.id,
+      at: movement.legalForm!.dueAt!,
+      code: movement.legalForm!.code,
+      name: `Form ${movement.legalForm!.code}`,
+      tone: STANDING_TONE[clockStanding(movement, now)],
+      onSelect: () => onSelect(movement),
+    }));
   return (
-    <div className={styles.rail} data-testid="ward-legal-clock-rail">
-      <div className={styles.railBay} data-on={passed.length > 0 ? "true" : undefined}>
-        <span className={styles.railBayValue}>
-          <span>Passed</span>
-          <span className={styles.mono}>{passed.length}</span>
-        </span>
-        {passed.slice(0, 3).map((movement) => {
-          const code = movement.legalForm!.code;
-          const at = formatInstantWithDay(movement.legalForm!.dueAt!, now);
-          return (
-            <button
-              key={movement.id}
-              type="button"
-              className={styles.railBayMark}
-              onClick={() => onSelect(movement)}
-              aria-label={`Form ${code} expired ${at}, open`}
-            >
-              <StatusGlyph tone="danger" size={9} />
-              <span className={styles.railCode}>{code}</span>
-              <span className={styles.mono}>{at}</span>
-            </button>
-          );
-        })}
-        {passed.length > 3 ? <span className={styles.railMore}>+{passed.length - 3}</span> : null}
-      </div>
-      <div className={styles.railPlot}>
-        <span className={styles.railLine} aria-hidden="true" />
-        {clusters.map((cluster, index) => {
-          const movement = cluster[0]!;
-          const standing = clockStanding(movement, now);
-          const code = movement.legalForm!.code;
-          const at = formatInstantWithDay(movement.legalForm!.dueAt!, now);
-          const more = cluster.length - 1;
-          return (
-            <button
-              key={movement.id}
-              type="button"
-              className={styles.railMark}
-              data-lane={index % 2}
-              style={{ left: x(movement.legalForm!.dueAt!) }}
-              onClick={() => onSelect(movement)}
-              aria-label={`Form ${code} expires ${at}${more > 0 ? ` and ${more} more close after` : ""}, open`}
-            >
-              <span className={styles.railLabel}>
-                <span className={styles.railCode}>{code}</span>
-                {at}
-                {more > 0 ? <span className={styles.railMore}>+{more}</span> : null}
-              </span>
-              <span className={styles.railDot} data-tone={STANDING_TONE[standing]} />
-            </button>
-          );
-        })}
-        {ticks.map((tick, index) => (
-          <span
-            key={tick}
-            className={styles.railTick}
-            data-first={index === 0 ? "true" : undefined}
-            style={{ left: x(tick) }}
-            aria-hidden="true"
-          >
-            {index === 0 ? "Now" : index === ticks.length - 1 ? "12h" : formatInstantWithDay(tick, now)}
-          </span>
-        ))}
-      </div>
-      <p className={styles.railFoot}>
-        {later > 0
+    <TimeRail
+      marks={marks}
+      now={now}
+      formatTime={(at) => formatInstantWithDay(at, now)}
+      verbs={{ passed: "expired", upcoming: "expires" }}
+      laterText={(later) =>
+        later > 0
           ? `${later} more ${later === 1 ? "expires" : "expire"} after the rail`
-          : "Nothing typed beyond the rail"}
-      </p>
-    </div>
+          : "Nothing typed beyond the rail"
+      }
+      testId="ward-legal-clock-rail"
+    />
   );
 }
 

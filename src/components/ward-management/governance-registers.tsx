@@ -4,8 +4,9 @@ import { ChevronRight, ClipboardList, Download, FileText, Fingerprint, History, 
 import Link from "next/link";
 import {
   useContext,
+  useEffect,
+  useRef,
   useState,
-  useSyncExternalStore,
   type ReactNode,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
@@ -30,6 +31,7 @@ import { LEAVING_DESTINATIONS } from "./ward-admissions";
 import { legalFormReceiptCorrectionReasonLabels } from "./ward-change-reasons";
 import { snoozeReasonLabel } from "./ward-inbox-snooze";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
+import { UNDO_TOAST_MS } from "./ward-operational-defaults";
 import { movementHref, unitHref } from "./shell/ward-facade";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF, WEEKLY_REPORT_HREF } from "./reports/report-routes";
 import { isOpen } from "./ward-derivations";
@@ -50,6 +52,7 @@ import {
   CardFoot,
   CardHead,
   Count,
+  Drawer,
   EmptyState,
   Field,
   Frac,
@@ -69,8 +72,11 @@ import {
   cx,
   tableClasses,
   type WfTone,
+  useIsPhone,
+  useToast,
 } from "@/components/wf";
 
+import { useIsTabletPortrait } from "./governance/use-tablet-portrait";
 import thirdEdition from "./governance-third-edition.module.css";
 
 /**
@@ -175,7 +181,23 @@ export function GovernanceAccessRecordPanel() {
 type GovernanceApi = Pick<
   ReturnType<typeof useWardFlow>,
   "worldGeneration" | "readAuditEvents" | "readAuditReviews" | "dispatch" | "admissions" | "bedReleases"
->;
+> &
+  Partial<Pick<ReturnType<typeof useWardFlow>, "readGovernanceAuditEvents" | "rejections">>;
+
+/** Governance reads the captured log plus the synthetic seeded entries (pass 2 engine), so the
+ *  Review tab has something to review on a fresh seed. Older hand-built contexts fall back. */
+/** The toast lives in the route layout; a screen rendered alone (tests, previews) has none. */
+function useOptionalToast(): ReturnType<typeof useToast> | null {
+  try {
+    return useToast();
+  } catch {
+    return null;
+  }
+}
+
+function readGovernanceEvents(api: GovernanceApi | undefined) {
+  return api?.readGovernanceAuditEvents?.(actor) ?? api?.readAuditEvents(actor);
+}
 type WorkbenchProps = {
   movements: Movement[];
   units: Unit[];
@@ -262,17 +284,40 @@ const display = (value: string | number | boolean | null | undefined) =>
 const when = (at: Instant | null, now: Instant) => (at === null ? "Time unavailable" : formatInstantWithDay(at, now));
 const destination = (id: string | null) =>
   LEAVING_DESTINATIONS.find((entry) => entry.id === id)?.label ?? "Not recorded";
+/**
+ * The record's person and UMRN (v10: "No raw internal ids. Patients by UMRN."). A movement or a
+ * referral resolves through its own episode link; an admission through its record. A record with no
+ * linked person reads in words, never as an internal id.
+ */
+function subjectPerson(
+  event: AuditEvent,
+  patientOf: ReturnType<typeof usePatientOf>,
+): { name: string; umrn: string } | null {
+  const subject = event.subject;
+  const info =
+    subject.kind === "movement"
+      ? patientOf({ movementId: subject.movementId })
+      : subject.kind === "referral"
+        ? patientOf({ referralId: subject.referralId })
+        : subject.kind === "admission"
+          ? patientOf({ id: subject.admissionId })
+          : null;
+  if (!info) return null;
+  return info.patient ? { name: info.displayName, umrn: info.umrn } : null;
+}
 function subjectLabel(event: AuditEvent, patientOf: ReturnType<typeof usePatientOf>): string {
   const subject = event.subject;
+  const person = subjectPerson(event, patientOf);
+  if (person) return person.name;
   switch (subject.kind) {
     case "admission":
-      return subject.admissionId;
+      return "Bed record, UMRN not recorded";
     case "movement": {
       // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
       return patientOf({ movementId: subject.movementId }).displayName;
     }
     case "referral":
-      return subject.referralId;
+      return "Referral, UMRN not recorded";
     case "bed-release":
       return subject.releaseId;
     case "audit-event":
@@ -702,27 +747,11 @@ function GapPill({ cell, label }: { cell: GapCell; label: string }) {
   return <Frac done={cell.done} total={cell.total} label={`${label} recorded`} tone={tone} />;
 }
 
-const PHONE_QUERY = "(max-width: 48rem)";
-
-/** Phone is its own layout (v10): under 48rem the screen renders a different tree. */
-function useIsPhone(): boolean {
-  return useSyncExternalStore(
-    (notify) => {
-      if (typeof window.matchMedia !== "function") return () => undefined;
-      const query = window.matchMedia(PHONE_QUERY);
-      query.addEventListener?.("change", notify);
-      return () => query.removeEventListener?.("change", notify);
-    },
-    () => typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches,
-    () => false,
-  );
-}
-
 export function GovernanceWorkbench(props: WorkbenchProps) {
   // The open tab survives a demo reset; everything else in the session starts again. It opens on
   // Review when something waits (v10 mockup), and on Gaps by site when the session holds nothing.
   const [tab, setTab] = useState<GovernanceTab>(() => {
-    const read = props.api?.readAuditEvents(actor);
+    const read = readGovernanceEvents(props.api);
     const waiting = read?.status === "allowed" && read.value.some((event) => event.category !== "review");
     return waiting ? "review" : "gaps";
   });
@@ -738,7 +767,14 @@ function GovernanceSession({
   setTab,
 }: WorkbenchProps & { tab: GovernanceTab; setTab: (tab: GovernanceTab) => void }) {
   const flow = useContext(WardFlowContext);
-  const patientOf = usePatientOf();
+  const resolvePatient = usePatientOf();
+  // An admission subject names only its id: resolve through the stay itself, so a bed record shows
+  // its person and UMRN rather than an internal id.
+  const patientOf: typeof resolvePatient = (subject) => {
+    const id = subject && "id" in subject && !("movementId" in subject) ? subject.id : undefined;
+    const stay = id ? flow?.admissions.find((admission) => admission.id === id) : undefined;
+    return resolvePatient(stay ?? subject);
+  };
   const [category, setCategory] = useState<"all" | AuditCategory>("all");
   const [outcome, setOutcome] = useState<"all" | AuditEvent["outcome"]>("all");
   const [reviewFilter, setReviewFilter] = useState<"all" | "unreviewed" | AuditReview["decision"]>("all");
@@ -762,10 +798,11 @@ function GovernanceSession({
   const [phoneDecision, setPhoneDecision] = useState<AuditReview["decision"]>("reviewed");
   const [phoneMore, setPhoneMore] = useState<"registers" | "reports" | null>(null);
   const isPhone = useIsPhone();
+  const isTabletPortrait = useIsTabletPortrait();
   const gate = useRoleGate();
   const reviewGate = gate("REVIEW_AUDIT_EVENT");
 
-  const eventRead = api?.readAuditEvents(actor);
+  const eventRead = readGovernanceEvents(api);
   const reviewRead = api?.readAuditReviews(actor);
   const allowed = eventRead?.status === "allowed" && reviewRead?.status === "allowed";
   const events = eventRead?.status === "allowed" ? eventRead.value : [];
@@ -814,6 +851,58 @@ function GovernanceSession({
     savedReview?.at === pending?.at;
   const reviewPending = pending !== null && reviewAttempt === undefined;
   const canReview = allowed && selected !== null && selected.category !== "review" && !reviewPending;
+
+  // Undo (pass 2 engine): once a review is confirmed, a toast offers Undo for a few seconds.
+  // Undo dispatches `UNDO_AUDIT_REVIEW` with the new review's id; a refusal shows its reason.
+  const toast = useOptionalToast();
+  const toastedReviewRef = useRef<string | null>(null);
+  const undoWatchRef = useRef<{ rejections: number; reviewId: string } | null>(null);
+  const undoGate = gate("UNDO_AUDIT_REVIEW");
+  const undoGateReason = undoGate.allowed ? undefined : undoGate.reason;
+  const rejectionCount = api?.rejections?.length ?? 0;
+  const newestRejection = api?.rejections?.at(-1);
+  const reviewIds = reviews.map((review) => review.id).join(" ");
+  const savedReviewId = confirmed ? (savedReview?.id ?? null) : null;
+  const savedDecision = pending?.decision;
+  useEffect(() => {
+    if (!toast || !api || savedReviewId === null || toastedReviewRef.current === savedReviewId) return;
+    toastedReviewRef.current = savedReviewId;
+    const generation = api.worldGeneration;
+    toast.push({
+      tone: "success",
+      title: `${savedDecision ? reviewLabels[savedDecision] : "Review"} recorded`,
+      body: undoGateReason,
+      undo: undoGateReason
+        ? undefined
+        : {
+            durationMs: UNDO_TOAST_MS,
+            onUndo: () => {
+              undoWatchRef.current = { rejections: rejectionCount, reviewId: savedReviewId };
+              api.dispatch({
+                type: "UNDO_AUDIT_REVIEW",
+                role: "coordinator",
+                now,
+                reviewId: savedReviewId,
+                expectedGeneration: generation,
+              });
+              setPending(null);
+            },
+          },
+    });
+  }, [api, now, rejectionCount, savedDecision, savedReviewId, toast, undoGateReason]);
+  useEffect(() => {
+    const watch = undoWatchRef.current;
+    if (!watch) return;
+    if (rejectionCount > watch.rejections) {
+      undoWatchRef.current = null;
+      const reason = newestRejection?.reason ?? "The record changed.";
+      setAnnouncement(`Review not undone. ${reason}`);
+      toast?.push({ tone: "warning", title: "Review not undone", body: reason });
+    } else if (!reviewIds.split(" ").includes(watch.reviewId)) {
+      undoWatchRef.current = null;
+      setAnnouncement("Review undone.");
+    }
+  }, [newestRejection, rejectionCount, reviewIds, toast]);
 
   // The supplied snapshot, so every tab reads the same movements and units.
   const sites = siteGaps(flow ? { ...flow, movements, units } : null, now);
@@ -966,8 +1055,58 @@ function GovernanceSession({
     ) : null;
   const reviewedOf = reviewable.length;
 
+  // The rail at rest (v10): the session summary, then the next events to review. No ring here: the
+  // ring stays in the hero. Pressing a next event opens it in the rail.
+  const restSummary = (
+    <div className={thirdEdition.restSummary} data-testid="ward-governance-rest-summary">
+      <div className={thirdEdition.restHead}>
+        <span className={thirdEdition.quietText}>Reviewed so far, captured since the session opened</span>
+        <Frac done={reviewedCount} total={reviewable.length} label="events reviewed" />
+      </div>
+      <dl className={thirdEdition.restCells}>
+        <div>
+          <dt>Overrides</dt>
+          <dd>{overrideCount}</dd>
+        </div>
+        <div>
+          <dt>Refused or stale</dt>
+          <dd>{refusedCount}</dd>
+        </div>
+        <div>
+          <dt>Record access</dt>
+          <dd>{accessCount}</dd>
+        </div>
+      </dl>
+      <h3 className={thirdEdition.eyebrow}>Next to review</h3>
+      {toReview.length === 0 ? (
+        <p className={thirdEdition.restClear}>
+          <StatusGlyph tone="success" size={9} />
+          Every captured event is reviewed.
+        </p>
+      ) : (
+        <ul className={thirdEdition.restNext}>
+          {toReview.slice(0, 4).map((event) => (
+            <li key={`${event.generation}-${event.id}`}>
+              <button type="button" className={thirdEdition.restNextRow} onClick={() => choose(event)}>
+                <StatusGlyph tone={OUTCOME_TONE[event.outcome]} size={9} />
+                <span className={thirdEdition.stack}>
+                  <strong className={thirdEdition.clip}>{actionLabels[event.action]}</strong>
+                  <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>
+                    {subjectLabel(event, patientOf)}
+                  </span>
+                </span>
+                <span className={thirdEdition.umrn}>{when(event.at, now)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+
   const detail = (
     <EventDetail
+      rest={restSummary}
       selected={selected}
       units={units}
       movements={movements}
@@ -992,6 +1131,28 @@ function GovernanceSession({
       }
     />
   );
+
+  // Tablet portrait (v10): no rail beside the table, so the chosen event slides over from the
+  // right and the session summary stays in the page below the table.
+  const placedDetail =
+    isTabletPortrait && selected ? (
+      <>
+        <Card className={thirdEdition.detailCard} aria-label="This session">
+          <div className={thirdEdition.detailBody}>{restSummary}</div>
+        </Card>
+        <Drawer
+          open
+          onClose={() => choose(null)}
+          title={actionLabels[selected.action]}
+          description={categoryLabels[selected.category]}
+          testId="ward-governance-event-sheet"
+        >
+          {detail}
+        </Drawer>
+      </>
+    ) : (
+      detail
+    );
 
   // Phone (v10): its own tree at 390. A compact hero with three figures, Review, Gaps and Audit as a
   // 44px segmented control, events as list rows, and a bottom sheet that records the review with
@@ -1370,7 +1531,7 @@ function GovernanceSession({
               }
             />
           </Card>
-          {detail}
+          {placedDetail}
         </div>
       ) : null}
 
@@ -1625,7 +1786,7 @@ function GovernanceSession({
               System advice and bed state at decision time are not recorded
             </CardFoot>
           </Card>
-          {detail}
+          {placedDetail}
         </div>
       ) : null}
 
@@ -1914,7 +2075,14 @@ function EventTable({
                     {categoryLabels[event.category]}
                   </span>
                 </span>
-                <span className={thirdEdition.clip}>{subjectLabel(event, patientOf)}</span>
+                <span className={thirdEdition.stack}>
+                  <span className={thirdEdition.clip}>{subjectLabel(event, patientOf)}</span>
+                  {subjectPerson(event, patientOf) ? (
+                    <span className={cx(thirdEdition.quietText, thirdEdition.clip, thirdEdition.umrn)}>
+                      {subjectPerson(event, patientOf)!.umrn}
+                    </span>
+                  ) : null}
+                </span>
                 <span className={thirdEdition.clip}>
                   {event.actor.role ? WARD_FLOW_ROLE_LABELS[event.actor.role] : "Role unavailable"}
                 </span>
@@ -1958,8 +2126,11 @@ function EventDetail({
   onChoose,
   feedback,
   roleReason,
+  rest,
 }: {
   roleReason?: string;
+  /** What the rail shows with nothing selected: the session summary. */
+  rest?: ReactNode;
   selected: AuditEvent | null;
   units: Unit[];
   movements: Movement[];
@@ -2000,9 +2171,11 @@ function EventDetail({
       <span className={thirdEdition.srOnly}>Select an event from the register</span>
       <div className={thirdEdition.detailHead}>
         <div className={thirdEdition.stack}>
-          <span className={thirdEdition.eyebrow}>{selected ? categoryLabels[selected.category] : "Event detail"}</span>
+          <span className={thirdEdition.eyebrow}>
+            {selected ? categoryLabels[selected.category] : rest ? "At rest" : "Event detail"}
+          </span>
           <h3 className={thirdEdition.detailTitle} id="inspectorHeading">
-            {selected ? actionLabels[selected.action] : "Nothing selected"}
+            {selected ? actionLabels[selected.action] : rest ? "This session" : "Nothing selected"}
           </h3>
         </div>
         {state ? (
@@ -2051,7 +2224,7 @@ function EventDetail({
                 )}
                 {referenced && (
                   <Button size="sm" onClick={() => onChoose(referenced)}>
-                    Inspect {referenced.id}
+                    Open the reviewed event
                   </Button>
                 )}
               </div>
@@ -2062,7 +2235,7 @@ function EventDetail({
             </div>
           </>
         ) : (
-          <EmptyState icon={ClipboardList} title="Select an event from the register" />
+          (rest ?? <EmptyState icon={ClipboardList} title="Select an event from the register" />)
         )}
       </div>
 

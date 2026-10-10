@@ -1,5 +1,11 @@
-import { daysInBed } from "@/components/ward-management/ward-admissions";
-import { dayOf, formatInstantWithDay, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { bedIsOccupied, daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
+import {
+  dayOf,
+  formatInstantWithDay,
+  minuteOfDay,
+  MINUTES_PER_DAY,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { travelBand, type TravelBand } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import type {
@@ -8,8 +14,8 @@ import type {
   TransportProvider,
   Unit,
 } from "@/components/ward-management/ward-model";
-import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
-import type { OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
+import { BED_MEETING_MINUTES, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
+import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
 import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
 
 /**
@@ -313,4 +319,46 @@ export function departureDayLabel(record: RepatriationRecord, now: Instant): str
   if (offset === 1) return "Tomorrow";
   if (offset === -1) return "Yesterday";
   return offset < 0 ? `${-offset} days ago` : `In ${offset} days`;
+}
+
+/** The most recent bed meeting at or before `now` (today's, or yesterday's before it starts). */
+export function lastBedMeetingAt(now: Instant): Instant {
+  return now - ((minuteOfDay(now) - BED_MEETING_MINUTES + MINUTES_PER_DAY) % MINUTES_PER_DAY);
+}
+
+export type BedMeetingComparison = {
+  /** When the meeting was, on the session clock. */
+  at: Instant;
+  /** People away from home at the meeting. */
+  away: number;
+  /** Of them, people whose recorded discharge date had already passed then. */
+  passed: number;
+};
+
+/**
+ * "Since the 08:30 bed meeting" (v10 delta twins), derived from the records, never from a stored
+ * snapshot: the ledger as it stood at the meeting. A person counts when they had arrived by then
+ * and were still in the bed, either now or until a recorded leaving after the meeting. A stay with
+ * no recorded leaving time is not counted back, so the figure never guesses.
+ */
+export function bedMeetingComparison(admissions: Admission[], units: Unit[], now: Instant): BedMeetingComparison {
+  const at = lastBedMeetingAt(now);
+  const thenInBed: Admission[] = [];
+  for (const admission of admissions) {
+    if (admission.arrivedAt === null || !Number.isFinite(admission.arrivedAt) || admission.arrivedAt > at) continue;
+    const stillIn = bedIsOccupied(admission);
+    const leftAfter =
+      admission.state === "departed" &&
+      admission.leftAt !== null &&
+      Number.isFinite(admission.leftAt) &&
+      admission.leftAt > at;
+    if (!stillIn && !leftAfter) continue;
+    thenInBed.push(stillIn ? admission : { ...admission, state: "occupied" });
+  }
+  const { entries } = outOfAreaLedger(thenInBed, units, at);
+  const passed = entries.filter((entry) => {
+    const offset = dischargeOffsetDays(entry, at);
+    return offset !== null && offset < 0;
+  }).length;
+  return { at, away: entries.length, passed };
 }

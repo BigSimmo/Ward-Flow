@@ -156,7 +156,7 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     renderPhoneBoard();
     const first = entries[0];
     // One button covers each card, so the profile link inside it is never nested in a button.
-    fireEvent.click(screen.getByRole("tab", { name: /Everyone/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Everyone/ }));
     const card = screen.getByTestId(`ward-out-of-area-card-${first.admission.id}`);
     fireEvent.click(within(card).getByRole("button", { name: /^Open / }));
     expect(card).toHaveAttribute("data-selected", "true");
@@ -250,7 +250,7 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
 
   it("renders patient name and UMRN link in mobile cards", () => {
     renderPhoneBoard();
-    fireEvent.click(screen.getByRole("tab", { name: /Everyone/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Everyone/ }));
     const cards = screen.getByTestId("ward-out-of-area-cards");
     const first = entries[0];
     const card = within(cards).getByTestId(`ward-out-of-area-card-${first.admission.id}`);
