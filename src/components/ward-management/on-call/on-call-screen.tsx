@@ -322,6 +322,8 @@ export function OnCallScreen() {
   }
 
   const toggleHighlight = (id: Highlight) => setHighlight((current) => (current === id ? null : id));
+  /** A highlight or search is on: rows it does not match recede by colour and stay in place. */
+  const dimming = highlight !== null || Boolean(query.trim());
   const isHighlighted = (entry: DirectoryEntry) =>
     matchesQuery(entry, query) ||
     (highlight !== null && HIGHLIGHTS.find((item) => item.id === highlight)!.test(entry, minute));
@@ -400,7 +402,7 @@ export function OnCallScreen() {
         eyebrow={
           atLater ? `Who answers at ${hhmm(minute)}${minute < boardMinute ? " tomorrow" : ""}` : "Who to call now"
         }
-        title="On-call directory"
+        title={`${answering.length} ${answering.length === 1 ? "line" : "lines"} answering`}
         stats={heroStats}
         aside={clock}
         bar={
@@ -435,7 +437,14 @@ export function OnCallScreen() {
               <Button variant="onHero" size="sm" icon={Star} count={favourites.length} onClick={() => setTab("mine")}>
                 My list
               </Button>
-              <Button variant="onHero" size="sm" icon={Printer} onClick={() => setDowntimeOpen(true)}>
+              <Button
+                variant="onHero"
+                size="sm"
+                icon={Printer}
+                className={styles.previewButton}
+                title="Preview until the Downtime page exists"
+                onClick={() => setDowntimeOpen(true)}
+              >
                 Downtime card
               </Button>
             </>
@@ -580,6 +589,7 @@ export function OnCallScreen() {
             groupBy={tab === "hospitals" ? groupBy : "place"}
             actions={actions}
             isHighlighted={isHighlighted}
+            dimming={dimming}
             queryActive={Boolean(query.trim())}
             hitCount={tabRows.filter((entry) => matchesQuery(entry, query)).length}
             otherHits={otherHits}
@@ -650,6 +660,7 @@ export function OnCallScreen() {
                 })
               }
               isHighlighted={isHighlighted}
+              dimming={dimming}
             />
             <CardFoot
               meta={
@@ -763,6 +774,7 @@ function DirectoryTable({
   collapsed,
   onToggleGroup,
   isHighlighted,
+  dimming = false,
 }: {
   entries: readonly DirectoryEntry[];
   rows: readonly DirectoryEntry[];
@@ -773,6 +785,7 @@ function DirectoryTable({
   collapsed: ReadonlySet<string>;
   onToggleGroup: (key: string) => void;
   isHighlighted: (entry: DirectoryEntry) => boolean;
+  dimming?: boolean;
 }) {
   const blocks = groupRows(entries, rows, tab, groupBy);
   const byRole = tab === "hospitals" && groupBy === "role";
@@ -889,6 +902,7 @@ function DirectoryTable({
                         byRole={byRole || tab === "mine"}
                         selected={entry.id === selectedId}
                         highlighted={isHighlighted(entry)}
+                        dimmed={dimming && !isHighlighted(entry)}
                         collapsed={isCollapsed && !isHighlighted(entry)}
                       />
                     ))}
@@ -916,6 +930,7 @@ function DirectoryRow({
   byRole,
   selected,
   highlighted,
+  dimmed = false,
   collapsed,
 }: {
   entry: DirectoryEntry;
@@ -923,6 +938,7 @@ function DirectoryRow({
   byRole: boolean;
   selected: boolean;
   highlighted: boolean;
+  dimmed?: boolean;
   collapsed: boolean;
 }) {
   const name = byRole && !isWardRow(entry) && entry.siteCode ? entry.groupTitle : entry.name;
@@ -941,13 +957,10 @@ function DirectoryRow({
   return (
     <tr
       data-testid={`ward-on-call-row-${entry.id}`}
-      className={cx(
-        styles.row,
-        selected && tableClasses.selected,
-        highlighted && styles.rowHighlight,
-        collapsed && styles.rowCollapsed,
-      )}
+      className={cx(styles.row, selected && tableClasses.selected, collapsed && styles.rowCollapsed)}
       aria-selected={selected}
+      data-highlighted={highlighted || undefined}
+      data-dim={dimmed ? "true" : undefined}
       data-collapsed={collapsed || undefined}
       onClick={(event) => {
         if ((event.target as HTMLElement).closest("button")) return;

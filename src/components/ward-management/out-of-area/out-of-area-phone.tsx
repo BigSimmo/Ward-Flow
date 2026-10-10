@@ -70,7 +70,8 @@ function PersonCard({
   const reason = entry.admission.blockReason;
   return (
     <li
-      className={cx(styles.phoneCard, person.highlighted && styles.phoneCardLit, first && styles.phoneCardFirst)}
+      className={cx(styles.phoneCard, person.highlighted && styles.phoneCardLit)}
+      data-first={first || undefined}
       data-testid={testId}
       data-selected={selected || undefined}
     >

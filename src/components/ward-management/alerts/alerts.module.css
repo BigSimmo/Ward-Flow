@@ -34,7 +34,7 @@
 
 .eyebrow {
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -43,6 +43,103 @@
 
 .heroStats {
   display: contents;
+}
+
+.heroBar {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.heroBar .heroStats {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+/* The hero chips read as count-first pills that highlight rows. */
+.heroBar .heroStats button {
+  height: var(--wf-h-sm);
+  padding: 0 12px;
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: var(--wf-r-pill);
+}
+
+.heroBar .heroStats button[aria-pressed="true"] {
+  background: var(--wf-on-hero-fill);
+  border-color: color-mix(in srgb, var(--wf-hero-ink) 55%, transparent);
+}
+
+.heroMeta {
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+}
+
+/* Phone: the conditions sit one tap away in a sheet. */
+.phoneChecking {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: var(--wf-touch);
+  padding: 0 var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phoneChecking:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phoneCheckingLabel {
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.phoneCheckingText {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+/* In the sheet the conditions read on the page surface, one per line. */
+.phoneChecks .checking {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.phoneChecks .checkingLabel {
+  display: none;
+}
+
+.phoneChecks .checkList {
+  flex-direction: column;
+  align-items: stretch;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.phoneChecks .check {
+  width: 100%;
+  min-height: var(--wf-touch);
+  color: var(--wf-ink-1);
+}
+
+.phoneChecks .checkList > [data-zero] .mono {
+  color: var(--wf-ink-3);
 }
 
 .heroTools {
@@ -108,22 +205,26 @@
 .checkingLabel {
   flex: none;
   color: var(--wf-hero-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
+/* Every watched condition stays in view: the list wraps by item (each item stays on one line). */
 .checkList {
   position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 2px;
   min-width: 0;
   margin: 0;
   padding: 0;
   list-style: none;
-  overflow-x: auto;
-  scrollbar-width: none;
+}
+
+.checkList > li {
+  white-space: nowrap;
 }
 
 .checkList::-webkit-scrollbar {
@@ -289,7 +390,7 @@ button.check[aria-pressed="true"] {
   border-top: 1px solid var(--wf-line);
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -335,9 +436,33 @@ button.check[aria-pressed="true"] {
   background: var(--wf-hover);
 }
 
-.row[data-highlighted],
-.card[data-highlighted] {
-  background: var(--wf-accent-tint);
+/* v10: a highlight keeps matching rows solid and dims the rest by colour; no tinted fill. */
+.row[data-dim="true"],
+.row[data-dim="true"] *,
+.card[data-dim="true"],
+.card[data-dim="true"] * {
+  color: var(--wf-dim);
+}
+
+/* Act now: a thin red full edge, never a fill or stripe. */
+.row[data-act] {
+  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
+}
+
+.row[data-act][data-selected] {
+  box-shadow:
+    inset 3px 0 0 var(--wf-accent-strong),
+    inset 0 0 0 1px var(--wf-act-edge);
+}
+
+.card[data-act] {
+  border-color: var(--wf-act-edge);
+}
+
+.highlightNote {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
 }
 
 /* The selected row carries a marker on its leading edge (a table row marker, not a card stripe). */
@@ -348,7 +473,7 @@ button.check[aria-pressed="true"] {
 
 .row[data-snoozed] .cell,
 .card[data-snoozed] .cardLine {
-  opacity: 0.75;
+  color: var(--wf-ink-3);
 }
 
 .rowGlyph {
@@ -1117,7 +1242,7 @@ button.check[aria-pressed="true"] {
 .drawerSectionTitle {
   margin: 0;
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }

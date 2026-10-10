@@ -121,7 +121,7 @@
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-sm);
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
 .clip {
@@ -200,7 +200,7 @@
 .eyebrow {
   margin: 0;
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -356,7 +356,7 @@
 .snapshotStack h3 {
   margin: 0;
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -466,7 +466,7 @@
   min-height: 36px;
   border-bottom: 1px solid var(--wf-line);
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -758,7 +758,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -878,4 +878,84 @@
     forced-color-adjust: none;
     background: CanvasText;
   }
+}
+
+/* v10 dim: a row a hero chip does not match recedes by colour, never by opacity. */
+.eventRow[data-dim="true"],
+.eventRow[data-dim="true"] * {
+  color: var(--wf-dim);
+}
+
+/* Preview controls on the hero are dashed and carry their reason. */
+.previewButton {
+  border-style: dashed;
+}
+
+/* ---------- Phone tree (v10): its own design at 390 ---------- */
+.phoneScreen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.phoneTabs {
+  width: 100%;
+}
+
+.phoneTabs [role="radio"] {
+  flex: 1 1 0;
+  min-height: var(--wf-touch);
+}
+
+.phoneList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phoneRow[data-dim="true"],
+.phoneRow[data-dim="true"] * {
+  color: var(--wf-dim);
+}
+
+.phoneSite {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneMore {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.phoneMoreCard {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-touch);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phoneMoreCard > .stack {
+  flex: 1 1 auto;
+}
+
+.phoneMoreCard:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phoneNotice {
+  margin: 0;
 }

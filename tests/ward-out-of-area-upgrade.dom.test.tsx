@@ -366,3 +366,24 @@ describe("out-of-area inspector — navigation and explicit patient choice", () 
     expect(screen.queryByTestId("ward-out-of-area-subject-facts")).not.toBeInTheDocument();
   });
 });
+
+describe("Out of area v10 pass", () => {
+  it("highlight chips dim the other rows, keep every row and never tint", () => {
+    renderBoard();
+    const table = screen.getByTestId("ward-out-of-area-entries");
+    const rowsBefore = table.querySelectorAll("[data-testid^='ward-out-of-area-row-']").length;
+    fireEvent.click(screen.getByTestId("ward-out-of-area-highlight-air"));
+    const rows = Array.from(table.querySelectorAll<HTMLElement>("[data-testid^='ward-out-of-area-row-']"));
+    expect(rows).toHaveLength(rowsBefore);
+    for (const row of rows) {
+      const lit = row.getAttribute("data-highlighted") === "true";
+      expect(row.getAttribute("data-dim") === "true").toBe(!lit);
+    }
+    expect(screen.getByText(/highlighted, all rows/)).toBeInTheDocument();
+  });
+
+  it("the hero foot says what is being checked", () => {
+    renderBoard();
+    expect(screen.getAllByText("Other records without home area or travel time").length).toBeGreaterThan(0);
+  });
+});
