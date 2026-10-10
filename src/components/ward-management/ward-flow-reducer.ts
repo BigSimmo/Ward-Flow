@@ -2218,16 +2218,17 @@ function heldBedRefusal(
       other.acceptedUnitId === unit.id &&
       other.heldBedNumber === bedNumber,
   );
-  const heldByReferral = state.referrals.some((referral) =>
-    referral.id !== exceptReferralId &&
-    !state.movements.some((movement) => movement.referralId === referral.id && movement.stage === "arrived") &&
-    referral.destinations.some(
-      (arm) =>
-        arm.state === "accepted" &&
-        arm.heldBedNumber === bedNumber &&
-        arm.destination.kind === "psychiatric_ward" &&
-        arm.destination.unitId === unit.id,
-    ),
+  const heldByReferral = state.referrals.some(
+    (referral) =>
+      referral.id !== exceptReferralId &&
+      !state.movements.some((movement) => movement.referralId === referral.id && movement.stage === "arrived") &&
+      referral.destinations.some(
+        (arm) =>
+          arm.state === "accepted" &&
+          arm.heldBedNumber === bedNumber &&
+          arm.destination.kind === "psychiatric_ward" &&
+          arm.destination.unitId === unit.id,
+      ),
   );
   return heldByMovement || heldByReferral ? `Bed ${bedNumber} on ${unit.name} is already held for someone` : null;
 }
@@ -2533,6 +2534,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // v10 pass 3: takes back the newest step of this kind on this subject, exactly (`ward-undo.ts`).
       const record = stepUndoFor(state.undoRecords, event.type, undoStepSubjectId(event));
       if (!record) return reject(state, event, UNDO_STEP_NOTHING[event.type]);
+      // An older toast's Undo must not take back a newer step that replaced its record.
+      if (event.decidedAt !== undefined && record.at !== event.decidedAt)
+        return reject(state, event, "A later step replaced this one, so this Undo no longer applies");
       const refusal =
         undoRoleRefusal(record, event.role, "actingUnitId" in event ? event.actingUnitId : undefined) ??
         undoWindowRefusal(record.at, event.now) ??
@@ -5476,22 +5480,25 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       ) {
         return reject(state, event, "Arrival needs this movement's matching held admission at its accepted ward.");
       }
-      const heldReferral = movement.referralId === undefined
-        ? undefined
-        : state.referrals
-            .find((referral) => referral.id === movement.referralId)
-            ?.destinations.find(
-              (arm) =>
-                arm.state === "accepted" &&
-                arm.heldBedNumber !== undefined &&
-                arm.destination.kind === "psychiatric_ward" &&
-                arm.destination.unitId === unit.id,
-            );
-      const heldBedNumber = movement.heldBedNumber ?? heldReferral?.heldBedNumber;
-      if (heldBedNumber !== undefined) {
-        const bedRefusal = bedNumberRefusal(state, unit, heldBedNumber, linkedAdmission?.id);
-        if (bedRefusal) return reject(state, event, bedRefusal);
-      }
+      const heldReferral =
+        movement.referralId === undefined
+          ? undefined
+          : state.referrals
+              .find((referral) => referral.id === movement.referralId)
+              ?.destinations.find(
+                (arm) =>
+                  arm.state === "accepted" &&
+                  arm.heldBedNumber !== undefined &&
+                  arm.destination.kind === "psychiatric_ward" &&
+                  arm.destination.unitId === unit.id,
+              );
+      // The patient lands in the bed held for them; if that bed has since been taken they still
+      // arrive, with no bed recorded, rather than being refused at the door.
+      const heldBed = movement.heldBedNumber ?? heldReferral?.heldBedNumber;
+      const heldBedNumber =
+        heldBed !== undefined && bedNumberRefusal(state, unit, heldBed, linkedAdmission?.id) === null
+          ? heldBed
+          : undefined;
       const isBedTurnaround = unit.empty.value <= 0;
 
       // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).
@@ -5625,7 +5632,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           withPerson = replaceReferral(withPerson, referral.id, {
             ...referral,
             destinations: referral.destinations.map((arm) => {
-              if (arm !== heldReferral) return arm;
+              if (
+                arm.state !== "accepted" ||
+                arm.heldBedNumber === undefined ||
+                arm.destination.kind !== "psychiatric_ward" ||
+                arm.destination.unitId !== unit.id
+              )
+                return arm;
               const { heldBedNumber: _heldBed, ...releasedArm } = arm;
               void _heldBed;
               return releasedArm;

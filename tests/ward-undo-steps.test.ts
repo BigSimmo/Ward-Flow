@@ -307,3 +307,18 @@ describe("override second sign-off", () => {
     expect(lastRefusal(state, next)).toBe("A second sign-off is recorded only with an override reason");
   });
 });
+
+describe("an older Undo cannot take back a newer step", () => {
+  // Gitar review on PR #242: two Offers on one movement inside the toast window. The first toast's
+  // Undo names its own step, so it is refused rather than withdrawing the second Offer.
+  it("refuses an Undo naming a step other than the newest, and allows the newest", () => {
+    const { applied, event } = step(seedWardFlowState(), "REFER_TO_UNITS");
+    const stale = { ...undoEventFor(event, "coordinator", NOW + 2), decidedAt: NOW - 1 } as WardFlowEvent;
+    const refused = wardFlowReducer(applied, stale);
+    expect(lastRefusal(applied, refused)).toBe("A later step replaced this one, so this Undo no longer applies");
+    const current = { ...undoEventFor(event, "coordinator", NOW + 2), decidedAt: NOW } as WardFlowEvent;
+    const undone = wardFlowReducer(applied, current);
+    expect(lastRefusal(applied, undone)).toBeUndefined();
+    expect(world(undone)).toEqual(world(seedWardFlowState()));
+  });
+});

@@ -358,7 +358,7 @@ describe("governance: synthetic seed entries and UNDO_AUDIT_REVIEW", () => {
     expect(seeded.length).toBeGreaterThanOrEqual(5);
     for (const entry of seeded) {
       expect(entry.origin).toBe("synthetic-seed");
-      expect(entry.id).toMatch(/^audit-seed-\d+$/);
+      expect(entry.id).toMatch(/^audit-seed-[a-z-]+$/);
       expect(entry.generation).toBe(0);
       expect(entry.at!).toBeLessThan(state.auditCaptureStartedAt);
     }
@@ -374,7 +374,7 @@ describe("governance: synthetic seed entries and UNDO_AUDIT_REVIEW", () => {
 
   it("reviews a synthetic entry, and Undo takes the review back exactly", () => {
     const before = seedWardFlowState();
-    const reviewed = wardFlowReducer(before, review("audit-seed-1"));
+    const reviewed = wardFlowReducer(before, review("audit-seed-referral-override"));
     expect(reviewed.auditReviews).toHaveLength(1);
     expect(isValidStoredWardFlowState(stored(reviewed))).toBe(true);
     const reviewId = reviewed.auditReviews[0].id;
@@ -385,20 +385,20 @@ describe("governance: synthetic seed entries and UNDO_AUDIT_REVIEW", () => {
     expect(undone.auditEvents.at(-1)).toMatchObject({
       category: "review",
       outcome: "accepted",
-      subject: { kind: "audit-event", eventId: "audit-seed-1" },
+      subject: { kind: "audit-event", eventId: "audit-seed-referral-override" },
       details: { decision: null, undoneReviewId: reviewId, undoneDecision: "reviewed" },
     });
     // The same event can be reviewed again afterwards, from a count of none.
-    expect(wardFlowReducer(undone, review("audit-seed-1", 0, NOW + 2)).auditReviews).toHaveLength(1);
+    expect(wardFlowReducer(undone, review("audit-seed-referral-override", 0, NOW + 2)).auditReviews).toHaveLength(1);
   });
 
   it("refuses a non-coordinator with a reason, a later review, an old review and an unknown one", () => {
-    const reviewed = wardFlowReducer(seedWardFlowState(), review("audit-seed-1"));
+    const reviewed = wardFlowReducer(seedWardFlowState(), review("audit-seed-referral-override"));
     const reviewId = reviewed.auditReviews[0].id;
     const ward = wardFlowReducer(reviewed, undoReview(reviewId, "ward"));
     expect(ward.rejections.at(-1)?.reason).toBe("Coordinator only");
     expect(ward.auditReviews).toEqual(reviewed.auditReviews);
-    const twice = wardFlowReducer(reviewed, review("audit-seed-1", 1));
+    const twice = wardFlowReducer(reviewed, review("audit-seed-referral-override", 1));
     expect(wardFlowReducer(twice, undoReview(reviewId)).rejections.at(-1)?.reason).toBe(
       "A later review of this event is on record; undo that one first",
     );

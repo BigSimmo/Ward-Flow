@@ -774,7 +774,9 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .tableWrap {
+  .tableWrap,
+  .chronoScroll {
+    max-height: none;
     overflow: visible;
   }
 
@@ -783,10 +785,6 @@
   }
 
   .page [data-print-hide] {
-    display: none !important;
-  }
-}
- {
     display: none !important;
   }
 }

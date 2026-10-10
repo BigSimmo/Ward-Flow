@@ -28,6 +28,8 @@ type Pending = {
   undo?: (now: Instant) => WardFlowEvent;
   /** What the toast says once the undo is accepted. */
   undone?: string;
+  /** When the step was recorded, so its Undo cannot take back a newer step on the same subject. */
+  decidedAt?: Instant;
 };
 
 export type UndoableStep = {
@@ -115,7 +117,12 @@ export function useUndoableStep({
                   prior: rejectionCountRef.current,
                   success: pending.undone ?? "Undone. Back as it was.",
                 };
-                dispatch(build(nowRef.current));
+                const undoEvent = build(nowRef.current);
+                dispatch(
+                  pending.decidedAt === undefined
+                    ? undoEvent
+                    : ({ ...undoEvent, decidedAt: pending.decidedAt } as WardFlowEvent),
+                );
                 setToken((value) => value + 1);
               },
             },
@@ -128,7 +135,11 @@ export function useUndoableStep({
   return {
     /** Dispatches `event` now, then offers Undo once the engine has accepted it. */
     run(event: WardFlowEvent, step: UndoableStep) {
-      pendingRef.current = { prior: rejectionCountRef.current, ...step };
+      pendingRef.current = {
+        prior: rejectionCountRef.current,
+        ...step,
+        ...("now" in event ? { decidedAt: event.now } : {}),
+      };
       dispatch(event);
       setToken((value) => value + 1);
     },
