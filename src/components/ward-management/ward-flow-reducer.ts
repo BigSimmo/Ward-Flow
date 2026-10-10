@@ -1620,16 +1620,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       return { ...state, patients: [...state.patients, patient], patientSequence: state.patientSequence + 1 };
     }
     case "RESET_SCENARIO":
-      return reduceSettingsEvent(state, event, decision, { reject, seed: seedWardFlowStateAt });
+      return reduceSettingsEvent(state, event, decision, { reject, seed: seedWardFlowStateAt, seedAnchor: NOW_ANCHOR });
 
     case "SET_SCENARIO":
-      return reduceSettingsEvent(state, event, decision, { reject, seed: seedWardFlowStateAt });
+      return reduceSettingsEvent(state, event, decision, { reject, seed: seedWardFlowStateAt, seedAnchor: NOW_ANCHOR });
 
     case "ADVANCE_CLOCK":
-      return reduceSettingsEvent(state, event, decision, { reject, seed: seedWardFlowStateAt });
+      return reduceSettingsEvent(state, event, decision, { reject, seed: seedWardFlowStateAt, seedAnchor: NOW_ANCHOR });
 
     case "SET_CONFIGURATION":
-      return reduceSettingsEvent(state, event, decision, { reject, seed: seedWardFlowStateAt });
+      return reduceSettingsEvent(state, event, decision, { reject, seed: seedWardFlowStateAt, seedAnchor: NOW_ANCHOR });
 
     case "RAISE_REFERRAL": {
       const department = allEmergencyDepartments().find((ed) => ed.id === event.edId);

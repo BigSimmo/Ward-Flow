@@ -2,7 +2,6 @@ import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { describeInvalidConfiguration, validateConfiguration } from "./ward-configuration";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
-import { NOW_ANCHOR } from "./ward-sites";
 import { WARD_SCENARIOS, type WardScenario } from "./ward-scenarios";
 
 type SettingsEvent = Extract<
@@ -10,6 +9,7 @@ type SettingsEvent = Extract<
   { type: "RESET_SCENARIO" | "SET_SCENARIO" | "ADVANCE_CLOCK" | "SET_CONFIGURATION" }
 >;
 type SettingsOperations = {
+  seedAnchor: number;
   reject: (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
   seed: (offsetMinutes: number, scenario?: WardScenario) => WardFlowState;
 };
@@ -38,7 +38,7 @@ function resetScenario(
   event: Extract<SettingsEvent, { type: "RESET_SCENARIO" }>,
   operations: SettingsOperations,
 ): WardFlowState {
-  return operations.seed(event.now - state.clockOffsetMinutes - NOW_ANCHOR);
+  return operations.seed(event.now - state.clockOffsetMinutes - operations.seedAnchor);
 }
 
 function setScenario(
@@ -61,7 +61,7 @@ function setScenario(
     return operations.reject(state, event, `SET_SCENARIO scenario must be chosen from WARD_SCENARIOS`);
   }
 
-  return operations.seed(event.now - state.clockOffsetMinutes - NOW_ANCHOR, event.scenario);
+  return operations.seed(event.now - state.clockOffsetMinutes - operations.seedAnchor, event.scenario);
 }
 
 function advanceClock(
