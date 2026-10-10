@@ -2095,9 +2095,9 @@
   gap: 10px;
   padding: 10px 14px;
   border-radius: var(--r2, 6px);
-  background: var(--danger-soft);
-  border: 1px solid var(--danger);
-  color: var(--danger-ink);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-act-edge);
+  color: var(--wf-ink-1);
   font-size: var(--t-1, 0.8125rem);
   font-weight: 500;
   line-height: 1.4;
@@ -2837,7 +2837,7 @@
 }
 .identityEyebrow {
   color: var(--good-soft);
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
   font-weight: 750;
   letter-spacing: 0.13em;
 }
@@ -2913,7 +2913,7 @@
   padding-right: 0;
 }
 .flightSnapshot span {
-  font-size: 9px;
+  font-size: var(--wf-fs-12);
   color: var(--muted);
   font-weight: 750;
   letter-spacing: 0.09em;
@@ -2926,7 +2926,7 @@
 }
 .flightSnapshot small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   line-height: 1.5;
 }
 .topToolbar {
@@ -2946,7 +2946,7 @@
   font-size: 12px;
 }
 .compactNext span {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .ctl {
   border-radius: 12px;
@@ -2993,7 +2993,7 @@
   background: var(--surface-2);
 }
 .barrierDetail {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   margin: 3px 0;
 }
 .barrierCardAction {
@@ -3001,7 +3001,7 @@
 }
 .barrierActionBtn {
   padding: 0 8px;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .barrierCardClear {
   padding: 0;
@@ -3042,7 +3042,7 @@
 }
 .railStatus span {
   color: var(--muted);
-  font-size: 9px;
+  font-size: var(--wf-fs-12);
   font-weight: 750;
   letter-spacing: 0.08em;
   display: flex;
@@ -3060,7 +3060,7 @@
   letter-spacing: -0.02em;
 }
 .railStatus p {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   line-height: 1.6;
   color: var(--muted);
   margin: 6px 0 0;
@@ -3090,7 +3090,7 @@
   font-size: 12px;
 }
 .jwhen {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
 }
 .jst[data-s="todo"] .jwhen {
   display: none;
@@ -3098,14 +3098,14 @@
 .jnode {
   width: 25px;
   height: 25px;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .stageDetailBox {
   padding: 10px;
   border-radius: 12px;
 }
 .jfoot {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .tabbar {
   padding: 6px 12px;
@@ -3180,7 +3180,7 @@
     font-size: 23px;
   }
   .identityEyebrow {
-    font-size: 9px;
+    font-size: var(--wf-fs-12);
   }
   .identityEyebrow span {
     display: none;
@@ -3199,7 +3199,7 @@
     justify-content: flex-start;
   }
   .liveState span {
-    font-size: 11px;
+    font-size: var(--wf-fs-12);
   }
   .flightSnapshot {
     padding: 14px;
@@ -3218,7 +3218,7 @@
     padding: 10px 14px;
   }
   .barrierSummaryBadge {
-    font-size: 9px;
+    font-size: var(--wf-fs-12);
   }
   .tabbar {
     padding: 5px;
@@ -3227,7 +3227,7 @@
   }
   .tabBtn {
     padding: 10px 8px;
-    font-size: 11px;
+    font-size: var(--wf-fs-12);
   }
   .tabNum {
     display: none;
@@ -3294,7 +3294,7 @@
     font-size: 12px;
   }
   .flightSnapshot small {
-    font-size: 10px;
+    font-size: var(--wf-fs-12);
   }
   .actionControls {
     display: grid;
@@ -3310,7 +3310,7 @@
     display: none;
   }
   .barrierCardClear .barrierLabel {
-    font-size: 11px;
+    font-size: var(--wf-fs-12);
     white-space: normal;
   }
   .railStatus {
@@ -3338,7 +3338,7 @@
 }
 .railStatus p {
   margin-top: 7px;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .journeyBody {
   padding: 12px;
@@ -3380,7 +3380,7 @@
 }
 .jname {
   line-height: 1.4;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .stageRightCluster {
   justify-content: space-between;
@@ -3399,7 +3399,7 @@
   position: relative;
 }
 .stageDetailBox {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   background: var(--surface-2);
   border-radius: 13px;
 }
@@ -3448,7 +3448,7 @@
     display: none;
   }
   .railStatus p {
-    font-size: 10px;
+    font-size: var(--wf-fs-12);
   }
 }
 .legacyTransportDisclosure {
@@ -3535,7 +3535,7 @@
 }
 .identityEyebrow {
   color: var(--muted);
-  font-size: 8px;
+  font-size: var(--wf-fs-12);
   letter-spacing: 0.13em;
 }
 .identityEyebrow span {
@@ -3551,13 +3551,13 @@
 .identityText h1 small,
 .identityText p {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .identityText p {
   line-height: 1.5;
 }
 .liveState {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   gap: 5px;
   max-width: 205px;
   padding-left: 12px;
@@ -3572,7 +3572,7 @@
   border-radius: 7px;
   padding: 4px 8px;
   width: fit-content;
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
 }
 .liveState[data-live="false"] strong {
   color: var(--muted);
@@ -3580,7 +3580,7 @@
 }
 .liveState span {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
   padding-left: 1px;
 }
 .headerActions {
@@ -3593,7 +3593,7 @@
   min-height: 44px;
   border-radius: 10px;
   padding: 8px 12px;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .headerActions .ctlPrimary {
   background: var(--ink);
@@ -3615,7 +3615,7 @@
   padding-right: 16px;
 }
 .flightSnapshot span {
-  font-size: 8px;
+  font-size: var(--wf-fs-12);
   color: var(--line);
   letter-spacing: 0.09em;
 }
@@ -3627,7 +3627,7 @@
 }
 .flightSnapshot small {
   color: var(--line);
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
 }
 .flightSnapshot > div[data-attention="true"] strong {
   color: var(--surface-2);
@@ -3650,16 +3650,16 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .compactNext strong {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   font-weight: 650;
   color: var(--ink);
   white-space: nowrap;
 }
 .compactNext span {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
   color: var(--muted);
   line-height: 1.4;
 }
@@ -3678,7 +3678,7 @@
   min-height: 44px;
   color: var(--muted);
   font: inherit;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   padding: 7px 9px;
   cursor: pointer;
 }
@@ -3686,7 +3686,7 @@
   background: var(--surface-2);
 }
 .quickLinks span {
-  font-size: 9px;
+  font-size: var(--wf-fs-12);
   color: var(--muted);
   background: var(--surface-2);
   padding: 3px 6px;
@@ -3702,7 +3702,7 @@
   background: var(--surface);
 }
 .arrivalDisclosure > summary {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   padding: 10px 16px;
   min-height: 44px;
   color: var(--muted);
@@ -3726,12 +3726,12 @@
   gap: 9px;
 }
 .barrierCardClear .barrierLabel {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
   font-weight: 500;
   color: var(--muted);
 }
 .barrierCardClear .barrierDetail {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
   color: var(--muted);
   margin: 0;
 }
@@ -3775,7 +3775,7 @@
   font-weight: 650;
 }
 .tabNum {
-  font-size: 9px;
+  font-size: var(--wf-fs-12);
   border-radius: 5px;
   padding: 1px 4px;
   background: var(--surface-2);
@@ -3799,7 +3799,7 @@
   min-height: 44px;
   border: 0;
   border-radius: 8px;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   padding: 7px 12px;
   color: var(--muted);
   background: transparent;
@@ -3819,7 +3819,7 @@
   border-bottom: 1px solid var(--surface-2);
 }
 .railStatus span {
-  font-size: 8px;
+  font-size: var(--wf-fs-12);
   letter-spacing: 0.1em;
 }
 .railStatus strong {
@@ -3829,13 +3829,13 @@
   color: var(--ink);
 }
 .railStatus p {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
   margin-top: 5px;
   color: var(--muted);
 }
 .journeyDisclosure > summary {
   padding: 10px 14px;
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
   background: var(--surface);
   border-bottom: 1px solid var(--surface-2);
 }
@@ -3855,17 +3855,17 @@
   min-height: 44px;
 }
 .jname {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
   font-weight: 500;
   line-height: 1.4;
 }
 .jtime {
-  font-size: 9px;
+  font-size: var(--wf-fs-12);
 }
 .jnode {
   width: 23px;
   height: 23px;
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
 }
 .jst[data-s="now"] .stageButton {
   background: var(--surface-2);
@@ -3884,7 +3884,7 @@
   border-radius: 10px;
 }
 .recordNotice {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
   padding: 7px 16px;
 }
 @media (max-width: 1050px) {
@@ -3953,7 +3953,7 @@
   }
   .liveState span {
     padding: 0;
-    font-size: 9px;
+    font-size: var(--wf-fs-12);
   }
   .headerActions {
     margin: 0;
@@ -3967,7 +3967,7 @@
     gap: 12px;
   }
   .flightSnapshot strong {
-    font-size: 11px;
+    font-size: var(--wf-fs-12);
   }
   .flightSnapshot > div {
     padding-right: 8px;
@@ -4002,7 +4002,7 @@
   }
   .tabBtn {
     padding: 8px 6px;
-    font-size: 10px;
+    font-size: var(--wf-fs-12);
     gap: 3px;
   }
   .tabBtn svg,
@@ -4024,7 +4024,7 @@
   margin: 0;
 }
 .jwhen {
-  font-size: 9px;
+  font-size: var(--wf-fs-12);
   line-height: 1.4;
 }
 .jnameRow {
@@ -5066,5 +5066,136 @@
 
   .gbPill {
     margin-left: 0;
+  }
+}
+
+/* ── v10 Patient hero ───────────────────────────────────────────────────────────────────────
+ * Eyebrow names the place, the name is the title with its state pill, then the identity line,
+ * the fact chips (15px figures) and the stages. The record tabs sit on the page under the band
+ * as pill tabs. Words stay neutral; glyphs carry tone. */
+.v6HeroWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.v6HeroBar > .v6IdLine {
+  order: 0;
+}
+
+.v6HeroFacts {
+  flex-wrap: nowrap;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.v6HeroFact,
+.v6HeroFact:first-child {
+  flex: 0 1 auto;
+  height: var(--wf-h-sm, 28px);
+  min-width: 0;
+  padding: 0 var(--wf-s-3);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+  color: var(--wf-hero-ink-2);
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+.v6HeroFact strong,
+.v6HeroFact .v6HeroWait {
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-15) / 1 var(--wf-mono);
+}
+
+.v6HeroActions {
+  margin-left: 0;
+}
+
+.v6HeroTabsRow .v6Tabs {
+  border-color: var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.v6HeroTabsRow .v6Tab {
+  color: var(--wf-ink-2);
+}
+
+.v6HeroTabsRow .v6Tab:hover {
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+
+.v6HeroTabsRow .v6Tab[aria-selected="true"],
+.v6HeroTabsRow .v6Tab[aria-selected="true"]:hover {
+  background: var(--wf-surface);
+  box-shadow:
+    inset 0 0 0 1px var(--wf-line-2),
+    var(--wf-e1);
+  color: var(--wf-ink-1);
+}
+
+.v6HeroTabsRow .v6TabCount,
+.v6HeroTabsRow .v6Tab[aria-selected="true"] .v6TabCount {
+  background: var(--wf-surface-2);
+  box-shadow: inset 0 0 0 1px var(--wf-line);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.v6GateTitle[data-tone="danger"] {
+  color: var(--wf-ink-1);
+}
+
+/* v10 Patient, phone: the facts become three figures (value over label), the status line leaves
+ * the band (it stays announced), and the tabs keep 44px targets. Desktop is untouched. */
+@media (max-width: 48rem) {
+  .v6HeroFacts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    width: 100%;
+  }
+
+  .v6HeroFact,
+  .v6HeroFact:first-child {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2px;
+    height: auto;
+    min-height: var(--wf-touch, 44px);
+    padding: 0 var(--wf-s-2);
+    border: 0;
+    border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+    border-radius: 0;
+    background: none;
+    white-space: nowrap;
+  }
+
+  .v6HeroFact:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .v6HeroFact:nth-child(n + 4) {
+    display: none;
+  }
+
+  .v6LiveState {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .v6HeroTabsRow .v6Tab {
+    min-height: var(--wf-touch, 44px);
   }
 }

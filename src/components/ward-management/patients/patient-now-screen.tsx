@@ -30,7 +30,7 @@ import { PatientTransitOperations } from "./patient-transit-operations";
 import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode } from "./patient-mode";
-import { PatientStatusCard, type PatientStatusContext } from "./patient-status-card";
+import { PatientStatusCard, dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -767,6 +767,24 @@ export function PatientNowScreen({
                   {(mode === "ward" || mode === "leave" || mode === "ed") && stayDay !== undefined ? (
                     <span className={styles.v6HeroFact}>
                       <strong className={styles.v6HeroWait}>Day {stayDay}</strong>
+                      on the ward
+                    </span>
+                  ) : null}
+                  {stayCurrent && resolved.liveAdmission ? (
+                    <span className={styles.v6HeroFact} data-testid="ward-patient-hero-discharge">
+                      {typeof resolved.liveAdmission.expectedDischargeAt === "number" ? (
+                        <>
+                          <strong>
+                            {dayLabel(resolved.liveAdmission.expectedDischargeAt, dayZero).replace(",", "")}
+                          </strong>
+                          discharge date
+                        </>
+                      ) : (
+                        <>
+                          <strong>None</strong>
+                          discharge date yet
+                        </>
+                      )}
                     </span>
                   ) : null}
                 </span>
@@ -1218,7 +1236,11 @@ export function PatientNowScreen({
                                 data-testid="ward-patient-overdue-alert"
                                 title={OPERATIONAL_DEFAULT_LABEL}
                               >
-                                <AlertCircle size={18} style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
+                                <AlertCircle
+                                  size={18}
+                                  style={{ flexShrink: 0, marginTop: 2, color: "var(--wf-danger)" }}
+                                  aria-hidden="true"
+                                />
                                 <div>
                                   <strong>Arrival Overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES}{" "}
                                   minutes past estimated arrival time (

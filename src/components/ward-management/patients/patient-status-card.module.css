@@ -203,3 +203,8 @@
 .cells[hidden] {
   display: none;
 }
+
+/* v10: act now is the thin red full edge, no fill. */
+.card[data-act="true"] {
+  border-color: var(--wf-act-edge);
+}

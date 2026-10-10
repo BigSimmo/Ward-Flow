@@ -25,7 +25,7 @@
   margin: 0;
 }
 .eyebrow {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   letter-spacing: 0.09em;
   font-weight: 700;
   color: var(--muted);
@@ -190,7 +190,7 @@
   color: var(--muted);
 }
 .verdict {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   background: var(--surface-2);
   border: 1px solid var(--line);
   padding: 5px 8px;
@@ -206,7 +206,7 @@
   display: flex;
   gap: 6px 12px;
   flex-wrap: wrap;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   color: var(--muted);
   margin: 10px 0;
 }
@@ -219,7 +219,7 @@
   line-height: 1.5;
 }
 .deck summary span {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   font-weight: 400;
   color: var(--muted);
   margin-left: 8px;
@@ -298,7 +298,9 @@
   min-width: 44px;
 }
 .deck button:disabled {
-  opacity: 0.55;
+  border: 1px dashed var(--wf-line-3);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
   cursor: not-allowed;
 }
 .deck :is(button, summary, input, select):focus-visible {
@@ -316,7 +318,7 @@
 }
 .destination > span {
   display: block;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   color: var(--muted);
   margin-bottom: 5px;
 }
@@ -476,18 +478,18 @@
   margin: 3px 0;
 }
 .heading p {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   max-width: 48ch;
   line-height: 1.5;
 }
 .eyebrow {
-  font-size: 9px;
+  font-size: var(--wf-fs-12);
   letter-spacing: 0.1em;
 }
 .stage,
 .count {
   border-radius: 30px;
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
 }
 .metrics {
   border-radius: 16px;
@@ -505,7 +507,7 @@
 }
 .metrics span,
 .metrics small {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
 }
 .metrics strong {
   font-size: 12px;
@@ -541,11 +543,11 @@
 }
 .filters button {
   border-radius: 9px;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .card > .deckHint {
   padding: 0 14px 10px;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .candidates {
   padding: 0 14px;
@@ -672,7 +674,7 @@
   border-radius: 7px;
   background: var(--good-soft);
   color: var(--good);
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
   padding: 5px 9px;
 }
 .columns {
@@ -701,7 +703,7 @@
   font-weight: 600;
 }
 .cardHeader .eyebrow {
-  font-size: 8px;
+  font-size: var(--wf-fs-12);
   color: var(--muted);
   letter-spacing: 0.08em;
 }
@@ -720,7 +722,7 @@
 .filters button {
   min-height: 44px;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
 }
 .deck label.wardSearch {
   margin: 12px 13px 0;
@@ -730,7 +732,7 @@
 }
 .card > .deckHint {
   padding: 4px 13px 9px;
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
 }
 .candidates {
   padding: 0 13px;
@@ -745,19 +747,19 @@
 }
 .candidate p {
   margin: 4px 0;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .candidateMeta {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
   gap: 5px 10px;
 }
 .candidate > details > summary {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
   min-height: 44px;
   padding: 10px 0;
 }
 .verdict {
-  font-size: 9px;
+  font-size: var(--wf-fs-12);
   border: 0;
   border-radius: 5px;
   padding: 3px 6px;
@@ -779,7 +781,7 @@
 }
 .destination span,
 .destination p {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .destination p {
   margin: 5px 0 0;
@@ -791,11 +793,11 @@
   background: var(--surface-2);
   border-radius: 8px;
   border: 0;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   padding: 9px 11px;
 }
 .facts {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   row-gap: 7px;
 }
 .facts dt {
@@ -806,7 +808,7 @@
 .danger {
   min-height: 44px;
   border-radius: 9px;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .primary {
   background: var(--good);
@@ -820,7 +822,7 @@
   gap: 8px;
 }
 .cardFooter span {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
 }
 .additional {
   box-shadow: none;
@@ -829,10 +831,10 @@
 .additional > summary {
   min-height: 44px;
   padding: 12px 16px;
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .additional > summary span {
-  font-size: 10px;
+  font-size: var(--wf-fs-12);
   margin-left: 8px;
   display: inline;
 }
@@ -840,7 +842,7 @@
   display: none;
 }
 .feedback p {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   border-radius: 8px;
 }
 .booking {
@@ -857,10 +859,10 @@
   padding: 12px 14px;
 }
 .correction > summary {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 .deck label {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
 }
 @media (max-width: 700px) {
   .deck {
@@ -873,7 +875,7 @@
     font-size: 21px;
   }
   .heading .stage {
-    font-size: 9px;
+    font-size: var(--wf-fs-12);
   }
   .additional > summary span {
     display: block;
@@ -1126,7 +1128,7 @@
 [data-ward-design="v6"] .danger {
   border: 1px solid var(--wf-line-2);
   background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 [data-ward-design="v6"] .deck :is(button, summary, input, select):focus-visible {
