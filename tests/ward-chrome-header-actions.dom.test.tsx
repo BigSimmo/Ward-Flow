@@ -143,7 +143,7 @@ describe("Ward Flow chrome header — board freshness", () => {
 /**
  * The one action that changes with the role — always a link, per `ward-flow-events.ts`'s
  * `EVENT_ROLE` table: `RAISE_REFERRAL` excludes `coordinator`, `RECEIVE_REFERRAL` is `community`
- * alone, and the referral slide-out dispatches as `ed` or `community`, never a coordinator. A
+ * or `ed`, and the referral slide-out dispatches as `ed` or `community`, never a coordinator. A
  * coordinator is in neither list, so every role gets a destination rather than a dispatched event.
  */
 describe("Ward Flow chrome header — role action", () => {
