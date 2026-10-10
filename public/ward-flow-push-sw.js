@@ -66,11 +66,10 @@ self.addEventListener("notificationclick", (event) => {
   const target = wardFlowPath(event.notification.data && event.notification.data.url);
   event.waitUntil(
     (async () => {
-      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      // Only windows this worker controls: navigate() refuses any other, so those get a new window below.
+      const windows = await self.clients.matchAll({ type: "window" });
       for (const client of windows) {
-        const open = new URL(client.url);
-        // Only a window this worker controls can be navigated; any other gets a new window below.
-        if (!client.url.startsWith(self.registration.scope) || !insideWardFlow(open.pathname)) continue;
+        if (!insideWardFlow(new URL(client.url).pathname)) continue;
         try {
           const focused = await client.focus();
           if ("navigate" in focused) await focused.navigate(target);
