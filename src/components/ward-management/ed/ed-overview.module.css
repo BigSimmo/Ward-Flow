@@ -8,7 +8,10 @@
   font-family: var(--wf-font);
 }
 
+/* `position: relative` on the strip and its scroller keeps the absolutely positioned
+ * screen-reader text inside them, so it never widens the page at any width. */
 .strip {
+  position: relative;
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--wf-line);
@@ -24,6 +27,7 @@
   margin: 0;
   padding: 0;
   overflow-x: auto;
+  position: relative;
   list-style: none;
 }
 
@@ -128,14 +132,8 @@
   }
 }
 
-/* Phone: the strip scrolls on its own. `position: relative` keeps the absolutely positioned
- * screen-reader text inside the scroller, so it no longer widens the page. */
+/* Phone: the strip scrolls on its own. */
 @media (max-width: 48rem) {
-  .strip,
-  .list {
-    position: relative;
-  }
-
   .list {
     grid-auto-columns: minmax(6.5rem, 1fr);
     overscroll-behavior-inline: contain;
