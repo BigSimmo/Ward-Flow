@@ -15,9 +15,10 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
  * "The forbidden pair is `{psychiatric_ward, community_team}` (owner rulings 13/14: a community
  * referral is for discharge, so it can never accompany a bed request)".
  *
- * That refusal exists ONLY on screen, in
- * `src/components/ward-management/referrals/referral-intake.tsx`'s `wardAndCommunityBothChosen()`,
- * which disables the intake form's Send button and nothing else:
+ * That refusal existed ONLY on screen, in the full-page intake form's `wardAndCommunityBothChosen()`
+ * (`referral-intake.tsx`, retired 8 Oct 2026), which disabled that form's Send button and nothing
+ * else. The referral slide-out that replaced it picks one destination kind at a time, so it cannot
+ * send the pair either — but that is still a screen, not the reducer:
  *
  *   export function wardAndCommunityBothChosen(kinds: readonly ReferralDestinationKind[]): boolean {
  *     return kinds.includes("psychiatric_ward") && kinds.includes("community_team");

@@ -37,7 +37,7 @@ export const FORM_TIMING_FACTOR_LABEL = "Form due time";
  *
  * Phase 7 Task 8 found the third consumer disagreeing with the other two: `priority-queue.tsx`
  * and `referral-board.tsx` each held their own identical copy and rendered "Tier 2 · urgent",
- * while `referral-intake.tsx` — the ONE screen where a human picks the value, on a phone, from a
+ * while the intake form (`referral-intake.tsx`, since retired) — the ONE screen where a human picks the value, on a phone, from a
  * source that may be a police car — rendered a bare "2". Two screens describing one field with
  * different words is this project's most expensive defect class, so the copies were replaced by
  * this single export rather than a third being added.

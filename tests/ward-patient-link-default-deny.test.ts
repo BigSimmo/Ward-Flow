@@ -345,7 +345,7 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
       "an unannotated function-callback destructured parameter must be detected",
     ).toBe(true);
     // NEGATIVE CONTROL. A bare local variable named `patientId` (the shape `person-screen.tsx` and
-    // `referral-intake.tsx` legitimately use — a route parameter, never a property read off a
+    // `ward-referral-drawer.tsx` legitimately use — a route parameter, never a property read off a
     // Referral or Admission) must not trip the guard, or the detector would forbid the fix along
     // with the leak.
     expect(PATIENT_LINK_READ.test("const routeText = `/people/${patientId}`;")).toBe(false);

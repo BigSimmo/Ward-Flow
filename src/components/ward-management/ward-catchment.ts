@@ -716,8 +716,8 @@ export interface SuburbAlias {
  * ⚠️ **THESE `note` STRINGS KEEP THEIR BACKTICKS ON PURPOSE, AND THAT IS NOT AN OVERSIGHT.**
  *
  * On 2026-09-11 the backticks were stripped from every catchment note that REACHES A SCREEN,
- * because a coordinator was reading them literally: `referral-intake.tsx:1947` renders a note as
- * plain `{expression}` text, so markdown punctuation is never interpreted and shows as typed.
+ * because a coordinator was reading them literally: the intake form (since retired) rendered a note as
+ * plain `{expression}` text, so markdown punctuation was never interpreted and showed as typed.
  *
  * 🔴 **The ten notes in THIS array reach no screen.** `lookupCatchment` reads `.note` at exactly
  * two lines — `:1200` (contested) and `:1242` (internally inconsistent) — and nowhere else; an

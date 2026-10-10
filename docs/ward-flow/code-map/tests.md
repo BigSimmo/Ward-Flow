@@ -354,7 +354,6 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 - **`tests/ward-referral-control-labels.dom.test.tsx`** (97 lines) — the two referral controls are findable by the words on them
 - **`tests/ward-referral-decided-heading.dom.test.tsx`** (136 lines) — the referral board's decided heading names the total, not the display cap
 - **`tests/ward-referral-decision-scope.test.ts`** (357 lines) — a role may only answer the destination it is
-- **`tests/ward-referral-destination-list-clears-legend.test.ts`** (64 lines) — the referral form's destination list clears the floated legend
 - **`tests/ward-referral-destinations.dom.test.tsx`** (759 lines) — Referral destinations — the option list itself
 - **`tests/ward-referral-duplicate.test.ts`** (266 lines) — the duplicate sentence
 - **`tests/ward-referral-ed-destination-validation.test.ts`** (105 lines) — an emergency-department destination is validated like every other governed field

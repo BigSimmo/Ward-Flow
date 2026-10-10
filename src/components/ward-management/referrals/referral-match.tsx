@@ -420,8 +420,8 @@ export function ReferralMatchView({
   const [withdrawRecorder, setWithdrawRecorder] = useState<"coordinator" | "sender">("coordinator");
   const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
   const [lastRejection, setLastRejection] = useState<Rejection | undefined>(undefined);
-  // Same async-detection pattern as `referral-intake.tsx`'s own `checkToken`/`priorRejectionCountRef`
-  // pair (see that file's doc comment for the full reasoning) — `dispatch` never returns whether
+  // Same async-detection pattern the referral slide-out uses for its own send (`submissionRef`) —
+  // `dispatch` never returns whether
   // the reducer accepted or refused an event, so the only way to know is to compare `rejections`
   // before and after, on the next render.
   const priorRejectionCountRef = useRef(rejections.length);

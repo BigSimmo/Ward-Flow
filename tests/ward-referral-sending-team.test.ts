@@ -68,13 +68,13 @@ describe("a referral records the team or service that sent it", () => {
   });
 
   /**
-   * ⚠️ THE ABSENCE IS A REAL ANSWER AND MUST SURVIVE AS ONE. Police, ambulance and an emergency
+   * ⚠️ THE ABSENCE IS A REAL ANSWER AND MUST SURVIVE AS ONE. Ambulance and an emergency
    * department's own medical staff are legitimate sources with no sending team. A default here —
    * an empty string, a source label, "Unknown" — would make "nobody recorded a team" and "this
    * team" indistinguishable afterwards.
    */
   it("leaves the field absent when no team was supplied, rather than defaulting it", () => {
-    const { after, created } = receive({ source: "police" });
+    const { after, created } = receive({ source: "ambulance" });
     expect(after.rejections).toEqual([]);
     expect(created).toHaveLength(1);
     expect(created[0]!.sendingTeamName, "an absent sending team was filled in with a substitute").toBeUndefined();
@@ -150,7 +150,7 @@ describe("the sending team is never rendered as the referrer", () => {
    */
   it("answers identically whether or not a sending team is recorded", () => {
     const withTeam = receive({ sendingTeamName: TEAM });
-    const withoutTeam = receive({ source: "police" });
+    const withoutTeam = receive({ source: "ambulance" });
     expect(withTeam.created).toHaveLength(1);
     expect(withoutTeam.created).toHaveLength(1);
     expect(withTeam.created[0]!.sendingTeamName, "the floor failed: the two cases are not different").toBe(TEAM);
