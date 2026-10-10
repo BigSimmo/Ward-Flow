@@ -62,14 +62,13 @@ function renderCoordinator() {
 describe("Command third-edition restyle — panel order and heading pins", () => {
   it("renders pressure, queue and flow, then mounts the shortlist after selection", () => {
     renderCoordinator();
-    // v6 Home (7 Oct 2026): the hero band's title leads, then the three headed cards.
-    expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual([
-      "70 open movements",
-      "ED pressure",
-      "Priority queue",
-      "State bedflow",
-    ]);
-    expect(screen.queryByLabelText("Placement")).not.toBeInTheDocument();
+    // Direction A (owner, 10 Oct 2026): the hero answers how many wait for how many beds, then the
+    // ED strip (heading for screen readers), the queue, State bedflow, and Placement showing the
+    // top of the queue at rest.
+    const atRest = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
+    expect(atRest[0]).toMatch(/^\d+ waiting for \d+ ready beds?$/u);
+    expect(atRest.slice(1)).toEqual(["ED pressure", "Priority queue", "State bedflow", "Placement"]);
+    expect(screen.getByTestId("ward-placement-top-of-queue")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
     // The exceptions drawer's default tab ("Exceptions") carries no `<h2>`, and its other three
     // tabs are `hidden` (not merely visually hidden — the native `hidden` attribute, which
@@ -80,7 +79,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     const headings = screen.getAllByRole("heading", { level: 2 });
     expect(headings.length, "expected the hero and the four headed top-level panels, found a different count").toBe(5);
     expect(headings.map((heading) => heading.textContent)).toEqual([
-      "70 open movements",
+      atRest[0],
       "ED pressure",
       "Priority queue",
       "State bedflow",

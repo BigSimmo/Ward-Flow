@@ -86,18 +86,70 @@ describe("Q004 refinement interaction regressions", () => {
     const row = within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!;
     const before = screen.getByTestId("ward-refinement-domain-state").textContent;
 
-    expect(screen.queryByLabelText("Placement")).toBeNull();
+    // Direction A (owner, 10 Oct 2026): at rest Placement shows the top of the queue, labelled so,
+    // with no Close and no queue row pressed. Nothing is selected until a coordinator picks a row.
+    const atRest = screen.getByLabelText("Placement");
+    expect(within(atRest).getByTestId("ward-placement-top-of-queue")).toHaveTextContent("Top of queue");
+    expect(within(atRest).queryByRole("button", { name: "Close shortlist and clear selection" })).toBeNull();
     expect(screen.queryByLabelText("Referral placement")).toBeNull();
     expect(row).toHaveAttribute("aria-pressed", "false");
 
     fireEvent.click(row);
     expect(row).toHaveAttribute("aria-pressed", "true");
     const shortlist = screen.getByLabelText("Placement");
+    expect(within(shortlist).queryByTestId("ward-placement-top-of-queue")).toBeNull();
     fireEvent.click(within(shortlist).getByRole("button", { name: "Close shortlist and clear selection" }));
 
-    expect(screen.queryByLabelText("Placement")).toBeNull();
+    expect(within(screen.getByLabelText("Placement")).getByTestId("ward-placement-top-of-queue")).toBeInTheDocument();
     expect(row).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
+  });
+
+  it("selects the top-of-queue patient when a ward is picked for them at rest", () => {
+    // A ward choice belongs to the movement it was made for: picking one for the previewed patient
+    // selects that patient, so the choice cannot drift onto whoever next reaches the top.
+    renderCoordinator();
+    const queue = screen.getByRole("region", { name: "Priority queue" });
+    const top = within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!;
+    const topId = top.getAttribute("data-testid")!.replace("ward-queue-row-", "");
+    expect(top).toHaveAttribute("aria-pressed", "false");
+
+    const bedflow = screen.getByRole("region", { name: "State Bedflow" });
+    fireEvent.click(within(bedflow).getAllByRole("button", { name: /^Offer / })[0]!);
+
+    expect(top).toHaveAttribute("aria-pressed", "true");
+    const placement = screen.getByLabelText("Placement");
+    expect(placement).toHaveAttribute("data-subject-movement", topId);
+    expect(within(placement).queryByTestId("ward-placement-top-of-queue")).toBeNull();
+  });
+
+  it("selects the top-of-queue patient as soon as the coordinator reaches into the preview", () => {
+    renderCoordinator();
+    const queue = screen.getByRole("region", { name: "Priority queue" });
+    const top = within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!;
+    const placement = screen.getByLabelText("Placement");
+    expect(within(placement).getByTestId("ward-placement-top-of-queue")).toBeInTheDocument();
+
+    fireEvent.pointerDown(within(placement).getAllByRole("button")[0]!);
+
+    expect(top).toHaveAttribute("aria-pressed", "true");
+    expect(within(screen.getByLabelText("Placement")).queryByTestId("ward-placement-top-of-queue")).toBeNull();
+  });
+
+  it("highlights exactly as many queue rows as the hero's Overdue count says", () => {
+    renderCoordinator();
+    const hero = screen.getByRole("region", { name: /waiting for \d+ ready bed/u });
+    const chip = within(hero).getByRole("button", { name: /Overdue/u });
+    const count = Number(chip.textContent!.match(/\d+/u)![0]);
+    expect(count, "the seed has no overdue movement, so this test proves nothing").toBeGreaterThan(0);
+
+    fireEvent.click(chip);
+
+    expect(chip).toHaveAttribute("aria-pressed", "true");
+    const queue = screen.getByRole("region", { name: "Priority queue" });
+    const rows = within(queue).getAllByTestId(/^ward-queue-row-/u);
+    expect(rows.filter((row) => row.getAttribute("data-dim") !== "true")).toHaveLength(count);
+    expect(screen.getByTestId("ward-queue-highlight-foot")).toHaveTextContent(`${count} of ${rows.length}`);
   });
 
   it("retains an explicitly selected referral as the shortlist subject across queue-tab switches", () => {
