@@ -367,15 +367,18 @@ describe("community treatment order (D-38)", () => {
     expect(refused.rejections.at(-1)?.reason).toMatch(/open placement or stay/);
   });
 
+  // A patient whose stays are all waitlisted or pulled, with no occupied stay or open placement.
+  function onlyWaitingOrPulled(state: ReturnType<typeof seedWardFlowStateAt>, patientId: string) {
+    const stays = state.admissions.filter((a) => a.patientId === patientId);
+    const waiting = stays.some((a) => a.state === "waitlisted" || a.state === "pulled");
+    const occupied = stays.some((a) => a.state === "occupied");
+    const placing = state.movements.some((m) => m.patientId === patientId && !m.closure && m.stage !== "arrived");
+    return waiting && !occupied && !placing;
+  }
+
   it("records an order for a patient whose only stay is waitlisted or pulled, as the page shows them Not active", () => {
     const state = seedWardFlowStateAt(0);
-    const waiting = state.patients.find(
-      (p) =>
-        !p.communityTreatmentOrder &&
-        state.admissions.some((a) => a.patientId === p.id && (a.state === "waitlisted" || a.state === "pulled")) &&
-        !state.admissions.some((a) => a.patientId === p.id && a.state === "occupied") &&
-        !state.movements.some((m) => m.patientId === p.id && !m.closure && m.stage !== "arrived"),
-    );
+    const waiting = state.patients.find((p) => !p.communityTreatmentOrder && onlyWaitingOrPulled(state, p.id));
     expect(waiting, "the seed needs a waitlisted or pulled patient with nothing else open").toBeDefined();
     const next = wardFlowReducer(state, {
       type: "RECORD_COMMUNITY_TREATMENT_ORDER",
