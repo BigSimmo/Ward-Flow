@@ -181,4 +181,13 @@ describe("ward role switcher — the 'Change view' wording ruling (2026-09-03), 
     expect(within(drawer).getByRole("group", { name: "Statewide desks" })).toBeInTheDocument();
     expect(within(drawer).queryByRole("group", { name: "Patient in focus" })).not.toBeInTheDocument();
   });
+
+  it("says a Preview tile is not wired, since Change view has no page toast", () => {
+    renderSwitcher(undefined, WARD_ROUTE);
+
+    fireEvent.click(screen.getByRole("button", { name: /change view/i }));
+    const drawer = screen.getByRole("dialog", { name: "Switch workstation" });
+    fireEvent.click(within(drawer).getByRole("button", { name: /Bed manager/ }));
+    expect(within(drawer).getByRole("status")).toHaveTextContent("Bed manager: Not wired in this prototype.");
+  });
 });

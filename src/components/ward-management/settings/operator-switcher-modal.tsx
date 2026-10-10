@@ -100,6 +100,8 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [hereOpen, setHereOpen] = useState(false);
+  // Change view opens this drawer without a page toast, so a Preview tile says so here instead.
+  const [previewNote, setPreviewNote] = useState<string | null>(null);
 
   const { statewide, sites, teams } = useMemo(
     () =>
@@ -331,7 +333,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
               className={cx(styles.stateTile, styles.preview)}
               aria-disabled="true"
               title="No screen for this role yet"
-              onClick={() => onPreview?.(name)}
+              onClick={() => (onPreview ? onPreview(name) : setPreviewNote(`${name}: Not wired in this prototype.`))}
             >
               <Icon icon={glyph} size={16} />
               <span className={styles.who}>
@@ -341,6 +343,11 @@ export function OperatorSwitcherModal({ isOpen, onClose, onPreview }: OperatorSw
             </button>
           ))}
         </div>
+      ) : null}
+      {previewNote && !searching ? (
+        <p className={styles.empty} role="status">
+          {previewNote}
+        </p>
       ) : null}
 
       <div className={styles.list}>
