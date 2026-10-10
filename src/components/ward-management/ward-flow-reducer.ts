@@ -2204,7 +2204,13 @@ function bedNumberRefusal(
  * v10 pass 3: why bed `bedNumber` of `unit` is already held for somebody on their way, or null. A
  * bed is held by another open movement this ward accepted into it, or by an accepted referral.
  */
-function heldBedRefusal(state: WardFlowState, unit: Unit, bedNumber: number, exceptMovementId: string): string | null {
+function heldBedRefusal(
+  state: WardFlowState,
+  unit: Unit,
+  bedNumber: number,
+  exceptMovementId?: string,
+  exceptReferralId?: string,
+): string | null {
   const heldByMovement = state.movements.some(
     (other) =>
       other.id !== exceptMovementId &&
@@ -2213,6 +2219,8 @@ function heldBedRefusal(state: WardFlowState, unit: Unit, bedNumber: number, exc
       other.heldBedNumber === bedNumber,
   );
   const heldByReferral = state.referrals.some((referral) =>
+    referral.id !== exceptReferralId &&
+    !state.movements.some((movement) => movement.referralId === referral.id && movement.stage === "arrived") &&
     referral.destinations.some(
       (arm) =>
         arm.state === "accepted" &&
@@ -2465,6 +2473,8 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         return reject(state, event, `This stay is already recorded in bed ${event.bedNumber}`);
       const bedRefusal = bedNumberRefusal(state, unit, event.bedNumber, admission.id);
       if (bedRefusal) return reject(state, event, bedRefusal);
+      const heldRefusal = heldBedRefusal(state, unit, event.bedNumber);
+      if (heldRefusal) return reject(state, event, heldRefusal);
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       const placed = replaceAdmission(state, admission.id, { ...admission, bedNumber: event.bedNumber });
@@ -5466,6 +5476,22 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       ) {
         return reject(state, event, "Arrival needs this movement's matching held admission at its accepted ward.");
       }
+      const heldReferral = movement.referralId === undefined
+        ? undefined
+        : state.referrals
+            .find((referral) => referral.id === movement.referralId)
+            ?.destinations.find(
+              (arm) =>
+                arm.state === "accepted" &&
+                arm.heldBedNumber !== undefined &&
+                arm.destination.kind === "psychiatric_ward" &&
+                arm.destination.unitId === unit.id,
+            );
+      const heldBedNumber = movement.heldBedNumber ?? heldReferral?.heldBedNumber;
+      if (heldBedNumber !== undefined) {
+        const bedRefusal = bedNumberRefusal(state, unit, heldBedNumber, linkedAdmission?.id);
+        if (bedRefusal) return reject(state, event, bedRefusal);
+      }
       const isBedTurnaround = unit.empty.value <= 0;
 
       // Owner ruling 2026-09-25: occupant counts follow gender (recorded sex for a non-binary person).
@@ -5509,8 +5535,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             }
           : {}),
       };
+      const { heldBedNumber: _heldBedNumber, ...movementWithoutHeldBed } = movement;
+      void _heldBedNumber;
       const updatedMovement: Movement = {
-        ...movement,
+        ...movementWithoutHeldBed,
         stage: "arrived",
         // `noTransportNeeded` (above) means no LIVE job was ever booked, but a cancelled job may
         // still sit on `movement.transport` — this route never writes `arrivedAt` onto it. Every
@@ -5562,6 +5590,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           state: "occupied",
           gender: movement.gender,
           arrivedAt: event.now,
+          ...(heldBedNumber === undefined ? {} : { bedNumber: heldBedNumber }),
           ...(isBedTurnaround ? { blockReason: "Awaiting clean" } : {}),
         });
       } else {
@@ -5589,6 +5618,20 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
             [source.id]: (withPerson.dischargeRevisions[source.id] ?? 0) + 1,
           },
         };
+      }
+      if (heldReferral && movement.referralId) {
+        const referral = findReferral(withPerson, movement.referralId);
+        if (referral) {
+          withPerson = replaceReferral(withPerson, referral.id, {
+            ...referral,
+            destinations: referral.destinations.map((arm) => {
+              if (arm !== heldReferral) return arm;
+              const { heldBedNumber: _heldBed, ...releasedArm } = arm;
+              void _heldBed;
+              return releasedArm;
+            }),
+          });
+        }
       }
       return replaceMovement(withPerson, movement.id, updatedMovement);
     }
@@ -7340,6 +7383,12 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
           genderPlacementAddition === undefined
             ? referral
             : { ...referral, genderPlacements: [...(referral.genderPlacements ?? []), genderPlacementAddition] };
+        if (event.bedNumber !== undefined) {
+          const bedRefusal =
+            bedNumberRefusal(state, unit, event.bedNumber, undefined) ??
+            heldBedRefusal(state, unit, event.bedNumber, undefined, referral.id);
+          if (bedRefusal) return reject(state, event, bedRefusal);
+        }
         const acceptRefusal = referralAcceptanceRefusal(
           event,
           referralForEligibility,
