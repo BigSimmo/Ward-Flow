@@ -366,11 +366,12 @@ capacity figure anywhere in this group is real.
   which role's chrome a route gets from the pathname alone — Ward Flow has no signed-in identity,
   so "the role IS the route". A chrome hint only, never a permission (permissions stay in the
   reducer's `EVENT_ROLE` table). Key exports: `wardChromeRole`, `noticeIsForWardChrome`,
-  `noticeIsMarkableByChrome`, `wardTasksAreActionableForRole`, `CHROME_ROLE_LABELS`.
+  `noticeIsMarkableByChrome`, `wardTasksAreActionableForRole`, `canSeeReadmissionFlag` (the 28 day
+  readmission flag is the coordinator's only, Josh, 9 Oct 2026), `CHROME_ROLE_LABELS`.
 - **`src/components/ward-management/ward-role-permissions.ts`** (145 lines, added 9 Oct 2026,
   feature 11) — Whether the route's role may take an action: `EVENT_ROLE` plus the one explicit
   `CROSS_ROLE_ALLOWED` list of borrowed-role pairs (Patient page, Legal forms Mark received, ward
-  Raise referral, New referral sheet) kept working until Josh rules on each. Never widens what the
+  Raise referral, New referral sheet), kept as listed exceptions (Josh, 9 Oct 2026). Never widens what the
   reducer accepts. Key exports: `canDispatch`, `dispatchPermission`, `roleLimitReason`,
   `rolesOnlyReason`, `CROSS_ROLE_ALLOWED`. Its hooks are in `ward-role-gate.tsx` (`useRouteRole`,
   `useRoleGate`), which renders the kit's `DisabledReason` beside a disabled button.
