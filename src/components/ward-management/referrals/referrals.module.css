@@ -7076,3 +7076,152 @@
     white-space: normal;
   }
 }
+
+/* ═══ v10: the decision panel for a referral no bed answers (ED review, community follow-up) ═══
+ * An eyebrow naming the ask, one plain card for where it went, the decline reason, then Decline
+ * (secondary) and Accept presentation (the panel's one primary). Words neutral, 12px floor. */
+
+.v10AskEyebrow {
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.v10AskCard {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.v10AskWhere {
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v10AskWhat {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v10AskActions {
+  display: grid;
+  gap: var(--wf-s-3);
+  margin-top: var(--wf-s-4);
+}
+
+.v10AskActions .fieldLegend {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.v10AskActions .select {
+  width: 100%;
+  min-height: var(--wf-h-md, 2.25rem);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background-color: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / 1 var(--wf-font);
+}
+
+.v10AskActions .acceptPresentationBtn {
+  min-height: var(--wf-h-md, 2.25rem);
+  padding: 0 var(--wf-s-4);
+  border: 1px solid var(--wf-pri-edge);
+  border-radius: var(--wf-r-pill);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  color: var(--wf-on-accent);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+}
+
+.v10AskActions .acceptPresentationBtn:hover {
+  background: linear-gradient(180deg, var(--wf-pri-1-hover), var(--wf-pri-2-hover));
+  box-shadow: none;
+  filter: none;
+}
+
+.v10AskActions .cancelBtn {
+  border-color: var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-ink-1);
+}
+
+.v10AskNote {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+/* v10: Decline and Withdraw read neutral (red means act now only). Greyed until a reason is
+   chosen: a dashed edge and the dim ink, never opacity. */
+.screen[data-ward-design="v6"] .declineButton {
+  color: var(--wf-ink-1);
+}
+
+.screen[data-ward-design="v6"] .declineButton[aria-disabled="true"],
+.v10AskActions .declineButton[aria-disabled="true"] {
+  border-style: dashed;
+  background: var(--wf-surface);
+  box-shadow: none;
+  color: var(--wf-dim);
+  cursor: not-allowed;
+}
+
+.screen[data-ward-design="v6"] .addCorrectionBtn[aria-disabled="true"] {
+  border-style: dashed;
+  opacity: 1;
+  color: var(--wf-dim);
+}
+
+.screen[data-ward-design="v6"] .correctionDisclaimer {
+  font-size: var(--wf-fs-12);
+}
+
+/* Decline and Accept side by side under the reason (v10 mockup). The legacy wrappers flatten into
+   one two-column grid; a confirm step still shows its own buttons in the accept cell. */
+.v10AskActions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.v10AskActions > * {
+  grid-column: 1 / -1;
+}
+
+.v10AskActions .declineControls,
+.v10AskActions .selectWithActionRow {
+  display: contents;
+}
+
+.v10AskActions .fieldLegend,
+.v10AskActions .select {
+  grid-column: 1 / -1;
+}
+
+.v10AskActions .declineButton {
+  grid-column: 1;
+  width: 100%;
+  border-radius: var(--wf-r-pill);
+}
+
+.v10AskActions > .matchRowTop {
+  grid-column: 2;
+  margin: 0;
+}
+
+.v10AskActions > .matchRowTop .acceptPresentationBtn,
+.v10AskActions > .matchRowTop .confirmActionRow {
+  width: 100%;
+  margin: 0;
+}

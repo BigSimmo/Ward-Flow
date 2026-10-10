@@ -349,7 +349,34 @@
   border-radius: var(--wf-r-lg) var(--wf-r-lg) 0 0;
 }
 
-.viewTabs {
+/* Queue and History as pill tabs (v10): a soft track with the chosen tab raised. Page-local
+   until a shared PillTabs part exists; the tablist semantics stay the shared Tabs'. */
+.viewTabs.viewTabs,
+.panelTabs.panelTabs {
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+
+.viewTabs [role="tab"],
+.panelTabs [role="tab"] {
+  height: calc(var(--wf-h-sm) - 6px);
+  margin: 0;
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  border-radius: var(--wf-r-pill);
+}
+
+.viewTabs [role="tab"][aria-selected="true"],
+.panelTabs [role="tab"][aria-selected="true"] {
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e-sel);
+}
+
+.toolbarChip {
   flex: 0 0 auto;
 }
 
@@ -492,8 +519,19 @@
   background: var(--wf-hover);
 }
 
-.rowHl {
-  background: var(--wf-hl);
+/* v10: a highlight never tints the rows it matches; it dims the rest (data-dim, colour only). */
+.row[data-dim="true"],
+.card[data-dim="true"] {
+  --wf-ink-1: var(--wf-dim);
+  --wf-ink-2: var(--wf-dim);
+  --wf-ink-3: var(--wf-dim);
+}
+
+/* Act now (overdue): a thin full red edge and no fill. */
+.row[data-overdue="true"],
+.card[data-overdue="true"] {
+  outline: 1px solid var(--wf-act-edge);
+  outline-offset: -1px;
 }
 
 .rowOn,
@@ -560,7 +598,7 @@
 .rowNote {
   display: block;
   overflow: hidden;
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -587,8 +625,7 @@
 }
 
 .waitOver > span {
-  color: var(--wf-danger-ink);
-  font-weight: 600;
+  color: var(--wf-ink-2);
 }
 
 .waitOver svg {
@@ -655,10 +692,6 @@
 
 .card {
   border-bottom: 1px solid var(--wf-line);
-}
-
-.cardHl {
-  background: var(--wf-hl);
 }
 
 .cardOn {
@@ -760,7 +793,7 @@
   flex-direction: column;
   flex-shrink: 0;
   gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-3) 0;
+  padding: var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line);
 }
 
@@ -894,7 +927,7 @@
 }
 
 .clock[data-tone="danger"] .clockLeft {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
   font-weight: 600;
 }
 
@@ -964,9 +997,11 @@
   font-weight: 400;
 }
 
-.panelTabs {
-  margin: 0 calc(var(--wf-s-3) * -1);
-  padding: 0 var(--wf-s-3);
+.panelTabs.panelTabs {
+  align-self: flex-start;
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
 }
 
 .panelBody.panelBody {
@@ -1220,7 +1255,7 @@
 }
 
 .timelineLate {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 .timelineLate svg {
@@ -1477,5 +1512,61 @@
      !important is needed because the rule it overrides is itself !important. */
   .rowSelect {
     display: inline !important;
+  }
+}
+
+/* v10 desktop toolbar: one row. The order note shrinks and truncates rather than wrapping. */
+@media (min-width: 48.0625rem) {
+  .toolbar {
+    flex-wrap: nowrap;
+  }
+
+  .search {
+    flex: 0 1 13rem;
+    min-width: 8rem;
+  }
+
+  .toolbarNote {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .orderNote {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .orderNote svg {
+    display: inline;
+    margin-right: var(--wf-s-1);
+    vertical-align: -2px;
+  }
+}
+
+/* v10 phone: Queue and History as a full width segmented control at 44px. Refused once lives in
+   the phone chip row, so the toolbar chip is desktop only. */
+@media (max-width: 48rem) {
+  .toolbarChip.toolbarChip {
+    display: none;
+  }
+
+  .viewTabs.viewTabs {
+    display: flex;
+    flex: 1 1 100%;
+  }
+
+  .viewTabs [role="tab"] {
+    flex: 1 1 0;
+    justify-content: center;
+    height: calc(var(--wf-touch, 44px) - 6px);
+  }
+
+  .panelTabs [role="tab"] {
+    height: calc(var(--wf-touch, 44px) - 6px);
   }
 }

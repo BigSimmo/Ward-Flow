@@ -1,0 +1,276 @@
+/*
+ * Referrals, phone only (v10). The page renders these parts only below 48rem, so nothing here can
+ * change the desktop or tablet board. 44px targets, 12px floor, words neutral and glyphs toned.
+ */
+
+.top {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.phHero {
+  --wf-danger: var(--wf-hero-danger);
+  --wf-warning: var(--wf-hero-warning);
+  --wf-success: var(--wf-hero-success);
+  --wf-info: var(--wf-hero-info);
+  --wf-neutral: var(--wf-hero-neutral);
+  --wf-focus-ring: var(--wf-hero-ink);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-3);
+  border: 1px solid var(--wf-hero-edge);
+  border-radius: var(--wf-r-xl);
+  background:
+    radial-gradient(120% 90% at 100% -20%, color-mix(in srgb, var(--wf-hero-info) 22%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+  color: var(--wf-hero-ink);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 28px;
+  color: var(--wf-hero-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  letter-spacing: var(--wf-tr-caps, 0.06em);
+  text-transform: uppercase;
+}
+
+.eyebrowText {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eyebrow > :last-child {
+  flex: 0 0 auto;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.title {
+  margin: 0;
+  overflow: hidden;
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+  letter-spacing: var(--wf-tr-20);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub {
+  margin: calc(var(--wf-s-2) * -1) 0 0;
+  overflow: hidden;
+  color: var(--wf-hero-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.num {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.figures {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  margin: 0 calc(var(--wf-s-1) * -1);
+}
+
+.figure {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  min-height: var(--wf-touch, 44px);
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-hero-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.figure + .figure::before {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+  width: 1px;
+  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  content: "";
+}
+
+.figure[aria-pressed="true"],
+.figure[aria-expanded="true"] {
+  background: var(--wf-on-hero-fill);
+  box-shadow: inset 0 0 0 1.5px var(--wf-hero-ink);
+}
+
+.figure:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: -2px;
+}
+
+.figureValue {
+  overflow: hidden;
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.figureLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-hero-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.action.action {
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+  min-height: var(--wf-touch, 44px);
+}
+
+.chipsFrame {
+  margin-right: calc(var(--wf-s-3) * -1);
+}
+
+.chips {
+  display: flex;
+  gap: var(--wf-s-2);
+  padding: 2px var(--wf-s-3) 2px 2px;
+}
+
+.chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  height: var(--wf-touch, 44px);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip b {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card[aria-expanded="true"] {
+  border-color: var(--wf-accent);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.cardIcon {
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+}
+
+.cardText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cardTitle {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardMeta {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The waiting axis and bed breakdown inside their sheet: the light page surface, not the hero. */
+.sheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+}
+
+.sheetHero {
+  --wf-danger: var(--wf-hero-danger);
+  --wf-warning: var(--wf-hero-warning);
+  --wf-success: var(--wf-hero-success);
+  --wf-neutral: var(--wf-hero-neutral);
+  --wf-focus-ring: var(--wf-hero-ink);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-hero-edge);
+  border-radius: var(--wf-r-lg);
+  background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  color: var(--wf-hero-ink);
+}

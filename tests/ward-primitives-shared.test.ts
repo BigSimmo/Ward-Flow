@@ -399,6 +399,8 @@ describe("the breakpoint scale", () => {
     "src/components/ward-management/patients/add-patient.module.css: 64",
     "src/components/ward-management/patients/person.module.css: 64",
     "src/components/ward-management/referrals/referrals.module.css: 48.0625",
+    // v10 (10 Oct 2026): the Referrals queue toolbar stays on one row above the phone range.
+    "src/components/ward-management/referrals/referral-board.module.css: 48.0625",
     "src/components/ward-management/ward-management-network-third-edition.module.css: 64",
     "src/components/ward-management/ward/ward.module.css: 48.001",
     // Command's independently scrolling diagram and shortlist share its reviewed 1400px split.

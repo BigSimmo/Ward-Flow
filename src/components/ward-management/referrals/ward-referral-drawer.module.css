@@ -334,8 +334,10 @@
   white-space: nowrap;
 }
 
+/* v10: words stay neutral; the glyph beside them carries the tone. */
 .stepState[data-erred="true"] {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
+  font-weight: 600;
 }
 
 /* Inbox ward picker */
@@ -965,7 +967,7 @@
 }
 
 .lateNote {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-2);
 }
 
 .confirmRow {
@@ -1123,9 +1125,13 @@
   align-items: center;
   gap: 6px;
   margin: 0;
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
+}
+
+.flowError svg {
+  color: var(--wf-danger);
 }
 
 .flowField {
@@ -1248,7 +1254,7 @@
 }
 
 .tierDigit[data-tier="1"] {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 .tierWords {
@@ -1957,7 +1963,7 @@ details.refCard > summary {
 }
 
 .sendTargetLabel[data-tone="danger"] {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 .sendTargetName {
@@ -2161,12 +2167,15 @@ details.refCard > summary {
 }
 
 .railCard[data-layout="pair"] small {
+  display: block;
+  min-width: 0;
   overflow: hidden;
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   text-overflow: ellipsis;
-  /* Wraps at the 12px floor instead of cutting a short note such as "Check before sending". */
-  white-space: normal;
+  /* v10: one line. A long note such as "Check before sending" truncates (full words in its
+     title) rather than wrapping the pair onto a second line. */
+  white-space: nowrap;
 }
 
 .railHead {
@@ -2175,6 +2184,10 @@ details.refCard > summary {
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-2);
+}
+
+.railFrac {
+  margin-left: auto;
 }
 
 .railCount {
@@ -2343,8 +2356,9 @@ details.refCard > summary {
   font-size: var(--wf-fs-12);
 }
 
+/* Discard is a quiet destructive action: neutral words, never red (red means act now only). */
 .btnDanger {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 .guard {
