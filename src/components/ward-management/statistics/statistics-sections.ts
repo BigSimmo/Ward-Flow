@@ -59,6 +59,12 @@ export const STATISTICS_OVERVIEW_HREF = "/mockups/ward-flow/statistics/overview"
 
 export const STATISTICS_COMPARE_HREF = "/mockups/ward-flow/statistics/compare";
 
+/** The four index pages (Statistics A, 9 Oct 2026): every service, ward, ED and team on one page. */
+export const STATISTICS_SERVICES_HREF = "/mockups/ward-flow/statistics/services";
+export const STATISTICS_WARDS_HREF = "/mockups/ward-flow/statistics/wards";
+export const STATISTICS_EDS_HREF = "/mockups/ward-flow/statistics/eds";
+export const STATISTICS_TEAMS_HREF = "/mockups/ward-flow/statistics/teams";
+
 /**
  * The id of the unit chooser on the comparisons page. The third section's `href` points at it, and
  * the comparisons screen puts it on the chooser's own heading — one constant, so a rename cannot

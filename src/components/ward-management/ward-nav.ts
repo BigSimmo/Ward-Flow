@@ -492,6 +492,24 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
     "/mockups/ward-flow/statistics/weekly",
     "The weekly operations report. Reached from the statistics section track (statistics/statistics-nav.tsx, 'Weekly'), for the same reason as /overview and /compare above.",
   ],
+  // The four statistics index pages (Statistics A, 9 Oct 2026): every service, ward, ED and team on
+  // one page. Each is a destination inside Statistics, not a section of the app.
+  [
+    "/mockups/ward-flow/statistics/services",
+    "Every health service on one page. Reached from the statistics section track (statistics/statistics-nav.tsx, 'Services') and the unit finder, for the same reason as /overview and /compare above.",
+  ],
+  [
+    "/mockups/ward-flow/statistics/wards",
+    "Every ward on one page. Reached from the statistics section track (statistics/statistics-nav.tsx, 'Wards') and the unit finder, for the same reason as /overview and /compare above.",
+  ],
+  [
+    "/mockups/ward-flow/statistics/eds",
+    "Every emergency department on one page. Reached from the statistics section track (statistics/statistics-nav.tsx, 'EDs') and the unit finder, for the same reason as /overview and /compare above.",
+  ],
+  [
+    "/mockups/ward-flow/statistics/teams",
+    "Every community team on one page. Reached from the statistics section track (statistics/statistics-nav.tsx, 'Teams') and the unit finder, for the same reason as /overview and /compare above.",
+  ],
   [
     "/mockups/ward-flow/reports/downtime",
     "The printable downtime pack. Reached from the Tools drawer's operational shortcuts (tools/ward-tools-workspace.tsx).",

@@ -91,6 +91,10 @@ import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
+import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
+import { StatisticsWardsIndexScreen } from "@/components/ward-management/statistics/statistics-wards-index";
+import { StatisticsEdsIndexScreen } from "@/components/ward-management/statistics/statistics-eds-index";
+import { StatisticsTeamsIndexScreen } from "@/components/ward-management/statistics/statistics-teams-index";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { StatisticsCompareScreen } from "@/components/ward-management/statistics/statistics-compare-screen";
 import { StatisticsEdScreen } from "@/components/ward-management/statistics/statistics-ed-screen";
@@ -191,6 +195,22 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
   [
     "/mockups/ward-flow/statistics/weekly",
     { concrete: "/mockups/ward-flow/statistics/weekly", render: () => <WeeklyReportScreen /> },
+  ],
+  [
+    "/mockups/ward-flow/statistics/services",
+    { concrete: "/mockups/ward-flow/statistics/services", render: () => <StatisticsServicesIndexScreen /> },
+  ],
+  [
+    "/mockups/ward-flow/statistics/wards",
+    { concrete: "/mockups/ward-flow/statistics/wards", render: () => <StatisticsWardsIndexScreen /> },
+  ],
+  [
+    "/mockups/ward-flow/statistics/eds",
+    { concrete: "/mockups/ward-flow/statistics/eds", render: () => <StatisticsEdsIndexScreen /> },
+  ],
+  [
+    "/mockups/ward-flow/statistics/teams",
+    { concrete: "/mockups/ward-flow/statistics/teams", render: () => <StatisticsTeamsIndexScreen /> },
   ],
   ["/mockups/ward-flow/statistics", { concrete: "/mockups/ward-flow/statistics", render: () => <StatisticsScreen /> }],
   [

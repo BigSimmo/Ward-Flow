@@ -1,14 +1,26 @@
-/* Ward and ED comparisons: the ward chart beside the department chart and pinned wards. */
-.grid {
-  display: grid;
+/*
+ * Ward and ED comparisons: the ward chart beside the department chart and pinned wards, in a
+ * FlushRow so the cards end flush. The split stays near even, because the ED chart and the pinned
+ * table need more room than a side column gives them, and the row goes to one column under 1100px
+ * as it always has. In one column nothing is matched, so the ward chart shows in full again.
+ */
+.grid.grid {
   grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
-  align-items: start;
-  gap: var(--wf-s-3);
 }
 
 @media (max-width: 1100px) {
-  .grid {
+  .grid.grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .grid.grid > [data-statistics-follow] {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .grid.grid > [data-statistics-follow] > [data-ward-primitive="panel"] > * {
+    overflow: visible;
   }
 }
 

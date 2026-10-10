@@ -25,9 +25,11 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 
 import { HospitalCapacityMatrix } from "./hospital-capacity-matrix";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
+import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { axisMax } from "./statistics-axis";
 import { occupiedBeds } from "./statistics-occupancy";
 import styles from "./statistics-v6.module.css";
+import detail from "./statistics-detail.module.css";
 
 /** The five services the network reports, in the order the overview has always shown them. */
 const OVERVIEW_SERVICES = [
@@ -177,6 +179,8 @@ export function StatisticsOverviewScreen() {
       )}
 
       <StatCard
+        id="services"
+        className={detail.anchor}
         icon={Network}
         title="Occupancy by health service"
         aside={
@@ -235,17 +239,21 @@ export function StatisticsOverviewScreen() {
         </div>
       </StatCard>
 
-      <div className={styles.gridMain}>
-        <HospitalCapacityMatrix
-          units={units}
-          bedReleases={bedReleases}
-          admissions={admissions}
-          leaveBeds={leaveBeds}
-          service={serviceFilter}
-        />
+      <FlushRow layout="lead2">
+        {/* The ward table is the long column: it scrolls inside at the height the cards beside it set. */}
+        <Follow id="beds-by-ward" className={detail.followLast}>
+          <HospitalCapacityMatrix
+            units={units}
+            bedReleases={bedReleases}
+            admissions={admissions}
+            leaveBeds={leaveBeds}
+            service={serviceFilter}
+          />
+        </Follow>
 
-        <div className={styles.stack}>
+        <FlushStack>
           <StatCard
+            id="empty-to-ready"
             icon={Filter}
             title="Empty to ready"
             aside={<span className={styles.muted}>Feed vs ward</span>}
@@ -295,6 +303,7 @@ export function StatisticsOverviewScreen() {
           </StatCard>
 
           <StatCard
+            id="admission-stages"
             icon={Activity}
             title="Admission stages"
             action={
@@ -377,6 +386,7 @@ export function StatisticsOverviewScreen() {
            * `tests/ward-statistics-sections.dom.test.tsx` asserts the old wording cannot return.
            */}
           <StatCard
+            id="declines"
             icon={X}
             title="Declines by reason"
             data-testid="ward-statistics-overview-declines"
@@ -442,6 +452,7 @@ export function StatisticsOverviewScreen() {
           </StatCard>
 
           <StatCard
+            id="awaiting-decision"
             icon={Clock}
             title="Awaiting a decision"
             data-testid="ward-statistics-overview-worklist"
@@ -488,8 +499,8 @@ export function StatisticsOverviewScreen() {
               </dl>
             </CardBody>
           </StatCard>
-        </div>
-      </div>
+        </FlushStack>
+      </FlushRow>
     </StatisticsPage>
   );
 }

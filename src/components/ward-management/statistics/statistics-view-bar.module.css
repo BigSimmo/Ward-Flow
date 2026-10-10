@@ -1,0 +1,109 @@
+/* The Summary view switch: three large pills under the hero. */
+.bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-1);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  border: 1px solid var(--wf-line);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  min-height: var(--wf-h-lg);
+  padding: 0 var(--wf-s-3) 0 var(--wf-s-2);
+  border-radius: var(--wf-r-pill);
+  border: 1px solid transparent;
+  color: var(--wf-ink-2);
+  text-decoration: none;
+}
+
+.item:hover {
+  background: color-mix(in srgb, var(--wf-surface) 70%, transparent);
+  color: var(--wf-ink-1);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.on,
+.on:hover {
+  background: var(--wf-surface);
+  border-color: var(--wf-line);
+  box-shadow: 0 1px 2px var(--wf-shadow-black-06);
+  color: var(--wf-ink-1);
+}
+
+.icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--wf-ink-2);
+}
+
+.on .icon {
+  background: var(--wf-ink-1);
+  color: var(--wf-surface);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.label,
+.caption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.label {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.caption {
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.kbd {
+  flex: none;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-3);
+  text-align: center;
+}
+
+@media (max-width: 48rem) {
+  .item {
+    min-height: var(--spacing-tap, 3rem);
+    justify-content: center;
+    padding: 0 var(--wf-s-2);
+  }
+
+  .caption,
+  .kbd {
+    display: none;
+  }
+}
+
+@media print {
+  .bar {
+    display: none;
+  }
+}

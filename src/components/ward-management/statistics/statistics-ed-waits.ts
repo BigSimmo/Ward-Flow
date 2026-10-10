@@ -39,6 +39,10 @@ import type { Movement } from "@/components/ward-management/ward-model";
  * which is not derived here.
  */
 
+/** The two wait lines in hours, for labels ("Past 24h"), so no label types the defaults in. */
+export const LONG_WAIT_HOURS = LONG_WAIT_MINUTES / 60;
+export const VERY_LONG_WAIT_HOURS = VERY_LONG_WAIT_MINUTES / 60;
+
 /** One movement paired with how long it has been open, floored at zero. */
 export type EdWaitingEntry = {
   readonly movement: Movement;
