@@ -42,6 +42,11 @@ import styles from "./home.module.css";
 
 type QueueTab = "patients" | "referrals";
 
+/** What the hero's Overdue and Tier 1 counts highlight in the queue. */
+export type QueueHighlight = "overdue" | "tier1";
+
+const HIGHLIGHT_LABEL: Record<QueueHighlight, string> = { overdue: "overdue", tier1: "Tier 1" };
+
 const MS_PER_MINUTE = 60_000;
 
 /**
@@ -90,6 +95,9 @@ type PriorityQueueProps = {
   };
   /** Where "Open in Delays" goes. */
   delaysHref?: string;
+  /** Rows the hero asked to highlight. The others dim; none is hidden or reordered. */
+  highlight?: QueueHighlight;
+  onClearHighlight?: () => void;
 };
 
 /**
@@ -113,6 +121,8 @@ export function PriorityQueue({
   serviceScope,
   pullHoldMinutes = defaultWardConfiguration().pullHoldMinutes,
   delaysHref = "/mockups/ward-flow/delays",
+  highlight,
+  onClearHighlight,
 }: PriorityQueueProps) {
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   const [activeTab, setActiveTab] = useState<QueueTab>("patients");
@@ -125,6 +135,11 @@ export function PriorityQueue({
   const soonCount = movements.filter((movement) => isSoon(movement, now)).length;
   const rows = soonOnly ? movements.filter((movement) => isSoon(movement, now)) : movements;
   const total = totalMovements ?? movements.length;
+  const isOverdue = (movement: Movement) =>
+    Math.max(0, now - movement.openedAt) >= queueWaitThresholds(movement.urgency).overdue;
+  const matchesHighlight = (movement: Movement) =>
+    highlight === "overdue" ? isOverdue(movement) : highlight === "tier1" ? movement.urgency === 1 : true;
+  const highlighted = highlight ? rows.filter(matchesHighlight).length : 0;
 
   const headCount =
     activeTab === "referrals"
@@ -213,6 +228,7 @@ export function PriorityQueue({
               ? (arrival.modeOfArrival ??
                 (arrival.mode ? (ARRIVAL_MODE_LABELS[arrival.mode] ?? arrival.mode) : "Transit"))
               : undefined;
+            const dimmed = highlight !== undefined && !matchesHighlight(movement);
             const flagDetail = movement.flaggedUrgent
               ? movement.urgentFlag
                 ? `Flagged urgent by ${WARD_FLOW_ROLE_LABELS[movement.urgentFlag.by]} at ${formatInstantWithDay(movement.urgentFlag.at, now)}: ${changeReasonLabels[movement.urgentFlag.reason]}.`
@@ -227,6 +243,8 @@ export function PriorityQueue({
                 data-origin-ed={movement.originEdId}
                 data-score={score}
                 data-wait={waitedMinutes}
+                data-overdue={level === "over" ? "true" : undefined}
+                data-dim={dimmed ? "true" : undefined}
                 className={cx(styles.queueRow, selected && styles.queueRowSelected)}
                 aria-pressed={selected}
                 title={flagDetail}
@@ -404,12 +422,25 @@ export function PriorityQueue({
       </div>
 
       <div className={styles.cardFoot}>
-        <span className={styles.footMeta}>
-          {activeTab === "referrals" ? "Longest wait first" : "Tier first, then longest wait"}
-        </span>
-        <Link href={delaysHref} className={styles.footLink}>
-          Open in Delays
-        </Link>
+        {activeTab === "patients" && highlight ? (
+          <span className={styles.footMeta} data-testid="ward-queue-highlight-foot">
+            <span className={styles.mono}>{highlighted}</span> of <span className={styles.mono}>{rows.length}</span>{" "}
+            {HIGHLIGHT_LABEL[highlight]} highlighted
+          </span>
+        ) : (
+          <span className={styles.footMeta}>
+            {activeTab === "referrals" ? "Longest wait first" : "Tier first, then longest wait"}
+          </span>
+        )}
+        {activeTab === "patients" && highlight && onClearHighlight ? (
+          <button type="button" className={styles.footButton} onClick={onClearHighlight}>
+            Clear
+          </button>
+        ) : (
+          <Link href={delaysHref} className={styles.footLink}>
+            Open in Delays
+          </Link>
+        )}
       </div>
     </Card>
   );

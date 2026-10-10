@@ -1,7 +1,8 @@
 /*
- * Home (v6 Home mockup, 7 Oct 2026). One hero band, the ED pressure card, then three columns:
- * priority queue, State bedflow, and the registers with "Since you looked". The explainable
- * shortlist opens over the right column. v6 tokens only; colour is a glyph or a dot, never a fill.
+ * Home (direction A, owner 10 Oct 2026). One hero band, a compact ED strip, then three equal
+ * columns: priority queue, State bedflow and Placement. On a desktop the columns sit flush at one
+ * height, about a window tall, and each scrolls inside itself. v6 tokens only; colour is a glyph or
+ * a dot, never a fill.
  *
  * `.screen` composes the older ward token layers because the shortlist panel inside it still
  * reads them (`coordinator.module.css`, `shortlist-panel.module.css`).
@@ -107,6 +108,20 @@
   text-decoration: underline;
 }
 
+.footButton {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  cursor: pointer;
+}
+
+.footButton:hover {
+  text-decoration: underline;
+}
+
 .headCount {
   color: var(--wf-ink-3);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
@@ -141,6 +156,7 @@
   display: flex;
   min-width: 0;
   border-right: 1px solid var(--wf-line);
+  container-type: inline-size;
 }
 
 .edButton {
@@ -198,22 +214,7 @@
 .edWaitingValue {
   margin-right: 2px;
   color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
-}
-
-.edTrack {
-  display: block;
-  height: 4px;
-  overflow: hidden;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-track);
-}
-
-.edTrack > span {
-  display: block;
-  height: 100%;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-data-1);
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-mono);
 }
 
 .edLine {
@@ -239,6 +240,14 @@
   text-overflow: ellipsis;
 }
 
+/* The word "longest" shows only where every tile has room for it, so no tile reads "longe…". The
+   button's spoken name always says "longest". A container query on .edCell, so all tiles agree. */
+@container (max-width: 8rem) {
+  .edLongest {
+    display: none;
+  }
+}
+
 /* ---------- three columns ---------- */
 
 .grid {
@@ -250,8 +259,61 @@
 }
 
 @media (min-width: 64rem) {
+  /* Three equal columns at one height, a little under a window tall (the shell's rail height less
+     room for the hero), each scrolling inside itself, so the page itself barely scrolls. */
   .grid {
-    grid-template-columns: minmax(0, 314fr) minmax(0, 454fr) minmax(0, 346fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+    height: max(30rem, calc(var(--ward-rail-height, 46rem) - 10rem));
+  }
+
+  .grid > * {
+    min-height: 0;
+  }
+
+  .grid .side {
+    min-height: 0;
+  }
+
+  .grid .side > :only-child,
+  .grid .flowCol > *,
+  .queueCard,
+  .flowCard {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .flowCol {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .queueList {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .flowBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .shortlistColumn {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  /* Placement scrolls inside its own column; its action bar holds to the foot of the column. */
+  .shortlistRegion.shortlistRegion > [data-testid^="ward-shortlist-"],
+  .shortlistRegion.shortlistRegion > [data-testid^="ward-referral-placement"] {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }
 
@@ -320,6 +382,46 @@
 .queueRowSelected {
   background: var(--wf-selected);
   box-shadow: inset 3px 0 0 var(--wf-pri-1);
+}
+
+/* Desktop: overdue is act now, so a thin red edge all round and no fill. The phone is unchanged. */
+@media (min-width: 48.0625rem) {
+  .queueRow[data-overdue="true"] {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-danger) 55%, transparent);
+  }
+
+  .queueRowSelected[data-overdue="true"] {
+    box-shadow:
+      inset 3px 0 0 var(--wf-pri-1),
+      inset 0 0 0 1px color-mix(in srgb, var(--wf-danger) 55%, transparent);
+  }
+
+  /* Words neutral, the glyph carries the tone (v9). */
+  .queueFlag {
+    color: var(--wf-ink-1);
+  }
+}
+
+/* Highlight from the hero: the other rows dim, never hide. They lose their colour and the name
+   steps down to secondary ink, but text keeps full opacity so it still meets 4.5:1 in both themes. */
+.queueRow[data-dim="true"] {
+  filter: grayscale(1);
+}
+
+.queueRow[data-dim="true"] .queueName strong {
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+
+.queueRow[data-dim="true"]:hover,
+.queueRow[data-dim="true"]:focus-visible {
+  filter: none;
+}
+
+.queueRow[data-dim="true"]:hover .queueName strong,
+.queueRow[data-dim="true"]:focus-visible .queueName strong {
+  color: inherit;
+  font-weight: 600;
 }
 
 .queueTier {
@@ -446,6 +548,12 @@
 
 .flowCard {
   min-width: 0;
+}
+
+/* The legend, today's count and Open Capacity share the foot; in a narrow column they wrap. */
+.flowCard .cardFoot {
+  flex-wrap: wrap;
+  row-gap: var(--wf-s-1);
 }
 
 .flowHead {
@@ -624,8 +732,11 @@
 }
 
 .groupFigures {
+  min-width: 0;
   margin-left: auto;
+  overflow: hidden;
   color: var(--wf-ink-2);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1011,6 +1122,19 @@ button.registerRow:hover {
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
 }
 
+/* Placement's Tier 1 pill stays neutral (v9); the queue's tier tile carries the tier. */
+.shortlistHeader ~ * header [data-tier="1"] {
+  border-color: var(--wf-line-3);
+  background: transparent;
+  color: var(--wf-ink-1);
+}
+
+.shortlistPreviewLabel {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
 /* ---------- footer marker ---------- */
 
 .refusalMarker {
@@ -1039,12 +1163,18 @@ button.registerRow:hover {
     display: none;
   }
 
+  /* The desktop's top-of-queue Placement never opens as a phone sheet. */
+  .side[data-preview="true"] {
+    display: none;
+  }
+
   .body {
     padding: var(--wf-s-3);
   }
 
-  /* "Open in Delays" gains an invisible 16px above and below: a 48px tap area, same layout. */
-  .footLink {
+  /* "Open in Delays" and Clear gain an invisible 16px above and below: a 48px tap area, same layout. */
+  .footLink,
+  .footButton {
     display: inline-block;
     margin-block: calc(-1 * var(--wf-s-4));
     padding-block: var(--wf-s-4);
@@ -1151,39 +1281,14 @@ button.registerRow:hover {
 }
 
 .registersBand,
-.flowWide,
 .flowCol {
   min-width: 0;
 }
 
 @media (min-width: 64rem) {
-  /* At rest State bedflow takes the two right columns. With a patient open the shortlist takes
-     the right column and the queue keeps its width. */
-  .flowWide {
-    grid-column: span 2;
-  }
-
-  .grid[data-shortlist-open="true"] {
-    grid-template-columns: minmax(0, 314fr) minmax(0, 400fr) minmax(0, 400fr);
-  }
-
-  /* Wide bedflow: the bed bar takes the spare width so names never truncate. */
-  .flowWide .unitMain {
-    grid-template-columns: minmax(14rem, 16rem) minmax(0, 1fr) 3.5rem;
-  }
-
-  /* Narrow bedflow: the legend drops under the title and the bar shortens so names fit. */
-  .grid[data-shortlist-open="true"] .flowHead {
-    flex-wrap: wrap;
-    row-gap: var(--wf-s-1);
-  }
-
-  .grid[data-shortlist-open="true"] .flowLegend {
-    flex-basis: 100%;
-  }
-
-  .grid[data-shortlist-open="true"] .unitMain {
-    grid-template-columns: minmax(0, 1fr) 3.5rem 3rem;
+  /* Bedflow rows in a third of the width: the bar shortens so ward names fit. */
+  .unitMain {
+    grid-template-columns: minmax(0, 1fr) 2.75rem 2.5rem;
     gap: var(--wf-s-2);
   }
 
@@ -1298,5 +1403,21 @@ button.registerRow:hover {
 
   .sinceCard[data-placement="band"] .cardFoot {
     grid-column: 1;
+  }
+}
+
+/* Print: release the fixed-height columns so every row prints. */
+@media print {
+  .grid {
+    height: auto;
+    grid-template-rows: none;
+  }
+
+  .queueList,
+  .flowBody,
+  .shortlistRegion.shortlistRegion > [data-testid^="ward-shortlist-"],
+  .shortlistRegion.shortlistRegion > [data-testid^="ward-referral-placement"] {
+    max-height: none;
+    overflow: visible;
   }
 }

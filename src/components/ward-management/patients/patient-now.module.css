@@ -5064,7 +5064,8 @@
   align-content: start;
 }
 
-@media (max-width: 1080px) {
+/* Stacks until 1121px, where the side column's `data-wf-rail="1121"` starts pinning it. */
+@media (max-width: 1120px) {
   .gbCols {
     grid-template-columns: minmax(0, 1fr);
   }

@@ -107,10 +107,10 @@ describe("the coordinator screen never keeps a closed movement selected (WF-22)"
       "TARGET must actually be closed after the dispatch, or this test proves nothing about a closed movement",
     ).toHaveTextContent("false");
 
-    // The shortlist region is gone, or no longer names the movement — either reading closes the
-    // gap, so both are checked: no region by that name survives, and nothing anywhere still
-    // carries TARGET's own shortlist body.
-    expect(screen.queryByLabelText("Placement")).not.toBeInTheDocument();
+    // The shortlist no longer names the movement: Placement falls back to the top of the queue
+    // (direction A, owner 10 Oct 2026), labelled so, and nothing anywhere still carries TARGET's
+    // own shortlist body.
+    expect(within(screen.getByLabelText("Placement")).getByTestId("ward-placement-top-of-queue")).toBeInTheDocument();
     expect(screen.queryByTestId(`ward-shortlist-${TARGET!.id}`)).not.toBeInTheDocument();
 
     // No other movement is silently selected — the queue must show no row claiming selection.

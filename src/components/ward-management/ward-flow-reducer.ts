@@ -1740,6 +1740,11 @@ function dischargeBlockingTransit(state: WardFlowState, admission: Admission): M
   );
 }
 
+/** "NUM <ward>" when the ward recorded it, otherwise the role's own label (the coordinator acts too). */
+function recordedByLabel(role: WardFlowRole, unitName: string): string {
+  return role === "ward" ? `NUM ${unitName}` : WARD_FLOW_ROLE_LABELS[role];
+}
+
 function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): WardFlowState {
   const deny = (
     reasonCode: AuditDecision["reasonCode"],
@@ -1785,12 +1790,16 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
     );
   }
 
+  // The coordinator may take every action (Josh, 10 Oct 2026) and acts for no single ward, so it is
+  // scoped by role alone and its unit comes from the admission below.
   const actor = (
-    "actingUnitId" in event
-      ? { role: event.role, actingUnitId: event.actingUnitId }
-      : "actingTeamId" in event
-        ? { role: event.role, actingTeamId: event.actingTeamId }
-        : { role: event.role }
+    event.role === "coordinator"
+      ? { role: event.role }
+      : "actingUnitId" in event
+        ? { role: event.role, actingUnitId: event.actingUnitId }
+        : "actingTeamId" in event
+          ? { role: event.role, actingTeamId: event.actingTeamId }
+          : { role: event.role }
   ) as WardRecordActor;
   if (!validRecordActor(actor)) return deny("scope");
   if (event.type === "OPEN_DISCHARGE_RECORD") {
@@ -1817,8 +1826,9 @@ function reduceRecordEvent(state: WardFlowState, event: ProtectedRecordEvent): W
   const admission = uniqueRecord(state.admissions, event.admissionId);
   const unit = uniqueRecord(
     state.units,
-    (event.type === "RECORD_ADMISSION_FOLLOW_UP" || event.type === "RECORD_ADMISSION_CARE") &&
-      (event.role === "coordinator" || event.role === "community")
+    event.role === "coordinator" ||
+      ((event.type === "RECORD_ADMISSION_FOLLOW_UP" || event.type === "RECORD_ADMISSION_CARE") &&
+        event.role === "community")
       ? admission?.unitId
       : event.actingUnitId,
   );
@@ -5827,7 +5837,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       // PATIENT's own timing (binding spec §4): `expectedAt` is an operational estimate about the
       // BED, the same category `expectedReturn` on `RECORD_LEAVE_BED` already sits in and is
       // already permitted to carry — see that event's own doc comment and `LeaveBed`'s type.
-      const flaggingRole = `NUM ${flaggedUnit.name}`;
+      const flaggingRole = recordedByLabel(event.role, flaggedUnit.name);
       const release: BedRelease = {
         // "WR-9NN" mirrors `nextReferralId`'s own "9" prefix above — visibly distinct at a
         // glance from the hand-authored "WR-00N" fixture ids, same reasoning as
@@ -5979,7 +5989,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const updated: BedRelease = {
         ...release,
         blocker: event.blocker,
-        blockedBy: `NUM ${blockedUnit.name}`,
+        blockedBy: recordedByLabel(event.role, blockedUnit.name),
         confirmedAt: event.now,
       };
       decision.outcome = "accepted";
@@ -6211,7 +6221,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         admissionId: onLeave.id,
         expectedReturn: event.expectedReturn,
         confirmedAt: event.now,
-        confirmedBy: `NUM ${unit.name}`,
+        confirmedBy: recordedByLabel(event.role, unit.name),
         kind: event.kind ?? "off_ward",
       };
       return { ...state, leaveBeds: [...state.leaveBeds, created], leaveBedSequence: sequence };
@@ -6275,7 +6285,7 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
         admissionId: stay.id,
         expectedReturn: event.now,
         confirmedAt: event.now,
-        confirmedBy: `NUM ${unit.name}`,
+        confirmedBy: recordedByLabel(event.role, unit.name),
         kind: "off_ward",
         absentWithoutLeave: absence,
       };
@@ -6323,9 +6333,10 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (patient.communityTreatmentOrder && patient.communityTreatmentOrder.endedAt === undefined) {
         return reject(state, event, `patient ${patient.id} already has a community treatment order recorded`);
       }
-      // The Patient page shows an open placement or stay ahead of a CTO, so an order recorded now
-      // would save unseen. Refuse it until the placement closes or the stay ends.
-      const openStay = state.admissions.some((stay) => stay.patientId === patient.id && stay.state !== "departed");
+      // The Patient page shows an open placement or an occupied stay ahead of a CTO, so an order
+      // recorded now would save unseen. Refuse it until the placement closes or the stay ends. A
+      // waitlisted or pulled stay alone does not count: the page shows that patient as Not active.
+      const openStay = state.admissions.some((stay) => stay.patientId === patient.id && stay.state === "occupied");
       const openPlacement = state.movements.some(
         (movement) => movement.patientId === patient.id && !movement.closure && movement.stage !== "arrived",
       );

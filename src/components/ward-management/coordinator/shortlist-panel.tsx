@@ -5,6 +5,7 @@ import Link from "next/link";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { Fragment, useCallback, useMemo, useState, type Dispatch, type FormEvent } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
+import { StatusGlyph } from "@/components/wf";
 
 import {
   CANCEL_TRANSPORT_REASONS,
@@ -961,7 +962,13 @@ export function ShortlistPanel({
           <div className={shortlistStyles.subjectBadges}>
             {/* Owner, 26 Sept 2026: removed — the header above already names the patient, so a
                 second badge repeating the WF journey number here would show it twice. */}
-            {movement.flaggedUrgent ? <span className={shortlistStyles.urgentBadge}>Urgent</span> : null}
+            {/* Words neutral, the glyph carries the tone (design system v9). */}
+            {movement.flaggedUrgent ? (
+              <span className={shortlistStyles.urgentBadge}>
+                <StatusGlyph tone="danger" size={9} />
+                Urgent
+              </span>
+            ) : null}
             <span className={`${styles.shortlistTierBadge} ${shortlistStyles.tierBadge}`} data-tier={movement.urgency}>
               Tier {movement.urgency}
             </span>
@@ -1323,10 +1330,16 @@ export function ShortlistPanel({
                               data-testid={`ward-shortlist-route-${candidate.unit.id}`}
                             >
                               {/* The same sentence as before; only the drive time shows on a closed row. */}
-                              <span className={shortlistStyles.routeLong}>
-                                {`${route.km} km by road from ${originEd?.siteCode ?? "ED"}, about `}
-                              </span>
-                              {`${route.min} min`}
+                              {route.km === 0 ? (
+                                "Same site"
+                              ) : (
+                                <>
+                                  <span className={shortlistStyles.routeLong}>
+                                    {`${route.km} km by road from ${originEd?.siteCode ?? "ED"}, about `}
+                                  </span>
+                                  {`${route.min} min`}
+                                </>
+                              )}
                             </span>
                           );
                         })()}
