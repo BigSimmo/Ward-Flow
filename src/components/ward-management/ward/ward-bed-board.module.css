@@ -454,15 +454,15 @@
   }
 
   .chip {
-    height: var(--wf-touch, 44px);
+    min-height: 48px;
   }
 
   .say {
-    min-height: var(--wf-touch, 44px);
+    min-height: 48px;
   }
 
   .say button {
-    min-height: var(--wf-touch, 44px);
+    min-height: 48px;
   }
 
   .corridor {
@@ -470,7 +470,7 @@
   }
 
   .soonChip {
-    height: var(--wf-touch, 44px);
+    min-height: 48px;
   }
 
   .foot {

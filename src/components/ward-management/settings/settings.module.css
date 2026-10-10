@@ -1005,7 +1005,7 @@
 }
 
 .phoneSaveBar > :is(a, button) {
-  min-height: var(--wf-touch);
+  min-height: 48px;
 }
 
 /* Inside a tall sheet the area's own cards stack in one column. */

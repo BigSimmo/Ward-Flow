@@ -109,7 +109,7 @@ export function WardBedBoard({
 }: WardBedBoardProps) {
   const isPhone = useIsPhone();
   const pods = podsOf(beds, unit, isMixed);
-  const free = beds.filter((bed) => bed.status === "ready").length;
+  const free = beds.filter((bed) => bed.status === "ready" && bed.heldFor === undefined).length;
   const leavingToday = beds.filter(
     (bed) =>
       bed.status !== "ready" &&
@@ -211,7 +211,7 @@ export function WardBedBoard({
       data-testid="ward-bed-board-plan"
     >
       {pods.map((pod, index) => {
-        const podFree = pod.beds.filter((bed) => bed.status === "ready").length;
+        const podFree = pod.beds.filter((bed) => bed.status === "ready" && bed.heldFor === undefined).length;
         return (
           <div key={pod.id} className={styles.podSlot}>
             {index === 1 ? <div className={styles.corridor} aria-hidden="true" /> : null}
