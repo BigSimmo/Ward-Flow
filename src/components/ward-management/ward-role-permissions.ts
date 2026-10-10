@@ -77,17 +77,6 @@ export const CROSS_ROLE_ALLOWED: readonly CrossRoleAllowance[] = [
     event: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
     reason: `${PATIENT_PAGE} the ward: Record return from ED`,
   },
-  // D-38/D-40 community treatment order on the Patient page, recorded as the community team.
-  {
-    routeRole: "coordinator",
-    event: "RECORD_COMMUNITY_TREATMENT_ORDER",
-    reason: `${PATIENT_PAGE} the community team: Record CTO (D-38)`,
-  },
-  {
-    routeRole: "coordinator",
-    event: "END_COMMUNITY_TREATMENT_ORDER",
-    reason: `${PATIENT_PAGE} the community team: Record ended (D-38)`,
-  },
   // Legal forms board (coordinator route): Mark received is recorded as the ED.
   {
     routeRole: "coordinator",

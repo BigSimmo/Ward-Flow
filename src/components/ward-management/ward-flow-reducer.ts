@@ -6320,6 +6320,19 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (patient.communityTreatmentOrder && patient.communityTreatmentOrder.endedAt === undefined) {
         return reject(state, event, `patient ${patient.id} already has a community treatment order recorded`);
       }
+      // The Patient page shows an open placement or stay ahead of a CTO, so an order recorded now
+      // would save unseen. Refuse it until the placement closes or the stay ends.
+      const openStay = state.admissions.some((stay) => stay.patientId === patient.id && stay.state !== "departed");
+      const openPlacement = state.movements.some(
+        (movement) => movement.patientId === patient.id && !movement.closure && movement.stage !== "arrived",
+      );
+      if (openStay || openPlacement) {
+        return reject(
+          state,
+          event,
+          `patient ${patient.id} has an open placement or stay; record the order once it has closed`,
+        );
+      }
       // D-40: an ended order is kept in `earlier` rather than overwritten, so Documents still lists it.
       const previous = patient.communityTreatmentOrder;
       const earlier =

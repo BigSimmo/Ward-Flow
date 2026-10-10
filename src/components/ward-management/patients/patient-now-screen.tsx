@@ -33,7 +33,7 @@ import { PATIENT_MODES, patientMode } from "./patient-mode";
 import { PatientStatusCard, type PatientStatusContext } from "./patient-status-card";
 import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
   PatientContactsCard,
   PatientLastSeenCard,
@@ -155,6 +155,8 @@ export function PatientNowScreen({
   const now = useWardFlowClock();
   // Feature 11: actions follow the route's role (`ward-role-permissions.ts`, cross-role pairs listed there).
   const gate = useRoleGate();
+  // A CTO is logged under the viewer's own role, never borrowed as the community team's.
+  const routeRole = useRouteRole();
   const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
 
   // `now` is a demo-clock `Instant` (minutes from `dayZero`), not a wall-clock millisecond
@@ -629,11 +631,11 @@ export function PatientNowScreen({
     },
     onRecordCto: () => {
       if (livePatient && gate("RECORD_COMMUNITY_TREATMENT_ORDER").allowed)
-        dispatch({ type: "RECORD_COMMUNITY_TREATMENT_ORDER", role: "community", now, patientId: livePatient.id });
+        dispatch({ type: "RECORD_COMMUNITY_TREATMENT_ORDER", role: routeRole, now, patientId: livePatient.id });
     },
     onEndCto: () => {
       if (livePatient && gate("END_COMMUNITY_TREATMENT_ORDER").allowed)
-        dispatch({ type: "END_COMMUNITY_TREATMENT_ORDER", role: "community", now, patientId: livePatient.id });
+        dispatch({ type: "END_COMMUNITY_TREATMENT_ORDER", role: routeRole, now, patientId: livePatient.id });
     },
     roleLimit: (eventType) => gate(eventType).reason,
     handoverRefusal:

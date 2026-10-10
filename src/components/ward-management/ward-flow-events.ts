@@ -2421,11 +2421,12 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_LEAVE_BED: ["ward"],
   END_LEAVE_BED: ["ward"],
   // Owner approval 9 Oct 2026 (Patient page gate board). An absence is the ward's to record, like
-  // leave. A community treatment order is the community team's.
+  // leave. A community treatment order is the community team's, and the coordinator may record it
+  // from the Patient page (10 Oct 2026), logged under the coordinator's own role.
   RECORD_ABSENT_WITHOUT_LEAVE: ["ward"],
   RECORD_ABSENCE_STEP: ["ward"],
-  RECORD_COMMUNITY_TREATMENT_ORDER: ["community"],
-  END_COMMUNITY_TREATMENT_ORDER: ["community"],
+  RECORD_COMMUNITY_TREATMENT_ORDER: ["community", "coordinator"],
+  END_COMMUNITY_TREATMENT_ORDER: ["community", "coordinator"],
   // The ward the patient is leaving records it. Not the coordinator: a statewide view does not
   // know that somebody walked out of a building, and a coordinator recording a discharge it
   // cannot observe is the shape this project refuses everywhere else.
