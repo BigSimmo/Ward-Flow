@@ -28,7 +28,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
   const [unitA, unitB] = state.units;
   const movements = state.movements.slice(0, 3);
   const referral = state.referrals[0];
-  const admission = state.admissions.find((candidate) => candidate.state === "occupied");
+  const admission = state.admissions[0];
   const actor = (role: WardFlowRole, unitId?: string): AuditActor => ({
     role,
     actingUnitId: role === "ward" && unitId ? unitId : null,
@@ -39,9 +39,8 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
     return movement ? { kind: "movement" as const, movementId: movement.id, patientId: null } : undefined;
   };
   const entries: (AuditEvent | undefined)[] = [];
-  let n = 0;
-  const base = (minutesBefore: number, role: WardFlowRole, unitId?: string) => ({
-    id: `audit-seed-${++n}`,
+  const base = (id: string, minutesBefore: number, role: WardFlowRole, unitId?: string) => ({
+    id,
     sequence: 0,
     generation: state.worldGeneration,
     at: start - minutesBefore,
@@ -51,7 +50,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
 
   if (referral && unitA)
     entries.push({
-      ...base(190, "coordinator"),
+      ...base("audit-seed-referral-override", 190, "coordinator"),
       subject: { kind: "referral", referralId: referral.id, patientId: null },
       outcome: "accepted",
       reasonCode: "none",
@@ -66,7 +65,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
   const legalSubject = movementSubject(0);
   if (legalSubject && unitA)
     entries.push({
-      ...base(160, "ward", unitA.id),
+      ...base("audit-seed-legal-status", 160, "ward", unitA.id),
       subject: legalSubject,
       outcome: "accepted",
       reasonCode: "none",
@@ -81,7 +80,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
   const refusedSubject = movementSubject(1);
   if (refusedSubject && unitB)
     entries.push({
-      ...base(120, "ward", unitB.id),
+      ...base("audit-seed-pull-patient", 120, "ward", unitB.id),
       subject: refusedSubject,
       outcome: "denied",
       reasonCode: "scope",
@@ -95,7 +94,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
     });
   if (admission)
     entries.push({
-      ...base(95, "coordinator"),
+      ...base("audit-seed-admission-access", 95, "coordinator"),
       subject: {
         kind: "admission",
         admissionId: admission.id,
@@ -111,7 +110,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
   const referSubject = movementSubject(2);
   if (referSubject && unitA && unitB)
     entries.push({
-      ...base(70, "coordinator"),
+      ...base("audit-seed-refer-to-units", 70, "coordinator"),
       subject: referSubject,
       outcome: "accepted",
       reasonCode: "none",
@@ -128,7 +127,7 @@ export function syntheticGovernanceAuditEvents(state: WardFlowState): AuditEvent
     });
   if (legalSubject)
     entries.push({
-      ...base(40, "coordinator"),
+      ...base("audit-seed-legal-status-stale", 40, "coordinator"),
       subject: legalSubject,
       outcome: "stale",
       reasonCode: "revision",

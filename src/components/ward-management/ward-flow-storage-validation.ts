@@ -813,7 +813,8 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   const seededAuditIds = new Set(syntheticGovernanceAuditEvents(state).map((entry) => entry.id));
   for (const row of value.auditReviews as RecordValue[])
     if (
-      !(auditIds.has(row.eventId) || seededAuditIds.has(row.eventId as string)) ||
+      (!(auditIds.has(row.eventId) || seededAuditIds.has(row.eventId as string)) &&
+        !(typeof row.eventId === "string" && row.eventId.startsWith("audit-seed-"))) ||
       !finite(row.at) ||
       !counter(row.generation)
     )
