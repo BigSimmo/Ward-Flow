@@ -93,12 +93,10 @@ import styles from "./ward-flow-sign-in-screen.module.css";
  * that invariant is unaffected rather than routed around.
  *
  * ⚠️ **THE APPEARANCE CONTROL KEEPS THE APP'S REAL THEME PREFERENCE.** This standalone screen
- * composes the canonical third-edition Ward token layer, whose explicit light/dark selectors read
- * `data-theme` from the document root. The app's `useTheme()` remains the sole preference owner;
- * the short effect below mirrors its resolved theme into that attribute while this page is mounted
- * and restores the prior value on exit. This makes explicit Light win on a dark machine and lets
- * Auto continue to follow the app's existing media-query subscription without creating a second
- * preference, store or provider.
+ * composes the canonical Ward token layer, whose explicit light/dark selectors read `data-theme`
+ * from the document root. `useTheme()` writes through the app's one theme switch
+ * (`@/lib/theme-client`), which sets `data-theme`, `.dark` and `theme-color` together, so a choice
+ * made here is the same choice the ward screens show after sign-in.
  */
 export function WardFlowSignInScreen() {
   const [chosen, setChosen] = useState<SignInRoleId>(SIGN_IN_ROLES[0].id);
@@ -107,19 +105,8 @@ export function WardFlowSignInScreen() {
   const [tab, setTab] = useState<"actions" | "limits">("actions");
   const [announcement, setAnnouncement] = useState("");
   const [toastOpen, setToastOpen] = useState(false);
-  const { theme, preference, setPreference } = useTheme();
+  const { preference, setPreference } = useTheme();
   const roleGroupId = useId();
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const previousTheme = root.getAttribute("data-theme");
-    root.setAttribute("data-theme", theme);
-
-    return () => {
-      if (previousTheme === null) root.removeAttribute("data-theme");
-      else root.setAttribute("data-theme", previousTheme);
-    };
-  }, [theme]);
 
   const role = roleById(chosen);
   const canDo = useMemo(() => actionsForRole(chosen), [chosen]);

@@ -17,22 +17,23 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
-import { applyAppearance } from "@/components/ward-management/shell/ward-bar";
+import { applyAppearance, applyGlare } from "@/components/ward-management/shell/ward-bar";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { APP_THEME_COLORS } from "@/lib/theme";
+import { APP_THEME_COLORS, GLARE_STORAGE_KEY } from "@/lib/theme";
 
 /**
  * 🔴 **THE APPEARANCE CONTROL, AND THE WHOLE REASON IT WAITED: IT MUST WRITE THE STATE THAT ALREADY
  * EXISTS, NOT A SECOND ONE THAT LOOKS LIKE IT.**
  *
  * The approved drawing scripts this control against `localStorage["ward-flow-settings-appearance"]`.
- * The control that is really built and really wired, in the Tools drawer, uses
- * `"ward-flow-appearance"`. ⚠️ **Built as scripted, the two would silently diverge — while the
- * drawing's own copy tells the reader "changing it here changes it there too".**
+ * The control that is really built and really wired uses the app's one theme preference
+ * (`"clinical-kb-theme"`, owned by `src/lib/theme-client.ts`). ⚠️ **Built as scripted, the two would
+ * silently diverge — while the drawing's own copy tells the reader "changing it here changes it there
+ * too".**
  *
- * 🔴 **AND THE SUBTLER HALF SURVIVES GETTING THE KEY RIGHT.** `applyAppearance` ends by dispatching
- * `ward-flow-appearance-change`; a second writer on the correct key that omits that dispatch updates
+ * 🔴 **AND THE SUBTLER HALF SURVIVES GETTING THE KEY RIGHT.** The one writer ends by dispatching
+ * `clinical-kb-theme-change`; a second writer on the correct key that omits that dispatch updates
  * its own screen and leaves the Tools control showing the old value until a reload. **Two controls
  * disagreeing inside one session with the stored value correct underneath.**
  *
@@ -59,6 +60,7 @@ afterEach(() => {
   // Leave the document as we found it — this store writes to a real `documentElement` and a real
   // `localStorage`, both shared by every test in this file and every file after it.
   applyAppearance("auto");
+  applyGlare(false);
   window.localStorage.clear();
 });
 
@@ -82,9 +84,14 @@ describe("the settings screen's appearance control", () => {
 
     fireEvent.click(within(panel).getByRole("radio", { name: "Dark" }));
 
-    expect(window.localStorage.getItem("ward-flow-appearance"), "the real key was not written").toBe("dark");
+    expect(window.localStorage.getItem("clinical-kb-theme"), "the real key was not written").toBe("dark");
     expect(window.localStorage.getItem("ward-flow-settings-appearance"), "a second key was written").toBeNull();
+    expect(window.localStorage.getItem("ward-flow-appearance"), "the retired ward key was written").toBeNull();
     expect(themeAttribute(), "the theme the whole app branches on did not change").toBe("dark");
+    expect(
+      document.documentElement.classList.contains("dark"),
+      "the legacy layers were left on the other theme (one switch)",
+    ).toBe(true);
   });
 
   it("moves the .dark class with the choice, so both theme layers agree", () => {
@@ -107,7 +114,12 @@ describe("the settings screen's appearance control", () => {
     expect(root.classList.contains("dark"), ".dark left on with Light chosen").toBe(false);
   });
 
-  it("hands the root back when the ward shell unmounts", () => {
+  /**
+   * ✅ **ONE APP-WIDE THEME.** The ward used to hand the root back on unmount because its pin was
+   * ward-only. With one key for the whole app, a page outside Ward Flow shows the same choice, so
+   * unmounting the shell must keep it.
+   */
+  it("keeps the one app-wide theme when the ward shell unmounts", () => {
     const { unmount } = render(
       <WardFlowProvider>
         <WardRail />
@@ -117,7 +129,7 @@ describe("the settings screen's appearance control", () => {
     expect(themeAttribute()).toBe("dark");
 
     unmount();
-    expect(themeAttribute(), "the ward theme stayed on a page outside Ward Flow").toBeNull();
+    expect(themeAttribute(), "leaving Ward Flow dropped the app-wide theme").toBe("dark");
   });
 
   /**
@@ -132,10 +144,11 @@ describe("the settings screen's appearance control", () => {
     const panel = screen.getByTestId("ward-settings-appearance");
 
     fireEvent.click(within(panel).getByRole("radio", { name: "Light" }));
-    expect(window.localStorage.getItem("ward-flow-appearance")).toBe("light");
+    expect(window.localStorage.getItem("clinical-kb-theme")).toBe("light");
+    expect(document.documentElement.classList.contains("dark"), "a light pin left .dark on").toBe(false);
 
     fireEvent.click(within(panel).getByRole("radio", { name: "Auto" }));
-    expect(window.localStorage.getItem("ward-flow-appearance"), "auto was stored as a value").toBeNull();
+    expect(window.localStorage.getItem("clinical-kb-theme"), "auto was stored as a value").toBeNull();
     expect(themeAttribute(), "data-theme survived a return to auto").toBeNull();
   });
 
@@ -187,5 +200,42 @@ describe("the settings screen's appearance control", () => {
     renderSettings();
     expect(screen.getByTestId("ward-settings-appearance")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-settings-not-yet-here"), "the screen apologises for a control it has").toBeNull();
+  });
+});
+
+describe("the settings screen's Glare mode switch", () => {
+  function glareSwitch() {
+    return within(screen.getByTestId("ward-settings-glare")).getByRole("switch", { name: "Glare mode" });
+  }
+
+  it("sits beside the theme control with its plain hint", () => {
+    renderSettings();
+    const row = screen.getByTestId("ward-settings-glare");
+    expect(within(row).getAllByText("Glare mode").length, "no visible Glare mode label").toBeGreaterThan(0);
+    expect(within(row).getByText("Stronger contrast for bright rooms")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-settings-appearance").nextElementSibling).toBe(row);
+    expect(glareSwitch().getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("turns Glare mode on and off through its own key, leaving the theme alone", () => {
+    renderSettings();
+    fireEvent.click(within(screen.getByTestId("ward-settings-appearance")).getByRole("radio", { name: "Dark" }));
+
+    fireEvent.click(glareSwitch());
+    expect(document.documentElement.getAttribute("data-mode"), "Glare did not reach the root").toBe("glare");
+    expect(window.localStorage.getItem(GLARE_STORAGE_KEY)).toBe("on");
+    expect(glareSwitch().getAttribute("aria-checked")).toBe("true");
+    expect(window.localStorage.getItem("clinical-kb-theme"), "Glare changed the theme choice").toBe("dark");
+
+    fireEvent.click(glareSwitch());
+    expect(document.documentElement.hasAttribute("data-mode"), "Glare stayed on after off").toBe(false);
+    expect(window.localStorage.getItem(GLARE_STORAGE_KEY)).toBeNull();
+    expect(glareSwitch().getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("follows a Glare change made from anywhere else", () => {
+    renderSettings();
+    act(() => applyGlare(true));
+    expect(glareSwitch().getAttribute("aria-checked"), "the switch did not follow the store").toBe("true");
   });
 });

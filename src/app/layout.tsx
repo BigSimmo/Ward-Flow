@@ -2,7 +2,14 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { cookies, headers } from "next/headers";
 import { resolveMetadataBase } from "@/lib/metadata-base";
-import { APP_THEME_COLORS, THEME_BOOTSTRAP_SCRIPT, THEME_COOKIE_NAME } from "@/lib/theme";
+import {
+  APP_THEME_COLORS,
+  GLARE_BOOTSTRAP_SCRIPT,
+  GLARE_COOKIE_NAME,
+  GLARE_ON_VALUE,
+  THEME_BOOTSTRAP_SCRIPT,
+  THEME_COOKIE_NAME,
+} from "@/lib/theme";
 import { AppAnnouncements } from "@/components/app-announcements";
 import { OverlayRoot } from "@/components/ui/overlay-root";
 import { PRIVATE_APP_ROBOTS_METADATA } from "@/lib/crawler-policy";
@@ -41,7 +48,9 @@ const baseMetadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: BRAND_NAME,
-    statusBarStyle: "black-translucent",
+    // "default" lets iOS pick status bar text that reads on the page. "black-translucent" forced
+    // white text, which disappeared on the light theme.
+    statusBarStyle: "default",
   },
 };
 
@@ -92,18 +101,25 @@ export default async function RootLayout({
   const clinicalTheme = cookieStore.get(THEME_COOKIE_NAME)?.value;
   const isDark = clinicalTheme === "dark";
   const themeClass = isDark ? "dark" : "";
+  // A pinned theme is painted on the server too, so the tokens that follow data-theme and the legacy
+  // .dark layers agree from the first byte. Glare mode is painted the same way.
+  const pinnedTheme = clinicalTheme === "light" || clinicalTheme === "dark" ? clinicalTheme : undefined;
+  const glareMode = cookieStore.get(GLARE_COOKIE_NAME)?.value === GLARE_ON_VALUE ? "glare" : undefined;
 
   return (
     <html
       lang="en-AU"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased ckb-v2 ${themeClass}`}
+      data-theme={pinnedTheme}
+      data-mode={glareMode}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {/* Applies the resolved theme before first paint on every route (standalone
             pages don't mount useTheme, and hydration-time toggling flashes light).
             Mirrors resolveThemePreference in src/lib/theme.ts: stored choice wins,
-            otherwise the OS preference. Key must match use-theme.ts. The second
+            otherwise the OS preference. Keys must match src/lib/theme-client.ts.
+            The Glare block applies data-mode="glare" the same way. The last
             block applies the density/motion preferences (keys must match
             use-app-preferences.ts) so an opted-in choice never flashes in.
             Its catch swallows deliberately (see the inline note): this runs
@@ -116,7 +132,7 @@ export default async function RootLayout({
           // read it), which reads as a hydration mismatch on this attribute.
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
-            __html: `${THEME_BOOTSTRAP_SCRIPT}(function(){try{var p=JSON.parse(localStorage.getItem("clinical-kb-preferences")||"{}");if(p&&typeof p==="object"){if(p.density==="compact"||p.density==="spacious"){document.documentElement.setAttribute("data-density",p.density);}if(p.motion==="reduced"||p.motion==="full"){document.documentElement.setAttribute("data-motion",p.motion);}}}catch(e){/* storage blocked or stored preferences JSON corrupt - the default density/motion apply */}})();`,
+            __html: `${THEME_BOOTSTRAP_SCRIPT}${GLARE_BOOTSTRAP_SCRIPT}(function(){try{var p=JSON.parse(localStorage.getItem("clinical-kb-preferences")||"{}");if(p&&typeof p==="object"){if(p.density==="compact"||p.density==="spacious"){document.documentElement.setAttribute("data-density",p.density);}if(p.motion==="reduced"||p.motion==="full"){document.documentElement.setAttribute("data-motion",p.motion);}}}catch(e){/* storage blocked or stored preferences JSON corrupt - the default density/motion apply */}})();`,
           }}
         />
         <a

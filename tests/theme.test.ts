@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   APP_THEME_COLORS,
+  GLARE_BOOTSTRAP_SCRIPT,
+  GLARE_COOKIE_NAME,
+  GLARE_ON_VALUE,
+  GLARE_STORAGE_KEY,
+  LEGACY_WARD_APPEARANCE_KEY,
   nextTheme,
+  readGlareCookie,
   readThemeCookie,
   readThemePreference,
   resolveThemePreference,
@@ -110,42 +116,136 @@ describe("theme helpers", () => {
     expect(setAttribute).toHaveBeenCalledWith("content", APP_THEME_COLORS.dark);
   });
 
-  describe("the ward appearance pin", () => {
-    function boot(pathname: string, stored: Record<string, string>, prefersDark: boolean) {
-      const classes = new Set<string>();
-      const attributes = new Map<string, string>();
-      const run = new Function("localStorage", "window", "document", THEME_BOOTSTRAP_SCRIPT);
-      run(
-        { getItem: (key: string) => stored[key] ?? null },
-        { location: { pathname }, matchMedia: () => ({ matches: prefersDark }) },
-        {
-          cookie: "",
-          documentElement: {
-            classList: { toggle: (name: string, on: boolean) => (on ? classes.add(name) : classes.delete(name)) },
-            setAttribute: (name: string, value: string) => attributes.set(name, value),
+  /** A fake <html> and storage, enough to run the pre-paint script end to end. */
+  function fakePage({ store = {} as Record<string, string>, prefersDark = false } = {}) {
+    const attributes = new Map<string, string>();
+    const classes = new Set<string>();
+    const listeners: Array<() => void> = [];
+    const metas = [
+      {
+        content: "",
+        setAttribute(_: string, value: string) {
+          this.content = value;
+        },
+      },
+    ];
+    const media = { matches: prefersDark, addEventListener: (_: string, fn: () => void) => listeners.push(fn) };
+    const page = {
+      store,
+      attributes,
+      classes,
+      metas,
+      media,
+      fireOsChange(dark: boolean) {
+        media.matches = dark;
+        listeners.forEach((fn) => fn());
+      },
+      run() {
+        new Function("localStorage", "window", "document", THEME_BOOTSTRAP_SCRIPT)(
+          {
+            getItem: (key: string) => store[key] ?? null,
+            setItem: (key: string, value: string) => (store[key] = value),
+            removeItem: (key: string) => delete store[key],
           },
-          querySelectorAll: () => [],
+          { matchMedia: () => media },
+          {
+            cookie: "",
+            documentElement: {
+              classList: { toggle: (name: string, on: boolean) => (on ? classes.add(name) : classes.delete(name)) },
+              setAttribute: (name: string, value: string) => attributes.set(name, value),
+              removeAttribute: (name: string) => attributes.delete(name),
+              getAttribute: (name: string) => attributes.get(name) ?? null,
+            },
+            querySelectorAll: () => metas,
+          },
+        );
+      },
+    };
+    return page;
+  }
+
+  it("pins data-theme, .dark and theme-color together before paint", () => {
+    const page = fakePage({ store: { [THEME_STORAGE_KEY]: "light" }, prefersDark: true });
+    page.run();
+    expect(page.attributes.get("data-theme")).toBe("light");
+    expect(page.classes.has("dark")).toBe(false);
+    expect(page.metas[0].content).toBe(APP_THEME_COLORS.light);
+  });
+
+  it("follows the OS with no data-theme when nothing is pinned, and keeps following it", () => {
+    const page = fakePage({ prefersDark: false });
+    page.run();
+    expect(page.attributes.has("data-theme")).toBe(false);
+    expect(page.classes.has("dark")).toBe(false);
+    page.fireOsChange(true);
+    expect(page.classes.has("dark"), "Auto did not follow the OS change").toBe(true);
+    expect(page.metas[0].content).toBe(APP_THEME_COLORS.dark);
+  });
+
+  it("leaves a pin alone when the OS changes", () => {
+    const page = fakePage({ store: { [THEME_STORAGE_KEY]: "light" } });
+    page.run();
+    page.fireOsChange(true);
+    expect(page.classes.has("dark")).toBe(false);
+    expect(page.attributes.get("data-theme")).toBe("light");
+  });
+
+  it("moves a ward pin made before the one key into it, once, and deletes the old key", () => {
+    const page = fakePage({ store: { [LEGACY_WARD_APPEARANCE_KEY]: "dark" } });
+    page.run();
+    expect(page.store[THEME_STORAGE_KEY]).toBe("dark");
+    expect(page.store[LEGACY_WARD_APPEARANCE_KEY]).toBeUndefined();
+    expect(page.attributes.get("data-theme")).toBe("dark");
+    expect(page.classes.has("dark")).toBe(true);
+  });
+
+  it("lets the app key win over a stale ward key", () => {
+    const page = fakePage({ store: { [THEME_STORAGE_KEY]: "light", [LEGACY_WARD_APPEARANCE_KEY]: "dark" } });
+    page.run();
+    expect(page.attributes.get("data-theme")).toBe("light");
+  });
+
+  describe("the Glare mode pre-paint script", () => {
+    function bootGlare({ stored = null as string | null, cookie = "", throws = false } = {}) {
+      const attributes = new Map<string, string>();
+      new Function("localStorage", "document", GLARE_BOOTSTRAP_SCRIPT)(
+        {
+          getItem: (key: string) => {
+            if (throws) throw new DOMException("Blocked", "SecurityError");
+            return key === GLARE_STORAGE_KEY ? stored : null;
+          },
+        },
+        {
+          cookie,
+          documentElement: {
+            setAttribute: (name: string, value: string) => attributes.set(name, value),
+            removeAttribute: (name: string) => attributes.delete(name),
+            getAttribute: (name: string) => attributes.get(name) ?? null,
+          },
         },
       );
-      return { dark: classes.has("dark"), dataTheme: attributes.get("data-theme") ?? null };
+      return attributes.get("data-mode") ?? null;
     }
 
-    it("paints a ward page in the ward choice, over the clinical one", () => {
-      const stored = { "ward-flow-appearance": "dark", [THEME_STORAGE_KEY]: "light" };
-      expect(boot("/mockups/ward-flow/hub", stored, false)).toEqual({ dark: true, dataTheme: "dark" });
+    it("paints data-mode=glare before first paint when it is stored on", () => {
+      expect(bootGlare({ stored: GLARE_ON_VALUE })).toBe("glare");
     });
 
-    it("follows the OS on a ward page with no ward choice, as WardRail does", () => {
-      expect(boot("/mockups/ward-flow", { [THEME_STORAGE_KEY]: "dark" }, false)).toEqual({
-        dark: false,
-        dataTheme: null,
-      });
+    it("leaves data-mode off when nothing is stored", () => {
+      expect(bootGlare()).toBeNull();
     });
 
-    it("leaves other pages, including sign-in, to the clinical choice", () => {
-      const stored = { "ward-flow-appearance": "dark", [THEME_STORAGE_KEY]: "light" };
-      expect(boot("/mockups/ward-flow-sign-in", stored, true)).toEqual({ dark: false, dataTheme: null });
-      expect(boot("/", stored, true)).toEqual({ dark: false, dataTheme: null });
+    it("falls back to the cookie when storage is empty or blocked", () => {
+      expect(bootGlare({ cookie: `a=1; ${GLARE_COOKIE_NAME}=${GLARE_ON_VALUE}` })).toBe("glare");
+      expect(bootGlare({ throws: true, cookie: `${GLARE_COOKIE_NAME}=${GLARE_ON_VALUE}` })).toBe("glare");
+      expect(bootGlare({ throws: true })).toBeNull();
+    });
+
+    it("reads the Glare cookie the server layout paints from", () => {
+      expect(readGlareCookie(`${GLARE_COOKIE_NAME}=${GLARE_ON_VALUE}`)).toBe(true);
+      expect(readGlareCookie(`x=1; ${GLARE_COOKIE_NAME}=${GLARE_ON_VALUE}; y=2`)).toBe(true);
+      expect(readGlareCookie(`${GLARE_COOKIE_NAME}=off`)).toBe(false);
+      expect(readGlareCookie("")).toBe(false);
     });
   });
 });

@@ -18,7 +18,12 @@ import {
 } from "lucide-react";
 
 import { useWardAccessibilityPreference } from "@/components/ward-management/shell/ward-accessibility";
-import { applyAppearance, useAppearanceStore } from "@/components/ward-management/shell/ward-bar";
+import {
+  applyAppearance,
+  applyGlare,
+  useAppearanceStore,
+  useGlareStore,
+} from "@/components/ward-management/shell/ward-bar";
 import { setRailOpenPreference, useRailOpenStore } from "@/components/ward-management/shell/ward-rail";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
@@ -235,6 +240,7 @@ function readTabFromHash(): SettingsTab | null {
 
 export function SettingsScreen() {
   const appearance = useAppearanceStore();
+  const glare = useGlareStore();
   const railOpen = useRailOpenStore();
   const { movements, dispatch, rejections, configuration, eventLog = [], readAuditEvents } = useWardFlow();
   const now = useWardFlowClock();
@@ -438,6 +444,7 @@ export function SettingsScreen() {
     setAudioBuzz(true);
     setAudioBuzzPreference(true);
     applyAppearance("auto");
+    applyGlare(false);
     setRailOpenPreference(true);
     setIsResetModalOpen(false);
     showToast("Defaults restored and recorded.");
@@ -1109,6 +1116,11 @@ export function SettingsScreen() {
             onAppearanceChange={(next) => {
               applyAppearance(next);
               showToast(`Theme set to ${next === "auto" ? "Auto" : next === "dark" ? "Dark" : "Light"}.`);
+            }}
+            glare={glare}
+            onGlareChange={(next) => {
+              applyGlare(next);
+              showToast(`Glare mode ${next ? "on" : "off"}.`);
             }}
             railOpen={railOpen}
             onRailChange={(open) => {
