@@ -5,7 +5,6 @@ import {
   useEffect,
   useId,
   useRef,
-  useState,
   type ComponentPropsWithoutRef,
   type ElementType,
   type PointerEvent as ReactPointerEvent,
@@ -619,7 +618,10 @@ export type ScrollRowProps = Omit<ComponentPropsWithoutRef<"div">, "children"> &
   rowClassName?: string;
 };
 
-type FadeState = { start: boolean; end: boolean };
+function setFlag(element: HTMLElement, key: "fadeStart" | "fadeEnd", on: boolean) {
+  if (on) element.dataset[key] = "true";
+  else delete element.dataset[key];
+}
 
 /**
  * A horizontal row of chips or tabs that scrolls sideways and never wraps. Each edge fades only
@@ -628,17 +630,19 @@ type FadeState = { start: boolean; end: boolean };
  * caller can give it a role and a name.
  */
 export function ScrollRow({ children, className, rowClassName, ...rest }: ScrollRowProps) {
+  const frameRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
-  const [fade, setFade] = useState<FadeState>({ start: false, end: false });
 
+  // The fade flags are written straight onto the frame, so scrolling never re-renders the row.
   const measure = useCallback(() => {
+    const frame = frameRef.current;
     const row = rowRef.current;
-    if (!row) return;
+    if (!frame || !row) return;
     const max = row.scrollWidth - row.clientWidth;
     // Right to left rows report a negative scrollLeft; the start edge is the right one there.
     const at = Math.abs(row.scrollLeft);
-    const next = { start: max > 1 && at > 1, end: max > 1 && at < max - 1 };
-    setFade((previous) => (previous.start === next.start && previous.end === next.end ? previous : next));
+    setFlag(frame, "fadeStart", max > 1 && at > 1);
+    setFlag(frame, "fadeEnd", max > 1 && at < max - 1);
   }, []);
 
   useEffect(() => {
@@ -657,11 +661,7 @@ export function ScrollRow({ children, className, rowClassName, ...rest }: Scroll
   }, [measure, children]);
 
   return (
-    <div
-      className={cx(styles.scrollRow, className)}
-      data-fade-start={fade.start ? "true" : undefined}
-      data-fade-end={fade.end ? "true" : undefined}
-    >
+    <div ref={frameRef} className={cx(styles.scrollRow, className)}>
       <div ref={rowRef} className={cx(styles.scrollTrack, rowClassName)} {...rest}>
         {children}
       </div>
