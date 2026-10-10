@@ -596,7 +596,23 @@ function PersonPanel({
           Journey
         </Link>
       </div>
+      {/* Q-12: delays with no named person are never dropped, so the note stays while a person is open. */}
+      <section aria-label="Delays with no named person" className={styles.personSystem}>
+        <NoStatewideDelays />
+      </section>
     </section>
+  );
+}
+
+function NoStatewideDelays() {
+  return (
+    <p className={styles.empty}>
+      <Glyph tone="success" />
+      <span>
+        <b>No statewide delays recorded.</b> This model records delays only against a movement. Ward-wide closures and
+        transport outages are not represented as patient movements yet.
+      </span>
+    </p>
   );
 }
 
@@ -849,13 +865,7 @@ function Registers({
           className={styles.regList}
         >
           <section aria-label="Delays with no named person" className={styles.system} data-ward-primitive="panel">
-            <p className={styles.empty}>
-              <Glyph tone="success" />
-              <span>
-                <b>No statewide delays recorded.</b> This model records delays only against a movement. Ward-wide
-                closures and transport outages are not represented as patient movements yet.
-              </span>
-            </p>
+            <NoStatewideDelays />
             <button
               type="button"
               className={styles.chip}
