@@ -267,6 +267,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "CONFIRM_MORNING_ROLLUP",
   "ACKNOWLEDGE_BROADCAST_ALERT",
   "STAND_DOWN_BROADCAST_ALERT",
+  // Global alerts, 10 Oct 2026: ids, enums, a whole number of beds and instants only.
+  "RAISE_PULL_NOW",
+  "REPLY_BROADCAST_ALERT",
   // Stream D, 9 Oct 2026: `plannedAdmissionId`/`unitId`/`actingUnitId` are ids, `reason` and
   // `legalStatus` are closed unions membership-checked by the reducer, and the rest are numbers or
   // instants. No initials or other typed text travels on these three. `CHANGE_PLANNED_ADMISSION`'s

@@ -5237,7 +5237,7 @@ function otherDepartureDestinations(departures: readonly Admission[]): string {
 
 /**
  * Display labels only — never the picker's own option set. Duplicated from
- * `referral-intake.tsx`'s own (unexported) `SOURCE_LABELS`, the third time this repository has
+ * the retired intake form's own (unexported) `SOURCE_LABELS`, the third time this repository has
  * made that trade rather than export a form-picker's private map for a read-only screen to import;
  * `community-vocabulary.ts`'s own near-identical duplication note records the same reasoning. A
  * source missing from this map still renders, as its own raw value, via the `??` fallback below.
@@ -5245,7 +5245,6 @@ function otherDepartureDestinations(departures: readonly Admission[]): string {
 const REFERRAL_SOURCE_LABELS: Record<Referral["source"], string> = {
   community: "Community",
   crisis_service: "Crisis service",
-  police: "Police",
   ambulance: "Ambulance",
   inter_hospital: "Inter-hospital",
   // The owner's own words, 2026-09-06, quoted rather than paraphrased: "ED medical staff will

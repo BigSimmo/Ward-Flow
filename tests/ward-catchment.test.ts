@@ -428,7 +428,7 @@ describe("ward-catchment — a catchment is a SET", () => {
  *
  * Found in a browser on 2026-09-11, not inferred: the destination picker on the referral intake
  * screen was showing a coordinator literal backticks — *"names `Kwinana` as the approved
- * hospital"*. `referral-intake.tsx:1947` renders a catchment note as plain `{expression}` text
+ * hospital"*. The intake form (`referral-intake.tsx`, since retired) rendered a catchment note as plain `{expression}` text
  * inside a `<p>`. There is no markdown component and no `dangerouslySetInnerHTML` anywhere on
  * that path, so punctuation written as markup is never interpreted and reaches the screen exactly
  * as typed.

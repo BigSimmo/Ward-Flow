@@ -1686,8 +1686,8 @@ describe("ReferralMatchView — structural vs operational gap", () => {
  *  rendering believes it is eligible and shows an Accept button for it. The live provider's real
  *  internal unit list is untouched, so `ACCEPT_REFERRAL`'s own `referralEligibility` check (inside
  *  the reducer) still sees the real forensic bed and refuses — proving the reducer validates
- *  independently of what the UI believes, the same property `referral-intake.tsx`'s own rejection
- *  test proves for `RECEIVE_REFERRAL`. */
+ *  independently of what the UI believes, the same property the reducer's own rejection tests
+ *  prove for `RECEIVE_REFERRAL`. */
 function RaiseAndReviewForensicHarness() {
   const { referrals, units, now, dispatch, rejections } = useWardFlow();
   const created = referrals.find((referral) => referral.id === "RF-901");
@@ -1714,7 +1714,7 @@ function RaiseAndReviewForensicHarness() {
             ],
             homeRegion: "Kimberley",
             suburb: { kind: "named", name: "Broome" },
-            source: "police",
+            source: "ambulance",
             urgency: 2,
             originSiteCode: "BRM",
             transportNeeded: false,

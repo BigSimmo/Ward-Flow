@@ -160,20 +160,23 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     const queue = page.getByRole("region", { name: "Priority queue" });
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
-    // Before selection, the diagram header reports the fixture's ward count and
-    // the shortlist is absent. Selecting a row mounts the matching shortlist.
+    // Before selection, the diagram header reports the fixture's ward count.
     // 2026-10-07 (v6 Home): the State bedflow card head reads "22 wards", as the v6 Home mockup
     // draws it; the count itself is still the fixture's own `allUnits().length`.
-    await expect(shortlist).toHaveCount(0);
     await expect(
       page
         .getByRole("region", { name: "State Bedflow", exact: true })
         .getByText(`${allUnits().length} wards`, { exact: true }),
     ).toBeVisible();
 
+    // Home direction A (Josh, 10 Oct 2026): at rest on desktop, Placement previews the top of the
+    // queue, labelled "Top of queue", with no row pressed. Selecting a row makes it the subject.
     const rows = queue.locator('[data-testid^="ward-queue-row-"]');
     const firstRow = rows.first();
     const firstId = (await firstRow.getAttribute("data-testid"))?.replace("ward-queue-row-", "");
+    await expect(shortlist).toHaveAttribute("data-subject-movement", String(firstId));
+    await expect(shortlist.getByTestId("ward-placement-top-of-queue")).toBeVisible();
+    await expect(firstRow).toHaveAttribute("aria-pressed", "false");
     await firstRow.click();
     await expect(firstRow).toHaveAttribute("aria-pressed", "true");
     await expect(shortlist).toHaveAttribute("data-subject-movement", String(firstId));
@@ -487,8 +490,16 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // no ward), so allUnits() on the seed returns 22 units, counted from the seed, not assumed.
     await expect(diagram.locator('[data-testid^="ward-diagram-unit-"]')).toHaveCount(22);
 
-    // No movement is selected yet, so nothing is routed.
-    await expect(diagram.locator('[data-routed="true"]')).toHaveCount(0);
+    // No movement is selected yet. Home direction A (Josh, 10 Oct 2026): the bedflow then routes
+    // the top-of-queue preview, the same patient Placement shows at rest.
+    const topId = (
+      await page
+        .getByRole("region", { name: "Priority queue" })
+        .locator('[data-testid^="ward-queue-row-"]')
+        .first()
+        .getAttribute("data-testid")
+    )?.replace("ward-queue-row-", "");
+    await assertRoutedMatchesShortlist(diagram, String(topId));
     // Removed with Josh's approval on 7 Oct 2026, v6 Home bedflow: the v6 State bedflow draws no connectors or department nodes.
     // (Was: ten demand connectors, department to hub, and zero route connectors by `data-connector-kind`.)
 

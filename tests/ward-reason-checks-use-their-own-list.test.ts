@@ -32,6 +32,8 @@ const REDUCERS = [
   // Stream A, 9 Oct 2026: SNOOZE_INBOX_ITEM's membership check lives in the inbox reducer it
   // delegates to, not in the main switch — scan both so a missing check cannot hide there.
   "src/components/ward-management/ward-inbox-reducer.ts",
+  // Global alerts (10 Oct 2026): REPLY_BROADCAST_ALERT's check lives in the broadcast reducer.
+  "src/components/ward-management/alerts/ward-broadcast-reducer.ts",
 ] as const;
 const EVENTS = "src/components/ward-management/ward-flow-events.ts";
 

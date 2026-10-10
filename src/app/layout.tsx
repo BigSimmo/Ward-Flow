@@ -9,6 +9,7 @@ import { PRIVATE_APP_ROBOTS_METADATA } from "@/lib/crawler-policy";
 import { BRAND_DESCRIPTION, BRAND_NAME } from "@/lib/brand";
 import "./globals.css";
 import "./ward-flow-v6-tokens.css";
+import "./ward-flow-v9-tokens.css";
 
 const geistSans = localFont({
   src: "../fonts/geist-latin.woff2",

@@ -36,6 +36,7 @@ import {
   type AlertSubject,
 } from "./alerts-model";
 import { DeclineLadder, WaitTrack, type TrackPoint } from "./alerts-visuals";
+import { PullNowButton } from "./global-alert-panels";
 import styles from "./alerts.module.css";
 
 export type AlertDetailHandlers = {
@@ -292,6 +293,7 @@ export function AlertDetail({
           </div>
         )}
         <div className={styles.actionRow}>
+          {movement ? <PullNowButton movement={movement} /> : null}
           <Button
             size="sm"
             icon={mine ? Check : UserRound}

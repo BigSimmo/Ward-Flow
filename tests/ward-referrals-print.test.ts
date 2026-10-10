@@ -143,14 +143,13 @@ describe("Ward referrals — every card container resets its dark-theme backgrou
     // per-option cards (`.destinationOption`, and `.destinationName` which is both the card's label
     // and its text). Every one carries its own explicit background and printed as a near-black
     // island until this fix.
-    // `.fieldCard`, `.destinationOption` and `.destinationName` left with the full-page referral form
-    // when it was retired on 8 Oct 2026; their rules went with it.
+    // `.fieldCard`, `.choiceCard`, `.destinationOption` and `.destinationName` left with the
+    // full-page referral form when it was retired on 8 Oct 2026; their rules went with it.
     for (const selector of [
       ".section",
       ".card",
       ".matchPanel",
       ".bandGroup",
-      ".choiceCard",
       ".choiceOption",
       ".matchRowAccepts",
       ".matchRowDeclines",
@@ -171,7 +170,6 @@ describe("Ward referrals — every card container resets its dark-theme backgrou
     const block = printBlockWithoutComments();
     for (const selector of [
       ".rejection",
-      ".confirmation",
       ".structuralGap",
       ".noBedAccepts",
       ".waitBadge",
@@ -236,12 +234,11 @@ describe("Ward referrals — every muted or themed text selector gets CanvasText
       // `.fieldNote`, `.destinationNote` and `.destinationFact` are the muted sentences that say
       // which team the catchment table names, how many units accept, and why an option is offered.
       // The intake-only ones (`.destinationName`, `.fieldNote`, `.destinationNote`, `.destinationFact`)
-      // left with that form on 8 Oct 2026, and their rules went with it.
+      // left with that form on 8 Oct 2026, and their rules went with it, as did `.confirmation`.
       // Each uses `--text-muted` or `--text-heading`, pale grey-blue in the dark theme whatever
       // `color-scheme` says.
       ".choiceOption",
       ".rejection",
-      ".confirmation",
       ".structuralGap",
       ".noBedAccepts",
       ".waitBadge",

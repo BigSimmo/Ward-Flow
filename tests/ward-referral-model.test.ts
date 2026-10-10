@@ -238,7 +238,6 @@ describe("front-door contract — fixed lists", () => {
     expect(REFERRAL_SOURCES).toEqual([
       "community",
       "crisis_service",
-      "police",
       "ambulance",
       "inter_hospital",
       "ed_medical",
@@ -647,6 +646,11 @@ describe("front-door contract — an ED may close to all admissions, never refus
     DISPATCH_BROADCAST_ALERT: false,
     ACKNOWLEDGE_BROADCAST_ALERT: false,
     STAND_DOWN_BROADCAST_ALERT: false,
+    // Global alerts (10 Oct 2026). Raising asks wards to pull sooner. A ward's "Can't" answers
+    // when it can pull, never whether: it leaves the acceptance and the referral as they were, and
+    // no ED can send either event.
+    RAISE_PULL_NOW: false,
+    REPLY_BROADCAST_ALERT: false,
     UPDATE_EXPECTED_DISCHARGE: false,
     // Stream D: a booking concerns a ward's own plan; none of these refuses a named person.
     BOOK_PLANNED_ADMISSION: false,
@@ -1806,9 +1810,9 @@ describe("the patient link is a pointer, and the guard still refuses everything 
   /**
    * ⚠️ THE THIRD STATE, ASSERTED AGAINST THE REDUCER ITSELF, NOT THROUGH THE SCREEN.
    *
-   * `referral-intake.tsx` now refuses at load — before a clinician answers a single question —
-   * when the `?patientId=` in the URL names nobody, so this exact reducer guard is no longer
-   * reachable through ordinary use of that screen. An unreachable guard is exactly what somebody
+   * The referral slide-out ignores a `?patientId=` that names nobody (`referral-sheet-link.ts`,
+   * checked against the record before use), so this exact reducer guard is not reachable through
+   * ordinary use of that screen. An unreachable guard is exactly what somebody
    * deletes six months later after grepping for callers, so this test dispatches
    * `RECEIVE_REFERRAL` directly with an id naming nobody and proves the rejection independently of
    * the UI that now stands in front of it. See `tests/ward-referral-destinations.dom.test.tsx`'s

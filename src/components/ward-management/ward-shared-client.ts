@@ -63,7 +63,7 @@ export class SharedWorkspaceClient {
       throw new Error("Incompatible workspace data");
     if (snapshot.revision >= (this.view.snapshot?.revision ?? 0)) this.publish({ snapshot, receivedAt: Date.now() });
   }
-  private async request(path: string, body?: PendingCommand) {
+  private async request(path: string, body?: PendingCommand | Record<string, unknown>) {
     const token = await this.options.token();
     if (this.disposed) throw new Error("Connection closed");
     const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
@@ -163,6 +163,46 @@ export class SharedWorkspaceClient {
     } finally {
       this.busy = false;
     }
+  }
+  /**
+   * Phone push (feature 4). The server's public VAPID key, or `enabled: false` when the server is
+   * not set up for phone alerts. The private key never leaves the server.
+   */
+  async pushKey(): Promise<{ enabled: true; publicKey: string } | { enabled: false }> {
+    const { response, value } = await this.request("/v1/workspace/push-key");
+    if (!response.ok) throw new Error("Phone alerts unavailable");
+    return value?.enabled === true && typeof value.publicKey === "string"
+      ? { enabled: true, publicKey: value.publicKey }
+      : { enabled: false };
+  }
+  /**
+   * Registers this device's browser push subscription for the signed-in coordinator. A refusal the
+   * person can act on comes back as its reason: this account is on its device limit, or another
+   * account's alerts are still on for this device.
+   */
+  async pushSubscribe(subscription: {
+    endpoint?: string;
+    keys?: Record<string, string>;
+  }): Promise<"subscribed" | "limit" | "in-use"> {
+    const { endpoint, keys } = subscription;
+    const { response, value } = await this.request("/v1/workspace/push-subscribe", {
+      subscription: { endpoint, keys },
+    });
+    if (response.status === 409 && (value?.code === "limit" || value?.code === "in-use")) return value.code;
+    if (!response.ok) throw new Error("Phone alerts were not turned on");
+    return "subscribed";
+  }
+  /** Whether this account owns an active phone alert record for this device. */
+  async pushStatus(endpoint: string): Promise<boolean> {
+    const { response, value } = await this.request("/v1/workspace/push-status", { endpoint });
+    if (!response.ok) throw new Error("Phone alerts could not be checked");
+    return value?.owned === true;
+  }
+  /** Stops phone alerts for this device. True when this account's record was revoked. */
+  async pushUnsubscribe(endpoint: string): Promise<boolean> {
+    const { response, value } = await this.request("/v1/workspace/push-unsubscribe", { endpoint });
+    if (!response.ok) throw new Error("Phone alerts were not turned off");
+    return value?.revoked === true;
   }
   retry = async () => {
     if (this.pending) await this.drain();
