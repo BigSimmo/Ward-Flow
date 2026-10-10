@@ -42,6 +42,19 @@ describe("patient-linked discharge transition", () => {
     });
     if (reason === "invalid-payload") expect(refused.auditEvents.at(-1)?.at).toBeNull();
   });
+  it("lets the coordinator record a discharge on any ward's stay (Josh, 10 Oct 2026)", () => {
+    const { state, admission, event } = fixture();
+    const { actingUnitId: _unused, ...withoutUnit } = event;
+    void _unused;
+    for (const coordinatorEvent of [
+      { ...event, role: "coordinator" },
+      { ...withoutUnit, role: "coordinator" },
+    ] as WardFlowEvent[]) {
+      const next = wardFlowReducer(state, coordinatorEvent);
+      expect(next.auditEvents.at(-1)).toMatchObject({ outcome: "accepted" });
+      expect(next.admissions.find((row) => row.id === admission.id)?.state).toBe("departed");
+    }
+  });
   it("arrival increments the actual selected DTO revision before the linked departure can run", () => {
     // The previous fixture transplanted WF-006 onto an unrelated occupied stay, changed the
     // stay to pulled, and left its patient/backpointer mismatched. Produce the actual held stay
@@ -179,7 +192,8 @@ describe("patient-linked discharge transition", () => {
   });
 
   it.each([
-    { role: "coordinator" },
+    // The coordinator may record a discharge (Josh, 10 Oct 2026); see the test above.
+    { role: "officer" },
     { role: "ed" },
     { role: "not-a-role" },
     { actingUnitId: "missing" },
