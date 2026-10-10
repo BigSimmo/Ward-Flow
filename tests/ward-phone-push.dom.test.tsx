@@ -126,7 +126,7 @@ describe("phone alerts row", () => {
   });
 
   it("never shows a Ward Flow id, record number or the word for a patient in any state", () => {
-    for (const state of [...UNAVAILABLE, "off", "on", "error", "error-on"] as PhonePushState[]) {
+    for (const state of [...UNAVAILABLE, "off", "on", "limit", "in-use", "error", "error-on"] as PhonePushState[]) {
       expect(phonePushRow(state).sub).not.toMatch(/WF-|UMRN|patient/i);
       // One line at 390px wide: the row truncates a longer reason.
       expect(phonePushRow(state).sub.length).toBeLessThanOrEqual(41);
@@ -144,7 +144,7 @@ function fakeApi(enabled = true): PhonePushApi & { [K in keyof PhonePushApi]: Re
       enabled ? { enabled: true as const, publicKey: SERVER_KEY } : { enabled: false as const },
     ),
     pushStatus: vi.fn(async () => true),
-    pushSubscribe: vi.fn(async () => {}),
+    pushSubscribe: vi.fn(async (): Promise<"subscribed" | "limit" | "in-use"> => "subscribed"),
     pushUnsubscribe: vi.fn(async () => true),
   };
 }
@@ -308,6 +308,22 @@ describe("usePhonePush", () => {
       expect(await result.current[1](true)).toBe("error");
     });
     expect(phonePushRow(result.current[0]).unavailable).toBe(false);
+  });
+
+  it("shows why the server refused, rather than asking to retry", async () => {
+    installBrowser({ permission: "granted" });
+    const api = fakeApi();
+    api.pushSubscribe.mockResolvedValueOnce("in-use");
+    const { result } = hook({ kind: "connected", api });
+    await waitFor(() => expect(result.current[0]).toBe("off"));
+    await act(async () => {
+      expect(await result.current[1](true)).toBe("in-use");
+    });
+    expect(phonePushRow(result.current[0])).toEqual({
+      checked: false,
+      unavailable: false,
+      sub: "On for another account on this device",
+    });
   });
 
   it("a failed turn-off stays on with the error, and the next tap retries it", async () => {

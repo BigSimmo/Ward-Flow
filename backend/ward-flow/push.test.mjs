@@ -298,7 +298,9 @@ test("a device whose alerts belong to another account is refused, not taken over
   const { handler } = routes({ outcome: "in-use" });
   const response = await handler(call("push-subscribe", { subscription }));
   assert.equal(response.status, 409);
-  assert.match((await response.json()).error, /another account/);
+  const body = await response.json();
+  assert.equal(body.code, "in-use");
+  assert.match(body.error, /another account/);
 });
 
 test("push routes refuse other accounts, missing sign-in, bad subscriptions and the wrong method", async () => {
@@ -319,7 +321,9 @@ test("push routes refuse other accounts, missing sign-in, bad subscriptions and 
   assert.equal((await handler(call("push-key", {}))).status, 405);
   assert.equal(calls.length, 0);
   const full = routes({ limit: true });
-  assert.equal((await full.handler(call("push-subscribe", { subscription }))).status, 409);
+  const refused = await full.handler(call("push-subscribe", { subscription }));
+  assert.equal(refused.status, 409);
+  assert.equal((await refused.json()).code, "limit");
 });
 
 test("configuration turns phone push on only with the shared workspace and all three settings", () => {

@@ -175,11 +175,22 @@ export class SharedWorkspaceClient {
       ? { enabled: true, publicKey: value.publicKey }
       : { enabled: false };
   }
-  /** Registers this device's browser push subscription for the signed-in coordinator. */
-  async pushSubscribe(subscription: { endpoint?: string; keys?: Record<string, string> }) {
+  /**
+   * Registers this device's browser push subscription for the signed-in coordinator. A refusal the
+   * person can act on comes back as its reason: this account is on its device limit, or another
+   * account's alerts are still on for this device.
+   */
+  async pushSubscribe(subscription: {
+    endpoint?: string;
+    keys?: Record<string, string>;
+  }): Promise<"subscribed" | "limit" | "in-use"> {
     const { endpoint, keys } = subscription;
-    const { response } = await this.request("/v1/workspace/push-subscribe", { subscription: { endpoint, keys } });
+    const { response, value } = await this.request("/v1/workspace/push-subscribe", {
+      subscription: { endpoint, keys },
+    });
+    if (response.status === 409 && (value?.code === "limit" || value?.code === "in-use")) return value.code;
     if (!response.ok) throw new Error("Phone alerts were not turned on");
+    return "subscribed";
   }
   /** Whether this account owns an active phone alert record for this device. */
   async pushStatus(endpoint: string): Promise<boolean> {

@@ -224,6 +224,15 @@ describe("phone alert calls", () => {
     expect(await notOwned.pushKey()).toEqual({ enabled: false });
   });
 
+  it("returns a refusal the person can act on instead of rejecting", async () => {
+    const inUse = client(() => Response.json({ code: "in-use", error: "another account" }, { status: 409 }));
+    expect(await inUse.pushSubscribe({ endpoint })).toBe("in-use");
+    const full = client(() => Response.json({ code: "limit", error: "10 devices" }, { status: 409 }));
+    expect(await full.pushSubscribe({ endpoint })).toBe("limit");
+    const ok = client(() => Response.json({ subscribed: true }));
+    expect(await ok.pushSubscribe({ endpoint })).toBe("subscribed");
+  });
+
   it("a server failure rejects, so the switch keeps its last confirmed state", async () => {
     const failing = client(() => Response.json({ error: "unavailable" }, { status: 503 }));
     await expect(failing.pushKey()).rejects.toThrow();

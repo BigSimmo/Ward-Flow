@@ -82,9 +82,13 @@ export function createSharedHandler({ config, store, authenticate, readBody, ver
           if (!subscription) return reply(400, { error: "A browser push subscription is required" });
           const outcome = await store.subscribe(actorId, subscription);
           return outcome === "limit"
-            ? reply(409, { error: "This account already has phone alerts on 10 devices. Turn one off first." })
+            ? reply(409, {
+                code: "limit",
+                error: "This account already has phone alerts on 10 devices. Turn one off first.",
+              })
             : outcome === "in-use"
               ? reply(409, {
+                  code: "in-use",
                   error: "Phone alerts on this device belong to another account. Turn them off there first.",
                 })
               : reply(200, { subscribed: true });

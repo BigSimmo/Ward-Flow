@@ -21,7 +21,11 @@ export type PhonePushApi = {
   pushKey(): Promise<{ enabled: true; publicKey: string } | { enabled: false }>;
   /** Whether the signed-in account owns an active server record for this device endpoint. */
   pushStatus(endpoint: string): Promise<boolean>;
-  pushSubscribe(subscription: { endpoint?: string; keys?: Record<string, string> }): Promise<void>;
+  /** "limit" and "in-use" are refusals the person can act on; any other failure rejects. */
+  pushSubscribe(subscription: {
+    endpoint?: string;
+    keys?: Record<string, string>;
+  }): Promise<"subscribed" | "limit" | "in-use">;
   /** True when the signed-in account's record was revoked; false when it owned none. */
   pushUnsubscribe(endpoint: string): Promise<boolean>;
 };
@@ -42,6 +46,10 @@ export type PhonePushState =
   | "off"
   | "on"
   | "busy"
+  // The server refused to turn alerts on: this account's device limit, or another account's alerts
+  // are still on for this device.
+  | "limit"
+  | "in-use"
   // The last change failed. "error": alerts are still off (or unknown); "error-on": still on.
   | "error"
   | "error-on";
@@ -71,6 +79,10 @@ export function phonePushRow(state: PhonePushState): { checked: boolean; unavail
       return unavailable("Blocked for this site in the browser");
     case "busy":
       return unavailable("Updating this device…");
+    case "limit":
+      return { checked: false, unavailable: false, sub: "On for 10 devices. Turn one off first" };
+    case "in-use":
+      return { checked: false, unavailable: false, sub: "On for another account on this device" };
     case "error":
       return { checked: false, unavailable: false, sub: "Server not reached. Try again." };
     case "error-on":
@@ -237,8 +249,8 @@ async function turnOn(api: PhonePushApi): Promise<PhonePushState> {
     subscription = null;
   }
   subscription ??= await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
-  await api.pushSubscribe(subscription.toJSON());
-  return "on";
+  const outcome = await api.pushSubscribe(subscription.toJSON());
+  return outcome === "subscribed" ? "on" : outcome;
 }
 
 async function turnOff(api: PhonePushApi): Promise<PhonePushState> {
