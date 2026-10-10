@@ -8,6 +8,7 @@ import {
   BarList,
   Button,
   Card,
+  CheckingFoot,
   EmptyState,
   Hero,
   HeroStat,
@@ -91,6 +92,25 @@ const LEAVING: readonly MovementStage[] = ["handover_ready", "moving"];
 const CLOCK_TONE = { past: "danger", severe: "warning", in: "neutral" } as const;
 const PIPS_SHOWN = 12;
 
+/**
+ * Hero highlight chips (v10, five at most). Pressing one keeps the people it names solid in every
+ * view and dims the rest by colour. It never hides an ED.
+ */
+type Highlight = "past" | "severe" | "no-bed" | "held" | "form";
+const HIGHLIGHT_MATCH: Record<Highlight, (person: EdPerson) => boolean> = {
+  past: (person) => person.clock === "past",
+  severe: (person) => person.clock !== "in",
+  "no-bed": (person) => NO_BED.includes(person.movement.stage),
+  held: (person) => HELD.includes(person.movement.stage),
+  form: (person) => Boolean(person.movement.legalForm),
+};
+function personDim(person: EdPerson, highlight: Highlight | null): boolean {
+  return highlight !== null && !HIGHLIGHT_MATCH[highlight](person);
+}
+function rowHighlighted(row: EdRow, highlight: Highlight | null): boolean {
+  return highlight === null || row.people.some(HIGHLIGHT_MATCH[highlight]);
+}
+
 /** Lane scale: logarithmic from zero to seven days, so an hour and a week both stay readable. */
 const LANE_TICKS: readonly [number, string][] = [
   [60, "1h"],
@@ -128,6 +148,7 @@ export function EdIndex() {
   const [order, setOrder] = useState<OrderBy>("longest");
   const [view, setView] = useState<ViewMode>("cards");
   const [query, setQuery] = useState("");
+  const [highlight, setHighlight] = useState<Highlight | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -183,7 +204,9 @@ export function EdIndex() {
   // Statewide hero counts.
   const total = (pick: (row: EdRow) => number) => rows.reduce((sum, row) => sum + pick(row), 0);
   const waiting = total((row) => row.summary.waiting);
-  const longest = Math.max(0, ...rows.map((row) => row.summary.longestWaitMinutes));
+  const withWaiting = rows.filter((row) => row.summary.waiting > 0);
+  const longestRow = [...rows].sort((a, b) => b.summary.longestWaitMinutes - a.summary.longestWaitMinutes)[0];
+  const longest = longestRow?.summary.longestWaitMinutes ?? 0;
 
   const matchesQuery = (row: EdRow) => {
     const q = query.trim().toLowerCase();
@@ -198,10 +221,13 @@ export function EdIndex() {
     (status === "past-target" && row.pastTarget > 0) ||
     (status === "waiting" && row.summary.waiting > 0) ||
     (status === "clear" && row.summary.waiting === 0);
+  const matchesFilters = (row: EdRow) => byService(row) && byStatus(row) && matchesQuery(row);
 
-  const filtered = rows.filter((row) => byService(row) && byStatus(row) && matchesQuery(row));
+  // v10 rule 5: filters and hero chips highlight and dim. Every ED stays in place in every view.
+  const matching = rows.filter(matchesFilters);
+  const isDim = (row: EdRow) => !matchesFilters(row) || !rowHighlighted(row, highlight);
   const serviceRank = (row: EdRow) => ED_HOME_SERVICE_BAND_ORDER.indexOf(row.summary.service);
-  const ordered = [...filtered].sort((a, b) => {
+  const ordered = [...rows].sort((a, b) => {
     if (order === "most") return b.summary.waiting - a.summary.waiting || serviceRank(a) - serviceRank(b);
     if (order === "service")
       return serviceRank(a) - serviceRank(b) || b.summary.longestWaitMinutes - a.summary.longestWaitMinutes;
@@ -215,7 +241,7 @@ export function EdIndex() {
     setQuery("");
   };
 
-  // Each service count applies the other active filters, so it matches the rows that option shows.
+  // Each service count applies the other active filters, so it matches the EDs that option keeps solid.
   const otherFilters = (row: EdRow) => byStatus(row) && matchesQuery(row);
   const services = ED_HOME_SERVICE_BAND_ORDER.filter((name) => rows.some((row) => row.summary.service === name));
   const serviceItems = [
@@ -232,37 +258,84 @@ export function EdIndex() {
     return { id: name, label: name, value, display: String(value), fill: "data-1" as const };
   });
 
+  const chips: { id: Highlight; value: number; label: string; tone?: "danger" | "warning"; word: string }[] = [
+    {
+      id: "past",
+      value: total((row) => row.pastTarget),
+      label: `Past ${waitLine(accessTarget)}`,
+      tone: "danger",
+      word: `past ${waitLine(accessTarget)}`,
+    },
+    {
+      id: "severe",
+      value: total((row) => row.severe),
+      label: `Over ${waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`,
+      tone: "warning",
+      word: `over ${waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`,
+    },
+    { id: "no-bed", value: total((row) => row.noBed), label: "No bed yet", word: "with no bed yet" },
+    { id: "held", value: total((row) => row.held), label: "Bed held", word: "with a bed held" },
+    { id: "form", value: total((row) => row.forms), label: "Under a form", word: "under a form" },
+  ];
+  const activeChip = chips.find((chip) => chip.id === highlight);
+  const highlightedEds = highlight ? withWaiting.filter((row) => rowHighlighted(row, highlight)).length : 0;
+
   return (
     <div className={styles.screen} data-testid="ward-ed-index" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
         <Hero
-          eyebrow="Emergency · Statewide"
+          eyebrow={`Emergency · Statewide · ${rows.length} departments`}
           level={1}
           title={
             <>
               <SrOnly>All emergency departments, </SrOnly>
-              {rows.length} EDs, {waiting} waiting
-            </>
-          }
-          stats={
-            <>
-              <HeroStat
-                value={total((row) => row.pastTarget)}
-                label={`Past ${waitLine(accessTarget)}`}
-                tone={total((row) => row.pastTarget) > 0 ? "danger" : undefined}
-              />
-              <HeroStat
-                value={total((row) => row.severe)}
-                label={`Over ${waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`}
-                tone={total((row) => row.severe) > 0 ? "warning" : undefined}
-              />
-              <HeroStat value={total((row) => row.noBed)} label="No bed yet" />
-              <HeroStat value={total((row) => row.held)} label="Bed held" />
-              <HeroStat value={total((row) => row.forms)} label="Under a form" />
-              <HeroStat value={waiting > 0 ? splitDuration(longest) : "None"} label="Longest" />
+              {waiting} waiting in {withWaiting.length} EDs
             </>
           }
           aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
+          bar={
+            <div className={styles.heroChips} role="group" aria-label="Highlight people waiting">
+              {chips.map((chip) => (
+                <HeroStat
+                  key={chip.id}
+                  inline
+                  value={chip.value}
+                  label={chip.label}
+                  tone={chip.tone && chip.value > 0 ? chip.tone : undefined}
+                  pressed={highlight === chip.id}
+                  onToggle={() => setHighlight((value) => (value === chip.id ? null : chip.id))}
+                />
+              ))}
+            </div>
+          }
+          barAside={
+            activeChip ? (
+              <span className={styles.heroNote} aria-live="polite" data-testid="ed-index-highlight-note">
+                <span>
+                  <b className={styles.heroNum}>{highlightedEds}</b> of {withWaiting.length} EDs have someone{" "}
+                  {activeChip.word}, all EDs stay
+                </span>
+                <Button variant="onHero" size="sm" onClick={() => setHighlight(null)}>
+                  Clear
+                </Button>
+              </span>
+            ) : null
+          }
+          foot={
+            <CheckingFoot
+              items={[
+                {
+                  id: "longest",
+                  label: waiting > 0 && longestRow ? `Longest, ${longestRow.short}` : "Longest",
+                  value: waiting > 0 ? splitDuration(longest) : 0,
+                },
+                { id: "target", label: "Access target", value: waitLine(accessTarget) },
+                { id: "severe", label: "Severe line", value: waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES) },
+              ]}
+              notChecked={["referrals, open movements only"]}
+            />
+          }
+          footAside={<span>Lists update once a minute</span>}
         />
 
         <section className={styles.filters} aria-label="Emergency department filters">
@@ -274,7 +347,7 @@ export function EdIndex() {
               id="edSearchInput"
               icon={Search}
               placeholder="ED, hospital or service"
-              aria-label="Filter emergency departments by keyword"
+              aria-label="Highlight emergency departments by keyword"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onClear={() => setQuery("")}
@@ -320,24 +393,25 @@ export function EdIndex() {
               onChange={setOrder}
             />
             <span className={styles.shownCount}>
+              <span className={styles.filterHint}>Filters and chips highlight, all EDs stay</span>
               {isFiltered ? (
                 <Button variant="ghost" size="sm" onClick={resetFilters}>
                   Reset filters
                 </Button>
               ) : null}
-              <span>
-                {filtered.length} of {rows.length}
+              <span data-testid="ed-index-match-count" aria-live="polite">
+                <b className={styles.num}>{matching.length}</b> of {rows.length} match
               </span>
             </span>
           </div>
         </section>
 
-        {ordered.length === 0 ? (
+        {matching.length === 0 ? (
           <Card className={styles.emptyCard}>
             <EmptyState
               icon={Search}
-              title="No EDs match"
-              meta={`${rows.length} emergency departments in the network`}
+              title="No match"
+              meta={`No ED matches these filters. All ${rows.length} stay below, dimmed.`}
               action={
                 <Button variant="sec" size="sm" onClick={resetFilters}>
                   Reset filters
@@ -345,14 +419,16 @@ export function EdIndex() {
               }
             />
           </Card>
-        ) : view === "table" ? (
-          <EdTable rows={ordered} />
+        ) : null}
+
+        {view === "table" ? (
+          <EdTable rows={ordered} isDim={isDim} highlight={highlight} />
         ) : view === "lanes" ? (
-          <EdLanes rows={ordered} services={services} accessTarget={accessTarget} />
+          <EdLanes rows={ordered} services={services} accessTarget={accessTarget} isDim={isDim} highlight={highlight} />
         ) : (
           <section className={styles.cardGrid} aria-label="Emergency department cards">
             {ordered.map((row) => (
-              <EdCard key={row.summary.ed.id} row={row} />
+              <EdCard key={row.summary.ed.id} row={row} dim={isDim(row)} highlight={highlight} />
             ))}
             <Card className={styles.serviceCard} as="section" aria-labelledby="ed-index-by-service">
               <h3 id="ed-index-by-service" className={styles.eyebrow}>
@@ -405,7 +481,7 @@ function Legend({ accessTarget }: { accessTarget: number }) {
 }
 
 /** One pip per person waiting, longest first, shaped by how long they have waited. */
-function PeoplePips({ row }: { row: EdRow }) {
+function PeoplePips({ row, highlight }: { row: EdRow; highlight: Highlight | null }) {
   if (row.people.length === 0) return <p className={styles.noneWaiting}>No one waiting</p>;
   const shown = row.people.slice(0, PIPS_SHOWN);
   return (
@@ -418,6 +494,7 @@ function PeoplePips({ row }: { row: EdRow }) {
         <span
           key={person.movement.id}
           className={styles.pip}
+          data-dim={personDim(person, highlight) ? "true" : undefined}
           title={`${person.name} · ${splitDuration(person.wait)} · ${person.stage}`}
         >
           <StatusGlyph tone={CLOCK_TONE[person.clock]} size={8} />
@@ -452,10 +529,16 @@ function EnterLink({ row }: { row: EdRow }) {
   );
 }
 
-function EdCard({ row }: { row: EdRow }) {
+function EdCard({ row, dim, highlight }: { row: EdRow; dim: boolean; highlight: Highlight | null }) {
   const { summary } = row;
   return (
-    <article className={styles.edCard} data-service={summary.service} data-past-target={row.pastTarget > 0}>
+    <article
+      className={styles.edCard}
+      data-service={summary.service}
+      data-past-target={row.pastTarget > 0}
+      data-dim={dim ? "true" : undefined}
+      data-testid={`ed-index-card-${summary.ed.id}`}
+    >
       <div className={styles.cardHead}>
         <h3 className={styles.edTitle} title={summary.ed.name}>
           {row.short}
@@ -465,7 +548,7 @@ function EdCard({ row }: { row: EdRow }) {
       <p className={styles.meta} title={summary.siteName}>
         {summary.siteName}
       </p>
-      <PeoplePips row={row} />
+      <PeoplePips row={row} highlight={highlight} />
       <p className={styles.figures}>
         <b className={styles.num}>{summary.waiting}</b> waiting <span aria-hidden="true">·</span>{" "}
         <b className={styles.num}>{row.noBed}</b> no bed <span aria-hidden="true">·</span>{" "}
@@ -483,7 +566,15 @@ function EdCard({ row }: { row: EdRow }) {
 
 const TABLE_COLUMNS = "minmax(170px, 1.4fr) minmax(200px, 2fr) 72px 60px 72px 60px 96px 76px";
 
-function EdTable({ rows }: { rows: EdRow[] }) {
+function EdTable({
+  rows,
+  isDim,
+  highlight,
+}: {
+  rows: EdRow[];
+  isDim: (row: EdRow) => boolean;
+  highlight: Highlight | null;
+}) {
   return (
     <Card className={styles.tableCard} as="section" aria-label="Emergency department table">
       <div role="table" aria-label="Emergency departments" className={styles.table}>
@@ -518,13 +609,14 @@ function EdTable({ rows }: { rows: EdRow[] }) {
               key={row.summary.ed.id}
               className={styles.tr}
               style={{ gridTemplateColumns: TABLE_COLUMNS }}
+              data-dim={isDim(row) ? "true" : undefined}
             >
               <span role="cell" className={styles.edCell}>
                 <span className={styles.edTitle}>{row.short}</span>
                 <span className={styles.meta}>{row.summary.service}</span>
               </span>
               <span role="cell">
-                <PeoplePips row={row} />
+                <PeoplePips row={row} highlight={highlight} />
               </span>
               {[row.noBed, row.held, row.leaving, row.forms].map((value, index) => (
                 <span role="cell" key={index} className={cx(styles.end, styles.num, value === 0 && styles.zero)}>
@@ -553,10 +645,14 @@ function EdLanes({
   rows,
   services,
   accessTarget,
+  isDim,
+  highlight,
 }: {
   rows: EdRow[];
   services: readonly HealthService[];
   accessTarget: number;
+  isDim: (row: EdRow) => boolean;
+  highlight: Highlight | null;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const picked = rows
@@ -583,7 +679,7 @@ function EdLanes({
         <section key={group.name} aria-label={group.name} className={styles.laneGroup}>
           <h3 className={styles.eyebrow}>{group.name}</h3>
           {group.rows.map((row) => (
-            <div key={row.summary.ed.id} className={styles.lane}>
+            <div key={row.summary.ed.id} className={styles.lane} data-dim={isDim(row) ? "true" : undefined}>
               <Link href={edHref(row.summary.ed.id)} className={styles.laneLabel}>
                 <b>{row.short}</b>
                 <span className={styles.laneCount}>{row.summary.waiting}</span>
@@ -599,6 +695,7 @@ function EdLanes({
                     type="button"
                     className={styles.mark}
                     style={{ left: `${lanePosition(person.wait)}%` }}
+                    data-dim={personDim(person, highlight) ? "true" : undefined}
                     aria-pressed={selected === person.movement.id}
                     aria-label={`${person.name}, ${splitDuration(person.wait)}, ${person.stage}`}
                     onClick={() => setSelected((value) => (value === person.movement.id ? null : person.movement.id))}

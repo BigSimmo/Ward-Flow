@@ -36,6 +36,14 @@ import { S2015_CATCHMENT_ROWS, parseFollowUpClinicSet } from "@/components/ward-
 import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-resolver";
 
 /**
+ * v10 rule 5 (10 Oct 2026): the filters highlight and dim, they never hide a name. Every link stays
+ * in the A to Z; the ones a filter matches are the links whose row is not dimmed.
+ */
+function solidTeamLinks(): HTMLElement[] {
+  return screen.getAllByTestId("community-index-link").filter((anchor) => !anchor.closest('[data-dim="true"]'));
+}
+
+/**
  * THE COMMUNITY GATEWAY (redesign v1) — guarded on the CLAIM and the CLINICAL PROPERTY, never on
  * rendering. The owner is redesigning many Ward Flow pages; a guard that goes red on a legitimate
  * restyle gets deleted, and an honest guard sitting beside it goes with it. So nothing below pins a
@@ -219,7 +227,9 @@ describe("Community gateway — live search narrows to exactly the matching set"
 
     fireEvent.change(screen.getByRole("searchbox", { name: "Search team names" }), { target: { value: sampleWord } });
 
-    const anchors = screen.getAllByTestId("community-index-link");
+    // Every name stays; the matching ones stay solid.
+    expect(screen.getAllByTestId("community-index-link")).toHaveLength(COMMUNITY_TEAM_PAGES.length);
+    const anchors = solidTeamLinks();
     const shownNames = anchors.map((anchor) => (anchor.textContent ?? "").trim());
     expect([...shownNames].sort()).toEqual([...expectedNames].sort());
 
@@ -234,7 +244,8 @@ describe("Community gateway — live search narrows to exactly the matching set"
       within(screen.getByRole("radiogroup", { name: "Filter team names" })).getByRole("radio", { name: /^EMHS/ }),
     );
 
-    const anchors = screen.getAllByTestId("community-index-link");
+    expect(screen.getAllByTestId("community-index-link")).toHaveLength(COMMUNITY_TEAM_PAGES.length);
+    const anchors = solidTeamLinks();
     expect(anchors.length).toBe(16);
     for (const anchor of anchors) {
       const name = (anchor.textContent ?? "").trim();
@@ -466,8 +477,9 @@ describe("Community gateway — directory header layout and service filtering", 
     const serviceGroup = screen.getByRole("radiogroup", { name: "Filter team names" });
     fireEvent.click(within(serviceGroup).getByRole("radio", { name: /^NMHS/ }));
 
-    expect(resultLine).toHaveTextContent("6 of 64 synthetic team names");
-    expect(screen.getAllByTestId("community-index-link")).toHaveLength(6);
+    expect(resultLine).toHaveTextContent("6 of 64 synthetic team names, all names stay");
+    expect(solidTeamLinks()).toHaveLength(6);
+    expect(screen.getAllByTestId("community-index-link")).toHaveLength(64);
 
     const resetBtn = screen.getByRole("button", { name: /reset all search and filter/i });
     expect(resetBtn).toBeInTheDocument();

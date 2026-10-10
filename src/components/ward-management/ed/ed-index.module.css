@@ -15,6 +15,44 @@
   padding: var(--wf-s-4);
 }
 
+/* Hero highlight chips (v10: five at most) and the note that says every ED stays. */
+.heroChips {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.heroNote {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+}
+
+.heroNote > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.heroNum {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-hero-ink);
+}
+
+.filterHint {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+}
+
 /* Filter card */
 .filters {
   display: flex;
@@ -56,6 +94,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--wf-s-2);
+  min-width: 0;
   margin-left: auto;
   font-size: var(--wf-fs-13);
   color: var(--wf-ink-2);
@@ -65,7 +104,7 @@
 /* Shared text */
 .eyebrow {
   margin: 0;
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -147,7 +186,7 @@
 .more {
   margin-left: 2px;
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
 
@@ -277,7 +316,7 @@
 
 .th {
   min-height: 36px;
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -313,7 +352,7 @@
 .axis {
   height: 28px;
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
 
@@ -430,7 +469,7 @@
   border: 1px solid var(--wf-line-ctl);
   border-radius: var(--wf-r-pill);
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
 }
 
@@ -453,6 +492,25 @@
   margin-top: var(--wf-s-2);
   padding: var(--wf-s-2) 0 var(--wf-s-3);
   border-top: 1px solid var(--wf-line);
+}
+
+/* Dim, never hide (v10 rule 5): parts that set their own ink follow data-dim by colour only. */
+[data-dim="true"] .edTitle,
+[data-dim="true"] .num,
+[data-dim="true"] .service,
+[data-dim="true"] .meta,
+[data-dim="true"] .figures,
+[data-dim="true"] .footLabel,
+[data-dim="true"] .laneLabel,
+[data-dim="true"] .laneCount,
+[data-dim="true"] .more,
+[data-dim="true"] .noneWaiting {
+  color: var(--wf-dim);
+}
+
+.pip[data-dim="true"],
+.mark[data-dim="true"] {
+  border-color: var(--wf-line);
 }
 
 @media (max-width: 80rem) {
@@ -489,6 +547,10 @@
 
   .filterRow + .filterRow {
     display: none;
+  }
+
+  .heroChips :global(button) {
+    min-height: var(--wf-touch);
   }
 
   .search {

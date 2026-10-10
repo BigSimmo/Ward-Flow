@@ -50,6 +50,36 @@
   white-space: nowrap;
 }
 
+/* v10 hero: mixed-face answer (words in Geist, figures in mono) and two highlight chips. */
+.heroFigure {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.heroChips {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.resultHint {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+/* Dim, never hide (v10 rule 5): a name a filter does not match stays in place, recedes by colour. */
+.teamRow[data-dim="true"] .teamRowLink,
+.teamRow[data-dim="true"] .service,
+.teamRow[data-dim="true"] .suburbs,
+.teamRow[data-dim="true"] .noMarker,
+.teamRow[data-dim="true"] .readsAlike,
+.teamRow[data-dim="true"] .teamRowGo {
+  color: var(--wf-dim);
+}
+
 /* ---- Layout ---- */
 
 .layout {
@@ -139,7 +169,7 @@
   border: 0;
   background: none;
   color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   cursor: pointer;
 }
 
@@ -194,7 +224,7 @@
   border-bottom: 1px solid var(--wf-line-2);
   background: var(--wf-surface);
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -510,7 +540,7 @@
 .subHead {
   margin: 0;
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -590,7 +620,7 @@
 .guideHead {
   margin: 0;
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -690,7 +720,8 @@
   }
 
   .heroNote {
-    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -776,5 +807,15 @@
 
   .side > [aria-labelledby="community-gateway-service-title"] {
     display: none;
+  }
+
+  .heroChips {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .heroChips :global(button) {
+    min-height: var(--wf-touch);
+    min-width: 0;
   }
 }

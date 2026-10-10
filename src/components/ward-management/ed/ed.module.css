@@ -5702,6 +5702,22 @@ tr.qRow:focus-visible {
 .boardResult {
   font-size: 12px;
   color: var(--muted);
+  white-space: nowrap;
+}
+.boardResult b {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+.boardHint {
+  color: var(--wf-ink-3);
+}
+
+/* v10 rule 5: a board row a filter, search or hero chip does not match stays in place and dims by
+ * colour only (data-dim, never opacity). Controls keep their own ink so they stay usable. */
+tr.qRow[data-dim="true"] td,
+tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"], a[class*="btn"] *) {
+  color: var(--wf-dim);
 }
 .boardWrap {
   max-height: none;

@@ -91,6 +91,7 @@ import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-m
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import {
+  ED_SEVERE_PRESSURE_WAIT_MINUTES,
   LATE_ARRIVAL_GRACE_MINUTES,
   LONG_WAIT_MINUTES,
   LONG_WAIT_TEXT,
@@ -155,6 +156,11 @@ type EdClockLine = {
  */
 function asLineHeading(term: string): string {
   return term.charAt(0).toUpperCase() + term.slice(1);
+}
+
+/** "24h", "8h": a wait line as a person says it, never "1d" or "8h 00m". */
+function waitLine(minutes: number): string {
+  return minutes % 60 === 0 ? `${minutes / 60}h` : splitDuration(minutes);
 }
 
 function urgencyGlyph(urgency: 1 | 2 | 3): string {
@@ -1430,6 +1436,8 @@ export function EdScreen({ edId }: EdScreenProps) {
   const [boardFilter, setBoardFilter] = useState<
     "all" | "not_reviewed" | "under_form" | "no_destination" | "discharge" | "withdrawn"
   >("all");
+  /** v10 hero highlight: the pressed hero chip keeps its rows solid and dims the rest. */
+  const [heroHighlight, setHeroHighlight] = useState<string | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   // The board's inline row, opened under one patient at a time (separate from the record dialog).
   const [expandedPatientId, setExpandedPatientId] = useState<string | null>(null);
@@ -1744,7 +1752,8 @@ export function EdScreen({ edId }: EdScreenProps) {
   const isEdAlarm = breachesCount > 0;
   const isEdWarn = awaitingBedCount > 3;
 
-  const filteredPatients = patients.filter((m) => {
+  // v10 rule 5: the board filters and the search highlight and dim. Every person stays on the board.
+  const matchesBoardFilter = (m: Movement) => {
     if (boardFilter === "not_reviewed") return !m.examination && !m.edOutcome && !isEdInitiatedWithdrawal(m);
     if (boardFilter === "under_form") return !!m.legalForm && !isEdInitiatedWithdrawal(m);
     if (boardFilter === "no_destination")
@@ -1752,21 +1761,34 @@ export function EdScreen({ edId }: EdScreenProps) {
     if (boardFilter === "discharge") return m.edOutcome === "for_discharge";
     if (boardFilter === "withdrawn") return isEdInitiatedWithdrawal(m);
     return true;
-  });
+  };
+  const matchesPatientQuery = (movement: Movement) => {
+    const q = patientQuery.trim().toLowerCase();
+    if (!q) return true;
+    const person = resolveSubjectPatient(movement, { patients: registryPatients, referrals, movements });
+    return `${person.displayName} ${person.umrn}`.toLowerCase().includes(q);
+  };
+  const heroHighlightMatch: Record<string, (m: Movement) => boolean> = {
+    past: (m) => now - m.openedAt >= accessTarget,
+    severe: (m) => now - m.openedAt >= ED_SEVERE_PRESSURE_WAIT_MINUTES,
+    no_bed: (m) =>
+      (m.stage === "placement_requested" || m.stage === "destination_review") && !isEdInitiatedWithdrawal(m),
+    under_form: (m) => !!m.legalForm && !isEdInitiatedWithdrawal(m),
+  };
+  const boardMatchCount = patients.filter((m) => matchesBoardFilter(m) && matchesPatientQuery(m)).length;
+  const isBoardRowDim = (m: Movement) =>
+    !matchesBoardFilter(m) ||
+    !matchesPatientQuery(m) ||
+    (heroHighlight !== null && !(heroHighlightMatch[heroHighlight]?.(m) ?? true));
 
-  const visiblePatients = filteredPatients
-    .filter((movement) => {
-      const person = resolveSubjectPatient(movement, { patients: registryPatients, referrals, movements });
-      return `${person.displayName} ${person.umrn}`.toLowerCase().includes(patientQuery.trim().toLowerCase());
-    })
-    .sort((a, b) => {
-      if (patientSort === "longest") return a.openedAt - b.openedAt;
-      if (patientSort === "name")
-        return resolveSubjectPatient(a, { patients: registryPatients, referrals, movements }).displayName.localeCompare(
-          resolveSubjectPatient(b, { patients: registryPatients, referrals, movements }).displayName,
-        );
-      return 0;
-    });
+  const visiblePatients = [...patients].sort((a, b) => {
+    if (patientSort === "longest") return a.openedAt - b.openedAt;
+    if (patientSort === "name")
+      return resolveSubjectPatient(a, { patients: registryPatients, referrals, movements }).displayName.localeCompare(
+        resolveSubjectPatient(b, { patients: registryPatients, referrals, movements }).displayName,
+      );
+    return 0;
+  });
 
   const selectedPatient = selectedPatientId ? patients.find((p) => p.id === selectedPatientId) : null;
   const selectedPatientInfo = selectedPatient
@@ -2635,6 +2657,39 @@ export function EdScreen({ edId }: EdScreenProps) {
     ? Math.max(...patients.map((movement) => Math.max(now - movement.openedAt, 0)))
     : undefined;
 
+  const leavingForWard = patients.filter(
+    (movement) => movement.stage === "handover_ready" || movement.stage === "moving",
+  ).length;
+  const heroChips = [
+    {
+      id: "past",
+      label: `Past ${waitLine(accessTarget)}`,
+      word: `past ${waitLine(accessTarget)}`,
+      value: patients.filter(heroHighlightMatch.past).length,
+      tone: "danger" as const,
+    },
+    {
+      id: "severe",
+      label: `Over ${waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`,
+      word: `over ${waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`,
+      value: patients.filter(heroHighlightMatch.severe).length,
+      tone: "warning" as const,
+    },
+    {
+      id: "no_bed",
+      label: "No bed yet",
+      word: "with no bed yet",
+      value: patients.filter(heroHighlightMatch.no_bed).length,
+    },
+    {
+      id: "under_form",
+      label: "Under a form",
+      word: "under a form",
+      value: patients.filter(heroHighlightMatch.under_form).length,
+    },
+  ];
+  const activeHeroChip = heroChips.find((chip) => chip.id === heroHighlight);
+
   const arrivalPlanMovement = arrivalPlanOpenFor ? movements.find((m) => m.id === arrivalPlanOpenFor) : undefined;
 
   return (
@@ -2670,20 +2725,29 @@ export function EdScreen({ edId }: EdScreenProps) {
               breaches: candidateMovements.filter((movement) => now - movement.openedAt > accessTarget).length,
             };
           })}
-          figures={[
-            { label: "On the board", value: patients.length },
+          onBoard={patients.length}
+          chips={heroChips}
+          highlight={heroHighlight}
+          onHighlight={setHeroHighlight}
+          highlightNote={
+            activeHeroChip ? (
+              <>
+                <b>{patients.filter(heroHighlightMatch[activeHeroChip.id]).length}</b> of {patients.length}{" "}
+                {activeHeroChip.word}, everyone stays on the board
+              </>
+            ) : undefined
+          }
+          checks={[
             {
-              label: "Waiting for a bed",
-              value: waitingForBed,
-              tone: waitingForBed > 0 ? "warning" : undefined,
-            },
-            { label: "To review", value: inbox.length },
-            { label: "Under a form", value: patients.filter((movement) => !!movement.legalForm).length },
-            {
+              id: "longest",
               label: "Longest here",
-              value: longestHere === undefined ? "—" : splitDuration(longestHere),
+              value: longestHere === undefined ? 0 : splitDuration(longestHere),
               tone: longestHere !== undefined && longestHere > accessTarget ? "danger" : undefined,
             },
+            { id: "held", label: "Bed held", value: waitingForBed },
+            { id: "leaving", label: "Leaving for a ward", value: leavingForWard },
+            { id: "unreviewed", label: "Not reviewed", value: notReviewedCount },
+            { id: "target", label: "Access target", value: waitLine(accessTarget) },
           ]}
           referralOpen={referralOpen}
           onRaiseReferral={() => {
@@ -3061,7 +3125,7 @@ export function EdScreen({ edId }: EdScreenProps) {
               </span>
             </div>
           </div>
-          <div className={styles.boardChips} role="tablist" aria-label="Filter the board">
+          <div className={styles.boardChips} role="group" aria-label="Filter the board">
             <button
               type="button"
               className={styles.boardChip}
@@ -3149,7 +3213,8 @@ export function EdScreen({ edId }: EdScreenProps) {
               {hasBoardDrafts ? "Unsaved changes · This screen only" : "Draft fields · This screen only"}
             </span>
             <span className={styles.boardResult} role="status">
-              {visiblePatients.length} of {patients.length} patients<span className="sr-only"> · Synthetic data</span>
+              <span className={styles.boardHint}>Filters highlight, everyone stays</span> <b>{boardMatchCount}</b> of{" "}
+              {patients.length} match<span className="sr-only"> · Synthetic data</span>
             </span>
           </div>
           {patients.length === 0 ? (
@@ -3186,10 +3251,10 @@ export function EdScreen({ edId }: EdScreenProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {visiblePatients.length === 0 && (
+                  {boardMatchCount === 0 && (
                     <tr>
                       <td colSpan={9} className={styles.noPatientMatches}>
-                        No patients match this search and filter.
+                        No one matches this search and filter. Everyone stays below, dimmed.
                       </td>
                     </tr>
                   )}
@@ -3352,6 +3417,7 @@ export function EdScreen({ edId }: EdScreenProps) {
                           data-minutes-in-department={minutesInDepartment}
                           data-selected={selectedPatientId === movement.id ? "true" : undefined}
                           data-unfolded={isUnfolded ? "true" : undefined}
+                          data-dim={isBoardRowDim(movement) ? "true" : undefined}
                           className={styles.qRow}
                         >
                           <td className={styles.tierCell}>
