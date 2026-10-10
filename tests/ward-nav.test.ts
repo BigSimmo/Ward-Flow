@@ -498,9 +498,8 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
       "(WardIndex) lists every ward in the network, grouped by health service, and links each one — " +
       `${WARD_INDEX_COVERED_UNITS} of ${WARD_INDEX_COVERED_UNITS}, established by rendering that page and ` +
       "counting its links rather than by this scan, in " +
-      "the 'Ward index' describe block in this file. ward-role-switcher.tsx also builds ward hrefs, but " +
-      "only over `wardCandidates`: empty with no movement focused, otherwise the focused movement's " +
-      "accepted unit or its referred units, so nought to three and only after a selection.",
+      "the 'Ward index' describe block in this file. The Switch workstation drawer behind Change view " +
+      "also links every ward, through the facade's unitHref inside a map, so this scan counts nought from it.",
   ],
   [
     "/mockups/ward-flow/community/[teamId]",
@@ -551,8 +550,8 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
     "1 of 10 instances reachable without state — ward-nav.ts's one seeded example (peel-ed), which " +
       "the /ed redirect backstop now also opens (26 Sept 2026: it used to name fremantle-ed, which is " +
       "not a seeded ED, so it counted a department that does not exist). " +
-      "ward-role-switcher.tsx builds one more, but only the focused movement's own originEdId, so nought " +
-      "or one and only after a selection. The other 9 departments have no route in. Was 7 until " +
+      "The Switch workstation drawer behind Change view links every department through the facade's " +
+      "edHref inside a map, which this scan counts as nought concrete instances by design. Was 7 until " +
       "2026-09-18, when King Edward Memorial and Perth Children's were added from the reference " +
       "register — two real public EDs with no psychiatric beds, so they widen the gap without " +
       "widening the navigation.",
@@ -764,12 +763,13 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     //
     // SEVEN AS OF THE OCTOBER 2026 DELAYS BOARD: its release-the-bed link now takes `unitHref`
     // from the facade instead of typing the route, the re-pointing the note above expected.
+    // SIX FROM 10 OCTOBER 2026: Change view (`ward-role-switcher.tsx`) no longer builds ward hrefs;
+    // it opens the Switch workstation drawer, which takes `unitHref` from the facade.
     expect([...(ward?.builtSites ?? [])].sort()).toEqual([
       "src/components/ward-management/capacity/capacity-screen.tsx",
       "src/components/ward-management/discharges/discharge-board.tsx",
       "src/components/ward-management/hub/hub-derivations.ts",
       "src/components/ward-management/shell/ward-facade.ts",
-      "src/components/ward-management/ward-role-switcher.tsx",
       "src/components/ward-management/ward/ward-answer-view.tsx",
       "src/components/ward-management/wards/ward-index.tsx",
     ]);
