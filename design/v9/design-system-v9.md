@@ -1,6 +1,6 @@
 # Ward Flow design system v9
 
-Synthetic prototype, not a medical device. The values live only in [`ward-flow-v9.css`](ward-flow-v9.css). [`ward-flow-design-system-v9.html`](ward-flow-design-system-v9.html) is the live board, drawn by that same sheet in day and night, desktop and phone.
+Synthetic prototype, not a medical device. This PR keeps the written v9 standard only. The reference CSS sheet (`ward-flow-v9.css`) and live HTML board (`ward-flow-design-system-v9.html`) are not in this branch; they remain on [`backup/claude/design-system-v7-4ygmui-pre-slim-20261010`](https://github.com/BigSimmo/Ward-Flow/tree/backup/claude/design-system-v7-4ygmui-pre-slim-20261010/design/v9). The app does not use v9 tokens yet.
 
 **Status.** This is the standard. v9 replaces v8 to v8.2 as one document, so nobody has to apply a chain of amendments. v8 (`../v8/`) and v7 (`../v7/`) stay unchanged for provenance. The app does not load this sheet yet. Loading it, and moving the shared parts onto it, is the next step (section 15).
 
@@ -307,8 +307,8 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 
 ## 16. Verified and not verified
 
-- **Verified.** The board renders from this sheet in Chromium (Playwright) in day and night, desktop and phone, with no script errors and no sideways scroll. Every `var(--wf-*)` the sheet reads is defined. Contrast figures for the new values come from the token values.
-- **Not verified.** The app does not load v9 yet. High contrast and print were checked by reading the rules, not on a ward PC or a printer. Backdrop blur performance on ward PCs is unmeasured. Edge support for `light-dark()` on WA Health desktops is unconfirmed. Glare mode has not been tried on a ward PC near a window.
+- **Verified.** Before this PR was slimmed, the reference board on the backup branch rendered from its sheet in Chromium (Playwright) in day and night, desktop and phone, with no script errors and no sideways scroll. Every `var(--wf-*)` that sheet reads is defined. Contrast figures for the new values come from the token values. The HTML board and unused v9 CSS are kept on `backup/claude/design-system-v7-4ygmui-pre-slim-20261010` and are not part of this lean PR.
+- **Not verified.** The app does not load v9 tokens yet. High contrast and print were checked by reading the rules, not on a ward PC or a printer. Backdrop blur performance on ward PCs is unmeasured. Edge support for `light-dark()` on WA Health desktops is unconfirmed. Glare mode has not been tried on a ward PC near a window.
 
 ## Appendix: where the v8.2 rules went
 
