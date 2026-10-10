@@ -158,10 +158,8 @@
 
 .counter {
   align-self: flex-end;
-  font: 500 var(--wf-fs-11) / 1 var(--wf-mono);
-  font-feature-settings:
-    "zero" 1,
-    "tnum" 1;
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-3);
 }
 
@@ -419,9 +417,7 @@
   align-items: center;
   justify-content: center;
   font: 500 var(--wf-fs-13) / 1 var(--wf-mono);
-  font-feature-settings:
-    "zero" 1,
-    "tnum" 1;
+  font-variant-numeric: tabular-nums;
   border-left: 1px solid var(--wf-line);
   border-right: 1px solid var(--wf-line);
 }

@@ -1,4 +1,5 @@
-/* v6 buttons (`.b`). Tokens only. One primary per area. */
+/* Buttons (`.b`), v9 states. Tokens only. One primary per area. Hover and press are colour steps,
+   never filter. Press is quick in, release a little slower. */
 
 .b {
   position: relative;
@@ -17,14 +18,15 @@
   border: 1px solid transparent;
   text-decoration: none;
   transition:
-    transform var(--wf-m-fast) var(--wf-ease),
-    box-shadow var(--wf-m-base) var(--wf-ease),
-    background var(--wf-m-base) var(--wf-ease),
-    filter var(--wf-m-base);
+    transform var(--wf-t-release) var(--wf-ease-out),
+    box-shadow var(--wf-t-micro) var(--wf-ease-out),
+    background-color var(--wf-t-micro) var(--wf-ease-out),
+    border-color var(--wf-t-micro) var(--wf-ease-out);
 }
 
 .b:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
+  transition-duration: var(--wf-t-press);
 }
 
 .b:focus-visible {
@@ -77,11 +79,11 @@
 }
 
 .pri:hover {
-  filter: brightness(1.08);
+  background: linear-gradient(180deg, var(--wf-pri-1-hover), var(--wf-pri-2-hover));
 }
 
 .pri:active {
-  filter: brightness(0.9);
+  background: linear-gradient(180deg, var(--wf-pri-1-press), var(--wf-pri-2-press));
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-hero-edge) 60%, transparent);
 }
 
@@ -167,7 +169,7 @@
 }
 
 .light:hover {
-  filter: brightness(0.97);
+  background: color-mix(in srgb, var(--wf-hero-ink) 90%, var(--wf-hero-ink-3));
 }
 
 /* Disabled: dashed edge, muted ink, and a visible reason beside it. */
@@ -175,7 +177,6 @@
 .b[aria-disabled="true"] {
   cursor: not-allowed;
   transform: none;
-  filter: none;
   color: var(--wf-ink-off);
   background: var(--wf-surface-2);
   border: 1px dashed var(--wf-line-3);
