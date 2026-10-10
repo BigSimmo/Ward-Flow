@@ -53,10 +53,15 @@ describe("State bedflow's fitting wards for the selected patient", () => {
     fireEvent.click(screen.getByTestId(`ward-queue-row-${MOVEMENT_ID}`));
 
     const bedflow = screen.getByRole("region", { name: "State Bedflow" });
-    const options = within(within(bedflow).getByTestId("ward-bedflow-options")).getAllByRole("button");
-    expect(options).toHaveLength(bed.size + noBed.size);
-    expect(options.filter((option) => option.dataset.fit === "bed")).toHaveLength(bed.size);
-    expect(options.filter((option) => option.dataset.fit === "no-bed")).toHaveLength(noBed.size);
+    // Direction A (owner, 10 Oct 2026): one summary line in place of the list of ward names; the
+    // rows themselves carry the highlight.
+    expect(within(bedflow).getByTestId("ward-bedflow-subject")).toHaveTextContent(
+      `${bed.size === 1 ? "1 ward fits" : `${bed.size} wards fit`} · ${noBed.size} no bed`,
+    );
+    for (const unitId of bed) {
+      const row = within(bedflow).getByTestId(`ward-diagram-unit-${unitId}`).closest("li")!;
+      expect(["fit", "referred", "accepted"]).toContain(row.getAttribute("data-highlight"));
+    }
 
     for (const unitId of noBed) {
       const row = within(bedflow).getByTestId(`ward-diagram-unit-${unitId}`).closest("li")!;

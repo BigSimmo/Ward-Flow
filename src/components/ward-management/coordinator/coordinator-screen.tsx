@@ -30,7 +30,7 @@ import shortlistStyles from "./shortlist-panel.module.css";
 import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
 import { HomeBedflow } from "./home-bedflow";
 import { HomeEdPressure, dueWindowLabel } from "./home-ed-pressure";
-import { PriorityQueue } from "./priority-queue";
+import { PriorityQueue, queueWaitThresholds, type QueueHighlight } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel";
 import { SinceLastLookPanel, sinceLastLookCount, useSinceLastLook } from "./since-last-look-panel";
 
@@ -43,13 +43,14 @@ const DELAYS_HREF = "/mockups/ward-flow/delays";
 const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-checked="true"]';
 
 /**
- * Home: the coordinator's first screen (v6 Home mockup, 7 Oct 2026).
+ * Home: the coordinator's first screen (direction A, owner 10 Oct 2026).
  *
- * One hero band (open movements and the day's counts, Live with pause, Start handover), the ED
- * pressure card, then the columns. At rest: the priority queue (with "Since you looked" under it)
- * and State bedflow across the two right columns. Selecting a patient or referral reads left to
- * right: queue, State bedflow (narrowed, fitting wards tinted), then the explainable shortlist on
- * the far right (a bottom sheet on a phone). The Exceptions count on the hero opens the four
+ * One hero band that answers "how many wait for how many beds", with five counts under it:
+ * Overdue and Tier 1 highlight those rows in the queue, the due count is flat, and Exceptions and
+ * Declines open the registers. New events sits at the right of that row. Then a compact ED strip, then
+ * three equal columns that read left to right: queue, State bedflow, Placement. At rest on a
+ * desktop Placement shows the top of the queue, labelled so, without selecting it; picking a
+ * patient or referral replaces it (a bottom sheet on a phone). The Exceptions count opens the four
  * registers as a strip under it (owner, 8 Oct 2026); on a phone they stay under the queue behind
  * "Today's answers". Nothing on this screen changes state except through the shortlist's own
  * reducer actions.
@@ -107,6 +108,11 @@ export function CoordinatorScreen() {
   // It starts closed. Exceptions and Declines open the registers on their own tab.
   const [heroPanel, setHeroPanel] = useState<"registers" | "since" | undefined>(undefined);
   const [registerTab, setRegisterTab] = useState<RegisterTabId>("exceptions");
+  // Overdue and Tier 1 on the hero highlight their rows in the queue; the rest dim, nothing hides.
+  const [highlight, setHighlight] = useState<QueueHighlight | undefined>(undefined);
+  function toggleHighlight(next: QueueHighlight) {
+    setHighlight((current) => (current === next ? undefined : next));
+  }
   function toggleRegisters(tab: RegisterTabId) {
     const showing = heroPanel === "registers" && (tab === "declines") === (registerTab === "declines");
     if (showing) {
@@ -192,6 +198,25 @@ export function CoordinatorScreen() {
     ? referralQueue.find((referral) => referral.id === selectedReferralId)
     : undefined;
   const hasPanelSubject = Boolean(selectedReferral || selectedMovement);
+  // Desktop at rest: Placement shows the top of the queue without selecting it, so no queue row
+  // reads as pressed when nobody pressed it. A phone keeps its sheet for a real pick only.
+  const previewMovement = !hasPanelSubject && !isPhone ? queue[0] : undefined;
+  const panelMovement = selectedMovement ?? previewMovement;
+
+  // A ward choice belongs to the movement it was made for, preview included: when the movement in
+  // Placement changes (a new top of queue, an ED or service filter), the ward choice goes.
+  const panelMovementId = panelMovement?.id;
+  const [unitOwnerId, setUnitOwnerId] = useState(panelMovementId);
+  if (unitOwnerId !== panelMovementId) {
+    setUnitOwnerId(panelMovementId);
+    setSelectedUnitId(undefined);
+  }
+  // Picking a ward for the previewed patient selects that patient, so the choice cannot drift onto
+  // whoever reaches the top of the queue next.
+  function pickUnit(unitId: string | undefined) {
+    if (previewMovement) selectMovement(previewMovement.id);
+    setSelectedUnitId(unitId);
+  }
 
   function closeShortlist() {
     selectMovement(undefined);
@@ -272,6 +297,12 @@ export function CoordinatorScreen() {
     (movement) => movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now) === "critical",
   ).length;
   const bedsReady = counts.capacity?.value ?? 0;
+  // The two highlight chips count the queue they highlight (after the ED and service filters).
+  const overdueInQueue = queue.filter(
+    (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
+  ).length;
+  const tierOneInQueue = queue.filter((movement) => movement.urgency === 1).length;
+  const dueWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
 
   // The four registers: a strip under the hero on desktop (opened from its Exceptions count), and
   // the collapsible "Today's answers" card under the queue on a phone. Only one is ever mounted.
@@ -310,23 +341,51 @@ export function CoordinatorScreen() {
 
         <div className={styles.body} data-testid="ward-coordinator-body">
           <Hero
-            eyebrow="State bedflow"
-            title={`${openMovements.length} open movements`}
+            // The phone keeps its own hero; direction A is the desktop's.
+            eyebrow={isPhone ? "State bedflow" : "Statewide · mental health beds"}
+            title={
+              isPhone
+                ? `${openMovements.length} open movements`
+                : `${waitingInEd} waiting for ${bedsReady} ready ${bedsReady === 1 ? "bed" : "beds"}`
+            }
             stats={
-              <>
-                <HeroStat value={tierOneOpen} label="Tier 1 open" tone={tierOneOpen > 0 ? "danger" : undefined} />
-                <HeroStat value={bedsReady} label="Beds ready" />
-                <HeroStat value={waitingInEd} label="Waiting in ED" />
-                <HeroStat
-                  value={breachWithinHour}
-                  label={`Due within ${dueWindowLabel(configuration.dueSoonUrgentMinutes)}`}
-                  tone={breachWithinHour > 0 ? "warning" : undefined}
-                />
-              </>
+              isPhone ? (
+                <>
+                  <HeroStat value={tierOneOpen} label="Tier 1 open" />
+                  <HeroStat value={bedsReady} label="Beds ready" />
+                  <HeroStat value={waitingInEd} label="Waiting in ED" />
+                  <HeroStat
+                    value={breachWithinHour}
+                    label={`Due within ${dueWindow}`}
+                    tone={breachWithinHour > 0 ? "warning" : undefined}
+                  />
+                </>
+              ) : undefined
             }
             bar={
               isPhone ? undefined : (
                 <div className={styles.heroToggles}>
+                  <HeroStat
+                    inline
+                    value={overdueInQueue}
+                    label="Overdue"
+                    tone={overdueInQueue > 0 ? "danger" : undefined}
+                    pressed={highlight === "overdue"}
+                    onToggle={() => toggleHighlight("overdue")}
+                  />
+                  <HeroStat
+                    inline
+                    value={tierOneInQueue}
+                    label="Tier 1"
+                    pressed={highlight === "tier1"}
+                    onToggle={() => toggleHighlight("tier1")}
+                  />
+                  <HeroStat
+                    inline
+                    value={breachWithinHour}
+                    label={`Due within ${dueWindow}`}
+                    tone={breachWithinHour > 0 ? "warning" : undefined}
+                  />
                   <HeroStat
                     inline
                     value={actionInbox.length}
@@ -345,16 +404,20 @@ export function CoordinatorScreen() {
                     controls="ward-home-hero-panel"
                     onToggle={() => toggleRegisters("declines")}
                   />
-                  <HeroStat
-                    inline
-                    value={newEvents}
-                    label="New events"
-                    tone={newEvents > 0 ? "info" : undefined}
-                    expanded={heroPanel === "since"}
-                    controls="ward-home-hero-panel"
-                    onToggle={() => setHeroPanel((open) => (open === "since" ? undefined : "since"))}
-                  />
                 </div>
+              )
+            }
+            barAside={
+              isPhone ? undefined : (
+                <HeroStat
+                  inline
+                  value={newEvents}
+                  label="New events"
+                  tone={newEvents > 0 ? "info" : undefined}
+                  expanded={heroPanel === "since"}
+                  controls="ward-home-hero-panel"
+                  onToggle={() => setHeroPanel((open) => (open === "since" ? undefined : "since"))}
+                />
               )
             }
             aside={
@@ -395,6 +458,7 @@ export function CoordinatorScreen() {
             className={styles.grid}
             data-testid="ward-coordinator-region-grid"
             data-shortlist-open={hasPanelSubject}
+            data-placement-preview={previewMovement ? "true" : undefined}
             ref={queueFocusRef}
           >
             <div className={styles.side}>
@@ -412,6 +476,8 @@ export function CoordinatorScreen() {
                 serviceScope={queueServiceScope}
                 pullHoldMinutes={configuration.pullHoldMinutes}
                 delaysHref={DELAYS_HREF}
+                highlight={highlight}
+                onClearHighlight={() => setHighlight(undefined)}
               />
               {isPhone ? renderRegisters("column") : null}
               {isPhone ? (
@@ -424,9 +490,9 @@ export function CoordinatorScreen() {
               ) : null}
             </div>
 
-            <div className={hasPanelSubject ? styles.flowCol : styles.flowWide}>
+            <div className={styles.flowCol}>
               <HomeBedflow
-                movement={selectedMovement}
+                movement={panelMovement}
                 units={units}
                 movements={movements}
                 bedReleases={bedReleases}
@@ -434,40 +500,52 @@ export function CoordinatorScreen() {
                 admissions={admissions}
                 now={now}
                 selectedUnitId={selectedUnitId}
-                onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
-                onOffer={(unitId) => setSelectedUnitId(unitId)}
+                onSelectUnit={(unitId) => pickUnit(selectedUnitId === unitId ? undefined : unitId)}
+                onOffer={(unitId) => pickUnit(unitId)}
                 parallelReferralCap={configuration.parallelReferralCap}
                 dischargesHeldUp={counts.discharges?.value ?? 0}
                 service={service}
               />
             </div>
 
-            {hasPanelSubject ? (
-              <div className={styles.side}>
-                <div
-                  className={`${styles.shortlistBackdrop} ${shortlistStyles.shortlistBackdrop ?? ""}`}
-                  onClick={closeShortlist}
-                  aria-hidden="true"
-                  data-testid="ward-coordinator-shortlist-backdrop"
-                />
+            {hasPanelSubject || previewMovement ? (
+              <div className={styles.side} data-preview={previewMovement ? "true" : undefined}>
+                {hasPanelSubject ? (
+                  <div
+                    className={`${styles.shortlistBackdrop} ${shortlistStyles.shortlistBackdrop ?? ""}`}
+                    onClick={closeShortlist}
+                    aria-hidden="true"
+                    data-testid="ward-coordinator-shortlist-backdrop"
+                  />
+                ) : null}
                 <div className={`${styles.shortlistColumn} ${shortlistStyles.shortlistColumn ?? ""}`}>
                   <aside
                     className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
                     aria-label={selectedReferral ? "Referral placement" : "Placement"}
                     // Journeys prove which movement the panel is for by this attribute.
-                    data-subject-movement={selectedReferral ? undefined : selectedMovement?.id}
+                    data-subject-movement={selectedReferral ? undefined : panelMovement?.id}
+                    // Reaching into the top-of-queue preview selects that patient first, so every
+                    // action acts on a chosen patient and a queue reorder cannot swap them mid-form.
+                    onPointerDownCapture={previewMovement ? () => selectMovement(previewMovement.id) : undefined}
+                    onFocusCapture={previewMovement ? () => selectMovement(previewMovement.id) : undefined}
                   >
                     <div className={`${styles.sheetHandle} ${shortlistStyles.sheetHandle ?? ""}`} aria-hidden="true" />
                     <header className={styles.shortlistHeader}>
                       <h2>{selectedReferral ? "Referral placement" : "Placement"}</h2>
-                      <button
-                        type="button"
-                        className={buttonClass({ variant: "ghost", size: "sm" })}
-                        onClick={closeShortlist}
-                        aria-label="Close shortlist and clear selection"
-                      >
-                        Close
-                      </button>
+                      {previewMovement ? (
+                        <span className={styles.shortlistPreviewLabel} data-testid="ward-placement-top-of-queue">
+                          Top of queue
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          className={buttonClass({ variant: "ghost", size: "sm" })}
+                          onClick={closeShortlist}
+                          aria-label="Close shortlist and clear selection"
+                        >
+                          Close
+                        </button>
+                      )}
                     </header>
                     {service ? (
                       <p className={styles.cardNote} data-testid="ward-shortlist-not-scoped">
@@ -478,7 +556,7 @@ export function CoordinatorScreen() {
                       <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
                     ) : (
                       <ShortlistPanel
-                        movement={selectedMovement}
+                        movement={panelMovement}
                         now={liveNow}
                         units={units}
                         bedReleases={bedReleases}
@@ -486,7 +564,7 @@ export function CoordinatorScreen() {
                         admissions={admissions}
                         referrals={referrals}
                         selectedUnitId={selectedUnitId}
-                        onSelectUnit={setSelectedUnitId}
+                        onSelectUnit={pickUnit}
                         dispatch={dispatch}
                         parallelReferralCap={configuration.parallelReferralCap}
                         pullHoldMinutes={configuration.pullHoldMinutes}
