@@ -115,6 +115,9 @@ export interface BroadcastAlert {
   targetUnitIds?: string[];
   /** `pull_now` only: when an unanswered alert returns to the coordinator. */
   answerBy?: Instant;
+  /** `pull_now` only: how many stage changes the movement had when the alert was sent. A pull after
+   * that point ends the alert, even one recorded in the same clock minute as the send. */
+  stageChangesAtDispatch?: number;
 }
 
 export interface BroadcastTemplate {
@@ -281,7 +284,11 @@ export const PULL_NOW_LIVE_STAGES: readonly Movement["stage"][] = [
  */
 export function pullNowStillWaiting(alert: BroadcastAlert, movement: Movement | undefined): boolean {
   if (!movement || movement.closure || !PULL_NOW_LIVE_STAGES.includes(movement.stage)) return false;
-  return !movement.stageChanges.some((change) => change.to === "pulled" && change.at >= alert.dispatchedAt);
+  const sinceDispatch =
+    alert.stageChangesAtDispatch === undefined
+      ? movement.stageChanges.filter((change) => change.at >= alert.dispatchedAt)
+      : movement.stageChanges.slice(alert.stageChangesAtDispatch);
+  return !sinceDispatch.some((change) => change.to === "pulled");
 }
 
 export function isPullNowOverdue(alert: BroadcastAlert, now: Instant): boolean {

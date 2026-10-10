@@ -740,7 +740,9 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
           ))) ||
       (row.movementId !== undefined && !text(row.movementId)) ||
       (row.targetUnitIds !== undefined && !strings(row.targetUnitIds)) ||
-      (row.answerBy !== undefined && !finite(row.answerBy))
+      (row.answerBy !== undefined && !finite(row.answerBy)) ||
+      (row.stageChangesAtDispatch !== undefined &&
+        !(Number.isInteger(row.stageChangesAtDispatch) && (row.stageChangesAtDispatch as number) >= 0))
     )
       return false;
   }

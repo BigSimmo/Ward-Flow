@@ -256,6 +256,7 @@ export function reduceBroadcastAlertEvent(
         movementId: movement.id,
         targetUnitIds,
         answerBy: (event.now + PULL_NOW_ANSWER_MINUTES) as Instant,
+        stageChangesAtDispatch: movement.stageChanges.length,
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";

@@ -117,7 +117,14 @@ describe("Pull now (global alerts, 10 Oct 2026)", () => {
     const coordinator = { role: "coordinator", id: COORDINATOR_DESK_ACKNOWLEDGER_ID };
     expect(bannerEntriesForDesk(released.broadcastAlerts, released.movements, coordinator, later)).toEqual([]);
     expect(reply(released, {}).broadcastAlerts[0].replies).toHaveLength(0);
-    expect(raise(released, "WF-003").broadcastAlerts).toHaveLength(2);
+    const again = raise(released, "WF-003");
+    expect(again.broadcastAlerts).toHaveLength(2);
+    // The fresh alert is sent in the same clock minute as the earlier pull, and is still live.
+    const fresh = again.broadcastAlerts[0];
+    expect(
+      bannerEntriesForDesk(again.broadcastAlerts, again.movements, coordinator, NOW).map((e) => e.alert.id),
+    ).toEqual([fresh.id]);
+    expect(reply(again, { alertId: fresh.id }).broadcastAlerts[0].replies).toHaveLength(1);
   });
 
   it("refuses to restore a save whose reply carries an unknown answer or reason", () => {
