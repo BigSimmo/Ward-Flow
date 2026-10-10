@@ -1292,6 +1292,16 @@
     background: transparent;
   }
 
+  /* Nothing to answer: the one sentence keeps the card's inset and the card spans the row. */
+  .sbarCard > p:only-child {
+    margin: 0;
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  .answerGrid > .panel[data-empty="true"] {
+    align-self: stretch;
+  }
+
   .patientDossierBanner {
     padding: var(--wf-s-3) var(--wf-s-4);
     border-bottom: 1px solid var(--wf-line);
