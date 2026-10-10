@@ -108,7 +108,7 @@ export default function WardFlowMockupLayout({ children }: { children: ReactNode
       <WardActNowNotifier />
       <div className={styles.shellRow}>
         <WardRail />
-        <div className={styles.shellContent}>
+        <div className={styles.shellContent} data-wf-scroller="">
           <WardBarMount />
           <WardBroadcastBanner />
           <WardPhoneDesktopOnly />

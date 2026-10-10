@@ -1,0 +1,504 @@
+/*
+ * Design system v10 shared parts (v10-parts.tsx). Tokens only. Tone in glyphs and edges, words in
+ * neutral ink, 12px floor, no tinted fills except a free or fit place.
+ */
+
+/* ── CheckingFoot ── */
+.checking {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 500;
+  white-space: normal;
+  color: var(--wf-hero-ink-2);
+}
+
+.checkingEyebrow {
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-hero-ink-3);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.checkLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.checkValue {
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-hero-ink);
+}
+
+.check[data-zero="true"] .checkValue {
+  color: var(--wf-hero-ink-3);
+}
+
+/* On a card or strip: page ink, a hairline above. */
+.checkingPage {
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+}
+
+.checkingPage .checkingEyebrow,
+.checkingPage .check[data-zero="true"] .checkValue {
+  color: var(--wf-ink-3);
+}
+
+.checkingPage .checkValue {
+  color: var(--wf-ink-1);
+}
+
+/* ── Frac ── */
+.frac {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-pill);
+  border: 1px solid var(--wf-line-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--wf-ink-1);
+}
+
+/* ── StepsDots ── */
+.steps {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.steps i {
+  width: 7px;
+  height: 7px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1.5px solid var(--wf-line-ctl);
+}
+
+.steps i[data-state="done"] {
+  background: var(--wf-success);
+  border-color: var(--wf-success);
+}
+
+.steps i[data-state="now"] {
+  background: var(--wf-info);
+  border-color: var(--wf-info);
+  box-shadow:
+    0 0 0 2px var(--wf-surface),
+    0 0 0 3.5px var(--wf-info);
+}
+
+/* ── OccupancyRing (hero only) ── */
+.ring {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  width: 148px;
+  flex: none;
+  color: var(--wf-hero-ink);
+}
+
+.ring svg {
+  display: block;
+  width: 148px;
+  height: 82px;
+  overflow: visible;
+}
+
+.ring path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.ringTrack {
+  stroke: var(--wf-on-hero-track);
+  stroke-width: 8;
+}
+
+.ringTrack[data-known="false"] {
+  stroke: var(--wf-on-hero-line);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+
+.ringValue {
+  stroke: var(--wf-hero-ink-2);
+  stroke-width: 8;
+  transition: stroke-dashoffset var(--wf-t-sheet) var(--wf-ease-sheet);
+}
+
+.ringRef {
+  stroke: var(--wf-hero-ink);
+  stroke-width: 2;
+  stroke-dasharray: var(--wf-ref-dash);
+}
+
+.ringFigure {
+  position: absolute;
+  top: 40px;
+  font: 600 var(--wf-fs-20) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ringUnit {
+  margin-left: 1px;
+  font-size: var(--wf-fs-13);
+}
+
+.ringWord {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--wf-hero-ink-2);
+}
+
+/* ── WardCapacityRow ── */
+.capRows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+  background: var(--wf-surface);
+}
+
+.capRow {
+  display: grid;
+  grid-template-columns: minmax(7rem, 9rem) minmax(0, 1fr) 4.5rem 12px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--wf-row);
+  padding: 0 var(--wf-s-3);
+  box-sizing: border-box;
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: left;
+}
+
+.capRow:last-child {
+  border-bottom: 0;
+}
+
+button.capRow {
+  cursor: pointer;
+  transition: background-color var(--wf-t-micro) var(--wf-ease-out);
+}
+
+button.capRow:hover {
+  background: var(--wf-hover);
+}
+
+button.capRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.capRow[data-selected="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+}
+
+/* A free or fit place: the one tinted fill allowed. */
+.capRow[data-fit="true"] {
+  background: linear-gradient(var(--wf-fit-tint), var(--wf-fit-tint)), var(--wf-surface);
+  box-shadow: inset 0 0 0 1px var(--wf-fit-edge);
+}
+
+.capName {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.capNameText,
+.capMeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.capNameText {
+  font-weight: 600;
+}
+
+.capMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.capBar {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.capBar > * {
+  flex: 1 1 auto;
+}
+
+/* The one dashed alert line, through the bar. */
+.capBar::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: var(--wf-cap-alert);
+  border-left: 1.5px dashed var(--wf-line-3);
+  pointer-events: none;
+}
+
+/* Dimmed (data-dim): words and bars recede by colour, never opacity or filter. */
+.capRow[data-dim="true"] .capMeta,
+.capRow[data-dim="true"] .capPct {
+  color: var(--wf-dim);
+}
+
+.capRow[data-dim="true"] .capBar span {
+  background: var(--wf-glyph-dim);
+}
+
+.capPct {
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.capGlyph {
+  display: inline-flex;
+  justify-content: center;
+}
+
+/* ── GroupHead ── */
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--wf-row-group);
+  padding: 0 var(--wf-s-4);
+  box-sizing: border-box;
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: left;
+}
+
+button.groupHead {
+  cursor: pointer;
+}
+
+button.groupHead:hover {
+  background: var(--wf-hover);
+}
+
+button.groupHead:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.groupName {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.groupTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+.groupCount {
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+}
+
+.groupMeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.groupAside {
+  flex: none;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.groupChevron {
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-t-micro) var(--wf-ease-out);
+}
+
+.groupHead[aria-expanded="false"] .groupChevron {
+  transform: rotate(-90deg);
+}
+
+/* A letter or section divider: no fill, the label then a hairline. */
+.groupLetter {
+  min-height: 28px;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  border-bottom: 0;
+  background: transparent;
+}
+
+.groupLetter .groupTitle {
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.groupLetter .groupName::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--wf-line);
+}
+
+/* ── SinceYouLooked ── */
+.since {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  overflow: hidden;
+  animation: wfFade var(--wf-t-enter) var(--wf-ease-out);
+}
+
+.sinceClock {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.sinceEmpty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.digest {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  margin: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+
+.digest > li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 14px;
+  box-shadow: -1px 0 0 var(--wf-line);
+}
+
+.digestFigure {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 var(--wf-fs-20) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.digestWord {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+
+.digestDetail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+@media (max-width: 48rem) {
+  .digest {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .digest > li {
+    box-shadow:
+      -1px 0 0 var(--wf-line),
+      0 -1px 0 var(--wf-line);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ringValue,
+  .groupChevron {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .frac,
+  .capRows,
+  .since,
+  .digest {
+    border-color: CanvasText;
+  }
+  .steps i[data-state="done"],
+  .steps i[data-state="now"] {
+    background: CanvasText;
+  }
+  .capRow[data-selected="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}

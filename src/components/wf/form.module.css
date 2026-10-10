@@ -344,14 +344,25 @@
   color: var(--wf-ink-off);
 }
 
-/* Shown for review, not connected: dimmed track, still focusable. */
+/* Shown for review, not connected: dimmed track, still focusable. v10: dim by colour token only,
+   never opacity, so the words stay legible and the contrast stays predictable. */
 .switchRow.unavailable {
   cursor: default;
 }
 
 .switchRow.unavailable .track,
+.switchRow.unavailable[aria-checked="true"] .track {
+  background: var(--wf-track);
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
+}
+
+.switchRow.unavailable .track::after {
+  background: var(--wf-surface);
+  box-shadow: 0 0 0 1px var(--wf-line-2);
+}
+
 .switchRow.unavailable .switchState {
-  opacity: 0.55;
+  color: var(--wf-dim);
 }
 
 .onHero {
@@ -423,7 +434,7 @@
 }
 
 .unavailable .stp {
-  opacity: 0.6;
+  color: var(--wf-dim);
 }
 
 .unavailable .stpButton {

@@ -227,18 +227,15 @@
 }
 
 /* Dim convention (v10): any part marked data-dim="true" recedes by colour only. Its words take
-   --wf-dim and its status glyphs take --wf-glyph-dim. Rows stay in place and stay focusable. */
+   --wf-dim and its status glyphs take --wf-glyph-dim. Rows stay in place and stay focusable.
+   A child that sets its own ink colour must also follow data-dim in its own stylesheet. */
 [data-dim="true"] {
   color: var(--wf-dim);
-  --wf-ink-1: var(--wf-dim);
-  --wf-ink-2: var(--wf-dim);
-  --wf-ink-3: var(--wf-dim);
   --wf-danger: var(--wf-glyph-dim);
   --wf-warning: var(--wf-glyph-dim);
   --wf-success: var(--wf-glyph-dim);
   --wf-info: var(--wf-glyph-dim);
   --wf-neutral: var(--wf-glyph-dim);
-  --wf-act-edge: var(--wf-line-2);
 }
 
 /* Glare mode: data-mode="glare" on the root, for ward PCs by bright windows. Solid surfaces, no

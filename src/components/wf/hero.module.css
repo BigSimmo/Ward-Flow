@@ -3,13 +3,16 @@
  * switch to their night values and the focus ring turns white, so dots and focus stay >= 3:1.
  */
 
-.hero {
+.hero:not(.quiet) {
   --wf-danger: var(--wf-hero-danger);
   --wf-warning: var(--wf-hero-warning);
   --wf-success: var(--wf-hero-success);
   --wf-info: var(--wf-hero-info);
   --wf-neutral: var(--wf-hero-neutral);
   --wf-focus-ring: var(--wf-hero-ink);
+}
+
+.hero {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
@@ -435,6 +438,72 @@
     order: 4;
   }
   .footAside {
+    display: none;
+  }
+}
+
+/* Quiet hero (v10): an inactive record or a calm page. A light inset card in page ink that never
+   looks live and never takes the band. Status glyphs keep their page values. */
+.quiet {
+  --wf-hero-ink: var(--wf-ink-1);
+  --wf-hero-ink-2: var(--wf-ink-2);
+  --wf-hero-ink-3: var(--wf-ink-3);
+  --wf-hero-edge: var(--wf-line-2);
+  --wf-hero-2: var(--wf-ink-1);
+  --wf-on-hero-fill: transparent;
+  --wf-on-hero-line: var(--wf-line-3);
+  --wf-on-hero-div: var(--wf-line);
+  background: var(--wf-surface);
+  border-color: var(--wf-line-2);
+  color: var(--wf-ink-1);
+  box-shadow: var(--wf-e1);
+}
+
+/*
+ * The band (v10 section 7.1, desktop and tablet only). `useWfBandBleed` (band.ts) sets
+ * data-band="on" when the page opens on this hero and writes how far the hero sits from the work
+ * column's edges and from the header. The hero then runs square to those edges and up to the
+ * header, which paints the band's top colour at rest, so the two read as one surface. Its text
+ * lines up with the header title and the card edges below. The page rises over its foot with one
+ * 22px round lip in the page canvas. Phone never gets data-band, so it keeps its own hero.
+ */
+@media (min-width: 48.0625rem) {
+  .hero[data-band="on"] {
+    position: relative;
+    margin-top: calc(-1 * var(--wf-band-top, 0px));
+    margin-left: calc(-1 * var(--wf-band-left, 0px));
+    margin-right: calc(-1 * var(--wf-band-right, 0px));
+    padding-top: var(--wf-s-3);
+    padding-bottom: calc(var(--wf-s-3) + var(--wf-band-lip));
+    padding-left: max(var(--wf-band-left, 0px), 18px);
+    padding-right: max(var(--wf-band-right, 0px), 16px);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background:
+      radial-gradient(720px 200px at 88% -40%, rgba(122, 170, 220, 0.16), transparent 70%),
+      linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  }
+
+  .hero[data-band="on"]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: var(--wf-band-lip);
+    border-radius: var(--wf-band-lip) var(--wf-band-lip) 0 0;
+    background: var(--wf-canvas);
+    box-shadow: 0 -1px 0 var(--wf-hero-edge);
+    pointer-events: none;
+  }
+}
+
+@media print {
+  .hero[data-band="on"] {
+    margin: 0;
+  }
+  .hero[data-band="on"]::after {
     display: none;
   }
 }

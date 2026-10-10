@@ -1,5 +1,8 @@
+"use client";
+
 import { ChevronDown } from "lucide-react";
-import { useId, type ElementType, type ReactNode } from "react";
+import { useId, useRef, type ElementType, type ReactNode } from "react";
+import { useWfBandBleed } from "./band";
 import { cx } from "./cx";
 import { SrOnly } from "./primitives";
 import { StatusGlyph, type WfTone } from "./status-glyph";
@@ -30,12 +33,26 @@ export type HeroProps = {
   level?: 1 | 2;
   /** `data-testid` on the hero section, so a page needs no wrapper element to find it. */
   testId?: string;
+  /**
+   * Quiet hero (v10): a light inset card for an inactive record or a calm page. It never looks
+   * live and never takes the band.
+   */
+  quiet?: boolean;
+  /**
+   * Desktop and tablet band (v10 section 7.1). On by default: when the page opens on this hero it
+   * runs square across the work column and the header sits in hero ink over it at rest. Pass
+   * `false` for a hero that must stay an inset card even at the top of a page.
+   */
+  band?: boolean;
   className?: string;
 };
 
 /**
  * v6 hero band. One per page. Inside it status glyphs use their night values and focus turns
  * white. Use `light` for its one primary button and `onHero` for the rest.
+ *
+ * v10: a page that opens on this hero gets the band on desktop and tablet automatically (see
+ * `band.ts`). Put a `CheckingFoot` in `foot` to say what the page checked and what it could not.
  */
 export function Hero({
   eyebrow,
@@ -50,12 +67,22 @@ export function Hero({
   footAside,
   level = 2,
   testId,
+  quiet = false,
+  band = true,
   className,
 }: HeroProps) {
   const titleId = useId();
+  const sectionRef = useRef<HTMLElement>(null);
+  useWfBandBleed(sectionRef, band && !quiet);
   const Heading = `h${level}` as ElementType;
   return (
-    <section className={cx(styles.hero, className)} aria-labelledby={titleId} data-testid={testId}>
+    <section
+      ref={sectionRef}
+      className={cx(styles.hero, quiet && styles.quiet, className)}
+      aria-labelledby={titleId}
+      data-testid={testId}
+      data-wf-hero={quiet ? "quiet" : "band"}
+    >
       <div className={styles.row}>
         <div className={styles.titleBlock}>
           {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}

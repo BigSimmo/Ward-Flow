@@ -29,13 +29,13 @@
 
 /* Act now: a thin red edge all round, never a fill (v9 section 5 and 9). */
 .actNow {
-  box-shadow: inset 0 0 0 1px var(--wf-danger);
+  box-shadow: inset 0 0 0 1px var(--wf-act-edge);
 }
 
 .selected.actNow {
   box-shadow:
     inset 3px 0 0 var(--wf-accent-strong),
-    inset 0 0 0 1px var(--wf-danger);
+    inset 0 0 0 1px var(--wf-act-edge);
 }
 
 /* v9 section 8: a row's ring sits inside with a 2px gap, so it never touches the red edge or the
@@ -194,7 +194,7 @@
 }
 
 .table tr.actNow {
-  outline: 1px solid var(--wf-danger);
+  outline: 1px solid var(--wf-act-edge);
   outline-offset: -1px;
 }
 

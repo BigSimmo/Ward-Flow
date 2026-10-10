@@ -2572,3 +2572,157 @@
     outline-offset: 2px;
   }
 }
+
+/*
+ * ── The band header (v10 section 7.1, Josh 10 Oct 2026, option 1 "Beside the sidebar") ─────────
+ *
+ * Desktop and tablet only. `data-band` comes from `useWfBandActive()` (src/components/wf/band.ts),
+ * which is true while the page opens on the shared Hero. Pages without a hero keep the glass bar.
+ *
+ * `ink`: at rest over the band. The bar paints the band's top colour, the hero rises to meet it,
+ * and the two read as one surface. Title in hero ink, the service pill and search on the on-hero
+ * fill and line, the ghost triggers in hero ink. New referral stays the blue primary.
+ * `light`: once the page scrolls past 4px. Solid surface-2, a 1px line and the bar shadow, no
+ * blur. The same as the phone bar when it scrolls.
+ *
+ * Phone (48rem and under) never gets `data-band`; its lean bar is unchanged.
+ */
+@media (min-width: 48.0625rem) {
+  .bar[data-band] {
+    transition:
+      background-color var(--wf-t-enter) var(--wf-ease-out),
+      border-color var(--wf-t-enter) var(--wf-ease-out),
+      box-shadow var(--wf-t-enter) var(--wf-ease-out),
+      color var(--wf-t-enter) var(--wf-ease-out);
+  }
+
+  .bar.bar[data-band]::before,
+  .bar.bar[data-band]::after {
+    display: none;
+  }
+
+  .bar.bar[data-band="ink"] {
+    --wf-focus-ring: var(--wf-hero-ink);
+    background: var(--wf-hero-1);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-bottom-color: var(--wf-hero-1);
+    box-shadow: none;
+    color: var(--wf-hero-ink);
+  }
+
+  .bar.bar[data-band="light"] {
+    background: var(--wf-surface-2);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-bottom: 1px solid var(--wf-line);
+    box-shadow: var(--wf-e-bar);
+  }
+
+  .bar[data-band="ink"] .place {
+    color: var(--wf-hero-ink);
+  }
+
+  .bar[data-band="ink"] .scopeBadgeBtn,
+  .bar[data-band="ink"] .drawerTrigger,
+  .bar[data-band="ink"] .triggerIcon {
+    color: var(--wf-hero-ink);
+  }
+
+  .bar[data-band="ink"] .scopeCaret,
+  .bar[data-band="ink"] .triggerCaret {
+    color: var(--wf-hero-ink-2);
+  }
+
+  .bar[data-band="ink"] .scopeBadgeBtn::before,
+  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type::before {
+    background: var(--wf-on-hero-fill);
+    border-color: var(--wf-on-hero-line);
+    box-shadow: none;
+  }
+
+  .bar[data-band="ink"]
+    .searchWrap
+    :global([data-testid="ward-global-search"]):focus-within
+    > div:first-of-type::before {
+    border-color: var(--wf-hero-ink);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
+  }
+
+  .bar[data-band="ink"] .scopeBadgeBtn:hover::before,
+  .bar[data-band="ink"] .drawerTrigger:hover::before {
+    background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  }
+
+  .bar[data-band="ink"] .drawerTrigger[aria-expanded="true"]::before {
+    border-color: var(--wf-on-hero-line);
+    background: var(--wf-on-hero-fill);
+    box-shadow: none;
+  }
+
+  /* The service dot keeps its own colour; its halo takes the band so it never smudges. */
+  .bar[data-band="ink"] .scopeDot {
+    box-shadow: 0 0 0 2px var(--wf-on-hero-line);
+  }
+
+  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search"]) > div:first-of-type > svg,
+  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search-input"])::placeholder {
+    color: var(--wf-hero-ink-3);
+  }
+
+  .bar[data-band="ink"] .searchWrap :global([data-testid="ward-global-search-input"]) {
+    color: var(--wf-hero-ink);
+  }
+
+  .bar[data-band="ink"] .searchWrap :global([data-ward-search-shortcut]) {
+    border-color: var(--wf-on-hero-line);
+    background: transparent;
+    color: var(--wf-hero-ink-2);
+  }
+
+  .bar[data-band="ink"] .unread {
+    background: var(--wf-hero-ink-2);
+  }
+
+  .bar[data-band="ink"] .badge {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--wf-on-hero-line);
+    color: var(--wf-hero-ink);
+  }
+
+  .bar[data-band="ink"] .vsep {
+    background: var(--wf-on-hero-line);
+  }
+
+  /* The primary keeps its blue face; its focus gap takes the band colour. */
+  .bar[data-band="ink"] .primary {
+    --wf-focus-ring: var(--wf-hero-ink);
+  }
+}
+
+@media (min-width: 48.0625rem) and (prefers-reduced-motion: reduce) {
+  .bar[data-band] {
+    transition-duration: var(--wf-t-enter);
+  }
+}
+
+@media (forced-colors: active) {
+  .bar.bar[data-band] {
+    background: Canvas;
+    border-bottom: 1px solid CanvasText;
+    color: CanvasText;
+  }
+  .bar[data-band] .place,
+  .bar[data-band] .scopeBadgeBtn,
+  .bar[data-band] .drawerTrigger,
+  .bar[data-band] .triggerIcon {
+    color: CanvasText;
+  }
+}
+
+@media print {
+  .bar.bar[data-band] {
+    background: none;
+    box-shadow: none;
+  }
+}

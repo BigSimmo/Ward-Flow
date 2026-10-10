@@ -7,7 +7,7 @@ export { dur, durMinutes, clk, durParts } from "./format";
 export { useMinuteNow } from "./use-minute-now";
 export { StatusGlyph, Dot, type WfTone } from "./status-glyph";
 export { Icon, type IconProps, type IconSize } from "./icon";
-export { SrOnly, Kbd, Count, CountBubble, Divider, Inset, Spinner, IconTile } from "./primitives";
+export { SrOnly, Kbd, Count, CountBubble, CountCircle, Divider, Inset, Spinner, IconTile } from "./primitives";
 export {
   Button,
   DisabledReason,
@@ -21,6 +21,24 @@ export {
 export { Badge, type BadgeProps, type BadgeVariant } from "./badge";
 export { Card, CardHead, CardBody, CardFoot, type CardProps, type CardHeadProps } from "./card";
 export { Hero, HeroStat, HeroSteps, type HeroProps, type HeroStatProps, type HeroStep } from "./hero";
+export { useWfBandActive, registerWfBandHero, WF_BAND_QUERY, WF_BAND_SCROLLED_PX, WF_BAND_TOP_SLACK_PX } from "./band";
+export {
+  CheckingFoot,
+  Frac,
+  StepsDots,
+  OccupancyRing,
+  WardCapacityRow,
+  WardCapacityRows,
+  GroupHead,
+  SinceYouLooked,
+  type CheckingItem,
+  type CheckingFootProps,
+  type StepState,
+  type OccupancyRingProps,
+  type WardCapacityRowProps,
+  type GroupHeadProps,
+  type SinceItem,
+} from "./v10-parts";
 export {
   Stat,
   StatGroup,

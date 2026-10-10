@@ -30,7 +30,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { standingFigures } from "@/components/ward-management/ward-standing-strip";
 
 import { Sheet } from "@/components/ui/sheet";
-import { StatusGlyph, type WfTone } from "@/components/wf";
+import { StatusGlyph, WF_BAND_SCROLLED_PX, useWfBandActive, type WfTone } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import {
   readStoredGlarePreference,
@@ -382,6 +382,39 @@ function useBarScrolled(enabled: boolean): boolean {
       if (frame) window.cancelAnimationFrame(frame);
     };
   }, [enabled]);
+
+  return enabled && scrolled;
+}
+
+/**
+ * Desktop and tablet band header (v10 section 7.1, Josh 10 Oct 2026, option 1). True once the
+ * page has scrolled past 4px. The desktop work column scrolls inside `[data-wf-scroller]`; below
+ * 1000px the window scrolls instead, so both are watched. Off on phone, which keeps its own bar.
+ */
+function useBandScrolled(barRef: RefObject<HTMLElement | null>, enabled: boolean): boolean {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const scroller = barRef.current?.closest<HTMLElement>("[data-wf-scroller]") ?? null;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const offset = Math.max(scroller?.scrollTop ?? 0, window.scrollY);
+      setScrolled(offset > WF_BAND_SCROLLED_PX);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    frame = window.requestAnimationFrame(update);
+    scroller?.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      scroller?.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [barRef, enabled]);
 
   return enabled && scrolled;
 }
@@ -1093,6 +1126,11 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const activityHasUnread = unreadNoticeCount > 0;
 
   const barScrolled = useBarScrolled(isPhone);
+  // Desktop and tablet only: a page that opens on the shared Hero bands the header (v10 7.1).
+  const barRef = useRef<HTMLElement>(null);
+  const bandActive = useWfBandActive() && !isPhone;
+  const bandScrolled = useBandScrolled(barRef, bandActive);
+  const bandState = bandActive ? (bandScrolled ? "light" : "ink") : undefined;
   // Phone only: the condensed bar's live line, the open movements in the current scope.
   const scopeOpenCount = activeService
     ? (serviceOptionOpenCounts.get(activeService as HealthService) ?? 0)
@@ -1100,9 +1138,12 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   return (
     <header
+      ref={barRef}
       className={styles.bar}
       aria-label="Header"
       data-testid="ward-bar"
+      data-wf-bar=""
+      data-band={bandState}
       data-long-title={routeTitle.length > 17 || undefined}
       data-scrolled={barScrolled || undefined}
     >

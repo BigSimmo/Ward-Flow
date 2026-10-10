@@ -41,6 +41,30 @@ export function CountBubble({ n, label, className }: { n: number | string; label
   );
 }
 
+/**
+ * v10 count circle for the compact sidebar rail and the phone dock: the number in an 18px edged
+ * circle, 12px mono, on the surface with a 2px ring in the colour behind it (`--wf-count-ring`).
+ * An urgent count takes an amber edge, never a fill and never an extra dot.
+ */
+export function CountCircle({
+  n,
+  label,
+  urgent = false,
+  className,
+}: {
+  n: number | string;
+  label?: string;
+  urgent?: boolean;
+  className?: string;
+}) {
+  return (
+    <span className={cx(styles.countCircle, className)} data-urgent={urgent ? "true" : undefined}>
+      <span aria-hidden={label ? true : undefined}>{n}</span>
+      {label ? <SrOnly>{label}</SrOnly> : null}
+    </span>
+  );
+}
+
 /** Hairline. Horizontal by default. */
 export function Divider({ vertical = false, className }: { vertical?: boolean; className?: string }) {
   return vertical ? (
