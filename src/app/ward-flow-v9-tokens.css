@@ -1,6 +1,7 @@
 /*
  * Ward Flow design system v9 tokens (approved 10 October 2026). Synthetic prototype.
- * Spec and source of values: design/v9/design-system-v9.md and design/v9/ward-flow-v9.css.
+ * Spec and source of values: design/v9/design-system-v9.md, with the reference sheet
+ * design/v9/ward-flow-v9.css kept on branch backup/claude/design-system-v7-4ygmui-pre-slim-20261010.
  * Loaded after ward-flow-v6-tokens.css. It adds the v9 token groups and re-points the v6 values that
  * v9 changes (glass, rows, motion). Themes follow the same switch as the v6 file:
  * :root[data-theme="dark"] or a dark OS unless data-theme="light", with .day and .night subtrees.
