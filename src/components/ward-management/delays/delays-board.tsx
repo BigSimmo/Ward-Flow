@@ -337,6 +337,7 @@ function PersonPanel({
       className={`${styles.card} ${styles.side}`}
       aria-label="Why this person is waiting"
       data-ward-primitive="panel"
+      data-wf-rail
       data-testid={`delays-detail-${movement.id}`}
       id="delays-person-panel"
       tabIndex={-1}
@@ -695,6 +696,7 @@ function Registers({
       className={`${styles.card} ${styles.side}`}
       aria-label="Escalations and resolved"
       data-ward-primitive="panel"
+      data-wf-rail
     >
       <div className={styles.sideB}>
         <div className={styles.seg} role="tablist" aria-label="Registers" onKeyDown={onTabKey}>
