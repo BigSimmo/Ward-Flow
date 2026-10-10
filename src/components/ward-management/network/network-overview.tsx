@@ -3,7 +3,19 @@
 import { BedDouble, MapPin, Network as NetworkIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { Card, CardHead, Segmented, SrOnly, StatusGlyph, Switch, cx, durMinutes } from "@/components/wf";
+import {
+  Button,
+  Card,
+  CardHead,
+  FilterChip,
+  Segmented,
+  SrOnly,
+  StatusGlyph,
+  Switch,
+  cx,
+  durMinutes,
+  useIsPhone,
+} from "@/components/wf";
 import { designationSummary } from "@/components/ward-management/ward-bed-designation";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
@@ -36,6 +48,24 @@ function serviceShort(service: HealthService): string {
   return SERVICE_SHORT[service] ?? service;
 }
 
+/** A hero figure pressed to highlight the bed flow (v10 Network). Units has no highlight. */
+export type NetworkHighlight = "waiting" | "ready" | "pulled" | "expected";
+
+const HIGHLIGHT_WORDS: Record<NetworkHighlight, string> = {
+  waiting: "in a service with people waiting in ED",
+  ready: "with a ready bed",
+  pulled: "with a pulled bed",
+  expected: "expecting a bed today",
+};
+
+/** Whether a unit row matches a hero highlight. Waiting is a service figure, so it reads the group. */
+function matchesHighlight(highlight: NetworkHighlight, row: NetworkUnitRow, group: ServiceGroup): boolean {
+  if (highlight === "waiting") return group.waiting > 0;
+  if (highlight === "ready") return row.states.ready > 0;
+  if (highlight === "pulled") return row.states.pulled > 0;
+  return row.expected > 0;
+}
+
 /**
  * State bedflow (v6 Network mockup): each health service as a small table of its wards, with the
  * bed bar, Ready, Pulled and Expected today, under a header stating how many wait in that service's
@@ -45,11 +75,20 @@ export function NetworkBedflow({
   groups,
   selectedUnitId,
   onSelectUnit,
+  highlight,
+  onClearHighlight,
 }: {
   groups: readonly ServiceGroup[];
   selectedUnitId: string | undefined;
   onSelectUnit: (unitId: string) => void;
+  /**
+   * The hero figure pressed (v10 Network): matching cells mark and every other row dims by colour.
+   * Nothing is hidden.
+   */
+  highlight?: NetworkHighlight;
+  onClearHighlight?: () => void;
 }) {
+  const isPhone = useIsPhone();
   const [scope, setScope] = useState<HealthService | "all">("all");
   const [readyOnly, setReadyOnly] = useState(false);
   const scopeItems = [
@@ -60,6 +99,10 @@ export function NetworkBedflow({
     .filter((group) => scope === "all" || group.service === scope)
     .map((group) => ({ ...group, rows: readyOnly ? group.rows.filter((row) => row.states.ready > 0) : group.rows }));
   const unitCount = groups.reduce((sum, group) => sum + group.rows.length, 0);
+  const shownCount = shown.reduce((sum, group) => sum + group.rows.length, 0);
+  const highlightedCount = highlight
+    ? shown.reduce((sum, group) => sum + group.rows.filter((row) => matchesHighlight(highlight, row, group)).length, 0)
+    : 0;
 
   return (
     <Card as="section" className={styles.bedflow} aria-labelledby="ward-network-flow-heading">
@@ -72,12 +115,43 @@ export function NetworkBedflow({
           </>
         }
         action={
-          <span className={styles.headControls}>
-            <Segmented label="Health service" items={scopeItems} value={scope} onChange={setScope} />
+          isPhone ? (
             <Switch label="Ready only" checked={readyOnly} onCheckedChange={setReadyOnly} />
-          </span>
+          ) : (
+            <span className={styles.headControls}>
+              <Segmented label="Health service" items={scopeItems} value={scope} onChange={setScope} />
+              <Switch label="Ready only" checked={readyOnly} onCheckedChange={setReadyOnly} />
+            </span>
+          )
         }
       />
+      {isPhone ? (
+        // Phone (v10 Network): the services as a scrolling chip row, 44px high, none cut off.
+        <div className={styles.scopeChips} role="group" aria-label="Health service">
+          {scopeItems.map((item) => (
+            <FilterChip
+              key={item.id}
+              pressed={scope === item.id}
+              onPressedChange={() => setScope(item.id)}
+              className={styles.scopeChip}
+            >
+              {item.label}
+            </FilterChip>
+          ))}
+        </div>
+      ) : null}
+      {highlight ? (
+        <p className={styles.highlightNote} data-testid="ward-network-highlight-note">
+          <span>
+            <b>{highlightedCount}</b> of {shownCount} units {HIGHLIGHT_WORDS[highlight]}, all rows stay
+          </span>
+          {onClearHighlight ? (
+            <Button variant="ghost" size="sm" onClick={onClearHighlight}>
+              Clear
+            </Button>
+          ) : null}
+        </p>
+      ) : null}
       <div className={styles.serviceGrid}>
         {shown.map((group) => {
           const share = occupiedPercent(group.occupied, group.beds);
@@ -90,7 +164,10 @@ export function NetworkBedflow({
                     {group.rows.length} {group.rows.length === 1 ? "ward" : "wards"}
                   </span>
                 </h3>
-                <span className={styles.serviceMeta}>
+                <span
+                  className={styles.serviceMeta}
+                  data-hl={highlight === "waiting" && group.waiting > 0 ? "true" : undefined}
+                >
                   <b>{group.waiting}</b> in ED
                   {share === undefined ? null : (
                     <>
@@ -122,8 +199,14 @@ export function NetworkBedflow({
                   <tbody>
                     {group.rows.map((row) => {
                       const selected = row.unit.id === selectedUnitId;
+                      const match = highlight ? matchesHighlight(highlight, row, group) : false;
+                      const mark = (kind: NetworkHighlight) => (highlight === kind && match ? "true" : undefined);
                       return (
-                        <tr key={row.unit.id} className={cx(selected && styles.rowSelected)}>
+                        <tr
+                          key={row.unit.id}
+                          className={cx(selected && styles.rowSelected)}
+                          data-dim={highlight && !match ? "true" : undefined}
+                        >
                           <td>
                             <button
                               type="button"
@@ -149,9 +232,15 @@ export function NetworkBedflow({
                               wardName={row.unit.name}
                             />
                           </td>
-                          <td className={cx(styles.num, styles.readyNum)}>{row.states.ready}</td>
-                          <td className={cx(styles.num, styles.pulledNum)}>{row.states.pulled}</td>
-                          <td className={styles.num}>+{row.expected}</td>
+                          <td className={cx(styles.num, styles.readyNum)} data-hl={mark("ready")}>
+                            {row.states.ready}
+                          </td>
+                          <td className={cx(styles.num, styles.pulledNum)} data-hl={mark("pulled")}>
+                            {row.states.pulled}
+                          </td>
+                          <td className={styles.num} data-hl={mark("expected")}>
+                            +{row.expected}
+                          </td>
                         </tr>
                       );
                     })}
