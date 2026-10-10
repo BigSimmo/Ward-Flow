@@ -991,10 +991,10 @@ test.describe("@mockup Role switcher — the loop", () => {
     }
 
     /**
-     * Opens the switcher and clicks the named menu item — never a rank (ruling R41 retired
-     * `.first()` for the whole phase). Each name passed below is checked, immediately below this
-     * function, to be a substring of exactly one menu item's accessible name, so a Playwright
-     * substring match here can never silently resolve to the wrong destination.
+     * Opens Change view's Switch workstation drawer and clicks the named statewide tile or Patient
+     * in focus chip — never a rank (ruling R41 retired `.first()` for the whole phase). Each name
+     * must resolve to exactly one link there, so a Playwright substring match here can never
+     * silently resolve to the wrong destination.
      *
      * `ensureToolsOpen`/`ensureToolsClosed` bracket the switch: the switcher lives inside
      * `WardBar`'s Tools drawer now (Task 8, 2026-09-11) — see those helpers' own header.
@@ -1002,8 +1002,11 @@ test.describe("@mockup Role switcher — the loop", () => {
     async function switchTo(menuItemName: string) {
       await ensureToolsOpen(page);
       await switcherTrigger().click();
-      const matches = page.getByRole("menuitem", { name: menuItemName });
-      await expect(matches, `"${menuItemName}" must resolve to exactly one menu item`).toHaveCount(1);
+      const matches = page
+        .getByRole("dialog", { name: "Switch workstation" })
+        .getByRole("group", { name: /^(Statewide desks|Patient in focus)$/ })
+        .getByRole("link", { name: menuItemName });
+      await expect(matches, `"${menuItemName}" must resolve to exactly one drawer link`).toHaveCount(1);
       const href = await matches.getAttribute("href");
       await matches.click();
       // Let the navigation commit before closing the drawer: closing calls history.back() while the
@@ -1038,7 +1041,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await expect(page.getByTestId("ward-ed-outstanding-WF-315")).not.toHaveAttribute("data-kind", "examination");
 
     // --- Step 2: Coordinator — select WF-315, refer to all three candidates. ---
-    await switchTo("Coordinator");
+    await switchTo("Flow coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
@@ -1089,7 +1092,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     // role. The shared `focusMovementId` (ward-flow-provider.tsx) re-selects WF-315 on this
     // remount without another click — proving the selection itself, not just the movement data,
     // survived the two role switches so far. ---
-    await switchTo("Coordinator");
+    await switchTo("Flow coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toContainText(
@@ -1133,7 +1136,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await expect(page.getByTestId("ward-ed-outstanding-WF-315")).toHaveAttribute("data-kind", "transport");
 
     // --- Steps 7-10: Officer — Accepted, En route, Collected, Delivered. ---
-    await switchTo("Officer");
+    await switchTo("Authorised officer");
     await expect(page.getByTestId("ward-officer-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
@@ -1158,7 +1161,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     }
 
     // --- Step 11: Coordinator — the patient has left the system. ---
-    await switchTo("Coordinator");
+    await switchTo("Flow coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("region", { name: "Priority queue" }).getByTestId("ward-queue-row-WF-315")).toHaveCount(
@@ -1199,8 +1202,11 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     async function switchTo(menuItemName: string) {
       await ensureToolsOpen(page);
       await switcherTrigger().click();
-      const matches = page.getByRole("menuitem", { name: menuItemName });
-      await expect(matches, `"${menuItemName}" must resolve to exactly one menu item`).toHaveCount(1);
+      const matches = page
+        .getByRole("dialog", { name: "Switch workstation" })
+        .getByRole("group", { name: /^(Statewide desks|Patient in focus)$/ })
+        .getByRole("link", { name: menuItemName });
+      await expect(matches, `"${menuItemName}" must resolve to exactly one drawer link`).toHaveCount(1);
       const href = await matches.getAttribute("href");
       await matches.click();
       // Let the navigation commit before closing the drawer: closing calls history.back() while the
@@ -1258,7 +1264,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
 
     // --- Step 5: click through to the coordinator — the role switcher's real <Link>, never a
     // goto. Coordinator is never ambiguous (spec §9: "Statewide — no ward or department"). ---
-    await switchTo("Coordinator");
+    await switchTo("Flow coordinator");
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 

@@ -141,6 +141,24 @@ describe("demo scenario save and load", () => {
     expect(good.format).toBe(WARD_FLOW_SCENARIO_FILE_FORMAT);
   });
 
+  it("loads a v6 world into this v7 build through the same migration as a browser restore", () => {
+    const built = buildScenarioFile(seedWardFlowStateAt(0), NOW_ANCHOR, 7, FIXED_SYSTEM_TIME);
+    if (!built.ok) throw new Error(built.reason);
+    const file = JSON.parse(built.json);
+    const v6State = { ...file.state };
+    delete v6State.plannedAdmissions;
+    delete v6State.plannedAdmissionSequence;
+    const read = readScenarioFile(JSON.stringify({ ...file, stateVersion: 6, state: v6State }), 7);
+    expect(read.ok).toBe(true);
+    if (!read.ok) return;
+    expect(read.state.plannedAdmissions).toEqual([]);
+    expect(read.state.plannedAdmissionSequence).toBe(0);
+    expect(read.state.movements).toEqual(v6State.movements);
+    expect(read.state.admissions).toEqual(v6State.admissions);
+    // Only into the version this build writes, and only from v6.
+    expect(readScenarioFile(JSON.stringify({ ...file, stateVersion: 5, state: v6State }), 7).ok).toBe(false);
+  });
+
   it("offers Save and Load in the demo menu and reports the outcome", async () => {
     const createObjectURL = vi.fn(() => "blob:scenario");
     const revokeObjectURL = vi.fn();

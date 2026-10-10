@@ -89,6 +89,8 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
   "DISPATCH_BROADCAST_ALERT",
   // Stream D, 9 Oct 2026: `initials` is typed by a person (one to three letters, normalised and
   // pattern-checked, but still typed about a person), so booking locks persistence like ADD_PATIENT.
+  // Its optional `gender` (9 Oct 2026) is an enum membership-checked against `REFERRAL_GENDERS`,
+  // not typed text; `initials` alone keeps the event on this list.
   "BOOK_PLANNED_ADMISSION",
   // 9 Oct 2026: `who` (the person told) and `reason` (why it does not apply) are typed text.
   "RECORD_SUPPORT_NOTIFICATION",
@@ -267,7 +269,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "STAND_DOWN_BROADCAST_ALERT",
   // Stream D, 9 Oct 2026: `plannedAdmissionId`/`unitId`/`actingUnitId` are ids, `reason` and
   // `legalStatus` are closed unions membership-checked by the reducer, and the rest are numbers or
-  // instants. No initials or other typed text travels on these three.
+  // instants. No initials or other typed text travels on these three. `CHANGE_PLANNED_ADMISSION`'s
+  // optional `gender` (Josh, 9 Oct 2026) is an enum, not free text: a `ReferralGender` the reducer
+  // membership-checks against `REFERRAL_GENDERS`, so it keeps this event on the safe list.
   "CHANGE_PLANNED_ADMISSION",
   "CANCEL_PLANNED_ADMISSION",
   "CONVERT_PLANNED_ADMISSION",

@@ -39,9 +39,11 @@ import {
   COHORTS,
   HEALTH_SERVICES,
   RECORDED_SEXES,
+  REFERRAL_GENDERS,
   type Cohort,
   type LegalStatus,
   type RecordedSex,
+  type ReferralGender,
 } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientCohort, patientDisplayName, type PatientId } from "@/components/ward-management/ward-patients";
@@ -154,6 +156,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       patientId: bookablePatients[0]?.id ?? "",
       initials: "",
       sex: "Not recorded",
+      gender: undefined,
       reason: PLANNED_ADMISSION_REASONS[0],
       unitId: units[0]?.id ?? "",
       dayOffset: 1,
@@ -172,6 +175,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       patientId: planned.patientId ?? "",
       initials: planned.initials ?? "",
       sex: planned.sex,
+      gender: planned.gender,
       reason: planned.reason,
       unitId: planned.unitId,
       // An overdue booking keeps its own past day, so saving another edit never moves it to today.
@@ -241,7 +245,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         type: "BOOK_PLANNED_ADMISSION",
         role: "coordinator",
         now,
-        ...(draft.who === "patient" ? { patientId: draft.patientId as PatientId } : { initials }),
+        ...(draft.who === "patient"
+          ? { patientId: draft.patientId as PatientId }
+          : { initials, ...(draft.gender === undefined ? {} : { gender: draft.gender }) }),
         sex,
         reason: draft.reason,
         unitId: draft.unitId,
@@ -257,6 +263,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         role: "coordinator",
         now,
         plannedAdmissionId: form.id,
+        ...(draft.who === "initials" && draft.gender !== undefined ? { gender: draft.gender } : {}),
         reason: draft.reason,
         unitId: draft.unitId,
         expectedArrivalAt,
@@ -295,6 +302,41 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   const update = (patch: Partial<Draft>) => {
     setDraft((current) => applyDraftPatch(current, patch));
   };
+
+  /** A linked patient's gender is the record's: shown, never picked. */
+  function recordGenderText(patientId: string): string {
+    const gender = patients.find((patient) => patient.id === patientId)?.gender;
+    return gender ? `Gender (from the patient record): ${gender}` : "Gender: not recorded on the patient record";
+  }
+
+  /**
+   * Gender for an initials-only booking, read by a single-sex ward when the person arrives. Once a
+   * booking has one, a change can correct it but not clear it (`lockRecorded`).
+   */
+  function genderField(lockRecorded: boolean) {
+    if (!draft) return null;
+    return (
+      <Field label="Gender">
+        <Select
+          value={draft.gender ?? ""}
+          onChange={(event) => {
+            const value = event.target.value;
+            update({ gender: value === "" ? undefined : (value as ReferralGender) });
+          }}
+          data-testid="ward-planned-gender"
+        >
+          <option value="" disabled={lockRecorded}>
+            Not recorded
+          </option>
+          {REFERRAL_GENDERS.map((gender) => (
+            <option key={gender} value={gender}>
+              {gender}
+            </option>
+          ))}
+        </Select>
+      </Field>
+    );
+  }
 
   return (
     <WardPanel
@@ -517,11 +559,25 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                         ))}
                       </Select>
                     </Field>
+                    {genderField(false)}
                   </>
                 )}
+                {draft.who === "patient" ? (
+                  <p className={styles.formWho} data-testid="ward-planned-record-gender">
+                    {recordGenderText(draft.patientId)}
+                  </p>
+                ) : null}
               </>
             ) : (
-              <p className={styles.formWho}>{changing ? whoText(changing) : "This booking is no longer listed."}</p>
+              <>
+                <p className={styles.formWho}>{changing ? whoText(changing) : "This booking is no longer listed."}</p>
+                {changing && changing.patientId === null ? genderField(changing.gender !== undefined) : null}
+                {changing?.patientId ? (
+                  <p className={styles.formWho} data-testid="ward-planned-record-gender">
+                    {recordGenderText(changing.patientId)}
+                  </p>
+                ) : null}
+              </>
             )}
             <Field label="Reason">
               <Select
