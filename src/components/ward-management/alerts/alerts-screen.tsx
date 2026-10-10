@@ -48,6 +48,7 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import {
   WA_BROADCAST_TEMPLATES,
   getActiveBroadcastAlert,
+  isAlertActive,
   type BroadcastSeverity,
   type BroadcastTargetScope,
   type BroadcastCategory,
@@ -1422,7 +1423,12 @@ function AlertsWorkspace() {
                             <span className={styles.historyText}>
                               <span className={styles.historyTitle}>{alert.title}</span>
                               <span className={styles.quiet}>
-                                {alert.status === "stood_down" ? "Stood down" : "Ended"} · {alert.targetScopeLabel}
+                                {alert.status === "stood_down"
+                                  ? "Stood down"
+                                  : isAlertActive(alert, now)
+                                    ? "Still live"
+                                    : "Ended"}{" "}
+                                · {alert.targetScopeLabel}
                               </span>
                             </span>
                           </li>

@@ -299,7 +299,9 @@ export function alertAsksDesk(alert: BroadcastAlert, desk: { role: string; id: s
   if (!desk.id) return false;
   const kind = broadcastKind(alert);
   if (kind === "pull_now") return desk.role === "ward" && (alert.targetUnitIds ?? []).includes(desk.id);
-  if (kind === "bed_call") return desk.role === "ward";
+  if (kind === "bed_call") {
+    return desk.role === "ward" && (alert.targetUnitIds === undefined || alert.targetUnitIds.includes(desk.id));
+  }
   // The coordinator desk acknowledges as COORDINATOR_DESK_ACKNOWLEDGER_ID (owner ruling 2026-09-25).
   return desk.role === "ward" || desk.role === "ed" || desk.role === "coordinator";
 }

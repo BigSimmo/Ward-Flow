@@ -140,7 +140,7 @@ describe("Pull now (global alerts, 10 Oct 2026)", () => {
 });
 
 describe("Bed call replies", () => {
-  const bedCall = () =>
+  const bedCall = (targetScope: "all" | "metro_adult" | "ed_liaison" = "all") =>
     wardFlowReducer(seedWardFlowState(), {
       type: "DISPATCH_BROADCAST_ALERT",
       role: "coordinator",
@@ -149,8 +149,8 @@ describe("Bed call replies", () => {
       message: "How many adult beds can you take today?",
       severity: "warning",
       category: "capacity_gridlock",
-      targetScope: "metro_adult",
-      targetScopeLabel: "Metro adult",
+      targetScope,
+      targetScopeLabel: "Target",
       durationMinutes: 120,
       dispatchedByName: "Desk",
       kind: "bed_call",
@@ -166,6 +166,16 @@ describe("Bed call replies", () => {
     expect(board.bedsOffered).toBe(1);
     expect(board.rows).toHaveLength(state.units.length);
     expect(board.rows[0].reply).toBeUndefined();
+  });
+
+  it("asks only the wards its target covers", () => {
+    const state = bedCall("metro_adult");
+    const asked = state.broadcastAlerts[0].targetUnitIds ?? [];
+    expect(asked).toContain("rph-adult-secure");
+    expect(asked).not.toContain("fsh-older-adult");
+    expect(replyBoard(state.broadcastAlerts[0], state.units).rows).toHaveLength(asked.length);
+    expect(reply(state, { unitId: "fsh-older-adult", answer: "cannot" }).broadcastAlerts[0].replies).toHaveLength(0);
+    expect(bedCall("ed_liaison").broadcastAlerts).toHaveLength(0);
   });
 
   it("refuses a bed count outside 1 to 4, a repeat answer, and an answer from an ED", () => {

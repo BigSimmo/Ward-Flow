@@ -4,7 +4,7 @@ import type { Instant } from "../ward-clock";
 import type { WardFlowEvent, WardFlowRole } from "../ward-flow-events";
 import type { WardFlowState } from "../ward-flow-reducer";
 import { REFERRAL_DECLINE_REASONS, type Unit } from "../ward-model";
-import { edById } from "../ward-sites";
+import { edById, siteByCode } from "../ward-sites";
 import {
   PULL_NOW_ANSWER_MINUTES,
   PULL_NOW_LIVE_MINUTES,
@@ -37,6 +37,24 @@ function findUnit(state: WardFlowState, unitId: string): Unit | undefined {
 /** A desk that may answer: a real ward, or (10 Oct 2026) a real ED, which has no `Unit` row. */
 function isRealDesk(state: WardFlowState, unitId: string): boolean {
   return Boolean(findUnit(state, unitId) || edById(unitId));
+}
+
+const METRO_SERVICES = ["East Metro", "North Metro", "South Metro"];
+
+/** The wards a bed call's chosen target covers. ED liaison names no ward, so it asks none. */
+function wardsInScope(state: WardFlowState, scope: BroadcastAlert["targetScope"]): string[] {
+  return state.units
+    .filter((unit) => {
+      const service = siteByCode(unit.siteCode)?.service ?? "";
+      if (scope === "all") return true;
+      if (scope === "metro_adult") return unit.cohort === "Adult" && METRO_SERVICES.includes(service);
+      if (scope === "forensic") return unit.forensic;
+      if (scope === "adolescent") return unit.cohort === "Youth";
+      if (scope === "older_adult") return unit.cohort === "Older adult";
+      if (scope === "regional_wachs") return service === "WACHS";
+      return false;
+    })
+    .map((unit) => unit.id);
 }
 
 /**
@@ -82,12 +100,17 @@ export function reduceBroadcastAlertEvent(
       if (kind === null) {
         return reject(state, event, "DISPATCH_BROADCAST_ALERT kind must be a directive or a bed call");
       }
+      // A bed call asks only the wards its target covers, fixed when it is sent.
+      const bedCallWards = kind === "bed_call" ? wardsInScope(state, targetScope) : [];
+      if (kind === "bed_call" && bedCallWards.length === 0) {
+        return reject(state, event, "DISPATCH_BROADCAST_ALERT a bed call needs a target that covers at least one ward");
+      }
       const nextSeq = (state.broadcastSequence ?? 0) + 1;
       const alertId = `BCAST-${nextSeq}`;
       const duration = event.durationMinutes;
       const newAlert: BroadcastAlert = {
         id: alertId,
-        ...(kind === "bed_call" ? { kind, replies: [] } : {}),
+        ...(kind === "bed_call" ? { kind, replies: [], targetUnitIds: bedCallWards } : {}),
         title: event.title.trim(),
         message: event.message.trim(),
         severity,
@@ -264,6 +287,9 @@ export function reduceBroadcastAlertEvent(
       }
       if (kind === "bed_call" && !findUnit(state, event.unitId)) {
         return reject(state, event, "REPLY_BROADCAST_ALERT only a ward answers a bed call");
+      }
+      if (kind === "bed_call" && target.targetUnitIds && !target.targetUnitIds.includes(event.unitId)) {
+        return reject(state, event, "REPLY_BROADCAST_ALERT this bed call did not ask that ward");
       }
       const answer = enumValue<string>(kind === "pull_now" ? PULL_NOW_ANSWERS : BED_CALL_ANSWERS, event.answer);
       if (answer === null) {

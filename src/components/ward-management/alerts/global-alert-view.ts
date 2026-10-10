@@ -89,7 +89,11 @@ export type ReplyBoard = {
 export function replyBoard(alert: BroadcastAlert, units: readonly { id: string; name: string }[]): ReplyBoard {
   const kind = broadcastKind(alert);
   const askedIds =
-    kind === "pull_now" ? (alert.targetUnitIds ?? []) : kind === "bed_call" ? units.map((u) => u.id) : [];
+    kind === "pull_now"
+      ? (alert.targetUnitIds ?? [])
+      : kind === "bed_call"
+        ? (alert.targetUnitIds ?? units.map((u) => u.id))
+        : [];
   const latest = latestReplies(alert);
   const rows = askedIds.map((unitId) => ({
     unitId,
