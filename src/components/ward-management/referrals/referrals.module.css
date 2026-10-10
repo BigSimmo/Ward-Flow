@@ -64,7 +64,7 @@
   gap: var(--ward-space-20);
   /*
    * 🔴 **THE `overflow-x: hidden; overflow-y: auto;` PAIR THAT USED TO BE HERE IS WHY
-   * `.intakeAside`'s `position: sticky` DID NOTHING.** `overflow-y: auto` made this element a
+   * the retired intake form's sticky aside DID NOTHING.** `overflow-y: auto` made this element a
    * scroll container, so the aside pinned to THIS box rather than to the window. This box never
    * scrolls — nothing constrains its height, so `scrollHeight === clientHeight` — while the document
    * does. **A sticky pinned to a box that never moves is indistinguishable from one nobody wrote.**
@@ -122,14 +122,6 @@
   letter-spacing: 0.04em;
 }
 
-.pageHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--ward-space-12, 0.75rem);
-}
-
 .pageTitleBlock {
   display: flex;
   flex-direction: column;
@@ -167,30 +159,6 @@
 .headerTelemetry {
   margin: 0;
   flex-shrink: 0;
-}
-
-.pageTitle {
-  margin: 0;
-  color: var(--ink);
-  font-size: var(--t-3);
-  font-weight: 700;
-}
-
-.pageSubtitle {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-0);
-  line-height: var(--ward-leading-body);
-}
-
-/* Task 6: the board's "New referral" link — the intake form's only entry point. `align-self`
-   keeps it to its own width inside `.pageHeader`'s column flex, which would otherwise stretch it
-   edge to edge and make a single action read as a page-wide banner. Same `--ward-tap`
-   (`--spacing-tap`, 3rem) tap target every other control in this file uses; never `min-h-11`. */
-
-.form {
-  display: grid;
-  gap: var(--ward-space-16);
 }
 
 /* One decision per card. Phone-first: a single full-width column, always — this never becomes
@@ -292,28 +260,11 @@
   outline-offset: 0.125rem;
 }
 
-/* Phase R2.1: a yes/no question that starts with NEITHER answer chosen. Same card weight and the
-   same 48px tap target as a picker card — these two were checkboxes, and an untouched checkbox
-   sent a definite clinical "no" nobody had chosen. `.fieldCard` is not reused directly because a
-   <fieldset> with `display: grid` takes its <legend> out of flow in Chrome; here the legend is
-   laid out as an ordinary block above the two choices. */
-.choiceCard {
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-lg);
-  background: var(--surface-subtle);
-  margin: 0;
-  padding: var(--ward-space-14) var(--ward-space-16);
-}
-
 /* A <legend> is laid out into the fieldset's top border by default, so these two cards would sit
    differently from the six picker cards above them — on a clinical form an unexplained difference
    in how a card is drawn reads as a difference in meaning. Floating the legend takes it out of the
    border and lays it out as an ordinary block, so a question card looks the same whichever control
    it holds. */
-.choiceCard > .fieldLegend {
-  float: left;
-  width: 100%;
-}
 
 .choiceRow {
   display: flex;
@@ -355,35 +306,9 @@
   outline-offset: 0.125rem;
 }
 
-/* FD-21: every destination a referrer may choose, one card each, stacked so a phone reads them in
-   one column and a desktop still gets full-width cards — the facts beside each option are
-   sentences, and sentences in narrow columns are how a clinician skips them. */
-/* ⚠️ `clear: both` IS LOAD-BEARING AND ITS ABSENCE MADE THIS FORM UNUSABLE. `.choiceCard >
-   .fieldLegend` above is `float: left; width: 100%`, so a following block sibling with no `clear`
-   is laid out BESIDE a float that occupies the whole line. There is no room left, this list
-   computed to ZERO width, and its three destination cards were pushed 93px past the right edge of
-   a 1440px viewport — with no horizontal scroll, so they could not be reached or clicked at all.
-   "Where to refer" is the control that sends the referral, so the page could be filled in and not
-   completed.
-
-   `.choiceRow` directly above already carries `clear: both` for the same reason, which is why the
-   Yes/No cards were unaffected and the fault looked like a styling quirk rather than a broken
-   control. Measured in the browser, not inferred: 0px -> 1283px, and the first card's right edge
-   moved from 1518 to 1390 inside a 1425 viewport. */
-.destinationList {
-  display: grid;
-  clear: both;
-  margin: var(--ward-space-8) 0 0;
-  padding: 0;
-  gap: var(--ward-space-8);
-  list-style: none;
-}
-
 /* Why Send is unavailable, named field by field. Never colour alone and never a tooltip: it is
    readable text in the same block as the control it explains.
-   ⚠️ `border-left-width` IS THE ONLY ASYMMETRY. Matched to `.historyWarning`'s established accent
-   in this same file, so a clinician meets the same "this is a caveat, read it" shape twice on one
-   screen rather than a heavier treatment invented just for this box. Colour is unchanged; this is
+   ⚠️ `border-left-width` IS THE ONLY ASYMMETRY. Colour is unchanged; this is
    a second, colour-independent cue that the reason is a blocker, not a note. */
 .unavailableReason {
   margin: 0;
@@ -405,23 +330,6 @@
   background: var(--ward-danger-soft);
   padding: var(--ward-space-12) var(--ward-space-14);
   color: var(--ward-danger);
-  font-size: var(--t-0);
-  font-weight: 600;
-  line-height: var(--ward-leading-body);
-}
-
-/* `.rejection` (shared with `referral-match.tsx`, frozen — see this file's own header note) keeps
-   its uniform border; `.confirmation` is intake-only, so the same left-accent `.unavailableReason`
-   carries is safe to add here for the same reason: a stronger, colour-independent "this is the
-   outcome" shape. */
-.confirmation {
-  margin: 0;
-  border: 0.0625rem solid var(--success-border);
-  border-left-width: 0.1875rem;
-  border-radius: var(--radius-lg);
-  background: var(--ward-success-soft);
-  padding: var(--ward-space-12) var(--ward-space-14);
-  color: var(--ward-success);
   font-size: var(--t-0);
   font-weight: 600;
   line-height: var(--ward-leading-body);
@@ -468,16 +376,9 @@
 }
 
 @media (min-width: 40rem) {
-  .form {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-
   .rejection,
-  .confirmation,
   .submit,
-  .unavailableReason,
-  .choiceCard {
+  .unavailableReason {
     grid-column: 1 / -1;
   }
 }
@@ -489,10 +390,8 @@
 }
 
 /*
- * Task 5 (Phase 7, "The front door"): the referral board and match view. Shares this module with
- * the intake form above — `.screen`, `.main`, `.governanceBanner`, `.prototypeBadge`,
- * `.pageHeader`, `.pageTitle`, `.pageSubtitle`, `.select`, `.fieldLegend` and `.rejection` are all
- * reused unchanged, never duplicated under a second name.
+ * Task 5 (Phase 7, "The front door"): the referral board and match view. The full-page intake
+ * form that once shared this module was retired on 8 Oct 2026; its own rules went with it.
  *
  * The board's queued/decided sections follow `discharges.module.css`'s own table-then-cards
  * pattern exactly: a table above 40rem, a stacked card list below it, swapped by the media query
@@ -1707,8 +1606,8 @@
  * shared layer takes its responsibilities with it, and nothing checks that it did.
  *
  * Every card-shaped container
- * below (`.fieldCard`, `.section`, `.card`, `.matchPanel`, `.choiceCard`, `.choiceOption`,
- * `.destinationOption`, `.destinationName`, `.matchRowAccepts`, `.matchRowDeclines`) has the
+ * below (`.section`, `.card`, `.matchPanel`, `.choiceOption`, `.matchRowAccepts`,
+ * `.matchRowDeclines`) has the
  * identical problem for the same reason — each carries its own explicit
  * `background: var(--surface-subtle)` / `var(--surface-raised)` / `var(--surface)`, confirmed by
  * measuring `getComputedStyle(...).backgroundColor` on the rendered dark-mode print output:
@@ -1814,12 +1713,6 @@
   color: var(--ward-muted);
   font-size: var(--t-1);
   line-height: var(--ward-leading-body);
-}
-
-.summaryList {
-  display: grid;
-  gap: var(--ward-space-8);
-  margin: 0;
 }
 
 .summaryRow {
@@ -2024,7 +1917,6 @@
   .card,
   .matchPanel,
   .bandGroup,
-  .choiceCard,
   .matchRowAccepts,
   .matchRowDeclines {
     border-color: CanvasText;
@@ -2033,9 +1925,8 @@
   }
 
   /*
-   * `.choiceOption` and `.destinationName` are each both a card AND the text carrier — the
-   * answer's word ("Yes"/"No") and the destination's name are direct children of the `<label>`
-   * that carries the class, not separately classed spans inside it — so each needs the card
+   * `.choiceOption` is both a card AND the text carrier — the answer's word is a direct child of
+   * the `<label>` that carries the class, not separately classed spans inside it — so each needs the card
    * group's border/background treatment and the text group's `color: CanvasText` in one rule.
    *
    * This rule is `.toggleCard`'s, moved. That class styled the three checkboxes this form used to
@@ -2054,15 +1945,13 @@
   }
 
   /*
-   * The four semantic alert boxes (rejection/confirmation on the intake form and the decline
-   * rejection on the match view; the structural-gap and no-bed-accepts banners on the match
+   * The semantic alert boxes (the decline rejection on the match view; the structural-gap and no-bed-accepts banners on the match
    * view). Each carries its own themed border/background/text-colour triplet
    * (`--danger-*`/`--warning-*`/`--success-*`) that is just as illegible in dark-mode print as
    * the muted tokens above — printed black-on-white here rather than colour-on-colour, which
    * reads as more urgent on paper, not less.
    */
   .rejection,
-  .confirmation,
   .structuralGap,
   .noBedAccepts {
     border-color: CanvasText;
@@ -2253,16 +2142,6 @@
   padding: 0.875rem 1.5rem 1.5rem;
 }
 
-.screen[data-referral-view="register"] .pageHeader {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .screen[data-referral-view] .governanceBanner {
   order: 4;
   min-height: 0;
@@ -2271,7 +2150,6 @@
   background: var(--surface-2);
 }
 
-.screen[data-referral-view] .choiceCard,
 .screen[data-referral-view] .section,
 .screen[data-referral-view] .matchPanel,
 .screen[data-referral-view] .asideCard,
@@ -2280,10 +2158,6 @@
   border-bottom-color: var(--line-strong);
   border-radius: var(--r1);
   background: var(--surface);
-}
-
-.screen[data-referral-view] .choiceCard {
-  padding: 0.875rem 1rem;
 }
 
 .screen[data-referral-view] .asideCard {
@@ -4207,98 +4081,7 @@
   }
 }
 
-/* Active Sovereign Person Card Body */
-
-.actionBtn {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  border-radius: var(--pill);
-  padding: 6px 14px;
-  font-size: var(--t-1);
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.12s ease;
-  min-height: 36px;
-  text-decoration: none;
-}
-
-.actionBtn:hover {
-  background: var(--surface);
-  border-color: var(--line-strong);
-}
-
 /* Quick Add Patient Modal */
-.modalOverlay {
-  position: fixed;
-  inset: 0;
-  background: var(--scrim);
-  backdrop-filter: blur(2px);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-
-.modalDialog {
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2);
-  box-shadow: var(--lift);
-  width: 100%;
-  max-width: 520px;
-  max-height: 90vh;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.modalHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--line);
-  background: var(--ground-hi);
-  border-radius: var(--r2) var(--r2) 0 0;
-}
-
-.modalTitle {
-  font-size: var(--t-3);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
-
-.modalCloseBtn {
-  background: transparent;
-  border: none;
-  font-size: 24px;
-  color: var(--muted);
-  cursor: pointer;
-  line-height: 1;
-  padding: 4px;
-  min-height: 32px;
-  min-width: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modalCloseBtn:hover {
-  color: var(--ink);
-}
-
-.modalBody {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
 
 .modalSelect {
   padding: 8px 12px;
@@ -4317,26 +4100,9 @@
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
-.modalFooter {
-  padding: 16px 20px;
-  border-top: 1px solid var(--line);
-  background: var(--ground-hi);
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  border-radius: 0 0 var(--r2) var(--r2);
-}
-
 /* Responsive adjustments */
 
 @media (max-width: 900px) {
-  .actionBtn,
-  .modalCloseBtn {
-    min-height: 44px;
-    height: auto;
-  }
-
   .modalSelect {
     min-height: 44px;
   }
@@ -6180,23 +5946,6 @@
 /* ═══ v6 (NewReferral.png): the person bar on the intake form ═══
  * One compact card: the linked or unlinked switch, the search, then the person in one row. */
 
-.screen[data-ward-design="v6"] .actionBtn {
-  min-height: var(--wf-h-sm);
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-@media (max-width: 48rem) {
-  .screen[data-ward-design="v6"] .actionBtn {
-    min-height: 3rem;
-  }
-}
-
 /* ═══ v6 (NewReferral.png): the person bar is one row ═══
  * The link switch, then the person, the search and Add new patient on a single line. The heading
  * stays for the section's name but is not drawn; the interpreter alert takes a row of its own. */
@@ -6205,53 +5954,6 @@
    search results must open past the bar's edge. */
 
 /* ═══ v6 (NewReferral--add-patient.webp): the Register new patient dialog ═══ */
-
-.screen[data-ward-design="v6"] .modalOverlay {
-  background: var(--wf-scrim);
-  backdrop-filter: none;
-}
-
-.screen[data-ward-design="v6"] .modalDialog {
-  max-width: 34rem;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-xl);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e3);
-  color: var(--wf-ink-1);
-}
-
-.screen[data-ward-design="v6"] .modalHeader {
-  align-items: center;
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
-  background: transparent;
-}
-
-.screen[data-ward-design="v6"] .modalTitle {
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
-}
-
-.screen[data-ward-design="v6"] .modalCloseBtn {
-  width: var(--wf-h-sm);
-  height: var(--wf-h-sm);
-  min-width: var(--wf-h-sm);
-  min-height: var(--wf-h-sm);
-  border-radius: var(--wf-r-sm);
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-20);
-}
-
-.screen[data-ward-design="v6"] .modalCloseBtn:hover {
-  background: var(--wf-hover);
-  color: var(--wf-ink-1);
-}
-
-.screen[data-ward-design="v6"] .modalBody {
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-4);
-}
 
 .screen[data-ward-design="v6"] .modalSelect {
   min-height: var(--wf-h-md);
@@ -6271,27 +5973,11 @@
   outline-offset: 2px;
 }
 
-/* A failed save is the one red thing here; a possible duplicate is a caution, not an emergency. */
-
-.screen[data-ward-design="v6"] .modalFooter {
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-  border-radius: 0 0 var(--wf-r-xl) var(--wf-r-xl);
-  background: var(--wf-surface-2);
-}
-
 /* The one primary: deep slate with white ink, never the pale accent ink on accent that read as
    disabled. A genuinely disabled state reads as a dashed outline with muted ink. */
 
-.screen[data-ward-design="v6"] .modalCloseBtn:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
 @media (max-width: 48rem) {
-  .screen[data-ward-design="v6"] .modalSelect,
-  .screen[data-ward-design="v6"] .modalCloseBtn {
+  .screen[data-ward-design="v6"] .modalSelect {
     min-height: 3rem;
   }
 }
