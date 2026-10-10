@@ -165,6 +165,15 @@ a.secondary:hover {
   overflow: visible;
 }
 
+/* The chosen part scrolls even when a toolbar sits between it and the header. */
+.followBody > [data-ward-primitive="panel"] > .scrolls,
+.followLast > [data-ward-primitive="panel"] > :not([data-ward-primitive="panel-header"]):last-child {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 /* A full-width card that a deep link lands on, clear of the sticky app header. */
 .anchor {
   scroll-margin-top: var(--wf-s-4);
