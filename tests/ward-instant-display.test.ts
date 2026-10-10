@@ -45,6 +45,10 @@ const MAY_ASSERT_TODAY = new Map([
   ["movement.transport.acceptedAt as Instant", "STILL TO SWEEP - transport accepted yesterday reads as today"],
   ["referral.localBedSought.at", "referral surface, owned by another session"],
   [
+    "record.estimatedAt",
+    "Out of area This shift: the clock sits above departureDayLabel, which names the departure's day (Yesterday, Today, Tomorrow or a day count), so the row still names the day.",
+  ],
+  [
     "selectedPatient.openedAtInstant",
     "Patient search Latest timeline: the clock sits in the time column and withDay adds the day from formatInstantWithDay to the event text beside it, so the row still names the day.",
   ],
