@@ -4949,7 +4949,12 @@ export function EdScreen({ edId }: EdScreenProps) {
         </section>
 
         <section className={styles.departmentWorkspace} aria-label="Selected department work">
-          <section className={`${styles.panel} ${styles.mod}`} aria-labelledby="ward-ed-attention-heading" data-wf-rail>
+          <section
+            className={`${styles.panel} ${styles.mod}`}
+            aria-labelledby="ward-ed-attention-heading"
+            data-wf-rail
+            data-wf-rail-release="1200"
+          >
             <div className={styles.ph}>
               <h2 id="ward-ed-attention-heading">Needs you</h2>
 

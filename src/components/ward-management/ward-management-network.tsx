@@ -679,7 +679,11 @@ export function WardNetworkWorkspace() {
             selectedUnitId={selectedUnitId}
             onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
           />
-          <div className={thirdEdition.overviewSide} data-wf-rail>
+          <div
+            className={thirdEdition.overviewSide}
+            data-wf-rail
+            data-wf-rail-release="1280"
+          >
             <ReadyByRoadTime
               ed={fromEd}
               rows={rows}

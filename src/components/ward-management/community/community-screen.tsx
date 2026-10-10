@@ -3138,7 +3138,12 @@ export function CommunityScreen({
           </div>
 
           {/* ── The team itself: how to reach it, and the sample deployment. Shown under every list (v6). ── */}
-          <div className={`${styles.tabPanelActive} ${v6.side}`} id="tab-team" data-wf-rail>
+          <div
+            className={`${styles.tabPanelActive} ${v6.side}`}
+            id="tab-team"
+            data-wf-rail
+            data-wf-rail-release="1199"
+          >
             {/* ── How to reach this team ── */}
             <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
               {(() => {

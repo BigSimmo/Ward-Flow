@@ -95,6 +95,65 @@
     overflow-y: auto;
     overscroll-behavior: contain;
   }
+
+}
+
+/* Release each opt-in rail when its page switches from columns to a stack. */
+@media (min-width: 1001px) and (max-width: 1200px) {
+  .shell [data-wf-rail][data-wf-rail-release="1200"]:not([hidden]) {
+    position: static;
+    top: auto;
+    align-self: auto;
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
+    overscroll-behavior: auto;
+    scrollbar-width: auto;
+  }
+
+  .shell [data-wf-rail][data-wf-rail-release="1200"]:not([hidden]) [data-wf-rail-body] {
+    max-height: none;
+    overflow-y: visible;
+    overscroll-behavior: auto;
+  }
+}
+
+@media (min-width: 1001px) and (max-width: 74.9375rem) {
+  .shell [data-wf-rail][data-wf-rail-release="1199"]:not([hidden]) {
+    position: static;
+    top: auto;
+    align-self: auto;
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
+    overscroll-behavior: auto;
+    scrollbar-width: auto;
+  }
+
+  .shell [data-wf-rail][data-wf-rail-release="1199"]:not([hidden]) [data-wf-rail-body] {
+    max-height: none;
+    overflow-y: visible;
+    overscroll-behavior: auto;
+  }
+}
+
+@media (min-width: 1001px) and (max-width: 80rem) {
+  .shell [data-wf-rail][data-wf-rail-release="1280"]:not([hidden]) {
+    position: static;
+    top: auto;
+    align-self: auto;
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
+    overscroll-behavior: auto;
+    scrollbar-width: auto;
+  }
+
+  .shell [data-wf-rail][data-wf-rail-release="1280"]:not([hidden]) [data-wf-rail-body] {
+    max-height: none;
+    overflow-y: visible;
+    overscroll-behavior: auto;
+  }
 }
 
 .shell [data-ward-primitive="panel"] {
