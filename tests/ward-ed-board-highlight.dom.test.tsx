@@ -63,3 +63,19 @@ describe("ED page — hero chips and board filters highlight, never hide", () =>
     expect(rows().filter((row) => row.getAttribute("data-dim") === "true")).toHaveLength(0);
   });
 });
+
+describe("ED page — v10 pass 3: names and the person sheet", () => {
+  it("names every board row Surname, Given", () => {
+    renderEd();
+    const names = screen.getAllByTestId(/^ward-ed-row-name-/u);
+    expect(names.length).toBeGreaterThan(0);
+    for (const name of names) expect(name.textContent).toMatch(/^[^,]+, [^,]+$/u);
+  });
+
+  it("opens the person sheet with the journey ribbon built from the record", () => {
+    renderEd();
+    fireEvent.click(screen.getAllByTestId(/^ward-ed-row-name-/u)[0]);
+    const journey = screen.getByTestId("ward-ed-person-journey");
+    expect(within(journey).getByRole("img").getAttribute("aria-label")).toMatch(/^Time in the department: /u);
+  });
+});

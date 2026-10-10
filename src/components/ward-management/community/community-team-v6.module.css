@@ -585,3 +585,62 @@ div.workspace > .side {
     width: 100%;
   }
 }
+
+/* v10 pass 3: Since you looked digest above the list, and the Switch team drawer. */
+.since {
+  margin: 0;
+}
+
+.switchBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.switchList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.switchItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-height: 40px;
+  padding: 0 var(--wf-s-2);
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  text-decoration: none;
+}
+
+.switchItem:hover {
+  background: var(--wf-hover);
+}
+
+.switchItem[aria-current="page"] {
+  font-weight: 600;
+}
+
+.switchName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.switchMeta {
+  flex: none;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+@media (max-width: 48rem) {
+  .switchItem {
+    min-height: var(--wf-touch);
+  }
+}

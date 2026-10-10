@@ -1,0 +1,58 @@
+/* RowSpark: a 12 hour trend line with the department's own mean dashed. Tokens only. */
+
+.spark {
+  display: block;
+  flex: none;
+  overflow: visible;
+}
+
+.big {
+  width: 160px;
+  height: 24px;
+}
+
+.line {
+  fill: none;
+  stroke: var(--wf-ink-2);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mean {
+  stroke: var(--wf-ref-stroke);
+  stroke-width: var(--wf-ref-w, 1);
+  stroke-dasharray: var(--wf-ref-dash, 3 3);
+}
+
+.dot {
+  fill: var(--wf-ink-1);
+}
+
+[data-dim="true"] .line {
+  stroke: var(--wf-dim);
+}
+
+[data-dim="true"] .dot {
+  fill: var(--wf-dim);
+}
+
+.trend {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wf-s-1);
+}
+
+.delta {
+  min-width: 22px;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+  text-align: right;
+}
+
+[data-dim="true"] .delta {
+  color: var(--wf-dim);
+}

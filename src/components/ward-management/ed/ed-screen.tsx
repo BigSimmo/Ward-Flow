@@ -1,5 +1,6 @@
 "use client";
 import { recordedMovementMedicalClearance } from "../ward-medical-clearance";
+import type { ToastApi } from "@/components/ui/toast";
 
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
@@ -106,7 +107,8 @@ import {
 } from "@/components/ward-management/referrals/arrival-time-modal";
 
 import { ChevronDown } from "lucide-react";
-import { buttonClass } from "@/components/wf";
+import { buttonClass, JourneyStrip, ScrollRow, Segmented, StatusGlyph, useIsPhone, useToast } from "@/components/wf";
+import { edJourneyStages } from "./ed-journey";
 import styles from "./ed.module.css";
 import { EdOverview } from "./ed-overview";
 import { EdActionsMenu, EdPlanPicker, EdPresentation, EdReviewStatus } from "./ed-board-controls";
@@ -1230,6 +1232,19 @@ function AttentionToneIcon({ tone }: { tone: "danger" | "warn" | "good" | "quiet
   );
 }
 
+/**
+ * The layout's `ToastProvider` wraps every ward route, so the Undo toast is always there in the app.
+ * A test that renders this screen on its own has no provider; there the toast is skipped rather than
+ * throwing. `useToast` always calls `useContext` before it throws, so hook order never changes.
+ */
+function useToastWhenMounted(): ToastApi | null {
+  try {
+    return useToast();
+  } catch {
+    return null;
+  }
+}
+
 export function EdScreen({ edId }: EdScreenProps) {
   const {
     movements,
@@ -1431,6 +1446,19 @@ export function EdScreen({ edId }: EdScreenProps) {
   );
   const priorRejectionCountRef = useRef(rejections.length);
   const [declineCheckToken, setDeclineCheckToken] = useState(0);
+  /**
+   * v10 pass 3: a recorded decline shows a toast with Undo (`UNDO_REFERRAL_DECISION`, the ED's own
+   * decision only, within the engine's undo window). `pendingDeclineRef` holds the referral just
+   * declined until the rejection check says whether the reducer accepted it; `undoCheckRef` holds
+   * the count before an Undo so a refused Undo can say why.
+   */
+  const toast = useToastWhenMounted();
+  /** Phone: Board, Needs you and Lists are one tap apart (v10 ED page, phone). */
+  const isPhone = useIsPhone();
+  const [phonePane, setPhonePane] = useState<"board" | "needs" | "lists">("board");
+  const pendingDeclineRef = useRef<string | undefined>(undefined);
+  const undoCheckRef = useRef<number | undefined>(undefined);
+  const [undoCheckToken, setUndoCheckToken] = useState(0);
   type DepartmentTabKey = "review" | "cleared" | "expected" | "forms" | "referred";
   const [departmentListTab, setDepartmentListTab] = useState<DepartmentTabKey>("review");
   const [boardFilter, setBoardFilter] = useState<
@@ -1547,9 +1575,41 @@ export function EdScreen({ edId }: EdScreenProps) {
       );
     } else {
       setDeclineRejection(undefined);
+      const declined = pendingDeclineRef.current;
+      if (declined !== undefined) {
+        toast?.push({
+          tone: "success",
+          title: "Referral declined",
+          body: "The referrer sees the reason. Undo puts it back in the inbox.",
+          undo: {
+            durationMs: 8000,
+            onUndo: () => {
+              undoCheckRef.current = rejections.length;
+              dispatch({ type: "UNDO_REFERRAL_DECISION", role: "ed", now, referralId: declined });
+              setUndoCheckToken((token) => token + 1);
+            },
+          },
+        });
+      }
     }
+    pendingDeclineRef.current = undefined;
     priorRejectionCountRef.current = rejections.length;
+    // `toast`, `dispatch` and `now` are read at the moment the check runs; the check itself is keyed
+    // on the dispatch token so it runs once per decline.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rejections, declineCheckToken]);
+
+  useEffect(() => {
+    if (undoCheckToken === 0 || undoCheckRef.current === undefined) return;
+    if (rejections.length > undoCheckRef.current) {
+      const newest = rejections[rejections.length - 1];
+      toast?.push({ tone: "warning", title: "Undo was refused", body: newest.reason });
+    } else {
+      toast?.push({ tone: "info", title: "Decline undone", body: "The referral is back in the inbox." });
+    }
+    undoCheckRef.current = undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rejections, undoCheckToken]);
 
   if (!department) {
     return (
@@ -2602,6 +2662,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     // button, so the control declines to advertise a decline it knows would be rejected.
     if (declineDraft === undefined) return;
     priorRejectionCountRef.current = rejections.length;
+    pendingDeclineRef.current = referralId;
     dispatch({
       type: "DECLINE_REFERRAL",
       role: "ed",
@@ -2699,7 +2760,7 @@ export function EdScreen({ edId }: EdScreenProps) {
       data-ward-design="third-edition"
       data-ward-rebuilt-screen="emergency-department"
     >
-      <main id="main-content" className={styles.main}>
+      <main id="main-content" className={styles.main} data-phone-pane={isPhone ? phonePane : undefined}>
         <EdOverview
           key={department.id}
           departmentId={department.id}
@@ -3085,8 +3146,25 @@ export function EdScreen({ edId }: EdScreenProps) {
           )}
         </section>
 
+        {isPhone ? (
+          <ScrollRow className={styles.phonePanes}>
+            <Segmented
+              label="Show"
+              size="md"
+              value={phonePane}
+              onChange={setPhonePane}
+              items={[
+                { id: "board" as const, label: "Board", count: patients.length },
+                { id: "needs" as const, label: "Needs you", count: priorityFlags.length },
+                { id: "lists" as const, label: "Lists" },
+              ]}
+            />
+          </ScrollRow>
+        ) : null}
+
         <section
           aria-label="This department's patients"
+          data-pane="board"
           className={`${styles.panel} ${styles.full} ${styles.listSection}${fullscreenBoard ? ` ${styles.fullscreenBoard}` : ""}`}
           tabIndex={0}
         >
@@ -3442,8 +3520,10 @@ export function EdScreen({ edId }: EdScreenProps) {
                               onClick={() =>
                                 setSelectedPatientId(selectedPatientId === movement.id ? null : movement.id)
                               }
+                              data-testid={`ward-ed-row-name-${movement.id}`}
                             >
-                              {patientInfo.displayName}
+                              {/* v10 content rule: board rows read "Surname, Given". */}
+                              {patientInfo.formalName}
                             </button>
                             <span className={styles.sub}>
                               <span className="sr-only">UMRN </span>
@@ -3555,7 +3635,11 @@ export function EdScreen({ edId }: EdScreenProps) {
                               data-state={minutesInDepartment > accessTarget ? "over" : "under"}
                               title={`Access target ${splitDuration(accessTarget)}. ${accessTargetLine(minutesInDepartment, accessTarget)}`}
                             >
-                              {minutesInDepartment > accessTarget && <span aria-hidden="true">Over target</span>}
+                              {minutesInDepartment > accessTarget && (
+                                <span aria-hidden="true">
+                                  <StatusGlyph tone="danger" size={8} /> Over target
+                                </span>
+                              )}
                               <span className="sr-only">
                                 Access target {splitDuration(accessTarget)}.{" "}
                                 {accessTargetLine(minutesInDepartment, accessTarget)}
@@ -5019,6 +5103,7 @@ export function EdScreen({ edId }: EdScreenProps) {
             className={`${styles.panel} ${styles.mod}`}
             aria-labelledby="ward-ed-attention-heading"
             data-wf-rail="1201"
+            data-pane="needs"
           >
             <div className={styles.ph}>
               <h2 id="ward-ed-attention-heading">Needs you</h2>
@@ -5104,7 +5189,11 @@ export function EdScreen({ edId }: EdScreenProps) {
               )}
             </div>
           </section>
-          <section className={`${styles.panel} ${styles.mod}`} aria-labelledby="ward-ed-lists-heading">
+          <section
+            className={`${styles.panel} ${styles.mod}`}
+            aria-labelledby="ward-ed-lists-heading"
+            data-pane="lists"
+          >
             <div className={styles.ph}>
               <h2 id="ward-ed-lists-heading">Lists</h2>
 
@@ -6054,6 +6143,19 @@ export function EdScreen({ edId }: EdScreenProps) {
                 </p>
               </div>
               <div className={`${styles.popBody} ${styles.pxBody}`}>
+                <section className={styles.pxBlock} data-testid="ward-ed-person-journey">
+                  <h3>Where their time went</h3>
+                  <JourneyStrip
+                    stages={edJourneyStages(
+                      selectedPatient,
+                      movementMedicalClearance(selectedPatient, referrals),
+                      stageCopy[selectedPatient.stage].label,
+                      now,
+                    )}
+                    formatDuration={splitDuration}
+                    label="Time in the department"
+                  />
+                </section>
                 <section className={styles.pxBlock}>
                   <h3>Where they are up to</h3>
                   <dl className={styles.pairs}>

@@ -240,12 +240,16 @@
   border-bottom: 1px solid var(--wf-line-2);
 }
 
+/* v10: the letter row is the shared GroupHead (letter variant); this wrapper keeps the jump target. */
 .letterHeading {
   margin: 0;
-  padding: var(--wf-s-3) 0 0 var(--wf-s-3);
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   scroll-margin-top: 2.5rem;
+}
+
+/* Desktop and tablet: the letter sits in the gutter beside its names, as in the mockup. */
+.letterHeading .letterRow {
+  min-height: 0;
+  padding: var(--wf-s-3) 0 0 var(--wf-s-3);
 }
 
 .letterHeading:focus-visible {
@@ -825,5 +829,52 @@
     width: 100%;
     min-height: var(--wf-touch);
     min-width: 0;
+  }
+}
+
+/* v10 pass 3, phone: A to Z, Suburb, Alike and Services one tap apart, and sticky letter rows. */
+.phonePanes,
+.paneWrap {
+  min-width: 0;
+}
+
+@media (max-width: 48rem) {
+  .layout[data-phone-pane="az"] [data-pane]:not([data-pane="az"]),
+  .layout[data-phone-pane="suburb"] [data-pane]:not([data-pane="suburb"]),
+  .layout[data-phone-pane="alike"] [data-pane]:not([data-pane="alike"]),
+  .layout[data-phone-pane="services"] [data-pane]:not([data-pane="services"]) {
+    display: none;
+  }
+
+  /* Phone: the letter is a full-width sticky GroupHead row above its names. */
+  .letterSection {
+    display: block;
+  }
+
+  .columnHead {
+    grid-template-columns: var(--cti-row-cols);
+    padding-left: var(--wf-s-3);
+  }
+
+  .columnHead > :first-child {
+    display: none;
+  }
+
+  .letterSection .teamRow {
+    padding-left: var(--wf-s-3);
+  }
+
+  .letterHeading {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 0;
+    background: var(--wf-surface);
+  }
+
+  .letterHeading .letterRow {
+    min-height: 32px;
+    padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-1);
+    border-bottom: 1px solid var(--wf-line);
   }
 }
