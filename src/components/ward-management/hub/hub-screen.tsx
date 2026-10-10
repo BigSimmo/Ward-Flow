@@ -544,7 +544,7 @@ export function HubScreen() {
             </div>
           </Card>
 
-          <aside className={styles.hubRight} aria-label="At a glance">
+          <aside className={styles.hubRight} aria-label="At a glance" data-wf-rail>
             {selected === undefined ? null : (
               <Card as="section" className={styles.previewCard} aria-label={`Preview, ${selected.name}`}>
                 <div className={styles.previewHead}>

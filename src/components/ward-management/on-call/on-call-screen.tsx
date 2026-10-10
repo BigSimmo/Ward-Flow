@@ -667,7 +667,12 @@ export function OnCallScreen() {
             </CardFoot>
           </Card>
 
-          <Card className={styles.panel} aria-labelledby={panelHeadingId} data-testid="ward-on-call-role-panel">
+          <Card
+            className={styles.panel}
+            aria-labelledby={panelHeadingId}
+            data-testid="ward-on-call-role-panel"
+            data-wf-rail
+          >
             {queryHits.length || query.trim() ? (
               <MatchesPanel query={query} hits={queryHits} actions={actions} onClear={() => setQuery("")} />
             ) : (

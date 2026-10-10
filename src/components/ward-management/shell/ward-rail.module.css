@@ -32,7 +32,8 @@
   top: 0;
   z-index: 35;
   align-self: flex-start;
-  height: 100dvh;
+  /* Fills the shell row, which is the window less the Data mode bar above it. */
+  height: 100%;
   box-sizing: border-box;
   padding: 0 0.75rem 0.625rem;
   isolation: isolate;

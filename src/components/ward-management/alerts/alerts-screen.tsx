@@ -1521,7 +1521,7 @@ function AlertsWorkspace() {
           </div>
 
           {isPhone ? null : (
-            <aside className={styles.panel} aria-label="Selected alert">
+            <aside className={styles.panel} aria-label="Selected alert" data-wf-rail>
               <Card as="div" className={styles.panelCard}>
                 {selectedPanel ?? <EmptyState icon={Bell} title="Pick an alert to see it here" />}
               </Card>
