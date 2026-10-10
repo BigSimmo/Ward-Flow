@@ -22,9 +22,14 @@ act-now (red) rows; `shell/ward-act-now-notifier.tsx` (open-tab alerts) and the 
 `engine.ts` `actNowAlerts` both read it. `backend/ward-flow/push.mjs` holds the VAPID settings
 check, subscription validation, the identifier-free payload and the sender; `postgres.mjs`
 compares the act-now list with the last announced one after each committed command and from the
-five-minute `wardFlowPushSweep` timer, then delivers after commit. Migration 3 adds
-`push_subscriptions` and `push_baselines`. On the client, `ward-shared-client.ts` gains the three
-push calls, `ward-shared-access.tsx` provides `PhonePushAccessContext`, `shell/ward-phone-push.ts`
+five-minute `wardFlowPushSweep` timer (inside a savepoint, so an error never costs the command)
+and queues pending rows in the `push_deliveries` outbox in the same transaction. Delivery claims
+due rows, sends each device one notification, waits at most `deliveryWaitMs` (1.5 s) on the
+command path, and retries only a device's temporary failures, up to `MAX_DELIVERY_ATTEMPTS`; the
+sweep picks up anything left pending. Migration 3 adds `push_subscriptions`, `push_baselines` and
+`push_deliveries`. On the client, `ward-shared-client.ts` gains the four
+push calls (key, status, subscribe, unsubscribe), `ward-shared-access.tsx` provides
+`PhonePushAccessContext` and releases the device's alerts before sign-out, `shell/ward-phone-push.ts`
 holds the per-device switch, and Settings > Alerts shows **Phone alerts** (greyed with a reason
 when unavailable). `public/ward-flow-push-sw.js` shows the notification and opens Alerts; it has
 no fetch handler. Tests: `backend/ward-flow/push.test.mjs`, the push case in `postgres.test.mjs`

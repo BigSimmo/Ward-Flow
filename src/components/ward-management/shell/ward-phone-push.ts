@@ -11,18 +11,19 @@
  * no fetch handler, so it never intercepts or caches pages.
  */
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { settingsHref } from "./ward-facade";
+import { WARD_DEVELOPER_HUB_HREF } from "@/components/ward-management/ward-nav";
 
 export const PHONE_PUSH_WORKER_URL = "/ward-flow-push-sw.js";
-// Derived from the facade builder so shell/ never types a route path of its own: the worker
-// controls every Ward Flow page, i.e. the directory that holds Settings.
-export const PHONE_PUSH_SCOPE = settingsHref().replace(/[^/]+$/, "");
+export const PHONE_PUSH_SCOPE = `${WARD_DEVELOPER_HUB_HREF}/`;
 
 /** The calls the signed-in shared workspace offers (`SharedWorkspaceClient`). */
 export type PhonePushApi = {
   pushKey(): Promise<{ enabled: true; publicKey: string } | { enabled: false }>;
+  /** Whether the signed-in account owns an active server record for this device endpoint. */
+  pushStatus(endpoint: string): Promise<boolean>;
   pushSubscribe(subscription: { endpoint?: string; keys?: Record<string, string> }): Promise<void>;
-  pushUnsubscribe(endpoint: string): Promise<void>;
+  /** True when the signed-in account's record was revoked; false when it owned none. */
+  pushUnsubscribe(endpoint: string): Promise<boolean>;
 };
 
 /** Whether this screen is on the shared Azure workspace, and signed in. */
@@ -41,9 +42,8 @@ export type PhonePushState =
   | "off"
   | "on"
   | "busy"
+  // The last change failed. "error": alerts are still off (or unknown); "error-on": still on.
   | "error"
-  // The server was not reached but this device still holds a subscription (a failed turn-off),
-  // so the switch stays on and a tap retries the turn-off rather than a turn-on.
   | "error-on";
 
 const ON_OFF = "New act-now alerts, with Ward Flow closed";
@@ -110,6 +110,21 @@ export function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
+/**
+ * Before sign-out: revoke this account's record for this device, then drop the browser
+ * subscription, so the next account on a shared device starts with alerts off. Leaves alone a
+ * browser subscription this account does not own. Best effort: errors are swallowed.
+ */
+export async function releasePhonePush(api: PhonePushApi): Promise<void> {
+  try {
+    if (!phonePushSupported()) return;
+    const subscription = await currentSubscription();
+    if (subscription && (await api.pushUnsubscribe(subscription.endpoint))) await subscription.unsubscribe();
+  } catch {
+    // Sign-out goes ahead regardless; the server drops the record once the push service rejects it.
+  }
+}
+
 async function currentSubscription(): Promise<PushSubscription | null> {
   const registration = await navigator.serviceWorker.getRegistration(PHONE_PUSH_SCOPE);
   return (await registration?.pushManager.getSubscription()) ?? null;
@@ -117,8 +132,11 @@ async function currentSubscription(): Promise<PushSubscription | null> {
 
 /**
  * The phone alerts switch for this device: its state, and `setEnabled` to turn it on or off.
- * Turning on asks the browser for permission once, installs the worker and registers this device
- * with the server; turning off removes it from the server first, then from the browser.
+ * It shows On only when the signed-in account owns an active server record for this device, so a
+ * shared device never shows another account's alerts as this account's. Turning on asks the
+ * browser for permission once, installs the worker and registers this device with the server;
+ * turning off revokes this account's record first, then the browser subscription it owned. A
+ * failed change keeps the last confirmed on or off, with the error, so the next tap retries.
  */
 export function usePhonePush(): [PhonePushState, (enabled: boolean) => Promise<PhonePushState>] {
   const access = useContext(PhonePushAccessContext);
@@ -134,7 +152,10 @@ export function usePhonePush(): [PhonePushState, (enabled: boolean) => Promise<P
         const key = await api.pushKey();
         if (!key.enabled) state = "server-off";
         else if (window.Notification.permission === "denied") state = "denied";
-        else state = (await currentSubscription()) ? "on" : "off";
+        else {
+          const subscription = await currentSubscription();
+          state = subscription && (await api.pushStatus(subscription.endpoint)) ? "on" : "off";
+        }
       } catch {
         state = "error";
       }
@@ -160,10 +181,8 @@ export function usePhonePush(): [PhonePushState, (enabled: boolean) => Promise<P
       try {
         next = enabled ? await turnOn(api) : await turnOff(api);
       } catch {
-        // A failed turn-off can leave this device subscribed: keep the switch on so the next tap
-        // retries the turn-off instead of a turn-on.
-        const held = enabled ? null : await currentSubscription().catch(() => null);
-        next = held ? "error-on" : "error";
+        // Nothing was confirmed: a failed turn-on is still off, a failed turn-off is still on.
+        next = enabled ? "error" : "error-on";
       }
       setChecked({ api, state: next });
       return next;
@@ -224,9 +243,7 @@ async function turnOn(api: PhonePushApi): Promise<PhonePushState> {
 
 async function turnOff(api: PhonePushApi): Promise<PhonePushState> {
   const subscription = await currentSubscription();
-  if (subscription) {
-    await api.pushUnsubscribe(subscription.endpoint);
-    await subscription.unsubscribe();
-  }
+  // Only a browser subscription this account owned is removed; another account's stays theirs.
+  if (subscription && (await api.pushUnsubscribe(subscription.endpoint))) await subscription.unsubscribe();
   return "off";
 }

@@ -8,6 +8,7 @@ const PATHS = [
   "/v1/workspace/push-key",
   "/v1/workspace/push-subscribe",
   "/v1/workspace/push-unsubscribe",
+  "/v1/workspace/push-status",
 ];
 
 export function createSharedHandler({ config, store, authenticate, readBody, verifierUnavailable }) {
@@ -92,8 +93,12 @@ export function createSharedHandler({ config, store, authenticate, readBody, ver
           endpoint = null;
         }
         if (!endpoint) return reply(400, { error: "A push endpoint is required" });
-        await store.unsubscribe(actorId, endpoint);
-        return reply(200, { subscribed: false });
+        // Ownership is the server's record for this signed-in account, never the browser's own
+        // subscription: another coordinator may have turned alerts on with this device earlier.
+        if (path === "/v1/workspace/push-status")
+          return reply(200, { owned: await store.pushStatus(actorId, endpoint) });
+        const outcome = await store.unsubscribe(actorId, endpoint);
+        return reply(200, { subscribed: false, revoked: outcome === "unsubscribed" });
       }
       if (path !== "/v1/workspace/commands" || request.method !== "POST")
         return reply(405, { error: "Method not allowed" });
