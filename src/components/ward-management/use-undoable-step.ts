@@ -34,6 +34,14 @@ type Pending = {
   priorSeq?: number;
 };
 
+type RecordWatch = { undoType: UndoStepType; subjectId: string; priorSeq?: number; seq?: number };
+
+/** The step record's number once the state shows a record newer than the one before the step. */
+function newRecordSeq(records: Parameters<typeof stepUndoFor>[0], watch: RecordWatch): number | undefined {
+  const seq = stepUndoFor(records, watch.undoType, watch.subjectId)?.seq;
+  return seq !== undefined && seq !== watch.priorSeq ? seq : undefined;
+}
+
 export type UndoableStep = {
   /** The toast's title once the engine accepts the step. */
   success: string;
@@ -81,10 +89,17 @@ export function useUndoableStep({
   const [token, setToken] = useState(0);
   const nowRef = useRef(now);
   const rejectionCountRef = useRef(rejections.length);
+  /** Open toasts still learning their step's record number; resolved as soon as the state shows it. */
+  const watchersRef = useRef(new Set<RecordWatch>());
   useEffect(() => {
     nowRef.current = now;
     rejectionCountRef.current = rejections.length;
   }, [now, rejections.length]);
+  // A shared workspace returns the step's record a moment after the toast opens: the first record
+  // newer than the one seen before the step is this step's, so later steps by others are not.
+  useEffect(() => {
+    for (const watch of watchersRef.current) if (watch.seq === undefined) watch.seq = newRecordSeq(undoRecords, watch);
+  }, [undoRecords]);
 
   useEffect(() => {
     const pending = pendingRef.current;
@@ -109,10 +124,16 @@ export function useUndoableStep({
     const offered = build(nowRef.current);
     const undoType = offered.type;
     // The record this toast is for, so its Undo is refused once a newer step replaces it.
-    // Only a record newer than the one seen before the step is this step's; until the state shows
-    // it (a shared workspace replies a moment later), the Undo carries no number and is not refused.
-    const seq = stepUndoFor(undoRecords, undoType as UndoStepType, undoStepSubjectId(offered))?.seq;
-    const recordSeq = seq !== undefined && seq !== pending.priorSeq ? seq : undefined;
+    const watch: RecordWatch = {
+      undoType: undoType as UndoStepType,
+      subjectId: undoStepSubjectId(offered),
+      priorSeq: pending.priorSeq,
+    };
+    watch.seq = newRecordSeq(undoRecords, watch);
+    if (watch.seq === undefined) {
+      watchersRef.current.add(watch);
+      setTimeout(() => watchersRef.current.delete(watch), UNDO_TOAST_MS);
+    }
     const limit = roleLimitReason(routeRole, undoType);
     sink.push({
       tone: "success",
@@ -129,7 +150,7 @@ export function useUndoableStep({
                 };
                 const undoEvent = {
                   ...build(nowRef.current),
-                  ...(recordSeq === undefined ? {} : { recordSeq }),
+                  ...(watch.seq === undefined ? {} : { recordSeq: watch.seq }),
                 } as WardFlowEvent;
                 dispatch(undoEvent);
                 setToken((value) => value + 1);
