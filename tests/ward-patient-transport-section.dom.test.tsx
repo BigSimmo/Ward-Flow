@@ -151,6 +151,30 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(provider).toHaveTextContent(movement.transport!.provider);
   });
 
+  it("does not display a successful booking when the reducer refuses the movement", () => {
+    // Restored after #147 dropped it: a second booking over a standing job is refused by the
+    // reducer (cancel first), so the page must say so and keep showing the first booking.
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <RecordTransportFixture />
+        <PatientNowScreen initialExampleId="WF-004" />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Record synthetic transport booking" }));
+    const section = screen.getByTestId("ward-patient-transport-section");
+    fireEvent.click(within(section).getByTestId("ward-patient-book-transport-btn"));
+    const form = within(section).getByTestId("ward-patient-transport-form");
+    fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-99210" } });
+    fireEvent.change(within(form).getByTestId("ward-patient-input-eta"), {
+      target: { value: `${clock(NOW_ANCHOR + 60)} AWST` },
+    });
+    fireEvent.click(within(form).getByTestId("ward-patient-confirm-transport-btn"));
+
+    expect(within(section).getByRole("alert")).toHaveTextContent("Booking was not recorded");
+    expect(within(section).getByTestId("ward-patient-cad-number")).toHaveTextContent("CAD-84920");
+    expect(within(section).getByTestId("ward-patient-cad-number")).not.toHaveTextContent("CAD-99210");
+  });
+
   it("does not offer a booking before a bed is accepted, so no booking can appear to succeed", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

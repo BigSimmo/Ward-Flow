@@ -8,10 +8,11 @@ import type { Patient } from "@/components/ward-management/ward-patients";
  * The Patient page's mode (gate board, 9 Oct 2026). The record state comes from the resolver order
  * the app already uses: an open movement, then an occupied bed, otherwise not active. An open
  * movement splits by stage into the three placement modes. An occupied bed is On leave when the stay
- * has a leave bed, and Absent without leave when that held bed records an absence (D-38). A record
- * with nothing open is On a CTO when the patient record holds a community treatment order (D-38).
+ * has a leave bed, and Absent without leave when that held bed records an absence (D-38). It is At ED
+ * when the ward has recorded them gone to an emergency department with the bed kept. A record with
+ * nothing open is On a CTO when the patient record holds a community treatment order (D-38).
  */
-export type PatientMode = "find" | "held" | "transit" | "ward" | "leave" | "awol" | "idle" | "cto";
+export type PatientMode = "find" | "held" | "transit" | "ward" | "leave" | "awol" | "ed" | "idle" | "cto";
 
 export const PATIENT_MODES: Record<
   PatientMode,
@@ -23,6 +24,7 @@ export const PATIENT_MODES: Record<
   ward: { label: "On ward", pill: "On ward", tone: "success", placing: false, quiet: false },
   leave: { label: "On leave", pill: "On leave", tone: "neutral", placing: false, quiet: false },
   awol: { label: "Absent without leave", pill: "Absent without leave", tone: "danger", placing: false, quiet: false },
+  ed: { label: "At ED", pill: "At ED", tone: "warning", placing: false, quiet: false },
   idle: { label: "Not active", pill: "Not active", tone: "neutral", placing: false, quiet: true },
   cto: { label: "On a CTO", pill: "Not active", tone: "neutral", placing: false, quiet: true },
 };
@@ -54,6 +56,7 @@ export function patientMode({
     if (leaveBed && admission && leaveBed.admissionId === admission.id) {
       return leaveBed.absentWithoutLeave ? "awol" : "leave";
     }
+    if (admission?.awayAtEmergencyDepartmentSince != null) return "ed";
     return "ward";
   }
   return activeCommunityTreatmentOrder(patient) ? "cto" : "idle";

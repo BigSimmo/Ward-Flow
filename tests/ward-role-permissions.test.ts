@@ -43,8 +43,17 @@ describe("canDispatch", () => {
       reason: "Coordinator, ED, ward or community team only",
     });
     expect(dispatchPermission("ward", "REFER_TO_UNITS")).toEqual({ allowed: false, reason: "Coordinator only" });
-    expect(dispatchPermission("ed", "CONFIRM_CAPACITY")).toEqual({ allowed: false, reason: "Ward only" });
+    expect(dispatchPermission("ed", "CONFIRM_CAPACITY")).toEqual({
+      allowed: false,
+      reason: "Ward or coordinator only",
+    });
     expect(dispatchPermission("coordinator", "REFER_TO_UNITS")).toEqual({ allowed: true });
+  });
+
+  it("lets the coordinator take every action apart from the demonstration controls (Josh, 10 Oct 2026)", () => {
+    for (const type of EVENT_TYPES) {
+      expect(EVENT_ROLE[type].includes("coordinator"), type).toBe(!EVENT_ROLE[type].includes("demo"));
+    }
   });
 
   it("never lets a route role take a demonstration-control event", () => {
@@ -69,7 +78,7 @@ describe("CROSS_ROLE_ALLOWED", () => {
   });
 
   it("keeps today's cross-role flows working (coordinator brief, 9 Oct 2026)", () => {
-    // Patient page (coordinator route).
+    // Patient page (coordinator route), now through EVENT_ROLE itself.
     for (const type of [
       "ACCEPT_IN_PRINCIPLE",
       "BOOK_TRANSPORT",
@@ -81,6 +90,9 @@ describe("CROSS_ROLE_ALLOWED", () => {
       "END_LEAVE_BED",
       "RECORD_ABSENT_WITHOUT_LEAVE",
       "RECORD_ABSENCE_STEP",
+      "RECORD_LEAVE_BED",
+      "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
+      "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
       "RECORD_COMMUNITY_TREATMENT_ORDER",
       "END_COMMUNITY_TREATMENT_ORDER",
     ] as const) {
@@ -200,7 +212,7 @@ describe("Patient status card actions follow the route's role", () => {
     expect(limited).toEqual({ kind: "unavailable", label: "Record CTO", reason: "Community team only" });
   });
 
-  it("leaves Record CTO available on the coordinator route through the listed pair", () => {
+  it("leaves Record CTO available on the coordinator route", () => {
     const action = buildPatientStatus("idle", {
       ...base,
       roleLimit: (type) => {
