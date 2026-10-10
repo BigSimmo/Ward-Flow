@@ -194,6 +194,8 @@ const categoryLabels: Record<AuditCategory, string> = {
   review: "Review",
   configuration: "Configuration",
   inbox: "Action item",
+  undo: "Undo",
+  "bed-placement": "Bed move",
 };
 const outcomeLabels = {
   accepted: "Accepted",
@@ -243,6 +245,10 @@ const actionLabels: Record<AuditEvent["action"], string> = {
   TAKE_INBOX_ITEM_OWNERSHIP: "Take action item",
   SNOOZE_INBOX_ITEM: "Snooze action item",
   UNSNOOZE_INBOX_ITEM: "Return snoozed action item",
+  UNDO_REFERRAL_DECISION: "Undo referral decision",
+  UNDO_AUDIT_REVIEW: "Undo review",
+  PLACE_IN_BED: "Move to bed",
+  UNDO_PLACE_IN_BED: "Undo bed move",
 };
 const reviewLabels = { reviewed: "Reviewed", "follow-up-required": "Follow-up required" } as const;
 const display = (value: string | number | boolean | null | undefined) =>
@@ -485,6 +491,34 @@ function EventFacts({ event, units, now }: { event: AuditEvent; units: Unit[]; n
             <BedFacts facts={event.details.after} now={now} />
           </section>
         </div>
+      );
+    case "undo":
+      return (
+        <FactList
+          facts={[
+            [
+              "Decision undone",
+              event.details.undoneAction === null
+                ? "Not recorded"
+                : event.details.undoneAction === "ACCEPT_REFERRAL"
+                  ? "Accept referral"
+                  : "Decline referral",
+            ],
+            [
+              "Decided at",
+              event.details.decidedAt === null ? "Not recorded" : formatInstantWithDay(event.details.decidedAt, now),
+            ],
+          ]}
+        />
+      );
+    case "bed-placement":
+      return (
+        <FactList
+          facts={[
+            ["From bed", display(event.details.fromBed)],
+            ["To bed", display(event.details.toBed)],
+          ]}
+        />
       );
     case "inbox":
       return (

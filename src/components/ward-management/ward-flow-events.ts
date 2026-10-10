@@ -1327,6 +1327,13 @@ export type WardFlowEvent =
       genderPlacementReason?: GenderPlacementReason;
       /** The tick — see `REFER_TO_UNITS.genderPlacementChecked`'s own doc comment. */
       genderPlacementChecked?: true;
+      /**
+       * v10 pass 2 (ward Bed board "Place here"): the bed, 1 to `Unit.beds`, the ward places this
+       * referral in. Only for a `psychiatric_ward` answer naming `unitId`; refused when out of range
+       * or when a current stay on that unit is already recorded in that bed. Kept on the accepted
+       * addressing as `heldBedNumber`.
+       */
+      bedNumber?: number;
       /** Optional fields for reassessment of clinical decisions (WF-17) */
       clinicalUpdate?: boolean;
       reassessment?: boolean;
@@ -2235,6 +2242,49 @@ export type WardFlowEvent =
       contactedAt?: Instant;
       /** Why it does not apply. Required, non-blank, when `outcome` is `not_applicable`. */
       reason?: string;
+    }
+  /*
+   * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
+   * role-gated, audited event that restores the state its decision changed EXACTLY, and only within
+   * `UNDO_WINDOW_MINUTES` (`ward-undo.ts`) of the decision and only while nothing has changed it
+   * since. Who made the decision may undo it, and the coordinator may undo anyone's. None carries
+   * typed text.
+   */
+  | {
+      /** Takes back the newest `ACCEPT_REFERRAL` or `DECLINE_REFERRAL` on this referral. */
+      type: "UNDO_REFERRAL_DECISION";
+      role: WardFlowRole;
+      now: Instant;
+      referralId: string;
+      /** A ward undoing its own decision names itself; refused when it is not the unit that answered. */
+      actingUnitId?: string;
+    }
+  | {
+      /** Takes back one `REVIEW_AUDIT_EVENT` review (the newest on its captured event). */
+      type: "UNDO_AUDIT_REVIEW";
+      role: WardFlowRole;
+      now: Instant;
+      reviewId: string;
+      expectedGeneration: number;
+    }
+  | {
+      /** The ward Bed board's pick up and place: puts a stay in a numbered bed on its own unit. */
+      type: "PLACE_IN_BED";
+      role: WardFlowRole;
+      now: Instant;
+      admissionId: string;
+      /** 1 to `Unit.beds`, and not a bed another current stay on the unit is recorded in. */
+      bedNumber: number;
+      /** A ward names itself and may only place stays on its own unit. */
+      actingUnitId?: string;
+    }
+  | {
+      /** Returns the stay to the bed (or no recorded bed) it had before the newest `PLACE_IN_BED`. */
+      type: "UNDO_PLACE_IN_BED";
+      role: WardFlowRole;
+      now: Instant;
+      admissionId: string;
+      actingUnitId?: string;
     };
 
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */
@@ -2754,4 +2804,13 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // Advisory carer/PSP/MHAS checklist (9 Oct 2026): recorded where the move is completed — the
   // ward (arrivals, discharges board) or the coordinator (movements).
   RECORD_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
+  // v10 pass 2 (Josh, 10 Oct 2026): Undo. Every role that may answer a referral may take back its
+  // OWN answer; the reducer refuses another role's decision (with a reason) unless the caller is the
+  // coordinator, who may undo anyone's.
+  UNDO_REFERRAL_DECISION: ["ward", "coordinator", "ed", "community"],
+  // Reviews are the coordinator's alone (`REVIEW_AUDIT_EVENT`), so taking one back is too.
+  UNDO_AUDIT_REVIEW: ["coordinator"],
+  // The ward Bed board: a ward moves stays between its own beds; the coordinator may do it anywhere.
+  PLACE_IN_BED: ["ward", "coordinator"],
+  UNDO_PLACE_IN_BED: ["ward", "coordinator"],
 };

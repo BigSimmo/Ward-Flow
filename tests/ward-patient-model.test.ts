@@ -50,6 +50,12 @@ const DECISIONS = new Map<string, string>([
       "review time, and no typed text. Covers `communityTreatmentOrder` only.",
   ],
   [
+    "V10-2026-10-10-ADDED-AT",
+    "Josh, 2026-10-10 (v10 build, pass 2 engine brief): add an 'added at' time for patients created " +
+      "through Add patient, so the page can show 'Added today'. A fact about the record, never the " +
+      "person. Covers `addedAt` only.",
+  ],
+  [
     "OWNER-2026-09-10-GENDER",
     "Owner, 2026-09-09/2026-09-10 (docs/ward-flow/owner-decisions-2026-09-09.md sections 8-9): sex " +
       "and gender are split into two separate fields; gender is Female or Male, held on the patient " +
@@ -95,6 +101,8 @@ const PLACEMENT_FIELDS = new Map<string, string>([
 const GENDER_RULING_FIELDS = new Map<string, string>([["gender", "OWNER-2026-09-10-GENDER"]]);
 /** `communityTreatmentOrder`, the one field D-38 adds, kept apart for the same provenance reason. */
 const CTO_RULING_FIELDS = new Map<string, string>([["communityTreatmentOrder", "D-38"]]);
+/** `addedAt`, the record fact the v10 pass 2 brief adds, kept apart for the same provenance reason. */
+const ADDED_AT_FIELDS = new Map<string, string>([["addedAt", "V10-2026-10-10-ADDED-AT"]]);
 
 /** Fields that predate R-2026-09-04-A and are not its concern — PD-1's own five. */
 const PD1_FIELDS = new Set(["id", "umrn", "givenName", "familyName", "dateOfBirth"]);
@@ -137,6 +145,7 @@ function aPatient(): Required<Patient> {
     aboriginalOrTorresStraitIslanderStatus: "Not stated",
     interpreterLanguage: "English — no interpreter required",
     communityTreatmentOrder: { form: "5A", recordedAt: 0, recordedBy: "Community team" },
+    addedAt: 0,
   };
 }
 
@@ -144,6 +153,8 @@ describe("Patient identity is a ruling, not a drift", () => {
   it("declares exactly the fields the ruling authorises, at runtime and in the type", () => {
     const expected = [
       "aboriginalOrTorresStraitIslanderStatus",
+      // v10 pass 2 (Josh, 10 Oct 2026): when Add patient created the record. A record fact.
+      "addedAt",
       "address",
       "catchmentCommunityTeam",
       "communityTreatmentOrder",
@@ -213,7 +224,8 @@ describe("Patient identity is a ruling, not a drift", () => {
         !PD1_FIELDS.has(field) &&
         !PLACEMENT_FIELDS.has(field) &&
         !GENDER_RULING_FIELDS.has(field) &&
-        !CTO_RULING_FIELDS.has(field),
+        !CTO_RULING_FIELDS.has(field) &&
+        !ADDED_AT_FIELDS.has(field),
     );
     expect(
       unaccounted,
@@ -241,6 +253,14 @@ describe("Patient identity is a ruling, not a drift", () => {
     for (const [field, decision] of CTO_RULING_FIELDS) {
       expect(DECISIONS.has(decision), `${field} cites "${decision}", which does not resolve`).toBe(true);
       expect([...PATIENT_FIELDS], `${field} is authorised by D-38 but not declared`).toContain(field);
+    }
+  });
+
+  it("has the v10 addedAt record field declared, decided, and citing a real decision", () => {
+    expect(ADDED_AT_FIELDS.size, "the v10 pass 2 brief named exactly one new patient field").toBe(1);
+    for (const [field, decision] of ADDED_AT_FIELDS) {
+      expect(DECISIONS.has(decision), `${field} cites "${decision}", which does not resolve`).toBe(true);
+      expect([...PATIENT_FIELDS], `${field} is authorised by the v10 brief but not declared`).toContain(field);
     }
   });
 

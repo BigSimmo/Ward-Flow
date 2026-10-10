@@ -30,7 +30,13 @@ import {
   type RecordRead,
   type WardRecordActor,
 } from "./ward-discharge-records";
-import { readAuditEvents, readAuditReviews, type AuditEvent, type AuditReview } from "./ward-audit";
+import {
+  readAuditEvents,
+  readAuditReviews,
+  readGovernanceAuditEvents,
+  type AuditEvent,
+  type AuditReview,
+} from "./ward-audit";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -108,6 +114,8 @@ type WardFlowContextValue = {
     handle: DischargeOpenHandle | null,
   ): RecordRead<DischargeRecord>;
   readAuditEvents(actor: WardRecordActor): RecordRead<readonly AuditEvent[]>;
+  /** v10 pass 2: `readAuditEvents` plus the synthetic seeded governance entries, for Governance. */
+  readGovernanceAuditEvents?(actor: WardRecordActor): RecordRead<readonly AuditEvent[]>;
   readAuditReviews(actor: WardRecordActor): RecordRead<readonly AuditReview[]>;
   movements: Movement[];
   units: Unit[];
@@ -1040,6 +1048,7 @@ function WardFlowWorld({
       readDischargeRecords: (actor, unitId) => selectDischargeRecords(state, actor, unitId),
       readDischargeRecord: (actor, admissionId, handle) => readOpenedDischargeRecord(state, actor, admissionId, handle),
       readAuditEvents: (actor) => readAuditEvents(state, actor),
+      readGovernanceAuditEvents: (actor) => readGovernanceAuditEvents(state, actor),
       readAuditReviews: (actor) => readAuditReviews(state, actor),
       openDischargeRecord: (actor, admissionId) => {
         if (!safeCounter(openRequestSequence.current) || openRequestSequence.current >= Number.MAX_SAFE_INTEGER)

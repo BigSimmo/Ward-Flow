@@ -2460,6 +2460,12 @@ export type ReferralAddressing = {
    * took back one destination's own live request", rather than a second list for this narrower act.
    */
   withdrawalReason?: WardRequestWithdrawalReason;
+  /**
+   * v10 pass 2 (Josh, 10 Oct 2026, ward Bed board "Place here"): the bed number, 1 to `Unit.beds`,
+   * the accepting ward placed this referral in. Only ever beside `acceptedUnitId`, and only when the
+   * acceptance named a bed (`ACCEPT_REFERRAL.bedNumber`). A fact about the ward's act, not the person.
+   */
+  heldBedNumber?: number;
 };
 
 /** The ward arm, named so signatures can require it. */

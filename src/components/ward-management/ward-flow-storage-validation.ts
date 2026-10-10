@@ -27,6 +27,7 @@ import { isSnoozeReason } from "./ward-inbox-snooze";
 import { WARD_SCENARIOS } from "./ward-scenarios";
 import { allEmergencyDepartments, siteByCode } from "./ward-sites";
 import { communityTeamById } from "./community/community-derivations";
+import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
 
 type RecordValue = Record<string, unknown>;
 const object = (v: unknown): v is RecordValue => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -255,7 +256,10 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
   for (const patient of value.patients as RecordValue[]) {
     // D-38: a community treatment order is the one non-text patient field: Form 5A, a finite
     // recorded time and a role label. Every other field stays plain text.
-    const { communityTreatmentOrder: order, ...identity } = patient;
+    // v10 pass 2: `addedAt` is the one other non-text field, a finite instant when present. Optional,
+    // so a save made before it existed loads unchanged; no storage version bump.
+    const { communityTreatmentOrder: order, addedAt, ...identity } = patient;
+    if (addedAt !== undefined && !finite(addedAt)) return false;
     if (order !== undefined) {
       if (!object(order) || order.form !== "5A" || !finite(order.recordedAt) || !text(order.recordedBy)) return false;
       if (order.endedAt !== undefined && !finite(order.endedAt)) return false;
@@ -452,7 +456,15 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
       !text(admission.sex) ||
       // R7 / counts follow gender (25 September 2026): optional; absent in older saves, which load as they are.
       (admission.gender !== undefined && !REFERRAL_GENDERS.includes(admission.gender as never)) ||
-      !counter(admission.dischargeDateMoves)
+      !counter(admission.dischargeDateMoves) ||
+      // v10 pass 2 (Bed board): optional, a whole bed on the stay's own unit when present.
+      (admission.bedNumber !== undefined &&
+        !(
+          Number.isInteger(admission.bedNumber) &&
+          (admission.bedNumber as number) >= 1 &&
+          (admission.bedNumber as number) <=
+            Number((value.units as RecordValue[]).find((unit) => unit.id === admission.unitId)?.beds ?? 0)
+        ))
     )
       return false;
     if (
@@ -796,8 +808,46 @@ export function isValidStoredWardFlowState(value: unknown): value is WardFlowSta
     )
       return false;
   }
+  // v10 pass 2: a review may name a synthetic seeded governance entry, derived from this same state.
+  const seededAuditIds = new Set(syntheticGovernanceAuditEvents(state).map((entry) => entry.id));
   for (const row of value.auditReviews as RecordValue[])
-    if (!auditIds.has(row.eventId) || !finite(row.at) || !counter(row.generation)) return false;
+    if (
+      !(auditIds.has(row.eventId) || seededAuditIds.has(row.eventId as string)) ||
+      !finite(row.at) ||
+      !counter(row.generation)
+    )
+      return false;
+  // v10 pass 2: undo records are optional (absent is none). Each names a real subject and holds
+  // only the shapes the reducer writes; a referral snapshot is checked by the generic walk above.
+  if (value.undoRecords !== undefined) {
+    if (!records(value.undoRecords)) return false;
+    const roles = ["coordinator", "ed", "ward", "officer", "demo", "community", "bed_manager", "executive"];
+    for (const row of value.undoRecords) {
+      if (!finite(row.at) || !roles.includes(row.role as string)) return false;
+      if (row.kind === "referral-decision") {
+        if (
+          !referralIds.has(row.referralId) ||
+          !["ACCEPT_REFERRAL", "DECLINE_REFERRAL"].includes(row.action as string) ||
+          !(row.unitId === null || unitIds.has(row.unitId)) ||
+          !object(row.before) ||
+          !object(row.after) ||
+          row.before.id !== row.referralId ||
+          row.after.id !== row.referralId ||
+          !strings(row.noticeIds)
+        )
+          return false;
+      } else if (row.kind === "bed-placement") {
+        const bed = (n: unknown) => Number.isInteger(n) && (n as number) >= 1;
+        if (
+          !admissionIds.has(row.admissionId) ||
+          !unitIds.has(row.unitId) ||
+          !(row.beforeBed === null || bed(row.beforeBed)) ||
+          !bed(row.afterBed)
+        )
+          return false;
+      } else return false;
+    }
+  }
   for (const row of value.notices as RecordValue[])
     if (!finite(row.raisedAt) || !object(row.to) || !object(row.about) || !text(row.kind) || !text(row.sentence))
       return false;

@@ -55,6 +55,8 @@ import type { Instant } from "@/components/ward-management/ward-clock";
  */
 export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   "auditCaptureStartedAt",
+  // v10 pass 2: when Add patient created a record (`Patient.addedAt`).
+  "addedAt",
   "acceptedAt",
   "waitlistedAt",
   "referredAt",

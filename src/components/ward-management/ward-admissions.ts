@@ -562,6 +562,14 @@ export type Admission = {
    * exists to forbid.
    */
   bedKind?: "locked" | "open";
+  /**
+   * WHICH OF THE UNIT'S BEDS THIS STAY IS IN, numbered 1 to `Unit.beds` — v10 pass 2 (Josh, 10 Oct
+   * 2026: the ward Bed board's pick up and place). A fact about the WARD'S ACT, in the same category
+   * as `bedKind` above: where the ward put the person, never anything about the person. Written only
+   * by `PLACE_IN_BED` (and reversed by `UNDO_PLACE_IN_BED`). OPTIONAL, and absent is ordinary: no
+   * seeded admission records a bed number, and a screen lays unnumbered stays out by position.
+   */
+  bedNumber?: number;
   state: AdmissionState;
   /** When the ward gave the bed away. The bed is gone from this instant — but a stay does NOT
    *  start here; see `daysInBed`. `null` while waitlisted. */
@@ -705,6 +713,7 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   homeRegion: true,
   tentativeDiagnosis: true,
   bedKind: true,
+  bedNumber: true,
   dischargeBarrier: true,
   stepDownCandidate: true,
   state: true,

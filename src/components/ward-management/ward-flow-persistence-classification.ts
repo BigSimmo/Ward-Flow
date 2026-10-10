@@ -278,6 +278,12 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "CHANGE_PLANNED_ADMISSION",
   "CANCEL_PLANNED_ADMISSION",
   "CONVERT_PLANNED_ADMISSION",
+  // v10 pass 2, 10 Oct 2026: Undo and the Bed board. Ids, whole bed numbers, a generation counter
+  // and instants only. An undo restores records the session already held; it adds no typed text.
+  "UNDO_REFERRAL_DECISION",
+  "UNDO_AUDIT_REVIEW",
+  "PLACE_IN_BED",
+  "UNDO_PLACE_IN_BED",
 ] as const satisfies readonly WardFlowEvent["type"][];
 
 /** Runtime form of the tuple above — an O(1)-lookup `Set`, used by the reducer wrapper and by the
@@ -389,7 +395,9 @@ type WardFlowReviewedStringOrUnknownKey =
   | "plannedAdmissionId"
   // Stream D: the demo calendar's "yyyy-mm-dd" date at `now`, computed by the panel from
   // `calendarDateOf(now, dayZero)` for the linked age-group check. Not about a person; never typed.
-  | "calendarDate";
+  | "calendarDate"
+  // v10 pass 2: `UNDO_AUDIT_REVIEW` names an `AuditReview.id`; the reducer finds the review or refuses.
+  | "reviewId";
 
 /** True exactly when `T` is (or includes) the wide `string` type — never for a literal or a union of
  *  literals, which is what lets a closed code-shaped union field pass untouched while a genuine

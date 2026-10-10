@@ -32,6 +32,8 @@ import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "./ward-flow-roles";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import { inboxRowMovementId } from "./ward-inbox-reducer";
+import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
+import { bedPlacementUndoFor, referralDecisionUndoFor } from "./ward-undo";
 import { isSnoozeReason, type InboxSnoozeReason } from "./ward-inbox-snooze";
 import type { PatientId } from "./ward-patients";
 import {
@@ -75,7 +77,11 @@ export type AuditBase = {
   subject: AuditSubject;
   outcome: "accepted" | "partial" | "denied" | "stale";
   reasonCode: AuditReason;
-  origin: "captured-this-session";
+  /**
+   * `synthetic-seed` (v10 pass 2, Josh 10 Oct 2026) marks the clearly synthetic governance entries a
+   * fresh demonstration opens with (`ward-governance-seed.ts`). They are never in `auditEvents`.
+   */
+  origin: "captured-this-session" | "synthetic-seed";
 };
 export type AuditReview = {
   id: string;
@@ -185,6 +191,24 @@ export type AuditEvent = AuditBase &
     | { category: "record-access"; action: "OPEN_DISCHARGE_RECORD"; details: { requestId: number | null } }
     | { category: "review"; action: "REVIEW_AUDIT_EVENT"; details: { decision: AuditReview["decision"] | null } }
     | {
+        // v10 pass 2: a review taken back. `decision` is always null so no screen reads it as a review.
+        category: "review";
+        action: "UNDO_AUDIT_REVIEW";
+        details: { decision: null; undoneReviewId: string | null; undoneDecision: AuditReview["decision"] | null };
+      }
+    | {
+        // v10 pass 2: a referral decision taken back with Undo.
+        category: "undo";
+        action: "UNDO_REFERRAL_DECISION";
+        details: { undoneAction: "ACCEPT_REFERRAL" | "DECLINE_REFERRAL" | null; decidedAt: Instant | null };
+      }
+    | {
+        // v10 pass 2: the ward Bed board's pick up and place, and its Undo. Bed numbers only.
+        category: "bed-placement";
+        action: "PLACE_IN_BED" | "UNDO_PLACE_IN_BED";
+        details: { fromBed: number | null; toBed: number | null };
+      }
+    | {
         // Stream A, 9 Oct 2026: who took, snoozed or returned an action item. The reason is a closed list.
         category: "inbox";
         action: "TAKE_INBOX_ITEM_OWNERSHIP" | "SNOOZE_INBOX_ITEM" | "UNSNOOZE_INBOX_ITEM";
@@ -252,7 +276,13 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "OPEN_DISCHARGE_RECORD":
       return "record-access";
     case "REVIEW_AUDIT_EVENT":
+    case "UNDO_AUDIT_REVIEW":
       return "review";
+    case "UNDO_REFERRAL_DECISION":
+      return "undo";
+    case "PLACE_IN_BED":
+    case "UNDO_PLACE_IN_BED":
+      return "bed-placement";
     case "SET_CONFIGURATION":
       return "configuration";
     case "TAKE_INBOX_ITEM_OWNERSHIP":
@@ -309,7 +339,11 @@ export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditS
     if (release && uniqueRecord(state.units, release.unitId))
       return { kind: "bed-release", releaseId: release.id, unitId: release.unitId };
   } else if (event.type === "REVIEW_AUDIT_EVENT") {
-    const entry = uniqueRecord(state.auditEvents, event.eventId);
+    const entry = uniqueRecord(governanceAuditEvents(state), event.eventId);
+    if (entry) return { kind: "audit-event", eventId: entry.id };
+  } else if (event.type === "UNDO_AUDIT_REVIEW") {
+    const review = uniqueRecord(state.auditReviews, event.reviewId);
+    const entry = review ? uniqueRecord(governanceAuditEvents(state), review.eventId) : undefined;
     if (entry) return { kind: "audit-event", eventId: entry.id };
   } else if (event.type === "SET_CONFIGURATION") {
     return { kind: "configuration" };
@@ -381,6 +415,7 @@ export function appendAudit(
   const mayResolveSubject =
     event.type === "OPEN_DISCHARGE_RECORD" ||
     event.type === "REVIEW_AUDIT_EVENT" ||
+    event.type === "UNDO_AUDIT_REVIEW" ||
     event.type === "RECORD_PATIENT_DISCHARGE" ||
     event.type === "RECORD_ADMISSION_FOLLOW_UP" ||
     event.type === "RECORD_ADMISSION_CARE"
@@ -435,6 +470,54 @@ export function appendAudit(
         details: { decision: reviewDecision(event.decision) },
       };
       break;
+    case "UNDO_AUDIT_REVIEW": {
+      const review = mayResolveSubject ? uniqueRecord(before.auditReviews, event.reviewId) : undefined;
+      captured = {
+        ...base,
+        category: "review",
+        action: event.type,
+        details: {
+          decision: null,
+          undoneReviewId: review?.id ?? null,
+          undoneDecision: reviewDecision(review?.decision),
+        },
+      };
+      break;
+    }
+    case "UNDO_REFERRAL_DECISION": {
+      const record = referralDecisionUndoFor(before.undoRecords, event.referralId);
+      captured = {
+        ...base,
+        category: "undo",
+        action: event.type,
+        details: { undoneAction: record?.action ?? null, decidedAt: finiteInstant(record?.at) },
+      };
+      break;
+    }
+    case "PLACE_IN_BED":
+    case "UNDO_PLACE_IN_BED": {
+      const bed = (state: WardFlowState) => {
+        const value = uniqueRecord(state.admissions, event.admissionId)?.bedNumber;
+        return typeof value === "number" && Number.isInteger(value) ? value : null;
+      };
+      const record =
+        event.type === "UNDO_PLACE_IN_BED" ? bedPlacementUndoFor(before.undoRecords, event.admissionId) : undefined;
+      captured = {
+        ...base,
+        category: "bed-placement",
+        action: event.type,
+        details: {
+          fromBed: bed(before),
+          toBed:
+            decision.outcome === "accepted"
+              ? bed(after)
+              : event.type === "PLACE_IN_BED"
+                ? finiteInstant(event.bedNumber)
+                : (record?.beforeBed ?? null),
+        },
+      };
+      break;
+    }
     case "TAKE_INBOX_ITEM_OWNERSHIP":
     case "SNOOZE_INBOX_ITEM":
     case "UNSNOOZE_INBOX_ITEM":
@@ -651,6 +734,25 @@ export function readAuditEvents(state: WardFlowState, actor: WardRecordActor): R
     ? { status: "allowed", value: structuredClone(state.auditEvents) }
     : { status: "denied" };
 }
+/**
+ * Every governance entry a reviewer sees: the synthetic seeded ones first, then this session's.
+ * Seeded entries belong to the current world (their `generation` is always the current one), so they
+ * return after a reset and can be reviewed like any other entry.
+ */
+export function governanceAuditEvents(state: WardFlowState): readonly AuditEvent[] {
+  return [...syntheticGovernanceAuditEvents(state), ...state.auditEvents];
+}
+
+/** `readAuditEvents` plus the synthetic seeded entries: for the Governance page only. */
+export function readGovernanceAuditEvents(
+  state: WardFlowState,
+  actor: WardRecordActor,
+): RecordRead<readonly AuditEvent[]> {
+  return validRecordActor(actor) && actor.role === "coordinator"
+    ? { status: "allowed", value: structuredClone(governanceAuditEvents(state)) }
+    : { status: "denied" };
+}
+
 export function readAuditReviews(state: WardFlowState, actor: WardRecordActor): RecordRead<readonly AuditReview[]> {
   return validRecordActor(actor) && actor.role === "coordinator"
     ? { status: "allowed", value: structuredClone(state.auditReviews) }
