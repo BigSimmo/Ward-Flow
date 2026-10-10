@@ -180,6 +180,15 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   UNDO_AUDIT_REVIEW: { category: "neither", plainWording: "Governance audit review undone" },
   PLACE_IN_BED: { category: "both", plainWording: "Patient moved to another bed on the ward" },
   UNDO_PLACE_IN_BED: { category: "both", plainWording: "Bed move undone" },
+  // v10 pass 3 (10 Oct 2026): the undoable steps.
+  UNDO_REFER_TO_UNITS: { category: "patient", plainWording: "Referral to wards undone" },
+  UNDO_ACCEPT_IN_PRINCIPLE: { category: "both", plainWording: "Acceptance undone" },
+  UNDO_LEGAL_FORM_RECORD: { category: "patient", plainWording: "Legal form record undone" },
+  UNDO_SUPPORT_NOTIFICATION: { category: "patient", plainWording: "Carer, PSP or MHAS record undone" },
+  UNDO_REPATRIATION: { category: "patient", plainWording: "Repatriation record undone" },
+  UNDO_HANDOVER_SIGN_OFF: { category: "neither", plainWording: "Handover sign-off undone" },
+  UNDO_ED_STEP: { category: "patient", plainWording: "Emergency department step undone" },
+  UNDO_TRANSPORT_STEP: { category: "both", plainWording: "Transport step undone" },
 
   // 2.9 World and admin
   ADVANCE_CLOCK: { category: "neither", plainWording: "Operational demonstration clock advanced" },

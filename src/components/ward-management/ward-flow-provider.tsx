@@ -73,6 +73,7 @@ import { activateScenarioNetwork, type WardScenario } from "@/components/ward-ma
 import { eventLogEntryFor, type EventLogEntry } from "@/components/ward-management/ward-event-log";
 import {
   WARD_FLOW_TEXT_SAFE_EVENT_TYPES,
+  eventCarriesTypedTextPayload,
   WARD_FLOW_TYPED_TEXT_EVENT_TYPES,
   findWardFlowEventTypeCoverageGaps,
   type AssertNever,
@@ -411,7 +412,8 @@ function trackWardFlowTypedTextDispatch(container: WardFlowContainer, event: War
     return { ...container, world: nextWorld, typedTextSeen: false, eventLog: [logged] };
   }
   const eventLog = [...(container.eventLog ?? []), logged];
-  const typedTextSeen = container.typedTextSeen || !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type);
+  const typedTextSeen =
+    container.typedTextSeen || !WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event);
   return { ...container, world: nextWorld, typedTextSeen, eventLog };
 }
 

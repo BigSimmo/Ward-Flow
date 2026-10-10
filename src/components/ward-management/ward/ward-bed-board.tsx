@@ -12,6 +12,11 @@ import { plainAge } from "@/components/ward-management/wards/plain-age";
 
 /** One referral waiting for this ward's answer that the board can place in a bed. */
 export type WaitingReferral = {
+  /**
+   * v10 pass 3: "movement" is a person the coordinator referred to this ward (placed with
+   * `ACCEPT_IN_PRINCIPLE` and a bed number); absent is a referral sent straight to the ward.
+   */
+  kind?: "referral" | "movement";
   id: string;
   name: string;
   /** "F", "M" or "Not recorded". */
@@ -27,9 +32,6 @@ export type WardBedBoardProps = {
   beds: readonly BedItem[];
   isMixed: boolean;
   waiting: readonly WaitingReferral[];
-  /** Referrals the coordinator sent, answered from Home (their acceptance names no bed). */
-  coordinatorReferrals: number;
-  onAnswerOnHome: () => void;
   picked: BoardPick | null;
   onPick: (pick: BoardPick | null) => void;
   /** The board's live sentence: what was picked, placed, refused or undone. */
@@ -97,8 +99,6 @@ export function WardBedBoard({
   beds,
   isMixed,
   waiting,
-  coordinatorReferrals,
-  onAnswerOnHome,
   picked,
   onPick,
   say,
@@ -120,7 +120,10 @@ export function WardBedBoard({
   const waitChips = (
     <>
       {waiting.map((referral) => {
-        const on = picked?.kind === "referral" && picked.referralId === referral.id;
+        const isMovement = referral.kind === "movement";
+        const on =
+          (picked?.kind === "referral" && !isMovement && picked.referralId === referral.id) ||
+          (picked?.kind === "movement" && isMovement && picked.movementId === referral.id);
         const reasonId = `ward-board-wait-${referral.id}-reason`;
         return (
           <span key={referral.id} className={styles.chipWrap}>
@@ -136,12 +139,19 @@ export function WardBedBoard({
                 onPick(
                   on
                     ? null
-                    : {
-                        kind: "referral",
-                        referralId: referral.id,
-                        name: referral.name,
-                        secureBedNeeded: referral.secureBedNeeded,
-                      },
+                    : isMovement
+                      ? {
+                          kind: "movement",
+                          movementId: referral.id,
+                          name: referral.name,
+                          secureBedNeeded: referral.secureBedNeeded,
+                        }
+                      : {
+                          kind: "referral",
+                          referralId: referral.id,
+                          name: referral.name,
+                          secureBedNeeded: referral.secureBedNeeded,
+                        },
                 );
               }}
             >
@@ -171,15 +181,6 @@ export function WardBedBoard({
       ) : null}
       {waiting.length === 0 && picked?.kind !== "stay" ? (
         <span className={styles.none}>Nobody waiting to be placed</span>
-      ) : null}
-      {coordinatorReferrals > 0 ? (
-        <button
-          type="button"
-          className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.homeLink)}
-          onClick={onAnswerOnHome}
-        >
-          {coordinatorReferrals} from the coordinator, answer on Home
-        </button>
       ) : null}
     </>
   );

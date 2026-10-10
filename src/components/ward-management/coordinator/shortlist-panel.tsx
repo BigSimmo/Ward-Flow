@@ -57,10 +57,15 @@ import {
   restrictionNotice,
 } from "@/components/ward-management/ward-derivations";
 import { eligibility, type EligibilityGate, type GateResult } from "@/components/ward-management/ward-eligibility";
-import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import {
+  WARD_FLOW_ROLE_LABELS,
+  type WardFlowEvent,
+  type WardFlowRole,
+} from "@/components/ward-management/ward-flow-events";
 import {
   ARRIVAL_MODE_LABELS,
   URGENCY_LEVELS,
+  OVERRIDE_SIGN_OFF_NAME_MAX,
   genderReviewNeeded,
   type ArrivalMode,
   type BedRelease,
@@ -479,6 +484,9 @@ export function ShortlistPanel({
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
   const [overrideSecondSignOff, setOverrideSecondSignOff] = useState(false);
+  // v10 pass 3: who gave the second sign-off, sent with the override (`overrideSignOff`).
+  const [overrideSignOffRole, setOverrideSignOffRole] = useState<WardFlowRole>("coordinator");
+  const [overrideSignOffName, setOverrideSignOffName] = useState("");
 
   const isOverrideDirty = overrideReason.trim().length > 0;
   const handleRestoreOverride = useCallback((cached: string) => {
@@ -566,6 +574,7 @@ export function ShortlistPanel({
     setOverrideOpen(false);
     setOverrideReason("");
     setOverrideSecondSignOff(false);
+    setOverrideSignOffName("");
     // ⚠️ DO NOT CLEAR THE PERSISTED DRAFT HERE. `useDirtyStateGuard` has already been called with the
     // NEWLY selected movement's key by the time this render-time reset runs, so clearing here would
     // delete the draft of the movement being ARRIVED AT (and leave the one being left). Drafts are
@@ -830,8 +839,10 @@ export function ShortlistPanel({
     if (!canOverride) return;
     const reason = overrideReason.trim();
     if (reason.length === 0) return;
-    // v10 Home: a second sign-off is required before an override is recorded.
-    if (!overrideSecondSignOff) return;
+    // v10 Home: a second sign-off is required before an override is recorded, and pass 3 sends
+    // who gave it (the acting role and a typed name or initials) with the override.
+    const signOffName = overrideSignOffName.trim();
+    if (!overrideSecondSignOff || signOffName.length === 0) return;
     // Membership-checked here as well as in the reducer. The reducer's check is the one that
     // matters; this one keeps a malformed value from being reported on screen as recorded.
     if (!OVERRIDE_REASONS.includes(reason as OverrideReason)) return;
@@ -846,11 +857,13 @@ export function ShortlistPanel({
       movementId,
       unitIds: [...referTargets],
       overrideReason: reason as OverrideReason,
+      overrideSignOff: { role: overrideSignOffRole, name: signOffName },
     });
     setOverrideRecord({ unitIds: [...referTargets], at: now, reason });
     setOverrideOpen(false);
     setOverrideReason("");
     setOverrideSecondSignOff(false);
+    setOverrideSignOffName("");
     clearOverrideDraft();
   }
 
@@ -1637,8 +1650,9 @@ export function ShortlistPanel({
                 </option>
               ))}
             </select>
-            {/* v10 Home: Override asks for a reason and a second sign-off. The tick is required before
-                the override is recorded; the engine does not yet store who gave it (D4). */}
+            {/* v10 Home: Override asks for a reason and a second sign-off. The tick and who gave it
+                (their role and a typed name or initials) are required before the override is
+                recorded; pass 3 stores both on the override and its audit entry. */}
             <label className={styles.shortlistOverrideCheckOption}>
               <input
                 type="checkbox"
@@ -1649,20 +1663,60 @@ export function ShortlistPanel({
               />
               Second sign-off: another senior clinician has agreed to this override
             </label>
+            <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-override-sign-off-role">
+              Signed off as
+            </label>
+            <select
+              id="ward-shortlist-override-sign-off-role"
+              className={styles.shortlistOverrideSelect}
+              value={overrideSignOffRole}
+              onChange={(event) => setOverrideSignOffRole(event.target.value as WardFlowRole)}
+              data-testid="ward-shortlist-override-sign-off-role"
+            >
+              {(["coordinator", "ward", "ed", "bed_manager", "executive"] as const).map((role) => (
+                <option key={role} value={role}>
+                  {WARD_FLOW_ROLE_LABELS[role]}
+                </option>
+              ))}
+            </select>
+            <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-override-sign-off-name">
+              Name or initials of who signed off
+            </label>
+            <input
+              id="ward-shortlist-override-sign-off-name"
+              type="text"
+              required
+              maxLength={OVERRIDE_SIGN_OFF_NAME_MAX}
+              autoComplete="off"
+              className={styles.shortlistOverrideSelect}
+              value={overrideSignOffName}
+              onChange={(event) => setOverrideSignOffName(event.target.value)}
+              data-testid="ward-shortlist-override-sign-off-name"
+            />
             <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-override-second-sign-off-note">
-              Who gave the second sign-off is not recorded. Not wired in this prototype.
+              Recorded with the override and its audit entry.
             </p>
             <button
               type="submit"
               className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
-              aria-disabled={overrideReason === "" || !overrideSecondSignOff ? "true" : undefined}
-              onClick={overrideReason === "" || !overrideSecondSignOff ? ignoreUnavailableActivation : undefined}
+              aria-disabled={
+                overrideReason === "" || !overrideSecondSignOff || overrideSignOffName.trim() === ""
+                  ? "true"
+                  : undefined
+              }
+              onClick={
+                overrideReason === "" || !overrideSecondSignOff || overrideSignOffName.trim() === ""
+                  ? ignoreUnavailableActivation
+                  : undefined
+              }
               title={
                 overrideReason === ""
                   ? "Choose a reason first"
                   : !overrideSecondSignOff
                     ? "Tick the second sign-off first"
-                    : undefined
+                    : overrideSignOffName.trim() === ""
+                      ? "Type who gave the second sign-off first"
+                      : undefined
               }
             >
               Record override

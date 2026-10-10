@@ -22,6 +22,8 @@ import {
 } from "@/components/ward-management/ward-eligibility";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { DECLINE_REASONS, type DeclineReason, type Movement, type Unit } from "@/components/ward-management/ward-model";
@@ -168,6 +170,18 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     return () => clearTimeout(timer);
   }, [toastMessage]);
 
+  // v10 pass 3: Accept dispatches at once and offers Undo on the layout's toast; this page's own
+  // toast line carries the outcome where no toast region is mounted.
+  const routeRole = useRouteRole();
+  const runStep = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole,
+    onMessage: triggerToast,
+    sayRefusal: wardSafeRejectionReason,
+  });
+
   if (!unit) {
     return (
       <div className={styles.answerScreen} data-testid="ward-unit-screen">
@@ -258,16 +272,24 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
 
   function handleAccept(movementId: string) {
     setPriorRejectionCount(rejections.length);
-    dispatch({
-      type: "ACCEPT_IN_PRINCIPLE",
-      role: "ward",
-      now,
-      movementId,
-      unitId: currentUnit.id,
-    });
-    setAcceptModalOpen(false);
+    const unitIdHere = currentUnit.id;
+    // v10 pass 3: Accept, then Undo on the toast (`UNDO_ACCEPT_IN_PRINCIPLE`, this ward's own).
     // Owner, 26 Sept 2026: no WF journey number in a person-facing toast.
-    triggerToast("Acceptance requested.");
+    runStep(
+      { type: "ACCEPT_IN_PRINCIPLE", role: "ward", now, movementId, unitId: unitIdHere },
+      {
+        success: "Accepted in principle.",
+        undo: (at) => ({
+          type: "UNDO_ACCEPT_IN_PRINCIPLE",
+          role: "ward",
+          now: at,
+          movementId,
+          actingUnitId: unitIdHere,
+        }),
+        undone: "Acceptance undone. The referral is back with this ward.",
+      },
+    );
+    setAcceptModalOpen(false);
   }
 
   function submitOverride(event: FormEvent<HTMLFormElement>, movementId: string) {
