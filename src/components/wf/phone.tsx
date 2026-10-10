@@ -672,15 +672,19 @@ export function ScrollRow({ children, className, rowClassName, ...rest }: Scroll
     observer?.observe(row);
     // Chips arriving or leaving change the content width without resizing the row itself, so each
     // chip is watched too, and the list is refreshed only when chips actually change.
-    const watch = () => {
-      for (const child of Array.from(row.children)) observer?.observe(child);
-    };
-    watch();
+    for (const child of Array.from(row.children)) observer?.observe(child);
     const chips =
       typeof MutationObserver === "undefined"
         ? null
-        : new MutationObserver(() => {
-            watch();
+        : new MutationObserver((records) => {
+            for (const record of records) {
+              record.removedNodes.forEach((node) => {
+                if (node instanceof Element) observer?.unobserve(node);
+              });
+              record.addedNodes.forEach((node) => {
+                if (node instanceof Element) observer?.observe(node);
+              });
+            }
             measure();
           });
     chips?.observe(row, { childList: true });
