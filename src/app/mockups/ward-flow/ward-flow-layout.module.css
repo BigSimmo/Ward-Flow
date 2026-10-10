@@ -85,6 +85,10 @@
   .shellRow {
     height: auto;
     max-height: none;
+    /* A short phone page still reaches the bottom of the screen (10 Oct 2026). Without this the
+       row stopped below its footer and left bare white under it. The window less the Data mode bar
+       above the shell (--wf-data-bar-height, published by ward-shared-access.tsx). */
+    min-height: calc(100dvh - var(--wf-data-bar-height, 0px));
     overflow: visible;
   }
   .shellContent {

@@ -79,10 +79,10 @@
   color: var(--wf-ink-2);
 }
 
+/* Neutral pill, red glyph: words stay neutral and the glyph carries the tone (v9). */
 .urgentBadge {
-  border-color: var(--wf-danger);
-  background: color-mix(in srgb, var(--wf-danger) 7%, var(--wf-surface));
-  color: var(--wf-danger-ink);
+  gap: 0.25rem;
+  color: var(--wf-ink-1);
 }
 
 /* The patient's facts as one wrapping line: a quiet label, then the value. */

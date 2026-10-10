@@ -35,4 +35,16 @@ describe("WardGround fills the column below short pages", () => {
     expect(desktop).toMatch(/position:\s*relative/u);
     expect(desktop).toMatch(/overflow-y:\s*clip/u);
   });
+
+  it("lets a short phone page reach the bottom of the screen below the data mode bar", () => {
+    const layout = readFileSync("src/app/mockups/ward-flow/ward-flow-layout.module.css", "utf8").replace(
+      /\/\*[\s\S]*?\*\//gu,
+      "",
+    );
+    const phone = [...layout.matchAll(/@media\s*\(max-width:\s*1000px\)\s*\{\s*\.shellRow\s*\{([^}]*)\}/gu)]
+      .map((match) => match[1])
+      .join("");
+    expect(phone, "no phone `.shellRow` rule").not.toBe("");
+    expect(phone).toMatch(/min-height:\s*calc\(100dvh - var\(--wf-data-bar-height, 0px\)\)/u);
+  });
 });
