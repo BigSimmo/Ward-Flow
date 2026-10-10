@@ -2442,6 +2442,12 @@ export type ReferralAddressing = {
   /** The unit that accepted. Only ever set on a `psychiatric_ward` addressing — the other three
    *  are answered by a person or a team, and have no unit to name. */
   acceptedUnitId?: string;
+  /**
+   * v10 pass 2 (Josh, 10 Oct 2026, ward Bed board "Place here"): the bed number, 1 to `Unit.beds`,
+   * the accepting ward placed this referral in. Only ever beside `acceptedUnitId`, and only when the
+   * acceptance named a bed (`ACCEPT_REFERRAL.bedNumber`). A fact about the ward's act, not the person.
+   */
+  heldBedNumber?: number;
   /** FD-5 — when the referrer took this referral back. A FIELD, not a fifth state (O-17.11), and
    *  set on every destination still `queued` at that moment: the referrer takes back the REFERRAL,
    *  not one ward's copy of it. A destination that already answered keeps its answer. The reasoning,

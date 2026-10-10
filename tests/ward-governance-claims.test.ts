@@ -109,6 +109,8 @@ const FIELD_CLASS: Record<string, "identity" | "operational" | "clinical"> = {
   // D-38: the community treatment order is legal authority, the same class as `legalStatus`: a form
   // code, when it was recorded and by which role. No clinical content and no lapse time.
   communityTreatmentOrder: "operational",
+  // v10 pass 2 (Josh, 10 Oct 2026): when Add patient created the record. A record fact.
+  addedAt: "operational",
 };
 
 describe("the governance data and audit disclosures", () => {
