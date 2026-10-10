@@ -24,9 +24,9 @@ import { SYNTHETIC_TRAVEL_BANDS } from "@/components/ward-management/ward-travel
 
 /** The short travel words for a cell, a card and a fact. The full label stays in `TRAVEL_BAND_LABELS`. */
 export const TRAVEL_SHORT: Record<TravelBand, string> = {
-  under_an_hour: "Under 1h",
-  one_to_three_hours: "1 to 3h",
-  three_hours_or_more: "Road 3h+",
+  under_an_hour: "Under 1 hour",
+  one_to_three_hours: "1 to 3 hours",
+  three_hours_or_more: "3 hours or more",
   air_transport_only: "Air only",
 };
 

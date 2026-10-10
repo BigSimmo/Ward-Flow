@@ -624,7 +624,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             <div className={styles.pills} role="group" aria-label="Highlight people">
               {pill("due", "Discharge date passed", "warning")}
               {pill("air", "Air only")}
-              {pill("road", "Road 3h+")}
+              {pill("road", TRAVEL_SHORT.three_hours_or_more)}
               {pill("noplan", "No return plan", "closed")}
               {pill("notagreed", "Ward not agreed", "neutral")}
               {pill("bed", "Awaiting home bed", "neutral")}
