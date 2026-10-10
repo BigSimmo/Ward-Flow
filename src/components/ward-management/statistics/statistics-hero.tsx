@@ -71,6 +71,24 @@ export function StatisticsHero({
 }) {
   const wardCount = useWardFlow().units.length;
   const now = useWardFlowClock();
+  // With chips (Summary) Export sits in the title row's action slot; with hero figures it leads
+  // the band's tool row, so it never adds a row of its own under the figures.
+  const exportButton = exportFigures ? (
+    <Button
+      variant="light"
+      size="sm"
+      icon={Download}
+      data-testid="ward-statistics-export"
+      onClick={() =>
+        downloadCsv(
+          `ward-flow-synthetic-${exportFigures.stem}-figures.csv`,
+          statisticsExportLines(exportFigures, formatInstant(now)),
+        )
+      }
+    >
+      Export the figures
+    </Button>
+  ) : null;
   return (
     <Hero
       level={1}
@@ -80,24 +98,7 @@ export function StatisticsHero({
       titleMeta={titleAction ? <span className={styles.titleAction}>{titleAction}</span> : undefined}
       stats={chips ?? stats}
       statsAlign="end"
-      aside={
-        exportFigures ? (
-          <Button
-            variant="light"
-            size="sm"
-            icon={Download}
-            data-testid="ward-statistics-export"
-            onClick={() =>
-              downloadCsv(
-                `ward-flow-synthetic-${exportFigures.stem}-figures.csv`,
-                statisticsExportLines(exportFigures, formatInstant(now)),
-              )
-            }
-          >
-            Export the figures
-          </Button>
-        ) : undefined
-      }
+      aside={chips ? exportButton : undefined}
       bar={
         <div className={styles.navSlot} data-testid={navTestId}>
           <StatisticsNav currentSection={section} activeSlug={slug} withSamples={false} wardCount={wardCount} />
@@ -105,6 +106,7 @@ export function StatisticsHero({
       }
       barAside={
         <>
+          {chips ? null : exportButton}
           {tools ? <span className={styles.heroTools}>{tools}</span> : null}
           <StatisticsRange />
           <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={onTogglePause} />

@@ -346,9 +346,10 @@
   color: var(--wf-ink-2);
 }
 
+/* One line on a wide screen: the controls shrink, then a crowded tablet bar wraps whole controls. */
 .filterBar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--wf-s-2) var(--wf-s-3);
   min-width: 0;
@@ -366,16 +367,32 @@
   font-size: var(--wf-fs-12);
 }
 
+.patientField {
+  flex: 0 1 auto;
+}
+
 .patientPick {
   width: min(100%, 300px);
+  min-width: 11rem;
 }
 
 .findBox {
-  width: min(100%, 260px);
+  flex: 1 1 14rem;
+  width: auto;
+  min-width: 9rem;
+  max-width: 260px;
 }
 
 .kindPick {
-  width: 180px;
+  flex: 0 1 180px;
+  width: auto;
+  min-width: 9.5rem;
+}
+
+@media (max-width: 87.5rem) {
+  .filterBar {
+    flex-wrap: wrap;
+  }
 }
 
 .roleSwitch {
@@ -390,8 +407,10 @@
   align-items: start;
 }
 
+/* The table card runs the full row height, so it ends level with the side panel beside it. */
 .chronoCard {
   min-width: 0;
+  align-self: stretch;
 }
 
 .countPill {
@@ -669,7 +688,8 @@
   min-height: var(--wf-touch);
 }
 
-@media (max-width: 1180px) {
+/* Tablet landscape keeps the table beside the summary; portrait (and below) stacks them. */
+@media (max-width: 62.5rem) {
   .chronoSplit {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -689,7 +709,18 @@
 
 .phoneSeg :is(a, button) {
   flex: 1 1 0;
+  justify-content: center;
   min-height: var(--wf-touch);
+}
+
+.phonePage .patientPick {
+  width: 100%;
+}
+
+.phonePage .phoneNote {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .phoneNote {

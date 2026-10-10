@@ -1,13 +1,25 @@
 "use client";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight, Copy, Download, ListOrdered, Printer, Search, X } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Download,
+  ListOrdered,
+  Printer,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 
 import {
   Button,
   Card,
   CardHead,
+  Drawer,
   FactGrid,
   Hero,
   HeroChip,
@@ -42,6 +54,22 @@ import { reportDay, reportMoment } from "./report-parts";
 import styles from "./reports.module.css";
 
 const NOT_RECORDED = "Not recorded";
+
+/** Tablet portrait (769 to 1000 wide): the event opens in a drawer instead of the side panel. */
+const PORTRAIT_TABLET_QUERY = "(min-width: 48.0625rem) and (max-width: 62.5rem)";
+
+function usePortraitTablet(): boolean {
+  return useSyncExternalStore(
+    (notify) => {
+      if (typeof window.matchMedia !== "function") return () => undefined;
+      const query = window.matchMedia(PORTRAIT_TABLET_QUERY);
+      query.addEventListener?.("change", notify);
+      return () => query.removeEventListener?.("change", notify);
+    },
+    () => typeof window.matchMedia === "function" && window.matchMedia(PORTRAIT_TABLET_QUERY).matches,
+    () => false,
+  );
+}
 
 type SourceTab = "all" | "records" | "audit" | "session";
 type ViewRole = "coordinator" | "nurse";
@@ -129,6 +157,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   const [query, setQuery] = useState("");
   const [viewRole, setViewRole] = useState<ViewRole>("coordinator");
   const [openKey, setOpenKey] = useState<string | null>(null);
+  // Phone only: the sheet that holds record kind and the role view, one tap from the list.
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const tableScroll = useRef<HTMLDivElement>(null);
 
   // Read once per world (the read returns a fresh copy each call), and only for the coordinator.
@@ -188,6 +218,9 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
 
   const openIndex = rows.findIndex((row) => row.key === openKey);
   const open = openIndex >= 0 ? rows[openIndex] : null;
+  const portraitTablet = usePortraitTablet();
+  // The side panel opens the event, except on a portrait tablet, where a drawer does.
+  const sideEvent = portraitTablet ? null : open;
 
   function choosePatient(next: string) {
     setPatientId(next);
@@ -329,10 +362,24 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
             }
           />
           {patientPicker}
-          <p className={styles.phoneNote}>{generated}</p>
+          <p className={styles.phoneNote} data-testid="ward-chronology-generated">
+            Synthetic demo data · generated {reportMoment(now, dayZero)}
+          </p>
           {chronology ? (
             <>
               {sourceTabs("md")}
+              <ul className={styles.phoneList}>
+                <PhoneListRow
+                  as="li"
+                  data-testid="ward-chronology-phone-filters"
+                  leading={<SlidersHorizontal size={16} aria-hidden="true" />}
+                  name="Record kind and view"
+                  meta={`${kind === "all" ? "Every record kind" : `${kind} only`}${
+                    coordinator ? ` · ${nurseView ? "Ward nurse" : "Bed coordinator"}` : ""
+                  }`}
+                  onSelect={() => setFiltersOpen(true)}
+                />
+              </ul>
               {withheld}
               {emptyState}
               {dayGroups(rows, dayZero).map((group) => (
@@ -370,6 +417,59 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
           ) : (
             <p className={styles.phoneNote}>No patient chosen. Choose one above.</p>
           )}
+          <PhoneSheet
+            open={filtersOpen}
+            onClose={() => setFiltersOpen(false)}
+            title="Record kind and view"
+            description="Filters the events listed; the counts are of this source"
+            primary={{ label: "Done", onAction: () => setFiltersOpen(false) }}
+            data-testid="ward-chronology-phone-filter-sheet"
+          >
+            <div className={styles.sheetBody}>
+              <ul className={styles.phoneList} aria-label="Record kind">
+                {[
+                  { id: "all", label: "Every record kind" },
+                  ...kinds.map((entry) => ({ id: entry, label: `${entry} only` })),
+                ].map((entry) => (
+                  <PhoneListRow
+                    key={entry.id}
+                    as="li"
+                    leading={kind === entry.id ? <Check size={16} aria-hidden="true" /> : <span aria-hidden="true" />}
+                    name={entry.label}
+                    aria-label={`${entry.label}${kind === entry.id ? ", chosen" : ""}`}
+                    value={
+                      entry.id === "all"
+                        ? sourceRows.filter((row) => tab === "all" || row.source === SOURCE_OF_TAB[tab]).length
+                        : sourceRows.filter(
+                            (row) => row.record === entry.id && (tab === "all" || row.source === SOURCE_OF_TAB[tab]),
+                          ).length
+                    }
+                    onSelect={() => {
+                      setKind(entry.id);
+                      setOpenKey(null);
+                    }}
+                  />
+                ))}
+              </ul>
+              {coordinator ? (
+                <Segmented<ViewRole>
+                  size="md"
+                  className={styles.phoneSeg}
+                  label="View as"
+                  value={viewRole}
+                  onChange={(next) => {
+                    setViewRole(next);
+                    if (next === "nurse" && tab === "audit") setTab("all");
+                    setOpenKey(null);
+                  }}
+                  items={[
+                    { id: "coordinator", label: "Bed coordinator" },
+                    { id: "nurse", label: "Ward nurse" },
+                  ]}
+                />
+              ) : null}
+            </div>
+          </PhoneSheet>
           <PhoneSheet open={open !== null} onClose={() => setOpenKey(null)} title={open?.action ?? ""}>
             {open ? (
               <div className={styles.sheetBody}>
@@ -386,6 +486,55 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
       </div>
     );
   }
+
+  /* The open event: times, who, before and after, reason, then Previous, Next and Copy row. Shown
+     in the sticky side panel, or in a drawer from the right on a portrait tablet. */
+  const eventBody = (row: ChronologyRow) => (
+    <div className={styles.sideBody}>
+      <FactGrid facts={detailFacts(row)} />
+      <dl className={styles.sideList}>
+        <div>
+          <dt>Record</dt>
+          <dd>{row.record}</dd>
+        </div>
+        <div>
+          <dt>Before</dt>
+          <dd>{row.before || NOT_RECORDED}</dd>
+        </div>
+        <div>
+          <dt>After</dt>
+          <dd>{row.after || NOT_RECORDED}</dd>
+        </div>
+        <div>
+          <dt>Reason</dt>
+          <dd>{row.reason || NOT_RECORDED}</dd>
+        </div>
+      </dl>
+      <div className={styles.sideActions}>
+        <Button
+          size="sm"
+          variant="sec"
+          icon={ChevronLeft}
+          disabled={openIndex <= 0}
+          onClick={() => openIndex > 0 && setOpenKey(rows[openIndex - 1].key)}
+        >
+          Previous
+        </Button>
+        <Button
+          size="sm"
+          variant="sec"
+          icon={ChevronRight}
+          disabled={openIndex >= rows.length - 1}
+          onClick={() => openIndex < rows.length - 1 && setOpenKey(rows[openIndex + 1].key)}
+        >
+          Next
+        </Button>
+        <Button size="sm" variant="ghost" icon={Copy} onClick={() => copyRow(row)}>
+          Copy row
+        </Button>
+      </div>
+    </div>
+  );
 
   /* -------------------------------------------------------------- desktop */
   return (
@@ -582,14 +731,14 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
             <aside
               className={styles.chronoSide}
               id={`${baseId}-panel`}
-              aria-label={open ? "Event" : "Summary"}
+              aria-label={sideEvent ? "Event" : "Summary"}
               data-wf-rail=""
             >
-              {open ? (
+              {sideEvent ? (
                 <Card aria-labelledby={`${baseId}-event-title`}>
                   <CardHead
                     id={`${baseId}-event-title`}
-                    title={open.action}
+                    title={sideEvent.action}
                     aside={
                       <Button
                         size="sm"
@@ -601,50 +750,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                       />
                     }
                   />
-                  <div className={styles.sideBody}>
-                    <FactGrid facts={detailFacts(open)} />
-                    <dl className={styles.sideList}>
-                      <div>
-                        <dt>Record</dt>
-                        <dd>{open.record}</dd>
-                      </div>
-                      <div>
-                        <dt>Before</dt>
-                        <dd>{open.before || NOT_RECORDED}</dd>
-                      </div>
-                      <div>
-                        <dt>After</dt>
-                        <dd>{open.after || NOT_RECORDED}</dd>
-                      </div>
-                      <div>
-                        <dt>Reason</dt>
-                        <dd>{open.reason || NOT_RECORDED}</dd>
-                      </div>
-                    </dl>
-                    <div className={styles.sideActions}>
-                      <Button
-                        size="sm"
-                        variant="sec"
-                        icon={ChevronLeft}
-                        disabled={openIndex <= 0}
-                        onClick={() => openIndex > 0 && setOpenKey(rows[openIndex - 1].key)}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="sec"
-                        icon={ChevronRight}
-                        disabled={openIndex >= rows.length - 1}
-                        onClick={() => openIndex < rows.length - 1 && setOpenKey(rows[openIndex + 1].key)}
-                      >
-                        Next
-                      </Button>
-                      <Button size="sm" variant="ghost" icon={Copy} onClick={() => copyRow(open)}>
-                        Copy row
-                      </Button>
-                    </div>
-                  </div>
+                  {eventBody(sideEvent)}
                 </Card>
               ) : (
                 <Card aria-labelledby={`${baseId}-summary-title`}>
@@ -701,6 +807,16 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                 </Card>
               )}
             </aside>
+            {/* Portrait tablet: the summary stays under the table and a clicked event slides over
+                from the right, so every column of the table stays readable. */}
+            <Drawer
+              open={portraitTablet && open !== null}
+              onClose={() => setOpenKey(null)}
+              title={open?.action ?? "Event"}
+              data-testid="ward-chronology-event-drawer"
+            >
+              {open ? eventBody(open) : null}
+            </Drawer>
           </div>
         ) : (
           <Card aria-labelledby={`${baseId}-none`}>

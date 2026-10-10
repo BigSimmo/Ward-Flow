@@ -93,6 +93,33 @@ describe("read-only report screens", () => {
     }
   });
 
+  it("on a phone keeps record kind and the role view one tap away, in a sheet", () => {
+    route.pathname = "/mockups/ward-flow/reports/chronology";
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    try {
+      inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
+      const filters = screen.getByTestId("ward-chronology-phone-filters");
+      expect(filters).toHaveTextContent("Every record kind · Bed coordinator");
+      fireEvent.click(within(filters).getByRole("button"));
+      const sheet = screen.getByRole("dialog", { name: "Record kind and view" });
+      expect(within(sheet).getByRole("radiogroup", { name: "View as" })).toBeTruthy();
+      fireEvent.click(within(sheet).getByRole("radio", { name: "Ward nurse" }));
+      fireEvent.click(within(sheet).getByRole("button", { name: "Done" }));
+      expect(screen.getByTestId("ward-chronology-phone-filters")).toHaveTextContent("Ward nurse");
+      expect(screen.getByTestId("ward-chronology-nurse-view")).toBeTruthy();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("asks for a patient before showing any chronology", () => {
     inProvider(<PatientChronologyScreen />);
     expect(screen.queryByTestId("ward-chronology-table")).toBeNull();
