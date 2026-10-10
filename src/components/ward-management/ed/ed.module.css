@@ -6357,7 +6357,7 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
   .boardTable .accessWarning {
     margin-top: 1px;
     font-size: var(--wf-fs-12);
-    color: var(--wf-danger-ink);
+    color: var(--wf-ink-2);
   }
 
   .boardTable .bayNumber {
@@ -7324,4 +7324,61 @@ tr.qRow[data-dim="true"] td :not(button, button *, select, input, a[class*="btn"
 
 .attentionStamp[data-tone="danger"] {
   border-color: var(--wf-act-edge);
+}
+
+/* v10 pass 3, phone: Board, Needs you and Lists are one tap apart. Phone only; desktop never sets
+ * data-phone-pane, so nothing here reaches it. */
+.phonePanes {
+  min-width: 0;
+}
+
+@media (max-width: 48rem) {
+  .main[data-phone-pane="board"] [data-pane="needs"],
+  .main[data-phone-pane="board"] [data-pane="lists"],
+  .main[data-phone-pane="needs"] [data-pane="board"],
+  .main[data-phone-pane="needs"] [data-pane="lists"],
+  .main[data-phone-pane="lists"] [data-pane="board"],
+  .main[data-phone-pane="lists"] [data-pane="needs"] {
+    display: none;
+  }
+}
+
+/* v10 pass 3: the person opens as a side sheet over the board (desktop and tablet) and as a tall
+ * bottom sheet on phone, not a centred dialog. One detail surface at a time. */
+@media (min-width: 48.0625rem) {
+  .pxDrawer .patientDialog {
+    inset: 0 0 0 auto;
+    width: min(520px, calc(100vw - 32px));
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    border-width: 0 0 0 1px;
+    border-radius: var(--wf-r-xl) 0 0 var(--wf-r-xl);
+  }
+}
+
+@media (max-width: 48rem) {
+  .pxDrawer .patientDialog {
+    inset: auto 0 0 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: 92dvh;
+    max-height: 92dvh;
+    margin: 0;
+    border-width: 1px 0 0;
+    border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+  }
+}
+
+/* v10: words stay neutral, the glyph carries the tone (no red words, no red fill). */
+.accessWarning,
+.accessWarning[data-state="over"] {
+  color: var(--wf-ink-2);
+}
+
+.arrivalLate {
+  border-color: var(--wf-act-edge);
+  background: none;
+  color: var(--wf-ink-1);
 }
