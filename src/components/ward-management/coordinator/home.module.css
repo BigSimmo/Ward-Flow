@@ -402,14 +402,26 @@
   }
 }
 
-/* Highlight from the hero: the other rows dim, never hide. */
+/* Highlight from the hero: the other rows dim, never hide. They lose their colour and the name
+   steps down to secondary ink, but text keeps full opacity so it still meets 4.5:1 in both themes. */
 .queueRow[data-dim="true"] {
-  opacity: 0.6;
+  filter: grayscale(1);
+}
+
+.queueRow[data-dim="true"] .queueName strong {
+  color: var(--wf-ink-3);
+  font-weight: 500;
 }
 
 .queueRow[data-dim="true"]:hover,
 .queueRow[data-dim="true"]:focus-visible {
-  opacity: 1;
+  filter: none;
+}
+
+.queueRow[data-dim="true"]:hover .queueName strong,
+.queueRow[data-dim="true"]:focus-visible .queueName strong {
+  color: inherit;
+  font-weight: 600;
 }
 
 .queueTier {
