@@ -170,6 +170,7 @@ export function diffForStepUndo(before: object, next: object): StepChange[] {
     const a = was[slice];
     const b = now[slice];
     if (a === b || typeof b === "number") continue;
+    if (Array.isArray(a) && Array.isArray(b) && sameRowsDiffed(slice, a, b, changes)) continue;
     if (Array.isArray(b) && (a === undefined || Array.isArray(a))) {
       const old = (a ?? []) as unknown[];
       if (old.every(isRow) && b.every(isRow)) {
@@ -185,6 +186,29 @@ export function diffForStepUndo(before: object, next: object): StepChange[] {
     if (!sameRecord(a ?? null, b ?? null)) changes.push({ slice, mode: "whole", before: a ?? null, after: b ?? null });
   }
   return changes;
+}
+
+/**
+ * The common case, kept cheap: the same number of entries, where every entry that is not the very
+ * same object is a row with the same id at the same place. Those rows are compared and the changed
+ * ones recorded. False (nothing recorded) when the list does not have that shape.
+ */
+function sameRowsDiffed(slice: string, was: unknown[], now: unknown[], changes: StepChange[]): boolean {
+  if (was.length !== now.length) return false;
+  const touched: number[] = [];
+  for (let index = 0; index < now.length; index += 1) {
+    const before = was[index];
+    const after = now[index];
+    if (before === after) continue;
+    if (!isRow(before) || !isRow(after) || before.id !== after.id) return false;
+    touched.push(index);
+  }
+  for (const index of touched) {
+    const before = was[index] as { id: string };
+    if (!sameRecord(now[index], before))
+      changes.push({ slice, mode: "id", id: before.id, index, before, after: now[index] });
+  }
+  return true;
 }
 
 /**
@@ -351,6 +375,14 @@ export function sameRecord(a: unknown, b: unknown): boolean {
   }
   const isObject = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object";
   if (isObject(a) && isObject(b)) {
+    // A reducer usually changes a plain value, so look for one of those first: cheap, and it spares
+    // a deep walk of every nested list before the difference.
+    for (const key in a) {
+      const item = a[key];
+      if (item === undefined || item === b[key] || isObject(item) || !Object.hasOwn(a, key)) continue;
+      const other = b[key];
+      if (other === undefined || isObject(other) || jsonScalar(item) !== jsonScalar(other)) return false;
+    }
     let members = 0;
     for (const key in a) {
       if (!Object.hasOwn(a, key) || a[key] === undefined) continue;
