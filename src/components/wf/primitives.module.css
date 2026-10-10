@@ -33,12 +33,10 @@
   white-space: nowrap;
 }
 
-/* `.k` count: rounded square, mono, inside tabs, segments and buttons. */
+/* `.k` count: rounded square, tabular sans (v9), inside tabs, segments and buttons. */
 .count {
-  font: 600 var(--wf-fs-11) / 1 var(--wf-mono);
-  font-feature-settings:
-    "zero" 1,
-    "tnum" 1;
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
