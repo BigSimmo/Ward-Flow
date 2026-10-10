@@ -204,6 +204,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       info.displayName,
       info.formalName,
       info.umrn,
+      entry.admission.id,
       entry.admission.homeRegion ?? "",
       entry.unit.name,
       site?.name ?? "",
@@ -388,10 +389,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
 
   function exportList() {
     const lines: (string | number)[][] = [
-      ["UMRN", "Home region", "Unit", "Site", "Travel time", "Discharge", "Return", "Since arrival"],
+      ["Admission", "UMRN", "Home region", "Unit", "Site", "Travel time", "Discharge", "Return", "Since arrival"],
     ];
     for (const entry of sorted) {
       lines.push([
+        entry.admission.id,
         patientOf(entry).umrn,
         entry.admission.homeRegion ?? "",
         entry.unit.name,

@@ -209,7 +209,9 @@ function bedOption(unit: Unit, band: TravelBand, now: Instant): BedOption {
     unit,
     siteCode: unit.siteCode,
     band,
-    beds: unit.allocatable.value,
+    // The same `min(allocatable, empty)` every other screen shows: a ward can confirm more
+    // allocatable beds than it has physically empty once arrivals land.
+    beds: Math.min(unit.allocatable.value, unit.empty.value),
     ageMinutes,
     stale: ageMinutes > unit.allocatable.staleAfterMinutes,
   };
