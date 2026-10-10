@@ -36,7 +36,12 @@ import { forgetDowntimePack } from "./reports/downtime-pack";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { absoluteWallClockMinutes, applyDueSoonThresholds, demoDayZero } from "@/components/ward-management/ward-clock";
 import { DUE_SOON_MINUTES, DUE_SOON_URGENT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { isValidStoredWardFlowState, withInboxStreamADefaults } from "./ward-flow-storage-validation";
+import {
+  isValidStoredWardFlowState,
+  migrateStoredWardFlowState,
+  WARD_FLOW_STORED_STATE_VERSION,
+  withInboxStreamADefaults,
+} from "./ward-flow-storage-validation";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -229,7 +234,9 @@ export const WARD_FLOW_DEMO_STORAGE_KEY = "ward-flow-demo-state-v1";
 // arrival/capacity conflicts; reciprocal runtime admission links are validated.
 // Old automatic saves are refused rather than silently migrating clinical facts.
 // v7 (2026-10-09, stream D): planned admissions and their id sequence are part of the state.
-const WARD_FLOW_DEMO_STORAGE_VERSION = 7;
+// A v6 save is the one exception to refusal (Josh, 9 Oct 2026): it gains an empty booking list
+// (`migrateStoredWardFlowState`) and is then validated exactly as a v7 save.
+const WARD_FLOW_DEMO_STORAGE_VERSION = WARD_FLOW_STORED_STATE_VERSION;
 
 /**
  * What actually goes to `sessionStorage`. Carries the world's calendar day ALONGSIDE the state, not
@@ -403,6 +410,14 @@ const SAVE_REJECTED =
 
 type DemoRead = { saved?: WardFlowDemoPayload; recoveryNotice?: string };
 
+/** A parsed save brought to this build's version when a migration exists (v6 only); any other
+ *  version is returned unchanged, so the version check below still refuses it. */
+function upgradeDemoPayload(value: unknown): unknown {
+  if (!isPlainObject(value) || value.version === WARD_FLOW_DEMO_STORAGE_VERSION) return value;
+  const state = migrateStoredWardFlowState(value.state, value.version);
+  return state === null ? value : { ...value, version: WARD_FLOW_DEMO_STORAGE_VERSION, state };
+}
+
 /** Same-day reload includes time away. A different day or backward clock starts a fresh demo;
  * no saved event or entered time is shifted or reconstructed. Storage access is entirely guarded. */
 function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number): DemoRead {
@@ -411,12 +426,13 @@ function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number): DemoRead {
     const storage = window.sessionStorage;
     const raw = storage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
     if (!raw) return {};
-    let parsed: unknown;
+    let stored: unknown;
     try {
-      parsed = JSON.parse(raw);
+      stored = JSON.parse(raw);
     } catch {
       return { recoveryNotice: SAVE_REJECTED };
     }
+    const parsed = upgradeDemoPayload(stored);
     if (
       !isValidDemoPayload(parsed) ||
       parsed.version !== WARD_FLOW_DEMO_STORAGE_VERSION ||

@@ -1005,6 +1005,14 @@ export type PlannedAdmission = {
   initials: string | null;
   /** Recorded sex, needed to place the person in a bed on arrival. */
   sex: RecordedSex;
+  /**
+   * Gender identity, the fact the gender designation gate reads when the booking converts, so a
+   * single-sex ward takes a matching booking (Josh, 9 October 2026). The same four values as
+   * `Movement.gender`; absent means not recorded, which a single-sex ward still refuses. For a
+   * linked patient it is the record's own `Patient.gender`, never the caller's; for initials only
+   * the person booking picks it. Optional, so a save made before it existed still restores.
+   */
+  gender?: ReferralGender;
   reason: PlannedAdmissionReason;
   /** Target ward. Its health service is the ward's site's service. */
   unitId: string;
