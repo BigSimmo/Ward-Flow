@@ -6,13 +6,16 @@ import type { WardFlowState } from "../ward-flow-reducer";
 import { REFERRAL_DECLINE_REASONS, type Unit } from "../ward-model";
 import { edById } from "../ward-sites";
 import {
+  PULL_NOW_ANSWER_MINUTES,
+  PULL_NOW_LIVE_MINUTES,
+  READY_AT_AHEAD_LIMIT_MINUTES,
+} from "../ward-operational-defaults";
+import {
   BED_CALL_ANSWERS,
   BED_CALL_MAX_BEDS,
   BROADCAST_CATEGORIES,
   DISPATCHABLE_BROADCAST_KINDS,
-  PULL_NOW_ANSWER_MINUTES,
   PULL_NOW_ANSWERS,
-  PULL_NOW_DURATION_MINUTES,
   broadcastKind,
   BROADCAST_SEVERITIES,
   BROADCAST_TARGET_SCOPES,
@@ -36,7 +39,6 @@ function isRealDesk(state: WardFlowState, unitId: string): boolean {
 
 /** The stages before a patient is pulled. Pull now means nothing once the bed is pulled. */
 const PULL_NOW_STAGES = ["placement_requested", "destination_review", "accepted_awaiting_bed"];
-const MAX_READY_AHEAD_MINUTES = 24 * 60;
 
 /**
  * Handles broadcast alert events:
@@ -218,9 +220,9 @@ export function reduceBroadcastAlertEvent(
         category: "capacity_gridlock",
         targetScope: "all",
         targetScopeLabel: names.length === 1 ? names[0] : `${names.length} wards`,
-        durationMinutes: PULL_NOW_DURATION_MINUTES,
+        durationMinutes: PULL_NOW_LIVE_MINUTES,
         dispatchedAt: event.now,
-        expiresAt: (event.now + PULL_NOW_DURATION_MINUTES) as Instant,
+        expiresAt: (event.now + PULL_NOW_LIVE_MINUTES) as Instant,
         dispatchedByRole: event.role,
         dispatchedByName: "Bed coordinator",
         status: "active",
@@ -274,17 +276,16 @@ export function reduceBroadcastAlertEvent(
       }
       if (answer === "after_discharge" || answer === "bed_ready_at") {
         const readyAt = finiteInstant(event.readyAt);
-        if (readyAt === null || readyAt <= event.now || readyAt > event.now + MAX_READY_AHEAD_MINUTES) {
+        if (readyAt === null || readyAt <= event.now || readyAt > event.now + READY_AT_AHEAD_LIMIT_MINUTES) {
           return reject(state, event, "REPLY_BROADCAST_ALERT readyAt must be later today or tomorrow");
         }
         reply.readyAt = readyAt as Instant;
       }
       if (answer === "cannot" && kind === "pull_now") {
-        const reason = enumValue(REFERRAL_DECLINE_REASONS, event.reason);
-        if (reason === null) {
+        if (!event.reason || !REFERRAL_DECLINE_REASONS.includes(event.reason)) {
           return reject(state, event, "REPLY_BROADCAST_ALERT Can't needs a reason from the decline reasons");
         }
-        reply.reason = reason;
+        reply.reason = event.reason;
       }
       const current = latestReplies(target).get(event.unitId);
       if (

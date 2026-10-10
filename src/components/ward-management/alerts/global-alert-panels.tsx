@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Siren, X } from "lucide-react";
 import { Button, StatusGlyph } from "@/components/wf";
-import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowContext, useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { Movement, Rejection } from "@/components/ward-management/ward-model";
@@ -118,6 +118,11 @@ export function PullNowCard({ alert, onStandDown }: { alert: BroadcastAlert; onS
  * is sent, and the engine's own words when it refuses.
  */
 export function PullNowButton({ movement }: { movement: Movement }) {
+  // Screens rendered outside the provider (isolated tests, previews) show no button.
+  return useContext(WardFlowContext) ? <PullNowControl movement={movement} /> : null;
+}
+
+function PullNowControl({ movement }: { movement: Movement }) {
   const { broadcastAlerts, movements, dispatch, rejections } = useWardFlow();
   const now = useWardFlowClock();
   const [refusalFrom, setRefusalFrom] = useState<number | null>(null);
