@@ -33,7 +33,7 @@ const WORD: Record<LiveState, string> = {
 };
 
 /**
- * Live chip (rule 9: live and honest). Live pulses (the pulse stops under reduced motion),
+ * Live chip (rule 9: live and honest). Live pulses once as it turns live (none under reduced motion),
  * Paused shows a ring, Syncing a small spinner, Stale an amber circle with "as at HH:MM", and
  * Offline a triangle. A `role="status"` line announces state changes only, never the ticking age.
  */

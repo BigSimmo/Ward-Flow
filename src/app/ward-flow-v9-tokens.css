@@ -1,0 +1,239 @@
+/*
+ * Ward Flow design system v9 tokens (approved 10 October 2026). Synthetic prototype.
+ * Spec and source of values: design/v9/design-system-v9.md and design/v9/ward-flow-v9.css.
+ * Loaded after ward-flow-v6-tokens.css. It adds the v9 token groups and re-points the v6 values that
+ * v9 changes (glass, rows, motion). Themes follow the same switch as the v6 file:
+ * :root[data-theme="dark"] or a dark OS unless data-theme="light", with .day and .night subtrees.
+ */
+
+/* ---------- theme independent ---------- */
+:root {
+  /* type: 15 is for figures (hero chips, key values). Tracking per size. */
+  --wf-fs-15: 15px;
+  /* 12px floor: no 11px text anywhere (v9 section 3) */
+  --wf-fs-11: var(--wf-fs-12);
+  --wf-lh-11: var(--wf-lh-12);
+  --wf-lh-15: 20px;
+  --wf-tr-20: -0.015em;
+  --wf-tr-15: -0.01em;
+  --wf-tr-caps: 0.06em;
+
+  /* space: 24 and 32 are for layout only */
+  --wf-s-6: 24px;
+  --wf-s-8: 32px;
+
+  /* the smallest pointer target on desktop */
+  --wf-target: 28px;
+
+  /* rows: one density setting. Default 44, dense 36, touch 52. Compact pages keep 44. */
+  --wf-row-dense: 36px;
+  --wf-row-default: 44px;
+  --wf-row-touch: 52px;
+  --wf-row: var(--wf-row-default);
+  --wf-row-compact: var(--wf-row-default);
+
+  /* status glyphs: 10 beside text, 12 in hero chips */
+  --wf-glyph: 10px;
+  --wf-glyph-hero: 12px;
+
+  /* motion by role. Quick in, quicker out. */
+  --wf-t-micro: 100ms;
+  --wf-t-press: 80ms;
+  --wf-t-release: 160ms;
+  --wf-t-enter: 220ms;
+  --wf-t-exit: 160ms;
+  --wf-t-sheet: 340ms;
+  --wf-t-live: 1400ms;
+  --wf-ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --wf-ease-in: cubic-bezier(0.3, 0, 1, 1);
+  --wf-ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  /* v6 motion names now point at the v9 roles */
+  --wf-m-fast: var(--wf-t-micro);
+  --wf-m-base: var(--wf-t-enter);
+  --wf-m-slow: var(--wf-t-sheet);
+  --wf-ease: var(--wf-ease-out);
+}
+
+[data-density="dense"] {
+  --wf-row: var(--wf-row-dense);
+}
+[data-density="touch"] {
+  --wf-row: var(--wf-row-touch);
+}
+
+/* ---------- day ---------- */
+:root,
+.day {
+  --wf-raised: #ffffff;
+  --wf-overlay: #ffffff;
+  /* Elevate (10 Oct 2026): a clear blue for anything pressable. Data bars stay slate. */
+  --wf-accent: #245a8c;
+  --wf-accent-strong: #1f4f7d;
+  --wf-accent-tint: #e3eef9;
+  --wf-accent-ink: #1f4d7a;
+  --wf-pri-1: #2f6aa3;
+  --wf-pri-2: #234f7a;
+  --wf-pri-edge: #1d4569;
+  --wf-pri-1-hover: #3874af;
+  --wf-pri-2-hover: #295a8a;
+  --wf-pri-1-press: #234f7a;
+  --wf-pri-2-press: #1c4166;
+  --wf-accent-hover: #1f4f7d;
+  --wf-accent-press: #1b4570;
+  /* closed beds are slate, drawn with a dashed edge, never gold */
+  --wf-data-closed: #b9c4cf;
+  /* cool glass, about 80% opaque by owner choice, in three tiers by role */
+  --wf-glass-bar: rgba(244, 247, 250, 0.8);
+  --wf-glass-pop: rgba(244, 247, 250, 0.84);
+  --wf-glass-sheet: rgba(246, 249, 252, 0.88);
+  --wf-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.75), transparent 50%);
+  --wf-glass-hl: rgba(255, 255, 255, 0.85);
+  --wf-glass-thin: var(--wf-glass-bar);
+  --wf-glass: var(--wf-glass-pop);
+  --wf-glass-thick: var(--wf-glass-sheet);
+  --wf-scrim: rgba(22, 30, 40, 0.14);
+  --wf-e-sel: inset 0 1px 0 var(--wf-hl), 0 1px 2px rgba(16, 24, 40, 0.12), 0 0 0 1px var(--wf-line-ctl);
+  --wf-e1-hover: inset 0 1px 0 var(--wf-hl), 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 20px -12px rgba(16, 24, 40, 0.24);
+  --wf-focus-gap: var(--wf-surface);
+  --wf-live-mark: var(--wf-accent);
+}
+
+/* ---------- night: surfaces step lighter as they rise. The glass aliases are repeated here
+   because the v6 night blocks set them directly. ---------- */
+:root[data-theme="dark"],
+.night {
+  --wf-raised: #1b2733;
+  --wf-overlay: #202d3a;
+  --wf-accent: #8cbcf0;
+  --wf-accent-strong: #8cbcf0;
+  --wf-accent-tint: #1d3349;
+  --wf-accent-ink: #b7d3f0;
+  --wf-on-accent: #0d141b;
+  --wf-pri-1: #3a72a8;
+  --wf-pri-2: #2c5c8c;
+  --wf-pri-edge: #5a8fc4;
+  --wf-pri-1-hover: #3c74ab;
+  --wf-pri-2-hover: #30639a;
+  --wf-pri-1-press: #2f5f8f;
+  --wf-pri-2-press: #27507a;
+  --wf-accent-hover: #a6cbf3;
+  --wf-accent-press: #76a9e0;
+  --wf-hero-edge: rgba(143, 176, 212, 0.1);
+  --wf-data-closed: #3a4b5c;
+  --wf-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 50%);
+  --wf-glass-bar: rgba(27, 39, 51, 0.78);
+  --wf-glass-pop: rgba(27, 39, 51, 0.82);
+  --wf-glass-sheet: rgba(32, 45, 58, 0.86);
+  --wf-glass-hl: rgba(255, 255, 255, 0.1);
+  --wf-glass-thin: var(--wf-glass-bar);
+  --wf-glass: var(--wf-glass-pop);
+  --wf-glass-thick: var(--wf-glass-sheet);
+  --wf-scrim: rgba(0, 0, 0, 0.4);
+  --wf-e-sel: inset 0 1px 0 var(--wf-hl), 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--wf-line-ctl);
+  --wf-e1-hover: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.35), 0 8px 20px -12px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --wf-raised: #1b2733;
+    --wf-overlay: #202d3a;
+    --wf-accent: #8cbcf0;
+    --wf-accent-strong: #8cbcf0;
+    --wf-accent-tint: #1d3349;
+    --wf-accent-ink: #b7d3f0;
+    --wf-on-accent: #0d141b;
+    --wf-pri-1: #3a72a8;
+    --wf-pri-2: #2c5c8c;
+    --wf-pri-edge: #5a8fc4;
+    --wf-pri-1-hover: #3c74ab;
+    --wf-pri-2-hover: #30639a;
+    --wf-pri-1-press: #2f5f8f;
+    --wf-pri-2-press: #27507a;
+    --wf-accent-hover: #a6cbf3;
+    --wf-accent-press: #76a9e0;
+    --wf-hero-edge: rgba(143, 176, 212, 0.1);
+    --wf-data-closed: #3a4b5c;
+    --wf-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 50%);
+    --wf-glass-bar: rgba(27, 39, 51, 0.78);
+    --wf-glass-pop: rgba(27, 39, 51, 0.82);
+    --wf-glass-sheet: rgba(32, 45, 58, 0.86);
+    --wf-glass-hl: rgba(255, 255, 255, 0.1);
+    --wf-glass-thin: var(--wf-glass-bar);
+    --wf-glass: var(--wf-glass-pop);
+    --wf-glass-thick: var(--wf-glass-sheet);
+    --wf-scrim: rgba(0, 0, 0, 0.4);
+    --wf-e-sel: inset 0 1px 0 var(--wf-hl), 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--wf-line-ctl);
+    --wf-e1-hover: inset 0 1px 0 var(--wf-hl), 0 0 0 1px rgba(0, 0, 0, 0.35), 0 8px 20px -12px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* Glare mode: data-mode="glare" on the root, for ward PCs by bright windows. Solid surfaces, no
+   glass, darker lines and 12px glyphs. Red still means act now. */
+:root[data-mode="glare"] {
+  color-scheme: light;
+  --wf-canvas: #ffffff;
+  --wf-surface: #ffffff;
+  --wf-surface-2: #f3f5f7;
+  --wf-raised: #ffffff;
+  --wf-overlay: #ffffff;
+  --wf-line: #9aa6b2;
+  --wf-line-2: #6f7c89;
+  --wf-line-3: #4a5562;
+  --wf-ink-1: #05080b;
+  --wf-ink-2: #1f2933;
+  --wf-ink-3: #3a4652;
+  --wf-glyph: 12px;
+  --wf-glass-bar: #ffffff;
+  --wf-glass-pop: #ffffff;
+  --wf-glass-sheet: #ffffff;
+  --wf-glass-thin: #ffffff;
+  --wf-glass: #ffffff;
+  --wf-glass-thick: #ffffff;
+  --wf-sheen: none;
+}
+
+/* Touch: coarse pointers get touch rows unless a density was chosen */
+@media (pointer: coarse) {
+  :root:not([data-density]) {
+    --wf-row: var(--wf-row-touch);
+  }
+}
+
+/* Reduced motion keeps feedback and swaps movement for a short fade. Never 0ms, because
+   transitionend and animationend do not fire at zero. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --wf-t-press: 1ms;
+    --wf-t-release: 1ms;
+    --wf-t-enter: 120ms;
+    --wf-t-exit: 120ms;
+    --wf-t-sheet: 120ms;
+  }
+}
+
+/* v9 motion keyframes, shared by the wf components */
+@keyframes wfMark {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.4);
+  }
+  12% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
+}
+@keyframes wfRise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes wfFade {
+  from {
+    opacity: 0;
+  }
+}
