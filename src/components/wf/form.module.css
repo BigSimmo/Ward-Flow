@@ -440,6 +440,10 @@
   .stpButton {
     width: 44px;
   }
+  /* The switch's 20px track sets its height, so touch gets a 48px tap height on the button. */
+  .switchRow {
+    min-height: 48px;
+  }
 }
 
 /* Phone (8 Oct 2026): text fields reach a 44px tap height. */

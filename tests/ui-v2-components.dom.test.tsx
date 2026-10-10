@@ -1192,6 +1192,31 @@ describe("Toast", () => {
     expect(within(region).queryByText("Source indexed")).not.toBeInTheDocument();
   });
 
+  it("offers a timed Undo through the provider and closes when it is pressed", async () => {
+    const onUndo = vi.fn();
+    function UndoHarness() {
+      const { push } = useToast();
+      return (
+        <button
+          type="button"
+          onClick={() => push({ tone: "info", title: "Bed 04 released", undo: { durationMs: 8000, onUndo } })}
+        >
+          Release
+        </button>
+      );
+    }
+    render(
+      <ToastProvider>
+        <UndoHarness />
+      </ToastProvider>,
+    );
+    const region = screen.getByTestId("toast-region");
+    await userEvent.click(screen.getByRole("button", { name: "Release" }));
+    await userEvent.click(within(region).getByRole("button", { name: "Undo" }));
+    expect(onUndo).toHaveBeenCalledTimes(1);
+    expect(within(region).queryByText("Bed 04 released")).not.toBeInTheDocument();
+  });
+
   it("deduplicates outcomes and caps the visible queue", async () => {
     function QueueHarness() {
       const { push } = useToast();

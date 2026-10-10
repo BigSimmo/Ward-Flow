@@ -203,6 +203,8 @@ describe("theme helpers", () => {
     const page = fakePage({ store: { [THEME_STORAGE_KEY]: "light", [LEGACY_WARD_APPEARANCE_KEY]: "dark" } });
     page.run();
     expect(page.attributes.get("data-theme")).toBe("light");
+    // The stale key goes too, or choosing Auto later would migrate it back into a pin.
+    expect(page.store[LEGACY_WARD_APPEARANCE_KEY]).toBeUndefined();
   });
 
   describe("the Glare mode pre-paint script", () => {

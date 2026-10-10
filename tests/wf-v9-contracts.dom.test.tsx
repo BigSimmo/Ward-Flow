@@ -151,6 +151,28 @@ describe("v9 component contracts", () => {
     expect(screen.queryByTestId("tooltip")).not.toBeNull();
   });
 
+  it("a tip dismissed with Escape while hovered still closes after the next hover", () => {
+    vi.useFakeTimers();
+    render(
+      <Tooltip content="No bed free on this ward">
+        <button type="button">Allocate bed</button>
+      </Tooltip>,
+    );
+    const trigger = screen.getByRole("button", { name: "Allocate bed" });
+    fireEvent.mouseEnter(trigger);
+    fireEvent.mouseLeave(trigger);
+    fireEvent.mouseEnter(screen.getByTestId("tooltip"));
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByTestId("tooltip")).toBeNull();
+
+    fireEvent.mouseEnter(trigger);
+    fireEvent.mouseLeave(trigger);
+    act(() => {
+      vi.advanceTimersByTime(130);
+    });
+    expect(screen.queryByTestId("tooltip"), "a stale tip hover kept the tooltip open").toBeNull();
+  });
+
   it("a sheet removed while open returns focus to the control that opened it", async () => {
     function Host() {
       const [open, setOpen] = useState(false);

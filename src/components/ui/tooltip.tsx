@@ -153,6 +153,8 @@ export function Tooltip({
       if (event.key !== "Escape") return;
       event.stopPropagation();
       setLinger(false);
+      // The tip unmounts, so its own mouseleave never fires: clear its hover here.
+      setHoverTip(false);
       setDismissed(true);
     };
     document.addEventListener("keydown", onKey);

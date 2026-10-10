@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { OverlayPortal } from "@/components/ui/overlay-root";
-import { ToastView } from "@/components/wf/toast";
+import { ToastView, type ToastUndo } from "@/components/wf/toast";
 
 export type ToastTone = "success" | "info" | "warning" | "danger";
 
@@ -18,6 +18,11 @@ export type Toast = {
   duration?: number;
   /** One action, such as Undo. */
   action?: { label: string; onAction: () => void };
+  /**
+   * A timed Undo window with its shrinking bar. The toast stays until the window ends, then
+   * closes itself, so `duration` defaults to 0 here too.
+   */
+  undo?: ToastUndo;
   /** Mono meta on the right, such as "1s ago". */
   meta?: string;
   /**
@@ -105,7 +110,7 @@ export function useToast(): ToastApi {
 }
 
 function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string) => void }) {
-  const duration = toast.duration ?? (toast.action ? 0 : DEFAULT_DURATION);
+  const duration = toast.duration ?? (toast.action || toast.undo ? 0 : DEFAULT_DURATION);
 
   useEffect(() => {
     if (duration <= 0) return;
@@ -132,6 +137,21 @@ function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
               label: toast.action.label,
               onAction: () => {
                 toast.action?.onAction();
+                onDismiss(toast.id);
+              },
+            }
+          : undefined
+      }
+      undo={
+        toast.undo
+          ? {
+              ...toast.undo,
+              onUndo: () => {
+                toast.undo?.onUndo();
+                onDismiss(toast.id);
+              },
+              onExpire: () => {
+                toast.undo?.onExpire?.();
                 onDismiss(toast.id);
               },
             }
