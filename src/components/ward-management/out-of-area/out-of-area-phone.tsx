@@ -394,7 +394,7 @@ export function OutOfAreaPhone({
           {anyHighlight ? (
             <p className={styles.hlLine}>
               <span aria-live="polite">
-                <b className={styles.mono}>{highlightedCount}</b> highlighted
+                <b className={styles.mono}>{highlightedCount}</b> synthetic records highlighted
               </span>
               <Button variant="ghost" size="sm" onClick={onClear}>
                 Clear

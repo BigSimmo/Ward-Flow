@@ -700,10 +700,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   <span aria-live="polite">
                     {anyHighlight ? (
                       <>
-                        <b className={styles.mono}>{highlightedCount}</b> highlighted
+                        <b className={styles.mono}>{highlightedCount}</b> synthetic records highlighted
                       </>
                     ) : (
-                      <>{entries.length} people</>
+                      <>{entries.length} synthetic records</>
                     )}
                   </span>
                   {anyHighlight ? (
