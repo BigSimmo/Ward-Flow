@@ -659,11 +659,11 @@ export const MODEL_CLAIMS: readonly ModelClaim[] = [
     rendered: "clearing that flag, releasing the bed and turning preparation off again all",
     claim: "`BLOCK_BED_RELEASE` overwrites `confirmedAt`.",
     sourceFile: WARD_REDUCER,
-    evidence: "blockedBy: `NUM ${blockedUnit.name}`, confirmedAt: event.now,",
+    evidence: "blockedBy: recordedByLabel(event.role, blockedUnit.name), confirmedAt: event.now,",
     falsifiedBy: {
       change: "`BLOCK_BED_RELEASE` stops writing `confirmedAt`, so flagging the bed as stuck no longer overwrites it.",
-      find: "blockedBy: `NUM ${blockedUnit.name}`, confirmedAt: event.now,",
-      replaceWith: "blockedBy: `NUM ${blockedUnit.name}`,",
+      find: "blockedBy: recordedByLabel(event.role, blockedUnit.name), confirmedAt: event.now,",
+      replaceWith: "blockedBy: recordedByLabel(event.role, blockedUnit.name),",
     },
   },
   {
