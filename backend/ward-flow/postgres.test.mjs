@@ -269,7 +269,11 @@ test(
       assert.equal(await store.pushStatus(actorB, device("e3").endpoint), true);
       assert.equal(await store.pushStatus(actorA, device("e3").endpoint), false, "ownership is per account");
       assert.equal(await store.unsubscribe(actorA, device("e3").endpoint), "not-found", "only the owner can revoke");
-      assert.equal(await store.subscribe(actorA, device("e3")), "in-use", "an active device is never taken over");
+      assert.equal(
+        await store.subscribe(actorA, { ...device("e3"), auth: "someone-elses-secret" }),
+        "in-use",
+        "a clashing endpoint without the device's own keys is refused",
+      );
       assert.equal(await store.pushStatus(actorB, device("e3").endpoint), true, "the owner's record is untouched");
       assert.equal(await store.unsubscribe(actorB, device("e3").endpoint), "unsubscribed");
       assert.equal(await store.subscribe(actorA, device("e3")), "subscribed", "a revoked device can be taken over");
@@ -482,11 +486,12 @@ test(
         assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"]);
         // Another coordinator cannot take the device while its owner's alerts are still on.
         const f1 = { endpoint: "https://fcm.googleapis.com/fcm/send/f1", ...keys };
-        assert.equal(await store.subscribe(actorA, f1), "in-use");
+        assert.equal(await store.subscribe(actorA, { ...f1, auth: "not-this-device" }), "in-use");
         assert.deepEqual(await statuses(workspaceId), ["f1 pending 1", "f2 sent 1"], "the owner's rows are untouched");
-        // The owner signs out (revoking it), then the other coordinator turns alerts on before the retry.
-        assert.equal(await store.unsubscribe(actorB, f1.endpoint), "unsubscribed");
+        // The owner's sign-out never reached the server; the device itself, holding its own keys,
+        // can still be taken over before the retry.
         assert.equal(await store.subscribe(actorA, f1), "subscribed");
+        assert.equal(await store.pushStatus(actorB, f1.endpoint), false, "the old owner no longer holds it");
         await store.sweepPush();
         assert.deepEqual(sent, [], "an item queued before the device changed hands is not sent");
         assert.deepEqual(await statuses(workspaceId), ["f2 sent 1"]);

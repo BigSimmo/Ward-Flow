@@ -263,13 +263,18 @@ export function createWorkspaceStore(
         // once its previous owner's record is revoked (they turned alerts off or signed out); an
         // active record of another account or workspace is never overwritten.
         const existing = await client.query(
-          "SELECT workspace_id, actor_id, revoked_at FROM ward_flow.push_subscriptions WHERE endpoint=$1 FOR UPDATE",
+          "SELECT workspace_id, actor_id, revoked_at, p256dh, auth FROM ward_flow.push_subscriptions WHERE endpoint=$1 FOR UPDATE",
           [subscription.endpoint],
         );
         const holder = existing.rows[0];
+        // Presenting the record's own p256dh and auth proves possession of the browser subscription
+        // (the auth secret exists only in that browser and here), so a device whose earlier owner
+        // never signed out cleanly can still be taken over from the device itself.
+        const sameDevice = holder && holder.p256dh === subscription.p256dh && holder.auth === subscription.auth;
         if (
           holder &&
           holder.revoked_at === null &&
+          !sameDevice &&
           (holder.workspace_id !== workspaceId.toLowerCase() || holder.actor_id !== actorId.toLowerCase())
         )
           return "in-use";
@@ -280,7 +285,7 @@ export function createWorkspaceStore(
           [subscription.endpoint],
         );
         const stored = await client.query(
-          "INSERT INTO ward_flow.push_subscriptions(workspace_id, actor_id, endpoint, p256dh, auth, created_at) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (endpoint) DO UPDATE SET workspace_id=EXCLUDED.workspace_id, actor_id=EXCLUDED.actor_id, p256dh=EXCLUDED.p256dh, auth=EXCLUDED.auth, created_at=EXCLUDED.created_at, last_success_at=NULL, revoked_at=NULL WHERE ward_flow.push_subscriptions.revoked_at IS NOT NULL OR (ward_flow.push_subscriptions.workspace_id=EXCLUDED.workspace_id AND ward_flow.push_subscriptions.actor_id=EXCLUDED.actor_id)",
+          "INSERT INTO ward_flow.push_subscriptions(workspace_id, actor_id, endpoint, p256dh, auth, created_at) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (endpoint) DO UPDATE SET workspace_id=EXCLUDED.workspace_id, actor_id=EXCLUDED.actor_id, p256dh=EXCLUDED.p256dh, auth=EXCLUDED.auth, created_at=EXCLUDED.created_at, last_success_at=NULL, revoked_at=NULL WHERE ward_flow.push_subscriptions.revoked_at IS NOT NULL OR (ward_flow.push_subscriptions.p256dh=EXCLUDED.p256dh AND ward_flow.push_subscriptions.auth=EXCLUDED.auth) OR (ward_flow.push_subscriptions.workspace_id=EXCLUDED.workspace_id AND ward_flow.push_subscriptions.actor_id=EXCLUDED.actor_id)",
           [workspaceId, actorId, subscription.endpoint, subscription.p256dh, subscription.auth, at],
         );
         // A concurrent first claim by another account can win the insert; it is not overwritten.
