@@ -24,12 +24,17 @@
   --ward-fixed-danger-border: var(--wf-fixed-danger-border);
   --ward-fixed-white: var(--wf-fixed-white);
   --ward-shadow-black-06: var(--wf-shadow-black-06);
+  /* The Data mode bar's measured height (globals.css, ward-shared-access.tsx). */
+  --ward-frame-top: var(--wf-data-bar-height);
   /* Page owners choose the appropriate size; short windows keep a readable minimum
      and let the document scroll rather than clipping controls or compressing records. */
-  --ward-workspace-height: clamp(36rem, calc(100dvh - 9rem), 64rem);
-  --ward-section-height: clamp(32rem, calc(100dvh - 10rem), 52rem);
-  --ward-compact-height: clamp(22rem, calc(100dvh - 18rem), 34rem);
+  --ward-workspace-height: clamp(36rem, calc(100dvh - var(--ward-frame-top) - 9rem), 64rem);
+  --ward-section-height: clamp(32rem, calc(100dvh - var(--ward-frame-top) - 10rem), 52rem);
+  --ward-compact-height: clamp(22rem, calc(100dvh - var(--ward-frame-top) - 18rem), 34rem);
+  /* Just under the 3.75rem glass top bar, with one gap. A rail pinned higher hides behind it. */
   --ward-sticky-top: 4.5rem;
+  /* The most a pinned rail may be: the window below the Data mode bar (--ward-frame-top) and the top bar, less a gap at the bottom. */
+  --ward-rail-height: calc(100dvh - var(--ward-frame-top) - var(--ward-sticky-top) - 0.75rem);
   /* Fill the column below WardBar, not the column's full height plus the bar.
      A percentage minimum overflows its flex parent by the header height. */
   display: flex;
@@ -57,6 +62,85 @@
   .shell {
     position: relative;
     overflow-y: clip;
+  }
+}
+
+/* Side columns stay in view (10 Oct 2026). When two columns sit side by side and one is much
+   shorter, the shorter one carries `data-wf-rail`. It pins just under the top bar while the longer
+   column scrolls past, so the page never shows a tall blank band beside it. A rail taller than the
+   window is capped at the window and scrolls inside itself. The selector outranks a screen's own
+   sticky, height or overflow rule on the same element.
+
+   A rail only acts while its columns actually sit side by side. Plain `data-wf-rail` starts at
+   1025px, where most two-column screens open out. A screen that stacks its columns until a wider
+   window gives the width it opens out at instead: `data-wf-rail="1121"`, `"1201"` or `"1281"`.
+   Below that width the column is ordinary page content again.
+
+   A rail holding one long list marks the part under its heading `data-wf-rail-body`: that part
+   fills the rest of the rail, so the card's heading stays in place above the list. */
+@media (min-width: 1025px) {
+  .shell [data-wf-rail="true"]:not([hidden]) {
+    position: sticky;
+    top: var(--ward-sticky-top);
+    align-self: start;
+    height: auto;
+    max-height: var(--ward-rail-height);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  .shell [data-wf-rail="true"]:has([data-wf-rail-body]):not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    overflow-y: hidden;
+  }
+
+  .shell [data-wf-rail="true"] [data-wf-rail-body] {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+@media (min-width: 1121px) {
+  .shell [data-wf-rail="1121"]:not([hidden]) {
+    position: sticky;
+    top: var(--ward-sticky-top);
+    align-self: start;
+    height: auto;
+    max-height: var(--ward-rail-height);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+}
+
+@media (min-width: 1201px) {
+  .shell [data-wf-rail="1201"]:not([hidden]) {
+    position: sticky;
+    top: var(--ward-sticky-top);
+    align-self: start;
+    height: auto;
+    max-height: var(--ward-rail-height);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+}
+
+@media (min-width: 1281px) {
+  .shell [data-wf-rail="1281"]:not([hidden]) {
+    position: sticky;
+    top: var(--ward-sticky-top);
+    align-self: start;
+    height: auto;
+    max-height: var(--ward-rail-height);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
   }
 }
 
