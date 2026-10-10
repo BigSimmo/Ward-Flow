@@ -3,7 +3,7 @@
   min-width: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
-  align-items: start;
+  align-items: stretch;
 }
 
 .dashboardCol {
@@ -249,7 +249,7 @@
 
 @media (min-width: 62.5625rem) {
   .pageGrid {
-    align-items: start;
+    align-items: stretch;
   }
 
   .pageGrid > :global([data-ward-primitive="panel"]) {
@@ -580,7 +580,7 @@
   grid-template-columns: minmax(min(440px, 100%), 1fr) minmax(min(440px, 100%), 1fr);
   gap: 0.875rem;
   margin-bottom: 0.875rem;
-  align-items: start;
+  align-items: stretch;
 }
 
 @media (max-width: 900px) {
