@@ -203,6 +203,21 @@ export function CoordinatorScreen() {
   const previewMovement = !hasPanelSubject && !isPhone ? queue[0] : undefined;
   const panelMovement = selectedMovement ?? previewMovement;
 
+  // A ward choice belongs to the movement it was made for, preview included: when the movement in
+  // Placement changes (a new top of queue, an ED or service filter), the ward choice goes.
+  const panelMovementId = panelMovement?.id;
+  const [unitOwnerId, setUnitOwnerId] = useState(panelMovementId);
+  if (unitOwnerId !== panelMovementId) {
+    setUnitOwnerId(panelMovementId);
+    setSelectedUnitId(undefined);
+  }
+  // Picking a ward for the previewed patient selects that patient, so the choice cannot drift onto
+  // whoever reaches the top of the queue next.
+  function pickUnit(unitId: string | undefined) {
+    if (previewMovement) selectMovement(previewMovement.id);
+    setSelectedUnitId(unitId);
+  }
+
   function closeShortlist() {
     selectMovement(undefined);
     queueFocusRef.current?.querySelector<HTMLElement>(QUEUE_FOCUS_SELECTOR)?.focus();
@@ -483,8 +498,8 @@ export function CoordinatorScreen() {
                 admissions={admissions}
                 now={now}
                 selectedUnitId={selectedUnitId}
-                onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
-                onOffer={(unitId) => setSelectedUnitId(unitId)}
+                onSelectUnit={(unitId) => pickUnit(selectedUnitId === unitId ? undefined : unitId)}
+                onOffer={(unitId) => pickUnit(unitId)}
                 parallelReferralCap={configuration.parallelReferralCap}
                 dischargesHeldUp={counts.discharges?.value ?? 0}
                 service={service}
@@ -543,7 +558,7 @@ export function CoordinatorScreen() {
                         admissions={admissions}
                         referrals={referrals}
                         selectedUnitId={selectedUnitId}
-                        onSelectUnit={setSelectedUnitId}
+                        onSelectUnit={pickUnit}
                         dispatch={dispatch}
                         parallelReferralCap={configuration.parallelReferralCap}
                         pullHoldMinutes={configuration.pullHoldMinutes}

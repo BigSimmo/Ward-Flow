@@ -105,6 +105,24 @@ describe("Q004 refinement interaction regressions", () => {
     expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
   });
 
+  it("selects the top-of-queue patient when a ward is picked for them at rest", () => {
+    // A ward choice belongs to the movement it was made for: picking one for the previewed patient
+    // selects that patient, so the choice cannot drift onto whoever next reaches the top.
+    renderCoordinator();
+    const queue = screen.getByRole("region", { name: "Priority queue" });
+    const top = within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!;
+    const topId = top.getAttribute("data-testid")!.replace("ward-queue-row-", "");
+    expect(top).toHaveAttribute("aria-pressed", "false");
+
+    const bedflow = screen.getByRole("region", { name: "State Bedflow" });
+    fireEvent.click(within(bedflow).getAllByRole("button", { name: /^Offer / })[0]!);
+
+    expect(top).toHaveAttribute("aria-pressed", "true");
+    const placement = screen.getByLabelText("Placement");
+    expect(placement).toHaveAttribute("data-subject-movement", topId);
+    expect(within(placement).queryByTestId("ward-placement-top-of-queue")).toBeNull();
+  });
+
   it("retains an explicitly selected referral as the shortlist subject across queue-tab switches", () => {
     renderCoordinator();
     const referralsTab = screen.getByRole("radio", { name: /Referrals/u });
