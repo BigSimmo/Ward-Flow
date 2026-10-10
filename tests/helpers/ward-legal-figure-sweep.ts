@@ -1152,6 +1152,14 @@ export function candidateEvents(
       );
     case "STAND_DOWN_BROADCAST_ALERT":
       return state.broadcastAlerts.map((alert) => ({ type, role, now, alertId: alert.id }));
+    // Global alerts (10 Oct 2026): a Pull now for every movement, then each ward answering every
+    // live alert. Read from live state, like the broadcast trio above.
+    case "RAISE_PULL_NOW":
+      return state.movements.map((movement) => ({ type, role, now, movementId: movement.id }));
+    case "REPLY_BROADCAST_ALERT":
+      return state.broadcastAlerts.flatMap((alert) =>
+        unitIds.map((unitId) => ({ type, role, now, alertId: alert.id, unitId, answer: "pulling_now" as const })),
+      );
     /*
      * Stream D planned admissions (9 Oct 2026): a booking on each ward, a change, cancel and arrival
      * for each booking still waiting — read from live state, like the broadcast trio above.

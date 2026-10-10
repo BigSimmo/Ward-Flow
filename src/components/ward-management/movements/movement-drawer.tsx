@@ -33,6 +33,7 @@ import { StatusGlyph, buttonClass, type WfTone } from "@/components/wf";
 
 import { movementNextStep, nextStepTarget } from "./movement-next-step";
 import { declineReasonLabels } from "./movement-workspace-derivations";
+import { PullNowButton } from "@/components/ward-management/alerts/global-alert-panels";
 import d from "./movement-drawer.module.css";
 
 /**
@@ -489,6 +490,7 @@ export function MovementDrawer({
               Ward board
             </Link>
           ) : null}
+          {open ? <PullNowButton movement={movement} /> : null}
           <button
             type="button"
             className={buttonClass({ variant: "sec", size: "sm", className: d.preview })}
