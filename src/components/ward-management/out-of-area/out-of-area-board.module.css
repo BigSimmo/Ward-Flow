@@ -694,7 +694,8 @@
 }
 
 .track {
-  flex: 0 0 4.5rem;
+  flex: 0 1 4.5rem;
+  min-width: 2rem;
   height: 8px;
   overflow: hidden;
   border: 1px solid var(--wf-line);
