@@ -1295,6 +1295,7 @@ export function PatientNowScreen({
                   {mode === "ward" ? (
                     <PatientWardChangeCard
                       now={now}
+                      dayZero={dayZero}
                       form={wardForm}
                       onFormChange={setWardForm}
                       onRecordLeave={recordLeave}

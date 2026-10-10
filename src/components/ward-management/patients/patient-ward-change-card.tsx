@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CalendarDays, DoorOpen, Stethoscope } from "lucide-react";
 import { Button, Card, CardHead } from "@/components/wf";
-import { MINUTES_PER_DAY, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, MINUTES_PER_DAY, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import styles from "./patient-ward-change-card.module.css";
 
@@ -37,6 +37,7 @@ export function typedTimeToInstant(time: string, dayOffset: number, now: Instant
  */
 export function PatientWardChangeCard({
   now,
+  dayZero,
   form,
   onFormChange,
   onRecordLeave,
@@ -46,6 +47,7 @@ export function PatientWardChangeCard({
   roleLimit,
 }: {
   now: Instant;
+  dayZero: Date;
   form: WardChangeForm;
   onFormChange: (form: WardChangeForm) => void;
   onRecordLeave: (expectedReturn: Instant, kind: LeaveKind) => void;
@@ -58,8 +60,16 @@ export function PatientWardChangeCard({
 }) {
   const [time, setTime] = useState("");
   const [day, setDay] = useState(0);
+  const [dischargeDate, setDischargeDate] = useState("");
   const [kind, setKind] = useState<LeaveKind>("off_ward");
-  const parsed = typedTimeToInstant(time, day, now);
+  const today = calendarDateOf(now, dayZero);
+  const todayValue = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const dischargeDay = dischargeDate
+    ? Math.round((new Date(`${dischargeDate}T00:00:00`).getTime() - dayZero.getTime()) / (MINUTES_PER_DAY * 60_000))
+    : undefined;
+  const parsed = form === "discharge" && dischargeDay !== undefined
+    ? typedTimeToInstant(time, dischargeDay, now)
+    : typedTimeToInstant(time, day, now);
   const future = parsed !== undefined && parsed > now;
   const leaveLimit = roleLimit("RECORD_LEAVE_BED");
   const edLimit = roleLimit("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT");
@@ -68,6 +78,7 @@ export function PatientWardChangeCard({
   function toggle(next: Exclude<WardChangeForm, "none">) {
     onFormChange(form === next ? "none" : next);
     setTime("");
+    if (next === "discharge") setDischargeDate("");
   }
 
   return (
@@ -135,14 +146,23 @@ export function PatientWardChangeCard({
             </div>
           ) : null}
           <label className={styles.changeField}>
-            <span>Day</span>
-            <select value={day} onChange={(event) => setDay(Number(event.target.value))}>
-              {DAY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <span>{form === "leave" ? "Day" : "Date"}</span>
+            {form === "leave" ? (
+              <select value={day} onChange={(event) => setDay(Number(event.target.value))}>
+                {DAY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="date"
+                value={dischargeDate}
+                min={todayValue}
+                onChange={(event) => setDischargeDate(event.target.value)}
+              />
+            )}
           </label>
           <label className={styles.changeField}>
             <span>{form === "leave" ? "Expected back time" : "Expected discharge time"}</span>
