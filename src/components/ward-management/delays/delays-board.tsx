@@ -36,7 +36,7 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById } from "@/components/ward-management/ward-sites";
 import { departmentLabel } from "@/components/ward-management/ward-absence-labels";
 import { currentDueSoonThresholds } from "@/components/ward-management/ward-clock";
-import { Hero, TierTile, type WfTone } from "@/components/wf";
+import { CheckingFoot, Hero, LiveChip, TierTile, type WfTone } from "@/components/wf";
 import { answerSilenceReminder, isCleared, type DelayCause, type DelayGroup } from "./delays-derivations";
 import { BandBar, Glyph, causeTitle } from "./delays-board-parts";
 import {
@@ -1047,6 +1047,7 @@ export function DelaysBoard({
   const over24 = rows.filter((row) => row.waited >= OVER_24H).length;
   const dueSoon = rows.filter(isDueSoon).length;
   const breached = rows.filter(isBreached).length;
+  const silentCount = rows.filter((row) => row.silent).length;
   const urgentMinutes = currentDueSoonThresholds().urgentMinutes;
   const soonHours = currentDueSoonThresholds().soonMinutes / 60;
 
@@ -1382,6 +1383,7 @@ export function DelaysBoard({
         eyebrow="Delays"
         title={`${rows.length} ${rows.length === 1 ? "person" : "people"} waiting`}
         testId="delays-hero"
+        className={styles.delaysHero}
         stats={
           <div className={styles.stats} role="group" aria-label="Filter by the headline counts">
             {heroStat(
@@ -1434,7 +1436,38 @@ export function DelaysBoard({
                 : undefined,
               "delays-stat-breached",
             )}
+            {/* Fifth chip: today's outcomes. A plain count, not a filter (v10 Delays hero). */}
+            <div className={`${styles.stat} ${styles.statStatic}`} data-testid="delays-stat-today">
+              <span className={styles.statV}>
+                {escalated.length}
+                <span className={styles.statSlash}>/</span>
+                {closedToday.length}
+              </span>
+              <span className={styles.statL}>Escalated / resolved today</span>
+            </div>
           </div>
+        }
+        aside={<LiveChip state="live" onHero />}
+        foot={
+          // This page watches conditions, so it says what it checked. Counts only, never "All clear".
+          <CheckingFoot
+            items={[
+              { id: "over24", label: `Over ${H24}`, value: over24, tone: over24 > 0 ? "danger" : "neutral" },
+              {
+                id: "silent",
+                label: "Silent 2h and over",
+                value: silentCount,
+                tone: silentCount > 0 ? "warning" : "neutral",
+              },
+              {
+                id: "breached",
+                label: "Past recorded time",
+                value: breached,
+                tone: breached > 0 ? "danger" : "neutral",
+              },
+            ]}
+            notChecked={["system delays, no feed"]}
+          />
         }
       />
       {banner}

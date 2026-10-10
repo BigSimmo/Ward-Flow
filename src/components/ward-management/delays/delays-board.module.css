@@ -375,6 +375,12 @@ button.stat:hover .statV {
   font-weight: 600;
 }
 
+.statSlash {
+  margin: 0 2px;
+  color: var(--wf-hero-ink-2);
+  font-weight: 400;
+}
+
 .statL {
   display: flex;
   align-items: center;
@@ -669,7 +675,7 @@ button.stat:hover .statV {
 }
 
 .wbOver {
-  color: var(--wf-danger);
+  color: var(--wf-ink-1);
   font-family: var(--wf-mono);
   font-size: var(--wf-fs-13);
   font-weight: 700;
@@ -1014,7 +1020,7 @@ button.stat:hover .statV {
 }
 
 .noteWarn strong {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
 }
 
 .facts {
@@ -1214,7 +1220,7 @@ button.stat:hover .statV {
 }
 
 .qv {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
 }
 
@@ -1333,8 +1339,7 @@ button.gLaneL:hover {
   position: absolute;
   top: 0;
   bottom: 0;
-  border-left: 1.5px dashed var(--wf-ink-3);
-  opacity: 0.6;
+  border-left: 1.5px dashed var(--wf-line-3);
 }
 
 .gBeyond {
@@ -1375,8 +1380,9 @@ button.gLaneL:hover {
     0 0 0 4px var(--wf-accent);
 }
 
-.dim {
-  opacity: 0.22;
+/* Dim by colour (v10): the global data-dim rule turns the dot's glyph to --wf-glyph-dim. */
+.gDot[data-dim="true"] {
+  color: var(--wf-dim);
 }
 
 .gNone {
@@ -1672,18 +1678,16 @@ button.gLaneL:hover {
   }
 }
 
-/* The dots stay small to read as a spread; their touch area is the full tap size. */
-.gDot {
-  position: relative;
-}
-
+/* The dots stay small to read as a spread; a transparent 28px hit area sits behind each one
+   (v10 Delays). The dot keeps position: absolute from .gDot above: an earlier "position: relative"
+   here put every dot back in the flow, so dots left their lanes. */
 .gDot::before {
   content: "";
   position: absolute;
   top: 50%;
   left: 50%;
-  width: var(--spacing-tap, 3rem);
-  height: var(--spacing-tap, 3rem);
+  width: 28px;
+  height: 28px;
   transform: translate(-50%, -50%);
 }
 
@@ -1909,5 +1913,16 @@ button.gLaneL:hover {
   .wbAct,
   .sxAct {
     forced-color-adjust: none;
+  }
+}
+
+/* ---------- phone hero (v10 Delays): three figures, no Checking foot ---------- */
+@media (max-width: 48rem) {
+  .stats > :nth-child(n + 4) {
+    display: none;
+  }
+
+  .delaysHero > :has(> * > [data-testid="wf-checking-foot"]) {
+    display: none;
   }
 }
