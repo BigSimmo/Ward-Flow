@@ -178,6 +178,69 @@
   }
 }
 
+/* ---------- v10 (10 Oct 2026, design system v10): the band, dim, edges and tints ----------
+   Colour pairs use light-dark(day, night), which follows the color-scheme the theme blocks set,
+   so one declaration serves :root, .day, .night and both dark switches. */
+:root {
+  /* Parts on the slate hero and on the band header at rest. */
+  --wf-on-hero-fill: rgba(255, 255, 255, 0.08);
+  --wf-on-hero-line: rgba(255, 255, 255, 0.2);
+  --wf-on-hero-hl: rgba(255, 255, 255, 0.14);
+  --wf-on-hero-ink: #d5e0ea;
+  --wf-on-hero-track: rgba(0, 0, 0, 0.2);
+  --wf-on-hero-div: rgba(255, 255, 255, 0.14);
+  /* The scrolled header: solid surface-2, a hairline and this soft bar shadow, no blur. */
+  --wf-e-bar: 0 6px 16px -12px rgba(16, 24, 40, 0.35);
+  /* White ink on the primary gradient in both themes. */
+  --wf-on-pri: #fff;
+  /* Touch floor, a count circle and a grouped table's group row. */
+  --wf-touch: 44px;
+  --wf-count: 20px;
+  --wf-row-group: 40px;
+  /* The band's round lip where the page rises over the hero foot. */
+  --wf-band-lip: 22px;
+
+  /* Dim, never hide: rows a highlight does not match take these colours. Never opacity, never
+     filter. Words take --wf-dim; glyphs inside a dimmed row take --wf-glyph-dim. */
+  --wf-dim: light-dark(rgba(22, 26, 32, 0.45), rgba(233, 238, 243, 0.42));
+  --wf-glyph-dim: light-dark(rgba(110, 122, 135, 0.45), rgba(150, 164, 178, 0.45));
+
+  /* The only tinted fills: a free or fit place (fit), and a fit with no bed now (hold). */
+  --wf-fit-tint: light-dark(rgba(47, 138, 95, 0.07), rgba(76, 179, 131, 0.09));
+  --wf-fit-edge: light-dark(rgba(47, 138, 95, 0.32), rgba(76, 179, 131, 0.36));
+  --wf-hold-tint: light-dark(rgba(172, 114, 10, 0.07), rgba(217, 164, 65, 0.09));
+  --wf-hold-edge: light-dark(rgba(172, 114, 10, 0.34), rgba(217, 164, 65, 0.36));
+  /* Act now: a thin 1px edge all the way round (.edge-act), never a fill or a side stripe. */
+  --wf-act-edge: light-dark(rgba(196, 81, 63, 0.6), rgba(226, 122, 104, 0.62));
+  --wf-neutral-ink: light-dark(#414953, #bcc8d4);
+  /* A remainder that is never the only mark of a value (the old light data step). */
+  --wf-data-rest: light-dark(#c9d3dd, #2a3a4b);
+
+  /* Charts: one reference line, one hatch meaning held or quiet, the now line, the overdue zone. */
+  --wf-ref-stroke: var(--wf-ink-3);
+  --wf-ref-w: 1px;
+  --wf-ref-dash: 4 3;
+  --wf-hatch: repeating-linear-gradient(135deg, var(--wf-data-2) 0 2px, transparent 2px 4px);
+  --wf-hatch-faint: repeating-linear-gradient(135deg, var(--wf-line-2) 0 2px, transparent 2px 6px);
+  --wf-now: var(--wf-accent);
+  --wf-overdue-zone: light-dark(rgba(196, 81, 63, 0.06), rgba(226, 122, 104, 0.08));
+}
+
+/* Dim convention (v10): any part marked data-dim="true" recedes by colour only. Its words take
+   --wf-dim and its status glyphs take --wf-glyph-dim. Rows stay in place and stay focusable. */
+[data-dim="true"] {
+  color: var(--wf-dim);
+  --wf-ink-1: var(--wf-dim);
+  --wf-ink-2: var(--wf-dim);
+  --wf-ink-3: var(--wf-dim);
+  --wf-danger: var(--wf-glyph-dim);
+  --wf-warning: var(--wf-glyph-dim);
+  --wf-success: var(--wf-glyph-dim);
+  --wf-info: var(--wf-glyph-dim);
+  --wf-neutral: var(--wf-glyph-dim);
+  --wf-act-edge: var(--wf-line-2);
+}
+
 /* Glare mode: data-mode="glare" on the root, for ward PCs by bright windows. Solid surfaces, no
    glass, darker lines and 12px glyphs. Red still means act now. */
 :root[data-mode="glare"] {

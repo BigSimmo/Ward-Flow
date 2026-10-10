@@ -35,7 +35,7 @@ describe("figma token sync", () => {
     expect(tokens.Colour.Day["--wf-accent"]).toBe("#2f4c66");
     expect(tokens.Colour.Night["--wf-accent"]).toBe("#8fb0d4");
     expect(tokens.Colour.Night["--wf-hero-ink"]).toBe("#ffffff");
-    expect(tokens.Size["--wf-r-md"]).toBe(10);
+    expect(tokens.Size["--wf-r-md"]).toBe(12);
     expect(tokens.Size["--wf-fs-28"]).toBe(28);
     expect(tokens.Colour.Day["--wf-e1"]).toBeUndefined();
     expect(diffTokens(css, tokens).changes).toEqual([]);
@@ -45,7 +45,7 @@ describe("figma token sync", () => {
     const pulled = exportTokens(css) as Tokens;
     pulled.Colour.Night["--wf-accent"] = { r: 0.5, g: 0.6, b: 0.8, a: 1 };
     pulled.Colour.Day["--wf-line"] = "rgba(22, 30, 40, 0.1)";
-    pulled.Size["--wf-r-lg"] = 16;
+    pulled.Size["--wf-r-lg"] = 18;
     pulled.Colour.Day["--wf-alpha-10"] = "#000000";
 
     const { changes, unknown } = diffTokens(css, pulled);
@@ -61,7 +61,7 @@ describe("figma token sync", () => {
     expect(result.css.match(/--wf-accent: #8099cc;/g)).toHaveLength(2);
     expect(result.css).toContain("--wf-accent: #2f4c66;");
     expect(result.css).toContain("--wf-line: rgba(22, 30, 40, 0.1);");
-    expect(result.css).toContain("--wf-r-lg: 16px;");
+    expect(result.css).toContain("--wf-r-lg: 18px;");
     expect(diffTokens(result.css, pulled).changes).toEqual([]);
   });
 

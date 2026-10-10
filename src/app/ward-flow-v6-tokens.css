@@ -74,10 +74,11 @@
     0 24px 48px -12px rgba(16, 24, 40, 0.3);
   --wf-focus-ring: var(--wf-accent);
   --wf-r-xs: 6px;
-  --wf-r-sm: 8px;
-  --wf-r-md: 10px;
-  --wf-r-lg: 14px;
-  --wf-r-xl: 20px;
+  /* v9 and v10 radius ladder: 6, 10, 12, 16, 22 and pill. Concentric corners, never square. */
+  --wf-r-sm: 10px;
+  --wf-r-md: 12px;
+  --wf-r-lg: 16px;
+  --wf-r-xl: 22px;
   --wf-r-pill: 999px;
   --wf-s-1: 4px;
   --wf-s-2: 8px;
