@@ -440,21 +440,22 @@ function AlertsWorkspace() {
   );
   const activeEntries = useMemo(() => toEntries(inbox, false), [toEntries, inbox]);
   const snoozedEntries = useMemo(() => toEntries(snoozedInbox, true), [toEntries, snoozedInbox]);
+  const oldestRaised = useMemo(() => {
+    const times = activeEntries.flatMap((entry) =>
+      entry.group === "running" || entry.raised === undefined ? [] : [entry.raised],
+    );
+    return times.length > 0 ? Math.min(...times) : undefined;
+  }, [activeEntries]);
   const actEntries = activeEntries.filter((entry) => entry.group === "act");
   const waitEntries = activeEntries.filter((entry) => entry.group === "wait");
   const runningEntries = activeEntries.filter((entry) => entry.group === "running");
   const allEntries = useMemo(() => [...activeEntries, ...snoozedEntries], [activeEntries, snoozedEntries]);
-  const countedActive = activeEntries.filter((entry) => entry.group !== "running");
+  const countedActive = useMemo(() => activeEntries.filter((entry) => entry.group !== "running"), [activeEntries]);
   const yoursCount = countedActive.filter((entry) => entry.mine).length;
   const needYouCount = actEntries.filter((entry) => entry.mine && !entry.seen).length;
   const highlightedCount = allEntries.filter((entry) => entry.highlighted).length;
   const anyHighlight = highlightOn;
   const maxAge = Math.max(1, ...allEntries.map((entry) => (entry.raised === undefined ? 0 : now - entry.raised)));
-  const oldestRaised = countedActive.reduce<Instant | undefined>(
-    (oldest, entry) =>
-      entry.raised === undefined ? oldest : oldest === undefined ? entry.raised : Math.min(oldest, entry.raised),
-    undefined,
-  );
   const owners = useMemo(() => {
     const names = [...new Set(allEntries.map((entry) => entry.owner))];
     return names.sort((a, b) => (a === COORDINATOR ? -1 : b === COORDINATOR ? 1 : a.localeCompare(b)));
@@ -471,6 +472,7 @@ function AlertsWorkspace() {
     );
     return ranked.length > 0 ? ranked : countedActive;
   }, [countedActive]);
+  const openCount = countedActive.length;
 
   const chosen = allEntries.find((entry) => entry.item.id === chosenId);
   // On the desktop the panel always shows an alert: the chosen one, else the first in line.
@@ -1136,8 +1138,8 @@ function AlertsWorkspace() {
               data-testid="ward-alerts-phone-hero"
               title={heroTitle}
               sub={
-                countedActive.length > 0
-                  ? `${countedActive.length} open${
+                openCount > 0
+                  ? `${openCount} open${
                       oldestRaised !== undefined ? ` · oldest ${minutesText(Math.max(0, now - oldestRaised))}` : ""
                     }`
                   : "Checking every condition below"
@@ -1181,9 +1183,9 @@ function AlertsWorkspace() {
             eyebrow="Alerts"
             title={heroTitle}
             titleMeta={
-              countedActive.length > 0 ? (
+              openCount > 0 ? (
                 <span className={styles.heroMeta}>
-                  <span className={styles.mono}>{countedActive.length}</span> open
+                  <span className={styles.mono}>{openCount}</span> open
                   {oldestRaised !== undefined ? (
                     <>
                       {" "}
@@ -1275,7 +1277,7 @@ function AlertsWorkspace() {
             barAside={
               <div className={styles.heroTools}>
                 <Button variant="onHero" size="sm" icon={ChevronRight} onClick={handleNext}>
-                  Next alert <span className={styles.mono}>{countedActive.length}</span>
+                  Next alert <span className={styles.mono}>{openCount}</span>
                 </Button>
                 <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
                   Copy for handover
