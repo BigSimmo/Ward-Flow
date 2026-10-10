@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { PublicClientApplication, type AccountInfo } from "@azure/msal-browser";
 import { SharedWorkspaceClient, type SharedView } from "./ward-shared-client";
 import type { WardFlowEvent } from "./ward-flow-events";
@@ -125,10 +125,39 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
 
 export function WardSharedAccess({ connection, children }: { connection: WardSharedConnection; children: ReactNode }) {
   const [showLiveInfo, setShowLiveInfo] = useState(false);
+  const toolbarRef = useRef<HTMLElement | null>(null);
   const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
+
+  useLayoutEffect(() => {
+    const toolbar = toolbarRef.current;
+    if (!toolbar) return;
+
+    const root = document.documentElement;
+    const previousHeight = root.style.getPropertyValue("--wf-data-bar-height");
+    const updateHeight = () => {
+      root.style.setProperty("--wf-data-bar-height", `${toolbar.getBoundingClientRect().height}px`);
+    };
+    updateHeight();
+
+    const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateHeight);
+    resizeObserver?.observe(toolbar);
+    window.addEventListener("resize", updateHeight);
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updateHeight);
+      if (previousHeight) root.style.setProperty("--wf-data-bar-height", previousHeight);
+      else root.style.removeProperty("--wf-data-bar-height");
+    };
+  }, []);
+
   return (
     <>
-      <section className={styles.toolbar} aria-label="Ward Flow data mode" data-data-mode="prototype">
+      <section
+        ref={toolbarRef}
+        className={styles.toolbar}
+        aria-label="Ward Flow data mode"
+        data-data-mode="prototype"
+      >
         <div>
           <strong>Data mode: Prototype</strong>
           <span className={styles.detail}>
