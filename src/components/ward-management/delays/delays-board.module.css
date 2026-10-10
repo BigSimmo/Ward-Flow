@@ -1150,6 +1150,11 @@ button.stat:hover .statV {
   font-size: var(--wf-fs-12);
 }
 
+.personSystem {
+  padding: var(--wf-s-1) 14px;
+  border-top: 1px solid var(--wf-line);
+}
+
 .system {
   display: flex;
   flex-direction: column;

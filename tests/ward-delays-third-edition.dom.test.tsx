@@ -150,6 +150,17 @@ describe("Delays — the drawing's panel names (task D1)", () => {
     fireEvent.click(screen.getByRole("tab", { name: /^System/u }));
     expect(screen.getByRole("region", { name: "Delays with no named person" })).toBeInTheDocument();
   });
+
+  // 10 Oct 2026 (Josh approved): opening a person replaces the rail, so their panel carries the
+  // same "Delays with no named person" note. Q-12 items are never dropped, even while a person is open.
+  it("keeps 'Delays with no named person' while a person's panel is open", () => {
+    renderScreen();
+    const [firstSelectButton] = screen.getAllByTestId(/^delays-select-/u);
+    fireEvent.click(firstSelectButton);
+    const panel = screen.getByRole("region", { name: "Why this person is waiting" });
+    const note = within(panel).getByRole("region", { name: "Delays with no named person" });
+    expect(note).toHaveTextContent("No statewide delays recorded.");
+  });
 });
 
 describe("Delays — the selected-person panel (task D1)", () => {
