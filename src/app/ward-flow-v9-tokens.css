@@ -109,7 +109,6 @@
   --wf-accent-strong: #8cbcf0;
   --wf-accent-tint: #1d3349;
   --wf-accent-ink: #b7d3f0;
-  --wf-on-accent: #0d141b;
   --wf-pri-1: #3a72a8;
   --wf-pri-2: #2c5c8c;
   --wf-pri-edge: #5a8fc4;
@@ -142,7 +141,6 @@
     --wf-accent-strong: #8cbcf0;
     --wf-accent-tint: #1d3349;
     --wf-accent-ink: #b7d3f0;
-    --wf-on-accent: #0d141b;
     --wf-pri-1: #3a72a8;
     --wf-pri-2: #2c5c8c;
     --wf-pri-edge: #5a8fc4;
@@ -191,11 +189,27 @@
   --wf-glass: #ffffff;
   --wf-glass-thick: #ffffff;
   --wf-sheen: none;
+  /* the day action family, so glare stays readable when the theme is night */
+  --wf-accent: #245a8c;
+  --wf-accent-strong: #1f4f7d;
+  --wf-accent-tint: #e3eef9;
+  --wf-accent-ink: #1f4d7a;
+  --wf-accent-hover: #1f4f7d;
+  --wf-accent-press: #1b4570;
+  --wf-on-accent: #ffffff;
+  --wf-pri-1: #2f6aa3;
+  --wf-pri-2: #234f7a;
+  --wf-pri-edge: #1d4569;
+  --wf-pri-1-hover: #3874af;
+  --wf-pri-2-hover: #295a8a;
+  --wf-pri-1-press: #234f7a;
+  --wf-pri-2-press: #1c4166;
 }
 
-/* Touch: coarse pointers get touch rows unless a density was chosen */
+/* Touch: coarse pointers get touch rows unless dense rows were chosen. The app's compact and
+   spacious preferences only change the text size, so they keep touch rows. */
 @media (pointer: coarse) {
-  :root:not([data-density]) {
+  :root:not([data-density="dense"]) {
     --wf-row: var(--wf-row-touch);
   }
 }
