@@ -211,16 +211,25 @@ export function PhoneSheet({
     if (panelRef.current) panelRef.current.style.transform = `translateY(${delta}px)`;
   }
 
-  function onHandleUp(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!dragRef.current.dragging) return;
-    const delta = Math.max(0, event.clientY - dragRef.current.startY);
+  function endDrag() {
     dragRef.current = { startY: 0, dragging: false };
     const panel = panelRef.current;
     if (panel) {
       panel.style.transition = "";
       panel.style.transform = "";
     }
+  }
+
+  function onHandleUp(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!dragRef.current.dragging) return;
+    const delta = Math.max(0, event.clientY - dragRef.current.startY);
+    endDrag();
     if (delta > DRAG_CLOSE_PX) onCloseRef.current();
+  }
+
+  // An interrupted gesture puts the sheet back and never closes it.
+  function onHandleCancel() {
+    if (dragRef.current.dragging) endDrag();
   }
 
   if (!open) return null;
@@ -259,7 +268,7 @@ export function PhoneSheet({
             onPointerDown={onHandleDown}
             onPointerMove={onHandleMove}
             onPointerUp={onHandleUp}
-            onPointerCancel={onHandleUp}
+            onPointerCancel={onHandleCancel}
           >
             <span className={styles.grip} />
           </div>
@@ -586,10 +595,15 @@ export function PhoneHero({
   return (
     <section className={cx(styles.hero, className)} aria-labelledby={titleId} data-testid={testId}>
       <div className={styles.heroTitleBlock}>
-        <Heading id={titleId} className={styles.heroTitle}>
+        {/* One line each; a cut string keeps its full words in a hover title. */}
+        <Heading id={titleId} className={styles.heroTitle} title={textOf(title)}>
           {title}
         </Heading>
-        {present(sub) ? <p className={styles.heroSub}>{sub}</p> : null}
+        {present(sub) ? (
+          <p className={styles.heroSub} title={textOf(sub)}>
+            {sub}
+          </p>
+        ) : null}
       </div>
       {shown.length ? (
         <ul className={styles.heroFigures} data-count={shown.length}>
@@ -617,6 +631,10 @@ export type ScrollRowProps = Omit<ComponentPropsWithoutRef<"div">, "children"> &
   /** Classes for the inner row that scrolls. */
   rowClassName?: string;
 };
+
+function textOf(node: ReactNode): string | undefined {
+  return typeof node === "string" || typeof node === "number" ? String(node) : undefined;
+}
 
 function setFlag(element: HTMLElement, key: "fadeStart" | "fadeEnd", on: boolean) {
   if (on) element.dataset[key] = "true";

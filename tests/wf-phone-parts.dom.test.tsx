@@ -152,6 +152,26 @@ describe("PhoneSheet", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("closes on a long drag of the handle, never on a cancelled one", async () => {
+    const onClose = vi.fn();
+    render(
+      <PhoneSheet open onClose={onClose} title="Who to call">
+        <p>Body</p>
+      </PhoneSheet>,
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Who to call" });
+    const handle = dialog.querySelector<HTMLElement>("[data-phone-sheet-handle]")!;
+    fireEvent.pointerDown(handle, { clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientY: 300, pointerId: 1 });
+    fireEvent.pointerCancel(handle, { clientY: 300, pointerId: 1 });
+    expect(onClose).not.toHaveBeenCalled();
+    expect(dialog.style.transform).toBe("");
+    fireEvent.pointerDown(handle, { clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientY: 300, pointerId: 1 });
+    fireEvent.pointerUp(handle, { clientY: 300, pointerId: 1 });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("closes only the top layer when a sheet is stacked on another", async () => {
     const onCloseLower = vi.fn();
     const onCloseUpper = vi.fn();
@@ -376,12 +396,12 @@ describe("Phone CSS", () => {
     expect(reduced).toMatch(/\.sheet \{\s*animation-name: wfPhoneSheetFade/);
   });
 
-  it("keeps the bottom bar solid and its links at 44px", () => {
+  it("keeps the bottom bar solid and its links at 48px", () => {
     const bar = block(".tabBar");
     expect(bar).toContain("background: var(--wf-surface)");
     expect(bar).not.toContain("backdrop-filter");
     expect(bar).toContain("env(safe-area-inset-bottom)");
-    expect(block(".tabLink")).toContain("min-height: 44px");
+    expect(block(".tabLink")).toContain("min-height: 48px");
   });
 
   it("gives the row action a 36px face, and the act now edge no fill", () => {

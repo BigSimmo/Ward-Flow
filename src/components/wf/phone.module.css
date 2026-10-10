@@ -1,7 +1,7 @@
 /*
  * v9 phone parts (design system v9 section 7). Phone is its own design at 390 by 844 and these
  * parts carry no desktop layout of their own: a screen renders them on the phone. Tokens only.
- * Names 14, meta 12, rows tap as a whole, row actions at least 36px, the bottom bar 44px.
+ * Names 14, meta 12, rows tap as a whole, row actions at least 36px, the bottom bar 48px.
  * Phone bars are solid, never glass. Red means act now only, as a thin edge, never a fill.
  */
 
@@ -114,7 +114,7 @@
   color: var(--wf-ink-2);
 }
 
-/* The close button keeps a 36px face; on touch a hit area takes it to 44px. */
+/* The close button keeps a 36px face; on touch a hit area takes it to 48px. */
 .sheetClose.sheetClose {
   position: relative;
   flex: none;
@@ -237,7 +237,7 @@
   justify-content: center;
   gap: 2px;
   min-width: 0;
-  min-height: 44px;
+  min-height: 48px;
   padding: var(--wf-s-1) 2px;
   box-sizing: border-box;
   color: var(--wf-ink-2);
@@ -402,6 +402,8 @@
 }
 
 /* Truncated words show in full on focus as well as hover (v9 section 8). */
+.rowInteractive:hover .rowName,
+.rowInteractive:hover .rowMeta,
 .rowInteractive:focus-visible .rowName,
 .rowInteractive:focus-visible .rowMeta {
   white-space: normal;
@@ -440,7 +442,7 @@
 }
 
 /* A 36px face at every width (doubled class beats the kit's phone tap floor). On touch it reaches
-   44px through a hit area, not a bigger face (v9 section 5). */
+   48px through a hit area, not a bigger face (v9 section 5). */
 .rowAction.rowAction {
   position: relative;
   height: 36px;
@@ -638,13 +640,13 @@
 
 /* ---------- touch ---------- */
 
-/* 44px targets on touch through a hit area, not a bigger face (v9 section 5). */
+/* 48px targets on touch through a hit area, not a bigger face (v9 section 5). */
 @media (pointer: coarse) {
   .rowAction::after,
   .sheetClose::after {
     content: "";
     position: absolute;
-    inset: -4px;
+    inset: -6px;
   }
 }
 
@@ -679,5 +681,12 @@
   .tabBar,
   .rowActionSlot {
     display: none;
+  }
+  /* Paper cannot scroll: every chip prints, wrapping if it must, with no edge fade. */
+  .scrollTrack {
+    flex-wrap: wrap;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 }
