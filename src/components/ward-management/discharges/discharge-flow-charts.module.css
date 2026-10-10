@@ -373,3 +373,19 @@
     display: none;
   }
 }
+
+/* v10 phone: inside its sheet the day chart scrolls sideways with 48px tap columns. */
+@media (max-width: 48rem) {
+  .day {
+    flex: 0 0 3rem;
+    min-width: 3rem;
+  }
+
+  .plot {
+    min-width: max-content;
+  }
+
+  .barRow {
+    min-height: var(--wf-touch, 44px);
+  }
+}

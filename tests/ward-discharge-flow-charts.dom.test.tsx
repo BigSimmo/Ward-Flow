@@ -46,7 +46,9 @@ describe("Discharges charts under the table (direction A)", () => {
     // Highlighted people come first, and every other record is still listed.
     expect(rows.slice(0, expected)).toEqual(lit);
     expect(rows.length).toBeGreaterThan(expected);
-    expect(screen.getByTestId("ward-discharge-highlight-note")).toHaveTextContent(`${expected} highlighted`);
+    expect(screen.getByTestId("ward-discharge-highlight-note")).toHaveTextContent(
+      new RegExp(`${expected} of \\d+ highlighted, all rows stay`),
+    );
     fireEvent.click(within(screen.getByTestId("ward-discharge-highlight-note")).getByRole("button", { name: "Clear" }));
     expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
   });
@@ -76,6 +78,20 @@ describe("Discharges charts under the table (direction A)", () => {
     expect(confirmedTab()).toHaveAttribute("aria-pressed", "false");
     expect(worklistRows().filter((row) => row.getAttribute("data-highlighted") === "true")).toHaveLength(count);
     fireEvent.click(screen.getByRole("button", { name: /^Now,/u }));
+    expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
+  });
+
+  it("barrier quick chips highlight matching rows and hide none (v10: chips highlight, not filter)", () => {
+    renderBoard();
+    const before = worklistRows().length;
+    const bar = within(screen.getByRole("toolbar", { name: "Quick blocker filters" }));
+    const chip = bar.getAllByRole("button").find((button) => button.textContent?.startsWith("Accommodation"));
+    expect(chip).toBeDefined();
+    fireEvent.click(chip!);
+    expect(chip).toHaveAttribute("aria-pressed", "true");
+    expect(worklistRows()).toHaveLength(before);
+    expect(screen.getByTestId("ward-discharge-highlight-note")).toHaveTextContent(/all rows stay/);
+    fireEvent.click(chip!);
     expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
   });
 

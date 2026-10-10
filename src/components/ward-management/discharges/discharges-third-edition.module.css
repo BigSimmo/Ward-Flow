@@ -1756,3 +1756,13 @@
     padding: 0 var(--wf-s-4);
   }
 }
+
+/* v10 phone: the two charts as cards that open sheets. */
+.phChartCards {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
