@@ -71,8 +71,10 @@ function fitName(name: string, width: number): string {
 }
 
 function hoursLabel(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const rest = Math.round(minutes % 60);
+  // Rounded first, so a median of 179.5 minutes reads 3h, never 2h 60m.
+  const whole = Math.round(minutes);
+  const hours = Math.floor(whole / 60);
+  const rest = whole % 60;
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
 }
 

@@ -280,7 +280,7 @@ export function StatisticsWardsIndexScreen() {
               { id: "none", label: "One list" },
             ]}
           />
-          <span className={index.matchCount} role="status" data-testid="ward-statistics-wards-match-count">
+          <span className={index.matchCount} data-testid="ward-statistics-wards-match-count">
             {chips.size > 0 ? `${matched} of ${rows.length} highlighted` : `${rows.length} wards`}
           </span>
         </div>

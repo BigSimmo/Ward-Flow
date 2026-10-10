@@ -559,7 +559,7 @@ function SiteCard({ site, lens, onClose }: { site: SiteFigures; lens: MapLens; o
       }
     >
       <CardBody className={styles.siteBody}>
-        <SrOnly role="status">{lensAria(site, lens)}</SrOnly>
+        <SrOnly>{lensAria(site, lens)}</SrOnly>
         {site.wards.length > 0 ? (
           <div className={styles.siteGroup}>
             <span className={styles.siteLabel}>Wards</span>

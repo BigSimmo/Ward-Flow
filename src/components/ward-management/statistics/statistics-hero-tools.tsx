@@ -115,9 +115,11 @@ export function HeroTool({
   testId?: string;
 }) {
   const className = cx(styles.tool, preview && styles.preview);
+  // The label hides on narrower desktops, leaving the icon, so the name stays as a tooltip.
+  const label = typeof children === "string" ? children : undefined;
   if (href && !preview) {
     return (
-      <Link href={href} className={className} data-testid={testId}>
+      <Link href={href} className={className} title={label} data-testid={testId}>
         {icon}
         <span className={styles.toolLabel}>{children}</span>
       </Link>
@@ -129,7 +131,7 @@ export function HeroTool({
       className={className}
       onClick={onClick}
       aria-disabled={preview || undefined}
-      title={preview ? NOT_WIRED : undefined}
+      title={preview ? NOT_WIRED : label}
       data-testid={testId}
     >
       {icon}
