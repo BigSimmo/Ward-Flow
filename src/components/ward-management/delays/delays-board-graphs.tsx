@@ -159,7 +159,8 @@ function Spread({
         const sorted = [...lane.rows].sort((a, b) => b.waited - a.waited);
         const placed: { x: number; y: number; row: BoardRow }[] = [];
         for (const row of sorted) {
-          const x = (spreadX(row.waited) / 100) * PLOT_WIDTH;
+          // Clamped so a dot at 0h or 7d keeps its whole circle inside the lane.
+          const x = Math.min(PLOT_WIDTH - DOT / 2, Math.max(DOT / 2, (spreadX(row.waited) / 100) * PLOT_WIDTH));
           // Nearest free slot, alternating above and below, however many share a wait.
           let y = 0;
           for (let step = 0; ; step += 1) {
@@ -203,7 +204,8 @@ function Spread({
                   <button
                     key={row.movement.id}
                     type="button"
-                    className={`${styles.gDot} ${anyFilter && !visible.has(row.movement.id) ? styles.dim : ""}`}
+                    className={styles.gDot}
+                    data-dim={anyFilter && !visible.has(row.movement.id) ? "true" : undefined}
                     aria-pressed={selectedId === row.movement.id}
                     aria-label={label}
                     style={{ left: `${(x / PLOT_WIDTH) * 100}%`, top: `calc(50% + ${y}px)` }}

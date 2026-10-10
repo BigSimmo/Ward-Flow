@@ -130,11 +130,11 @@
 }
 
 .waitWord[data-tone="danger"] {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 .waitWord[data-tone="warning"] {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
 }
 
 .meter {
@@ -336,11 +336,11 @@
 }
 
 .legal[data-tone="danger"] {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
 }
 
 .legal[data-tone="warning"] {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
 }
 
 .grid {
@@ -484,7 +484,7 @@
 
 .sectionTitle {
   margin: 0;
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 650;
   letter-spacing: 0.04em;
   text-transform: uppercase;

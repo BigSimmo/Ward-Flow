@@ -138,7 +138,7 @@ describe("Q004 refinement interaction regressions", () => {
 
   it("highlights exactly as many queue rows as the hero's Overdue count says", () => {
     renderCoordinator();
-    const hero = screen.getByRole("region", { name: /waiting for \d+ ready bed/u });
+    const hero = screen.getByRole("region", { name: /waiting, \d+ beds? ready/u });
     const chip = within(hero).getByRole("button", { name: /Overdue/u });
     const count = Number(chip.textContent!.match(/\d+/u)![0]);
     expect(count, "the seed has no overdue movement, so this test proves nothing").toBeGreaterThan(0);

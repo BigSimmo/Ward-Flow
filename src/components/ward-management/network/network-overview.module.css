@@ -16,7 +16,7 @@
   border: 1px solid var(--wf-line-ctl);
   border-radius: var(--wf-r-xs);
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   color: var(--wf-ink-2);
   vertical-align: middle;
@@ -104,7 +104,7 @@
   padding: 6px var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line);
   background: var(--wf-surface-2);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.07em;
   text-align: left;
@@ -202,15 +202,17 @@
 
 .unitGrid th.num {
   font-family: var(--wf-font);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
 }
 
+/* v10: figures stay neutral ink; the bar beside them carries the tone. */
 .readyNum {
-  color: var(--wf-success-ink);
+  color: var(--wf-ink-1);
+  font-weight: 600;
 }
 
 .pulledNum {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
 }
 
 .empty {

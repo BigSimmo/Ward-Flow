@@ -114,7 +114,7 @@
 }
 
 .overdue {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
 }
 
 .actions {
@@ -131,7 +131,7 @@
 }
 
 .refusal {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
 }
 
 .form {

@@ -396,7 +396,7 @@
 
 .orderLegend {
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -446,7 +446,7 @@
   border-radius: var(--wf-r-pill);
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
@@ -459,7 +459,7 @@
   border-top: 1px solid var(--wf-line);
   border-bottom: 1px solid var(--wf-line);
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -767,7 +767,7 @@
 
 .drawerUmrnBadge {
   font-family: var(--mono);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   padding: 1px 6px;
   border-radius: 4px;
@@ -777,7 +777,7 @@
 }
 
 .drawerLegalTag {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   padding: 1px 6px;
   border-radius: 4px;
@@ -795,7 +795,7 @@
 }
 
 .drawerUrgencyText {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--muted);
 }
 
@@ -827,7 +827,7 @@
 }
 
 .corridorStatusTag {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -846,19 +846,19 @@
 
 .tagAmber {
   background: var(--warn-soft);
-  color: var(--warn-ink);
+  color: var(--ink);
   border: 1px solid var(--warn-border);
 }
 
 .tagRed {
   background: var(--danger-soft);
-  color: var(--danger-ink);
+  color: var(--ink);
   border: 1px solid var(--danger-border);
 }
 
 .tagGreen {
   background: var(--good-soft);
-  color: var(--good-ink);
+  color: var(--ink);
   border: 1px solid var(--good-border);
 }
 
@@ -913,7 +913,7 @@
 }
 
 .hubRole {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--muted);
@@ -936,7 +936,7 @@
 }
 
 .hubMeta {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--muted);
   margin-top: 1px;
   line-height: 1.25;
@@ -946,7 +946,7 @@
   margin-top: auto;
   padding-top: 4px;
   border-top: 1px solid var(--line);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--muted);
   display: flex;
   justify-content: space-between;
@@ -964,7 +964,7 @@
   gap: 4px;
   color: var(--accent-ink);
   font-weight: 700;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   text-decoration: none;
   transition: color 0.15s ease;
 }
@@ -985,7 +985,7 @@
 }
 
 .transitBadge {
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   background: var(--accent-soft);
@@ -1019,14 +1019,14 @@
 
 .transitVehicle {
   font-family: var(--mono);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--ink);
   margin-top: 3px;
 }
 
 .transitEta {
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   color: var(--muted);
 }
 
@@ -1062,7 +1062,7 @@
 }
 
 .whereaboutsHeading {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--accent-ink);
@@ -1131,12 +1131,12 @@
 }
 
 .textDanger {
-  color: var(--danger-ink);
+  color: var(--ink);
   font-weight: 700;
 }
 
 .textGood {
-  color: var(--good-ink);
+  color: var(--ink);
   font-weight: 700;
 }
 
@@ -1160,13 +1160,13 @@
 .flowCheckGood {
   background: var(--good-soft);
   border: 1px solid var(--good-border);
-  color: var(--good-ink);
+  color: var(--ink);
 }
 
 .flowCheckBlocked {
   background: var(--warn-soft);
   border: 1px solid var(--warn-border);
-  color: var(--warn-ink);
+  color: var(--ink);
 }
 
 /* Action Bar */
@@ -1242,7 +1242,7 @@
 
 .actionUrgentBtn {
   background: var(--danger-soft);
-  color: var(--danger-ink);
+  color: var(--ink);
   border: 1px solid var(--danger-border);
   padding: 0.35rem 0.75rem;
   border-radius: var(--r2);
@@ -1262,13 +1262,15 @@
 }
 
 .actionUrgentBtn[aria-disabled="true"] {
-  opacity: 0.6;
+  border-color: var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-dim);
   cursor: not-allowed;
 }
 
 .actionUrgentRemove {
   background: var(--danger-soft);
-  color: var(--danger-ink);
+  color: var(--ink);
   border: 1px solid var(--danger-border);
   padding: 0.35rem 0.75rem;
   border-radius: var(--r2);
@@ -1321,7 +1323,7 @@
 }
 
 .auditSummaryBadge {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-family: var(--mono);
   font-weight: 700;
   padding: 1px 6px;
@@ -1351,7 +1353,7 @@
   margin-top: 1rem;
   padding-top: 0.75rem;
   border-top: 1px solid var(--line);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--muted);
   text-align: center;
 }
@@ -1480,11 +1482,11 @@
 }
 
 .dayMetric[data-tone="danger"] strong {
-  color: var(--danger);
+  color: var(--ink);
 }
 
 .dayMetric[data-tone="warning"] strong {
-  color: var(--warn);
+  color: var(--ink);
 }
 
 .attentionBand {
@@ -2125,10 +2127,10 @@
   color: var(--muted);
 }
 .carryingSummaryState[data-tone="good"] {
-  color: var(--good);
+  color: var(--ink);
 }
 .carryingSummaryState[data-tone="danger"] {
-  color: var(--danger);
+  color: var(--ink);
 }
 .carryingSummaryMeta {
   overflow: hidden;
@@ -2426,7 +2428,7 @@
   border-color: var(--warn);
   border-radius: var(--r2);
   background: var(--warn-soft);
-  color: var(--warn);
+  color: var(--ink);
   font-size: var(--t-0);
 }
 
@@ -2754,13 +2756,13 @@
   text-transform: uppercase;
   padding: 1px 7px;
   border-radius: var(--radius-pill, 9999px);
-  color: var(--warn);
+  color: var(--ink);
   background: var(--warn-soft);
   box-shadow: inset 0 0 0 1px var(--warn);
 }
 
 .causeGroupHeading[data-sev="breach"] .causeGroupMark {
-  color: var(--danger);
+  color: var(--ink);
   background: var(--danger-soft);
   box-shadow: inset 0 0 0 1px var(--danger);
 }
@@ -2825,21 +2827,21 @@
 }
 
 .recordTag[data-tone="danger"] {
-  color: var(--danger);
+  color: var(--ink);
   background: var(--danger-soft);
   box-shadow: inset 0 0 0 1px var(--danger);
   font-weight: 600;
 }
 
 .recordTag[data-tone="warn"] {
-  color: var(--warn);
+  color: var(--ink);
   background: var(--warn-soft);
   box-shadow: inset 0 0 0 1px var(--warn);
   font-weight: 600;
 }
 
 .recordTag[data-tone="good"] {
-  color: var(--good);
+  color: var(--ink);
   background: var(--good-soft);
   box-shadow: inset 0 0 0 1px var(--good);
 }
@@ -2852,7 +2854,7 @@
 }
 
 .recordEscalation strong {
-  color: var(--warn);
+  color: var(--ink);
   font-weight: 600;
 }
 

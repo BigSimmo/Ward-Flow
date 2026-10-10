@@ -39,33 +39,39 @@
 }
 
 .heroStatGroup {
-  display: contents;
-}
-
-.heroStatButton {
   display: flex;
-  align-items: stretch;
-  padding: 0;
-  border: 0;
-  border-radius: var(--wf-r-sm);
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
 }
 
-.heroStatButton:hover {
-  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+/* The ring leads the hero on desktop and tablet: Hero renders it in its stats slot, and this moves
+   that slot ahead of the title. */
+@media (min-width: 48.0625rem) {
+  .capacityHero > :first-child > :nth-child(2) {
+    flex: 0 0 auto;
+    order: -1;
+    overflow: visible;
+  }
 }
 
-.heroStatButton:focus-visible {
-  outline: 2px solid var(--wf-hero-ink);
-  outline-offset: 2px;
+/* Shared-part fix kept page-local: the ring's own "svg" rule also sizes the glyph under the figure. */
+.capacityHero [data-testid="wf-occupancy-ring"] > span svg {
+  width: 10px;
+  height: 10px;
 }
 
-.heroStatButton[aria-pressed="true"]:not(:first-child) {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wf-hero-ink) 45%, transparent);
+/* Phone: three figures and the arc only (v10 Capacity, Phone). */
+@media (max-width: 48rem) {
+  .heroStatGroup > :nth-child(n + 4) {
+    display: none;
+  }
+}
+
+/* The Oldest count jump sits at the right end of the chip row. */
+.heroJump {
+  margin-left: auto;
 }
 
 /* Shared panel and table primitives, restated in v6 on this screen. */
@@ -325,7 +331,7 @@
 
 .highlightLabel {
   margin-right: var(--wf-s-1);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -365,7 +371,7 @@
 
 .networkHeading {
   margin: 0;
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -549,7 +555,7 @@
 
 .readySummary h3 {
   margin: 0;
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -781,7 +787,7 @@
   border-radius: var(--wf-r-pill);
   background: var(--wf-surface-2);
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
   text-align: center;
 }
@@ -851,7 +857,7 @@
   position: absolute;
   top: 50%;
   right: 10px;
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
   pointer-events: none;
   transform: translateY(-50%);
@@ -903,7 +909,7 @@
   height: 36px;
   padding-block: 0;
   background: var(--wf-surface);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1019,7 +1025,7 @@
   padding: 0 6px;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-pill);
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
 }
 
@@ -1027,7 +1033,7 @@
   display: block;
   margin-top: 2px;
   font-size: var(--wf-fs-12);
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-2);
 }
 
 .authYes,
@@ -1061,7 +1067,7 @@
 
 .foldIcon {
   width: 12px;
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
 
@@ -1222,7 +1228,7 @@
 
 /* Phone: the ward table these hero figures highlight is hidden, so they read as plain figures. */
 @media (max-width: 48rem) {
-  .heroStatButton {
+  .heroStatGroup button {
     pointer-events: none;
     cursor: default;
   }

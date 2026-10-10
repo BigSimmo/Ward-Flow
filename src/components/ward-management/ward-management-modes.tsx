@@ -290,8 +290,10 @@ export function WardModeWorkspace({ mode }: { mode: WardWorkspaceMode }) {
     >
       <ModeHeader mode={mode} role={role} onRoleChange={setRole} />
       <main id="main-content" className={styles.modeContent}>
-        {mode !== "governance" && <RoleFocus role={role} />}
+        {/* v10: a page opens on its hero, so the role note follows the body rather than sitting
+            above the Network hero (a block above the hero would cost it the band). */}
         <ModeBody mode={mode} />
+        {mode !== "governance" && <RoleFocus role={role} />}
         <WardPrototypeFooter
           testId={mode === "network" ? "ward-network-governance" : `ward-mode-${mode}-disclosure`}
           note={mode === "network" ? "Synthetic network figures and bed statuses · Not a medical device" : undefined}

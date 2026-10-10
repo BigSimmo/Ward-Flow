@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { Hero, HeroStat, LiveChip, buttonClass } from "@/components/wf";
+import { CheckingFoot, Hero, HeroStat, LiveChip, OccupancyRing, buttonClass } from "@/components/wf";
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
-import { clockState } from "@/components/ward-management/ward-clock";
+import { clockState, formatInstant } from "@/components/ward-management/ward-clock";
+import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
+import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { allDeclines, allOverrides, buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -38,6 +41,9 @@ const HANDOVER_HREF = "/mockups/ward-flow/handover";
 /** Activity lines shown under "Since you looked". */
 const SINCE_TIMELINE_LINES = 8;
 const DELAYS_HREF = "/mockups/ward-flow/delays";
+
+/** A bed count older than this is named in the hero's Checking foot (v10 Home chapter). */
+const BED_COUNT_FRESH_MINUTES = 60;
 
 /** Focus target when a selection goes away: the selected queue row, else the active queue choice. */
 const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-checked="true"]';
@@ -288,7 +294,6 @@ export function CoordinatorScreen() {
     () => wardNavCounts({ movements, units, referrals, bedReleases, leaveBeds, now }),
     [movements, units, referrals, bedReleases, leaveBeds, now],
   );
-  const tierOneOpen = openMovements.filter((movement) => movement.urgency === 1).length;
   const waitingInEd = useMemo(
     () => edPressure(now, movements).reduce((sum, row) => sum + row.waiting, 0),
     [now, movements],
@@ -303,6 +308,36 @@ export function CoordinatorScreen() {
   ).length;
   const tierOneInQueue = queue.filter((movement) => movement.urgency === 1).length;
   const dueWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
+
+  // v10 hero: the one ring on the page is statewide occupancy, read from the same ward rows as the
+  // Capacity page's ring so the two pages show one figure, against the sidebar's alert line.
+  const statewideOccupancy = useMemo(() => {
+    const rows = networkWardRows(units, now, bedReleases, admissions, leaveBeds);
+    const beds = rows.reduce((sum, row) => sum + row.unit.beds, 0);
+    const occupied = rows.reduce((sum, row) => sum + row.occupied, 0);
+    return beds > 0 ? (occupied / beds) * 100 : null;
+  }, [units, now, bedReleases, admissions, leaveBeds]);
+  // Checking foot: what this page watched, as counts. Never "All clear".
+  const staleBedCounts = units.filter((unit) => now - unit.allocatable.confirmedAt > BED_COUNT_FRESH_MINUTES).length;
+  const wardsNotReporting = units.filter(
+    (unit) => now - unit.allocatable.confirmedAt > unit.allocatable.staleAfterMinutes,
+  ).length;
+  // "N new since 07:12": the last look, or the start of this shift when there is none yet.
+  const sinceClock = formatInstant(lastLook.changes?.since ?? currentShiftStartInstant(now));
+  const sinceLabel = `new since ${sinceClock}`;
+  const shiftWord = currentShift(now)
+    .name.replace(/ Shift$/u, " shift")
+    .toLowerCase();
+  const heroTitle = (
+    <>
+      <span className={styles.heroNum}>{waitingInEd}</span> waiting, <span className={styles.heroNum}>{bedsReady}</span>{" "}
+      {bedsReady === 1 ? "bed" : "beds"} ready
+    </>
+  );
+  // Phone: Exceptions and New since scroll to their cards under the queue and open them.
+  function revealOnPhone(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   // The four registers: a strip under the hero on desktop (opened from its Exceptions count), and
   // the collapsible "Today's answers" card under the queue on a phone. Only one is ever mounted.
@@ -341,29 +376,59 @@ export function CoordinatorScreen() {
 
         <div className={styles.body} data-testid="ward-coordinator-body">
           <Hero
-            // The phone keeps its own hero; direction A is the desktop's.
-            eyebrow={isPhone ? "State bedflow" : "Statewide · mental health beds"}
-            title={
-              isPhone
-                ? `${openMovements.length} open movements`
-                : `${waitingInEd} waiting for ${bedsReady} ready ${bedsReady === 1 ? "bed" : "beds"}`
+            className={styles.homeHero}
+            // Phone direction A (Josh, 10 Oct 2026): queue first. The same answer as the desktop
+            // title, three figures you can tap, then New since and Pause.
+            eyebrow={isPhone ? `Statewide · ${shiftWord}` : `Statewide · mental health beds · ${shiftWord}`}
+            title={heroTitle}
+            titleMeta={
+              isPhone && statewideOccupancy !== null ? `${statewideOccupancy.toFixed(0)}% of open beds full` : undefined
             }
             stats={
               isPhone ? (
                 <>
-                  <HeroStat value={tierOneOpen} label="Tier 1 open" />
-                  <HeroStat value={bedsReady} label="Beds ready" />
-                  <HeroStat value={waitingInEd} label="Waiting in ED" />
                   <HeroStat
-                    value={breachWithinHour}
-                    label={`Due within ${dueWindow}`}
-                    tone={breachWithinHour > 0 ? "warning" : undefined}
+                    value={overdueInQueue}
+                    label="Overdue"
+                    tone={overdueInQueue > 0 ? "danger" : undefined}
+                    pressed={highlight === "overdue"}
+                    onToggle={() => toggleHighlight("overdue")}
+                  />
+                  <HeroStat
+                    value={tierOneInQueue}
+                    label="Tier 1"
+                    pressed={highlight === "tier1"}
+                    onToggle={() => toggleHighlight("tier1")}
+                  />
+                  <HeroStat
+                    value={actionInbox.length}
+                    label="Exceptions"
+                    tone={actionInbox.length > 0 ? "warning" : undefined}
+                    command
+                    onToggle={() => {
+                      setExceptionsOpen(true);
+                      revealOnPhone("ward-home-phone-registers");
+                    }}
                   />
                 </>
-              ) : undefined
+              ) : (
+                // The one ring on the page. CSS moves it ahead of the title on desktop and tablet.
+                <OccupancyRing percent={statewideOccupancy} alertAt={BED_ALERT_THRESHOLD_PERCENT} scope="Statewide" />
+              )
             }
             bar={
-              isPhone ? undefined : (
+              isPhone ? (
+                <div className={styles.phoneHeroActs}>
+                  <HeroStat
+                    inline
+                    value={newEvents}
+                    label={sinceLabel}
+                    command
+                    onToggle={() => revealOnPhone("ward-home-phone-since")}
+                  />
+                  <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
+                </div>
+              ) : (
                 <div className={styles.heroToggles}>
                   <HeroStat
                     inline
@@ -385,6 +450,7 @@ export function CoordinatorScreen() {
                     value={breachWithinHour}
                     label={`Due within ${dueWindow}`}
                     tone={breachWithinHour > 0 ? "warning" : undefined}
+                    className={styles.heroDueChip}
                   />
                   <HeroStat
                     inline
@@ -412,7 +478,7 @@ export function CoordinatorScreen() {
                 <HeroStat
                   inline
                   value={newEvents}
-                  label="New events"
+                  label={sinceLabel}
                   tone={newEvents > 0 ? "info" : undefined}
                   expanded={heroPanel === "since"}
                   controls="ward-home-hero-panel"
@@ -421,12 +487,41 @@ export function CoordinatorScreen() {
               )
             }
             aside={
-              <>
-                <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
-                <Link href={HANDOVER_HREF} className={buttonClass({ variant: "light" })}>
-                  Start handover
-                </Link>
-              </>
+              isPhone ? undefined : (
+                <>
+                  <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
+                  <Link href={HANDOVER_HREF} className={buttonClass({ variant: "light" })}>
+                    Start handover
+                  </Link>
+                </>
+              )
+            }
+            foot={
+              isPhone ? undefined : (
+                <CheckingFoot
+                  items={[
+                    {
+                      id: "overdue",
+                      label: "Overdue",
+                      value: overdueInQueue,
+                      tone: overdueInQueue > 0 ? "danger" : "neutral",
+                    },
+                    {
+                      id: "stale-counts",
+                      label: "Bed counts older than 1h",
+                      value: staleBedCounts,
+                      tone: staleBedCounts > 0 ? "warning" : "neutral",
+                    },
+                    {
+                      id: "not-reporting",
+                      label: "Wards not reporting",
+                      value: wardsNotReporting,
+                      tone: wardsNotReporting > 0 ? "warning" : "neutral",
+                    },
+                  ]}
+                  notChecked={["private hospitals, no feed"]}
+                />
+              )
             }
           />
 
@@ -479,14 +574,16 @@ export function CoordinatorScreen() {
                 highlight={highlight}
                 onClearHighlight={() => setHighlight(undefined)}
               />
-              {isPhone ? renderRegisters("column") : null}
+              {isPhone ? <div id="ward-home-phone-registers">{renderRegisters("column")}</div> : null}
               {isPhone ? (
-                <SinceLastLookPanel
-                  changes={lastLook.changes}
-                  now={now}
-                  activity={recentActivity}
-                  onMarkSeen={lastLook.markSeen}
-                />
+                <div id="ward-home-phone-since">
+                  <SinceLastLookPanel
+                    changes={lastLook.changes}
+                    now={now}
+                    activity={recentActivity}
+                    onMarkSeen={lastLook.markSeen}
+                  />
+                </div>
               ) : null}
             </div>
 

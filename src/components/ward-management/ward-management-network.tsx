@@ -592,6 +592,7 @@ export function WardNetworkWorkspace() {
         title={
           shortfall === undefined ? "Ready beds cover the wait" : `${shortfall.service} short ${-readyGap(shortfall)}`
         }
+        titleMeta={`${readyNow} ready ${readyNow === 1 ? "bed" : "beds"} against ${waitingInEd} waiting in ED`}
         stats={
           <>
             <HeroStat value={waitingInEd} label="Waiting in ED" />

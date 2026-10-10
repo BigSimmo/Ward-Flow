@@ -5,10 +5,21 @@ import Link from "next/link";
 import { LEAVING_DESTINATIONS } from "../ward-admissions";
 
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
-import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import type { DischargeOpenHandle, DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import { FilterChip, Hero, HeroStat, SrOnly, StatusGlyph, buttonClass, type WfTone } from "@/components/wf";
+import {
+  FilterChip,
+  Hero,
+  HeroStat,
+  OccupancyRing,
+  SrOnly,
+  StatusGlyph,
+  buttonClass,
+  durMinutes,
+  type WfTone,
+} from "@/components/wf";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
@@ -188,6 +199,12 @@ export function CapacityScreen() {
   const selectedRow = networkRows.find((row) => row.unit.id === selectedUnitId);
   const totalLockedReady = networkRows.reduce((sum, row) => sum + row.lockedReady, 0);
   const totalOpenReady = netTotals.ready - totalLockedReady;
+  const totalPulled = networkRows.reduce((sum, row) => sum + row.pulled, 0);
+  // The ward whose count is oldest: the hero's jump chip opens it.
+  const oldestCount = networkRows.reduce<NetworkWardRow | undefined>(
+    (oldest, row) => (oldest === undefined || row.confirmedAt < oldest.confirmedAt ? row : oldest),
+    undefined,
+  );
 
   /**
    * ⚠️ **`scopedNetworkRows` IS `networkRows` UNCHANGED WHEN `service` IS `null`.** That equality —
@@ -225,6 +242,7 @@ export function CapacityScreen() {
     { id: "all", label: "All", predicate: () => true },
     { id: "ready", label: "Has a bed ready", predicate: (row) => row.ready > 0 },
     { id: "locked-ready", label: "Has a locked bed ready", predicate: (row) => row.lockedReady > 0 },
+    { id: "open-ready", label: "Has an open bed ready", predicate: (row) => row.ready - row.lockedReady > 0 },
     { id: "needs-confirming", label: "Needs confirming", predicate: (row) => !isConfirmationFresh(row.unit, now) },
   ];
   const activeNetworkFilter = networkFilters.find((option) => option.id === networkFilterId) ?? networkFilters[0];
@@ -311,39 +329,52 @@ export function CapacityScreen() {
         <Hero
           className={styles.capacityHero}
           level={1}
-          eyebrow="Capacity"
+          // v10: the Wards count appears once, here, never as a chip.
+          eyebrow={`Capacity · ${service ?? "Statewide"} · ${networkRows.length} ${networkRows.length === 1 ? "ward" : "wards"} · as at ${formatInstant(now)}`}
           title={
             <>
               <SrOnly>Capacity, </SrOnly>
               {netTotals.ready} beds ready of {netTotals.beds}
             </>
           }
+          titleMeta={netTotals.pendingPreparation ? `${netTotals.pendingPreparation} being made ready` : undefined}
           stats={
+            // v10 Capacity: the one ring on the page, ahead of the title (see .capacityHero).
+            <OccupancyRing
+              percent={netTotals.beds > 0 ? (totalOccupied / netTotals.beds) * 100 : null}
+              alertAt={BED_ALERT_THRESHOLD_PERCENT}
+              scope={service ?? "Statewide"}
+            />
+          }
+          bar={
             <div className={styles.heroStatGroup} role="group" aria-label="Statewide Bed Telemetry">
-              <button
-                type="button"
-                className={styles.heroStatButton}
-                onClick={() => highlightWards("all")}
-                aria-pressed={networkFilterId === "all"}
-                title="Show the ward table and clear highlights"
-              >
-                <HeroStat value={networkRows.length} label="Wards" />
-              </button>
               <HeroStat
-                value={`${netTotals.beds > 0 ? ((totalOccupied / netTotals.beds) * 100).toFixed(1) : "0.0"}%`}
-                label="Occupied"
+                inline
+                value={totalLockedReady}
+                label="Locked ready"
+                pressed={networkFilterId === "locked-ready"}
+                onToggle={() => highlightWards(networkFilterId === "locked-ready" ? "all" : "locked-ready")}
               />
-              <button
-                type="button"
-                className={styles.heroStatButton}
-                onClick={() => highlightWards("locked-ready")}
-                aria-pressed={networkFilterId === "locked-ready"}
-                title="Highlight wards with locked beds ready in the ward table"
-              >
-                <HeroStat value={totalLockedReady} label="Locked ready" />
-              </button>
-              <HeroStat value={totalOpenReady} label="Open ready" />
-              <HeroStat value={netTotals.pendingPreparation ?? 0} label="Being made ready" tone="neutral" />
+              <HeroStat
+                inline
+                value={totalOpenReady}
+                label="Open ready"
+                pressed={networkFilterId === "open-ready"}
+                onToggle={() => highlightWards(networkFilterId === "open-ready" ? "all" : "open-ready")}
+              />
+              <HeroStat inline value={totalPulled} label="Pulled" tone={totalPulled > 0 ? "warning" : undefined} />
+              <HeroStat inline value={freeingTracked ? totalFreeing : "Not tracked"} label="Due out today" />
+              {oldestCount ? (
+                <HeroStat
+                  inline
+                  command
+                  value={durMinutes(Math.max(0, now - oldestCount.confirmedAt))}
+                  label={`Oldest count, ${oldestCount.unit.name}`}
+                  tone={isConfirmationFresh(oldestCount.unit, now) ? undefined : "warning"}
+                  onToggle={() => selectWard(oldestCount.unit.id)}
+                  className={styles.heroJump}
+                />
+              ) : null}
             </div>
           }
           aside={

@@ -188,7 +188,7 @@
 
 .ganttScrubLabel {
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -359,7 +359,7 @@
   border-right: 1px solid var(--wf-line);
   background: var(--wf-surface);
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -379,7 +379,7 @@
   padding: 6px var(--wf-s-2);
   border-right: 1px solid var(--wf-line);
   color: var(--wf-ink-2);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   font-variant-numeric: tabular-nums;
 }
 
@@ -470,7 +470,7 @@
   border-radius: var(--wf-r-xs);
   background: var(--wf-pri-1);
   color: var(--wf-on-accent);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -514,7 +514,7 @@
 
 .ganttSvcTag {
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -778,7 +778,7 @@
   border-radius: var(--wf-r-pill);
   background: var(--wf-surface-2);
   color: var(--wf-ink-2);
-  font: 500 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-mono);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
