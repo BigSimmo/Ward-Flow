@@ -162,6 +162,14 @@
   overflow: auto;
 }
 
+/* Desktop: the A to Z card is a rail, so the list fills the card and scrolls inside it instead of
+   stopping at a fixed 46rem (ward-shell.module.css, data-wf-rail). */
+@media (min-width: 62.5625rem) {
+  .listWrap {
+    max-height: none;
+  }
+}
+
 .listWrap:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
