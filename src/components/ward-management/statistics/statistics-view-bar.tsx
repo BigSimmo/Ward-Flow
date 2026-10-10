@@ -16,8 +16,11 @@ const VIEWS: ReadonlyArray<{ id: StatisticsView; icon: LucideIcon; label: string
 ];
 
 function viewFromHash(hash: string): StatisticsView {
+  // A card inside a view (#journey-stages, #map-rank) opens that view too.
   const id = hash.replace(/^#/, "");
-  return id === "journey" || id === "map" ? id : "board";
+  if (id === "journey" || id.startsWith("journey-")) return "journey";
+  if (id === "map" || id.startsWith("map-")) return "map";
+  return "board";
 }
 
 /**

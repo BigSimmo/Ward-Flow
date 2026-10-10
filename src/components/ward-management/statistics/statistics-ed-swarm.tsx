@@ -17,6 +17,8 @@ const RADIUS = 5;
 const SPACING = RADIUS * 2 + 3;
 const LANE = RADIUS * 2 + 2;
 const MIN_ROW = 44;
+/** A row never grows past seven lanes: a crowded row packs its lanes closer instead. */
+const MAX_LANES = 7;
 const ROW_PAD = 10;
 const AXIS_H = 24;
 
@@ -106,7 +108,9 @@ export function StatisticsEdSwarm({
     const sized = rows.map((row) => {
       const marks = pack(row.entries, toX);
       const reach = marks.reduce((most, mark) => Math.max(most, Math.abs(mark.lane)), 0);
-      return { row, marks, height: Math.max(MIN_ROW, (reach * 2 + 1) * LANE + ROW_PAD * 2) };
+      const lanes = reach * 2 + 1;
+      const step = lanes > MAX_LANES ? (MAX_LANES * LANE) / lanes : LANE;
+      return { row, marks, step, height: Math.max(MIN_ROW, Math.min(lanes, MAX_LANES) * LANE + ROW_PAD * 2) };
     });
     return sized.map((item, index) => {
       const top = sized.slice(0, index).reduce((sum, above) => sum + above.height, 0);
@@ -138,7 +142,7 @@ export function StatisticsEdSwarm({
               </g>
             );
           })}
-          {laid.map(({ row, marks, top, mid, median: middle }, index) => (
+          {laid.map(({ row, marks, step, top, mid, median: middle }, index) => (
             <g key={row.id}>
               {index > 0 ? <line x1={0} x2={width} y1={top} y2={top} className={styles.rowLine} /> : null}
               <text x={0} y={mid + 4} className={styles.name}>
@@ -148,7 +152,7 @@ export function StatisticsEdSwarm({
                 <line x1={toX(middle)} x2={toX(middle)} y1={mid - 12} y2={mid + 12} className={styles.median} />
               ) : null}
               {marks.map(({ x, lane, entry }) => {
-                const cy = mid + lane * LANE;
+                const cy = mid + lane * step;
                 const over48 = entry.waitMinutes >= VERY_LONG_WAIT_MINUTES;
                 const over24 = entry.waitMinutes >= LONG_WAIT_MINUTES;
                 const placed = entry.movement.acceptedUnitId !== undefined;

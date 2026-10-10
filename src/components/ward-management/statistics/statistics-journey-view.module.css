@@ -1,0 +1,519 @@
+/*
+ * Summary, Journey view (direction A): the ribbon, the stage band, then "Where is a bed" beside
+ * "Who is waiting". Tokens only. Phone changes sit under max-width: 48rem and never touch desktop.
+ */
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.view [id] {
+  scroll-margin-top: var(--wf-s-4);
+}
+
+.aside {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* ── Ribbon ─────────────────────────────────────────────────────────────── */
+
+.ribbonBody {
+  padding-top: var(--wf-s-4);
+  padding-bottom: var(--wf-s-2);
+}
+
+.ribbonScroll {
+  min-width: 0;
+}
+
+.ribbon {
+  position: relative;
+  margin: 0 var(--wf-s-2);
+}
+
+.bands {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.bands path {
+  fill: color-mix(in srgb, var(--wf-accent) 14%, transparent);
+}
+
+.nodes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nodeSlot {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.node {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--wf-r-lg);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  cursor: pointer;
+}
+
+.node:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.nodeBox {
+  position: absolute;
+  top: var(--node-top);
+  left: 50%;
+  width: var(--node-w);
+  height: var(--node-h);
+  box-sizing: border-box;
+  transform: translateX(-50%);
+  border: 1.5px solid var(--wf-accent);
+  border-radius: min(18px, calc(var(--node-h) / 2));
+  background: color-mix(in srgb, var(--wf-accent) 20%, var(--wf-surface));
+  transition: background var(--wf-m-fast) var(--wf-ease);
+}
+
+.node:hover .nodeBox {
+  background: var(--wf-accent-tint);
+}
+
+.nodeOn .nodeBox,
+.nodeOn:hover .nodeBox {
+  background: var(--wf-accent);
+}
+
+.nodeCount {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--node-top) - 34px);
+  font: 600 var(--wf-fs-28) / 30px var(--wf-mono);
+  letter-spacing: -0.02em;
+  text-align: center;
+  color: var(--wf-ink-1);
+}
+
+.nodeLabel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--node-top) + var(--node-h) + 8px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 5px;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: center;
+  color: var(--wf-ink-2);
+}
+
+.nodeLabel svg {
+  flex: none;
+  margin-top: 4px;
+}
+
+.nodeOn .nodeLabel {
+  color: var(--wf-ink-1);
+}
+
+/* ── Stage band ─────────────────────────────────────────────────────────── */
+
+.band {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  scroll-margin: var(--wf-s-4);
+  transition:
+    background var(--wf-m-fast) var(--wf-ease),
+    border-color var(--wf-m-fast) var(--wf-ease);
+}
+
+.stageOn {
+  border-color: var(--wf-accent);
+  background: var(--wf-selected);
+}
+
+.stageHead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stageLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.stageLabel svg {
+  flex: none;
+}
+
+.stageFigure {
+  margin: 0;
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+.stageCaption {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  margin: auto 0 0;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+
+.breakdownRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: 2px 0;
+}
+
+.breakdownRow dt {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.breakdownRow dd {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+/* ── Where is a bed ─────────────────────────────────────────────────────── */
+
+.bedsBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.bedsKey {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.lineKey {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--wf-mono);
+}
+
+.lineSwatch {
+  width: 0;
+  height: 12px;
+  border-left: 1.5px dashed var(--wf-ink-2);
+}
+
+.hospitals {
+  min-width: 0;
+}
+
+.hospitalHead,
+.hospitalRow {
+  display: grid;
+  grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr) 3.25rem;
+  align-items: center;
+  column-gap: var(--wf-s-3);
+}
+
+.hospitalHead {
+  padding: 0 var(--wf-s-2) var(--wf-s-1);
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.ticks {
+  position: relative;
+  height: 1em;
+  font-family: var(--wf-mono);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.ticks span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.ticks span:first-child {
+  transform: none;
+}
+
+.ticks span:last-child {
+  transform: translateX(-100%);
+}
+
+.readyHead {
+  text-align: right;
+}
+
+.hospitalList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hospitalRow {
+  width: 100%;
+  min-height: 40px;
+  padding: 4px var(--wf-s-2);
+  border: 0;
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hospitalList li:last-child .hospitalRow {
+  border-bottom: 0;
+}
+
+.hospitalRow:hover {
+  background: var(--wf-hover);
+}
+
+.hospitalRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.hospitalName {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hospitalName strong,
+.hospitalName small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hospitalName strong {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.hospitalName small {
+  font-size: var(--wf-fs-11);
+  color: var(--wf-ink-3);
+}
+
+.barArea {
+  position: relative;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  min-width: 0;
+}
+
+.guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--wf-line);
+}
+
+.alertMark {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-left: 1.5px dashed var(--wf-ink-2);
+}
+
+.bar {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+
+.bar > span {
+  display: block;
+  flex: 0 0 auto;
+  height: 100%;
+}
+
+.occupied {
+  background: var(--wf-data-3);
+}
+
+.pulled {
+  background: repeating-linear-gradient(135deg, var(--wf-data-2) 0 2px, var(--wf-track) 2px 4px);
+}
+
+.closed {
+  background: var(--wf-data-2);
+}
+
+.ready {
+  background: var(--wf-data-1);
+}
+
+.readyCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+}
+
+.empty {
+  margin: 0;
+  color: var(--wf-ink-3);
+}
+
+/* Narrower desktops keep seven columns with tighter padding. */
+@media (max-width: 90rem) {
+  .stage {
+    padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) var(--wf-s-2);
+  }
+}
+
+/* Between phone and wide desktop the seven stages wrap to four a row. */
+@media (max-width: 75rem) {
+  .band {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* ── Phone ──────────────────────────────────────────────────────────────── */
+@media (max-width: 48rem) {
+  /* The ribbon keeps its shape and scrolls sideways inside its card. */
+  .ribbonScroll {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    margin: 0 calc(var(--wf-s-3) * -1);
+    padding: 0 var(--wf-s-3);
+  }
+
+  .ribbon {
+    min-width: 40rem;
+  }
+
+  .nodeLabel {
+    font-size: var(--wf-fs-12);
+  }
+
+  /* The card header keeps its title; the hint is the stage band itself on a phone. */
+  .aside {
+    display: none;
+  }
+
+  /* One stage per row: the figure on the left, its breakdown on the right. */
+  .band {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    align-items: start;
+    gap: var(--wf-s-3);
+  }
+
+  .breakdown {
+    margin: 0;
+    padding: 0 0 0 var(--wf-s-3);
+    border-top: 0;
+    border-left: 1px solid var(--wf-line);
+  }
+
+  .hospitalHead,
+  .hospitalRow {
+    grid-template-columns: minmax(6rem, 8.5rem) minmax(0, 1fr) 2.75rem;
+    column-gap: var(--wf-s-2);
+  }
+
+  .hospitalRow {
+    min-height: var(--spacing-tap, 3rem);
+  }
+}
+
+@media (forced-colors: active) {
+  .bar > span,
+  .nodeBox {
+    forced-color-adjust: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nodeBox,
+  .stage {
+    transition: none;
+  }
+}
