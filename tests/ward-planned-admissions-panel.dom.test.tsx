@@ -82,6 +82,24 @@ describe("planned admissions panel", () => {
     expect(document.body.textContent).not.toMatch(/PA-/);
   });
 
+  it("records a picked gender on an initials-only booking, so a matching single-sex ward takes it", () => {
+    renderPanel();
+    fireEvent.click(screen.getByTestId("ward-planned-book"));
+    // A linked patient's gender is shown from the record, never picked.
+    expect(screen.queryByTestId("ward-planned-gender")).toBeNull();
+    expect(screen.getByTestId("ward-planned-record-gender")).toHaveTextContent(/patient record/);
+    fireEvent.change(screen.getByTestId("ward-planned-who"), { target: { value: "initials" } });
+    expect(screen.queryByTestId("ward-planned-record-gender")).toBeNull();
+    fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "cd" } });
+    fireEvent.change(screen.getByTestId("ward-planned-sex"), { target: { value: "Male" } });
+    fireEvent.change(screen.getByTestId("ward-planned-gender"), { target: { value: "Male" } });
+    fireEvent.change(screen.getByTestId("ward-planned-unit"), { target: { value: "fsh-adult-secure" } });
+    fireEvent.click(screen.getByTestId("ward-planned-submit"));
+    fireEvent.click(within(screen.getByTestId("ward-planned-PA-01")).getByRole("button", { name: "Arrived" }));
+    expect(screen.queryByTestId("ward-planned-refusal")).toBeNull();
+    expect(screen.queryByTestId("ward-planned-PA-01")).toBeNull();
+  });
+
   it("names the person on the overdue row in Alerts, never the booking id", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

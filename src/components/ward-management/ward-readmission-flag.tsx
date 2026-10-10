@@ -1,8 +1,10 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { StatusGlyph } from "@/components/wf";
+import { canSeeReadmissionFlag, wardChromeRole } from "./ward-chrome-role";
 import { useWardFlow } from "./ward-flow-provider";
 import { READMISSION_WINDOW_DAYS, type ReadmissionFlag as ReadmissionFlagValue } from "./ward-readmission";
 
@@ -21,7 +23,27 @@ export function readmissionDetailText(flag: ReadmissionFlagValue, dayZero: Date)
 }
 
 /**
- * Compact 28 day readmission flag. The prior discharge date and ward show on hover (`title`) and,
+ * The ED index (`/mockups/ward-flow/ed`, every emergency department listed). `wardChromeRole`
+ * deliberately gives it the coordinator's chrome, as All wards has: only `/ed/[edId]` is an ED
+ * desk, and the header, desk, nav counts, search and role switcher all read that answer. It is
+ * still an ED screen, so the flag is hidden there here rather than by changing the chrome role.
+ */
+const ED_INDEX_PATH = /\/ward-flow\/ed\/?$/u;
+
+/** Whether the flag shows on this route: the coordinator's routes only, never the ED index. */
+export function readmissionFlagVisibleOn(pathname: string): boolean {
+  if (ED_INDEX_PATH.test(pathname)) return false;
+  return canSeeReadmissionFlag(wardChromeRole(pathname));
+}
+
+/** Whether this route's role sees the flag: the coordinator only (`canSeeReadmissionFlag`). */
+export function useReadmissionFlagVisible(): boolean {
+  return readmissionFlagVisibleOn(usePathname() ?? "");
+}
+
+/**
+ * Compact 28 day readmission flag. Shown on the coordinator's screens only (Josh, 9 October 2026);
+ * on any other role's route it renders nothing, wherever it is placed. The prior discharge date and ward show on hover (`title`) and,
  * where `expandable`, on pressing the flag. Inside another control (a row that is itself a
  * button) pass `expandable={false}`: the detail is then hover text plus screen-reader text.
  */
@@ -36,7 +58,8 @@ export function ReadmissionFlag({
 }) {
   const { dayZero } = useWardFlow();
   const [open, setOpen] = useState(false);
-  if (!flag) return null;
+  const visible = useReadmissionFlagVisible();
+  if (!flag || !visible) return null;
   const detail = readmissionDetailText(flag, dayZero);
 
   if (!expandable) {

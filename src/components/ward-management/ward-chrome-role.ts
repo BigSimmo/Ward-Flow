@@ -17,14 +17,7 @@
  * decides which figures are worth showing; it must never be the thing standing between somebody and
  * an action.
  */
-export type WardChromeRole =
-  | "coordinator"
-  | "ward"
-  | "ed"
-  | "officer"
-  | "community"
-  | "bed_manager"
-  | "executive";
+export type WardChromeRole = "coordinator" | "ward" | "ed" | "officer" | "community" | "bed_manager" | "executive";
 
 /** Where the ward-scoped routes live, so the mapping is not a guess about URL shapes. */
 const WARD_SEGMENTS = ["/ward/", "/board/"];
@@ -89,6 +82,15 @@ export function noticeIsMarkableByChrome(
 /** The global action inbox is coordinator-owned in EVENT_ROLE. Other route roles may read their
  * own Activity notices, but must not dispatch coordinator task actions under a borrowed identity. */
 export function wardTasksAreActionableForRole(role: WardChromeRole): role is "coordinator" {
+  return role === "coordinator";
+}
+
+/**
+ * Whether this route's role is shown the 28 day readmission flag (`ward-readmission-flag.tsx`).
+ * Coordinator only (Josh, 9 October 2026); every other role's screens hide it. Like the other
+ * helpers here, a display rule read from the route, never a permission.
+ */
+export function canSeeReadmissionFlag(role: WardChromeRole): boolean {
   return role === "coordinator";
 }
 
