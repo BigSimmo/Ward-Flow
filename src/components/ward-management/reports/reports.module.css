@@ -27,11 +27,12 @@
   align-items: start;
 }
 
+/* Cards side by side end on one line, so a short card never leaves a blank band beside a taller one. */
 .grid3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--wf-s-3);
-  align-items: start;
+  align-items: stretch;
 }
 
 .controls {

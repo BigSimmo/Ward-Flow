@@ -1,4 +1,5 @@
-/* v6 badge (`.bd`): neutral body, coloured glyph. The text carries the meaning. */
+/* Badge (`.bd`): neutral body, coloured glyph. The text carries the meaning. Counts are tabular
+   sans and ids are mono (v9). */
 
 .bd {
   display: inline-flex;
@@ -33,7 +34,7 @@
 
 .sm {
   height: 20px;
-  font-size: var(--wf-fs-11);
+  font-size: var(--wf-fs-12);
   padding: 0 6px;
 }
 
@@ -68,14 +69,12 @@
 }
 
 .n {
-  font-family: var(--wf-mono);
-  font-feature-settings:
-    "zero" 1,
-    "tnum" 1;
+  font-variant-numeric: tabular-nums;
   padding-left: 6px;
   margin-left: 1px;
   border-left: 1px solid var(--wf-line-2);
   color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
 }
 
 .solid .n,
