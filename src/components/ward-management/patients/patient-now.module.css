@@ -5199,3 +5199,43 @@
     min-height: var(--wf-touch, 44px);
   }
 }
+
+/* v10: the Journey strip under the stages, sized by real duration (bed wait hatched). */
+.v6Journey {
+  min-width: 0;
+}
+
+.v6PhoneMore {
+  display: none;
+}
+
+/* v10 phone: the record tabs become a 44px segmented control (Now, History, Forms). */
+@media (max-width: 48rem) {
+  .v6HeroTabsRow {
+    flex-wrap: wrap;
+  }
+
+  .v6Tabs {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .v6Tab {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    height: var(--wf-touch, 44px);
+  }
+
+  .v6PhoneMore {
+    display: flex;
+    gap: var(--wf-s-1);
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  .v6PhoneMore > * {
+    min-height: var(--wf-touch, 44px);
+  }
+}

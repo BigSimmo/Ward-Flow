@@ -28,6 +28,7 @@ export function PatientFlightHeader({
   location,
   facts,
   steps,
+  journey,
   tabs,
   actions,
 }: {
@@ -47,6 +48,8 @@ export function PatientFlightHeader({
   facts?: ReactNode;
   /** The seven stages, only while the movement is live. */
   steps?: ReactNode;
+  /** v10: the Journey strip, sized by real duration, under the stages. */
+  journey?: ReactNode;
   tabs: ReactNode;
   actions?: ReactNode;
 }) {
@@ -106,6 +109,7 @@ export function PatientFlightHeader({
             {idLine}
             {facts}
             {steps}
+            {journey}
           </div>
         }
       />
