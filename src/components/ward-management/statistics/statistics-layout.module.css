@@ -36,8 +36,7 @@
   min-width: 0;
 }
 
-.row > [data-ward-primitive="panel"],
-.row > .stack > [data-ward-primitive="panel"]:last-child {
+.row > [data-ward-primitive="panel"] {
   height: 100%;
   box-sizing: border-box;
 }
