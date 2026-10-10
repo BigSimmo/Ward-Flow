@@ -641,8 +641,13 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
     await page.goto("/mockups/ward-flow/delays", { waitUntil: "load" });
     await expect(page.getByRole("searchbox", { name: "Find a person or ED" })).toBeEnabled();
     const first = page.getByTestId(/^delays-select-/u).first();
-    await first.click();
-    await expect(first).toHaveAttribute("aria-expanded", "true");
+    // The searchbox is enabled in the server HTML too, so it does not prove React has hydrated. A
+    // click before hydration does nothing, so press again until the person opens (never press an
+    // open row, which would close it).
+    await expect(async () => {
+      if ((await first.getAttribute("aria-expanded")) !== "true") await first.click();
+      await expect(first).toHaveAttribute("aria-expanded", "true", { timeout: 2_000 });
+    }, "the first Delays row never opened").toPass({ timeout: 20_000 });
     const waiting = page.getByRole("region", { name: "Waiting", exact: true });
     const sizes = {
       "delays-cause": 13,
