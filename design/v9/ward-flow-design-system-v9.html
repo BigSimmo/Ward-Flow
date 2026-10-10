@@ -2810,6 +2810,7 @@
               b.addEventListener("click", () => {
                 ready[+b.dataset.i].ok = true;
                 drawReady();
+                ($("readyRows").querySelector('[data-state="todo"]') || $("sendBtn")).focus();
               }),
             );
         }
@@ -2880,7 +2881,7 @@
         $("resetBtn").addEventListener("click", () => {
           vi = savedI;
           drawRule();
-          $("stV").focus();
+          $("stMinus").focus();
         });
         document.querySelector(".range .saved").style.left = ((45 - 15) / 105) * 100 + "%";
 
@@ -2920,6 +2921,12 @@
                   drawTriage();
                   const n = document.querySelector(`[data-col="done"] [data-i="${i}"]`);
                   if (n) n.classList.add("enter");
+                  const next = $("triage").querySelector(".chk:not([disabled])");
+                  if (next) next.focus();
+                  else if (n) {
+                    n.tabIndex = -1;
+                    n.focus();
+                  }
                 }, 160);
               }),
             );
@@ -2972,12 +2979,13 @@
         addEventListener("resize", placeRef);
 
         // 14. hold
-        let mins = 42;
+        let mins = 10 * 60 + 42;
         let held = false;
         setInterval(() => {
           if (held || document.hidden) return;
-          mins = (mins + 1) % 60;
-          $("liveClk").textContent = "10:" + String(mins).padStart(2, "0");
+          mins = (mins + 1) % 1440;
+          $("liveClk").textContent =
+            String(Math.floor(mins / 60)).padStart(2, "0") + ":" + String(mins % 60).padStart(2, "0");
           restart($("livePulse"), "tick");
         }, 6000);
         $("holdBtn").addEventListener("click", (e) => {
@@ -3967,6 +3975,7 @@
           picked = null;
           renderWait();
           renderPlan();
+          planEl.querySelector(".bp.placed")?.focus();
           say.textContent = `Placed ${w.name} in bed ${b.no}, ${b.pod.name}. Synthetic, nothing is saved.`;
         }
         renderWait();

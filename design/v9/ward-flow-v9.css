@@ -5210,11 +5210,21 @@ svg.gl {
   border-top: 1px solid var(--wf-line);
 }
 
+/* Timeline marks keep their small face but take a 28px hit area with a mouse (44px on touch, below) */
+.tax .mk::after,
+.crail .mk::after,
+.hrun .mk::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 28px);
+  height: max(100%, 28px);
+  translate: -50% -50%;
+}
+
 /* Touch: every small mark and button reaches 44px through a hit area, never a bigger face */
 @media (pointer: coarse) {
-  .tax .mk,
-  .crail .mk,
-  .hrun .mk,
   .pinc thead button,
   .toast .b,
   .bl button {
@@ -5235,7 +5245,9 @@ svg.gl {
     translate: -50% -50%;
   }
   .menu [role="menuitem"],
-  .ready-row {
+  .ready-row,
+  .ladder button,
+  .gm tbody th button {
     min-height: var(--wf-touch);
   }
   .sw::before {
@@ -5249,7 +5261,7 @@ svg.gl {
 @media (forced-colors: active) {
   .ps button[aria-current="true"],
   .ftiles button[aria-pressed="true"],
-  .gm tr[aria-selected="true"],
+  .gm tbody th button[aria-pressed="true"],
   .bl button[aria-pressed="true"],
   .ladder button[aria-pressed="true"],
   .tax .mk[aria-pressed="true"],
