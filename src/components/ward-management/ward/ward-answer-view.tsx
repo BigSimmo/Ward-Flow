@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { ContextualBackLink } from "@/components/contextual-back-link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
@@ -32,11 +32,13 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 
-import { Hero, buttonClass } from "@/components/wf";
+import { Hero, HeroStat, OccupancyRing, Stepper, buttonClass } from "@/components/wf";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import styles from "./ward-answer-view.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { WardDynamicIsland } from "@/components/ward-management/shell/ward-dynamic-island";
+
+/** The hero ring's alert line. Invented for the prototype (build guide: open for Josh). */
+const ANSWER_ALERT_LINE = 95;
 
 const WARD_GATE_LABELS: Record<EligibilityGate, string> = {
   acuity: "Acuity",
@@ -318,9 +320,9 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
     triggerToast(`Capacity confirmation requested for ${currentUnit.name}.`);
   }
 
-  // Bed matrix cells
-  const occupiedCount = states.occupied;
-  const occupancyPct = Math.round((occupiedCount / Math.max(1, unit.beds)) * 100);
+  // The request waiting longest, for the hero's sub line.
+  const oldestWaiting = [...incoming].sort((left, right) => left.openedAt - right.openedAt)[0];
+
   const activeSpeciallingCount = movements.filter((m) => m.specialling && m.acceptedUnitId === unit.id).length;
 
   return (
@@ -329,114 +331,83 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
         <Hero
           level={1}
           eyebrow={`Ward answer · ${site?.name ?? unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`}
-          title={unit.name}
-          bar={
-            <ContextualBackLink fallbackHref={`/mockups/ward-flow/ward/${unit.id}`} className={styles.backLink}>
-              <ArrowLeft size={14} aria-hidden="true" />
-              <span>Back to Ward Overview</span>
-            </ContextualBackLink>
+          title={
+            incoming.length === 0
+              ? "Nothing to answer"
+              : `${incoming.length} ${incoming.length === 1 ? "request" : "requests"} to answer`
           }
+          stats={
+            <OccupancyRing
+              className={styles.heroRing}
+              percent={unit.beds > 0 ? (states.occupied / unit.beds) * 100 : null}
+              alertAt={ANSWER_ALERT_LINE}
+              scope={unit.name}
+              status={
+                unit.beds > 0 && (states.occupied / unit.beds) * 100 >= ANSWER_ALERT_LINE
+                  ? { tone: "warning", word: `At risk, over ${ANSWER_ALERT_LINE}%` }
+                  : { tone: "success", word: `In use, under ${ANSWER_ALERT_LINE}%` }
+              }
+            />
+          }
+          statsAlign="end"
           aside={
-            <button
-              ref={triggerRef}
-              type="button"
-              className={buttonClass({ variant: "light", size: "sm" })}
-              disabled={!activeMovement}
-              onClick={(e) => {
-                if (activeMovement) {
-                  openerRef.current = e.currentTarget;
-                  setAcceptModalOpen(true);
-                }
-              }}
-            >
-              Accept in Principle (Waitlist)
-            </button>
+            incoming.length > 0 ? (
+              <span className={styles.heroNav} role="group" aria-label="Bed request position">
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "onHero", size: "sm" })}
+                  disabled={activeAnswerIndex === 0}
+                  onClick={() => setAnswerIndex((current) => Math.max(0, current - 1))}
+                >
+                  <ChevronLeft size={14} aria-hidden="true" />
+                  Previous
+                </button>
+                <span className={styles.heroNavPos}>
+                  Request <b>{activeAnswerIndex + 1}</b> of <b>{incoming.length}</b>
+                </span>
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "onHero", size: "sm" })}
+                  disabled={activeAnswerIndex >= incoming.length - 1}
+                  onClick={() => setAnswerIndex((current) => Math.min(incoming.length - 1, current + 1))}
+                >
+                  Next
+                  <ChevronRight size={14} aria-hidden="true" />
+                </button>
+              </span>
+            ) : null
+          }
+          bar={
+            <div className={styles.heroChips} role="group" aria-label={`${unit.name} beds`}>
+              {/* Facts, not filters: the same ruled four as the Census below, plus being made ready. */}
+              <HeroStat inline value={states.occupied} label={BED_STATE_LABELS.occupied} />
+              <HeroStat inline value={states.ready} label={BED_STATE_LABELS.ready} tone="success" />
+              <HeroStat inline value={pendingPreparation} label={BED_STATE_LABELS.beingMadeReady} />
+              <HeroStat inline value={states.pulled} label={BED_STATE_LABELS.pulled} />
+              <HeroStat inline value={states.closed} label={BED_STATE_LABELS.closed} />
+            </div>
+          }
+          foot={
+            <span className={styles.heroFoot}>
+              <ContextualBackLink fallbackHref={`/mockups/ward-flow/ward/${unit.id}`} className={styles.backLink}>
+                <ArrowLeft size={14} aria-hidden="true" />
+                <span>Ward overview</span>
+              </ContextualBackLink>
+              <span className={styles.heroFootMeta}>
+                {unit.name}
+                {oldestWaiting ? (
+                  <>
+                    {" "}
+                    · oldest <b>{elapsedLabel(oldestWaiting, now)}</b>
+                  </>
+                ) : null}
+              </span>
+            </span>
           }
         />
       </div>
 
       <main id="main-content" className={styles.workspace}>
-        {/* Contextual Dynamic HUD Island */}
-        <WardDynamicIsland
-          testId="ward-unit-status-hud"
-          title="Unit Status"
-          status={breakdown.blockedToday > 0 ? "alarm" : capacity.available === 0 ? "warning" : "nominal"}
-          statusText={
-            breakdown.blockedToday > 0
-              ? `${breakdown.blockedToday} blocked beds`
-              : capacity.available === 0
-                ? "Zero ready capacity"
-                : "Nominal operational status"
-          }
-          ariaLabel="Unit status indicators"
-          metrics={[
-            {
-              id: "kpi-occupied",
-              label: "Occupied",
-              value: states.occupied,
-              subtext: `${occupancyPct}%`,
-              tone: "neutral",
-            },
-            {
-              id: "kpi-ready",
-              label: "Ready",
-              value: capacity.available,
-              subtext: `${capacity.available} allocatable`,
-              tone: "good",
-            },
-            {
-              id: "kpi-turnaround",
-              label: "Turnaround",
-              value: pendingPreparation,
-              subtext: pendingPreparation === 1 ? "1 cleaning" : `${pendingPreparation} cleaning`,
-              tone: "warn",
-            },
-            {
-              id: "kpi-blocked",
-              label: "Blocked",
-              value: breakdown.blockedToday,
-              subtext: breakdown.blockedToday > 0 ? `${breakdown.blockedToday} blocked` : undefined,
-              tone: breakdown.blockedToday > 0 ? "critical" : "neutral",
-            },
-          ]}
-        />
-
-        {/* Stepper Bar */}
-        {incoming.length > 0 ? (
-          <div className={styles.stepperBar} aria-label="Bed request position">
-            <div className={styles.stepperInfo}>
-              <strong>
-                Request {activeAnswerIndex + 1} of {incoming.length}
-              </strong>
-              <span>
-                {incoming.length - activeAnswerIndex - 1 === 0
-                  ? "No more requests are waiting behind this one."
-                  : `${incoming.length - activeAnswerIndex - 1} more ${
-                      incoming.length - activeAnswerIndex - 1 === 1 ? "request is" : "requests are"
-                    } waiting behind this one.`}
-              </span>
-            </div>
-            <div className={styles.stepperNav}>
-              <button
-                type="button"
-                className={`${styles.btn} ${styles.btnSm}`}
-                disabled={activeAnswerIndex === 0}
-                onClick={() => setAnswerIndex((current) => Math.max(0, current - 1))}
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                className={`${styles.btn} ${styles.btnSm}`}
-                disabled={activeAnswerIndex >= incoming.length - 1}
-                onClick={() => setAnswerIndex((current) => Math.min(incoming.length - 1, current + 1))}
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        ) : null}
-
         {/* Two-Column Layout Grid */}
         <div className={styles.answerGrid}>
           {/* Left Column: SBAR Clinical Referral Panel */}
@@ -843,7 +814,7 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 <dl className={styles.capacityFacts} aria-label={`Current bed facts for ${unit.name}`}>
                   <div>
                     <dt>Ready now</dt>
-                    <dd>{capacity.available}</dd>
+                    <dd>{states.ready}</dd>
                   </div>
                   <div>
                     <dt>Physically empty</dt>
@@ -865,8 +836,8 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 {pendingPreparation > 0 ? (
                   <p className={styles.bedsPendingPreparation} data-testid="ward-answer-beds-pending">
                     <strong>
-                      {pendingPreparation} of the {capacity.available} ready {capacity.available === 1 ? "bed" : "beds"}{" "}
-                      at {unit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
+                      {pendingPreparation} of the {states.ready} ready {states.ready === 1 ? "bed" : "beds"} at{" "}
+                      {unit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
                     </strong>{" "}
                     The bed stays offered and stays counted — pulling the next patient takes hours anyway — but the ward
                     cannot admit into it yet.
@@ -894,28 +865,25 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
                 </div>
 
                 <form className={styles.capacityForm} onSubmit={submitCapacity} data-testid="ward-capacity-form">
-                  <label className={styles.capacityLabel} htmlFor="ward-capacity-input">
-                    Confirm allocatable beds for {unit.name}
-                  </label>
+                  <span className={styles.capacityLabel} id="ward-capacity-label">
+                    Allocatable now, for {unit.name}
+                  </span>
                   <div className={styles.capacityRow}>
-                    <input
-                      id="ward-capacity-input"
-                      data-testid="ward-capacity-input"
-                      type="number"
+                    {/* v10: one control only, a stepper; no slider and no free number box. */}
+                    <Stepper
+                      value={Number(capacityValue) || 0}
                       min={0}
                       max={unit.beds}
-                      value={capacityValue}
-                      onChange={(event) =>
-                        setCapacityDraft({ unitId, revision: capacityRevision, value: event.target.value })
-                      }
-                      className={styles.capacityInput}
+                      noun="allocatable beds"
+                      valueTestId="ward-capacity-input"
+                      onChange={(next) => setCapacityDraft({ unitId, revision: capacityRevision, value: String(next) })}
                     />
                     <button
                       type="submit"
                       data-testid="ward-capacity-submit"
                       className={`${styles.btn} ${styles.btnPrimary}`}
                     >
-                      Confirm capacity
+                      Confirm
                     </button>
                   </div>
                   <p className={styles.capacityConfirmed}>
@@ -931,12 +899,12 @@ export function WardAnswerView({ unitId }: WardAnswerViewProps) {
               <div className={styles.panelHeader}>
                 <h2 className={styles.panelTitle}>Census</h2>
                 <span className={styles.panelSub}>
-                  {unit.beds} beds · {capacity.available} ready
+                  {unit.beds} beds · {states.ready} ready
                 </span>
               </div>
               {pendingPreparation > 0 ? (
                 <p className={styles.notice}>
-                  {pendingPreparation} of the {capacity.available} ready {capacity.available === 1 ? "bed" : "beds"} at{" "}
+                  {pendingPreparation} of the {states.ready} ready {states.ready === 1 ? "bed" : "beds"} at{" "}
                   {currentUnit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
                 </p>
               ) : null}
