@@ -11,9 +11,12 @@
  * no fetch handler, so it never intercepts or caches pages.
  */
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { settingsHref } from "./ward-facade";
 
 export const PHONE_PUSH_WORKER_URL = "/ward-flow-push-sw.js";
-export const PHONE_PUSH_SCOPE = "/mockups/ward-flow/";
+// Derived from the facade builder so shell/ never types a route path of its own: the worker
+// controls every Ward Flow page, i.e. the directory that holds Settings.
+export const PHONE_PUSH_SCOPE = settingsHref().replace(/[^/]+$/, "");
 
 /** The calls the signed-in shared workspace offers (`SharedWorkspaceClient`). */
 export type PhonePushApi = {
@@ -38,7 +41,10 @@ export type PhonePushState =
   | "off"
   | "on"
   | "busy"
-  | "error";
+  | "error"
+  // The server was not reached but this device still holds a subscription (a failed turn-off),
+  // so the switch stays on and a tap retries the turn-off rather than a turn-on.
+  | "error-on";
 
 const ON_OFF = "New act-now alerts, with Ward Flow closed";
 
@@ -67,6 +73,8 @@ export function phonePushRow(state: PhonePushState): { checked: boolean; unavail
       return unavailable("Updating this device…");
     case "error":
       return { checked: false, unavailable: false, sub: "Server not reached. Try again." };
+    case "error-on":
+      return { checked: true, unavailable: false, sub: "Server not reached. Try again." };
     case "on":
       return { checked: true, unavailable: false, sub: ON_OFF };
     case "off":
@@ -152,7 +160,10 @@ export function usePhonePush(): [PhonePushState, (enabled: boolean) => Promise<P
       try {
         next = enabled ? await turnOn(api) : await turnOff(api);
       } catch {
-        next = "error";
+        // A failed turn-off can leave this device subscribed: keep the switch on so the next tap
+        // retries the turn-off instead of a turn-on.
+        const held = enabled ? null : await currentSubscription().catch(() => null);
+        next = held ? "error-on" : "error";
       }
       setChecked({ api, state: next });
       return next;

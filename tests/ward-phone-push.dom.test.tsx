@@ -58,6 +58,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe("the phone push worker scope", () => {
+  it("covers every Ward Flow page and matches the scope the worker file declares", () => {
+    expect(PHONE_PUSH_SCOPE).toBe("/mockups/ward-flow/");
+  });
+});
+
 describe("phone alerts row", () => {
   it.each(UNAVAILABLE)("%s: greys out with a reason, stays reachable and changes nothing", (state) => {
     const { row, toggle, onPhonePushChange } = alertsPane(state);
@@ -99,7 +105,7 @@ describe("phone alerts row", () => {
   });
 
   it("never shows a Ward Flow id, record number or the word for a patient in any state", () => {
-    for (const state of [...UNAVAILABLE, "off", "on", "error"] as PhonePushState[]) {
+    for (const state of [...UNAVAILABLE, "off", "on", "error", "error-on"] as PhonePushState[]) {
       expect(phonePushRow(state).sub).not.toMatch(/WF-|UMRN|patient/i);
       // One line at 390px wide: the row truncates a longer reason.
       expect(phonePushRow(state).sub.length).toBeLessThanOrEqual(41);
@@ -251,5 +257,26 @@ describe("usePhonePush", () => {
       expect(await result.current[1](true)).toBe("error");
     });
     expect(phonePushRow(result.current[0]).unavailable).toBe(false);
+  });
+
+  it("keeps the switch on after a failed turn-off, so the next tap retries the turn-off", async () => {
+    const browser = installBrowser({ permission: "granted", subscribed: true });
+    const api = fakeApi();
+    api.pushUnsubscribe.mockRejectedValueOnce(new Error("503"));
+    const { result } = hook({ kind: "connected", api });
+    await waitFor(() => expect(result.current[0]).toBe("on"));
+    await act(async () => {
+      expect(await result.current[1](false)).toBe("error-on");
+    });
+    expect(browser.subscription.unsubscribe).not.toHaveBeenCalled();
+    expect(phonePushRow(result.current[0])).toEqual({
+      checked: true,
+      unavailable: false,
+      sub: "Server not reached. Try again.",
+    });
+    await act(async () => {
+      expect(await result.current[1](false)).toBe("off");
+    });
+    expect(browser.subscription.unsubscribe).toHaveBeenCalledTimes(1);
   });
 });
