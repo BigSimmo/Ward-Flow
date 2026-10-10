@@ -494,8 +494,8 @@ supplies Why they're here, Legal now (recorded times only, no lapse times, D5) a
 Now shows the status card, then `patient-transit-operations.tsx` (with `showMetrics={false}`, the
 card already states those facts), the transport booking record and arrival plan in held and transit
 modes, and the context cards. The old gate card, Next step card, facts strip, Live journey rail and
-Clinical overview switch are gone, so `patient-clinical-summary.tsx` and `patient-tracker-facts.tsx`
-are no longer rendered by Patient Now. The status card does not read where else a patient has
+Clinical overview switch are gone. `patient-clinical-summary.tsx` and `patient-tracker-facts.tsx`
+were deleted on 10 October 2026 with Josh's approval. The status card does not read where else a patient has
 stayed (D-14).
 
 **5 October 2026 compact redesign:** `patient-flight-header.tsx` accepts local action controls;

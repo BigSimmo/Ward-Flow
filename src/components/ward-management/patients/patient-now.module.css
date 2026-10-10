@@ -3497,13 +3497,6 @@
 .clearanceModalBox {
   border-radius: 22px;
 }
-.screen:not([data-active-tab="now"]) .journeyBody > [data-patient-tracker-facts] {
-  order: -1;
-  border-top: 0;
-  padding-top: 0;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line);
-}
 
 /* Dossier redesign: a calm identity bar, concise transfer brief, stable tracker. */
 .scroll {
@@ -3849,13 +3842,6 @@
 .journeyBody {
   padding: 11px;
   gap: 10px;
-}
-.journeyBody > [data-patient-tracker-facts],
-.screen:not([data-active-tab="now"]) .journeyBody > [data-patient-tracker-facts] {
-  order: -1;
-  border-top: 0;
-  border-bottom: 1px solid var(--surface-2);
-  padding: 0 0 10px;
 }
 .jrn {
   gap: 0;
@@ -4618,10 +4604,6 @@
 .screen[data-ward-design="v6"] .provenanceSentence {
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
-}
-
-.v6RailCard [data-patient-tracker-facts] {
-  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
 }
 
 /* ── The record and the live journey rail ── */
