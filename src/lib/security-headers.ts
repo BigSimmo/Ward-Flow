@@ -106,8 +106,9 @@ export function buildContentSecurityPolicy({
     // not a configured Sentry integration. Add an external origin only with
     // an explicitly configured integration and its privacy review.
     `connect-src ${["'self'", ...sharedOrigins].join(" ")}; ` +
-    // MSAL renews tokens in a hidden Microsoft sign-in frame once its refresh token lapses.
-    (sharedOrigins.includes(MICROSOFT_SIGN_IN_ORIGIN) ? `frame-src ${MICROSOFT_SIGN_IN_ORIGIN}; ` : "") +
+    // No frame-src for MSAL's hidden renewal frame: it returns to this site, which refuses
+    // framing (frame-ancestors 'none', X-Frame-Options DENY), so once the refresh token lapses
+    // the coordinator signs in again rather than the site allowing itself to be framed.
     "worker-src 'self'; " +
     "manifest-src 'self'; " +
     scriptSrc +

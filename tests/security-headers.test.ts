@@ -165,7 +165,8 @@ describe("security headers", () => {
       expect(directive(csp, "connect-src")).toBe(
         "connect-src 'self' https://wardflow-dev-api-aue.azurewebsites.net https://login.microsoftonline.com",
       );
-      expect(directive(csp, "frame-src")).toBe("frame-src https://login.microsoftonline.com");
+      expect(directive(csp, "frame-src")).toBeUndefined();
+      expect(directive(csp, "frame-ancestors")).toBe("frame-ancestors 'none'");
       expect(directive(csp, "img-src")).toBe("img-src 'self' data: blob:");
     });
 
