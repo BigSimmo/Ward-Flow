@@ -58,7 +58,7 @@ export function queueWaitThresholds(urgency: number): { dueSoon: number; overdue
 }
 
 /** "Soon": a recorded legal form due within the due-soon window, or already past it. */
-function isSoon(movement: Movement, now: Instant) {
+export function isSoon(movement: Movement, now: Instant) {
   const dueAt = movement.legalForm?.dueAt;
   if (dueAt === undefined) return false;
   const state = clockState(dueAt, now);
@@ -98,6 +98,7 @@ type PriorityQueueProps = {
   /** Rows the hero asked to highlight. The others dim; none is hidden or reordered. */
   highlight?: QueueHighlight;
   onClearHighlight?: () => void;
+  onSoonOnlyChange?: (soonOnly: boolean) => void;
 };
 
 /**
@@ -123,6 +124,7 @@ export function PriorityQueue({
   delaysHref = "/mockups/ward-flow/delays",
   highlight,
   onClearHighlight,
+  onSoonOnlyChange,
 }: PriorityQueueProps) {
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   const [activeTab, setActiveTab] = useState<QueueTab>("patients");
@@ -162,7 +164,10 @@ export function PriorityQueue({
         {activeTab === "patients" ? (
           <FilterChip
             pressed={soonOnly}
-            onPressedChange={setSoonOnly}
+            onPressedChange={(pressed) => {
+              setSoonOnly(pressed);
+              onSoonOnlyChange?.(pressed);
+            }}
             tone="warning"
             count={soonCount}
             className={styles.noShrink}

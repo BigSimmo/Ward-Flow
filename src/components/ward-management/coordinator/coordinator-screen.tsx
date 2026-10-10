@@ -30,7 +30,7 @@ import shortlistStyles from "./shortlist-panel.module.css";
 import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
 import { HomeBedflow } from "./home-bedflow";
 import { HomeEdPressure, dueWindowLabel } from "./home-ed-pressure";
-import { PriorityQueue, queueWaitThresholds, type QueueHighlight } from "./priority-queue";
+import { PriorityQueue, isSoon, queueWaitThresholds, type QueueHighlight } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel";
 import { SinceLastLookPanel, sinceLastLookCount, useSinceLastLook } from "./since-last-look-panel";
 
@@ -98,6 +98,7 @@ export function CoordinatorScreen() {
     return restored && isOpen(restored) ? restored.id : undefined;
   });
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>(undefined);
+  const panelMovementIdRef = useRef<string | undefined>(undefined);
   const [selectedEdId, setSelectedEdId] = useState<string | undefined>(undefined);
   // The shortlist's other possible subject. Switching the queue between Patients and Referrals
   // never touches either selection.
@@ -110,6 +111,7 @@ export function CoordinatorScreen() {
   const [registerTab, setRegisterTab] = useState<RegisterTabId>("exceptions");
   // Overdue and Tier 1 on the hero highlight their rows in the queue; the rest dim, nothing hides.
   const [highlight, setHighlight] = useState<QueueHighlight | undefined>(undefined);
+  const [soonOnly, setSoonOnly] = useState(false);
   function toggleHighlight(next: QueueHighlight) {
     setHighlight((current) => (current === next ? undefined : next));
   }
@@ -175,6 +177,7 @@ export function CoordinatorScreen() {
   const scopedFilteredMovements = isInServiceScope ? filteredMovements.filter(isInServiceScope) : filteredMovements;
   const queue = queueOrder(scopedFilteredMovements, now);
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
+  const highlightedQueue = soonOnly ? queue.filter((movement) => isSoon(movement, now)) : queue;
 
   const noRecordedServiceCount = useMemo(() => noRecordedServiceMovementCount(movements, units), [movements, units]);
   const urgentOutsideServiceCount = useMemo(() => {
@@ -202,20 +205,14 @@ export function CoordinatorScreen() {
   // reads as pressed when nobody pressed it. A phone keeps its sheet for a real pick only.
   const previewMovement = !hasPanelSubject && !isPhone ? queue[0] : undefined;
   const panelMovement = selectedMovement ?? previewMovement;
-
-  // A ward choice belongs to the movement it was made for, preview included: when the movement in
-  // Placement changes (a new top of queue, an ED or service filter), the ward choice goes.
-  const panelMovementId = panelMovement?.id;
-  const [unitOwnerId, setUnitOwnerId] = useState(panelMovementId);
-  if (unitOwnerId !== panelMovementId) {
-    setUnitOwnerId(panelMovementId);
-    setSelectedUnitId(undefined);
+  // A ward choice is scoped to the effective placement subject, including an unselected preview.
+  if (panelMovementIdRef.current !== panelMovement?.id) {
+    panelMovementIdRef.current = panelMovement?.id;
+    if (selectedUnitId !== undefined) setSelectedUnitId(undefined);
   }
-  // Picking a ward for the previewed patient selects that patient, so the choice cannot drift onto
-  // whoever reaches the top of the queue next.
-  function pickUnit(unitId: string | undefined) {
+
+  function promotePreview() {
     if (previewMovement) selectMovement(previewMovement.id);
-    setSelectedUnitId(unitId);
   }
 
   function closeShortlist() {
@@ -289,6 +286,7 @@ export function CoordinatorScreen() {
     [movements, units, referrals, bedReleases, leaveBeds, now],
   );
   const tierOneOpen = openMovements.filter((movement) => movement.urgency === 1).length;
+  const tierOneQueue = highlightedQueue.filter((movement) => movement.urgency === 1).length;
   const waitingInEd = useMemo(
     () => edPressure(now, movements).reduce((sum, row) => sum + row.waiting, 0),
     [now, movements],
@@ -297,7 +295,7 @@ export function CoordinatorScreen() {
     (movement) => movement.legalForm?.dueAt !== undefined && clockState(movement.legalForm.dueAt, now) === "critical",
   ).length;
   const bedsReady = counts.capacity?.value ?? 0;
-  const overdueOpen = openMovements.filter(
+  const overdueOpen = highlightedQueue.filter(
     (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
   ).length;
   const dueWindow = dueWindowLabel(configuration.dueSoonUrgentMinutes);
@@ -373,7 +371,7 @@ export function CoordinatorScreen() {
                   />
                   <HeroStat
                     inline
-                    value={tierOneOpen}
+                    value={tierOneQueue}
                     label="Tier 1"
                     pressed={highlight === "tier1"}
                     onToggle={() => toggleHighlight("tier1")}
@@ -476,6 +474,7 @@ export function CoordinatorScreen() {
                 delaysHref={DELAYS_HREF}
                 highlight={highlight}
                 onClearHighlight={() => setHighlight(undefined)}
+                onSoonOnlyChange={setSoonOnly}
               />
               {isPhone ? renderRegisters("column") : null}
               {isPhone ? (
@@ -498,8 +497,8 @@ export function CoordinatorScreen() {
                 admissions={admissions}
                 now={now}
                 selectedUnitId={selectedUnitId}
-                onSelectUnit={(unitId) => pickUnit(selectedUnitId === unitId ? undefined : unitId)}
-                onOffer={(unitId) => pickUnit(unitId)}
+                onSelectUnit={(unitId) => setSelectedUnitId((current) => (current === unitId ? undefined : unitId))}
+                onOffer={(unitId) => setSelectedUnitId(unitId)}
                 parallelReferralCap={configuration.parallelReferralCap}
                 dischargesHeldUp={counts.discharges?.value ?? 0}
                 service={service}
@@ -520,6 +519,8 @@ export function CoordinatorScreen() {
                   <aside
                     className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
                     aria-label={selectedReferral ? "Referral placement" : "Placement"}
+                    onFocusCapture={promotePreview}
+                    onPointerDown={promotePreview}
                     // Journeys prove which movement the panel is for by this attribute.
                     data-subject-movement={selectedReferral ? undefined : panelMovement?.id}
                   >
@@ -558,7 +559,7 @@ export function CoordinatorScreen() {
                         admissions={admissions}
                         referrals={referrals}
                         selectedUnitId={selectedUnitId}
-                        onSelectUnit={pickUnit}
+                        onSelectUnit={setSelectedUnitId}
                         dispatch={dispatch}
                         parallelReferralCap={configuration.parallelReferralCap}
                         pullHoldMinutes={configuration.pullHoldMinutes}
