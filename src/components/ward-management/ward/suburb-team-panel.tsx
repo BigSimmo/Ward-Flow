@@ -16,7 +16,7 @@ import styles from "./ward.module.css";
  * Task A3's lookup half, built from `ward-third-edition.html`'s *Where to refer* panel.
  *
  * ⚠️ **THE HEADING IS NOT THE DRAWING'S.** Owner ruling: *"Where to refer"* is already rendered by
- * `referrals/referral-intake.tsx` for a different thing — the destination-kind picker, which is about
+ * the referral form (`referrals/referral-intake.tsx` then, retired 8 Oct 2026) for a different thing — the destination-kind picker, which is about
  * the ACT of referring. **One phrase over two meanings on two screens is the defect this project has
  * ruled on repeatedly**, and the established use wins. This panel is named for the question it
  * answers.

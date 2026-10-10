@@ -113,7 +113,7 @@ type WardFlowContextValue = {
   /** Task 5 (Phase 7, "The front door"): the referral board and match view need every front-door
    *  referral, live from reducer state — the same reasoning `bedReleases`/`leaveBeds` below
    *  already document for their own collections. Previously omitted: the intake form's own
-   *  success banner (`referral-intake.tsx`) could not echo the referral it had just raised,
+   *  success banner (since retired; the referral slide-out replaced it) could not echo the referral it had just raised,
    *  because nothing on this context carried it. */
   referrals: Referral[];
   /** A recipient projection; other wards and their answers never leave this selector. */

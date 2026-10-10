@@ -1806,9 +1806,9 @@ describe("the patient link is a pointer, and the guard still refuses everything 
   /**
    * ⚠️ THE THIRD STATE, ASSERTED AGAINST THE REDUCER ITSELF, NOT THROUGH THE SCREEN.
    *
-   * `referral-intake.tsx` now refuses at load — before a clinician answers a single question —
-   * when the `?patientId=` in the URL names nobody, so this exact reducer guard is no longer
-   * reachable through ordinary use of that screen. An unreachable guard is exactly what somebody
+   * The referral slide-out ignores a `?patientId=` that names nobody (`referral-sheet-link.ts`,
+   * checked against the record before use), so this exact reducer guard is not reachable through
+   * ordinary use of that screen. An unreachable guard is exactly what somebody
    * deletes six months later after grepping for callers, so this test dispatches
    * `RECEIVE_REFERRAL` directly with an id naming nobody and proves the rejection independently of
    * the UI that now stands in front of it. See `tests/ward-referral-destinations.dom.test.tsx`'s

@@ -321,8 +321,8 @@ const NO_SECURITY_VALUE = "";
 const NO_SEX_VALUE = "";
 /**
  * T11 (item 8): the gender picker's "not yet answered" sentinel, distinct from
- * `GENDER_NOT_RECORDED_VALUE` immediately below — the same split `referral-intake.tsx`'s
- * `UNANSWERED_VALUE`/`NOT_RECORDED_VALUE` pair makes, restated here in this file's own
+ * `GENDER_NOT_RECORDED_VALUE` immediately below — the same split the retired intake form's
+ * `UNANSWERED_VALUE`/`NOT_RECORDED_VALUE` pair made, restated here in this file's own
  * `undefined`-sentinel convention rather than borrowing that file's string one.
  */
 const NO_GENDER_VALUE = "";
@@ -450,7 +450,7 @@ type ReferralDraftState = {
  *
  * `undefined` is this file's own sentinel for "not yet answered" — the same choice `declineDraft`
  * (`useState<ReferralDeclineReason | undefined>(undefined)` below) already makes — rather than
- * `referral-intake.tsx`'s string sentinel (`UNANSWERED_VALUE`). Two spellings of "unanswered" in
+ * the retired intake form's string sentinel (`UNANSWERED_VALUE`). Two spellings of "unanswered" in
  * one codebase is how a future check ends up looking for the wrong one; this file keeps the one
  * already living here. `referralDraftBlockedReason` below is what the submit control and
  * `submitReferral`'s own guard both read to find out whether that is still true.
@@ -1412,7 +1412,7 @@ export function EdScreen({ edId }: EdScreenProps) {
    *
    * ⚠️ **WHY IT IS SCOPED TO THE ROW.** `dispatch` never reports whether the reducer accepted, so
    * the only way to know is to compare `rejections` before and after — the same
-   * `checkToken`/`priorRejectionCountRef` pair `referral-match.tsx` and `referral-intake.tsx` use.
+   * `checkToken`/`priorRejectionCountRef` pair `referral-match.tsx` uses.
    * **What does NOT port from `referral-match.tsx` is holding one `lastRejection` for the whole
    * component.** That is safe there only because that screen renders exactly ONE referral. This is
    * a LIST, so an unscoped refusal would be displayed against whichever row happened to render it.
