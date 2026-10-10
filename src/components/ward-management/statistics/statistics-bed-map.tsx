@@ -207,6 +207,13 @@ export function StatisticsBedMap({ map, wardName }: { map: BedMap; wardName: str
           </li>
         ))}
       </ol>
+      <SrOnly>
+        <span aria-label={`${wardName} individual bed details`}>
+          {cells.map((entry, index) => (
+            <span key={index} tabIndex={0}>{`Bed ${index + 1}: ${cellTitle(entry)}. `}</span>
+          ))}
+        </span>
+      </SrOnly>
       <p className={styles.note}>
         Grouped by state. Bed numbers are not recorded; hover a bed for its admission number.
         {unplacedRecords > 0
