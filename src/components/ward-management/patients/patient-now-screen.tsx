@@ -31,6 +31,8 @@ import { pullHoldRemainingLabel } from "@/components/ward-management/ward-board-
 import { resolvePatientNowRecord } from "./patient-now-adapter";
 import { PATIENT_MODES, patientMode } from "./patient-mode";
 import { PatientStatusCard, type PatientStatusContext } from "./patient-status-card";
+import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import {
   PatientContactsCard,
@@ -173,6 +175,10 @@ export function PatientNowScreen({
   }
 
   const [activeTab, setActiveTab] = useState<TabKey>(initialTaskAction === "contact" ? "community" : "now");
+  // The ward's change form on Now (leave, discharge date) and where its last attempt started, so a
+  // refusal from the engine shows beside the form that caused it.
+  const [wardForm, setWardForm] = useState<WardChangeForm>("none");
+  const [wardAttemptStart, setWardAttemptStart] = useState<number>();
   const operationsRef = useRef<HTMLDivElement | null>(null);
   // The placement work sits on Now in every placement mode, so opening it only moves focus there.
   function openOperations() {
@@ -296,7 +302,7 @@ export function PatientNowScreen({
   const modeMeta = PATIENT_MODES[mode];
   const isLiveBedflow = modeMeta.placing;
   // A movement's forms are the authority in force only while it is open or its stay is current.
-  const stayCurrent = mode === "ward" || mode === "leave" || mode === "awol";
+  const stayCurrent = mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed";
   const movementInForce = Boolean(
     liveMovement &&
     mode !== "idle" &&
@@ -453,9 +459,11 @@ export function PatientNowScreen({
           ? `On leave from ${stayUnit?.name ?? "the ward"}`
           : mode === "awol"
             ? `Missing from ${stayUnit?.name ?? "the ward"}`
-            : mode === "ward"
-              ? (stayUnit?.name ?? acceptingUnit?.name)
-              : livePatient?.suburb;
+            : mode === "ed"
+              ? `At ED from ${stayUnit?.name ?? "the ward"}`
+              : mode === "ward"
+                ? (stayUnit?.name ?? acceptingUnit?.name)
+                : livePatient?.suburb;
   const stayArrivedAt = resolved.liveAdmission?.arrivedAt;
   const stayDay =
     stayArrivedAt !== undefined && stayArrivedAt !== null
@@ -493,6 +501,74 @@ export function PatientNowScreen({
         actingUnitId: stay.unitId,
       });
   }
+  // Leave, gone to ED and the discharge date, from the change card. Each remembers where the
+  // rejection list stood, so the card can say when the engine refused.
+  function recordLeave(expectedReturn: number, kind: LeaveKind) {
+    const stay = resolved?.liveAdmission;
+    if (!stay || !gate("RECORD_LEAVE_BED").allowed) return;
+    setWardAttemptStart(rejections.length);
+    dispatch({
+      type: "RECORD_LEAVE_BED",
+      role: "ward",
+      now,
+      unitId: stay.unitId,
+      actingUnitId: stay.unitId,
+      admissionId: stay.id,
+      expectedReturn,
+      kind,
+    });
+    setWardForm("none");
+  }
+  function goneToEd() {
+    const stay = resolved?.liveAdmission;
+    if (!stay || !gate("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT").allowed) return;
+    setWardAttemptStart(rejections.length);
+    dispatch({
+      type: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
+      role: "ward",
+      now,
+      admissionId: stay.id,
+      actingUnitId: stay.unitId,
+    });
+    setWardForm("none");
+  }
+  function returnFromEd() {
+    const stay = resolved?.liveAdmission;
+    if (!stay || !gate("RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT").allowed) return;
+    dispatch({
+      type: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
+      role: "ward",
+      now,
+      admissionId: stay.id,
+      actingUnitId: stay.unitId,
+    });
+  }
+  function saveDischarge(expectedDischargeAt: number) {
+    const stay = resolved?.liveAdmission;
+    if (!stay || !gate("UPDATE_EXPECTED_DISCHARGE").allowed) return;
+    setWardAttemptStart(rejections.length);
+    dispatch({
+      type: "UPDATE_EXPECTED_DISCHARGE",
+      role: "ward",
+      now,
+      admissionId: stay.id,
+      expectedDischargeAt,
+      actingUnitId: stay.unitId,
+    });
+    setWardForm("none");
+  }
+  const wardRefusal =
+    wardAttemptStart !== undefined
+      ? rejections
+          .slice(wardAttemptStart)
+          .filter(
+            (rejection) =>
+              rejection.attempted === "RECORD_LEAVE_BED" ||
+              rejection.attempted === "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT" ||
+              rejection.attempted === "UPDATE_EXPECTED_DISCHARGE",
+          )
+          .at(-1)?.reason
+      : undefined;
 
   const statusContext: PatientStatusContext = {
     movement: liveMovement,
@@ -517,6 +593,13 @@ export function PatientNowScreen({
     stayUnitName: stayUnit?.name,
     onRecordReturn: recordReturn,
     onMarkAbsent: markAbsent,
+    onDischargeDate: () => {
+      setWardForm("discharge");
+      requestAnimationFrame(() =>
+        document.getElementById("pn-ward-change")?.scrollIntoView({ block: "center", behavior: "smooth" }),
+      );
+    },
+    onReturnFromEd: returnFromEd,
     onAbsenceStep: (step) => {
       const stay = resolved.liveAdmission;
       if (!stay || !gate("RECORD_ABSENCE_STEP").allowed) return;
@@ -555,7 +638,7 @@ export function PatientNowScreen({
         role: displayCadNumber ? `Transport, CAD ${displayCadNumber}` : "Transport",
       });
     if (originName) contacts.push({ name: originName, role: "Sending ED" });
-  } else if ((mode === "ward" || mode === "leave" || mode === "awol") && (stayUnit ?? acceptingUnit)) {
+  } else if ((mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed") && (stayUnit ?? acceptingUnit)) {
     const wardUnit = stayUnit ?? acceptingUnit;
     if (wardUnit) contacts.push({ name: wardUnit.name, role: "Ward, nurse in charge" });
     const police = stayLeaveBed?.absentWithoutLeave?.steps.find((done) => done.step === "police_notified")?.at;
@@ -648,7 +731,7 @@ export function PatientNowScreen({
                           ? livePatient?.legalStatus
                           : (liveMovement?.legalStatus ?? livePatient?.legalStatus)) ?? "Legal status not recorded")}
                   </span>
-                  {(mode === "leave" || mode === "awol") && (
+                  {(mode === "leave" || mode === "awol" || mode === "ed") && (
                     <span className={styles.v6HeroFact}>
                       <BedDouble size={14} aria-hidden="true" />
                       Bed held
@@ -663,7 +746,7 @@ export function PatientNowScreen({
                       absent since {clock(stayLeaveBed.absentWithoutLeave.since)}
                     </span>
                   ) : null}
-                  {(mode === "ward" || mode === "leave") && stayDay !== undefined ? (
+                  {(mode === "ward" || mode === "leave" || mode === "ed") && stayDay !== undefined ? (
                     <span className={styles.v6HeroFact}>
                       <strong className={styles.v6HeroWait}>Day {stayDay}</strong>
                     </span>
@@ -1210,6 +1293,18 @@ export function PatientNowScreen({
                     </>
                   ) : null}
                   {mode === "ward" ? (
+                    <PatientWardChangeCard
+                      now={now}
+                      form={wardForm}
+                      onFormChange={setWardForm}
+                      onRecordLeave={recordLeave}
+                      onGoneToEd={goneToEd}
+                      onSaveDischarge={saveDischarge}
+                      refusal={wardRefusal}
+                      roleLimit={(eventType) => gate(eventType).reason}
+                    />
+                  ) : null}
+                  {mode === "ward" || mode === "ed" ? (
                     <PatientWhyCard
                       title="Why admitted"
                       chip={stayUnit ? stayUnit.name : undefined}
@@ -1219,7 +1314,10 @@ export function PatientNowScreen({
                     />
                   ) : null}
                   {mode === "leave" && stayLeaveBed ? (
-                    <PatientLeaveCard dueBack={clock(stayLeaveBed.expectedReturn)} onMarkAbsent={markAbsent} />
+                    <PatientLeaveCard
+                      dueBack={formatInstantWithDay(stayLeaveBed.expectedReturn, now)}
+                      onMarkAbsent={markAbsent}
+                    />
                   ) : null}
                   {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
                     <PatientLastSeenCard
@@ -1278,6 +1376,7 @@ export function PatientNowScreen({
                 movement={liveMovement}
                 dayZero={dayZero}
                 unitName={(id) => units.find((u) => u.id === id)?.name}
+                stays={resolved.stays}
                 open={!modeMeta.quiet}
                 onBackToNow={() => {
                   setActiveTab("now");

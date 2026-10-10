@@ -5596,6 +5596,16 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       if (admission.awayAtEmergencyDepartmentSince !== null) {
         return reject(state, event, `admission ${admission.id} is already recorded as away at an emergency department`);
       }
+      // Leave, absence and a trip to ED are three different answers to "where are they now", so one
+      // stay holds at most one of them. End the leave or the absence first.
+      const heldBed = state.leaveBeds.find((bed) => bed.admissionId === admission.id);
+      if (heldBed) {
+        return reject(
+          state,
+          event,
+          `admission ${admission.id} is ${heldBed.absentWithoutLeave ? "absent without leave" : "on leave"} (${heldBed.id}); record the return first`,
+        );
+      }
       return replaceAdmission(state, admission.id, { ...admission, awayAtEmergencyDepartmentSince: event.now });
     }
 
@@ -6184,6 +6194,13 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       }
       const current = state.leaveBeds.find((bed) => bed.admissionId === onLeave.id);
       if (current) return reject(state, event, `admission ${onLeave.id} is already on leave (${current.id})`);
+      if (onLeave.awayAtEmergencyDepartmentSince !== null) {
+        return reject(
+          state,
+          event,
+          `admission ${onLeave.id} is away at an emergency department; record the return first`,
+        );
+      }
       const sequence = state.leaveBedSequence + 1;
       const created: LeaveBed = {
         id: nextLeaveBedId(sequence),
@@ -6230,6 +6247,9 @@ function reduceClinicalEvent(state: WardFlowState, event: WardFlowEvent, decisio
       const current = state.leaveBeds.find((bed) => bed.admissionId === stay.id);
       if (current?.absentWithoutLeave) {
         return reject(state, event, `admission ${stay.id} is already recorded absent without leave (${current.id})`);
+      }
+      if (stay.awayAtEmergencyDepartmentSince !== null) {
+        return reject(state, event, `admission ${stay.id} is away at an emergency department; record the return first`);
       }
       const absence = { since: event.now, steps: [] };
       if (current) {

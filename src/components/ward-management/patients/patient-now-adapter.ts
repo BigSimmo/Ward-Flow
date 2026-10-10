@@ -22,6 +22,9 @@ export interface ResolvedPatientNow {
   livePatient?: Patient;
   liveReferral?: Referral;
   liveAdmission?: Admission;
+  /** Every ward stay linked to this person, oldest first, for History. Read here because this is
+   *  the one patient file allowed to follow the patient link (D-14). */
+  stays?: Admission[];
   displayName: string;
   preferredName?: string;
   currentStageIndex: number;
@@ -349,6 +352,12 @@ export function resolvePatientNowRecord(
       livePatient,
       liveReferral: referral,
       liveAdmission: linkedAdmission,
+      stays: admissions.filter(
+        (admission) =>
+          admission.id === movement.admissionId ||
+          admission.movementId === movement.id ||
+          (livePatient !== undefined && admission.patientId === livePatient.id),
+      ),
       displayName,
       preferredName,
       currentStageIndex: stageIdx,
@@ -535,6 +544,7 @@ export function resolvePatientNowRecord(
         livePatient: patient,
         liveReferral: linkedReferral,
         liveAdmission: activeAdmission,
+        stays: patientAdmissions,
         displayName: patientDisplayName(patient),
         preferredName: patient.preferredName,
         currentStageIndex: stageIdx,
@@ -639,6 +649,7 @@ export function resolvePatientNowRecord(
         livePatient: patient,
         liveReferral: linkedReferral,
         liveAdmission: activeAdmission,
+        stays: patientAdmissions,
         displayName: patientDisplayName(patient),
         preferredName: patient.preferredName,
         currentStageIndex: stageIdx >= 0 ? stageIdx : 0,
@@ -689,6 +700,7 @@ export function resolvePatientNowRecord(
     return {
       record: communityRecord,
       livePatient: patient,
+      stays: patientAdmissions,
       displayName: patientDisplayName(patient),
       preferredName: patient.preferredName,
       currentStageIndex: 0,

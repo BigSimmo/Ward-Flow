@@ -65,6 +65,18 @@ export const CROSS_ROLE_ALLOWED: readonly CrossRoleAllowance[] = [
     event: "RECORD_ABSENCE_STEP",
     reason: `${PATIENT_PAGE} the ward: missing person steps (D-38)`,
   },
+  // Ward changes on the Patient page (Josh, 10 Oct 2026), recorded as the ward the stay is on.
+  { routeRole: "coordinator", event: "RECORD_LEAVE_BED", reason: `${PATIENT_PAGE} the ward: Start leave` },
+  {
+    routeRole: "coordinator",
+    event: "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
+    reason: `${PATIENT_PAGE} the ward: Gone to ED`,
+  },
+  {
+    routeRole: "coordinator",
+    event: "RECORD_RETURNED_FROM_EMERGENCY_DEPARTMENT",
+    reason: `${PATIENT_PAGE} the ward: Record return from ED`,
+  },
   // D-38/D-40 community treatment order on the Patient page, recorded as the community team.
   {
     routeRole: "coordinator",

@@ -4,6 +4,7 @@ import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward
 import { useState, type ReactNode } from "react";
 import {
   ArrowUpRight,
+  BedDouble,
   CalendarDays,
   Clipboard,
   FileText,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button, Card, CardHead, StatusGlyph, cx, tableClasses, type WfTone } from "@/components/wf";
 import type { Movement } from "../ward-model";
+import { LEAVING_DESTINATIONS, type Admission } from "../ward-admissions";
 import type { Patient } from "../ward-patients";
 import { edById } from "../ward-sites";
 import { calendarDateOf } from "../ward-clock";
@@ -132,11 +134,14 @@ export function PatientHistoryTab({
   unitName,
   open,
   onBackToNow,
+  stays = [],
 }: {
   record: PatientNowRecord;
   movement?: Movement;
   dayZero: Date;
   unitName: (id: string) => string | undefined;
+  /** Ward stays linked to this person, from the adapter (D-14). Newest shown first. */
+  stays?: readonly Admission[];
   /** True while something is open now, so the log offers Back to Now rather than Overview. */
   open: boolean;
   onBackToNow: () => void;
@@ -349,7 +354,55 @@ export function PatientHistoryTab({
           </p>
         </Card>
       </div>
+      {stays.length > 0 ? <WardStaysCard stays={stays} dayZero={dayZero} unitName={unitName} /> : null}
     </section>
+  );
+}
+
+/** Each ward stay the record links: where, when, and how it ended. Only recorded values. */
+function WardStaysCard({
+  stays,
+  dayZero,
+  unitName,
+}: {
+  stays: readonly Admission[];
+  dayZero: Date;
+  unitName: (id: string) => string | undefined;
+}) {
+  const newestFirst = [...stays].sort((a, b) => (b.arrivedAt ?? b.leftAt ?? 0) - (a.arrivedAt ?? a.leftAt ?? 0));
+  return (
+    <Card aria-label="Ward stays" data-testid="ward-patient-ward-stays">
+      <CardHead level={3} icon={BedDouble} title="Ward stays" meta={`${stays.length}`} />
+      <div className={styles.rows}>
+        {newestFirst.map((stay) => {
+          const from = stay.arrivedAt != null ? dayLabel(stay.arrivedAt, dayZero) : undefined;
+          const to = stay.leftAt != null ? dayLabel(stay.leftAt, dayZero) : undefined;
+          const destination = stay.leavingDestination
+            ? LEAVING_DESTINATIONS.find((item) => item.id === stay.leavingDestination)?.label
+            : undefined;
+          const followUp = stay.followUp
+            ? stay.followUp.state === "arranged"
+              ? "follow-up arranged"
+              : "follow-up not arranged"
+            : undefined;
+          const current = stay.state !== "departed";
+          return (
+            <Row
+              key={stay.id}
+              k={from ? (to ? `${from} to ${to}` : `From ${from}`) : "Dates not recorded"}
+              action={
+                <span className={styles.chip}>
+                  {current ? (stay.state === "occupied" ? "Current" : "Bed held") : "Closed"}
+                </span>
+              }
+            >
+              {unitName(stay.unitId) ?? "Ward not recorded"}
+              {!current ? <small> · {[destination, followUp].filter(Boolean).join(", ") || "Left"}</small> : null}
+            </Row>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 
