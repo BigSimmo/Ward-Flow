@@ -5,10 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { wardChromeRole, wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
 
-import { decisionTargetInboxItems } from "@/components/ward-management/ward-decision-targets";
-import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
+import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { partitionSnoozed } from "@/components/ward-management/ward-inbox-snooze";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 
 import { newActNowItems, showActNowNotification, useActNowNotificationPreference } from "./ward-act-now-notifications";
@@ -33,9 +31,7 @@ export function WardActNowNotifier() {
 
   const actNow = useMemo(() => {
     if (!actionable) return [];
-    const open = movements.filter(isOpen);
-    const rows = [...buildActionInbox(open, now, units), ...decisionTargetInboxItems(open, now, configuration)];
-    return partitionSnoozed(rows, inboxSnoozes, now).active.filter((item) => item.tone === "danger");
+    return activeActNowItems({ movements, units, configuration, inboxSnoozes }, now);
   }, [actionable, movements, units, configuration, inboxSnoozes, now]);
 
   useEffect(() => {

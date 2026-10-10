@@ -200,3 +200,44 @@ describe("shared workspace connection", () => {
     client.dispose();
   });
 });
+
+describe("phone alert calls", () => {
+  const endpoint = "https://fcm.googleapis.com/fcm/send/device";
+  function client(answer: (path: string) => Response) {
+    return new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: () => {},
+      fetch: async (url) => answer(new URL(String(url)).pathname),
+    });
+  }
+
+  it("reads ownership and revocation from the server, never assuming them", async () => {
+    const owned = client((path) =>
+      Response.json(path.endsWith("push-status") ? { owned: true } : { subscribed: false, revoked: true }),
+    );
+    expect(await owned.pushStatus(endpoint)).toBe(true);
+    expect(await owned.pushUnsubscribe(endpoint)).toBe(true);
+    const notOwned = client(() => Response.json({}));
+    expect(await notOwned.pushStatus(endpoint)).toBe(false);
+    expect(await notOwned.pushUnsubscribe(endpoint)).toBe(false);
+    expect(await notOwned.pushKey()).toEqual({ enabled: false });
+  });
+
+  it("returns a refusal the person can act on instead of rejecting", async () => {
+    const inUse = client(() => Response.json({ code: "in-use", error: "another account" }, { status: 409 }));
+    expect(await inUse.pushSubscribe({ endpoint })).toBe("in-use");
+    const full = client(() => Response.json({ code: "limit", error: "10 devices" }, { status: 409 }));
+    expect(await full.pushSubscribe({ endpoint })).toBe("limit");
+    const ok = client(() => Response.json({ subscribed: true }));
+    expect(await ok.pushSubscribe({ endpoint })).toBe("subscribed");
+  });
+
+  it("a server failure rejects, so the switch keeps its last confirmed state", async () => {
+    const failing = client(() => Response.json({ error: "unavailable" }, { status: 503 }));
+    await expect(failing.pushKey()).rejects.toThrow();
+    await expect(failing.pushStatus(endpoint)).rejects.toThrow();
+    await expect(failing.pushSubscribe({ endpoint })).rejects.toThrow();
+    await expect(failing.pushUnsubscribe(endpoint)).rejects.toThrow();
+  });
+});
