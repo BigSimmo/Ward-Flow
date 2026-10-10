@@ -1,0 +1,138 @@
+/* ED wait field: one row per department, one mark per person, rows sized to fit their marks. */
+.swarm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.box {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.box svg {
+  display: block;
+  overflow: visible;
+}
+
+.grid {
+  stroke: var(--wf-line);
+  stroke-width: 1;
+}
+
+.threshold {
+  stroke: var(--wf-ink-3);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.rowLine {
+  stroke: var(--wf-line);
+  stroke-width: 1;
+}
+
+.axis {
+  fill: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+.name {
+  fill: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+}
+
+.count {
+  fill: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+}
+
+.median {
+  stroke: var(--wf-ink-1);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.placed {
+  fill: var(--wf-accent);
+}
+
+.unplaced {
+  fill: var(--wf-surface);
+  stroke: var(--wf-accent);
+  stroke-width: 1.8;
+}
+
+.over24 {
+  fill: var(--wf-warning);
+}
+
+.over48 {
+  fill: var(--wf-danger);
+}
+
+.rowLinks {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.rowLinks li {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.rowLink {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--wf-r-md);
+  pointer-events: auto;
+}
+
+.rowLink:hover {
+  background: color-mix(in srgb, var(--wf-ink-1) 4%, transparent);
+}
+
+.rowLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  white-space: nowrap;
+}
+
+.medianKey::before {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+  background: var(--wf-ink-1);
+}

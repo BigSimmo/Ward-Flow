@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BedDouble, ChevronDown, MapPin, Network, Plane } from "lucide-react";
+import { BedDouble, ChevronDown, Clock, LayoutList, MapPin, Network, Plane } from "lucide-react";
 
 import {
   BarList,
@@ -21,8 +21,13 @@ import {
 import {
   statisticsSectionById,
   STATISTICS_SERVICE_CHOOSER_HREF,
+  STATISTICS_SERVICES_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
-import { serviceStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import {
+  edStatisticsHref,
+  serviceStatisticsHref,
+  wardStatisticsHref,
+} from "@/components/ward-management/shell/ward-facade";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
@@ -32,13 +37,24 @@ import { allEmergencyDepartments, siteByCode, wardSites } from "@/components/war
 
 import { countAxisMax } from "./statistics-axis";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
+import { StatisticsEdSwarm } from "./statistics-ed-swarm";
+import { edWaitFigures } from "./statistics-ed-waits";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
+import { HeroTool, UnitStepper } from "./statistics-hero-tools";
+import { FlushRow, Follow } from "./statistics-layout";
 import { useOptionalRouter } from "./statistics-nav";
 import { occupiedBeds } from "./statistics-occupancy";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
 
 const OUT_OF_AREA_HREF = "/mockups/ward-flow/out-of-area";
+
+/** "Joondalup Health Campus Emergency Department" reads "Joondalup ED" beside the ED wait field. */
+function shortDepartmentName(name: string): string {
+  return name
+    .replace(/ Emergency Department$/u, " ED")
+    .replace(/ (Memorial |General |Public )?(Hospital|Health Campus|Health Service) ED$/u, " ED");
+}
 
 /** "Sir Charles Gairdner Hospital" to "Sir Charles Gairdner", for the hero's one-line list. */
 function shortSiteName(name: string): string {
@@ -71,7 +87,7 @@ function shortSiteName(name: string): string {
  */
 export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   const live = useStatisticsLive();
-  const { units: liveUnits, admissions, referrals, bedReleases, leaveBeds } = live.state;
+  const { units: liveUnits, admissions, referrals, bedReleases, leaveBeds, movements } = live.state;
   const now = live.now;
 
   const section = statisticsSectionById("service");
@@ -162,6 +178,15 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
   const bandCounts = new Map<(typeof OUT_OF_AREA_BANDS)[number], number>(OUT_OF_AREA_BANDS.map((band) => [band, 0]));
   for (const entry of outOfAreaEntries) bandCounts.set(entry.band, (bandCounts.get(entry.band) ?? 0) + 1);
 
+  // Everyone waiting in this service's emergency departments, read through the ED screens' own helper.
+  const edSwarmRows = serviceEds.map((department) => ({
+    id: department.id,
+    name: shortDepartmentName(department.name),
+    href: edStatisticsHref(department.id),
+    entries: edWaitFigures(movements, department.id, now).waitingMovements,
+  }));
+  const edWaiting = edSwarmRows.reduce((sum, row) => sum + row.entries.length, 0);
+
   return (
     <StatisticsPage
       section={section}
@@ -169,7 +194,29 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
       slug={service}
       testId="ward-statistics-service-screen"
       title={service}
-      titleAction={<ChangeService current={service} />}
+      titleAction={
+        <>
+          <ChangeService current={service} />
+          <UnitStepper
+            items={wardServiceOrder.map((candidate) => ({
+              id: candidate,
+              href: serviceStatisticsHref(candidate),
+              label: candidate,
+            }))}
+            currentId={service}
+            noun="service"
+          />
+        </>
+      }
+      tools={
+        <HeroTool
+          href={STATISTICS_SERVICES_HREF}
+          icon={<LayoutList size={14} aria-hidden="true" />}
+          testId="ward-statistics-service-tool-services"
+        >
+          All services
+        </HeroTool>
+      }
       eyebrowLabel="Health service"
       eyebrowDetail={
         <span className={detail.siteIdentity} data-testid="ward-statistics-service-identity">
@@ -220,27 +267,17 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
         </>
       }
     >
-      <div className={styles.gridMain}>
-        <div className={styles.stack}>
-          <StatisticsCapacityChart
-            units={serviceUnits}
-            bedReleases={bedReleases}
-            admissions={admissions}
-            leaveBeds={leaveBeds}
-            initialGroup="ward"
-            scopeLabel={`in ${service}`}
-            title="Ward capacity"
-          />
-          <ReadyBeds
-            service={service}
-            readyRows={readyRows}
-            totalReady={totalReady}
-            zeroReadyWards={zeroReadyWards}
-            pendingPreparation={pendingPreparation}
-            openNow={totalOpenNow}
-          />
-        </div>
-        <div className={styles.stack}>
+      <FlushRow layout="lead2" id="capacity">
+        <StatisticsCapacityChart
+          units={serviceUnits}
+          bedReleases={bedReleases}
+          admissions={admissions}
+          leaveBeds={leaveBeds}
+          initialGroup="ward"
+          scopeLabel={`in ${service}`}
+          title="Ward capacity"
+        />
+        <Follow className={detail.followBody}>
           <Placement
             service={service}
             raised={ownReferrals.length}
@@ -250,13 +287,27 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             unresolved={placedAtUnresolvedWard}
             byService={placedElsewhereByService}
           />
+        </Follow>
+      </FlushRow>
+
+      <FlushRow layout="lead2">
+        <ReadyBeds
+          service={service}
+          readyRows={readyRows}
+          totalReady={totalReady}
+          zeroReadyWards={zeroReadyWards}
+          pendingPreparation={pendingPreparation}
+          openNow={totalOpenNow}
+        />
+        <Follow className={detail.followBody}>
           <StatCard
+            id="far-from-home"
             icon={MapPin}
             title="Far from home"
             aside="Synthetic travel bands"
             data-testid="ward-statistics-service-out-of-area"
           >
-            <CardBody className={styles.bodyStack}>
+            <CardBody className={`${styles.bodyStack} ${detail.scrolls}`}>
               <dl className={styles.figures}>
                 <div className={styles.figure}>
                   <dd className={styles.figureValue} data-testid="ward-statistics-service-out-of-area-value">
@@ -295,10 +346,34 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
               </ul>
             </CardBody>
           </StatCard>
-        </div>
-      </div>
+        </Follow>
+      </FlushRow>
 
       <StatCard
+        id="ed-waits"
+        className={detail.anchor}
+        icon={Clock}
+        title="ED waits"
+        aside={`${edWaiting} waiting in ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
+        data-testid="ward-statistics-service-ed-waits"
+      >
+        <CardBody className={detail.swarmBody}>
+          {edSwarmRows.length === 0 ? (
+            <p className={styles.muted}>No emergency department is recorded at a {service} hospital.</p>
+          ) : (
+            <StatisticsEdSwarm
+              rows={edSwarmRows}
+              labelWidth={180}
+              label={`Each person waiting in a ${service} emergency department, by how long they have waited`}
+              testId="ward-statistics-service-ed-swarm"
+            />
+          )}
+        </CardBody>
+      </StatCard>
+
+      <StatCard
+        id="out-of-area"
+        className={detail.anchor}
         icon={Plane}
         title="Out of area"
         aside="In this service's beds"
@@ -406,6 +481,7 @@ function ReadyBeds({
 }) {
   return (
     <StatCard
+      id="ready-beds"
       icon={BedDouble}
       title="Ready beds by ward"
       aside={`${readyRows.length} ${readyRows.length === 1 ? "ward" : "wards"}`}
@@ -529,6 +605,7 @@ function Placement({
   ];
   return (
     <StatCard
+      id="referrals"
       icon={Network}
       title="Where referrals landed"
       action={
@@ -544,7 +621,7 @@ function Placement({
       }
       data-testid="ward-statistics-service-placement"
     >
-      <CardBody className={styles.bodyStack}>
+      <CardBody className={`${styles.bodyStack} ${detail.scrolls}`}>
         <dl className={styles.figures}>
           <div className={styles.figure}>
             <dd className={styles.figureValue} data-testid="ward-statistics-service-placement-raised">

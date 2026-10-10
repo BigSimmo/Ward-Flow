@@ -152,3 +152,34 @@ a.secondary:hover {
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   white-space: nowrap;
 }
+
+/*
+ * Following cards (Josh, 9 Oct 2026: rows end flush). `Follow` lets every part of its card under the
+ * header share the scrolling; on these pages only the part that holds the rows scrolls, so a
+ * toolbar or a card foot keeps its own height and stays in view. `followBody`: the child marked
+ * `scrolls` scrolls. `followLast`: the card's last child scrolls (for a card this page does not own).
+ */
+.followBody > [data-ward-primitive="panel"] > :not([data-ward-primitive="panel-header"]):not(.scrolls),
+.followLast > [data-ward-primitive="panel"] > :not([data-ward-primitive="panel-header"]):not(:last-child) {
+  flex: none;
+  overflow: visible;
+}
+
+/* The chosen part scrolls even when a toolbar sits between it and the header. */
+.followBody > [data-ward-primitive="panel"] > .scrolls,
+.followLast > [data-ward-primitive="panel"] > :not([data-ward-primitive="panel-header"]):last-child {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* A full-width card that a deep link lands on, clear of the sticky app header. */
+.anchor {
+  scroll-margin-top: var(--wf-s-4);
+}
+
+/* The ED wait field takes the card's whole width, with room around the marks. */
+.swarmBody {
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}

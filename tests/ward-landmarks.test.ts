@@ -86,6 +86,10 @@ import { SovereignShowcaseScreen } from "@/components/ward-management/sovereign/
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
 import { WeeklyReportScreen } from "@/components/ward-management/reports/weekly-report-screen";
+import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
+import { StatisticsWardsIndexScreen } from "@/components/ward-management/statistics/statistics-wards-index";
+import { StatisticsEdsIndexScreen } from "@/components/ward-management/statistics/statistics-eds-index";
+import { StatisticsTeamsIndexScreen } from "@/components/ward-management/statistics/statistics-teams-index";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const REPO_ROOT = path.resolve(__dirname, "..");
@@ -262,6 +266,11 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/sovereign`, render: () => createElement(SovereignShowcaseScreen) },
   // Read-only reports, 9 Oct 2026 (stream C).
   { route: `${ROUTE_PREFIX}/statistics/weekly`, render: () => createElement(WeeklyReportScreen) },
+  // The four statistics index pages, 9 Oct 2026 (Statistics A).
+  { route: `${ROUTE_PREFIX}/statistics/services`, render: () => createElement(StatisticsServicesIndexScreen) },
+  { route: `${ROUTE_PREFIX}/statistics/wards`, render: () => createElement(StatisticsWardsIndexScreen) },
+  { route: `${ROUTE_PREFIX}/statistics/eds`, render: () => createElement(StatisticsEdsIndexScreen) },
+  { route: `${ROUTE_PREFIX}/statistics/teams`, render: () => createElement(StatisticsTeamsIndexScreen) },
   { route: `${ROUTE_PREFIX}/reports/downtime`, render: () => createElement(DowntimePackScreen) },
   { route: `${ROUTE_PREFIX}/reports/chronology`, render: () => createElement(PatientChronologyScreen) },
 ];
