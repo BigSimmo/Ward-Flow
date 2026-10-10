@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildContentSecurityPolicy, buildSecurityHeaders, resolveRuntimeFlags } from "../src/lib/security-headers";
+import {
+  buildContentSecurityPolicy,
+  buildSecurityHeaders,
+  resolveRuntimeFlags,
+  resolveSharedWorkspaceOrigins,
+} from "../src/lib/security-headers";
 
 // Regression guard for the "all images fail to render" incident in the former
 // clinical app, whose document images loaded cross-origin from Supabase Storage.
@@ -134,6 +139,44 @@ describe("security headers", () => {
       const headers = buildSecurityHeaders(flags);
       expect(headers.some((header) => header.key === "Content-Security-Policy")).toBe(false);
     }
+  });
+
+  // The shared Azure workspace is the only browser-side cross-origin caller:
+  // its Function and Microsoft sign-in, and only when that Function is configured.
+  describe("shared Azure workspace origins", () => {
+    const directive = (csp: string, name: string) =>
+      csp
+        .split(";")
+        .map((part) => part.trim())
+        .find((part) => part.startsWith(`${name} `));
+
+    it("adds only the configured Function origin and Microsoft sign-in", () => {
+      const sharedOrigins = resolveSharedWorkspaceOrigins("https://wardflow-dev-api-aue.azurewebsites.net/api/");
+      expect(sharedOrigins).toEqual([
+        "https://wardflow-dev-api-aue.azurewebsites.net",
+        "https://login.microsoftonline.com",
+      ]);
+      const csp = buildContentSecurityPolicy({
+        isDevelopment: false,
+        isLocalHttpRuntime: false,
+        nonce: NONCE,
+        sharedOrigins,
+      });
+      expect(directive(csp, "connect-src")).toBe(
+        "connect-src 'self' https://wardflow-dev-api-aue.azurewebsites.net https://login.microsoftonline.com",
+      );
+      expect(directive(csp, "frame-src")).toBe("frame-src https://login.microsoftonline.com");
+      expect(directive(csp, "img-src")).toBe("img-src 'self' data: blob:");
+    });
+
+    it("keeps connect-src same-origin when the Function is missing, invalid or not https", () => {
+      for (const value of [undefined, "", "not a url", "http://ward-api.example"]) {
+        expect(resolveSharedWorkspaceOrigins(value)).toEqual([]);
+      }
+      const csp = buildContentSecurityPolicy({ isDevelopment: false, isLocalHttpRuntime: false, nonce: NONCE });
+      expect(directive(csp, "connect-src")).toBe("connect-src 'self'");
+      expect(directive(csp, "frame-src")).toBeUndefined();
+    });
   });
 
   // Single source of truth shared by next.config.ts and proxy.ts. The

@@ -36,12 +36,37 @@ export type ContentSecurityPolicyOptions = SecurityHeaderFlags & {
   // Per-request nonce (base64) generated in src/proxy.ts. script-src allow-lists
   // this nonce instead of 'unsafe-inline', so only scripts carrying it execute.
   nonce: string;
+  // Extra connect-src origins for the shared Azure workspace (resolveSharedWorkspaceOrigins).
+  sharedOrigins?: readonly string[];
 };
+
+/** Microsoft sign-in, which the shared workspace's MSAL client calls for tokens. */
+export const MICROSOFT_SIGN_IN_ORIGIN = "https://login.microsoftonline.com";
+
+// The shared Azure workspace (ward-shared-access.tsx) is the one browser-side
+// cross-origin caller: it fetches from its Azure Function and gets tokens from
+// Microsoft sign-in. Both origins are allowed only when the Function URL is
+// configured and https, so a build without the shared workspace keeps
+// connect-src same-origin. NEXT_PUBLIC_* is fixed at build time.
+export function resolveSharedWorkspaceOrigins(
+  baseUrl: string | undefined = process.env.NEXT_PUBLIC_WARD_API_BASE_URL,
+): string[] {
+  if (!baseUrl) return [];
+  let url: URL;
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    return [];
+  }
+  if (url.protocol !== "https:") return [];
+  return [url.origin, MICROSOFT_SIGN_IN_ORIGIN];
+}
 
 export function buildContentSecurityPolicy({
   isDevelopment,
   isLocalHttpRuntime,
   nonce,
+  sharedOrigins = [],
 }: ContentSecurityPolicyOptions): string {
   // Production: nonce + 'strict-dynamic' is the modern strict-CSP shape. CSP3
   // browsers ignore host allow-lists AND 'unsafe-inline' for scripts, running
@@ -80,7 +105,9 @@ export function buildContentSecurityPolicy({
     // monitoring SDK. logger.ts provides an optional server forwarding seam,
     // not a configured Sentry integration. Add an external origin only with
     // an explicitly configured integration and its privacy review.
-    "connect-src 'self'; " +
+    `connect-src ${["'self'", ...sharedOrigins].join(" ")}; ` +
+    // MSAL renews tokens in a hidden Microsoft sign-in frame once its refresh token lapses.
+    (sharedOrigins.includes(MICROSOFT_SIGN_IN_ORIGIN) ? `frame-src ${MICROSOFT_SIGN_IN_ORIGIN}; ` : "") +
     "worker-src 'self'; " +
     "manifest-src 'self'; " +
     scriptSrc +

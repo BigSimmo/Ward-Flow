@@ -8,7 +8,7 @@ import {
   isDeveloperGatedPath,
   isWardFlowPath,
 } from "@/lib/developer-area/headers";
-import { buildContentSecurityPolicy, resolveRuntimeFlags } from "@/lib/security-headers";
+import { buildContentSecurityPolicy, resolveRuntimeFlags, resolveSharedWorkspaceOrigins } from "@/lib/security-headers";
 
 // Next 16 renamed the `middleware` file convention to `proxy` (see
 // node_modules/next/dist/docs/.../file-conventions/proxy.md). Proxy defaults to
@@ -50,6 +50,7 @@ const staticRouteRedirects: Record<string, string> = {
 // CSP matches the rest of the policy (unsafe-eval in dev, HTTPS upgrade off local
 // http). Evaluated once at module load.
 const { isDevelopment, isLocalHttpRuntime } = resolveRuntimeFlags();
+const sharedOrigins = resolveSharedWorkspaceOrigins();
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -57,7 +58,7 @@ export async function proxy(request: NextRequest) {
   // A fresh, unguessable nonce per request (see Next.js CSP guide). Buffer+base64
   // matches the documented pattern and keeps the value header-safe.
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const csp = buildContentSecurityPolicy({ isDevelopment, isLocalHttpRuntime, nonce });
+  const csp = buildContentSecurityPolicy({ isDevelopment, isLocalHttpRuntime, nonce, sharedOrigins });
 
   // Fetch Metadata plus an Origin/Referer host check (see `@/lib/api-csrf` for why
   // `Sec-Fetch-Site: cross-site` alone is not enough).

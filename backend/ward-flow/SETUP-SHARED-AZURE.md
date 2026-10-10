@@ -128,7 +128,7 @@ To turn it on, after separate approval for each provider step:
 
 5. On each phone: open the HTTPS frontend, sign in, then Settings, Alerts, **Phone alerts**. On iPhone (iOS 16.4 or later) add Ward Flow to the Home Screen and open it from there first; Safari tabs cannot receive web push.
 
-The frontend's Content-Security-Policy currently sets `connect-src 'self'`. A browser enforcing it refuses the cross-origin calls to the Function (and Microsoft sign-in), for the shared workspace and phone alerts alike, until the Function origin and `https://login.microsoftonline.com` are added through a reviewed `src/lib/security-headers.ts` change. Push delivery itself is between the browser and its push service and does not need a CSP entry.
+When the frontend is built with an https `NEXT_PUBLIC_WARD_API_BASE_URL`, its Content-Security-Policy adds that Function origin and `https://login.microsoftonline.com` to `connect-src`, and Microsoft sign-in to `frame-src` for MSAL's silent token renewal (`resolveSharedWorkspaceOrigins` in `src/lib/security-headers.ts`). Without it, `connect-src` stays `'self'`. Rebuild the frontend after setting or changing that value. Push delivery itself is between the browser and its push service and does not need a CSP entry.
 
 Removing any one of the three settings turns phone alerts off. Stored subscriptions stay until a person turns the switch off, the push service reports them gone, or they are deleted.
 
