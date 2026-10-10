@@ -108,7 +108,7 @@
   flex: none;
   align-items: center;
   gap: 8px;
-  height: 44px;
+  min-height: var(--spacing-tap, 3rem);
   padding: 0 14px;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-pill);
@@ -131,6 +131,7 @@
 .search input {
   flex: 1;
   min-width: 0;
+  min-height: var(--spacing-tap, 3rem);
   border: 0;
   background: transparent;
   color: var(--wf-ink-1);
