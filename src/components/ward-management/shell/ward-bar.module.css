@@ -1246,8 +1246,7 @@
 
   .drawerTrigger[data-bar-mode="activity"],
   .drawerTrigger[data-bar-mode="tools"],
-  .vsep,
-  .primaryWrap {
+  .vsep {
     display: none;
   }
 

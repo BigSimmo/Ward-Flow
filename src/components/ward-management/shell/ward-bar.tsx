@@ -411,12 +411,7 @@ function usePhoneViewport(): boolean {
   );
 }
 
-/**
- * Phone bar, option A (Josh, 8 Oct 2026): the same bar on every page, so every page offers New
- * referral on the phone. The full-page form is retired (8 Oct 2026, option B), so the referral route
- * is no exception: it is the Referrals board with the slide-out open. Desktop keeps each page's own
- * action.
- */
+/** The desktop bar keeps each page's own primary action; phone actions live in the phone menu. */
 const NEW_REFERRAL_ACTION: WardPrimaryAction = {
   kind: "new-referral",
   label: "New referral",
@@ -424,15 +419,14 @@ const NEW_REFERRAL_ACTION: WardPrimaryAction = {
 };
 
 export function phoneBarAction(action: WardPrimaryAction | undefined, phone: boolean): WardPrimaryAction | undefined {
-  if (!phone || action?.kind === "new-referral") return action;
-  return NEW_REFERRAL_ACTION;
+  return phone ? undefined : action;
 }
 
 /**
- * The universal header (Josh, 9 Oct 2026): "ensure that referral is on every single page". A route
- * with no action of its own, or a deliberate "none", now shows New referral on desktop too, as it
- * already did on the phone. A route with its own primary (Record a decision, Contact a team,
- * Export the figures) keeps it, so the bar still holds one primary button.
+ * The universal desktop header (Josh, 9 Oct 2026): "ensure that referral is on every single page".
+ * A route with no action of its own, or a deliberate "none", shows New referral. A route with its
+ * own primary (Record a decision, Contact a team, Export the figures) keeps it, so the bar still
+ * holds one primary button.
  */
 export function routeBarAction(pathname: string): WardPrimaryAction {
   const action = resolveWardPrimaryAction(pathname);
