@@ -1,7 +1,15 @@
 import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+// The role is the route (`ward-chrome-role.ts`); the coordinator's referral queue by default.
+const COORDINATOR_ROUTE = "/mockups/ward-flow/referrals";
+const route = vi.hoisted(() => ({ pathname: "/mockups/ward-flow/referrals" }));
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  usePathname: () => route.pathname,
+}));
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -12,6 +20,8 @@ vi.mock("next/link", () => ({
 }));
 
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
+import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { readmissionFlagVisibleOn } from "@/components/ward-management/ward-readmission-flag";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
@@ -72,21 +82,52 @@ function Newest() {
   );
 }
 
+function receiveOnBoard(): string {
+  render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <Receive />
+      <ReferralBoard />
+      <Newest />
+    </WardFlowProvider>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "receive referral" }));
+  const [id, rejections] = (screen.getByTestId("newest").textContent ?? "").split("|");
+  expect(rejections, "RECEIVE_REFERRAL was refused").toBe("");
+  return id!;
+}
+
 describe("28 day readmission flag on the referral queue", () => {
+  afterEach(() => {
+    route.pathname = COORDINATOR_ROUTE;
+  });
+
+  it("shows the coordinator only: another role's route hides it (Josh, 9 Oct 2026)", () => {
+    route.pathname = "/mockups/ward-flow/ward/fre-adult-open";
+    const id = receiveOnBoard();
+    expect(screen.getByTestId(`ward-referral-board-row-${id}`)).toBeInTheDocument();
+    expect(screen.queryByTestId(`ward-referral-board-readmission-${id}`)).toBeNull();
+    expect(screen.queryByText("28d readmission")).toBeNull();
+  });
+
+  it("hides it on the ED index, which keeps the coordinator's chrome", () => {
+    route.pathname = "/mockups/ward-flow/ed";
+    // The chrome role is unchanged: only the flag treats the index as an ED screen.
+    expect(wardChromeRole(route.pathname)).toBe("coordinator");
+    expect(readmissionFlagVisibleOn("/mockups/ward-flow/ed")).toBe(false);
+    expect(readmissionFlagVisibleOn("/mockups/ward-flow/ed/")).toBe(false);
+    expect(readmissionFlagVisibleOn("/mockups/ward-flow/ed/scgh")).toBe(false);
+    expect(readmissionFlagVisibleOn("/mockups/ward-flow/edit-settings")).toBe(true);
+    expect(readmissionFlagVisibleOn(COORDINATOR_ROUTE)).toBe(true);
+    const id = receiveOnBoard();
+    expect(screen.getByTestId(`ward-referral-board-row-${id}`)).toBeInTheDocument();
+    expect(screen.queryByTestId(`ward-referral-board-readmission-${id}`)).toBeNull();
+  });
+
   it("flags a new referral whose prior stay's referral has left the queue", () => {
     expect(priorReferral.patientId, "RF-010 must name its person for this case").toBeDefined();
     expect(referralQueueOrder(seed.referrals).map((referral) => referral.id)).not.toContain("RF-010");
 
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <Receive />
-        <ReferralBoard />
-        <Newest />
-      </WardFlowProvider>,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "receive referral" }));
-    const [id, rejections] = (screen.getByTestId("newest").textContent ?? "").split("|");
-    expect(rejections, "RECEIVE_REFERRAL was refused").toBe("");
+    const id = receiveOnBoard();
     const row = screen.getByTestId(`ward-referral-board-row-${id}`);
 
     const flag = within(row).getByTestId(`ward-referral-board-readmission-${id}`);

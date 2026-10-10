@@ -10,13 +10,15 @@ import {
   type PlannedAdmissionReason,
 } from "../ward-admissions";
 import { dayOf, MINUTES_PER_DAY, minuteOfDay, type Instant } from "../ward-clock";
-import type { Cohort, LegalStatus, RecordedSex } from "../ward-model";
+import type { Cohort, LegalStatus, RecordedSex, ReferralGender } from "../ward-model";
 
 export type PlannedAdmissionDraft = {
   who: "patient" | "initials";
   patientId: string;
   initials: string;
   sex: RecordedSex;
+  /** Picked for an initials-only booking; absent is not recorded. A linked patient's is the record's. */
+  gender?: ReferralGender;
   reason: PlannedAdmissionReason;
   unitId: string;
   /** Days from today. Negative only when an overdue booking is being changed. */
