@@ -24,9 +24,9 @@ import { SYNTHETIC_TRAVEL_BANDS } from "@/components/ward-management/ward-travel
 
 /** The short travel words for a cell, a card and a fact. The full label stays in `TRAVEL_BAND_LABELS`. */
 export const TRAVEL_SHORT: Record<TravelBand, string> = {
-  under_an_hour: "Under 1 hour",
-  one_to_three_hours: "1 to 3 hours",
-  three_hours_or_more: "3 hours or more",
+  under_an_hour: "Under 1h",
+  one_to_three_hours: "1 to 3h",
+  three_hours_or_more: "Road 3h+",
   air_transport_only: "Air only",
 };
 
@@ -222,12 +222,14 @@ export function confirmedAgeText(minutes: number): string {
 export function closerBedOptions(entry: OutOfAreaEntry, units: Unit[], now: Instant): BedOption[] {
   const region = entry.admission.homeRegion;
   if (region === null) return [];
+  // Air-only is a transport mode, not a distance that can be ranked against road bands.
+  if (entry.band === "air_transport_only") return [];
   const current = BAND_RANK[entry.band];
   const options: BedOption[] = [];
   for (const unit of units) {
     if (unit.cohort !== entry.unit.cohort || unit.id === entry.unit.id) continue;
     const band = travelBand(region, unit.siteCode);
-    if (band === undefined || BAND_RANK[band] >= current) continue;
+    if (band === undefined || band === "air_transport_only" || BAND_RANK[band] >= current) continue;
     options.push(bedOption(unit, band, now));
   }
   return options.sort((a, b) => BAND_RANK[a.band] - BAND_RANK[b.band] || b.beds - a.beds);
@@ -255,10 +257,12 @@ export function homeRegionBeds(entries: OutOfAreaEntry[], units: Unit[], now: In
     .sort((a, b) => b[1] - a[1])
     .map(([region, away]) => {
       const table = SYNTHETIC_TRAVEL_BANDS[region] ?? {};
+      // Do not use air-only's position in the table as a distance ranking.
       const recorded = Object.entries(table).filter((pair): pair is [string, TravelBand] => pair[1] !== undefined);
-      const best = recorded.length ? Math.min(...recorded.map(([, band]) => BAND_RANK[band])) : undefined;
-      const sites = recorded.filter(([, band]) => BAND_RANK[band] === best).map(([code]) => code);
-      const band = recorded.find(([, candidate]) => BAND_RANK[candidate] === best)?.[1];
+      const roadRecorded = recorded.filter(([, candidate]) => candidate !== "air_transport_only");
+      const best = roadRecorded.length ? Math.min(...roadRecorded.map(([, candidate]) => BAND_RANK[candidate])) : undefined;
+      const sites = roadRecorded.filter(([, candidate]) => BAND_RANK[candidate] === best).map(([code]) => code);
+      const band = roadRecorded.find(([, candidate]) => BAND_RANK[candidate] === best)?.[1];
       const options = units
         .filter((unit) => sites.includes(unit.siteCode) && unit.cohort === "Adult")
         .map((unit) => bedOption(unit, travelBand(region, unit.siteCode)!, now));
@@ -290,13 +294,4 @@ export function shiftLabel(now: Instant): string {
 /** Whether a recorded return departs on today's calendar day. */
 export function leavesToday(record: RepatriationRecord, now: Instant): boolean {
   return dayOf(record.estimatedAt) === dayOf(now);
-}
-
-/** A night shift runs past midnight, so a departure can fall yesterday as well as today or tomorrow. */
-export function departureDayLabel(record: RepatriationRecord, now: Instant): string {
-  const offset = dayOf(record.estimatedAt) - dayOf(now);
-  if (offset === 0) return "Today";
-  if (offset === 1) return "Tomorrow";
-  if (offset === -1) return "Yesterday";
-  return offset < 0 ? `${-offset} days ago` : `In ${offset} days`;
 }
