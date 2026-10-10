@@ -17,7 +17,9 @@ import type { Referral } from "@/components/ward-management/ward-model";
  *   3. By the role that made the decision (a ward by its own unit), or the coordinator for anyone.
  *      Any other caller is refused with a reason, never silently.
  */
-export const UNDO_WINDOW_MINUTES = 5;
+import { UNDO_WINDOW_MINUTES } from "./ward-operational-defaults";
+
+export { UNDO_WINDOW_MINUTES };
 
 /** The most undo records kept; the oldest go first. One per subject, so this is plenty. */
 export const UNDO_RECORD_LIMIT = 50;

@@ -30,6 +30,10 @@ export interface OperationalDefault {
   readonly display: string;
 }
 
+/** How long a recorded decision or bed move can be undone (v10 Undo toasts). A software safety
+ *  window, not a clinical or legal limit. */
+export const UNDO_WINDOW_MINUTES = 5;
+
 /** Minutes past the estimated arrival before a screen names a person as late. */
 export const LATE_ARRIVAL_GRACE_MINUTES = 60;
 
