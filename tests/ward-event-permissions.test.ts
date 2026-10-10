@@ -446,6 +446,8 @@ describe("who may raise which event", () => {
     DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
     ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager", "executive"],
     STAND_DOWN_BROADCAST_ALERT: ["coordinator", "bed_manager", "executive"],
+    RAISE_PULL_NOW: ["coordinator"],
+    REPLY_BROADCAST_ALERT: ["ward", "coordinator"],
     UPDATE_EXPECTED_DISCHARGE: ["ward", "coordinator"],
     // Stream D planned admissions, 9 Oct 2026: booked and managed by the coordinator, bed manager
     // or the receiving ward; arrival recorded by the ward or coordinator.
