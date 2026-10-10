@@ -17,7 +17,7 @@ import {
   cx,
 } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import {
@@ -493,7 +493,7 @@ function RecordedReturn({
       <p className={styles.doneHead}>
         <StatusGlyph tone="success" size={10} />
         <b>Return recorded</b>
-        <span className={styles.mono}>{formatInstant(record.at)}</span>
+        <span className={styles.mono}>{formatInstantWithDay(record.at, now)}</span>
         <span className={styles.placeNote}>Coordinator</span>
       </p>
       <dl className={styles.kv}>

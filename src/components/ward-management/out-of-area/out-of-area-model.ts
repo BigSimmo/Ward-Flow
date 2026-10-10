@@ -1,5 +1,5 @@
 import { daysInBed } from "@/components/ward-management/ward-admissions";
-import { dayOf, formatInstant, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { travelBand, type TravelBand } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import type {
@@ -11,7 +11,6 @@ import type {
 import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import type { OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
 import { siteByCode, wardSites } from "@/components/ward-management/ward-sites";
-import { SYNTHETIC_TRAVEL_BANDS } from "@/components/ward-management/ward-travel-bands";
 
 /**
  * Out of area option A (9 Oct 2026): the small, pure reads the page shows beside the ledger.
@@ -264,8 +263,10 @@ export function homeRegionBeds(entries: OutOfAreaEntry[], units: Unit[], now: In
   return [...counts.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([region, away]) => {
-      const table = SYNTHETIC_TRAVEL_BANDS[region] ?? {};
-      const recorded = Object.entries(table).filter((pair): pair is [string, TravelBand] => pair[1] !== undefined);
+      // Asked of `travelBand` site by site: only ward-distance.ts reads the band fixture.
+      const recorded = wardSites
+        .map((site): [string, TravelBand | undefined] => [site.code, travelBand(region, site.code)])
+        .filter((pair): pair is [string, TravelBand] => pair[1] !== undefined);
       // The shortest road band recorded, or the air only sites when a region has no road band.
       const road = recorded.filter(([, band]) => ROAD_RANK[band] !== undefined);
       const best = road.length ? Math.min(...road.map(([, band]) => ROAD_RANK[band] as number)) : undefined;
@@ -297,7 +298,7 @@ export function currentShiftStart(now: Instant): Instant {
 }
 
 export function shiftLabel(now: Instant): string {
-  return `${formatInstant(currentShiftStart(now))} to now`;
+  return `${formatInstantWithDay(currentShiftStart(now), now)} to now`;
 }
 
 /** Whether a recorded return departs on today's calendar day. */

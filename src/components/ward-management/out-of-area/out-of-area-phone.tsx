@@ -5,7 +5,7 @@ import { useState, type ReactNode } from "react";
 import { BedDouble, ChevronLeft, ChevronRight, Copy, House, Phone, Route, Search } from "lucide-react";
 
 import { Button, Icon, Sheet, SrOnly, StatusGlyph, Tabs, TextInput, cx, type WfTone } from "@/components/wf";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import type { OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
@@ -153,6 +153,7 @@ export function OutOfAreaPhone({
   onClear,
   readyIds,
   leavingToday,
+  now,
   selectedId,
   onSelect,
   onClose,
@@ -310,7 +311,7 @@ export function OutOfAreaPhone({
                   return (
                     <li key={record.admissionId}>
                       <button type="button" className={styles.phoneLeave} onClick={() => open(record.admissionId)}>
-                        <span className={styles.phoneLeaveTime}>{formatInstant(record.estimatedAt)}</span>
+                        <span className={styles.phoneLeaveTime}>{formatInstantWithDay(record.estimatedAt, now)}</span>
                         <span className={styles.two}>
                           <b>{person.name}</b>
                           <span>
