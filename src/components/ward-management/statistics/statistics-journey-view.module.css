@@ -271,7 +271,7 @@
 .hospitalHead,
 .hospitalRow {
   display: grid;
-  grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr) 3.25rem;
+  grid-template-columns: minmax(min(7rem, 100%), 11rem) minmax(0, 1fr) 3.25rem;
   align-items: center;
   column-gap: var(--wf-s-3);
 }
@@ -495,7 +495,7 @@
 
   .hospitalHead,
   .hospitalRow {
-    grid-template-columns: minmax(6rem, 8.5rem) minmax(0, 1fr) 2.75rem;
+    grid-template-columns: minmax(min(6rem, 100%), 8.5rem) minmax(0, 1fr) 2.75rem;
     column-gap: var(--wf-s-2);
   }
 

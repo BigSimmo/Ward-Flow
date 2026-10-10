@@ -19,7 +19,7 @@
 }
 
 .lead3 {
-  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+  grid-template-columns: minmax(0, 2fr) minmax(min(320px, 100%), 1fr);
 }
 
 .halves {

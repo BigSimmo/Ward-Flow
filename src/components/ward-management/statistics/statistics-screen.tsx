@@ -480,7 +480,7 @@ export function StatisticsScreen({
         ) : (
           <div id="journey" hidden />
         )}
-        {view === "map" ? <StatisticsMapView /> : <div id="map" hidden />}
+        {view === "map" ? <StatisticsMapView live={{ state: live.state, now }} /> : <div id="map" hidden />}
         {view !== "board" ? null : (
           <div id="board" className={styles.stack}>
             <FlushRow layout="lead2" id="beds">
